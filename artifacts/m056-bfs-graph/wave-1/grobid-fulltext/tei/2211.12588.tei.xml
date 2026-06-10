@@ -1,0 +1,1794 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Program of Thoughts Prompting: Disentangling Computation from Reasoning for Numerical Reasoning Tasks</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2023-10-23">23 Oct 2023</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+							<email>wenhuchen@uwaterloo.ca</email>
+							<affiliation key="aff0">
+								<orgName type="department">Santa Barabra • Google Research</orgName>
+								<orgName type="institution" key="instit1">University of Waterloo ¶ Vector Institute</orgName>
+								<orgName type="institution" key="instit2">Toronto † University of California</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xueguang</forename><surname>Ma</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Santa Barabra • Google Research</orgName>
+								<orgName type="institution" key="instit1">University of Waterloo ¶ Vector Institute</orgName>
+								<orgName type="institution" key="instit2">Toronto † University of California</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xinyi</forename><surname>Wang</surname></persName>
+							<email>xinyi_wang@ucsb.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Santa Barabra • Google Research</orgName>
+								<orgName type="institution" key="instit1">University of Waterloo ¶ Vector Institute</orgName>
+								<orgName type="institution" key="instit2">Toronto † University of California</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">William</forename><forename type="middle">W</forename><surname>Cohen</surname></persName>
+							<email>wcohen@google.com</email>
+							<affiliation key="aff0">
+								<orgName type="department">Santa Barabra • Google Research</orgName>
+								<orgName type="institution" key="instit1">University of Waterloo ¶ Vector Institute</orgName>
+								<orgName type="institution" key="instit2">Toronto † University of California</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Program of Thoughts Prompting: Disentangling Computation from Reasoning for Numerical Reasoning Tasks</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2023-10-23">23 Oct 2023</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">CF8F26CAC152FD2FDECA29415B3EB430</idno>
+					<idno type="arXiv">arXiv:2211.12588v4[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:10+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recently, there has been significant progress in teaching language models to perform step-bystep reasoning to solve complex numerical reasoning tasks. Chain-of-thoughts prompting (CoT) is the state-of-art method for many of these tasks. CoT uses language models to produce text describing reasoning, and computation, and finally the answer to a question. Here we propose 'Program of Thoughts' (PoT), which uses language models (mainly Codex) to generate text and programming language statements, and finally an answer. In PoT, the computation can be delegated to a program interpreter, which is used to execute the generated program, thus decoupling complex computation from reasoning and language understanding. We evaluate PoT on five math word problem datasets and three financial-QA datasets in both few-shot and zero-shot settings. We find that PoT has an average performance gain over CoT of around 12% across all datasets. By combining PoT with self-consistency decoding, we can achieve extremely strong performance on all the math datasets and financial datasets. All of our data and code will be released.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Numerical reasoning is a long-standing task in artificial intelligence. A surge of datasets has been proposed recently to benchmark deep-learning models' capabilities to perform numerical/arithmetic reasoning. Some widely used benchmarks are based on Math word problems (MWP) <ref type="bibr" target="#b9">(Cobbe et al., 2021;</ref><ref type="bibr" target="#b30">Patel et al., 2021;</ref><ref type="bibr" target="#b22">Lu et al., 2022;</ref><ref type="bibr" target="#b21">Ling et al., 2017)</ref>, where systems are supposed to answer math questions expressed with natural text. Besides MWP, some datasets also consider financial problems <ref type="bibr">(Chen et al., 2021b;</ref><ref type="bibr" target="#b4">2022;</ref><ref type="bibr" target="#b48">Zhu et al., 2021)</ref>, where systems need to answer math-driven financial questions.</p><p>Prior work <ref type="bibr" target="#b21">(Ling et al., 2017;</ref><ref type="bibr" target="#b9">Cobbe et al., 2021)</ref> has studied how to train models from scratch or fine-tune models to generate intermediate steps to derive the final answer. Such methods are data-intensive, requiring a significant number of training examples with expert-annotated steps. Recently, <ref type="bibr" target="#b27">Nye et al. (2021)</ref> have discovered that the large language models (LLMs) <ref type="bibr" target="#b2">(Brown et al., 2020;</ref><ref type="bibr">Chen et al., 2021a;</ref><ref type="bibr" target="#b8">Chowdhery et al., 2022)</ref> can be prompted with a few input-output exemplars to solve these tasks without any training or finetuning. In particular, when prompted with a few examples containing inputs, natural language 'rationales', and outputs, LLMs can imitate the demonstrations to both generate rationales and answer these questions. Such a prompting method is latter extended as 'Chain of Thoughts (CoT)' <ref type="bibr" target="#b43">(Wei et al., 2022)</ref>, and it is able to achieve state-of-the-art performance on a wide spectrum of textual and numerical reasoning datasets. CoT uses LLMs for both reasoning and computation, i.e. the language model not only needs to generate the mathematical expressions but also needs to perform the computation in each step. We argue that language models are not ideal for actually solving these mathematical expressions, because: 1) LLMs are very prone to arithmetic calculation errors, especially when dealing with large numbers; 2) LLMs cannot solve complex mathematical expressions like polynomial equations or even differential equations; 3) LLMs are highly inefficient at expressing iteration, especially when the number of iteration steps is large.</p><p>In order to solve these issues, we propose program-of-thoughts (PoT) prompting, which will delegate computation steps to an external language interpreter. In PoT, LMs can express reasoning steps as Python programs, and the computation can be accomplished by a Python interpreter. We depict the difference between CoT and PoT in Figure <ref type="figure" target="#fig_0">1</ref>. In the upper example, for CoT the iteration runs for 50 times, which leads to extremely low accuracy;<ref type="foot" target="#foot_0">foot_0</ref> in the lower example, CoT cannot solve the cubic equation with language models and outputs a wrong answer. In contrast, in the upper example, PoT can express the iteration process with a few lines of code, which can be executed on a Python interpreter to derive an accurate answer; and in the lower example, PoT can convert the problem into a program that relies on 'SymPy' library in Python to solve the complex equation.</p><p>We evaluate PoT prompting across five MWP datasets, GSM8K, AQuA, SVAMP, TabMWP, MultiArith; and three financial datasets, FinQA, ConvFinQA, and TATQA. These datasets cover various input formats including text, tables, and conversation. We give an overview of the results in Figure <ref type="figure" target="#fig_1">2</ref>. Under both fewshot and zero-shot settings, PoT outperforms CoT significantly across all the evaluated datasets. Under the few-shot setting, the average gain over CoT is around 8% for the MWP datasets and 15% for the financial datasets. Under the zero-shot setting, the average gain over CoT is around 12% for the MWP datasets. PoT combined with self-consistency (SC) also outperforms CoT+SC <ref type="bibr">(Wang et al., 2022b)</ref> by an average of 10%</p><formula xml:id="formula_0">G S M 8 K A Q u A S V A M P T a b M W P F in Q A C o n v F in T A T Q A<label>63</label></formula><p>.1 45.3 76.4 65.2 40.4 45.5 61.4 71.6 54.1 85.2 73.2 64.5 64.6 69 CoT PoT G S M 8 K A Q u A S V A M P T a b M W P F in Q A C o n v F in T A T Q A 78 52 86.8 75.4 44.4 47.9 63.9 80 58.6 89.1 81.8 68.1 67.3 73.4</p><p>CoT across all datasets. Our PoT+SC achieves the best-known results on all the evaluated MWP datasets and near best-known results on the financial datasets (excluding GPT-4 (OpenAI, 2023)). Finally, we conduct comprehensive ablation studies to understand the different components of PoT.</p><formula xml:id="formula_1">-SC PoT-SC G S M 8 K A Q u A S V A M P T a b M W P F in Q A C o n v F in T A T Q A</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Program of Thoughts</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Preliminaries</head><p>In-context learning has been described in <ref type="bibr" target="#b2">Brown et al. (2020)</ref>; <ref type="bibr">Chen et al. (2021a)</ref>; <ref type="bibr" target="#b8">Chowdhery et al. (2022)</ref>; <ref type="bibr" target="#b31">Rae et al. (2021)</ref>. Compared with fine-tuning, in-context learning (1) only takes a few annotations/demonstrations as a prompt, and (2) performs inference without training the model parameters. With in-context learning, LLMs receive the input-output exemplars as the prefix, followed by an input problem, and generate outputs imitating the exemplars. More recently, 'chain of thoughts prompting' <ref type="bibr" target="#b43">(Wei et al., 2022)</ref> has been proposed as a specific type of in-context learning where the exemplar's output contains the 'thought process' or rationale instead of just an output. This approach has been shown to elicit LLMs' strong reasoning capabilities on various kinds of tasks. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Program of Thoughts</head><p>Besides natural language, programs can also be used to express our thought processes. By using semantically meaningful variable names, a program can also be a natural representation to convey human thoughts. For example, in the lower example in Figure <ref type="figure" target="#fig_0">1</ref>, we first create an unknown variable named interest_rate. Then we bind 'summation in two years with ... interest rate' to the variable sum_in_two_years_with_XXX_interest and write down the equation expressing their mathematical relations with interest_rate. These equations are packaged into the 'solve' function provided by 'SymPy'. The program is executed with Python to solve the equations to derive the answer variable interest_rate.</p><p>Unlike CoT, PoT relegates some computation to an external process (a Python interpreter). The LLMs are only responsible for expressing the 'reasoning process' in the programming language. In contrast, CoT aims to use LLMs to perform both reasoning and computation. We argue that such an approach is more expressive and accurate in terms of numerical reasoning.</p><p>The 'program of thoughts' is different from generating equations directly, where the generation target would be solve(20000 * (1 + x) 3 -2000 -x * 20000 * 3 -1000, x). As observed by <ref type="bibr" target="#b43">Wei et al. (2022)</ref> for CoT, directly generating such equations is challenging for LLMs. PoT differs from equation generation in two aspects: (1) PoT breaks down the equation into a multi-step 'thought' process, and (2) PoT binds semantic meanings to variables to help ground the model in language. We found that this sort of 'thoughtful' process can elicit language models' reasoning capabilities and generate more accurate programs. We provide a detailed comparison in the experimental section.</p><p>We show the proposed PoT prompting method in Figure <ref type="figure" target="#fig_2">3</ref> under the few-shot and zero-shot settings. Under the few-shot setting, a few exemplars of (question, 'program of thoughts') pairs will be prefixed as demonstrations to teach the LLM how to generate 'thoughtful' programs. Under the zero-shot setting, the prompt only contains an instruction without any exemplar demonstration. Unlike zero-shot CoT <ref type="bibr" target="#b18">(Kojima et al., 2022)</ref>, which requires an extra step to extract the answer from the 'chain of thoughts', zero-shot PoT can return the answer straightforwardly without extra steps.</p><p>In zero-shot PoT, a caveat is that LLM can fall back to generating a reasoning chain in comments rather than in the program. Therefore, we propose to suppress '#' token logits to encourage it to generate programs. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">PoT as an Intermediate Step</head><p>For certain problems requiring additional textual reasoning, we propose to utilize PoT to tackle the computation part. The program generated by PoT can be executed to provide intermediate result, which is further combined with the question to derive the final answer with CoT. We depict the whole process in Figure <ref type="figure">8</ref>.</p><p>During demonstration, we present LLMs with examples to teach it predict whether to an additional CoT reasoning needs to be used. If LLM outputs 'keep prompting' in the end, we will adopt the execution results from PoT as input to further prompt LLMs to derive the answer through CoT.</p><p>For instance, in the left example in Figure <ref type="figure" target="#fig_2">3</ref>, the program will be executed to return a float number 'ans=2.05', which means that after 2.05 hours the two trains will meet. However, directly adding 2.05 to 11 AM does not make sense because 2.05 hour needs to be translated to minutes to obtain the standard HH:MM time format to make it aligned with provided option in the multi-choice questions. Please note that this prompting strategy is only needed for the AQuA because the other datasets can all be solved by PoT-only prompting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Experimental Setup</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Datasets</head><p>We summarize our evaluated datasets in Table <ref type="table" target="#tab_0">1</ref>. We use the test set for all the evaluated datasets except TATQA. These datasets are highly heterogeneous in terms of their input formats. We conduct comprehensive experiments on this broad spectrum of datasets to show the generalizability and applicability of PoT prompting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dataset Split Example Domain Input Output</head><p>GSM8K <ref type="bibr" target="#b9">(Cobbe et al., 2021)</ref> Test 1318 MWP Question Number AQuA <ref type="bibr" target="#b21">(Ling et al., 2017)</ref> Test 253 MWP Question Option SVAMP <ref type="bibr" target="#b30">(Patel et al., 2021)</ref> Test 1000 MWP Question Number MultiArith <ref type="bibr" target="#b32">(Roy &amp; Roth, 2015)</ref>  For text+table hybrid inputs, we separate tables and text with '\n'. For conversational history, we also separate conversation turns by '\n'. The prompt is constructed by the concatenation of task instruction, text, linearized table, and question. For conversational question answering, we simply concatenate all the dialog history in the prompt.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Implementation Details</head><p>We mainly use the OpenAI Codex (code-davinci-002) API<ref type="foot" target="#foot_1">foot_1</ref> for our experiments. We also tested GPT-3 (text-davinci-002), ChatGPT (gpt-turbo-3.5), CodeGen <ref type="bibr" target="#b26">(Nijkamp et al., 2022)</ref> (codegen-16B-multi and codegen-16B-mono), CodeT5+ <ref type="bibr">(Wang et al., 2023b)</ref> and Xgen<ref type="foot" target="#foot_2">foot_2</ref> for ablation experiments. We use Python 3.8 with the SymPy library<ref type="foot" target="#foot_3">foot_3</ref> to execute the generated program. For the few-shot setting, we use 4-8 shots for all the datasets, based on their difficulty. For simple datasets like FinQA <ref type="bibr">(Chen et al., 2021b)</ref>, we tend to use fewer shots, while for more challenging datasets like AQuA <ref type="bibr" target="#b21">(Ling et al., 2017)</ref> and TATQA <ref type="bibr" target="#b48">(Zhu et al., 2021)</ref>, we use 8 shots to cover more diverse problems. The examples are taken from the training set. We generally write prompts for 10-20 examples and then tune the exemplar selection on a small validation set to choose the best 4-8 shots for the full set evaluation.</p><p>To elicit the LLM's capability to perform multi-step reasoning, we found a prompt to encourage LLMs to generate reasonable programs without demonstration. The detailed prompt is shown in Figure <ref type="figure" target="#fig_2">3</ref>. However, a caveat is that LLM can fall back to generating a reasoning chain in comments rather than in the program. Therefore, we suppress the '#' token logits by a small bias to decrease its probability to avoid such cases. In our preliminary study, we found that -2 as the bias can achieve the best result. We found that this simple strategy can greatly improve our performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Metrics</head><p>We adopt exact match scores as our evaluation metrics for GSM8K, SVAMP, and MultiArith datasets. We will round the predicted number to a specific precision and then compare it with the reference number. For the AQuA dataset, we use PoT to compute the intermediate answer and then prompt the LLM again to output the closest option to measure the accuracy. For TabMWP, ConvFinQA, and TATQA datasets, we use the official evaluation scripts provided on Github. For FinQA, we relax the evaluation for CoT because LLMs cannot perform the computation precisely (especially with high-precision floats and large numbers), so we adopt 'math.isclose' with relative tolerance of 0.001 to compare answers.</p><p>Baselines We report results for three different models including Codex <ref type="bibr">(Chen et al., 2021a)</ref>, GPT-3 <ref type="bibr" target="#b2">(Brown et al., 2020)</ref>, PaLM <ref type="bibr" target="#b8">(Chowdhery et al., 2022)</ref> and LaMDA <ref type="bibr" target="#b38">(Thoppilan et al., 2022)</ref>. We consider two types of prediction strategies including direct answer output and chain of thought to derive the answer. Since PaLM API is not public, we only list PaLM results reported from previous work <ref type="bibr" target="#b43">(Wei et al., 2022;</ref><ref type="bibr">Wang et al., 2022b)</ref>. We also leverage an external calculator as suggested in <ref type="bibr" target="#b43">Wei et al. (2022)</ref> for all the equations generated by CoT, which is denoted as CoT + calc. Besides greedy decoding, we use self-consistency <ref type="bibr">(Wang et al., 2022b)</ref> with CoT, taking the majority vote over 40 different completions as the prediction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Main Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Few-shot Results</head><p>We give our few-shot results in Table <ref type="table">2</ref>. On MWP datasets, PoT with greedy decoding improves on GSM8K/AQuA/TabMWP by more than 8%. On SVAMP, the improvement is 4% mainly due to its simplicity. For financial QA datasets, PoT improves over CoT by roughly 20% on FinQA/ConvFinQA and 8% on TATQA. The larger improvements in FinQA and ConvFinQA are mainly due to miscalculations on LLMs for large numbers (e.g. in the millions). CoT adopts LLMs to perform the computation, which is highly prone to miscalculation errors, while PoT adopts a highly precise external computer to solve the problem. As an ablation, we also compare with CoT+calc, which leverages an external calculator to correct the calculation results in the generated 'chain of thoughts'. The experiments show that adding an external calculator only shows mild improvement over CoT on MWP datasets, much behind PoT. The main reason for poor performance of 'calculator' is due to its rigid post-processing step, which can lead to low recall in terms of calibrating the calculation results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Few-shot + Self-Consistency Results</head><p>We leverage self-consistency (SC) decoding to understand the upper bound of our method. This sampling-based decoding algorithm can greatly reduce randomness in the generation procedure and boosts performance. Specifically, we set a temperature of 0.4 and K=40 throughout our experiments. According to</p><p>Table 2, we found that PoT + SC still outperforms CoT + SC Model #Params GSM8K AQuA SVAMP TabWMP FinQA ConvFin TATQA Avg Fine-tuned or few-shot prompt Published SoTA -78.0 52.0 86.8 68.2 68.0 68.9 73.6 70.7 Few-shot prompt (Greedy Decoding) Codex Direct 175B 19.7 29.5 69.9 59.4 25.6 40.0 55.0 42.7 Codex CoT 175B 63.1 45.3 76.4 65.2 40.4 45.6 61.4 56.7 GPT-3 Direct 175B 15.6 24.8 65.7 57.1 14.4 29.1 37.9 34.9 GPT-3 CoT 175B 46.9 35.8 68.9 62.9 26.1 37.4 42.5 45.7 PaLM Direct 540B 17.9 25.2 69.4 -----PaLM CoT 540B 56.9 35.8 79.0 -----Codex CoT calc 175B 65.4 45.3 77.0 65.8 ----GPT-3 CoT calc 175B 49.6 35.8 70.3 63.4 ----PaLM CoT calc 540B 58.6 35.8 79.8 -----PoT-Codex 175B 71.6 54.1 85.2 73.2 64.5 64.6 69.0 68.9 Few-shot prompt (Self-Consistency Decoding) LaMDA CoT-SC 137B 27.7 26.8 53.5 -----Codex CoT-SC 175B 78.0 52.0 86.8 75.4 44.4 47.9 63.2 63.9 PaLM CoT-SC 540B 74.4 48.3 86.6 -----PoT-SC-Codex 175B 80.0 58.6 89.1 81.8 68.1 67.3 70.2 73.6 Few-shot prompt (GPT-4) CoT-GPT4 175B 92.0 72.4 97.0 -58.2 ---PoT-GPT4 175B 97.2 84.4 97.4 -74.0 ---</p><p>Table <ref type="table">2</ref>: The few-shot results for different datasets. Published SoTA includes the best-known results (excluding results obtained by GPT-4). On GSM8K, AQuA and SVAMP, the prior SoTA results are CoT + self-consistency decoding <ref type="bibr">(Wang et al., 2022b)</ref>. On FinQA, the prior best result is from <ref type="bibr">Wang et al. (2022a)</ref>. On ConvFinQA, the prior best result is achieved by FinQANet <ref type="bibr" target="#b6">(Chen et al., 2022)</ref>. On TabWMP <ref type="bibr" target="#b22">(Lu et al., 2022)</ref>, the prior best result is achieved by Dynamic Prompt Learning <ref type="bibr" target="#b22">(Lu et al., 2022)</ref>. On TATQA, the SoTA result is by RegHNT <ref type="bibr" target="#b20">(Lei et al., 2022)</ref>.</p><p>Model #Params GSM8K AQuA SVAMP TabMWP MultiArith Avg Zero-shot Direct (GPT-3) 175B 12.6 22.4 58.7 38.9 22.7 31.0 Zero-shot CoT (GPT-3) 175B 40.5 31.9 63.7 53.5 79.3 53.7 Zero-shot CoT (PaLM) 540B 43.0 ---66.1 -Zero-shot PoT (Ours) 175B 57.0 43.9 70.8 66.5 92.2 66.1 </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Zero-shot Results</head><p>We also evaluate the zero-shot performance of PoT and compare with <ref type="bibr" target="#b18">Kojima et al. (2022)</ref> in Table <ref type="table" target="#tab_1">3</ref>. As can be seen, zero-shot PoT significantly outperforms zero-shot CoT across all the MWP datasets evaluated. Compared to few-shot prompting, zero-shot PoT outperforms zero-shot CoT <ref type="bibr" target="#b18">(Kojima et al., 2022</ref>) by an even larger margin. On the evaluated datasets, PoT's outperforms CoT by an average of 12%. On TabMWP, zero-shot PoT is even higher than few-shot CoT. These results show the great potential to directly generalize to many unseen numerical tasks even without any dataset-specific exemplars. Figure <ref type="figure">5</ref>: Exemplar sensitivity analysis for GSM8K and FinQA, where v1, v2 and v3 are three versions of k-shot demonstration sampled from the pool.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Ablation Studies</head><p>We performed multiple ablation studies under the few-shot setting to understand the importance of different factors in PoT including the backbone models, prompt engineering, etc.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Backend Ablation</head><p>To understand PoT's performance on different backbone models, we compare the performance of text-davinci-002, code-davinci-002, gpt-3.5-turbo, codegen-16B-mono, codegen-16B-multi, CodeT5+ and XGen. We choose three representative datasets GSM8K, SVAMP, and FinQA to analyze the results. We show our experimental results in Table <ref type="table" target="#tab_2">4</ref>. As can be seen, gpt-3.5-turbo can achieve the highest score to outperform codex (code-davinci-002) by a remarkable margin. In contrast, text-davinci-002 is weaker than code-davinci-002, which is mainly because the following text-based instruction tuning undermines the models' capabilities to generate code. A concerning fact we found is that the open source model like codegen <ref type="bibr" target="#b26">Nijkamp et al. (2022)</ref> is significantly behind across different benchmarks. We conjecture that such a huge gap could be attributed to non-sufficient pre-training and model size.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Sensitivity to Exemplars</head><p>To better understand how sensitive PoT is w.r.t different exemplars, we conduct a sensitivity analysis. Specifically, we wrote 20 total exemplars. For k-shot learning, we randomly sample k = (2, 4, 6, 8) out of the 20 exemplars three times as v1, v2, and v3. We will use these randomly sampled exemplars as demonstrations for PoT. We summarize our sensitivity analysis in Figure <ref type="figure">5</ref>. First of all, we found that increasing the number of shots helps more for GSM8K than FinQA. This is mainly due to the diversity of questions in GSM8K. By adding more exemplars, the language models can better generalize to diverse questions. Another observation is that when given fewer exemplars, PoT's performance variance is Table 6: Comparison between PoT and equation generation on three different datasets.</p><p>larger. When K=2, the performance variance can be as large as 7% for both datasets. With more exemplars, the performance becomes more stable.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Comparison with PaL</head><p>We also compare PoT with another more recent related approach like PaL <ref type="bibr" target="#b13">(Gao et al., 2022)</ref>. According to to Table <ref type="table" target="#tab_3">5</ref>, we found that our method is in general better than PaL, especially on SVAMP and ASDIV. Our results are 6% higher than their prompting method.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Semantic Binding and Multi-Step Reasoning</head><p>The two core properties of 'program of thoughts' are:</p><p>(1) multiple steps: breaking down the thought process into the step-by-step program, (2) semantic binding: associating semantic meaning to the variable names. To better understand how these two properties contribute, we compared with two variants. One variant is to remove the semantic binding and simply use a, b, c as the variable names. The other variant is to directly predict the final mathematical equation to compute the results. We show our findings in Table <ref type="table">6</ref>. As can be seen, removing the binding will in general hurt the model's performance. On more complex questions involving more variables like GSM8K, the performance drop is larger. Similarly, prompting LLMs to directly generate the target equations is also very challenging. Breaking down the target equation into multiple reasoning steps helps boost performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Breakdown Analysis</head><p>We perform further analysis to determine which kinds of problems CoT and PoT differ most in performance. We use AQuA <ref type="bibr" target="#b21">(Ling et al., 2017)</ref> as our testbed for this. Specifically, we manually classify the questions in AQuA into several categories including geometry, polynomial, symbolic, arithmetic, combinatorics, linear equation, iterative and probability. We show the accuracy for each subcategory in Figure <ref type="figure" target="#fig_4">6</ref>. The major categories are (1) linear equations, (2) arithmetic, (3) combinatorics, (4) probability, and (5) iterative. The largest improvements of PoT are in the categories 'linear/polynomial equation', 'iterative', 'symbolic', and 'combinatorics'. These questions require more complex arithmetic or symbolic skills to solve. In contrast, on 'arithmetic', 'probability', and 'geometric' questions, PoT and CoT perform similarly. Such observation reflects our assumption that 'program' is more effective on more challenging problems.  Error Analysis We considered two types of errors: (1) value grounding error, and (2) logic generation error. The first type indicates that the model fails to assign correct values to the variables relevant to the question. The second type indicates that the model fails to generate the correct computation process to answer the question based on the defined variables. Figure <ref type="figure" target="#fig_5">7</ref> shows an example of each type of error. In the upper example, the model fetches the value of the variables incorrectly while the computation logic is correct. In the lower example, the model grounded relevant variables correctly but fails to generate proper computation logic to answer the question. We manually examined the errors made in the TAT-QA results. Among the 198 failure cases of numerical reasoning questions with the PoT (greedy) method, 47% have value grounding errors and 33% have logic errors. In 15% both types of errors occurred and in 5% we believe the answer is actually correct. We found that the majority of the errors are value grounding errors, which is also common for other methods such as CoT.</p><p>4 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Mathematical Reasoning in NLP</head><p>Mathematical reasoning skills are essential for general-purpose intelligent systems, which have attracted a significant amount of attention from the community. Earlier, there have been studies in understanding NLP models' capabilities to solve arithmetic/algebraic questions <ref type="bibr" target="#b16">(Hosseini et al., 2014;</ref><ref type="bibr" target="#b19">Koncel-Kedziorski et al., 2015;</ref><ref type="bibr" target="#b32">Roy &amp; Roth, 2015;</ref><ref type="bibr" target="#b21">Ling et al., 2017;</ref><ref type="bibr" target="#b33">Roy &amp; Roth, 2018)</ref>. Recently, more challenging datasets <ref type="bibr" target="#b12">(Dua et al., 2019;</ref><ref type="bibr" target="#b34">Saxton et al., 2019;</ref><ref type="bibr" target="#b23">Miao et al., 2020;</ref><ref type="bibr" target="#b0">Amini et al., 2019;</ref><ref type="bibr" target="#b15">Hendrycks et al., 2021;</ref><ref type="bibr" target="#b30">Patel et al., 2021)</ref> have been proposed to increase the difficulty, diversity or even adversarial robustness. LiLA <ref type="bibr" target="#b8">(Mishra et al., 2022)</ref> proposes to assemble a large set of mathematical datasets into a unified dataset. LiLA also annotates Python programs as the generation target for solving mathematical problems. However, LiLA <ref type="bibr" target="#b8">(Mishra et al., 2022)</ref> is mostly focused on dataset unification. Our work aims to understand how to generate 'thoughtful programs' to best elicit LLM's reasoning capability. Besides, we also investigate how to solve math problems without any exemplars. <ref type="bibr" target="#b1">Austin et al. (2021)</ref> propose to evaluate LLMs' capabilities to synthesize code on two curated datasets MBPP and MathQA-Python.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">In-context Learning with LLMs</head><p>GPT-3 <ref type="bibr" target="#b2">(Brown et al., 2020</ref> LMs, but only emerge as the model scales up <ref type="bibr" target="#b17">(Kaplan et al., 2020)</ref>. Recently, there have been several works <ref type="bibr" target="#b44">(Xie et al., 2021;</ref><ref type="bibr" target="#b24">Min et al., 2022)</ref> aiming to understand how and why in-context learning works. Another concurrent work similar to ours is BINDER <ref type="bibr" target="#b7">(Cheng et al., 2022)</ref>, which applies Codex to synthesize 'soft' SQL queries to answer questions from tables.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Chain of Reasoning with LLMs</head><p>Although LLMs have demonstrated remarkable success across a range of NLP tasks, their ability to reason is often seen as a limitation. Recently, CoT <ref type="bibr" target="#b43">(Wei et al., 2022;</ref><ref type="bibr" target="#b18">Kojima et al., 2022;</ref><ref type="bibr">Wang et al., 2022b)</ref> was proposed to enable LLM's capability to perform reasoning tasks by demonstrating 'natural language rationales'. <ref type="bibr" target="#b37">Suzgun et al. (2022)</ref> have shown that CoT can already surpass human performance on challenging BIG-Bench tasks. Later on, several other works <ref type="bibr" target="#b10">(Drozdov et al., 2022;</ref><ref type="bibr" target="#b47">Zhou et al., 2022;</ref><ref type="bibr" target="#b27">Nye et al., 2021)</ref> also propose different approaches to utilize LLMs to solve reasoning tasks by allowing intermediate steps.</p><p>ReAct <ref type="bibr" target="#b46">Yao et al. (2022)</ref> propose to leverage external tools like search engine to enhance the LLM reasoning skills. Our method can be seen as augmenting CoT with external tools (Python) to enable robust numerical reasoning. Another contemporary work <ref type="bibr" target="#b13">(Gao et al., 2022</ref>) was proposed at the same time as ours to adopt hybrid text/code reasoning to address math questions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Discussion about Contemporary Work</head><p>Recently, there has been several follow-up work on top of PoT including self-critic <ref type="bibr" target="#b14">(Gou et al., 2023)</ref>, selfeval <ref type="bibr" target="#b45">(Xie et al., 2023)</ref>, plan-and-solve <ref type="bibr">(Wang et al., 2023a)</ref>. These methods propose to enhance LLMs' capabilities to solve math problems with PoT. self-critic <ref type="bibr" target="#b14">(Gou et al., 2023)</ref> and self-eval <ref type="bibr" target="#b44">(Xie et al., 2021)</ref> both adopt self-evaluation to enhance the robustness of the generated program. plan-and-solve <ref type="bibr">(Wang et al., 2023a)</ref> instead adopt more detailed planning instruction to help LLMs create a high-level reasoning plan. These methods all prove to bring decent improvements over PoT on different math reasoning datasets.</p><p>Another line of work related to ours is Tool-use in transformer models <ref type="bibr" target="#b35">(Schick et al., 2023;</ref><ref type="bibr" target="#b29">Paranjape et al., 2023)</ref>. These work propose to adopt different tools to help the language models ground on external world. These work generalizes our Python program into more general API calls to include search engine, string extraction, etc. By generalization, LLMs can unlock its capabilities to solve more complex reasoning and grounding problems in real-world scenarios.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Discussion</head><p>In this work, we have verified that our prompting methods can work efficiently on numerical reasoning tasks like math or finance problem solving. We also study how to combine PoT with CoT to combine the merits of both prompting approaches. We believe PoT is suitable for problems which require highly symbolic reasoning skills. For semantic reasoning tasks like commonsense reasoning (StrategyQA), we conjecture that PoT is not the best option. In contrast, CoT can solve more broader reasoning tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusions</head><p>In this work, we investigate how to disentangle computation from reasoning in solving numerical problems. By 'program of thoughts' prompting, we are able to elicit LLMs' abilities to generate accurate programs to express complex reasoning procedure, while also allows computation to be separately handled by an external program interpreter. This approach is able to boost the performance of LLMs on several math datasets significantly. We believe our work can inspire more work to combine symbolic execution with LLMs to achieve better performance on other symbolic reasoning tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>Our work aims at combining LLM with symbolic execution to solve challenging math problems. PoT would require execution of 'generated code' from LLMs, which could contain certain dangerous or risky code snippets like 'import os; os.rmdir()', etc. We have blocked the LLM from importing any additional modules and restrict it to using the pre-defined modules. Such brutal-force blocking works reasonable for math QA, however, for other unknown symbolic tasks, it might hurt the PoT's generalization. Another limitation is that PoT still struggles with AQuA dataset with complex algebraic questions with only 58% accuracy. It's mainly due to the diversity questions in AQuA, which the demonstration cannot possibly cover. Therefore, the future research should discuss how to further prompt LLMs to generate code for highly diversified Math questions.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Comparison between Chain of Thoughts and Program of Thoughts.</figDesc><graphic coords="2,72.00,86.27,468.01,309.43" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Few-shot (upper), Few-shot + SC (middle) and Zero-Shot (lower) Performance overview of Codex PoT and Codex CoT across different datasets.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Left: Few-shot PoT prompting, Right: Zero-shot PoT prompting.</figDesc><graphic coords="4,83.70,81.86,444.60,204.93" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: PoT combined with CoT for multi-stage reasoning.</figDesc><graphic coords="5,83.70,81.86,444.58,82.51" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: PoT and CoT's breakdown accuracy across different types of questions.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Error cases on TAT-QA dev set using PoT-greedy method.</figDesc><graphic coords="10,79.70,81.86,449.27,283.46" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><figDesc>) demonstrated a strong capability to perform few-shot predictions, where the model is given a description of the task in natural language with few examples. Scaling model size, data, and computing are crucial to enable this learning ability. Recently, Rae et al. (2021); Smith et al. (2022); Chowdhery et al. (2022); Du et al. (2022) have proposed to train different types of LLMs with different training recipes. The capability to follow few-shot exemplars to solve unseen tasks is not existent on smaller</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Summarization of all the datasets being evaluated.</figDesc><table><row><cell></cell><cell>Test</cell><cell>600</cell><cell>MWP</cell><cell>Question</cell><cell>Number</cell></row><row><cell>TabMWP (Lu et al., 2022)</cell><cell>Test</cell><cell>7861</cell><cell>MWP</cell><cell>Table + Question</cell><cell>Number + Text</cell></row><row><cell>FinQA (Chen et al., 2021b)</cell><cell>Test</cell><cell>1147</cell><cell cols="2">Finance Table + Text + Question</cell><cell>Number + Binary</cell></row><row><cell cols="2">ConvFinQA (Chen et al., 2022) Test</cell><cell>421</cell><cell cols="3">Finance Table + Text + Conversation Number + Binary</cell></row><row><cell>TATQA (Zhu et al., 2021)</cell><cell>Dev</cell><cell>1668</cell><cell cols="2">Finance Table + Text + Question</cell><cell>Number + Text</cell></row></table><note><p>To incorporate the diverse inputs, we propose to linearize these inputs in the prompt. For table inputs, we adopt the same strategy as<ref type="bibr" target="#b4">Chen (2022)</ref> </p><p>to linearize a table into a text string. The columns of the table are separated by '|' and the rows are separated by '\n'. If a table cell is empty, it is filled by '-'.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>The zero-shot results for different datasets. The baseline results are taken from<ref type="bibr" target="#b18">Kojima et al. (2022)</ref>.</figDesc><table><row><cell>on MWP datasets with notable margins. On financial datasets, we observe that self-consistency decoding</cell></row><row><cell>is less impactful for both PoT and CoT. Similarly, PoT + SC outperforms CoT + SC by roughly 20% on</cell></row><row><cell>FinQA/ConvFinQA and 7% on TATQA.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>PoT prompting performance with different backend model.</figDesc><table><row><cell></cell><cell>Model</cell><cell></cell><cell></cell><cell></cell><cell cols="4">#Params GSM8K SVAMP</cell></row><row><cell></cell><cell cols="4">code-davinci-002</cell><cell>175B</cell><cell cols="2">71.6</cell><cell>85.2</cell></row><row><cell></cell><cell cols="4">text-davinci-002</cell><cell>175B</cell><cell cols="2">60.4</cell><cell>80.1</cell></row><row><cell></cell><cell cols="4">gpt-3.5-turbo</cell><cell>-</cell><cell cols="2">76.3</cell><cell>88.2</cell></row><row><cell></cell><cell cols="5">codegen-16B-multi 16B</cell><cell cols="2">8.2</cell><cell>29.2</cell></row><row><cell></cell><cell cols="5">codegen-16B-mono 16B</cell><cell cols="2">12.7</cell><cell>41.1</cell></row><row><cell></cell><cell cols="2">codeT5+</cell><cell></cell><cell></cell><cell>16B</cell><cell cols="2">12.5</cell><cell>38.5</cell></row><row><cell></cell><cell>xgen</cell><cell></cell><cell></cell><cell></cell><cell>7B</cell><cell cols="2">11.0</cell><cell>40.6</cell></row><row><cell cols="2">v1 v2 v2</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>0.73</cell><cell>0.74</cell></row><row><cell></cell><cell cols="2">0.65</cell><cell>0.68</cell><cell></cell><cell>0.67</cell><cell>0.69</cell><cell>0.65</cell><cell></cell><cell>0.7</cell></row><row><cell>0.62</cell><cell>0.58</cell><cell></cell><cell></cell><cell>0.6</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell>0.55</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">2-shots</cell><cell cols="3">4-shots</cell><cell cols="3">6-shots</cell><cell cols="2">8-shots</cell></row><row><cell></cell><cell cols="2">0.66</cell><cell></cell><cell></cell><cell>0.66</cell><cell></cell><cell></cell><cell></cell></row><row><cell>0.63</cell><cell>0.64</cell><cell></cell><cell>0.63</cell><cell>0.62</cell><cell></cell><cell>0.62</cell><cell>0.64</cell><cell>0.62</cell><cell>0.64</cell><cell>0.62</cell></row><row><cell></cell><cell>0.58</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">2-shots</cell><cell cols="3">4-shots</cell><cell cols="3">6-shots</cell><cell cols="2">8-shots</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 5 :</head><label>5</label><figDesc>Comparison of PoT against contemporary work PaL<ref type="bibr" target="#b13">(Gao et al., 2022)</ref>.</figDesc><table><row><cell cols="7">Model GSM8K GSM8K-Hard SVAMP ASDIV ADDSUB MULTIARITH</cell></row><row><cell>PaL</cell><cell>72.0</cell><cell>61.2</cell><cell>79.4</cell><cell>79.6</cell><cell>92.5</cell><cell>99.2</cell></row><row><cell>PoT</cell><cell>71.6</cell><cell>61.8</cell><cell>85.2</cell><cell>85.2</cell><cell>92.2</cell><cell>99.5</cell></row><row><cell></cell><cell cols="2">Method</cell><cell cols="3">GSM8K SVAMP FinQA</cell><cell></cell></row><row><cell></cell><cell>PoT</cell><cell></cell><cell>71.6</cell><cell>85.2</cell><cell>64.5</cell><cell></cell></row><row><cell></cell><cell cols="2">PoT -Binding</cell><cell>60.2</cell><cell>83.8</cell><cell>61.6</cell><cell></cell></row><row><cell></cell><cell cols="2">PoT -MultiStep</cell><cell>45.8</cell><cell>81.9</cell><cell>58.9</cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Assuming each addition is correct with 90% chance, after 50 additions, the likelihood of a correct output is less than 1%.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://openai.com/blog/openai-codex/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>https://blog.salesforceairesearch.com/xgen/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>https://www.sympy.org/en/index.html</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_4"><p>Published in Transactions on Machine Learning Research (10/2023)</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Appendix</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.1">PoT as intermediate step</head><p>We demonstrate the workflow in Figure <ref type="figure" target="#fig_7">8</ref>. PoT as intermediate step is able to address more complex questions which require both symbolic and commonsense reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.2">Exemplars for Prompting</head><p>To enable better reproducibility, we also put our prompts and exemplars for GSM8K dataset and AQuA dataset in the following pages:</p><p>Ques%on: Janet's ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes muffins for her friends every day with four. She sells the remainder at the farmers' market daily for $2 per fresh duck egg. How much in dollars does she make every day at the farmers' market? # Python code, return ans total_eggs = 16 eaten_eggs = 3 baked_eggs = 4 sold_eggs = total_eggs -eaten_eggs -baked_eggs dollars_per_egg = 2 ans = sold_eggs * dollars_per_egg Ques%on: A robe takes 2 bolts of blue fiber and half that much white fiber. How many bolts in total does it take? # Python code, return ans bolts_of_blue_fiber = 2 bolts_of_white_fiber = num_of_blue_fiber / 2 ans = bolts_of_blue_fiber + bolts_of_white_fiber Ques%on: Josh decides to try flipping a house. He buys a house for $80,000 and then puts in $50,000 in repairs. This increased the value of the house by 150%. How much profit did he make? # Python code, return ans cost_of_original_house = 80000 increase_rate = 150 / 100 value_of_house = (1 + increase_rate) * cost_of_original_house cost_of_repair = 50000 ans = value_of_house -cost_of_repair -cost_of_original_house Ques%on: Every day, Wendi feeds each of her chickens three cups of mixed chicken feed, containing seeds, mealworms and vegetables to help keep them healthy. She gives the chickens their feed in three separate meals. In the morning, she gives her flock of chickens 15 cups of feed. In the a`ernoon, she gives her chickens another 25 cups of feed. How many cups of feed does she need to give her chickens in the final meal of the day if the size of Wendi's flock is 20 chickens? # Python code, return ans numb_of_chickens = 20 cups_for_each_chicken = 3 cups_for_all_chicken = num_of_chickens * cups_for_each_chicken cups_in_the_morning = 15 cups_in_the_a`ernoon = 25 ans = cups_for_all_chicken -cups_in_the_morning -cups_in_the_a`ernoon Ques%on: Kylar went to the store to buy glasses for his new apartment. One glass costs $5, but every second glass costs only 60% of the price. Kylar wants to buy 16 glasses. How much does he need to pay for them? # Python code, return ans num_glasses = 16 first_glass_cost = 5 second_glass_cost = 5 * 0.6 ans = 0 for i in range(num_glasses):</p><p>if i % 2 == 0: ans += first_glass_cost else:</p><p>ans += second_glass_cost Ques%on: Marissa is hiking a 12-mile trail. She took 1 hour to walk the first 4 miles, then another hour to walk the next two miles. If she wants her average speed to be 4 miles per hour, what speed (in miles per hour) does she need to walk the remaining distance? # Python code, return ans average_mile_per_hour = 4 total_trail_miles = 12 remaining_miles = total_trail_miles -4 -2 total_hours = total_trail_miles / average_mile_per_hour remaining_hours = total_hours -2 ans = remaining_miles / remaining_hours Ques%on: Carlos is plan%ng a lemon tree. The tree will cost $90 to plant. Each year it will grow 7 lemons, which he can sell for $1.5 each. It costs $3 a year to water and feed the tree. How many years will it tak e before he starts earning money on the lemon tree? # Python code, return ans total_cost = 90 cost_of_watering_and_feeding = 3 cost_of_each_lemon = 1.5 num_of_lemon_per_year = 7 ans = 0 while total_cost &gt; 0: total_cost += cost_of_watering_and_feeding total_cost -= num_of_lemon_per_year * cost_of_each_lemon ans += 1</p><p>Ques%on: When Freda cooks canned tomatoes into sauce, they lose half their volume. Each 16 ounce can of tomatoes that she uses contains three tomatoes. Freda's last batch of tomato sauce made 32 ounces of sauce. How many tomatoes did Freda use? # Python code, return ans lose_rate = 0.5 num_tomato_contained_in_per_ounce_sauce = 3 / 16 ounce_sauce_in_last_batch = 32 num_tomato_in_last_batch = ounce_sauce_in_last_batch * num_tomato_contained_in_per_ounce_sauce ans = num_tomato_in_last_batch / (1 -lose_rate) Ques%on: Jordan wanted to surprise her mom with a homemade birthday cake. From reading the instruc%ons, she knew it would take 20 minutes to make the cake bajer and 30 minutes to bake the cake. The cake would require 2 hours to cool and an addi%onal 10 minutes to frost the cake. If she plans to make the cake all on the same day, what is the latest %me of day that Jordan can start making the cake to be ready to serve it at 5:00 pm? # Python code, return ans minutes_to_make_bajer = 20 minutes_to_bake_cake = 30 minutes_to_cool_cake = 2 * 60 minutes_to_frost_cake = 10 total_minutes = minutes_to_make_bajer + minutes_to_bake_cake + minutes_to_cool_cake + minutes_to_frost_cake total_hours = total_minutes / 60 ans = 5 -total_hours # Write Python Code to solve the following ques7ons. Store your result as a variable named 'ans'. from sympy import Symbol from sympy import simplify import math from sympy import solve_it # solve_it(equa7ons, variable): solving the equa7ons and return the variable value.</p><p># Ques7on: In a flight of 600 km, an aircraK was slowed down due to bad weather. Its average speed for the trip was reduced by 200 km/hr and the 7me of flight increased by 30 minutes.</p><p>The dura7on of the flight is: # Answer op7on: ['A)1 hour', 'B)2 hours', 'C)3 hours', 'D)4 hours', 'E)5 hours'] dura7on = Symbol('dura7on', posi7ve=True) delay = 30 / 60 total_disntace = 600 original_speed = total_disntace / dura7on reduced_speed = total_disntace / (dura7on + delay) solu7on = solve_it(original_speed -reduced_speed -200, dura7on) ans = solu7on[dura7on]</p><p># Ques7on: M men agree to purchase a giK for Rs. D. If 3 men drop out how much more will each have to contribute towards the purchase of the giK?</p><formula xml:id="formula_2"># Answer op7ons: ['A)D/(M-3)', 'B)MD/3', 'C)M/(D-3)', 'D)3D/(M2-3M)', 'E)None of these'] M = Symbol('M') D = Symbol('D') cost_before_dropout = D / M cost_aKer_dropout = D / (M -</formula><p>3) ans=simplify(cost_aKer_dropout -cost_before_dropout) # Ques7on: A sum of money at simple interest amounts to Rs. 815 in 3 years and to Rs. 854 in 4 years. The sum is: # Answer op7on: ['A)Rs. 650', 'B)Rs. 690', 'C)Rs. 698', 'D)Rs. 700', 'E)None of these'] deposit = Symbol('deposit', posi7ve=True) interest = Symbol('interest', posi7ve=True) money_in_3_years = deposit + 3 * interest money_in_4_years = deposit + 4 * interest solu7on = solve_it([money_in_3_years -815, money_in_4_years -854], [deposit, interest]) ans = solu7on[deposit] # Ques7on: Find out which of the following values is the mul7ple of X, if it is divisible by 9 and 12? # Answer op7on: ['A)36', 'B)15', 'C)17', 'D)5', 'E)7'] op7ons = [36, 15, 17, 5, 7] for op7on in op7ons: if op7on % 9 == 0 and op7on % 12 == 0: ans = op7on break # Ques7on: 35% of the employees of a company are men. 60% of the men in the company speak French and 40% of the employees of the company speak French. What is % of the women in the company who do not speak French? # Answer op7on: ['A)4%', 'B)10%', 'C)96%', 'D)90.12%', 'E)70.77%'] num_women = 65 men_speaking_french = 0.6 * 35 employees_speaking_french = 0.4 * 100 women_speaking_french = employees_speaking_french -men_speaking_french women_not_speaking_french=num_women -women_speaking_french ans = women_not_speaking_french / num_women # Ques7on: In one hour, a boat goes 11 km/hr along the stream and 5 km/hr against the stream. The speed of the boat in s7ll water (in km/hr) is: # Answer op7on: ['A)4 kmph', 'B)5 kmph', 'C)6 kmph', 'D)7 kmph', 'E)8 kmph'] boat_speed = Symbol('boat_speed', posi7ve=True) stream_speed = Symbol('stream_speed', posi7ve=True) along_stream_speed = 11 against_stream_speed = 5 solu7on = solve_it([boat_speed + stream_speed -along_stream_speed, boat_speed -stream_speed -against_stream_speed], [boat_speed, stream_speed]) ans = solu7on[boat_speed] # Ques7on: The difference between simple interest and C.I. at the same rate for Rs.5000 for 2 years in Rs.72. The rate of interest is? # Answer op7on: ['A)10%', 'B)12%', 'C)6%', 'D)8%', 'E)4%'] interest_rate = Symbol('interest_rate', posi7ve=True) amount = 5000 amount_with_simple_interest = amount * (1 + 2 * interest_rate / 100) amount_with_compound_interest = amount * (1 + interest_rate / 100) ** 2 solu7on = solve_it(amount_with_compound_interest -amount_with_simple_interest -72, interest_rate) ans = solu7on[interest_rate] # Ques7on: The area of a rectangle is 15 square cen7meters and the perimeter is 16 cen7meters. What are the dimensions of the rectangle? # Answer op7on: ['A)2&amp;4', 'B)3&amp;5', 'C)4&amp;6', 'D)5&amp;7', 'E)6&amp;8'] width = Symbol('width', posi7ve=True) height = Symbol('height', posi7ve=True) area = 15 permimeter = 16 solu7on = solve_it([width * height -area, 2 * (width + height) -permimeter], [width, height]) ans = (solu7on[width], solu7on[height])</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8 :</head><label>8</label><figDesc>We adopt PoT to prompt language models to first generate an intermediate answer and then continue to prompt large models to generate the final answer.We write the pseudo code as follows:#Function PoT( I n p u t ) -&gt; Output # I n p u t : q u e s t i o n # Ouptut : program # Function Prompt ( I n p u t ) -&gt; Output # I n p u t : q u e s t i o n + i n t e r m e d i a t e # Ouptut : answer program = PoT( q u e s t i o n ) exec ( program ) i f i s i n t a n c e ( ans , dict ) : ans = l i s t ( x . i t e m s ( ) ) . pop ( 0 ) e x t r a = ' a c c o r d i n g ␣ t o ␣ t h e ␣ program : ␣ ' e x t r a += ans [ 0 ] + ' ␣=␣ ' + ans [ 1 ] pred = Prompt ( q u e s t i o n + e x t r a ) e l s e : pred = ans return pred</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Towards interpretable math word problem solving with operation-based formalisms</title>
+		<author>
+			<persName><forename type="first">Aida</forename><surname>Amini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saadia</forename><surname>Gabriel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanchuan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rik</forename><surname>Koncel-Kedziorski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mathqa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference of the North American Chapter</title>
+		<title level="s">Long and Short Papers</title>
+		<meeting>the 2019 Conference of the North American Chapter</meeting>
+		<imprint>
+			<publisher>the Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="2357" to="2367" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.07732</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<biblScope unit="page">2021</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Large language models are few (1)-shot table reasoners</title>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.06710</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Finqa: A dataset of numerical reasoning over financial data</title>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charese</forename><surname>Smiley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameena</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iana</forename><surname>Borova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dylan</forename><surname>Langdon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reema</forename><surname>Moussa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matt</forename><surname>Beane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ting-Hao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bryan R Routledge</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2021 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="3697" to="3711" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Exploring the chain of numerical reasoning in conversational finance question answering</title>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charese</forename><surname>Smiley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameena</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.03849</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Binding language models in symbolic languages</title>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengzu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rahul</forename><surname>Nadkarni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yushi</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dragomir</forename><surname>Radev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mari</forename><surname>Ostendorf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.02875</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaurav</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.02311</idno>
+		<title level="m">Scaling language modeling with pathways</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.14168</idno>
+		<title level="m">Training verifiers to solve math word problems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Compositional semantic parsing with large language models</title>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Drozdov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ekin</forename><surname>Akyürek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinying</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.15003</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Glam: Efficient scaling of language models with mixtureof-experts</title>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanping</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Lepikhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxim</forename><surname>Krikun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanqi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adams</forename><forename type="middle">Wei</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orhan</forename><surname>Firat</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="5547" to="5569" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Drop: A reading comprehension benchmark requiring discrete reasoning over paragraphs</title>
+		<author>
+			<persName><forename type="first">Dheeru</forename><surname>Dua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pradeep</forename><surname>Dasigi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Stanovsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matt</forename><surname>Gardner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference of the North American Chapter</title>
+		<title level="s">Long and Short Papers</title>
+		<meeting>the 2019 Conference of the North American Chapter</meeting>
+		<imprint>
+			<publisher>the Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="2368" to="2378" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Callan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.10435</idno>
+		<title level="m">Pal: Program-aided language models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Critic: Large language models can self-correct with tool-interactive critiquing</title>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yeyun</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujiu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.11738</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Measuring mathematical problem solving with the math dataset</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurav</forename><surname>Kadavath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akul</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2103.03874</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Learning to solve arithmetic word problems with verb categorization</title>
+		<author>
+			<persName><forename type="first">Mohammad Javad</forename><surname>Hosseini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oren</forename><surname>Etzioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="523" to="533" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><forename type="middle">B</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2001.08361</idno>
+		<title level="m">Scaling laws for neural language models</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Large language models are zero-shot reasoners</title>
+		<author>
+			<persName><forename type="first">Takeshi</forename><surname>Kojima</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shane</forename><surname>Shixiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Machel</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutaka</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Matsuo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Iwasawa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.11916</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Parsing algebraic word problems into equations</title>
+		<author>
+			<persName><forename type="first">Rik</forename><surname>Koncel-Kedziorski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oren</forename><surname>Etzioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siena</forename><surname>Dumas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ang</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="585" to="597" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Answering numerical reasoning questions in table-text hybrid contents with graph-based encoder and tree-based decoder</title>
+		<author>
+			<persName><forename type="first">Fangyu</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shizhu</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kang</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 29th International Conference on Computational Linguistics</title>
+		<meeting>the 29th International Conference on Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1379" to="1390" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Program induction by rationale generation: Learning to solve and explain algebraic word problems</title>
+		<author>
+			<persName><forename type="first">Wang</forename><surname>Ling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dani</forename><surname>Yogatama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Dyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phil</forename><surname>Blunsom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 55th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="158" to="167" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Dynamic prompt learning via policy gradient for semi-structured mathematical reasoning</title>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><forename type="middle">Nian</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song-Chun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tanmay</forename><surname>Rajpurohit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Kalyan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2209.14610</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">A diverse corpus for evaluating and developing english math word problem solvers</title>
+		<author>
+			<persName><surname>Shen-Yun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao-Chun</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keh-Yih</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 58th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="975" to="984" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sewon</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinxi</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ari</forename><surname>Holtzman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikel</forename><surname>Artetxe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2202.12837</idno>
+		<title level="m">Rethinking the role of demonstrations: What makes in-context learning work? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Lila: A unified benchmark for mathematical reasoning</title>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Finlayson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leonard</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chitta</forename><surname>Baral</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tanmay</forename><surname>Rajpurohit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oyvind</forename><surname>Tafjord</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Kalyan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2022 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Codegen: An open large language model for code with multi-turn program synthesis</title>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Nijkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroaki</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifu</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingbo</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.13474</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anders</forename><surname>Johan Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Gur-Ari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aitor</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Luan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.00114</idno>
+		<title level="m">Show your work: Scratchpads for intermediate computation with language models</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<idno type="arXiv">arXiv:2303.08774</idno>
+		<title level="m">OpenAI. Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Automatic multi-step reasoning and tool-use for large language models</title>
+		<author>
+			<persName><forename type="first">Bhargavi</forename><surname>Paranjape</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Lundberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Tulio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ribeiro</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.09014</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<pubPlace>Art</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Are NLP models really able to solve simple math word problems?</title>
+		<author>
+			<persName><forename type="first">Arkil</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Satwik</forename><surname>Bhattamishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Navin</forename><surname>Goyal</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2021.naacl-main.168</idno>
+		<ptr target="https://aclanthology.org/2021.naacl-main.168" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2021 Conference of the North American Chapter</title>
+		<meeting>the 2021 Conference of the North American Chapter</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2021-06">June 2021</date>
+			<biblScope unit="page" from="2080" to="2094" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Jack W Rae</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Borgeaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jordan</forename><surname>Millican</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francis</forename><surname>Hoffmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Aslanides</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Henderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Susannah</forename><surname>Ring</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Young</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.11446</idno>
+		<title level="m">Scaling language models: Methods, analysis &amp; insights from training gopher</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Solving general arithmetic word problems</title>
+		<author>
+			<persName><forename type="first">Subhro</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Roth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2015 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2015 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="1743" to="1752" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Mapping to declarative knowledge for word problem solving</title>
+		<author>
+			<persName><forename type="first">Subhro</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Roth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="page" from="159" to="172" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">David</forename><surname>Saxton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Grefenstette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Hill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pushmeet</forename><surname>Kohli</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1904.01557</idno>
+		<title level="m">Analysing mathematical reasoning abilities of neural models</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Toolformer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2302.04761</idno>
+		<title level="m">Language models can teach themselves to use tools</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Using deepspeed and megatron to train megatron-turing nlg 530b, a large-scale generative language model</title>
+		<author>
+			<persName><forename type="first">Shaden</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mostofa</forename><surname>Patwary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brandon</forename><surname>Norick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Legresley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samyam</forename><surname>Rajbhandari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Casper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Zerveas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vijay</forename><surname>Korthikanti</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.11990</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Challenging big-bench tasks and whether chain-of-thought can solve them</title>
+		<author>
+			<persName><forename type="first">Mirac</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Gehrmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyung</forename><forename type="middle">Won</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.09261</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Romal</forename><surname>Thoppilan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">De</forename><surname>Freitas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Apoorv</forename><surname>Kulshreshtha</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Heng-Tze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alicia</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Taylor</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leslie</forename><surname>Bos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Du</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.08239</idno>
+		<title level="m">Language models for dialog applications</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">A numerical reasoning question answering system with fine-grained retriever and the ensemble of multiple generators for finqa</title>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangzhou</forename><surname>Ju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunlin</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin-Yu</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shujian</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajun</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2206.08506</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Planand-solve prompting: Improving zero-shot chain-of-thought reasoning by large language models</title>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihuai</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunshi</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ka-Wei</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ee-Peng</forename><surname>Lim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.04091</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.11171</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hung</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhilesh</forename><surname>Deepak Gotmare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">Q</forename><surname>Nghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junnan</forename><surname>Bui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven Ch</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hoi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.07922</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Open code large language models for code understanding and generation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">5</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Chain of thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.11903</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">An explanation of in-context learning as implicit bayesian inference</title>
+		<author>
+			<persName><forename type="first">Sang</forename><surname>Michael Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditi</forename><surname>Raghunathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengyu</forename><surname>Ma</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Decomposition enhances reasoning via self-evaluation guided decoding</title>
+		<author>
+			<persName><forename type="first">Yuxi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenji</forename><surname>Kawaguchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min-Yen</forename><surname>Kan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxian</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qizhe</forename><surname>Xie</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.00633</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS 2022 Foundation Models for Decision Making Workshop</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Least-to-most prompting enables complex reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.10625</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Tat-qa: A question answering benchmark on a hybrid of tabular and textual content in finance</title>
+		<author>
+			<persName><forename type="first">Fengbin</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenqiang</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youcheng</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiancheng</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuli</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tat-Seng</forename><surname>Chua</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing</title>
+		<meeting>the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="3277" to="3287" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

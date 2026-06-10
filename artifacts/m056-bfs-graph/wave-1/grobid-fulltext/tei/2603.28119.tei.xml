@@ -1,0 +1,1377 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Compressing Code Context for LLM-based Issue Resolution</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-03-30">30 Mar 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Haoxiang</forename><surname>Jia</surname></persName>
+							<email>haoxiangjia@stu.pku.edu.cn</email>
+						</author>
+						<author>
+							<persName><forename type="first">Sergey</forename><surname>Mechtaev</surname></persName>
+							<email>mechtaev@pku.edu.cn</email>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="department">Earl T. Barr</orgName>
+								<orgName type="institution">Peking University Beijing</orgName>
+								<address>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="institution">University College London London</orgName>
+								<address>
+									<country key="GB">UK</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="institution">Peking University Beijing</orgName>
+								<address>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Compressing Code Context for LLM-based Issue Resolution</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-03-30">30 Mar 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">12AC317159FD0DEE17074134B582D4C1</idno>
+					<idno type="arXiv">arXiv:2603.28119v1[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:11+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Automated Issue Resolution</term>
+					<term>Code Context</term>
+					<term>Compression</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large Language Models (LLMs) are now capable of resolving realworld GitHub issues. However, current approaches overapproximate the code context and suffer from two compounding problems: the prohibitive cost of processing massive inputs, and low effectiveness as noise floods the context window and distracts the model from the bug-fixing signal. Existing compression techniques fail to resolve this tension: generic compressors compromise the semantic integrity of code, while code-specific tools lack awareness of code structure and task context to preserve essential patch ingredients. To address this, we propose a novel framework consisting of two components. First, Oracle-guided Code Distillation (OCD), a context distillation algorithm that combines genetic search and delta debugging to systematically reduce code contexts to their minimal sufficient subsequence -retaining only the ingredients required for a successful fix. We use this distilled data to fine-tune SWEzze, a lightweight model that learns to compress code context at inference time, filtering noise and combating distraction while preserving fix ingredients. Evaluated on SWE-bench Verified across three frontier LLMs, SWEzze maintains a stable compression rate of about 6× across models, reduces the total token budget by 51.8%-71.3% relative to the uncompressed setting, improves issue resolution rates by 5.0%-9.2%, and delivers the best overall balance among effectiveness, compression ratio, and latency compared with state-of-the-art context compression baselines.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Issue resolution by Large Language Models (LLMs) has progressed from academic prototypes to practical adoption in industry. Systems such as Agentless <ref type="bibr" target="#b28">[29]</ref> and SWE-Agent <ref type="bibr" target="#b32">[33]</ref> can localize faults, synthesize patches, and resolve issues across real-world repositories. Yet scaling these approaches reveals a fundamental bottleneck: cost and effectively utilizing code context. Unlike many naturallanguage tasks, issue resolution requires reasoning over context scattered across multiple files -definitions, call chains, class hierarchies, modules, and interfaces -making context construction a critical component of the resolution pipeline <ref type="bibr" target="#b9">[10]</ref>.</p><p>To extract relevant code context, existing approaches rely on heuristic retrieval or Retrieval-Augmented Generation (RAG) <ref type="bibr" target="#b8">[9]</ref> to rank files according to lexical similarity, embeddings, or shallow structural signals. To avoid missing crucial dependencies, these methods typically return top-𝑘 files or functions that collectively span hundreds of lines to capture only a handful of relevant segments. This leads to context overapproximation, where the true * Sergey Mechtaev is the corresponding author.</p><p>bug-fixing signal is diluted by large amounts of irrelevant code. The impact is twofold. First, it imposes a direct computational inference cost: inference cost scales roughly with the size of the provided context <ref type="bibr" target="#b24">[25]</ref>. Second, excessive context degrades effectiveness, as irrelevant code floods the context window <ref type="bibr" target="#b14">[15]</ref> and distracts the model from the bug-fixing signal <ref type="bibr" target="#b21">[22]</ref>.</p><p>A promising mitigation to this problem is to compress retrieved contexts: distilling the overapproximate output of retrieval into a concise form that retains only the essential information, and use it as the input to the downstream issue-resolving LLM. However, existing compression strategies <ref type="bibr" target="#b11">[12]</ref> are ineffective for patch generation. Generic compressors <ref type="bibr" target="#b5">[6]</ref> that treat code as natural language tend to disrupt program structure and break semantic links (e.g., definition-use relations and type constraints) that are often required to construct a correct patch. Conversely, code-specific heuristic pruners <ref type="bibr" target="#b22">[23,</ref><ref type="bibr" target="#b26">27]</ref> select context based on its similarity or relatedness to the issue description or the buggy code, but issue resolution often depends on fix ingredients <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b27">28]</ref>, i.e., code elements such as variables, expressions, and types that are needed to construct a correct patch, that may not bear obvious lexical or structural resemblance to the bug itself, causing these compressors to discard the necessary ingredients.</p><p>To address this problem, we propose a framework that distills high-quality training data from a computationally expensive oracle to train a lightweight, inference-ready model. We first employ Oracle-guided Code Distillation (OCD) to systematically reduce an initial context to a minimal sufficient context (MSC) -a oneminimal subsequence where every retained fragment is functionally necessary for a successful repair. To produce these MSCs, OCD uses a Genetic Algorithm (GA) to discover patch-enabling configurations, which Hierarchical Delta Debugging (HDD) <ref type="bibr" target="#b16">[17]</ref> then minimizes. These distilled examples from the SWESmith dataset <ref type="bibr" target="#b33">[34]</ref> serve as the training signal for SWEzze, a cross-encoder fine-tuned from Qwen3-Reranker-0.6B <ref type="bibr" target="#b37">[38]</ref> via parameter-efficient LoRA adaptation <ref type="bibr" target="#b3">[4]</ref>. By learning to map initial code context 𝐶 init to its corresponding MSC ( Ĉ), SWEzze captures the structured dependency patterns that distinguish fix ingredients <ref type="bibr" target="#b15">[16]</ref> from incidentally related code. At inference time, SWEzze operates without oracle access, scoring segments and assembling compressed context through budget-aware greedy selection.</p><p>We evaluate SWEzze within the Agentless workflow <ref type="bibr" target="#b28">[29]</ref> on SWE-bench Verified across the GPT-5.2, DeepSeek-V3.2, and Qwen3-Coder-Next frontier models, and compare with state-of-the-art compressors. SWEzze achieves the best end-to-end issue resolution performance and the best balance among repair effectiveness, compression strength, and runtime overhead. Across all three models, it maintains a stable compression rate of about 6×, reduces the total token budget by 51.8%-71.3% relative to the uncompressed setting, and improves issue resolution rates by 5.0%-9.2%. Compared with prior compressors, SWEzze not only achieves higher overall resolution rates, but also covers the broadest set of solvable instances, reaching 93.8%-99.2% of the union of all cases resolved by any baseline. Our results show that for repository-level issue resolution compression is more effective when it preserves repair-sufficient context, rather than maximizing token reduction or similarity.</p><p>In summary, the paper makes the following contributions:</p><p>• Oracle-guided Code Distillation, a novel framework for distilling minimal sufficient context for LLM-based issue resolution.</p><p>• SWEzze, a novel code context compression model that retains fix ingredients while removing distracting noise.</p><p>• Evaluation on SWE-Bench Verified that demonstrates that SWEzze significantly reduces the cost of LLM-based issue resolution while at the same time improving success rate. All code, data, and reproduction scripts are available at <ref type="url" target="https://zenodo.org/records/19248411">https:  //zenodo.org/records/19248411</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">MOTIVATING EXAMPLE</head><p>We illustrate SWEzze's ability to identify and retain fix ingredients for issue resolution using a case study from the widely-used Matplotlib library <ref type="bibr" target="#b2">[3]</ref>, extracted from SWE-Bench <ref type="bibr" target="#b6">[7]</ref>. This issue, shown in Figure <ref type="figure" target="#fig_0">1</ref> (top), reports a bug in DPI calculation on Mac OS. The human patch for this issue (top left) simply inserts a state update statement inside the file figure.py, using the API call state.get('_original_dpi', state['_dpi']). Although the fix itself is small, it is representative of real-world issue resolution: constructing the patch requires understanding a project-specific API that is unlikely to appear in the issue description, making it essential for the compressor to retain the relevant context.</p><p>SWEzze compresses prompts by pruning their code segments to an issue's fix ingredients <ref type="bibr" target="#b15">[16]</ref>, the minimal set of semantic dependencies needed to resolve that issue. We designed SWEzze to be modeland harness-agnostic, ensuring compatibility with any downstream repair workflow. To illustrate its operation, we integrate SWEzze into Agentless <ref type="bibr" target="#b28">[29]</ref>, a pipeline combining fault localization and context construction that is widely used to evaluate frontier LLMs on issue resolution <ref type="bibr" target="#b1">[2]</ref>. The "Agentless + Context Compression" module (Figure <ref type="figure" target="#fig_0">1</ref>, top right) depicts Agentless localizing a bug and forwarding the initial code context to three compressors: SWEzze and two established baselines.</p><p>The leaf nodes of Figure <ref type="figure" target="#fig_0">1</ref> present the repair patches generated by the frontier model when provided the suspicious locations and the compressed contexts from each tool. As you can see, the resulting patches diverge significantly. When using the contexts from Long-CodeZip <ref type="bibr" target="#b22">[23]</ref> and SWE-Pruner <ref type="bibr" target="#b26">[27]</ref>, the model produces patches that do not resolve the issue. In contrast, SWEzze's context preserves the fix ingredients, enabling the model to generate a patch that matches the logic of the human reference. Agentless' success resolving this issue depends critically on the choice of context compressor: it resolves the issue only when using SWEzze, because the baseline compressors discarded crucial, fix-relevant information.</p><p>To understand this difference, we compare the compressed contexts in Figure <ref type="figure" target="#fig_1">2</ref>. This figure shows a fragment of the initial code context C init , where the background color indicates whether a segment appears in the fix ingredients Ĉ identified via delta debugging <ref type="bibr" target="#b34">[35]</ref>: light green denotes retained segments, light red denotes removed ones. Notably, although Ĉ does not contain any references to '_original_dpi' used in the human patch, it contains the statement scale = self.figure.dpi / self.device_pixel_ratio, which reveals how the scale is computed. With this fragment in its context, the downstream LLM correctly recomputes DPI as shown in the patch generated with SWEzze in Figure <ref type="figure" target="#fig_0">1</ref>, bottom left. SWEzze is the only compressor that retains this fragment: LongCodeZip selected irrelevant fragments, while SWE-Pruner retained only a single line from this function, which proved insufficient for the model to construct a fix.</p><p>This performance reflects SWEzze's core design: an oracle that protects fix ingredients and a search strategy (GA and HDD) that maximizes our oracle budget. While baseline compressors rely on static heuristics, SWEzze's search-based OCD framework identifies and retains the functional dependencies required for a successful repair. Consequently, SWEzze achieves a BERTScore <ref type="bibr" target="#b36">[37]</ref> of 0.44 against the minimal context Ĉ, indicating high semantic overlap with the fix-relevant fragments, more than doubling the fidelity of LongCodeZip (0.20) and SWE-Pruner (0.00). This approach allows SWEzze to preserve critical components like the 'resize' method, which the baselines systematically strip away.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">ORACLE-GUIDED CONTEXT DISTILLATION</head><p>To train a compression model that preserves fix ingredients, we need training data in which these ingredients are distilled to their essence. We operationalize this through the notion of minimal sufficient context. Given an issue description I, a fault location F , and an initial over-approximate code context C init retrieved from a repository, the goal is to identify a subset Ĉ ⊆ C init such that | Ĉ| ≪ |C init |. We call Ĉ a sufficient code context if an LLM can use I, F , and Ĉ to generate a patch P that passes the validation suite T . Sufficient contexts are generally not unique: multiple distinct subsets of C init may independently satisfy sufficiency while being incomparable under set inclusion (e.g., two alternative helper functions may each enable a correct patch, yet neither subsumes the other). Our goal is to find any sufficient context that is also minimal.</p><p>Finding a globally minimal (minimum-cardinality) sufficient context would require enumerating all 2 | C init | subsets-computationally intractable for realistic codebases. Following delta debugging <ref type="bibr" target="#b34">[35]</ref>, we instead target 1-minimality, a local minimality criterion that is efficiently computable yet provides strong compression guarantees: Definition 3.1 (Minimal Sufficient Context). A sufficient code context Ĉ ⊆ C init is minimal if removing any single element from Ĉ causes it to become insufficient-i.e., for every element 𝑒 ∈ Ĉ, Ĉ \ {𝑒} does not enable the LLM to generate a patch that passes T . The 1-minimality ensures that every retained element is individually necessary, producing clean training signal without redundant context. At the same time, it is tractable: verifying 1-minimality requires at most | Ĉ| oracle calls per element, unlike the exponential cost of global minimality.</p><p>The goal of Oracle-Guided Context Distillation (OCD) is to produce high-quality training examples that map C init to a 1-minimal sufficient subset Ĉ. Unlike prior compression methods that rely on perplexity or embedding similarity, we define sufficiency through a functional criterion. We formulate context distillation as a search problem guided by an execution oracle that evaluates candidate contexts by invoking the repair model and validating generated patches. Our approach comprises three components: (1) a hierarchical search space representation that ensures syntactic validity ( §3.1); (2) priority scoring that leverages training-time information to guide search ( §3.2); and (3) a two-phase search strategy combining genetic algorithm and delta debugging ( §3.3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Search Space Representation</head><p>The effectiveness of search for minimal context depends on how the search space is structured. Token-level representation, while flexible, frequently results in syntactically invalid code that may confuse the model. To ensure that all candidate context subsequences remain well-formed, we impose a hierarchical structure on the search space that respects the syntactic rules.</p><p>We decompose each source file 𝐹 ∈ C init into a tree of nested structural units. Throughout this paper, we use the term "structural unit" (or simply "unit") to refer to any element at these three hierarchical levels; the hierarchy consists of three levels:</p><p>• File Level: File-level decisions determine whether any content from a source file appears in the compressed context.</p><p>• Function Level: Within a file, we view function and method definitions as independent units. This level captures the organizational structure of procedural and object-oriented code.</p><p>• Block Level: Within a function, we partition statements into contiguous blocks. Each block represents a sequence of statements that can be independently included or excluded. We refer to the leaf-level units produced by the hierarchical decomposition as code segments (or simply segments). Concretely, a segment is one of five AST-derived types:</p><p>• method: a method definition bound to a class;</p><p>• function: a top-level or nested function definition;</p><p>• class_header: the signature and class-level statements of a class (excluding its method bodies); • block: a contiguous sequence of statements inside a function body that does not constitute a standalone definition; • file: a top-level fragment that is outside any class or function.</p><p>Segments are the atomic scoring units used by SWEzze and the granularity at which inclusion/exclusion decisions are made during both data construction and inference.</p><p>Rather than silently removing code units, we replace omitted content with placeholders. When a unit 𝑢 is excluded, we substitute it with a template 𝜏 𝑢 that indicates the location and magnitude of the omission (e.g., # ... N lines omitted, where 𝑁 denotes the number of source code lines in the original unit). This design preserves the code structure, allowing the LLM to recognize that additional context exists even if not explicitly provided.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Priority-Guided Search</head><p>The search space of context subsequences is exponential in the number of structural units. To make search tractable, we assign priority scores that guide the search towards promising regions. For each structural unit 𝑢, we compute a priority score Φ(𝑢) that estimates its relevance to successful patch generation. The score aggregates three categories of signals:</p><p>Patch Overlap. Let F patch denote the set of files modified by the ground-truth patch P gold . Units that belong to F patch receive elevated priority, as the developer's patch serves as direct evidence of which files require modification. We capture this signal using an indicator function I(𝑢 ∈ F patch ) that returns 1 if unit 𝑢 belongs to these patch-relevant files and 0 otherwise.</p><p>Test Coverage. We execute the failing tests and record the set of covered lines L cov (𝑢) within each unit 𝑢. Units containing more covered lines are prioritized, as test coverage indicates dynamic relevance to the failure. To prevent bias from test cases that exercise large portions of the codebase, we apply logarithmic dampening to the coverage count.</p><p>Symbol Overlap. We extract identifiers (variable, function, class names) from P gold and define SymScore(𝑢, P gold ) as a function measuring lexical overlap between these identifiers and the content of unit 𝑢. This heuristic captures semantic dependencies: if a patch</p><p>Algorithm 1: Oracle-Guided Context Distillation Input: Context C init , oracle O, priority Φ Output: Minimal sufficient context Ĉ /* Hierarchical Decomposition ( §3.1) */ 1 U ← Decompose(C init ) ; // file ⊃ function ⊃ block 2 Φ(𝑢) ← PriorityScore(𝑢) ∀𝑢 ∈ U ; // §3.2 /* Phase I: Genetic Algorithm Search ( §3.3) */ 3 ĈGA ← GeneticSearch(U, Φ, O); 4 if no passing subset found then return C init ; /* Phase II: Hierarchical Delta Debugging ( §3.3) */ 5 Ĉ ← ĈGA ; 6 foreach level ℓ ∈ {file, function, block} do 7 Ĉ ← ddmin( Ĉ, ℓ, O, Φ) ; // remove redundant units 8 return Ĉ; references a particular function or variable, the code defining that symbol is likely necessary for correct patch generation.</p><p>The composite priority score combines these three signals:</p><formula xml:id="formula_0">Φ(𝑢) = 𝑤 𝑝 • I(𝑢 ∈ F patch ) + 𝑤 𝑐 • log(1 + |L cov (𝑢)|) + 𝑤 𝑠 • SymScore(𝑢, P gold )</formula><p>where 𝑤 𝑝 , 𝑤 𝑐 , and 𝑤 𝑠 are configurable weights controlling the relative importance of patch overlap, test coverage, and symbol overlap signals, respectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Two-Phase Search Strategy</head><p>Having defined the search space and priority scoring, we now describe the search algorithm itself. The initial context C init may or may not enable successful patch generation -failure can stem from inherent task difficulty or from distracting elements that mislead the model. Therefore, we first must identify a subset of C init that enables successful patch generation, before minimizing it. We address this problem with a two-phase pipeline (Algorithm 1): a Genetic Algorithm (GA) identifies resolution-enabling subsequences solution, and Hierarchical Delta Debugging (HDD) minimizes them. The two phases are complementary: GA handles the combinatorial challenge of finding a sufficient subset among exponentially many candidates, while HDD ensures the result contains no redundant units. Priority scores Φ guide both phases-biasing GA initialization and fitness toward high-priority configurations, and guiding HDD to remove low-priority units first.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.1">Phase I: Genetic Search.</head><p>We employ a Genetic Algorithm (GA) to explore the space of context configurations. GA's populationbased search evolves configurations toward promising regions of the search space. We represent each candidate context as a binary genome g = (𝑔 1 , 𝑔 2 , . . . , 𝑔 𝑛 ), where each gene 𝑔 𝑖 ∈ {0, 1} corresponds to a structural unit 𝑢 𝑖 (file or function). A gene value of 1 indicates inclusion, while 0 indicates exclusion. To maintain syntactic validity, we enforce upward consistency: if a function gene is active, its parent file gene must also be active. This constraint is enforced after each genetic operation through a repair step. The fitness function is designed to identify passing solutions while guiding failed configurations toward promising regions. For failed configurations, the fitness function is the sum of retained code segment priority scores which guides the search toward larger, high-priority contexts more likely to contain patch-critical information.</p><p>We employ operators adapted for hierarchical code structure:</p><p>• Initialization: The initial population is seeded with highprobability configurations derived from priority scores (e.g., context restricted to gold-patch files). Remaining slots are filled with randomly generated individuals whose inclusion probability is biased by priority.</p><p>• Selection: Tournament selection with elitism preserves the top 20% of individuals, ensuring good solutions are not lost while maintaining population diversity.</p><p>• Crossover: Hierarchical crossover operates at file granularity, swapping entire file subtrees between parents. This preserves the internal coherence of file structures and respects the natural modularity of code.</p><p>• Mutation: Standard bit-flip mutation is applied with a configurable rate, followed by a repair step that enforces upward consistency and prevents degenerate empty individuals.</p><p>GA stops immediately upon discovering any resolution-enabling subsequence solution rather than continuing to find better ones.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.2">Phase II: Hierarchical Delta Debugging.</head><p>Once a resolutionenabling context subsequence is discovered, we apply Hierarchical Delta Debugging (HDD) <ref type="bibr" target="#b16">[17]</ref> to systematically minimize it. HDD extends the classical delta debugging algorithm by exploiting the hierarchical structure of our search space, ensuring the final context is locally minimal. It operates in three sequential passes, each targeting a different level of the hierarchy:</p><p>(1) File-Level Reduction: We attempt to remove entire files from the context. Files that can be removed without breaking sufficiency are permanently excluded. (2) Function-Level Reduction: Within each retained file, we attempt to remove individual functions, identifying functions that were retrieved but are not actually required for the fix. (3) Block-Level Reduction: Within each retained function, we attempt to remove statement blocks, eliminating unnecessary implementation details while preserving essential logic.</p><p>At each level, we apply the ddmin algorithm <ref type="bibr" target="#b34">[35]</ref> adapted for our setting. Given a set of currently retained units 𝑈 , ddmin iteratively partitions 𝑈 and tests whether smaller subsets maintain sufficiency. The algorithm terminates when removing any single remaining unit causes the context to become insufficient, achieving 1-minimality. We integrate priority scores by sorting units in ascending priority order before partitioning. This causes the algorithm to preferentially attempt removing low-priority units first, accelerating convergence by front-loading the removal of redundant content.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.3">Candidate Evaluation.</head><p>Each candidate context evaluation requires invoking the repair model to generate patches and executing the test suite to validate correctness. This process is computationally expensive, making evaluation efficiency critical for scalable data construction. To reduce variance from the stochastic nature of </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">OCD on SWE-Smith</head><p>To prepare training data for our compression model, we applied OCD to SWE-Smith <ref type="bibr" target="#b33">[34]</ref>, a large dataset of 50K issues sourced from 128 GitHub repositories, which does not intersect with our testing set. From this dataset, we uniformly sampled 10K issues, and distilled Agentless' contexts for these with OCD by using Qwen3-Coder-30b to evaluate context sufficiency. Before fine-tuning a compressor, we analyzed the data that OCD produced from three dimensions: compression effectiveness, segment-level relevance, and context sparsity. Table <ref type="table" target="#tab_0">1</ref> summarizes the distilled corpus. Across 3,157 instances from 41 Python repositories, for which a sufficient context was found, the AST segmenter produces 156,545 labeled segments, or 49.6 segments per instance on average. Only 8.4% of segments are relevant to the fix, we call this ratio relevance density; on average, only 4.15 out of 49.6 segments per instance are necessary for patch generation. This severe class imbalance shows why a compressor cannot be trained with a naive uniform loss: the easy all-negative decision rule is statistically attractive but useless for repair. Figure <ref type="figure">3</ref> reveals that the fraction of relevant segments decreases monotonically with context size: instances with small context (1-20 segments) have a relevance density above 11%, while those with 200+ segments drop below 2%. At the segment level, method-level units constitute 78.0% of all segments but have a relevance density of only 7.5%, making method selection the primary bottleneck of context compression.</p><p>We note that HDD is required to produce minimal sufficient contexts by definition. To understand the impact of GA, we conducted an ablation -when not using the genetic algorithm, the number of successfully minimized instances reduces by 52.7%.</p><p>To understand why certain segments are relevant, we classify each segment into semantic roles based on its structural relationship to the issue description and fault location (Figure <ref type="figure">4</ref>). The Schema role (data classes and type definitions) achieves the highest relevance density at 39.2%, reflecting the prevalence of type-mismatch and field-naming bugs in SWE-bench. Definition segments (11.7%) and Call Chain segments (10.2%) confirm that structural proximity to the fault in the call graph is a strong predictor of relevance. In contrast, Generic Utility segments exhibit the lowest relevance 1K 10K 100K Total Segments (log scale) Schema Exception Definition Config Call Chain Behavior Similar Impl. Generic Util. (a) Role Support n=1,340 n=633 n=32,494 n=4,866 n=39,565 n=4,915 n=48,411 n=1,491 0 10 20 30 40 50 Positive Rate (%) 39.2% 14.7% 11.7% 10.8% 10.2% 8.7% 7.4% 7.2% Whiskers: 95% CI (b) Role Relevance Figure 4: Relevance density per semantic role. Schema segments achieve the highest relevance density (39.2%), while Generic Utility segments represent the strongest noise source (7.2%). The wide variance across roles motivates role-aware sample weighting in SWEzze training.</p><p>density (7.2%), representing recall noise from broad file-level retrieval. The five-fold variance in relevance density across rolesfrom 7.2% to 39.2%-has a practical implication: a uniform loss function would under-weight rare but highly informative schema and definition segments while over-penalizing the model for retaining generic utilities. This observation motivates the role-aware sample weighting strategy adopted in SWEzze's training, where per-sample weights are modulated by semantic role to reflect the differential informativeness of each segment category.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">SWEZZE COMPRESSION MODEL</head><p>Distillation in Section 3 yields training examples that map an overapproximate context to a minimal sufficient subset. Formally, it produces a corpus D contains tuples of the form (I, F , C init , Ĉ), where I is the issue description, F is the fault location, C init is the initial retrieved context, and Ĉ is the minimal sufficient context identified by OCD. We transform this corpus into a pointwise classification dataset of (𝑞, 𝑠, 𝑦) triples, where 𝑞 is a structured query, 𝑠 is a code segment, and 𝑦 ∈ {0, 1} indicates whether the oracle retained that segment. Each initial context C init is parsed into a set of code segments {𝑠 1 , . . . , 𝑠 𝑛 }.</p><p>We use this corpus to fine-tune Qwen3-Reranker-0.6B and obtain SWEzze, a lightweight cross-encoder that defines a scoring function 𝑓 (𝑞, 𝑠; 𝜃 ) ∈ [0, 1]. Given a structured query 𝑞 built from the issue description and fault location, with a code segment 𝑠 from the initial context, the model predicts whether 𝑠 should be retained to preserve patch sufficiency. A reranker model is well suited to this setting because the supervision is defined at the segment level, and inference only requires scoring a fixed pool of candidate segments rather than generating context from scratch.</p><p>We employ Low-Rank Adaptation (LoRA) for parameter-efficient fine-tuning. This reduces trainable parameters by over an order of magnitude, making fine-tuning feasible on commodity hardware while preserving the base model's code understanding. We use LoRA with rank 𝑟 = 16 and scaling factor 𝛼 = 32, applied to the query, key, value, and output projection matrices. Training runs for 3 epochs with an effective batch size of 16 (per-device batch size 4 with 4 gradient accumulation steps), using AdamW with learning rate 2×10 -4 , 10% linear warmup, weight decay of 0.01, and gradient clipping at norm 1.0. We use bfloat16 mixed precision with gradient checkpointing to fit training within commodity GPU memory. The best checkpoint is selected by AUC-ROC on a held-out validation set comprising 10% of instances.</p><p>A key challenge in our dataset is that the oracle discards far more code segments than it retains-a typical instance has a compression ratio well below 50%, meaning negatives substantially outnumber positives. Without correction, the model would learn to trivially predict "discard" for all segments. We address this through two complementary mechanisms: (1) a class-level weight that upscales the loss contribution of positive (retained) segments in proportion to the imbalance ratio, ensuring that missing a necessary segment is penalized more heavily than retaining a redundant one; and (2) the per-sample role-aware weights, which further modulate individual examples based on their structural informativeness. Together, these mechanisms aim to encode that it is worse to lose a patch-critical dependency than to include a few extra lines of supporting code.</p><p>At inference time, given a new instance, the system first parses C init into segments and constructs the structured query 𝑞 as in training. Each segment is scored by the cross-encoder in batches. For segments that exceed the model's context window, a slidingwindow strategy scores overlapping windows independently and aggregates them, ensuring that long functions or class bodies are evaluated fairly rather than truncated. Finally, the system assembles the compressed context through budget-aware greedy selection. The token budget is controlled by a configurable compression rate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">EVALUATION</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Our evaluation answers the following research questions:</head><p>RQ1 How does SWEzze compare to existing compression baselines in terms of compression ratio and efficiency? RQ2 Does SWEzze preserve or improve downstream issue resolution rates compared to baselines across different LLMs? RQ3 What compression-related root causes lead to failed issue resolution?</p><p>Dataset. We conduct our evaluation on SWE-bench Verified <ref type="bibr" target="#b6">[7]</ref>, a curated subset of 500 real-world GitHub issues spanning 12 popular Python repositories. Each instance consists of an issue description, the repository snapshot at the time of filing, a ground-truth patch, and a regression test suite. SWE-bench Verified is widely adopted as Table <ref type="table">2</ref>: Comparison of context compression methods on SWE-bench Verified (500 instances). For each downstream LLM, the number in parentheses denotes the mean initial context length in tokens before compression. Compression is reported as the reduction rate relative to the initial context length (higher is more aggressive). Bold denotes the best result per column.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Method</head><p>DeepSeek-V3.</p><p>2 (15,921 tokens) Qwen3-Coder-Next (7,761 tokens) GPT-5.2 (15,690 tokens) Resolved Rate Compression Resolved Rate Compression Resolved Rate Compression No_compression 239 0.478 1.00× 200 0.400 1.00× 266 0.532 1.00× No_context 231 0.462 -193 0.386 -262 0.524 -LLMLingua-2 245 0.490 2.98× 193 0.386 2.80× 272 0.544 2.94× LongCodeZip 238 0.476 5.02× 199 0.398 7.40× 284 0.568 7.67× SWE-Pruner 233 0.466 4.10× 192 0.384 49.75× 270 0.540 22.37× SWEzze 261 0.522 6.03× 210 0.420 5.95× 289 0.578 6.55× a standard benchmark for LLM-based issue resolution, providing a controlled yet realistic testbed where issues range from single-line fixes to multi-file refactorings.</p><p>We obtain the code context for each instance using Agentless <ref type="bibr" target="#b28">[29]</ref>. Agentless hierarchically localizes an issue by first identifying relevant files, then classes and functions within those files, and finally pinpointing specific code elements. During this process, it retrieves a ranked list of related elements at each granularity. We use the top-10 strategy to select elements from the ranked list, chosen to match the context size used in prior compression work <ref type="bibr" target="#b22">[23]</ref>; since the total cost of our experiments already exceeds 2800$, we did not perform additional ablation over this parameter. After Agentless determines suspicious locations, we treat the edit targets as the focal point and retain the remaining top-ranked related elements as the supporting context.</p><p>Baselines. We compare SWEzze against three compression baselines spanning distinct compression paradigms:</p><p>• LLMLingua-2 : A token-level compression method that trains a compact encoder to predict per-token preservation probabilities via data distillation.</p><p>• LongCodeZip : A hierarchical code-specific compressor that ranks functions by conditional perplexity and prunes blocks.</p><p>• SWE-Pruner : A task-aware code compressor that uses a lightweight reranker to estimate token relevance and prunes lines whose aggregated scores fall below a threshold.</p><p>• No Compression: The full evaluation context is passed directly to the repair model without any reduction.</p><p>• No Context: Only the issue description and fault location are provided, with no supporting code context.</p><p>To ensure fairness, we configure each baseline at its recommended or best-aligned operating point. For LLMLingua-2 and SWE-Pruner, we adopt default parameter settings specified in their respective publications. For LongCodeZip, we derive the target compression ratio from the effective compression levels reported in LongCodeZip's original experiments and set the compression rate to 5×. For SWEzze, we also set the compression rate to 5×. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Models.</head><p>To assess generalizability of SWEzze across different LLMs, we evaluate each compression method under three downstream repair models that differ in architecture, scale, and provider: GPT-5.2 <ref type="bibr" target="#b23">[24]</ref>, DeepSeek-V3.2 <ref type="bibr" target="#b12">[13]</ref>, and Qwen3-Coder-Next <ref type="bibr" target="#b0">[1]</ref>.</p><p>Evaluation Metrics. We assess compression methods along four dimensions that jointly capture the cost effectiveness trade-off of context compression:</p><p>• Resolution Rate: The fraction of instances for which the repair model generates a patch that passes the full regression test suite. This is the primary effectiveness metric, directly measuring whether compression preserves the semantic content necessary for correct patch synthesis.</p><formula xml:id="formula_1">• Compression Rate: The ratio |C init |/| Ĉ| measured in tokens,</formula><p>where high values indicate more aggressive compression. This metric quantifies the reduction in context size.</p><p>• Token Count: The total number of tokens consumed during the repair step, comprising both compressed prompt tokens and completion tokens.</p><p>• Compression Time: The wall-clock time required to compress a single instance, measuring the computational overhead that the compression step introduces into the repair pipeline.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">RQ1: Compression Efficiency and Cost</head><p>Table <ref type="table">2</ref> shows that across all three LLMs SWEzze's compression rate stays close to 6× (6.03× on DeepSeek-V3.2, 5.95× on Qwen3-Coder-Next, and 6.55× on GPT-5.2). This pattern is more stable than that of the baselines. LLMLingua-2 is conservative, remaining below 3× compression in every setting.</p><p>LongCodeZip compresses more, but its compression rate varies more across models. SWE-Pruner's compression rate ranges from 4.10× on DeepSeek-V3.2 to 49.75× on Qwen3-Coder-Next. The weak result of SWE-Pruner on DeepSeek-V3.2 can be explained by the fact that the issue description and fault location consume much of SWE-Pruner's hint-generation budget. The achieved compression rate may exceed the target rate because the target defines only a minimum compression level. Once no budget remains for another code segment, or no remaining segment meets the selection threshold, the method stops adding segments.</p><p>Higher compression rate leads to token cost savings. Compared with No_compression, SWEzze removes 13,150 prompt tokens per instance on DeepSeek-V3.2, 6,535 on Qwen3-Coder-Next, and 12,401 on GPT-5.2, which corresponds to prompt reductions of 60.3%, 69.1%, and 73.4%, respectively. The end-to-end token budget, measured as the sum of prompt and completion tokens, still falls by 55.9%, 51.8%, and 71.3% relative to the uncompressed setting. Compared with LLMLingua-2, SWEzze further reduces the total token budget by 20.5% on DeepSeek-V3.2 and 35.4% on GPT-5.2. On Qwen3-Coder-Next, however, its total cost remains higher than that of the more aggressive LongCodeZip and SWE-Pruner. It shows that SWEzze does not optimize only for the smallest possible token cost, but aims for more balanced, controlled compression.</p><p>Averaged over the three LLMs, LLMLingua-2 and SWE-Pruner are the fastest methods, requiring only 0.75 and 0.93 seconds per instance, respectively, while LongCodeZip is much slower at 24.4 seconds. SWEzze lowers this overhead to 6.1 seconds on average, making it about 4.0× faster than LongCodeZip. The same pattern appears across all backends: relative to LongCodeZip, SWEzze reduces compression latency by 71.1% on DeepSeek-V3.2, 77.1% on Qwen3-Coder-Next, and 78.8% on GPT-5.2. At the same time, it is 8.2× slower than LLMLingua-2 and 6.6× slower than SWE-Pruner, which reflects the extra cost of structured segmentation and reasoning on compression queries. While SWEzze is not the cheapest compressor in absolute terms, it offers a better balance among compression rate, stability, and latency than the baselines. RQ1: SWEzze achieves stable ∼6× compression across LLMs, reduces the total token count by 51.8%-71.3% over No_compression; it is 4.0× faster than LongCodeZip on average.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">RQ2: End-to-End Issue Resolution</head><p>Table <ref type="table">2</ref> shows that SWEzze achieves the best issue resolution performance across all three LLMs. Its resolution rate reaches 0.522 on DeepSeek-V3.2, 0.420 on Qwen3-Coder-Next, and 0.578 on GPT-5.2. Relative to No_compression, these results correspond to absolute gains of 4.4, 2.0, and 4.6 percentage points (relative improvements of 9.2%, 5.0%, and 8.6%). When compared with No_context, SWEzze's gains are 6.0, 3.4, and 5.4 percentage points (13.0%, 8.8%, and 10.3% in relative improvement). This pattern suggests that repository context helps issue resolution only when intelligently selected. The much smaller gap between No_compression and No_context further suggests that a substantial part of the raw retrieved context is not necessary and may even hinder the repair process.</p><p>Importantly, SWEzze's improvements do not simply come from solving the same easy instances as the competing compressors. Figure <ref type="figure" target="#fig_3">5</ref> shows that the largest intersection in every panel is the four-way overlap, with 223 instances on DeepSeek-V3.2, 170 on Qwen3-Coder-Next, and 254 on GPT-5.2. This indicates that all methods solve a large shared set of relatively easy instances. Even so, SWEzze still covers the largest resolved set on every comparison. Compared with the strongest baseline for each model, this adds 16 instances on DeepSeek-V3, 11 on Qwen3-Coder, and 5 on GPT-5.2, which corresponds to relative gains of 6.5%, 5.5%, and 1.8%. Measured against the union of all resolved instances, the coverage of SWEzze reaches 99.2% on DeepSeek-V3, 93.8% on Qwen3-Coder, and 96.7% on GPT-5.2. This means that the advantage of SWEzze is not limited to higher overall accuracy. It also recovers a broader set of instances, including cases missed by other compressors.</p><p>As shown in Figure <ref type="figure">6</ref>, the baselines tend to fall into less favorable operating regions. LLMLingua-2 stays in a low-cost but low-gain region, offering only marginal improvement or even causing degradation. SWE-Pruner represents the other extreme. It can apply very aggressive compression, but its downstream behavior is unstable, suggesting that excessive pruning often removes information needed for repair. LongCodeZip is more competitive in compression strength, but its gains are less consistent and come with substantially higher latency. In contrast, SWEzze consistently achieves the largest improvements in resolution rate, while maintaining a moderate compression rate of about 6× and a practical runtime overhead. These results support the central claim of this work: for repository-level issue resolution, the goal is not to maximize compression aggressiveness, but to preserve the small subset of context that is truly sufficient for generating a correct patch.</p><p>RQ2: SWEzze achieves the best issue resolution performance across all three LLMs, improving resolution rates by 5.0-13.0% to the uncompressed and no-context settings. It also covers the broadest set of resolved instances, reaching 93.8%-99.2% of the union of all solved cases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">RQ3: Analysis of Compression Failures</head><p>Based on the UpSet plot, we manually inspected unresolved instances, and found three recurring types of failures. First, a compressor may retain distracting code, which pulls the LLM toward irrelevant logic. Second, the model may not score code segments with enough precision. This problem often occurred in projects with overridden functions or multiple implementations that share the same signature and have similar function bodies. In such cases, small code differences may lead to divergent behaviors, but the model cannot distinguish them reliably. Third, overly aggressive compression may damage the syntactic structure of the original code and produce fragmented contexts that obscure semantic relations. We uniformly sampled 30 instances unresolved by GPT-5.2 for which the uncompressed code context produced a passing patch. Among these instances, 5 are due to distracting context, 8 to imprecise segment scoring, and 17 to disrupted syntactic structure.</p><p>Figure <ref type="figure" target="#fig_4">7</ref> shows a representative case where retained context distracts the repair model. The issue requires assigning the maxlength attribute to the username field. In this case, SWEzze, No_context,</p><p>1x 2x 5x 10x 20x 50x Compression Factor -4% -2% 0% +2% +4% +6% +8% +10% Δ Resolution Rate (%) Comp. time 1s 10s 35s LLMLingua-2 LongCodeZip SWE-Pruner SWEzze LLMLingua-2 LongCodeZip SWE-Pruner SWEzze DeepSeek Qwen GPT No Compression baseline Figure 6: Tradeoff between compression rate, resolution rate improvement over the no-compression baseline (Δ = 0%, dashed), and compression latency (bubble area) across four methods and three LLMs (marker shape). SWEzze (orange) achieves the highest resolution-rate gains (+5.0%-+9.2%) at a moderate compression rate (∼6×) and latency. and No_compression all resolve the issue successfully, whereas LongCodeZip and SWE-Pruner fail. The failure arises because these two methods, especially SWE-Pruner, discard most of the surrounding context and keep only the widget_attrs function. This function contains a predicate that checks whether widget.is_hidden is false, and one branch assigns a value to widget.max_length.</p><p>With only this compressed context, the repair model generates a patch that adds an unnecessary constraint on is_hidden, which causes the tests to fail. This example shows that context compression can hurt repair performance not only by removing essential information, but also by keeping misleading fragments that divert the model from the true repair logic.</p><p>RQ3: Manual analysis shows that most failures are due to distracting retained context, insufficiently precise semantic discrimination between similar code segments, and breaking syntactic structure through overly aggressive compression.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">THREATS TO VALIDITY &amp; DISCUSSION</head><p>To assess whether SWEzze generalizes across model families, we evaluate with three issue-resolution models from distinct providers and architectures: GPT-5.2, DeepSeek-V3.2, and Qwen3-Coder-Next. Crucially, none of these is the model used during OCD data construction (Qwen3-Coder-30b), which means the compressed contexts were distilled under one model yet consistently benefit different ones. This cross-model transfer suggests that the fix ingredients extracted by OCD capture genuine semantic dependencies of the issue rather than artifacts of a particular model's decoding strategy, and that the resulting compression is largely model-agnostic. The search process relies on ground-truth patches and test coverage information that are unavailable at inference time. This creates a distribution gap between training and deployment: the model must learn to approximate the oracle's judgments using only information available from the issue description and retrieved code. We address this gap in the model training phase by formulating the task as learning to predict which units the oracle would retain. Importantly, the inputs required by OCD-(issue, patch, test suite) triples-are naturally produced by any software project that uses pull requests with continuous integration. This means OCD training data can in principle be mined from any repository with a sufficiently rich merge history, not only from curated benchmarks.</p><p>Our search explicitly targets minimal sufficient contexts rather than merely sufficient ones. This design choice reflects the hypothesis that minimal contexts provide cleaner supervision signals-they contain less noise and more directly capture the causal dependencies required for repair. However, minimality is defined with respect to the specific LLM and generation parameters used during data construction; the truly minimal context may vary across models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">RELATED WORK</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM Context.</head><p>Previous research noticed that LLMs struggle with processing long contexts <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b14">15]</ref>, raising the so-called "lost-in-themiddle" problem. Worse, Shi et al <ref type="bibr" target="#b21">[22]</ref> noticed that LLMs tend to be distracted by irrelevant context, which significantly degrades performance. Although recent work on long context handling partially alleviated this problem <ref type="bibr" target="#b35">[36]</ref>, state-of-the-art LLMs continue to exhibit this weakness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Context Retrieval.</head><p>To resolve issues in real-world repositories, an LLM requires relevant code context containing necessary projectspecific dependencies. FitRepair <ref type="bibr" target="#b29">[30]</ref> uses hard-coded heuristics to augment prompts with contextual code data. LLM agents employ more flexible mechanisms such as embedding-based retrieval <ref type="bibr" target="#b28">[29]</ref>, retrieval-augmented generation (RAG) <ref type="bibr" target="#b8">[9]</ref> such as matching relevant code snippets with BM25 <ref type="bibr" target="#b19">[20]</ref>, or agentic retrieval that invokes code search APIs <ref type="bibr" target="#b38">[39]</ref>. Because these techniques rely on syntactic similarity, and capture only shallow semantic properties, they typically overapproximate the necessary context, which result in decreased generation efficiency and increased cost.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prompt Compression.</head><p>Prompt compression aims to reduce the length of prompts to improve the efficiency of processing LLM inputs <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b25">26]</ref>. A large body of works focus on task-agnostic natural language compression, such as LlmLingua <ref type="bibr" target="#b4">[5]</ref> and LlmLin-gua2 <ref type="bibr" target="#b17">[18]</ref>. Techniques such as TACO-RL <ref type="bibr" target="#b20">[21]</ref> offer task-specific natural language compression, that optimizes prompt for a specific task. Despite their practicality, such approaches are ineffective in selecting relevant code context for issue resolution, because source code demands strict syntactic integrity and requires taking into account structural dependencies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>LLM-based Issue Resolution &amp; Program Repair.</head><p>LLMs enabled effective automated program repair <ref type="bibr" target="#b7">[8]</ref> that can resolve issues in real-world repositories, with representative techniques including ChatRepair <ref type="bibr" target="#b30">[31]</ref>, SWE-Agent <ref type="bibr" target="#b32">[33]</ref>, and AutoCodeRover <ref type="bibr" target="#b38">[39]</ref>. In this work we rely on Agentless <ref type="bibr" target="#b28">[29]</ref> because it represents a canonical issue resolution workflow, which is widely used to evaluate frontier LLMs on issue resolution <ref type="bibr" target="#b1">[2]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Code Compression &amp; Information Selection.</head><p>Early works such as Maniple <ref type="bibr" target="#b18">[19]</ref> selected relevant code fragments for LLM-based program repair using a random forest, however this approach is not fine-grained enough to identify precise fix ingredients. Xiao et al. <ref type="bibr" target="#b31">[32]</ref> suggested to reduce agent trajectories by removing useless, redundant, and expired information to reduces computational costs. In contrast to SWEzze, this approach is not code-specific. Long-CodeZip <ref type="bibr" target="#b22">[23]</ref> introduced a code-specific compression framework; it first ranks function-level chunks using conditional perplexity to align with the task, and then applies fine-grained block-level pruning via knapsack algorithm. Similarly, SWE-Pruner <ref type="bibr" target="#b26">[27]</ref> finetunes a lightweight reranker to score each token's task-conditioned relevance, and prunes lines whose aggregated scores fall below a threshold. Their key limitation is that the ranking criteria, perplexity or relevance score, do not address the problem of retaining ingredients for issue resolution, since they merely measure relatedness of code fragment to the bug. In contrast, SWEzze reframes the problem from compressing for relevance to distilling for sufficiency. By leveraging oracle feedback, we move beyond statistical proxies to explicitly search for the minimal context configuration that enables the generation of a correct patch.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">CONCLUSION</head><p>We presented a code context compression framework for LLMbased issue resolution. Unlike prior compressors that rely on perplexity or lexical similarity, SWEzze is trained on minimal sufficient contexts produced by Oracle-guided Code Distillation (OCD), a twophase search combining genetic algorithms and hierarchical delta debugging. OCD identifies the smallest context subsequence that still enables a correct patch, thus capturing ingredients required for issue resolution rather than surface-level relatedness. Evaluated on SWE-bench Verified with three frontier LLMs, SWEzze achieves stable compression while also improving resolution rates over previous compression baselines.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Agentless + SWEzze generates a correct patch because SWEzze retains the fix ingredients in the compressed context. In contrast, previous compressors (LongCodeZip and SWE-Pruner) degrade Agentless performance by removing these ingredients.</figDesc><graphic coords="2,66.41,85.60,479.20,269.92" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: A fragment of Agentless' code context for resolving the issue in Figure 1. SWEzze's context has the higher correlation with a minimal sufficient context computed via delta-debugging, and the only one that contains the ingredients to correctly recompute DPI to address the issue.</figDesc><graphic coords="3,53.80,85.60,240.25,313.80" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :Figure 4 :</head><label>34</label><figDesc>Figure3: Relevance density vs. context size. Relevance density monotonically decreases with the increase of context size, confirming that broader retrieval introduces proportionally more noise. Error bars denote interquartile ranges.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: UpSet plots of resolved-instance overlaps across compression methods on SWE-bench Verified. Each panel corresponds to one downstream repair model. Top bars show the size of resolved-instance intersections, while the left bars show the total number of resolved instances per method, with SWEzze highlighted in orange. The plots reveal both the shared wins and the additional instances uniquely recovered by SWEzze.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 7 :</head><label>7</label><figDesc>Figure7: SWE-Pruner retains a distracting fragment that leads to an incorrect patch, whereas SWEzze removes it, enabling correct resolution. The compressed context uses the same visual notation as Figure2.</figDesc><graphic coords="10,65.81,85.61,216.23,344.87" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Overview of the constructed training dataset based on SWE-Smith of minimal sufficient contexts.</figDesc><table><row><cell>Metric</cell><cell>Value</cell></row><row><cell>Unique repositories</cell><cell>41</cell></row><row><cell>Total instances (bugs)</cell><cell>3,157</cell></row><row><cell>Total code segments</cell><cell>156,545</cell></row><row><cell>Avg. segments per instance</cell><cell>49.6</cell></row><row><cell>Positive segments (relevant)</cell><cell>13,102</cell></row><row><cell cols="2">Negative segments (irrelevant) 143,443</cell></row><row><cell>Relevance density</cell><cell>8.4%</cell></row><row><cell cols="2">LLM generation, we generate multiple patch candidates per evalua-</cell></row><row><cell cols="2">tion and apply majority voting. A context is deemed sufficient if</cell></row><row><cell cols="2">at least half of the generated patches pass all tests, providing more</cell></row><row><cell>reliable sufficiency judgments.</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Prompt and total token consumption per instance across downstream LLMs. SWEzze substantially reduces the end-to-end token cost relative to the uncompressed setting while retaining sufficient context for repair.</figDesc><table><row><cell>Method</cell><cell cols="2">DeepSeek-V3.2</cell><cell cols="2">Qwen3-Coder-Next</cell><cell cols="2">GPT-5.2</cell></row><row><cell>No_compression</cell><cell>21 808</cell><cell>23 194</cell><cell>9457</cell><cell>13 901</cell><cell>16 893</cell><cell>17 408</cell></row><row><cell>No_context</cell><cell>6359</cell><cell>7627</cell><cell>1675</cell><cell>4394</cell><cell>2255</cell><cell>2767</cell></row><row><cell>LLMLingua-2</cell><cell>11 480</cell><cell>12 864</cell><cell>4408</cell><cell>7236</cell><cell>7237</cell><cell>7731</cell></row><row><cell>LongCodeZip</cell><cell>9177</cell><cell>10 569</cell><cell>2658</cell><cell>6028</cell><cell>4166</cell><cell>4667</cell></row><row><cell>SWE-Pruner</cell><cell>9834</cell><cell>11 214</cell><cell>1753</cell><cell>4822</cell><cell>2912</cell><cell>3393</cell></row><row><cell>SWEzze</cell><cell>8658</cell><cell>10 230</cell><cell>2922</cell><cell>6707</cell><cell>4492</cell><cell>4992</cell></row><row><cell cols="4">SWEzze vs. No_compression -60.3% -55.9% -69.1%</cell><cell>-51.8%</cell><cell cols="2">-73.4% -71.3%</cell></row></table><note><p>Prompt ↓ Total ↓ Prompt ↓ Total ↓ Prompt ↓ Total ↓</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Mean compression latency per instance (seconds) for each method across the three LLMs. Lower is faster.</figDesc><table><row><cell>Method</cell><cell cols="3">DeepSeek-V3.2 Qwen3-Coder-Next GPT-5.2</cell></row><row><cell>LLMLingua-2</cell><cell>0.9</cell><cell>0.44</cell><cell>0.9</cell></row><row><cell>LongCodeZip</cell><cell>34.6</cell><cell>10.9</cell><cell>27.8</cell></row><row><cell>SWE-Pruner</cell><cell>1.2</cell><cell>0.48</cell><cell>1.1</cell></row><row><cell>SWEzze</cell><cell>10.0</cell><cell>2.5</cell><cell>5.9</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGMENTS</head><p>We thank <rs type="person">Yue Pan</rs> for assistance with the implementation, and <rs type="person">Yihan Dai</rs>, <rs type="person">Haotian Xu</rs>, and <rs type="person">Dimitrios Stamatios Bouras</rs> for their comments on an early draft.</p></div>
+			</div>			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ruisheng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mouxiang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunlong</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Jing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingze</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2603.00729</idno>
+		<title level="m">Qwen3-codernext technical report</title>
+		<imprint>
+			<date type="published" when="2026">2026. 2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Da</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edwin</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yannis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanak</forename><surname>Ide</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Lauffer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nitin</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chetan</forename><surname>Pasari</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rane</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.16941</idno>
+		<title level="m">Swe-bench pro: Can ai agents solve long-horizon software engineering tasks? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">The Matplotlib development team</title>
+		<ptr target="https://matplotlib.org/" />
+	</analytic>
+	<monogr>
+		<title level="m">Matplotlib: Visualization with Python</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+			<biblScope unit="page" from="2026" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">LoRA: Low-Rank Adaptation of Large Language Models</title>
+		<author>
+			<persName><forename type="first">Edward</forename><forename type="middle">J</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shean</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2106.09685</idno>
+		<ptr target="https://arxiv.org/abs/2106.09685" />
+		<imprint>
+			<date type="published" when="2021">2021. 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Llmlingua: Compressing prompts for accelerated inference of large language models</title>
+		<author>
+			<persName><forename type="first">Huiqiang</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianhui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chin-Yew</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqing</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lili</forename><surname>Qiu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2023 conference on empirical methods in natural language processing</title>
+		<meeting>the 2023 conference on empirical methods in natural language processing</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="13358" to="13376" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Longllmlingua: Accelerating and enhancing llms in long context scenarios via prompt compression</title>
+		<author>
+			<persName><forename type="first">Huiqiang</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianhui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xufang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chin-Yew</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqing</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lili</forename><surname>Qiu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="1658" to="1677" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.06770</idno>
+		<title level="m">Swe-bench: Can language models resolve real-world github issues? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Automated program repair</title>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Le Goues</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Pradel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhik</forename><surname>Roychoudhury</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Commun. ACM</title>
+		<imprint>
+			<biblScope unit="volume">62</biblScope>
+			<biblScope unit="page" from="56" to="65" />
+			<date type="published" when="2019">2019. 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Retrieval-augmented generation for knowledge-intensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heinrich</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Letian</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bohan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rili</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaming</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Earl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federica</forename><surname>Barr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoyang</forename><surname>Sarro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ye</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2602.05892</idno>
+		<title level="m">ContextBench: A Benchmark for Context Retrieval in Coding Agents</title>
+		<imprint>
+			<date type="published" when="2026">2026. 2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Loogle: Can long-context language models understand long contexts</title>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengmeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilong</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muhan</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="16304" to="16333" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Prompt compression for large language models: A survey</title>
+		<author>
+			<persName><forename type="first">Zongqian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinhong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nigel</forename><surname>Collier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<meeting>the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="7182" to="7195" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aixin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bochao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenggang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Ruan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.19437</idno>
+		<title level="m">Deepseek-v3 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">LSRepair: Live search of fix ingredients for automated program repair</title>
+		<author>
+			<persName><forename type="first">Kui</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anil</forename><surname>Koyuncu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kisub</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongsun</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tegawendé</forename><forename type="middle">F</forename><surname>Bissyandé</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2018 25th Asia-Pacific Software Engineering Conference (APSEC)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="658" to="662" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Lost in the middle: How language models use long contexts</title>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Nelson F Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Hewitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Paranjape</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Bevilacqua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the association for computational linguistics</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="page" from="157" to="173" />
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Do the fix ingredients already exist? an empirical inquiry into the redundancy assumptions of program repair approaches</title>
+		<author>
+			<persName><forename type="first">Matias</forename><surname>Martinez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Westley</forename><surname>Weimer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Monperrus</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Companion Proceedings of the 36th international conference on software engineering</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="492" to="495" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">HDD: hierarchical delta debugging</title>
+		<author>
+			<persName><forename type="first">Ghassan</forename><surname>Misherghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhendong</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 28th international conference on Software engineering</title>
+		<meeting>the 28th international conference on Software engineering</meeting>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="142" to="151" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Llmlingua-2: Data distillation for efficient and faithful task-agnostic prompt compression</title>
+		<author>
+			<persName><forename type="first">Zhuoshi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianhui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huiqiang</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Menglin</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xufang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Rühle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqing</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chin-Yew</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2024</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="963" to="981" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">The fact selection problem in llm-based program repair</title>
+		<author>
+			<persName><forename type="first">Nikhil</forename><surname>Parasaram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huijie</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zineb</forename><surname>Flahy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abriele</forename><surname>Qudsi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damian</forename><surname>Ziaber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Earl</forename><surname>Barr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Mechtaev</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2404.05520</idno>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Robertson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Zaragoza</surname></persName>
+		</author>
+		<title level="m">The probabilistic relevance framework: BM25 and beyond</title>
+		<imprint>
+			<publisher>Now Publishers Inc</publisher>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="volume">4</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Taco-rl: Task aware prompt compression optimization with reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Shivam</forename><surname>Shandilya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Menglin</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Supriyo</forename><surname>Ghosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huiqiang</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qianhui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Rühle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saravan</forename><surname>Rajmohan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: ACL 2025</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="1582" to="1597" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Large language models can be easily distracted by irrelevant context</title>
+		<author>
+			<persName><forename type="first">Freda</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanishka</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Scales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="31210" to="31227" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuling</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichun</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beijun</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Gu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2510.00446</idno>
+		<title level="m">Longcodezip: Compress long context for code language models</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaditya</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Fry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Perelman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Tart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adi</forename><surname>Ganesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>El-Kishky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><surname>Mclaughlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiden</forename><surname>Low</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhila</forename><surname>Ostrow</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ananthram</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.03267</idno>
+		<title level="m">Openai gpt-5 system card</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Attention is All you Need</title>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Vaswani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niki</forename><surname>Parmar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Llion</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><forename type="middle">N</forename><surname>Gomez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Illia</forename><surname>Polosukhin</surname></persName>
+		</author>
+		<ptr target="https://proceedings.neurips.cc/paper/2017/hash/3" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 30: Annual Conference on Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">Samy</forename><surname>Luxburg</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Hanna</forename><forename type="middle">M</forename><surname>Bengio</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Rob</forename><surname>Wallach</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><forename type="middle">V N</forename><surname>Fergus</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Roman</forename><surname>Vishwanathan</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Garnett</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Long Beach, CA, USA, Isabelle Guyon</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2017-09">2017. 2017. December 4-9, 2017</date>
+			<biblScope unit="page" from="5998" to="6008" />
+		</imprint>
+	</monogr>
+	<note>f5ee243547dee91fbd053c1c4a845aa-Abstract.html</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhongwei</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Che</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samiul</forename><surname>Alam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiachen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongnan</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shen</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quanlu</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.03863</idno>
+		<title level="m">Efficient large language models: A survey</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yuhang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuling</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mo</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rongrui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shilin</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Lian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuting</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyu</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Gu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.16746</idno>
+		<title level="m">SWE-Pruner: Self-Adaptive Context Pruning for Coding Agents</title>
+		<imprint>
+			<date type="published" when="2026">2026. 2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Sorting and transforming program repair ingredients via deep learning code similarities</title>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>White</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Tufano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matias</forename><surname>Martinez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Monperrus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denys</forename><surname>Poshyvanyk</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2019 IEEE 26th international conference on software analysis, evolution and reengineering (SANER)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="479" to="490" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soren</forename><surname>Dunn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.01489</idno>
+		<title level="m">Agentless: Demystifying llm-based software engineering agents</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">The plastic surgery hypothesis in the era of large language models</title>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifeng</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2023 38th IEEE/ACM International Conference on Automated Software Engineering (ASE)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="522" to="534" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Automated program repair via conversation: Fixing 162 out of 337 bugs for $0.42 each using chatgpt</title>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xia</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis</title>
+		<meeting>the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="819" to="831" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Improving the efficiency of LLM agent systems through trajectory reduction</title>
+		<author>
+			<persName><forename type="first">Yuan-An</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingfei</forename><surname>Xiong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.23586</idno>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<title level="m">SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering</title>
+		<imprint>
+			<publisher>Karthik Narasimhan, and Ofir Press</publisher>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>In NeurIPS</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kabir</forename><surname>Khandpur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanzhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ludwig</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diyi</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.21798</idno>
+		<title level="m">Swe-smith: Scaling data for software engineering agents</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Simplifying and isolating failureinducing input</title>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Zeller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ralf</forename><surname>Hildebrandt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on software engineering</title>
+		<imprint>
+			<biblScope unit="volume">28</biblScope>
+			<biblScope unit="page" from="183" to="200" />
+			<date type="published" when="2002">2002. 2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Alex</forename><forename type="middle">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Kraska</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Khattab</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2512.24601</idno>
+		<title level="m">Recursive language models</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">BERTScore: Evaluating Text Generation with BERT</title>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varsha</forename><surname>Kishore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><forename type="middle">Q</forename><surname>Weinberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Artzi</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=SkeHuCVFDr" />
+	</analytic>
+	<monogr>
+		<title level="m">8th International Conference on Learning Representations, ICLR 2020</title>
+		<meeting><address><addrLine>Addis Ababa, Ethiopia</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2020-04-26">2020. April 26-30, 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Qwen3 embedding: Advancing text embedding and reranking through foundation models</title>
+		<author>
+			<persName><forename type="first">Yanzhao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingxin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dingkun</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengjun</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.05176</idno>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Autocoderover: Autonomous program improvement</title>
+		<author>
+			<persName><forename type="first">Yuntong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haifeng</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyu</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhik</forename><surname>Roychoudhury</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis</title>
+		<meeting>the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="1592" to="1604" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,2631 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Natural-Language Agent Harnesses</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-05-18">18 May 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Linyue</forename><surname>Pan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Shenzhen International Graduate School</orgName>
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Lexiao</forename><surname>Zou</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Harbin Institute of Technology</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shuo</forename><surname>Guo</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Shenzhen International Graduate School</orgName>
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jingchen</forename><surname>Ni</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Shenzhen International Graduate School</orgName>
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<author role="corresp">
+							<persName><forename type="first">Hai-Tao</forename><surname>Zheng</surname></persName>
+							<email>zheng.haitao@sz.tsinghua.edu.cn</email>
+							<affiliation key="aff0">
+								<orgName type="department">Shenzhen International Graduate School</orgName>
+								<orgName type="institution">Tsinghua University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Natural-Language Agent Harnesses</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-05-18">18 May 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">FCB0A837CF0FB58C943F9BF47B3A0504</idno>
+					<idno type="arXiv">arXiv:2603.25723v2[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:11+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Agent performance is strongly shaped by the surrounding harness: the external execution system around a model that organizes a task run. Yet this logic is usually buried in tightly coupled controller code, which makes harnesses hard to inspect, compare, transfer, and ablate. This paper asks whether the reusable design pattern of an agent harness can be represented as an executable natural-language object. We introduce Natural-Language Agent Harnesses (NLAHs), editable documents that describe run-level harness policy, and Intelligent Harness Runtime (IHR), a shared runtime that interprets these documents into agent calls, handoffs, state updates, validation gates, and artifact contracts. Across coding, terminal-use, and computer-use benchmarks, IHR-executed NLAHs achieve comparable task outcomes to code and prompted realizations, while exposing much shorter static harness policies. Module ablations further show that explicit harness modules are analyzable. These results suggest that agent harnesses can be turned from incidental glue around models into scientific representation objects.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Modern language-model agents have become multi-step execution systems. They use tools, keep state, recover from failures, validate intermediate results, and sometimes delegate work to other agents <ref type="bibr" target="#b57">[Yao et al., 2023</ref><ref type="bibr" target="#b45">, Shinn et al., 2023</ref><ref type="bibr">, Wang et al., 2024b</ref><ref type="bibr" target="#b19">, Fourney et al., 2024</ref><ref type="bibr" target="#b3">, Anthropic, 2024]</ref>. These behaviors are organized by an external harness, which can have large effects on measured performance <ref type="bibr">[LangChain, 2026b</ref><ref type="bibr" target="#b8">,a, Bui, 2026]</ref>. Similar concerns appear in recent work on agent scaffolds, workflow generation, long-context execution, multi-agent orchestration, and tool-using agents <ref type="bibr">[OpenAI, 2026b</ref><ref type="bibr">, Anthropic, 2025a</ref><ref type="bibr">,b, Ding et al., 2026</ref><ref type="bibr">, Liu et al., 2024</ref><ref type="bibr">, Chroma Research, 2025</ref><ref type="bibr">, Sun et al., 2025]</ref>.</p><p>The problem is that harnesses are usually not represented as clean research objects. A code harness may mix prompts, tool adapters, parser rules, validation scripts, artifact paths, retry logic, context policy, and benchmark-specific assumptions in one controller bundle. As a result, a seemingly small harness change can also change call boundaries, tool mediation, state carriers, validation gates, and stopping semantics. This makes harnesses hard to inspect, port, compare, and ablate, even though the harness pattern itself is often the reusable part of the system. This paper studies whether a harness pattern can be externalized as executable natural language. We propose Natural-Language Agent Harnesses (NLAHs), which write run-level harness policy as editable text, and Intelligent Harness Runtime (IHR), a shared runtime that executes this policy through agent calls. The key separation is simple: natural language carries the harness policy, while code and the runtime carry exact mechanisms such as tool execution, parsing, sandboxing, and logging.</p><p>Figure <ref type="figure">1</ref>: Three ways to control an agent run. The spectrum ranges from restrictive harnessing to no external harness, or self-harnessing. Code harnesses impose hard external control on a model through program logic. NLAH+IHR, the design point studied in this paper, moves the harness policy into readable natural language while a shared runtime executes that policy through child-agent calls. Self-harnessing is a possible future design in which a controller model directly harnesses other models without any external harness.</p><p>We evaluate this idea with three connected questions. First, can IHR-executed NLAHs control real agent runs while preserving task performance comparable to code and prompted realizations? Second, do IHR-executed NLAHs materialize the intended harness mechanisms beyond using the same text as ordinary prompting? Third, once harness policy is explicit, can individual modules such as file-backed state, verifier separation, self-evolution, and multi-candidate search be analyzed as module-level interventions? Across coding, terminal-use, and computer-use benchmarks, our results show that NLAHs are executable and compact, that they leave measurable behavioral traces, and that module-level gains depend on whether a module aligns intermediate control with the benchmark's acceptance condition.</p><p>Our contributions are as follows:</p><p>• We introduce NLAHs as explicit natural-language representations of agent harness patterns, distinct from both runtime policy and deterministic code hooks.</p><p>• We introduce IHR, a shared in-loop runtime that turns NLAHs into auditable agent calls, handoffs, state updates, validation gates, and artifact contracts.</p><p>• We explore the boundary between natural language and code in agent-harness systems, making a first step toward substantially broadening the scope of natural language from local instructions to harness-level strategy.</p><p>• We provide controlled evidence across three benchmark families that NLAHs can shape agent behavior with comparable task outcomes, expose concise static harness policies, and support module-level analysis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Preliminaries</head><p>A model is a callable learned function from context c to output y, where the context may include text, images, or video: y = LM m (c).</p><p>An agent is a system that wraps one or more model calls with external interaction. An agent receives a task, maintains some execution state, observes feedback from tools or environments, and decides whether to continue acting, ask for information, validate progress, or stop. Thus, an agent is a model-centered execution process that can include multiple model calls and external actions. A single model call is a degenerate special case of an agent call, where the agent is allowed to call the model only once for a one-shot answer and performs no external action. In this paper, the atomic unit of harness execution is therefore an agent call. This choice lets NLAH describe harness behavior at the level where prompts, tools, state, validation, and delegation actually operate.</p><p>A harness is the external execution system around a model in an agent. It turns a base model into an agent that can act over real tasks by deciding what the model sees, what tools it may call, where state is stored, how observations are returned, when validation runs, how failures are recovered, when execution may stop, and how one or more model or agent calls are organized. Harness engineering is the practice of designing, implementing, adapting, debugging, and evaluating agent harnesses. Section D.1 summarizes descriptions of eleven main aspects of harness engineering. These include agent loops, tool design and documentation, context engineering, filesystem and workspace management, memory and state, validation and stopping conditions, safety permissions and sandboxing, runtime defaults, observability and replay, retry and recovery, and budget control.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head><p>Inspired by reusable natural-language carriers such as AGENTS.md, CLAUDE.md, and SKILL.md, we consider extending natural-language documents from simple tool or workflow descriptions to broader harness-level strategies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">NLAHs and IHR</head><p>An NLAH+IHR system has four layers. The first layer is the base agent: a code-form minimal executable substrate. In our setting, the base agent is only an LLM loop: it can call a model, but the only external tool exposed to the model is a terminal. Through the terminal, the base agent can read and write files, run processes, record events, and launch child agents when needed. Launching a child agent does not require a separate dedicated tool: the base agent can use the terminal to start a new instance of itself and pass that instance a child task packet. The second layer is the runtime policy: a fixed instruction that turns the base agent into IHR by defining how it should interpret and execute harness documents. The third layer is the NLAH: the natural-language policy document that describes the stages, roles, state rules, verification rules, recovery rules, and stopping conditions of a task run. The fourth layer is the set of scripts and adapters: deterministic code used for exact operations such as running tests, parsing results, calling benchmark tools, or checking artifacts.</p><p>This separation is the main design choice. The base agent and adapters provide the machine interface.</p><p>The runtime policy provides shared execution semantics. The NLAH provides the per-harness policy.</p><p>IHR is intentionally thin, containing the base agent and the text-form runtime policy. It uses the base agent as an orchestrator guided by the runtime policy and delegates substantive task work to child agents. For a nominally single-agent harness, IHR still realizes the run as a parent orchestrator plus one executor child, so the boundary between harness control and task execution remains visible. For multi-role or multi-branch harnesses, IHR launches separate child agents, passes each agent only the intended task packet, supervises handoff, and records the resulting behavior. Thus, IHR is not a large bespoke controller for one benchmark; it is a shared runtime that gives natural-language harness policy a common execution substrate.</p><p>The NLAH is the part that changes from one harness to another. It specifies what the run should do and leaves low-level operations to the runtime, tools, and hooks. For example, an NLAH can state when to create a task state file, when to ask a verifier to inspect a patch, what evidence must be preserved before answering, when a retry is allowed, and what condition closes the run. The runtime then instantiates these clauses through model calls, child-agent messages, tool calls, files, and deterministic hooks. NLAHs extend beyond ordinary prompts: they describe the lifecycle of a task run and cover subsequent multi-step execution.</p><p>We keep deterministic code where precision matters. Tests, parsers, sandboxing, benchmark adapters, and artifact validators remain in code because they require exact and reproducible behavior. Natural language is used for policy: task decomposition, role contracts, evidence discipline, retry logic, state handoff, and validation strategy. This division of labor avoids the overclaim that natural language can replace all controller code, while still moving the most inspectable part of harness design out of opaque implementation logic. Section D.2 gives the natural-language/code boundary and maps code-harness aspects to the IHR+NLAH carriers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Notes on writing NLAHs</head><p>In our experiments, an NLAH is a compact policy document that makes the harness decisions explicit. We found the following writing principles useful.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>State the task contract first.</head><p>An NLAH should begin by defining the input, the expected output, the allowed tools or artifacts, and the condition under which the run is complete. This prevents later sections from becoming vague advice. For coding tasks, the contract may specify patch location, test evidence, and final answer format. For computer-use tasks, it may specify the target application state, allowed interaction channels, and completion evidence.</p><p>Separate stages from mechanisms. The NLAH should name the stages of the run-for example, inspect, plan, edit, verify, recover, and finalize-but it should not reimplement every low-level tool operation in prose. Low-level operations are better handled by scripts, adapters, and runtime hooks. The NLAH should instead define when those mechanisms are used and what evidence they must produce.</p><p>Make state and evidence explicit. Long-horizon agents fail when useful intermediate information is lost or when a final answer is produced without auditable evidence. A readable NLAH should therefore specify where state is stored, which artifacts must be reopened by later agents, what evidence supports a claim, and which files or logs close the run. This is especially important for file-backed state, verifier modules, and evidence-backed answering.</p><p>Write module boundaries so they can be ablated. A module is useful for research only if it can be removed or changed without silently changing the rest of the harness. NLAH sections should therefore use clear names for modules such as verifier, self-evolution, multi-candidate search, context compression, or markdown memory. This lets us ask whether a module changes task outcomes, process metrics, or solved-set composition under a shared runtime.</p><p>Prefer simple and enforceable language. NLAHs should use short clauses, concrete conditions, and explicit artifacts. Phrases such as "be careful," "think deeply," or "act like an expert" are weak harness policy because they do not define observable behavior. By contrast, clauses such as "write a state file before delegating," "run the verifier only after producing a candidate patch," or "do not finalize without evidence from the target file" are easier for IHR to execute and easier for researchers to audit. Section D.2 gives the detailed expressivity boundary.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experimental Design</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Research questions</head><p>We evaluate whether harness pattern logic can be compared across implementation media, audited through harness mechanisms, and analyzed as explicit modules.</p><p>• RQ1 (Harness Realization). Can NLAHs shape observable agent behavior while maintaining comparable task outcomes, and how does this control compare with native code harnesses and prompted NLAHs?</p><p>• RQ2 (Harness Mechanism Realization). Do IHR-executed NLAHs preserve and materialize intended harness mechanisms, such as workflow structure, contract enforcement, tool use, recovery, and information handoff?</p><p>• RQ3 (Module Ablation). Once harness modules are expressed in natural language, can they be cleanly ablated and analyzed at the module level?</p><p>4.2 Harness realizations RQ1 compares three realizations of the same harness idea, ordered by how directly the harness can control execution.</p><p>• Code Harness denotes the original code implementation of the studied agent harness family: the controller code, workflow scripts, framework defaults, and tool adapters that realize the harness before it is represented as an NLAH. It provides the strongest and most deterministic control, but its policy is interleaved with implementation details.</p><p>• Prompted NLAH denotes the same NLAH content provided as ordinary prompt or instruction text to the Codex CLI agent, without IHR's shared runtime charter and execution semantics. It tests how much control is available when natural language is only a passive instruction carrier.</p><p>• IHR-executed NLAH denotes NLAH interpreted and executed by IHR, with explicit runtime semantics for child lifecycle, artifact and state handling, contract gates, and stopping. It gives up the hard determinism of a code harness, but gives the natural-language policy an execution substrate that can materialize roles, handoffs, state, and verification boundaries.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Benchmarks and harness families</head><p>We evaluate on three representative benchmark families that require multi-step control, tool use, durable state accumulation, and verification or evidence management.</p><p>Coding. SWE-bench Verified evaluates repository-grounded issue resolution; the main metric is issue resolution rate <ref type="bibr" target="#b21">[Jimenez et al., 2024</ref><ref type="bibr" target="#b14">, Chowdhury et al., 2024]</ref>. We study coding harness families including Live-SWE-Agent <ref type="bibr" target="#b53">[Xia et al., 2025]</ref>.</p><p>Terminal-use capability. Terminal-Bench 2.0 (TB2) evaluates long-horizon command-line tasks in Linux environments; the main metric is task success <ref type="bibr" target="#b35">[Merrill et al., 2026]</ref>. Meta-Harness is an agent-driven technique that automatically debugs and optimizes executable code harnesses <ref type="bibr" target="#b26">[Lee et al., 2026]</ref>. We study MHTBA, the state-of-the-art terminal-use code harness produced by Meta-Harness for Terminal-Bench 2.0 with Claude Opus 4.6 <ref type="bibr" target="#b46">[Stanford IRIS Lab, 2026]</ref>.</p><p>Computer use. OSWorld evaluates computer-use behavior grounded in real desktop environments; the main metric is task success rate <ref type="bibr" target="#b55">[Xie et al., 2024]</ref>. For OSWorld, we report a SeeAct-style GUI harness family <ref type="bibr">[Zheng et al., 2024a]</ref>. 5 Results</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">RQ1: Harness realization</head><p>RQ1 asks whether harness policy can be moved from code into an NLAH without losing the ability to control real agent runs. We compare three realizations: the native code harness, the same NLAH used as ordinary instructions, and the same NLAH executed by IHR. This design separates two questions: whether natural-language harness policy is expressive enough, and whether a shared runtime gives that policy stronger execution semantics than prompting alone. The results are shown in Table <ref type="table" target="#tab_0">1</ref>.</p><p>IHR-executed NLAHs are operationally viable. Across the audited settings, NLAHs achieve task performance in the same regime as the corresponding code harnesses. On Live-SWE, IHR-executed NLAH reaches 73.0, above the native code harness at 67.0 and close to the prompted NLAH at 77.0. On OSWorld, NLAH reaches 46.3, essentially matching the code harness at 47.1. On MHTBA, NLAH reaches 53.9, below the prompted version at 57.3 but far above the native code realization at 36.0. A detailed analysis of the MHTBA code artifact's TB2 portability is given in Appendix C. These results support the central feasibility claim: NLAH and IHR together can drive real multi-step agent behavior.</p><p>The cost profile reflects prototype-runtime engineering overhead. NLAHs often use more model calls, tool calls, or tokens than code harnesses. This is expected in the current implementation because IHR is built on a general agent substrate and uses natural-language orchestration, which adds overhead relative to a hand-specialized controller. The important point is that this cost does not destroy task performance. In several cases, the added autonomy lets the model choose action granularity more flexibly than a rigid controller, which helps explain why Live-SWE NLAH is both competitive and much faster in wall-clock time than the native code harness. Thus, the current cost profile should be read as an engineering target; it does not show that the representation is unusable.</p><p>NLAHs expose the policy layer that code harnesses hide. The conciseness audit in Table <ref type="table" target="#tab_1">2</ref> shows the strongest representation-level result. For Live-SWE, the readable harness policy is reduced from 60.1k tokens of code materials to a 2.9k-token NLAH. For MHTBA, it is reduced from 10.5k to 0.8k tokens. This means the high-level policy-state handling, validation, recovery, candidate search, and completion gates-is separated from deterministic mechanisms and becomes directly inspectable.</p><p>That separation is what enables mechanism-level auditing in RQ2 and module-level ablation in RQ3.  Behavior is flexible but still policy-guided. The OSWorld cases illustrate why NLAH is best viewed as a policy layer operating at the level of goals, evidence, and gates. The NLAH preserves staged observation, action selection, recovery, and completion checking, but it may choose a different concrete route when that route satisfies the same completion contract. For example, GUI-oriented tasks can sometimes be completed through shell commands, file edits, or package-level operations that provide clearer evidence. This flexible routing preserves harness control and reflects the intended benefit of expressing policy at the level of goals, evidence, and gates; the policy need not prescribe every action primitive.</p><p>Takeaway. RQ1 supports the first claim of the paper: harness policy can be externalized into compact natural language and executed by a shared runtime while preserving competitive task outcomes. The main remaining gap is engineering efficiency: reducing handoff loss, fixed context overhead, and redundant orchestration calls in the prototype runtime.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">RQ2: Harness mechanism realization</head><p>RQ2 asks whether IHR-executed NLAHs materialize the intended harness mechanisms in addition to matching task scores. We define and use new pattern-preservation and harness-engineering metrics for the settings where logs expose the required event structure. Because NLAHs deliberately operate at the level of policy, contracts, and gates, the audit focuses on whether expected mechanisms such as workflow structure, stage coverage, tool use, contract enforcement, recovery, and handoff appear in the run.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>NLAHs preserve recognizable workflow structure.</head><p>Table <ref type="table" target="#tab_2">3</ref> shows that NLAH runs keep nontrivial prompt-contract, tool-surface, workflow-preservation, stage-coverage, and ordered-workflow scores relative to the reference harnesses. On Live-SWE, NLAH raises Verification Signals to 9.890 and improves Stage Coverage and Ordered Workflow over prompted execution. On MHTBA, NLAH has nearly the same Workflow Preservation as Prompt, slightly higher Stage Coverage and Ordered Workflow, and lower Context Boundary and Model Match because parent-child execution changes the topology and distributes work across parent and child contexts. These metrics support the same qualitative point as RQ1's behavioral discussion: NLAH execution is policy-guided execution.</p><p>The strongest mechanism evidence appears in contracts, tools, and recovery. Table <ref type="table" target="#tab_3">4</ref> shows high artifact-contract compliance, tool-call success, and continuation after failed tool calls for IHRexecuted NLAHs. On Live-SWE, NLAH reaches 1.000 Artifact Contract, 0.933 Tool Call Success, The main mechanism weakness is handoff. The same table also identifies the main runtime bottleneck. NLAH Orchestration Reliability is lower than Prompt on both Live-SWE and MHTBA, and Information Handoff Recall drops from the direct-context Prompt setting to 0.322 and 0.553 under parent-child execution. This weakness is consistent with the cost profile in RQ1: the prototype runtime already materializes harness mechanisms, but loses information across boundaries that ordinary prompting does not create.</p><p>Takeaway. RQ2 separates the mechanism claim from RQ1's outcome claim. The same runs show that NLAH+IHR remains competitive on task outcomes and also produces auditable workflow, contract, verification, tool-use, recovery, and handoff signals. The main remaining gap is therefore more specific than generic overhead: IHR needs better handoff and orchestration reliability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">RQ3: Module ablation</head><p>RQ3 asks whether explicit NLAH modules support meaningful intervention under a shared runtime. We analyze Table <ref type="table" target="#tab_4">5</ref> from a global perspective: which module families help across benchmarks, which ones mainly change process shape, and which ones add cost or branching without improving the path to benchmark acceptance. The discussion compares modules within each reported benchmark; averaging scores across benchmark families would be inappropriate. We keep the two most consequential observations in the main text and move the remaining module-specific discussion to Section F.1.</p><p>The strongest modules tighten state and acceptance discipline. Two modules stand out. Filebacked state improves both benchmarks, from 73.0 to 75.6 on SWE and from 44.4 to 58.3 on OSWorld. Self-evolution is even stronger on the solve loop itself, reaching 78.8 on SWE and 52.8 on OSWorld. Evidence-backed answering is also consistently positive, though more modestly, with gains of +2.8 on both benchmarks. The common pattern is important: the modules that help most make the acceptance path cleaner by preserving state, forcing explicit evidence, or sharpening the retry decision.</p><p>Extra branching is not the same as better control. Multi-candidate search produces the clearest topology change. Agent Calls jump from 1.1 to 5.7 on SWE and from 1.083 to 1.333 on OSWorld, but this extra branching yields only +2.8 on OSWorld and a drop from 73.0 to 71.4 on SWE. This is a useful negative result. Explicit branching does change the search behavior, but under the current runtime and budget it is too expensive and too infrastructure-sensitive to dominate simpler modules. More search is not automatically better harness design.</p><p>Global takeaway. RQ3 therefore supports a clear paper-level conclusion. Explicit NLAH modules are useful when they shorten the path from intermediate work to auditable evidence and final benchmark acceptance. They are less useful when they mainly add local process layers, extra branching, or compressed summaries whose notion of success can drift away from the evaluator. This is exactly the kind of conclusion that is hard to reach when harness logic stays buried inside code: once the modules become explicit, we can see whether they help and how they help.</p><p>6 Related Work</p><p>Agent harnesses and scaffold-aware evaluation. Recent agent systems show that performance depends on the execution scaffold around the model, including tools, feedback loops, state, validation, and workflow structure <ref type="bibr" target="#b57">[Yao et al., 2023</ref><ref type="bibr" target="#b27">, Lewis et al., 2021</ref><ref type="bibr" target="#b45">, Shinn et al., 2023</ref><ref type="bibr" target="#b19">, Fourney et al., 2024</ref><ref type="bibr" target="#b37">, Muennighoff et al., 2025</ref><ref type="bibr" target="#b3">, Anthropic, 2024]</ref>. Code-harness synthesis, scaffold-aware benchmarks, agent graph compilation, and multi-agent routing or orchestration further make this dependence explicit <ref type="bibr" target="#b34">[Lou et al., 2026</ref><ref type="bibr" target="#b13">, Chivukula et al., 2025</ref><ref type="bibr">, Ding et al., 2026</ref><ref type="bibr">, An et al., 2025</ref><ref type="bibr">, Zhan et al., 2026b</ref><ref type="bibr">,a, Yang et al., 2026</ref><ref type="bibr">, Wang et al., 2025b</ref><ref type="bibr">,c, Yue et al., 2025</ref><ref type="bibr">, Ke et al., 2026</ref><ref type="bibr" target="#b16">, Costa, 2026]</ref>. These works motivate our setting. Our focus is whether the harness policy itself can be externalized as editable natural language and executed under a shared runtime.</p><p>Natural-language instruction carriers. Files such as prompts, AGENTS.md, CLAUDE.md, AgentSkills, and related skill bundles show that operational knowledge can be packaged as reusable text and attached to agent runs [AGENTS.md, 2026, AgentSkills, 2026]. Recent skill and memory work extends this idea by learning, evolving, storing, and transferring reusable procedures <ref type="bibr" target="#b28">[Hao et al., 2026</ref><ref type="bibr">, Ye et al., 2026</ref><ref type="bibr" target="#b36">, Mi et al., 2026</ref><ref type="bibr">, Zhang et al., 2026</ref><ref type="bibr">, Li et al., 2026a</ref><ref type="bibr" target="#b30">, Li, 2026</ref><ref type="bibr">, Li et al., 2026b</ref><ref type="bibr">, Chen et al., 2026a</ref><ref type="bibr" target="#b42">, PinchBench, 2026</ref><ref type="bibr" target="#b54">, Xia et al., 2026]</ref>. NLAHs are related but operate at a different level. NLAHs operate at the run-level harness-policy layer, specifying roles, call boundaries, state carriers, evidence gates, recovery rules, and stopping criteria.</p><p>Natural language as programs, workflows, and constraints. Prompt programming, promptware, and language-model programming frameworks such as LMQL, DSPy, APPL, and SGLang treat prompts and LLM calls as programmable objects <ref type="bibr" target="#b32">[Liang et al., 2025</ref><ref type="bibr">, Cheng et al., 2025</ref><ref type="bibr">, Chen et al., 2026b</ref><ref type="bibr" target="#b7">, Beurer-Kellner et al., 2023</ref><ref type="bibr" target="#b23">, Khattab et al., 2024</ref><ref type="bibr" target="#b18">, Dong et al., 2025</ref><ref type="bibr">, Zheng et al., 2024b]</ref>.</p><p>Other work compiles natural language into workflows, graphs, runtime constraints, or executable specifications <ref type="bibr" target="#b31">[Li et al., 2024</ref><ref type="bibr" target="#b64">, Zheng et al., 2025</ref><ref type="bibr">, Shi et al., 2025</ref><ref type="bibr">, Wang et al., 2025a</ref><ref type="bibr">, Sharma, 2026</ref><ref type="bibr" target="#b41">, OpenProse, 2026</ref><ref type="bibr" target="#b40">, OpenClaw, 2026]</ref>. NLAHs share the premise that natural language can carry executable intent. They differ in scope: the target object is the agent harness over a full task run, extending beyond an individual call, a fixed pipeline, or a formal workflow graph. NLAHs deliberately keep a freer natural-language form to preserve editability and broad expressivity, while relying on IHR and deterministic hooks for execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Conclusion</head><p>We studied whether agent harness policy can be externalized as a compact, executable, and analyzable representation. We introduced Natural-Language Agent Harnesses and an Intelligent Harness Runtime that executes these harnesses under shared runtime semantics. Across coding, terminal-use, and computer-use benchmarks, IHR-executed NLAHs remain competitive with native harnesses while making the policy layer much shorter and easier to inspect. Mechanism audits and module ablations further show that explicit harness documents can support process-level inspection and mechanismlevel analysis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Discussion</head><p>NLAHs as a policy layer. The main lesson of this work is a division of labor. Natural language is well suited for harness policy: roles, contracts, evidence requirements, retry rules, validation strategy, state handoff, and stopping conditions. Code remains the right medium for exact mechanisms: parsers, tool execution, sandboxing, benchmark adapters, logging, and deterministic validators. NLAHs make the policy layer explicit while IHR and deterministic hooks preserve executable precision. This framing is narrower and more defensible than saying that natural language should replace controller code.</p><p>Why explicit harness policy matters. When harness logic is hidden inside a controller, researchers can usually compare whole systems but not cleanly compare the policy choices inside those systems. NLAHs change the unit of analysis. A harness can be read as text, executed under a shared runtime, audited through mechanism metrics, and modified module by module. This makes harness design closer to an experimental object: we can ask what a verifier contributes, whether file-backed state matters, whether branching pays for its cost, and whether compression loses task-critical information.</p><p>Natural language remains useful at the harness level. Some prompt-level gains can diminish as models become stronger, and prompt tricks can be brittle across tasks <ref type="bibr">[Wang et al., 2024a</ref><ref type="bibr">, Cao et al., 2024]</ref>. Our results point to a different role for natural language. The useful object is an explicit run-level policy that tells an agent what evidence to preserve, when to delegate, how to verify, and when to stop. This type of control remains important even when the base model improves, because stronger models still need task structure, state discipline, and acceptance criteria.</p><p>Toward harness representation science. Once harnesses become explicit objects, they become searchable and testable objects as well. Future work can retrieve, compose, mutate, and optimize NLAH modules under shared runtime assumptions. This creates a path from opaque harness engineering toward a more controlled science of harness representations, where the key questions include which full agent system wins and which harness policy choices cause the difference.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Reproducibility</head><p>The replication package, including our source code, is open-sourced at <ref type="url" target="https://github.com/curated-skills/LinguaClaw">https://github.com/  curated-skills/LinguaClaw</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C MHTBA Code-Artifact Portability on TB2</head><p>The MHTBA code baseline is the released Meta-Harness TB2 artifact, whose public usage reports Terminal-Bench 2.0 results under anthropic/claude-opus-4-6 with -n-attempts 5. Our controlled RQ1 run intentionally places this same code artifact under the common GPT setting used in the paper, namely gpt-5.4-mini, reasoning effort xhigh, and one attempt. This setting tests cross-model portability of a discovered harness artifact and avoids only remeasuring it in its native model environment. Table <ref type="table" target="#tab_5">6</ref> shows that the code-artifact gap is not simply a uniform inability to solve TB2 tasks. Out of 89 samples, 66 end with AgentTimeoutError. Among these timeout runs, 21 already have reward 1.0, so the task state satisfied the verifier but the controller still failed to stop. The remaining 45 failed timeouts form the main source of the 32/89 code score. Table <ref type="table" target="#tab_6">7</ref> isolates the behavior pattern in cases where the GPT-based natural-language realizations succeed but the code artifact fails. The code artifact usually spends hundreds of episodes in the agent loop, consumes tens of millions of prompt tokens, and accumulates many warnings that the previous response contained no tool calls. This is a runtime-protocol symptom; task-domain difficulty explains only part of the pattern.</p><p>The trace-level mechanism is visible in the completion gate. The code artifact first treats task_complete as a pending-completion request and asks the model to call the completion tool again after a checklist. If the next response does not call the completion tool again, the controller clears the pending-completion state and continues the loop. Under GPT, many trajectories answer the confirmation prompt with text such as DONE and no tool call. The controller then returns a no-tool warning, the model issues a harmless no-op command to satisfy the warning, and the run re-enters the first completion gate. This loop can repeat until the global timeout.</p><p>The sample tune-mjcf is a compact example. The verifier reward is 1.0, but the run still ends with AgentTimeoutError after 3600 seconds, 186 episodes, and 5.4M input tokens. Near the end of the trace, GPT alternates between a task_complete tool call, a text-only DONE response with Tool Calls: [], a no-tool warning, and a no-op shell command. Thus the run has already reached a valid task state, but it cannot satisfy the code artifact's exact two-call stopping protocol.</p><p>This evidence supports a model-harness adaptation explanation. The released artifact was optimized and reported in a Claude Opus 4.6 setting, and it includes Anthropic-specific prompt caching behavior. When transplanted to GPT, assumptions about completion confirmation, tool-call selection, and long-loop stopping transfer poorly. Prompt and NLAH keep the high-level terminal-harness ideas, such as environment bootstrapping, batched shell work, programmatic checking, and final review, while avoiding the brittle released state machine by running through the Codex execution substrate and writing reproducible artifacts such as /sa-output/artifacts/solve.sh. In the inspected Prompt and NLAH TB2 trajectories, the run ends with the Codex task-complete event and does not enter a repeated no-tool warning cycle. The MHTBA result therefore illustrates a general harnessengineering risk: a code harness discovered for one model can encode latent assumptions about that model's tool-calling and stopping behavior, and those assumptions may be more fragile than the natural-language harness policy it was meant to implement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Formalization and Definitions</head><p>D.1 Harness engineering aspects D.2 NLAH expressivity boundary and code-harness mapping Table <ref type="table">9</ref> specifies the boundary between natural language and code in an IHR+NLAH system. The key boundary is whether an aspect should be shared substrate, shared runtime semantics, editable task-family policy, deterministic task-family hook, or model-internal behavior.</p><p>For production use, NLAH mainly offers fast iteration, auditing, portability, and module-level experimentation. Its weaknesses are interpretation uncertainty, model dependence, cost, and safety or permission risks. Production systems should therefore keep safety, permissions, evaluation, and key parsing logic in code.</p><p>Table <ref type="table" target="#tab_7">10</ref> maps the main harness-engineering aspects in Table <ref type="table">8</ref> to the IHR+NLAH carriers. This mapping defines the expressivity boundary used in this paper. If a decision is shared by all harnesses or needed for machine execution, it belongs to base-agent code or runtime policy. If a decision is task-family-specific and should be read, edited, refactored, or ablated, it belongs to NLAH. If correctness depends on exact execution, it belongs to scripts or adapters.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Runtime and Implementation Details E.1 Runtime-policy prompt</head><p>The fixed runtime-policy prompt used in IHR encodes the shared cross-benchmark runtime policy that makes NLAHs executable under a common substrate. In operational terms, the runtime-policy prompt enforces five ideas:</p><p>• Runtime-only parent role. The top-level agent takes the orchestrator role, so even a nominally single-agent harness is realized as "parent runtime + one task child." This keeps substantive workspace work inside child agents and makes delegation boundaries inspectable.</p><p>• Minimal delegated baseline. If no NLAH is provided, or if the provided NLAH is incomplete, the runtime first constructs the thinnest runnable baseline from the benchmark contract and then treats extra NLAH clauses as overlays on that baseline. This baseline is part of what distinguishes IHR-executed NLAH from prompted NLAH: the runtime grounds task instructions in a runnable delegated execution substrate.</p><p>• Call-graph recovery with explicit context semantics. The runtime reconstructs roles, stages, repetition structure, and independence requirements from NLAH text, and then realizes them as child-agent launches. fork_context=true means that a child forks and inherits the parent's accumulated conversational context. fork_context=false means that a child starts from a fresh, independent, clean context and receives only the minimal task packet explicitly handed to it. Together with disposable one-shot children and fresh children for independent branches, this preserves the original harness's model-call boundaries and avoids collapsing everything into one long dialogue.</p><p>• Separated runtime state and final artifacts. Durable intermediate state is written under STATE_ROOT (default /sa-output/runtime) only when needed for reuse or auditability, while judgeable deliverables go to /sa-output/artifacts. This lets the runtime expose stable evidence surfaces without mirroring the entire task workspace.</p><p>• Contract-first completion and auditability. Benchmark outputs and completion gates remain the primary contract, but the runtime must leave inspectable evidence when an NLAH claims staged or multi-role execution. As a result, IHR-executed NLAH adds a shared layer of orchestration, context, artifact, and reporting discipline, with prompt text serving as one input to that layer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.2 Realizing Harness Aspects with IHR</head><p>In IHR, an agent call is the atomic unit of harness execution. A model call is a degenerate agent call in which the task instruction asks the agent to answer once without external action. This agent-level view matches the level at which harnesses specify prompts, tools, workflow, memory, retrieval, compression, validation, and delegation.</p><p>Prompt design is realized by constructing the initial context of each agent. When a harness requires role-specific system prompts, the NLAH can store each prompt in a separate file, and IHR can instruct the corresponding agent instance to load that file. This gives the NLAH a relatively precise way to specify agent roles while still keeping prompt content in editable natural language.</p><p>Tool design is realized through code-backed tools. Concrete tools are executable programs, wrappers, scripts, services, or adapters. An agent with terminal access can call these tools by running the referenced code under the sandbox, permission, and budget constraints of the run. Thus, NLAH carries tool policy and tool-use discipline, while scripts and adapters carry exact tool behavior.</p><p>Workflow and multi-agent structure are realized by IHR orchestration. IHR can launch new agents, send messages to running agents, inspect their returned state or answers, route outputs to other agents, launch additional agents, and close agents whose roles are complete. This lets natural-language harness policy materialize as concrete call boundaries, handoffs, verification stages, selector stages, and multi-agent execution.</p><p>Memory and retrieval are realized as external, path-addressable state. The NLAH specifies which facts, decisions, failures, validation results, and artifacts should be written to memory files, task histories, manifests, or evidence records. IHR can require later agents to reopen these files before planning, verification, handoff, or final reporting. Retrieval follows the same pattern: the NLAH specifies retrieval sources, timing, and evidence rules, while IHR exposes search scripts, file indexes, or adapters through the terminal and requires retrieved evidence to be written into auditable artifacts.</p><p>Compression is realized as a contract-preserving context operation. The NLAH specifies when compression is allowed, what state must be externalized before compression, what fields the compressed state must preserve, and which information must remain recoverable. When context becomes long or a stage boundary is reached, IHR can require the agent to write a compact state file containing the task goal, constraints, explored paths, failure signals, validation status, key evidence, artifact paths, and next actions. Later agents recover state by reopening this compressed file and the referenced artifacts. This makes compression an auditable harness operation with explicit recovery surfaces.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F NLAH Modules</head><p>The module boxes below are concise paraphrastic summaries of the NLAH module behaviors used in RQ3. evidence-backed answering ARTIFACT: Before any final answer, final patch, or solved claim, write one standalone evidence document as the designated evidence artifact for the current task or stage. STRUCTURE: Cover the problem statement, relevant materials, observed symptoms, root cause, candidate resolution, validation, and residual uncertainty. CLAIM DISCIPLINE: Each major claim must state its provenance, whether it is direct observation or inference, and the minimal supporting span or output segment when available. GATE: Do not release a complete answer while release-critical claims remain uncited, contradicted, or materially incomplete in that evidence document.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>verifier separation</head><p>ROLE: Verifier inspects one candidate answer against the original problem and the lightest sufficient task materials needed to check it. PROCEDURE: Identify the candidate's claim, break it into checkable subclaims, audit completeness, factual correctness, and logical correctness, and run at least one central independent check when feasible. OUTPUT: Return exactly one primary verdict label plus a report that explains the verdict, names the checks run or blocked, and does not repair the candidate on its behalf.</p><p>self-evolution LOOP: Run an explicit retry loop with a real baseline attempt first and a default cap of five attempts unless the task specifies otherwise. TRIGGER: After every non-successful, partially successful, unstable, or stalled attempt, reflect on concrete failure signals before planning the next attempt. AXES: Redesign the next attempt along prompt, tool, and workflow evolution, and make attempt 2 materially reflect the reflection from attempt 1. STOP: Continue until judged success or the attempt cap is reached, and report incomplete to avoid pretending the last attempt passed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>multi-candidate search</head><p>BUDGET: Use an explicit candidate budget K, defaulting to K=5 when unspecified, and restore lost budget if a branch crashes before returning comparable evidence.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: NLAH+IHR framework. A native code harness mixes policy and mechanism inside controller code. NLAH+IHR separates them: the NLAH stores readable harness policy, IHR provides shared execution semantics, and scripts or adapters handle exact operations such as tools, tests, parsers, and validators.</figDesc><graphic coords="3,108.00,72.00,396.02,222.76" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>file-backed state ROOT: Choose STATE_ROOT under /sa-output, keep it separate from the original task workspace, and maintain STATE_ROOT/RESPONSE.md as the stable runtime-level status file. HANDOFF: No prompt, role instruction, reply, or promoted artifact counts as transferred until it exists as TASK.md, NLAH.md, RESPONSE.md, or another named file under STATE_ROOT. CHILD PACKET: Each launched child receives children/&lt;id&gt;/TASK.md, optional children/&lt;id&gt;/NLAH. md, and writes back children/&lt;id&gt;/RESPONSE.md. BOOKKEEPING: Keep append-only launch and promotion history in state/task_history.jsonl, index promoted outputs in artifacts/manifest.json, and reopen files by path for reuse and recovery.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><graphic coords="2,108.00,72.00,395.99,158.78" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>RQ1: NLAH execution preserves competitive task performance while exposing process costs. Perf. is the benchmark primary percentage metric. Code denotes the native code harness, Prompt denotes the same NLAH text used as ordinary instructions, and NLAH denotes IHR-executed NLAH. Token and call metrics report the observable process cost of each realization.</figDesc><table><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>LLM</cell><cell>Tool</cell><cell>Pr.</cell><cell>Comp.</cell><cell>Run time</cell></row><row><cell cols="2">Benchmark Harness</cell><cell>Type</cell><cell>Perf.</cell><cell>Calls</cell><cell>Calls</cell><cell>Tok.</cell><cell>Tok.</cell><cell>(min)</cell></row><row><cell cols="2">SWE Verified Live-SWE</cell><cell>Code</cell><cell>67.00</cell><cell>23.30</cell><cell cols="2">17.70 283.60k</cell><cell>3.50k</cell><cell>28.90</cell></row><row><cell></cell><cell></cell><cell>Prompt</cell><cell>77.00</cell><cell>36.40</cell><cell>48.00</cell><cell>2.20M</cell><cell>27.50k</cell><cell>5.70</cell></row><row><cell></cell><cell></cell><cell>NLAH</cell><cell>73.00</cell><cell>41.00</cell><cell>63.40</cell><cell>2.20M</cell><cell>32.30k</cell><cell>6.10</cell></row><row><cell>TB2</cell><cell>MHTBA</cell><cell>Code</cell><cell>36.00</cell><cell>223.20</cell><cell>122.90</cell><cell>10.40M</cell><cell>17.50k</cell><cell>19.50</cell></row><row><cell></cell><cell></cell><cell>Prompt</cell><cell>57.30</cell><cell>41.50</cell><cell>48.00</cell><cell>3.10M</cell><cell>51.80k</cell><cell>11.10</cell></row><row><cell></cell><cell></cell><cell>NLAH</cell><cell>53.90</cell><cell>56.40</cell><cell>78.00</cell><cell>4.20M</cell><cell>74.80k</cell><cell>13.50</cell></row><row><cell>OSWorld</cell><cell>SeeAct</cell><cell>Code</cell><cell>47.10</cell><cell>23.30</cell><cell>47.80</cell><cell>1.40M</cell><cell>8.90k</cell><cell>9.00</cell></row><row><cell></cell><cell></cell><cell>Prompt</cell><cell>47.90</cell><cell>35.30</cell><cell>39.20</cell><cell>1.10M</cell><cell>12.30k</cell><cell>4.90</cell></row><row><cell></cell><cell></cell><cell>NLAH</cell><cell>46.30</cell><cell>40.90</cell><cell>48.60</cell><cell>1.10M</cell><cell>13.60k</cell><cell>5.50</cell></row></table><note><p>4.4 Experimental setup</p><p>All experiments use the same IHR instantiation: Codex CLI version 0.123.0, model gpt-5.4-mini[OpenAI, 2026a]</p><p>, and reasoning effort xhigh. Runs execute on Ubuntu 24.04 servers with 64 CPU cores and 251 GiB of memory. To improve reproducibility and sandbox safety, all runs are executed in Docker containers. Per-task container caps are 32 vCPUs, 84 GiB memory, and 40 GiB storage.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>RQ1: NLAHs expose the reusable harness policy in fewer static materials. Counts include audited static NLAH files and corresponding code-harness implementation materials, not runtime prompts or generated logs.</figDesc><table><row><cell>Benchmark</cell><cell>Harness</cell><cell>Token</cell><cell></cell><cell>Files</cell><cell></cell></row><row><cell></cell><cell></cell><cell>Code</cell><cell>NLAH</cell><cell>Code</cell><cell>NLAH</cell></row><row><cell>SWE Verified</cell><cell>Live-SWE</cell><cell>60.10k</cell><cell>2.90k</cell><cell>68.00</cell><cell>3.00</cell></row><row><cell>TB2</cell><cell>MHTBA</cell><cell>10.50k</cell><cell>0.80k</cell><cell>3.00</cell><cell>1.00</cell></row><row><cell>OSWorld</cell><cell>SeeAct</cell><cell>47.50k</cell><cell>1.40k</cell><cell>5.00</cell><cell>1.00</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>RQ2: NLAHs preserve recognizable harness-pattern structure. Except for Verification Signals, the Code row is the reference harness and therefore does not receive one-way similarity scores.</figDesc><table><row><cell></cell><cell></cell><cell></cell><cell>Verification</cell><cell>Prompt</cell><cell>Tool</cell><cell>Workflow</cell><cell>Stage</cell><cell>Ordered</cell><cell>Context</cell><cell>Model</cell></row><row><cell>Benchmark</cell><cell>Harness</cell><cell>Type</cell><cell>Signals</cell><cell>Contract</cell><cell>Surface</cell><cell>Pres.</cell><cell>Cov.</cell><cell>Workflow</cell><cell>Boundary</cell><cell>Match</cell></row><row><cell>SWE Verified</cell><cell cols="2">Live-SWE Code</cell><cell>3.99</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>SWE Verified</cell><cell cols="2">Live-SWE Prompt</cell><cell>6.51</cell><cell>0.89</cell><cell>0.82</cell><cell cols="2">0.70 0.75</cell><cell>0.74</cell><cell cols="2">1.00 1.00</cell></row><row><cell>SWE Verified</cell><cell cols="2">Live-SWE NLAH</cell><cell>9.89</cell><cell>0.81</cell><cell>0.87</cell><cell cols="2">0.67 0.82</cell><cell>0.78</cell><cell cols="2">0.76 0.76</cell></row><row><cell cols="3">Terminal-Bench 2.0 MHTBA Code</cell><cell>45.05</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell cols="3">Terminal-Bench 2.0 MHTBA Prompt</cell><cell>13.18</cell><cell>1.00</cell><cell>0.81</cell><cell cols="2">0.64 0.57</cell><cell>0.53</cell><cell cols="2">1.00 0.99</cell></row><row><cell cols="3">Terminal-Bench 2.0 MHTBA NLAH</cell><cell>22.82</cell><cell>0.84</cell><cell>0.80</cell><cell cols="2">0.63 0.57</cell><cell>0.54</cell><cell cols="2">0.81 0.55</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>RQ2: NLAHs instantiate harness-engineering mechanisms. For Prompt, Orchestration Reliability and Information Handoff Recall use direct-context variants; for NLAH, they use parentchild handoff variants.</figDesc><table><row><cell></cell><cell></cell><cell></cell><cell>Artifact</cell><cell>Tool Call</cell><cell>Failed Tool</cell><cell>Cached Token</cell><cell>Orchestration</cell><cell>Information</cell></row><row><cell>Benchmark</cell><cell>Harness</cell><cell>Type</cell><cell>Contract</cell><cell>Success</cell><cell>Continuation</cell><cell>Ratio</cell><cell>Reliability</cell><cell>Handoff Recall</cell></row><row><cell>SWE Verified</cell><cell cols="2">Live-SWE Code</cell><cell>0.99</cell><cell>0.88</cell><cell>0.95</cell><cell>0.71</cell><cell>NA</cell><cell>NA</cell></row><row><cell>SWE Verified</cell><cell cols="2">Live-SWE Prompt</cell><cell>0.99</cell><cell>0.93</cell><cell>0.98</cell><cell>0.96</cell><cell>1.00</cell><cell>1.00</cell></row><row><cell>SWE Verified</cell><cell cols="2">Live-SWE NLAH</cell><cell>1.00</cell><cell>0.93</cell><cell>0.99</cell><cell>0.94</cell><cell>0.83</cell><cell>0.32</cell></row><row><cell cols="2">Terminal-Bench 2.0 MHTBA</cell><cell>Code</cell><cell>NA</cell><cell>0.95</cell><cell>0.79</cell><cell>0.00</cell><cell>NA</cell><cell>NA</cell></row><row><cell cols="2">Terminal-Bench 2.0 MHTBA</cell><cell>Prompt</cell><cell>1.00</cell><cell>0.92</cell><cell>1.00</cell><cell>0.96</cell><cell>0.99</cell><cell>1.00</cell></row><row><cell cols="2">Terminal-Bench 2.0 MHTBA</cell><cell>NLAH</cell><cell>0.96</cell><cell>0.93</cell><cell>1.00</cell><cell>0.94</cell><cell>0.85</cell><cell>0.55</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>RQ3: Explicit NLAH modules can be ablated under a shared runtime. Each row adds one module to a benchmark-specific Basic condition. Perf. is the main benchmark metric, and Agent Calls measures changes in execution topology. Values should be compared within the same benchmark column, not across benchmark families.</figDesc><table><row><cell>Setting</cell><cell cols="2">SWE Verified</cell><cell cols="2">OSWorld</cell></row><row><cell></cell><cell></cell><cell>Agent</cell><cell></cell><cell>Agent</cell></row><row><cell></cell><cell>Perf.</cell><cell>Calls</cell><cell>Perf.</cell><cell>Calls</cell></row><row><cell>Basic</cell><cell>73.00</cell><cell>1.10</cell><cell>44.40</cell><cell>1.08</cell></row><row><cell>+ File-backed state</cell><cell>75.60+2.60</cell><cell>1.100.00</cell><cell>58.30+13.90</cell><cell>1.11+0.03</cell></row><row><cell>+ Evidence-backed answering</cell><cell>75.80+2.80</cell><cell>1.20+0.10</cell><cell>47.20+2.80</cell><cell>1.06-0.03</cell></row><row><cell>+ Verifier</cell><cell>73.20+0.20</cell><cell>2.30+1.20</cell><cell>52.80+8.40</cell><cell>1.42+0.33</cell></row><row><cell>+ Self-evolution</cell><cell>78.80+5.80</cell><cell>1.20+0.10</cell><cell>52.80+8.40</cell><cell>1.19+0.11</cell></row><row><cell>+ Multi-candidate search</cell><cell>71.40-1.60</cell><cell>5.70+4.60</cell><cell>47.20+2.80</cell><cell>1.33+0.25</cell></row><row><cell>+ Dynamic orchestration</cell><cell>74.60+1.60</cell><cell>1.60+0.50</cell><cell>47.20+2.80</cell><cell>1.14+0.06</cell></row><row><cell>+ Context compression</cell><cell>72.00-1.00</cell><cell>2.20+1.10</cell><cell>36.10-8.30</cell><cell>1.22+0.14</cell></row><row><cell>+ Markdown memory</cell><cell>70.20-2.80</cell><cell>1.30+0.20</cell><cell>50.00+5.60</cell><cell>1.54+0.46</cell></row><row><cell cols="5">and 0.992 Failed Tool Continuation. On MHTBA, the corresponding values are 0.955, 0.928,</cell></row><row><cell cols="5">and 0.995. These numbers indicate that IHR turns instructions from text into observable artifacts,</cell></row><row><cell cols="2">tool-mediated execution, and recovery behavior.</cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 6 :</head><label>6</label><figDesc>MHTBA code-artifact timeout diagnostics on TB2 under GPT.</figDesc><table><row><cell>Outcome group</cell><cell>Count</cell><cell>Share Interpretation</cell></row><row><cell>Resolved without timeout</cell><cell cols="2">11 12.4% The code artifact both solved and stopped</cell></row><row><cell></cell><cell></cell><cell>normally.</cell></row><row><cell>Resolved with timeout</cell><cell cols="2">21 23.6% The verifier reward is already 1.0, but the agent</cell></row><row><cell></cell><cell></cell><cell>loop did not terminate cleanly.</cell></row><row><cell>Failed without timeout</cell><cell cols="2">12 13.5% The run failed for reasons other than the global</cell></row><row><cell></cell><cell></cell><cell>agent timeout.</cell></row><row><cell>Failed with timeout</cell><cell cols="2">45 50.6% The dominant failure mode is timeout after a</cell></row><row><cell></cell><cell></cell><cell>long control loop.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 7 :</head><label>7</label><figDesc>MHTBA code-artifact trajectory diagnostics for cross-condition disagreements.</figDesc><table><row><cell>Slice</cell><cell cols="4">N Timeouts Mean episodes Mean input tokens Mean</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>no-</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>tool</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>warn-</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>ings</cell></row><row><cell>Code fail, Prompt success</cell><cell>26</cell><cell>25</cell><cell>316.5</cell><cell>16.3M 146.9</cell></row><row><cell>Code fail, NLAH success</cell><cell>24</cell><cell>22</cell><cell>285.2</cell><cell>14.7M 124.3</cell></row><row><cell cols="2">Code fail, both Prompt and NLAH success 19</cell><cell>19</cell><cell>318.3</cell><cell>15.4M 146.4</cell></row><row><cell>All three settings success</cell><cell>23</cell><cell>16</cell><cell>174.3</cell><cell>5.2M 79.1</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 10 :</head><label>10</label><figDesc>Mapping code-harness aspects to IHR+NLAH carriers.</figDesc><table><row><cell>Aspect</cell><cell></cell><cell>Base-agent code</cell><cell>Runtime policy</cell><cell>NLAH</cell><cell>Scripts/adapters</cell></row><row><cell>Agent loop</cell><cell></cell><cell>Minimal model-tool</cell><cell>Parent orchestrator</cell><cell>Task-family stages,</cell><cell>Optional loop</cell></row><row><cell></cell><cell></cell><cell>loop and child</cell><cell>role, child</cell><cell>branching, role</cell><cell>drivers for fixed</cell></row><row><cell></cell><cell></cell><cell>launch primitive</cell><cell>boundary, stop</cell><cell>responsibilities</cell><cell>protocols</cell></row><row><cell></cell><cell></cell><cell></cell><cell>discipline</cell><cell></cell><cell></cell></row><row><cell cols="2">Tool design and docu-</cell><cell>Tool schemas,</cell><cell>Shared rules for</cell><cell>When and why to</cell><cell>Tool wrappers and</cell></row><row><cell>mentation</cell><cell></cell><cell>dispatch, timeout,</cell><cell>unavailable tools</cell><cell>use each tool class</cell><cell>capability adapters</cell></row><row><cell></cell><cell></cell><cell>error capture</cell><cell>and tool-result</cell><cell></cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell>handling</cell><cell></cell><cell></cell></row><row><cell>Context engineering</cell><cell></cell><cell>Message history</cell><cell>Forking semantics,</cell><cell>What to pass,</cell><cell>Retrieval or</cell></row><row><cell></cell><cell></cell><cell>and context</cell><cell>fresh-child</cell><cell>reopen, summarize,</cell><cell>summarization</cell></row><row><cell></cell><cell></cell><cell>compression</cell><cell>semantics, handoff</cell><cell>or keep private</cell><cell>helpers</cell></row><row><cell></cell><cell></cell><cell>mechanism</cell><cell>discipline</cell><cell></cell><cell></cell></row><row><cell>Filesystem</cell><cell>and</cell><cell>Workspace access</cell><cell>Separation between</cell><cell>Required paths,</cell><cell>Artifact processors</cell></row><row><cell>workspace</cell><cell></cell><cell>and run-state</cell><cell>runtime state and</cell><cell>artifact ownership,</cell><cell>and path</cell></row><row><cell></cell><cell></cell><cell>locations</cell><cell>final artifacts</cell><cell>overwrite rules</cell><cell>normalizers</cell></row><row><cell>Memory and state</cell><cell></cell><cell>Minimal persisted</cell><cell>When durable state</cell><cell>Task histories,</cell><cell>State serializers and</cell></row><row><cell></cell><cell></cell><cell>run parameters,</cell><cell>is required for audit</cell><cell>manifests, memory</cell><cell>merge scripts</cell></row><row><cell></cell><cell></cell><cell>messages, and</cell><cell>or reuse</cell><cell>files, state update</cell><cell></cell></row><row><cell></cell><cell></cell><cell>events</cell><cell></cell><cell>rules</cell><cell></cell></row><row><cell cols="3">Validation and stopping Ability to run</cell><cell>Contract-first</cell><cell>Acceptance gates,</cell><cell>Tests, validators,</cell></row><row><cell></cell><cell></cell><cell>commands and</cell><cell>completion and</cell><cell>verifier roles,</cell><cell>parsers, graders</cell></row><row><cell></cell><cell></cell><cell>collect outputs</cell><cell>failure reporting</cell><cell>evidence</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>requirements</cell><cell></cell></row><row><cell cols="2">Safety, permissions, and</cell><cell>Process execution</cell><cell>Shared permission</cell><cell>Task-family</cell><cell>Sandbox wrappers</cell></row><row><cell>sandboxing</cell><cell></cell><cell>limits and allowed</cell><cell>interpretation and</cell><cell>prohibitions or</cell><cell>and policy checks</cell></row><row><cell></cell><cell></cell><cell>tool surface</cell><cell>refusal discipline</cell><cell>safe-use rules</cell><cell></cell></row><row><cell>Runtime defaults</cell><cell></cell><cell>Provider access,</cell><cell>Common execution</cell><cell>Overrides only</cell><cell>Configuration</cell></row><row><cell></cell><cell></cell><cell>default timeout,</cell><cell>defaults exposed to</cell><cell>when task-family</cell><cell>adapters</cell></row><row><cell></cell><cell></cell><cell>max steps, model</cell><cell>all NLAHs</cell><cell>semantics require</cell><cell></cell></row><row><cell></cell><cell></cell><cell>routing</cell><cell></cell><cell>them</cell><cell></cell></row><row><cell cols="2">Observability, logging,</cell><cell>Event stream,</cell><cell>What boundaries</cell><cell>Claimed stages,</cell><cell>Trace</cell></row><row><cell>and replay</cell><cell></cell><cell>message log, tool</cell><cell>must remain</cell><cell>module boundaries,</cell><cell>post-processors and</cell></row><row><cell></cell><cell></cell><cell>records</cell><cell>inspectable</cell><cell>required evidence</cell><cell>metrics scripts</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>notes</cell><cell></cell></row><row><cell>Retry and recovery</cell><cell></cell><cell>Ability to rerun</cell><cell>Failure labels, route</cell><cell>Retry policy, repair</cell><cell>Cleanup, reset, and</cell></row><row><cell></cell><cell></cell><cell>tools or launch new</cell><cell>changes,</cell><cell>stages, fallback</cell><cell>diagnostic scripts</cell></row><row><cell></cell><cell></cell><cell>children</cell><cell>honest-stop</cell><cell>paths</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell>semantics</cell><cell></cell><cell></cell></row><row><cell>Budget control</cell><cell></cell><cell>Token/time/tool-</cell><cell>Shared budget</cell><cell>Candidate counts,</cell><cell>Cost aggregation</cell></row><row><cell></cell><cell></cell><cell>call accounting and</cell><cell>discipline and</cell><cell>retry limits, search</cell><cell>and budget-check</cell></row><row><cell></cell><cell></cell><cell>caps</cell><cell>reporting</cell><cell>depth policy</cell><cell>scripts</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments and Disclosure of Funding</head><p>We thank the reviewers for their careful reading and constructive feedback, which helped sharpen the scope, framing, and experimental design of this work. We are also grateful to <rs type="person">Ronak Malde</rs> and <rs type="person">Thomas Wolf</rs> for valuable follow-up discussions.</p></div>
+			</div>			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Code hook Tests, validators, parsers, benchmark wrappers, artifact post-processing, and any operation that requires exact execution; script hooks are task-family-specific precise operations that should not rely on natural-language interpretation and are executed by agents from the filesystem through bash.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model internals</head><p>Not NLAH Constrained decoding, logit bias, sampling, and model-internal reasoning mechanisms, unless a runtime or provider exposes them as code-level hooks.</p><p>DIVERSITY: Vary the core hypothesis, decomposition, evidence route, tool plan, or risk preference so candidates are not near-duplicates. SELECTION: Prune duplicates, unsupported, dominated, or overly risky branches, then compare survivors on task fit, evidence quality, coherence, and repair cost. ESCALATION: If no candidate is good enough, expand or redesign the search and avoid forcing a fragile winner.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>dynamic orchestration</head><p>AUTONOMY: Beyond the mandatory task-owning child, add extra subagents only when delegation materially improves coverage, latency, specialist focus, or quality control, and prefer the smallest adequate topology. TOPOLOGY: Classify the task shape, assign each child a non-overlapping responsibility and success condition, and parallelize only genuinely independent branches. PARENT ROLE: Once a delegated topology is chosen, the parent should narrate launches, waits, comparisons, and integration while leaving substantive work to the corresponding child roles. BOUNDARY: Direct task-workspace familiarization or repository probing belongs to child roles after commitment to delegated execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>context compression</head><p>TRIGGER: Compress active context only after writing or reopening path-addressable state that preserves the current task contract, artifacts, failures, and next actions. SUMMARY: Preserve the task goal, constraints, explored paths, accepted and rejected decisions, validation status, unresolved risks, and exact artifact paths. FILTER: Drop redundant dialogue, stale speculation, and low-value logs, but never drop acceptance criteria, error signatures, commands still needed for replay, or handoff state.</p><p>CHECK: After compression, reload the compacted state and continue only after confirming that the next action and required evidence remain recoverable.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>markdown memory</head><p>CARRIER: Maintain a Markdown memory file with stable headings for task facts, decisions, reusable observations, environment notes, and unresolved caveats. UPDATE: Add concise entries after meaningful discoveries, validations, failures, or design decisions, and mark superseded entries to avoid silently overwriting them. READ: Reopen the memory file before planning, delegation, verification, and final reporting so durable facts can re-enter active context by path. HYGIENE: Keep entries source-grounded and task-scoped; avoid turning memory into a transcript or a dumping ground for speculative notes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F.1 Additional RQ3 module observations</head><p>Validation helps, but only when it stays close to the benchmark gate. Verifier is positive on both benchmarks, but its gains are uneven: +0.2 on SWE and +8.4 on OSWorld. This is still a useful result. It shows that an explicit checking stage can help, but only when the verifier's local object of judgment remains close to the benchmark's own acceptance criterion. The same logic explains why dynamic orchestration is real but modest: it changes behavior enough to recover some cases, yet its aggregate gains remain limited because it does not automatically tighten the final acceptance path.</p><p>Durable state is more reliable than aggressive compression. The memory-related modules separate cleanly. Context compression hurts both benchmarks, dropping SWE from 73.0 to 72.0 and OSWorld from 44.4 to 36.1. Markdown memory is mixed, hurting SWE by 2.8 points but helping OSWorld by 5.6. By contrast, file-backed state is positive in both settings. The interpretation is that path-addressable durable state is a stronger and more reliable carrier than either aggressive summarization or free-form memory notes, especially when the evaluator depends on action-critical details that are easy to lose during compression.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G Limitations, Risks, and Broader Impact Limitations</head><p>The main limitation is natural-language imprecision. NLAHs are editable natural-language policies, so semantically important constraints may be under-specified, interpreted differently across models, or weakened by paraphrase. We therefore keep exact mechanisms in code and treat executed behavior as something that must be checked through runs, avoiding inference from the text alone.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Broader impact and risks</head><p>Externalizing harness modules can reduce development cost, improve comparability, and encourage reuse of robust workflows. However, portable harness logic and scripts may also lower the barrier to spreading risky workflows. Because harnesses mediate tool use, artifact handling, and delegation, they can introduce new attack surfaces for prompt injection, malicious tool grafting, or supply-chain contamination. Deployments should combine provenance tracking, review, permission control, and sandbox isolation.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_8"><head>Table 8 :</head><label>8</label><figDesc>Harness-engineering aspects and their core design questions.</figDesc><table><row><cell>Aspect</cell><cell>Core question</cell></row><row><cell>Agent loop</cell><cell>How does the agent observe, plan, act, validate, update state, retry, and stop</cell></row><row><cell></cell><cell>over a long run?</cell></row><row><cell cols="2">Tool design and documentation Which tools are exposed, how are their schemas and descriptions written, and</cell></row><row><cell></cell><cell>how are tool errors returned?</cell></row><row><cell>Context engineering</cell><cell>What should each call see, what should be loaded just in time, and when</cell></row><row><cell></cell><cell>should context be compressed or refreshed?</cell></row><row><cell>Filesystem and workspace</cell><cell>Where do task inputs, intermediate files, scratch files, and final artifacts live?</cell></row><row><cell>Memory and state</cell><cell>What information persists across steps, retries, context compression, or future</cell></row><row><cell></cell><cell>runs, and what is the authoritative carrier?</cell></row><row><cell>Validation and stopping</cell><cell>What evidence is required before success, failure, retry, or budget exhaustion</cell></row><row><cell></cell><cell>can be declared?</cell></row><row><cell>Safety, permissions, and sand-</cell><cell>What actions, files, network resources, commands, and credentials are</cell></row><row><cell>boxing</cell><cell>allowed or blocked?</cell></row><row><cell>Runtime defaults</cell><cell>What default limits, timeouts, context policies, model settings, and execution</cell></row><row><cell></cell><cell>modes shape behavior?</cell></row><row><cell>Observability, logging, and re-</cell><cell>What trace, provenance, artifacts, and metrics are recorded so a run can be</cell></row><row><cell>play</cell><cell>audited or replayed?</cell></row><row><cell>Retry and recovery</cell><cell>How are failures classified, how is state restored, and what changes on the</cell></row><row><cell></cell><cell>next attempt?</cell></row><row><cell>Budget control</cell><cell>How are token, time, tool-call, candidate, retry, and monetary budgets</cell></row><row><cell></cell><cell>enforced or reported?</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_9"><head>Table 9 :</head><label>9</label><figDesc>Natural-language/code boundary in an IHR+NLAH system.</figDesc><table><row><cell>Layer</cell><cell>Owner</cell><cell>Responsibility</cell></row><row><cell cols="2">Base runtime code Code</cell><cell>Model APIs, LiteLLM routing, tool schemas, bash execution,</cell></row><row><cell></cell><cell></cell><cell>timeouts, event streams, message history, context-token estimation,</cell></row><row><cell></cell><cell></cell><cell>and run state; code also carries what must be precise, reproducible,</cell></row><row><cell></cell><cell></cell><cell>safe, fast, or dependent on external systems, including tool calls, file</cell></row><row><cell></cell><cell></cell><cell>execution, sandboxing, parsers, and evaluators.</cell></row><row><cell>Runtime policy /</cell><cell>Fixed NL</cell><cell>IHR interpretation semantics</cell></row><row><cell>charter</cell><cell></cell><cell></cell></row></table><note><p>, including parent-child boundaries, the meaning of an agent call, artifact and STATE_ROOT semantics, completion gates, and audit requirements; it also carries shared interpretation rules, such as the rule that a parent orchestrator does not do substantive task work while executor children perform the task.</p><p>NLAH</p><p>Replaceable NL The concrete harness roles, stages, loops, validation policy, recovery policy, state strategy, delegation policy, and module composition; natural language should carry roles, stages, strategies, when to validate, how to recover, what evidence is sufficient, and which modules can be ablated. Scripts / adapters</p></note></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Website home page</title>
+		<author>
+			<persName><surname>Agentskills</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Agentskills</surname></persName>
+		</author>
+		<ptr target="https://agentskills.io/home" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+			<biblScope unit="page" from="2026" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<ptr target="https://agents.md/" />
+		<title level="m">AGENTS.md. Agents.md. Community specification website</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+			<biblScope unit="page" from="2026" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Amo-bench: Large language models still struggle in high school math competitions</title>
+		<author>
+			<persName><forename type="first">Xunliang</forename><surname>Shengnan An</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyu</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yehao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junlin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinxuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanlin</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziwen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2510.26768" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Building effective agents. Engineering blog</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/engineering/building-effective-agents" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2026" to="2029" />
+		</imprint>
+	</monogr>
+	<note>Published</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Effective harnesses for long-running agents</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents" />
+	</analytic>
+	<monogr>
+		<title level="m">Engineering blog, 2025a</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Published</surname></persName>
+		</author>
+		<imprint>
+			<biblScope unit="page" from="2026" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">How we built our multi-agent research system</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/engineering/multi-agent-research-system" />
+	</analytic>
+	<monogr>
+		<title level="m">Engineering blog, 2025b</title>
+		<imprint>
+			<biblScope unit="page" from="2026" to="2029" />
+		</imprint>
+	</monogr>
+	<note>Published</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Prompting is programming: A query language for large language models</title>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Beurer-Kellner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Vechev</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3591300</idno>
+		<ptr target="https://doi.org/10.1145/3591300" />
+	</analytic>
+	<monogr>
+		<title level="j">Proc. ACM Program. Lang</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<date type="published" when="2023-06">June 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Building effective ai coding agents for the terminal: Scaffolding, harness, context engineering, and lessons learned</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">Q</forename><surname>Nghi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bui</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2603.05344" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">On the worst prompt performance of large language models</title>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deng</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhisong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuexian</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wai</forename><surname>Lam</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.10248" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Skillcraft: Can llm agents learn to use tools skillfully?</title>
+		<author>
+			<persName><forename type="first">Shiqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingze</forename><surname>Gai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruochen</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinghan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tongyao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junlong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kangrui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Klara</forename><surname>Kaleb</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manling</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxian</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yee</forename><forename type="middle">Whye</forename><surname>Teh</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2603.00718" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Promptware engineering: Software engineering for prompt-enabled systems</title>
+		<author>
+			<persName><forename type="first">Zhenpeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weisong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanzhe</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><forename type="middle">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.02400" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Sharing state between prompts and programs</title>
+		<author>
+			<persName><forename type="first">Ellie</forename><forename type="middle">Y</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Logan</forename><surname>Weber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tian</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Carbin</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2512.14805" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Agint: Agentic graph compilation for software engineering agents</title>
+		<author>
+			<persName><forename type="first">Abhi</forename><surname>Chivukula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jay</forename><surname>Somasundaram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vijay</forename><surname>Somasundaram</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2511.19635" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">Neil</forename><surname>Chowdhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Aung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chan</forename><surname>Jun Shern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oliver</forename><surname>Jaffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dane</forename><surname>Sherburn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giulio</forename><surname>Starace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Mays</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rachel</forename><surname>Dias</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marwan</forename><surname>Aljubeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mia</forename><surname>Glaese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leyton</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tejal</forename><surname>Patwardhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksander</forename><surname>Madry</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/introducing-swe-bench-verified/" />
+	</analytic>
+	<monogr>
+		<title level="j">Introducing SWE-bench verified</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Context rot: How increasing input tokens impacts llm performance</title>
+		<ptr target="https://research.trychroma.com/context-rot" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<publisher>Chroma Research</publisher>
+			<biblScope unit="page" from="2026" to="2029" />
+		</imprint>
+	</monogr>
+	<note>Research article</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Adaptive multi-agent collaboration through dynamic spawning for longhorizon code generation</title>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Costa</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Agentspawn</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2602.07072" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Octobench: Benchmarking scaffold-aware instruction following in repository-grounded agentic coding</title>
+		<author>
+			<persName><forename type="first">Deming</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shichun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enhui</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziying</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihan</forename><surname>Dou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honglin</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weiyu</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengyu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengjun</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qunhong</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanjing</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qidi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Gui</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2601.10343" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">APPL: A prompt programming language for harmonious integration of programs and large language model prompts</title>
+		<author>
+			<persName><forename type="first">Honghua</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qidong</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yubo</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoyu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangjun</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gennady</forename><surname>Pekhimenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><forename type="middle">J</forename><surname>Maddison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xujie</forename><surname>Si</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2025.acl-long.63</idno>
+		<ptr target="https://aclanthology.org/2025.acl-long.63/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">Wanxiang</forename><surname>Che</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Joyce</forename><surname>Nabende</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Ekaterina</forename><surname>Shutova</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Mohammad</forename><surname>Taher</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Pilehvar</forename></persName>
+		</editor>
+		<meeting>the 63rd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2025-07">July 2025</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="1243" to="1266" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Magentic-one: A generalist multi-agent system for solving complex tasks</title>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Fourney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gagan</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hussein</forename><surname>Mozannar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eduardo</forename><surname>Salinas</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Erkang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Friederike</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grace</forename><surname>Niedtner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Griffin</forename><surname>Proebsting</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Bassman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Gerrits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Alber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ricky</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Loynd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Dibia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ece</forename><surname>Awadallah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafah</forename><surname>Kamar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saleema</forename><surname>Hosn</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Amershi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2411.04468" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Recreate: Reasoning and creating domain agents driven by experience</title>
+		<author>
+			<persName><forename type="first">Zhezheng</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianqing</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hande</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2601.11100" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">SWE-bench: Can language models resolve real-world github issues?</title>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=VTF8yNQM66" />
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Mas-orchestra: Understanding and improving multi-agent reasoning through holistic orchestration and controlled benchmarks</title>
+		<author>
+			<persName><forename type="first">Zixuan</forename><surname>Ke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifei</forename><surname>Ming</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Austin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Chin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuan-Phi</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prathyusha</forename><surname>Jwalapuram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Semih</forename><surname>Yavuz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shafiq</forename><surname>Joty</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2601.14652" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Dspy: Compiling declarative language model calls into state-of-the-art pipelines</title>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Khattab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arnav</forename><surname>Singhvi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paridhi</forename><surname>Maheshwari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keshav</forename><surname>Santhanam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sri</forename><surname>Vardhamanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saiful</forename><surname>Haq</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashutosh</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanna</forename><surname>Moazam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heather</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Zaharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Potts</surname></persName>
+		</author>
+		<ptr target="https://proceedings.iclr.cc/paper_files/paper/2024/file/f1" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<editor>
+			<persName><forename type="first">B</forename><surname>Kim</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Yue</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Chaudhuri</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Fragkiadaki</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Khan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Sun</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">2024</biblScope>
+			<biblScope unit="page" from="54928" to="54958" />
+		</imprint>
+	</monogr>
+	<note>cf02ce09757f57c3b93c0db83181e0-Paper-Conference.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">The anatomy of an agent harness. Engineering blog</title>
+		<author>
+			<persName><surname>Langchain</surname></persName>
+		</author>
+		<ptr target="https://blog.langchain.com/the-anatomy-of-an-agent-harness/" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+			<biblScope unit="page" from="2026" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Improving deep agents with harness engineering. Engineering blog</title>
+		<author>
+			<persName><surname>Langchain</surname></persName>
+		</author>
+		<ptr target="https://blog.langchain.com/improving-deep-agents-with-harness-engineering/" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+			<biblScope unit="page" from="2026" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yoonho</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roshen</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qizheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kangwook</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Khattab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2603.28052" />
+		<title level="m">Metaharness: End-to-end optimization of model harnesses</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Retrieval-augmented generation for knowledge-intensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heinrich</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Tau Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douwe</forename><surname>Kiela</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2005.11401" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Organizing, orchestrating, and benchmarking agent skills at ecosystem scale</title>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunjiang</forename><surname>Mu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianhao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyue</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyao</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiqun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyue</forename><surname>Hu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2603.02176" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xiangyi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yimin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shenghan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaokun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifeng</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yubo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingran</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiankai</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qunhong</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuandong</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanli</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roey</forename><surname>Ben Chaim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zonglin</forename><surname>Di</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yipeng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junwei</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhuo</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liqiang</forename><surname>Jing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyang</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiachen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songlin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yijiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueqian</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanqing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ze</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runhui</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wengao</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanwen</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiqi</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Dillmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lee</forename></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2602.12670" />
+		<title level="m">Skillsbench: Benchmarking how well agent skills work across diverse tasks, 2026b</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">When single-agent with skills replace multi-agent systems and when they fail</title>
+		<author>
+			<persName><forename type="first">Xiaoxiao</forename><surname>Li</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2601.04748" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Autoflow: Automated workflow generation for large language model agents</title>
+		<author>
+			<persName><forename type="first">Zelong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenyue</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Balaji</forename><surname>Rama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Om</forename><surname>Raheja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2407.12821" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Prompts are programs too! understanding how developers build software containing prompts</title>
+		<author>
+			<persName><forename type="first">Jenny</forename><forename type="middle">T</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melissa</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikitha</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brad</forename><forename type="middle">A</forename><surname>Myers</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3729342</idno>
+		<ptr target="https://doi.org/10.1145/3729342" />
+	</analytic>
+	<monogr>
+		<title level="j">Proc. ACM Softw. Eng</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<date type="published" when="2025-06">June 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Lost in the middle: How language models use long contexts</title>
+		<author>
+			<persName><forename type="first">Nelson</forename><forename type="middle">F</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Hewitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Paranjape</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Bevilacqua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<idno type="DOI">10.1162/tacl_a_00638</idno>
+		<ptr target="https://aclanthology.org/2024.tacl-1.9/" />
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="page" from="157" to="173" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Autoharness: improving llm agents by automatically synthesizing a code harness</title>
+		<author>
+			<persName><forename type="first">Xinghua</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miguel</forename><surname>Lázaro-Gredilla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Dedieu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carter</forename><surname>Wendelken</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wolfgang</forename><surname>Lehrach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><forename type="middle">P</forename><surname>Murphy</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2603.03329" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Mike</forename><forename type="middle">A</forename><surname>Merrill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">G</forename><surname>Shaw</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Carlini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Raj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Bercovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeong Yeon</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Walshe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">Kelly</forename><surname>Buchanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanghao</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Poulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maoyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marianna</forename><surname>Nezhurina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenia</forename><surname>Jitsev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Orfeas</forename><surname>Menis Mastromichalakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zizhao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leon</forename><surname>Liangyu Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anurag</forename><surname>Kashyap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan-Lucas</forename><surname>Uslu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianbo</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghao</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song</forename><surname>Bian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedang</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Dillmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akshay</forename><surname>Anand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Lanpouthakoun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bardia</forename><surname>Koopah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changran</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Etash</forename><surname>Guha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">S</forename><surname>Gabriel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Dreiman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Krauth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shangyin</forename><surname>Amanfu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shreyas</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Pimpalgaonkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangning</forename><surname>Aggarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuandong</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiqing</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanli</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hange</forename><surname>Heineman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manish</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Shetty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nabil</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Negin</forename><surname>Omi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanda</forename><surname>Raoof</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Terry</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wuwei</forename><surname>Yue Zhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiwei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxin</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenhao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shang</forename><surname>Chai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dariush</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Wahdany</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaming</forename><surname>She</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhikang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sasha</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahson</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arinbjörn</forename><surname>Saiyed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Kolbeinsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Michael Rytting</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Marten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Dimakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ludwig</forename><surname>Konwinski</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schmidt</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2601.11868" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note>Terminal-bench: Benchmarking agents on hard, realistic tasks in command line interfaces</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Procmem: Learning reusable procedural memory from experience via non-parametric ppo for llm agents</title>
+		<author>
+			<persName><forename type="first">Qirui</forename><surname>Mi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhijian</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengyue</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yisen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haifeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2602.01869" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Emmanuel Candès, and Tatsunori Hashimoto. s1: Simple test-time scaling</title>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zitong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijia</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2501.19393" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Introducing gpt-5.4 mini and nano. Product announcement</title>
+		<ptr target="https://openai.com/index/introducing-gpt-5-4-mini-and-nano/" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+			<biblScope unit="page" from="2026" to="2030" />
+		</imprint>
+		<respStmt>
+			<orgName>OpenAI</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Harness engineering: leveraging codex in an agent-first world. Engineering blog</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/harness-engineering/" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+			<biblScope unit="page" from="2026" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">GitHub repository</title>
+		<author>
+			<persName><surname>Openclaw</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lobster</surname></persName>
+		</author>
+		<ptr target="https://github.com/openclaw/lobster" />
+	</analytic>
+	<monogr>
+		<title level="m">First public repository commit</title>
+		<imprint>
+			<date type="published" when="2026-01">January 2026</date>
+			<biblScope unit="page" from="2026" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">GitHub repository</title>
+		<author>
+			<persName><surname>Openprose</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Openprose</surname></persName>
+		</author>
+		<idno>commit: 2026-01-03</idno>
+		<ptr target="https://github.com/openprose/prose" />
+	</analytic>
+	<monogr>
+		<title level="m">First public repository</title>
+		<imprint>
+			<date type="published" when="2026-01">January 2026</date>
+			<biblScope unit="page" from="2026" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<author>
+			<persName><surname>Pinchbench</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pinchbench</surname></persName>
+		</author>
+		<ptr target="https://github.com/pinchbench/skill" />
+		<title level="m">GitHub repository</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+			<biblScope unit="page" from="2026" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Contextcov: Deriving and enforcing executable constraints from agent instruction files</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Reshabh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sharma</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2603.00822" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Flowagent: Achieving compliance and flexibility for workflow agents</title>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siqi</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuei</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deqing</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Sun</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2502.14345" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Berman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2303.11366" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">Iris</forename><surname>Stanford</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lab</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Meta-Harness</surname></persName>
+		</author>
+		<ptr target="https://github.com/stanford-iris-lab/meta-harness-tbench2-artifact" />
+		<title level="m">Reports a 76.4% Terminal-Bench 2.0 result with Claude Opus</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note>Terminal-bench 2.0 artifact</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Scaling long-horizon llm agent via context-folding</title>
+		<author>
+			<persName><forename type="first">Weiwei</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miao</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhan</forename><surname>Ling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuesong</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiecao</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2510.11967" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m" type="main">Do advanced language models eliminate the need for prompt engineering in software engineering?</title>
+		<author>
+			<persName><forename type="first">Guoqing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihao</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sixiang</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhou</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyuan</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2411.02093" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Agentspec: Customizable runtime enforcement for safe and reliable llm agents</title>
+		<author>
+			<persName><forename type="first">Haoyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">M</forename><surname>Poskitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Sun</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2503.18666" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">AnyMAC: Cascading flexible multi-agent collaboration via next-agent prediction</title>
+		<author>
+			<persName><forename type="first">Song</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianlong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jundong</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2025.emnlp-main.584</idno>
+		<ptr target="https://aclanthology.org/2025.emnlp-main.584/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Christos</forename><surname>Christodoulopoulos</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tanmoy</forename><surname>Chakraborty</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Carolyn</forename><surname>Rose</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Violet</forename><surname>Peng</surname></persName>
+		</editor>
+		<meeting>the 2025 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Suzhou, China</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2025-11">November 2025</date>
+			<biblScope unit="page" from="11555" to="11567" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Executable code actions elicit better llm agents</title>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangyi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifan</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunzhu</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2402.01030" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Agent-Dropout: Dynamic agent elimination for token-efficient and high-performance LLM-based multiagent collaboration</title>
+		<author>
+			<persName><forename type="first">Zhexuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuebo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2025.acl-long.1170</idno>
+		<ptr target="https://aclanthology.org/2025.acl-long.1170/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">Wanxiang</forename><surname>Che</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Joyce</forename><surname>Nabende</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Ekaterina</forename><surname>Shutova</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Mohammad</forename><surname>Taher</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Pilehvar</forename></persName>
+		</editor>
+		<meeting>the 63rd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2025-07">July 2025</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="24013" to="24035" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Live-swe-agent: Can software engineering agents self-evolve on the fly?</title>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2511.13646" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">Skillrl: Evolving agents via recursive skill-augmented reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianwen</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanyang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaide</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siwei</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xujiang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haifeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cihang</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huaxiu</forename><surname>Yao</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2602.08234" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Osworld: Benchmarking multimodal agents for open-ended tasks in real computer environments</title>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jixuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siheng</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruisheng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Toh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoujun</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongchan</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyu</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitao</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yu</surname></persName>
+		</author>
+		<idno type="DOI">10.52202/079017-1650</idno>
+		<ptr target="https://proceedings.neurips.cc/paper_files/paper/2024/file/5" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Globerson</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Mackey</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Belgrave</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Fan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">U</forename><surname>Paquet</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Tomczak</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="52040" to="52094" />
+		</imprint>
+	</monogr>
+	<note>d413e48f84dc61244b6be550f1cd8f5-Paper-Datasets_and_Benchmarks_Track.pdf</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<title level="m" type="main">Os-symphony: A holistic framework for robust and generalist computer-using agent</title>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiushi</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zehao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingjing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhoumianze</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangzhi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanzhi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zichen</forename><surname>Ding</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2601.07779" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cao</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=WE_vluYUL-X" />
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<title level="m" type="main">Meta context engineering via agentic skill evolution</title>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuning</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Arak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haonan</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guojie</forename><surname>Song</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2601.21557" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<analytic>
+		<title level="a" type="main">Learning to route LLMs for multi-agent systems</title>
+		<author>
+			<persName><forename type="first">Yanwei</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guibin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guancheng</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiyan</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Masrouter</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2025.acl-long.757</idno>
+		<ptr target="https://aclanthology.org/2025.acl-long.757/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">Wanxiang</forename><surname>Che</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Joyce</forename><surname>Nabende</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Ekaterina</forename><surname>Shutova</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Mohammad</forename><surname>Taher</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Pilehvar</forename></persName>
+		</editor>
+		<meeting>the 63rd Annual Meeting of the Association for Computational Linguistics<address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2025-07">July 2025</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="15549" to="15572" />
+		</imprint>
+	</monogr>
+	<note>Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<title level="m" type="main">viewsense: Spatial and mental perspective reasoning from orthographic views in vision-language models</title>
+		<author>
+			<persName><forename type="first">Shaoxiong</forename><surname>Zhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanlin</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hai</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijian</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hai-Tao</forename><surname>Zheng</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2603.07751" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">Mathsmith: Towards extremely hard mathematical reasoning by forging synthetic problems with a reinforced policy</title>
+		<author>
+			<persName><forename type="first">Shaoxiong</forename><surname>Zhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanlin</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziyu</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dahua</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziqing</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Tan</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2508.05592" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<title level="m" type="main">Memskill: Learning and evolving memory skills for self-evolving agents</title>
+		<author>
+			<persName><forename type="first">Haozhen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quanyu</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianzhu</forename><surname>Bao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haodong</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenya</forename><surname>Wang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2602.02474" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<analytic>
+		<title level="a" type="main">Gpt-4v(ision) is a generalist web agent, if grounded</title>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyu</forename><surname>Gou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jihyung</forename><surname>Kil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Su</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+		<ptr target="https://proceedings.mlr.press/v235/zheng24e.html" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 41st International Conference on Machine Learning</title>
+		<meeting>the 41st International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">235</biblScope>
+			<biblScope unit="page" from="61349" to="61385" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<title level="m" type="main">Mermaidflow: Redefining agentic workflow generation via safetyconstrained evolutionary programming</title>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianda</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueming</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Terence</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haopeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yew-Soon</forename><surname>Ong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivor</forename><surname>Tsang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyan</forename><surname>Yin</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.22967" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<analytic>
+		<title level="a" type="main">Sglang: efficient execution of structured language model programs</title>
+		<author>
+			<persName><forename type="first">Lianmin</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangsheng</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuyue</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cody</forename><surname>Hao Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyi</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christos</forename><surname>Kozyrakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clark</forename><surname>Barrett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Sheng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 38th International Conference on Neural Information Processing Systems, NIPS &apos;24</title>
+		<meeting>the 38th International Conference on Neural Information Processing Systems, NIPS &apos;24<address><addrLine>Red Hook, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Curran Associates Inc</publisher>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

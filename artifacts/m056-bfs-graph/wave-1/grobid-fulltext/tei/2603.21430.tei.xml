@@ -1,0 +1,1610 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">DomAgent: Leveraging Knowledge Graphs and Case-Based Reasoning for Domain-Specific Code Generation</title>
+				<funder>
+					<orgName type="full">Chalmers Artificial Intelligence Research Centre (CHAIR)</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">Autonomous Systems and Software Program (WASP)</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">Knut and Alice Wallenberg Foundation</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-03-25">25 Mar 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Shuai</forename><surname>Wang</surname></persName>
+							<email>shuaiwa@chalmers.se</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Chalmers University of Technology Gothenburg</orgName>
+								<address>
+									<country key="SE">Sweden</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Dhasarathy</forename><surname>Parthasarathy</surname></persName>
+							<email>dhasarathy.parthasarathy@volvo.com</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Volvo Group Gothenburg</orgName>
+								<address>
+									<country key="SE">Sweden</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Robert</forename><surname>Feldt</surname></persName>
+							<email>robert.feldt@chalmers.se</email>
+							<affiliation key="aff2">
+								<orgName type="institution">Chalmers University of Technology Gothenburg</orgName>
+								<address>
+									<country key="SE">Sweden</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yinan</forename><surname>Yu</surname></persName>
+							<idno type="ORCID">0000-0002-3221-7517</idno>
+							<affiliation key="aff3">
+								<orgName type="institution">Chalmers University of Technology Gothenburg</orgName>
+								<address>
+									<country key="SE">Sweden</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">DomAgent: Leveraging Knowledge Graphs and Case-Based Reasoning for Domain-Specific Code Generation</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-03-25">25 Mar 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">1CF83FE1187AF40B3C0C454662896D65</idno>
+					<idno type="arXiv">arXiv:2603.21430v2[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:10+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Large Language Models</term>
+					<term>Domain-Specific Code Generation</term>
+					<term>Knowledge Graph</term>
+					<term>Agent-Based Systems</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Large language models (LLMs) have shown impressive capabilities in code generation. However, because most LLMs are trained on public domain corpora, directly applying them to real-world software development often yields low success rates, as these scenarios frequently require domain-specific knowledge. In particular, domain-specific tasks usually demand highly specialized solutions, which are often underrepresented or entirely absent in the training data of generic LLMs. To address this challenge, we propose DomAgent, an autonomous coding agent that bridges this gap by enabling LLMs to generate domain-adapted code through structured reasoning and targeted retrieval. A core component of Do-mAgent is DomRetriever, a novel retrieval module that emulates how humans learn domain-specific knowledge, by combining conceptual understanding with experiential examples. It dynamically integrates top-down knowledge-graph reasoning with bottom-up case-based reasoning, enabling iterative retrieval and synthesis of structured knowledge and representative cases to ensure contextual relevance and broad task coverage. DomRetriever can operate as part of DomAgent or independently with any LLM for flexible domain adaptation. We evaluate DomAgent on an open benchmark dataset in the data science domain (DS-1000) and further apply it to real-world truck software development tasks. Experimental results show that DomAgent significantly enhances domain-specific code generation, enabling small open-source models to close much of the performance gap with large proprietary LLMs in complex, real-world applications. The code is available at: <ref type="url" target="https://github.com/Wangshuaiia/DomAgent">https://github.com/Wangshuaiia/DomAgent</ref>.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Code generation task in truck domain:</head><p>Read the Truck CAN signal OverspeedWarningStat and map it to a standardized format for downstream use from utils.can import read def get_over_speed_warning_stauts(): signal_name = "OverspeedWarningStat" can_value = read(signal_name) # Context-specific mapping of CAN raw values mapping = { "NotAvailable": 2, "Enabled": 1, "Disabled": 0 } mapped_value = mapping.get(can_value) return mapped_value </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Recently, large language models (LLMs) have made remarkable progress in the field of code generation. Both closed-source models such as GPT-4o and Claude Sonnet 4.5, and open-source models like CodeLlama <ref type="bibr" target="#b30">[30]</ref>, Mistral <ref type="bibr" target="#b16">[16]</ref>, DeepSeek-Coder <ref type="bibr" target="#b11">[11]</ref>, and Qwen-Coder <ref type="bibr" target="#b15">[15]</ref> have demonstrated impressive capabilities, and some of them even surpass human performance in general benchmark tasks. Tools like GitHub Copilot now leverage these models to provide adaptive, real-time coding assistance across various programming environments.</p><p>In real-world applications, programming tasks are often highly domain-specific <ref type="bibr" target="#b20">[20,</ref><ref type="bibr" target="#b36">36]</ref>. Software development across different industries, such as truck control systems or database management <ref type="bibr" target="#b14">[14]</ref>, typically requires code that is tailored to the distinct requirements and constraints of each domain. While existing LLMs perform well on general-purpose, open-domain tasks, their performance degrades significantly when faced with specialized, domainspecific problems <ref type="bibr" target="#b9">[9]</ref>. One key reason is that LLMs often lack the required information to accomplish specialized tasks. Domain-specific programming demands not only domain knowledge, such as understanding how to use industry-specific libraries, but also the ability to produce specialized solutions aligned with the operational logic of the target system. Figure <ref type="figure" target="#fig_0">1</ref> illustrates an example from truck software development: generating Python code to read the CAN signal OverspeedWarningStat and adapting the function with contextspecific mapping to fit the workflow. Directly using general LLMs poses two challenges: (1) a lack of knowledge about third-party libraries, and (2) insufficient capability for context-specific adaptation to the workflow.</p><p>A straightforward way to address this challenge is to fine-tune LLMs with domain-specific data <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b7">8]</ref>. However, relying on finetuning to equip LLMs with domain-specific knowledge is often impractical, as fine-tuning introduces high development and maintenance costs <ref type="bibr" target="#b4">[5]</ref>. The resulting models often struggle to adapt to constantly updated libraries. A more efficient and flexible solution is Retrieval-Augmented Generation (RAG) <ref type="bibr" target="#b18">[18]</ref>, which augments existing LLMs with external knowledge without modifying model weights. Popular software development frameworks such as Auto-Gen <ref type="bibr" target="#b41">[41]</ref>, LangChain and TaskWeaver <ref type="bibr" target="#b27">[27]</ref> leverage this strategy to quickly integrate LLMs with domain knowledge at low cost. Moreover, recent studies <ref type="bibr" target="#b26">[26,</ref><ref type="bibr" target="#b32">32]</ref> show that combining lightweight fine-tuning with RAG, using only a small number of domain examples, can substantially enhance model adaptability and accuracy for specialized programming tasks, achieving results comparable to much larger, fully fine-tuned systems.</p><p>In practice, RAG-based solutions dominate many real-world applications, accounting for over half (about 51%) of deployed LLMpowered software systems <ref type="bibr" target="#b34">[34]</ref>. To provide domain knowledge efficiently, recent work has shown that even basic retrieval methods like BM25 can significantly enhance performance by appending top-K results from external knowledge bases to prompts <ref type="bibr" target="#b42">[42]</ref>. Using sentence embeddings for retrieval can also improve the retrieval accuracy <ref type="bibr" target="#b19">[19,</ref><ref type="bibr" target="#b43">43]</ref>. However, excessively long retrieved content can negatively impact performance, as extended contexts may obscure key information and mislead the model <ref type="bibr" target="#b2">[3]</ref>. Segmenting candidate texts into smaller chunks of 200-800 tokens is a way to solve this issue <ref type="bibr" target="#b38">[38]</ref>. Zhu et al. <ref type="bibr" target="#b46">[46]</ref> improved the segmenting by using structural cues such as abstract syntax trees (ASTs) to produce more meaningful splits <ref type="bibr" target="#b46">[46]</ref>. Using another LLMs to filter out irrelevant information and compress the retrieved content also mitigate it <ref type="bibr" target="#b6">[7]</ref>. To introduce structured and concise knowledge, knowledge graphs (KGs) have also been explored as retrieval sources for code repair <ref type="bibr" target="#b25">[25]</ref>. KGs also contain the dependencies between software modules, supporting repository-level code generation <ref type="bibr" target="#b1">[2]</ref>. However, as these methods largely depend on plain textual similarity and neglect explicit links to relevant packages and functions, precisely retrieving relevant knowledge remains a fundamental challenge in complex real-world settings.</p><p>Bottom-up retrieval: For domain-specific tasks that require specialized knowledge and domain logic, a common approach is to leverage case-based reasoning (CBR), where a few-shot examples is included in the prompt to guide LLMs toward solving domainadapted tasks <ref type="bibr" target="#b13">[13,</ref><ref type="bibr" target="#b39">39]</ref>. Studies have shown that a fixed set of examples often fails to cover diverse scenarios. A more effective approach is to dynamically select examples based on the given task, using text embeddings to compute similarity scores <ref type="bibr" target="#b3">[4]</ref>. Subsequent work refined the retrieval process by re-ranking candidates through AST analysis to better capture code-level relationships <ref type="bibr" target="#b24">[24]</ref>. To broaden the case coverage, Tan et al. <ref type="bibr" target="#b33">[33]</ref> queried multiple information sources and integrated these retrieved contents through a segmented prompting strategy. Constructing high-quality case libraries from large training datasets is an effective way to improve case coverage <ref type="bibr" target="#b12">[12]</ref>. However, in real-world scenarios, creating a large and comprehensive case base is labor-intensive and timeconsuming. Achieving high coverage with a small set of examples is still an important and practical challenge.</p><p>Top-down retrieval: Just as human learning also relies on structured understanding, rules, relationships, and conceptual hierarchies, LLMs require top-down knowledge to complement bottomup example learning. KGs provide such structure by representing packages, functions, and their interrelations as nodes and edges. This structure makes it straightforward to link code examples to KG based on the package calling. For instance, as shown in Figure <ref type="figure" target="#fig_0">1</ref>, a code snippet calling utils.can.read can be explicitly connected to its corresponding node in the KG. Such links allow retrieving domain knowledge and locating relevant code examples beyond plain text similarity, by directly matching concrete package or function usage. In addition, explicitly evaluating the coverage of KG nodes by the packages and functions used in cases facilitates building a compact, diverse, and coverage-rich candidate case base.</p><p>Based on the above insights, we propose an agent system for domain-specific code generation that integrates both bottom-up (case-based) and top-down (knowledge-based) retrieval into a unified reasoning framework. The system is designed to emulate the human learning process: combining experiential reasoning from examples with conceptual understanding from structured knowledge. More specifically, the system leverages KGs as external repositories to provide accurate domain knowledge. To improve task coverage with a small case set, we exploit relational information in the KG to guide case selection, ensuring diversity by covering as many functions in the graph as possible. At the core of our system is a new retrieval module, DomRetriever, which dynamically integrates top-down and bottom-up retrieval to enhance both knowledge and case selection. It enables the model to iteratively identify, refine, and combine relevant knowledge with representative cases. Experiments on a benchmark dataset on data science domain show that our method significantly outperforms similar size LLMs. We also deploy the system in real-world truck software development tasks, demonstrating its robustness in practical settings.</p><p>Our contributions are as follows:</p><p>• We propose the first agent system (DomAgent) for domainspecific code generation that integrates structured knowledge (top-down) with case-based reasoning (bottom-up), improving both information retrieval and code generation.</p><p>• We design a KG-guided case selction method that exploits structural relations in the knowledge graph to achieve broad task coverage with a small set of cases.</p><p>• We develop a novel retrieval module (DomRetriever) that unifies knowledge-graph-guided retrieval and case-based reasoning into a dynamic, bidirectional process. DomRetriever can be seamlessly integrated into any LLM pipeline for flexible domain adaptation.</p><p>• We validate the agent on a benchmark dataset and in realworld truck software development, demonstrating its effectiveness.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">RELATED WORK 2.1 Knowledge Retrieval for Code Generation</head><p>RAG has become one of the most effective strategies to equip LLMs with external domain knowledge without modifying their parameters <ref type="bibr" target="#b18">[18,</ref><ref type="bibr" target="#b35">35,</ref><ref type="bibr" target="#b37">37]</ref>. By retrieving relevant information from external repositories, the model can access up-to-date and task-specific context to enhance code generation performance in specialized domains <ref type="bibr" target="#b45">[45]</ref>. Yang et al. <ref type="bibr" target="#b42">[42]</ref> conducted an empirical study showing that using basic retrieval methods, such as BM25, to fetch relevant content from external knowledge bases and simply appending the top-K results to the prompt can already yield strong performance. Li et al. <ref type="bibr" target="#b19">[19]</ref> further enhanced retrieval accuracy by employing sentence embeddings for semantic search, enabling more precise matching between queries and relevant documents. However, long retrieved texts may overwhelm the model's attention and obscure key information, leading to degraded generation quality <ref type="bibr" target="#b2">[3]</ref>. To mitigate this issue, Wang et al. <ref type="bibr" target="#b38">[38]</ref> proposed splitting candidate texts into smaller chunks of 200-800 tokens, while Zhu et al. <ref type="bibr" target="#b46">[46]</ref> leveraged structural cues from ASTs to produce more meaningful segmentations. Gao et al. <ref type="bibr" target="#b6">[7]</ref> introduced a secondary LLM to filter irrelevant content and compress retrieved texts, ensuring that only the most salient information is retained. Beyond plain-text retrieval, KGs offer a structured and concise way to represent domain knowledge. KGs can capture the dependencies between entities, which can be used to facilitate repository-level code generation. Ouyang et al. <ref type="bibr" target="#b25">[25]</ref> demonstrated that using KGs as retrieval sources can effectively provide relevant information for code repair tasks. Compared to unstructured text, KGs provide explicit relationships among entities such as packages, functions, and classes, making them particularly suitable for retrieving domain-specific programming knowledge.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">In-Context Learning and Case-Based Reasoning</head><p>While retrieval-based methods focus on supplementing external knowledge, another effective strategy for domain-specific code generation is to provide task-specific guidance directly through examples. ICL <ref type="bibr" target="#b5">[6]</ref> and CBR <ref type="bibr" target="#b13">[13,</ref><ref type="bibr" target="#b39">39]</ref> enable LLMs to learn from a few representative examples embedded in the prompt, helping them infer specialized problem-solving patterns without explicit model updates. A common limitation of fixed few-shot prompts is their inability to generalize across diverse scenarios. Dannenhauer et al. <ref type="bibr" target="#b3">[4]</ref> addressed this issue by building a case base and dynamically selecting examples based on semantic similarity, where both the query and cases were encoded into embeddings for retrieval. To further refine the selection, Nashid et al. <ref type="bibr" target="#b24">[24]</ref> re-ranked candidate cases using AST analysis, which captures code-level structural relations that pure text similarity may miss. Tan et al. <ref type="bibr" target="#b33">[33]</ref> proposed a segmented prompting strategy that integrates retrieved content from multiple sources to enhance contextual coverage. In addition, Guo et al. <ref type="bibr" target="#b12">[12]</ref> constructed a large and high-quality case base from extensive training data, and iteratively optimized it through selection and execution feedback to retain the most effective examples. Despite these advances, maintaining large case bases is labor-intensive and costly, making it impractical for fast-evolving industrial environments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">PROBLEM DEFINATION</head><p>We address the problem of domain-specific code generation by leveraging structured knowledge and reusable examples. Given a domain-specific generation task 𝑞, a KG G, and a case base B, the objective is to retrieve the necessary domain knowledge from G and identify relevant cases from B, and then synthesize the target code ŷ by integrating these retrieved resources. Formally, we consider a KG G = {⟨𝑒, 𝑟, 𝑒 ′ ⟩ | 𝑒, 𝑒 ′ ∈ E, 𝑟 ∈ R}, where E and R represent the sets of entities and relations, respectively. Each triple ⟨𝑒, 𝑟, 𝑒 ′ ⟩ encodes a relationship 𝑟 between entity 𝑒 and entity 𝑒 ′ . In our setting, entities represent domain knowledge such as packages, functions, their descriptions, and parameters, while edges represent direct relationships, e.g., a function belonging to a package.</p><p>The case base B is a collection of reference code cases. Its construction should ensure coverage and diversity while minimizing manual effort, since creating cases is costly and time-consuming. Our goal is to build a small but representative set of high-quality cases that achieves broad coverage.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">METHODS</head><p>Our approach, illustrated in Figure <ref type="figure">2</ref>, comprises three key components. (1) Case Base Construction module leverages the invocation relationships between functions and code cases in the knowledge graph to explicitly and efficiently sample representative cases; (2) Retrieval-Augmented Code Generation module unifys knowledge and case retrieval through a reasoning LLM to enhance retrieval effectiveness; (3) For Agent Training, we employ reinforcement learning to train the reasoning LLM to autonomously invoke retrieval tools, improving its ability to reason and access relevant knowledge when solving the coding task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Hierarchical Case Selection with Knowledge Graph Guidance</head><p>To construct a representative case base that covers both diverse packages and their functional usage patterns, we leverage the hierarchical structure of the KG to perform hierarchical case selection.</p><p>Package-level anchoring. Suppose there are 𝑛 software packages P = {𝑝 1 , 𝑝 2 , . . . , 𝑝 𝑛 } represented in the KG. For each package 𝑝 𝑖 , we take its root node in the KG as an anchor node 𝑎 𝑖 . Let C(𝑎 𝑖 ) = {𝑐 𝑖1 , 𝑐 𝑖2 , . . . } denote the set of its child nodes (e.g., functions and attributes belonging to package 𝑝 𝑖 ). Each child node 𝑐 𝑖 𝑗 is represented by its textual name 𝑡 𝑖 𝑗 concatenated with its description 𝑠 𝑖 𝑗 , and then encoded into a continuous semantic vector space through an embedding function:</p><formula xml:id="formula_0">v 𝑖 𝑗 = 𝑓 embed (𝑡 𝑖 𝑗 ∥ 𝑠 𝑖 𝑗 ) ∈ R 𝑑 (<label>1</label></formula><formula xml:id="formula_1">)</formula><p>where ∥ denotes string concatenation.</p><p>Function-level clustering. For each package 𝑝 𝑖 , we apply 𝑘-means clustering to its embedded child nodes:</p><formula xml:id="formula_2">{v 𝑖 𝑗 } ------→ k-means K 𝑖 = {𝐾 𝑖1 , 𝐾 𝑖2 , . . . , 𝐾 𝑖𝑚 }<label>(2)</label></formula><p>where 𝑚 denotes the number of clusters per package. Each cluster 𝐾 𝑖𝑘 corresponds to a semantically coherent functional usage pattern.</p><p>Coverage-driven case selection. Each candidate code case 𝑐 imports some packages 𝑝 (𝑥) and functions 𝐹 (𝑥). Our goal is to build a case base B that: 1) covers as many packages as possible, and 2) maximizes the diversity of functional usage within each package.</p><p>Let</p><formula xml:id="formula_3">𝑛 ′ = |{𝑝 (𝑥) | 𝑥 ∈ B}|, 𝑚 ′ = |{𝐾 𝑖𝑘 | ∃𝑥 ∈ B, 𝐹 (𝑥)∩𝐾 𝑖𝑘 ≠</formula><p>∅}| be the number of distinct packages and the number of covered clusters in the current case base, respectively. The coverage ratios are then defined as</p><formula xml:id="formula_4">𝛼 = 𝑛 ′ 𝑛 , 𝛽 = 𝑚 ′ 𝑚 (3)</formula><p>We iteratively traverse the candidate code cases. For each candidate 𝑥, we test whether adding it to B increases either package coverage or cluster coverage:</p><formula xml:id="formula_5">Δ𝛼 = 𝑛 ′ new 𝑛 -𝛼, Δ𝛽 = 𝑚 ′ new 𝑚 -𝛽<label>(4)</label></formula><p>If Δ𝛼 &gt; 0 or Δ𝛽 &gt; 0, the case is added to B; otherwise, it is discarded as redundant.</p><p>Stopping criterion. We define two thresholds 𝜏 1 and 𝜏 2 to control the case selection process. The construction stops when</p><formula xml:id="formula_6">𝛼 = 𝑛 ′ 𝑛 &gt; 𝜏 1 and 𝛽 = 𝑚 ′ 𝑚 &gt; 𝜏 2 (<label>5</label></formula><formula xml:id="formula_7">)</formula><p>i.e., when both package-level and cluster-level coverage exceed predefined acceptable levels. This strategy ensures that each package is well represented while preserving the diversity of functional usage patterns within packages. In addition, before storing the code to the case base, we execute it to ensure that it runs correctly. We store these code cases in a vector database, where the key is the natural language description of the corresponding task to support similarity-based task retrieval.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Domain-Specific Code Generation Agent</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.1">DomRetriever.</head><p>To generate domain-specific code, we retrieve both relevant domain knowledge and representative taskrelated cases.</p><p>Top-down retrieval. Given a task description 𝑞, we first determine which software package should be utilized. Specifically, we use an LLM as the classifier, and the inputs are both 𝑞 and the textual description 𝑡 𝑝 of each candidate package. The LLM outputs a binary classification:</p><formula xml:id="formula_8">p𝑖 = 𝐿𝐿𝑀 𝑃 𝑞 || 𝑡 𝑝 ∈ {0, 1}<label>(6)</label></formula><p>where p𝑖 = 1 indicates that 𝑝 𝑖 is applicable to the task 𝑞. Then, we encode the task 𝑞 with 𝑓 embed to obtain q = 𝑓 embed (𝑞) ∈ R 𝑑 . Then we compute the cosine similarity between the encoded vector 𝑓 embed (𝑞) and the embeddings of domain knowledge equations v 𝑖 𝑗 (as defined in Eq. 1):</p><formula xml:id="formula_9">𝑠 𝑖 𝑗 (𝑞) = cos(q, v 𝑖 𝑗 ) = q ⊤ v 𝑖 𝑗 ∥q∥ 2 ∥v 𝑖 𝑗 ∥ 2 (<label>7</label></formula><formula xml:id="formula_10">)</formula><p>We select the nodes with the highest 𝑇 similarity scores as the relevant domain knowledge list K = {𝑘 1 , 𝑘 2 , . . . , 𝑘 𝑇 }.</p><p>Bottom-up retrieval. We first compute the semantic similarity between the task embedding 𝑓 embed (𝑞) and the natural language descriptions of candidate code cases. The top-𝑅 most similar cases are selected to form an initial case list C = {𝑐 1 , 𝑐 2 , . . . , 𝑐 𝑅 }. To refine this list, we further focus on the similarity between cases and the retrieved packages (or functions, which we refer to as packages for simplicity in the following part). Specifically, for each case 𝑐 𝑖 , we compute the overlap count between the packages used in 𝑐 𝑖 and those contained in K:</p><formula xml:id="formula_11">𝑂 (𝑐 𝑖 ) = |Packages(𝑐 𝑖 ) ∩ Packages(K)| (<label>8</label></formula><formula xml:id="formula_12">)</formula><p>Then we select the top case 𝑐 * according to 𝑂 (𝑐 𝑖 ).</p><p>LLM-guided refinement with tool-use in the reasoning stage. To further enhance the relevance and completeness of the domain knowledge K, we compare the selected case 𝑐 * with K, using a reasoning LLM as an agent to automatically refine K by removing irrelevant items or retrieving supplementary knowledge based on 𝑐 * . As illustrated in the example in Figure <ref type="figure">2</ref>, during the review process, knowledge that is only superficially semantically related but functionally irrelevant can be filtered out. To achieve this, both the domain knowledge retrieval and case retrieval processes are encapsulated as API tools, denoted as SearchKG(𝑞) and SearchCase(𝑞) respectively, which are invoked during the reasoning phase of the LLM.</p><p>As shown in Figure <ref type="figure">2</ref>, we design two special tokens &lt;search_kg&gt; and &lt;search_case&gt; to trigger these searches respectively. During the reasoning stage, similar to DeepSeek-R1 <ref type="bibr" target="#b10">[10]</ref>, the LLM's internal reasoning is enclosed within the tag &lt;think&gt; • • • &lt;/think&gt;. In the subsequent answering stage (denoted by &lt;answer&gt; • • • &lt;/answer&gt;), the LLM outputs the finalized domain knowledge K together with the specialized solution ĉ.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.2">Code Generation.</head><p>We concatenate the original task description 𝑞, the refined domain knowledge K, and the specialized solution ĉ to form the final prompt, which is then fed into another LLM gen (•) to generate the target code ŷ. Formally, the process can be expressed as: ŷ = LLM gen 𝑞 || K || ĉ (9) In this module, we can either use the same reasoning LLM as Dom-Retriever for code generation or choose a more powerful LLM to assist with it.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Agent Training</head><p>To enable the LLM to use retrieval tools, that is, to generate the special tokens &lt;search_kg&gt; and &lt;search_case&gt; for triggering retrieval, we constructed fine-tuning examples so that the LLM learns to produce these tokens. Specifically, we manually created several few-shot examples and concatenated them into long chainof-thought (CoT) sequences. Then, given a query, we leveraged a powerful LLM (e.g., GPT-5) to generate reasoning steps and answers, like the reasoning process in Figure <ref type="figure">2</ref>. Finally, we fine-tuned our LLM on this synthesized data to teach it to generate the retrievaltriggering tokens.</p><p>Based on this, we further apply reinforcement learning (RL) to guide the LLM to review the contents retrieved by the two tools and decide whether to filter out irrelevant knowledge. The final answer should include only the most relevant knowledge and cases. To provide a learning signal, we train a reward model 𝑓 𝑟 using a powerful external LLM. This model assesses the relevance of a query 𝑞 to the retrieved knowledge K and cases ĉ:</p><formula xml:id="formula_13">reward = 𝑓 𝑟 𝑞 || K || ĉ . (<label>10</label></formula><formula xml:id="formula_14">)</formula><p>The obtained reward serves as the feedback signal for training the agent LLM. We employ the classical RL optimization algorithm GRPO <ref type="bibr" target="#b31">[31]</ref> to update the model parameters with respect to the reward function:</p><formula xml:id="formula_15">𝜃 * = arg max 𝜃 E 𝑞, K, ĉ∼𝜋 𝜃 𝑓 𝑟 (𝑞 || K || ĉ) ,<label>(11)</label></formula><p>where 𝜋 𝜃 denotes the policy of the LLM parameterized by 𝜃 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">EXPERIMENTS 5.1 Experimental Setup</head><p>In this paper, we conduct experiments and ablation studies on two datasets: (1) the open benchmark dataset DS-1000, and (2) a realworld domain-specific code generation dataset, Truck CAN Signal.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Benchmark dataset.</head><p>We first conducted experiments on the DS-1000 benchmark dataset <ref type="bibr" target="#b17">[17]</ref> in the data science domain. DS-1000 contains 1,000 tasks derived from 451 distinct Stack Overflow questions, covering seven widely used data science packages: NumPy, Pandas, Matplotlib, SciPy, scikit-learn, TensorFlow, and PyTorch. The original questions are slightly modified to differ from their Stack Overflow sources, preventing LLMs from solving them by simply memorizing pre-training data. Because the tasks require calling and correctly using various functions across these domain libraries, they remain challenging even for state-of-the-art LLMs such as GPT-4o.</p><p>We use a knowledge graph DS-KG for data science packages which is constructed by Ouyang et al. <ref type="bibr" target="#b25">[25]</ref>. Each library function is represented as an entity, linking with attributes such as name and description. They mined the official documentation of major data science libraries and obtained 505,640 triples in total.</p><p>Application in real-world truck software development. We further apply our agent for CAN signal reading and writing, which is a fundamental task in truck API development. As shown in Figure <ref type="figure" target="#fig_0">1</ref>, working with CAN signals requires understanding third-party packages for CAN message access and applying specific signal transformations to ensure consistency across upstream and downstream systems. We leverage the truck manufacturer's internal CAN signal documentation to provide domain knowledge. In total, we use 776 CAN signals spanning six functional domains: Driver Productivity, Connected Systems, Energy, Vehicle Systems, Visibility, and Dynamics. Implementation Details. We conduct experiments using two LLMs as the backbone of our agent: LLaMA-3.1-8B-Instruct and Qwen-2.5-7B. We construct a set of 500 high-quality examples in open-domain task to teach the models how to invoke these retrieval tools. Once the model learns to use the retrieval tool, we apply it directly to our tasks. We sample only 300 examples (30%) from the DS-1000 dataset to construct the case bases, and use the remaining 700 examples for testing. We use sentence-BERT <ref type="bibr" target="#b28">[28]</ref> as the language encoding tool, with the hyperparameters 𝜏 1 and 𝜏 2 both set to 0.9. The training is performed on 8 NVIDIA A100 80G GPUs in total. For each input query, we generate 16 outputs (rollouts). We train for 2 epochs with a batch size of 16 and a learning rate of 1e-6. DS-1000 provides predefined code contexts and testing functions for evaluation, while in the CAN signal reading and writing setting, engineers authored the corresponding test functions. Thus, we executed these test functions and adopted pass@1 as the metric.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Main Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.1">DS-1000.</head><p>Table <ref type="table" target="#tab_2">3</ref> presents a comprehensive comparison across multiple models and code-generation frameworks on the DS-1000 benchmark dataset. Among the vanilla LLMs, GPT-4o achieves the highest overall pass@1 accuracy (51.0%), demonstrating strong general-purpose reasoning ability but revealing limited domain adaptation for specialized deep learning libraries, such as Pytorch and Tensorflow. Vanilla open-source models such as Qwen2.5-7B and LLaMA3.1-8B perform moderately, highlighting the performance disparity between proprietary and open models in zero-shot code generation settings.</p><p>Within the coding-agent family, models like WizardCoder and Magicoder show clear improvements over standard LLMs through specialized fine-tuning on code-related data. However, even the strongest variant, MagicoderS-CL, achieves a total score of only 37.5%, indicating that static code fine-tuning alone cannot fully generalize across diverse data science tasks. It is worth noting that MagicoderS-CL employs a two-stage large-scale fine-tuning strategy: it is initially trained on 75K carefully curated synthesized programming instruction data and subsequently fine-tuned on the 110K open-source complex instruction dataset Evol-Instruct. Such an approach requires large amounts of data and computational resources, making it impractical in real-world scenarios.</p><p>Our proposed DomAgent framework substantially improves the performance of small open-source models. DomAgent (Qwen2.5-7B) and DomAgent (LLaMA3.1-8B) reach 39.2% and 40.5%, respectively, outperforming all previous coding agents by approximately +2.0 to +3.0 percentage points. When paired with large external models for code generation, DomRetriever further enhances performance. For instance, coupling LLaMA3.1-8B (DomRetriever) with GPT-4o as the code generation model yields the best result at 58.6%, representing a +7.6% gain over GPT-4o alone.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.2">Truck CAN Signal.</head><p>Table <ref type="table" target="#tab_1">2</ref> compares the performance of large proprietary GPT-4o and small open-source models Qwen2.5-7B across six highly specialized domains. Despite its strong general capability, the proprietary GPT-4o performs unsatisfactorily on these highly domain-specific code generation tasks, reaching an overall score of 71.22%. When enhanced with DomRetriever, its performance increases to 98.04%, highlighting the effectiveness of DomRetriever. This also ensures that our agent can operate effectively within real-world truck software development workflows. In addition, the DomAgent, built on the small open-source Qwen2.5-7B model, achieves 96.64%, nearly matching GPT-4o with Dom-Retriever and vastly outperforming its vanilla baseline (39.62%). These results demonstrate that domain-adaptive architectures such as DomAgent can effectively bridge the performance gap between proprietary large models and small open-source models in complex, real-world industrial tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Ablation Study</head><p>We formulate our ablation design to understand how each component in our proposed framework contributes to domain-specific code generation across diverse data science libraries and real-world expert domains.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3.1">DS-1000.</head><p>We first compare the configurations with knowledge grounding (+KG) and case-based reasoning (+CBR), and their combination with a standard RAG mechanism +KG+CBR (RAG pipeline) to quantify how each component contributes individually and jointly. The results show that while knowledge grounding improves baseline performance, case-based reasoning provides larger gains. The combination of +KG+CBR in a standard RAG pipeline further enhances overall performance, with improvements roughly additive to the individual contributions. Further, comparing +KG+CBR (RAG pipeline) and +KG+CBR (DomAgent) reveals that DomAgent's retrieval mechanism (cf. Section 4.2.1) consistently yield improvements across both Qwen2.5-7B and LLaMA3.1-8B, achieving competitive results with LLaMA3.3-70B, particularly in specialized tasks requiring deeper logical composition and multistep data manipulation, such as operations in Pandas and Tensorflow. Moreover, we study the synergy between DomRetriever and large external code-generation models. Combining small retrieval models (e.g., LLaMA3.1-8B or Qwen2.5-7B) with strong generators (e.g., GPT-4o or LLaMA3.3-70B) consistently improves performance across libraries.</p><p>Case-based reasoning is an important step in DomAgent. Since constructing a high-quality case base is both expensive and timeconsuming, an efficient strategy is crucial. To evaluate the effectiveness of our Hierarchical Case Selection with Knowledge Graph Guidance introduced in Section 4.1, we conduct an ablation study by gradually increasing the proportion of sampled cases. As shown in Figure <ref type="figure" target="#fig_2">3</ref>, performance (pass@1) steadily improves with larger sampling proportions for both strategies, but the KG-guided case selection consistently outperforms random sampling across all proportions. The improvement is most pronounced in the low-sampling regime (achieving near-full performance with only 30% of the data), demonstrating that knowledge-guided selection effectively identifies more representative and contextually diverse examples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3.2">Truck CAN Signal.</head><p>We conducted experiments on six types of truck CAN signals using our proposed DomAgent, which employs Qwen2.5-7B as its backbone. We also tested an alternative configuration that leverages GPT-4o as an external LLM for code generation. The results are summarized in Table <ref type="table" target="#tab_3">4</ref>.   The results clearly demonstrate that DomAgent significantly outperforms the vanilla models in both settings. Specifically, Do-mAgent with Qwen2.5-7B achieves a 57.02% improvement over the vanilla Qwen2.5-7B model, while DomAgent with GPT-4o achieves a 26.82% improvement. Overall, both models achieve strong final performance: Qwen2.5-7B reaches a pass@1 of 96.64, and GPT-4o reaches 98.04. Notably, DomAgent performs consistently well across all six CAN signal types. Both configurations even achieve 100% pass@1 on the Driver Productivity, Energy, and Visibility signal types, confirming the reliability of our method for industrial deployment.</p><p>By contrast, the vanilla models perform poorly, even though we manually curated representative cases and carefully tuned prompts. The vanilla Qwen2.5-7B only achieves 39.62 pass@1, while the stronger GPT-4o reaches 71.22 pass@1. This finding highlights the limitations of relying solely on fixed prompt engineering or static few-shot examples. Without injecting external domain knowledge and customizing the reasoning process, existing LLMs struggle to handle domain-specific code generation tasks effectively.</p><p>When we add domain knowledge (+KG), Qwen2.5-7B improves by 31.27 points, and GPT-4o improves by 16.58 points, both showing substantial gains. This improvement is mainly because our knowledge graph is constructed from internal CAN signal documentation, which contains descriptions of signal attributes and natural-language explanations of how to use essential third-party libraries. With this domain-specific knowledge, the models can accurately call internal CAN signal read/write tools. Interestingly, GPT-4o achieves 87.80 pass@1 using only +KG, reflecting its strong document understanding and code generation capabilities, allowing it to leverage documentation effectively even without explicit few-shot examples.</p><p>Adding case-based reasoning (+CBR) leads to an even larger improvement: Qwen2.5-7B +KG improves by an additional 44.95 points, and GPT-4o improves by 19.88 points. This is because retrieving highly relevant cases enables more effective few-shot learning, where the retrieved cases often include domain knowledge, such as concrete examples of how to invoke third-party libraries or convert CAN signals.  Comparing the RAG pipeline with our DomAgent shows that review and filtering of irrelevant information further enhance performance. Moreover, reinforcement learning within DomAgent strengthens its ability to autonomously explore and reason, contributing to its superior results.</p><p>Overall, each module of our approach brings substantial improvements to domain-specific code generation. The integration of domain knowledge, case-based reasoning, information filtering, and reinforcement learning enables DomAgent to achieve state-of-theart results and makes it feasible for deployment in real industrial environments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">CONCLUSION AND FUTURE WORK</head><p>In this work, we introduced DomAgent, an autonomous agent for domain-specific code generation that leverages KG-based retrieval to accurately acquire structured domain knowledge. During case retrieval, DomAgent exploits the relationships between packages and cases, re-ranking candidates based on package overlap. By integrating the reasoning capabilities of LLMs, DomAgent can invoke retrieval tools during the reasoning process, review the retrieved domain knowledge against the target case, and filter out irrelevant information to improve retrieval precision. We trained the LLM to use retrieval tools through supervised fine-tuning and employed reinforcement learning to encourage the model to explore the relevance between cases and domain knowledge. In addition, we proposed a KG-guided case selection method for constructing the case base, achieving comparable performance by selecting only 30% of the cases compared to random sampling with 80%. DomAgent can serve as a retriever for essential domain knowledge and cases, making it easily integrable with other external LLMs for code generation. Experiments on both a benchmark dataset and a real-world truck domain dataset demonstrated that our approach outperforms LLMs of similar size. Moreover, we successfully deployed DomAgent in a real factory to generate code for accessing truck CAN signals. These results collectively validate the effectiveness and practical value of our method.</p><p>In future work, we plan to enhance DomAgent along three main directions. First, we will incorporate AST-based fine-grained similarity analysis <ref type="bibr" target="#b44">[44]</ref>, to improve the performance of retrieving relevant code cases at the structural level. Second, we will explore the use of soft prompts <ref type="bibr" target="#b22">[22]</ref>, a lightweight form of knowledge injection, to enable the model to efficiently adapt to new domains with minimal retraining. Finally, we intend to evaluate DomAgent in a wider range of real-world industrial scenarios to further validate its practicality and generalizability.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>ChallengesFigure 1 :</head><label>1</label><figDesc>Figure 1: Example of a domain-specific code generation task in truck software development: reading the CAN signal OverspeedWarningStat and adapting the function with context-specific mapping to fit the workflow.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>&lt;think&gt;Step 2 Figure 2 :</head><label>22</label><figDesc>Figure2: Case base construction (top) and the overall workflow of our DomAgent (bottom). We first perform KG-guided selection to obtain representative cases. Then, our DomAgent retrieves domain knowledge from a KG and cases from the case base, while reviewing the retrieved domain knowledge in the reasoning process based on the selected case. Finally, using the answer of DomAgent, LLM generates the domain-specific code.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Effect of KG-based case selection versus random sampling with different sampling proportions on case base construction, using the Qwen2.5-7B-based DomAgent on the Data Science dataset.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Performance comparison (pass@1) across different libraries and methods on Data Science dataset. All the results marked with an asterisk (*) are copied from the Magicoder paper<ref type="bibr" target="#b40">[40]</ref>.</figDesc><table><row><cell>Package Count</cell><cell>Size</cell><cell cols="2">Matplotlib Numpy 155 220</cell><cell>Pytorch 291</cell><cell>Pandas 68</cell><cell>Scipy 106</cell><cell cols="2">Sklearn Tensorflow 115 45</cell><cell>Total 1000</cell></row><row><cell>Baseline (Vanilla LLMs)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Qwen2.5-7B</cell><cell>7B</cell><cell>54.2</cell><cell>34.9</cell><cell>25.3</cell><cell>16.8</cell><cell>23.1</cell><cell>21.4</cell><cell>29.7</cell><cell>29.3</cell></row><row><cell>LLaMA3.1-8b</cell><cell>8B</cell><cell>55.1</cell><cell>36.2</cell><cell>26.4</cell><cell>18.3</cell><cell>24.2</cell><cell>22.5</cell><cell>30.1</cell><cell>30.4</cell></row><row><cell>LLaMA3.3-70B</cell><cell>70B</cell><cell>60.2</cell><cell>40.0</cell><cell>36.5</cell><cell>37.8</cell><cell>40.1</cell><cell>42.0</cell><cell>43.5</cell><cell>40.3</cell></row><row><cell>GPT-3.5-Turbo</cell><cell>-</cell><cell>65.8</cell><cell>32.7</cell><cell>30.2</cell><cell>36.8</cell><cell>39.6</cell><cell>40.0</cell><cell>42.2</cell><cell>39.4</cell></row><row><cell>GPT-4o</cell><cell>-</cell><cell>65.2</cell><cell>56.8</cell><cell>41.9</cell><cell>47.1</cell><cell>48.1</cell><cell>50.4</cell><cell>46.7</cell><cell>51.0</cell></row><row><cell>Coding Agents</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>StarCoder [21]</cell><cell>15B</cell><cell>51.7  *</cell><cell>29.7  *</cell><cell>21.4  *</cell><cell>11.4  *</cell><cell>20.2  *</cell><cell>29.5  *</cell><cell>24.5  *</cell><cell>26.0  *</cell></row><row><cell>WizardCoder [23]</cell><cell>15B</cell><cell>55.2  *</cell><cell>33.6  *</cell><cell>26.2  *</cell><cell>16.7  *</cell><cell>22.4  *</cell><cell>24.9  *</cell><cell>26.7  *</cell><cell>29.2  *</cell></row><row><cell>CodeLLaMA-Python [29]</cell><cell>7B</cell><cell>55.3  *</cell><cell>34.5  *</cell><cell>19.9  *</cell><cell>16.4  *</cell><cell>22.3  *</cell><cell>17.6  *</cell><cell>28.5  *</cell><cell>28.0  *</cell></row><row><cell>WizardCoder-CL [40]</cell><cell>7B</cell><cell>53.5  *</cell><cell>34.4  *</cell><cell>25.7  *</cell><cell>15.2  *</cell><cell>21.0  *</cell><cell>24.5  *</cell><cell>28.9  *</cell><cell>28.4  *</cell></row><row><cell>Magicoder-CL [40]</cell><cell>7B</cell><cell>54.6  *</cell><cell>34.8  *</cell><cell>24.7  *</cell><cell>19.0  *</cell><cell>25.0  *</cell><cell>22.6  *</cell><cell>28.9  *</cell><cell>29.9  *</cell></row><row><cell>MagicoderS-CL (large-scale fine-tuning) [40]</cell><cell>7B</cell><cell>55.9  *</cell><cell>40.6  *</cell><cell>40.4  *</cell><cell>28.4  *</cell><cell>28.8  *</cell><cell>35.8  *</cell><cell>37.6  *</cell><cell>37.5  *</cell></row><row><cell>DomAgent (Qwen2.5-7B; ours)</cell><cell>7B</cell><cell>62.5</cell><cell>37.9</cell><cell>32.7</cell><cell>33.5</cell><cell>30.6</cell><cell>29.1</cell><cell>36.9</cell><cell>39.2</cell></row><row><cell>DomAgent (LaMA3.1-8B; ours)</cell><cell>8B</cell><cell>62.5</cell><cell>43.1</cell><cell>33.1</cell><cell>29.2</cell><cell>31.5</cell><cell>29.3</cell><cell>37.1</cell><cell>40.5</cell></row><row><cell>External LLM (Code Gen) Enhanced with DomRetriever</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">LLaMA3.1-8B (DomRetriever) + LLaMA3.3-70B (Code Gen) 70B</cell><cell cols="6">63.5 (+3.3) 49.3 (+9.3) 44.6 (+8.1) 41.4 (+3.6) 44.0 (+3.9) 46.3 (+4.3)</cell><cell>49.2 (+5.7)</cell><cell>47.9 (+7.6)</cell></row><row><cell>LLaMA3.1-8B (DomRetriever) + GPT-4o (Code Gen)</cell><cell>-</cell><cell cols="6">68.6 (+3.4) 64.2 (+7.4) 50.8 (+8.9) 49.1 (+2.0) 50.7 (+2.6) 56.4 (+6.0)</cell><cell>53.3 (+6.6)</cell><cell>58.6 (+7.6)</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Comparison of small open models-based DomAgent (Qwen2.5-7B-based) against GPT-4o-based models for domain-specific code generation tasks: truck CAN signal reading/writing across six domains.</figDesc><table><row><cell cols="2">Domain</cell><cell></cell><cell></cell><cell></cell><cell cols="3">GPT-4o-based Vanilla +DomRetriever (Qwen2.5-7B)</cell><cell>Qwen2.5-7B-based (open-source) Vanilla DomAgent</cell></row><row><cell cols="5">Driver productivity</cell><cell>65.1</cell><cell>100</cell><cell>32.6</cell><cell>100</cell></row><row><cell cols="5">Connected systems</cell><cell>73.4</cell><cell>97.4</cell><cell>46.8</cell><cell>97.8</cell></row><row><cell cols="2">Energy</cell><cell></cell><cell></cell><cell></cell><cell>58.8</cell><cell>100</cell><cell>36.2</cell><cell>100</cell></row><row><cell cols="4">Vehicle system</cell><cell></cell><cell>71.1</cell><cell>97.1</cell><cell>35.1</cell><cell>94.3</cell></row><row><cell cols="2">Visibility</cell><cell></cell><cell></cell><cell></cell><cell>82.2</cell><cell>100</cell><cell>44.3</cell><cell>100</cell></row><row><cell cols="3">Dynamics</cell><cell></cell><cell></cell><cell>75.5</cell><cell>96.4</cell><cell>39.8</cell><cell>91.4</cell></row><row><cell cols="2">Total</cell><cell></cell><cell></cell><cell></cell><cell>71.22</cell><cell>98.04</cell><cell>39.62</cell><cell>96.64</cell></row><row><cell></cell><cell>40</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>39.2</cell><cell>39.6</cell><cell>39.5</cell><cell>39.1</cell><cell>39.9</cell><cell>39.6</cell></row><row><cell></cell><cell>38</cell><cell></cell><cell></cell><cell></cell><cell>37.8</cell><cell></cell><cell>38.6</cell></row><row><cell>pass@1</cell><cell>34 36</cell><cell></cell><cell></cell><cell>34.5</cell><cell></cell><cell>34.7</cell><cell>35.5</cell><cell>36.7</cell><cell>37.5</cell></row><row><cell></cell><cell>32</cell><cell></cell><cell></cell><cell></cell><cell>33.6</cell><cell></cell></row><row><cell></cell><cell>30</cell><cell>0</cell><cell>29.3</cell><cell cols="4">Sampling Proportion (%) 10 20 30 40 50 60 70 80 31.7 KG-based Selection Random Sampling</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Ablation study of different modules on the Data Science dataset.</figDesc><table><row><cell>Count</cell><cell>Size</cell><cell cols="2">Matplotlib Numpy 155 220</cell><cell>Pytorch 291</cell><cell>Pandas 68</cell><cell>Scipy 106</cell><cell cols="2">Sklearn Tensorflow 115 45</cell><cell>Total 1000</cell></row><row><cell>Ablation on End-to-end DomAgent</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Qwen2.5-7B</cell><cell>7B</cell><cell>54.2</cell><cell>34.9</cell><cell>25.3</cell><cell>16.8</cell><cell>23.1</cell><cell>21.4</cell><cell>29.7</cell><cell>29.3</cell></row><row><cell>Qwen2.5-7B+KG</cell><cell>7B</cell><cell cols="6">56.1 (+1.9) 37.5 (+2.6) 27.8 (+2.5) 18.4 (+1.6) 25.2 (+2.1) 23.5 (+2.1)</cell><cell>31.2 (+1.5)</cell><cell>31.4 (+2.1)</cell></row><row><cell>Qwen2.5-7B+CBR</cell><cell>7B</cell><cell>57.3 (+3.1)</cell><cell cols="5">32.9 (-2.0) 32.4 (+7.1) 24.6 (+7.8) 27.5 (+4.4) 28.5 (+7.1)</cell><cell>37.9 (+8.2)</cell><cell>34.8 (+5.5)</cell></row><row><cell>Qwen2.5-7B+KG+CBR (RAG pipeline)</cell><cell>7B</cell><cell cols="6">62.3 (+8.1) 40.9 (+6.0) 31.6 (+6.3) 23.8 (+7.0) 30.4 (+7.3) 27.3 (+5.9)</cell><cell>36.3 (+6.6)</cell><cell>37.4 (+8.1)</cell></row><row><cell>Qwen2.5-7B+KG+CBR (DomAgent)</cell><cell>7B</cell><cell cols="6">62.5 (+8.3) 37.9 (+3.0) 32.7 (+7.4) 33.5 (+16.7) 30.6 (+7.5) 29.1 (+7.7)</cell><cell>36.9 (+7.2)</cell><cell>39.2 (+9.9)</cell></row><row><cell>LLaMA3.1-8b</cell><cell>8B</cell><cell>55.1</cell><cell>36.2</cell><cell>26.4</cell><cell>18.3</cell><cell>24.2</cell><cell>22.5</cell><cell>30.1</cell><cell>30.4</cell></row><row><cell>LLaMA3.1-8b+KG</cell><cell>8B</cell><cell cols="6">57.2 (+2.1) 38.1 (+1.9) 28.6 (+2.2) 19.1 (+0.8) 26.0 (+1.8) 24.0 (+1.5)</cell><cell>32.5 (+2.4)</cell><cell>32.2 (+1.8)</cell></row><row><cell>LLaMA3.1-8b+CBR</cell><cell>8B</cell><cell cols="6">61.6 (+6.5) 40.1 (+3.9) 30.8 (+4.4) 26.6 (+8.3) 30.4 (+6.2) 28.7 (+6.2)</cell><cell>37.4 (+7.3)</cell><cell>37.6 (+7.2)</cell></row><row><cell>LLaMA3.1-8b+KG+CBR (RAG pipeline)</cell><cell>8B</cell><cell cols="6">60.4 (+5.3) 41.3 (+5.1) 32.6 (+6.2) 24.1 (+5.8) 30.6 (+6.4) 29.1 (+6.6)</cell><cell>36.7 (+6.6)</cell><cell>39.2 (+8.8)</cell></row><row><cell>LLaMA3.1-8b+KG+CBR (DomAgent)</cell><cell>8B</cell><cell cols="6">62.5 (+7.4) 43.1 (+6.9) 33.1 (+6.7) 29.2 (+10.9) 31.5 (+7.3) 29.3 (+6.8)</cell><cell>37.1 (+7.0)</cell><cell>40.5 (+10.1)</cell></row><row><cell cols="3">Ablation on External LLM (Code Gen) Enhanced with DomRetriever</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>LLaMA3.3-70B</cell><cell>70B</cell><cell>60.2</cell><cell>40.0</cell><cell>36.5</cell><cell>37.8</cell><cell>40.1</cell><cell>42.0</cell><cell>43.5</cell><cell>40.3</cell></row><row><cell>LLaMA3.3-70B+KG</cell><cell>70B</cell><cell cols="6">61.0 (+0.8) 42.2 (+2.2) 37.0 (+0.5) 38.4 (+0.6) 41.0 (+0.9) 42.7 (+0.7)</cell><cell>44.2 (+0.7)</cell><cell>40.4 (+0.1)</cell></row><row><cell>LLaMA3.3-70B+CBR</cell><cell>70B</cell><cell cols="6">62.5 (+2.3) 47.1 (+7.1) 38.5 (+2.0) 40.0 (+2.2) 42.5 (+2.4) 44.1 (+2.1)</cell><cell>45.5 (+2.0)</cell><cell>46.0 (+5.7)</cell></row><row><cell>LLaMA3.3-70B+KG+CBR (RAG pipeline)</cell><cell>70B</cell><cell cols="6">63.1 (+2.9) 47.8 (+7.8) 39.1 (+2.6) 40.6 (+2.8) 43.2 (+3.1) 44.9 (+2.9)</cell><cell>46.2 (+2.7)</cell><cell>46.5 (+6.2)</cell></row><row><cell>Qwen2.5-7B (DomRetriever) + LLaMA3.3-70B (Code Gen)</cell><cell>70B</cell><cell cols="6">63.9 (+3.7) 48.2 (+8.2) 43.8 (+7.3) 41.8 (+4.0) 44.3 (+4.2) 46.0 (+4.0)</cell><cell>47.3 (+3.8)</cell><cell>47.4 (+7.1)</cell></row><row><cell cols="2">LLaMA3.1-8B (DomRetriever) + LLaMA3.3-70B (Code Gen) 70B</cell><cell cols="6">63.5 (+3.3) 49.3 (+9.3) 44.6 (+8.1) 41.4 (+3.6) 44.0 (+3.9) 46.3 (+4.3)</cell><cell>49.2 (+5.7)</cell><cell>47.9 (+7.6)</cell></row><row><cell>GPT-4o</cell><cell>-</cell><cell>65.2</cell><cell>56.8</cell><cell>41.9</cell><cell>47.1</cell><cell>48.1</cell><cell>50.4</cell><cell>46.7</cell><cell>51.0</cell></row><row><cell>GPT-4o+KG</cell><cell>-</cell><cell cols="3">65.5 (+0.3) 56.9 (+0.1) 41.3 (-0.6)</cell><cell cols="3">46.2 (-0.9) 50.1 (+2.0) 51.8 (+1.4)</cell><cell>52.0 (+5.3)</cell><cell>51.2 (+0.2)</cell></row><row><cell>GPT-4o+CBR</cell><cell>-</cell><cell cols="6">69.0 (+3.8) 60.8 (+4.0) 49.1 (+7.2) 52.0 (+4.9) 53.2 (+5.1) 53.7 (+3.3)</cell><cell>53.5 (+6.8)</cell><cell>56.1 (+5.1)</cell></row><row><cell>GPT-4o+KG+CBR (RAG pipeline)</cell><cell>-</cell><cell cols="6">68.5 (+3.3) 61.2 (+4.4) 50.0 (+8.1) 50.6 (+3.5) 51.0 (+2.9) 56.4 (+6.0)</cell><cell>53.1 (+6.4)</cell><cell>56.4 (+5.4)</cell></row><row><cell>Qwen2.5-7B (DomRetriever) + GPT-4o (Code Gen)</cell><cell>-</cell><cell cols="6">67.8 (+2.6) 62.3 (+5.5) 49.3 (+7.4) 49.6 (+2.5) 50.3 (+2.2) 55.6 (+5.2)</cell><cell>52.2 (+5.5)</cell><cell>57.8 (+6.8)</cell></row><row><cell>LLaMA3.1-8B (DomRetriever) + GPT-4o (Code Gen)</cell><cell>-</cell><cell cols="6">68.6 (+3.4) 64.2 (+7.4) 50.8 (+8.9) 49.1 (+2.0) 50.7 (+2.6) 56.4 (+6.0)</cell><cell>53.3 (+6.6)</cell><cell>58.6 (+7.6)</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Ablation study on the truck CAN signal code generation task.</figDesc><table><row><cell>Domain</cell><cell>Driver productivity</cell><cell>Connected systems</cell><cell>Energy</cell><cell>Vehicle system</cell><cell cols="2">Visibility Dynamics</cell><cell>Total</cell></row><row><cell>Count</cell><cell>135</cell><cell>212</cell><cell>72</cell><cell>136</cell><cell>56</cell><cell>155</cell><cell>776</cell></row><row><cell>Ablation on End-to-end DomAgent</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Qwen2.5-7B</cell><cell>32.6</cell><cell>46.8</cell><cell>36.2</cell><cell>35.1</cell><cell>44.3</cell><cell>39.8</cell><cell>39.62</cell></row><row><cell>Qwen2.5-7B + KG</cell><cell>62.1 (+29.5)</cell><cell cols="6">76.4 (+29.6) 78.7 (+42.5) 67.3 (+32.2) 65.4 (+21.1) 72.5 (+32.7) 70.89 (+31.27)</cell></row><row><cell>Qwen2.5-7B + CBR</cell><cell>74.4 (+41.8)</cell><cell cols="6">88.1 (+41.3) 86.3 (+50.1) 84.8 (+49.7) 89.3 (+45.0) 85.9 (+46.1) 84.57 (+44.95)</cell></row><row><cell>Qwen2.5-7B+KG+CBR (RAG pipeline)</cell><cell>92.2 (+59.6)</cell><cell cols="6">91.1 (+44.3) 94.2 (+58.0) 87.1 (+52.0) 95.2 (+50.9) 90.4 (+50.6) 91.03 (+51.41)</cell></row><row><cell>Qwen2.5-7B+KG+CBR (DomAgent)</cell><cell>100 (+67.4)</cell><cell cols="6">97.8 (+51.0) 100 (+63.8) 94.3 (+59.2) 100 (+55.7) 91.4 (+51.6) 96.64 (+57.02)</cell></row><row><cell cols="3">Ablation on External LLM (Code Gen) Enhanced with DomRetriever</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>GPT-4o</cell><cell>65.1</cell><cell>73.4</cell><cell>58.8</cell><cell>71.1</cell><cell>82.2</cell><cell>75.5</cell><cell>71.22</cell></row><row><cell>GPT-4o + KG</cell><cell>85.2 (+20.1)</cell><cell cols="6">85.3 (+11.9) 84.3 (+25.5) 90.7 (+19.6) 94.9 (+12.7) 90.0 (+14.5) 87.80 (+16.58)</cell></row><row><cell>GPT-4o + CBR</cell><cell>93.5 (+28.4)</cell><cell cols="6">92.1 (+18.7) 90.2 (+31.4) 88.3 (+17.2) 93.4 (+11.2) 89.7 (+14.2) 91.10 (+19.88)</cell></row><row><cell>GPT-4o+KG+CBR (RAG pipeline)</cell><cell>97.6 (+32.5)</cell><cell cols="6">96.2 (+22.8) 96.5 (+37.7) 95.1 (+24.0) 98.0 (+15.8) 96.6 (+21.1) 96.49 (+25.27)</cell></row><row><cell>Qwen2.5-7B (DomRetriever) + GPT-4o (Code Gen)</cell><cell>100 (+34.9)</cell><cell cols="6">97.4 (+24.0) 100 (+41.2) 97.1 (+26.0) 100 (+17.8) 96.4 (+20.9) 98.04 (+26.82)</cell></row><row><cell>LLaMA3.1-8B (DomRetriever) + GPT-4o (Code Gen)</cell><cell>100 (+34.9)</cell><cell cols="6">98.3 (+24.9) 100 (+41.2) 98.6 (+27.5) 100 (+17.8) 97.2 (+21.7) 98.71 (+27.49)</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGMENT</head><p>This work was partially funded by the <rs type="funder">Autonomous Systems and Software Program (WASP)</rs>, supported by the <rs type="funder">Knut and Alice Wallenberg Foundation</rs>, and the <rs type="funder">Chalmers Artificial Intelligence Research Centre (CHAIR)</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Finetuning large language models for specialized use cases</title>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><forename type="middle">G</forename><surname>Dm Anisuzzaman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">A</forename><surname>Malins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachi</forename><forename type="middle">I</forename><surname>Friedman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Attia</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Mayo Clinic Proceedings: Digital Health</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page">100184</biblScope>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Knowledge Graph Based Repository-Level Code Generation</title>
+		<author>
+			<persName><forename type="first">Mihir</forename><surname>Athale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vishal</forename><surname>Vaddina</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE/ACM International Workshop on Large Language Models for Code</title>
+		<imprint>
+			<biblScope unit="page" from="169" to="176" />
+			<date type="published" when="2025">2025. 2025</date>
+			<publisher>IEEE</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Main-rag: Multi-agent filtering retrieval-augmented generation</title>
+		<author>
+			<persName><forename type="first">Chia-Yuan</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhimeng</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineeth</forename><surname>Rakesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Menghai</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chin-Chia</forename><surname>Michael Yeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanchu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingzhi</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhichao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mahashweta</forename><surname>Das</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The 63rd Annual Meeting of the Association for Computational Linguistics (ACL)</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">A case-based reasoning approach to dynamic few-shot prompting for code generation</title>
+		<author>
+			<persName><forename type="first">Dustin</forename><surname>Dannenhauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zohreh</forename><surname>Dannenhauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Despina</forename><surname>Christou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kostas</forename><surname>Hatalis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML 2024 Workshop on LLMs and Cognition</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">How Abilities in Large Language Models are Affected by Supervised Fine-tuning Data Composition</title>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyi</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keming</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengpeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingfeng</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="177" to="198" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">A Survey on In-context Learning</title>
+		<author>
+			<persName><forename type="first">Qingxiu</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Damai</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ce</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyuan</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heming</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingjing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baobao</forename><surname>Chang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2024 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="1107" to="1128" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Preference-guided refactored tuning for retrieval augmented code generation</title>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yun</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deze</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenhan</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zejian</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haofen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanshan</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 39th IEEE/ACM International Conference on Automated Software Engineering</title>
+		<meeting>the 39th IEEE/ACM International Conference on Automated Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="65" to="77" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Yubin</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devamanyu</forename><surname>Hazarika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mahdi</forename><surname>Namazifar</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Supervised Fine-Tuning of Large Language Models on Human Demonstrations Through the Lens of Memorization</title>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS 2023 Workshop on Instruction Tuning and Instruction Following</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">On the effectiveness of large language models in domain-specific code generation</title>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yalan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhan</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengcheng</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhao</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juhong</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Software Engineering and Methodology</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="1" to="22" />
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoyu</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.12948</idno>
+		<title level="m">Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.14196</idno>
+		<title level="m">DeepSeek-Coder: When the Large Language Model Meets Programming -The Rise of Code Intelligence</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">DS-Agent: Automated Data Science by Empowering Large Language Models with Case-Based Reasoning</title>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hechang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kostas</forename><surname>Hatalis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Despina</forename><surname>Christou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vyshnavi</forename><surname>Kondapalli</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2504.06943</idno>
+		<title level="m">Review of case-based reasoning for LLM agents: theoretical foundations, architectural components, and cognitive integration</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Next-generation database interfaces: A survey of llm-based text-to-sql</title>
+		<author>
+			<persName><forename type="first">Zijin</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinggang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junnan</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feiran</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Huang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Knowledge and Data Engineering</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Bohan</forename><surname>Hui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2409.12186</idno>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Qwen2.5-Coder Technical Report. arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Albert</forename><forename type="middle">Q</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandre</forename><surname>Sablayrolles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arthur</forename><surname>Mensch</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.06825</idno>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Mistral 7B. arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">DS-1000: A natural and reliable benchmark for data science code generation</title>
+		<author>
+			<persName><forename type="first">Yuhang</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengxi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="18319" to="18345" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Retrieval-augmented generation for knowledge-intensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heinrich</forename><surname>Küttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="9459" to="9474" />
+			<date type="published" when="2020">2020. 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chengwei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenqiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ningyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shumin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuanqi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajun</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.04702</idno>
+		<ptr target="https://arxiv.org/abs/2501.04702" />
+		<title level="m">Retrieval-Augmented Code Generation for Universal Information Extraction</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Evocodebench: An evolving code generation benchmark with domain-specific evaluations</title>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunfei</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binhua</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongbin</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="57619" to="57641" />
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">Raymond</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangtian</forename><surname>Zi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denis</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Marone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">I</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Chim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Liu</surname></persName>
+		</author>
+		<title level="m">StarCoder: may the source be with you! Transactions on Machine Learning Research</title>
+		<imprint/>
+	</monogr>
+	<note>n.d.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Prompt Compression for Large Language Models: A Survey</title>
+		<author>
+			<persName><forename type="first">Zongqian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinhong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixuan</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nigel</forename><surname>Collier</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2025.naacl-long.368</idno>
+		<ptr target="https://doi.org/10.18653/v1/2025.naacl-long.368" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<editor>
+			<persName><forename type="first">Luis</forename><surname>Chiruzzo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Alan</forename><surname>Ritter</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</editor>
+		<meeting>the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>New Mexico</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="7182" to="7195" />
+		</imprint>
+	</monogr>
+	<note>Long Papers</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">WizardCoder: Empowering Code Large Language Models with Evol-Instruct</title>
+		<author>
+			<persName><forename type="first">Ziyang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Can</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pu</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingfeng</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiubo</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenxiang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chongyang</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>In ICLR</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Retrieval-based prompt selection for code-related few-shot learning</title>
+		<author>
+			<persName><forename type="first">Noor</forename><surname>Nashid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mifta</forename><surname>Sintaha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Mesbah</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2023 IEEE/ACM 45th International Conference on Software Engineering (ICSE)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="2450" to="2462" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Knowledge-Enhanced Program Repair for Data Science Code</title>
+		<author>
+			<persName><forename type="first">Shuyin</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyu</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert</forename><surname>Merono</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Penuela</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2025 IEEE/ACM 47th International Conference on Software Engineering (ICSE)</title>
+		<imprint>
+			<publisher>IEEE Computer Society</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="782" to="782" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Fine-Tuning or Retrieval? Comparing Knowledge Injection in LLMs</title>
+		<author>
+			<persName><forename type="first">Oded</forename><surname>Ovadia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Menachem</forename><surname>Brief</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moshik</forename><surname>Mishaeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oren</forename><surname>Elisha</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2024 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="237" to="250" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liqun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shilin</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaoyun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangkai</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jue</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.17541</idno>
+		<title level="m">Taskweaver: A code-first agent framework</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks</title>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Reimers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iryna</forename><surname>Gurevych</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing</title>
+		<meeting>the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing</meeting>
+		<imprint>
+			<publisher>EMNLP-IJCNLP</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="3982" to="3992" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Baptiste Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sten</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Itai</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Xiaoqing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yossi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyu</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Romain</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tal</forename><surname>Sauvestre</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Remez</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.12950</idno>
+		<title level="m">Code llama: Open foundation models for code</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Baptiste Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gloeckle</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.12950</idno>
+		<title level="m">Code Llama: Open Foundation Models for Code</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Zhihong</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peiyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Runxin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junxiao</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.03300</idno>
+		<title level="m">Deepseekmath: Pushing the limits of mathematical reasoning in open language models</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Fine tuning vs. retrieval augmented generation for less popular knowledge</title>
+		<author>
+			<persName><forename type="first">Heydar</forename><surname>Soudani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evangelos</forename><surname>Kanoulas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faegheh</forename><surname>Hasibi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 Annual International ACM SIGIR Conference on Research and Development in Information Retrieval in the Asia Pacific Region</title>
+		<meeting>the 2024 Annual International ACM SIGIR Conference on Research and Development in Information Retrieval in the Asia Pacific Region</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="12" to="22" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Prompt-based code completion via multi-retrieval augmented generation</title>
+		<author>
+			<persName><forename type="first">Hanzhuo</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ling</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zizheng</forename><surname>Zhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuqun</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Software Engineering and Methodology</title>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Tully</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joff</forename><surname>Redfern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Derek</forename><surname>Xiao</surname></persName>
+		</author>
+		<ptr target="https://menlovc.com/2024-the-state-of-generative-ai-in-the-enterprise/" />
+		<title level="m">2024: The State of Generative AI in the Enterprise</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">iQUEST: An Iterative Question-Guided Framework for Knowledge Base Question Answering</title>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinan</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2025.acl-long.760</idno>
+		<ptr target="https://doi.org/10.18653/v1/2025.acl-long.760" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 63rd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="15616" to="15628" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Automating a Complete Software Test Process Using LLMs: An Automotive Case Study</title>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Feldt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhasarathy</forename><surname>Parthasarathy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2025 IEEE/ACM 47th International Conference on Software Engineering (ICSE)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="373" to="384" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Plugging Schema Graph into Multi-Table QA: A Human-Guided Framework for Reducing LLM Reliance</title>
+		<author>
+			<persName><forename type="first">Xixi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miguel</forename><surname>Costa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jordanka</forename><surname>Kovaceva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francisco</forename><forename type="middle">C</forename><surname>Pereira</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.04427</idno>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">CodeRAG-Bench: Can Retrieval Augment Code Generation?</title>
+		<author>
+			<persName><forename type="first">Zora</forename><surname>Zhiruo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wang</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akari</forename><surname>Asai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyan Velocity</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiqing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: NAACL 2025, Luis Chiruzzo</title>
+		<editor>
+			<persName><forename type="first">Alan</forename><surname>Ritter</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="3199" to="3214" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Case-based reasoning: A review</title>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Watson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Farhi</forename><surname>Marir</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The knowledge engineering review</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="page" from="327" to="354" />
+			<date type="published" when="1994">1994. 1994</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Magicoder: Empowering Code Generation with OSS-Instruct</title>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifeng</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="52632" to="52657" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation</title>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gagan</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beibin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erkang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaokun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiale</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR 2024 Workshop on Large Language Model (LLM) Agents</title>
+		<imprint/>
+	</monogr>
+	<note>n.d.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">An empirical study of retrieval-augmented code generation: Challenges and opportunities</title>
+		<author>
+			<persName><forename type="first">Zezhou</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sirong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cuiyun</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenhao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kui</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Xia</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Software Engineering and Methodology</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Pan: Prototype-based adaptive network for robust cross-modal retrieval</title>
+		<author>
+			<persName><forename type="first">Zhixiong</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenji</forename><surname>Mao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 44th international ACM SIGIR conference on research and development in information retrieval</title>
+		<meeting>the 44th international ACM SIGIR conference on research and development in information retrieval</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="1125" to="1134" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yilin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinran</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zora</forename><forename type="middle">Zhiruo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyang</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tongshuang</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.15655</idno>
+		<title level="m">cAST: Enhancing Code Retrieval-Augmented Generation with Structural Chunking via Abstract Syntax Tree</title>
+		<imprint>
+			<date type="published" when="2025">2025. 2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Retrievalaugmented generation for ai-generated content: A survey</title>
+		<author>
+			<persName><forename type="first">Penghao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinhan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengren</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunteng</forename><surname>Geng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangcheng</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ling</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Cui</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.19473</idno>
+		<imprint>
+			<date type="published" when="2024">2024. 2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Hao Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shikun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengjun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.03618</idno>
+		<ptr target="https://arxiv.org/abs/2312.03618" />
+		<title level="m">AceCoder: Utilizing Existing Code to Enhance Code Generation</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

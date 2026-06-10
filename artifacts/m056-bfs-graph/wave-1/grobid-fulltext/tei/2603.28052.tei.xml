@@ -1,0 +1,1836 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Meta-Harness: End-to-End Optimization of Model Harnesses</title>
+				<funder>
+					<orgName type="full">OpenAI</orgName>
+				</funder>
+				<funder ref="#_E78S6ma">
+					<orgName type="full">KFAS</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-03-30">30 Mar 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Yoonho</forename><surname>Lee</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Roshen</forename><surname>Nair</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Qizheng</forename><surname>Zhang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Omar</forename><surname>Khattab</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+						</author>
+						<title level="a" type="main">Meta-Harness: End-to-End Optimization of Model Harnesses</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-03-30">30 Mar 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">3D50366F7354E5716B91E22AAD4BD6B0</idno>
+					<idno type="arXiv">arXiv:2603.28052v1[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:10+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Human-written Model-optimized (ours)</head><p>Figure <ref type="figure">1</ref>: (Left) On text classification, Meta-Harness outperforms the best prior handdesigned harnesses (ACE) and existing text optimizers (TTT-Discover, OpenEvolve), matching the next-best method's final accuracy after just 4 evaluations. (Right) On TerminalBench-2, Meta-Harness outperforms all reported Claude Haiku 4.5 harnesses.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Changing the harness around a fixed large language model (LLM) can produce a 6× performance gap on the same benchmark <ref type="bibr" target="#b46">[47]</ref>. The harness-the code that determines what to store, retrieve, and show to the model-often matters as much as the model itself. This sensitivity has led to growing interest in harness engineering, the practice of refining the code around an LLM to improve the overall system's performance <ref type="bibr">[36; 21; 10; 9]</ref>. But despite its importance, harness engineering remains largely manual: practitioners inspect failures, Method History Log content MTok/iter OPRO <ref type="bibr" target="#b50">[51]</ref> Window past (solution, score) pairs 0.002 TextGrad <ref type="bibr" target="#b52">[53]</ref> Last textual feedback on current artifact 0.015 AlphaEvolve <ref type="bibr" target="#b34">[35]</ref> Window program database + eval. scores 0.022 GEPA <ref type="bibr" target="#b0">[1]</ref> Summary reflective feedback from rollout traces 0.008 Feedback Descent <ref type="bibr" target="#b25">[26]</ref> Summary comparison + textual feedback 0.012 TTT-Discover <ref type="bibr" target="#b53">[54]</ref> Window prev. solution fragment 0.026</p><p>Meta-Harness Full all logs and scores 10.0</p><p>Table <ref type="table">1</ref>: Comparison of text optimization methods and their settings. Each row represents a method collapsed across tasks. Mtok/iter is our best estimate of the full context generated from one evaluation of a text artifact in the largest setting considered in each paper. This paper considers settings that yield orders-of-magnitude more context per artifact evaluation.</p><p>adjust heuristics, and iterate on a small number of designs. In this paper, we ask whether this process itself can be automated.</p><p>A natural starting point is recent work on text optimization, since harness engineering also involves iteratively improving text and code artifacts using feedback from prior attempts <ref type="bibr">[38; 39; 35; 26; 1]</ref>. However, these methods are poorly matched to harness engineering because they typically operate with short-horizon or heavily compressed feedback: some condition only on the current candidate <ref type="bibr">[31; 51; 53]</ref>, others rely primarily on scalar scores <ref type="bibr">[35; 12]</ref>, and others restrict feedback to short templates or LLM-generated summaries <ref type="bibr">[1; 26]</ref>. This is a pragmatic scalability choice, not evidence that longer-range dependencies are uninformative. Harnesses act over long horizons: a single choice about what to store, when to retrieve it, or how to present it can affect behavior many reasoning steps later. Compressed feedback often removes the information needed to trace downstream failures to earlier harness decisions. Across the tasks studied by several representative text optimizers, the available context per optimization step ranges from only 100 to 30,000 tokens (Table <ref type="table">1</ref>), far below the diagnostic footprint of harness search. More broadly, work on retrieval and memory-augmented language models suggests that useful context should often be accessed adaptively rather than monolithically packed into a single prompt <ref type="bibr">[28; 48; 37; 56]</ref>.</p><p>We address this limitation with Meta-Harness, an agentic harness for optimizing harnesses via end-to-end search (Figure <ref type="figure" target="#fig_0">2</ref>). Its proposer is a coding agent, i.e., a language-model-based system that can invoke developer tools and modify code. The choice of coding agent (rather than raw LLM) matters because the amount of experience quickly exceeds context limits, so the proposer must decide what to inspect and validate edits through direct interaction with the codebase. Its key design choice is to expose full history through a filesystem, enabling selective diagnosis of raw prior code and execution traces rather than optimization from compressed per-candidate summaries. For every previous candidate harness, the filesystem stores the source code, evaluation scores, and execution traces, which the proposer retrieves via standard operations such as grep and cat rather than ingesting them as a single prompt.</p><p>In practice, the proposer reads a median of 82 files per iteration in our most demanding setting, referencing over 20 prior candidates per step (Appendix A). In the settings we study, a single evaluation can produce up to 10,000,000 tokens of diagnostic information, roughly three orders of magnitude beyond the largest feedback budgets used in prior text optimization settings (Table <ref type="table">1</ref>).</p><p>We evaluate Meta-Harness on online text classification, mathematical reasoning, and agentic coding. On online text classification, harnesses discovered by Meta-Harness improve over Agentic Context Engineering (ACE, Zhang et al. <ref type="bibr" target="#b58">[59]</ref>) by 7.7 points while using 4× fewer context tokens, and match the next-best text optimizer's final performance after 60 proposals with only four (Figure <ref type="figure">1</ref>). On retrieval-augmented math reasoning, a single discovered harness improves accuracy on 200 IMO-level problems by 4.7 points on average across five held-out models. On TerminalBench-2, the discovered harness surpasses Terminus-KIRA and ranks #1 among all Haiku 4.5 agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>At a high level, Meta-Harness brings ideas from the broader literature on credit assignment and meta-learning <ref type="bibr">[40; 46; 3; 17; 44; 2]</ref> in a new regime enabled by recent advances in coding agents. Rather than updating model weights, the system assigns credit at the harness level: it uses experience from past rollouts to deliberately reason about which steps and components are responsible for failures, then rewrites the external code that governs future behavior. More specifically, the method lies at the intersection of several recent research threads; it is most directly related to work on adaptive access to external context, executable code search, and text optimization.</p><p>External memory and adaptive access. Several prior works note the benefits of treating large knowledge sources or long inputs as external resources that a language model accesses adaptively, rather than consuming them in a single pass. Specifically, retrieval-augmented generation <ref type="bibr" target="#b27">[28]</ref>, interleaved retrieval and reasoning <ref type="bibr" target="#b47">[48]</ref>, memory-based agents <ref type="bibr" target="#b36">[37]</ref>, or recursive language models <ref type="bibr" target="#b55">[56]</ref> are mechanisms for adaptive access to external context. Meta-Harness uses a similar access pattern, but in the more demanding setting of harness engineering, where the proposer selectively inspects a large external history of code, scores, and execution traces to improve context-management procedures themselves.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Executable code search.</head><p>Recent methods search over executable code for functions, workflows, or agent designs. Early work proposes using large models as mutation and crossover operators in evolutionary program search <ref type="bibr" target="#b26">[27]</ref>. Later methods evolve designated functions within fixed program scaffolds <ref type="bibr" target="#b38">[39]</ref>, use meta-agents to program new agents from prior discoveries <ref type="bibr" target="#b19">[20]</ref>, or search over workflow graphs for agentic systems <ref type="bibr" target="#b57">[58]</ref>. Another line of work searches over memory designs for continual-learning agents, where memory persists across task streams <ref type="bibr">[57; 50]</ref>. In contrast, Meta-Harness searches over domain-specific harnesses, including prompt construction, retrieval, and state update strategies that reset between tasks. Its outer loop is deliberately minimal: instead of relying on a fixed scaffold, an archive of prior discoveries, or a persistent memory mechanism, it gives the proposer unrestricted filesystem access to prior experience. This lets the agent decide what information to inspect and enables search over full harness implementations rather than a predefined space of context-management procedures.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Text optimization methods.</head><p>Meta-Harness is also closely related to methods such as ProTeGi, TextGrad, OPRO, GEPA, AlphaEvolve/OpenEvolve, and Feedback Descent, which iteratively improve prompts or other text artifacts using feedback from prior attempts <ref type="bibr">[38; 31; 53; 51; 1; 35; 43; 26]</ref>. However, these methods are less well suited to harness engineering, where optimization targets a complete executable procedure, and the relevant environmental feedback is distributed across code, scores, and execution traces in a way that is hard to summarize up front. Rather than reacting only to aggregate scores or summaries, the proposer in Meta-Harness can reason over failed examples and their execution traces to propose targeted edits. See Table <ref type="table">1</ref> for a comparison of problem scale considered in those papers and ours, and Figures <ref type="figure">1</ref> and <ref type="figure" target="#fig_2">4</ref> for a direct comparison with OpenEvolve, GEPA, and TTT-Discover in our problem setting.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Meta-Harness: A Harness for Optimizing Harnesses</head><p>This section describes Meta-Harness, our outer-loop procedure for searching over taskspecific harnesses. Meta-Harness is built on the idea that harness optimization benefits from allowing a proposer to selectively inspect prior code and execution traces via filesystem access, rather than optimizing from lossy summaries or an additional hand-designed search structure. At a high level, it repeatedly proposes, evaluates, and logs new harnesses.</p><p>Meta-Harness is itself a harness in the broad sense (hence the name), since it determines what information the proposer model sees during search. Unless otherwise noted, we use harness to refer to the task-specific programs being optimized.</p><p>Objective. A harness is a stateful program that wraps a language model and determines what context the model sees at each step. The goal is simple: find the harness that makes the underlying model perform best on the target task distribution. Formally, let M denote a fixed language model and X a task distribution. For a harness H and task instance x ∼ X , we execute a rollout trajectory τ ∼ p M (H, x). The harness constructs prompts for M, the model responds, and the harness updates its state after each interaction. A task-specific reward function r(τ, x) scores the trajectory. The objective of harness optimization is to find the harness that maximizes the expected final reward:</p><formula xml:id="formula_0">H * = arg max H E x∼X ,τ∼p M (H,x) r(τ, x),</formula><p>When multiple objectives are relevant (e.g., accuracy and context cost), we evaluate candidates under Pareto dominance and report the resulting frontier. In practice, this search has traditionally been carried out by human engineers and researchers, who iteratively refine prompts, context-management rules, and tool-use logic by hand.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Meta-Harness search loop.</head><p>Meta-Harness uses a single coding-agent proposer with access to a growing filesystem D that serves as its feedback channel <ref type="foot" target="#foot_0">1</ref> . Here, a coding agent is a language-model-based system that can invoke developer tools and modify code. Unlike prior systems that externalize the improvement logic in a hand-designed search loop, Meta-Harness delegates diagnosis and proposal to the coding agent itself: it decides which prior artifacts to inspect, which failure modes to address, and whether to make a local edit or a more substantial rewrite. Equivalently, the proposer is not a raw next-token model operating on a fixed prompt assembled by the outer loop; it is an agent that retrieves information, navigates prior artifacts, and edits code as part of the search itself. Each evaluated harness contributes a directory containing its source code, scores, and execution traces (such as prompts, tool calls, model outputs, and state updates). The filesystem is typically far larger than the proposer's context window, so the proposer queries it through terminal tools such as grep and cat rather than ingesting it as a single prompt. At each iteration, the proposer first inspects prior code, scores, and execution traces, then reasons about likely failure modes before generating a new harness.</p><p>Meta-Harness maintains a population H and a Pareto frontier over evaluated harnesses, but imposes no parent-selection rule: the proposer is free to inspect any prior harness and its execution trace when proposing new ones. We run evolution for a fixed number of iterations and perform a final test-set evaluation on the Pareto frontier. This simplicity is deliberate: by leaving diagnosis and edit decisions to the proposer rather than hard-coding search heuristics, Meta-Harness can improve automatically as coding agents become more capable. The proposer never sees</p><p>test-set results; its only feedback comes from the search set, the subset of task instances used to evaluate candidate harnesses during search and generate the feedback signal for improvement, and from execution traces logged during those search runs. Advantages of code-space search. Harness optimization occurs in code space, where small changes to retrieval, memory, or prompt-construction logic can affect behavior many steps later, making local search heuristics poorly matched to the problem. By inspecting execution Algorithm 1 Meta-Harness outer loop over harnesses 1: Input: tasks X , LLM M, proposer P, iterations N 2: Initialize: population H ▷ Initial set of valid harnesses 3: Initialize: filesystem D ← ∅ ▷ stores code, scores, traces 4: for H ∈ H do 5: E H ← Evaluate(H, M, X ) 6: D ← D ∪ {(H, E H )} 7: for t = 1 . . . N do 8: Proposer P queries filesystem D ▷ inspects prior harnesses and scores 9: Proposer P proposes k new harnesses {H 1 , . . . , H k } 10: for H in {H 1 , . . . , H k } do 11:</p><p>if H passes interface validation then 12:</p><p>D ← D ∪ {(H, EVALUATE(H, M, X ))} 13: return Pareto frontier of harnesses stored in D traces, the proposer can often infer why a harness failed and which earlier design choices likely contributed to the failure, not just that it failed, as illustrated by the search trajectories in Appendices A and A.2. There, we see that the proposer reads broadly across prior code and logs, then uses those traces to identify confounded edits, isolate likely causal changes, and shift toward safer modifications after repeated regressions. The proposer can therefore modify the harness at the level of algorithmic structure, ranging from changes to retrieval, memory, or prompt-construction logic to full program rewrites, rather than filling in templates or applying predefined mutation operators. In practice, it often starts from a strong prior harness, but this is an emergent strategy rather than a hard-coded rule. Although the search space is large, representing harnesses as programs provides a natural regularization bias: coding models tend to propose coherent algorithms rather than brittle, hard-coded solutions, which biases the search toward reusable context-management procedures. This action space is closely aligned with the read-write-execute workflows on which frontier coding assistants are trained.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Practical implementation.</head><p>In our experiments, each harness is a single-file Python program that modifies task-specific prompting, retrieval, memory, and orchestration logic. In our experiments, the proposer P is Claude Code <ref type="bibr" target="#b3">[4]</ref> with Opus-4.6. The proposer is guided by a minimal domain-specific skill that describes where to write new harnesses, how to inspect previous harnesses and their execution traces, and what files it can and cannot modify. The base model M varies by domain and is always frozen; see Section 4 for details. In our experiments, a typical run evaluates roughly 60 harnesses over 20 iterations. We provide additional tips for implementing Meta-Harness in a new domain in Appendix D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>We evaluate Meta-Harness on three task domains: online text classification, math reasoning, and agentic coding. In each domain, we compare harnesses discovered by our search against domain-appropriate baselines using the standard evaluation metric. Please refer to each subsection for the precise experimental setup.</p><p>We compare against two main classes of methods. (1) Human-designed strategies: these are hand-crafted harnesses for each domain, representing the current state of the art in context construction. We describe these baselines in the corresponding subsections. (2) Program-search methods: these methods search over candidate harnesses using feedback and reward signals, but are designed for smaller-scale settings than harness engineering.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Online Text Classification</head><p>We follow the online text classification setup of Zhang et al. <ref type="bibr" target="#b58">[59]</ref>; Ye et al. <ref type="bibr" target="#b51">[52]</ref>: an LLM receives labeled examples one at a time, updates its memory, and is evaluated on a heldout test set. We use GPT-OSS-120B as the LLM text classifier, and consider the problem of</p><p>Datasets Avg. Harness USPTO S2D Law Acc Ctx ↓ Zero-Shot 12.0 63.2 7.0 27.4 0 Few-Shot (8) 14.0 67.9 21.0 34.3 2.0 Few-Shot (32) 13.0 72.2 21.0 35.4 7.9 Few-Shot (all) 15.0 78.3 29.0 40.8 12.3 MCE [52] † 14.0 83.0 23.0 40.0 28.5 ACE [59] † 16.0 77.8 29.0 40.9 50.8 Meta-Harness 14.0 86.8 45.0 48.6 11.4 Table 2: Test-set metrics for all harnesses on the three datasets. Ctx denotes additional input tokens in context (thousands). †: implementation from Ye et al. [52]. ↓: lower is better. Meta-Harness improves online text classification accuracy while using a smaller input context. 0 10k 20k 30k 40k 50k 25 30 35 40 45 50 Test accuracy Ours (Pareto) Ours (non-Pareto) MCE ACE Zero-shot Few-shot 115k 200k</p><p>Additional context (chars) designing a harness for text classification. We use three datasets, chosen for difficulty and domain diversity: LawBench (Law) <ref type="bibr" target="#b15">[16]</ref> predicts criminal charges from case descriptions (215 classes); Symptom2Disease (S2D) <ref type="bibr" target="#b18">[19]</ref> predicts diseases from symptom descriptions (22 classes); and USPTO-50k <ref type="bibr" target="#b40">[41]</ref> predicts precursor reactants from product molecules (180 classes). We initialize the search population H from the main baseline harnesses in this setting: zero-shot, few-shot, ACE, and MCE. We ran 20 evolution iterations with two candidates per iteration, producing 40 candidate harnesses.</p><p>Comparison vs text optimizers. We compare Meta-Harness against representative methods for optimizing text. For a fair comparison, we use the same proposer configuration (Opus-4.6 with max reasoning), select candidates solely based on search-set performance, and hold out the test sets until the final evaluation. Since evaluation is the main computational bottleneck, we give each method the same budget of proposal harness evaluations. We consider the following points of comparison:</p><p>• Best-of-N: independent samples from the seed with no search structure; a computematched control for whether search matters at all.</p><p>• OpenEvolve <ref type="bibr" target="#b42">[43]</ref>: evolutionary search over programs with LLM mutation.</p><p>• TTT-Discover <ref type="bibr" target="#b54">[55]</ref>: we use only the text-optimization component of their method, i.e., proposal selection via the PUCT reuse rule.</p><p>In this setting, Meta-Harness matches the best prior text optimizers (OpenEvolve, TTT-Discover) in 0.1× the evaluations, and its final accuracy surpasses theirs by more than 10 points (Figure <ref type="figure">1</ref> and Table <ref type="table">4</ref>). We attribute this speedup to the intentional design choices that impose minimum necessary structure on the outer loop (Section 3). In particular, Meta-Harness preserves full experience history using a filesystem and allows the proposer to inspect anything necessary, whereas both OpenEvolve and TTT-Discover operate with more structured and substantially more limited proposer inputs than full filesystem access. We note that online text classification is the smallest-context setting we study (Table <ref type="table">1</ref>), so if structure-heavy text optimizers already lag here, their limitations may only grow in harder regimes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Meta-Harness is 10× Faster and Converges to a Better Harness</head><p>In this setting, Meta-Harness matches the best prior text optimizers (OpenEvolve, TTT-Discover) with 10× fewer full evaluations, and its final accuracy surpasses theirs by more than 10 points.</p><p>To isolate which parts of the proposer interface matter most, we compare three conditions in online text classification: a scores-only condition, a scores-plus-summary condition in which the proposer receives LLM-generated summaries but no raw traces, and the full Meta-Harness interface with access to execution traces (Table <ref type="table" target="#tab_0">3</ref>). The results show a large gap in favor of the full interface: scores-only reaches 34.6 median and 41.3 best accuracy, while scores-plus-summary reaches 34.9 median and 38.7 best. By contrast, Meta-Harness Access to raw execution traces is the key ingredient for enabling harness search. reaches 50.0 median and 56.7 best accuracy, and even its median candidate outperforms the best candidate found under either ablation. We interpret this as evidence that full access to execution traces is the most important component of the interface: summaries do not recover the missing signal, and may even hurt by compressing away diagnostically useful details. Method Median Best GEPA [1] 32.6 40.2 Best-of-N 34.0 44.2 OpenEvolve [43] 39.1 43.3 TTT-Discover [55] 34.1 45.6 Meta-Harness 50.0 56.7 Table 4: Text classification accuracies of the harnesses proposed by different text optimizers (search set). Meta-Harness is substantially more effective at harness optimization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Comparison vs state-of-the-art harnesses.</head><p>Our primary points of comparison are hand-designed harnesses for this problem setting: Agentic Context Engineering (ACE, Zhang et al. <ref type="bibr" target="#b58">[59]</ref>), which uses reflective memory curation to build context over time, and Meta Context Engineering (MCE, Ye et al. <ref type="bibr" target="#b51">[52]</ref>), which maintains and evolves a library of natural-language skills for context construction. As additional baselines, we evaluate zero-shot prompting and few-shot prompting with N ∈ {4, 8, 16, 32, all} examples. Results in Table <ref type="table">2</ref> show that Meta-Harness improves substantially over prior hand-designed harnesses. The selected Meta-Harness<ref type="foot" target="#foot_2">foot_2</ref> reaches 48.6% accuracy, outperforming ACE by 7.7 points and MCE by 8.6 points. These gains do not come from using more context: Meta-Harness uses only 11.4K context tokens, versus 50.8K for ACE and 28.5K for MCE.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Accuracy-Context Tradeoffs.</head><p>Because Meta-Harness performs free-form optimization over harness code, we can express a joint preference for both accuracy and context cost rather than committing to a single scalar objective in advance. Given only the current metrics and the desired trade-off, the proposer is able to discover harnesses across a broad range of the frontier, yielding a smooth accuracy-context Pareto curve in Figure <ref type="figure" target="#fig_1">3</ref>. This allows us to trade additional context for higher test accuracy in a controlled way, rather than committing to a single hand-designed operating point.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Out-of-distribution (OOD) task evaluation.</head><p>We evaluate whether the discovered harness generalizes to entirely new datasets unseen during search. We consider nine diverse datasets, and describe them in detail in Appendix C.1. The selected Meta-Harness system achieves the best average accuracy (73.1%), outperforming ACE (70.2%) and all few-shot baselines (Table <ref type="table" target="#tab_1">5</ref>). Notably, we observe that naively adding more few-shot examples beyond 32 hurts performance in 7/9 tasks. Meta-Harness shows the highest performance on 6/9 datasets, suggesting that the discovered harness captures generally effective strategies for text classification rather than overfitting to the specific datasets used during search.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Harnesses for Retrieval-Augmented Reasoning</head><p>We study a somewhat non-standard setup for olympiad math solving: augmenting the model with the ability to retrieve examples from a large corpus. There is a good reason to expect retrieval to help mathematical reasoning in principle, because solutions often share reusable proof patterns, so previous reasoning traces contain information that a model may Meta-Harness outperforms the next best method by 2.9 points on these 9 previously unseen tasks. Method GPT-5.4n GPT-5.4m Gem-3.1FL Gem-3F GPT-20B Avg. No Retriever 23.0 28.8 28.6 42.6 47.6 34.1 Dense Retrieval (k=1) 27.1 (+4.1) 24.5 (-4.3) 31.3 (+2.7) 42.3 (-0.3) 46.9 (-0.7) 34.4 (+0.3) Dense Retrieval (k=5) 31.1 (+8.1) 28.3 (-0.5) 37.1 (+8.5) 47.2 (+4.6) 46.7 (-0.9) 38.1 (+4.0) Random Few-shot 23.1 (+0.1) 24.5 (-4.3) 31.0 (+2.4) 40.4 (-2.2) 41.8 (-5.8) 32.2 (-1.9) BM25 Retrieval 30.2 (+7.2) 29.2 (+0.4) 32.8 (+4.2) 46.6 (+4.0) 48.9 (+1.3) 37.5 (+3.4) Meta-Harness 31.7 (+8.7) 30.4 (+1.6) 34.9 (+6.3) 46.3 (+3.7) 50.6 (+3.0) 38.8 (+4.7) Table 6: Retrieval-augmented math problem solving on 200 IMO-level math problems. We show pass@1 averaged over three samples per problem, with absolute improvement over the baseline in parentheses. The discovered Meta-Harness retrieval strategy improves reasoning on these IMO-level problems across all five held-out models, with a 4.7-point average gain over no retriever.</p><p>be able to exploit at inference time. Yet retrieval has not become a standard ingredient in this setting, and prior work suggests that it has been much less successful on reasoning-intensive math benchmarks than in more fact-grounded domains <ref type="bibr">[42; 49; 6]</ref>. The difficulty is that naive retrieval rarely surfaces the right traces in the right form. This suggests that success depends less on adding retrieval per se than on discovering the right retrieval policy. Rather than hand-designing that policy, we give Meta-Harness a hard set of olympiad problems and allow the retrieval behavior itself to emerge from search.</p><p>The retrieval corpus contains ≥500,000 solved problems from eight open-source datasets. We carefully deduplicated and decontaminated it against both evaluation benchmarks and the search set, confirmed that held-out problems have no exact prefix matches under our string-based filter, and manually inspected top BM25 retrievals for held-out examples (appendix C.2). We use Meta-Harness to optimize a harness for 40 iterations over a 250-problem search set of Olympiad-difficulty math problems (OlympiadBench + Omni-MATH hard), producing 109 candidate retrieval harnesses. We initialize the search population H from the main baseline harnesses in this setting: zero-shot, few-shot, and ACE. We select a single harness based on search-set performance using GPT-OSS-20B (Appendix B.2). We evaluate this harness on 200 previously unseen IMO-level problems drawn from IMO-AnswerBench, IMO-ProofBench, and ArXivMath <ref type="bibr">[30; 6]</ref>. In addition to GPT-OSS-20B, we evaluate the same retrieval harness on four models not seen during search: GPT-5.4-nano, GPT-5.4-mini, Gemini-3.1-Flash-Lite, and Gemini-3-Flash. We follow the standard evaluation protocol of prior work <ref type="bibr" target="#b29">[30]</ref> and report accuracy averaged over three samples per problem.</p><p>Results. Table <ref type="table">6</ref> compares the discovered harness against no retrieval, dense retrieval using the separate embedding model text-embedding-3-small, random few-shot prompting, and BM25 retrieval. In contrast, Meta-Harness operates entirely in code space on top of the same BM25-based lexical retrieval stack as the sparse baseline, rather than introducing an additional dense encoder. The discovered retrieval harness outperforms the no-retrieval baseline across all five held-out models, with an average gain of 4.7 points. It also matches or exceeds the strongest fixed baselines on average, outperforming BM25 retrieval by 1.3 points overall, while avoiding the regressions observed with dense retrieval and random few-shot prompting across several models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Meta-Harness Improves Reasoning on IMO-Level Math Problems</head><p>In retrieval-augmented math reasoning, a single discovered retrieval harness transfers across five held-out models, improving accuracy by 4.7 points on average over no retrieval and yielding the strongest overall average among the compared methods.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Evaluating Agentic Coding Harnesses on TerminalBench-2</head><p>TerminalBench-2 <ref type="bibr" target="#b32">[33]</ref> evaluates LLM agents on 89 challenging tasks that require longhorizon, fully autonomous execution under complex dependencies, and substantial domain knowledge. Prior work has shown that the choice agent harness has a large effect on performance on this benchmark. We initialize search from two strong open baselines, Terminus 2 <ref type="bibr" target="#b32">[33]</ref> and Terminus-KIRA <ref type="bibr" target="#b24">[25]</ref>. For this experiment, we perform search and final evaluation on the same 89-task benchmark. We use this benchmark as a discovery problem <ref type="bibr" target="#b53">[54]</ref> in which the goal is to discover a harness configuration that improves performance on a hard, publicly contested benchmark. This is standard practice: public writeups already describe repeated benchmark-specific harness iteration on TerminalBench itself <ref type="bibr">[18; 34; 25]</ref>, and the benchmark is small and expensive enough that introducing a separate split would materially weaken the search signal. We additionally check for overfitting by manual inspection and regex-based audits for task-specific string leakage into evolved harnesses. We note that although the resulting harness is specialized to the TerminalBench-2 regime, autonomous completion of difficult long-horizon tasks from a single instruction is a core capability, and the benchmark consists of many tasks that frontier models and heavily engineered harnesses struggle with. -Harness ranks #2 among all Opus-4.6 agents and #1 among all Haiku-4.5 agents on this competitive task.</p><p>Results. We report results on the full benchmark in Table <ref type="table" target="#tab_2">7</ref>, evaluated on two base models: Claude Opus 4.6 and Claude Haiku 4.5. On Opus 4.6, Meta-Harness discovers a harness achieving 76.4% pass rate, surpassing the hand-engineered Terminus-KIRA (74.7%) and ranking #2 among all Opus 4.6 agents on the TerminalBench-2 leaderboard. The only higher-scoring Opus 4.6 agent is ForgeCode (81.8%); however, we were unable to reproduce their reported result from the publicly available code alone, suggesting their leaderboard scores depend on components beyond the published repository. On the weaker Haiku 4.5 model, the improvement is larger: Meta-Harness achieves 37.6%, outperforming the next-best reported agent (Goose, 35.5%) by 2.1 points. TerminalBench-2 is an actively contested benchmark with multiple teams directly optimizing for it, so the fact that an automatic search method can achieve benefits at this frontier is encouraging for long-horizon textoptimization loops.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Qualitative behavior of the proposer.</head><p>The harness search trajectory helps explain why Meta-Harness achieves these gains; we provide a detailed summary in Appendix A. In early iterations, the proposer combined plausible structural fixes with prompt-template edits and observed that both candidates regressed. It then explicitly hypothesized that the regressions were confounded by the shared prompt intervention, isolated the structural changes from the prompt rewrite, and ultimately pivoted toward a safer additive modification that became the best candidate in the run. This provides qualitative evidence that filesystem access enables the proposer to inspect prior experience in enough detail to form causal hypotheses and revise the harness accordingly.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Meta-Harness Surpasses Hand-Engineered Agents on TerminalBench-2</head><p>On TerminalBench-2, Meta-Harness automatically discovers harnesses that surpass Terminus-KIRA on Opus 4.6 and rank #1 among all Haiku 4.5 agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Discussion</head><p>Beyond outperforming existing harnesses, Meta-Harness has several practical advantages. Discovered harnesses generalize to out-of-distribution classification datasets (Table <ref type="table" target="#tab_1">5</ref>) and to unseen base models in the math setting (</p><p>Table 6). A search run completes in a few hours of wall-clock time, yet produces readable, transferable strategies that can be reused across models, including future, stronger ones. Overfitting in code space is also more inspectable: brittle if-chains or hard-coded class mappings are visible on inspection in a way that weight-space overfitting is not. More broadly, our results suggest that the main advantage of Meta-Harness is not just search over code, but search with selective access to prior diagnostic experience. The proposer is not limited to scalar rewards or fixed summaries; it can inspect raw code, execution traces, and prior failures, then use that information to form and test hypotheses about what to change. The qualitative search trajectories in Appendix A.2 illustrate this behavior directly. Our findings reflect a recurring pattern in machine learning [45]: once a search space becomes accessible, stronger general-purpose agents can outperform hand-engineered solutions. A natural next step for future work is to co-evolve the harness and the model weights, letting the strategy shape what the model learns and vice versa. While we evaluate on three diverse domains, our experiments demonstrate that harness search can work with one particularly strong coding-agent proposer (Claude Code); a broader study of how the effect varies across proposer agents remains for future work. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Qualitative Proposer Behavior</head><p>This section examines how the proposer uses the filesystem during search, drawing on the TerminalBench-2 run (10 iterations, Claude Opus 4.6).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 File Access Statistics</head><p>To verify that the proposer makes substantive use of the filesystem rather than defaulting to local edits, we recorded all file reads per iteration.</p><p>Table <ref type="table">8</ref> summarizes the results. The proposer reads a median of 82 files per iteration (range 69-99), roughly evenly split between prior harness source code (41%) and execution traces (40%), with the remainder going to score summaries (6%) and other files (13%). This confirms that the proposer's access pattern is non-Markovian: it routinely inspects the majority of available history rather than conditioning only on the most recent parent.</p><p>Statistic Value Files read per iteration (median) 82 Files read per iteration (range) 69-99 File type breakdown Harness source code 41% Execution traces 40% Score/summary files 6% Other 13% Table 8: Proposer file access statistics from the TerminalBench-2 search run (10 iterations, Claude Opus 4.6). The proposer reads extensively from the filesystem, with roughly equal attention to prior source code and execution traces.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Qualitative Behavior: Causal Reasoning Over Prior Failures</head><p>The TerminalBench-2 search log reveals a clear narrative arc in which the proposer learns from its own regressions. Rather than wandering randomly through local edits, it forms an explicit diagnosis of why early candidates failed, then shifts toward a safer design pattern. All text inside the log boxes below is quoted verbatim from the proposer's recorded reasoning at each iteration (emphasis ours).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Iterations 1-2: promising bugfixes are confounded by prompt edits.</head><p>The first two iterations both bundle plausible structural fixes with prompt-template modifications, and both regress sharply from the 64.4% Terminus-KIRA baseline. Iteration 1 targets observation corruption from leaked terminal markers and adds a loop breaker:</p><p>Hypothesis: CMDEND marker fragments leak into LLM observations on long-running tasks, causing the model to get confused and enter infinite no-tool-call loops. Stripping these markers + adding a loop breaker will recover wasted steps.</p><p>That candidate also introduced a new cleanup-oriented prompt template and a verification checklist. Iteration 2 proposes a different state-machine fix: Double-confirmation completion mechanism causes verification spirals. Observed in trajectories where the agent solves the task early but burns 15--40+ additional steps re-verifying because each verification command resets pending completion, requiring another task complete → checklist → verify cycle.</p><p>This second candidate removes the pending-completion mechanism entirely, while also carrying over the marker stripping and the new prompt. It still regresses, which gives the proposer two failed candidates with different structural changes but one shared prompt intervention.</p><p>Iteration 3: the proposer identifies the confound. By iteration 3, the proposer explicitly infers that the regressions are not primarily due to the structural bugfixes themselves:</p><p>Prior attempts: evo marker fix (58.9%, -5.6pp), evo single confirm (57.8%, -6.7pp) ---both regressed. Root cause of regressions: Prompt template changes (cleanup directives) caused the agent to delete necessary state before task completion. The structural bugfixes were confounded with harmful prompt changes. evo strip only isolates the two proven structural fixes. This is the key causal step in the trajectory. The proposer notices that the common factor across the first two failures is not the particular bugfix, but the cleanup-heavy prompt rewrite. It therefore reverts to the original prompt and tests only the marker-stripping and loop-breaker. The resulting candidate still underperforms slightly (63.3%, -1.1pp), but it loses far less than the earlier versions, which supports the confound diagnosis. The proposer even cites concrete trajectory evidence, noting that configure-git-webserver produced baseline failures with agents stuck in 30-60 step verification spirals after effectively solving the task. Iteration 5 tries to soften the cleanup language while preserving confirmation, but still edits the prompt and regresses badly. Iteration 6 returns to the safer evo strip only base and proposes a systems-level optimization:</p><p>Empty-command turns waste full LLM round-trips when terminal output hasn't changed. Smart-waiting (poll pane up to 3×5s) before the next LLM call saves 5--15 turns on long-running tasks.</p><p>That change also regresses. By this point, the proposer has learned a specific empirical lesson: modifications to prompts and completion flow are high risk, even when the local hypothesis sounds reasonable.</p><p>Iteration 7: the winning candidate. After six consecutive regressions, the proposer shifts strategy from modifying the control loop to adding information before the loop begins:</p><p>All 6 prior iterations regressed from the 64.4% baseline because they modified the completion flow, prompt template, or observation processing. evo env bootstrap takes a different approach ---purely additive. It gathers an environment snapshot via a single shell command before the first LLM call and appends it to the initial prompt. No other methods are changed. This should eliminate 3--5 wasted exploration turns on dependency-heavy tasks without risking regression on already-passing tasks.</p><p>This candidate is the best result so far. The important point is not just that iteration 7 wins, but that the proposer articulates why it should be safer: it avoids touching the previously fragile completion machinery and instead adds information that is useful mainly on hard tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Iteration 8: composition.</head><p>Having found one additive improvement, the proposer next attempts to compose it with an earlier structural fix:</p><p>Combining two orthogonal fixes ---env snapshot (saves early exploration turns) + marker stripping with no-tool-call loop breaker ---will yield +1--3pp because they address independent failure modes without touching prompts or confirmation flows (which caused regressions in 5 of 7 prior iterations).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Iteration 10: cross-run transfer.</head><p>The proposer references results from a separate earlier search run:</p><p>The evolution history showed ''don't cleanup service artifacts'' was worth +18pp. Iter 9 (evo no cleanup directive) targeted the same idea but crashed before evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Summary.</head><p>The search trajectory demonstrates that the proposer does more than random mutation. Across the first seven iterations, it identifies a confound, tests the confoundisolating hypothesis directly, observes that control-flow and prompt edits remain fragile, and then deliberately pivots to a purely additive modification that becomes the best candidate in the run. It subsequently tries to compose that winning idea with earlier fixes and even transfers lessons across runs. This kind of causal reasoning over prior failures is precisely what full-history filesystem access enables and what compressed-feedback optimizers cannot support.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Discovered Harnesses</head><p>Meta-Harness discovers executable inference-time procedures specific to the problem setup at hand. These harnesses are structured, domain-specific policies, often with nontrivial control flow such as routing, filtering, and conditional context construction, selected solely by whether they improve search-set performance. This section presents compact, method-style abstractions of representative harnesses that summarize the main behaviors and controlflow decisions that drive inference-time behavior. For reference, the full implementation for each discovered harness is on the order of 100-1000 lines of code. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1 Text Classification Harness</head><p>In online text classification, Meta-Harness discovers a family of memory-based harnesses rather than a single canonical policy.</p><p>Table 9 reports the Pareto frontier of non-dominated variants from the main search, all selected solely by search-set performance. We highlight two representative endpoints here: Meta-Harness (Draft Verification), the lowest-context frontier point, and Meta-Harness (Label-Primed Query), the highest-accuracy frontier point used in the main text. Overview. Both harnesses maintain a growing memory of past labeled examples and build prompts from that memory at inference time. What differs is the control flow used to interrogate the memory. Meta-Harness (Draft Verification) uses two short calls and explicitly tests the model's first guess against retrieved counterexamples, while Meta-Harness (Label-Primed Query) spends a larger single-call budget on making the label space and local decision boundaries explicit. Figures <ref type="figure" target="#fig_4">5</ref> and <ref type="figure" target="#fig_5">6</ref> summarize these two programs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Meta-Harness (Draft Verification).</head><p>The corresponding discovered file is draft verificat ion.py. This lightweight variant turns prediction into a two-call procedure. It first retrieves the 5 most similar labeled examples and makes a draft prediction. It then re-queries the same memory conditioned on that draft label, retrieving 5 confirmers with the same label and 5 challengers with different labels, and asks the model whether to maintain or revise its initial answer. The key discovered behavior is that the second retrieval depends on both the query and the draft prediction, so the harness can surface counterexamples targeted at the model's current guess rather than only generic near neighbors. If too few labeled examples have been accumulated, the program falls back to a standard single-call few-shot prompt.</p><p>• Stage 1: Draft. Retrieve the 5 nearest labeled examples and ask for an initial prediction.</p><p>• Stage 2: Verification. Condition retrieval on the draft label, then show both supporting and challenging examples before making the final prediction.</p><p>• Cold start. If fewer than 5 labeled examples are available, skip the two-stage procedure and use a standard single-call few-shot prompt.</p><p>• Why it is cheap. Both calls use short retrieved contexts, so the overall context cost stays near the low end of the frontier even with two model invocations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Query + memory</head><p>Label primer all valid labels TF-IDF retrieval query-anchored pairing </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Meta-Harness (Label-Primed Query).</head><p>The corresponding discovered file is label prime d query anchored.py. This strongest variant uses a single larger call built from three parts. It begins with a label primer listing the valid output labels, then constructs a coverage section with one query-relevant example per label, and finally adds query-anchored contrastive pairs that place highly similar examples with different labels side by side. The coverage block exposes the full label space, while the contrastive block sharpens local decision boundaries around the current query. In code, the harness implements this with TF-IDF retrieval over past labeled examples and a query-anchored pairing rule that chooses contrasting examples from the same local neighborhood.</p><p>• Label primer. List the valid output labels before showing any examples, so the model sees the full answer space up front.</p><p>• Coverage block. For each known label, retrieve the most query-relevant labeled example and include one representative example per class.</p><p>• Contrastive block. Build pairs of highly similar examples with different labels, so the prompt exposes local decision boundaries around the current query.</p><p>• Retrieval rule. Use TF-IDF similarity and query-anchored partner selection rather than label-agnostic nearest neighbors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Math Retrieval Harness</head><p>This subsection describes the retrieval harness discovered by Meta-Harness for mathematical reasoning (Section 4.2). The final harness is a compact four-route BM25 program whose structure emerged through search rather than being manually specified after the fact. All design choices below-the routing predicates, reranking terms, deduplication thresholds, and per-route example counts-were selected by the outer loop across 40 iterations of evolution.</p><p>Datasets Avg metrics Variant USPTO ↑ Symptom ↑ LawBench ↑ Avg ↑ Ctx ↓ Meta-Harness (Draft Verification) 18.0 85.4 17.0 40.1 5.4 Meta-Harness (Error-Annotated) 9.0 87.7 24.0 40.2 22.3 Meta-Harness (CoT Replay) 13.0 88.2 25.0 42.1 23.3 Meta-Harness (Cluster Coverage) 12.0 86.8 33.0 43.9 31.2 Meta-Harness (Cascade Retrieval) 12.0 86.8 36.0 44.9 39.2 Meta-Harness (RRF + Contrastive) 18.0 89.6 35.0 47.5 41.4 Meta-Harness (Relevance + Contrastive) 18.0 90.6 36.0 48.2 43.9 Meta-Harness (Label-Primed Query) 14.0 86.8 45.0 48.6 45.5</p><p>Table <ref type="table">9</ref>: Pareto-optimal discovered variants from the main text-classification search, trading off average accuracy against context cost. The selected system in the main text is Meta-Harness (Label-Primed Query). Ctx denotes average additional characters in input context (thousands). Overview. At inference time, the harness assigns each problem to exactly one of four routes: combinatorics, geometry, number theory, or a default route for algebra and other problems. The gates are implemented as lightweight lexical predicates over the problem statement, including keyword sets and a small number of regex features for geometry notation. The harness does not aggregate outputs across routes: once a route is selected, only that route retrieves examples for the final prompt. All routes use BM25 as the underlying retrieval mechanism over the filtered corpus described above. The BM25 index uses a math-aware tokenizer that preserves LaTeX tokens (e.g., \frac, ˆ{2}) as atomic units. The selected harness is a merge of two successful search lineages, autonomously combined by the proposer during search: one contributed a stronger geometry route based on raw BM25, while another contributed a stronger combinatorics route based on deduplication and difficulty reranking. Figure <ref type="figure" target="#fig_7">8</ref> gives a compact flowchart view of the final program.</p><p>• Combinatorics: fetch 20 BM25 candidates, deduplicate to 8, rerank by lexical score and difficulty, then return the top 3. This is the main route where the harness explicitly trades off diversity against hard-problem matching.</p><p>• Geometry: return 1 hard NuminaMath reference together with 2 raw BM25 neighbors. Search consistently prefers raw structural matches here over difficulty reranking.</p><p>• Number theory: fetch 12 BM25 candidates and rerank using lexical score, difficulty, and a small bonus for solutions that state a technique early. This favors examples whose proof strategy is explicit.</p><p>• Default: fetch 10 BM25 candidates, rerank by lexical score and difficulty, and choose an adaptive number of examples based on how concentrated the top retrieval scores are.</p><p>Query Lexical router keyword and regex cues Combinatorics BM25@20 Dedup to 8 Rerank Keep 3 Geometry 1 fixed ref + 2 BM25 No rerank Number theory BM25@12 Rerank Keep 3 Algebra/Other BM25@10 Rerank Adaptive K Build final prompt </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 TerminalBench-2 Harness</head><p>The discovered TerminalBench-2 harness builds on Terminus-KIRA <ref type="bibr" target="#b24">[25]</ref>, inheriting its native tool calling (replacing Terminus 2's ICL-based JSON parsing), 30KB output cap, and multiperspective completion checklist. The main modification discovered by Meta-Harness is environment bootstrapping: before the agent loop begins, the harness runs a compound shell command to gather a snapshot of the sandbox environment and injects it into the initial prompt. The proposer's hypothesis, recorded verbatim from the search log, was: Hypothesis: ''Injecting an environment snapshot (OS, installed languages, package managers, /app contents) before the first LLM turn will reduce wasted exploration episodes by 3--5 turns on dependency-heavy tasks'' Changes: ''Added gather env snapshot() that runs a single compound shell command to collect working directory, /app listing, available languages (python, gcc, node, java, rustc, go), package managers (pip, apt) [. . . ] and injects as [Environment Snapshot] block''</p><p>The snapshot includes: the working directory, a listing of /app (truncated to 20 entries for large directories), available programming languages and their versions (Python, GCC, G++, Node, Java, Rust, Go), installed package managers (pip, apt-get), and available memory. This eliminates the 2-4 exploratory turns that agents typically spend discovering what tools and files are available, allowing the model to begin productive work immediately. The bootstrapping command is guarded by a 15-second timeout and fails silently, so it does not break the agent in unusual environments. The full implementation adds roughly 80 lines on top of Terminus-KIRA. Figure <ref type="figure">9</ref> summarizes the harness structure.</p><p>Per-task analysis. Compared to Terminus-KIRA, the discovered harness gains on 7 of 89 tasks, with the largest improvements on protein-assembly and path-tracing. The gaining tasks share a common property: they require domain-specific tooling whose availability cannot be assumed in advance (bioinformatics libraries, rendering pipelines, chess engines, cryptographic utilities, CoreWars simulators). Without the bootstrap, the agent spends its</p><p>Task instruction Env bootstrap pwd, files, languages, pkg managers, memory Initial prompt task + snapshot Agent loop native tool calling 30KB output cap Multi-perspective completion checklist Task complete pass fail Figure <ref type="figure">9</ref>: Discovered TerminalBench-2 harness. The harness inherits Terminus-KIRA's native tool calling, output cap, and completion checklist (green). The environment bootstrap (red) is the component discovered by Meta-Harness: it gathers a sandbox snapshot before the agent loop begins, eliminating early exploratory turns. first 2-4 turns probing the environment; on tasks with tight turn budgets or where early wrong assumptions cascade, those wasted turns can be the difference between pass and fail. This suggests that the bootstrap's value is largest when the environment is non-obvious, and the task requires the agent to match its strategy to what is actually installed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Dataset Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.1 OOD Text Classification Datasets</head><p>• SciCite is a 3-way citation-intent classification benchmark introduced by Cohan et al. <ref type="bibr" target="#b13">[14]</ref>. Each example consists of a citation context from a scientific paper, labeled by the citation's rhetorical role, such as background, method, or result. The task tests whether a model can infer why one paper cites another from the local scientific context.</p><p>• FiNER-139 is a financial numeric entity recognition benchmark introduced by Loukas et al. <ref type="bibr" target="#b28">[29]</ref>. It consists of word-level annotations from financial filings with 139 fine-grained XBRL entity types, making it substantially more fine-grained than standard sentencelevel classification tasks. The benchmark tests whether a model can identify and classify numeric financial entities from context.</p><p>• Amazon Reviews is the English portion of the Multilingual Amazon Reviews Corpus introduced by Keung et al. <ref type="bibr" target="#b21">[22]</ref>. In our setting, it is used as a 5-way review rating prediction task, where the label corresponds to the review's star rating. This benchmark evaluates general-domain sentiment and rating prediction from product review text.</p><p>• Financial PhraseBank is a 3-way financial sentiment benchmark introduced by Malo et al. <ref type="bibr" target="#b31">[32]</ref>. It consists of sentences from financial news and related economic text labeled as positive, neutral, or negative with respect to market sentiment. The task evaluates domain-specific sentiment classification in finance.</p><p>• GoEmotions is a fine-grained emotion classification benchmark introduced by Demszky et al. <ref type="bibr" target="#b14">[15]</ref>. It contains English Reddit comments annotated with 27 emotion categories plus a neutral category, and is commonly treated as a 28-way classification task. The benchmark tests nuanced affect recognition beyond coarse positive-negative sentiment.</p><p>• Banking77 is a fine-grained intent classification benchmark introduced by Casanueva et al. <ref type="bibr" target="#b10">[11]</ref>. It contains online banking user utterances labeled with 77 intents, covering a wide range of customer service requests. The task evaluates single-domain intent detection with a large label space.</p><p>• AG News is a 4-way news topic classification benchmark commonly associated with the text classification setup of Zhang et al. <ref type="bibr" target="#b59">[60]</ref>. Examples are labeled with broad news categories such as world, sports, business, and science/technology. It is a standard general-domain benchmark for topic classification.</p><p>• SciTail is a science-domain textual entailment benchmark in which the task is to predict whether a hypothesis is entailed by a premise sentence in a science-focused inference setting <ref type="bibr" target="#b23">[24]</ref>.</p><p>• TweetEval (Hate) is the hate-speech subset of the TweetEval benchmark introduced by Barbieri et al. <ref type="bibr" target="#b6">[7]</ref>. It is a binary tweet classification task for detecting hateful versus non-hateful content within a unified social-media evaluation suite. This benchmark tests robust classification in noisy, short-form social media text.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2 Math Retrieval Corpus</head><p>Table <ref type="table">10</ref> lists the datasets composing the retrieval corpus used in Section 4.2. The raw sources contain more problems than the final corpus; several filtering steps were applied before merging. NuminaMath-1.5 was filtered to competition-math subsets (AMC/AIME, olympiad references, number theory, inequalities, and related sources), discarding lowerquality web-scraped entries. OpenMathReasoning was deduplicated to one solution per problem (retaining the solution with the highest pass rate on an independent verifier), and problems whose source matched any evaluation benchmark family (IMO, AIME, HMMT, SMT, USAMO, Putnam) were removed before deduplication. The entire corpus was then decontaminated against all evaluation benchmarks and the search set used during harness search, using exact prefix matching followed by fuzzy Jaccard similarity (threshold 0.8); any corpus problem matching an eval problem under either criterion was discarded. Solutions from OpenMathReasoning and DeepMath are truncated to 5,000 characters to limit retrieval context length. At runtime, the selected harness further restricts retrieval to entries with non-empty solutions shorter than 4,000 characters. Retrieved solutions are truncated again to 3,000 characters when inserted into the prompt. For the geometry route, the harness also constructs a separate hard-reference index from NuminaMath problems with difficulty greater than 6.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3 Math IMO-level Test Set</head><p>The main text aggregates results over 200 IMO-level problems drawn from IMO-AnswerBench, IMO-ProofBench, ArXivMath December 2025, and ArXivMath January 2026. The 200-problem evaluation set consists of a stratified 100-problem subset of IMO-AnswerBench, together with all problems from the other three benchmarks. This perbenchmark breakdown is useful because the four datasets mix answer-style, proof, and research-style problems, which are aggregated together in the main paper for brevity. When included, the table in this section should report each benchmark separately for both Base and Meta-Harness across the five held-out models.</p><p>Dataset Problems Sol. Len Proof <ref type="url" target="https://huggingface.co/datasets/nvidia/OpenMathReasoning">OpenMathReasoning</ref> 281,743 5,000 † 34% <ref type="url" target="https://huggingface.co/datasets/zwhe99/DeepMath-103K">DeepMath-103K</ref> 103,021 5,000 † 0% <ref type="url" target="https://huggingface.co/datasets/AI-MO/NuminaMath-1.5">NuminaMath-1.5</ref> 129,520 1,376 13% <ref type="url" target="https://huggingface.co/datasets/AIMO-Corpus/PolyMath">PolyMath</ref> 11,083 363 0% <ref type="url" target="https://huggingface.co/datasets/KbsdJames/Omni-MATH">Omni-MATH</ref> 4,289 829 0% <ref type="url" target="https://huggingface.co/datasets/SPIderman5/FineProofs-SFT">FineProofs-SFT</ref> 4,275 3,977 100% <ref type="url" target="https://huggingface.co/datasets/gneubig/aime-1983-2024">AIME 1983-2024</ref> 933 -0% <ref type="url" target="https://huggingface.co/datasets/Putnam-AXIOM/putnam-axiom-dataset-v1">Putnam-AXIOM</ref> 492 888 100% Total 535,356 5,000 † 22% † Truncated at 5,000 characters; actual solutions are longer.</p><p>Table <ref type="table">10</ref>: Datasets in the math retrieval corpus (535K problems total). Sol. Len is the median solution length in characters. Proof indicates whether the dataset contains prooftype problems (by answer or problem type field).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dataset Problems</head><p>IMO-AnswerBench 100 IMO-ProofBench 60 ArXivMath Dec. 2025 17 ArXivMath Jan. <ref type="bibr">2026</ref> 23</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Total 200</head><p>Table <ref type="table">11</ref>: Breakdown of the 200-problem IMO-level evaluation set.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D Practical Implementation Tips</head><p>Meta-Harness is largely domain-agnostic: we expect it to apply in any setting where a language model is wrapped by a task-specific harness. Applying it in a new domain, however, requires operating in a relatively new regime of LLM-assisted coding, where the proposer conditions on long-horizon histories of prior runs and writes programs whose effects may only become visible many steps later. In getting this workflow to work reliably, we found a small set of practical choices that mattered consistently across the three domains studied in this paper. The guidelines below are not themselves scientific claims about the method; they are engineering lessons from building and running the system, which we hope will make it easier for future work to apply Meta-Harness in other domains.</p><p>• Write a good skill. The skill text is the primary interface for steering the search, and its quality is the strongest lever on whether the loop works. The proposer receives a naturallanguage skill <ref type="bibr" target="#b4">[5]</ref> that defines its role, the directory layout, CLI commands, and output format. In practice, the skill should constrain outputs and safety-relevant behavior, not the proposer's diagnosis procedure: it should specify what is forbidden, what artifacts to produce, and what objectives to optimize, while leaving the model free to inspect scores, traces, and prior code as needed. Our intuition from inspecting logs from Meta-Harness runs is that after enough iterations, the accumulated traces often shape the proposer's behavior more than the skill itself. In our experience, iterating on the skill text had a larger effect on search quality than changing iteration count or population size. Expect to run a few short evolution runs (3-5 iterations each) specifically to debug and refine the skill before committing to a full run.</p><p>• Start with a baseline harness and a search set that is hard for it. Write a simple baseline (e.g., few-shot prompting), then construct the search set by either filtering for examples that the baseline gets wrong or selecting a diverse subset of difficult instances. The search has little to optimize if the baseline already saturates the evaluation. Keep the search set small enough for roughly 50 full evaluations per run (50-100 examples in our classification experiments, 88 problems for math retrieval); a fast, discriminative eval is more valuable than a large one.</p><p>• Log everything in a format that is easy to navigate. Evaluation code should write code, scores, and execution traces in a form that the proposer can query reliably. In practice, this means using machine-readable formats such as JSON, organizing artifacts hierarchically, choosing reasonable and consistent file names, and adopting naming schemes that make simple tools such as regex search work well.</p><p>• Make logs queryable through a small CLI (optional, but helpful). Each harness gets a directory containing source code, scores, and execution traces, but as the history grows, raw filesystem access alone becomes cumbersome. A short CLI that lists the Pareto frontier, shows top-k harnesses, and diffs code and results between pairs of runs can make the experience store much easier to use, and querying such CLIs is closely aligned with the workflows on which coding agents are trained. If relevant offline experience exists (rollouts from other models, solved problem corpora, relevant papers), converting it into the same directory structure can also help warm-start exploration and ground new ideas. This layer helps the proposer save tokens it may have wasted on navigation.</p><p>• Lightweight validation before expensive benchmarks. Write a small validation test that imports the module, instantiates the class, and calls both methods on a tiny set of examples. Harnesses proposed during the search should pass this test before being fully evaluated. A simple test script can catch most malformed or nonfunctional candidates in seconds and keep the cost of failures near zero.</p><p>• Automate evaluation outside the proposer. Running evals is simple enough that it is not worth making the proposer do it. A separate harness should score candidates and write results to the filesystem.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E Extended Related Work</head><p>This appendix expands the brief discussion in Section 2 and situates Meta-Harness relative to several neighboring lines of work that we could not cover in detail in the main text. A recurring distinction is that Meta-Harness optimizes executable harness implementations and provides the proposer with selective access to prior code, scores, and execution traces via the filesystem.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>AlphaEvolve / OpenEvolve.</head><p>AlphaEvolve <ref type="bibr" target="#b34">[35]</ref> and OpenEvolve <ref type="bibr" target="#b42">[43]</ref> evolve code via LLM-guided mutations with structured feedback: the proposer receives a program database with scalar scores (4-22K tokens per step; Table <ref type="table">1</ref>) and applies fixed mutation strategies to tournament-selected parents. These methods are designed for algorithm discovery and optimization (mathematical conjectures, scheduling heuristics, hardware kernels), where the search target is a single stateless function with a clean scalar objective, and mutations are local. Harness engineering is a different regime: harnesses are stateful programs that accumulate experience across many examples, and a single design choice (e.g., what to store in memory) can cascade through an entire evaluation sequence. Meta-Harness addresses this by giving an unstructured coding agent full filesystem access, letting it selectively read any prior candidate's source code, execution traces, and scores.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>GEPA.</head><p>GEPA <ref type="bibr" target="#b0">[1]</ref> is the closest text optimizer in terms of feedback richness, providing rollout traces per candidate. It is designed for prompt optimization on tasks with short feedback loops (math problems, instruction-following, code optimization), where each rollout is a single LLM call or a short pipeline. In this regime, per-candidate reflection works well: one prompt, one answer, one score. Harness engineering requires reasoning across many examples and many candidates simultaneously: understanding why a retrieval strategy works for one class of problems but degrades on another requires comparing execution traces across the full population. GEPA operates on one candidate at a time (2-8K tokens per step; Table <ref type="table">1</ref>), with a fixed critique format that must anticipate what information is relevant. Meta-Harness gives the proposer access to all prior candidates simultaneously and lets the agent decide what to examine.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prompt orchestration frameworks.</head><p>Several systems provide structured abstractions for composing multi-stage LLM programs. LMQL <ref type="bibr" target="#b7">[8]</ref>, LangChain <ref type="bibr" target="#b12">[13]</ref>, and DSPy <ref type="bibr" target="#b22">[23]</ref> make prompt engineering more systematic by providing higher-level interfaces for prompt templates, control flow, and modular LLM pipelines. These frameworks help developers specify and organize LLM programs, but they still typically require manual design of retrieval policies, memory updates, and orchestration logic. Meta-Harness operates at a different level: it searches over the implementation of these policies in executable code, treating the harness itself as the optimization target.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Meta-Harness search loop. (1) An agent reads a filesystem containing all prior candidates' source code, execution traces, and scores, and proposes a new harness. (2) We evaluate the proposed harness on evaluation tasks. (3) All logs (proposed code, reasoning traces, evaluation scores) are stored in the filesystem in a new directory, and the loop repeats.</figDesc><graphic coords="2,213.49,70.93,75.17,50.05" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Pareto frontier of accuracy vs. context tokens on online text classification. Meta-Harness achieves a stronger accuracy-context Pareto frontier than all comparison methods.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Search-set accuracy over evaluations for all compared text optimizers on online text classification. Each point is one candidate harness; lines track the best-so-far. Per-dataset curves are shown alongside the aggregate. Meta-Harness reaches the final accuracy of OpenEvolve and TTT-Discover within the first 4 evaluations and continues improving, ending more than 10 points above all baselines.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Iterations 4 - 6 :</head><label>46</label><figDesc>direct fixes to the diagnosed failure mode still regress. The next three iterations continue to probe the same part of the design space, but now with more explicit theories about why the completion logic is fragile. Iteration 4 attributes failures to a concrete state-machine bug in which verification commands reset the completion flag and trap the agent in repeated checklist cycles:Remove the two self. pending completion = False lines that reset the completion flag when intermediate commands run. This fixes a state machine bug where: (1) Agent calls task complete → sees QA checklist, pending completion = True (2) Agent runs verification commands → pending completion = False (bug!) (3) Agent calls task complete again → sees checklist AGAIN → infinite loop.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Figure5: Draft-verification classification harness. The first call produces a draft label from a short retrieved context. The second call retrieves evidence for and against that draft and returns the final prediction.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Label-primed query-anchored classification harness. The program builds a single prompt that exposes the label space, then populates it with query-relevant coverage examples and local contrastive pairs.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Search-set vs. test accuracy per dataset for discovered text-classification strategies. Each pink dot is a discovered strategy; baselines are labeled. The dashed diagonal is y=x.</figDesc><graphic coords="20,108.00,257.25,395.99,148.47" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8 :</head><label>8</label><figDesc>Figure8: Discovered math retrieval harness. A lexical router assigns each query to one of four subject-specific retrieval policies. The selected policy retrieves examples, which are inserted into the final prompt.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 3 :</head><label>3</label><figDesc>Ablation of the information available to the proposer in online text classification. &gt; ZS: number of runs whose accuracy exceeded the zero-shot baseline. The full Meta-Harness interface substantially outperforms scores-only and scores-plus-summary ablations.</figDesc><table><row><cell>Scores Only</cell><cell>✓</cell><cell>✓</cell><cell>×</cell><cell>×</cell><cell>34.6</cell><cell>41.3</cell><cell>26</cell></row><row><cell>Scores + Summary</cell><cell>✓</cell><cell>✓</cell><cell>✓</cell><cell>×</cell><cell>34.9</cell><cell>38.7</cell><cell>23</cell></row><row><cell>Meta-Harness (full)</cell><cell>✓</cell><cell>✓</cell><cell>-</cell><cell>✓</cell><cell>50.0</cell><cell>56.7</cell><cell>39</cell></row></table><note><p>Method</p><p>Scores Code Summ. Traces Median ↑ Best Acc ↑ &gt; ZS</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 5 :</head><label>5</label><figDesc>OOD text classification dataset evaluation. We report test accuracy for each dataset and the average additional context tokens across all nine datasets.</figDesc><table><row><cell>Harness</cell><cell cols="11">SciC FiNER Amz5 FPB GoEmo Bank77 News SciT TwHate Avg Acc Ctx ↓</cell></row><row><cell>Zero-shot</cell><cell>32.7</cell><cell>56.0</cell><cell>52.7</cell><cell>90.0</cell><cell>42.0</cell><cell>80.7</cell><cell>84.7</cell><cell>89.3</cell><cell>75.3</cell><cell>67.0</cell><cell>-</cell></row><row><cell>Few-shot (8)</cell><cell>34.0</cell><cell>63.0</cell><cell>54.0</cell><cell>90.0</cell><cell>44.0</cell><cell>82.7</cell><cell>84.7</cell><cell>91.3</cell><cell>76.7</cell><cell>68.9</cell><cell>2.2</cell></row><row><cell>Few-shot (32)</cell><cell>38.7</cell><cell>62.0</cell><cell>53.3</cell><cell>90.7</cell><cell>43.3</cell><cell>86.0</cell><cell>85.3</cell><cell>90.7</cell><cell>76.7</cell><cell>69.6</cell><cell>5.2</cell></row><row><cell cols="2">Few-shot (all) 35.3</cell><cell>61.0</cell><cell>50.0</cell><cell>93.3</cell><cell>42.7</cell><cell>80.7</cell><cell>84.0</cell><cell>90.0</cell><cell>76.7</cell><cell>68.2</cell><cell>7.4</cell></row><row><cell>ACE [59]</cell><cell>40.7</cell><cell>74.0</cell><cell>48.0</cell><cell>96.7</cell><cell>44.0</cell><cell>83.3</cell><cell>86.0</cell><cell>90.7</cell><cell>68.7</cell><cell>70.2</cell><cell>11.7</cell></row><row><cell>Meta-Harness</cell><cell>53.3</cell><cell>67.0</cell><cell>60.0</cell><cell>94.0</cell><cell>46.0</cell><cell>82.7</cell><cell>86.7</cell><cell>91.3</cell><cell>77.3</cell><cell>73.1</cell><cell>7.3</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 7 :</head><label>7</label><figDesc>Pass rate on TerminalBench-2. Results or others are from the official leaderboard. Meta</figDesc><table><row><cell>Harness</cell><cell cols="2">Auto Pass (%)</cell></row><row><cell cols="2">Claude Opus 4.6</cell><cell></cell></row><row><cell>Claude Code</cell><cell>×</cell><cell>58.0</cell></row><row><cell>Terminus 2</cell><cell>×</cell><cell>62.9</cell></row><row><cell>Mux</cell><cell>×</cell><cell>66.5</cell></row><row><cell>Droid</cell><cell>×</cell><cell>69.9</cell></row><row><cell>TongAgents</cell><cell>×</cell><cell>71.9</cell></row><row><cell>MAYA-V2</cell><cell>×</cell><cell>72.1</cell></row><row><cell>Terminus-KIRA</cell><cell>×</cell><cell>74.7</cell></row><row><cell>Capy</cell><cell>×</cell><cell>75.3</cell></row><row><cell>ForgeCode</cell><cell>×</cell><cell>81.8</cell></row><row><cell>Meta-Harness</cell><cell>✓</cell><cell>76.4</cell></row><row><cell cols="2">Claude Haiku 4.5</cell><cell></cell></row><row><cell>OpenHands</cell><cell>×</cell><cell>13.9</cell></row><row><cell>Claude Code</cell><cell>×</cell><cell>27.5</cell></row><row><cell>Terminus 2</cell><cell>×</cell><cell>28.3</cell></row><row><cell>Mini-SWE-Agent</cell><cell>×</cell><cell>29.8</cell></row><row><cell>Terminus-KIRA</cell><cell>×</cell><cell>33.7</cell></row><row><cell>Goose</cell><cell>×</cell><cell>35.5</cell></row><row><cell>Meta-Harness</cell><cell>✓</cell><cell>37.6</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Based on earlier exploration, we think this workflow only became practical recently, following major improvements in coding-agent capabilities around early</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2026" xml:id="foot_1"><p></p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_2"><p>We slightly overload terminology for brevity: in the tables, Meta-Harness denotes the best discovered harness, whereas elsewhere it refers to the entire harness search procedure.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>We thank <rs type="person">KRAFTON AI</rs> for providing API credit support. This work is supported by <rs type="funder">OpenAI</rs>, <rs type="funder">KFAS</rs>, and Schmidt Sciences <rs type="grantNumber">AI2050</rs>. We thank <rs type="person">Anikait Singh</rs> and <rs type="person">Jubayer Ibn Hamid</rs> for their valuable feedback and suggestions, and <rs type="person">Sienna J. Lee</rs> for patiently listening to YL's half-formed thoughts during the early stages of this work.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_E78S6ma">
+					<idno type="grant-number">AI2050</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shangyin</forename><surname>Lakshya A Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dilara</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Soylu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishi</forename><surname>Ziems</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krista</forename><surname>Khare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arnav</forename><surname>Opsahl-Ong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Herumb</forename><surname>Singhvi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Shandilya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meng</forename><surname>Michael J Ryan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jiang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2507.19457</idno>
+		<title level="m">Reflective prompt evolution can outperform reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">What learning algorithm is in-context learning? investigations with linear models</title>
+		<author>
+			<persName><forename type="first">Ekin</forename><surname>Aky Ürek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Andreas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengyu</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2211.15661" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Learning to learn by gradient descent by gradient descent</title>
+		<author>
+			<persName><forename type="first">Marcin</forename><surname>Andrychowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Misha</forename><surname>Denil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergio</forename><surname>Gomez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">W</forename><surname>Hoffman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Pfau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Schaul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brendan</forename><surname>Shillingford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nando</forename><forename type="middle">De</forename><surname>Freitas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Claude code: An agentic coding tool</title>
+		<author>
+			<persName><surname>Anthropic</surname></persName>
+		</author>
+		<ptr target="https://www.anthropic.com/claude-code" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Anthropic and community contributors. agentskills/agentskills</title>
+		<ptr target="https://github.com/agentskills/agentskills" />
+	</analytic>
+	<monogr>
+		<title level="m">GitHub repository</title>
+		<imprint>
+			<date type="published" when="2026-03-27">March 27, 2026</date>
+		</imprint>
+	</monogr>
+	<note>Specification and documentation for Agent Skills</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Matharena: Evaluating llms on uncontaminated math competitions</title>
+		<author>
+			<persName><forename type="first">Mislav</forename><surname>Balunović</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jasper</forename><surname>Dekoninck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivo</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikola</forename><surname>Jovanović</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Vechev</surname></persName>
+		</author>
+		<ptr target="https://matharena.ai/" />
+		<imprint>
+			<date type="published" when="2025-02">February 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Tweeteval: Unified benchmark and comparative evaluation for tweet classification</title>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Barbieri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jose</forename><surname>Camacho-Collados</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leonardo</forename><surname>Neves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luis</forename><surname>Espinosa-Anke</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2010.12421" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Prompting is programming: A query language for large language models</title>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Beurer-Kellner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Vechev</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3591300</idno>
+		<ptr target="http://dx.doi.org/10.1145/3591300" />
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the ACM on Programming Languages</title>
+		<idno type="ISSN">2475-1421</idno>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="1946" to="1969" />
+			<date type="published" when="2023-06">June 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">B</forename><surname>Birgitta</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Öckeler</surname></persName>
+		</author>
+		<ptr target="https://martinfowler.com/articles/exploring-gen-ai/harness-engineering.html" />
+		<imprint>
+			<date type="published" when="2026-03">March 2026</date>
+		</imprint>
+	</monogr>
+	<note>martinfowler.com</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Can B öl ük. I improved 15 LLMs at coding in one afternoon. only the harness changed</title>
+		<ptr target="https://blog.can.ac/2026/02/12/the-harness-problem/" />
+		<imprint>
+			<date type="published" when="2026-02">February 2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Efficient intent detection with dual sentence encoders</title>
+		<author>
+			<persName><forename type="first">Tadas</forename><surname>Ñigo Casanueva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniela</forename><surname>Temčinas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Gerz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Henderson</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vulić</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2003.04807" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mert</forename><surname>Cemri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shubham</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akshat</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Audrey</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiuyang</forename><surname>Mang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Naren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koushik</forename><surname>Lutfi Eren Erdogan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Sen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zaharia</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2602.20133</idno>
+		<title level="m">Adaevolve: Adaptive llm driven zeroth-order optimization</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Chase</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Langchain</surname></persName>
+		</author>
+		<ptr target="https://github.com/langchain-ai/langchain.Software" />
+		<imprint>
+			<date type="published" when="2022-10">October 2022</date>
+			<biblScope unit="page" from="2022" to="2032" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Structural scaffolds for citation intent classification in scientific publications</title>
+		<author>
+			<persName><forename type="first">Arman</forename><surname>Cohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Waleed</forename><surname>Ammar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Madeleine</forename><surname>Van Zuylen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Field</forename><surname>Cady</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1904.01608" />
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Goemotions: A dataset of fine-grained emotions</title>
+		<author>
+			<persName><forename type="first">Dorottya</forename><surname>Demszky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dana</forename><surname>Movshovitz-Attias</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeongwoo</forename><surname>Ko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Cowen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaurav</forename><surname>Nemade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sujith</forename><surname>Ravi</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2005.00547" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Lawbench: Benchmarking legal knowledge of large language models</title>
+		<author>
+			<persName><forename type="first">Zhiwei</forename><surname>Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoyu</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawei</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fengzhe</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuo</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhixin</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zongwen</forename><surname>Shen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2024 conference on empirical methods in natural language processing</title>
+		<meeting>the 2024 conference on empirical methods in natural language processing</meeting>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="7933" to="7962" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Model-agnostic meta-learning for fast adaptation of deep networks</title>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Benchmarks don&apos;t matter</title>
+		<author>
+			<persName><surname>Forgecode</surname></persName>
+		</author>
+		<ptr target="https://forgecode.dev/blog/benchmarks-dont-matter/" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">to diagnosis</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Gretel</surname></persName>
+		</author>
+		<ptr target="https://huggingface.co/datasets/gretelai/symptom" />
+	</analytic>
+	<monogr>
+		<title level="m">Symptom to diagnosis dataset</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="2026" to="2027" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Automated design of agentic systems</title>
+		<author>
+			<persName><forename type="first">Shengran</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=t9U3LW7JVX" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Effective harnesses for long-running agents</title>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Anthropic</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Young</surname></persName>
+		</author>
+		<ptr target="https://anthropic.com/engineering/effective-harnesses-for-long-running-agents" />
+		<imprint>
+			<date type="published" when="2025-11">November 2025</date>
+			<publisher>Anthropic Engineering Blog</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">The multilingual amazon reviews corpus</title>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Keung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichao</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gy</forename><surname>Örgy Szarvas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2010.02573" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Dspy: Compiling declarative language model calls into self-improving pipelines</title>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Khattab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arnav</forename><surname>Singhvi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paridhi</forename><surname>Maheshwari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keshav</forename><surname>Santhanam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sri</forename><surname>Vardhamanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saiful</forename><surname>Haq</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashutosh</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">T</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanna</forename><surname>Moazam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heather</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Zaharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Potts</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2310.03714" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Scitail: A textual entailment dataset from science question answering</title>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Clark</surname></persName>
+		</author>
+		<idno type="DOI">10.1609/aaai.v32i1.12022</idno>
+		<ptr target="https://ojs.aaai.org/index.php/AAAI/article/view/12022" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2018-04">Apr. 2018</date>
+			<biblScope unit="volume">32</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Terminus-kira: Boosting frontier model performance on terminal-bench with minimal harness</title>
+		<author>
+			<persName><forename type="first">Krafton</forename><surname>Ai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ludo</forename><surname>Robotics</surname></persName>
+		</author>
+		<ptr target="https://github.com/krafton-ai/kira" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Feedback descent: Open-ended text optimization via pairwise comparison</title>
+		<author>
+			<persName><forename type="first">Yoonho</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Boen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2511.07919</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">In arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Lehman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shawn</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamal</forename><surname>Ndousse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cathy</forename><surname>Yeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenneth</forename><forename type="middle">O</forename><surname>Stanley</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2206.08896" />
+		<title level="m">Evolution through large models</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Retrieval-augmented generation for knowledge-intensive nlp tasks</title>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Piktus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Petroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Karpukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Heinrich K Üttler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rocktäschel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="9459" to="9474" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Finer: Financial numeric entity recognition for xbrl tagging</title>
+		<author>
+			<persName><forename type="first">Lefteris</forename><surname>Loukas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manos</forename><surname>Fergadiotis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilias</forename><surname>Chalkidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eirini</forename><surname>Spyropoulou</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2022.acl-long.303</idno>
+		<ptr target="http://dx.doi.org/10.18653/v1/2022.acl-long.303" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 60th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="4419" to="4431" />
+		</imprint>
+	</monogr>
+	<note>Prodromos Malakasiotis, Ion Androutsopoulos, and Georgios Paliouras Long Papers)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Towards robust mathematical reasoning</title>
+		<author>
+			<persName><forename type="first">Thang</forename><surname>Luong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawsen</forename><surname>Hwang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hoang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Golnaz</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Ghiasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Insuk</forename><surname>Chervonyi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junsu</forename><surname>Seo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Garrett</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Bingham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swaroop</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clara</forename><forename type="middle">Huiyi</forename><surname>Zhai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimin</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeonghyun</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhwi</forename><surname>Ahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyou</forename><surname>Bae</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Trieu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Trinh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junehyuk</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jung</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/2025.emnlp-main.1794/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2025 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Self-refine: Iterative refinement with self-feedback</title>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skyler</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="46534" to="46594" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Good debt or bad debt: Detecting semantic orientations in economic texts</title>
+		<author>
+			<persName><forename type="first">Pekka</forename><surname>Malo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankur</forename><surname>Sinha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pyry</forename><surname>Takala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pekka</forename><surname>Korhonen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jyrki</forename><surname>Wallenius</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1307.5336" />
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mike</forename><forename type="middle">A</forename><surname>Merrill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">G</forename><surname>Shaw</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Carlini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Raj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Bercovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeong Yeon</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Walshe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kelly Buchanan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.11868</idno>
+		<title level="m">Terminalbench: Benchmarking agents on hard, realistic tasks in command line interfaces</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">How we scored #1 on terminal-bench (52%)</title>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Nichols</surname></persName>
+		</author>
+		<ptr target="https://www.warp.dev/blog/terminal-bench" />
+		<imprint>
+			<date type="published" when="2025-06">Jun 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Alphaevolve: A coding agent for scientific and algorithmic discovery</title>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Novikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marvin</forename><surname>Ngân V Ũ</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emilien</forename><surname>Eisenberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Po-Sen</forename><surname>Dupont</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><forename type="middle">Zsolt</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Wagner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Borislav</forename><surname>Shirobokov</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kozlovskii</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">R</forename><surname>Francisco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abbas</forename><surname>Ruiz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mehrabian</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.13131</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Harness engineering: leveraging Codex in an agent-first world</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/harness-engineering/" />
+		<imprint>
+			<date type="published" when="2026-02">February 2026</date>
+		</imprint>
+	</monogr>
+	<note>OpenAI Blog</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Packer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vivian</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Shishir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Patil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Wooders</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Memgpt</surname></persName>
+		</author>
+		<title level="m">Towards llms as operating systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Automatic prompt optimization with &quot;gradient descent&quot; and beam search</title>
+		<author>
+			<persName><forename type="first">Reid</forename><surname>Pryzant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Iter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Tat Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenguang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Zeng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.03495</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Mathematical discoveries from program search with large language models</title>
+		<author>
+			<persName><forename type="first">Bernardino</forename><surname>Romera-Paredes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammadamin</forename><surname>Barekatain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Novikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matej</forename><surname>Balog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M Pawan</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emilien</forename><surname>Dupont</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francisco Jr</forename><surname>Ruiz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jordan</forename><forename type="middle">S</forename><surname>Ellenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengming</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Fawzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">625</biblScope>
+			<biblScope unit="issue">7995</biblScope>
+			<biblScope unit="page" from="468" to="475" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">A neural network that embeds its own meta-levels</title>
+		<author>
+			<persName><forename type="first">Jurgen</forename><surname>Schmidhuber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE International Conference on Neural Networks</title>
+		<imprint>
+			<date type="published" when="1993">1993</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">What&apos;s what: The (nearly) definitive guide to reaction role assignment</title>
+		<author>
+			<persName><forename type="first">Nadine</forename><surname>Schneider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolaus</forename><surname>Stiefl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gregory</forename><forename type="middle">A</forename><surname>Landrum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of chemical information and modeling</title>
+		<imprint>
+			<biblScope unit="volume">56</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="2336" to="2346" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Adaptive retrieval helps reasoning in llms -but mostly if it&apos;s not used</title>
+		<author>
+			<persName><forename type="first">Srijan</forename><surname>Shakya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anamaria-Roberta</forename><surname>Hartl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sepp</forename><surname>Hochreiter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Korbinian</forename><forename type="middle">P</forename><surname>Öppel</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2602.07213" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Openevolve: an open-source evolutionary coding agent</title>
+		<author>
+			<persName><forename type="first">Asankhaya</forename><surname>Sharma</surname></persName>
+		</author>
+		<ptr target="https://github.com/algorithmicsuperintelligence/openevolve.GitHubrepository" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Prototypical networks for few-shot learning</title>
+		<author>
+			<persName><forename type="first">Jake</forename><surname>Snell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Swersky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">S</forename><surname>Zemel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">The bitter lesson</title>
+		<author>
+			<persName><forename type="first">Rich</forename><surname>Sutton</surname></persName>
+		</author>
+		<ptr target="http://www.incompleteideas.net/IncIdeas/Bitter-Lesson.html" />
+		<imprint>
+			<date type="published" when="2019">2019. 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Learning to learn: Introduction and overview</title>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Thrun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lorien</forename><surname>Pratt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Learning to learn</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="1998">1998</date>
+			<biblScope unit="page" from="3" to="17" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">Muxin</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Blair</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenwei</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunlun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honghua</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanchen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinni</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangjing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxuan</forename><surname>You</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID:285462974" />
+		<title level="m">Swe-bench mobile: Can large language model agents develop industry-level mobile applications? In arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Interleaving retrieval with chain-of-thought reasoning for knowledge-intensive multi-step questions</title>
+		<author>
+			<persName><forename type="first">Harsh</forename><surname>Trivedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niranjan</forename><surname>Balasubramanian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tushar</forename><surname>Khot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2212.10509" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Thomas Hudson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noura</forename><surname>Al</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moubayed</forename></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2404.06347" />
+		<title level="m">Rar-b: Reasoning as retrieval benchmark</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Learning to continually learn via metalearning agentic memory designs</title>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengran</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Clune</surname></persName>
+		</author>
+		<ptr target="https://api.semanticscholar.org/CorpusID" />
+	</analytic>
+	<monogr>
+		<title level="m">OpenReview</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+			<biblScope unit="page">285454009</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Large language models as optimizers</title>
+		<author>
+			<persName><forename type="first">Chengrun</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifeng</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanxiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuning</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Arak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haonan</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guojie</forename><surname>Song</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.21557</idno>
+		<title level="m">Meta context engineering via agentic skill evolution</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mert</forename><surname>Yuksekgonul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Bianchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Boen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Guestrin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Zou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2406.07496" />
+		<title level="m">Textgrad: Automatic &quot;differentiation&quot; via text</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">Learning to discover at test time</title>
+		<author>
+			<persName><forename type="first">Mert</forename><surname>Yuksekgonul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Koceja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinhao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Bianchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jed</forename><surname>Mccaleb</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Kautz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Guestrin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Sun</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2601.16175" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<title level="m" type="main">Learning to discover at test time</title>
+		<author>
+			<persName><forename type="first">Mert</forename><surname>Yuksekgonul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Koceja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinhao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Bianchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jed</forename><surname>Mccaleb</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Kautz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Guestrin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.16175</idno>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Recursive language models</title>
+		<author>
+			<persName><forename type="first">Alex</forename><forename type="middle">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Kraska</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Khattab</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2512.24601" />
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guibin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haotian</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenhong</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junhao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">He</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wangchunshu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuicheng</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Memevolve</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2512.18746</idno>
+		<title level="m">Meta-evolution of agent memory systems</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<monogr>
+		<title level="m" type="main">Aflow: Automating agentic workflow generation</title>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinyu</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaoyang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fengwei</forename><surname>Teng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xionghui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingnan</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuyu</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglin</forename><surname>Wu</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2410.10762" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<monogr>
+		<title level="m" type="main">Agentic context engineering: Evolving contexts for selfimproving language models</title>
+		<author>
+			<persName><forename type="first">Qizheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changran</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shubhangi</forename><surname>Upasani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boyuan</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fenglu</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kamanuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jay</forename><surname>Rainton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengmeng</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanchen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Urmish</forename><surname>Thakker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Olukotun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2510.04618</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<monogr>
+		<title level="m" type="main">Character-level convolutional networks for text classification</title>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junbo</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1509.01626" />
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

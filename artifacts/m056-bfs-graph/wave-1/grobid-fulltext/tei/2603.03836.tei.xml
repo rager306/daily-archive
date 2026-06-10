@@ -1,0 +1,2998 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">SkillVLA: Tackling Combinatorial Diversity in Dual-Arm Manipulation via Skill Reuse</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-03-04">4 Mar 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Xuanran</forename><surname>Zhai</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">National University of Singapore</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zekai</forename><surname>Huang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">National University of Singapore</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Longyan</forename><surname>Wu</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="department">Shanghai Innovation Institute</orgName>
+							</affiliation>
+							<affiliation key="aff5">
+								<orgName type="institution">Fudan University</orgName>
+								<address>
+									<addrLine>7 Smart Systems Institute</addrLine>
+									<region>NUS</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Qianyou</forename><surname>Zhao</surname></persName>
+							<affiliation key="aff4">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Qiaojun</forename><surname>Yu</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="laboratory">Laboratory</orgName>
+								<address>
+									<settlement>Shanghai</settlement>
+									<region>AI</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jieji</forename><surname>Ren</surname></persName>
+							<affiliation key="aff4">
+								<orgName type="institution">Shanghai Jiao Tong University</orgName>
+							</affiliation>
+						</author>
+						<author role="corresp">
+							<persName><forename type="first">Ce</forename><surname>Hao</surname></persName>
+							<email>cehao@u.nus.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">National University of Singapore</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Beijing Zhongguancun Academy</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Harold</forename><surname>Soh</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">National University of Singapore</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">SkillVLA: Tackling Combinatorial Diversity in Dual-Arm Manipulation via Skill Reuse</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-03-04">4 Mar 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">56650FB7CF0599046B5497CD61A42216</idno>
+					<idno type="arXiv">arXiv:2603.03836v1[cs.RO]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-10T13:10+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract/>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Abstract-Recent progress in vision-language-action (VLA) models has demonstrated strong potential for dual-arm manipulation, enabling complex behaviors and generalization to unseen environments. However, mainstream bimanual VLA formulations largely overlook the critical challenge of combinatorial diversity. Different pairings of single-arm behaviors can induce qualitatively distinct task behaviors, yet existing models do not explicitly account for this structure. We argue that effective bimanual VLAs should support skill reuse-the ability to recombine previously learned single-arm skills across novel left-right pairings-thereby avoiding the need to separately learn every possible combination. Current VLA designs entangle skills across arms, preventing such recomposition and limiting scalability. To address this limitation, we propose SkillVLA, a framework explicitly designed to enable skill reuse in dual-arm manipulation. Extensive experiments demonstrate that SkillVLA substantially improves skill composition, increasing overall success rate from 0% to 51%, and achieves strong performance on cooperative and long-horizon tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>Bimanual manipulation expands a robot's effective workspace and enables concurrent, coordinated actions, supporting a wider range of tasks than single-arm systems <ref type="bibr" target="#b37">[38,</ref><ref type="bibr" target="#b51">52,</ref><ref type="bibr" target="#b44">45,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b10">11,</ref><ref type="bibr" target="#b24">25]</ref>. In this context, recent vision-language-action (VLA) models <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b22">23,</ref><ref type="bibr" target="#b28">29,</ref><ref type="bibr" target="#b39">40,</ref><ref type="bibr" target="#b38">39,</ref><ref type="bibr" target="#b41">42]</ref> have shown impressive performance on bimanual manipulation; by jointly predicting both arms' actions (e.g., via a concatenated action vector) with large-capacity architectures, VLA methods can represent complex coordinated behaviors. Further, by leveraging visionlanguage pretraining of VLM models, recent bimanual VLAs have shown the ability to generalize to novel scenes and instructions <ref type="bibr" target="#b22">[23,</ref><ref type="bibr" target="#b13">14,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b3">4,</ref><ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b2">3,</ref><ref type="bibr" target="#b6">7,</ref><ref type="bibr" target="#b25">26]</ref>.</p><p>Despite recent progress, learning generalist bimanual policies remains challenging, as dual-arm control introduces richer behaviors patterns. Specifically, real-world bimanual behaviors exhibit pronounced combinatorial diversity. As shown in Fig. <ref type="figure" target="#fig_0">1</ref>, many dual-arm tasks can be viewed as compositions of single-arm behaviors, and different pairings of leftand right-arm skills induce different bimanual tasks. As the underlying skill set grows, the number of possible pairings increases quadratically, resulting in an overwhelming number of combinations corresponding to different tasks. Current VLA formulations largely overlook combinatorial diversity. Predicting both arms via action concatenation requires the model to learn the joint distribution of left-and right-arm distributions. While this design is simple and captures tight coordination, it confines outputs to action pairings observed in demonstrations. As a result, the policy has limited combinatorial generalization and cannot form new bimanual behaviors by recombining single-arm skills, which makes them unable to address combinatorial diversity. We refer to this limitation as skill entanglement and analyze it in detail in Sec. IV-C.</p><p>To address the combinatorial diversity, a model must be able to effectively reuse robot skills learned from given demonstrations in a more flexible and thorough way. We name this ability as skill reuse. Concretely, instead of mechanically treating every bimanual behavior as indivisible dual-arm primitive, an ideal model should automatically uncover the latent skill structure within demonstrations and perform reasoning at the skill level. For bimanual behaviors that are essentially composition of single-arm skills, the model should reuse the discovered skills across different left-right combinations and compose them to form novel pairings that are not explicitly observed during training. We view such flexible reuse as a key foundation for broad generalization in bimanual settings, and provide a more formal definition and discussion in Sec. IV.</p><p>We propose SkillVLA to enable skill reuse and address combinatorial diversity. Unlike conventional VLAs relying on monolithic dual-arm reasoning throughout, SkillVLA automatically identifies skill structures from demonstrations and performs skill-adaptive action generation. Concretely, for singlearm skills, it can retrieve and invoke them as independent units for recomposition or further adaptation. For behaviors that require collaboration, the model instead captures interarm dependence. SkillVLA achieves this with a two-level reasoning architecture. A shared high-level VLM, equipped with a collaboration estimator, captures global task intent and makes skill decisions. At the lower level, the policy follows the high-level instruction and switches between operation modes: it performs per-arm reasoning and action generation for single-arm skills, while allowing these two streams to be entangled by communication when cooperative behavior is deemed necessary by the high-level reasoning. Through skilladaptive generation and per-arm reasoning, SkillVLA further exploits the VLM's capability by extending reasoning to a finer semantic granularity, leading to stronger generalization.</p><p>We conduct real-robot experiments on 20 manipulation tasks and two long-horizon multi-stage tasks to validate SkillVLA's skill reuse and generalization ability. First, to evaluate if models are able to tackle combinatorial diversity, we test them on unseen tasks composed by learned skills, where strong bimanual VLA baselines achieve near-zero success due to skill entanglement. SkillVLA raises the success rate to 51%, demonstrating a decisive improvement in combinatorial generalization. Second, to confirm that our method does not sacrifice inter-arm cooperation, we evaluate on three highlycooperative tasks, where SkillVLA matches the performance of the baselines, showing that its adaptive communication remains expressive for close coordination. Third, we study two multi-stage long-horizon tasks that interleave collaborative and independent phases. While SkillVLA correctly identifies cooperation level required and, further, completes the tasks faster by recomposing skills to parallelize the two arms when possible, reducing execution time by 21%. Finally, we conduct a continual-learning study to show that skill reuse also benefits long-term skill learning: SkillVLA can effectively reuse existing behaviors for acquiring new skills, achieving significantly better performances under limited demonstrations. In summary, this paper makes three main contributions:</p><p>• We identify the skill entanglement issue in current VLAs and formulate the bimanual skill reuse problem.</p><p>• We propose SkillVLA, which enables flexible skill reuse to tackle combinatorial diversity.</p><p>• We validate SkillVLA on a real dual-arm robot, demonstrating combinatorial generalization ability via skill reuse, while maintaining strong performance on cooperative and long-horizon tasks.</p><p>II. RELATED WORK Dual-arm manipulation has long been a central topic in robotics. Early work largely focused on methods specialized for particular task families, such as assembly <ref type="bibr" target="#b46">[47,</ref><ref type="bibr" target="#b48">49,</ref><ref type="bibr" target="#b17">18,</ref><ref type="bibr" target="#b49">50]</ref>, cloth folding <ref type="bibr" target="#b30">[31,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b43">44,</ref><ref type="bibr" target="#b34">35,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b0">1,</ref><ref type="bibr" target="#b11">12]</ref>, and bagging <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b8">9]</ref>. To improve adaptability, subsequent efforts introduced platforms with richer actuation, including dexterous end-effectors <ref type="bibr" target="#b40">[41,</ref><ref type="bibr" target="#b36">37,</ref><ref type="bibr" target="#b14">15]</ref> and mobile bases <ref type="bibr" target="#b45">[46,</ref><ref type="bibr" target="#b16">17]</ref>. More recently, motivated by the goal of generalist bimanual policies, several works have scaled training data by learning from human demonstration videos <ref type="bibr" target="#b51">[52,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b32">33]</ref>.</p><p>Generalist bimanual policies, however, remained limited until the emergence of VLA models <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b42">43,</ref><ref type="bibr" target="#b28">29,</ref><ref type="bibr" target="#b38">39,</ref><ref type="bibr" target="#b52">53,</ref><ref type="bibr" target="#b50">51,</ref><ref type="bibr" target="#b6">7]</ref> accelerated progress in this direction. These approaches typically train end-to-end imitation learning policies on top of pretrained vision-language models. Benefiting from large model capacity and large-scale training on diverse robot datasets <ref type="bibr" target="#b31">[32,</ref><ref type="bibr" target="#b23">24,</ref><ref type="bibr" target="#b35">36,</ref><ref type="bibr" target="#b26">27,</ref><ref type="bibr" target="#b47">48]</ref>, they have shown improved environmental generalization, including better robustness to complex or unseen scenes. Nonetheless, generalization across diverse tasks remains challenging. Building on this line of work, we propose SkillVLA to improve action-level generalization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. PROBLEM FORMULATION</head><p>We consider a bimanual robot with left and right manipulators. At each time step, the robot receives an input x ∈ X (usually observation, instruction and robot state) and produces actions a L ∈ A L and a R ∈ A R ; we write a = (a L , a R ). We are given a dataset of demonstrations D = {(x i , a i L , a i R )} I i=1 , where each tuple is a state-action sample extracted from expert trajectories. We assume these expert actions are generated by executing skills drawn from an underlying skill set</p><formula xml:id="formula_0">S = S pair ∪ S D , S pair = {(s m L , s m R )} M m=1 , S D = {s n D } N n=1</formula><p>where S L and S R are the single-arm skill sets for the left and right arm (Def. 1), and S D is a set of genuinely dualarm (bimanual) skills (Def. 2). Here S pair collects the paired single-arm skills that actually appear in the demonstrations. Our goal is to learn a bimanual policy π θ (a L , a R | x) that is able to effectively reuse these learned skills (Def. 3), which we view as a key factor for resolving combinatorial diversity building generalist bimanual manipulation policies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. SKILL REUSE IN DUAL-ARM MANIPULATION</head><p>In this section, we first give specific definitions of skills and skill reuse (Sec. IV-A), then we analyze what is required to solve this problem: for skill reuse to be possible, the model must (i) select suitable skills for any given scene x (Sec. IV-B), and (ii) generate correct actions for the selected skill (or skill pair). The latter motivates explicitly distinguishing between single-arm and dual-arm skills during training and execution, which current VLA-based methods do not support (Sec. IV-C).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Definitions</head><p>To formulate and analyze skill reuse in a general bimanual setting, we first define what we mean by a skill. We distinguish between single-arm skills, which can be executed by one arm in isolation, and dual-arm skills, which require coordinated behavior between the two arms. Definition 1 (Single-Arm Skills). For κ ∈ {L, R}, S κ is the set of all possible left/right arm skills. A single-arm skill s κ ∈ S κ is a conditional distribution π sκ (a κ | x). For any pair (s L , s R ) ∈ S L × S R , their composition is defined as</p><formula xml:id="formula_1">π s L ,s R (a L , a R | x) = π s L (a L | x) π s R (a R | x).</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Definition 2 (Dual-Arm Skills). A dual-arm skill s</head><formula xml:id="formula_2">D ∈ S D is a joint conditional distribution π s D (a L , a R | x) such that the conditional mutual information I πs D (a L ; a R | x) &gt; 0. Equivalently, π s D (a L , a R | x) ̸ = π s L (a L | x) π s R (a R | x) for any single-arm skills s L , s R .</formula><p>Achieving inter-arm coordination for dual-arm skills requires an information pathway that induces dependence between a L and a R . We denote this pathway conceptually by an inter-arm message m, yielding action generation forms such as π L (a L | x, Y L , m L ) and π R (a R | x, Y R , m R ). In practice, inter-arm message may be realized in various ways, such as explicit message passing, or implicitly through shared parameters as in common monolithic policies.</p><p>For any possible scene x, we assume there exists a (possibly multi-valued) set of correct skills S ⋆ (x) ⊆ (S L × S R ) ∪ S D that are appropriate for that scene. We decompose this set as</p><formula xml:id="formula_3">S ⋆ (x) = S ⋆ pair (x) ∪ S ⋆ D (x), where S ⋆ pair (x) = S ⋆ (x) ∩ (S L × S R ), S ⋆ D (x) = S ⋆ (x) ∩ S D</formula><p>, corresponding to correct skills that can be expressed as a composition of single-arm skills and correct skills that are genuinely dual-arm. Note that S ⋆ pair (x) is defined over the full product S L ×S R , and is not restricted to the paired set S pair ; in particular, it may contain recombinations of single-arm skills that never co-occur in the demonstrations. Definition 3 (Skill Reuse). For a bimanual policy learned from skill set S = S pair ∪ S D = {(s m L , s m R )} ∪ {s n D }, we define its possible behavior set as S p = ({s m L } × {s m R }) ∪ {s n D }. We say that the policy exhibits skill reuse if, for every scene x (possibly unseen) with S ⋆ (x) ∩ S p ̸ = ∅, there exists a skill</p><formula xml:id="formula_4">s ∈ S ⋆ (x) ∩ S p such that π θ (a L , a R | x) ≈ π s (a L , a R | x).</formula><p>Equivalently, this requirement decomposes into two major subproblems: (i) single-arm composition: if the correct behavior for x is a composition of single-arm skills, i.e. S ⋆ (x) ∩ S p = {(S i L , S j R )} for some i, j, the policy must be able to realize this composition, even for (s i L , s j R ) that never appeared in S pair ; and (ii) dual-arm reproduction: when the correct skill is genuinely dual-arm, i.e. S ⋆ (x) ∩ S p = {s i D } for some i, the policy should also produce action for s i D while maintaining its inter-arm coordination structure. For cases where multiple skill choices are valid, specifically, the model should then select and produce one of them. Remark (Fast bimanual continual learning by skill reuse). In practice, many dual-arm skills are close to simple compositions of two single-arm skills, in the sense that each arm largely follows a independent per-arm behavior under the same context x. The challenge is the coordination between the two arms: the joint action distribution deviates from an independent product due to inter-arm coupling (cf. I(a L ; a R | x) &gt; 0 in Def. 2). Therefore, if a model can flexibly invoke reusable single-arm skills, acquiring a new bimanual skill can often be done with minimal finetuning by mainly learning additional information for coupling on top of the existing per-arm skills, rather than relearning both arms from scratch. Therefore, effective skill reuse can improve efficiency in continual learning or large-scale learning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Skill Selector</head><p>Given a library of skills, action generation can be viewed as first selecting which skill (or skill pair) to use for a given scene x, and then sampling actions from the corresponding skill distributions. We assume a (finite) skill library consisting of indexed single-arm skills {s k L } k∈K L ⊆ S L and {s l R } l∈K R ⊆ S R , and indexed dual-arm skills {s d D } d∈K D ⊆ S D . We introduce a discrete skill index random variable</p><formula xml:id="formula_5">Y ∈ Y := K D ∪ (K L × K R ), where Y = d ∈ K D means that the dual-arm skill π s D (a L , a R | x) should be used, and Y = (k, l) ∈ K L × K R means that the single-arm skills π s k L (a L | x) and π s l R (a R | x) should be used concurrently.</formula><p>An ideal high-level selector defines a distribution p ⋆ (Y | x), and the resulting action distribution is the mixture</p><formula xml:id="formula_6">π ⋆ (a L , a R | x) = d∈K D p ⋆ (Y = d | x) π s D (a L , a R | x) + (k,l)∈K L ×K R p ⋆ (Y = (k, l) | x) π s k L (a L | x) π s l R (a R | x).</formula><p>We use the term skill selector for this conceptual mechanism, without assuming a specific module or architecture. Ideally, the skill selector should select appropriate skills not only for scenes seen in the demonstrations, but also for novel inputs where the correct skill configuration has never been observed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Skill Entanglement in Current VLAs</head><p>VLAs are often built upon a pretrained VLM, which provides strong generalization over visual scenes and naturallanguage instructions. Typically, a VLA has a additional action module (or "action expert") to generate actions. In bimanual manipulation, the action is commonly represented as a single vector by concatenating the left-and right-arm actions.</p><p>The VLM is a natural candidate to implement a generalizable skill selector-i.e., to map a scene x to an appropriate skill index Y (or an equivalent decision variable) that can generalize beyond the demonstrated scenes. However, even if the upstream skill decision is sufficiently able to separate scenes requiring different skills, can the downstream action generation mechanism reuse skills in the sense of Sec. IV-A?</p><p>We argue that common VLA designs exhibit two forms of skill entanglement that hinder effective skill reuse: Action Entanglement. Many bimanual VLA policies are trained to predict a single concatenated joint action vector (a L , a R ). This monolithic supervision couples the two arms at the output level and encourages the model to fit the empirical joint distribution induced by paired demonstrations. Consequently, the learned policy may internalize datasetspecific cross-arm correlations rather than isolating reusable single-arm structure. This becomes problematic for skill reuse and recomposition. Even if the upstream vision-language reasoning can distinguish scenes requiring different skills, the downstream action generator may fail to (i) disentangle singlearm skills from dual-arm coordination patterns and (ii) support recomposition of single-arm skills beyond the left-right pairings observed during training. In other words, joint-action learning can bias the model toward reproducing demonstrated bimanual patterns, limiting its ability to generalize to unseen combinations of per-arm behaviors. Latent entanglement in action-expert VLAs. As previously mentioned, recent VLA methods augment a pretrained VLM with a dedicated action-generation module (e.g., π 0 /π 0.5 <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b22">23]</ref>, RDT2 <ref type="bibr" target="#b39">[40]</ref>, DexVLA <ref type="bibr" target="#b41">[42]</ref>). Abstractly, a VLM encodes context x into a representation z, and an action module predicts bimanual actions conditioned on z,</p><formula xml:id="formula_7">p(a L , a R | x) = p(a L , a R | z) p(z | x) dz,</formula><p>where p(z | x) is induced by the VLM backbone and p(a L , a R | z) is implemented by the action expert.</p><p>While this architecture can be effective in practice, it introduces an additional pathway for skill entanglement. In bimanual imitation, the shared latent z learned from paired demonstrations may implicitly encode cross-arm dependencies. This latent entanglement can degrade skill recomposition when the policy is evaluated on unseen left-right pairings, since the action expert conditions both arms on a representation that already mixes information across arms.</p><p>V. METHOD: SKILLVLA In this section, we present SkillVLA, a method designed to enable effective skill reuse to address combinatorial diversity and accelerate the acquisition of new skills. We first describe the overall architecture, which realizes skill reuse via a two-level reasoning pipeline and a collaboration estimator for behavior-type identification. We then introduce additional training strategies that help the model better capture skill structure and infer the degree of inter-arm cooperation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Method Pipeline</head><p>Our method (overview in Fig. <ref type="figure" target="#fig_1">2</ref>) follows the common VLA paradigm, with a top-level VLM and actions generated via an iterative flow-matching process <ref type="bibr" target="#b27">[28,</ref><ref type="bibr" target="#b29">30]</ref>. In our implementation, we use the pretrained PaliGemma <ref type="bibr" target="#b5">[6]</ref> backbone released with π 0.5 <ref type="bibr" target="#b22">[23]</ref> for initiating the VLMs. Our method consists of two main functional components, described below: Two-level reasoning (skill selection and action generation). Because an explicit skill library is typically unavailable in practice, we aim for the model to discover and instantiate skill representations that support both learning and reuse. Skills can be represented in many forms; in SkillVLA we use natural language as the skill descriptor, which aligns naturally with the VLM backbone. We implement this choice via a twolevel reasoning pipeline.</p><p>As shown in Fig. <ref type="figure" target="#fig_1">2</ref>, the high-level module explicitly produces per-arm sub-prompts that act as skill descriptors. Concretely, we prompt the VLM to generate two texts (u L , u R ) in a fixed format:</p><formula xml:id="formula_8">(u L , u R ) ∼ p(u L , u R | x),</formula><p>where u L and u R describe what the left and right arms should do, respectively (e.g., "pick the cake on the right" vs. "pick the box on the left"). This representation targets task intent and explicitly decouples per-arm skill selection, enabling flexible single-arm recomposition: novel combinations can be formed by pairing previously generated (or learned) u L and u R in new scenes. During low-level skill learning, we freeze the high-level VLM to preserve its vision-language generalization while training the action components.</p><p>At the low level, per-arm actions are generated by two separate streams. Each stream uses its own low-level VLM (fine-tuned separately, e.g., via LoRA <ref type="bibr" target="#b19">[20]</ref>) to process the visual input and the corresponding per-arm prompt, producing a per-arm latent representation z i = f i (x, u i ), where i ∈ {L, R}. Action experts then predict actions conditioned on the corresponding latent and the arm state. To support coordinated bimanual behaviors when needed, we introduce an adaptive cross-attention mechanism between the action experts to capture inter-arm dependence:</p><formula xml:id="formula_9">a i ∼ p(a i | z i , α m i ) ,</formula><p>where m i is the inter-arm message produced by crossattention. The cooperation level signal α gates this message to enable skill-adaptive action generation and is further elaborated upon below. Cooperation estimator (behavior mode identification). While inter-arm communication is useful for capturing low-level dependence, it should be selectively enabled; for single-arm skills, the two arms should remain largely disentangled during both training and evaluation. To this end, we introduce a cooperation estimator that attends to the high-level VLM representation and predicts a scalar α ∈ [0, 1], indicating the degree of inter-arm cooperation (larger α implies stronger coupling). Formally, the estimator predicts</p><formula xml:id="formula_10">α ∼ p(α | z H ), z H = f H (x),</formula><p>where z H is the latent representation produced by the frozen high-level VLM. This signal serves as a mode identifier, indicating whether the current behavior is better explained as (i) a composition of single-arm skills or (ii) a cooperative dual-arm skill. We gate inter-arm message passing by α, enabling the policy to interpolate between per-arm generation and coupled dual-arm generation.</p><p>To train α t , we use a simple communication usefulness objective derived from behavioral cloning (BC). At timestep t, the BC loss is</p><formula xml:id="formula_11">L BC = ∥â L t -a L t ∥ 2 2 + ∥â R t -a R t ∥ 2 2 .</formula><p>We compute L on BC with cross-attention enabled and L off BC with cross-attention disabled. We then define</p><formula xml:id="formula_12">L coop = λ • L on BC -L off BC sg • α t ,</formula><p>where (•) sg denotes stop-gradient. Minimizing L coop increases α t when communication reduces the BC error and decreases α t otherwise.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Additional Cooperation-Level Learning</head><p>Because α directly gates cross-arm interaction, accurately inferring the cooperation level is critical. We introduce additional mechanisms to encourage reliable cooperation estimation, which we use by default in our implementation.</p><p>Priors and regularizers for cooperation learning. VLMs are pretrained on datastes and thus encode broad task semantics and commonsense regularities (e.g., when two arms are typically required). This makes them a natural source of priors for estimating task-dependent cooperation. To distill this information into a lightweight estimator, we use an off-the-shelf VLM to produce a prior coordination strength α vlm ∈ [0, 1] for the current scene and task (or α vlm ∈ {0, 1} when using a discrete gate).</p><p>Let αt denote the gate value actually used for communication (i.e., the continuous α t , or the soft discrete probability ŷt defined below). We regularize αt toward the VLM prior and further encourage (a) sticky gating for temporal smoothness and (b) conservative communication, keeping the gate small unless interaction is beneficial:</p><formula xml:id="formula_13">L prior = ℓ(α t , α vlm ), L sticky = ℓ(α t , αt-1 ), L sup = αt .</formula><p>We set ℓ(u, v) = ∥u -v∥ 2 2 when αt is continuous, and use a Bernoulli cross-entropy ℓ(u, v) = -v log u-(1-v) log(1-u) when αt ∈ (0, 1) is interpreted as a probability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Cooperation level discretization.</head><p>In practice, a continuous gate α t can exhibit small but persistent fluctuations that destabilize action generation. To improve stability, we (optionally) discretize the gate by restricting α t ∈ {0, 1}. Specifically, the model predicts ŷt ∈ (0, 1), the probability of enabling cross-arm communication, and we train it with a binary crossentropy loss:</p><formula xml:id="formula_14">L disc = BCE(y t , ŷt ), y t = I L on BC &lt; L off BC .</formula><p>At inference time, we binarize ŷt to obtain αt ∈ {0, 1}, which directly enables or disables the cross-attention message. We apply the same priors and regularizers from Sec. V-B to ŷt as a soft relaxation, thereby shaping the resulting discrete gate. This tokenized formulation simplifies gate prediction and empirically improved stability in preliminary experiments. Implementation and training details are provided in appendix.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VI. EXPERIMENTS</head><p>In this section, we evaluate our model's ability to (i) freely reuse learned single-arm skills, (ii) capture the inter-arm coordination required by truly cooperative behaviors, and (iii) identify when cooperation is necessary for a given state. Our experiments are designed to answer the following questions:</p><p>1) Can SkillVLA flexibly recompose learned skills and generalize to unseen combinations of single-arm skills? 2) Is SkillVLA's communication mechanism sufficient to support tight inter-arm coordination and reproduce cooperative dual-arm skills? TABLE I: Success Rates on Skill Recomposition Tasks ↑ Methods Recomposition Tasks Cup×Cake Cup×Stir Cup×Smash Box×Cake Box×Stir Box×Smash Mug×Cake Mug×Stir Mug×Smash Avg. π 0.5 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 π 0 -FAST 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 TwinVLA 0.1 0.0 0.0 0.2 0.0 0.1 0.0 0.0 0.0 0.04 SkillVLA 0.7 0.4 0.5 0.6 0.4 0.5 0.6 0.3 0.6 0.51</p><p>TABLE II: Success Rates on Skills Learned Methods Skills Learned Cup Box Mug Cake Stir Smash Avg. π 0.5 0.7 1.0 0.8 0.8 0.6 0.7 0.77 π 0 -FAST 0.9 0.8 0.7 0.9 0.5 0.4 0.70 TwinVLA 0.7 0.8 0.5 0.8 0.5 0.7 0.67 SkillVLA 0.8 0.7 0.8 1.0 0.6 0.8 0.78</p><p>3) Can SkillVLA handle multi-stage, long-horizon tasks by estimating cooperation level and switching between operating modes? 4) In continual learning, does SkillVLA better leverage previously learned skills to acquire related new skills compared to existing methods?</p><p>Baselines and evaluation metrics. We compare SkillVLA against π 0.5 <ref type="bibr" target="#b22">[23]</ref>, a representative state-of-the-art VLA baseline. For Q1, we additionally include π 0 -FAST <ref type="bibr" target="#b33">[34]</ref> as a representative autoregressive VLA, which represents the other major paradigm beyond diffusion-based VLAs and tests whether skill entanglement persists across architectures. In the Q1 setting, these general-purpose VLAs achieve near-zero success due to severe skill entanglement. To enable more informative comparisons, we further include TwinVLA <ref type="bibr" target="#b20">[21]</ref> as a factorized baseline that composes two single-arm VLAs by sharing action experts while allowing uncontrolled cross-arm attention. For most tasks (except the long-horizon task), we report success rate as the primary metric. For long-horizon tasks which comprise multiple stages, we additionally report a progress score and the average completion time to quantify execution quality and efficiency. Additional experimental details are provided in appendix.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Single-Arm Skill Reuse</head><p>Task Setup. Here, we evaluate whether a bimanual VLA can reuse learned single-arm skills under unseen left-right combinations. As shown in Fig. <ref type="figure" target="#fig_2">3</ref>, our training data include three skills per arm, collected from single-arm executions while the other arm remains stationary. At test time, we ask the policy to execute a left-arm skill and a right-arm skill simultaneously in combinations that never appear in the training set. This setting directly probes skill reuse since the policy should invoke the correct per-arm behaviors and maintain stable concurrent execution, rather than reverting to familiar demonstration-time patterns. Performance Results. As reported in Tab. I and Tab. II, all methods perform comparably on the seen single-arm skills, but their behaviors diverge sharply when asked to zero-shot recompose unseen left-right combinations. In particular, π 0.5 and π 0 -FAST achieve a 0% success rate. Qualitatively, these models frequently revert to the trainingtime regime in which one arm acts while the other remains idle, indicating that they primarily reproduce skill pairings present in the dataset rather than freely recombining per-arm behaviors. Moreover, when instructed to perform a two-arm task, π 0.5 often exhibits instability in that the nominally "idle" arm jitters or drifts. These results are not entirely surprising since the test settings are essentially out-of-distribution (OOD) for standard VLAs and this failure mode can be attributed to entangled bimanual control. Because π 0.5 uses a single shared representation to control both arms, each left-right pairing effectively corresponds to a distinct latent mode specifying a coupled bimanual action. Unseen pairings therefore require a latent that is not induced by any training demonstration, producing an OOD input to the downstream action expert.</p><p>TwinVLA attains non-zero success by occasionally producing the intended composition. However, although it uses separate VLM streams for the two arms, it relies on uncontrolled cross-attention between streams, which can introduce implicit coupling. This yields unpredictable interference under unseen pairings and keeps overall success low.</p><p>In contrast, SkillVLA achieves a substantially higher success rate of 51% on unseen combinations. By explicitly disentangling per-arm skill invocation, performing skill-adaptive action generation, and enabling controlled inter-arm communication only when needed, SkillVLA more reliably reuses the same single-arm behaviors under novel pairings while reducing spurious cross-arm interference.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Dual-Arm (Cooperative) Skill Reproduction</head><p>Task Setup. To evaluate whether SkillVLA can reproduce cooperative dual-arm skills that require close inter-arm coordination, we design three cooperative tasks (Fig. <ref type="figure" target="#fig_3">4</ref>). These tasks fall into two categories with qualitatively different coordination demands. The first category, SHAKE and BALL, requires tight low-level alignment between the two arms. The second category, ALIGN, requires both low-level alignment and high-level coordination; two blocks are placed near the center of the table, and the two arms must simultaneously pick the objects and align them. Importantly, the arm-object assignment is randomized across trials, requiring the policy to resolve task allocation on the fly. Performance Results. As reported in Tab. III, SkillVLA achieves performance comparable to the strong baseline π 0.5 across all cooperative tasks. This suggests that SkillVLA can identify when cooperation is required and that its explicit communication mechanism is expressive enough to support tight inter-arm coordination when needed. Ablation: Cross-Attention. We further isolate the role of action-level communication by evaluating an ablation that disables cross-attention between the two action experts. This variant performs particularly poorly on SHAKE and BALL, confirming that cross-attention-based communication is important for maintaining tight low-level alignment. On ALIGN, which places greater emphasis on high-level task assignment</p><p>TABLE III: Success Rate in Cooperative Tasks ↑ Methods Shake Ball Align Avg. π 0.5 0.30 0.45 0.65 0.47 TwinVLA 0.15 0.55 0.55 0.42 SkillVLA 0.25 0.50 0.70 0.48 SkillVLA w/o Attn. 0.00 0.10 0.40 0.17 and is comparatively less sensitive to continuous low-level coupling, disabling communication results in a smaller performance drop.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Applications in Long-Horizon Settings</head><p>We next evaluate whether SkillVLA can (i) infer the required cooperation level and (ii) switch between collaborative and non-collaborative modes within a single episode. Task setup. To this end, we design two long-horizon real-world tasks, TUBES and COLLECT ITEMS (Fig. <ref type="figure" target="#fig_4">5</ref>). Each task intentionally interleaves phases that admit independent per-arm execution with phases that require explicit bimanual cooperation. As a representative example, TUBES consists of two stages with distinct coordination demands: (1) transferring tubes from one rack to another (independent per-arm collection), and (2) lifting and placing the loaded rack onto another rack (inherently cooperative bimanual manipulation). We train the model using demonstrations of three skills, i.e., transferring a tube with the left arm, transferring a tube with the right arm, and moving the rack with both arms. We then evaluate the policy zero-shot on the full long-horizon task that composes these stages. Performance and Efficiency Results. As shown in Fig. <ref type="figure" target="#fig_4">5</ref> (bottom right), SkillVLA achieves a progress score comparable to strong baselines, indicating that it can select an appropriate operating mode and complete the task reliably. More importantly, SkillVLA reduces average completion time by ≈ 21% relative to the baselines. Qualitatively, monolithic baselines tend to follow demonstration-like sequential patterns (one arm acts while the other waits), whereas SkillVLA leverages skill reuse to exploit parallelism when available. In TUBES, during the tube-collection stage, it concurrently invokes the single-arm tube-transfer skills with both arms (i.e., α = 0), enabling parallel left-right execution and substantially accelerating completion. This ability to opportunistically parallelize subtasks better utilizes the robot's hardware and improves practical throughput. Mode switching via the cooperation gate. Fig. <ref type="figure" target="#fig_4">5</ref> (bottom left) visualizes SkillVLA's discrete gate output α ∈ {0, 1}, where α = 0 corresponds to independent per-arm execution and α = 1 activates inter-arm cooperation. We observe that α evolves coherently with task progress; it switches to α = 1 during inherently cooperative phases such as moving the loaded rack with both arms, while remaining at α = 0 during collection phases where the arms can operate independently. This stage-consistent switching suggests that the gate can infer the required cooperation level from scene and instruction</p><p>Start Pick Tubes Place Tubes Pick Tube Rack SkillVLA 𝝅 𝟎.𝟓 Place Tube Rack Start Pick Tube (Right) Pick Tube Rack Place Tube Rack Place Tube (Right) Pick Tube (Left) Place Tube (Left)  context, allowing SkillVLA to reuse both single-arm and dualarm behaviors within a single rollout. Ablation: Continuous vs. Discretized Gating. We also evaluate an ablation that uses a continuous (non-discretized) gate. This variant is less stable over long horizons. As shown in Fig. <ref type="figure" target="#fig_4">5</ref> (bottom left), continuous α exhibits noticeably higher fluctuation despite following a similar overall trend. This instability propagates to action generation, leading to lower success and higher variance in performance (Fig. <ref type="figure" target="#fig_4">5</ref>, bottom right). These results suggest that discretizing α improves robustness by enforcing simpler, clearer mode switching.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Reuse of Learned Skills in Continual Learning</head><p>Task setup. To answer Q4, we study whether SkillVLA can reuse learned single-arm skills to accelerate the acquisition of a new cooperative dual-arm skill via fine-tuning. As illustrated in Fig. <ref type="figure" target="#fig_5">6</ref> (left), we consider two task groups, LIFT BAG and SHAKE CUP. In each group, we first pretrain the model on the corresponding single-arm dataset (e.g., lifting a bag with one arm), and then fine-tune it with a small number of demonstrations to obtain the target dual-arm skill (e.g., lifting with both arms). For each task group, we construct a twostage continual-learning protocol: (i) pretraining on single-arm executions to learn reusable per-arm behaviors, followed by (ii) fine-tuning on a limited set of dual-arm demonstrations to learn the cooperative variant.</p><p>Learning Curves and Data Efficiency. Fig. <ref type="figure" target="#fig_5">6</ref> (right) reports success rates as a function of the number of dual-arm demonstrations used for fine-tuning. In LIFT BAG, the target dual-arm behavior is close to a composition of the pretrained singlearm skills, and SkillVLA achieves 20% success zero-shot. Moreover, with only 5 fine-tuning demonstrations, it reaches near-peak performance. In contrast, π 0.5 and TwinVLA remain far from convergence even after training on 30 demonstrations. These results indicate that SkillVLA can effectively leverage previously learned single-arm behaviors for rapid adaptation.</p><p>Adapting Skills to New Coordination. SHAKE CUP is challenging because the required coordination deviates from the original single-arm behavior; one hand must stabilize the cap rather than simply shaking the cup body. Despite this mismatch, SkillVLA exhibits the same data-efficient trend. This suggests that reuse in continual learning is not limited to replaying identical action patterns. Instead, the model can transfer related single-arm behaviors as a strong initialization and quickly adapt them into a new cooperative policy. Overall, these results support skill reuse as a practical mechanism for continual learning and for scaling generalist bimanual policies with reduced demonstration burden.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VII. CONCLUSION, LIMITATIONS, AND FUTURE WORK</head><p>In this work, we study the combinatorial diversity challenge in bimanual manipulation through the lens of skill reuse. We identify skill entanglement in existing VLA designs as a central obstacle to reuse-particularly for composing diverse left-right skill pairings and generalizing to unseen task combinations. To address this, we propose SkillVLA, which mitigates entanglement by explicitly separating per-arm skill invocation and enabling skill-adaptive action generation, while still leveraging the generalization of pretrained visionlanguage models. Across real-world evaluations, SkillVLA improves combinatorial generalization and data efficiency in continual skill acquisition, demonstrating more reliable reuse of both single-arm and cooperative dual-arm behaviors.</p><p>Limitations. SkillVLA depends on pretrained VLMs for highlevel reasoning and for providing priors on cooperation, which ties performance to the capability, latency, and cost profile of the underlying foundation model. Future work will explore more efficient ways to distill or compress this reasoning into lightweight policy components, as well as richer skill representations beyond natural language. More broadly, we view disentangled skill learning/selection and controlled crossarm coupling as key ingredients for scaling toward truly generalist bimanual agents that can recombine skills reliably on demand.</p><p>In this section, we provide a geometric analysis of the limitations inherent to monolithic bimanual VLAs. We demonstrate that modeling dual-arm control via a single joint distribution π θ (a L , a R |x) creates a structural disconnect between the training manifold and the target space required for skill recomposition. We term this limitation Action Entanglement. Formulation of the Training Manifold. Consider a monolithic VLA policy trained on a dataset of expert demonstrations D. We define the training manifold S train as the subset of the joint action space supported by these demonstrations:</p><formula xml:id="formula_15">S train = {(a L , a R ) | ∃x, (x, a L , a R ) ∈ D} ⊂ A L × A R</formula><p>In standard bimanual datasets, this manifold is typically sparse and exhibits high inter-arm correlation. For instance, if a specific "lifting" skill for the left arm is only ever demonstrated while the right arm is "idling", the manifold S train captures this specific coupling. Consequently, the learned policy π θ approximates the empirical joint density defined strictly over this support, internalizing the conditional dependence between the arms. The Geometry of Unseen Recomposition. Consider a recomposition task defined by a context x * that requires the concurrent execution of a known left-arm skill s L and a known right-arm skill s R . The set of valid solutions, or the target support, is the Cartesian product of the valid marginal actions for each skill:</p><formula xml:id="formula_16">S target (x * ) = supp(π s L (•|x)) × supp(π s R (•|x))</formula><p>We define a skill combination as "unseen" when this specific pairing of behaviors has not been observed in the dataset. Geometrically, this implies that the target solution lies outside the training manifold: S target (x * ) ∩ S train = ∅ Entanglement Mechanism. The core challenge of action entanglement arises from the discrepancy between the training objective and the inference requirement under this disjoint geometry.</p><p>Training Dynamics: The objective of imitation learning is to maximize the likelihood of actions within S train . The policy π θ inherently learns the correlations present in the data (e.g., a L ∈ Lift =⇒ a R ∈ Idle).</p><p>Inference Failure: When presented with x * , the model is required to generate an action a * ∈ S target . However, because a * lies in a region of the joint space assigned negligible probability density by the learned distribution (since a * / ∈ S train ), the monolithic model struggles to factorize the arms. Instead, the policy tends to regress to the high-density modes of the training distribution. This results in spurious crosstalk, where the execution of one arm creates a "pull" that forces the other arm to default to its training-time partner behavior, preventing the successful composition of the two skills.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Latent Entanglement in Action-Expert VLAs</head><p>We consider the broad class of action-expert VLAs, where a pretrained VLM backbone encodes the multimodal context x into a shared latent representation z, and a downstream action module predicts actions conditioned on this z. While standard implementations typically predict the joint action (a L , a R ) monolithically (thus suffering from action entanglement), one might propose a straightforward solution: factorizing the output module to use disjoint action experts π L (a L |z) and π R (a R |z).</p><p>In this section, we demonstrate that this decoupled architecture remains insufficient for reliable recomposition due to a secondary failure mode at the vision-language interface, which we term Latent Entanglement. Geometry of the Latent Interface. During training, the VLM backbone projects the demonstration inputs D onto a specific manifold within the latent space. We denote the effective support of these training latents as:</p><formula xml:id="formula_17">Z train = {z = f VLM (x) | x ∈ D}</formula><p>The downstream action experts (AEs), π L and π R , are optimized to approximate the conditional action density p(a|z) specifically for inputs z ∈ Z train . Consequently, the reliability of these experts is strictly bounded by this learned latent support. Generalization Failure via OOD Latents. Consider an unseen recomposition task x * requiring a novel combination of skills. While the high-level VLM may generally understand this scene, it projects the global context into a single embedding z * = f VLM (x * ). Because x * represents a semantic combination distinct from any training example, the resulting embedding z * may deviate from the cluster of latents seen during training (i.e., z * / ∈ Z train ). This presents the downstream experts with an Outof-Distribution (OOD) conditioning variable. Unlike the VLM backbone, these specialized experts lack web-scale pretraining and are prone to unpredictable behavior when queried with latents outside their training manifold. Conclusion: The Entanglement of Reasoning. This analysis reveals that the reliance on a single shared latent creates a bottleneck. The latent z must implicitly encode the crossarm dependencies observed in the data to satisfy the training objective. Consequently, even if the action heads are structurally disentangled, the shared reasoning pathway entangles the control signals before they reach the experts.</p><p>This highlights that true combinatorial generalization requires more than just output factorization; it requires the disentanglement of reasoning. The VLM must be capable of explicitly decomposing the global context into separate skill descriptors for each arm, rather than summarizing the joint state into a single entangled embedding.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Analysis of SkillVLA</head><p>Our theoretical analysis has identified action and latent entanglement as critical barriers to skill reuse, arising from the mismatch between the training manifold and the target space of unseen tasks. SkillVLA is explicitly designed to resolve this mismatch. In this section, we analyze the generative process of our method, demonstrating how it structurally supports singlearm skill recomposition where monolithic baselines fail.</p><p>When the collaboration gate is closed (α = 0), SkillVLA models the joint action distribution as a conditional product of independent streams:</p><formula xml:id="formula_18">π ψ (a L , a R | x) = u,z p(a L | z L )p(a R | z R ) Independent AEs • p(z L | x, u L )p(z R | x, u R ) Per-Arm VLMs • p(u L , u R | x) High-level VLM dudz.</formula><p>This factorization enables the model to effectively cover the target support S target for unseen skill pairs. We analyze this process in three stages: Semantic Decomposition to Known Primitives First, leveraging its web-scale generalization capability, the high-level planner decomposes the novel context x * into explicit skill descriptors u L and u R . Crucially, while the combination (u L , u R ) is novel to the system, the individual descriptors correspond to single-arm skills s L and s R that exist within the training repertoire. This step effectively breaks the OOD joint query into recognizable semantic units. In-Distribution Latent Generation Unlike shared-latent models that must encode the novel combination into a single vector, SkillVLA processes the descriptors independently: z L ∼ p(z L |x, u L ). Since u L specifies a known skill s L present in the training demonstrations D, the mapping from (x, u L ) to z L constitutes an in-distribution inference task for the low-level VLM. Consequently, the generated latent z L naturally aligns with the manifold of latents seen during training (Z train ), preventing the drift into undefined regions that characterizes latent entanglement.</p><p>Construction of the Product Support With valid, indistribution latents z L and z R , the independent Action Experts p(a L |z L ) and p(a R |z R ) operate within their valid domains. The resulting joint policy support is the Cartesian product of these valid marginals,</p><formula xml:id="formula_19">supp(π ψ ) = supp(p(a L |z L )) × supp(p(a R |z R ))</formula><p>Since the experts correctly recover the behaviors for the known skills s L and s R , this product space effectively covers the target support S target (x * ). Thus, by structurally reducing an OOD joint task into ID sub-tasks, SkillVLA provides a robust mechanism for zero-shot skill recomposition.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>APPENDIX B IMPLEMENTATION DETAILS</head><p>Methods Implementation. Our goal is to isolate the structural limitations of existing VLA systems and evaluate our proposed remedy under controlled settings. To avoid confounding factors, we do not introduce new backbone architectures or extensive pretraining recipes. Instead, we adopt minimal structural modifications to the primary baseline π 0.5 <ref type="bibr" target="#b22">[23]</ref>, ensuring the pipeline aligns with our disentangled design while maintaining component comparability.</p><p>We initialize the components using the pretrained PaliGemma checkpoints released with π 0.5 <ref type="bibr" target="#b22">[23]</ref>, duplicating the low-level VLM and action experts to support disentangled execution. While directly using an off-the-shelf VLM is possible, prior to policy learning, we perform a lightweight vision-language fine-tuning of the high-level VLM on subtask generation data to ensure prompting stability; this module then remains frozen throughout the main training phase, where only the low-level VLMs are fine-tuned via independent LoRA adapters <ref type="bibr" target="#b19">[20]</ref>.</p><p>The cross-attention module, which enables controlled interaction between the two action experts, employs independent query/key/value (QKV) projections trained from scratch. For action sampling, we maintain the flow-matching time schedule identical to the original π 0.5 implementation. Finally, the cooperation-level estimator is implemented as a Transformer decoder that attends to the high-level VLM's KV cache via cross-attention.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Cooperation Prior.</head><p>To obtain the cooperation level labels used as learning priors, we preprocess the training dataset using a frozen Qwen3-VL-32B model <ref type="bibr" target="#b2">[3]</ref>. Specifically, we prompt the model annotate the degree of required inter-arm coordination, augmenting the dataset with these values as part of ground-truth supervision for the cooperation estimator.</p><p>TABLE IV: Cooperative Task Details Abbr. Task Description Shake SHAKE CUP A cup with a loose cap is placed on the table. The robot must shake the cup bimanually, with one arm securing the cap to prevent separation. This requires the arms to move synchronously to maintain the assembly's integrity. Lift LIFT BALL A ball rests on a stand. The robot must lift the ball using both arms. The upward motion must be synchronized in velocity to maintain equilibrium and prevent the ball from rotating or falling. Align ALIGN BLOCKS Two blocks are placed on the table. The robot must grasp one block with each arm and place them onto the table simultaneously such that they align collinearly. Start Relocate Block (L) &amp; Reach Drawer (R) Open Drawer Place Toy (R) Place Block (R) Place Block </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>APPENDIX C EXPERIMENTAL DETAILS</head><p>A. Baselines π 0 -FAST and π 0.5 . Contemporary VLA architectures predominantly fall into two paradigms: autoregressive generation and diffusion-based modeling. We select π 0 -FAST <ref type="bibr" target="#b33">[34]</ref> and π 0.5 <ref type="bibr" target="#b22">[23]</ref> as representative state-of-the-art baselines for these respective categories, allowing us to evaluate performance across both dominant design spaces. TwinVLA. To extend our evaluation to architectures beyond mainstream monolithic models, we additionally include Twin-VLA <ref type="bibr" target="#b20">[21]</ref> as a baseline. This method is constructed by duplicating a single-arm VLA to improve training efficiency, incorporating cross-attention between the parallel VLM streams to enable inter-arm communication. We reproduce this architecture to evaluate the performance of current factorized designs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Experimental Details</head><p>1) Skill Recomposition Tasks: We conduct skill recomposition experiments to evaluate the capability for single-arm skill reuse. In our protocol, models are trained on a set of independent single-arm skills, using 50 demonstrations per skill. We first validate that the models have mastered these source behaviors by conducting 10 evaluation rollouts for each original skill. Subsequently, we assess zero-shot generalization by testing the models on unseen skill combinations, performing 10 evaluation episodes for each pairing to establish the comparative trends in skill reuse.</p><p>2) Cooperative Tasks: Our experiments include three cooperative tasks-SHAKE CUP, LIFT BALL, and ALIGN BLOCKS-designed to probe the efficacy of inter-arm communication (see Table <ref type="table">IV</ref> for details). Each task necessitates strict bimanual coupling, ranging from synchronized lowlevel actuation to high-level planning. For each distinct task, we collect a dataset of 50 demonstrations and train taskspecific models. To ensure statistical reliability for evaluating performances, we evaluate each model on each task over 20 rollouts.</p><p>3) Long-Horizon Tasks: Our experiments include two longhorizon tasks: TUBES and COLLECT ITEMS. We train taskspecific policies separately using demonstrations of the skills required for each task (Fig. <ref type="figure">8</ref> and <ref type="figure">9</ref>), collecting 50 demonstrations per skill. For evaluation, we use the same set of items in the same environment, while randomizing the initial object placements across trials to ensure a fair comparison. We run 10 evaluation episodes per task, resulting in 20 total evaluations for each method.</p><p>For evaluation, we report the average progress rate to reflect overall task performance. The progress rate of each episode is defined as the achieved progress score divided by the maximum score of the corresponding task. Details for each task are as follows:</p><p>• TUBES: The task starts with two tube racks placed next to each other on the table: one rack is empty and the other holds two tubes. The robot must (i) transfer both tubes to the empty rack, and then (ii) lift the rack containing the tubes using both arms and place it onto the other rack. +1 For each tube successfully transferred. ×2 +1 For successfully placing the rack.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Maximum score: 3 points.</head><p>• COLLECT ITEMS: The task starts with two items and a closed drawer on the table. The robot must (i) open the drawer using both arms, (ii) load both items into the drawer, and then (iii) close the drawer using both arms. Notably, as shown in Fig. <ref type="figure" target="#fig_6">7</ref>, one item is initially located behind the drawer and cannot be placed into it directly. The robot must first use one arm to relocate this item to a position above the drawer reachable to the other arm, and then use the other arm to place it into the drawer. +1 For opening the drawer. +1 For relocating the behind-drawer item to above the drawer.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Transfer Tube (L)</head><p>Transfer Tube (R) Transfer Rack Fig. <ref type="figure">8</ref>: Skills Learned for TUBES.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Place Block Relocate Block Place Toy Open Drawer Close Drawer</head><p>Fig. <ref type="figure">9</ref>: Skills Learned for COLLECT ITEMS.</p><p>+1 For each item placed into the drawer. ×2 +1 For closing the drawer. Maximum score: 5 points. Additionally, we report completion time to reflect behavioral efficiency. Since fully successful episodes are sparse, we compute a progress-normalized completion time and average it only over episodes with non-zero progress. Concretely,</p><formula xml:id="formula_20">t norm = 1 |I| i∈I t i s i ,</formula><p>where t i is the execution time of the i-th evaluation episode, s i ∈ (0, 1] is its progress rate, and |I| denotes the number of episodes that achieve non-zero progress. 4) Continual-Learning Tasks: Our evaluation includes two groups of continual learning tasks. In this protocol, we first pretrain the models on fundamental single-arm skills using 50 demonstrations per skill. Subsequently, we fine-tune the models on dual-arm tasks using varying numbers of limited demonstrations, as stated in the main text. To ensure statistical reliability, we evaluate the models over 20 rollouts after each fine-tuning stage.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 :</head><label>1</label><figDesc>Fig. 1: SkillVLA extracts single-arm skills from training data with hierarchical reasoning and skill-adaptive learning, being able to recompose them into unseen combinations during test time.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Fig. 2 :</head><label>2</label><figDesc>Fig. 2: SkillVLA framework. SkillVLA adopts a two-level reasoning pipeline, where the high-level VLM generates separate subtasks for arms and low-level VLMs further process the prompts to instruct action generation. Inter-arm cross-attention enables cooperative behaviors generation, controlled by a collaboration estimator that identifies the operation mode required.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Fig. 3 :</head><label>3</label><figDesc>Fig. 3: Skill recomposition tasks. (A): The models are trained on demonstrations of three skills for each arm. (B): After the models have learned the skills, zero-shot tests are conducted for every possible combinations of left and right-arm skills.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 4 :</head><label>4</label><figDesc>Fig. 4: Cooperative tasks. (a) SHAKE: Shake the cup with a cap without making them fall apart. (b) BALL: Lift the ball steadily. (c) ALIGN: Align the blocks on the table.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Fig. 5 :</head><label>5</label><figDesc>Fig. 5: Long-horizon tasks behaviors and results. Top: Behavior of π0.5 in TUBES. Middle left: Behavior of SkillVLA in TUBES. Bottom left: Changes of α values throughout the completion, respectively from SkillVLA and an ablated version without discretization of α. Bottom right: Averaged progress score and completion time of methods on the long-horizon tasks.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Fig. 6 :</head><label>6</label><figDesc>Fig. 6: Continual learning tasks and results. Left: SkillVLA in continual learning tasks, LIFT BAG and SHAKE CUP. Right: Success rates on cooperative tasks LIFT BAG and SHAKE CUP w.r.t the number of continual learning demonstrations.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Fig. 7 :</head><label>7</label><figDesc>Fig. 7: Rollout of SkillVLA on COLLECT ITEMS.</figDesc><graphic coords="15,306.23,186.72,81.81,56.18" type="bitmap" /></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>APPENDIX A METHOD ANALYSIS</head><p>In this appendix, we provide a comparative analysis to justify the architectural design of SkillVLA. We identify skill entanglement in existing monolithic VLAs as a fundamental obstacle to combinatorial generalization. Building on these structural findings, we demonstrate the necessity of the fully disentangled approach adopted by SkillVLA and analyze its effectiveness in resolving entanglement. We begin by establishing the geometric definitions that underpin our discussion. Preliminary: Support. To facilitate our geometric analysis, we first establish the concept of effective support to delineate the valid behavior of a learned policy. For a continuous policy distribution π(•|x), we define the effective support as the set of actions where the probability density is non-negligible:</p><formula xml:id="formula_21">supp(π(•|x)) = {a ∈ A | π(a|x) &gt; ϵ}</formula><p>In this analysis, we use the support to distinguish between the training manifold (the region of the action space covered by expert demonstrations) and the target support (the region of the action space required to solve a novel recomposition task). A model's ability to generalize to unseen tasks depends on whether its predicted support can cover the target support of the new context.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Speedfolding: Learning efficient bimanual folding of garments</title>
+		<author>
+			<persName><forename type="first">Yahav</forename><surname>Avigal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lars</forename><surname>Berscheid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tamim</forename><surname>Asfour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Torsten</forename><surname>Kröger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ken</forename><surname>Goldberg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2022 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1" to="8" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Bag all you need: Learning a generalizable bagging strategy for heterogeneous objects</title>
+		<author>
+			<persName><forename type="first">Arpit</forename><surname>Bahety</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shreeya</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huy</forename><surname>Ha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathalie</forename><surname>Hager</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Burchfiel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Cousineau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuran</forename><surname>Song</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="960" to="967" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruizhe</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xionghui</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zesen</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianghao</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunjiang</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbin</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifang</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qidong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shutong</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaohai</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingsheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaixin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zicheng</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuejing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dayiheng</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shixuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dunjie</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruilin</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxu</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rui</forename><surname>Men</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">;</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianhong</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianqiang</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiuyue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhibo</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingkun</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Humen</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingren</forename><surname>Zhou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2511.21631" />
+		<imprint>
+			<date type="published" when="2025-06">Jun. 2025</date>
+			<pubPlace>Lingchen Meng, Xuancheng Ren, Xingzhang Ren, Sibo Song, Yuchong Sun</pubPlace>
+		</imprint>
+	</monogr>
+	<note>Fan Zhou, Jing Zhou, Yuanzhi Zhu, and Ke Zhu. Qwen3-vl technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keqin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuejing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenbin</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sibo</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shijie</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Humen</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingkun</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaohai</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianqiang</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheren</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiabo</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianbao</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zesen</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhibo</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haiyang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyang</forename><surname>Lin</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2502.13923" />
+		<title level="m">Qwen2.5-vl technical report</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Bimanual robotic cloth manipulation for laundry folding</title>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Bersch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Pitzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sören</forename><surname>Kammel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2011 IEEE/RSJ International Conference on Intelligent Robots and Systems</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="1413" to="1419" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Beyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Steiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">André Susano</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Kolesnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Salz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxim</forename><surname>Neumann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ibrahim</forename><surname>Alabdulmohsin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Tschan-Nen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emanuele</forename><surname>Bugliarello</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Unterthiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Keysers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skanda</forename><surname>Koppula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangyu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Grycner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Gritsenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neil</forename><surname>Houlsby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manoj</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keran</forename><surname>Rong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Eisenschlos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Kabra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Bauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matko</forename><surname>Bošnjak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Minderer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Voigtlaender</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioana</forename><surname>Bica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivana</forename><surname>Balazevic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joan</forename><surname>Puigcerver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pinelopi</forename><surname>Papalampidi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Henaff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radu</forename><surname>Soricut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremiah</forename><surname>Harmsen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohua</forename><surname>Zhai</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2407.07726" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note>Paligemma: A versatile 3b vlm for transfer</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">A Vision-Language-Action Flow Model for General Robot Control</title>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adnan</forename><surname>Esmail</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Robert Equi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niccolo</forename><surname>Fusai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lachy</forename><surname>Groom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Szymon</forename><surname>Jakubczak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyiming</forename><surname>Ke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Li-Bell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohith</forename><surname>Mothukuri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suraj</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Pertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucy</forename><forename type="middle">Xiaoyang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laura</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Tanner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Walling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haohuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ury</forename><surname>Zhilinsky</surname></persName>
+		</author>
+		<idno type="DOI">10.15607/RSS.2025.XXI.010</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Robotics: Science and Systems</title>
+		<meeting>Robotics: Science and Systems<address><addrLine>LosAngeles, CA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2025-06">June 2025</date>
+			<biblScope unit="volume">0</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Cloth funnels: Canonicalized-alignment for multi-purpose garment manipulation</title>
+		<author>
+			<persName><forename type="first">Alper</forename><surname>Canberk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huy</forename><surname>Ha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Burchfiel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Cousineau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuran</forename><surname>Song</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference of Robotics and Automation (ICRA)</title>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Bagging by learning to singulate layers using interactive perception</title>
+		<author>
+			<persName><forename type="first">Lawrence</forename><surname>Yunliang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baiyu</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Seita</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayah</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Kollar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Held</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ken</forename><surname>Goldberg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="3176" to="3183" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Autobag: Learning to open plastic bags and insert objects</title>
+		<author>
+			<persName><forename type="first">Lawrence</forename><surname>Yunliang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baiyu</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Seita</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Kollar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Held</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ken</forename><surname>Goldberg</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICRA48891.2023.10161402</idno>
+	</analytic>
+	<monogr>
+		<title level="m">2023 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="3918" to="3925" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Robotwin 2.0: A scalable data generator and benchmark with strong domain randomization for robust bimanual robotic manipulation</title>
+		<author>
+			<persName><forename type="first">Tianxing</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zanxin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baijun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijian</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yibin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiwei</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zixuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianliang</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Gu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2506.18088</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Universal manipulation interface: Inthe-wild robot teaching without in-the-wild robots</title>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Chi</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenjia</forename><surname>Xu</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Chuer</forename><surname>Pan</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Cousineau</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Burchfiel</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Siyuan</forename><surname>Feng</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Russ</forename><surname>Tedrake</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Shuran</forename><surname>Song</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">RSS</orgName>
+			</affiliation>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Robotics: Science and Systems</title>
+		<meeting>Robotics: Science and Systems</meeting>
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Efficient bimanual manipulation using learned task schemas</title>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Chitnis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shubham</forename><surname>Tulsiani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saurabh</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Gupta</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2020 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="1149" to="1155" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">InternVLA-M1 Contributors. Internvla-m1: A spatially guided vision-language-action framework for generalist robot policy</title>
+		<idno type="arXiv">arXiv:2510.13778</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Bunny-visionpro: Real-time bimanual dexterous teleoperation for imitation learning</title>
+		<author>
+			<persName><forename type="first">Runyu</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuzhe</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiyue</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengzhe</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiqi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruihan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojuan</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaolong</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/IROS60139.2025.11247017</idno>
+	</analytic>
+	<monogr>
+		<title level="m">2025 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="12248" to="12255" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Palm-e: An embodied multimodal language model</title>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Mehdi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corey</forename><surname>Sajjadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Lynch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayzaan</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenlong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Duckworth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Klaus</forename><surname>Toussaint</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Greff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Florence</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2303.03378</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Mobile ALOHA: Learning bimanual mobile manipulation using low-cost whole-body teleoperation</title>
+		<author>
+			<persName><forename type="first">Zipeng</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tony</forename><forename type="middle">Z</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=FO6tePGRZj" />
+	</analytic>
+	<monogr>
+		<title level="m">8th Annual Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">A dualarm robotic cooperative framework for multiple peg-inhole assembly of large objects</title>
+		<author>
+			<persName><forename type="first">Dongsheng</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dianxi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongchen</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangfei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiexin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Ding</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Robotics and Computer-Integrated Manufacturing</title>
+		<imprint>
+			<biblScope unit="volume">95</biblScope>
+			<biblScope unit="page">102991</biblScope>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Ego4d: Around the world in 3,000 hours of egocentric video</title>
+		<author>
+			<persName><forename type="first">Kristen</forename><surname>Grauman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Westbury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eugene</forename><surname>Byrne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachary</forename><surname>Chavis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonino</forename><surname>Furnari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohit</forename><surname>Girdhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Hamburger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyu</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE/CVF conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="18995" to="19012" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Lora: Low-rank adaptation of large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Edward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shean</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ICLR</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">3</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Twinvla: Data-efficient bimanual manipulation with twin single-arm vision-languageaction models</title>
+		<author>
+			<persName><forename type="first">Hokyun</forename><surname>Im</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Euijin</forename><surname>Jeong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianlong</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrey</forename><surname>Kolobov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youngwoon</forename><surname>Lee</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2511.05275" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Physical</forename><surname>Intelligence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Amin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raichelle</forename><surname>Aniceto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Balakrishna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ken</forename><surname>Conley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grace</forename><surname>Connors</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Darpinian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karan</forename><surname>Dhabalia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Dicarlo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Equi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adnan</forename><surname>Esmail</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunhao</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Catherine</forename><surname>Glossop</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Godden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Goryachev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lachy</forename><surname>Groom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hunter</forename><surname>Hancock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gashon</forename><surname>Hussein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Szymon</forename><surname>Jakubczak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rowan</forename><surname>Jen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Katz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyiming</forename><surname>Ke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chandra</forename><surname>Kuchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marinda</forename><surname>Lamb</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devin</forename><surname>Leblanc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Li-Bell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vishnu</forename><surname>Mano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohith</forename><surname>Mothukuri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suraj</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Pertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Allen</forename><forename type="middle">Z</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charvi</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucy</forename><forename type="middle">Xiaoyang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laura</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jost</forename><surname>Tobias Springenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Stachowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Will</forename><surname>Stoeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Swerdlow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Tanner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcel</forename><surname>Torne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Walling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haohuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Blake</forename><surname>Williams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sukwon</forename><surname>Yoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lili</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ury</forename><surname>Zhilinsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Zhou</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2511.14759" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>π * 0.6 : a vla that learns from experience</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">a vision-languageaction model with open-world generalization</title>
+		<author>
+			<persName><forename type="first">Physical</forename><surname>Intelligence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Darpinian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karan</forename><surname>Dhabalia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adnan</forename><surname>Esmail</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Equi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niccolo</forename><surname>Fusai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manuel</forename><forename type="middle">Y</forename><surname>Galliker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dibya</forename><surname>Ghosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lachy</forename><surname>Groom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Szymon</forename><surname>Jakubczak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyiming</forename><surname>Ke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devin</forename><surname>Leblanc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Li-Bell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohith</forename><surname>Mothukuri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suraj</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Pertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Allen</forename><forename type="middle">Z</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucy</forename><forename type="middle">Xiaoyang</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laura</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jost</forename><surname>Tobias Springenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Stachowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Tanner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Homer</forename><surname>Walke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Walling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haohuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lili</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ury</forename><surname>Zhilinsky</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2504.16054" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="volume">5</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">DROID: A Large-Scale In-The-Wild Robot Manipulation Dataset</title>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Khazatsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Pertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suraj</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Balakrishna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sudeep</forename><surname>Dasari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddharth</forename><surname>Karamcheti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soroush</forename><surname>Nasiriany</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohan</forename><surname>Kumar Srirama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lawrence</forename><surname>Yunliang Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kirsty</forename><surname>Ellis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>David Fagan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joey</forename><surname>Hejna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Masha</forename><surname>Itkina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marion</forename><surname>Lepert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Yecheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><forename type="middle">Tree</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suneel</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shivin</forename><surname>Belkhale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huy</forename><surname>Dass</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arhan</forename><surname>Ha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abraham</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youngwoon</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marius</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sungjae</forename><surname>Memmel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilija</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiyuan</forename><surname>Radosavovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Zhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><forename type="middle">Beltran</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shan</forename><surname>Hatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingpei</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abdul</forename><surname>Mercat</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rehman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Archit</forename><surname>Pannag R Sanketi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cody</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Simpson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Homer</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Blake</forename><surname>Rich Walke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Wulfe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><forename type="middle">Heewon</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arefeh</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tony</forename><forename type="middle">Z</forename><surname>Yavary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rohan</forename><surname>Agia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mateo</forename><forename type="middle">Guaman</forename><surname>Baijal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daphne</forename><surname>Castro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiuyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trinity</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaimyn</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><forename type="middle">Paul</forename><surname>Drake</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jensen</forename><surname>Foster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">Antonio</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minho</forename><surname>Herrera</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Heo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaheng</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donovon</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charlotte</forename><surname>Jackson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunshuang</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zehan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhiram</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suvir</forename><surname>Maddukuri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Mirchandani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tony</forename><surname>Morton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abigail O'</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rosario</forename><surname>Neill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Derick</forename><surname>Scalise</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Seale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Son</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emi</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">E</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Annie</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyun</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunchu</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Osbert</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Glen</forename><surname>Bastani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeannette</forename><surname>Berseth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ken</forename><surname>Bohg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Goldberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dinesh</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">J</forename><surname>Jayaraman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jitendra</forename><surname>Lim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Malik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subramanian</forename><surname>Martín-Martín</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dorsa</forename><surname>Ramamoorthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuran</forename><surname>Sadigh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajun</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">C</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuke</forename><surname>Yip</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Kollar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Finn</surname></persName>
+		</author>
+		<idno type="DOI">10.15607/RSS.2024.XX.120</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Robotics: Science and Systems</title>
+		<meeting>Robotics: Science and Systems<address><addrLine>Delft, Netherlands</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024-07">July 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">A low-cost and lightweight 6 DoF bimanual arm for dynamic and contact-rich manipulation</title>
+		<author>
+			<persName><forename type="first">Jaehyung</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiho</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongryung</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujin</forename><surname>Jang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beomjoon</forename><surname>Kim</surname></persName>
+		</author>
+		<idno type="DOI">10.15607/RSS.2025.XXI.055</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Robotics: Science and Systems</title>
+		<meeting>Robotics: Science and Systems<address><addrLine>LosAngeles, CA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2025-06">June 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Moo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddharth</forename><surname>Pertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Karamcheti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suraj</forename><surname>Balakrishna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>Rafailov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grace</forename><surname>Foster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pannag</forename><surname>Lam</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sanketi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.09246</idno>
+		<title level="m">An open-source vision-language-action model</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Data scaling laws in imitation learning for robotic manipulation</title>
+		<author>
+			<persName><forename type="first">Fanqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingdong</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pingyue</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Gao</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=pISLZG7ktL" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Flow matching for generative modeling</title>
+		<author>
+			<persName><forename type="first">Yaron</forename><surname>Lipman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ricky</forename><forename type="middle">T Q</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heli</forename><surname>Ben-Hamu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maximilian</forename><surname>Nickel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Le</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=PqvMRDCJT9t" />
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">RDT-1b: a diffusion foundation model for bimanual manipulation</title>
+		<author>
+			<persName><forename type="first">Songming</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingxuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bangguo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hengkai</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huayu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ke</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hang</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Zhu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirteenth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Flow straight and fast: Learning to generate and transfer data with rectified flow</title>
+		<author>
+			<persName><forename type="first">Xingchao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyue</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liu</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=XVjTT1nw5z" />
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Cloth grasp point detection based on multiple-view geometric cues with application to robotic towel folding</title>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Maitin-Shepard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Cusumano-Towner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinna</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2010 IEEE International Conference on Robotics and Automation</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="2308" to="2315" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Open x-embodiment: Robotic learning datasets and rt-x models : Open x-embodiment collaboration0</title>
+		<author>
+			<persName><forename type="first">O'</forename><surname>Abby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abdul</forename><surname>Neill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhiram</forename><surname>Rehman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Maddukuri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abraham</forename><surname>Padalkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Acorn</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agrim</forename><surname>Pooley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajay</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ajinkya</forename><surname>Mandlekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tung</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICRA57147.2024.10611477</idno>
+	</analytic>
+	<monogr>
+		<title level="m">2024 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="6892" to="6903" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">R+ x: Retrieval and execution from everyday human videos</title>
+		<author>
+			<persName><forename type="first">Georgios</forename><surname>Papagiannis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Norman</forename><surname>Di Palo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pietro</forename><surname>Vitiello</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Johns</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2025 IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="8284" to="8290" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">FAST: Efficient Action Tokenization for Vision-Language-Action Models</title>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Pertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Stachowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suraj</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oier</forename><surname>Mees</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<idno type="DOI">10.15607/RSS.2025.XXI.012</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Robotics: Science and Systems</title>
+		<meeting>Robotics: Science and Systems<address><addrLine>LosAngeles, CA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2025-06">June 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Learning robot manipulation from cross-morphology demonstration</title>
+		<author>
+			<persName><forename type="first">Gautam</forename><surname>Salhotra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaurav</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sukhatme</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.03833</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nur</forename><surname>Muhammad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mahi</forename><surname>Shafiullah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anant</forename><surname>Rai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haritheja</forename><surname>Etukuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiqian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ishan</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soumith</forename><surname>Chintala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lerrel</forename><surname>Pinto</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2311.16098</idno>
+		<title level="m">On bringing robots home</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Bimanual dexterity for complex tasks</title>
+		<author>
+			<persName><forename type="first">Kenneth</forename><surname>Shaw</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yulong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahui</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohan</forename><surname>Kumar Srirama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ray</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyu</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Russell</forename><surname>Mendonca</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deepak</forename><surname>Pathak</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=55tYfHvanf" />
+	</analytic>
+	<monogr>
+		<title level="m">8th Annual Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Dual arm manipulation-a survey</title>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiannis</forename><surname>Karayiannidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lazaros</forename><surname>Nalpantidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavi</forename><surname>Gratal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dimos</forename><forename type="middle">V</forename><surname>Dimarogonas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danica</forename><surname>Kragic</surname></persName>
+		</author>
+		<idno>robot.2012.07.005</idno>
+		<ptr target="https://www.sciencedirect.com/science/article/pii/S092188901200108X" />
+	</analytic>
+	<monogr>
+		<title level="j">Robotics and Autonomous Systems</title>
+		<idno type="ISSN">0921-8890</idno>
+		<imprint>
+			<biblScope unit="volume">60</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page" from="1340" to="1353" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Accelerating vision-language-action model integrated with action chunking via parallel decoding</title>
+		<author>
+			<persName><forename type="first">Wenxuan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengxiang</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhide</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zongyuan</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoang</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.02310</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Rdt2: Enabling zero-shot cross-embodiment generalization by scaling up umi data</title>
+		<author>
+			<persName><surname>Rdt Team</surname></persName>
+		</author>
+		<ptr target="https://github.com/thu-ml/RDT2" />
+		<imprint>
+			<date type="published" when="2025-09">September 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">DexCap: Scalable and Portable Mocap Data Collection System for Dexterous Manipulation</title>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haochen</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhuo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruohan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="DOI">10.15607/RSS.2024.XX.043</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Robotics: Science and Systems</title>
+		<meeting>Robotics: Science and Systems<address><addrLine>Delft, Netherlands</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2024-07">July 2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Dexvla: Visionlanguage model with plug-in diffusion expert for general robot control</title>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichen</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinming</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaomin</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feifei</forename><surname>Feng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.05855</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Tinyvla: Towards fast, data-efficient vision-language-action models for robotic manipulation</title>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichen</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinming</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minjie</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhibin</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ran</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaomin</forename><surname>Shen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Fabricflownet: Bimanual cloth manipulation with a flow-based policy</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Weng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Man</forename><surname>Sujay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>Bajracharya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Khush</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Held</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="192" to="202" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Deep imitation learning for bimanual robotic manipulation</title>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Chowdhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>De Paolis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linfeng</forename><surname>Kaluza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lawson</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rose</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="2327" to="2337" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Equibot: SIM(3)-equivariant diffusion policy for generalizable and data efficient learning</title>
+		<author>
+			<persName><forename type="first">Jingyun</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziang</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Congyue</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rika</forename><surname>Antonova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuran</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeannette</forename><surname>Bohg</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=ueBmGhLOXP" />
+	</analytic>
+	<monogr>
+		<title level="m">8th Annual Conference on Robot Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Forcevla: Enhancing vla models with a force-aware moe for contact-rich manipulation</title>
+		<author>
+			<persName><forename type="first">Jiawen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hairuo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiaojun</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jieji</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ce</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haitong</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangyu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guofan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panpan</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cewu</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenqiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2505.22159" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Demonstrating the Octopi-1.5 Visual-Tactile-Language Model</title>
+		<author>
+			<persName><forename type="first">Samson</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lin</forename><surname>Kelvin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harold</forename><surname>Soh</surname></persName>
+		</author>
+		<idno type="DOI">10.15607/RSS.2025.XXI.058</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Robotics: Science and Systems</title>
+		<meeting>Robotics: Science and Systems<address><addrLine>LosAngeles, CA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2025-06">June 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware</title>
+		<author>
+			<persName><forename type="first">Tony</forename><forename type="middle">Z</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikash</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<idno type="DOI">10.15607/RSS.2023.XIX.016</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Robotics: Science and Systems</title>
+		<meeting>Robotics: Science and Systems<address><addrLine>Daegu</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2023-07">July 2023</date>
+		</imprint>
+	</monogr>
+	<note>Republic of Korea</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Aloha unleashed: A simple recipe for robot dexterity</title>
+		<author>
+			<persName><forename type="first">Tony</forename><forename type="middle">Z</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Tompson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seyed</forename><surname>Kamyar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seyed</forename><surname>Ghasemipour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayzaan</forename><surname>Wahid</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+		<ptr target="https://proceedings.mlr.press/v270/zhao25b.html" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of The 8th Conference on Robot Learning</title>
+		<editor>
+			<persName><forename type="first">Pulkit</forename><surname>Agrawal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Oliver</forename><surname>Kroemer</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Wolfram</forename><surname>Burgard</surname></persName>
+		</editor>
+		<meeting>The 8th Conference on Robot Learning</meeting>
+		<imprint>
+			<date type="published" when="2025-11">Nov 2025</date>
+			<biblScope unit="volume">270</biblScope>
+			<biblScope unit="page" from="6" to="09" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xiaowen</forename><surname>Haoyu Zhen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peihao</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jincheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yilun</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yining</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuang</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2403.09631</idno>
+		<title level="m">A 3d vision-language-action generative world model</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">3</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<analytic>
+		<title level="a" type="main">You Only Teach Once: Learn One-Shot Bimanual Robotic Manipulation from Video Demonstrations</title>
+		<author>
+			<persName><forename type="first">Huayi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruixiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunxin</forename><surname>Tai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueci</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guiliang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kui</forename><surname>Jia</surname></persName>
+		</author>
+		<idno type="DOI">10.15607/RSS.2025.XXI.149</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Robotics: Science and Systems</title>
+		<meeting>Robotics: Science and Systems<address><addrLine>LosAngeles, CA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2025-06">June 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Rt-2: Vision-language-action models transfer web knowledge to robotic control</title>
+		<author>
+			<persName><forename type="first">Brianna</forename><surname>Zitkovich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhe</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sichun</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ted</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Wohlhart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Welker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayzaan</forename><surname>Wahid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quan</forename><surname>Vuong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huong</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radu</forename><surname>Soricut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anikait</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaspiar</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Sermanet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pannag</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grecia</forename><surname>Sanketi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">S</forename><surname>Salazar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krista</forename><surname>Ryoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kanishka</forename><surname>Reymann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Pertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Mordatch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yao</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tsang-Wei Edward</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Isabel</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Leal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Kuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Kalashnikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikhil</forename><forename type="middle">J</forename><surname>Julian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Irpan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jasmine</forename><surname>Ichter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Herzog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keerthana</forename><surname>Hausman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chuyuan</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chelsea</forename><surname>Florence</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Avinava</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danny</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianli</forename><surname>Driess</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcin</forename><surname>Krzysztof</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Choromanski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yevgen</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justice</forename><surname>Chebotar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Carbajal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Montserrat</forename><surname>Brohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kehang</forename><surname>Gonzalez Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Han</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+		<ptr target="https://proceedings.mlr.press/v229/zitkovich23a.html" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of The 7th Conference on Robot Learning</title>
+		<editor>
+			<persName><forename type="first">Jie</forename><surname>Tan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Marc</forename><surname>Toussaint</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kourosh</forename><surname>Darvish</surname></persName>
+		</editor>
+		<meeting>The 7th Conference on Robot Learning</meeting>
+		<imprint>
+			<date type="published" when="2023-11">Nov 2023</date>
+			<biblScope unit="volume">229</biblScope>
+			<biblScope unit="page" from="6" to="09" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,3848 @@
+{
+  "layout": {
+    "author": "Dylan R. Ashley; Jan Przepióra; Yimeng Chen; Ali Abualsaud; Nurzhan Yesmagambet; Shinkyu Park; Eric Feron; Jürgen Schmidhuber",
+    "creation date": null,
+    "file name": "2603.05621.pdf",
+    "kids": [
+      {
+        "bounding box": [
+          71.338,
+          701.521,
+          540.665,
+          722.26
+        ],
+        "content": "RACAS: Controlling Diverse Robots With a Single Agentic System",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 15.94,
+        "heading level": 2,
+        "id": 10,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H2",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          72.482,
+          659.181,
+          531.349,
+          685.756
+        ],
+        "content": "Dylan R. Ashley,∗1,2,3,4 Jan Przepi´ora,∗5,6 Yimeng Chen,∗1 Ali Abualsaud,5 Nurzhan Yesmagambet,5 Shinkyu Park,5 Eric Feron,5 and J¨urgen Schmidhuber 1,2,3,4",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 10.959,
+        "id": 11,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          14.04,
+          219.91,
+          36.36,
+          572.09
+        ],
+        "content": "arXiv:2603.05621v2[cs.RO]11Mar2026",
+        "font": "Times-Roman",
+        "font size": 20.0,
+        "heading level": 1,
+        "id": 19,
+        "level": "Doctitle",
+        "page number": 1,
+        "pdfua_tag": "H1",
+        "text color": "[0.5, 0.5, 0.5]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          54.0,
+          410.093,
+          298.802,
+          631.01
+        ],
+        "content": "Abstract—Many robotic platforms expose an API through which external software can command their actuators and read their sensors. However, transitioning from these lowlevel interfaces to high-level autonomous behaviour requires a complicated pipeline, whose components demand distinct areas of expertise. Existing approaches to bridging this gap either require retraining for every new embodiment or have only been validated across structurally similar platforms. We introduce RACAS (Robot-Agnostic Control via Agentic Systems), a cooperative agentic architecture in which three LLM/VLMbased modules (Monitors, a Controller, and a Memory Curator) communicate exclusively through natural language to provide closed-loop robot control. RACAS requires only a natural language description of the robot, a definition of available actions, and a task specification; no source code, model weights, or reward functions need to be modified to move between platforms. We evaluate RACAS on several tasks using a wheeled ground robot, a recently published novel multi-jointed robotic limb, and an underwater vehicle. RACAS consistently solved all assigned tasks across these radically different platforms, demonstrating the potential of agentic AI to substantially reduce the barrier to prototyping robotic solutions.",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 8.966,
+        "id": 12,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          310.727,
+          298.803,
+          401.175
+        ],
+        "content": "∗Equal contribution. 1Center of Excellence in Generative AI, King Abdullah University of Science and Technology (KAUST), Saudi Arabia. 2Dalle Molle Institute for Artificial Intelligence Research (IDSIA), Switzerland. 3Universit`a della Svizzera italiana (USI), Switzerland. 4Scuola universitaria professionale della Svizzera italiana (SUPSI), Switzerland. 5Robotics, Intelligent Systems, and Control Lab, King Abdullah University of Science and Technology (KAUST), Saudi Arabia. 6Department of Process Control, AGH University of Krakow, Poland. Correspondence to dylan.ashley@usi.ch, jan.przepiora@kaust.edu.sa, or yimeng.chen@kaust.edu.sa.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 13,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          389.538,
+          619.567,
+          481.662,
+          631.571
+        ],
+        "content": "I. INTRODUCTION",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 14,
+        "level": "1",
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          382.953,
+          558.001,
+          610.15
+        ],
+        "content": "Most robots deployed in operational settings today come with a programmatic API through which external software can command their actuators and read their sensors. However, applying a robot to a given problem requires a complicated pipeline that moves from these relatively lowlevel control commands to high-level behavior. This pipeline generally contains elements such as perception modules that extract task-relevant state from raw sensor streams, planning algorithms that reason over that state, and control policies that map this reasoning to platform-specific motor commands. Importantly, the expertise needed to develop the lowlevel and high-level parts of this pipeline comes from disjoint areas of specialization; hardware and firmware engineers who understand the robot’s kinematics, sensor characteristics, and communication protocols rarely specialize in the planning and learning algorithms that govern task execution, and vice versa. This gap creates a barrier for applying robots to various tasks that scales poorly with the growing diversity of commercially available platforms.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 15,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          310.167,
+          558.001,
+          381.947
+        ],
+        "content": "Existing approaches to bridging the gap between low-level motor commands and high-level control algorithms fall into two broad categories. The first approach is to train end-to-end policies on robot-specific demonstration data. While effective within the training distribution, these methods require data collection and retraining for every new embodiment and",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 16,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          96.84,
+          102.316,
+          515.12,
+          292.642
+        ],
+        "id": 17,
+        "page number": 1,
+        "pdfua_tag": "Figure",
+        "source": "2603.05621_images/imageFile1.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          54.0,
+          61.261,
+          557.998,
+          97.175
+        ],
+        "content": "Fig. 1: The basic design of the system tries to minimize the extent of changes needed to apply it to different robots. The majority of the complexity of adapting to different robot platforms is offloaded to large AI models augmented with a dynamic structured memory system.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 18,
+        "linked content id": 17,
+        "page number": 1,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          132.348,
+          633.533,
+          236.748,
+          737.933
+        ],
+        "id": 20,
+        "page number": 2,
+        "pdfua_tag": "Figure",
+        "source": "2603.05621_images/imageFile2.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          253.801,
+          633.533,
+          358.201,
+          737.933
+        ],
+        "id": 22,
+        "page number": 2,
+        "pdfua_tag": "Figure",
+        "source": "2603.05621_images/imageFile3.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          375.255,
+          633.533,
+          479.655,
+          737.933
+        ],
+        "id": 23,
+        "page number": 2,
+        "pdfua_tag": "Figure",
+        "source": "2603.05621_images/imageFile4.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          147.794,
+          618.062,
+          479.651,
+          628.867
+        ],
+        "content": "(a) Clearpath Dingo (b) Alhakami et al. Limb (c) BlueRobotics BlueROV2",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 21,
+        "linked content id": 22,
+        "page number": 2,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          130.749,
+          600.448,
+          481.253,
+          612.452
+        ],
+        "content": "Fig. 2: The three real-world robotic platforms the system from Fig. 1 was applied to.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 24,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          421.12,
+          298.801,
+          576.586
+        ],
+        "content": "degrade when the target platform differs structurally from the training fleet [1], [2], [3]. The second approach utilizes large language models (LLM) or vision language models (VLM) reasoning around robot API libraries, allowing natural language to serve as a common interface between highlevel intent and low-level commands [4], [5], [6]. These frameworks reduce embodiment-specific engineering, but have so far been validated only on structurally highly-similar platforms (e.g., different manipulator arms) in controlled laboratory settings. To the best of our knowledge, prior systems demonstrated zero-training generalization across radically heterogeneous platforms where morphology, dynamics, and operating environments differ fundamentally.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 25,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          146.2,
+          298.801,
+          421.217
+        ],
+        "content": "While a custom-engineered system would inevitably be needed for production-grade deployment (if only because of the stochastic nature of the alternative), we investigate whether a general agentic AI-based system can provide robot-agnostic closed-loop control using only the programmatic interfaces that robots already expose. To this end, we introduce RACAS (Robot-Agnostic Control via Agentic Systems), a relatively simple agentic architecture that decomposes control into three cooperative LLM/VLM-based modules that communicate exclusively through natural language: a controller, a set of monitors, and a memory curator (Fig. 1). This system requires only a natural language description of the robot, a structured definition of available actions (that is to say, a light abstraction layer over the API and its documentation converting commands like servo drive(1m) to move forwards), and a description of the task and what considerations the robot should have when executing it. No source code, model weights, or reward functions are modified; all embodiment-specific and task-specific knowledge is confined to these declarative prompt configurations. Learning occurs through the memory curator, allowing the controller to learn to query the monitor (in the style of Learning to Think [7] or NLSOMs [8], [9]).",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 26,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          86.472,
+          298.801,
+          146.297
+        ],
+        "content": "We evaluate RACAS on platforms that differ radically in morphology, movement capabilities, and operating environment (Fig. 2): a wheeled ground robot (Clearpath Dingo1) in both simulation and in the real world, a modified recentlypublished novel robotic limb by Alhakami et al. [10] (which",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 29,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          58.584,
+          292.904,
+          77.775
+        ],
+        "content": "1https://clearpathrobotics.com/dingo-indoor-mob ile-robot/",
+        "font": "NimbusMonL-Regu",
+        "font size": 7.97,
+        "id": 30,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          504.806,
+          558.003,
+          576.586
+        ],
+        "content": "an LLM would thus have no knowledge of), and an underwater remotely operated vehicle (BlueRobotics BlueROV22). In all cases, the unmodified RACAS successfully completes the assigned tasks. Altogether, this demonstrates the potential of agentic AI to substantially reduce the barrier to prototyping and testing robotic solutions across diverse platforms.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 31,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          323.163,
+          492.253,
+          493.324,
+          505.214
+        ],
+        "content": "Our main contributions are as follows:",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 3,
+        "id": 32,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          323.163,
+          335.441,
+          558.001,
+          490.907
+        ],
+        "id": 33,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              323.163,
+              454.993,
+              558.001,
+              490.907
+            ],
+            "content": "1) We propose RACAS, a cooperative multi-module agentic architecture for closed-loop robot control in which all communication occurs in natural language.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              323.163,
+              395.217,
+              558.001,
+              455.042
+            ],
+            "content": "2) We show that all embodiment-specific and task-specific knowledge can be confined to declarative prompt configurations, requiring no modifications to source code, model weights, or reward functions to adapt the system to a new platform.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              323.163,
+              335.441,
+              558.001,
+              395.266
+            ],
+            "content": "3) We demonstrate—to the best of our knowledge—the first zero-training generalization of a single control framework across three radically heterogeneous robot platforms, including a very recent robotic platform that an LLM would have no prior knowledge of.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "arabic numbers",
+        "page number": 2,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          313.2,
+          298.021,
+          558.001,
+          333.497
+        ],
+        "content": "The source code for all our experiments (including prompts) is available at https://github.com/janpr z11/robot-agnostic-control",
+        "font": "NimbusMonL-Regu",
+        "font size": 9.963,
+        "id": 34,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          263.919,
+          484.441,
+          290.907
+        ],
+        "content": "II. RELATED WORK A. LLM/VLM-Based Robotic Control",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 35,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          81.344,
+          558.001,
+          260.72
+        ],
+        "content": "Recent work has increasingly leveraged large language models (LLMs) and vision-language models (VLMs) as core components of robotic control pipelines. A foundational paradigm is to use the LLM as a high-level planner whose outputs are grounded through low-level skill libraries or affordance models. SayCan [5] pairs a pre-trained LLM with a learned value function that scores the feasibility of candidate actions, enabling a mobile manipulator to execute longhorizon household instructions from a fixed skill set. Two concurrent lines of work further develop this paradigm along complementary axes. Code-as-Policies [6] has the LLM generate executable Python code that directly calls robot APIs, improving interpretability and enabling reactive feedback loops within the generated programs, though it does not support iterative LLM re-planning when the generated code",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 36,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          327.646,
+          58.584,
+          541.544,
+          68.809
+        ],
+        "content": "2https://bluerobotics.com/store/rov/bluerov2/",
+        "font": "NimbusMonL-Regu",
+        "font size": 7.97,
+        "id": 37,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          619.567,
+          298.801,
+          739.168
+        ],
+        "content": "fails. Inner Monologue [11] instead incorporates perceptual feedback, such as success detection and scene descriptions, into the LLM’s planning loop, allowing dynamic re-planning upon failure. More recent frameworks, such as RobotIQ [12] and ChatGPT for Robotics [4], demonstrate modular integration of LLMs with robot control stacks across multiple robot types. While both integrate dedicated visual perception modules, their reasoning remains centralized in a single textbased LLM rather than leveraging vision-language models as core reasoning components.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 38,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          332.482,
+          298.801,
+          619.455
+        ],
+        "content": "To overcome the limitations of monolithic architectures, several works explore multi-agent designs. MALMM [13] decomposes robot control into three specialized LLM agents, including Planner, Coder, and Supervisor, which collaboratively generate and verify manipulation plans in a zeroshot setting. RoCo [14] employs an LLM-mediated dialogue to coordinate multiple robots, where agents negotiate task allocation through natural language exchange. LLM2Swarm [15] scales this concept to robot swarms by equipping each agent with a local LLM instance for real-time linguistic coordination and emergent collective behavior. On the perception side, Manipulate-Anything [16] constructs a multi-stage VLM pipeline that identifies objects, generates sub-tasks, executes actions, and verifies outcomes through vision, demonstrating the value of tight visual grounding. VADER [17] similarly leverages visual question answering to detect execution failures and dynamically delegate subtasks to other robots or humans. Despite this progress, existing multi-agent systems either consist entirely of textonly LLMs with limited visual understanding [13], [14] or employ VLMs only at specific pipeline stages within a single-domain setting [16], [17]. In contrast, our work focuses on a general-purpose architecture in which a VLM and an LLM operate as functionally complementary agents.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 39,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          312.543,
+          207.155,
+          324.438
+        ],
+        "content": "B. Cross-Embodiment Generalization",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 40,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          57.674,
+          298.801,
+          308.781
+        ],
+        "content": "Generalization across diverse embodiments without taskspecific retraining is a central aspiration of robotics. ModelAgnostic Meta-Learning (MAML) [18], for example, attempts to achieve this by optimizing initial model parameters so that a small number of gradient steps suffice to adapt to a new task. Despite improving sample efficiency at test time, early meta-reinforcement learning methods still require extensive meta-training across curated task distributions and struggle to generalize across semantically diverse tasks [19], [20]. Critically, they do not naturally extend to crossembodiment settings without explicit hardware encodings or additional data collection for each new morphology. With the advent of foundation models, some have suggested such models might be the key to achieving this [21]. Datadriven approaches have pursued this through scale: RT-1 [1] trains a Transformer policy on over 130k demonstrations from a fleet of identical robots, achieving 97% success on seen tasks, but degrading on novel instructions outside the training distribution. RT-2 [2] improves generalization by cofine-tuning a vision-language model on both internet-scale image-text data and robot demonstrations, enabling emergent",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 41,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          571.746,
+          558.001,
+          739.167
+        ],
+        "content": "semantic reasoning (e.g., picking up an object that could be used as an improvised hammer), yet still requires robotspecific action data for training. RoboCat [3] demonstrates cross-embodiment transfer across different robotic arms by iteratively fine-tuning and self-generating new training data, but each new embodiment demands additional data collection and retraining cycles. At a larger scale, PaLME [22] and Gato [23] show that a single pre-trained large model can handle diverse modalities and tasks. Frameworklevel approaches such as ChatGPT for Robotics [4] sidestep embodiment-specific training by wrapping LLM reasoning around robot API libraries through a common language interface. However, none of them has been validated beyond controlled laboratory settings with standard robot platforms.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 42,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          487.91,
+          558.001,
+          571.645
+        ],
+        "content": "A notable gap remains: prior approaches typically require training data or fine-tuning specific to the target embodiment, or have only been validated across structurally similar platforms (e.g., different manipulator arms). Demonstration of zero-training generalization across radically heterogeneous platforms remains rare, where morphology, dynamics, and operating environments differ fundamentally.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 43,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          468.069,
+          479.854,
+          479.964
+        ],
+        "content": "C. Memory and Adaptation Mechanisms",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 44,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          284.971,
+          558.001,
+          464.348
+        ],
+        "content": "Effective agentic behavior requires not only planning but also the ability to accumulate and retrieve experiential knowledge over time. Several works have explored structured knowledge representations to support LLM-based robot planning, though each addresses only a narrow aspect of the information a robot needs to retain. SayPlan [24] augments an LLM with a 3D scene graph encoding spatial relationships among rooms and objects; while the framework performs iterative scene graph search and re-grounding during planning, the graph itself is externally constructed and does not encode the robot’s own capabilities or experiential knowledge. LLM-GROP [25] and ProgPrompt [26] similarly encode environment and action specifications in symbolic or programmatic form, yet these are manually defined per domain and do not evolve with experience.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 45,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          57.674,
+          558.001,
+          284.871
+        ],
+        "content": "Other works construct representations that are ephemeral or unstructured. VoxPoser [27] composes 3D voxel-based value maps through LLM-generated code that queries a VLM for spatial grounding, but these maps are discarded after each task. Inner Monologue [11] maintains a running log of actions and perceptual feedback within an episode, enabling reactive re-planning, yet this trace does not persist across tasks and carries no mechanism for long-term knowledge accumulation. RONAR [28] uses an LLM to narrate the robot’s sensory experience as natural language traces, improving human situational awareness, but these narratives serve a descriptive role and do not feed back into the control loop for future decision-making. Similarly, MOO [29] leverages a frozen VLM to extract object localization masks for openvocabulary manipulation and conditions a Transformer-based policy on observation history, but this implicit temporal context carries no structured or persistent memory. A separate line of work explores self-reflection as an adaptation mechanism. BUMBLE [30] combines short-term memory",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 46,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          84.239,
+          581.119,
+          527.758,
+          737.938
+        ],
+        "id": 47,
+        "page number": 4,
+        "pdfua_tag": "Figure",
+        "source": "2603.05621_images/imageFile5.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          112.023,
+          563.974,
+          499.977,
+          575.978
+        ],
+        "content": "Fig. 3: An example of RACAS’s reasoning process during one of the Dingo (real-world) runs.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 48,
+        "linked content id": 47,
+        "page number": 4,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          54.0,
+          456.377,
+          298.801,
+          540.112
+        ],
+        "content": "for online re-planning with a long-term memory of humanannotated failure cases. Most recently, PragmaBot [31] uses a VLM for both planning and visual success verification, enabling fully autonomous self-reflection. A limitation shared by all these approaches is their lack of an organized, persistent memory that captures the distinct types of knowledge a robot accumulates in operation.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 49,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          125.466,
+          438.362,
+          227.334,
+          450.366
+        ],
+        "content": "III. METHODOLOGY",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 50,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          327.738,
+          298.801,
+          435.383
+        ],
+        "content": "We present a framework for language-driven robotic control that operates across heterogeneous robot embodiments without retraining or code modification. The core idea is to decompose closed-loop control into three cooperative LLM pipelines: perception, decision, and memory, connected through a unified natural language interface, and to encapsulate all embodiment-specific knowledge in declarative prompt configurations rather than in learned parameters or engineered modules.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 51,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          84.721,
+          154.234,
+          321.727
+        ],
+        "id": 52,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              54.0,
+              309.832,
+              154.234,
+              321.727
+            ],
+            "content": "A. Problem Formulation",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  54.0,
+                  222.068,
+                  298.803,
+                  306.744
+                ],
+                "content": "We consider the problem of controlling a robot whose morphology is known only through a natural language description D, a text-defined set of admissible actions A = {a1,...,aK}, and a stream of raw images from one or more onboard cameras {I1(c),...,It(c)}Cc=1, to achieve a userspecified task τ. No dynamics model, kinematic parameters, or embodiment-specific learned weights are provided.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 8,
+                "page number": 4,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  54.0,
+                  102.627,
+                  298.802,
+                  222.228
+                ],
+                "content": "At each time step t, the system must select a single action at ∈ A based on the current visual observations, the task specification, and all prior interaction history. Unlike conventional formulations where the state space S and action space A are fixed-dimensional vectors tied to a specific robot, here both are represented symbolically in natural language and vary across embodiments. The action space for a multi-joint manipulator may contain eight primitives, while an underwater vehicle may expose six. The framework accommodates this variation without architectural change.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 9,
+                "page number": 4,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              84.721,
+              147.629,
+              96.616
+            ],
+            "content": "B. System Architecture",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "english letters",
+        "page number": 4,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          57.674,
+          298.801,
+          81.633
+        ],
+        "content": "The system consists of three LLM-based modules: a Controller, a set of Monitors, and a Memory Curator. They are",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 53,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          516.153,
+          558.001,
+          540.112
+        ],
+        "content": "orchestrated in a closed loop around a hardware abstraction layer (Fig. 1). At each step t, the loop proceeds as follows:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 54,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          323.163,
+          374.958,
+          558.002,
+          514.104
+        ],
+        "id": 55,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              323.163,
+              490.145,
+              557.502,
+              514.104
+            ],
+            "content": "1) The Controller generates a targeted visual query qt based on the current task state.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              323.163,
+              452.276,
+              558.002,
+              491.394
+            ],
+            "content": "2) Each Monitor mc processes its camera image It(c) conditioned on qt and returns a natural language scene description o(tc).",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              323.163,
+              422.778,
+              558.001,
+              453.721
+            ],
+            "content": "3) The Controller receives all monitor observations {o(tc)}, reasons over them, and selects an action at.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              323.163,
+              405.633,
+              558.001,
+              429.592
+            ],
+            "content": "4) The action is dispatched to the robot through the hardware abstraction layer.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              323.163,
+              374.958,
+              558.001,
+              405.682
+            ],
+            "content": "5) The Memory Curator integrates the interaction record into a persistent environment memory Mt.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 5,
+        "numbering style": "arabic numbers",
+        "page number": 4,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          313.2,
+          319.849,
+          558.001,
+          379.674
+        ],
+        "content": "All three modules communicate exclusively through natural language. Adapting the system to a new robot requires only replacing the prompt configuration files (the robot description D, the action definitions A, and the environment context), with no modification to the control logic itself.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 56,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          176.337,
+          558.004,
+          319.848
+        ],
+        "content": "The Controller is re-initialized at each step with a dynamically composed system prompt assembled from six components: the robot description D, the action interface A, the environment memory Mt−1 accumulated from prior steps (Sec. III-D), the proprioceptive state st (joint displacements maintained by an internal position tracker), the action history Ht, and the task specification τ. In step 1, the Controller reasons over this context to produce the visual query qt; in step 3, it receives the monitor observations and outputs a reasoning trace followed by a single action at. Fig. 3 showcases the reasoning process with RACAS during a real run of the Dingo experiments.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 57,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          157.344,
+          457.448,
+          169.239
+        ],
+        "content": "C. Query-Driven Visual Perception",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 58,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          57.674,
+          558.003,
+          153.971
+        ],
+        "content": "Our Monitor module reformulates perception as a language-conditioned visual question-answering process. At each step, the Controller first generates a task-relevant visual query qt based on its current context (task objective, action history, and environment memory). This query is dispatched to each Monitor mc, which analyzes the corresponding camera image It(c) through a VLM and returns a natural language scene description. For low-resolution cameras (e.g.,",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 59,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          100.278,
+          619.133,
+          219.078,
+          737.933
+        ],
+        "id": 60,
+        "page number": 5,
+        "pdfua_tag": "Figure",
+        "source": "2603.05621_images/imageFile6.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          353.327,
+          619.133,
+          511.721,
+          737.929
+        ],
+        "id": 63,
+        "page number": 5,
+        "pdfua_tag": "Figure",
+        "source": "2603.05621_images/imageFile7.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          222.564,
+          619.133,
+          349.836,
+          737.92
+        ],
+        "id": 62,
+        "page number": 5,
+        "pdfua_tag": "Figure",
+        "source": "2603.05621_images/imageFile8.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          102.401,
+          603.662,
+          484.495,
+          614.467
+        ],
+        "content": "(a) Alhakami et al. Limb setup (b) Dingo (simulation) setup (c) Dingo (real-world) setup",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 61,
+        "linked content id": 62,
+        "page number": 5,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          80.772,
+          479.412,
+          369.348,
+          598.209
+        ],
+        "id": 64,
+        "page number": 5,
+        "pdfua_tag": "Figure",
+        "source": "2603.05621_images/imageFile9.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          372.833,
+          479.412,
+          531.227,
+          598.208
+        ],
+        "id": 66,
+        "page number": 5,
+        "pdfua_tag": "Figure",
+        "source": "2603.05621_images/imageFile10.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          163.9,
+          463.941,
+          512.357,
+          474.746
+        ],
+        "content": "(d) BlueROV2 (small tank) setup (e) BlueROV2 (large pool) setup",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 65,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          434.372,
+          557.998,
+          458.331
+        ],
+        "id": 67,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              54.0,
+              434.372,
+              557.998,
+              458.331
+            ],
+            "content": "Fig. 4: Snapshots of the various setups experiments were conducted in. In all cases, the target was never visible from the starting position.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 124,
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          386.551,
+          298.799,
+          410.51
+        ],
+        "content": "96×96 pixels), a two-stage learned super-resolution pipeline upscales images before VLM inference.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 68,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          254.48,
+          298.802,
+          386.036
+        ],
+        "content": "This design differs from conventional perception pipelines (object detectors, depth estimators) that produce fixedschema numerical outputs (bounding boxes, class labels) regardless of task context. Three properties follow. First, perception is task-adaptive: the query qt varies with the execution stage, so the Monitor attends to different scene aspects without architectural change. Second, the output resides in the same representational space as the Controller’s input, eliminating hand-designed encoders that would otherwise be embodiment-specific. Third, the VLM provides openvocabulary recognition without domain-specific training.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 69,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          231.114,
+          202.991,
+          243.009
+        ],
+        "content": "D. LLM-Curated Persistent Memory",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 70,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          166.117,
+          298.801,
+          225.941
+        ],
+        "content": "Naively appending all observations to the conversation history leads to unbounded context growth and eventual degradation. We address this with a dedicated Memory Curator, a separate LLM instance that maintains a structured, bounded representation of accumulated knowledge.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 71,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          50.909,
+          298.801,
+          165.319
+        ],
+        "content": "a) Incremental rewriting: After each control step, the Memory Curator receives the current memory Mt−1 together with the latest interaction record (visual query, monitor responses, and executed action) and produces an updated memory Mt. This is a rewriting operation rather than appending: the Curator compresses redundant information, resolves contradictions between old and new observations, and discards details no longer relevant to the current task, keeping Mt bounded in length.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 72,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          333.125,
+          302.143,
+          558.001,
+          410.51
+        ],
+        "id": 73,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              333.125,
+              398.506,
+              558.001,
+              410.51
+            ],
+            "content": "b) Structured schema: The Curator organizes knowl-",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  313.2,
+                  314.82,
+                  558.001,
+                  398.555
+                ],
+                "content": "edge into 4 categories: (1) physical environment, including scene description, spatial layout, and a dynamic object inventory with properties and last-observed locations; (2) robot state, covering position, orientation, and joint configuration; (3) curated history of significant commands and their outcomes, filtered for novelty and task relevance; and (4) task state with current objectives and completion status.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 7,
+                "page number": 5,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              333.125,
+              302.143,
+              558.001,
+              314.147
+            ],
+            "content": "c) Cross-modal position inference: The memory sys-",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "english letters",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          313.2,
+          194.546,
+          558.001,
+          302.192
+        ],
+        "content": "tem infers object positions by intersecting two cues: which camera observed the object and which action brought it into view. For example, if a rightward camera detects an object after a leftward movement, the object is inferred to be to the left of the robot’s starting position. These relative spatial estimates are updated as the robot moves (e.g., an object recorded as “in front” becomes “front-right” after a leftward movement), providing spatial memory that compensates for the VLM’s lack of metric depth estimation.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 74,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          158.2,
+          558.001,
+          194.114
+        ],
+        "content": "To validate the Memory Curator, we conducted a proofof-concept experiment using the OpenAI Gym Blackjack environment [32]. Details are provided in the appendix.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 75,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          368.328,
+          135.43,
+          502.873,
+          147.434
+        ],
+        "content": "IV. EXPERIMENTAL SETUP",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 76,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          50.909,
+          558.001,
+          129.454
+        ],
+        "content": "We evaluate the proposed framework across three platforms that span radically different morphologies, movement capabilities, and operating environments. Crucially, the control logic and LLM modules remain identical across all platforms; only the prompt configuration files (robot description D, action definitions A, and environment context) are varied.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 77,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          105.492,
+          726.765,
+          247.31,
+          738.769
+        ],
+        "content": "TABLE I: Platform Configurations",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 78,
+        "linked content id": 79,
+        "page number": 6,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          54.001,
+          677.634,
+          298.798,
+          720.0
+        ],
+        "id": 79,
+        "level": "5",
+        "number of columns": 5,
+        "number of rows": 2,
+        "page number": 6,
+        "pdfua_tag": "Table",
+        "rows": [
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  54.184,
+                  711.197,
+                  130.515,
+                  719.633
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      59.87,
+                      711.795,
+                      85.546,
+                      720.635
+                    ],
+                    "content": "Platform",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 7.336,
+                    "id": 1,
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  130.515,
+                  711.197,
+                  191.309,
+                  719.633
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      142.572,
+                      711.795,
+                      179.252,
+                      720.635
+                    ],
+                    "content": "Morphology",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 7.336,
+                    "id": 3,
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  191.309,
+                  711.197,
+                  224.606,
+                  719.633
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      196.994,
+                      711.795,
+                      218.921,
+                      720.635
+                    ],
+                    "content": "# Cam.",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 7.336,
+                    "id": 5,
+                    "level": "1",
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  224.606,
+                  711.197,
+                  246.54,
+                  719.633
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      230.292,
+                      706.851,
+                      240.854,
+                      719.571
+                    ],
+                    "content": "|A|",
+                    "font": "CMSY8",
+                    "font size": 7.336,
+                    "id": 7,
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  246.54,
+                  711.197,
+                  298.615,
+                  719.633
+                ],
+                "column number": 5,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      259.274,
+                      711.795,
+                      285.882,
+                      720.635
+                    ],
+                    "content": "Img. res.",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 7.336,
+                    "id": 9,
+                    "level": "1",
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 1,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  54.184,
+                  678.001,
+                  130.515,
+                  711.197
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      59.87,
+                      678.416,
+                      124.83,
+                      712.015
+                    ],
+                    "content": "Alhakami et al. Limb Dingo (simulation) Dingo (real-world) BlueROV2",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 7.336,
+                    "id": 10,
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  130.515,
+                  678.001,
+                  191.309,
+                  711.197
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      136.201,
+                      678.416,
+                      185.624,
+                      712.015
+                    ],
+                    "content": "4-DOF arm 3-DOF Wheeled 3-DOF Wheeled 6-DOF ROV",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 7.336,
+                    "id": 12,
+                    "level": "1",
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  191.309,
+                  678.001,
+                  224.606,
+                  711.197
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      206.123,
+                      678.416,
+                      209.791,
+                      712.015
+                    ],
+                    "content": "4 3 1 1",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 7.336,
+                    "id": 24,
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  224.606,
+                  678.001,
+                  246.54,
+                  711.197
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      233.739,
+                      678.416,
+                      237.407,
+                      712.015
+                    ],
+                    "content": "9 4 4 6",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 7.336,
+                    "id": 29,
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  246.54,
+                  678.001,
+                  298.615,
+                  711.197
+                ],
+                "column number": 5,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      252.224,
+                      673.472,
+                      292.93,
+                      710.951
+                    ],
+                    "content": "100 × 100 640 × 480 1280 × 800 1920 × 1080",
+                    "font": "CMR8",
+                    "font size": 7.336,
+                    "id": 34,
+                    "page number": 6,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 6,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 2,
+            "type": "table row"
+          }
+        ],
+        "type": "table"
+      },
+      {
+        "bounding box": [
+          54.0,
+          630.601,
+          298.801,
+          654.561
+        ],
+        "content": "When it was safe to do so, a baseline is also established using randomly selected actions.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 80,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          147.871,
+          134.149,
+          623.926
+        ],
+        "id": 81,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              54.0,
+              612.031,
+              134.149,
+              623.926
+            ],
+            "content": "A. Robot Platforms",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  73.925,
+                  321.859,
+                  298.801,
+                  608.832
+                ],
+                "id": 4,
+                "level": "4",
+                "list items": [
+                  {
+                    "bounding box": [
+                      73.925,
+                      596.828,
+                      298.801,
+                      608.832
+                    ],
+                    "content": "a) Alhakami et al. Limb: A multi-jointed manipulator",
+                    "font": "NimbusRomNo9L-ReguItal",
+                    "font size": 9.963,
+                    "kids": [
+                      {
+                        "bounding box": [
+                          54.0,
+                          453.366,
+                          298.801,
+                          596.877
+                        ],
+                        "content": "based on the work of [10] with servo-driven axes: horizontal (left/right), vertical (up/down), rotational (clockwise/counterclockwise), and a single-finger end effector (bend/extend). The arm is equipped with six onboard cameras (although we disabled the two side-facing cameras in our experiments to make the task more challenging) that operate at 100 × 100 px resolution. In order to achieve improved reasoning capabilities, the camera image has been up-sampled. The action space contains eight directional primitives plus a reset position command (|A| = 9). Low-resolution images are upscaled to 768 × 768 px via a two-stage Swin2SR superresolution pipeline before VLM inference.",
+                        "font": "NimbusRomNo9L-Regu",
+                        "font size": 9.963,
+                        "id": 2,
+                        "page number": 6,
+                        "pdfua_tag": "P",
+                        "text color": "[0.0]",
+                        "type": "paragraph"
+                      }
+                    ],
+                    "page number": 6,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      73.925,
+                      441.411,
+                      298.801,
+                      453.415
+                    ],
+                    "content": "b) Clearpath Dingo: A wheeled ground robot evaluated",
+                    "font": "NimbusRomNo9L-ReguItal",
+                    "font size": 9.963,
+                    "kids": [
+                      {
+                        "bounding box": [
+                          54.0,
+                          333.814,
+                          298.805,
+                          442.314
+                        ],
+                        "content": "in both NVIDIA Isaac Sim3 and in the physical environment shown in Fig. 4. In simulation, the robot is equipped with three cameras (forward, left, right) at 640 × 480 px. In the real-world environment, the robot is equipped with one forward-facing camera providing 1280 × 800 px image. In both cases, motion is restricted to the ground plane with actions: forward, backward, rotate left, and rotate right (|A| = 4). A proximity threshold of 1 m to the target object defines episode success.",
+                        "font": "NimbusRomNo9L-Regu",
+                        "font size": 9.963,
+                        "id": 3,
+                        "page number": 6,
+                        "pdfua_tag": "P",
+                        "text color": "[0.0]",
+                        "type": "paragraph"
+                      }
+                    ],
+                    "page number": 6,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      73.925,
+                      321.859,
+                      298.801,
+                      333.863
+                    ],
+                    "content": "c) BlueROV2 underwater vehicle: A thruster-driven",
+                    "font": "NimbusRomNo9L-ReguItal",
+                    "font size": 9.963,
+                    "kids": [],
+                    "page number": 6,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  }
+                ],
+                "number of list items": 3,
+                "numbering style": "english letters",
+                "page number": 6,
+                "pdfua_tag": "L",
+                "type": "list"
+              },
+              {
+                "bounding box": [
+                  54.0,
+                  178.397,
+                  298.801,
+                  321.908
+                ],
+                "content": "remotely operated vehicle equipped with four vectored and four vertical thrusters, controlled through the MAVLink protocol using ArduSub firmware. A single forward-facing 1920 × 1080 px camera provides visual feedback over UDP using GStreamer. The vehicle is fully actuated in six degrees of freedom; however, for the purposes of this study, control is restricted to three translational/rotational axes (surge, heave, and yaw). The resulting discrete action set A consists of six commands: surge forward/backward, yaw left/right, and heave up/down (|A| = 6). Thrust magnitudes are configured per action (300–600 on a 0–1000 scale) with a 2-second command duration.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 5,
+                "page number": 6,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  63.963,
+                  166.442,
+                  298.801,
+                  178.446
+                ],
+                "content": "Table I summarizes the key differences between platforms.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 6,
+                "page number": 6,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              147.871,
+              89.337,
+              159.766
+            ],
+            "content": "B. Tasks",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "english letters",
+        "page number": 6,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          84.848,
+          298.801,
+          144.673
+        ],
+        "content": "a) Object localization (Alhakami et al. Limb): The robot must locate a designated target object in a cluttered laboratory workspace by coordinating multi-camera observations and articulated joint movements. The object selected for the system to locate is a fire extinguisher as shown in Fig. 4a.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 82,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          68.446,
+          58.584,
+          253.651,
+          68.809
+        ],
+        "content": "3https://developer.nvidia.com/isaac/sim",
+        "font": "NimbusMonL-Regu",
+        "font size": 7.97,
+        "id": 83,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          703.253,
+          558.001,
+          739.167
+        ],
+        "content": "The task is completed when a separate VLM detects it in any of the cameras’ fields of view. 30 runs of the experiment were conducted.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 84,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          333.125,
+          559.337,
+          558.001,
+          703.075
+        ],
+        "id": 85,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              333.125,
+              691.071,
+              558.001,
+              703.075
+            ],
+            "content": "b) Target approach (Dingo): The robot navigates to-",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  313.2,
+                  571.519,
+                  558.005,
+                  691.12
+                ],
+                "content": "ward a fire extinguisher placed in a simulated 20×30 meters warehouse environment using only visual feedback. The robot camera views as well as the setup of the experiment are presented in Fig. 4b. The episode terminates successfully when the robot reaches within 1 m of the target. A similar approach is implemented with the real-world version of the experiment. Robot operates in a 9.5 × 5.5 m area separated from the laboratory environment by net-like curtains as shown in Fig. 4c. For both of the cases, the experiment was conducted 10 times.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 1,
+                "page number": 6,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              333.125,
+              559.337,
+              558.001,
+              571.341
+            ],
+            "content": "c) Underwater navigation (BlueROV2): The robot nav-",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "english letters",
+        "page number": 6,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          313.2,
+          368.054,
+          558.004,
+          559.386
+        ],
+        "content": "igates to a designated target within a water tank measuring 2.00×1.10×1.50 m, filled to 80% of its volume. The operator specifies the target being a green box through a natural language instruction, and the robot must orient and maneuver in three dimensions using thruster commands and a single camera feed. The camera image is limited to 512 × 512 px taken from the top of the frame in order to limit the field of view. This alteration is applied in order to make the task harder by not allowing the floor of the tank to be visible from the surface level. The run was repeated 10 times. The tank composition for the run can be seen in Fig. 4d. Subsequent experiments were conducted in a larger pool of size 15×15 m with a depth of up to 3.8 m. For this case, there is no image cropping present, and the target object is set to a group of blue boxes placed in the corner of the pool (see Fig. 4e). The pool-based experiments consisted of 5 runs.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 86,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          348.198,
+          432.193,
+          360.093
+        ],
+        "content": "C. Prompt-Based Adaptation",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 87,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          260.735,
+          558.005,
+          344.47
+        ],
+        "content": "Adapting the framework to each platform requires authoring three text files: (1) a robot description D summarizing the morphology, joint structure, and sensor layout in natural language; (2) a tool definition file specifying the admissible actions A in a structured JSON schema; and (3) the task description. No source code, model weights, or reward functions are modified.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 88,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          240.879,
+          422.669,
+          252.774
+        ],
+        "content": "D. Implementation Details",
+        "font": "NimbusRomNo9L-ReguItal",
+        "font size": 9.963,
+        "id": 89,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          129.506,
+          558.001,
+          237.151
+        ],
+        "content": "All LLM and VLM inference uses the OpenAI GPT-4.1mini or GPT-4.1 models via the official API. The smaller model was applied to all experiments except Dingo (realworld) and BlueROV2 (large pool), where the larger version was used. The Controller and Memory Curator operate as text-only LLM calls; the Monitors operate as VLM calls with image input. The control loop executes at approximately one action per 5–10 seconds, dominated by API latency. The total cost of API calls amounted to less than $100.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 90,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          367.346,
+          109.54,
+          503.854,
+          121.544
+        ],
+        "content": "V. RESULTS & DISCUSSION",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 91,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          57.674,
+          558.001,
+          105.543
+        ],
+        "content": "Tab. II shows the average number of steps needed to solve each setting compared with a random baseline (where relevant) and the minimal number of steps needed to solve the task. Note that the minimum number of steps shown in",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 92,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          708.045,
+          298.801,
+          738.769
+        ],
+        "content": "TABLE II: Performance Comparison of RACAS and Baselines (± standard error)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 93,
+        "level": "Subtitle",
+        "page number": 7,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          54.0,
+          649.564,
+          298.815,
+          708.045
+        ],
+        "id": 94,
+        "level": "5",
+        "number of columns": 4,
+        "number of rows": 2,
+        "page number": 7,
+        "pdfua_tag": "Table",
+        "rows": [
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  54.212,
+                  697.874,
+                  149.264,
+                  707.621
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      60.78,
+                      698.565,
+                      100.327,
+                      708.778
+                    ],
+                    "content": "Experiment",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.476,
+                    "id": 1,
+                    "page number": 7,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 7,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  149.264,
+                  697.874,
+                  209.241,
+                  707.621
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      164.658,
+                      698.565,
+                      193.848,
+                      708.778
+                    ],
+                    "content": "Baseline",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.476,
+                    "id": 3,
+                    "level": "1",
+                    "page number": 7,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 7,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  209.241,
+                  697.874,
+                  269.218,
+                  707.621
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      225.27,
+                      698.565,
+                      253.189,
+                      708.778
+                    ],
+                    "content": "RACAS",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.476,
+                    "id": 5,
+                    "page number": 7,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 7,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  269.218,
+                  697.874,
+                  298.603,
+                  707.621
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      275.787,
+                      698.565,
+                      292.035,
+                      708.778
+                    ],
+                    "content": "Min.",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.476,
+                    "id": 7,
+                    "page number": 7,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 7,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 1,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  54.212,
+                  649.987,
+                  149.264,
+                  697.874
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      60.78,
+                      650.466,
+                      142.697,
+                      698.819
+                    ],
+                    "content": "Dingo (simulation) Dingo (real-world) Alhakami et al. Limb BlueROV2 (small tank) BlueROV2 (large pool)",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.476,
+                    "id": 8,
+                    "page number": 7,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 7,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  149.264,
+                  649.987,
+                  209.241,
+                  697.874
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      155.833,
+                      650.466,
+                      202.672,
+                      698.819
+                    ],
+                    "content": "25.00 ± 0.00 N/A 22.07 ± 0.98 N/A N/A",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.476,
+                    "id": 14,
+                    "page number": 7,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 7,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  209.241,
+                  649.987,
+                  269.218,
+                  697.874
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      215.81,
+                      644.753,
+                      262.649,
+                      698.819
+                    ],
+                    "content": "16.40 ± 0.96 25.80 ± 4.94 9.56 ± 1.50 14.00 ± 1.75 19.20 ± 6.51",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.476,
+                    "id": 16,
+                    "level": "1",
+                    "page number": 7,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 7,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  269.218,
+                  649.987,
+                  298.603,
+                  697.874
+                ],
+                "column number": 4,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      276.807,
+                      644.753,
+                      291.015,
+                      698.819
+                    ],
+                    "content": "10 7 3 5 ≈ 5",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.476,
+                    "id": 31,
+                    "page number": 7,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 7,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 2,
+            "type": "table row"
+          }
+        ],
+        "type": "table"
+      },
+      {
+        "bounding box": [
+          93.869,
+          620.876,
+          104.198,
+          634.649
+        ],
+        "content": "60",
+        "font": "DejaVuSans",
+        "font size": 8.121,
+        "id": 115,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          239.813,
+          610.935,
+          263.363,
+          628.912
+        ],
+        "content": "Agent Random",
+        "font": "DejaVuSans",
+        "font size": 5.684,
+        "id": 122,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          81.253,
+          562.258,
+          92.271,
+          620.876
+        ],
+        "content": "StepsperEpisode",
+        "font": "DejaVuSans",
+        "font size": 6.497,
+        "id": 116,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          223.49,
+          613.161,
+          235.671,
+          617.952
+        ],
+        "id": 123,
+        "level": "6",
+        "number of columns": 1,
+        "number of rows": 1,
+        "page number": 7,
+        "pdfua_tag": "Table",
+        "rows": [
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  224.099,
+                  613.77,
+                  235.062,
+                  617.343
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [],
+                "page number": 7,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 1,
+            "type": "table row"
+          }
+        ],
+        "type": "table"
+      },
+      {
+        "bounding box": [
+          93.869,
+          595.058,
+          104.198,
+          608.831
+        ],
+        "content": "40",
+        "font": "DejaVuSans",
+        "font size": 8.121,
+        "id": 113,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          93.869,
+          569.241,
+          104.198,
+          583.014
+        ],
+        "content": "20",
+        "font": "DejaVuSans",
+        "font size": 8.121,
+        "id": 111,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          252.999,
+          513.331,
+          262.64,
+          546.138
+        ],
+        "content": "(largepool)",
+        "font": "DejaVuSans",
+        "font size": 5.684,
+        "id": 109,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          127.443,
+          516.021,
+          137.084,
+          546.126
+        ],
+        "content": "etal.Limb",
+        "font": "DejaVuSans",
+        "font size": 5.684,
+        "id": 97,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          167.092,
+          512.037,
+          176.733,
+          546.11
+        ],
+        "content": "(simulation)",
+        "font": "DejaVuSans",
+        "font size": 5.684,
+        "id": 100,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          226.566,
+          512.113,
+          236.207,
+          546.106
+        ],
+        "content": "(smalltank)",
+        "font": "DejaVuSans",
+        "font size": 5.684,
+        "id": 106,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          200.133,
+          513.179,
+          209.774,
+          546.103
+        ],
+        "content": "(real-world)",
+        "font": "DejaVuSans",
+        "font size": 5.684,
+        "id": 103,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          121.086,
+          517.886,
+          130.727,
+          544.247
+        ],
+        "content": "Alhakami",
+        "font": "DejaVuSans",
+        "font size": 5.684,
+        "id": 96,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          246.642,
+          515.52,
+          256.283,
+          543.939
+        ],
+        "content": "BlueROV2",
+        "font": "DejaVuSans",
+        "font size": 5.684,
+        "id": 108,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          220.209,
+          514.911,
+          229.85,
+          543.33
+        ],
+        "content": "BlueROV2",
+        "font": "DejaVuSans",
+        "font size": 5.684,
+        "id": 105,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          193.776,
+          521.331,
+          203.417,
+          537.981
+        ],
+        "content": "Dingo",
+        "font": "DejaVuSans",
+        "font size": 5.684,
+        "id": 102,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          160.735,
+          520.76,
+          170.376,
+          537.41
+        ],
+        "content": "Dingo",
+        "font": "DejaVuSans",
+        "font size": 5.684,
+        "id": 99,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          465.134,
+          298.801,
+          501.049
+        ],
+        "id": 124,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              54.0,
+              465.134,
+              298.801,
+              501.049
+            ],
+            "content": "Fig. 5: Distribution of steps needed to complete the tasks in each of the settings. Note that random control policies were artificially limited to 25 steps.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 7,
+        "pdfua_tag": "L",
+        "previous list id": 67,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          285.379,
+          298.801,
+          440.845
+        ],
+        "content": "Tab. II is under the assumption that an oracle is available, and so represents an unreachable upper-bound on performance. In the large pool setting, additional stochasticity exists due to the presence of wind, leading to the optimal number of steps being approximate. In cases where a random baseline was considered, the performance of RACAS was significantly better (family-wise confidence of p < 0.01 using Student’s t-test and Holm-Bonferroni corrections). Fig. 5 further shows the distribution of steps per episode in each of the settings. Notably, despite the radically different environments and the added complexities, the settings where it was unsafe to run a random baseline were still generally able to solve the task in a reasonable number of steps.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 125,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          201.532,
+          298.801,
+          285.267
+        ],
+        "content": "Altogether, these results demonstrate clear evidence that RACAS was able to cleanly solve all the tasks in a reasonable number of steps. Thus, we can conclude that, at least for relatively simple navigation tasks, RACAS enables the generalization abilities of LLMs and VLMs to carry over to solving robotic tasks through relatively arbitrary morphologies and environments.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 126,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          105.73,
+          298.801,
+          201.42
+        ],
+        "content": "During operation, we noted that the time to complete the tasks was heavily dominated by the system attempting to locate any trace of the object. Once spotted, RACAS consistently directed the robot in an almost straight line towards the objective. This further suggests that the performance of RACAS is more limited by the sensor fidelity and available tools rather than by the underlying models or system architecture.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 127,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          132.321,
+          85.686,
+          220.48,
+          97.69
+        ],
+        "content": "VI. CONCLUSION",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 128,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          57.674,
+          298.801,
+          81.633
+        ],
+        "content": "We presented RACAS, a single agentic system that uses cooperative LLM and VLM modules to provide closed-",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 129,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          595.657,
+          558.001,
+          739.167
+        ],
+        "content": "loop control across heterogeneous robot embodiments. All embodiment-specific knowledge is confined to declarative prompt configurations. No source code, model weights, or reward functions need to be modified to move between platforms. We evaluated RACAS on three platforms that differ radically in morphology, maneuverability, and operating environment, including a recently-published robotic limb that an LLM would have no prior knowledge of. In all cases, the unmodified system completed the assigned tasks. To the best of our knowledge, this constitutes the first zero-training generalization of a unified control framework across such fundamentally different robotic platforms.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 130,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          464.015,
+          558.001,
+          595.57
+        ],
+        "content": "RACAS sidesteps the traditional barriers to robotic deployment that arise from collecting demonstration data, engineering custom state representations, and training platformspecific policies. Instead, a practitioner can adapt the system to a new robot using only the robot’s existing API and natural language descriptions. This represents a significant reduction in the expertise and resources needed to prototype robotic solutions, and as foundation models continue to improve in their reasoning and perception capabilities, we expect this approach to become increasingly viable for a wider range of tasks and platforms.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 131,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          338.081,
+          444.187,
+          533.119,
+          456.191
+        ],
+        "content": "VII. LIMITATIONS AND FUTURE WORK",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 132,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          308.732,
+          558.001,
+          440.288
+        ],
+        "content": "Our evaluation is restricted to target localization and navigation tasks, which, while sufficient for demonstrating cross-embodiment generalization, represent only one stage of a typical robotic mission. Extending RACAS to contactrich tasks such as manipulation is a natural next step, though the high per-step inference cost of the current architecture makes long-horizon manipulation experiments prohibitively slow. Future work will explore the integration of existing manipulation primitives as callable tools within the agentic framework, reducing the number of LLM-mediated decisions per task.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 133,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          224.911,
+          558.001,
+          308.646
+        ],
+        "content": "A second limitation, one consistent issue that harmed the abilities of the system was a lack of depth information. While this was able to be inferred from the images, such inferences were sub-optimal, leading to the robots being under- or over-confident on impact chances. Future work will look at integrating either LIDAR or a more sophisticated architecture into the monitor sub-systems.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 134,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          413.458,
+          205.084,
+          457.744,
+          217.088
+        ],
+        "content": "APPENDIX",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 135,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          313.2,
+          57.674,
+          558.001,
+          201.185
+        ],
+        "content": "To evaluate the Memory Curator’s ability to accumulate and leverage experience across episodes, the system is applied to a modified version of the Blackjack environment from OpenAI Gym [32]. Blackjack is well-suited for this purpose: its rules are simple enough that requiring no complex multi-agent coordination, yet optimal play hinges on an effective memory mechanism to infer a hidden numerical target from repeated outcomes. In the game, a player draws cards and must decide whether to take another card (hit) or stop (stick), aiming to reach the target sum without exceeding it. The standard target of 21 is well-represented in LLM training corpora, meaning an LLM-based agent could play",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 136,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          679.343,
+          298.801,
+          739.168
+        ],
+        "content": "near-optimally from prior knowledge alone without relying on the Memory Curator. We therefore replace the target with 42, a value the agent is not informed of. The agent is only told that the target lies in the range X ∈ [12,100] and must infer it from game outcomes across episodes.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 137,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          643.465,
+          298.801,
+          679.38
+        ],
+        "content": "In the game, the Monitor was given the rendered gamestate images (Fig. 6) to identify card values, while the Controller reasons about optimal play strategies.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 138,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          523.902,
+          298.802,
+          643.502
+        ],
+        "content": "To provide a baseline for the experiment, a series of tests is run. Firstly, the Memory Curator module is disabled: the Controller receives the environment memory Mt−1 in a nonstructured manner, appending its previous outputs back with the input query. The second baseline is obtained through complete memory removal. The system must take actions based solely on current visual observations. This ablation measures whether persistent structured memory improves decision quality over reactive control. All tests were compared to a random choice policy.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 139,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          464.114,
+          298.801,
+          523.939
+        ],
+        "content": "The result shown in Fig. 6 confirms the ability of the system to infer feedback from previous episodes of operation based on memory updates. Memory Curator allows the system to keep performing well with multiple instances of memory updates, allowing it to maintain high performance.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 140,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          247.56,
+          443.456,
+          275.78,
+          448.614
+        ],
+        "content": "Strucured Memory",
+        "font": "DejaVuSans",
+        "font size": 3.041,
+        "id": 162,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          64.497,
+          395.938,
+          125.691,
+          446.933
+        ],
+        "id": 141,
+        "page number": 8,
+        "pdfua_tag": "Figure",
+        "source": "2603.05621_images/imageFile11.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          144.276,
+          438.857,
+          151.045,
+          446.077
+        ],
+        "content": "0.6",
+        "font": "DejaVuSans",
+        "font size": 4.257,
+        "id": 158,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          247.56,
+          438.99,
+          282.689,
+          444.147
+        ],
+        "content": "Nonstructured Memory",
+        "font": "DejaVuSans",
+        "font size": 3.041,
+        "id": 164,
+        "level": "5",
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          131.26,
+          416.964,
+          139.512,
+          442.702
+        ],
+        "content": "Avg.Score",
+        "font": "DejaVuSans",
+        "font size": 4.865,
+        "id": 160,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          247.56,
+          434.524,
+          265.03,
+          439.681
+        ],
+        "content": "No Memory",
+        "font": "DejaVuSans",
+        "font size": 3.041,
+        "id": 166,
+        "level": "5",
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          247.56,
+          430.057,
+          260.153,
+          435.215
+        ],
+        "content": "Random",
+        "font": "DejaVuSans",
+        "font size": 3.041,
+        "id": 168,
+        "level": "5",
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          144.276,
+          424.123,
+          151.045,
+          431.344
+        ],
+        "content": "0.8",
+        "font": "DejaVuSans",
+        "font size": 4.257,
+        "id": 155,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          144.276,
+          409.39,
+          151.045,
+          416.611
+        ],
+        "content": "1.0",
+        "font": "DejaVuSans",
+        "font size": 4.257,
+        "id": 152,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          156.891,
+          401.831,
+          235.137,
+          409.052
+        ],
+        "content": "0 20 40 60 80 100",
+        "font": "DejaVuSans",
+        "font size": 4.257,
+        "id": 144,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          186.198,
+          394.537,
+          205.31,
+          402.788
+        ],
+        "content": "Episode",
+        "font": "DejaVuSans",
+        "font size": 4.865,
+        "id": 150,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.15]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          64.497,
+          380.467,
+          125.702,
+          391.272
+        ],
+        "content": "(a) Camera view",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 142,
+        "linked content id": 141,
+        "page number": 8,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          153.081,
+          380.467,
+          264.408,
+          391.272
+        ],
+        "content": "(b) Cumulative average scores",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 169,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          61.417,
+          362.853,
+          291.384,
+          374.857
+        ],
+        "content": "Fig. 6: Blackjack visualization and experimental results.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 170,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.733,
+          330.667,
+          229.068,
+          342.671
+        ],
+        "content": "ACKNOWLEDGMENT",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 171,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          54.0,
+          207.905,
+          298.801,
+          327.505
+        ],
+        "content": "The authors would like to thank David Alvear Goyes for his assistance in setting up the Dingo experiments. This work was supported by the Center of Excellence for Generative AI at the King Abdullah University of Science and Technology (KAUST, Award Number 5940), the European Research Council (ERC, Advanced Grant Number 742870), and the Swiss National Science Foundation (SNF, Grant Number 200021 192356). Large language models were used throughout the paper to help draft sections and improve readability.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 172,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          148.505,
+          189.123,
+          204.302,
+          201.127
+        ],
+        "content": "REFERENCES",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 173,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          57.985,
+          58.233,
+          298.802,
+          184.42
+        ],
+        "id": 174,
+        "level": "6",
+        "list items": [
+          {
+            "bounding box": [
+              57.985,
+              147.917,
+              298.802,
+              184.42
+            ],
+            "content": "[1] A. Brohan, N. Brown, J. Carbajal, Y. Chebotar, J. Dabis, C. Finn, K. Gopalakrishnan, K. Hausman, A. Herzog, et al., “Rt-1: Robotics transformer for real-world control at scale,” arXiv preprint arXiv:2212.06817, 2022.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              57.985,
+              121.011,
+              298.802,
+              148.548
+            ],
+            "content": "[2] ——, “Rt-2: Vision-language-action models transfer web knowledge to robotic control,” in 7th Annual Conference on Robot Learning (CoRL), 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              57.985,
+              85.139,
+              298.802,
+              121.642
+            ],
+            "content": "[3] K. Bousmalis, G. Vezzani, D. Rao, C. Devin, A. X. Lee, M. Bauza, T. Davchev, Y. Zhou, A. Gupta, et al., “Robocat: A selfimproving generalist agent for robotic manipulation,” arXiv preprint arXiv:2306.11706, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              57.985,
+              58.233,
+              298.802,
+              85.77
+            ],
+            "content": "[4] S. H. Vemprala, R. Bonatti, A. Bucker, and A. Kapoor, “Chatgpt for robotics: Design principles and model abilities,” IEEE Access, vol. 12, pp. 55682–55696, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 175,
+        "number of list items": 4,
+        "numbering style": "arabic numbers",
+        "page number": 8,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          313.2,
+          58.234,
+          558.002,
+          737.327
+        ],
+        "id": 175,
+        "level": "6",
+        "list items": [
+          {
+            "bounding box": [
+              317.185,
+              700.824,
+              558.002,
+              737.327
+            ],
+            "content": "[5] M. Ahn, A. Brohan, N. Brown, Y. Chebotar, O. Cortes, B. David, C. Finn, C. Fu, K. Gopalakrishnan, et al., “Do as i can, not as i say: Grounding language in robotic affordances,” in 6th Annual Conference on Robot Learning (CoRL), 2022, pp. 287–318.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              317.185,
+              664.211,
+              558.002,
+              700.714
+            ],
+            "content": "[6] J. Liang, W. Huang, F. Xia, P. Xu, K. Hausman, B. Ichter, P. Florence, and A. Zeng, “Code as policies: Language model programs for embodied control,” in 2023 IEEE International Conference on Robotics and Automation (ICRA), 2023, pp. 9493–9500.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              317.185,
+              636.565,
+              558.002,
+              664.101
+            ],
+            "content": "[7] J. Schmidhuber, On Learning to Think: Algorithmic Information Theory for Novel Combinations of Reinforcement Learning Controllers and Recurrent Neural World Models. arXiv, 2015.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              317.185,
+              599.952,
+              558.001,
+              636.495
+            ],
+            "content": "[8] M. Zhuge, H. Liu, F. Faccio, D. R. Ashley, R. Csord´as, A. Gopalakrishnan, A. Hamdi, H. A. A. K. Hammoud, V. Herrmann, et al., Mindstorms in Natural Language-Based Societies of Mind. arXiv, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              317.185,
+              581.272,
+              558.002,
+              599.842
+            ],
+            "content": "[9] ——, “Mindstorms in natural language-based societies of mind,” Computational Visual Media, vol. 11, no. 1, pp. 29–81, 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              535.693,
+              558.002,
+              581.162
+            ],
+            "content": "[10] M. Alhakami, D. R. Ashley, J. Dunham, Y. Dai, F. Faccio, E. Feron, and J. Schmidhuber, “Towards an extremely robust baby robot with rich interaction ability for advanced machine learning algorithms,” Proceedings of the 2025 IEEE/RSJ International Conference on Intelligent Robots and Systems, 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              499.08,
+              558.002,
+              535.583
+            ],
+            "content": "[11] W. Huang, F. Xia, T. Xiao, H. Chan, J. Liang, P. Florence, A. Zeng, J. Tompson, I. Mordatch, et al., “Inner monologue: Embodied reasoning through planning with language models,” in 6th Annual Conference on Robot Learning (CoRL), 2022.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              471.434,
+              558.002,
+              498.971
+            ],
+            "content": "[12] E. K. Raptis, A. C. Kapoutsis, and E. B. Kosmatopoulos, “Robotiq: Empowering mobile robots with human-level planning for real-world execution,” arXiv preprint arXiv:2502.12862, 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              434.821,
+              558.002,
+              471.324
+            ],
+            "content": "[13] H. Singh, R. J. Das, M. Han, P. Nakov, and I. Laptev, “Malmm: Multiagent large language models for zero-shot robotic manipulation,” in 2025 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2025, pp. 20386–20393.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              407.175,
+              558.002,
+              434.712
+            ],
+            "content": "[14] Z. Mandi, S. Jain, and S. Song, “Roco: Dialectic multi-robot collaboration with large language models,” in 2024 IEEE International Conference on Robotics and Automation (ICRA), 2024, pp. 286–299.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              379.529,
+              558.002,
+              407.065
+            ],
+            "content": "[15] V. Strobel, M. Dorigo, and M. Fritz, “Llm2swarm: Robot swarms that responsively reason, plan, and collaborate through llms,” in NeurIPS 2024 Workshop on Open-World Agents (OWA-2024), 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              342.916,
+              558.002,
+              379.419
+            ],
+            "content": "[16] J. Duan, W. Yuan, W. Pumacay, Y. R. Wang, K. Ehsani, D. Fox, and R. Krishna, “Manipulate-anything: Automating real-world robots using vision-language models,” in 8th Annual Conference on Robot Learning (CoRL), 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              306.303,
+              558.002,
+              342.806
+            ],
+            "content": "[17] M. Ahn, M. Gonzalez Arenas, M. Bennice, N. Brown, C. Chan, B. David, A. Francis, G. Gonzalez, R. Hessmer, et al., “Vader: Visual affordance detection and error recovery for multi robot human collaboration,” arXiv preprint arXiv:2405.16021, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              278.657,
+              558.002,
+              306.194
+            ],
+            "content": "[18] C. Finn, P. Abbeel, and S. Levine, “Model-agnostic meta-learning for fast adaptation of deep networks,” in Proceedings of the 34th International Conference on Machine Learning (ICML), 2017.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              242.044,
+              558.002,
+              278.547
+            ],
+            "content": "[19] T. Yu, D. Quillen, Z. He, R. Julian, K. Hausman, C. Finn, and S. Levine, “Meta-world: A benchmark and evaluation for multi-task and meta reinforcement learning,” in Proceedings of the 3rd Annual Conference on Robot Learning (CoRL), 2020.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              214.398,
+              558.002,
+              241.935
+            ],
+            "content": "[20] J. Beck, R. Vuorio, E. Zheran Liu, Z. Xiong, L. Zintgraf, C. Finn, and S. Whiteson, “A tutorial on meta-reinforcement learning,” Foundations and Trends in Machine Learning, vol. 18, no. 2-3, pp. 224–384, 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              177.785,
+              558.002,
+              214.288
+            ],
+            "content": "[21] R. Firoozi, J. Tucker, S. Tian, A. Majumdar, J. Sun, W. Liu, Y. Zhu, S. Song, A. Kapoor, et al., “Foundation models in robotics: Applications, challenges, and the future,” The International Journal of Robotics Research, vol. 44, no. 5, pp. 701–739, 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              141.173,
+              558.002,
+              177.676
+            ],
+            "content": "[22] D. Driess, F. Xia, M. S. M. Sajjadi, C. Lynch, A. Chowdhery, B. Ichter, A. Wahid, J. Tompson, Q. Vuong, et al., “Palm-e: An embodied multimodal language model,” in International Conference on Machine Learning (ICML), 2023, pp. 8469–8488.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              113.526,
+              558.002,
+              141.063
+            ],
+            "content": "[23] S. Reed, K. Zolna, E. Parisotto, S. Gomez Colmenarejo, A. Novikov, G. Barth-Maron, M. Gimenez, Y. Sulsky, J. Kay, et al., “A generalist agent,” arXiv preprint arXiv:2205.06175, 2022.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              76.914,
+              558.002,
+              113.417
+            ],
+            "content": "[24] K. Rana, J. Haviland, S. Garg, J. Abou-Chakra, I. Reid, and N. S¨underhauf, “Sayplan: Grounding large language models using 3d scene graphs for scalable task planning,” in 7th Annual Conference on Robot Learning, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              313.2,
+              58.234,
+              558.002,
+              76.804
+            ],
+            "content": "[25] Y. Ding, X. Zhang, C. Paxton, and S. Zhang, “Task and motion planning with large language models for object rearrangement,” in",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 177,
+        "number of list items": 21,
+        "numbering style": "arabic numbers",
+        "page number": 8,
+        "pdfua_tag": "L",
+        "previous list id": 174,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          54.0,
+          512.53,
+          298.803,
+          737.327
+        ],
+        "id": 177,
+        "level": "6",
+        "list items": [
+          {
+            "bounding box": [
+              72.259,
+              718.756,
+              298.801,
+              737.327
+            ],
+            "content": "2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2023, pp. 2086–2092.",
+            "font": "NimbusRomNo9L-ReguItal",
+            "font size": 7.97,
+            "id": 176,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              682.891,
+              298.802,
+              719.394
+            ],
+            "content": "[26] I. Singh, V. Blukis, A. Mousavian, A. Goyal, D. Xu, J. Tremblay, et al., “Progprompt: Generating situated robot task plans using large language models,” in 2023 IEEE International Conference on Robotics and Automation (ICRA), 2023, pp. 11523–11530.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              655.992,
+              298.802,
+              683.528
+            ],
+            "content": "[27] W. Huang, C. Wang, R. Zhang, Y. Li, J. Wu, and L. Fei-Fei, “Voxposer: Composable 3d value maps for robotic manipulation with language models,” in 7th Annual Conference on Robot Learning (CoRL), 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              620.126,
+              298.802,
+              656.629
+            ],
+            "content": "[28] Z. Wang, B. Liang, V. Dhat, Z. Brumbaugh, N. Walker, R. Krishna, and M. Cakmak, “I can tell what i am doing: Toward real-world natural language grounding of robot experiences,” in 8th Annual Conference on Robot Learning (CoRL), 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              584.261,
+              298.802,
+              620.764
+            ],
+            "content": "[29] A. Stone, T. Xiao, Y. Lu, K. Gopalakrishnan, K.-H. Lee, Q. Vuong, P. Wohlhart, S. Kirmani, B. Zitkovich, et al., “Open-world object manipulation using pre-trained vision-language models,” in 7th Annual Conference on Robot Learning (CoRL), 2023, pp. 3397–3417.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              557.362,
+              298.803,
+              584.938
+            ],
+            "content": "[30] R. Shah, A. Yu, Y. Zhu, Y. Zhu, and R. Mart´ın-Mart´ın, “Bumble: Unifying reasoning and acting with vision-language models for buildingwide mobile manipulation,” arXiv preprint arXiv:2410.06237, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              530.462,
+              298.801,
+              558.039
+            ],
+            "content": "[31] K. Qu, G. Lan, R. Zurbr¨ugg, C. Chen, C. E. Mower, H. BouAmmar, and M. Hutter, “A pragmatist robot: Learning to plan tasks by experiencing the real world,” arXiv preprint arXiv:2507.16713, 2026.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              54.0,
+              512.53,
+              298.802,
+              531.1
+            ],
+            "content": "[32] G. Brockman, V. Cheung, L. Pettersson, J. Schneider, J. Schulman, J. Tang, and W. Zaremba, OpenAI Gym. arXiv, 2016.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 7.97,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 8,
+        "numbering style": "arabic numbers",
+        "page number": 9,
+        "pdfua_tag": "L",
+        "previous list id": 175,
+        "type": "list"
+      }
+    ],
+    "modification date": null,
+    "number of pages": 9,
+    "title": "RACAS: Controlling Diverse Robots With a Single Agentic System"
+  }
+}

@@ -1,0 +1,2810 @@
+{
+  "layout": {
+    "author": "Mo Li; L. H. Xu; Qitai Tan; Ting Cao; Yunxin Liu",
+    "creation date": null,
+    "file name": "2603.26664.pdf",
+    "kids": [
+      {
+        "bounding box": [
+          14.04,
+          222.13,
+          36.36,
+          569.87
+        ],
+        "content": "arXiv:2603.26664v1[cs.SE]27Mar2026",
+        "font": "Times-Roman",
+        "font size": 20.0,
+        "heading level": 1,
+        "id": 56,
+        "level": "Doctitle",
+        "page number": 1,
+        "pdfua_tag": "H1",
+        "text color": "[0.5, 0.5, 0.5]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          134.269,
+          653.158,
+          477.733,
+          695.48
+        ],
+        "content": "Learning to Commit: Generating Organic Pull Requests via Online Repository Memory",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 17.215,
+        "heading level": 2,
+        "id": 44,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H2",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          188.771,
+          600.201,
+          417.6,
+          611.867
+        ],
+        "content": "Mo Li1 L.H. Xu Qitai Tan1 Ting Cao1† Yunxin Liu1",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 8.966,
+        "id": 46,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          256.921,
+          589.078,
+          342.626,
+          601.082
+        ],
+        "content": "1Tsinghua University",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 47,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          283.758,
+          546.618,
+          328.243,
+          562.172
+        ],
+        "content": "Abstract",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 48,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          143.866,
+          285.035,
+          468.139,
+          537.039
+        ],
+        "content": "Large language model (LLM)-based coding agents achieve impressive results on controlled benchmarks yet routinely produce pull requests that real maintainers reject. The root cause is not functional incorrectness but a lack of organicity: generated code ignores project-specific conventions, duplicates functionality already provided by internal APIs, and violates implicit architectural constraints accumulated over years of development. Simply exposing an agent to the latest repository snapshot is not enough: the snapshot reveals the final state of the codebase, but not the repository-specific change patterns by which that state was reached. We introduce Learning to Commit, a framework that closes this gap through Online Repository Memory. Given a repository with a strict chronological split, the agent performs supervised contrastive reflection on earlier commits: it blindly attempts to resolve each historical issue, compares its prediction against the oracle diff, and distils the gap into a continuously growing set of skills—reusable patterns capturing coding style, internal API usage, and architectural invariants. When a new PR description arrives, the agent conditions its generation on these accumulated skills, producing changes grounded in the project’s own evolution rather than generic pretraining priors. Evaluation is conducted on genuinely future, merged pull requests that could not have been seen during the skill-building phase, and spans multiple dimensions including functional correctness, code-style consistency, internal API reuse rate, and modified-region plausibility. Experiments on an expert-maintained repository with rich commit history show that Online Repository Memory effectively improves organicity scores on held-out future tasks.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 49,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          251.402,
+          190.814,
+          266.956
+        ],
+        "content": "1 Introduction",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 50,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          120.746,
+          504.003,
+          241.841
+        ],
+        "content": "The past three years have witnessed a remarkable acceleration in AI-assisted software engineering. Coding agents built on large language models now resolve a substantial fraction of tasks on curated benchmarks such as SWE-bench [1], while libraries like HumanEval [2] and MBPP [3] are largely saturated. Repository-scale benchmarks such as FEA-Bench and FeatureBench further extend evaluation from isolated code generation to multi-file feature implementation in realistic repositories [4; 5]. These numbers have fuelled optimism that LLM agents are ready for industrial deployment. Yet professional maintainers of complex repositories remain cautious: they acknowledge that AIgenerated code is often functionally correct, but still routinely reject pull requests because the code feels alien—written by someone who has never read the project. In practice, this alien quality manifests not only as stylistic mismatch but also as unnecessary code bloat: the agent re-implements utilities, wrappers, or control flow patterns that the repository already contains.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 51,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          93.449,
+          504.003,
+          116.362
+        ],
+        "content": "The gap between benchmark scores and industrial merge-rate reflects a structural blind spot in how we currently evaluate coding agents. Benchmarks such as SWE-bench still cast software engi-",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 52,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          118.859,
+          76.667,
+          193.631,
+          87.243
+        ],
+        "content": "†Corresponding author.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 54,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          49.667,
+          135.672,
+          59.271
+        ],
+        "content": "Preprint.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 55,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          532.693,
+          504.003,
+          719.242
+        ],
+        "content": "neering as a sequence of isolated, one-off tasks: an agent sees an issue, edits the codebase, and succeeds if the tests pass, without carrying any accumulated knowledge forward. Furthermore, they typically evaluate issues out of chronological order, ignoring how a repository and its conventions naturally evolve over time. COMMIT0 [6] stresses whole-library implementation from API specifications, while SWE-CI [7] extends evaluation over months of consecutive commits. At the same time, repository-level systems such as Repository Memory and SGAgent show that richer codebase context improves localisation and repair [8; 9], and PR-centric works such as Coeditor, Clean-PR, and R2E-Gym suggest that commit and PR histories are valuable learning signals [10–12]. Yet these settings still share the same basic premise: the agent is not expected to undergo anything like repository-specific onboarding before it starts writing code. This omission matters because the current repository snapshot shows only the finished building, not why particular supports, interfaces, and boundaries were introduced along the way. More broadly, it reflects a shift that is now becoming central in agent research: capability no longer depends only on managing context within a single session, but increasingly on managing and updating memory across sessions and across time. While recent frameworks like SWE-Bench-CL [13] attempt to evaluate such continual learning chronologically, they rely on unsupervised self-reflection. Without explicit expert supervision, agents are prone to accumulating self-reinforcing errors.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 57,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          418.123,
+          504.003,
+          528.308
+        ],
+        "content": "This missing onboarding step is precisely what separates a seasoned contributor from an outsourced newcomer. When a human engineer joins a mature codebase, she does not immediately open a text editor. She reads prior commits, studies module boundaries, discovers which internal utilities are idiomatic, and internalises the preferences of the maintainers. Only then does she open a pull request that looks as if it grew organically from the repository itself. Current agents skip this process entirely, producing what we term alien code: syntactically valid, often functionally correct, but stylistically foreign, architecturally dissonant, and full of redundant reimplementations of existing helper functions, often inflating patch size in the process. Even when such patches pass unit tests, maintainers reject them for exactly the reasons that a junior engineer would be asked to revise a first contribution.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 58,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          314.462,
+          504.003,
+          414.097
+        ],
+        "content": "To generate code that is not merely correct but genuinely organic, we introduce Learning to Commit, a framework centred on Online Repository Memory. The key idea is simple: organicity is learnable from the commit history, which records how a project has chosen to evolve over time. Given a repository with a strict chronological split, the agent performs supervised contrastive reflection on earlier commits—blindly attempting each historical change, comparing its prediction against the oracle diff, and distilling the gap into a continuously growing, incrementally updatable set of skills. When a new PR description arrives, the agent retrieves and conditions its generation on these skills, producing changes aligned with the repository’s naming conventions, preferred abstractions, and maintainer preferences.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 59,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          210.8,
+          504.003,
+          310.077
+        ],
+        "content": "Evaluating coding agents is frequently compromised by pre-training data leakage—a pervasive vulnerability in current evaluations, as evidenced by recent efforts like SWE-Bench++ [14]. By design, our same-repository, time-split evaluation inherently guarantees zero data leakage. Skills are built exclusively from commits before a hard cutoff date, while evaluation tasks are drawn from genuinely future merged commits. We measure success not only by functional correctness but also by code-style consistency, internal API reuse, and modified-region plausibility. While we validate on an expert-maintained internal repository in this work, the pipeline is designed to be extended to highquality public GitHub repositories in future work. In this paper, we establish repository-personalised adaptation as a first-class evaluation objective for coding agents. Our contributions are:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 60,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          135.397,
+          80.164,
+          504.004,
+          197.969
+        ],
+        "id": 61,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              135.397,
+              163.788,
+              504.004,
+              197.969
+            ],
+            "content": "• We formalise repository-personalised online adaptation through the Learning to Commit framework, establishing both an online learning mechanism for agents to organically align with evolving codebases and a rigorous evaluation paradigm.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              135.397,
+              121.976,
+              504.004,
+              155.798
+            ],
+            "content": "• We propose a training-free, online skill extraction method that distils repository-specific conventions via supervised contrastive reflection—comparing the agent’s blind attempts against oracle diffs to accumulate abstract, reusable development skills.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              135.397,
+              80.164,
+              504.004,
+              113.986
+            ],
+            "content": "• We construct and release a strict time-split benchmark of curated repositories with multidimensional metrics (code style, API reuse, modified-region plausibility), demonstrating that our framework effectively improves organicity over existing paradigms.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "unordered",
+        "page number": 2,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          669.864,
+          504.003,
+          714.595
+        ],
+        "content": "Table 1: Comparison of representative repository-level benchmarks and agentic learning paradigms. Columns progress from basic capabilities to our unique contributions: leveraging historical context, continual learning across tasks, strict data leakage prevention, oracle-supervised memory updates, and multi-dimensional organicity evaluation. Symbol legend: ✓ = fully satisfies; ✗ = not supported.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 63,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          112.45,
+          659.262,
+          499.548,
+          667.938
+        ],
+        "content": "Framework / Paradigm Chronological Eval Historical Memory Zero Data Leakage Oracle Supervision Organicity Eval",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 6.669,
+        "id": 65,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          112.45,
+          618.892,
+          478.828,
+          656.568
+        ],
+        "content": "SWE-bench [1] ✗ ✗ ✗ ✗ ✗ SWE-Bench++ [14] ✗ ✗ ✓ ✗ ✗ RepoMem [8] ✗ ✓ ✗ ✗ ✗ SWE-CI [7] ✓ ✗ ✗ ✗ ✗ SWE-Bench-CL [13] ✓ ✓ ✗ ✗ ✗",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 6.669,
+        "id": 67,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          112.45,
+          607.362,
+          479.441,
+          616.039
+        ],
+        "content": "Learning to Commit (Ours) ✓ ✓ ✓ ✓ ✓",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 6.669,
+        "id": 69,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          568.658,
+          197.09,
+          584.212
+        ],
+        "content": "2 Related Work",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 71,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          168.843,
+          406.001,
+          557.214
+        ],
+        "id": 72,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              108.0,
+              544.253,
+              377.648,
+              557.214
+            ],
+            "content": "2.1 Static Evaluation Paradigms and Repository-Level Agents",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  108.0,
+                  403.562,
+                  504.003,
+                  535.566
+                ],
+                "content": "Early benchmarks evaluated large language models in isolated, stateless environments [2; 3], which recently evolved into realistic, repository-level tasks like SWE-bench [1] and its multi-file or generative extensions [4–6]. To tackle these complex scenarios, recent works scale up training data through automated PR harvesting [11; 12; 15], with works like SWE-Bench++ [14] specifically designing recent cutoffs to ensure zero data leakage and design multi-agent workflows with specialized roles and reasoning steps [9; 16]. However, these data-centric and workflow-based approaches treat tasks as static snapshots, completely ignoring the chronological evolution of software. While SWECI [7] introduces a temporal CI-loop to penalize technical debt, it primarily evaluates performance degradation rather than empowering the agent to actively learn and internalize repository-specific conventions over time. Crucially, these existing paradigms rely almost exclusively on functional test passes as their success metric, lacking multi-dimensional organicity evaluation to assess codebase stylistic consistency, internal API reuse, and architectural fit.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 40,
+                "page number": 3,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              375.219,
+              406.001,
+              388.18
+            ],
+            "content": "2.2 Agent Memory and Continual Learning in Software Engineering",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  108.0,
+                  223.619,
+                  504.003,
+                  366.532
+                ],
+                "content": "To capture historical developer intent, models have incorporated commit histories via static weight updates [10; 17] or passive retrieval augmentation [8], yet both lack an active trial-and-error learning process. The necessity for dynamic continual learning is highlighted by the performance degradation observed in long-horizon tasks [7; 18], prompting explorations into online agent memory at various granularities [19–21]. Most notably, SWE-Bench-CL [13] evaluates continual learning chronologically but relies on unsupervised self-reflection; consequently, it is highly vulnerable to “garbagein-garbage-out” errors when early attempts fail, as autonomous reflection without ground-truth validation often leads to self-reinforcing errors [19]. Even with stepwise environmental feedback [22], signals remain too noisy to extract deep design patterns. Our work bridges this gap: by strictly partitioning history to prevent data leakage, our agent attempts historical commits and receives oracle diffs as dense supervision. Through supervised contrastive distillation between blind attempts and expert patches, the agent extracts reusable, repository-specific development patterns into a continuously refined skill document, ensuring failures drive optimal, history-conditioned memory updates.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 41,
+                "page number": 3,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  108.0,
+                  201.801,
+                  504.003,
+                  224.714
+                ],
+                "id": 42,
+                "level": "3",
+                "list items": [
+                  {
+                    "bounding box": [
+                      108.0,
+                      201.801,
+                      504.003,
+                      224.714
+                    ],
+                    "content": "Table 1 summarises how our protocol compares with representative prior benchmarks across these key dimensions.",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 9.963,
+                    "kids": [],
+                    "page number": 3,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  }
+                ],
+                "next list id": 188,
+                "number of list items": 1,
+                "numbering style": "arabic numbers",
+                "page number": 3,
+                "pdfua_tag": "L",
+                "type": "list"
+              }
+            ],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              168.843,
+              193.013,
+              184.397
+            ],
+            "content": "3 Methodology",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 11.955,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "arabic numbers",
+        "page number": 3,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          144.438,
+          222.689,
+          157.399
+        ],
+        "id": 73,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              108.0,
+              144.438,
+              222.689,
+              157.399
+            ],
+            "content": "3.1 Problem Formulation",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 3,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          69.201,
+          504.005,
+          135.751
+        ],
+        "content": "Let C = (c1,c2,...,cT) denote a chronological sequence of high-quality commits from a target repository R. Each commit ct is associated with a repository snapshot St (the codebase state at the parent commit), an oracle code diff ∆t, and a synthetic issue description dt that specifies the task intent without leaking the implementation. A temporal cutoff T∗ strictly partitions the sequence into a history prefix C− = {ct : t ≤ T∗} for learning and a held-out test set C+ = {ck : k > T∗} for evaluation.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 74,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          173.509,
+          688.219,
+          230.62,
+          713.141
+        ],
+        "content": "High-Quality Commit Filtering & Temporal Split",
+        "font": "ComicSansMS",
+        "font size": 6.556,
+        "id": 83,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          316.115,
+          701.135,
+          493.61,
+          712.918
+        ],
+        "content": "Temporal Cutoff Multi-dimensional",
+        "font": "ComicSansMS",
+        "font size": 6.556,
+        "id": 143,
+        "level": "8",
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          368.553,
+          692.411,
+          417.292,
+          709.135
+        ],
+        "content": "Future Commits 𝒞+",
+        "font": "ComicSansMS",
+        "font size": 6.556,
+        "id": 90,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          262.222,
+          691.528,
+          298.817,
+          708.706
+        ],
+        "content": "Historical Commits 𝒞−",
+        "font": "ComicSansMS",
+        "font size": 6.556,
+        "id": 86,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          122.075,
+          689.657,
+          154.863,
+          706.821
+        ],
+        "content": "Code Repository",
+        "font": "ComicSansMS",
+        "font size": 6.546,
+        "id": 79,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          450.475,
+          687.996,
+          482.967,
+          704.877
+        ],
+        "content": "Organicity Evaluation",
+        "font": "ComicSansMS",
+        "font size": 6.556,
+        "id": 147,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          357.809,
+          648.973,
+          417.578,
+          671.608
+        ],
+        "id": 122,
+        "kids": [
+          {
+            "bounding box": [
+              362.129,
+              652.532,
+              411.425,
+              670.21
+            ],
+            "content": "Synthetic Issue Description 𝑑𝑘",
+            "font": "ComicSansMS",
+            "font size": 6.556,
+            "id": 4,
+            "page number": 4,
+            "pdfua_tag": "P",
+            "text color": "[0.0]",
+            "type": "paragraph"
+          }
+        ],
+        "page number": 4,
+        "type": "text block"
+      },
+      {
+        "bounding box": [
+          431.165,
+          654.833,
+          460.0,
+          669.124
+        ],
+        "content": "Generated Patch",
+        "font": "Calibri-Bold",
+        "font size": 6.546,
+        "id": 150,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          473.766,
+          654.001,
+          491.304,
+          668.302
+        ],
+        "content": "Oracle Patch",
+        "font": "Calibri-Bold",
+        "font size": 6.556,
+        "id": 153,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          151.323,
+          659.906,
+          322.46,
+          667.353
+        ],
+        "content": "Step1:Repository Onboarding via Contrastive Reflection",
+        "font": "Calibri-BoldItalic",
+        "font size": 7.447,
+        "id": 107,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          457.357,
+          649.827,
+          471.616,
+          666.181
+        ],
+        "id": 148,
+        "page number": 4,
+        "pdfua_tag": "Figure",
+        "source": "2603.26664_images/imageFile1.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          163.255,
+          637.342,
+          183.159,
+          656.967
+        ],
+        "id": 98,
+        "page number": 4,
+        "pdfua_tag": "Figure",
+        "source": "2603.26664_images/imageFile2.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          442.235,
+          639.815,
+          450.248,
+          654.839
+        ],
+        "content": "ෝ Δ𝑘",
+        "font": "CambriaMath",
+        "font size": 7.745,
+        "id": 152,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          479.72,
+          641.018,
+          487.403,
+          649.525
+        ],
+        "content": "Δ𝑘",
+        "font": "CambriaMath",
+        "font size": 7.447,
+        "id": 155,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          445.882,
+          623.517,
+          482.92,
+          638.548
+        ],
+        "content": "Deterministic Metrics:",
+        "font": "ComicSansMS-Bold",
+        "font size": 5.655,
+        "id": 132,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          240.288,
+          628.61,
+          290.1,
+          636.057
+        ],
+        "content": "Dense On-Policy",
+        "font": "Calibri-BoldItalic",
+        "font size": 7.447,
+        "id": 116,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          156.023,
+          626.706,
+          190.784,
+          634.143
+        ],
+        "content": "Agent Blind",
+        "font": "Calibri",
+        "font size": 7.437,
+        "id": 99,
+        "linked content id": 98,
+        "page number": 4,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          122.259,
+          615.635,
+          139.193,
+          632.584
+        ],
+        "id": 95,
+        "page number": 4,
+        "pdfua_tag": "Figure",
+        "source": "2603.26664_images/imageFile3.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          205.44,
+          608.2,
+          228.611,
+          631.393
+        ],
+        "id": 141,
+        "page number": 4,
+        "pdfua_tag": "Figure",
+        "source": "2603.26664_images/imageFile4.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          247.347,
+          619.667,
+          282.718,
+          627.105
+        ],
+        "content": "Supervision",
+        "font": "Calibri-BoldItalic",
+        "font size": 7.437,
+        "id": 117,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          164.415,
+          602.035,
+          179.92,
+          627.047
+        ],
+        "id": 100,
+        "kids": [
+          {
+            "bounding box": [
+              160.961,
+              617.771,
+              185.731,
+              625.218
+            ],
+            "content": "Attempt",
+            "font": "Calibri",
+            "font size": 7.447,
+            "id": 2,
+            "page number": 4,
+            "pdfua_tag": "P",
+            "text color": "[0.0]",
+            "type": "paragraph"
+          },
+          {
+            "bounding box": [
+              167.918,
+              602.64,
+              175.927,
+              617.664
+            ],
+            "content": "ෝ Δ𝑘",
+            "font": "CambriaMath",
+            "font size": 7.745,
+            "id": 3,
+            "page number": 4,
+            "pdfua_tag": "P",
+            "text color": "[0.0]",
+            "type": "paragraph"
+          }
+        ],
+        "page number": 4,
+        "type": "text block"
+      },
+      {
+        "bounding box": [
+          306.147,
+          605.823,
+          326.942,
+          626.935
+        ],
+        "id": 110,
+        "page number": 4,
+        "pdfua_tag": "Figure",
+        "source": "2603.26664_images/imageFile5.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          160.961,
+          617.771,
+          185.731,
+          625.218
+        ],
+        "content": "A t",
+        "font": "Calibri",
+        "font size": 7.447,
+        "id": 101,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          361.105,
+          608.2,
+          375.959,
+          623.067
+        ],
+        "id": 125,
+        "page number": 4,
+        "pdfua_tag": "Figure",
+        "source": "2603.26664_images/imageFile6.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          436.079,
+          601.101,
+          492.243,
+          622.842
+        ],
+        "id": 134,
+        "level": "7",
+        "list items": [
+          {
+            "bounding box": [
+              436.417,
+              615.789,
+              492.243,
+              622.842
+            ],
+            "content": "1. File IoU (Localisation)",
+            "font": "ComicSansMS",
+            "font size": 5.061,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              436.079,
+              601.101,
+              482.347,
+              614.107
+            ],
+            "content": "2. Trajectory Steps (Efficiency)",
+            "font": "ComicSansMS",
+            "font size": 5.061,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 4,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          378.971,
+          610.926,
+          415.371,
+          617.482
+        ],
+        "content": "Coding Agent",
+        "font": "Calibri-Bold",
+        "font size": 6.556,
+        "heading level": 6,
+        "id": 126,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H6",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          230.959,
+          606.074,
+          304.97,
+          613.521
+        ],
+        "content": "Gap Reflection Skills",
+        "font": "Calibri-Italic",
+        "font size": 7.447,
+        "id": 113,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          119.166,
+          595.326,
+          144.748,
+          611.706
+        ],
+        "content": "Selected Past",
+        "font": "Calibri",
+        "font size": 7.447,
+        "id": 96,
+        "linked content id": 95,
+        "page number": 4,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          199.845,
+          579.96,
+          234.967,
+          605.273
+        ],
+        "content": "Supervised Contrastive Reflection",
+        "font": "Calibri-BoldItalic",
+        "font size": 7.447,
+        "id": 108,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          298.65,
+          587.266,
+          331.857,
+          603.636
+        ],
+        "content": "Repository Memory",
+        "font": "Calibri-Bold",
+        "font size": 7.437,
+        "id": 111,
+        "level": "6",
+        "linked content id": 110,
+        "page number": 4,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          436.12,
+          593.377,
+          487.914,
+          600.429
+        ],
+        "content": "3. Line Deviation Ratio",
+        "font": "ComicSansMS",
+        "font size": 5.061,
+        "id": 158,
+        "level": "9",
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          450.155,
+          587.424,
+          479.912,
+          594.491
+        ],
+        "content": "(Patch Bloat)",
+        "font": "ComicSansMS",
+        "font size": 5.071,
+        "id": 159,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          118.612,
+          586.387,
+          145.565,
+          593.824
+        ],
+        "content": "Commits",
+        "font": "Calibri",
+        "font size": 7.437,
+        "id": 97,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          246.526,
+          585.266,
+          280.563,
+          592.714
+        ],
+        "content": "Repository-",
+        "font": "Calibri-Italic",
+        "font size": 7.447,
+        "id": 118,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          292.655,
+          569.398,
+          337.727,
+          585.778
+        ],
+        "content": "Structured skill docs",
+        "font": "Calibri",
+        "font size": 7.447,
+        "id": 112,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          446.047,
+          576.75,
+          482.207,
+          584.645
+        ],
+        "content": "Pairwise LLM",
+        "font": "ComicSansMS-Bold",
+        "font size": 5.665,
+        "id": 136,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          245.482,
+          576.328,
+          281.605,
+          583.765
+        ],
+        "content": "Specific Skill",
+        "font": "Calibri-Italic",
+        "font size": 7.437,
+        "id": 119,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          162.958,
+          565.382,
+          180.486,
+          582.925
+        ],
+        "id": 102,
+        "page number": 4,
+        "pdfua_tag": "Figure",
+        "source": "2603.26664_images/imageFile7.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          369.638,
+          564.913,
+          404.717,
+          579.202
+        ],
+        "content": "Generated “Organic” PR",
+        "font": "Calibri",
+        "font size": 6.546,
+        "id": 128,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          454.712,
+          569.603,
+          473.779,
+          577.483
+        ],
+        "content": "Judge:",
+        "font": "ComicSansMS-Bold",
+        "font size": 5.655,
+        "id": 137,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          248.259,
+          567.393,
+          278.794,
+          574.84
+        ],
+        "content": "Extraction",
+        "font": "Calibri-Italic",
+        "font size": 7.447,
+        "id": 120,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          435.67,
+          562.305,
+          454.714,
+          569.371
+        ],
+        "content": "1. Scope",
+        "font": "ComicSansMS",
+        "font size": 5.071,
+        "id": 161,
+        "level": "9",
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          466.034,
+          556.069,
+          488.867,
+          569.073
+        ],
+        "content": "2. Logic Similarity",
+        "font": "ComicSansMS",
+        "font size": 5.061,
+        "id": 164,
+        "level": "9",
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          161.964,
+          556.769,
+          181.402,
+          564.216
+        ],
+        "content": "Oracle",
+        "font": "Calibri",
+        "font size": 7.447,
+        "id": 103,
+        "linked content id": 102,
+        "page number": 4,
+        "text color": "[0.0]",
+        "type": "caption"
+      },
+      {
+        "bounding box": [
+          435.67,
+          556.346,
+          458.838,
+          563.398
+        ],
+        "content": "Alignment",
+        "font": "ComicSansMS",
+        "font size": 5.061,
+        "id": 162,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          372.6,
+          538.227,
+          405.788,
+          560.559
+        ],
+        "content": "Step2: SkillConditioned Resolution",
+        "font": "Calibri-BoldItalic",
+        "font size": 6.546,
+        "id": 130,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          166.309,
+          547.828,
+          177.211,
+          555.266
+        ],
+        "content": "Diff",
+        "font": "Calibri",
+        "font size": 7.437,
+        "id": 104,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          435.712,
+          542.035,
+          462.674,
+          555.049
+        ],
+        "content": "3. Redundancy",
+        "font": "ComicSansMS",
+        "font size": 5.061,
+        "id": 166,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          465.827,
+          541.974,
+          493.104,
+          554.977
+        ],
+        "content": "4.Style Consistency",
+        "font": "ComicSansMS",
+        "font size": 5.061,
+        "id": 168,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          131.169,
+          528.362,
+          329.323,
+          549.512
+        ],
+        "id": 91,
+        "level": "5",
+        "number of columns": 3,
+        "number of rows": 2,
+        "page number": 4,
+        "pdfua_tag": "Table",
+        "rows": [
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  131.375,
+                  534.904,
+                  162.958,
+                  549.483
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  162.958,
+                  534.904,
+                  181.377,
+                  549.483
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [
+                  {
+                    "bounding box": [
+                      168.058,
+                      537.933,
+                      175.741,
+                      546.442
+                    ],
+                    "content": "Δ𝑘",
+                    "font": "CambriaMath",
+                    "font size": 7.447,
+                    "id": 1,
+                    "page number": 4,
+                    "pdfua_tag": "P",
+                    "text color": "[0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  181.377,
+                  534.904,
+                  329.116,
+                  549.483
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 1,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 1,
+            "type": "table row"
+          },
+          {
+            "cells": [
+              {
+                "bounding box": [
+                  131.375,
+                  528.391,
+                  162.958,
+                  534.904
+                ],
+                "column number": 1,
+                "column span": 1,
+                "kids": [],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  162.958,
+                  528.391,
+                  181.377,
+                  534.904
+                ],
+                "column number": 2,
+                "column span": 1,
+                "kids": [],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              },
+              {
+                "bounding box": [
+                  181.377,
+                  528.391,
+                  329.116,
+                  534.904
+                ],
+                "column number": 3,
+                "column span": 1,
+                "kids": [],
+                "page number": 4,
+                "pdfua_tag": "TD",
+                "row number": 2,
+                "row span": 1,
+                "type": "table cell"
+              }
+            ],
+            "row number": 2,
+            "type": "table row"
+          }
+        ],
+        "type": "table"
+      },
+      {
+        "bounding box": [
+          108.0,
+          443.447,
+          504.003,
+          520.905
+        ],
+        "content": "Figure 1: Overview of the Learning to Commit framework. Real repositories are time-split into past commits (for skill learning) and future commits (for evaluation). In Step 1, the agent performs on-policy contrastive reflection: it blindly attempts each historical commit, then compares its prediction against the oracle diff to extract repository-specific development patterns into a structured skill document. In Step 2, the agent generates organic patches for unseen future tasks, guided by the accumulated skills. In Step 3, generated patches are evaluated against oracle commits across multiple dimensions including file IoU, line deviation, and multi-dimensional LLM judge scores.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 169,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          336.391,
+          504.003,
+          421.4
+        ],
+        "content": "Given a future task description dk ∈ C+, the objective is to generate a patch ∆ˆk that is simultaneously functionally correct and organically aligned with the repository, under the constraint that the agent may only use C− for adaptation. The Learning to Commit framework decomposes this into two phases (illustrated in Fig. 1): (1) Repository Onboarding (Learning Phase), where the agent iteratively builds a reusable skill document M from C− through on-policy contrastive reflection; and (2) Skill-Conditioned Resolution (Solve Phase), where, given dk and the repository snapshot Sk, the agent autonomously resolves the task conditioned on the accumulated skills M.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 170,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          316.214,
+          343.855,
+          329.175
+        ],
+        "content": "3.2 Repository Onboarding via Contrastive Reflection",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 171,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          137.814,
+          504.003,
+          308.087
+        ],
+        "content": "The learning phase mimics how a human developer onboards onto a new project: not by passively reading documentation, but by actively attempting tasks and learning from the gap between one’s own output and expert practice. We initialise an empty skill document M(0) = ∅. For each learning commit ct ∈ C−, the agent executes a three-step loop. Step 1 (Blind Attempt): The agent receives the repository snapshot St and the synthetic issue description dt, along with the current skill document M(t−1). It autonomously explores the codebase using standard tool-use capabilities (file reading, searching, editing) and produces a candidate patch ∆ˆt. Step 2 (Oracle Revelation and Contrastive Reflection): The ground-truth oracle diff ∆t—representing the accepted solution by a human domain expert—is revealed. The agent compares its own attempt ∆ˆt against ∆t, identifying discrepancies in file localisation, implementation logic, API usage, and coding style. The gap between the two serves as dense, on-policy supervision: the larger the discrepancy, the richer the learning signal. Step 3 (Skill Update): Based on the contrastive reflection, the agent updates the skill document through explicit CRUD operations—creating new entries for previously unknown patterns, revising entries that were partially correct, and deprecating entries contradicted by the oracle evidence:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 172,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          220.553,
+          115.942,
+          503.995,
+          135.497
+        ],
+        "content": "M(t) = UPDATE M(t−1), ∆ˆt, ∆t, dt . (1)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 173,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          69.201,
+          504.003,
+          113.932
+        ],
+        "content": "The resulting skill document M consolidates abstract, reusable development patterns that typically encompass: (1) coding style and naming conventions, (2) the existence and correct usage of internal API utilities, (3) implicit architectural constraints and module boundaries, and (4) maintainer preference patterns such as error handling style and test organisation. Unlike static RAG over commit",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 174,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          696.329,
+          504.003,
+          719.242
+        ],
+        "content": "histories, this on-policy learning loop ensures the extracted patterns are precisely calibrated to the agent’s own capability gaps—addressing exactly the mistakes the agent would otherwise make.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 176,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          669.127,
+          253.593,
+          682.088
+        ],
+        "content": "3.3 Skill-Conditioned Resolution",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 177,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          583.437,
+          504.005,
+          660.895
+        ],
+        "content": "When a future task dk ∈ C+ arrives, the agent receives the repository snapshot Sk, the task description dk, and the full accumulated skill document M. The agent then autonomously resolves the task using standard tool-use capabilities—reading relevant files, searching the codebase, and applying edits—conditioned on the development patterns recorded in M. No rigid retrieval pipeline or preplanned workflow is imposed; the agent decides which skills to consult and which files to explore based on its own judgement, mirroring how a human developer with internalised project knowledge would approach a new task.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 178,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          556.234,
+          220.896,
+          569.195
+        ],
+        "content": "3.4 Dataset Construction",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 179,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          405.09,
+          504.003,
+          548.003
+        ],
+        "content": "We preliminarily validate the framework on a large-scale internal reinforcement learning training repository, where every commit has been reviewed and approved by domain experts, ensuring highquality ground-truth patches. The data curation pipeline proceeds in five stages. (i) Commit scanning and quality filtering: we extract the full non-merge commit history, apply programmatic pre-filters to remove trivial changes (e.g., fewer than 10 modified lines, version bumps), and use an LLM to assess whether each remaining commit exhibits substantive, learnable development patterns. Commits whose diffs exceed 180K tokens are excluded. In our pilot repository, this substantially reduces the raw commit pool to high-quality candidates (concrete numbers in §4). (ii) Unsupervised category clustering: to prevent the learning curriculum from collapsing onto a single change pattern, we sample the rationales from the first stage and perform unsupervised clustering to identify core development categories (yielding seven categories spanning architecture design, concurrency, testing, etc.). (iii) Category tagging: each retained commit is then assigned a primary category label by an LLM that considers the commit title, the rationale, and the full patch content.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 180,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          290.52,
+          504.003,
+          401.064
+        ],
+        "content": "Following the initial tagging, we construct the final benchmark sets. (iv) Stratified sampling with temporal split: commits are chronologically ordered and split into learning and test pools. Within each pool, we perform stratified proportional downsampling across categories to construct a balanced curriculum. (v) Synthetic query generation: for each task, an LLM synthesises an issue-style natural-language query from the commit message and diff. The prompt specifies the “what” and “why” of the task while strictly omitting implementation details (exact file paths, function names, or solution strategies), emulating a realistic user issue that does not leak the oracle patch. Crucially, the strict temporal split ensures that all learning commits predate all test commits, completely preventing information leakage from evaluation tasks into the skill-building phase. Scaling this pipeline to diverse open-source GitHub repositories is a direct extension planned for future work.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 181,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          263.317,
+          211.95,
+          276.278
+        ],
+        "content": "3.5 Evaluation Metrics",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 182,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          219.583,
+          504.003,
+          255.086
+        ],
+        "content": "Evaluating the organicity of AI-generated patches requires moving beyond functional test passes. We evaluate generated patches ∆ˆk against oracle patches ∆k across two complementary metric families.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 183,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          183.414,
+          504.003,
+          207.113
+        ],
+        "content": "Deterministic code metrics. (1) File IoU: the Jaccard similarity |F(∆)ˆ ∩ Fk∗|/|F(∆)ˆ ∪ Fk∗| between the files modified by the agent and those in the oracle, measuring localisation accuracy.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 184,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          149.006,
+          504.003,
+          184.509
+        ],
+        "content": "(2) Trajectory steps: the total number of tool calls during the solve phase, reflecting problem-solving efficiency. (3) Line deviation ratio: (|∆ˆ| − |∆k|)/|∆k|, measuring patch bloat; agents that fail to reuse internal APIs typically produce inflated diffs.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 185,
+        "level": "10",
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          69.201,
+          504.003,
+          136.11
+        ],
+        "content": "Multi-dimensional LLM judge. We employ a pairwise A/B evaluation protocol in which an advanced LLM compares the baseline agent (without skills) against the skill-conditioned agent across four dimensions: (Q1) scope alignment—accuracy of the modified file and function locations; (Q2) logic similarity—proximity to the oracle’s core implementation logic; (Q3) redundancy and hallucination—code conciseness and absence of over-engineering, a key indicator of successful skill utilisation; and (Q4) code style—adherence to the repository’s native conventions. To reduce",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 186,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          674.008,
+          504.003,
+          714.595
+        ],
+        "id": 188,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              108.0,
+              674.008,
+              504.003,
+              714.595
+            ],
+            "content": "Table 2: Deterministic code metrics across four experimental conditions. Bold indicates the better result in each pair. File IoU measures localisation accuracy (↑), Steps measures solve efficiency (↓), and Line Deviation measures patch bloat relative to the oracle (↓, closer to 0 is better).",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 204,
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 6,
+        "pdfua_tag": "L",
+        "previous list id": 42,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          148.44,
+          666.682,
+          463.564,
+          678.348
+        ],
+        "content": "Setting File IoU (Skill / Base) Steps (Skill / Base) Line Dev. (Skill / Base)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 190,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          148.44,
+          621.829,
+          439.642,
+          663.383
+        ],
+        "content": "seq-all 80% / 61% 56.8 / 71.9 0.69 / 1.59 par-bycat 80% / 68% 62.7 / 62.7 0.62 / 0.88 par-all 81% / 72% 67.7 / 68.3 0.80 / 1.06 seq-bycat 71% / 71% 75.0 / 76.4 1.22 / 1.13",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 192,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          573.362,
+          504.003,
+          596.275
+        ],
+        "content": "single-judge bias, we run evaluations with two independent judge models and report agreement rates.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 194,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          540.96,
+          191.017,
+          556.514
+        ],
+        "content": "4 Experiments",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 195,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          516.888,
+          215.377,
+          529.849
+        ],
+        "content": "4.1 Experimental Setup",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 196,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          420.055,
+          504.003,
+          508.782
+        ],
+        "content": "Repository and dataset curation. We evaluate our framework on an internal, expert-maintained reinforcement learning training repository comprising agent environments, judge evaluation, and orchestration subsystems. Starting with 2,738 non-merge commits, we apply the filtering and LLMassessment pipeline described in §3.4. This yields 386 high-quality, substantive commits (a 77.2% suitability rate) distributed across seven core development categories, such as architecture design, concurrency and IPC, and defensive programming. Following a strict temporal split, we perform stratified sampling to construct a balanced curriculum of 24 historical learning commits and 7 genuinely future, held-out test tasks.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 197,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          285.12,
+          504.003,
+          406.574
+        ],
+        "content": "Experimental design and baselines. To isolate the effect of repository-specific onboarding, we evaluate a skill-conditioned agent (which receives the accumulated memory M) against a baseline agent (which operates without any skill document), both powered by Claude Opus 4.6 with identical tool-use capabilities. We investigate the skill-building process across four experimental conditions by crossing two learning modes with two curriculum assignments. For the learning mode, the agent extracts skills either Sequentially (progressively fusing insights through iterative trial-and-error) or in Parallel (processing commits concurrently before a final pairwise merge). For curriculum assignment, each test task is paired either with learning commits strictly from its own category (by category) to simulate targeted onboarding, or with the entire learning corpus (all) to simulate comprehensive repository adaptation. This yields four conditions—seq-all, seq-bycat, par-all, and par-bycat—each evaluated on all 7 test tasks.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 198,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          257.333,
+          186.595,
+          270.294
+        ],
+        "content": "4.2 Main Results",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 200,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          171.409,
+          504.003,
+          249.226
+        ],
+        "content": "Deterministic code metrics. Table 2 reports file-level localisation accuracy (File IoU), problemsolving efficiency (trajectory steps), and patch bloat (line deviation ratio) across all four conditions. The skill-conditioned agent achieves consistently higher File IoU in three out of four settings, with the largest gain of +19 percentage points in seq-all (80% vs. 61%). In the same setting, the skill agent also uses 21% fewer tool calls (56.8 vs. 71.9 steps), suggesting that accumulated skills help the agent navigate the codebase more efficiently. Line deviation ratio is lower for the skill agent in three out of four settings, indicating patches closer in size to the oracle.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 201,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          69.201,
+          504.003,
+          157.928
+        ],
+        "content": "Multi-dimensional LLM judge. Table 3 reports overall pairwise win rates from two independent judge models (Claude Opus 4.6 and Gemini 3.1 Pro). The skill-conditioned agent wins more often than the baseline in three out of four settings under both judges, with the strongest results in par-bycat (54%/57%) and seq-all (55%/58%). Table 4 breaks down the par-bycat results by dimension: the skill agent’s advantage is concentrated in Q2 (logic similarity, 50% vs. 25%) and Q3 (redundancy reduction, 54% vs. 41%), while the baseline retains a slight edge on Q1 (scope alignment) and Q4 (code style). Across all four settings, Q3 (redundancy and hallucination) shows the most consistent skill advantage (39–69% win rate), with high inter-judge agreement.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 202,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          178.681,
+          504.003,
+          714.595
+        ],
+        "id": 204,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              108.0,
+              691.682,
+              504.003,
+              714.595
+            ],
+            "content": "Table 3: Overall pairwise win rates (%) of the skill-conditioned agent, as judged by two independent LLMs. Bold indicates skill agent wins more than 50%.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  219.938,
+                  677.591,
+                  392.066,
+                  689.257
+                ],
+                "content": "Setting Claude Judge Gemini Judge",
+                "font": "NimbusRomNo9L-Medi",
+                "font size": 8.966,
+                "id": 27,
+                "page number": 7,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  219.938,
+                  633.276,
+                  374.321,
+                  674.292
+                ],
+                "content": "par-bycat 54% 57% seq-all 55% 58% par-all 46% 54% seq-bycat 26% 46%",
+                "font": "CMTT9",
+                "font size": 8.966,
+                "id": 29,
+                "page number": 7,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              589.47,
+              504.003,
+              612.383
+            ],
+            "content": "Table 4: Dimension-level breakdown for the par-bycat setting (averaged over Claude and Gemini judges).",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  194.374,
+                  575.379,
+                  415.557,
+                  587.045
+                ],
+                "content": "Dimension Skill Win Base Win Tie",
+                "font": "NimbusRomNo9L-Medi",
+                "font size": 8.966,
+                "id": 32,
+                "page number": 7,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  194.374,
+                  531.065,
+                  417.628,
+                  571.758
+                ],
+                "id": 34,
+                "level": "5",
+                "list items": [
+                  {
+                    "bounding box": [
+                      194.374,
+                      560.953,
+                      417.628,
+                      571.758
+                    ],
+                    "content": "Q1: Scope Alignment 25% 41% 34%",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "kids": [],
+                    "page number": 7,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      194.374,
+                      550.452,
+                      417.628,
+                      562.118
+                    ],
+                    "content": "Q2: Logic Similarity 50% 25% 25%",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "kids": [],
+                    "page number": 7,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      194.374,
+                      540.489,
+                      415.387,
+                      552.155
+                    ],
+                    "content": "Q3: Redundancy & Halluc. 54% 41% 5%",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "kids": [],
+                    "page number": 7,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      194.374,
+                      531.065,
+                      417.628,
+                      541.87
+                    ],
+                    "content": "Q4: Code Style 27% 38% 36%",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "kids": [],
+                    "page number": 7,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  }
+                ],
+                "number of list items": 4,
+                "numbering style": "arabic numbers",
+                "page number": 7,
+                "pdfua_tag": "L",
+                "type": "list"
+              },
+              {
+                "bounding box": [
+                  108.0,
+                  494.247,
+                  166.401,
+                  507.208
+                ],
+                "id": 36,
+                "level": "6",
+                "list items": [
+                  {
+                    "bounding box": [
+                      108.0,
+                      494.247,
+                      166.401,
+                      507.208
+                    ],
+                    "content": "4.3 Analysis",
+                    "font": "NimbusRomNo9L-Medi",
+                    "font size": 9.963,
+                    "kids": [],
+                    "page number": 7,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  }
+                ],
+                "number of list items": 1,
+                "numbering style": "arabic numbers",
+                "page number": 7,
+                "pdfua_tag": "L",
+                "type": "list"
+              },
+              {
+                "bounding box": [
+                  108.0,
+                  409.167,
+                  504.003,
+                  486.985
+                ],
+                "content": "Learning mode comparison. Sequential learning with full-corpus assignment (seq-all) produces the highest-quality skills: File IoU reaches 80%, trajectory steps are minimised, and pairwise win rate is among the highest. This is consistent with our expectation that progressive, on-policy refinement of a single skill document yields more coherent and deeply fused knowledge than parallel extraction followed by post-hoc merging. However, par-bycat achieves comparable File IoU (80%) with targeted category-specific skills, suggesting that focused, domain-aligned learning can compensate for the lack of sequential fusion.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 37,
+                "page number": 7,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  108.0,
+                  309.07,
+                  504.003,
+                  397.797
+                ],
+                "content": "The asymmetric value of skills. Our results reveal that repository-specific skills provide asymmetric benefits across capability dimensions. The strongest gains appear in file localisation (File IoU +10–18%), core logic reproduction (Q2 win rate 50% vs. 25%), and redundancy reduction (Q3 favours skill agents in three out of four settings). Meanwhile, fine-grained scope alignment (Q1) and code style (Q4) show marginal or neutral effects. This pattern suggests that accumulated skills primarily help agents understand where to make changes and what internal patterns to reuse, while surface-level stylistic conformance may require additional mechanisms beyond the current skill representation.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 38,
+                "page number": 7,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  108.0,
+                  208.973,
+                  504.003,
+                  297.7
+                ],
+                "content": "Case study. The largest positive effect appears on a task requiring the agent to fix a shared-RNG concurrency bug in a judge client module. The skill agent, having learned the repository’s module structure during onboarding, correctly localises the fix to the judge client file (File IoU = 100%), while the baseline agent misidentifies the target entirely, editing an unrelated API module (File IoU = 0%). Conversely, the largest negative effect occurs on a training-step guard logic fix, where both agents correctly identify the core bug but the skill agent retains a redundant defensive guard that the baseline omits, resulting in slightly more verbose code. This illustrates that skills occasionally induce over-caution without functionally harming the solution.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 39,
+                "page number": 7,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              178.681,
+              275.277,
+              194.235
+            ],
+            "content": "5 Conclusion and Future Work",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 11.955,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "arabic numbers",
+        "page number": 7,
+        "pdfua_tag": "L",
+        "previous list id": 188,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          69.201,
+          504.003,
+          168.478
+        ],
+        "content": "While large language model-based coding agents excel on isolated programming benchmarks, they frequently fail to produce “organic” pull requests in real-world software engineering because they lack an understanding of repository-specific human preferences and historical context. To bridge this gap, we presented Learning to Commit, an agentic framework that empowers models to actively learn from a repository’s evolution. By performing on-policy contrastive reflection on historical commits, the agent distils implicit architectural constraints and coding conventions into a reusable repository memory. Our results demonstrate that this historical adaptation enables agents to significantly improve file localisation, reduce patch bloat, and generate contributions that genuinely align with expert maintainers’ expectations.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 205,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          609.057,
+          504.003,
+          719.242
+        ],
+        "content": "As a foundational step toward repository-adaptive agents, this work naturally opens several avenues for future research. First, while our framework demonstrates strong efficacy on a highly coupled, industrial codebase, scaling the data curation and evaluation pipeline to a diverse set of high-quality, popular open-source GitHub repositories is a critical next step to verify its generalisability. Second, although our multi-dimensional LLM judge provides a granular assessment of organicity, relying on LLMs as evaluators inherently introduces potential biases and inaccuracies; future work must explore more robust, verifiable metrics for evaluating true alignment with human coding preferences. Finally, an important direction is to examine whether repository-specific skills transfer to broader coding tasks and established evaluation settings, further clarifying the scope and limits of historical adaptation in moving coding agents toward seasoned, long-term contributors.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 207,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          579.538,
+          163.544,
+          595.092
+        ],
+        "content": "References",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 208,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          69.201,
+          504.003,
+          575.338
+        ],
+        "id": 209,
+        "level": "7",
+        "list items": [
+          {
+            "bounding box": [
+              112.981,
+              552.425,
+              504.003,
+              575.338
+            ],
+            "content": "[1] Carlos E. Jimenez, John Yang, Alexander Wettig, Shunyu Yao, Kexin Pei, Ofir Press, and Karthik Narasimhan. Swe-bench: Can language models resolve real-world github issues?,",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  129.579,
+                  541.516,
+                  347.86,
+                  553.52
+                ],
+                "content": "2024. URL https://arxiv.org/abs/2310.06770.",
+                "font": "CMTT10",
+                "font size": 9.963,
+                "id": 17,
+                "level": "8",
+                "page number": 8,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              402.976,
+              504.003,
+              534.98
+            ],
+            "content": "[2] Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, Alex Ray, Raul Puri, Gretchen Krueger, Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela Mishkin, Brooke Chan, Scott Gray, Nick Ryder, Mikhail Pavlov, Alethea Power, Lukasz Kaiser, Mohammad Bavarian, Clemens Winter, Philippe Tillet, Felipe Petroski Such, Dave Cummings, Matthias Plappert, Fotios Chantzis, Elizabeth Barnes, Ariel Herbert-Voss, William Hebgen Guss, Alex Nichol, Alex Paino, Nikolas Tezak, Jie Tang, Igor Babuschkin, Suchir Balaji, Shantanu Jain, William Saunders, Christopher Hesse, Andrew N. Carr, Jan Leike, Josh Achiam, Vedant Misra, Evan Morikawa, Alec Radford, Matthew Knight, Miles Brundage, Mira Murati, Katie Mayer, Peter Welinder, Bob McGrew, Dario Amodei, Sam McCandlish, Ilya Sutskever, and Wojciech Zaremba. Evaluating large language models trained on code, 2021. URL https://arxiv. org/abs/2107.03374.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              362.618,
+              504.003,
+              396.44
+            ],
+            "content": "[3] Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, and Charles Sutton. Program synthesis with large language models, 2021. URL https://arxiv.org/abs/2108.07732.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              311.351,
+              504.003,
+              356.082
+            ],
+            "content": "[4] Wei Li, Xin Zhang, Zhongxin Guo, Shaoguang Mao, Wen Luo, Guangyue Peng, Yangyu Huang, Houfeng Wang, and Scarlett Li. Fea-bench: A benchmark for evaluating repositorylevel code generation for feature implementation, 2025. URL https://arxiv.org/abs/ 2503.06680.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              260.083,
+              504.003,
+              304.815
+            ],
+            "content": "[5] Qixing Zhou, Jiacheng Zhang, Haiyang Wang, Rui Hao, Jiahe Wang, Minghao Han, Yuxue Yang, Shuzhe Wu, Feiyang Pan, Lue Fan, Dandan Tu, and Zhaoxiang Zhang. Featurebench: Benchmarking agentic coding for complex feature development, 2026. URL https:// arxiv.org/abs/2602.10975.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              219.725,
+              504.003,
+              253.597
+            ],
+            "content": "[6] Wenting Zhao, Nan Jiang, Celine Lee, Justin T Chiu, Claire Cardie, Matthias Gall´e, and Alexander M Rush. Commit0: Library generation from scratch, 2024. URL https: //arxiv.org/abs/2412.01769.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              179.367,
+              504.003,
+              213.189
+            ],
+            "content": "[7] Jialong Chen, Xander Xu, Hu Wei, Chuan Chen, and Bing Zhao. Swe-ci: Evaluating agent capabilities in maintaining codebases via continuous integration, 2026. URL https: //arxiv.org/abs/2603.03823.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              139.009,
+              504.003,
+              172.831
+            ],
+            "content": "[8] Boshi Wang, Weijian Xu, Yunsheng Li, Mei Gao, Yujia Xie, Huan Sun, and Dongdong Chen. Improving code localization with repository memory, 2026. URL https://arxiv.org/abs/ 2510.01003.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              98.65,
+              504.003,
+              132.472
+            ],
+            "content": "[9] Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao. Sgagent: Suggestion-guided llm-based multi-agent framework for repository-level software repair, 2026. URL https://arxiv.org/abs/2602.23647.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              69.201,
+              504.003,
+              92.114
+            ],
+            "content": "[10] Jiayi Wei, Greg Durrett, and Isil Dillig. Coeditor: Leveraging contextual changes for multiround code auto-editing, 2024. URL https://arxiv.org/abs/2305.18584.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 211,
+        "number of list items": 10,
+        "numbering style": "arabic numbers",
+        "page number": 8,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          281.385,
+          504.003,
+          719.242
+        ],
+        "id": 211,
+        "level": "7",
+        "list items": [
+          {
+            "bounding box": [
+              108.0,
+              685.42,
+              504.003,
+              719.242
+            ],
+            "content": "[11] Qinglin Zhu, Tianyu Chen, Shuai Lu, Lei Ji, Runcong Zhao, Murong Ma, Xiangxiang Dai, Yulan He, Lin Gui, Peng cheng, and Yeyun Gong. Pull requests as a training signal for repolevel code editing, 2026. URL https://arxiv.org/abs/2602.07457.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              644.723,
+              504.003,
+              678.545
+            ],
+            "content": "[12] Naman Jain, Jaskirat Singh, Manish Shetty, Liang Zheng, Koushik Sen, and Ion Stoica. R2egym: Procedural environments and hybrid verifiers for scaling open-weights swe agents, 2025. URL https://arxiv.org/abs/2504.07164.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              614.935,
+              504.003,
+              637.848
+            ],
+            "content": "[13] Thomas Joshi, Shayan Chowdhury, and Fatih Uysal. Swe-bench-cl: Continual learning for coding agents, 2025. URL https://arxiv.org/abs/2507.00014.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              574.237,
+              504.003,
+              608.059
+            ],
+            "content": "[14] Lilin Wang, Lucas Ramalho, Alan Celestino, Phuc Anthony Pham, Yu Liu, Umang Kumar Sinha, Andres Portillo, Onassis Osunwa, and Gabriel Maduekwe. Swe-bench++: A framework for the scalable generation of software engineering benchmarks from open-source repositories,",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  129.579,
+                  563.328,
+                  347.86,
+                  575.332
+                ],
+                "content": "2025. URL https://arxiv.org/abs/2512.17419.",
+                "font": "CMTT10",
+                "font size": 9.963,
+                "id": 18,
+                "level": "8",
+                "page number": 9,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              511.722,
+              504.003,
+              556.453
+            ],
+            "content": "[15] Jiale Zhao, Guoxin Chen, Fanzhe Meng, Minghao Li, Jie Chen, Hui Xu, Yongshuai Sun, Wayne Xin Zhao, Ruihua Song, Yuan Zhang, Peng Wang, Cheng Chen, Jirong Wen, and Kai Jia. Immersion in the github universe: Scaling coding agents to mastery, 2026. URL https: //arxiv.org/abs/2602.09892.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              481.933,
+              504.003,
+              504.846
+            ],
+            "content": "[16] Nikita Benkovich and Vitalii Valkov. Agyn: A multi-agent system for team-based autonomous software engineering, 2026. URL https://arxiv.org/abs/2602.01465.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              452.145,
+              504.003,
+              475.058
+            ],
+            "content": "[17] Shangqing Liu, Yanzhou Li, Xiaofei Xie, and Yang Liu. Commitbart: A large pre-trained model for github commits, 2023. URL https://arxiv.org/abs/2208.08100.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              422.357,
+              504.003,
+              445.27
+            ],
+            "content": "[18] Jared Zhu, Minhao Hu, and Junde Wu. Swe context bench: A benchmark for context learning in coding, 2026. URL https://arxiv.org/abs/2602.08316.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              392.568,
+              504.003,
+              415.482
+            ],
+            "content": "[19] Pengfei Du. Memory for autonomous llm agents:mechanisms, evaluation, and emerging frontiers, 2026. URL https://arxiv.org/abs/2603.07670.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              351.871,
+              504.003,
+              385.693
+            ],
+            "content": "[20] Kangning Shen, Jingyuan Zhang, Chenxi Sun, Wencong Zeng, and Yang Yue. Structurally aligned subtask-level memory for software engineering agents, 2026. URL https://arxiv. org/abs/2602.21611.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              311.174,
+              504.003,
+              344.996
+            ],
+            "content": "[21] Yaolun Zhang, Yiran Wu, Yijiong Yu, Qingyun Wu, and Huazheng Wang. Live-evo: Online evolution of agentic memory from continuous feedback, 2026. URL https://arxiv.org/ abs/2602.02369.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              281.385,
+              504.003,
+              304.299
+            ],
+            "content": "[22] Yinjie Wang, Xuyang Chen, Xiaolong Jin, Mengdi Wang, and Ling Yang. Openclaw-rl: Train any agent simply by talking, 2026. URL https://arxiv.org/abs/2603.10165.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 12,
+        "numbering style": "arabic numbers",
+        "page number": 9,
+        "pdfua_tag": "L",
+        "previous list id": 209,
+        "type": "list"
+      }
+    ],
+    "modification date": null,
+    "number of pages": 9,
+    "title": "Learning to Commit: Generating Organic Pull Requests via Online Repository Memory"
+  }
+}
