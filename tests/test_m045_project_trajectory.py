@@ -179,3 +179,63 @@ def test_reverse_adr_audit_flags_import_eligible_true_in_artifacts(tmp_path, mon
     rule_id_set = {v["rule_id"] for v in report["reverse_adr_audit_details"]["violations"]}
     assert "no_import_eligible_true_in_artifacts" in rule_id_set
     assert report["verdict"] == "blocked"
+
+
+def test_phase_default_is_preflight_and_backward_compatible(tmp_path, monkeypatch):
+    root = _project(tmp_path)
+    # Inject fake git status to simulate uncommitted changes.
+    monkeypatch.setattr(traj, "git_status", lambda root: {"exit_code": 0, "changed_files": 5, "entries": []})
+    monkeypatch.setattr(traj, "ROOT", root)
+
+    report = traj.build_report(root=root)
+
+    assert report["phase"] == "preflight"
+    flag_severities = {f["flag"]: f["severity"] for f in report["drift_flags"]}
+    assert flag_severities.get("uncommitted_changes_present") == "info"
+
+
+def test_phase_active_promotes_uncommitted_to_medium(tmp_path, monkeypatch):
+    root = _project(tmp_path)
+    monkeypatch.setattr(traj, "git_status", lambda root: {"exit_code": 0, "changed_files": 5, "entries": []})
+    monkeypatch.setattr(traj, "ROOT", root)
+
+    report = traj.build_report(root=root, phase="active")
+
+    assert report["phase"] == "active"
+    flag_severities = {f["flag"]: f["severity"] for f in report["drift_flags"]}
+    assert flag_severities.get("uncommitted_changes_present") == "medium"
+    assert report["verdict"] == "drift_risk"
+    overrides = [f for f in report["drift_flags"] if f.get("phase_override")]
+    assert any(f["flag"] == "uncommitted_changes_present" for f in overrides)
+
+
+def test_phase_closeout_demotes_uncommitted_to_info(tmp_path, monkeypatch):
+    root = _project(tmp_path)
+    monkeypatch.setattr(traj, "git_status", lambda root: {"exit_code": 0, "changed_files": 5, "entries": []})
+    monkeypatch.setattr(traj, "ROOT", root)
+
+    report = traj.build_report(root=root, phase="closeout")
+
+    assert report["phase"] == "closeout"
+    flag_severities = {f["flag"]: f["severity"] for f in report["drift_flags"]}
+    assert flag_severities.get("uncommitted_changes_present") == "info"
+    assert report["verdict"] == "on_track"
+
+
+def test_phase_unknown_raises_value_error(tmp_path, monkeypatch):
+    root = _project(tmp_path)
+    monkeypatch.setattr(traj, "ROOT", root)
+
+    import pytest
+    with pytest.raises(ValueError, match="unknown phase"):
+        traj.build_report(root=root, phase="nonexistent")
+
+
+def test_render_markdown_includes_phase(tmp_path, monkeypatch):
+    root = _project(tmp_path)
+    monkeypatch.setattr(traj, "ROOT", root)
+    report = traj.build_report(root=root, phase="active")
+
+    markdown = traj.render_markdown(report)
+
+    assert "Phase: `active`" in markdown

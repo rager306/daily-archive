@@ -111,7 +111,7 @@ The project has a **clean separation** between canonical (GSD, ADRs) and derived
 
 **Gaps:** trajectory check is local, not CI-enforced. The M046 chore-commit showed that even with 326 dirty files, the trajectory check still reports `on_track` — because the dirty-files flag is info-level. This is a tuning opportunity (consider promoting `uncommitted_changes_present` to medium in some contexts).
 
-**Recommendation 5:** Tune trajectory check drift severities per phase. During active milestone execution, promote `uncommitted_changes_present` to medium (so agents commit more often). During closeout, demote to info. **Priority: medium.** **Anchor: D080, R065.**
+**Recommendation 5:** Tune trajectory check drift severities per phase. During active milestone execution, promote `uncommitted_changes_present` to medium (so agents commit more often). During closeout, demote to info. **Priority: medium.** **Anchor: D080, R065.** **Resolved in M048-8bhn38:** `scripts/check_project_trajectory.py` now accepts `--phase {preflight,active,closeout}` (default preflight = current behavior). `PHASE_SEVERITY_OVERRIDES` dict: `active` promotes `uncommitted_changes_present` to medium (verdict=drift_risk), `closeout` demotes to info (verdict=on_track). 5 new tests cover all phases. Trajectory report shows phase explicitly.
 
 ### 2.6 AI-Assisted Coding Governance — LEADING (2026 PATTERN)
 

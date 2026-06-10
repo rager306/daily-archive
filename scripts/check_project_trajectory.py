@@ -22,6 +22,17 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT_DIR = ROOT / "artifacts" / "project-trajectory"
 DIMENSIONS = ("architecture", "functionality", "module_code", "evidence", "safety", "operations", "next_gate", "reverse_adr_audit")
+PHASES = ("preflight", "active", "closeout")
+
+# Phase-aware severity overrides per D080 and M046 Roadmap Recommendation 5.
+# Default = preflight (current behavior). Active phase promotes uncommitted
+# changes to medium to encourage frequent commits. Closeout demotes it
+# back to info because changes are expected before commit.
+PHASE_SEVERITY_OVERRIDES: dict[str, dict[str, str]] = {
+    "preflight": {},
+    "active": {"uncommitted_changes_present": "medium"},
+    "closeout": {"uncommitted_changes_present": "info"},
+}
 PROHIBITED_PATTERNS = {
     "graph_import_authorized": re.compile(r"(?i)(graph import|GraphDB import|LadybugDB import).{0,80}(authorized|allowed|enabled)"),
     "fact_promotion_allowed": re.compile(r"(?i)(fact promotion|promoted facts).{0,80}(authorized|allowed|enabled)"),
@@ -163,6 +174,25 @@ def dimension(status: str, evidence: list[str], flags: list[str] | None = None) 
     return {"status": status, "evidence": evidence, "flags": flags or []}
 
 
+def adjust_severity_for_phase(flags: list[dict[str, Any]], phase: str) -> list[dict[str, Any]]:
+    """Apply phase-aware severity overrides to a list of drift flags.
+
+    Returns a new list; the original is not mutated. Each flag's severity
+    is replaced if there is a per-phase override for its flag id.
+    """
+    overrides = PHASE_SEVERITY_OVERRIDES.get(phase, {})
+    if not overrides:
+        return list(flags)
+    adjusted: list[dict[str, Any]] = []
+    for flag in flags:
+        new_severity = overrides.get(flag.get("flag"))
+        if new_severity is None:
+            adjusted.append(flag)
+            continue
+        adjusted.append({**flag, "severity": new_severity, "phase_override": True})
+    return adjusted
+
+
 # Reverse ADR audit: code-level checks that the binding ADRs are honoured
 # in actual code, not just in narrative. Each rule has an anchor ADR/R and
 # a severity (high = blocking, medium = drift_risk).
@@ -291,7 +321,9 @@ def reverse_adr_audit(root: Path) -> dict[str, Any]:
     return {"status": status, "violations": violations, "evidence": evidence, "rule_count": len(REVERSE_ADR_AUDIT_RULES)}
 
 
-def build_report(*, root: Path = ROOT, codebase_memory_snapshot: Path | None = None) -> dict[str, Any]:
+def build_report(*, root: Path = ROOT, codebase_memory_snapshot: Path | None = None, phase: str = "preflight") -> dict[str, Any]:
+    if phase not in PHASES:
+        raise ValueError(f"unknown phase: {phase!r}; expected one of {PHASES}")
     paths = Paths.from_root(root)
     requirements_text = read_text(paths.requirements)
     decisions_text = read_text(paths.decisions)
@@ -325,6 +357,9 @@ def build_report(*, root: Path = ROOT, codebase_memory_snapshot: Path | None = N
             "evidence": f"{violation['file']}:{violation['line']}",
             "snippet": violation["snippet"],
         })
+
+    # Apply phase-aware severity overrides (D080, M046 Recommendation 5).
+    drift_flags = adjust_severity_for_phase(drift_flags, phase)
 
     safety_flags = [flag["flag"] for flag in drift_flags if flag["severity"] == "high"]
     verdict = "blocked" if safety_flags else ("drift_risk" if any(flag["severity"] == "medium" for flag in drift_flags) else "on_track")
@@ -374,6 +409,7 @@ def build_report(*, root: Path = ROOT, codebase_memory_snapshot: Path | None = N
 
     report = {
         "schema_version": "m045.project-trajectory.v1",
+        "phase": phase,
         "verdict": verdict,
         "dimensions": dimensions,
         "drift_flags": drift_flags,
@@ -421,6 +457,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "# Project Trajectory Report",
         "",
         f"- Verdict: `{report['verdict']}`",
+        f"- Phase: `{report.get('phase', 'preflight')}`",
         f"- Derived, not canonical: {str(report['derived_not_canonical']).lower()}",
         "- Graph writes: disabled",
         "- Production import: disabled",
@@ -454,11 +491,19 @@ def main() -> int:
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--codebase-memory-snapshot", type=Path)
+    parser.add_argument(
+        "--phase",
+        choices=PHASES,
+        default="preflight",
+        help="Severity tuning phase. preflight (default) = current behavior; "
+             "active = uncommitted_changes_present promoted to medium; "
+             "closeout = uncommitted_changes_present demoted to info.",
+    )
     args = parser.parse_args()
-    report = build_report(root=args.root, codebase_memory_snapshot=args.codebase_memory_snapshot)
+    report = build_report(root=args.root, codebase_memory_snapshot=args.codebase_memory_snapshot, phase=args.phase)
     write_json(args.output_dir / "trajectory-report.json", report)
     write_text(args.output_dir / "trajectory-report.md", render_markdown(report))
-    sys.stdout.write(f"trajectory report: verdict={report['verdict']} flags={len(report['drift_flags'])}\n")
+    sys.stdout.write(f"trajectory report: verdict={report['verdict']} phase={report['phase']} flags={len(report['drift_flags'])}\n")
     return 0 if report["verdict"] != "blocked" else 2
 
 
