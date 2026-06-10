@@ -358,10 +358,18 @@ def validate_graph(graph: dict[str, Any]) -> None:
 
 
 def load_entries() -> tuple[list[RequirementEntry], list[DecisionEntry], list[AdrEntry]]:
+    project_adr_dir = ROOT / "doc" / "adr"
+    seen: dict[str, AdrEntry] = {}
+    for adr_entry in parse_adrs(ADR_DIR):
+        seen[adr_entry.adr_id] = adr_entry
+    for adr_entry in parse_adrs(project_adr_dir):
+        existing = seen.get(adr_entry.adr_id)
+        if existing is None or (adr_entry.path and not existing.path.startswith("doc/adr/")):
+            seen[adr_entry.adr_id] = adr_entry
     return (
         parse_requirements(read_text(REQUIREMENTS_PATH)),
         parse_decisions(read_text(DECISIONS_PATH)),
-        parse_adrs(ADR_DIR),
+        list(seen.values()),
     )
 
 

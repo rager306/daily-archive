@@ -167,6 +167,8 @@
 | D078 | M043-cqiqeq | sidecar-evidence | How combined parser sidecar outputs should be represented after M043 | Use candidate-only sidecar comparison packets with explicit ready/replay/blocker statuses, prior artifact references, source summaries, and false graph/import/promotion flags. |
 | D079 | M044-qq02k8 | sidecar-architecture-guardrail | How future parser/sidecar work should avoid drifting from accepted architecture decisions | Require the M044 sidecar architecture guardrail context pack and verifier before GROBID, OpenDataLoader, Adaptix, quant-mind, sidecar packet, or graph-readiness execution. |
 | D080 | M045-4s8e44 | trajectory-governance | How agents should preserve overall project trajectory across sessions and milestones | Use a unified project trajectory checker as a planning and closeout preflight, composing GSD/ADR/governance/GitNexus/codebase-memory evidence instead of adding narrow one-off guardrails. |
+| D081 | M046-3b7gp0 QW-1 (2026-06-09) | adr-framework | Accept ADR-001 (Scientific Papers as First Domain) | Drafted and accepted ADR-001 in M046-3b7gp0 QW-1 follow-up. ADR-001 isolates the first-domain framing previously implicit in ADR-000, names paper-domain requirements (R024, R027, R029, R031-R033, R050, R058, R060) as first-domain validation constraints, and defines a forward decision point for second-domain selection (R024 graph-readiness threshold). Status changed from Planned to Accepted; all 8 ADRs are now binding or deferred (zero Planned). |
+| D082 | M055 | architecture | Hybrid Parser Architecture | GROBID (header/citations) + OpenDataLoader (body/tables/layout) |
 
 ## ADR Index
 
@@ -179,6 +181,8 @@
 | ADR-005 | Accepted | `doc/adr/m034/ADR-005-no-direct-extractor-to-graphdb-path.md` | No Direct Extractor to GraphDB Path |
 | ADR-006 | Accepted | `doc/adr/m034/ADR-006-agent-boundary.md` | Agent Boundary |
 | ADR-007 | Accepted | `doc/adr/m034/ADR-007-quantmind-pattern-source-not-runtime-dependency.md` | Quant-mind Pattern Source Not Runtime Dependency |
+| ADR-001 | Accepted | `doc/adr/ADR-001-scientific-papers-as-first-domain.md` | Scientific Papers as First Domain |
+| ADR-008 | Accepted (binding) | `doc/adr/ADR-008-hybrid-parser-architecture.md` | Hybrid Parser Architecture |
 
 ## Typed Graph Projection
 
