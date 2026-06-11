@@ -1595,3 +1595,50 @@ Return code: 1`.
 M056 S07 closes the 1-hop BFS synthesis loop with three durable artifacts: this report, `candidate-edges.json`, and ADR-010.
 The artifacts preserve parser-scale evidence and a conservative graph-readiness recommendation while keeping the safety boundary intact.
 The next milestone gate should decide whether to run 2-hop BFS or select an alternative anchor before any graph import path is considered.
+
+
+## 17 missing PDFs completed
+
+The 17 references missed by the prior 1-hop BFS subagent pass have now been acquired and parsed from the local PDF corpus. Of these, 16 are new PDF acquisitions for this M056 evidence packet and `2507.19457` is the duplicate pre-existing PDF noted in the recovery manifest.
+
+### Final acquisition and parser aggregate
+
+- Acquisition: 17/17 references present on disk; 16 new plus 1 duplicate.
+- GROBID aggregate: 17/17 success; 2000 total raw refs; 1016 biblStructs; 472 biblStructs with arXiv evidence.
+- OpenDataLoader aggregate: 17/17 success; 0 unavailable; 0 low-quality sources.
+- Final cumulative corpus: 1 anchor + 165 unique 1-hop PDFs = 166 PDFs.
+- Candidate edge count update: was 3983; added 471 directed GROBID candidate edges; now 4454 total directed candidate edges.
+- Candidate graph nodes: now 2656 nodes after adding cited external-reference targets from the 17 recovered TEI files.
+- Corpus-internal candidate edges: now 504 directed edges with both endpoints in the final cumulative corpus.
+- 1-hop BFS is now truly complete: 100% acquisition for the anchor reference set.
+
+### Safety block
+
+- `graph_import_allowed`: `false`
+- `graphdb_written`: `false`
+- `import_eligible`: `false`
+- `ladybugdb_written`: `false`
+- `production_import_attempted`: `false`
+- Graph import is not authorized; production import is not authorized; promotion of parser output to facts is not authorized.
+
+### Per-PDF completion table
+
+| arXiv ID | Acquisition | GROBID refs | biblStructs | arXiv biblStructs | New candidate edges | OpenDataLoader | Duplicate? |
+|---|---:|---:|---:|---:|---:|---|---|
+| `2305.04032` | acquired | 78 | 30 | 14 | 14 | success | no |
+| `2307.12856` | acquired | 247 | 113 | 55 | 59 | success | no |
+| `2310.03731` | acquired | 109 | 48 | 29 | 29 | success | no |
+| `2312.13010` | acquired | 108 | 52 | 33 | 31 | success | no |
+| `2402.16117` | acquired | 143 | 103 | 61 | 61 | success | no |
+| `2403.00839` | acquired | 80 | 41 | 22 | 22 | success | no |
+| `2404.14662` | acquired | 240 | 70 | 31 | 31 | success | no |
+| `2409.10737` | acquired | 47 | 37 | 7 | 7 | success | no |
+| `2504.06939` | acquired | 93 | 60 | 37 | 35 | success | no |
+| `2506.10948` | acquired | 111 | 51 | 26 | 26 | success | no |
+| `2507.19457` | acquired | 156 | 81 | 24 | 24 | success | yes |
+| `2510.02387` | acquired | 222 | 114 | 50 | 49 | success | no |
+| `2510.04618` | acquired | 105 | 70 | 16 | 16 | success | no |
+| `2512.15813` | acquired | 22 | 16 | 5 | 5 | success | no |
+| `2601.16206` | acquired | 95 | 42 | 16 | 16 | success | no |
+| `2601.16443` | acquired | 54 | 33 | 19 | 19 | success | no |
+| `2602.09856` | acquired | 90 | 55 | 27 | 27 | success | no |

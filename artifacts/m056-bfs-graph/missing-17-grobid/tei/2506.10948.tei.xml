@@ -1,0 +1,1733 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Execution Guided Line-by-Line Code Generation</title>
+				<funder ref="#_4A6P5Qk">
+					<orgName type="full">Michael J. Fox Foundation</orgName>
+				</funder>
+				<funder ref="#_Deq6bpV">
+					<orgName type="full">Ministry of Innovation, Science &amp; Technology, Israel</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">Tel Aviv University Center for AI and Data Science</orgName>
+					<orgName type="abbreviated">TAD</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Boaz</forename><surname>Lavon</surname></persName>
+							<email>boazlavon@mail</email>
+							<affiliation key="aff0">
+								<orgName type="department">Blavatnik School of Computer Science</orgName>
+								<orgName type="institution">Tel Aviv University</orgName>
+								<address>
+									<region>AI</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shahar</forename><surname>Katz</surname></persName>
+							<email>shaharkatz3@mail</email>
+							<affiliation key="aff0">
+								<orgName type="department">Blavatnik School of Computer Science</orgName>
+								<orgName type="institution">Tel Aviv University</orgName>
+								<address>
+									<region>AI</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Lior</forename><surname>Wolf</surname></persName>
+							<email>wolf@cs.tau.ac.il</email>
+							<affiliation key="aff0">
+								<orgName type="department">Blavatnik School of Computer Science</orgName>
+								<orgName type="institution">Tel Aviv University</orgName>
+								<address>
+									<region>AI</region>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Execution Guided Line-by-Line Code Generation</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">CB872DF7509A474119F3CB45162DED04</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-11T03:38+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We present a novel approach to neural code generation that incorporates real-time execution signals into the language model generation process. While large language models (LLMs) have demonstrated impressive code generation capabilities, they typically do not utilize execution feedback during inference, a critical signal that human programmers regularly leverage. Our method, Execution-Guided Classifier-Free Guidance (EG-CFG), dynamically incorporates execution signals as the model generates code, providing line-by-line feedback that guides the generation process toward executable solutions. EG-CFG employs a multi-stage process: first, we conduct beam search to sample candidate program completions for each line; second, we extract execution signals by executing these candidates against test cases; and finally, we incorporate these signals into the prompt during generation. By maintaining consistent signals across tokens within the same line and refreshing signals at line boundaries, our approach provides coherent guidance while preserving syntactic structure. Moreover, the method naturally supports native parallelism at the task level in which multiple agents operate in parallel, exploring diverse reasoning paths and collectively generating a broad set of candidate solutions. Our experiments across diverse coding tasks demonstrate that EG-CFG significantly improves code generation performance compared to standard approaches, achieving state-of-the-art results across various levels of complexity, from foundational problems to challenging competitive programming and data science tasks. Our</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Large language models (LLMs) have recently demonstrated remarkable code generation capabilities, significantly advancing performance in tasks such as general programming problems <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b2">3]</ref>, competitive coding challenges <ref type="bibr" target="#b3">[4]</ref>, and real-world software engineering tasks <ref type="bibr" target="#b4">[5]</ref>. However, current LLM-based code generation methods primarily rely on pattern recognition derived from static representations of code rather than explicitly modeling code execution at runtime <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b2">3]</ref>. Consequently, the generated programs often appear to be correct superficially, but fail to execute correctly on actual inputs, reflecting a critical gap between learned syntactic patterns and genuine executability.</p><p>State-of-the-art approaches typically use iterative refinement <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b6">7,</ref><ref type="bibr" target="#b7">8]</ref> or self-debugging strategies <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b9">10]</ref>. Recent approaches adopt multi-agent or agentic workflows, explicitly employing iterative refinement and collaborative feedback mechanisms <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b13">14]</ref>. However, these methods typically operate in discrete cycles: generating complete candidate solutions, executing them, and then using feedback from failures to guide subsequent attempts. Such approaches do not continuously integrate execution signals during inference, thus limiting their ability to dynamically adjust toward runtime correctness at the token level.</p><p>In contrast, human programmers frequently execute incomplete code fragments to quickly detect errors, assess progress, and iteratively refine their implementations based on concrete runtime outcomes, while exploring multiple candidate implementations and planning at varying levels of detail before finalizing solutions <ref type="bibr" target="#b14">[15,</ref><ref type="bibr" target="#b15">16]</ref>. This iterative, real-time refinement process explicitly  grounds coding decisions in observed execution behavior rather than relying purely on syntactic or structural reasoning <ref type="bibr" target="#b16">[17]</ref>.</p><p>Inspired by these human coding practices and by LLM exploration techniques <ref type="bibr" target="#b17">[18,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b19">20,</ref><ref type="bibr" target="#b20">21]</ref>, our proposed approach generates dynamic execution signals by explicitly sampling multiple candidate continuations at varied completion horizons, systematically adjusting decoding temperature to encourage exploration of different reasoning paths. Executing these diverse candidates yields rich execution-based feedback, explicitly mirroring human iterative refinement and exploratory problem-solving processes.</p><p>Unlike methods that provide explicit correctness indicators, such as scalar pass/fail or ranking signals <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b21">22]</ref>, or explicit verbal critiques and structured reflections on execution failures <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b19">20]</ref>, our method provides the raw execution outcome as a soft guidance signal. This approach allows the model to autonomously interpret and integrate minimally processed feedback into its generation process, bridging a significant gap between explicit externally-supervised reinforcement, in which the model is explicitly told what runs were successful <ref type="bibr" target="#b8">[9]</ref>, and implicit self-verification, where the model autonomously assesses the correctness of its own reasoning <ref type="bibr" target="#b9">[10]</ref>.</p><p>To incorporate the execution-based signal, our method utilizes Classifier-Free Guidance (CFG) <ref type="bibr" target="#b22">[23]</ref>, conditioning token-level generation decisions on the runtime outcome obtained by executing candidate code completions during inference. This approach guides the model toward solutions that are both syntactically plausible and executable, substantially improving correctness.</p><p>As depicted in Figure <ref type="figure" target="#fig_0">1</ref>, our Execution-Guided Classifier-Free Guidance (EG-CFG) approach achieves state-of-the-art performance on the MBPP and MBPP-ET benchmarks <ref type="bibr" target="#b2">[3]</ref>, significantly outperforming existing methods. Using the open-source DeepSeek-V3-0324 model <ref type="bibr" target="#b23">[24]</ref>, EG-CFG attains 96.6% accuracy on MBPP and 73.0% on MBPP-ET, surpassing previous leading approaches such as QualityFlow <ref type="bibr" target="#b10">[11]</ref> (94.2%), MetaGPT <ref type="bibr" target="#b24">[25]</ref> (87.7%), and LPW <ref type="bibr" target="#b25">[26]</ref> (84.8% on MBPP, 65.8% on MBPP-ET), all of which utilized leading closed-source models. On the HumanEval benchmark (Figure <ref type="figure" target="#fig_1">2</ref>), EG-CFG achieves state-of-the-art accuracy of 99.4%, matching LDB <ref type="bibr" target="#b26">[27]</ref> and establishes a new state-of-the-art on the HumanEval-ET benchmark, reaching 89.02% accuracy and surpassing LPW's 84.8% accuracy achieved with GPT-4o. Furthermore, EG-CFG establishes a new state-of-the-art on DS-1000 (Figure <ref type="figure" target="#fig_2">3</ref>), a domain-specific benchmark focused on challenging data science problems, achieving 69.9% accuracy. Lastly, EG-CFG achieves a new state-of-the-art on the CodeContests benchmark (Figure <ref type="figure" target="#fig_3">4</ref>) with 60.6% accuracy using DeepSeek-V3-0324, demonstrating its effectiveness on challenging competitive programming problems.  The superior performance of EG-CFG on MBPP-ET and HumanEval-ET highlights that our method not only generates accurate code but also significantly enhances robustness and reliability under complex and extended test scenarios. Summarizing, our main contributions are: (i) a framework for dynamically generating code while executing fragments of the code and using the execution traces to guide the generation process, (ii) introducing native parallelism at the task level that is not achievable in the sequential iterative refinement methods, (iii) using CFG in order to generate code that is conditioned on the execution feedback, and (iv) obtaining new state-of-the-art results on the MBPP, MBPP-ET, HumanEval-ET, DS-1000 and CodeContests benchmarks using open-source models, outperforming previous methods that are based on the leading closed-source models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Program synthesis has long served both as a means to evaluate LLMs' capabilities <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b27">28]</ref> and as a key goal of the research community to automate code generation <ref type="bibr" target="#b28">[29,</ref><ref type="bibr" target="#b29">30]</ref>. Modern LLMs are typically assessed via automated benchmarks: given a coding problem description, the model generates code that is then validated on a set of test cases (unit-test). In this work, we focus on six code generation benchmarks: MBPP <ref type="bibr" target="#b2">[3]</ref>, HumanEval <ref type="bibr" target="#b0">[1]</ref>, DS-1000 <ref type="bibr" target="#b30">[31]</ref> and CodeContests <ref type="bibr" target="#b3">[4]</ref>, along with the extended variants MBPP-ET and HumanEval-ET <ref type="bibr" target="#b31">[32]</ref>. MBPP combines crowd-sourced tasks and math-based problems <ref type="bibr" target="#b32">[33]</ref>, HumanEval includes hand-written Python challenges, DS-1000 presents challenging data science problems involving libraries like Pandas and NumPy, and CodeContests features competitive programming problems requiring advanced algorithmic reasoning.</p><p>While zero-shot prompting, meaning directly querying an LLM on a task, is one evaluation strategy, few-shot prompting <ref type="bibr" target="#b33">[34]</ref>, which provides a small number of input-output examples, is more widely adopted. Other methods, such as Chain-of-Thought (CoT) <ref type="bibr" target="#b34">[35]</ref>, leverage the model's autoregressive nature to iteratively solve such tasks by decomposing them into sub-tasks. Similar approaches, such as Tree-of-Thoughts <ref type="bibr" target="#b20">[21]</ref> extend CoT by exploring multiple candidate reasoning paths at a higher level of granularity.</p><p>With the growing ability of LLMs to utilize external signals and tools <ref type="bibr" target="#b35">[36]</ref>, LLMs have been augmented with feedback mechanisms to improve code generation. Approaches such as Reflexion <ref type="bibr" target="#b8">[9]</ref>, Program-aided Language Models (PAL) <ref type="bibr" target="#b5">[6]</ref>, and ReAct <ref type="bibr" target="#b6">[7]</ref> iteratively update prompts based on external tools' outputs or intermediate results. In particular, Self-Debugging <ref type="bibr" target="#b9">[10]</ref> demonstrates how LLMs can leverage debugging tools: the model generates code, tests it on available unit-test examples, and refines its output using the debugging feedback. Another related approach, LPW <ref type="bibr" target="#b25">[26]</ref>, employs a structured two-phase process involving initial high-level plan generation followed by iterative refinement and debugging guided by execution feedback. The Multi-Granularity Debugger (MGDebugger) <ref type="bibr" target="#b36">[37]</ref> also uses the LLM to simulate the execution of generated Python programs, employing the simulated trace as additional feedback for code refinement.</p><p>While some approaches use a single LLM to solve coding problems, agentic methods employ multiple LLM instances to tackle a single task. Works such as MetaGPT <ref type="bibr" target="#b24">[25]</ref> introduce a framework in which a given task is split into multiple procedures, each assigned to a dedicated LLM agent. AgentCoder <ref type="bibr" target="#b11">[12]</ref> extends these multi-agent frameworks by employing both a test-designer agent and an executor agent, effectively integrating the Self-Debugging paradigm <ref type="bibr" target="#b9">[10]</ref> into an agentic workflow and demonstrating the benefits of execution feedback. Current agentic workflows, such as MapCoder <ref type="bibr" target="#b12">[13]</ref> and LPW <ref type="bibr" target="#b25">[26]</ref>, typically rely on discrete cycles of sequential agent interactions or distinct refinement phases, inherently limiting their ability to fully leverage the power of parallelism within a single task. In contrast, EG-CFG breaks this barrier by introducing native parallelism at the task level. Multiple agents run concurrently on the same task, each with a different configuration, simultaneously exploring diverse reasoning paths without the constraints of sequential cycles, fully leveraging the power of parallelism.</p><p>Although code generation methods have advanced dramatically, they all rely on naive decoding methods such as temperature or top-p sampling <ref type="bibr" target="#b17">[18]</ref>. In particular, execution-feedback techniques generate a complete solution, execute it, and then refine the code. For example, the model is prompted to produce a function, its implementation is tested against unit tests, and the resulting feedback is appended to the original prompt. This process repeats iteratively until a correct solution emerges. This approach contrasts with recent advances in LLM inference techniques, especially guidance methods such as Classifier Guidance <ref type="bibr" target="#b37">[38]</ref> and Classifier-Free Guidance (CFG) <ref type="bibr" target="#b22">[23,</ref><ref type="bibr" target="#b38">39]</ref>. These methods condition generation on external constraints or classifier signals, directing the model to sample tokens from multiple contrastive distributions. Although CFG has shown strong performance, its guidance signals remain static, predefined and fixed throughout the sampling process <ref type="bibr" target="#b39">[40]</ref>.</p><p>As far as we can ascertain, guidance methods such as CFG have yet to be applied at scale to dynamic, execution-driven reasoning. This work bridges this gap by demonstrating that a single open-source model, augmented with execution feedback and a novel token-sampling strategy, outperforms the state-of-the-art across multiple widely adopted coding benchmarks at different complexity levelsfrom foundational problems to challenging competitive programming and data sceince tasks. Our contribution differs from prior work in multiple key aspects, including:</p><p>1. Prior approaches generate entire code blocks (or sub-blocks) and use the execution feedback of the entire block; by contrast, our approach gradually generates the solution line-by-line by sampling and executing multiple candidate continuation programs at each step. 2. Instead of explicitly relying on unit-test pass/fail signals or direct reflections on correctness, our method incrementally constructs code fragments and leverages their execution traces as an implicit feedback signal, guiding the model without explicit external supervision. 3. Our method relies on a single prompting scheme where multiple agents perform the same task and differ only in their parameter configurations. Each agent explores diverse reasoning paths and collectively generating a broad set of candidate solutions. This enables a level of parallelism that is unattainable in methods where agents communicate sequentially. 4. We replace naive decoding with CFG, using innovative trace-inspired prompts for dualdistribution interpolation sampling.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Method</head><p>We present Execution-Guided Classifier-Free Guidance (EG-CFG), a novel inference-time decoding method for neural code generation that explicitly integrates dynamic execution signals into the autoregressive generation process. A programming task τ is represented by three components: τ = (p task , T, f name ), (1) where p task is a textual definition of the programming task, T = {t j }</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>|T |</head><p>j=1 is the set of test cases, and f name is the target Python function name. The goal is to generate executable Python code w * = [w * 0 , w * 1 , . . . , w * N -1 ] that solves the task correctly, formally satisfying: Execute(w * , t j ) = success, ∀t j ∈ T.</p><p>(2) We consider two distinct instruction templates p 0 : the standard DeepSeek-Coder 3-shot prompt <ref type="bibr" target="#b40">[41]</ref>, consisting of concise instructions accompanied by short illustrative examples, and an alternative prompt explicitly designed to encourage the generation of step-by-step solutions with more atomic logic. See Appendix A for the example prompts used.</p><p>We build the instruction prompt by incorporating the task components into the prompt template:</p><formula xml:id="formula_0">p inst = BUILDINSTRUCTIONPROMPT(p 0 , τ )<label>(3)</label></formula><p>At each step i, given a previously generated token sequence w &lt;i , the LLM M assigns a probability distribution M (w i | p inst,w&lt;i ), which is conditioned on the instruction prompt p inst . This generation proceeds iteratively until reaching a maximum token length N max or an end-of-code token. We build the instruction prompt by injecting the instruction task to the prompt template. We first run the model to produce an initial output sequence p pre based on p inst :</p><formula xml:id="formula_1">w i pre = arg max M (w i | p inst,w&lt;i ), p pre = [p inst , w 0 pre , • • • , w n-1 pre ] (<label>4</label></formula><formula xml:id="formula_2">)</formula><p>The generated sequence p pre contains reasoning tokens that precede the final executable solution. We identify the beginning of this solution block at index i solution by locating a special start-of-code token, which is defined in p 0 . We then define the prefix of all preceding tokens, p pre-sol , as:</p><formula xml:id="formula_3">p pre-sol = p pre [: i solution ]<label>(5)</label></formula><p>Additionally, we define an index i dyn that marks the end of the final few-shot example within the instruction prompt p inst , which is used to inject future signals into the prompt.</p><p>The prompt p sol that we pass to the LLM is constructed autoregressively by aggregating executable code tokens into p pre-sol as formalized later in Equation 14 of section 3.3. This prompt contains partial solutions that are progressively updated until the solution is formed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Dynamic Execution Feedback</head><p>Our dynamic execution feedback explicitly generates multiple candidate continuations based on a partially completed solution. Specifically, given p sol we generate a set of candidate continuations using beam-search decoding. Each candidate explicitly extends the current solution by d additional lines of code, capturing meaningful variations in potential solutions and providing a granular basis for execution-based guidance. Formally, given parameters specifying the number of candidates s, completion horizon d, and sampling temperature t, the beam search sampling is performed to obtain s candidates.</p><formula xml:id="formula_4">w i cj ∼ M (w i | p sol , w &lt;i cj ; t) until CountLines(c j ) ≥ d, c j = [w 0 cj , • • • , w i cj ]</formula><p>, j = 1, . . . , s (6) Each candidate c j is generated autoregressively with a stopping condition triggered after d newline characters, representing a plausible continuation of the next d lines of code. These candidates form the basis for generating detailed execution signals used to guide subsequent inference steps.</p><p>Executable Extraction To handle potentially invalid candidate continuations, we extract executable components via Abstract Syntax Tree (AST) parsing. Formally, for each candidate c j , we apply the executable extraction function: ĉj = ExtractExecutable(c j ), j = 1, . . . , s.</p><p>This extraction function iteratively attempts to parse each candidate c j as follows: (1) attempt parsing c j (2) if unsuccessful, append a Python pass statement to the last line and retry; (3) if still unsuccessful, iteratively remove the last line and retry. This ensures minimal modifications for syntactic validity. After extraction, we apply uniqueness filtering to remove duplicates:</p><formula xml:id="formula_6">C = Unique {ĉ j } s j=1 .<label>(8)</label></formula><p>This AST-based verification explicitly ensures that execution guidance relies solely on syntactically valid and executable code.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Execution Feedback and Trace</head><p>For each unique executable candidate ĉj ∈ C, we explicitly execute it against all provided test cases T = {t m }</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>|T |</head><p>m=1 and record the resulting execution feedback: e j,m = ExtractExecutionFeedback(ĉ j , t m ), ∀ĉ j ∈ C, t m ∈ T.</p><p>Our approach is agnostic to the precise structure of the execution feedback e j,m . In our implementation, execution feedback specifically takes the form of execution traces: a structured representation of a program's runtime behavior, capturing detailed step-by-step information during execution.</p><p>Specifically, we use a custom debugger for structured execution traces. A trace e j,m is defined as a sequence of N j,m runtime events, ε k , resulting from the execution of a program ĉj with input t m :</p><formula xml:id="formula_8">e j,m = [ε k ] N j,m k=1 , ε k = (E k , ℓ k , v k , τ k , r k , x k )<label>(10)</label></formula><p>Each event ε k is a tuple containing the event type E k ∈ {call, line, return, exception}, the source line number ℓ k , mappings from variable names to their values (v k ) and types (τ k ), the return value r k , and any exception details x k . This structured representation provides comprehensive insight into the correctness and behavior of executed code, serving as a precise basis for dynamic feedback in our inference framework.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Dynamic Signal Aggregation</head><p>The dynamic execution feedback signal is the concatenation of a fixed instruction string, denoted p dyn-inst , to the aggregated execution feedback. This yields the dynamic signal prompt:</p><formula xml:id="formula_9">p signal = [p dyn-inst , {(ĉ j , t m , e j,m )} ĉj ∈C, tm∈T ],<label>(11)</label></formula><p>where each tuple consists of a candidate completion ĉj , a test case t m , and its corresponding execution trace e j,m . Now we form a new prompt naming this prompt p dyn as dynamic signal prompt:</p><formula xml:id="formula_10">p dyn = [p sol [: i dyn ], p signal , p sol [i dyn :]]<label>(12)</label></formula><p>An example of the obtained prompt is shown in appendix Appendix B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Classifier-Free Guidance (CFG)</head><p>Inspired by <ref type="bibr" target="#b22">[23,</ref><ref type="bibr" target="#b38">39]</ref>, we utilize CFG to explicitly guide token generation by interpolating between two probability distributions: (i) an unconditional (prior) distribution based on the evolving solution prompt p sol , and (ii) a conditional distribution based on dynamic signal prompt p dyn which incorporates execution feedback. Formally, for each token w i , the CFG distribution is computed as:</p><formula xml:id="formula_11">log M CFG (w i | p sol , p dyn ) = log M (w i | p sol ) + γ [log M (w i | p dyn ) -log M (w i | p sol )] , (<label>13</label></formula><formula xml:id="formula_12">)</formula><p>where γ ≥ 0 explicitly controls the strength of guidance. Higher values of γ encourage the model to follow the execution-based guidance, while lower values allow greater flexibility toward the unconditional prior.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Execution-Guided Inference Loop</head><p>Our inference procedure extends standard autoregressive token generation by explicitly incorporating dynamic execution feedback via CFG. Starting from an initial prompt p pre-sol (Equation <ref type="formula" target="#formula_3">5</ref>), we autoregressively sample tokens w i from the CFG-conditioned distribution M CFG (w i | p sol , p dyn ), progressively constructing the solution sequence p sol . At each token-generation step, we reuse the dynamic signal p signal (Equation <ref type="formula" target="#formula_9">11</ref>), injecting it into p sol at index i dyn to form p dyn as described in Equation 12. p signal itself is regenerated only upon completing a new line.</p><formula xml:id="formula_13">w i sol = arg max M CFG (w i | p sol , p dyn ), p sol = [p pre-sol , w 0 sol , • • • , w n-1 sol ]<label>(14)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Parallel Multi-Agent Execution</head><p>Given an input task as defined in Equation 1, we launch a parallel multi-agent inference process where each agent is assigned a unique configuration: candidate count s, generation horizon d, sampling temperature t, instruction prompt template p 0 and guidance strength γ. Once any agent finds a correct solution, it is immediately returned and all remaining agents are terminated. The full pseudo-code for both the execution-guided inference loop and the multi-agent controller is provided in Appendix C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>Implementation Details We conduct our experiments using two LLMs across different parameter scales: DeepSeek-Coder-1.3B <ref type="bibr" target="#b40">[41]</ref>, which is small enough to run locally on our machines (NVIDIA GeForce RTX 2080 Ti and RTX 3090 GPUs), and a large open-source model, DeepSeek-V3-0324 <ref type="bibr" target="#b23">[24]</ref>, which we use through a cloud inference endpoint. We use Fireworks AI which was chosen based on two criteria: a modest cost, and the availability of a log probability output that is required to perform the CFG (Equation <ref type="formula" target="#formula_11">13</ref>). The full code used for our experiments is provided in the supplementary materials.</p><p>Hyperparameter Settings As explained in section 3.4, our method launches multiple parallel agents for each task. Each agent is assigned a different hyperparameter configuration. The following hyper-parameter sets were used in our experiments: s = 3, t ∈ {0.7, 0.75, 0.85, 0.95, 1.2, 1.5}, d ∈ {2, 3, 6, 8}, γ ∈ {0, 0.5, 1, 3}. Additionally, we evaluate both p 0 prompt templates, see section 3 and appendix Appendix A.</p><p>Evaluation Benchmark Our evaluations use widely-adopted benchmarks: MBPP [3] (500 tasks) and HumanEval <ref type="bibr" target="#b0">[1]</ref> (164 tasks), along with their extended test versions MBPP-ET and HumanEval-ET <ref type="bibr" target="#b31">[32]</ref>. To assess performance on more challenging tasks, we also evaluate on the DS-1000 data science benchmark <ref type="bibr" target="#b30">[31]</ref> (1000 tasks) and the CodeContests competitive programming benchmark <ref type="bibr" target="#b3">[4]</ref> (using the ExecEval framework <ref type="bibr" target="#b41">[42]</ref>). We report accuracy: the percentage of problems passing all test cases. To rigorously test generalization and prevent overfitting to public tests, evaluations on HumanEval, HumanEval-ET, MBPP-ET, CodeContests, and DS-1000 rely on hidden test cases inaccessible during inference. DS-1000's structure, providing only a single input-output example per problem, further tests model robustness against reliance on examples.</p><p>Baselines We compare our EG-CFG method against several established state-of-the-art methods for code generation and debugging: a Baseline LLM using the few-shot template from DeepSeek-Coder's evaluation <ref type="bibr" target="#b40">[41]</ref>; MGDebugger <ref type="bibr" target="#b36">[37]</ref>, an iterative refinement method combining test-case feedback with LLM-simulated execution traces; MapCoder <ref type="bibr" target="#b12">[13]</ref>, which employs multi-agent interactions; QualityFlow <ref type="bibr" target="#b10">[11]</ref>, which incorporates agentic workflows for iterative enhancement; LPW <ref type="bibr" target="#b25">[26]</ref>, which utilizes a structured two-phase workflow with runtime execution feedback; and CodeSim <ref type="bibr" target="#b13">[14]</ref>, a search-based method that adapts semantically similar code snippets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Using the</head><p>DeepSeek-V3-0324 model, EG-CFG achieves new state-of-the-art (SOTA) results across all evaluated benchmarks. On MBPP and MBPP-ET (Table 1), it surpasses prior methods using large closed-source models like GPT-4 and Claude 3.5. On HumanEval (Table 2), it matches the state-ofthe-art (LDB) at 99.4% and sets a new state-of-the-art on the challenging HumanEval-ET variant. Furthermore, it establishes new state-of-the-art on CodeContests (Table 3), significantly exceeding its own baseline, MapCoder, and previous GPT-4 based approaches like LPW and CodeSim, and also sets a new state-of-the-art on DS-1000 (69.9%, Table 4), outperforming CONLINE/GPT-4.</p><p>We note that across all tested baselines, the publicly available code was highly sensitive to the specific model and could not be readily applied to DeepSeek models. We invested substantial effort in debugging and adapting the code to ensure it produced meaningful results that represented each baseline method as favorably as possible. Other methods, such as QualityFlow, have not released their code, preventing us from evaluating them on the DeepSeek models. While LPW did release a public implementation, we encountered substantial technical issues during the execution of their published code on the DeepSeek-Coder 1.3b model, resulting in unusually low scores despite our best debugging efforts on that benchmark.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Run time</head><p>A key advantage of EG-CFG is its native parallelism, a design choice that aligns with the growing trend of leveraging large-scale, parallel compute in modern agentic systems. This architectural choice is a key differentiator from iterative refinement methods, which are inherently sequential and therefore cannot leverage parallel compute to accelerate work on a single task. In contrast, EG-CFG is designed to explore diverse reasoning paths simultaneously across multiple agents (as described in section 3.4). This fundamental architectural difference makes wall-clock time the most relevant and fair metric for comparison. As can be seen in Table <ref type="table" target="#tab_4">5</ref>, on the MBPP benchmark, our method is more efficient than MGDebugger and competitive with MapCoder. When comparing with LPW, our method is more efficient with the smaller model but slower with the larger model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Fairness of Comparison</head><p>To demonstrate EG-CFG's qualitative advantage is not just a larger compute budget, we drastically increased baseline token usage. On MBPP (DeepSeek-V3-0324), we raised MGDebugger and MapCoder retry counts 40-fold (from 5 to 200). Despite this 40x compute increase, gains were marginal : MGDebugger improved by only 6.8 percentage points, from 86.8% to 93.6% (solving 34 of its 86 prior failures). MapCoder's improvement was even smaller, at 1.6 percentage points, from 87.2% to 88.8% (solving 8 of its 64 prior failures). Both remained significantly below EG-CFG's 96.6% accuracy , showing our performance gap is due to the execution-guided feedback loop's quality, rather than the amount of computation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Ablation study</head><p>We performed an ablation study on the MBPP and MBPP-ET benchmarks to evaluate various components of our method. The results are reported in Table <ref type="table" target="#tab_5">6</ref>. When omitting the beam search of Equation 6, which creates multiple solutions instead of a single completion, the performance of the method drops and becomes much closer to the baseline performance. The role of CFG is evident from the second ablation, in which a value of γ = 1 is used in Equation 13. In this case, there is a clear drop in performance, although results are still clearly above the baseline. Finally, a similar drop in performance is observed when replacing the detailed execution trace used as part of the dynamic signal with a minimal execution trace, formally defined as the final event of the execution trace (Equation <ref type="formula" target="#formula_8">10</ref>).  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Limitations</head><p>While the EG-CFG framework demonstrates significant improvements in code generation performance, several important limitations should be acknowledged.</p><p>First, the approach introduces computational overhead compared to standard inference methods. The beam search exploration, execution of multiple candidate continuations, and dual-distribution interpolation in the CFG mechanism collectively increase inference time. Though our parallel execution strategy mitigates this overhead somewhat, future work should explore more efficient methods for extracting and incorporating execution signals. Second, EG-CFG's effectiveness is contingent upon the availability of executable test cases that adequately exercise the target functionality. In real-world programming scenarios, comprehensive test cases may not always be available or easily generated by LLMs, potentially limiting the approach's applicability.</p><p>Finally, because our inference loop is bottom-up, it does not exploit task decomposition, a strategy that has been shown to improve code generation <ref type="bibr" target="#b36">[37]</ref>. Future work could integrate our sampling strategy with iterative refinement methods, task-decomposition methods or with top-down problem-inspection techniques <ref type="bibr" target="#b49">[50]</ref> to achieve even better performance. Despite these limitations, EG-CFG represents a significant advancement in execution-aware code generation and provides a solid foundation for future research addressing these challenges.</p><p>Long-Instruct Prompt for MBPP Task 395 (pinst) You are an AI programming assistant, utilizing the Deepseek Coder model, developed by Deepseek Company, ... ### Instruction: Write a python function to find the first non-repeated character in a given string. Write a Python function that satisfies the following test cases: &gt;&gt;&gt; Test Cases: ['assert first_non_repeating_character("abcabc") == None', 'assert first_non_repeating_character("abc") == "a"', 'assert first_non_repeating_character("ababc") == "c"'] Your solution should be written in as many lines as possible. This ensures that prefixes of your function remain valid Python programs. Allowing **incremental execution and debugging**. Write the function **step by step**, progressively introducing variables and logic. Avoid using list comprehensions, lambda functions, or overly compact one-liners. Instead, follow these guidelines:** Avoid list comprehensions, use loops instead: Incorrect: def square_numbers(lst): return [x ** 2 for x in lst] Correct: def square_numbers(lst): squares = [] for num in lst: squared_value = num ** 2 squares.append(squared_value) return squares Avoid inline expressions, use variables instead Incorrect: def calculate_area(length, width): return (length * width) / 2 Correct: def calculate_area(length, width): product = length * width area = product / 2 return area Incorrect: result.append(x + y) Correct: z = x + y result.append(z) Incorrect: def compute_value(a, b, c): return (a + b) * (c / (a -b) + (a * c) / (b + c)) Correct: def compute_value(a, b, c): term1 = a + b term2 = a -b term3 = c / term2 term4 = a * c / (b + c) result = term1 * (term3 + term4) return result ### Response: </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Example Dynamic Prompt Structure</head><p>This appendix provides a concrete example illustrating the structure of the dynamic prompt p dyn used by our EG-CFG method (described at the end of Section 3.1). Figure <ref type="figure">7</ref> below shows how the different components are assembled into the dynamic prompt p dyn . It displays the original task instruction (p inst ), followed by the dynamically injected signal (p signal ). This signal begins with the dynamic signal instruction (p dyn-inst ) and includes execution traces for each candidate, obtained in this example by executing s = 2 candidates against a single test case (|T | = 1). Finally, the figure shows the model's partially completed response generated up to that point.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: MBPP &amp; MBPP-ET performance. EG-CFG (DeepSeek-V3) sets a new state-of-the-art results.</figDesc><graphic coords="2,108.00,72.00,395.99,97.36" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: HumanEval &amp; HumanEval-ET performance. EG-CFG (DeepSeek-V3) matches the state-ofthe-art on HumanEval and sets a new state-of-the-art on HumanEval-ET.</figDesc><graphic coords="2,108.00,210.21,396.00,96.88" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: DS-1000 performance. EG-CFG (DeepSeek-V3) achieves new state-of-the-art, surpassing GPT-4.</figDesc><graphic coords="3,108.00,72.00,395.99,98.38" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: CodeContests performance. EG-CFG (DeepSeek-V3) sets a new state-of-the-art, outperforming GPT-4 and GPT-4o methods.</figDesc><graphic coords="3,108.00,206.64,396.00,93.08" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Long-Instruct prompt for MBPP Task 395. This instruction-only prompt includes stylistic constraints that encourage traceable, step-by-step completions suitable for dynamic signal extraction.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Performance on the MBPP and MBPP-ET benchmarks. Our proposed EG-CFG achieves a new state-of-the-art overall accuracy. The DeepSeek-Coder-1.3B and -V3-0324 results for all baselines were obtained by our study using the official implementations provided by each baseline method. The results below the double separator were collected from the respective papers.</figDesc><table><row><cell>Model</cell><cell>Method</cell><cell></cell><cell>MBPP</cell><cell cols="2">MBPP-ET</cell></row><row><cell></cell><cell></cell><cell cols="4">Acc. (%) RSR (%) Acc. (%) RSR (%)</cell></row><row><cell>DeepSeek-Coder 1.3B</cell><cell>Baseline LLM</cell><cell>49.4</cell><cell>0.0</cell><cell>42.6</cell><cell>0.0</cell></row><row><cell>DeepSeek-Coder 1.3B</cell><cell>EG-CFG (Ours)</cell><cell>83.2</cell><cell>66.79</cell><cell>59.8</cell><cell>29.96</cell></row><row><cell>DeepSeek-Coder 1.3B</cell><cell>MapCoder [13]</cell><cell>55.2</cell><cell>11.46</cell><cell>46.2</cell><cell>6.27</cell></row><row><cell>DeepSeek-Coder 1.3B</cell><cell>MGDebugger [37]</cell><cell>70.4</cell><cell>41.5</cell><cell>44.6</cell><cell>3.48</cell></row><row><cell>DeepSeek-V3-0324</cell><cell>Baseline LLM</cell><cell>82.8</cell><cell>0.0</cell><cell>64.8</cell><cell>0.00</cell></row><row><cell>DeepSeek-V3-0324</cell><cell>EG-CFG (Ours)</cell><cell>96.6</cell><cell>80.23</cell><cell>73.0</cell><cell>23.29</cell></row><row><cell>DeepSeek-V3-0324</cell><cell>MapCoder [13]</cell><cell>87.2</cell><cell>25.58</cell><cell>69.6</cell><cell>13.63</cell></row><row><cell>DeepSeek-V3-0324</cell><cell>MGDebugger [37]</cell><cell>86.8</cell><cell>23.25</cell><cell>64.8</cell><cell>0.00</cell></row><row><cell>DeepSeek-V3-0324</cell><cell>LPW [26]</cell><cell>84.0</cell><cell>6.97</cell><cell>65.2</cell><cell>1.13</cell></row><row><cell>GPT-4</cell><cell>Baseline LLM</cell><cell>68.3</cell><cell>-</cell><cell>49.2</cell><cell>-</cell></row><row><cell>GPT-4</cell><cell>Self-Collaboration [43]</cell><cell>78.9</cell><cell>-</cell><cell>62.1</cell><cell>-</cell></row><row><cell>GPT-4</cell><cell>Self-Debugging [10]</cell><cell>80.6</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>GPT-4</cell><cell>MetaGPT [25]</cell><cell>87.7</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>GPT-4</cell><cell>MapCoder [13]</cell><cell>83.1</cell><cell>-</cell><cell>57.5</cell><cell>-</cell></row><row><cell>GPT-4o</cell><cell>LPW [26]</cell><cell>84.8</cell><cell>-</cell><cell>65.8</cell><cell>-</cell></row><row><cell>CodeQwen1.5</cell><cell>MGDebugger [37]</cell><cell>80.8</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell cols="2">DeepSeek-Coder-V2-Lite MGDebugger [37]</cell><cell>80.0</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>Claude-Sonnet-3.5</cell><cell>Baseline LLM [11]</cell><cell>88.7</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>Claude-Sonnet-3.5</cell><cell>QualityFlow [11]</cell><cell>94.2</cell><cell>-</cell><cell>-</cell><cell>-</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Performance on the HumanEval and HumanEval-ET benchmarks. Our proposed EG-CFG matches the state-of-the-art on HumanEval and achieves a new state-of-the-art on HumanEval-ET.</figDesc><table><row><cell>Model</cell><cell>Method</cell><cell cols="2">HumanEval</cell><cell cols="2">HumanEval-ET</cell></row><row><cell></cell><cell></cell><cell cols="4">Acc. (%) RSR (%) Acc. (%) RSR (%)</cell></row><row><cell>DeepSeek-V3-0324</cell><cell>Baseline LLM</cell><cell>82.92</cell><cell>0.0</cell><cell>79.20</cell><cell>0.0</cell></row><row><cell>DeepSeek-V3-0324</cell><cell>EG-CFG (Ours)</cell><cell>99.4</cell><cell>94.04</cell><cell>89.02</cell><cell>47.21</cell></row><row><cell>DeepSeek-V3-0324</cell><cell>MapCoder [13]</cell><cell>96.95</cell><cell>82.14</cell><cell>81.70</cell><cell>12.02</cell></row><row><cell>DeepSeek-V3-0324</cell><cell>MGDebugger [37]</cell><cell>87.20</cell><cell>25.05</cell><cell>81.09</cell><cell>9.09</cell></row><row><cell>DeepSeek-V3-0324</cell><cell>LPW [26]</cell><cell>95.12</cell><cell>71.42</cell><cell>84.74</cell><cell>26.63</cell></row><row><cell>GPT-4</cell><cell>Baseline LLM</cell><cell>67.7</cell><cell>-</cell><cell>50.6</cell><cell>-</cell></row><row><cell>GPT-4</cell><cell>Self-Collaboration [43]</cell><cell>90.7</cell><cell>-</cell><cell>70.1</cell><cell>-</cell></row><row><cell>GPT-4</cell><cell>Self-Debugging [10]</cell><cell>61.6</cell><cell>-</cell><cell>45.8</cell><cell>-</cell></row><row><cell>GPT-4</cell><cell>MetaGPT [25]</cell><cell>85.9</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>GPT-4</cell><cell>MapCoder [13]</cell><cell>80.5</cell><cell>-</cell><cell>70.1</cell><cell>-</cell></row><row><cell>GPT-4o</cell><cell>LPW [26]</cell><cell>98.2</cell><cell>-</cell><cell>84.8</cell><cell>-</cell></row><row><cell>LLaMA 3</cell><cell>LDB [27]</cell><cell>99.4</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>Claude-Sonnet-3.5</cell><cell>QualityFlow [11]</cell><cell>98.8</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>CodeQwen1.5</cell><cell>MGDebugger [37]</cell><cell>91.5</cell><cell>64.1</cell><cell>-</cell><cell>-</cell></row><row><cell cols="2">DeepSeek-Coder-V2-Lite MGDebugger [37]</cell><cell>94.5</cell><cell>76.3</cell><cell>-</cell><cell>-</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Performance on the CodeContests benchmark. Our proposed EG-CFG achieves a new state-of-the-art overall accuracy on CodeContests. The runs on DeepSeek-V3-0324 are by us, and all other results are quoted from the literature. * The LPW results were obtained on a custom test-set; the published code was not compatible with evaluating on DeepSeek. * * Reported by the MapCoder paper [13]. * * * Reported by the CodeSim paper [14].</figDesc><table><row><cell>Model</cell><cell>Method</cell><cell cols="2">Accuracy (%) RSR (%)</cell></row><row><cell cols="2">DeepSeek-V3-0324 Baseline LLM</cell><cell>41.81</cell><cell>0.00</cell></row><row><cell cols="2">DeepSeek-V3-0324 EG-CFG (Ours)</cell><cell>60.6</cell><cell>32.29</cell></row><row><cell cols="2">DeepSeek-V3-0324 MapCoder [13]</cell><cell>50.30</cell><cell>14.59</cell></row><row><cell cols="2">DeepSeek-V3-0324 CodeSim [14]</cell><cell>52.72</cell><cell>18.76</cell></row><row><cell>GPT-4o GPT-4o</cell><cell>LPW [26]  *  LDB [27]  *  *  *</cell><cell>34.7 29.3</cell><cell>--</cell></row><row><cell>GPT-4</cell><cell>CodeSim [14]</cell><cell>29.1</cell><cell>-</cell></row><row><cell>GPT-4 GPT-4 GPT-4</cell><cell>MapCoder [13] Self-Planning [44]  *  *  Analogical [45]  *  *</cell><cell>28.5 10.9 10.9</cell><cell>---</cell></row><row><cell>GPT-3.5 Turbo</cell><cell>CodeSim [14]</cell><cell>16.4</cell><cell>-</cell></row><row><cell>GPT-3.5 Turbo GPT-3.5 Turbo GPT-3.5 Turbo</cell><cell>MapCoder [13] Analogical [45]  *  *  Self-Planning [44]  *  *</cell><cell>12.7 7.3 6.1</cell><cell>---</cell></row><row><cell>MoTCoder-15B</cell><cell>MoTCoder [46]</cell><cell>26.34</cell><cell>-</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Performance on the DS-1000 benchmark. Our proposed EG-CFG achieves a new stateof-the-art overall accuracy on DS-1000. * Reported by the SelfEvolve paper<ref type="bibr" target="#b46">[47]</ref>. * * Reported by DS-1000<ref type="bibr" target="#b30">[31]</ref> official leaderboard.</figDesc><table><row><cell>Model</cell><cell>Method</cell><cell cols="2">Accuracy (%) RSR (%)</cell></row><row><cell>DeepSeek-V3-0324</cell><cell>EG-CFG (Ours)</cell><cell>69.9</cell><cell>50.73</cell></row><row><cell>DeepSeek-V3-0324</cell><cell>Baseline LLM</cell><cell>38.9</cell><cell>0.00</cell></row><row><cell>GPT-4</cell><cell>CONLINE [48]</cell><cell>68.0</cell><cell>-</cell></row><row><cell>GPT-4</cell><cell>Baseline LLM</cell><cell>60.2</cell><cell>-</cell></row><row><cell>GPT-3.5 Turbo GPT-3.5 Turbo GPT-3.5 Turbo</cell><cell>SelfEvolve [47] Self Debugging [10]  *  DocPrompting [49]  *</cell><cell>57.1 53.0 45.50</cell><cell>---</cell></row><row><cell cols="2">GPT-4o Claude 3.5 Sonnet DeepSeek-Coder-V2-SFT Baseline LLM  *  *  Baseline LLM  *  *  Baseline LLM  *  *  Qwen2-72B-Instruct Baseline LLM  *  *</cell><cell>59.9 54.3 53.2 52.8</cell><cell>----</cell></row><row><cell>5 Conclusions</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="4">This paper introduces Execution-Guided Classifier-Free Guidance (EG-CFG), a novel approach that</cell></row><row><cell cols="4">fundamentally reframes neural code generation by incorporating real-time execution signals directly</cell></row><row><cell cols="4">into the inference process. Our method bridges a critical gap between static pattern recognition and</cell></row><row><cell cols="4">execution semantics by dynamically sampling candidate continuations, extracting execution traces,</cell></row><row><cell cols="3">and leveraging these signals to guide token-level generation decisions.</cell><cell></cell></row><row><cell cols="4">The empirical results demonstrate that EG-CFG achieves new state-of-the-art results across a diverse</cell></row><row><cell cols="4">set of benchmarks. Using DeepSeek-V3-0324, it achieves 96.6% accuracy on MBPP, 73.0% on</cell></row><row><cell cols="4">MBPP-ET, 99.4% on HumanEval, 89.02% on HumanEval-ET, 69.9% on DS-1000, and 60.6% on</cell></row><row><cell cols="4">CodeContests, surpassing both open-source and proprietary model-based approaches. The superior</cell></row><row><cell cols="4">performance on both MBPP-ET and HumanEval-ET underscores the method's robustness and</cell></row><row><cell cols="4">effectiveness in generating reliable and accurate code under complex and extended test scenarios.</cell></row><row><cell cols="4">Notably, our approach demonstrates robust performance even with smaller models, achieving 83.2%</cell></row><row><cell cols="4">accuracy using DeepSeek-Coder-1.3B, comparable to results from substantially larger models like</cell></row><row><cell cols="4">GPT-4. This scalability highlights the effectiveness of execution signals as a guiding mechanism</cell></row><row><cell>regardless of model capacity.</cell><cell></cell><cell></cell><cell></cell></row></table><note><p>The EG-CFG approach offers several advantages over existing methods. Unlike discrete iterative refinement techniques that operate at coarse granularity between complete solution attempts, our method provides continuous feedback at the token level. By integrating execution signals that reflect</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>Per-task runtime statistics (in seconds) for each model and method on MBPP.</figDesc><table><row><cell>Model</cell><cell>Method</cell><cell>Mean ± SD (s)</cell></row><row><cell cols="2">DeepSeek-Coder 1.3b EG-CFG</cell><cell>123.23 ± 344.91</cell></row><row><cell cols="3">DeepSeek-Coder 1.3b MGDebugger 495.16 ± 411.07</cell></row><row><cell cols="2">DeepSeek-Coder 1.3b MapCoder</cell><cell>121.9 ± 213.89</cell></row><row><cell cols="2">DeepSeek-Coder 1.3b LPW</cell><cell>197.71 ± 128.07</cell></row><row><cell>DeepSeek-V3-0324</cell><cell>EG-CFG</cell><cell>271.37 ± 271.45</cell></row><row><cell>DeepSeek-V3-0324</cell><cell cols="2">MGDebugger 842.24 ± 705.19</cell></row><row><cell>DeepSeek-V3-0324</cell><cell>MapCoder</cell><cell>283.84 ± 197.54</cell></row><row><cell>DeepSeek-V3-0324</cell><cell>LPW</cell><cell>87.51 ± 210.84</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 6 :</head><label>6</label><figDesc>Ablation results for EG-CFG on DeepSeek-Coder 1.3b on MBPP and MBPP-ET benchmarks.</figDesc><table><row><cell>Method</cell><cell></cell><cell>MBPP</cell><cell cols="2">MBPP-ET</cell></row><row><cell></cell><cell cols="4">Acc. (%) RSR (%) Acc. (%) RSR (%)</cell></row><row><cell>EG-CFG</cell><cell>83.2</cell><cell>66.79</cell><cell>59.8</cell><cell>29.96</cell></row><row><cell>EG-CFG, no beam search</cell><cell>58.2</cell><cell>17.39</cell><cell>43.6</cell><cell>1.74</cell></row><row><cell>EG-CFG w/o CFG (γ = 1)</cell><cell>75.2</cell><cell>50.98</cell><cell>48.2</cell><cell>9.74</cell></row><row><cell>EG-CFG, minimal trace</cell><cell>76.4</cell><cell>53.35</cell><cell>51.2</cell><cell>14.98</cell></row><row><cell>Baseline LLM</cell><cell>49.4</cell><cell>0.0</cell><cell>42.6</cell><cell>0.0</cell></row><row><cell cols="5">actual runtime behavior, EG-CFG mirrors the incremental testing and debugging process that human</cell></row><row><cell>programmers employ.</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table><note><p>Looking forward, this work opens several promising research directions. The execution-guided framework could be extended to more complex programming tasks requiring longer-horizon planning or multi-file interactions. Additionally, the principles of EG-CFG, which dynamically incorporate external semantic signals into generation, could benefit domains that rely on grounding in systems, such as database querying, formal verification, or simulation-based tasks. More broadly, EG-CFG represents a shift in generative modeling beyond static, pattern-based generation toward responsive, context-aware methods informed by environmental interaction. As models scale and applications expand, such approaches can drive the development of systems that generate high-quality outputs while reasoning about their real-world behavior, enabling more reliable and aligned generation.</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_0"><p>39th Conference on Neural Information Processing Systems (NeurIPS 2025).</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>This work was supported by a <rs type="funder">Tel Aviv University Center for AI and Data Science (TAD)</rs> grant. This research was also supported by the <rs type="funder">Ministry of Innovation, Science &amp; Technology, Israel</rs> (<rs type="grantNumber">1001576154</rs>) and the <rs type="funder">Michael J. Fox Foundation</rs> (<rs type="grantNumber">MJFF-022407</rs>). The contribution of SK is part of a PhD thesis research conducted at <rs type="institution">Tel Aviv University</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_Deq6bpV">
+					<idno type="grant-number">1001576154</idno>
+				</org>
+				<org type="funding" xml:id="_4A6P5Qk">
+					<idno type="grant-number">MJFF-022407</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A The two p inst prompts used by our method</head><p>The two basic instruction prompts used by our method are provided in Figure <ref type="figure" target="#fig_5">5</ref> and Figure <ref type="figure">6</ref>. The former is the standard DeepSeek-Coder 3-shot prompt <ref type="bibr" target="#b40">[41]</ref>, consisting of concise instructions accompanied by short illustrative examples, and the latter is an alternative prompt explicitly designed to encourage the generation of step-by-step solutions with more atomic logic.</p><p>Raw DeepSeek-Instruct Prompt for MBPP Task 395 You are an AI programming assistant, utilizing the Deepseek Coder model, developed by Deepseek Company, and you only answer questions related to computer science. ### Instruction: Please refer the given examples and generate a python function for my problem. Examples are listed as follows: -Example 1: &gt;&gt;&gt; Problem: Write a function to find the similar elements from the given two tuple lists. &gt;&gt;&gt; Test Cases: assert similar_elements((3, 4, 5, 6),(5, 7, 4, 10)) == (4, 5) assert similar_elements((1, 2, 3, 4),(5, 4, 3, 7)) == (3, 4) assert similar_elements((11, 12, 14, 13),(17, 15, 14, 13)) == (13, 14) &gt;&gt;&gt; Code: def similar_elements(test_tup1, test_tup2): res = tuple(set(test_tup1) &amp; set(test_tup2)) return (res) -Example 2: &gt;&gt;&gt; Problem: Write a python function to identify non-prime numbers. &gt;&gt;&gt; Test Cases: assert is_not_prime(2) == False assert is_not_prime(10) == True assert is_not_prime(35) == True &gt;&gt;&gt; Code: import math def is_not_prime(n): result = False for i in range(2,int(math.sqrt(n)) + 1): if n % i == 0: result = True return result -Example 3: &gt;&gt;&gt; Problem: Write a function to find the largest integers from a given list of numbers using... &gt;&gt;&gt; Test Cases: assert heap_queue_largest([25, 35, 22, 85, 14, 65, 75, 22, 58],3) == [85, ... assert heap_queue_largest([25, 35, 22, 85, 14, 65, 75, 22, 58],2) == [85, ... assert heap_queue_largest([25, 35, 22, 85, 14, 65, 75, 22, 58],5) == [85, ... &gt;&gt;&gt; Code: import heapq as hq def heap_queue_largest(nums,n): largest_nums = hq.nlargest(n, nums) return largest_nums Here is my problem: &gt;&gt;&gt; Problem: Write a python function to find the first non-repeated character in a given string. &gt;&gt;&gt; Test Cases: assert first_non_repeating_character("abcabc") == None assert first_non_repeating_character("abc") == "a" assert first_non_repeating_character("ababc") == "c" ### Response: Instruction from p inst :</p><p>Write a python function to find the first non-repeated character in a given string. assert first_non_repeating_character("aabc") == "b" assert first_non_repeating_character("abcabc") == None assert first_non_repeating_character("abc") == "a" assert first_non_repeating_character("ababc") == "c" Dynamic Signal Instruction (p dyn-inst ) starts at i dyn Below are execution traces from running the response function after appending several possible future continuations. These continuations represent plausible ways the function might continue from its current state. They are not necessarily full solutions -some may be partial, exploratory, or incomplete. For each candidate continuation, multiple test cases (invocations) were executed to observe its behavior under different inputs. Each entry includes:</p><p>- </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C EG-CFG Pseudo-Code</head><p>To complement the formal description in Section 3, we provide full pseudo-code for our method in this appendix. Algorithm 1 outlines the controller responsible for coordinating a multi-agent parallel inference process, where each agent explores diverse reasoning paths using a unique configuration. Each agent independently invokes the core decoding routine defined in Algorithm 2, which integrates dynamic execution feedback via classifier-free guidance (CFG). This loop incrementally generates a solution by incorporating real-time execution feedback into the prompt.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 1 Multi-Agent Parallel Inference Controller</head><p>Input: Task τ = (ptask, T, fname) (Eq.1), Model M , EG-CFG Configurations H = {(p0, s, d, t, γ)} 1: Launch parallel agents A = {a h : h ∈ H} 2: for all agents a h ∈ A with config (p0, s, d, t, γ) in parallel do 3: pinst ← BUILDINSTRUCTIONPROMPT(p0, τ ) ▷ Build instruction prompt, Equation <ref type="formula">3  4:</ref>psol ← EG-CFG-INFERENCELOOP(pinst, T, M, s, d, t, γ) 5:</p><p>if Execute(psol, tj) = success, ∀tj ∈ T then ▷ Verify solution, Equation <ref type="formula">2  6:</ref>return psol ▷ Return first valid solution and terminate other agents 7:</p><p>end if 8: end for 9: return null ▷ Failure: No correct solution found</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Algorithm 2 Execution-Guided Classifier-Free Guidance (EG-CFG) Inference Loop</head><p>Input: pinst, T, M, s, d, t, γ 1: ppre ← M (pinst) ▷ Generate initial output sequence, Equation 4 2: Locate isolution, idyn in ppre 3: ppre-sol ← ppre[: isolution] ▷ Extract reasoning prefix before solution code, Equation 5 4: psol ← ppre-sol 5: psignal ← null 6: while true do 7:</p><p>if psignal = null or (wi-1 exists and '\n' in wi-1) then 8:</p><p>Craw ← [] ▷ Initialize list for executable candidates 9:</p><p>for all each j = 1, . . . , s do 10:</p><p>Initialize cj ← [] 11:</p><p>while CountLines(cj) &lt; d do ▷ Generate a candidate continuation, Equation <ref type="formula">6  12:</ref>Sample w k c j ∼ M (w k | psol, w &lt;k c j ; t) 13:</p><p>Append w k c j to cj 14:</p><p>end while 15: ĉj ← ExtractExecutable(c j ) ▷ Extract executable part, Equation <ref type="formula">7  16:</ref>Append ĉj to Craw 17: end for 18:</p><p>C ← Unique(Craw) ▷ Filter for unique candidate continuations, Equation <ref type="formula">8  19:</ref>E ← [] ▷ Initialize list for feedback tuples 20:</p><p>▷ Candidate execution against test cases are running in parallel, Equation <ref type="formula">9  21:</ref>for all each ĉj ∈ C do 22:</p><p>for all each tm ∈ T do 23: e j,m ← ExtractExecutionFeedback(ĉ j , tm) 24:</p><p>Append (ĉ j , tm, e j,m ) to E 25:</p><p>end for 26:</p><p>end for 27:</p><p>psignal ← [pdyn-inst, E] ▷ Construct the full dynamic signal, Equation <ref type="formula">11  28:</ref>end if 29:</p><p>pdyn ← [ psol[: idyn], psignal, psol[idyn :] ] ▷ Inject signal into the prompt, Equation <ref type="formula">12  30:</ref>wi ← arg max MCFG(w | psol, pdyn) ▷ Sample next token using CFG, Eq.13 Eq. <ref type="formula">14  31:</ref>Append wi to psol ▷ Append new token to the solution, Eq.13 Eq. <ref type="formula">14  32:</ref>if wi = EOT or length(psol) ≥ Nmax then 33:</p><p>return psol 34:</p><p>end if 35: end while</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>The DeepSeek-Instruct prompt used for MBPP Task 395. This prompt includes multiple solved examples followed by the target task.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>1 Figure 7 :</head><label>17</label><figDesc>A candidate version of the function -A specific test case used for invocation -The resulting execution trace for that test case These dynamic signals can help you better understand how different plausible continuations behave at runtime, and guide you toward a more accurate solution. Execution feedback for a single test (|T | = 1) and s = 2 candidates: # Function: def f i r s t _ n o n _ r e p e a t i n g _ c h a r a c t e r ( s ) : char_count = {} for char in s : char_count [ char ] = char_count . get ( char , 0) + 1 for char in s : if char_count [ char ] == 1: return char return None # Invocation: first_non_repeating_character("aabc") # Execution Trace: s = ' aabc ' , char_count = {} ... char = 'c ' -&gt; char_count = { 'a ': 2 , 'b ': 1 , 'c ': 1} char = 'b ' -&gt; count = 1 -&gt; return 'b ' # Function: def f i r s t _ n o n _ r e p e a t i n g _ c h a r a c t e r ( s ) : char_count = {} for char in s : char_count [ char ] = char_count . get ( char , 0) + 1 for char in s : if char_count [ char ] == 2: return char return None # Invocation: first_non_repeating_character("aabc") # Execution Trace: s = ' aabc ' , char_count = {} ... char = 'c ' -&gt; char_count = { 'a ': 2 , 'b ': 1 , 'c ': 1} char = 'a ' -&gt; count = 2 -&gt; return 'a ' ### Response: ''' python def f i r s t _ n o n _ r e p e a t i n g _ c h a r a c t e r ( s ) : char_count = {} for char in s : char_count [ char ] = char_count . get ( char , 0) + Example of p dyn with injected p signal at index i dyn .</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">A survey on large language models for code generation</title>
+		<author>
+			<persName><forename type="first">Juyong</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiasi</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sungju</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sunghun</forename><surname>Kim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2406.00515</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.07732</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Competition-level code generation with alphacode</title>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyoung</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agustin</forename><surname>Dal Lago</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">378</biblScope>
+			<biblScope unit="issue">6624</biblScope>
+			<biblScope unit="page" from="1092" to="1097" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Large language models for software engineering: A systematic literature review</title>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanjie</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhou</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kailong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiapu</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Grundy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyu</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Software Engineering and Methodology</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="1" to="79" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Pal: Program-aided language models</title>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengfei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jamie</forename><surname>Callan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno>PMLR</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="10764" to="10799" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Show your work: Scratchpads for intermediate computation with language models</title>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anders</forename><surname>Johan Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guy</forename><surname>Gur-Ari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aitor</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Luan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="8634" to="8652" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Teaching large language models to self-debug</title>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.05128</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Qualityflow: An agentic workflow for program synthesis controlled by llm quality checks</title>
+		<author>
+			<persName><forename type="first">Yaojie</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaopeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linbo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejiao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amit</forename><surname>Kachroo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Talha</forename><surname>Oz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Tripp</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2501.17167</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><forename type="middle">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Luck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwen</forename><surname>Bu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhao</forename><surname>Qing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heming</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Agentcoder</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.13010</idno>
+		<title level="m">Multiagent-based code generation with iterative testing and optimisation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Mapcoder: Multi-agent code generation for competitive problem solving</title>
+		<author>
+			<persName><forename type="first">Ashraful</forename><surname>Md</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammed</forename><forename type="middle">Eunus</forename><surname>Islam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Md</forename><surname>Ali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parvez</forename><surname>Rizwan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2405.11403</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Codesim: Multi-agent code generation and problem solving through simulation-driven planning and debugging</title>
+		<author>
+			<persName><forename type="first">Ashraful</forename><surname>Md</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammed</forename><forename type="middle">Eunus</forename><surname>Islam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Md</forename><surname>Ali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parvez</forename><surname>Rizwan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2502.05664</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Developers ask reachability questions</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Thomas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brad</forename><forename type="middle">A</forename><surname>Latoza</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Myers</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 32Nd ACM/IEEE International Conference on Software Engineering</title>
+		<meeting>the 32Nd ACM/IEEE International Conference on Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="185" to="194" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">An exploratory study of how developers seek, relate, and collect relevant information during software maintenance tasks</title>
+		<author>
+			<persName><forename type="first">Amy</forename><forename type="middle">J</forename><surname>Ko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brad</forename><forename type="middle">A</forename><surname>Myers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">J</forename><surname>Coblenz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Htet</forename><surname>Htet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aung</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on software engineering</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="971" to="987" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Usability analysis of visual programming environments: a &apos;cognitive dimensions&apos; framework</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">G</forename><surname>Thomas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marian</forename><surname>Green</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Petre</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Visual Languages &amp; Computing</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="131" to="174" />
+			<date type="published" when="1996">1996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">The curious case of neural text degeneration</title>
+		<author>
+			<persName><forename type="first">Ari</forename><surname>Holtzman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Buys</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Forbes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1904.09751</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Genx: Mastering code and test generation with execution feedback</title>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yafei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haonan</forename><surname>Lu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.13464</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Self-consistency improves chain of thought reasoning in language models</title>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aakanksha</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2203.11171</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="11809" to="11822" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Codet: Code generation with generated tests</title>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fengji</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anh</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Lou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.10397</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Salimans</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.12598</idno>
+		<title level="m">Classifier-free diffusion guidance</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aixin</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bingxuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bochao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengda</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenggang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengqi</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Ruan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.19437</idno>
+		<title level="m">Deepseek-v3 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Metagpt: Meta programming for a multi-agent collaborative framework</title>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiawu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ceyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zili</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Ka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shing</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijuan</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twelfth International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Planning-driven programming: A large language model programming workflow</title>
+		<author>
+			<persName><forename type="first">Chao</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanchuan</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nir</forename><surname>Lipovetzky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krista</forename><forename type="middle">A</forename><surname>Ehinger</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2411.14503</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Debug like a human: A large language model debugger via verifying runtime execution step-by-step</title>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingbo</forename><surname>Shang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2402.16906</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Hendrycks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Collin</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Basart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mantas</forename><surname>Mazeika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Steinhardt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2009.03300</idno>
+		<title level="m">Measuring massive multitask language understanding</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Prow: A step toward automatic program writing</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Richard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard Ct</forename><surname>Waldinger</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 1st international joint conference on Artificial intelligence</title>
+		<meeting>the 1st international joint conference on Artificial intelligence</meeting>
+		<imprint>
+			<date type="published" when="1969">1969</date>
+			<biblScope unit="page" from="241" to="252" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Toward automatic program synthesis</title>
+		<author>
+			<persName><forename type="first">Zohar</forename><surname>Manna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">J</forename><surname>Waldinger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="151" to="165" />
+			<date type="published" when="1971">1971</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Ds-1000: A natural and reliable benchmark for data science code generation</title>
+		<author>
+			<persName><forename type="first">Yuhang</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengxi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Wen Tau Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Yu</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2211.11501</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Codescore: Evaluating code generation by learning code execution</title>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiazheng</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Software Engineering and Methodology</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1" to="22" />
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Towards interpretable math word problem solving with operation-based formalisms</title>
+		<author>
+			<persName><forename type="first">Aida</forename><surname>Amini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saadia</forename><surname>Gabriel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanchuan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rik</forename><surname>Koncel-Kedziorski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mathqa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference of the North American Chapter</title>
+		<title level="s">Long and Short Papers</title>
+		<meeting>the 2019 Conference of the North American Chapter</meeting>
+		<imprint>
+			<publisher>the Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="2357" to="2367" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><forename type="middle">D</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="1877" to="1901" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fei</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Toolformer: Language models can teach themselves to use tools</title>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Hambro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="68539" to="68551" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">From code to correctness: Closing the last mile of code generation with hierarchical debugging</title>
+		<author>
+			<persName><forename type="first">Yuling</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songsong</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengcheng</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>Gu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2410.01215</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Diffusion models beat gans on image synthesis</title>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Nichol</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="8780" to="8794" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Sanchez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honglu</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Spangher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elad</forename><surname>Levi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pawan</forename><surname>Sasanka Ammanamanchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stella</forename><surname>Biderman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.17806</idno>
+		<title level="m">Stay on topic with classifier-free guidance</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Stay on topic with classifier-free guidance</title>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Sanchez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Spangher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honglu</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elad</forename><surname>Levi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stella</forename><surname>Biderman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="43197" to="43234" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<author>
+			<persName><forename type="first">Qihao</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenda</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wentao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanting</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Li</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.14196</idno>
+		<title level="m">Deepseek-coder: When the large language model meets programming-the rise of code intelligence</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Xcodeeval: An execution-based large scale multilingual multitask benchmark for code understanding, generation, translation and retrieval</title>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Abdullah Matin Khan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Saiful Bari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Do</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weishi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Md</forename><surname>Rizwan Parvez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shafiq</forename><surname>Joty</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Long Papers</publisher>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="6766" to="6805" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Self-collaboration code generation via chatgpt</title>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Software Engineering and Methodology</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="1" to="38" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Self-planning code generation with large language models</title>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lecheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiwei</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenpin</forename><surname>Jiao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Software Engineering and Methodology</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="1" to="30" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">Michihiro</forename><surname>Yasunaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panupong</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jure</forename><surname>Leskovec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.01714</idno>
+		<title level="m">Large language models as analogical reasoners</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Elevating large language models with modular of thought for challenging programming tasks</title>
+		<author>
+			<persName><forename type="first">Jingyao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pengguang</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaya</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Motcoder</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2312.15960</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Selfevolve: A code evolution framework via large language models</title>
+		<author>
+			<persName><forename type="first">Shuyang</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.02907</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Conline: Complex code generation and refinement with online searching and correctness testing</title>
+		<author>
+			<persName><forename type="first">Xinyi</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaru</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yun</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shi</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zejian</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dongmei</forename><surname>Zhang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<publisher>CoRR</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiruo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengbao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Docprompting</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2207.05987</idno>
+		<title level="m">Generating code by retrieving the docs</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Tomer Nussbaum, and Shir Granot Peled. Artificial expert intelligence through pac-reasoning</title>
+		<author>
+			<persName><forename type="first">Shai</forename><surname>Shalev-Shwartz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amnon</forename><surname>Shashua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gal</forename><surname>Beniamini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Or</forename><surname>Sharir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Wies</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ido</forename><surname>Ben-Shaul</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.02441</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

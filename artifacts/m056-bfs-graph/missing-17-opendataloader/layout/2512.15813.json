@@ -1,0 +1,4544 @@
+{
+  "layout": {
+    "author": "Nishant Gaurav; Adit Akarsh; Tejas Ravishankar; Manoj Bajaj",
+    "creation date": null,
+    "file name": "2512.15813.pdf",
+    "kids": [
+      {
+        "bounding box": [
+          14.04,
+          222.69,
+          36.36,
+          569.31
+        ],
+        "content": "arXiv:2512.15813v1[cs.SE]17Dec2025",
+        "font": "Times-Roman",
+        "font size": 20.0,
+        "heading level": 1,
+        "id": 77,
+        "level": "Doctitle",
+        "page number": 1,
+        "pdfua_tag": "H1",
+        "text color": "[0.5, 0.5, 0.5]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          124.103,
+          653.158,
+          487.899,
+          695.48
+        ],
+        "content": "CodeMem: Architecting Reproducible Agents via Dynamic MCP and Procedural Memory",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 17.215,
+        "heading level": 2,
+        "id": 65,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H2",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          180.487,
+          588.771,
+          274.616,
+          612.831
+        ],
+        "content": "Nishant Gaurav nishant@agentr.dev",
+        "font": "SFTT1000",
+        "font size": 9.963,
+        "id": 67,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          182.23,
+          549.683,
+          265.9,
+          573.743
+        ],
+        "content": "Tejas Ravishankar tejas@agentr.dev",
+        "font": "SFTT1000",
+        "font size": 9.963,
+        "id": 69,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          353.076,
+          588.771,
+          431.517,
+          612.831
+        ],
+        "content": "Adit Akarsh adit@agentr.dev",
+        "font": "SFTT1000",
+        "font size": 9.963,
+        "id": 68,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          346.104,
+          549.683,
+          429.774,
+          573.743
+        ],
+        "content": "Manoj Bajaj manoj@agentr.dev",
+        "font": "SFTT1000",
+        "font size": 9.963,
+        "id": 70,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          283.758,
+          508.011,
+          328.243,
+          523.565
+        ],
+        "content": "Abstract",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 71,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          143.866,
+          338.651,
+          469.38,
+          492.473
+        ],
+        "content": "Current tool-using AI agents suffer from limited action space, context inefficiency, and probabilistic instability that makes them unsuitable for handling repetitive tasks which are otherwise reliably and efficiently tackled by agentic workflows built on platforms like n8n [12] and Zapier [8]. Earlier works like CodeAct [15], DynaSaur [13], Code Mode [4] have tried to tackle the first two issues by using the whole Python language as its action space: The number of tools that the agent can call becomes infinite. Python code blocks can execute complex actions into a single step and print only relevant results which helps in keeping the context lean. However, the probabilistic instability issue still remains, as for the same task in the same environment, the agent can follow different trajectories due to the probabilistic nature of LLMs. Therefore, we need procedural memory for consistency and reliability. This paper proposes CodeMem, an architecture to implement procedural memory via code which can be used to build and run reusable agentic workflows with deterministic reliability.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 72,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          290.977,
+          190.814,
+          306.531
+        ],
+        "content": "1 Introduction",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 73,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.691,
+          177.182,
+          504.003,
+          276.459
+        ],
+        "content": "Tool-using language agents have evolved from single-shot chatbots into complex systems capable of planning and state management. Frameworks like CoALA emphasize that capable agents require structured memory, rich action spaces, and iterative decision-making loops [14]. However, most production architectures still rely on token-heavy, tool-centric interaction patterns where the LLM micromanages every step. This paper proposes CodeMem, an architecture that reframes the LLM as an architect of executable workflows. Instead of standard chat-based tool calling, the agent utilizes a sandbox to write, validate, and save successful logic into a persistent procedural memory bank. This approach solves the reproducibility crisis inherent in probabilistic models by shifting complex logic from volatile context windows into deterministic code.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 74,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.691,
+          84.43,
+          505.745,
+          172.797
+        ],
+        "content": "The plan for the rest of the paper is as follows. We first summarize the relevant literature which form the basis for CodeMem (in Section 2). Then we dive deeper into the benefits of CodeAct over ReAct which establishes that Code is the right format for capturing procedures (in Section 3). The next Section covers the key bottlenecks which must be solved (in Section 4). Section 5 proposes the CodeMem Architecture which overcomes the key bottlenecks specified in the previous section. In Section 6, we show how CodeMem creates procedural memory with a real-world case-study. Section 7 shows experiments which prove the benefits of CodeMem quantitatively. Finally we summarize the findings in Section 8.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 75,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          49.603,
+          139.131,
+          60.408
+        ],
+        "content": "Preprint.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 76,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          705.96,
+          197.09,
+          721.514
+        ],
+        "content": "2 Related Work",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 78,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          682.931,
+          261.115,
+          695.892
+        ],
+        "content": "2.1 Procedural Memory in Theory",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 79,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.691,
+          630.43,
+          505.24,
+          675.161
+        ],
+        "content": "The CoALA framework organizes agent memory into working, episodic, semantic, and procedural categories [14]. While working memory (context) and semantic memory (RAG) are well-solved, procedural memory (implicit knowledge of how to execute tasks) remains a bottleneck. The paper suggests three possible approaches for capturing procedural memory in AI Agents:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 80,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          131.412,
+          578.062,
+          302.151,
+          621.619
+        ],
+        "id": 81,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              131.412,
+              609.615,
+              271.725,
+              621.619
+            ],
+            "content": "1. Rewriting the code of the Agent",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              131.412,
+              593.838,
+              274.206,
+              605.842
+            ],
+            "content": "2. Editing the weights of the LLMs",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              131.412,
+              578.062,
+              302.151,
+              590.066
+            ],
+            "content": "3. Editing the instructions of the AI Agent",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "arabic numbers",
+        "page number": 2,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          107.691,
+          546.338,
+          505.741,
+          569.251
+        ],
+        "content": "Theoretically both these approaches make sense, but practical implementations are still missing. LangGraph, a popular agentic framework, calls this out in their documentation:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 82,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          142.54,
+          503.705,
+          468.298,
+          537.527
+        ],
+        "content": "“In practice, it is fairly uncommon for agents to modify their model weights or rewrite their code. However, it is more common for agents to modify their own prompts.” [9]",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 83,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          477.656,
+          367.187,
+          490.617
+        ],
+        "content": "2.2 Implementing Procedural Memory via Meta Prompting",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 84,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          446.972,
+          504.668,
+          469.885
+        ],
+        "content": "Frameworks like LangGraph distinguish between short-term memory (thread-scoped checkpoints) and long-term memory (cross-thread persistence) [10].",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 85,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          390.139,
+          505.653,
+          435.229
+        ],
+        "content": "Short-Term: LangGraph effectively manages conversation state (i.e. the messages history, including human, AI, and tool messages) via checkpoints. All kinds of memory (semantic, episodic, and procedural) can be captured in short term memory but there is no guarantee that the agent will utilize this memory reliably. That’s why we need long term memory.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 86,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          106.675,
+          322.397,
+          505.746,
+          378.396
+        ],
+        "content": "Long-Term: For capturing semantic and episodic memory we can leverage RAG and there are several open-source projects (e.g. Graphiti [6], LightRAG [7]) which are getting used in production. However, capturing procedural memory is still an underexplored topic. LangGraph conceptualizes procedural updates primarily as modifications to graph topology or just the system instructions (e.g., “update the prompt to handle X better next time”) [9].",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 87,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          273.281,
+          505.654,
+          318.012
+        ],
+        "content": "For example, the LangGraph team built a Tweet generator using external feedback and prompt rewriting to produce high-quality paper summaries for Twitter. In this case, the specific summarization prompt was difficult to specify a priori, but it was fairly easy for a user to critique the generated Tweets and provide feedback on how to improve the summarization process [11].",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 88,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          235.074,
+          505.241,
+          268.896
+        ],
+        "content": "However, relying on prompt updates for procedural memory is brittle. Because LLMs are stochastic, updating a system prompt does not guarantee the agent will adhere to the new procedure in the future, especially for longer instructions.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 89,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          207.776,
+          504.004,
+          231.049
+        ],
+        "content": "In contrast, CodeMem treats procedural memory as frozen code, ensuring deterministic execution without relying on the model’s instruction-following capability.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 90,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          181.727,
+          295.098,
+          194.688
+        ],
+        "content": "2.3 Progressive Disclosure for Tool Calling",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 91,
+        "level": "Subtitle",
+        "page number": 2,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          118.317,
+          505.247,
+          173.957
+        ],
+        "content": "Standard approaches to tool use require injecting full tool definitions into the system prompt. As tool libraries grow, this leads to context window bloat and attention degradation. Dynamic ReAct [5] proposes a solution by decoupling tool existence from tool definition. Instead of loading all tools, the agent is given a discovery mechanism to query a registry and load only relevant tools and their schemas on-demand.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 92,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.691,
+          69.201,
+          505.65,
+          113.932
+        ],
+        "content": "This follows the principle of progressive disclosure where we disclose the relevant tools to the LLM on an ad hoc basis. This shifts tool access from an O(N) context cost to an O(1) search operation, enabling infinite-scale tool libraries. This approach was also later highlighted in Anthropic’s engineering blog titled Code execution with MCP [1].",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 93,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          207.0,
+          513.163,
+          405.004,
+          720.002
+        ],
+        "id": 95,
+        "page number": 3,
+        "pdfua_tag": "Figure",
+        "source": "2512.15813_images/imageFile1.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          108.0,
+          459.754,
+          505.247,
+          504.485
+        ],
+        "id": 96,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              108.0,
+              459.754,
+              505.247,
+              504.485
+            ],
+            "content": "Figure 1: Mechanism for updating procedural memory via instruction tuning. The agent analyzes the conversation history and existing instructions to generate refined new instructions (e.g., adding constraints like \"Do not use hashtags\"). This process, utilized by the LangGraph Tweet generator, relies on meta-prompting rather than code modification [11].",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 173,
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 3,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          107.641,
+          415.848,
+          503.996,
+          438.762
+        ],
+        "content": "Access to a tool registry is also a key ingredient for an infinite action space. Without it, a CodeAct Agent cannot leverage capabilities outside of first party python libraries.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 97,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          385.107,
+          449.919,
+          400.661
+        ],
+        "content": "3 Comparative Analysis: Executable Code vs. Direct Tool Calling",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 98,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.641,
+          329.902,
+          505.245,
+          374.633
+        ],
+        "content": "Recent benchmarks indicate a fundamental limit to the JSON-centric tool calling paradigm (ReAct), where LLMs are provided a set of tools (with tool names and tool arguments), and they write JSON text for calling these tools. By shifting from discrete tool calls to executable code, agents achieve higher success rates and lower latency.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 99,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          303.776,
+          312.104,
+          316.737
+        ],
+        "content": "3.1 The Performance Gap: CodeAct vs. ReAct",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 100,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          262.152,
+          505.654,
+          295.974
+        ],
+        "content": "Research by Wang et al. [15] on the CodeAct framework demonstrates that agents utilizing executable Python code as their primary action space significantly outperform those relying on standard textbased or JSON-based tool invocation.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 101,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          135.397,
+          180.587,
+          505.747,
+          252.432
+        ],
+        "id": 102,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              135.397,
+              229.16,
+              504.165,
+              252.432
+            ],
+            "content": "• Success Rate: On the M3ToolEval benchmark, code-driven agents achieved a 20% higher success rate compared to ReAct agents.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              135.397,
+              180.587,
+              505.747,
+              225.677
+            ],
+            "content": "• Action Efficiency: Code agents required 30% fewer turns to complete equivalent tasks. This efficiency stems from the ability to compose multiple actions (e.g., search → filter → sort) into a single executable block, whereas ReAct requires a full LLM inference cycle for each individual step.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "unordered",
+        "page number": 3,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          154.461,
+          307.631,
+          167.422
+        ],
+        "content": "3.2 Decoupling Reasoning from Computation",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 103,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.691,
+          69.201,
+          505.745,
+          146.66
+        ],
+        "content": "Standard agents suffer from “computation hallucination,” where the LLM attempts to perform arithmetic or logic within the context window. Chen et al. [3] introduced Program of Thoughts (PoT), showing that offloading logic to a Python interpreter improves numerical reasoning accuracy by over 10% compared to Chain of Thought (CoT). In the CodeMem architecture, the Dynamic MCP tools serve as the “API,” but the logic (loops, data processing) is offloaded to the Python Sandbox. This separation ensures that the LLM acts as a semantic router while the CPU handles the syntactic execution, eliminating non-deterministic errors in logical processing.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 104,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.532,
+          418.714,
+          331.224,
+          719.601
+        ],
+        "id": 106,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              107.532,
+              687.263,
+              331.224,
+              719.601
+            ],
+            "content": "3.3 Contextual Complexity Analysis We define the context cost C for a workflow of N steps.",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  135.397,
+                  571.721,
+                  397.919,
+                  679.18
+                ],
+                "id": 50,
+                "level": "3",
+                "list items": [
+                  {
+                    "bounding box": [
+                      135.397,
+                      666.219,
+                      241.489,
+                      679.18
+                    ],
+                    "content": "• Standard Tool Calling:",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 9.963,
+                    "kids": [
+                      {
+                        "bounding box": [
+                          242.798,
+                          633.692,
+                          261.144,
+                          650.977
+                        ],
+                        "content": "C ≈",
+                        "font": "CMSY10",
+                        "font size": 9.963,
+                        "id": 41,
+                        "page number": 4,
+                        "pdfua_tag": "P",
+                        "text color": "[0.0]",
+                        "type": "paragraph"
+                      },
+                      {
+                        "bounding box": [
+                          267.581,
+                          653.966,
+                          273.892,
+                          660.939
+                        ],
+                        "content": "N",
+                        "font": "CMMI7",
+                        "font size": 6.974,
+                        "id": 42,
+                        "page number": 4,
+                        "pdfua_tag": "P",
+                        "text color": "[0.0]",
+                        "type": "paragraph"
+                      },
+                      {
+                        "bounding box": [
+                          264.657,
+                          629.758,
+                          277.563,
+                          636.731
+                        ],
+                        "content": "i=1",
+                        "font": "CMR7",
+                        "font size": 6.974,
+                        "id": 43,
+                        "page number": 4,
+                        "pdfua_tag": "P",
+                        "text color": "[0.0]",
+                        "type": "paragraph"
+                      },
+                      {
+                        "bounding box": [
+                          278.305,
+                          639.801,
+                          397.539,
+                          650.728
+                        ],
+                        "content": "(Sprompt + Shistory + Stool_output",
+                        "font": "NimbusRomNo9L-Regu",
+                        "font size": 6.974,
+                        "id": 44,
+                        "page number": 4,
+                        "pdfua_tag": "P",
+                        "text color": "[0.0]",
+                        "type": "paragraph"
+                      },
+                      {
+                        "bounding box": [
+                          397.539,
+                          638.508,
+                          400.197,
+                          643.489
+                        ],
+                        "content": "i",
+                        "font": "CMMI5",
+                        "font size": 4.981,
+                        "id": 45,
+                        "page number": 4,
+                        "pdfua_tag": "P",
+                        "text color": "[0.0]",
+                        "type": "paragraph"
+                      },
+                      {
+                        "bounding box": [
+                          401.193,
+                          640.765,
+                          405.067,
+                          650.728
+                        ],
+                        "content": ")",
+                        "font": "CMR10",
+                        "font size": 9.963,
+                        "id": 46,
+                        "page number": 4,
+                        "pdfua_tag": "P",
+                        "text color": "[0.0]",
+                        "type": "paragraph"
+                      },
+                      {
+                        "bounding box": [
+                          143.557,
+                          603.919,
+                          503.998,
+                          626.832
+                        ],
+                        "content": "The context grows linearly with every intermediate step, often truncating memory before the task is complete.",
+                        "font": "NimbusRomNo9L-Regu",
+                        "font size": 9.963,
+                        "id": 47,
+                        "page number": 4,
+                        "pdfua_tag": "P",
+                        "text color": "[0.0]",
+                        "type": "paragraph"
+                      }
+                    ],
+                    "page number": 4,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      135.397,
+                      571.721,
+                      397.919,
+                      601.758
+                    ],
+                    "content": "• CodeMem: C ≈ Sprompt + Scode_block + Sfinal_result",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 9.963,
+                    "kids": [],
+                    "page number": 4,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  }
+                ],
+                "number of list items": 2,
+                "numbering style": "unordered",
+                "page number": 4,
+                "pdfua_tag": "L",
+                "type": "list"
+              },
+              {
+                "bounding box": [
+                  143.866,
+                  542.882,
+                  504.002,
+                  576.704
+                ],
+                "content": "Intermediate data transformations occur in the sandbox’s memory (RAM), not the LLM’s context window. This allows for infinite-depth processing (e.g., looping through 10,000 database rows) without consuming token budget.",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 51,
+                "page number": 4,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  147.964,
+                  518.696,
+                  464.037,
+                  530.7
+                ],
+                "content": "Table 1: Benchmark Comparison: JSON Tool Calling vs. CodeMem Execution",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 9.963,
+                "id": 52,
+                "page number": 4,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  107.801,
+                  454.432,
+                  510.973,
+                  511.368
+                ],
+                "id": 53,
+                "level": "5",
+                "number of columns": 3,
+                "number of rows": 5,
+                "page number": 4,
+                "pdfua_tag": "Table",
+                "rows": [
+                  {
+                    "cells": [
+                      {
+                        "bounding box": [
+                          108.1,
+                          499.862,
+                          195.899,
+                          510.97
+                        ],
+                        "column number": 1,
+                        "column span": 1,
+                        "kids": [
+                          {
+                            "bounding box": [
+                              113.978,
+                              499.936,
+                              142.74,
+                              512.897
+                            ],
+                            "content": "Metric",
+                            "font": "NimbusRomNo9L-Medi",
+                            "font size": 9.963,
+                            "id": 1,
+                            "page number": 4,
+                            "pdfua_tag": "P",
+                            "text color": "[0.0]",
+                            "type": "paragraph"
+                          }
+                        ],
+                        "page number": 4,
+                        "pdfua_tag": "TD",
+                        "row number": 1,
+                        "row span": 1,
+                        "type": "table cell"
+                      },
+                      {
+                        "bounding box": [
+                          195.899,
+                          499.862,
+                          344.829,
+                          510.97
+                        ],
+                        "column number": 2,
+                        "column span": 1,
+                        "kids": [
+                          {
+                            "bounding box": [
+                              201.877,
+                              499.936,
+                              330.773,
+                              512.897
+                            ],
+                            "content": "Standard Tool Calling (JSON)",
+                            "font": "NimbusRomNo9L-Medi",
+                            "font size": 9.963,
+                            "id": 3,
+                            "level": "1",
+                            "page number": 4,
+                            "pdfua_tag": "P",
+                            "text color": "[0.0]",
+                            "type": "paragraph"
+                          }
+                        ],
+                        "page number": 4,
+                        "pdfua_tag": "TD",
+                        "row number": 1,
+                        "row span": 1,
+                        "type": "table cell"
+                      },
+                      {
+                        "bounding box": [
+                          344.829,
+                          499.862,
+                          510.674,
+                          510.97
+                        ],
+                        "column number": 3,
+                        "column span": 1,
+                        "kids": [
+                          {
+                            "bounding box": [
+                              350.807,
+                              499.936,
+                              434.642,
+                              512.897
+                            ],
+                            "content": "CodeMem (Python)",
+                            "font": "NimbusRomNo9L-Medi",
+                            "font size": 9.963,
+                            "id": 5,
+                            "page number": 4,
+                            "pdfua_tag": "P",
+                            "text color": "[0.0]",
+                            "type": "paragraph"
+                          }
+                        ],
+                        "page number": 4,
+                        "pdfua_tag": "TD",
+                        "row number": 1,
+                        "row span": 1,
+                        "type": "table cell"
+                      }
+                    ],
+                    "row number": 1,
+                    "type": "table row"
+                  },
+                  {
+                    "cells": [
+                      {
+                        "bounding box": [
+                          108.1,
+                          488.554,
+                          195.899,
+                          499.862
+                        ],
+                        "column number": 1,
+                        "column span": 1,
+                        "kids": [
+                          {
+                            "bounding box": [
+                              113.978,
+                              489.227,
+                              189.923,
+                              501.231
+                            ],
+                            "content": "Multi-step Latency",
+                            "font": "NimbusRomNo9L-Regu",
+                            "font size": 9.963,
+                            "id": 6,
+                            "page number": 4,
+                            "pdfua_tag": "P",
+                            "text color": "[0.0]",
+                            "type": "paragraph"
+                          }
+                        ],
+                        "page number": 4,
+                        "pdfua_tag": "TD",
+                        "row number": 2,
+                        "row span": 1,
+                        "type": "table cell"
+                      },
+                      {
+                        "bounding box": [
+                          195.899,
+                          488.554,
+                          344.829,
+                          499.862
+                        ],
+                        "column number": 2,
+                        "column span": 1,
+                        "kids": [
+                          {
+                            "bounding box": [
+                              201.877,
+                              482.462,
+                              311.04,
+                              501.231
+                            ],
+                            "content": "High (N× Inference Time)",
+                            "font": "NimbusRomNo9L-Regu",
+                            "font size": 9.963,
+                            "id": 8,
+                            "page number": 4,
+                            "pdfua_tag": "P",
+                            "text color": "[0.0]",
+                            "type": "paragraph"
+                          }
+                        ],
+                        "page number": 4,
+                        "pdfua_tag": "TD",
+                        "row number": 2,
+                        "row span": 1,
+                        "type": "table cell"
+                      },
+                      {
+                        "bounding box": [
+                          344.829,
+                          488.554,
+                          510.674,
+                          499.862
+                        ],
+                        "column number": 3,
+                        "column span": 1,
+                        "kids": [
+                          {
+                            "bounding box": [
+                              350.807,
+                              482.462,
+                              504.797,
+                              501.231
+                            ],
+                            "content": "Low (1× Inference + Execution Time)",
+                            "font": "NimbusRomNo9L-Regu",
+                            "font size": 9.963,
+                            "id": 10,
+                            "level": "1",
+                            "page number": 4,
+                            "pdfua_tag": "P",
+                            "text color": "[0.0]",
+                            "type": "paragraph"
+                          }
+                        ],
+                        "page number": 4,
+                        "pdfua_tag": "TD",
+                        "row number": 2,
+                        "row span": 1,
+                        "type": "table cell"
+                      }
+                    ],
+                    "row number": 2,
+                    "type": "table row"
+                  },
+                  {
+                    "cells": [
+                      {
+                        "bounding box": [
+                          108.1,
+                          477.246,
+                          195.899,
+                          488.554
+                        ],
+                        "column number": 1,
+                        "column span": 1,
+                        "kids": [
+                          {
+                            "bounding box": [
+                              113.978,
+                              477.919,
+                              181.783,
+                              489.923
+                            ],
+                            "content": "Logic Reliability",
+                            "font": "NimbusRomNo9L-Regu",
+                            "font size": 9.963,
+                            "id": 11,
+                            "page number": 4,
+                            "pdfua_tag": "P",
+                            "text color": "[0.0]",
+                            "type": "paragraph"
+                          }
+                        ],
+                        "page number": 4,
+                        "pdfua_tag": "TD",
+                        "row number": 3,
+                        "row span": 1,
+                        "type": "table cell"
+                      },
+                      {
+                        "bounding box": [
+                          195.899,
+                          477.246,
+                          344.829,
+                          488.554
+                        ],
+                        "column number": 2,
+                        "column span": 1,
+                        "kids": [
+                          {
+                            "bounding box": [
+                              201.877,
+                              477.919,
+                              338.853,
+                              489.923
+                            ],
+                            "content": "Probabilistic (LLM predicts logic)",
+                            "font": "NimbusRomNo9L-Regu",
+                            "font size": 9.963,
+                            "id": 13,
+                            "level": "1",
+                            "page number": 4,
+                            "pdfua_tag": "P",
+                            "text color": "[0.0]",
+                            "type": "paragraph"
+                          }
+                        ],
+                        "page number": 4,
+                        "pdfua_tag": "TD",
+                        "row number": 3,
+                        "row span": 1,
+                        "type": "table cell"
+                      },
+                      {
+                        "bounding box": [
+                          344.829,
+                          477.246,
+                          510.674,
+                          488.554
+                        ],
+                        "column number": 3,
+                        "column span": 1,
+                        "kids": [
+                          {
+                            "bounding box": [
+                              350.807,
+                              477.919,
+                              501.312,
+                              489.923
+                            ],
+                            "content": "Deterministic (Python executes logic)",
+                            "font": "NimbusRomNo9L-Regu",
+                            "font size": 9.963,
+                            "id": 15,
+                            "page number": 4,
+                            "pdfua_tag": "P",
+                            "text color": "[0.0]",
+                            "type": "paragraph"
+                          }
+                        ],
+                        "page number": 4,
+                        "pdfua_tag": "TD",
+                        "row number": 3,
+                        "row span": 1,
+                        "type": "table cell"
+                      }
+                    ],
+                    "row number": 3,
+                    "type": "table row"
+                  },
+                  {
+                    "cells": [
+                      {
+                        "bounding box": [
+                          108.1,
+                          465.939,
+                          195.899,
+                          477.246
+                        ],
+                        "column number": 1,
+                        "column span": 1,
+                        "kids": [
+                          {
+                            "bounding box": [
+                              113.978,
+                              466.612,
+                              182.6,
+                              478.616
+                            ],
+                            "content": "Max Loop Depth",
+                            "font": "NimbusRomNo9L-Regu",
+                            "font size": 9.963,
+                            "id": 16,
+                            "page number": 4,
+                            "pdfua_tag": "P",
+                            "text color": "[0.0]",
+                            "type": "paragraph"
+                          }
+                        ],
+                        "page number": 4,
+                        "pdfua_tag": "TD",
+                        "row number": 4,
+                        "row span": 1,
+                        "type": "table cell"
+                      },
+                      {
+                        "bounding box": [
+                          195.899,
+                          465.939,
+                          344.829,
+                          477.246
+                        ],
+                        "column number": 2,
+                        "column span": 1,
+                        "kids": [
+                          {
+                            "bounding box": [
+                              201.877,
+                              466.612,
+                              309.381,
+                              478.616
+                            ],
+                            "content": "< 25 (Limited by Context)",
+                            "font": "NimbusRomNo9L-Regu",
+                            "font size": 9.963,
+                            "id": 18,
+                            "page number": 4,
+                            "pdfua_tag": "P",
+                            "text color": "[0.0]",
+                            "type": "paragraph"
+                          }
+                        ],
+                        "page number": 4,
+                        "pdfua_tag": "TD",
+                        "row number": 4,
+                        "row span": 1,
+                        "type": "table cell"
+                      },
+                      {
+                        "bounding box": [
+                          344.829,
+                          465.939,
+                          510.674,
+                          477.246
+                        ],
+                        "column number": 3,
+                        "column span": 1,
+                        "kids": [
+                          {
+                            "bounding box": [
+                              350.807,
+                              459.847,
+                              476.376,
+                              478.616
+                            ],
+                            "content": "∞ (Limited by Compute/Time)",
+                            "font": "NimbusRomNo9L-Regu",
+                            "font size": 9.963,
+                            "id": 20,
+                            "level": "1",
+                            "page number": 4,
+                            "pdfua_tag": "P",
+                            "text color": "[0.0]",
+                            "type": "paragraph"
+                          }
+                        ],
+                        "page number": 4,
+                        "pdfua_tag": "TD",
+                        "row number": 4,
+                        "row span": 1,
+                        "type": "table cell"
+                      }
+                    ],
+                    "row number": 4,
+                    "type": "table row"
+                  },
+                  {
+                    "cells": [
+                      {
+                        "bounding box": [
+                          108.1,
+                          454.83,
+                          195.899,
+                          465.939
+                        ],
+                        "column number": 1,
+                        "column span": 1,
+                        "kids": [
+                          {
+                            "bounding box": [
+                              113.978,
+                              455.304,
+                              176.523,
+                              467.308
+                            ],
+                            "content": "Reproducibility",
+                            "font": "NimbusRomNo9L-Regu",
+                            "font size": 9.963,
+                            "id": 21,
+                            "page number": 4,
+                            "pdfua_tag": "P",
+                            "text color": "[0.0]",
+                            "type": "paragraph"
+                          }
+                        ],
+                        "page number": 4,
+                        "pdfua_tag": "TD",
+                        "row number": 5,
+                        "row span": 1,
+                        "type": "table cell"
+                      },
+                      {
+                        "bounding box": [
+                          195.899,
+                          454.83,
+                          344.829,
+                          465.939
+                        ],
+                        "column number": 2,
+                        "column span": 1,
+                        "kids": [
+                          {
+                            "bounding box": [
+                              201.877,
+                              455.304,
+                              306.484,
+                              467.308
+                            ],
+                            "content": "Low (Varies by seed/drift)",
+                            "font": "NimbusRomNo9L-Regu",
+                            "font size": 9.963,
+                            "id": 23,
+                            "level": "1",
+                            "page number": 4,
+                            "pdfua_tag": "P",
+                            "text color": "[0.0]",
+                            "type": "paragraph"
+                          }
+                        ],
+                        "page number": 4,
+                        "pdfua_tag": "TD",
+                        "row number": 5,
+                        "row span": 1,
+                        "type": "table cell"
+                      },
+                      {
+                        "bounding box": [
+                          344.829,
+                          454.83,
+                          510.674,
+                          465.939
+                        ],
+                        "column number": 3,
+                        "column span": 1,
+                        "kids": [
+                          {
+                            "bounding box": [
+                              350.807,
+                              455.304,
+                              449.865,
+                              467.308
+                            ],
+                            "content": "High (Versioned Scripts)",
+                            "font": "NimbusRomNo9L-Regu",
+                            "font size": 9.963,
+                            "id": 25,
+                            "page number": 4,
+                            "pdfua_tag": "P",
+                            "text color": "[0.0]",
+                            "type": "paragraph"
+                          }
+                        ],
+                        "page number": 4,
+                        "pdfua_tag": "TD",
+                        "row number": 5,
+                        "row span": 1,
+                        "type": "table cell"
+                      }
+                    ],
+                    "row number": 5,
+                    "type": "table row"
+                  }
+                ],
+                "type": "table"
+              }
+            ],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              418.714,
+              307.484,
+              434.268
+            ],
+            "content": "4 The Limitations of Vanilla CodeAct",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 11.955,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 4,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          107.532,
+          353.575,
+          504.001,
+          409.215
+        ],
+        "content": "While shifting from ReAct to CodeAct addresses the issues of context inefficiency and limited action spaces, it introduces a new set of bottlenecks related to reliability and persistence. CodeAct allows an agent to utilize the full expressivity of Python [15], but without a dedicated memory architecture, it suffers from issues arising from the nature of LLMs. We identify four structural penalties of using vanilla CodeAct without a persistence layer:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 107,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          328.851,
+          230.709,
+          341.812
+        ],
+        "content": "4.1 Probabilistic Instability",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 108,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.691,
+          265.838,
+          505.748,
+          321.478
+        ],
+        "content": "Standard CodeAct relies on generative improvisation for every task. Because LLMs are nondeterministic, the agent may generate different code paths for the exact same request across different sessions, especially if the request is not detailed (e.g., using pandas one day and openpyxl the next). This leads to trajectory divergence, where the logic validated in a previous session is not guaranteed to be reproduced, effectively causing the agent to “reinvent the wheel” unpredictably.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 109,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          241.114,
+          292.328,
+          254.075
+        ],
+        "content": "4.2 Redundant Computation and Latency",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 110,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          210.828,
+          504.004,
+          233.741
+        ],
+        "content": "Re-deriving solutions from scratch consumes extra tokens and requires computational time, even if provided perfect instructions. The total time for a task is calculated as:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 111,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          156.283,
+          504.0,
+          205.063
+        ],
+        "content": "Ttask = Tplan + Twrite_code + Tdebug + Texecute Even for tasks solved hundreds of times, the agent wastes tokens and time re-generating the planning and coding phases, since in practice it usually does not get everything right in one go. A system with procedural memory avoids this overhead by reducing the cost to approximately Texecute.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 112,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          132.214,
+          251.661,
+          145.175
+        ],
+        "content": "4.3 Inability to Retain Feedback",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 113,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.641,
+          69.201,
+          505.651,
+          124.841
+        ],
+        "content": "Vanilla CodeAct agents lack cross-session memory, making them unsuitable for workflows with any customization. If a user provides specific feedback, such as “filter by ‘received’ date rather than ‘sent’ date”, that correction is lost once the current context window closes. Without a mechanism to save successful logic, the agent fails to learn from the environment and requires repeated supervision for the same errors.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 114,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          706.64,
+          187.681,
+          719.601
+        ],
+        "content": "4.4 Context Drift",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 116,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.691,
+          643.479,
+          505.748,
+          699.119
+        ],
+        "content": "In longer, multi-step tasks (e.g., “Scrape 100 pages, filter by keyword, then summarize”), standard CodeAct agents often suffer from context drift. As the conversation history fills with intermediate code outputs and error logs, the original high-level goal gets pushed out of the LLM’s attention span. The agent might successfully scrape the data but “forget” to summarize it, or it might get stuck in a loop trying to fix a minor scraping error, losing sight of the overall objective.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 117,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          613.436,
+          319.798,
+          628.99
+        ],
+        "content": "5 The Solution: CodeMem Architecture",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 118,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.691,
+          558.651,
+          504.001,
+          603.382
+        ],
+        "content": "To overcome the structural penalties of vanilla CodeAct, we propose CodeMem, an architecture that transitions the LLM from a perpetual improviser to an architect of reusable skills. We address the bottlenecks identified in Section 4 by combining a Dynamic MCP discovery layer with a Procedural Memory Bank.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 119,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          533.224,
+          202.924,
+          546.185
+        ],
+        "content": "5.1 The Core Toolset",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 120,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.691,
+          502.79,
+          505.242,
+          525.703
+        ],
+        "content": "The foundation of the architecture relies on four primary tools that enable the agent to navigate, plan, and execute logic deterministically:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 121,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          135.397,
+          348.228,
+          505.743,
+          493.176
+        ],
+        "id": 122,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              135.397,
+              459.354,
+              505.743,
+              493.176
+            ],
+            "content": "• search_functions & load_functions: Implements the Dynamic MCP protocol [5]. This allows the agent to discover relevant tools and inject their schemas Just-in-Time, preventing context window bloat.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              135.397,
+              422.312,
+              504.003,
+              456.135
+            ],
+            "content": "• write_todos: A state persistence mechanism for long-horizon planning. It explicitly tracks dependencies (Pending → In Progress → Completed), preventing the “Goal Drift” often seen in standard CodeAct sessions.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              135.397,
+              396.179,
+              504.0,
+              419.093
+            ],
+            "content": "• execute_code: Runs Python scripts in a secure sandbox [2], allowing the agent to chain loaded tools together programmatically rather than sequentially via chat.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              135.397,
+              348.228,
+              504.35,
+              392.96
+            ],
+            "content": "• register_skill: The tool to add to procedural memory. This tool takes a successfully validated Python function and saves it into the user’s permanent library. It freezes the logic (and any specific user constraints) after it is finalized so it can be recalled deterministically in future sessions without re-generation.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 4,
+        "numbering style": "unordered",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          322.801,
+          208.204,
+          335.762
+        ],
+        "content": "5.2 Solving Instability",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 123,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.671,
+          281.458,
+          504.249,
+          315.28
+        ],
+        "content": "To resolve Probabilistic Instability (Section 4.1) and the lack of a method to incorporate user feedback (Section 4.3), CodeMem changes the lifecycle of code generation. Instead of treating code as ephemeral text, we treat it as a candidate for permanent storage.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 124,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          259.053,
+          504.002,
+          272.204
+        ],
+        "content": "Trial: The agent uses execute_code to generate and test logic in the sandbox, self-correcting errors",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 125,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          143.866,
+          248.932,
+          192.563,
+          260.936
+        ],
+        "content": "in real-time.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 126,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          233.11,
+          504.349,
+          246.071
+        ],
+        "content": "Saving: Once the output matches user requirements including any specific constraints like “filter by",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 127,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          143.866,
+          222.011,
+          359.154,
+          234.803
+        ],
+        "content": "received date”, the system triggers register_skill.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 128,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          206.977,
+          503.997,
+          219.938
+        ],
+        "content": "Persistence: The validated logic is saved to the user’s library, and used deterministically in the",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 129,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          143.866,
+          196.666,
+          170.147,
+          208.67
+        ],
+        "content": "future.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 130,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          171.239,
+          239.188,
+          184.2
+        ],
+        "content": "5.3 Solving Latency and Cost",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 131,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.691,
+          140.804,
+          503.995,
+          163.717
+        ],
+        "content": "To eliminate the Re-Derivation Penalty (Section 4.2), CodeMem alters the execution flow for recurrent tasks.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 132,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          135.397,
+          62.436,
+          401.925,
+          131.55
+        ],
+        "id": 133,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              135.397,
+              100.319,
+              401.925,
+              131.55
+            ],
+            "content": "• Standard CodeAct: Ttask = Tplan + Twrite + Tdebug + Texecute",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              135.397,
+              62.436,
+              352.558,
+              92.967
+            ],
+            "content": "• CodeMem Reuse: Ttask ≈ Texecute",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "unordered",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          107.641,
+          663.602,
+          505.241,
+          719.242
+        ],
+        "content": "The user is able to access their repository of stored skills, and load it into the execution environment’s context as well as the LLM’s context. This allows the LLM to be aware of the function’s functionality, while also not having to rewrite the code to use it. Thus, by skipping the planning, writing/rewriting, and debugging phases entirely, the agent reduces latency and eliminates the token costs associated with re-generation.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 135,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          638.066,
+          221.733,
+          651.027
+        ],
+        "content": "5.4 Solving Context Drift",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 136,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.691,
+          563.951,
+          504.668,
+          630.501
+        ],
+        "content": "To prevent context drift (Section 4.4) during longer tasks, CodeMem utilizes write_todos as an external anchor. Implicit internal reasoning often fails as the context window fills with logs and code blocks. write_todos maintains a structured checklist (Pending → In Progress → Completed) outside of the chat history. This allows the agent to deep-dive into specific sub-tasks (like debugging a scraper) without losing its place in the overall plan, ensuring the final crystallized code is complete and modular.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 137,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          286.983,
+          540.72,
+          325.305,
+          550.324
+        ],
+        "content": "User Query",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 139,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          226.829,
+          526.555,
+          245.149,
+          535.199
+        ],
+        "content": "search",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.173,
+        "id": 158,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          368.049,
+          526.554,
+          383.98,
+          535.198
+        ],
+        "content": "recall",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.173,
+        "id": 162,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          250.188,
+          474.249,
+          258.832,
+          514.289
+        ],
+        "content": "Retry(Stderr)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.173,
+        "id": 168,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          174.391,
+          493.883,
+          203.738,
+          512.98
+        ],
+        "content": "Tool Registry",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 7.97,
+        "id": 149,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          404.933,
+          476.907,
+          442.104,
+          512.98
+        ],
+        "content": "Procedural Memory (Saved Skills)",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 7.97,
+        "id": 152,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          282.448,
+          484.962,
+          329.81,
+          503.58
+        ],
+        "content": "Agent (LLM) Architect",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 7.97,
+        "id": 141,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          172.538,
+          476.907,
+          205.048,
+          495.238
+        ],
+        "content": "(Dynamic MCP)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 150,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          355.393,
+          469.031,
+          382.091,
+          477.675
+        ],
+        "content": "functions",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.173,
+        "id": 164,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          308.442,
+          458.527,
+          348.884,
+          467.171
+        ],
+        "content": "1. Gen Script",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.173,
+        "id": 154,
+        "level": "4",
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          222.839,
+          457.19,
+          247.142,
+          465.834
+        ],
+        "content": "schemas",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.173,
+        "id": 160,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          281.059,
+          413.001,
+          331.261,
+          440.976
+        ],
+        "content": "Python Sandbox execute_code",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 7.97,
+        "id": 143,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          413.886,
+          359.079,
+          422.515,
+          411.791
+        ],
+        "content": "register_skill",
+        "font": "SFTT0900",
+        "font size": 7.173,
+        "id": 172,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          257.234,
+          358.484,
+          266.0,
+          367.128
+        ],
+        "content": "No",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.173,
+        "id": 166,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          345.173,
+          358.484,
+          355.61,
+          367.128
+        ],
+        "content": "Yes",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.173,
+        "id": 170,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          292.398,
+          352.56,
+          320.595,
+          362.164
+        ],
+        "content": "Success?",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 145,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          308.979,
+          313.106,
+          327.313,
+          321.75
+        ],
+        "content": "Result",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.173,
+        "id": 156,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          285.027,
+          277.977,
+          326.983,
+          287.581
+        ],
+        "content": "Final Output",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 147,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          230.087,
+          503.997,
+          264.268
+        ],
+        "id": 173,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              108.0,
+              230.087,
+              503.997,
+              264.268
+            ],
+            "content": "Figure 2: The CodeMem Architecture. The Agent creates reproducible workflows by discovering tools (Left), executing them in a sandbox (Center), and freezing successful logic into persistent memory (Right).",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 6,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 6,
+        "pdfua_tag": "L",
+        "previous list id": 96,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          190.975,
+          354.325,
+          206.529
+        ],
+        "content": "6 Creating Procedural Memory: A Case Study",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 174,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.641,
+          125.216,
+          505.247,
+          180.856
+        ],
+        "content": "The ultimate goal of the CodeMem architecture is not merely to execute a task once, but to crystallize the successful logic into a reusable skill. This process transforms ephemeral chains of thought into persistent procedural memory. To illustrate the necessity and mechanics of this transition, we examine the Outlook-OneDrive Bridge, a complex administrative task that requires temporal filtering, conditional logic, and cross-service file orchestration.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 175,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          99.679,
+          340.597,
+          112.64
+        ],
+        "content": "6.1 The Challenge: High-Fidelity Data Orchestration",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 176,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          69.201,
+          504.001,
+          92.114
+        ],
+        "content": "Consider the following real-world request, which represents a class of tasks typically fatal to standard chat agents:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 177,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          143.507,
+          663.602,
+          468.303,
+          719.601
+        ],
+        "content": "User Query: “Go through the past 15 days of emails in my Outlook. Wherever there’s a PDF or XLSX attachment, save it to a OneDrive folder named ‘Email Attachments/[Company Name]’. Ignore internal emails from @agentr.dev. If the company name is codeword, extract the real company name from the attachment metadata.”",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 179,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.671,
+          620.414,
+          505.656,
+          654.236
+        ],
+        "content": "This prompt contains four distinct constraints: a temporal window (15 days), a file-type filter (PDF/XLSX), a negative filter (ignore domain), and a conditional logic branch (pseudo-code extraction).",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 180,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          596.703,
+          322.614,
+          609.664
+        ],
+        "content": "6.1.1 The ReAct Failure Mode: Context Collapse",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 181,
+        "level": "Subtitle",
+        "page number": 7,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          567.761,
+          503.997,
+          590.675
+        ],
+        "content": "In a standard Tool-Calling (ReAct) architecture, the agent attempts to solve this iteratively. This approach fails due to linear complexity scaling:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 182,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          131.412,
+          462.058,
+          505.745,
+          558.755
+        ],
+        "id": 183,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              131.412,
+              545.604,
+              505.742,
+              558.755
+            ],
+            "content": "1. Ingestion: The agent calls outlook_list_emails and receives a JSON list of 50+ emails.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              131.412,
+              519.8,
+              503.997,
+              543.86
+            ],
+            "content": "2. Iteration: It must iterate through this list one by one. For every email with an attachment, it calls outlook_get_attachment.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              131.412,
+              462.058,
+              505.745,
+              518.057
+            ],
+            "content": "3. Collapse: The API returns the raw Base64 string of a 5MB PDF. This single data payload instantly fills the context window. The agent undergoes Context Collapse—the truncation of the conversation history deletes the memory of which emails have already been processed. The agent typically enters a failure loop, re-fetching the first email indefinitely until the token budget is exhausted.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "arabic numbers",
+        "page number": 7,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          437.002,
+          337.289,
+          449.963
+        ],
+        "content": "6.2 The CodeMem Solution: Sandbox Orchestration",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 184,
+        "level": "Subtitle",
+        "page number": 7,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          406.715,
+          503.997,
+          429.629
+        ],
+        "content": "In the CodeMem architecture, the LLM does not ingest the data; instead, it architects the pipeline that moves the data. The agent operates in three distinct phases to ensure reliability.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 185,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          311.133,
+          505.249,
+          397.709
+        ],
+        "id": 186,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              108.0,
+              374.437,
+              505.242,
+              397.709
+            ],
+            "content": "Phase 1: Discovery & Planning. The agent utilizes search_functions to map the API surface, identifying the necessary tools for retrieval and storage.",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              348.633,
+              504.002,
+              371.905
+            ],
+            "content": "Phase 2: Script Generation. Instead of calling tools one by one, the agent authors a robust Python script (Listing 1) that handles the logic in silico.",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              311.133,
+              505.249,
+              346.102
+            ],
+            "content": "Phase 3: Execution. The script executes in the sandbox. In our experiments, it processed 7 emails, filtered 3, and uploaded 4 files in a single execution pass taking 14 seconds. The final artifact is the agent_main function itself, which is saved to the user’s library for zero-shot reuse.",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "arabic numbers",
+        "page number": 7,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          107.691,
+          267.488,
+          499.122,
+          299.826
+        ],
+        "content": "6.3 Architectural Advantages The shift from ReAct to CodeMem introduces two fundamental improvements in agent reliability:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "heading level": 5,
+        "id": 187,
+        "level": "Subtitle",
+        "page number": 7,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          135.397,
+          133.042,
+          504.004,
+          258.481
+        ],
+        "id": 188,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              135.397,
+              191.572,
+              504.004,
+              258.481
+            ],
+            "content": "• O(1) Context Complexity: In ReAct, context consumption scales linearly with the size of the data (O(D)), as file contents must pass through the LLM. In CodeMem, context consumption is constant (O(1)) relative to data size. The LLM only sees the reference to the data (e.g., variable attachment[’content’]), while the actual binary transfer occurs within the Python Sandbox’s heap memory. This allows agents to process gigabytes of data without utilizing a single token of context.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              135.397,
+              133.042,
+              504.004,
+              189.041
+            ],
+            "content": "• Deterministic Control Flow: The requirement to “ignore emails from @agentr.dev” is a simple boolean check. In an LLM-driven loop, the model must “remember” to apply this rule at every step, making it susceptible to attention drift. In the generated script, the if statement is syntactically enforced by the Python interpreter, ensuring 100% compliance with the negative filter.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 7,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "unordered",
+        "page number": 7,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          92.06,
+          483.838,
+          98.038,
+          700.257
+        ],
+        "id": 192,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              95.049,
+              693.054,
+              98.038,
+              700.257
+            ],
+            "content": "1",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              95.049,
+              683.091,
+              98.038,
+              690.294
+            ],
+            "content": "2",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              95.049,
+              673.129,
+              98.038,
+              680.332
+            ],
+            "content": "3",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              95.049,
+              663.166,
+              98.038,
+              670.369
+            ],
+            "content": "4",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              95.049,
+              643.241,
+              98.038,
+              650.444
+            ],
+            "content": "5",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              95.049,
+              633.278,
+              98.038,
+              640.481
+            ],
+            "content": "6",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              95.049,
+              623.315,
+              98.038,
+              630.518
+            ],
+            "content": "7",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              95.049,
+              613.353,
+              98.038,
+              620.556
+            ],
+            "content": "8",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              95.049,
+              603.39,
+              98.038,
+              610.593
+            ],
+            "content": "9",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              92.06,
+              593.428,
+              98.038,
+              600.631
+            ],
+            "content": "10",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              92.06,
+              583.465,
+              98.038,
+              590.668
+            ],
+            "content": "11",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              92.06,
+              573.502,
+              98.038,
+              580.705
+            ],
+            "content": "12",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              92.06,
+              563.54,
+              98.038,
+              570.743
+            ],
+            "content": "13",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              92.06,
+              553.577,
+              98.038,
+              560.78
+            ],
+            "content": "14",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              92.06,
+              543.614,
+              98.038,
+              550.817
+            ],
+            "content": "15",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              92.06,
+              533.652,
+              98.038,
+              540.855
+            ],
+            "content": "16",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              92.06,
+              523.689,
+              98.038,
+              530.892
+            ],
+            "content": "17",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              92.06,
+              513.726,
+              98.038,
+              520.929
+            ],
+            "content": "18",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              92.06,
+              503.764,
+              98.038,
+              510.967
+            ],
+            "content": "19",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              92.06,
+              493.801,
+              98.038,
+              501.004
+            ],
+            "content": "20",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              92.06,
+              483.838,
+              98.038,
+              491.041
+            ],
+            "content": "21",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 5.978,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.5]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 21,
+        "numbering style": "arabic numbers",
+        "page number": 8,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          200.422,
+          707.238,
+          411.579,
+          719.242
+        ],
+        "content": "Listing 1: The Agent-Generated Orchestration Script",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "heading level": 5,
+        "id": 190,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          104.613,
+          479.142,
+          507.387,
+          705.095
+        ],
+        "id": 191,
+        "kids": [
+          {
+            "bounding box": [
+              108.789,
+              691.515,
+              305.195,
+              702.302
+            ],
+            "content": "async def agent_main(days_back =15):",
+            "font": "SFTT0900",
+            "font size": 8.966,
+            "id": 11,
+            "page number": 8,
+            "pdfua_tag": "P",
+            "text color": "[0.0]",
+            "type": "paragraph"
+          },
+          {
+            "bounding box": [
+              131.061,
+              621.776,
+              491.153,
+              692.339
+            ],
+            "id": 13,
+            "level": "1",
+            "list items": [
+              {
+                "bounding box": [
+                  131.061,
+                  661.627,
+                  491.153,
+                  692.339
+                ],
+                "content": "# 1. Deterministic Date Calculation cutoff = datetime.now() - timedelta(days=days_back) filter_query = f\"receivedDateTime >= {cutoff} and hasAttachments",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "kids": [
+                  {
+                    "bounding box": [
+                      151.143,
+                      651.664,
+                      195.225,
+                      662.451
+                    ],
+                    "content": "eq true\"",
+                    "font": "SFTT0900",
+                    "font size": 8.966,
+                    "id": 7,
+                    "page number": 8,
+                    "pdfua_tag": "P",
+                    "text color": "[1.0, 0.0, 0.0]",
+                    "type": "paragraph"
+                  }
+                ],
+                "page number": 8,
+                "pdfua_tag": "LI",
+                "text color": "[0.5]",
+                "type": "list item"
+              },
+              {
+                "bounding box": [
+                  131.061,
+                  621.776,
+                  446.38,
+                  642.526
+                ],
+                "content": "# 2. Bulk Fetch & Local Filter emails = await outlook__list_emails(filter=filter_query)",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "kids": [],
+                "page number": 8,
+                "pdfua_tag": "LI",
+                "text color": "[0.5]",
+                "type": "list item"
+              }
+            ],
+            "number of list items": 2,
+            "numbering style": "arabic numbers",
+            "page number": 8,
+            "pdfua_tag": "L",
+            "type": "list"
+          },
+          {
+            "bounding box": [
+              131.294,
+              581.926,
+              372.623,
+              612.638
+            ],
+            "content": "for email in emails: # Logic handled in loop , not via tokens if \"@agentr.dev\" in email[’from’]:",
+            "font": "SFTT0900",
+            "font size": 8.966,
+            "id": 17,
+            "page number": 8,
+            "pdfua_tag": "P",
+            "text color": "[0.5]",
+            "type": "paragraph"
+          },
+          {
+            "bounding box": [
+              176.61,
+              571.963,
+              220.117,
+              582.75
+            ],
+            "content": "continue",
+            "font": "SFTT0900",
+            "font size": 8.966,
+            "id": 21,
+            "page number": 8,
+            "pdfua_tag": "P",
+            "text color": "[0.0, 0.0, 1.0]",
+            "type": "paragraph"
+          },
+          {
+            "bounding box": [
+              153.647,
+              482.299,
+              468.813,
+              562.825
+            ],
+            "id": 24,
+            "level": "2",
+            "list items": [
+              {
+                "bounding box": [
+                  153.647,
+                  542.075,
+                  463.166,
+                  562.825
+                ],
+                "content": "# 3. Data Streaming (Not Context Loading) attachment = await outlook__get_attachment(email[’id’])",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "kids": [],
+                "page number": 8,
+                "pdfua_tag": "LI",
+                "text color": "[0.5]",
+                "type": "list item"
+              },
+              {
+                "bounding box": [
+                  153.647,
+                  482.299,
+                  468.813,
+                  532.937
+                ],
+                "content": "# 4. Metadata Extraction via Helper meta = await _analyze_email_metadata(email) path = f\"Email Attachments December/{meta[’company ’]}/\" await onedrive__upload_file(path , attachment[’content’])",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "kids": [],
+                "page number": 8,
+                "pdfua_tag": "LI",
+                "text color": "[0.5]",
+                "type": "list item"
+              }
+            ],
+            "number of list items": 2,
+            "numbering style": "arabic numbers",
+            "page number": 8,
+            "pdfua_tag": "L",
+            "type": "list"
+          }
+        ],
+        "page number": 8,
+        "type": "text block"
+      },
+      {
+        "bounding box": [
+          108.0,
+          444.628,
+          351.546,
+          457.589
+        ],
+        "content": "6.4 Pathways to Formation: Instruction vs. Exploration",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 193,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.691,
+          402.572,
+          504.002,
+          436.394
+        ],
+        "content": "There are two distinct ways to turn a one-time conversation into a reusable tool. The reliability of the resulting tool depends on whether the user provides the blueprint (Instruction) or the agent discovers it (Exploration).",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 194,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          376.706,
+          336.323,
+          389.667
+        ],
+        "content": "6.4.1 Pathway 1: Exploration-Driven (The Scientist)",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 195,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          335.995,
+          503.998,
+          369.817
+        ],
+        "content": "In this scenario, the user provides a high-level goal (“Fetch my emails...”) without implementation details. The agent must perform Hierarchical Task Analysis, decomposing the abstract request into executable steps through trial and error.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 196,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          135.397,
+          225.026,
+          505.248,
+          325.552
+        ],
+        "id": 197,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              135.397,
+              291.371,
+              505.248,
+              325.552
+            ],
+            "content": "• Cognitive Load: High. The agent must hypothesize which tools to use (e.g., searching for “fetch emails”), discover that the API lacks specific filters (e.g., filtering by attachment type), and devise a Python-side logic to compensate.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              135.397,
+              251.956,
+              504.002,
+              286.925
+            ],
+            "content": "• Execution Profile: Iterative and Cyclic. The logs show the agent loading tools, attempting execution, discovering limitations (e.g., lack of file writing capabilities), and pivoting strategies (e.g., switching from markitdown to pandas).",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              135.397,
+              225.026,
+              504.002,
+              248.298
+            ],
+            "content": "• Risk: Without a clear map, the agent is prone to Goal Drift—forgetting the high-level objective while fixing low-level syntax errors.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "unordered",
+        "page number": 8,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          199.161,
+          336.672,
+          212.122
+        ],
+        "content": "6.4.2 Pathway 2: Instruction-Driven (The Architect)",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 198,
+        "level": "Subtitle",
+        "page number": 8,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          147.54,
+          504.001,
+          192.271
+        ],
+        "content": "In this scenario, the user acts as the Architect, providing a fully specified algorithm. The agent acts as a Builder, translating natural language constraints directly into control flow. This pathway is characterized by a “Handshake” protocol where the agent confirms the architectural details before building.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 199,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          143.866,
+          102.916,
+          469.787,
+          137.097
+        ],
+        "content": "User Prompt: “Create a reproducible workflow... [Detailed logic for Outlook/OneDrive]... Ignore emails where the domain is @agentr.dev... Set an appropriate name...”",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 200,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.751,
+          69.201,
+          504.0,
+          92.114
+        ],
+        "content": "Because the instructions are dense, the agent recognizes the need for state management and halts to verify requirements before writing the final code:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 201,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          685.42,
+          504.002,
+          719.601
+        ],
+        "content": "Agent: “Since this workflow fetches emails from a rolling window... running it multiple times could result in duplicate files. Would you like me to add a ‘memory’ to this agent (e.g., using a Google Sheet) to track processed emails?”",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 203,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          655.398,
+          504.169,
+          683.071
+        ],
+        "content": "User: “no log required” Agent: [Generates Plan] “I will filter out emails from @agentr.dev... and use the current month for",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 204,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          629.777,
+          243.054,
+          657.091
+        ],
+        "content": "dynamic folder naming.” User: “ok”",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 205,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.691,
+          598.551,
+          504.002,
+          621.464
+        ],
+        "content": "This confirmation step is critical. It ensures that the resulting procedural memory aligns exactly with user intent before the logic is crystallized into the codebase.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 206,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          573.468,
+          275.112,
+          586.619
+        ],
+        "content": "6.5 State Anchoring via write_todos",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 207,
+        "level": "Subtitle",
+        "page number": 9,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.691,
+          532.463,
+          504.003,
+          566.285
+        ],
+        "content": "To manage the complexity of both pathways, particularly the exploration-driven one, the agent utilizes write_todos as an External Working Memory. Before executing complex logic, the agent externalizes its plan:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 208,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          510.76,
+          139.376,
+          522.696
+        ],
+        "content": "todos:",
+        "font": "SFTT1000",
+        "font size": 9.963,
+        "id": 209,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          118.458,
+          423.487,
+          426.977,
+          511.787
+        ],
+        "id": 210,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              118.458,
+              488.942,
+              379.912,
+              511.787
+            ],
+            "content": "- status: completed content: Load functions for Outlook and OneDrive",
+            "font": "SFTT1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              118.458,
+              467.124,
+              426.977,
+              489.969
+            ],
+            "content": "- status: pending content: Fetch Outlook emails... filter for (.pdf, .xlsx)",
+            "font": "SFTT1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              118.458,
+              445.306,
+              390.369,
+              468.151
+            ],
+            "content": "- status: pending content: Process sample... extract Company Name...",
+            "font": "SFTT1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              118.458,
+              423.487,
+              322.397,
+              446.333
+            ],
+            "content": "- status: pending content: Create folders... and upload",
+            "font": "SFTT1000",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 4,
+        "numbering style": "unordered",
+        "page number": 9,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          106.675,
+          370.633,
+          504.003,
+          415.364
+        ],
+        "content": "This bridges the gap between Goal and Execution. If the sandbox crashes or the context is truncated due to a large error log, the agent reads the todos object to perform State Recovery. It identifies that “Process sample” is still marked pending and immediately generates a fix for the error, picking up exactly where it left off without needing to re-derive the plan from the chat history.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 211,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          341.125,
+          254.344,
+          356.679
+        ],
+        "content": "7 Experimental Evaluation",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 212,
+        "level": "Subtitle",
+        "page number": 9,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          318.856,
+          219.242,
+          331.817
+        ],
+        "content": "7.1 Dataset Composition",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 213,
+        "level": "Subtitle",
+        "page number": 9,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.691,
+          277.661,
+          505.658,
+          311.483
+        ],
+        "content": "To rigorously evaluate the efficacy of the CodeMem architecture, we curated a dataset of 25 multistep agentic tasks. These tasks range from simple retrieval (Difficulty 1) to complex, multi-tool orchestration (Difficulty 5). The dataset covers diverse domains including:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 214,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          135.397,
+          217.318,
+          504.002,
+          270.014
+        ],
+        "id": 215,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              135.397,
+              257.053,
+              486.648,
+              270.014
+            ],
+            "content": "• Personal Productivity: \"Find unread emails from the last 24 hours and draft replies.\"",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              135.397,
+              242.341,
+              479.924,
+              255.302
+            ],
+            "content": "• Data Analysis: \"Analyze Census data for ZIP 94012 and email a visualized report.\"",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              135.397,
+              217.318,
+              504.002,
+              240.59
+            ],
+            "content": "• System Operations: \"Scrape Reddit threads, filter by sentiment, and update a Google Sheet.\"",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "unordered",
+        "page number": 9,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          186.399,
+          503.998,
+          209.312
+        ],
+        "content": "Each task requires the agent to navigate a real-world environment, chaining between 2 to 8 distinct tools (e.g., Gmail, Google Sheets, Reddit, Web Search) to achieve a verifiable outcome.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 216,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          161.507,
+          235.212,
+          174.468
+        ],
+        "content": "7.2 Evaluation Methodology",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 217,
+        "level": "Subtitle",
+        "page number": 9,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          131.22,
+          503.997,
+          154.492
+        ],
+        "content": "Given the open-ended nature of agentic tasks, we employed an LLM-as-a-Judge framework to measure correctness. We utilized Gemini 2.5 Flash as the evaluator model.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 218,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          103.923,
+          504.002,
+          126.836
+        ],
+        "content": "Crucially, the judge was not limited to checking the final text response. It was granted access to the full agent trajectory, including:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 219,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          131.412,
+          69.201,
+          331.8,
+          95.917
+        ],
+        "id": 220,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              131.412,
+              83.913,
+              331.8,
+              95.917
+            ],
+            "content": "1. The sequence of tool selections and arguments.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              131.412,
+              69.201,
+              298.315,
+              81.205
+            ],
+            "content": "2. The raw code executed in the sandbox.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 222,
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 9,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          131.412,
+          707.238,
+          475.58,
+          719.242
+        ],
+        "id": 222,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              131.412,
+              707.238,
+              475.58,
+              719.242
+            ],
+            "content": "3. The execution outputs (stdout/stderr) and side effects (e.g., API success responses).",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 10,
+        "pdfua_tag": "L",
+        "previous list id": 220,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          107.691,
+          675.634,
+          504.671,
+          698.547
+        ],
+        "content": "This allowed the judge to verify functional success (e.g., \"Did the file actually get saved to Drive?\") rather than relying solely on the agent’s self-reported success.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 223,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          649.854,
+          270.52,
+          662.815
+        ],
+        "content": "7.3 CodeMem Performance Analysis",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 224,
+        "level": "Subtitle",
+        "page number": 10,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.532,
+          619.278,
+          504.004,
+          642.191
+        ],
+        "content": "We evaluated the CodeMem architecture across three state-of-the-art foundational models. Table 2 presents the comparative performance metrics.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 225,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          131.501,
+          575.696,
+          480.501,
+          609.772
+        ],
+        "content": "Table 2: Performance Comparison on CodeMem Benchmarks Model Correctness (Min) Avg. Calls P50 Latency Total Tokens",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "id": 226,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          131.501,
+          538.361,
+          466.513,
+          572.542
+        ],
+        "content": "Gemini 3 Full 96% 7.00 100.48s 2.02M Claude 4.5 Sonnet 79% 6.96 71.38s 2.61M GPT-5 Chat 68% 2.80 14.75s 0.49M",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 229,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          460.746,
+          504.001,
+          523.51
+        ],
+        "content": "As shown in Table 2, Gemini 3 Full achieved the highest stability with a minimum correctness of 96%, utilizing an average of 7.00 assistant calls to fully resolve tasks. Conversely, while GPT-5 Chat appears highly efficient in terms of latency (14.75s) and token usage (0.49M), this efficiency is illusory. The model frequently failed to iterate on edge cases, exiting the loop prematurely (2.80 avg calls) compared to the ∼7 calls required by higher-reasoning models to achieve success.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 231,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          437.116,
+          256.974,
+          452.67
+        ],
+        "content": "8 Summary of Architecture",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 232,
+        "level": "Subtitle",
+        "page number": 10,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          161.174,
+          408.458,
+          450.827,
+          420.462
+        ],
+        "content": "Table 3: Comparison of Architectural Components and Problems Solved",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 233,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          370.082,
+          514.403,
+          399.347
+        ],
+        "content": "Feature Implementation Tool Problem Solved Context Management search / load_functions Context Bloat: Tools are loaded Just-in-Time",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "id": 235,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          329.901,
+          359.961,
+          421.218,
+          371.965
+        ],
+        "content": "via Dynamic MCP [5].",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 237,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          322.252,
+          516.06,
+          356.433
+        ],
+        "content": "State Persistence write_todos Goal Drift: Complex plans are tracked in a structured list, preventing agents from \"forgetting\" parallel tasks.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 238,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          284.543,
+          514.405,
+          318.725
+        ],
+        "content": "Flow Control execute_code (Sandbox) Rigid Orchestration: Loops and conditionals occur in deterministic code, not probabilistic chat.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 239,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          257.744,
+          514.405,
+          281.016
+        ],
+        "content": "Computation execute_code (Pandas) Logic Failure: Mathematical operations are calculated by the CPU, not predicted by tokens.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 240,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          220.035,
+          514.405,
+          254.216
+        ],
+        "content": "Reliability register_skill (DB) Reproducibility: Successful logic is frozen into reusable skills, avoiding stochastic prompt drift.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 241,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          180.869,
+          163.544,
+          196.423
+        ],
+        "content": "References",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 243,
+        "level": "Subtitle",
+        "page number": 10,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          112.981,
+          68.413,
+          505.746,
+          176.082
+        ],
+        "id": 244,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              112.981,
+              152.381,
+              505.046,
+              176.082
+            ],
+            "content": "[1] Anthropic. Code execution with MCP. https://www.anthropic.com/engineering/ code-execution-with-mcp, 2024. Anthropic Engineering Blog.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              122.094,
+              505.746,
+              145.007
+            ],
+            "content": "[2] Anthropic. Introducing agent skills. https://www.claude.com/blog/skills, 2025. Claude.com Blog.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              68.413,
+              505.653,
+              113.932
+            ],
+            "content": "[3] Wenhu Chen, Xueguang Ma, Xinyi Wang, and William W Cohen. Program of thoughts prompting: Disentangling computation from reasoning for numerical reasoning tasks. Transactions on Machine Learning Research, 2023. ISSN 2835-8856. URL https://openreview.net/ forum?id=YfZ4ZPt8zd. Also available as arXiv:2211.12588 (2022).",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 10,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 246,
+        "number of list items": 3,
+        "numbering style": "arabic numbers",
+        "page number": 10,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          357.749,
+          505.74,
+          719.242
+        ],
+        "id": 246,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              112.981,
+              695.541,
+              505.043,
+              719.242
+            ],
+            "content": "[4] Cloudflare. Code mode: A new way to build agents. https://blog.cloudflare.com/ code-mode/, 2024. Accessed: 2025-01-01.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              654.844,
+              504.49,
+              689.454
+            ],
+            "content": "[5] Nishant Gaurav, Adit Akarsh, Ankit Ranjan, and Manoj Bajaj. Dynamic react: Scalable tool selection for large-scale mcp environments. arXiv preprint arXiv:2509.20386, 2025. URL https://arxiv.org/abs/2509.20386.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              625.056,
+              505.051,
+              648.757
+            ],
+            "content": "[6] GetZep. Graphiti: Build real-time knowledge graphs for ai agents. https://github.com/ getzep/graphiti, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              595.267,
+              505.051,
+              618.968
+            ],
+            "content": "[7] HKUDS. Lightrag: Simple and fast retrieval-augmented generation. https://github.com/ HKUDS/LightRAG, 2024. Associated with arXiv:2410.05779.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              576.388,
+              480.922,
+              589.18
+            ],
+            "content": "[8] Zapier Inc. Zapier: Automation that moves you forward. https://zapier.com, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              546.6,
+              504.492,
+              570.301
+            ],
+            "content": "[9] LangChain AI. Langgraph: Adding memory to agents. LangChain Documentation, 2024. URL https://langchain-ai.github.io/langgraph/how-tos/memory/add-memory/.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              516.812,
+              504.492,
+              540.513
+            ],
+            "content": "[10] LangChain AI. Langgraph: Persistence and memory. LangChain Documentation, 2024. URL https://langchain-ai.github.io/langgraph/how-tos/persistence/.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              487.023,
+              505.044,
+              510.724
+            ],
+            "content": "[11] LangChain AI. Langgraph concepts: Memory. https://langchain-ai.github.io/ langgraph/concepts/memory/, 2024. Section: Procedural Memory.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              468.144,
+              489.036,
+              480.936
+            ],
+            "content": "[12] n8n.io. n8n: Workflow automation tool. https://n8n.io, 2024. Accessed: 2024-05-20.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              428.235,
+              505.242,
+              462.057
+            ],
+            "content": "[13] Dang Nguyen, Viet Dac Lai, Seunghyun Yoon, Ryan A Rossi, Handong Zhao, Ruiyi Zhang, Puneet Mathur, Nedim Lipka, Yu Wang, et al. Dynasaur: Large language agents beyond predefined actions. arXiv preprint arXiv:2411.01747, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              386.749,
+              504.49,
+              421.359
+            ],
+            "content": "[14] Theodore Sumers, Shunyu Yao, Karthik Narasimhan, and Thomas L. Griffiths. Cognitive architectures for language agents (coala). arXiv preprint arXiv:2309.02427, 2024. URL https://arxiv.org/abs/2309.02427.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              357.749,
+              505.74,
+              380.662
+            ],
+            "content": "[15] Xingyao Wang, Yangyi Chen, Lifan Yuan, Yizhe Zhang, Yunzhu Li, Hao Peng, and Heng Ji. Executable code actions elicit better llm agents, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 12,
+        "numbering style": "arabic numbers",
+        "page number": 11,
+        "pdfua_tag": "L",
+        "previous list id": 244,
+        "type": "list"
+      }
+    ],
+    "modification date": null,
+    "number of pages": 11,
+    "title": "CodeMem: Architecting Reproducible Agents via Dynamic MCP and Procedural Memory"
+  }
+}

@@ -1,0 +1,1260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Endless Terminals: Scaling RL Environments for Terminal Agents</title>
+				<funder>
+					<orgName type="full">HAI-SAP Grant</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">Affective Science Fellowship</orgName>
+				</funder>
+				<funder ref="#_RFhH6b6">
+					<orgName type="full">National Science Foundation</orgName>
+					<orgName type="abbreviated">NSF</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2026-02-14">14 Feb 2026</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Kanishk</forename><surname>Gandhi</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Stanford University</orgName>
+								<orgName type="institution" key="instit2">Microsoft Research</orgName>
+								<orgName type="institution" key="instit3">Stanford University</orgName>
+								<orgName type="institution" key="instit4">Microsoft Research UW-Madison</orgName>
+								<orgName type="institution" key="instit5">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Shivam</forename><surname>Garg</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Stanford University</orgName>
+								<orgName type="institution" key="instit2">Microsoft Research</orgName>
+								<orgName type="institution" key="instit3">Stanford University</orgName>
+								<orgName type="institution" key="instit4">Microsoft Research UW-Madison</orgName>
+								<orgName type="institution" key="instit5">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Noah</forename><forename type="middle">D</forename><surname>Goodman</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Stanford University</orgName>
+								<orgName type="institution" key="instit2">Microsoft Research</orgName>
+								<orgName type="institution" key="instit3">Stanford University</orgName>
+								<orgName type="institution" key="instit4">Microsoft Research UW-Madison</orgName>
+								<orgName type="institution" key="instit5">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Dimitris</forename><surname>Papailiopoulos</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Stanford University</orgName>
+								<orgName type="institution" key="instit2">Microsoft Research</orgName>
+								<orgName type="institution" key="instit3">Stanford University</orgName>
+								<orgName type="institution" key="instit4">Microsoft Research UW-Madison</orgName>
+								<orgName type="institution" key="instit5">Microsoft Research</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Endless Terminals: Scaling RL Environments for Terminal Agents</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2026-02-14">14 Feb 2026</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">B06EDD19F4BB0DFDC3DBB0A76EB08BD2</idno>
+					<idno type="arXiv">arXiv:2601.16443v3[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-11T03:39+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Environments are the bottleneck for self-improving agents. Current terminal benchmarks were built for evaluation, not training; reinforcement learning requires a scalable pipeline, not just a dataset. We introduce Endless Terminals, a fully autonomous pipeline that procedurally generates terminal-use tasks without human annotation. The pipeline has four stages: generating diverse task descriptions, building and validating containerized environments, producing completion tests, and filtering for solvability. From this pipeline we obtain 3255 tasks spanning file operations, log management, data processing, scripting, and database operations. We train agents using vanilla PPO with binary episode level rewards and a minimal interaction loop: no retrieval, multi-agent coordination, or specialized tools. Despite this simplicity, models trained on Endless Terminals show substantial gains: on our held-out dev set, Llama-3.2-3B improves from 4.0% to 18.2%, Qwen2.5-7B from 10.7% to 53.3%, and Qwen3-8B-openthinkersft from 42.6% to 59.0%. These improvements transfer to human-curated benchmarks: models trained on Endless Terminals show substantial gains on held out human curated benchmarks: on TerminalBench 2.0, Llama-3.2-3B improves from 0.0% to 2.2%, Qwen2.5-7B from 2.2% to 3.4%, and Qwen3-8B-openthinker-sft from 1.1% to 6.7%, in each case outperforming alternative approaches including models with more complex agentic scaffolds. These results demonstrate that simple RL succeeds when environments scale. 1  </p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Reinforcement learning is hungry for environments. Successes of RL in improving language model reasoning, from mathematical problem solving to code generation have relied on access to a large set of diverse, and automatically verifiable tasks. Yet for training LLM agents to perform multi-turn computer tasks in a terminal, no such scalable environment exists. Real world terminal use requires agents to reason across multiple interactions, recover from errors, and interactively execute sequences of commands that transform the stat of a system. Manual curation of such environments is expensive, and existing benchmarks offer at most hundreds of tasks, far too few to support robust RL training <ref type="bibr">(Team, 2025b;</ref><ref type="bibr">Prime Intellect, 2025;</ref><ref type="bibr">Team, 2025a)</ref>.</p><p>Prior approaches to building capable terminal agents have largely sidestepped this environment bottleneck. Some rely on fixed evaluation benchmarks repurposed for training, risking overfitting to narrow task distributions. Others distill behavior from stronger proprietary models through supervised finetuning <ref type="bibr" target="#b6">(Guha et al., 2025)</ref>, inheriting the ceiling of the teacher and requiring expensive API access. A third line of work <ref type="bibr">(Team, 2025a;</ref><ref type="bibr" target="#b10">Lin et al., 2018)</ref> uses human curated datasets of coding or shell tasks, but the annotation cost limits scale and diversity. What remains missing is a fully autonomous pipeline that can generate an endless stream of terminal tasks: complete with initial environments, task specifications, and verification tests, with minimal human supervision.</p><p>We introduce Endless Terminals, a procedural generation pipeline that synthesizes terminaluse tasks without human annotation or distillation. The pipeline operates in four stages (see Fig. <ref type="figure" target="#fig_1">2</ref>): 1) generating diverse task descriptions by sampling across categories, complexity levels, and scenario contexts; 2) building containerized environments and validating them with automatically generated prerequisite tests; 3) generating completion tests that verify the expected end state; and 4) filtering tasks by sampling solutions from a capable model to ensure solvability.</p><p>We train models with a minimal agent architecture, a simple interaction loop where the model reasons, executes commands, and observes the output every turn, with no retrieval, tool use, or multi-agent scaffolding. Vanilla PPO <ref type="bibr" target="#b18">(Schulman et al., 2017)</ref> with 16 turns on Endless Terminals yields substantial gains: on our held-out dev set, Llama-3.2-3B <ref type="bibr" target="#b4">(Grattafiori et al., 2024)</ref> improves from 4.0% to 18.2%, Qwen-2.5-7B (Qwen et al., 2024) from 10.7% to 53.3%, and Qwen-3-8B-openthinker-sft <ref type="bibr" target="#b25">(Yang et al., 2025;</ref><ref type="bibr">Team, 2025a</ref>) from 42.6% to 59.0%. These gains transfer to difficult, human curated benchmarks. On TerminalBench 2.0 (Team, 2025b), Llama-3.2-3B improves from 0.0% to 2.2%, Qwen-2.5-7B from 2.2% to 3.4%, and Qwen-3-8B-Open-Thoughts from 1.1% to 6.7%, in each case outperforming other finetuned versions of the corresponding models on TerminalBench.</p><p>These results demonstrate that an autonomous pipeline to scale environments can lead to improvements on human curated benchmarks and that simple RL setups succeed if we can scale them up.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Agentic Scaffolds. Prior work develops scaffolds for LLM agents with custom tools, retrieval, context management, and multi-agent coordination. SWE-agent <ref type="bibr" target="#b27">(Yang et al., 2024)</ref> provides specialized commands for code navigation and editing. OpenHands <ref type="bibr" target="#b23">(Wang et al., 2024)</ref> combines an agent with tools for bash execution, file editing, and browser interaction. Terminus (Team, 2025b) takes a simpler approach, giving the agent only an interactive tmux session controlled via keystrokes. Our scaffold is simpler still: the agent reasons and emits commands, with the full history of prior thoughts, actions and shell outputs in context.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Supervised Finetuning and Distillation</head><p>One approach to building capable agents is to curate high quality datasets for supervised finetuning. <ref type="bibr" target="#b6">Guha et al. (2025)</ref> (OpenThoughts) distill reasoning traces from frontier models, showing that data quality drives downstream improvement with RL. <ref type="bibr" target="#b2">Gandhi et al. (2025)</ref> identify cognitive behaviors: verification, backtracking, subgoal setting that enable self-improvement via RL, and show these can be Phase I: Generate Task Descriptions</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Sample Prompt for Generation</head><p>Output Format: XML with two sections: &lt;task&gt;: Detailed specification of the desired final system state (files, ports, directories, formats). No commands given-agent must infer the solution. &lt;truth&gt;: Hidden ground-truth data for automated verification (file contents, expected outputs, setup requirements) Write a new task focusing on {category} with complexity: {complexity} and in the scenario: {context}. Be very specific about the output format in the task description that the automated test will check. Write the task description in a way that a user might ask an AI assistant… Categories: Process management Data processing Package management ….</p><p>Complexity: simple 2-3 commands multi-step sequential Set of 5-10 commands ….</p><p>Context: database reliability engineer managing backups MLOps engineer tracking experiment artifacts storage administrator managing disk space ….</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Shell Environment Config</head><p>Configure a shell's timezone (UTC) and locale (C.UTF-8) temporarily-without system-wide changes or sudo-then create a log file verifying the settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Log Analysis for Monitoring</head><p>Parse application log files to generate a CSV report for a monitoring pipeline. Extract error metrics (count, percentage) per service from timestamped log entries and output a structured summary.</p><p>Checksum Generation for Integrity Verification Create a SHA-256 checksum file for a log bundle, allowing customers to verify the archive hasn't been tampered with. Generate a checksum in a strict format (hash + two spaces + filename) and output it to a verification file. Phase II: Setup &amp; Validate Container Example Tasks Using the task description and ground truth data, create a valid, buildable definition file that sets up all required prerequisites. Write a setup script Write a test file that validates the environment before an agent performs a task…test for the presence of all required prerequisites: files, directories, processes, repositories, or other resources. Write tests to verify the initial state Phase III: Final Tests Write a test file that validates the environment after an agent performs a task…exact expected end state: checking files, directories, processes … Phase IV: Check Solvability of tasks Generate 16 solutions from o3 &amp; Filter out unsolved tasks. instilled. <ref type="bibr" target="#b11">Olmo et al. (2025)</ref> demonstrate how midtraining on targeted data mixes to elicit capabilities like math and coding aids improvement with RL. Finally, OpenThinker-Agent (Team, 2025a) applies this recipe to terminal tasks, distilling traces from strong teachers. These approaches are complementary: SFT can provide a warm start for RL training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Benchmarks and Interactive Environments.</head><p>Progress on coding agents has been driven by human curated benchmarks with execution based evaluation, including SWEBench <ref type="bibr" target="#b8">(Jimenez et al., 2023)</ref> for GitHub issue resolution and TerminalBench 2.0 (Team, 2025b) for terminal tasks. These benchmarks require multiturn interaction where agents issue commands and observe outputs before deciding the next action, a format shared by InterCode <ref type="bibr" target="#b26">(Yang et al., 2023)</ref> for interactive coding, and WebArena <ref type="bibr" target="#b31">(Zhou et al., 2023)</ref> for web navigation. Our procedurally generated tasks follow this multiturn format, with agents interacting with a persistent shell.</p><p>Synthetic Environment Generation Some recent works construct environments for training agents on verifiable tasks. SWEGym <ref type="bibr" target="#b13">(Pan et al., 2024)</ref> provides 2438 Python tasks with executable tests, but relies on existing GitHub issues rather than procedural generation. In single turn domains, <ref type="bibr" target="#b15">Poesia et al. (2024)</ref> propose models that posit and solve increasingly difficult problems training them through self-play. OpenThoughts Agent (Team, 2025a) is closest to our work, introducing terminal-use tasks for SFT and RL. However, their RL dataset involves human generated queries and commands from NL2Bash <ref type="bibr" target="#b10">(Lin et al., 2018)</ref>, and doesn't yield gains on benchmarks like Terminal Bench 2.0, or an autonomously generated endless terminals dev set. Endless Terminals generates tasks fully autonomously at arbitrary scale, and vanilla PPO yields substantial improvements that transfer to held out benchmarks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Procedural Generation of Tasks</head><p>Our procedural generation pipeline (Fig. <ref type="figure" target="#fig_1">2</ref>) for EndlessTerminals consists of four stages: 1) generating task descriptions, 2) setting up an environment while validating it with selfwritten tests, 3) generating tests to verify completion of a task, and 4) generating several solutions from a strong model to ensure the validity of a task. Each stage builds on the previous, with automatic verification ensuring validity at every step.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Generating Task Descriptions</head><p>We prompt (Fig. <ref type="figure" target="#fig_1">2</ref>, Phase I) a language model to generate task descriptions paired with privileged ground truth information. To ensure diversity, each prompt samples randomly from three dimensions: task categories (like file management, text processing, log analysis, git operations, database queries, security scanning, among others), complexity levels (from single commands to multi-step sequences), and scenario contexts (like developer organizing files, DevOps engineer debugging logs, data analyst processing CSVs). The model outputs a task instruction, written as a request someone might pose to an AI assistant, along with a separate privileged information section containing exact file contents, paths, and expected states that automated tests will use for verification. The privileged information section is never revealed to the agent interacting with the environment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Setting up and validating containers</head><p>Given the task description and ground truth, we generate two files (Fig. <ref type="figure" target="#fig_1">2</ref>, Phase II): an initial state test file that validates the container before the agent begins, and an Apptainer container definition or Dockerfile that establishes the required environment. The initial state tests verify prerequisites for the task: the presence of specific files, directories, running processes, or cloned repositories. For container generation, we employ an iterative refinement loop: the model generates a container definition, we build it and run the initial tests inside, and if tests fail, we feed the failure output back to the model for correction. This continues for up to k = 3 rounds or until tests pass. Tasks that cannot produce a valid container are discarded.</p><p>Final Test Generation. We generate a second test file that validates the system state after successful task completion. Given the task description, ground truth, and initial state tests, the model produces tests verifying expected outcomes, for example checking for the created files with correct contents, modified configurations, computed results (Fig. <ref type="figure" target="#fig_1">2</ref>, Phase III). These tests use paths, instructions and explicit data derived from the privileged ground truth. We verify that these tests do not pass in the initial state, ensuring they meaningfully assess task completion rather than trivially succeeding.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Solution Based Filtering.</head><p>To ensure tasks are solvable, we sample n = 16 solution attempts from a capable model (o3 (OpenAI, 2025)) using our agent framework (Fig. <ref type="figure" target="#fig_1">2</ref>, Phase IV). Each attempt consists of an interactive session where the agent issues commands, observes outputs, and continues until declaring completion or exhausting its action budget. We retain tasks where at least one solution succeeds (pass@16 &gt; 0) and discard the rest (see Fig. <ref type="figure" target="#fig_5">6</ref>, right). This filtering removes under specified or impossible tasks while confirming that retained tasks are achievable by strong models.</p><p>The complete pipeline processes tasks in parallel, failed tasks are discarded automatically. This approach gives us a controlled, automated and procedural way to generate tasks in a target domain while remaining automatically verifiable.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Interacting with the Terminal</head><p>Interaction Loop. At each turn, the model receives the conversation history, including its own previous reasoning and the shell outputs from prior commands, and pro-duces either a command to execute or a signal that the task is complete. We use minimal XML tags to structure outputs: &lt;command&gt;...&lt;/command&gt; wraps shell commands, and &lt;command&gt;done&lt;/command&gt; indicates task completion. The model can include arbitrary reasoning before its command, which becomes part of the conversation history visible in subsequent turns. This means that the model can reference prior reasoning, correct mistakes, or build on partial progress.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Shell Environment.</head><p>For the shell, we support two types of containers: Docker and Apptainer. For Docker, we use the harbor framework <ref type="bibr" target="#b7">(Harbor Framework Team, 2026)</ref>. For Apptainer, we maintain a persistent interactive shell session using a pseudo-terminal (PTY). The agent connects to an Apptainer container instance that remains alive across all turns of an episode, preserving filesystem state, environment variables, and running processes between commands. Each command executes in this persistent context. We capture both stdout and stderr, along with the exit code, and return a structured observation: whether the command succeeded or failed, followed by the output. This feedback is appended to the conversation as the next user message, and the loop continues.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Minimal Scaffolding.</head><p>The system prompt contains only basic instructions: output one command per turn, use non-interactive flags, verify solutions before declaring completion. So, tools like vim, htop etc. cannot be used by the agent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Episode Termination.</head><p>An episode ends when the agent emits the done action, reaches a maximum number of turns (16 while training) or tokens (16k while training). We execute the held-out final tests inside the container to determine success.  Task Generation. Our pipeline produces 3255 tasks in Apptainer format, of which approximately 2500 are also converted to Harbor <ref type="bibr" target="#b7">(Harbor Framework Team, 2026)</ref> format. We use the Apptainer pipeline for all experiments. Solvability filtering discards roughly half of all generated candidates, those where o3 (OpenAI, 2025) fails all 16 attempts, removing underspecified or invalid tasks from the training distribution.</p><p>Endless Terminals produces a diverse distribution of solvable tasks. Fig. <ref type="figure" target="#fig_3">4</ref> shows the composition of our generated dataset. Task categories span file operations (the largest category), log management, data processing, text processing, scripting, archiving and compression and database operations. Solution lengths (Fig. <ref type="figure" target="#fig_5">6</ref>, left) vary considerably, with most tasks requiring between 1,000 and 4,000 characters of interaction, though the distribution has a long tail extending beyond 10,000 characters for more complex tasks. The distribution of the success rate of solutions sampled from o3 (Fig. <ref type="figure" target="#fig_5">6</ref>, right) shows that roughly half the tasks are solved by all 16 attempts, with the remainder spanning a range of difficulties: though all are, by construction, within reach of current frontier models. Training Setup. We train our agent with Proximal Policy Optimization (PPO) <ref type="bibr" target="#b18">(Schulman et al., 2017)</ref>. Our implementation uses SkyRL <ref type="bibr" target="#b5">(Griggs et al., 2025)</ref> For each training batch, we sample 16 rollouts per prompt for up to 16 turns, with a maximum of 2048 tokens generated per turn and a total context window of 16k tokens for the full conversation history. We use a temperature of 0.6 for both training and evaluation.</p><p>We treat each complete episode as a single reward signal: the agent receives reward 1 if the final tests pass and 0 otherwise, with no intermediate rewards. For the PPO objective, we use clipping bounds ϵ low = 0.2 and ϵ high = 0.28 <ref type="bibr" target="#b28">(Yu et al., 2025)</ref>, with sequence level loss averaging. We do not use a KL penalty since anecdotally we found that this hurt performance. To reduce the time for collecting rollouts, we add a 5 minute environment timeout. At inference time, we allow the model to interact for 64 turns, collapsing history when the context limit is reached by add the history of previous commands to the first user message.</p><p>We train three models: Llama-3.2-3B-Instruct, Qwen2.5-7B-Instruct, and Qwen3-8Bopenthinker-sft as our base models. Qwen3-8B-openthinker-sft is finetuned on 15000 traces from two sources: NL2Bash (Lin et al., 2018), synthetically generated tasks for shell command formatting, and InferredBugs <ref type="bibr" target="#b9">(Jin et al., 2023)</ref>, a collection of C# and Java bugs converted into interactive tasks. Traces are distilled from GLM-4.6 <ref type="bibr" target="#b29">(Zeng et al., 2025)</ref>. Llama-3.2-3b and Qwen2.5-7b were trained on 4 A100s for about 2 days. Qwen3-8b-openthoughts-sft was trained on 8 B200s for about 8 hours.</p><p>Endless Terminals yields consistent improvement across models. Training with PPO on procedurally generated tasks produces steady gains regardless of model size or starting capability. As shown in Fig. <ref type="figure" target="#fig_4">3</ref> (top row), reward increases throughout training for all three base models-Llama-3.2-3B, Qwen2.5-7B, and Qwen3-8B-openthinker-sft. On our held-out development set, Llama-3.2-3B improves from 4.0% to 18.2%, Qwen2.5-7B from 10.7% to 53.3%, and Qwen3-8B-openthinker-sft from 42.6% to 59.0% This demonstrates that our procedural generation pipeline provides a reliable training signal. On the OpenThinker development set, we observe similar trends: Llama-3.2-3B improves from 0.0% to 1.0%, Qwen2.5-7B from 3.9% to 8.5%, and Qwen3-8B-openthinker-sft from 9.7% to 10.2%. Gains on the OpenThinker development set are smaller, as this benchmark includes general software engineering tasks like issue resolution rather than purely terminal based tasks.</p><p>Simple RL succeeds when environments scale. Our setup uses vanilla PPO with binary episode level rewards, no intermediate shaping, no KL penalty, and a minimal agent architecture without retrieval or multi-agent scaffolding. The gains come not from algorithmic sophistication but from scaling the environments, Endless Terminals provides the diverse, automatically verifiable tasks that RL requires. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Gains transfer to held out human-curated benchmarks.</head><p>The improvements from training on Endless Terminals generalize beyond our procedurally generated distribution. On Terminal-Bench 2.0, a human curated benchmark the models never see during training, we observe substantial improvements: llama-3.2-3b improves from 0.0% to 2.2%, qwen-2.5-7b from 2.2% to 3.4%, and qwen-3-8b-open-thoughts-sft from 1.1% to 6.7%. In each case our RL trained models outperform other versions of the same base architectures (Fig. <ref type="figure" target="#fig_4">3</ref>, bottom right), including models trained with alternative RL recipes (Team, 2025a) with agentic scaffolds like Terminus-2 (Team, 2025b). Finally, our tasks were generated before the release of TerminalBench 2.0, ensuring no data leakage.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Failure Modes.</head><p>We analyze the tasks where our best model, qwen-3-8b-openthoguhts-sft achieved zero success on TerminalBench 2.0. For context, Claude Sonnet 4.5 with Terminus-2 achieves 42.8% on this benchmark with a 200 turn limit and an agentic scaffold, compared to our 6.7% with 64 turns and a no agentic scaffold. Pass@5 rates (at least one success in 5 attempts) decrease with task difficulty: 25% (1/4) easy, 14.5% (8/55) medium, and 10%</p><p>(3/30) hard tasks (Fig. <ref type="figure" target="#fig_7">7</ref>).</p><p>We identify two primary failure modes (Fig. <ref type="figure" target="#fig_6">5</ref>): 1) loop failures <ref type="bibr" target="#b14">(Pipis et al., 2025)</ref>, where the model becomes stuck repeating the same command sequence, accounting for 39% of failures (30 tasks), and 2) turn exhaustion, where the model hits the turn limit (we train with 16 turns and evaluate with 64 turns with a sliding window), affecting 26% of failures (20 tasks). These categories overlap, with 11 tasks exhibiting both behaviors. The remaining failures (49%) terminate early with incorrect solutions, often in specialized domains like cryptanalysis, machine learning model extraction, and bioinformatics where the model lacks domain knowledge. By category (pass@5), the model performs best on software-engineering (6/26), followed by data-science (1/8), optimization (1/2), scientificcomputing (1/8), system-administration (1/9), data-processing (1/4), and security (1/8), while achieving zero success on mathematics (0/4), machine-learning (0/3), and modeltraining (0/4) tasks. To understand loop failures, we measure command diversity: the ratio of unique commands to total commands issued after the first error. Successful tasks exhibit significantly higher command diversity (0.49 on average) compared to failed tasks with loop behavior (0.18 on average), indicating that successful runs explore alternative approaches after errors while failed runs repeat commands.</p><p>Distillation and RL are complementary. Our results show that starting from a stronger base amplifies gains from RL. Qwen3-8B-openthinker-sft, which was first finetuned on 15,000 distilled traces from NL2Bash and InferredBugs, achieves the highest final performance after RL training (6.7% on TerminalBench 2.0). This suggests that SFT provides a warm start that RL can build upon more effectively <ref type="bibr" target="#b2">(Gandhi et al., 2025;</ref><ref type="bibr" target="#b6">Guha et al., 2025)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Discussion</head><p>We introduced Endless Terminals, a procedural generation pipeline that synthesizes terminal-use tasks without human annotation or distillation from stronger models. The pipeline operates autonomously across four stages-task description generation, container setup with self, validation, completion test generation, and solution based filtering, producing 3,255 valid tasks spanning tasks like file operations, log management, data processing, text processing, etc. Training with PPO on these tasks yields consistent improvements across model scales, and these gains transfer to TerminalBench 2.0., a human curated benchmark. Our results demonstrate that simple RL setups can succeed when environments scale. Our failure mode analysis on TerminalBench 2.0 revealed two patterns: loop failures, where models repeat the same command sequences (39% of failures), and turn exhaustion (26%). Successful tasks exhibit significantly higher command diversity after the first error (0.49 vs 0.18 for looping failures), suggesting that exploring alternative approaches is crucial. Performance also varies by domain: software engineering tasks achieve 23% success while mathematics, machine learning, and model training show zero success. This gap may reflect insufficient coverage of these domains in our procedural generation pipeline.</p><p>Our approach has several limitations worth noting. First, the procedurally generated tasks tend to resemble competitive programming problems more than the messy, underspecified requests that users actually pose to AI assistants. Real terminal use often involves ambiguous goals, implicit context, and might require clarifying questions. These are difficult to capture in automatically generated specifications without sacrificing verifiability. However, better user modeling <ref type="bibr" target="#b19">(Shaikh et al., 2025;</ref><ref type="bibr" target="#b24">Weston &amp; Foerster, 2025;</ref><ref type="bibr" target="#b3">Gandhi et al., 2026)</ref> might enable building of such "fuzzy" environments. Conditioning the generation prompt to produce more naturalistic requests while maintaining sufficient specification for verification remains an open challenge.</p><p>Our filter for solvability introduces a capability ceiling. We filter using pass@16 from o3, retaining only tasks where at least one solution succeeds. This process that discards roughly half of all generated candidates. This filtering confirms that retained tasks are solvable and removes potentially underspecified or invalid tasks but also tasks that are beyond the capabilities of o3. This means that our pipeline cannot generate tasks beyond the frontier model's capability. As stronger models emerge, this ceiling will rise, but the dependence on a frontier validator limits our ability to train agents on truly novel problems. Self-play approaches, where models iteratively generate tasks just beyond their current capability and learn to solve them, could adaptively scale difficulty without relying on a fixed frontier validator <ref type="bibr" target="#b15">(Poesia et al., 2024;</ref><ref type="bibr" target="#b0">Zhao et al., 2025)</ref>.</p><p>Incorporating humans in the loop, either to validate generated tasks or to provide naturalistic task descriptions, could improve both task quality and diversity beyond what purely synthetic generation achieves, albeit at the increasing the cost of generating tasks, making the pipeline less scalable. Testing RL with richer agentic scaffolds (retrieval, multi-agent coordination, tool use) may yield further gains. Partial rewards based on the number of test cases passed, rather than binary episode-level rewards, could provide denser training signal and accelerate learning <ref type="bibr" target="#b20">(Sun et al., 2025)</ref>. Finally, learning world models of terminal dynamics <ref type="bibr" target="#b1">(Copet et al., 2025)</ref> or distilling environment dynamics into reasoning-based experience models <ref type="bibr" target="#b0">(Chen et al., 2025)</ref> could enable more sample-efficient training by allowing agents to plan and simulate outcomes through imagined rollouts before executing commands. These directions, task verification, richer scaffolds, denser reward signals, and learned world models, highlight that building capable terminal agents remains a multifaceted challenge. Endless Terminals represents one cog in this greater effort, demonstrating that scalable environment generation can unlock substantial gains even with simple RL setups. We hope this work encourages the community to invest in automated task generation pipelines alongside algorithmic advances, richer scaffolds, and improved training objectives.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Endless Terminals. Tasks are procedurally generated through four phases: (I) task description generation, (II) container setup with iterative validation, (III) completion test generation, and (IV) solution-based filtering using o3. The pipeline yields 3255 verified tasks for training terminal agents with PPO.</figDesc><graphic coords="1,112.69,483.12,384.12,143.28" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: Overview of the Endless Terminals procedural generation pipeline. Phase I generates diverse task descriptions by sampling across categories, complexity levels, and scenario contexts, producing both a task description and privileged ground truth data for verification. Phase II creates containerized environments and validates them with self written prerequisite tests. Phase III generates completion tests that verify the expected end state. Phase IV filters tasks by sampling 16 solutions from o3, retaining only tasks where at least one solution succeeds. Some example tasks include shell configuration, log analysis, and checksum generation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>So, we get a minimal loop between the model and the environment. The model reasons, acts, and observes, the conversation history accumulates, and the model reasons again with full context of what it has tried.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Distribution of tasks in Endless Terminals. Left: Task categories, with file operations and log management comprising the largest shares.</figDesc><graphic coords="5,264.28,446.93,254.10,191.31" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Training and evaluation results. Top row: Reward curves during PPO training on Endless Terminals for (left) Llama-3.2-3B, (center) Qwen2.5-7B, and (right) Qwen3-8Bopenthinker-sft, showing consistent improvement across all models. Bottom row: Pass rates on (left) our development set, (center) OpenThinker development set , and (right) TerminalBench 2.0 . Models trained with our RL approach (+RL Ours) outperform base models and alternative finetuned variants across all evaluations. Here, RL (OpenThinker) denotes RL training in OpenThoughts-Agent (Team, 2025a). Results on Terminal Bench 2.0 are averaged over 5 runs for our methods.</figDesc><graphic coords="6,108.00,171.95,396.35,109.73" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Distribution of Generated Solutions. (left) Distribution of solution lengths (in characters, log scale), showing most tasks require 1000-4000 characters of interaction with a long tail for complex tasks. (right) Distribution of pass rates across 16 o3 solution attempts, showing roughly half of tasks are solved by all attempts while the remainder span a range of difficulties.</figDesc><graphic coords="7,304.75,82.28,183.14,155.53" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5 :</head><label>5</label><figDesc>Figure5: Failure Analysis. Failure modes are dominated by loop behaviors (39%) and turn exhaustion (26%), with remaining failures terminating early on specialized domains like cryptanalysis and bioinformatics (right).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Analysis of successes on TerminalBench 2.0. (right) vary substantially across categories, with software engineering tasks showing the best performance. and (left) Success rates (pass@5) decline with task difficulty</figDesc><graphic coords="8,352.14,81.86,151.41,119.62" type="bitmap" /></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>The authors would like to thank <rs type="person">Vaish Shrivastava</rs>, <rs type="person">Sahaj Agarwal</rs>, <rs type="person">Vasilis Kontonis</rs>, <rs type="person">Ahmed Awadallah</rs>, <rs type="person">Corby Rossett</rs> and <rs type="person">Shital Shah</rs> for discussions and their support. This work was started during KG's internship at Microsoft Research. KG was supported by an <rs type="funder">HAI-SAP Grant</rs>, the <rs type="funder">Affective Science Fellowship</rs> and an <rs type="funder">NSF</rs> <rs type="grantName">Expeditions</rs> grant during his time at <rs type="institution">Stanford</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_RFhH6b6">
+					<orgName type="grant-name">Expeditions</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Scaling agent learning via experience synthesis</title>
+		<author>
+			<persName><forename type="first">Zhaorun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuokai</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yifan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tarun</forename><surname>Kalluri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sara</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanhao</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haibo</forename><surname>Tong</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2511.03773</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jade</forename><surname>Copet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Carbonneaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gal</forename><surname>Cohen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Kahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jannik</forename><surname>Kossen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Kreuk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Mcmilin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michel</forename><surname>Meyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Wei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2510.02387</idno>
+		<title level="m">An open-weights llm for research on code generation with world models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Cognitive behaviors that enable self-improving reasoners, or, four habits of highly effective stars</title>
+		<author>
+			<persName><forename type="first">Kanishk</forename><surname>Gandhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ayush</forename><surname>Chakravarthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anikait</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Lile</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">D</forename><surname>Goodman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.01307</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Kanishk</forename><surname>Gandhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agam</forename><surname>Bhatia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">D</forename><surname>Goodman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2601.04436</idno>
+		<title level="m">Learning to simulate human dialogue</title>
+		<imprint>
+			<date type="published" when="2026">2026</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Grattafiori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhimanyu</forename><surname>Dubey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Jauhri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhinav</forename><surname>Pandey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Kadian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Al-Dahle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiesha</forename><surname>Letman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhil</forename><surname>Mathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Schelten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Vaughan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.21783</idno>
+		<title level="m">The llama 3 herd of models</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Evolving skyrl into a highly-modular rl framework</title>
+		<author>
+			<persName><forename type="first">Tyler</forename><surname>Griggs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sumanth</forename><surname>Hegde</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiyi</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charlie</forename><surname>Ruan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Moritz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kourosh</forename><surname>Hakhamaneshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Liaw</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akshay</forename><surname>Malik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Zaharia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note>Notion Blog</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Openthoughts: Data recipes for reasoning models</title>
+		<author>
+			<persName><forename type="first">Etash</forename><surname>Guha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Marten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sedrick</forename><surname>Keh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Negin</forename><surname>Raoof</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georgios</forename><surname>Smyrnis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hritik</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marianna</forename><surname>Nezhurina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean</forename><surname>Mercat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trung</forename><surname>Vu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zayne</forename><surname>Sprague</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashima</forename><surname>Suvarna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Feuer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zaid</forename><surname>Khan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Frankel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sachin</forename><surname>Grover</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caroline</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiye</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanjia</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shreyas</forename><surname>Pimpalgaonkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kartik</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charlie</forename><surname>Cheng-Jie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichuan</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vivek</forename><surname>Pratt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jon</forename><surname>Ramanujan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Saad-Falcon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Achal</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alon</forename><surname>Dave</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kushal</forename><surname>Albalak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Blake</forename><surname>Arora</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chinmay</forename><surname>Wulfe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Hegde</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sewoong</forename><surname>Durrett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Oh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saadia</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Gabriel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Grover</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vaishaal</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Shankar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><forename type="middle">A</forename><surname>Gokaslan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tatsunori</forename><surname>Merrill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenia</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reinhard</forename><surname>Jitsev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maheswaran</forename><surname>Heckel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandros</forename><forename type="middle">G</forename><surname>Sathiamoorthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ludwig</forename><surname>Dimakis</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schmidt</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2506.04178" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Harbor: A framework for evaluating and optimizing agents and models in container environments</title>
+		<author>
+			<persName><forename type="first">Framework</forename><surname>Harbor</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Team</surname></persName>
+		</author>
+		<ptr target="https://github.com/laude-institute/harbor" />
+		<imprint>
+			<date type="published" when="2026-01">January 2026</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kexin</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Press</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2310.06770</idno>
+		<title level="m">Swe-bench: Can language models resolve real-world github issues? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Inferfix: End-to-end program repair with llms</title>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Syed</forename><surname>Shahriar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Tufano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neel</forename><surname>Sundaresan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Svyatkovskiy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 31st ACM joint european software engineering conference and symposium on the foundations of software engineering</title>
+		<meeting>the 31st ACM joint european software engineering conference and symposium on the foundations of software engineering</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1646" to="1656" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Nl2bash: A corpus and semantic parser for natural language interface to the linux operating system</title>
+		<author>
+			<persName><forename type="first">Victoria</forename><surname>Xi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglong</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">D</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ernst</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1802.08979</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Team</forename><surname>Olmo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Allyson</forename><surname>Ettinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Bertsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bailey</forename><surname>Kuehl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Graham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Heineman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dirk</forename><surname>Groeneveld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faeze</forename><surname>Brahman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Finbarr</forename><surname>Timbers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamish</forename><surname>Ivison</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2512.13961</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Olmo 3. arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">OpenAI o3 and o4-mini system card</title>
+		<author>
+			<persName><surname>Openai</surname></persName>
+		</author>
+		<ptr target="https://openai.com/index/o3-o4-mini-system-card/" />
+		<imprint>
+			<date type="published" when="2025-04">April 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Training software engineering agents and verifiers with swe-gym</title>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Navdeep</forename><surname>Jaitly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alane</forename><surname>Suhr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhe</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2412.21139</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Charilaos</forename><surname>Pipis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shivam</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vasilis</forename><surname>Kontonis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vaishnavi</forename><surname>Shrivastava</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2512.12895</idno>
+		<title level="m">Akshay Krishnamurthy, and Dimitris Papailiopoulos. Wait, wait, wait... why do reasoning models loop? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Learning formal mathematics from intrinsic motivation</title>
+		<author>
+			<persName><forename type="first">Gabriel</forename><surname>Poesia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Broman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Haber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Goodman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="page" from="43032" to="43057" />
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">A community hub for discovering and sharing environments for RL training and downstream evaluation</title>
+		<ptr target="https://app.primeintellect.ai/dashboard/environments" />
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="2025" to="2026" />
+		</imprint>
+	</monogr>
+	<note type="report_type">Preprint. Prime Intellect. Environments hub</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang Qwen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengpeng</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wei</surname></persName>
+		</author>
+		<title level="m">Qwen2. 5 technical report</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Wolski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleg</forename><surname>Klimov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1707.06347</idno>
+		<title level="m">Proximal policy optimization algorithms</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Creating general user models from computer use</title>
+		<author>
+			<persName><forename type="first">Omar</forename><surname>Shaikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shardul</forename><surname>Sapkota</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shan</forename><surname>Rizvi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Horvitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sung</forename><surname>Joon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diyi</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">S</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bernstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 38th Annual ACM Symposium on User Interface Software and Technology</title>
+		<meeting>the 38th Annual ACM Symposium on User Interface Software and Technology</meeting>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+			<biblScope unit="page" from="1" to="23" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yiyou</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pohao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoyue</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2509.21016</idno>
+		<title level="m">Rl grokking recipe: How does rl unlock and transfer new algorithms in llms? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<ptr target="https://open-thoughts.ai/agent" />
+		<title level="m">OpenThoughts-Agent Team. OpenThoughts-Agent</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">The Terminal-Bench Team. Terminal-bench: A benchmark for ai agents in terminal environments</title>
+		<ptr target="https://github.com/laude-institute/terminal-bench" />
+		<imprint>
+			<date type="published" when="2025-04">Apr 2025</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xingyao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boxuan</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiayi</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yueqi</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaskirat</forename><surname>Singh</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2407.16741</idno>
+		<title level="m">Openhands: An open platform for ai software developers as generalist agents</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Ai &amp; human co-improvement for safer co-superintelligence</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Foerster</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2512.05356</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">An</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anfeng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baosong</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beichen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binyuan</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengen</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenxu</forename><surname>Lv</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.09388</idno>
+		<title level="m">Qwen3 technical report</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Intercode: Standardizing and benchmarking interactive coding with execution feedback</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akshara</forename><surname>Prabhakar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="23826" to="23854" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">SWE-agent: Agent-computer interfaces enable automated software engineering</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><forename type="middle">E</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Wettig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Lieret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ofir</forename><surname>Karthik R Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Press</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/2405.15793" />
+	</analytic>
+	<monogr>
+		<title level="m">The Thirty-eighth Annual Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Dapo: An open-source llm reinforcement learning system at scale</title>
+		<author>
+			<persName><forename type="first">Qiying</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruofei</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufeng</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaochen</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weinan</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiantian</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gaohong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingjun</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2503.14476</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Aohan</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qinkai</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengxing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cunxiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Da</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiajie</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2508.06471</idno>
+		<title level="m">Glm-4.5: Agentic, reasoning, and coding (arc) foundation models</title>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Absolute zero: Reinforced self-play reasoning with zero data</title>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiran</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthieu</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shenzhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingyun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zilong</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gao</forename><surname>Huang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2505.03335</idno>
+		<imprint>
+			<date type="published" when="2025">2025</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuhui</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abishek</forename><surname>Sridhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xianyi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianyue</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.13854</idno>
+		<title level="m">A realistic web environment for building autonomous agents</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

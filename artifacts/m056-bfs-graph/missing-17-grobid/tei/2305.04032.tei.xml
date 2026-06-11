@@ -1,0 +1,1475 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">ToolCoder: Teach Code Generation Models to use API search tools</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Kechi</forename><surname>Zhang</surname></persName>
+							<email>zhangkechi@pku.edu.cn</email>
+						</author>
+						<author>
+							<persName><forename type="first">Huangzhao</forename><surname>Zhang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+							<email>lige@pku.edu.cn</email>
+						</author>
+						<author>
+							<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+							<email>lijia@stu.pku.edu.cn</email>
+						</author>
+						<author>
+							<persName><forename type="first">Zhuo</forename><surname>Li</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+							<email>zhijin@pku.edu.cn</email>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Key Lab of High Confidence Software Technology</orgName>
+								<orgName type="institution">MoE (Peking University</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Key Lab of High Confidence Software Technology</orgName>
+								<orgName type="institution">MoE (Peking University</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country>China zhang</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="laboratory">Key Lab of High Confidence Software Technology</orgName>
+								<orgName type="institution">MoE (Peking University</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff3">
+								<orgName type="laboratory">Key Lab of High Confidence Software Technology</orgName>
+								<orgName type="institution">MoE (Peking University</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff4">
+								<orgName type="laboratory">Key Lab of High Confidence Software Technology</orgName>
+								<orgName type="institution">MoE (Peking University</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff5">
+								<orgName type="laboratory">Key Lab of High Confidence Software Technology</orgName>
+								<orgName type="institution">MoE (Peking University</orgName>
+								<address>
+									<settlement>Beijing</settlement>
+									<country key="CN">China</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">ToolCoder: Teach Code Generation Models to use API search tools</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">C3FCB9D3AD2C3AE742795317FC59DEDD</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-11T03:37+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Automatically generating source code from natural language descriptions has been a growing field of research in recent years. However, current large-scale code generation models often encounter difficulties when selecting appropriate APIs for specific contexts. These models may generate APIs that do not meet requirements or refer to non-existent APIs in third-party libraries, especially for lesser-known or private libraries. Inspired by the process of human developers using tools to search APIs, we propose ToolCoder, a novel approach that integrates API search tools with existing models to assist in code generation and API selection. To teach our model to use tools, we introduce an automated data annotation method using ChatGPT to add tool usage information into the source code data and fine-tune code generation models. During inference, we integrate API search tools into the generation process so that our model can automatically use the search tool to get suggestions when selecting an API. Our experimental results demonstrate that ToolCoder exhibits excellent performance and generalization across five public and private library code generation benchmarks, with at least 6.21% improvement on average pass@1 metrics and 9.64% improvement on average pass@10 metrics compared to stateof-the-art methods. Furthermore, we show that our relatively small ToolCoder model is comparable to one of the current best models, GPT-3.5, highlighting the potential of incorporating programming tools into the code generation process.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>Automated code generation has become increasingly important due to the significant effort required to manually write source code, especially for complex software. Deep learning techniques, particularly language models, have shown great promise in generating high-quality source code from natural language requirements. Currently, pre-trained code generation models are considered the state-of-the-art solution for various code generation tasks, such as CodeX <ref type="bibr" target="#b2">[3]</ref>, ChatGPT <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b15">16]</ref> and CodeGen <ref type="bibr" target="#b13">[14]</ref> models.</p><p>Accurately selecting appropriate application programming interfaces (APIs) is essential for pre-trained models to generate</p><p>* Corresponding authors def init_model(args): …... # inp_size (height, width, extra_dim) # out_size (height, width) out = np.? # inp_size (height, width, extra_dim) # out_size (height, width) out = np.squeeze(inp)</p><p>def init_model(): # inp_size (height, width, extra_dim) # out_size (height, width) out = n code. API selection is crucial for accurately expressing program semantics and efficiently addressing problems. However, there are too many existing third-party libraries and their APIs, and new APIs are constantly being developed. Existing models often find it challenging to select APIs accurately and will generate non-existent APIs or APIs that do not meet requirements. For example, according to our preliminary experiments on NumpyEval and PandasEval <ref type="bibr" target="#b25">[26]</ref>, a popular code generation model CodeGen-2B generates more than 26% code that contains an incorrect API. Furthermore, for security and functionality reasons, industrial companies often build private libraries for internal use only. For these private libraries that are not publicly available, the error rate will increase to more than 90%. These third-party public libraries or private libraries provide so many APIs that code generation models have never seen, resulting in the model being unable to generate API-oriented code. Therefore, it is worth exploring methods to improve code generation models to generate accurate source codes using these domain-specific or private library APIs.</p><p>To assist code generation models in selecting appropriate APIs during the generation process, we draw inspiration from human programmers' perspectives. In most programming scenarios, programmers can use search tools to get suggestions from web sources or library documents when selecting an API. Figure <ref type="figure" target="#fig_0">1</ref> shows an example of human programmers selecting the proper API during coding. When encountering an API usage scenario, programmers summarize their needs into a query and use existing API search tools to search for suitable APIs, such as Google search engines or documentation search tools for specific libraries. Then, according to the search results, programmers can choose the proper API. This programming process using tools to retrieve and determine API usage improves programming efficiency, improves accuracy, and reduces the risk of errors. It motivates us to investigate approaches to teach code generation models to use search tools to find suitable APIs.</p><p>In this paper, we propose ToolCoder, a low-cost and efficient solution that integrates API search tools into pre-trained code generation models, mimicking how programmers solve this problem. To help models learn to use tools, we propose an automated data annotation method with ChatGPT to add tool usage information into the source code data and use the annotated dataset to fine-tune code generation models. Specifically, our approach utilizes the in-context learning ability of large models to annotate a special tool-augment dataset at a low cost. We employ parameter-efficient fine-tuning to improve the training efficiency. During inference, we integrate API search tools into the decoding process of our model, allowing the model to learn to use external tools autonomously.</p><p>We extensively evaluate our proposed ToolCoder with pass rate metrics <ref type="bibr" target="#b2">[3]</ref>. ❶ We evaluate ToolCoder on three public library benchmarks. Our model achieves significant improvements over state-of-the-art baselines with at least 10.11%, 3.26%, and 1.39% pass@1. Our relatively small ToolCoder is even comparable to one of the current best language models, GPT-3.5. ❷ We further evaluate our model on two private library benchmarks. By switching to the appropriate search tool, our ToolCoder can be easily transferred to these private library scenarios and achieves stable improvement. Our model exhibits better generalization performance and raises at least 6.21% improvement on the average pass@1 metrics for all five benchmarks. ❸ We also conduct an ablation study to analyze the different settings in our experiments, including the dataset, training, and inference settings. Results prove the effectiveness of different designs in our approach.</p><p>Our contributions in this paper can be summarized as follows:</p><p>• To the best of our knowledge, we are the first to incorporate a programming tool into code generation models.</p><p>Our results highlight the importance of models' ability to use tools.</p><p>Case 2: Pandas df = pd.DataFrame({'A': [5, 6, 7], 'B': [7, 8, 9]}) # sum all values and return a numeric value sum_value = df.sum() sum_value is not a numeric value Case 1: Numpy a = np.arange(2*3*2).reshape((2,3,2)) count_value = a.count(2) 'numpy.ndarray' object has no attribute 'count' Case 3: Private library (BeatNum) import beatnum as bn num_str = bn.numstr([0,33,4444522]) module 'beatnum' has no attribute 'numstr' Fig. 2. Failure Cases of CodeGen-2B model in selecting APIs, including generating non-existing APIs on public libraries (Case 1), generating unqualified APIs (Case 2), and lack of API-related knowledge on private libraries (Case 3).</p><p>• We propose an automatic method for annotating datasets in software engineering. This low-cost and efficient annotation framework uses powerful ChatGPT to annotate API datasets with public source code datasets, reducing the manual effort required to create private annotated datasets. Our dataset construction method can also be easily transferred to other tasks.</p><p>• We propose ToolCoder, which incorporates the ability to use API search tools into pre-trained code generation models and improves the performance on API-related code generation tasks. Our approach outperforms existing API-oriented baselines on multiple popular API-related code generation benchmarks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. MOTIVATING EXAMPLES</head><p>In this section, we examine the limitations of the current code generation models when selecting a suitable API and how existing search tools can aid in API selection. By exploring these issues, we hope to provide context for our research and explain our motivation for proposing a new approach to address these challenges.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Limitations of current code generation models in selecting suitable APIs</head><p>Application Programming Interfaces (APIs) are essential to modern software development. APIs allow developers to integrate pre-existing code and services into their applications. Using APIs can significantly reduce the time and effort required to develop complex software systems.</p><p>However, selecting the proper API remains challenging for code generation models. Due to the proliferation of third-party libraries and their associated APIs, existing code generation models often need help choosing APIs. Here we choose the popular model CodeGen-2B to test its performance on API selection. Figure <ref type="figure">2</ref> shows three failure examples of the generated code for selecting APIs. ❶ Case 1: The CodeGen-2B model has the potential risk of generating APIs that do</p><p>TABLE I COMPARISONS OF TWO TYPES OF SEARCH TOOLS FOR API SELECTION. Online Search Engine Documentation Search Knowledge Resources Programming Community or Tutorial Websites (StackOverFlow, datagy.io, etc.) Library Documentation API Type Public libraries, especially those well-known and widely-discussed Any APIs, including public and private libraries Advantages Practical and Accurate Rich sources Keep updating Wide coverage Detailed explanation Stable Example Tools Google, Bing, DuckDuckGo NumPydoc, Pandasdoc, Private documentations not exist, even on such a popular and common third-party library as NumPy. There is no count API in the Numpy library, but CodeGen2B still generates. ❷ Case 2: It may also use the wrong API and generate unqualified code. df.sum() will return with a Pandas Series type but not the required numeric value. It shows that these existing code generation models still have challenges choosing an appropriate API to implement a given requirement. We conduct a statistical experiment to analyze the generated code on two benchmarks, NumpyEval and PandasEval <ref type="bibr" target="#b26">[27]</ref>, and find that more than 26% of the APIs generated have the problems mentioned above. We also conduct experiments on private library benchmarks such as BeatNumEval <ref type="bibr" target="#b25">[26]</ref>. Private libraries are widespread in real code scenarios, and they are not public for security and functional reasons. Experiments show that for those APIs in private libraries, the failure rate will increase to more than 90%. ❸ Case 3: We find the CodeGen-2B lacks corresponding private knowledge and concocts an incomprehensible API for the private library BeatNum. It shows that existing code generation models have limitations in API generation and are not specifically optimized for using APIs. In this paper, we aim to address these API selection issues.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Existing search tools to aid API selection</head><p>Drawing inspiration from the approach programmers employ in selecting an API, our study reveals that existing search tools can provide API recommendations. For example, in Figure <ref type="figure" target="#fig_0">1</ref>, the developer needs to use the numpy library to remove the extra single dimension in input size. The developer turns to online search engine tools or library documentation search tools and gets the proper API suggestion np.squeeze. These two search tools can play a significant role in selecting APIs. A comparison of these two types of search tools is given in Table <ref type="table">I</ref>. We will analyze the use of these two types of search tools.</p><p>1) Online Search Engine Tool: Online search engine tools provide rich information on various API usage scenarios. Human programmers share their experience in solving various programming problems on various community and tutorial websites such as StackOverFlow<ref type="foot" target="#foot_0">foot_0</ref> and datagy.io<ref type="foot" target="#foot_1">foot_1</ref> . They organize and summarize the API suggestions used for different problems. Formally, these online API suggestions are usually displayed in the form of programming experience sharing or question and answer. When other people encounter similar problems, search engines can use this information well, and programmers only need to provide a question query. These search engines regard these community websites as knowledge resources and can provide helpful API suggestions, especially for those public libraries that are well-known and widely discussed. Since these online programming experiences on the website are constantly updated and provide a variety of practical scenarios, we can often get more accurate API suggestions from these online search engine tools. These mature commercial search engine tools such as Google<ref type="foot" target="#foot_2">foot_2</ref> , DuckDuckGo<ref type="foot" target="#foot_3">foot_3</ref> can provide accurate, instant, and fast search responses and are widely used by human programmers.</p><p>2) Documentation Search Tool: Since lesser-known public libraries or private libraries have few discussions on the online community websites, human programmers also turn to library documentations for API suggestions. Documentations are usually available for public libraries and private libraries. Therefore, it can provide rich information for any API usage scenario. Documentations provide detailed explanations for each API, with a broad convergence over the corresponding library. The documentation contains detailed and accurate explanations of the parameters and usage of the API. It is the most detailed place to learn how to use an API. Since the documentation does not change frequently, its results are more stable. Formally, API information in the documentation is usually given in pairs of API and corresponding comments. We can use BM25 <ref type="bibr" target="#b18">[19]</ref> or other semantic similarity scores as search metrics to search for comments that meet the requirements and find the corresponding API as the final suggestion for coding.</p><p>These various search tools are helpful for programming and selecting an API. Inspired by the API search process of human developers, we aim to incorporate these two types of search tools into code generation models. By letting the code generation model learn to use these online search engine tools or documentation search tools, our models can effectively navigate the vast amount of information available to identify the most relevant APIs. This approach enables our models to more accurately match APIs with specific needs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. API SEARCH TOOL</head><p>To better present the methodology of our model, we first provide a brief introduction to the API search tool in this section. The proposed API search tool is an abstraction of the existing search tools for API selection and will be used as an external tool for our ToolCoder.</p><p>Following the motivating examples in Section II-B, we develop the API search tool for code generation models based on these two categories of sources. ❶ For those commonly used public libraries such as numpy and pandas, we use DuckDuckgo as the search engine because it provides a more convenient and automated method compared to other search engines. We use the search engine to search the relative content from several online community websites and extract the mentioned APIs with string regex matching. Since these contents have a richer introduction to the API, more accurate API suggestions can be obtained from the search engine. ❷ For lesser-known APIs or those in private libraries, we employ the BM25 score as our retrieval metric to search from the corresponding API documentation.</p><p>We then abstract the two types of search tools into a unified form: we use the notation AP ISearch(query) → answer to represent the call of API search tool, where AP ISearch is the function name that abstracts different API search sources, query denotes the search query and answer indicates the return answer from API search tools that can be referred to for further code generation. In subsequent experiments, we serialize API search tool calls for model input. To differentiate from regular text, we surround the tool calls with special tokens by starting with ⟨AP I⟩ and ending with ⟨/AP I⟩. Examples can be viewed in Figure <ref type="figure">3</ref>. We set ⟨AP I⟩, ⟨/AP I⟩, and → as special tokens in our model vocabulary.</p><p>IV. TOOLCODER In this section, we present our approach ToolCoder for selecting and using APIs in coding practices. The goal of our approach is to train a model that can effectively select and use appropriate APIs based on existing partial code. To achieve this goal, we decompose our approach into three modules, including data annotation, fine-tuning, and inference. The three modules work in a pipeline as shown in Figure <ref type="figure">3</ref>. We will describe the details in the following subsections.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Automatic Data Annotation</head><p>In order for the model to learn to use the API search tool, we first need a dataset that includes the source code and associated tool call processes. As mentioned in Section III, we abstract the search call process with the notation ⟨AP I⟩ AP ISearch(query) → answer ⟨/AP I⟩. However, such datasets are not readily available. To address this issue, we propose automatically augmenting an existing source code dataset with the tool call notation using ChatGPT (gpt-3.5turbo) <ref type="foot" target="#foot_4">5</ref> , which has demonstrated excellent few-shot and even zero-shot learning ability in many different language learning tasks already. This low-cost and efficient annotation method reduces the manual effort required to create private annotated datasets. Our data annotation process can be divided into three parts: ❶ base dataset selection, ❷ prompt selection, and ❸ filter and clean. Base Dataset Selection. For the base dataset, we choose to use the popular pre-trained dataset CodeSearchNet-Python <ref type="bibr" target="#b7">[8]</ref> TABLE II STATISTICS OF THE ANNOTATION DATASET. Statistic Dataset Size 53,000 Avg. Annotation API 3.2 Avg. Length (in words) before annotation 186.24 Avg. Length (in words) after annotation 211.49 Proportion of some third-party libraries NumPy 24% Pandas 13% TorchData 0%</p><p>as the base dataset. It is a real-world programming dataset obtained from GitHub without any additional annotations. This dataset is already commonly used by many pre-trained code generation models, so we can assure as much as possible that our subsequent training will not affect the model's generalization performance on language generation and modeling ability. We use a simple length filtering method and randomly choose nearly 60k function-level source code from this dataset as the base dataset for our annotation method. Prompt Selection. Similar to <ref type="bibr" target="#b19">[20]</ref>, to help generate the annotated dataset, we need to provide a detailed instruction for ChatGPT to specify its system role as a data annotator, shown in Figure <ref type="figure">4</ref>. To facilitate the quality of the generated datasets, we manually write three human-written input-output pairs as part of the prompt with three libraries including numpy, pandas, and matplotlib. We choose these three libraries as the examples in the prompt because we are skilled in them, and they are also commonly used in the base dataset. Based on our selected prompt and base dataset, we will ask the ChatGPT to annotate the tool-augmented dataset. We generate one annotated data for each base sample. The automatic annotation process lasted for four days.</p><p>Filter and Clean. After getting all the generated results from chatGPT, we performed a series of simple filtering operations on the results to remove those abnormal data samples. We filter out nested API Search calls, control the number of API Search calls in a sample of less than 5, and ensure that at least one is an API call from a public library. We filter out those samples that are different from the source code after removing the API Search call. Furthermore, for the generated API answer in the search call, we check whether it is followed by the corresponding API in the generated code to ensure that the API search call is closely related to the specific code implementation. Finally, we cleaned and obtained the final data set of 53k, which will be used for subsequent fine-tuning.</p><p>Table <ref type="table">II</ref> shows the statistics of the final annotated dataset. We also count the proportion of some third-party library APIs in the dataset for reference in subsequent evaluation experiments.</p><p>In the left part of Figure <ref type="figure">3</ref>, we also give an example sample of the final dataset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Parameter-efficient Fine-tuning</head><p>We leverage the annotated dataset to fine-tune a pre-trained language model to teach the model to generate the search tool call itself. To address the challenge of limited computational   Your task is to add calls to a API Search Tool to a piece of source code. You can use an API Search Tool to lookup important third-party APIs from the document. The API Search Tool should help you get information required to complete the source code and select API. Use the format: "&lt;API&gt;APISearch(query)-&gt;answer&lt;/API&gt;". In the format, "query" is the search input that describes the specific role of the API required in this code, and "answer" is the search output API. Here are some examples of API calls: Input: B = np.reshape(A, (-1, 2)) Output: B = &lt;API&gt;APISearch(Gives a new shape to an array without changing its data.)-&gt;np.reshape&lt;/API&gt;np.reshape(A, (-1, 2)) (...another two Input-Output pairs...) Input: {code} Output: Fig. 4. An exemplary prompt used to generate API-augmented datasets for the API search tool. In our setting, We selected a total of three human-written input-output pairs as part of the prompt, using three libraries: numpy, pandas, and matplotlib.</p><p>resources and improve the training efficiency, we propose restricting the number of meta-trainable parameters and layers in the pre-trained model and adopting a parameter-efficient fine-tuning approach that can efficiently adapt pre-trained models to new task types. In particular, we apply LoRA <ref type="bibr" target="#b6">[7]</ref> to reduce trainable parameters. Low-Rank Adaptation (LoRA) is a low-dimensional representation-based parameter-efficient tuning method. It injects trainable low-rank matrices into transformer layers to approximate the weight updates. For a pre-trained weight matrix W ∈ R d×k , LoRA represents its update with a lowrank decomposition W + δW = W + W down W up , where W down ∈ R d×r , W up ∈ R r×k are tunable parameters. LoRA generally applies this update to the attention linear projection matrices in the multi-head attention sub-layer in Transformer.</p><p>For a specific input x to the linear projection in multi-head attention, LoRA modifies the projection output h as:</p><formula xml:id="formula_0">h ← h + s • xW down W up ,<label>(1)</label></formula><p>where s ≥ 1 is a tunable scalar hyperparameter. The illustration of LoRA is shown in the middle part of Figure <ref type="figure">3</ref>.</p><p>In our training setting, we freeze most of the parameters in the pre-trained model and only apply LoRA on the query and value projections in the attention module for each transformer layer. As a result, we only need to train 0.18% parameters in CodeGen-350M and 0.09% for CodeGen-2B. It makes it possible to efficiently fine-tune models on a consumer-level GPU, such as Nvidia GeForce RTX 2080 (11GB RAM). The parameter-efficient tuning strategy significantly reduces the training computational burden in our experiments. It can achieve results comparable to full-parameter training with less computational resources and time. We will give a detailed analysis of the ablation experiment in Section VI-C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Inference enhanced with Tools</head><p>After training with the annotation dataset, the model can generate the API search calls during the code generation process. The pseudo-code description of the decoding process with API search tool procedure is in Algorithm 1.</p><p>During inference, we perform regular decoding until the model produces the ⟨AP I⟩ token, indicating that it next expects the response for an API call. At this point, we continue the decoding process and record the following generated tokens to get the query between AP ISearch( and ) →. Then we interrupt the decoding process and call the API search tool to get a response, and continue the decoding process after inserting both the response and the ⟨/AP I⟩ token.  As mentioned in Section III, we adopt different API search sources for different types of API usage. For those commonly used public libraries, we use the DuckDuckGo, a popular online website search engine, to adopt content in-site search in several selected websites. For those lesser-known or private library APIs, there is no relevant online information. So we employ the BM25 score as our retrieval metric to search from the corresponding API documents. We encapsulate these search interfaces so that our ToolCoder can call search tools with high performance. In our experiment, we control the search delay within 0.6s to ensure high efficiency during the code generation process.</p><p>After the entire inference process is over, we use the regular matching method to remove the API search part from the generated code, that is, the part between ⟨AP I⟩ and ⟨/AP I⟩ to get the generated code. By using API search tools in this way, we can effectively address the challenge of selecting appropriate APIs and reduce the time and effort required for developers to find suitable APIs. V. EXPERIMENTAL SETUP To assess the effectiveness of our approach, we perform a large-scale study to answer four research questions. In this section, we describe the details of our study, including datasets, metrics, and baselines.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Research Question</head><p>Our study aims to answer four research questions. In RQ1, we compare our ToolCoder to SOTA code generation models on three public library benchmarks. In RQ2, we conduct experiments on two private library benchmarks to show the generalization of our proposed model on those private libraries. In RQ3, we conduct an ablation study to prove the contributions of different modules. In RQ4, we conduct a series of quality measures on the generated results and analyze the effectiveness and limitations of our method through detailed case studies.</p><p>RQ1. How does ToolCoder perform compared to SOTA baselines on public library code generation? To evaluate ToolCoder's performance on public library code generation, we conduct experiments on three public library code generation benchmarks, including numpy, pandas, and torchdata. We compare ToolCoder's performance with existing SOTA code generation baselines.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>RQ2. How does ToolCoder perform on private library code generation?</head><p>We select two private library benchmarks where the pre-trained language models have never encountered any private library APIs, and there is no relevant information available online. We evaluate ToolCoder's performance on these private libraries to demonstrate its generalization and versatility.</p><p>RQ3. What are the contributions of different modules in our approach? Our approach pipeline consists of three modules: data annotation, fine-tuning, and inference. To analyze the effectiveness of our approach, we conduct an ablation study by varying settings in our pipeline, including the dataset, training, and inference search settings.</p><p>RQ4. How is the quality of our generated code with ToolCoder? We evaluate the quality of generated code using ToolCoder by performing a case study analysis. Additionally, we analyze the effectiveness of our method and explain why our model works.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Datasets</head><p>Our experiments are conducted on three public library benchmarks, PandasEval, NumpyEval, and TorchDataEval, and two private library benchmarks, including MonkeyEval and BeatNumEval. We choose these benchmarks to ensure our proposed method can be used in various API selection scenarios.</p><p>1) Public library benchmarks: PandasEval [27] is a domain-specific method or block generation benchmark for the Pandas library in Python. PandasEval contains 101 test examples. Each example corresponds to a programming problem of Pandas, containing the context code, the target method body (or block), and multiple test cases. NumpyEval <ref type="bibr" target="#b26">[27]</ref> is almost the same as PandasEval, apart from the domain. NumpyEval specifically targets the Numpy library in Python. The benchmark also contains 101 test examples. TorchDataEval <ref type="bibr" target="#b25">[26]</ref> is based on the TorchData library in Python. TorchData is a newly released library, which is more likely to be unseen to the pre-trained models. Therefore, this benchmark is proposed to evaluate the model against the unseen library containing 50 test examples. In our experiments, our annotated dataset does not contain API code related to TorchData as shown in Table <ref type="table">II</ref>, and our base pre-trained model does not contain these data during the pre-training phase, so this benchmark can also be used to demonstrate the generalization ability of our method on those APIs that are public but never seen by the code generation model.</p><p>2) Private library benchmarks: MonkeyEval <ref type="bibr" target="#b25">[26]</ref>, modified from PandasEval, is designed to evaluate the method generation model against the unseen library. The Monkey library is crafted by modifying all Pandas-related keywords. e.g., "pandas" is converted to "monkey", "dataframe" is converted to "knowledgeframe", etc.. The library construction process ensures that no information about the API names of these libraries is leaked in the online materials or any training datasets. MonkeyEval converts all examples in PandasEval, leading to 101 test examples. BeatNumEval <ref type="bibr" target="#b25">[26]</ref> is modified from NumpyEval, in the same way as PandasEval to MonkeyEval. BeatNumEval also has 101 test examples. The pre-trained model has not seen the API in MonkeyEval and BeatNumEval, and the online search resources cannot provide any API-related information. So the API selection on these benchmarks will only rely on the API search tool we built on the documentation of these private libraries.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Metrics</head><p>Following the previous work, we use the metric pass rate pass@k <ref type="bibr" target="#b2">[3]</ref> for performance evaluation and take advantage of the provided unit tests to determine the functional correctness of code solutions. For each problem, we submit k code solutions for evaluation. If any of the k code solutions passes all ground truth test cases, the problem is considered solved. Then pass@k is the percentage of solved problems. In our experiments, we set k = {1, 10}.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Baselines</head><p>We select six series of recent code generation models as baselines, including one of the most powerful models, GPT-3.5. These models can be divided into two categories: general models and API-oriented models.</p><p>1) General Models: CodeT5 [2] is an encoder-decoder pretrained model for code-related tasks. It uses the identifieraware pre-training task and has achieved SOTA results on many general code generation benchmarks. We use CodeT5base with 220M parameters in our experiments. PyCodeGPT <ref type="bibr" target="#b26">[27]</ref> is a decoder-only pre-trained code generation model with 110M parameters. It is initialized with the GPT-Neo and is continually pre-trained with a large-scale code corpus in Python. CodeGen <ref type="bibr" target="#b13">[14]</ref> is a series of decoder-only pre-trained code generation models with parameters varying from 350M to 16B. It casts code generation as a multi-turn conversation between a user and a system. CodeGen has shown strong ability on a variety of complex code generation tasks. Due to computational limitations, we use 350M and 2B versions in our experiments. GPT-3.5 <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b15">16]</ref> is one of the most powerful generation models from OpenAI. We use the "gpt-3.5-turbo" model as it is the most cost-effective and performant model in the GPT3.5 family. As OpenAI states, it can be complemented with flexible natural language and programming language capabilities <ref type="foot" target="#foot_5">6</ref> .</p><p>2) API-oriented models: CERT <ref type="bibr" target="#b26">[27]</ref> is a generation approach designed for API-related code. CERT contains two modules: the sketcher and generator, each of which is finetuned independently with PyCodeGPT. It first predicts a sketch based on the NL description and generates the complete code based on the sketch. For each library, CERT requires a specially trained weight for generation. We use the released weight as two independent models: CERT-numpy, CERTpandas. CodeGenAPI <ref type="bibr" target="#b25">[26]</ref> is another API-oriented code generation model. It uses a two-stage pipeline to generate code:</p><p>TABLE III PASS RATE OF MODELS ON PUBLIC LIBRARY BENCHMARKS Model Para. NumpyEval PandasEval TorchDataEval pass@1 pass@10 pass@1 pass@10 pass@1 pass@10 General Models CodeT5 220M 0 0.1 0 0 0 0 PyCodeGPT 110M 18.04 38.61 12.75 37.62 3.80 14.00 CodeGen350M 350M 18.51 43.56 16.73 29.70 4.60 14.00 CodeGen2B 2B 29.10 53.46 30.69 42.57 7.00 18.00 GPT3.5 -58.41 66.21 30.09 33.16 6.00 24.00 API-oriented CERT-numpy 220M 31.47 46.42 16.03 27.72 2.20 14.00 CERT-pandas 220M 18.81 33.66 28.42 48.04 2.80 6.00 CodeGenAPI 350M 16.55 29.48 13.58 34.95 7.19 16.93 CodeGenAPI-retrieval 475M 12.67 27.32 11.25 28.61 10.41 23.50 CodeGen-retrieval 475M 18.30 35.12 9.54 29.02 7.52 16.36 Ours ToolCoder-OnlineTool 350M 35.64 50.50 22.77 37.62 7.40 20.00 2B 41.58 55.44 31.68 47.52 11.80 24.00</p><p>given an NL description, CodeGenAPI firstly uses a retriever model initialized with BERT <ref type="bibr" target="#b4">[5]</ref> to find APIs from documents. Then it uses a generator initialized with CodeGen-350M to generate the complete code based on the retrieved API and problem description. We use the three released settings in their paper: CodeGenAPI, CodeGen-retrieval, and CodeGenAPIretrieval. The first setting only uses the trained generator without retrieval, and the latter two use the best-performing top2 retrieval results to assist generation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E. Implementation Details</head><p>Training. Our model is implemented in the Pytorch framework, and we perform all the experiments on four RTX 2080-11GB GPUs. We initialize our ToolCoder by leveraging pretrained weights of CodeGen-350M and CodeGen-2B. The training batch size is set to 8, and the total training epoch is set to 10. We use validation loss to determine the best checkpoint as the final model. Tool. When implementing the API search tool, we adopt insite online search in datagy.io as well as NumPy<ref type="foot" target="#foot_6">foot_6</ref> , Pandas <ref type="foot" target="#foot_7">8</ref> and TorchData websites <ref type="foot" target="#foot_8">9</ref> using the DuckDuckGo for public library benchmarks. For private library benchmarks, we use provided Monkey and BeatNum library documentations to design an API search tool based on the BM25 algorithm. The tool's response for inference is considered as the first retrieved API.</p><p>Inference. During the model generation process, we use temperature sampling with T = 0.8 and limit the sample budget to 10. Each experiment is run three times with random seeds and then averaged for the final results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VI. RESULTS AND ANALYSES</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. RQ1: Results for Public library API Code Generation</head><p>To answer RQ1, we evaluate baselines and our ToolCoder on NumpyEval, PandasEval and TorchDataEval and results are shown in Table <ref type="table">III</ref>. ToolCoder-OnlineTool represents the</p><p>TABLE IV PASS RATE OF MODELS ON PRIVATE LIBRARY BENCHMARKS Model Para. MonkeyEval BeatNumEval pass@1 pass@10 pass@1 pass@10 General Models CodeT5 220M 0 0 0 0 CodeGen350M 350M 0.95 4.90 5.15 11.96 CodeGen2B 2B 1.59 5.94 5.94 11.88 GPT3.5 -2.47 8.91 6.68 17.82 API-oriented CodeGenAPI 350M 1.19 4.68 4.44 8.24 CodeGenAPI-retrieval 475M 3.41 8.33 5.90 11.79 CodeGen-retrieval 475M 2.46 6.35 6.65 13.68 Ours ToolCoder-DocTool 350M 2.98 5.94 6.73 12.87 2B 3.02 7.92 6.93 13.86 performance of our model with the online search engine tool to generate code.</p><p>We notice that some general code generation models, such as CodeT5, have achieved poor results, which proves that the selection of public library API has particular challenges for code generation models. Results show that ToolCoder achieves the best results among general code generation baselines and API-oriented baselines. Even compared with the extremely large model GPT3.5, our model can achieve comparable performance with these public library benchmarks.</p><p>Compared with the state-of-the-art API-oriented baselines, our model achieves 10.11%, 3.26%, and 1.39% pass@1 improvement over the best baseline on three benchmarks. Even when we control our model parameters to be smaller than the baselines as ToolCoder-350M, our model can still achieve excellent overall performances. Existing API-oriented models mainly focus on training and inference on a library API code dataset, resulting in the failure of the same model to achieve good results on multiple API benchmarks, such as CERT-numpy and CERT-pandas. Our model shows stronger generalization ability and can be applied to various API libraries. Our method can achieve excellent results even on the unseen TorchData library. Our model is trained based on CodeGen models. The performance of our ToolCoder models is significantly higher than that of the corresponding base CodeGen model, indicating that our training process and tool assistant can help models learn to generate API-related code better.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. RQ2: Results for Private library API Code Generation</head><p>To answer RQ2, we evaluate baselines and our ToolCoder on MonkeyEval and BeatNumEval. Results are shown in Table <ref type="table">IV</ref>. ToolCoder-DocTool represents the performance of our model with the documentation search tool to generate code as these private do not have relevant online resources.</p><p>These private library benchmarks are extremely hard for general code generation models, which we can see by the smaller pass@1 and pass@10 scores. With the documentation search tool enhanced, our ToolCoder shows stable generalization ability on these two new benchmarks. When compared with the state-of-the-art API-oriented baselines, our model</p><p>TABLE V ABLATION STUDIES ON DATASET SETTINGS. WE CONDUCT EXPERIMENTS ON TOOLCODER-350M. NumpyEval PandasEval TorchDataEval Dataset Setting pass@1 pass@10 pass@1 pass@10 pass@1 pass@10 ToolCoder-350M 35.64 50.50 22.77 37.62 7.40 20.00 original dataset 19.40 39.60 19.92 38.61 6.00 14.00 annotation w/o query 14.05 43.56 11.68 33.66 3.80 6.00 CodeGen-350M 18.51 43.56 16.73 29.70 4.60 14.00 shows comparable performance. Combining the excellent performance of our method on the public library benchmarks, the average pass@1 on five benchmarks of our two series of Tool-Coder is 15.10%, 19.00%. For this average pass@1 metric, our ToolCoder outperforms the best baseline CodeGen-retrieval, which is only 8.89%, raising at least 6.21% improvement. As for the average pass@10, our model outperforms all APIoriented baselines by at least 9.64%. It is confident that our ToolCoder shows the overall best performance on various API selection scenarios. Compared with the base pre-trained model CodeGen-350M and CodeGen-2B, our model greatly improves. ToolCoder-350M outperforms the base CodeGen-350M by 2.03%, 1.58% on pass@1 and 1.04%, 0.91% on pass@10. ToolCoder-2B also achieves a similar improvement compared with CodeGen-2B. It shows that documentation search tools can help code generation models select proper APIs during inference, thus improving the quality of the generated code. Compared with the most powerful model GPT3.5, our ToolCoder can still achieve better results in some inference settings. Results show that our proposed ToolCoder can assist the API selection process and enhance the ability of the code generation model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. RQ3: Ablation Studies</head><p>To answer RQ3, we investigate the impact of different designed modules in our pipeline. We conduct ablation studies, including changing the dataset, training, and inference settings in our experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>1) Dataset Setting:</head><p>We perform ablation experiments on the dataset construction in Table <ref type="table">V</ref>. We replace our training dataset with the original dataset, which only contains the regular source code and without annotation, referring as original dataset. We also add an experiment to remove the content of the query in the search call so that its form becomes APISearch()→answer. During inference, we use the question description to search the API directly. We refer to this ablation as annotation w/o query. We also add the original CodeGen-350M model for comparison, which is not trained on the new dataset.</p><p>Results show that our dataset annotation is essential for improvement. Compared with the model trained on the original dataset, our ToolCoder-350M shows a stable improvement on almost all metrics. The annotation dataset enables our model to use the external search tool for API selection and thus improve the quality of the generated code. Results also show that it is essential to generate the search query. When we discard the</p><p>TABLE VI ABLATION STUDIES ON TRAINING SETTINGS. WE CONDUCT EXPERIMENTS ON TOOLCODER-350M. Training Setting Training Time Training Para. NumpyEval PandasEval TorchDataEval pass@1 pass@10 pass@1 pass@10 pass@1 pass@10 ToolCoder-350M 6h 0.65M 35.64 50.50 22.77 37.62 7.40 20.00 full-training 29h 350M 35.35 58.41 22.67 40.59 6.00 22.00 search query in the data construction and use the problem description for API search tools, we observe a drastic drop in the final results as annotation w/o query in the Table V. We attribute it to the fact that the problem description is still far from the use of the specific API, so it is still difficult to select the appropriate API using the existing API search tools. We can also confirm that only fine-tuning on the original source code dataset can not help the model learn to select APIs. We compare the CodeGen-350M with the model trained on the original dataset. Results show that additional training on the code dataset does not significantly improve the model's performance. The key to our improvement is to annotate the API tool into the code dataset to teach the model to use external API search tools.</p><p>2) Training Setting: We performed ablation experiments with ToolCoder-350M on the training setting in Table <ref type="table">VI</ref>. Our experiments compare the performance of two approaches: full parameter training, referred to as full-training. Our proposed method utilizes LoRA for parameter-efficient training. We evaluate their performance on public library benchmarks and recorded their training costs, including training time and parameters, using 2*2080 GPUs.</p><p>Results show that our fine-tuning strategy has almost no performance penalty compared with the regular full-training. On the public library benchmarks, the difference between the two pass@1 results is within 0.4%. The gap in these results is acceptable, considering the huge savings in training costs. In our experiment settings, our parameter-efficient fine-tuning strategy can reduce the training time from 29h to 6h and the training parameters from more than 350M to 0.65M. We only need to train 0.18% parameters in CodeGen-350M and 0.09% for CodeGen-2B. It makes it possible to efficiently fine-tune models on a consumer-level GPU, such as Nvidia GeForce RTX 2080 (11GB RAM).</p><p>3) Inference Setting: We perform ablation experiments on the inference setting in Table VII. We add experiments to disable the tool in our model. NoTool represents that we disable the tool for inference and use our trained model to directly generate an API based on the search query and complete the code. We compare with our original inference setting on public and private library benchmarks.</p><p>Experiments show that our external tools are essential in improving performance. On public library benchmarks, the online search engine tool improves pass@1 by 1.88%, 2.57%, 0.4% for ToolCoder-350M, and 2.87%, 0.29%, 4.3% for ToolCoder-2B. The online search engine tool can search for similar API usage scenarios and provide accurate API</p><p>TABLE VII ABLATION STUDIES ON INFERENCE SETTINGS. (a) On Public library benchmarks Inference Setting NumpyEval PandasEval TorchDataEval pass@1 pass@10 pass@1 pass@10 pass@1 pass@10 OnlineTool-350M 35.64 50.50 22.77 37.62 7.40 20.00 NoTool-350M 33.76 46.53 20.19 35.64 6.00 16.00 OnlineTool-2B 41.58 55.44 31.68 47.52 11.80 24.00 NoTool-2B 38.71 54.45 31.38 44.55 7.50 20.00 (b) On Private library benchmarks Inference Setting MonkeyEval BeatNumEval pass@1 pass@10 pass@1 pass@10 OnlineTool-350M 2.98 5.94 6.73 12.87 NoTool-350M 0.29 0.99 1.68 4.95 OnlineTool-2B 3.02 7.92 6.93 13.86 NoTool-2B 0.79 2.97 2.77 8.91 suggestions. When considering private library benchmarks, the improvement is more significant. We find the model itself works poorly on private libraries. However, with the assistance of the documentation search tool, our model can choose a suitable private library API.</p><p>Another interesting observation is that the NoTool also achieves relatively good performance on public library benchmarks. We believe that the improvement comes from our dataset annotation process. The additional tool call process in the dataset can be seen as a way to think about and choose the API. The chain of thought in the annotation dataset can assist the code generation model in better understanding the functions and application scenarios of different APIs, thus directly improving the model to select the API. However, for private libraries, since the knowledge of private libraries is not seen by the code generation model, this form of dataset annotation is challenging to bring improvements to the model. With proper API search tools enhanced, our ToolCoder can select API more accurately and improve further.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. RQ4: Qualitative analysis</head><p>To answer RQ4, we perform a case study analysis to assess the generated code's quality. Figure <ref type="figure" target="#fig_8">5</ref> represents code snippets generated on public and private library benchmarks. From the examples, we obtain the following findings: ❶ The generated search query provides more fine-grained technical planning for the solution. The NumpyEval case requires summing values in a dataframe, and the generated query breaks down the requirements, focusing first on summing arrays. It fills the gap between requirements and concrete APIs. ❷ The response of the search tools both play a crucial role in the generated code. The online search engine tool finds the proper API from the correct websites, and the documentation search tool finds the proper API by searching over the API comments. ❸ Our ToolCoder also can make necessary modifications based on the tool response. For example, the online search tool returns the response as cumsum, not directly defined in the input code. out = &lt;API&gt;APISearch(Find indices where elements should be inserted to maintain order.)-&gt; 🔍 Find indices where elements should be inserted to maintain order ✅ BeatNum Documenta?on find_sorted: find the indices into a sorted numset a such that if the corresponding elements in v were inserted before the indices the order of a would be preserved out = &lt;API&gt;APISearch(Find indices where elements should be inserted to maintain order.)-&gt;bn.find_sorted&lt;/API&gt;bn.find_sorted(master, search) Input: import numpy as np import pandas as pd df = pd.DataFrame({'A': <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b6">7]</ref>, 'B': [7, 8, 9]}) # What's the best way to sum all values in a Pandas dataframe? # the result is a numeric value  Our ToolCoder can add some components not in the response and generate the correct API np.cumsum.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VII. THREATS TO VALIDITY</head><p>Threats to internal validity are related to the roles of the model architecture and hyper-parameters setting. In our experiments, we do a small-range grid search on learning rate and batch size settings. Our ToolCoder-350M model tries to keep the hyper-parameters the same as baseline models for a fair comparison. Threats to external validity are mainly related to the tasks and datasets we choose in this paper. We counter this by evaluating our model on five different benchmarks of two types of API, including public and private library API code generation. Threats to construct validity include the evaluation metrics we used in this work. We utilize pass rates to evaluate the correctness of generated code accurately. This metric is adequate for corresponding tasks and has been adopted by many previous studies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VIII. RELATED WORK</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Code Generation</head><p>Code generation aims to generate the source code that satisfies a given natural language description or requirement.</p><p>It involves automatically creating source code based on functional requirements, such as natural language descriptions <ref type="bibr" target="#b8">[9]</ref> or pseudo code algorithms <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b14">15,</ref><ref type="bibr" target="#b24">25]</ref>. Recently pre-trained language models have shown impressive capabilities in code generation tasks. Lu et al. <ref type="bibr" target="#b10">[11]</ref> adapt GPT-2 <ref type="bibr" target="#b17">[18]</ref> model on the source code, resulting in CodeGPT. Chen et al. <ref type="bibr" target="#b2">[3]</ref> finetune GPT-3 <ref type="bibr" target="#b3">[4]</ref> models on the code to produce CodeX and GitHub Copilot. OpenAI also produces the GPT3.5 series of models, which have shown strong generation capabilities in natural language and programming languages. Neither CodeX nor GPT3.5 is open-sourced, which leads to several attempts to replicate CodeX in industry and academia, resulting in GPT-Neo <ref type="bibr" target="#b0">[1]</ref>, GPT-J <ref type="bibr" target="#b20">[21]</ref>, CodeParrot <ref type="bibr" target="#b21">[22]</ref>, PolyCoder <ref type="bibr" target="#b22">[23]</ref>, PyCodeGPT <ref type="bibr" target="#b26">[27]</ref>, InCoder <ref type="bibr" target="#b5">[6]</ref>, and CodeGen <ref type="bibr" target="#b13">[14]</ref>. In our experiments, we choose the CodeGen series of models as our base model for further exploration.</p><p>Recently, some work has focused on selecting APIs during code generation. As discussed in Section II-A, existing code generation models still struggle with selecting appropriate APIs for a given context, especially for private or lesserknown APIs. Existing work <ref type="bibr" target="#b25">[26,</ref><ref type="bibr" target="#b26">27,</ref><ref type="bibr" target="#b28">29]</ref> has proposed some API-oriented code generation methods. They typically use a two-stage pipeline, where the first stage involves searching or generating related APIs and then using them to generate code. We pursue this research line and propose to leverage pretrained models and API search tools to automate API selection in coding practices. In comparison, our approach has two advantages: ❶ Our method shows strong generalization ability. By setting an appropriate API search tool, our method can quickly adapt to any API-related code generation scenario. ❷ Our method does not require multi-stage generation. Instead, we integrate the API search tool into the decoding process, making our approach more flexible and allowing the API selection process to be closer to the specific code fragment being generated.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Tool-Augmented Large Language Models</head><p>Recent research in language modeling has explored using external tools to supplement the knowledge stored in the model's weights <ref type="bibr" target="#b11">[12]</ref>. These external tools can include other neural networks or even the language model itself, allowing for the composition of different pre-trained models on various modalities, such as the Socratic Model <ref type="bibr" target="#b27">[28]</ref>. Alternatively, natural language knowledge can be retrieved from external sources, as demonstrated by WebGPT <ref type="bibr" target="#b12">[13]</ref> and ReAct <ref type="bibr" target="#b23">[24]</ref> through the use of search APIs. Other approaches, such as Toolformer <ref type="bibr" target="#b19">[20]</ref> and ART <ref type="bibr" target="#b16">[17]</ref>, leverage a combination of search tools, question-answering tools, machine translation tools, calculators, and other tools to solve various NLP tasks. ChatGPT Plugins<ref type="foot" target="#foot_9">foot_9</ref> further demonstrate the potential for language models to integrate with thousands to millions of tools. However, incorporating programming tools into code-related models has not been explored yet.</p><p>Our paper addresses this gap by abstracting the process of human programmers selecting APIs into a programming tool that augments code generation models. IX. CONCLUSION In this paper, we propose ToolCoder, a novel approach incorporating API search tools into the code generation process to assist models in selecting appropriate APIs. We categorize API search tools into two types, including online search engine tools and documentation search tools, and abstract them into a unified form. We propose an automatic dataset annotation method to add tool usage information to the source code data. The parameter-efficient strategy is used to fine-tune the model. During inference, the model decoding process is enhanced with external API search tools for proper API selection. Experiments on public and private library code generation benchmarks show that our ToolCoder outperforms state-of-the-art methods, with at least a 6.21% improvement on average pass@1 metrics. Our experiments also demonstrate the potential of incorporating programming tools into the code generation process, shedding light on this line of future work.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1. An illustrative example of the process of human programmers selecting the proper API during coding. Programmers summarize their demands into a query (remove single-dimensional entries) and use the search engine tool or documentation search tool to get the proper API suggestion (np.squeeze).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>Code Genera)on Pretrained Model ⚙ Parameter-efficient Fine-Tuning can be trained only with a consumer-level GPU ChatGPT Before Annota+on: … if mean is not None: samples=mulBvariate_normal(mean, matrix, N) … A-er Annota+on: … if mean is not None: samples= &lt;API&gt;APISearch(Generates random samples from a mul9variate normal distribu9on.)-&gt; mul9variate_normal &lt;/API&gt; mulBvariate_normal(mean, matrix, N) … NL_input: How do I get the value at an n-th row of a given column name in Pandas? output = &lt;API&gt; APISearch(Selects a single row of data from a DataFrame.)-&gt; pandas.DataFrame.iloc &lt;/API&gt; df.iloc[n]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>[column_name]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>🔍Fig. 3 .Fig. 4 .</head><label>34</label><figDesc>Fig. 3. The pipeline of our approach ToolCoder. The pipeline has three main parts: (1) Automatically Annotate Tool-augmented Dataset with ChatGPT, (2) Parameter-efficient Fine-tune existing pre-trained code generation model with the annotated dataset, and (3) Inference of the fine-tuned model enhanced with API search tools.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Algorithm 1</head><label>1</label><figDesc>Inference with API Search Tool 1: procedure INFERWITHTOOL(model, input nl, maxlen) 2: Pass input nl to the model and get predicted token 3: output ← [token]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>token ← the last token of output 7 :</head><label>7</label><figDesc>if token = ⟨AP I⟩ then 8: query ← the following generated tokens between APISearch( and )→ 9: response ← Call API search tool with query 10: Append ⟨AP I⟩APISearch(query)→response⟨/AP I⟩ to output 11: i ← i+ length of the call process 12:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><figDesc>bn master = bn.numset([1,2,3,4,5]) search = bn.numset([4,2,2,3]) # Find indices of a list of values in a beatnum numset Output:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><figDesc>&lt;API&gt;APISearch(Calculate the sum of the values in the given array.)-&gt; 🔍 Calculate the sum of the values in the given array ✅ h8ps://datagy.io/numpy-cumsum/ -&gt; cumsum sum_value = &lt;API&gt;APISearch(Calculate the sum of the values in the given array.)-&gt;cumsum&lt;/API&gt; np.cumsum(df.values)[-1]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Fig. 5 .</head><label>5</label><figDesc>Fig. 5. Case Studies of the ToolCoder-2B, with online search engine tool on NumpyEval and documentation search tool on BeatNumEval.</figDesc></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://stackoverflow.com/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://datagy.io/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>https://www.google.com/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>https://duckduckgo.com/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_4"><p>https://openai.com/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_5"><p>https://platform.openai.com/docs/models/gpt-3-5</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_6"><p>https://numpy.org/doc/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="8" xml:id="foot_7"><p>https://pandas.pydata.org/docs/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="9" xml:id="foot_8"><p>https://pytorch.org/data/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="10" xml:id="foot_9"><p>https://openai.com/blog/chatgpt-plugins</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">GPT-Neo: Large Scale Autoregressive Language Modeling with Mesh-Tensorflow. If you use this software, please cite it using these metadata</title>
+		<author>
+			<persName><forename type="first">Sid</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leo</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phil</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Connor</forename><surname>Leahy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stella</forename><surname>Biderman</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021. 2021</date>
+			<biblScope unit="page">58</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Detect-Localize-Repair: A Unified Framework for Learning to Debug with CodeT5</title>
+		<author>
+			<persName><forename type="first">Nghi</forename><surname>Bui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><forename type="middle">C H</forename><surname>Hoi</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/2022.findings-emnlp.57" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2022</title>
+		<editor>
+			<persName><forename type="first">Zornitsa</forename><surname>Goldberg</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Yue</forename><surname>Kozareva</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Zhang</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Abu Dhabi, United Arab Emirates</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022-12-07">2022. December 7-11, 2022</date>
+			<biblScope unit="page" from="812" to="823" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Evaluating Large Language Models Trained on Code</title>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Pondé De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raul</forename><surname>Puri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heidy</forename><surname>Khlaaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brooke</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><surname>Pavlov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alethea</forename><surname>Power</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Tillet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felipe</forename><forename type="middle">Petroski</forename><surname>Such</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dave</forename><surname>Cummings</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fotios</forename><surname>Chantzis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elizabeth</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Hebgen Guss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Nichol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Paino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikolas</forename><surname>Tezak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">N</forename><surname>Carr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedant</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Morikawa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Knight</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miles</forename><surname>Brundage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mira</forename><surname>Murati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bob</forename><surname>Mcgrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<ptr target="https://arxiv.org/abs/2107.03374" />
+		<imprint>
+			<date type="published" when="2021">2021. 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Language Models are Few-shot Learners for Prognostic Prediction</title>
+		<author>
+			<persName><forename type="first">Zekai</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mariann</forename><surname>Micsinai Balan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Brown</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2302.12692</idno>
+		<idno type="arXiv">arXiv:2302.12692</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2302.12692" />
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristina</forename><surname>Toutanova</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/n19-1423</idno>
+		<ptr target="https://doi.org/10.18653/v1/n19-1423" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, NAACL-HLT 2019</title>
+		<title level="s">Long and Short Papers</title>
+		<editor>
+			<persName><forename type="first">Jill</forename><surname>Burstein</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Christy</forename><surname>Doran</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Thamar</forename><surname>Solorio</surname></persName>
+		</editor>
+		<meeting>the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, NAACL-HLT 2019<address><addrLine>Minneapolis, MN, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019-06-02">2019. June 2-7, 2019</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="4171" to="4186" />
+		</imprint>
+	</monogr>
+	<note>Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armen</forename><surname>Aghajanyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jessy</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wallace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Freda</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2204.05999</idno>
+		<idno type="arXiv">arXiv:2204.05999</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2204.05999" />
+		<title level="m">InCoder: A Generative Model for Code Infilling and Synthesis</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">LoRA: Low-Rank Adaptation of Large Language Models</title>
+		<author>
+			<persName><forename type="first">Edward</forename><forename type="middle">J</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yelong</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phillip</forename><surname>Wallis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeyuan</forename><surname>Allen-Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanzhi</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shean</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=nZeVKeeFYf9" />
+	</analytic>
+	<monogr>
+		<title level="m">The Tenth International Conference on Learning Representations, ICLR 2022, Virtual Event</title>
+		<imprint>
+			<date type="published" when="2022-04-25">2022. April 25-29, 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">CodeSearch-Net Challenge: Evaluating the State of Semantic Code Search</title>
+		<author>
+			<persName><forename type="first">Hamel</forename><surname>Husain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ho-Hsiang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tiferet</forename><surname>Gazit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miltiadis</forename><surname>Allamanis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Brockschmidt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1909.09436</idno>
+		<ptr target="http://arxiv.org/abs/1909.09436" />
+		<imprint>
+			<date type="published" when="2019">2019. 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Mapping Language to Code in Programmatic Context</title>
+		<author>
+			<persName><forename type="first">Srinivasan</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Konstas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alvin</forename><surname>Cheung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/d18-1192</idno>
+		<ptr target="https://doi.org/10.18653/v1/d18-1192" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing</title>
+		<editor>
+			<persName><forename type="first">Ellen</forename><surname>Riloff</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">David</forename><surname>Chiang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Julia</forename><surname>Hockenmaier</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jun'ichi</forename><surname>Tsujii</surname></persName>
+		</editor>
+		<meeting>the 2018 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Brussels, Belgium</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2018-10-31">2018. October 31 -November 4, 2018</date>
+			<biblScope unit="page" from="1643" to="1652" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Spoc: Search-based pseudocode to code</title>
+		<author>
+			<persName><forename type="first">Sumith</forename><surname>Kulal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panupong</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kartik</forename><surname>Chandra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mina</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oded</forename><surname>Padon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Aiken</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><forename type="middle">S</forename><surname>Liang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<date type="published" when="2019">2019. 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">CodeXGLUE: A Machine Learning Benchmark Dataset for Code Understanding and Generation</title>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junjie</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Svyatkovskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ambrosio</forename><surname>Blanco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><forename type="middle">B</forename><surname>Clement</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Drain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duyu</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lidong</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjun</forename><surname>Shou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Tufano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neel</forename><surname>Sundaresan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengyu</forename><surname>Shao Kun Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shujie</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks 1, NeurIPS Datasets and Benchmarks 2021</title>
+		<editor>
+			<persName><forename type="first">Joaquin</forename><surname>Vanschoren</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Sai-Kit</forename><surname>Yeung</surname></persName>
+		</editor>
+		<meeting>the Neural Information Processing Systems Track on Datasets and Benchmarks 1, NeurIPS Datasets and Benchmarks 2021</meeting>
+		<imprint>
+			<date type="published" when="2021-12">2021. December 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Augmented Language Models: a Survey</title>
+		<author>
+			<persName><forename type="first">Grégoire</forename><surname>Mialon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christoforos</forename><surname>Nalmpantis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramakanth</forename><surname>Pasunuru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Baptiste Rozière</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Asli</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edouard</forename><surname>Celikyilmaz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Grave</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Scialom</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2302.07842</idno>
+		<idno type="arXiv">arXiv:2302.07842</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2302.07842" />
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<title level="m" type="main">WebGPT: Browser-assisted questionanswering with human feedback</title>
+		<author>
+			<persName><forename type="first">Reiichiro</forename><surname>Nakano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suchir</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christina</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vineet</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><surname>Saunders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Cobbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tyna</forename><surname>Eloundou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Button</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Knight</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.09332</idno>
+		<ptr target="https://arxiv.org/abs/2112.09332" />
+		<imprint>
+			<date type="published" when="2021">2021. 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">A Conversational Paradigm for Program Synthesis</title>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Nijkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroaki</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifu</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingbo</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2203.13474</idno>
+		<idno type="arXiv">arXiv:2203.13474</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2203.13474" />
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Learning to generate pseudo-code from source code using statistical machine translation</title>
+		<author>
+			<persName><forename type="first">Yusuke</forename><surname>Oda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroyuki</forename><surname>Fudaba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hideaki</forename><surname>Hata</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sakriani</forename><surname>Sakti</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2015 30th IEEE/ACM International Conference on Automated Software Engineering (ASE)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="574" to="584" />
+		</imprint>
+	</monogr>
+	<note>Tomoki Toda, and Satoshi Nakamura</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Training language models to follow instructions with human feedback</title>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diogo</forename><surname>Almeida</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carroll</forename><forename type="middle">L</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katarina</forename><surname>Slama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Hilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fraser</forename><surname>Kelton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maddie</forename><surname>Simens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">F</forename><surname>Christiano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Lowe</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2203.02155</idno>
+		<idno type="arXiv">arXiv:2203.02155</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2203.02155" />
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">ART: Automatic multi-step reasoning and tool-use for large language models</title>
+		<author>
+			<persName><forename type="first">Bhargavi</forename><surname>Paranjape</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><forename type="middle">M</forename><surname>Lundberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannaneh</forename><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Túlio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ribeiro</forename></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2303.09014</idno>
+		<idno type="arXiv">arXiv:2303.09014</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2303.09014" />
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Language Models are Unsupervised Multitask Learners</title>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Robertson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Zaragoza</surname></persName>
+		</author>
+		<idno type="DOI">10.1561/1500000019</idno>
+		<ptr target="https://doi.org/10.1561/1500000019" />
+	</analytic>
+	<monogr>
+		<title level="m">The Probabilistic Relevance Framework: BM25 and Beyond</title>
+		<imprint>
+			<date type="published" when="2009-01">2009. 01 2009</date>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="333" to="389" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Toolformer: Language Models Can Teach Themselves to Use Tools</title>
+		<author>
+			<persName><forename type="first">Timo</forename><surname>Schick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jane</forename><surname>Dwivedi-Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Dessì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberta</forename><surname>Raileanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maria</forename><surname>Lomeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Cancedda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Scialom</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2302.04761</idno>
+		<idno type="arXiv">arXiv:2302.04761</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2302.04761" />
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">GPT-J-6B: A 6 Billion Parameter Autoregressive Language Model</title>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aran</forename><surname>Komatsuzaki</surname></persName>
+		</author>
+		<ptr target="https://github.com/kingoflolz/mesh-transformer-jax" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Transformers: State-of-the-Art Natural Language Processing</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wolf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lysandre</forename><surname>Debut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Sanh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Chaumond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clement</forename><surname>Delangue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Moi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierric</forename><surname>Cistac</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rault</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Louf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Morgan</forename><surname>Funtowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joe</forename><surname>Davison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Shleifer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clara</forename><surname>Patrick Von Platen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yacine</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Jernite</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Canwen</forename><surname>Plu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teven</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sylvain</forename><surname>Le Scao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mariama</forename><surname>Gugger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Drame</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">M</forename><surname>Lhoest</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rush</surname></persName>
+		</author>
+		<ptr target="https://www.aclweb.org/anthology/2020.emnlp-demos.6" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing: System Demonstrations</title>
+		<meeting>the 2020 Conference on Empirical Methods in Natural Language Processing: System Demonstrations</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="38" to="45" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">A systematic evaluation of large language models of code</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Frank</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Neubig</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Josua Hellendoorn</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3520312.3534862</idno>
+		<ptr target="https://doi.org/10.1145/3520312.3534862" />
+	</analytic>
+	<monogr>
+		<title level="m">MAPS@PLDI 2022: 6th ACM SIGPLAN International Symposium on Machine Programming</title>
+		<editor>
+			<persName><forename type="first">Swarat</forename><surname>Chaudhuri</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</editor>
+		<meeting><address><addrLine>San Diego, CA, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2022-06-13">2022. 13 June 2022</date>
+			<biblScope unit="page" from="1" to="10" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Re-Act: Synergizing Reasoning and Acting in Language Models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2210.03629</idno>
+		<idno type="arXiv">arXiv.2210.03629arXiv:2210.03629</idno>
+		<ptr target="https://doi.org/10.48550/" />
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">TRANX: A transition-based neural abstract syntax parser for semantic parsing and code generation</title>
+		<author>
+			<persName><forename type="first">Pengcheng</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1810.02720</idno>
+		<imprint>
+			<date type="published" when="2018">2018. 2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">When Language Model Meets Private Library</title>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongji</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Lou</surname></persName>
+		</author>
+		<ptr target="https://aclanthology.org/2022.findings-emnlp.21" />
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2022</title>
+		<editor>
+			<persName><forename type="first">Zornitsa</forename><surname>Goldberg</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Yue</forename><surname>Kozareva</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Zhang</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Abu Dhabi, United Arab Emirates</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022-12-07">2022. December 7-11, 2022</date>
+			<biblScope unit="page" from="277" to="288" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">CERT: Continual Pre-training on Sketches for Library-oriented Code Generation</title>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minsu</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongji</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Lou</surname></persName>
+		</author>
+		<idno type="DOI">10.24963/ijcai.2022/329</idno>
+		<ptr target="https://doi.org/10.24963/ijcai.2022/329" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Thirty-First International Joint Conference on Artificial Intelligence</title>
+		<editor>
+			<persName><forename type="first">Luc</forename><surname>De</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Raedt</forename></persName>
+		</editor>
+		<meeting>the Thirty-First International Joint Conference on Artificial Intelligence<address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022-07-29">2022. 23-29 July 2022</date>
+			<biblScope unit="volume">2022</biblScope>
+			<biblScope unit="page" from="2369" to="2375" />
+		</imprint>
+	</monogr>
+	<note>ijcai.org</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Socratic Models: Composing Zero-Shot Multimodal Reasoning with Language</title>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Welker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Krzysztof</forename><surname>Choromanski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Tombari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aveek</forename><surname>Purohit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">S</forename><surname>Ryoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vikas</forename><surname>Sindhwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johnny</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Florence</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/arXiv.2204.00598</idno>
+		<idno type="arXiv">arXiv:2204.00598</idno>
+		<ptr target="https://doi.org/10.48550/arXiv.2204.00598" />
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">DocPrompting: Generating Code by Retrieving the Docs</title>
+		<author>
+			<persName><forename type="first">Shuyan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><forename type="middle">F</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengbao</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Neubig</surname></persName>
+		</author>
+		<ptr target="https://openreview.net/forum?id=ZTCxT2t2Ru" />
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

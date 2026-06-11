@@ -1,0 +1,5408 @@
+{
+  "layout": {
+    "author": "Boaz Lavon; Shahar Katz; Lior Wolf",
+    "creation date": null,
+    "file name": "2506.10948.pdf",
+    "kids": [
+      {
+        "bounding box": [
+          14.04,
+          222.69,
+          36.36,
+          569.31
+        ],
+        "content": "arXiv:2506.10948v2[cs.LG]23Oct2025",
+        "font": "Times-Roman",
+        "font size": 20.0,
+        "heading level": 1,
+        "id": 120,
+        "level": "Doctitle",
+        "page number": 1,
+        "pdfua_tag": "H1",
+        "text color": "[0.5, 0.5, 0.5]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          124.267,
+          673.083,
+          487.736,
+          695.48
+        ],
+        "content": "Execution Guided Line-by-Line Code Generation",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 17.215,
+        "heading level": 2,
+        "id": 110,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H2",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          167.429,
+          600.698,
+          444.568,
+          632.757
+        ],
+        "content": "Boaz Lavon Shahar Katz Lior Wolf Blavatnik School of Computer Science and AI, Tel Aviv University {boazlavon@mail, shaharkatz3@mail, wolf@cs}.tau.ac.il",
+        "font": "SFTT1000",
+        "font size": 9.963,
+        "id": 112,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          283.758,
+          559.681,
+          328.243,
+          575.235
+        ],
+        "content": "Abstract",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 113,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          143.397,
+          318.735,
+          469.881,
+          549.709
+        ],
+        "content": "We present a novel approach to neural code generation that incorporates real-time execution signals into the language model generation process. While large language models (LLMs) have demonstrated impressive code generation capabilities, they typically do not utilize execution feedback during inference, a critical signal that human programmers regularly leverage. Our method, Execution-Guided Classifier-Free Guidance (EG-CFG), dynamically incorporates execution signals as the model generates code, providing line-by-line feedback that guides the generation process toward executable solutions. EG-CFG employs a multi-stage process: first, we conduct beam search to sample candidate program completions for each line; second, we extract execution signals by executing these candidates against test cases; and finally, we incorporate these signals into the prompt during generation. By maintaining consistent signals across tokens within the same line and refreshing signals at line boundaries, our approach provides coherent guidance while preserving syntactic structure. Moreover, the method naturally supports native parallelism at the task level in which multiple agents operate in parallel, exploring diverse reasoning paths and collectively generating a broad set of candidate solutions. Our experiments across diverse coding tasks demonstrate that EG-CFG significantly improves code generation performance compared to standard approaches, achieving state-of-the-art results across various levels of complexity, from foundational problems to challenging competitive programming and data science tasks. Our code is available at: https://github.com/boazlavon/eg_cfg",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 114,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          285.356,
+          190.814,
+          300.91
+        ],
+        "content": "1 Introduction",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 115,
+        "level": "Subtitle",
+        "page number": 1,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          198.195,
+          505.247,
+          275.654
+        ],
+        "content": "Large language models (LLMs) have recently demonstrated remarkable code generation capabilities, significantly advancing performance in tasks such as general programming problems [1, 2, 3], competitive coding challenges [4], and real-world software engineering tasks [5]. However, current LLM-based code generation methods primarily rely on pattern recognition derived from static representations of code rather than explicitly modeling code execution at runtime [1, 3]. Consequently, the generated programs often appear to be correct superficially, but fail to execute correctly on actual inputs, reflecting a critical gap between learned syntactic patterns and genuine executability.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 116,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          116.352,
+          504.346,
+          193.811
+        ],
+        "content": "State-of-the-art approaches typically use iterative refinement [6, 7, 8] or self-debugging strategies [9, 10]. Recent approaches adopt multi-agent or agentic workflows, explicitly employing iterative refinement and collaborative feedback mechanisms [11, 12, 13, 14]. However, these methods typically operate in discrete cycles: generating complete candidate solutions, executing them, and then using feedback from failures to guide subsequent attempts. Such approaches do not continuously integrate execution signals during inference, thus limiting their ability to dynamically adjust toward runtime correctness at the token level.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 117,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          67.236,
+          504.353,
+          111.968
+        ],
+        "content": "In contrast, human programmers frequently execute incomplete code fragments to quickly detect errors, assess progress, and iteratively refine their implementations based on concrete runtime outcomes, while exploring multiple candidate implementations and planning at varying levels of detail before finalizing solutions [15, 16]. This iterative, real-time refinement process explicitly",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 118,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          49.603,
+          385.169,
+          60.408
+        ],
+        "content": "39th Conference on Neural Information Processing Systems (NeurIPS 2025).",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 119,
+        "page number": 1,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          622.635,
+          503.993,
+          719.999
+        ],
+        "id": 121,
+        "page number": 2,
+        "pdfua_tag": "Figure",
+        "source": "2506.10948_images/imageFile1.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          108.0,
+          457.584,
+          505.652,
+          618.227
+        ],
+        "id": 122,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              108.0,
+              595.313,
+              503.997,
+              618.227
+            ],
+            "content": "Figure 1: MBPP & MBPP-ET performance. EG-CFG (DeepSeek-V3) sets a new state-of-the-art results.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  108.0,
+                  484.906,
+                  503.998,
+                  581.785
+                ],
+                "id": 107,
+                "page number": 2,
+                "pdfua_tag": "Figure",
+                "source": "2506.10948_images/imageFile2.png",
+                "type": "image"
+              }
+            ],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              457.584,
+              505.652,
+              480.497
+            ],
+            "content": "Figure 2: HumanEval & HumanEval-ET performance. EG-CFG (DeepSeek-V3) matches the state-ofthe-art on HumanEval and sets a new state-of-the-art on HumanEval-ET.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 2,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 130,
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 2,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          418.391,
+          504.17,
+          441.305
+        ],
+        "content": "grounds coding decisions in observed execution behavior rather than relying purely on syntactic or structural reasoning [17].",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 123,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          347.457,
+          505.654,
+          414.007
+        ],
+        "content": "Inspired by these human coding practices and by LLM exploration techniques [18, 19, 20, 21], our proposed approach generates dynamic execution signals by explicitly sampling multiple candidate continuations at varied completion horizons, systematically adjusting decoding temperature to encourage exploration of different reasoning paths. Executing these diverse candidates yields rich execution-based feedback, explicitly mirroring human iterative refinement and exploratory problem-solving processes.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 124,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          265.614,
+          505.245,
+          343.073
+        ],
+        "content": "Unlike methods that provide explicit correctness indicators, such as scalar pass/fail or ranking signals [4, 22], or explicit verbal critiques and structured reflections on execution failures [9, 20], our method provides the raw execution outcome as a soft guidance signal. This approach allows the model to autonomously interpret and integrate minimally processed feedback into its generation process, bridging a significant gap between explicit externally-supervised reinforcement, in which the model is explicitly told what runs were successful [9], and implicit self-verification, where the model autonomously assesses the correctness of its own reasoning [10].",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 125,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.691,
+          216.499,
+          505.245,
+          261.23
+        ],
+        "content": "To incorporate the execution-based signal, our method utilizes Classifier-Free Guidance (CFG) [23], conditioning token-level generation decisions on the runtime outcome obtained by executing candidate code completions during inference. This approach guides the model toward solutions that are both syntactically plausible and executable, substantially improving correctness.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 126,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          69.201,
+          505.657,
+          212.114
+        ],
+        "content": "As depicted in Figure 1, our Execution-Guided Classifier-Free Guidance (EG-CFG) approach achieves state-of-the-art performance on the MBPP and MBPP-ET benchmarks [3], significantly outperforming existing methods. Using the open-source DeepSeek-V3-0324 model [24], EG-CFG attains 96.6% accuracy on MBPP and 73.0% on MBPP-ET, surpassing previous leading approaches such as QualityFlow [11] (94.2%), MetaGPT [25] (87.7%), and LPW [26] (84.8% on MBPP, 65.8% on MBPPET), all of which utilized leading closed-source models. On the HumanEval benchmark (Figure 2), EG-CFG achieves state-of-the-art accuracy of 99.4%, matching LDB [27] and establishes a new state-of-the-art on the HumanEval-ET benchmark, reaching 89.02% accuracy and surpassing LPW’s 84.8% accuracy achieved with GPT-4o. Furthermore, EG-CFG establishes a new state-of-the-art on DS-1000 (Figure 3), a domain-specific benchmark focused on challenging data science problems, achieving 69.9% accuracy. Lastly, EG-CFG achieves a new state-of-the-art on the CodeContests benchmark (Figure 4) with 60.6% accuracy using DeepSeek-V3-0324, demonstrating its effectiveness on challenging competitive programming problems.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 127,
+        "page number": 2,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          621.615,
+          503.992,
+          720.0
+        ],
+        "id": 129,
+        "page number": 3,
+        "pdfua_tag": "Figure",
+        "source": "2506.10948_images/imageFile3.png",
+        "type": "image"
+      },
+      {
+        "bounding box": [
+          108.0,
+          464.961,
+          505.653,
+          617.206
+        ],
+        "id": 130,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              108.0,
+              594.293,
+              504.001,
+              617.206
+            ],
+            "content": "Figure 3: DS-1000 performance. EG-CFG (DeepSeek-V3) achieves new state-of-the-art, surpassing GPT-4.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  108.0,
+                  492.283,
+                  504.0,
+                  585.364
+                ],
+                "id": 108,
+                "page number": 3,
+                "pdfua_tag": "Figure",
+                "source": "2506.10948_images/imageFile4.png",
+                "type": "image"
+              }
+            ],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              464.961,
+              505.653,
+              487.874
+            ],
+            "content": "Figure 4: CodeContests performance. EG-CFG (DeepSeek-V3) sets a new state-of-the-art, outperforming GPT-4 and GPT-4o methods.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 3,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 3,
+        "pdfua_tag": "L",
+        "previous list id": 122,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          107.691,
+          362.508,
+          504.251,
+          461.784
+        ],
+        "content": "The superior performance of EG-CFG on MBPP-ET and HumanEval-ET highlights that our method not only generates accurate code but also significantly enhances robustness and reliability under complex and extended test scenarios. Summarizing, our main contributions are: (i) a framework for dynamically generating code while executing fragments of the code and using the execution traces to guide the generation process, (ii) introducing native parallelism at the task level that is not achievable in the sequential iterative refinement methods, (iii) using CFG in order to generate code that is conditioned on the execution feedback, and (iv) obtaining new state-of-the-art results on the MBPP, MBPP-ET, HumanEval-ET, DS-1000 and CodeContests benchmarks using open-source models, outperforming previous methods that are based on the leading closed-source models.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 131,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          331.742,
+          197.09,
+          347.296
+        ],
+        "content": "2 Related Work",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 132,
+        "level": "Subtitle",
+        "page number": 3,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          221.978,
+          504.353,
+          321.255
+        ],
+        "content": "Program synthesis has long served both as a means to evaluate LLMs’ capabilities [1, 28] and as a key goal of the research community to automate code generation [29, 30]. Modern LLMs are typically assessed via automated benchmarks: given a coding problem description, the model generates code that is then validated on a set of test cases (unit-test). In this work, we focus on six code generation benchmarks: MBPP [3], HumanEval [1], DS-1000 [31] and CodeContests [4], along with the extended variants MBPP-ET and HumanEval-ET [32]. MBPP combines crowd-sourced tasks and math-based problems [33], HumanEval includes hand-written Python challenges, DS-1000 presents challenging data science problems involving libraries like Pandas and NumPy, and CodeContests features competitive programming problems requiring advanced algorithmic reasoning.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 133,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.532,
+          151.044,
+          505.246,
+          217.594
+        ],
+        "content": "While zero-shot prompting, meaning directly querying an LLM on a task, is one evaluation strategy, few-shot prompting [34], which provides a small number of input–output examples, is more widely adopted. Other methods, such as Chain-of-Thought (CoT) [35], leverage the model’s autoregressive nature to iteratively solve such tasks by decomposing them into sub-tasks. Similar approaches, such as Tree-of-Thoughts [21] extend CoT by exploring multiple candidate reasoning paths at a higher level of granularity.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 134,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.532,
+          69.201,
+          505.245,
+          146.66
+        ],
+        "content": "With the growing ability of LLMs to utilize external signals and tools [36], LLMs have been augmented with feedback mechanisms to improve code generation. Approaches such as Reflexion [9], Program-aided Language Models (PAL) [6], and ReAct [7] iteratively update prompts based on external tools’ outputs or intermediate results. In particular, Self-Debugging [10] demonstrates how LLMs can leverage debugging tools: the model generates code, tests it on available unit-test examples, and refines its output using the debugging feedback. Another related approach, LPW [26], employs a structured two-phase process involving initial high-level plan generation followed by",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 135,
+        "page number": 3,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.671,
+          685.42,
+          505.241,
+          719.242
+        ],
+        "content": "iterative refinement and debugging guided by execution feedback. The Multi-Granularity Debugger (MGDebugger) [37] also uses the LLM to simulate the execution of generated Python programs, employing the simulated trace as additional feedback for code refinement.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 137,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.532,
+          549.032,
+          505.745,
+          681.036
+        ],
+        "content": "While some approaches use a single LLM to solve coding problems, agentic methods employ multiple LLM instances to tackle a single task. Works such as MetaGPT [25] introduce a framework in which a given task is split into multiple procedures, each assigned to a dedicated LLM agent. AgentCoder [12] extends these multi-agent frameworks by employing both a test-designer agent and an executor agent, effectively integrating the Self-Debugging paradigm [10] into an agentic workflow and demonstrating the benefits of execution feedback. Current agentic workflows, such as MapCoder [13] and LPW [26], typically rely on discrete cycles of sequential agent interactions or distinct refinement phases, inherently limiting their ability to fully leverage the power of parallelism within a single task. In contrast, EG-CFG breaks this barrier by introducing native parallelism at the task level. Multiple agents run concurrently on the same task, each with a different configuration, simultaneously exploring diverse reasoning paths without the constraints of sequential cycles, fully leveraging the power of parallelism.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 138,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          434.461,
+          505.745,
+          544.647
+        ],
+        "content": "Although code generation methods have advanced dramatically, they all rely on naive decoding methods such as temperature or top-p sampling [18]. In particular, execution-feedback techniques generate a complete solution, execute it, and then refine the code. For example, the model is prompted to produce a function, its implementation is tested against unit tests, and the resulting feedback is appended to the original prompt. This process repeats iteratively until a correct solution emerges. This approach contrasts with recent advances in LLM inference techniques, especially guidance methods such as Classifier Guidance [38] and Classifier-Free Guidance (CFG) [23, 39]. These methods condition generation on external constraints or classifier signals, directing the model to sample tokens from multiple contrastive distributions. Although CFG has shown strong performance, its guidance signals remain static, predefined and fixed throughout the sampling process [40].",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 139,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          363.527,
+          505.65,
+          430.077
+        ],
+        "id": 140,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              107.641,
+              363.527,
+              505.65,
+              430.077
+            ],
+            "content": "As far as we can ascertain, guidance methods such as CFG have yet to be applied at scale to dynamic, execution-driven reasoning. This work bridges this gap by demonstrating that a single open-source model, augmented with execution feedback and a novel token-sampling strategy, outperforms the state-of-the-art across multiple widely adopted coding benchmarks at different complexity levels from foundational problems to challenging competitive programming and data sceince tasks. Our contribution differs from prior work in multiple key aspects, including:",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 152,
+        "number of list items": 1,
+        "numbering style": "english letters",
+        "page number": 4,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          112.981,
+          224.648,
+          505.651,
+          364.124
+        ],
+        "id": 141,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              112.981,
+              330.302,
+              504.347,
+              364.124
+            ],
+            "content": "1. Prior approaches generate entire code blocks (or sub-blocks) and use the execution feedback of the entire block; by contrast, our approach gradually generates the solution line-by-line by sampling and executing multiple candidate continuation programs at each step.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              295.084,
+              504.173,
+              328.906
+            ],
+            "content": "2. Instead of explicitly relying on unit-test pass/fail signals or direct reflections on correctness, our method incrementally constructs code fragments and leverages their execution traces as an implicit feedback signal, guiding the model without explicit external supervision.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              248.957,
+              504.244,
+              293.688
+            ],
+            "content": "3. Our method relies on a single prompting scheme where multiple agents perform the same task and differ only in their parameter configurations. Each agent explores diverse reasoning paths and collectively generating a broad set of candidate solutions. This enables a level of parallelism that is unattainable in methods where agents communicate sequentially.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.981,
+              224.648,
+              505.651,
+              247.561
+            ],
+            "content": "4. We replace naive decoding with CFG, using innovative trace-inspired prompts for dualdistribution interpolation sampling.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 4,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 4,
+        "numbering style": "arabic numbers",
+        "page number": 4,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          195.624,
+          165.779,
+          211.178
+        ],
+        "content": "3 Method",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 142,
+        "level": "Subtitle",
+        "page number": 4,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.532,
+          158.287,
+          503.999,
+          192.109
+        ],
+        "content": "We present Execution-Guided Classifier-Free Guidance (EG-CFG), a novel inference-time decoding method for neural code generation that explicitly integrates dynamic execution signals into the autoregressive generation process. A programming task τ is represented by three components:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 143,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          264.992,
+          146.178,
+          504.666,
+          158.837
+        ],
+        "content": "τ = (ptask,T,fname), (1)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 144,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          103.053,
+          505.246,
+          146.015
+        ],
+        "content": "where ptask is a textual definition of the programming task, T = {tj}|jT=1| is the set of test cases, and fname is the target Python function name. The goal is to generate executable Python code w∗ = [w0∗,w1∗,...,wN∗ −1] that solves the task correctly, formally satisfying:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 145,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          226.42,
+          87.443,
+          504.663,
+          106.575
+        ],
+        "content": "Execute(w∗,tj) = success, ∀tj ∈ T. (2)",
+        "font": "CMR10",
+        "font size": 9.963,
+        "id": 146,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.532,
+          69.201,
+          505.245,
+          92.114
+        ],
+        "content": "We consider two distinct instruction templates p0: the standard DeepSeek-Coder 3-shot prompt [41], consisting of concise instructions accompanied by short illustrative examples, and an alternative",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 147,
+        "page number": 4,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          696.329,
+          503.999,
+          719.242
+        ],
+        "content": "prompt explicitly designed to encourage the generation of step-by-step solutions with more atomic logic. See Appendix A for the example prompts used.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 149,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.532,
+          679.941,
+          490.355,
+          691.945
+        ],
+        "content": "We build the instruction prompt by incorporating the task components into the prompt template:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 150,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          216.705,
+          660.609,
+          504.667,
+          673.269
+        ],
+        "content": "pinst = BUILDINSTRUCTIONPROMPT(p0,τ) (3)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 7.97,
+        "id": 151,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          642.34,
+          504.351,
+          654.783
+        ],
+        "id": 152,
+        "level": "2",
+        "list items": [
+          {
+            "bounding box": [
+              107.641,
+              642.34,
+              504.351,
+              654.783
+            ],
+            "content": "At each step i, given a previously generated token sequence w<i, the LLM M assigns a probability",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 1,
+        "numbering style": "english letters",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "previous list id": 140,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          625.105,
+          212.97,
+          643.874
+        ],
+        "content": "distribution M(wi | pinst,w",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 153,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          598.487,
+          504.001,
+          643.874
+        ],
+        "content": "), which is conditioned on the instruction prompt pinst. This generation proceeds iteratively until reaching a maximum token length Nmax or an end-of-code token. We build the instruction prompt by injecting the instruction task to the prompt template. We first run the model to produce an initial output sequence ppre based on pinst:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 155,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          212.97,
+          630.933,
+          221.024,
+          635.914
+        ],
+        "content": "<i",
+        "font": "CMMI5",
+        "font size": 4.981,
+        "id": 154,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          299.249,
+          575.229,
+          504.666,
+          594.36
+        ],
+        "content": "), ppre = [pinst,wpre0 ,··· ,wpren−1] (4)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "heading level": 5,
+        "id": 158,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          167.917,
+          575.229,
+          290.198,
+          594.136
+        ],
+        "content": "wprei = arg maxM(wi | pinst,w",
+        "font": "CMR10",
+        "font size": 9.963,
+        "heading level": 5,
+        "id": 156,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          290.198,
+          581.057,
+          298.252,
+          586.038
+        ],
+        "content": "<i",
+        "font": "CMMI5",
+        "font size": 4.981,
+        "id": 157,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          543.626,
+          505.249,
+          578.104
+        ],
+        "content": "The generated sequence ppre contains reasoning tokens that precede the final executable solution. We identify the beginning of this solution block at index isolution by locating a special start-of-code token, which is defined in p0. We then define the prefix of all preceding tokens, ppre-sol, as:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 159,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          260.974,
+          526.478,
+          504.67,
+          539.137
+        ],
+        "content": "ppre-sol = ppre[: isolution] (5)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 6.974,
+        "id": 160,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          499.675,
+          503.995,
+          523.243
+        ],
+        "content": "Additionally, we define an index idyn that marks the end of the final few-shot example within the instruction prompt pinst, which is used to inject future signals into the prompt.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 161,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.691,
+          462.124,
+          504.003,
+          495.946
+        ],
+        "content": "The prompt psol that we pass to the LLM is constructed autoregressively by aggregating executable code tokens into ppre-sol as formalized later in Equation 14 of section 3.3. This prompt contains partial solutions that are progressively updated until the solution is formed.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 162,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          424.945,
+          503.997,
+          451.971
+        ],
+        "id": 163,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              108.0,
+              424.945,
+              503.997,
+              451.971
+            ],
+            "content": "3.1 Dynamic Execution Feedback Our dynamic execution feedback explicitly generates multiple candidate continuations based on a",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 5,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 5,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          359.491,
+          505.245,
+          426.04
+        ],
+        "content": "partially completed solution. Specifically, given psol we generate a set of candidate continuations using beam-search decoding. Each candidate explicitly extends the current solution by d additional lines of code, capturing meaningful variations in potential solutions and providing a granular basis for execution-based guidance. Formally, given parameters specifying the number of candidates s, completion horizon d, and sampling temperature t, the beam search sampling is performed to obtain s candidates.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 164,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          115.339,
+          340.027,
+          126.031,
+          353.577
+        ],
+        "content": "wci",
+        "font": "CMMI10",
+        "font size": 9.963,
+        "heading level": 5,
+        "id": 165,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          133.019,
+          334.669,
+          211.435,
+          353.577
+        ],
+        "content": "∼ M(wi | psol,wc<i",
+        "font": "CMMI10",
+        "font size": 9.963,
+        "heading level": 5,
+        "id": 167,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          211.933,
+          334.669,
+          381.865,
+          353.577
+        ],
+        "content": ";t) until CountLines(cj) ≥ d, cj = [wc0",
+        "font": "CMR10",
+        "font size": 9.963,
+        "heading level": 5,
+        "id": 169,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          385.405,
+          334.669,
+          419.897,
+          353.577
+        ],
+        "content": ",··· ,wci",
+        "font": "CMMI10",
+        "font size": 9.963,
+        "heading level": 5,
+        "id": 171,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          424.118,
+          341.434,
+          504.666,
+          353.438
+        ],
+        "content": "], j = 1,...,s (6)",
+        "font": "CMMI10",
+        "font size": 9.963,
+        "heading level": 5,
+        "id": 173,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          126.032,
+          339.529,
+          128.962,
+          344.51
+        ],
+        "content": "j",
+        "font": "CMMI5",
+        "font size": 4.981,
+        "id": 166,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          205.682,
+          339.529,
+          208.612,
+          344.51
+        ],
+        "content": "j",
+        "font": "CMMI5",
+        "font size": 4.981,
+        "id": 168,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          381.185,
+          339.529,
+          384.115,
+          344.51
+        ],
+        "content": "j",
+        "font": "CMMI5",
+        "font size": 4.981,
+        "id": 170,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          419.898,
+          339.529,
+          422.828,
+          344.51
+        ],
+        "content": "j",
+        "font": "CMMI5",
+        "font size": 4.981,
+        "id": 172,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          301.559,
+          504.002,
+          335.382
+        ],
+        "content": "Each candidate cj is generated autoregressively with a stopping condition triggered after d newline characters, representing a plausible continuation of the next d lines of code. These candidates form the basis for generating detailed execution signals used to guide subsequent inference steps.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 174,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          264.24,
+          504.001,
+          298.421
+        ],
+        "content": "Executable Extraction To handle potentially invalid candidate continuations, we extract executable components via Abstract Syntax Tree (AST) parsing. Formally, for each candidate cj, we apply the executable extraction function:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 175,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          212.966,
+          249.926,
+          504.672,
+          262.068
+        ],
+        "content": "cˆj = ExtractExecutable(cj), j = 1,...,s. (7)",
+        "font": "CMR10",
+        "font size": 9.963,
+        "heading level": 5,
+        "id": 176,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.691,
+          201.305,
+          504.167,
+          246.036
+        ],
+        "content": "This extraction function iteratively attempts to parse each candidate cj as follows: (1) attempt parsing cj (2) if unsuccessful, append a Python pass statement to the last line and retry; (3) if still unsuccessful, iteratively remove the last line and retry. This ensures minimal modifications for syntactic validity. After extraction, we apply uniqueness filtering to remove duplicates:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 177,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.691,
+          158.903,
+          504.667,
+          197.606
+        ],
+        "content": "C = Unique {cˆj}sj=1 . (8) This AST-based verification explicitly ensures that execution guidance relies solely on syntactically valid and executable code.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 178,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          123.078,
+          505.385,
+          155.764
+        ],
+        "content": "Execution Feedback and Trace For each unique executable candidate cˆj ∈ C, we explicitly execute it against all provided test cases T = {tm}|mT=1| and record the resulting execution feedback:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 179,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          172.804,
+          102.93,
+          504.67,
+          121.838
+        ],
+        "content": "ej,m = ExtractExecutionFeedback(ˆcj,tm), ∀cˆj ∈ C, tm ∈ T. (9)",
+        "font": "CMR10",
+        "font size": 9.963,
+        "heading level": 5,
+        "id": 180,
+        "level": "Subtitle",
+        "page number": 5,
+        "pdfua_tag": "H5",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          69.201,
+          505.652,
+          103.023
+        ],
+        "content": "Our approach is agnostic to the precise structure of the execution feedback ej,m. In our implementation, execution feedback specifically takes the form of execution traces: a structured representation of a program’s runtime behavior, capturing detailed step-by-step information during execution.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 181,
+        "page number": 5,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          695.891,
+          504.004,
+          719.242
+        ],
+        "content": "Specifically, we use a custom debugger for structured execution traces. A trace ej,m is defined as a sequence of Nj,m runtime events, εk, resulting from the execution of a program cˆj with input tm:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 183,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          261.967,
+          687.323,
+          273.247,
+          692.304
+        ],
+        "content": "j,m",
+        "font": "CMMI5",
+        "font size": 4.981,
+        "id": 185,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          208.7,
+          677.315,
+          261.22,
+          690.791
+        ],
+        "content": "ej,m = [εk]N",
+        "font": "CMMI7",
+        "font size": 6.974,
+        "id": 184,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.751,
+          619.12,
+          504.67,
+          689.757
+        ],
+        "content": "k=1 , εk = (Ek,ℓk,vk,τk,rk,xk) (10) Each event εk is a tuple containing the event type Ek ∈ {call,line,return,exception}, the source line number ℓk, mappings from variable names to their values (vk) and types (τk), the return value rk, and any exception details xk. This structured representation provides comprehensive insight into the correctness and behavior of executed code, serving as a precise basis for dynamic feedback in our inference framework.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 186,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          583.212,
+          503.998,
+          617.393
+        ],
+        "content": "Dynamic Signal Aggregation The dynamic execution feedback signal is the concatenation of a fixed instruction string, denoted pdyn-inst, to the aggregated execution feedback. This yields the dynamic signal prompt:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 187,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          212.586,
+          561.45,
+          504.669,
+          580.357
+        ],
+        "content": "psignal = [pdyn-inst, {(ˆcj,tm,ej,m)}cˆj∈C, tm∈T], (11)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 6.974,
+        "id": 188,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          540.099,
+          503.996,
+          563.668
+        ],
+        "content": "where each tuple consists of a candidate completion cˆj, a test case tm, and its corresponding execution trace ej,m. Now we form a new prompt naming this prompt pdyn as dynamic signal prompt:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 189,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          110.491,
+          510.761,
+          504.672,
+          537.762
+        ],
+        "content": "pdyn = [psol[: idyn],psignal,psol[idyn :]] (12) An example of the obtained prompt is shown in appendix Appendix B.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 190,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          491.893,
+          266.007,
+          504.854
+        ],
+        "content": "3.2 Classifier-Free Guidance (CFG)",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 191,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          439.351,
+          504.004,
+          484.52
+        ],
+        "content": "Inspired by [23, 39], we utilize CFG to explicitly guide token generation by interpolating between two probability distributions: (i) an unconditional (prior) distribution based on the evolving solution prompt psol, and (ii) a conditional distribution based on dynamic signal prompt pdyn which incorporates execution feedback. Formally, for each token wi, the CFG distribution is computed as:",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 192,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          387.977,
+          504.672,
+          436.796
+        ],
+        "content": "log MCFG(wi | psol,pdyn) = log M(wi | psol) + γ [log M(wi | pdyn) − log M(wi | psol)], (13) where γ ≥ 0 explicitly controls the strength of guidance. Higher values of γ encourage the model to follow the execution-based guidance, while lower values allow greater flexibility toward the unconditional prior.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 193,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          363.44,
+          275.252,
+          376.401
+        ],
+        "content": "3.3 Execution-Guided Inference Loop",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 194,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          288.862,
+          505.245,
+          356.067
+        ],
+        "content": "Our inference procedure extends standard autoregressive token generation by explicitly incorporating dynamic execution feedback via CFG. Starting from an initial prompt ppre-sol (Equation 5), we autoregressively sample tokens wi from the CFG-conditioned distribution MCFG(wi | psol,pdyn), progressively constructing the solution sequence psol. At each token-generation step, we reuse the dynamic signal psignal (Equation 11), injecting it into psol at index idyn to form pdyn as described in Equation 12. psignal itself is regenerated only upon completing a new line.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 195,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          157.046,
+          265.909,
+          504.667,
+          285.188
+        ],
+        "content": "wsoli = arg maxMCFG(wi | psol,pdyn), psol = [ppre-sol,wsol0 ,··· ,wsoln−1] (14)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 196,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          248.137,
+          263.696,
+          261.098
+        ],
+        "content": "3.4 Parallel Multi-Agent Execution",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 197,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          185.123,
+          504.167,
+          240.764
+        ],
+        "content": "Given an input task as defined in Equation 1, we launch a parallel multi-agent inference process where each agent is assigned a unique configuration: candidate count s, generation horizon d, sampling temperature t, instruction prompt template p0 and guidance strength γ. Once any agent finds a correct solution, it is immediately returned and all remaining agents are terminated. The full pseudo-code for both the execution-guided inference loop and the multi-agent controller is provided in Appendix C.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 198,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          155.971,
+          191.017,
+          171.525
+        ],
+        "content": "4 Experiments",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 199,
+        "level": "Subtitle",
+        "page number": 6,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          69.201,
+          504.356,
+          147.019
+        ],
+        "content": "Implementation Details We conduct our experiments using two LLMs across different parameter scales: DeepSeek-Coder-1.3B [41], which is small enough to run locally on our machines (NVIDIA GeForce RTX 2080 Ti and RTX 3090 GPUs), and a large open-source model, DeepSeek-V3-0324 [24], which we use through a cloud inference endpoint. We use Fireworks AI which was chosen based on two criteria: a modest cost, and the availability of a log probability output that is required to perform the CFG (Equation 13). The full code used for our experiments is provided in the supplementary materials.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 200,
+        "page number": 6,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          663.602,
+          505.245,
+          719.601
+        ],
+        "content": "Hyperparameter Settings As explained in section 3.4, our method launches multiple parallel agents for each task. Each agent is assigned a different hyperparameter configuration. The following hyper-parameter sets were used in our experiments: s = 3, t ∈ {0.7,0.75,0.85,0.95,1.2,1.5}, d ∈ {2,3,6,8}, γ ∈ {0,0.5,1,3}. Additionally, we evaluate both p0 prompt templates, see section 3 and appendix Appendix A.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 202,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          551.284,
+          505.657,
+          650.92
+        ],
+        "content": "Evaluation Benchmark Our evaluations use widely-adopted benchmarks: MBPP [3] (500 tasks) and HumanEval [1] (164 tasks), along with their extended test versions MBPP-ET and HumanEvalET [32]. To assess performance on more challenging tasks, we also evaluate on the DS-1000 data science benchmark [31] (1000 tasks) and the CodeContests competitive programming benchmark [4] (using the ExecEval framework [42]). We report accuracy: the percentage of problems passing all test cases. To rigorously test generalization and prevent overfitting to public tests, evaluations on HumanEval, HumanEval-ET, MBPP-ET, CodeContests, and DS-1000 rely on hidden test cases inaccessible during inference. DS-1000’s structure, providing only a single input-output example per problem, further tests model robustness against reliance on examples.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 203,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          460.785,
+          504.827,
+          538.602
+        ],
+        "content": "Baselines We compare our EG-CFG method against several established state-of-the-art methods for code generation and debugging: a Baseline LLM using the few-shot template from DeepSeek-Coder’s evaluation [41]; MGDebugger [37], an iterative refinement method combining test-case feedback with LLM-simulated execution traces; MapCoder [13], which employs multi-agent interactions; QualityFlow [11], which incorporates agentic workflows for iterative enhancement; LPW [26], which utilizes a structured two-phase workflow with runtime execution feedback; and CodeSim [14], a search-based method that adapts semantically similar code snippets.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 204,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          433.797,
+          161.409,
+          446.758
+        ],
+        "content": "4.1 Results",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 9.963,
+        "heading level": 4,
+        "id": 205,
+        "level": "Subtitle",
+        "page number": 7,
+        "pdfua_tag": "H4",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          353.861,
+          505.745,
+          431.32
+        ],
+        "content": "Using the DeepSeek-V3-0324 model, EG-CFG achieves new state-of-the-art (SOTA) results across all evaluated benchmarks. On MBPP and MBPP-ET (Table 1), it surpasses prior methods using large closed-source models like GPT-4 and Claude 3.5. On HumanEval (Table 2), it matches the state-ofthe-art (LDB) at 99.4% and sets a new state-of-the-art on the challenging HumanEval-ET variant. Furthermore, it establishes new state-of-the-art on CodeContests (Table 3), significantly exceeding its own baseline, MapCoder, and previous GPT-4 based approaches like LPW and CodeSim, and also sets a new state-of-the-art on DS-1000 (69.9%, Table 4), outperforming CONLINE/GPT-4.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 206,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.532,
+          261.109,
+          504.17,
+          349.477
+        ],
+        "content": "We note that across all tested baselines, the publicly available code was highly sensitive to the specific model and could not be readily applied to DeepSeek models. We invested substantial effort in debugging and adapting the code to ensure it produced meaningful results that represented each baseline method as favorably as possible. Other methods, such as QualityFlow, have not released their code, preventing us from evaluating them on the DeepSeek models. While LPW did release a public implementation, we encountered substantial technical issues during the execution of their published code on the DeepSeek-Coder 1.3b model, resulting in unusually low scores despite our best debugging efforts on that benchmark.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 207,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          148.792,
+          505.246,
+          248.427
+        ],
+        "content": "Run time A key advantage of EG-CFG is its native parallelism, a design choice that aligns with the growing trend of leveraging large-scale, parallel compute in modern agentic systems. This architectural choice is a key differentiator from iterative refinement methods, which are inherently sequential and therefore cannot leverage parallel compute to accelerate work on a single task. In contrast, EG-CFG is designed to explore diverse reasoning paths simultaneously across multiple agents (as described in section 3.4). This fundamental architectural difference makes wall-clock time the most relevant and fair metric for comparison. As can be seen in Table 5, on the MBPP benchmark, our method is more efficient than MGDebugger and competitive with MapCoder. When comparing with LPW, our method is more efficient with the smaller model but slower with the larger model.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 208,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          69.201,
+          505.247,
+          136.109
+        ],
+        "content": "Fairness of Comparison To demonstrate EG-CFG’s qualitative advantage is not just a larger compute budget, we drastically increased baseline token usage. On MBPP (DeepSeek-V3-0324), we raised MGDebugger and MapCoder retry counts 40-fold (from 5 to 200). Despite this 40x compute increase, gains were marginal : MGDebugger improved by only 6.8 percentage points, from 86.8% to 93.6% (solving 34 of its 86 prior failures). MapCoder’s improvement was even smaller, at 1.6 percentage points, from 87.2% to 88.8% (solving 8 of its 64 prior failures). Both",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 209,
+        "page number": 7,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.691,
+          414.326,
+          504.002,
+          714.595
+        ],
+        "id": 211,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              107.691,
+              669.864,
+              504.002,
+              714.595
+            ],
+            "content": "Table 1: Performance on the MBPP and MBPP-ET benchmarks. Our proposed EG-CFG achieves a new state-of-the-art overall accuracy. The DeepSeek–Coder-1.3B and –V3-0324 results for all baselines were obtained by our study using the official implementations provided by each baseline method. The results below the double separator were collected from the respective papers.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  127.264,
+                  643.515,
+                  482.499,
+                  669.03
+                ],
+                "content": "Model Method MBPP MBPP-ET Acc. (%) RSR (%) Acc. (%) RSR (%)",
+                "font": "NimbusRomNo9L-Medi",
+                "font size": 8.966,
+                "id": 67,
+                "page number": 8,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  127.264,
+                  604.693,
+                  475.029,
+                  640.909
+                ],
+                "content": "DeepSeek-Coder 1.3B Baseline LLM 49.4 0.0 42.6 0.0 DeepSeek-Coder 1.3B EG-CFG (Ours) 83.2 66.79 59.8 29.96 DeepSeek-Coder 1.3B MapCoder [13] 55.2 11.46 46.2 6.27 DeepSeek-Coder 1.3B MGDebugger [37] 70.4 41.5 44.6 3.48",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 8.966,
+                "id": 70,
+                "page number": 8,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  127.264,
+                  556.764,
+                  475.029,
+                  601.549
+                ],
+                "content": "DeepSeek-V3-0324 Baseline LLM 82.8 0.0 64.8 0.00 DeepSeek-V3-0324 EG-CFG (Ours) 96.6 80.23 73.0 23.29 DeepSeek-V3-0324 MapCoder [13] 87.2 25.58 69.6 13.63 DeepSeek-V3-0324 MGDebugger [37] 86.8 23.25 64.8 0.00 DeepSeek-V3-0324 LPW [26] 84.0 6.97 65.2 1.13",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 8.966,
+                "id": 72,
+                "page number": 8,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  127.264,
+                  506.443,
+                  466.436,
+                  551.129
+                ],
+                "content": "GPT-4 Baseline LLM 68.3 - 49.2 GPT-4 Self-Collaboration [43] 78.9 - 62.1 GPT-4 Self-Debugging [10] 80.6 - - GPT-4 MetaGPT [25] 87.7 - - GPT-4 MapCoder [13] 83.1 - 57.5 -",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 8.966,
+                "id": 74,
+                "page number": 8,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  127.264,
+                  447.654,
+                  466.436,
+                  503.299
+                ],
+                "content": "GPT-4o LPW [26] 84.8 - 65.8 CodeQwen1.5 MGDebugger [37] 80.8 - - DeepSeek-Coder-V2-Lite MGDebugger [37] 80.0 - - Claude-Sonnet-3.5 Baseline LLM [11] 88.7 - - Claude-Sonnet-3.5 QualityFlow [11] 94.2 - - -",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 8.966,
+                "id": 76,
+                "page number": 8,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              107.691,
+              414.326,
+              504.001,
+              437.239
+            ],
+            "content": "Table 2: Performance on the HumanEval and HumanEval-ET benchmarks. Our proposed EG-CFG matches the state-of-the-art on HumanEval and achieves a new state-of-the-art on HumanEval-ET.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 8,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 228,
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 8,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          127.264,
+          384.989,
+          482.499,
+          410.504
+        ],
+        "content": "Model Method HumanEval HumanEval-ET Acc. (%) RSR (%) Acc. (%) RSR (%)",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 8.966,
+        "id": 213,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          127.264,
+          337.598,
+          475.029,
+          382.382
+        ],
+        "content": "DeepSeek-V3-0324 Baseline LLM 82.92 0.0 79.20 0.0 DeepSeek-V3-0324 EG-CFG (Ours) 99.4 94.04 89.02 47.21 DeepSeek-V3-0324 MapCoder [13] 96.95 82.14 81.70 12.02 DeepSeek-V3-0324 MGDebugger [37] 87.20 25.05 81.09 9.09 DeepSeek-V3-0324 LPW [26] 95.12 71.42 84.74 26.63",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 216,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          127.264,
+          287.277,
+          466.436,
+          331.963
+        ],
+        "content": "GPT-4 Baseline LLM 67.7 - 50.6 GPT-4 Self-Collaboration [43] 90.7 - 70.1 GPT-4 Self-Debugging [10] 61.6 - 45.8 GPT-4 MetaGPT [25] 85.9 - - GPT-4 MapCoder [13] 80.5 - 70.1 -",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 218,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          127.264,
+          223.008,
+          466.436,
+          284.132
+        ],
+        "content": "GPT-4o LPW [26] 98.2 - 84.8 LLaMA 3 LDB [27] 99.4 - - Claude-Sonnet-3.5 QualityFlow [11] 98.8 - - CodeQwen1.5 MGDebugger [37] 91.5 64.1 - DeepSeek-Coder-V2-Lite MGDebugger [37] 94.5 76.3 - -",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 220,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          183.832,
+          503.997,
+          206.745
+        ],
+        "content": "remained significantly below EG-CFG’s 96.6% accuracy , showing our performance gap is due to the execution-guided feedback loop’s quality, rather than the amount of computation.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 225,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          69.201,
+          505.745,
+          168.837
+        ],
+        "content": "Ablation study We performed an ablation study on the MBPP and MBPP-ET benchmarks to evaluate various components of our method. The results are reported in Table 6. When omitting the beam search of Equation 6, which creates multiple solutions instead of a single completion, the performance of the method drops and becomes much closer to the baseline performance. The role of CFG is evident from the second ablation, in which a value of γ = 1 is used in Equation 13. In this case, there is a clear drop in performance, although results are still clearly above the baseline. Finally, a similar drop in performance is observed when replacing the detailed execution trace used as part of the dynamic signal with a minimal execution trace, formally defined as the final event of the execution trace (Equation 10).",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 226,
+        "page number": 8,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.691,
+          282.481,
+          505.652,
+          714.595
+        ],
+        "id": 228,
+        "level": "4",
+        "list items": [
+          {
+            "bounding box": [
+              107.691,
+              658.737,
+              504.825,
+              714.595
+            ],
+            "content": "Table 3: Performance on the CodeContests benchmark. Our proposed EG-CFG achieves a new state-of-the-art overall accuracy on CodeContests. The runs on DeepSeek-V3-0324 are by us, and all other results are quoted from the literature. ∗ The LPW results were obtained on a custom test-set; the published code was not compatible with evaluating on DeepSeek. ∗∗Reported by the MapCoder paper [13]. ∗∗∗Reported by the CodeSim paper [14].",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  174.562,
+                  643.467,
+                  435.197,
+                  655.133
+                ],
+                "content": "Model Method Accuracy (%) RSR (%)",
+                "font": "NimbusRomNo9L-Medi",
+                "font size": 8.966,
+                "id": 81,
+                "page number": 9,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  174.562,
+                  604.546,
+                  427.732,
+                  640.86
+                ],
+                "content": "DeepSeek-V3-0324 Baseline LLM 41.81 0.00 DeepSeek-V3-0324 EG-CFG (Ours) 60.6 32.29 DeepSeek-V3-0324 MapCoder [13] 50.30 14.59 DeepSeek-V3-0324 CodeSim [14] 52.72 18.76",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 8.966,
+                "id": 83,
+                "page number": 9,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  174.562,
+                  578.613,
+                  419.13,
+                  598.621
+                ],
+                "content": "GPT-4o LPW [26]∗ 34.7 GPT-4o LDB [27]∗∗∗ 29.3 -",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 8.966,
+                "id": 85,
+                "page number": 9,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  174.562,
+                  538.231,
+                  419.13,
+                  575.468
+                ],
+                "content": "GPT-4 CodeSim [14] 29.1 GPT-4 MapCoder [13] 28.5 GPT-4 Self-Planning [44]∗∗ 10.9 GPT-4 Analogical [45]∗∗ 10.9 -",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 8.966,
+                "id": 87,
+                "page number": 9,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  174.562,
+                  497.848,
+                  419.13,
+                  535.086
+                ],
+                "content": "GPT-3.5 Turbo CodeSim [14] 16.4 GPT-3.5 Turbo MapCoder [13] 12.7 GPT-3.5 Turbo Analogical [45]∗∗ 7.3 GPT-3.5 Turbo Self-Planning [44]∗∗ 6.1 -",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 8.966,
+                "id": 89,
+                "page number": 9,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  174.562,
+                  483.898,
+                  419.13,
+                  494.703
+                ],
+                "content": "MoTCoder-15B MoTCoder [46] 26.34 -",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 8.966,
+                "id": 91,
+                "page number": 9,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              107.691,
+              443.864,
+              505.652,
+              477.686
+            ],
+            "content": "Table 4: Performance on the DS-1000 benchmark. Our proposed EG-CFG achieves a new stateof-the-art overall accuracy on DS-1000. ∗Reported by the SelfEvolve paper [47]. ∗∗Reported by DS-1000 [31] official leaderboard.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  162.955,
+                  428.376,
+                  446.804,
+                  440.042
+                ],
+                "content": "Model Method Accuracy (%) RSR (%)",
+                "font": "NimbusRomNo9L-Medi",
+                "font size": 8.966,
+                "id": 95,
+                "page number": 9,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  162.955,
+                  406.395,
+                  439.339,
+                  425.994
+                ],
+                "content": "DeepSeek-V3-0324 EG-CFG (Ours) 69.9 50.73 DeepSeek-V3-0324 Baseline LLM 38.9 0.00",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 8.966,
+                "id": 97,
+                "page number": 9,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  162.955,
+                  383.976,
+                  430.737,
+                  403.251
+                ],
+                "content": "GPT-4 CONLINE [48] 68.0 GPT-4 Baseline LLM 60.2 -",
+                "font": "NimbusRomNo9L-Regu",
+                "font size": 8.966,
+                "id": 99,
+                "page number": 9,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  162.955,
+                  310.659,
+                  430.737,
+                  380.831
+                ],
+                "id": 101,
+                "level": "5",
+                "list items": [
+                  {
+                    "bounding box": [
+                      162.955,
+                      352.063,
+                      430.737,
+                      380.831
+                    ],
+                    "content": "GPT-3.5 Turbo SelfEvolve [47] 57.1 GPT-3.5 Turbo Self Debugging [10]∗ 53.0 GPT-3.5 Turbo DocPrompting [49]∗ 45.50 -",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "kids": [],
+                    "page number": 9,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      162.955,
+                      310.659,
+                      430.737,
+                      348.63
+                    ],
+                    "content": "GPT-4o Baseline LLM∗∗ 59.9 Claude 3.5 Sonnet Baseline LLM∗∗ 54.3 DeepSeek-Coder-V2-SFT Baseline LLM∗∗ 53.2 Qwen2-72B-Instruct Baseline LLM∗∗ 52.8 -",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "kids": [],
+                    "page number": 9,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  }
+                ],
+                "number of list items": 2,
+                "numbering style": "arabic numbers",
+                "page number": 9,
+                "pdfua_tag": "L",
+                "type": "list"
+              }
+            ],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              282.481,
+              187.717,
+              298.035
+            ],
+            "content": "5 Conclusions",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 11.955,
+            "kids": [],
+            "page number": 9,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "arabic numbers",
+        "page number": 9,
+        "pdfua_tag": "L",
+        "previous list id": 211,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          107.691,
+          221.978,
+          505.243,
+          277.618
+        ],
+        "content": "This paper introduces Execution-Guided Classifier-Free Guidance (EG-CFG), a novel approach that fundamentally reframes neural code generation by incorporating real-time execution signals directly into the inference process. Our method bridges a critical gap between static pattern recognition and execution semantics by dynamically sampling candidate continuations, extracting execution traces, and leveraging these signals to guide token-level generation decisions.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 229,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.691,
+          107.408,
+          505.745,
+          217.594
+        ],
+        "content": "The empirical results demonstrate that EG-CFG achieves new state-of-the-art results across a diverse set of benchmarks. Using DeepSeek-V3-0324, it achieves 96.6% accuracy on MBPP, 73.0% on MBPP-ET, 99.4% on HumanEval, 89.02% on HumanEval-ET, 69.9% on DS-1000, and 60.6% on CodeContests, surpassing both open-source and proprietary model-based approaches. The superior performance on both MBPP-ET and HumanEval-ET underscores the method’s robustness and effectiveness in generating reliable and accurate code under complex and extended test scenarios. Notably, our approach demonstrates robust performance even with smaller models, achieving 83.2% accuracy using DeepSeek-Coder-1.3B, comparable to results from substantially larger models like GPT-4. This scalability highlights the effectiveness of execution signals as a guiding mechanism regardless of model capacity.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 230,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.691,
+          69.201,
+          504.17,
+          103.023
+        ],
+        "content": "The EG-CFG approach offers several advantages over existing methods. Unlike discrete iterative refinement techniques that operate at coarse granularity between complete solution attempts, our method provides continuous feedback at the token level. By integrating execution signals that reflect",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 231,
+        "page number": 9,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          134.206,
+          702.591,
+          477.487,
+          714.595
+        ],
+        "content": "Table 5: Per-task runtime statistics (in seconds) for each model and method on MBPP.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 233,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          202.026,
+          605.839,
+          407.737,
+          701.758
+        ],
+        "content": "Model Method Mean ± SD (s) DeepSeek-Coder 1.3b EG-CFG 123.23 ± 344.91 DeepSeek-Coder 1.3b MGDebugger 495.16 ± 411.07 DeepSeek-Coder 1.3b MapCoder 121.9 ± 213.89 DeepSeek-Coder 1.3b LPW 197.71 ± 128.07 DeepSeek-V3-0324 EG-CFG 271.37 ± 271.45 DeepSeek-V3-0324 MGDebugger 842.24 ± 705.19 DeepSeek-V3-0324 MapCoder 283.84 ± 197.54 DeepSeek-V3-0324 LPW 87.51 ± 210.84",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 235,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.691,
+          587.437,
+          504.001,
+          600.229
+        ],
+        "content": "Table 6: Ablation results for EG-CFG on DeepSeek-Coder 1.3b on MBPP and MBPP-ET benchmarks.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 239,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          172.438,
+          561.877,
+          437.325,
+          587.392
+        ],
+        "content": "Method MBPP MBPP-ET Acc. (%) RSR (%) Acc. (%) RSR (%)",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 8.966,
+        "id": 241,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          172.438,
+          514.585,
+          429.849,
+          559.271
+        ],
+        "content": "EG-CFG 83.2 66.79 59.8 29.96 EG-CFG, no beam search 58.2 17.39 43.6 1.74 EG-CFG w/o CFG (γ = 1) 75.2 50.98 48.2 9.74 EG-CFG, minimal trace 76.4 53.35 51.2 14.98 Baseline LLM 49.4 0.0 42.6 0.0",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 244,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          476.978,
+          503.997,
+          499.891
+        ],
+        "content": "actual runtime behavior, EG-CFG mirrors the incremental testing and debugging process that human programmers employ.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 246,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          373.316,
+          505.247,
+          472.593
+        ],
+        "content": "Looking forward, this work opens several promising research directions. The execution-guided framework could be extended to more complex programming tasks requiring longer-horizon planning or multi-file interactions. Additionally, the principles of EG-CFG, which dynamically incorporate external semantic signals into generation, could benefit domains that rely on grounding in systems, such as database querying, formal verification, or simulation-based tasks. More broadly, EG-CFG represents a shift in generative modeling beyond static, pattern-based generation toward responsive, context-aware methods informed by environmental interaction. As models scale and applications expand, such approaches can drive the development of systems that generate high-quality outputs while reasoning about their real-world behavior, enabling more reliable and aligned generation.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 247,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          351.435,
+          185.051,
+          366.989
+        ],
+        "content": "6 Limitations",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 248,
+        "level": "Subtitle",
+        "page number": 10,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.532,
+          318.263,
+          505.245,
+          341.176
+        ],
+        "content": "While the EG-CFG framework demonstrates significant improvements in code generation performance, several important limitations should be acknowledged.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 249,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          225.511,
+          505.651,
+          313.878
+        ],
+        "content": "First, the approach introduces computational overhead compared to standard inference methods. The beam search exploration, execution of multiple candidate continuations, and dual-distribution interpolation in the CFG mechanism collectively increase inference time. Though our parallel execution strategy mitigates this overhead somewhat, future work should explore more efficient methods for extracting and incorporating execution signals. Second, EG-CFG’s effectiveness is contingent upon the availability of executable test cases that adequately exercise the target functionality. In real-world programming scenarios, comprehensive test cases may not always be available or easily generated by LLMs, potentially limiting the approach’s applicability.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 250,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          154.577,
+          504.351,
+          221.126
+        ],
+        "content": "Finally, because our inference loop is bottom-up, it does not exploit task decomposition, a strategy that has been shown to improve code generation [37]. Future work could integrate our sampling strategy with iterative refinement methods, task-decomposition methods or with top-down problem-inspection techniques [50] to achieve even better performance. Despite these limitations, EG-CFG represents a significant advancement in execution-aware code generation and provides a solid foundation for future research addressing these challenges.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 251,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          124.192,
+          206.834,
+          139.746
+        ],
+        "content": "Acknowledgements",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 252,
+        "level": "Subtitle",
+        "page number": 10,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.671,
+          69.201,
+          505.741,
+          113.932
+        ],
+        "content": "This work was supported by a Tel Aviv University Center for AI and Data Science (TAD) grant. This research was also supported by the Ministry of Innovation, Science & Technology, Israel (1001576154) and the Michael J. Fox Foundation (MJFF-022407). The contribution of SK is part of a PhD thesis research conducted at Tel Aviv University.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 253,
+        "page number": 10,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          705.96,
+          163.544,
+          721.514
+        ],
+        "content": "References",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 255,
+        "level": "Subtitle",
+        "page number": 11,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          108.0,
+          69.48,
+          505.574,
+          702.519
+        ],
+        "id": 256,
+        "level": "6",
+        "list items": [
+          {
+            "bounding box": [
+              112.483,
+              671.789,
+              505.126,
+              702.519
+            ],
+            "content": "[1] Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde De Oliveira Pinto, Jared Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, et al. Evaluating large language models trained on code. arXiv preprint arXiv:2107.03374, 2021.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.483,
+              644.415,
+              504.004,
+              665.183
+            ],
+            "content": "[2] Juyong Jiang, Fan Wang, Jiasi Shen, Sungju Kim, and Sunghun Kim. A survey on large language models for code generation. arXiv preprint arXiv:2406.00515, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.483,
+              607.079,
+              504.004,
+              637.81
+            ],
+            "content": "[3] Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, et al. Program synthesis with large language models. arXiv preprint arXiv:2108.07732, 2021.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.483,
+              569.743,
+              505.574,
+              600.474
+            ],
+            "content": "[4] Yujia Li, David Choi, Junyoung Chung, Nate Kushman, Julian Schrittwieser, Rémi Leblond, Tom Eccles, James Keeling, Felix Gimeno, Agustin Dal Lago, et al. Competition-level code generation with alphacode. Science, 378(6624):1092–1097, 2022.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.483,
+              532.407,
+              505.117,
+              563.138
+            ],
+            "content": "[5] Xinyi Hou, Yanjie Zhao, Yue Liu, Zhou Yang, Kailong Wang, Li Li, Xiapu Luo, David Lo, John Grundy, and Haoyu Wang. Large language models for software engineering: A systematic literature review. ACM Transactions on Software Engineering and Methodology, 33(8):1–79, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.483,
+              495.071,
+              504.001,
+              525.802
+            ],
+            "content": "[6] Luyu Gao, Aman Madaan, Shuyan Zhou, Uri Alon, Pengfei Liu, Yiming Yang, Jamie Callan, and Graham Neubig. Pal: Program-aided language models. In International Conference on Machine Learning, pages 10764–10799. PMLR, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.483,
+              457.736,
+              505.491,
+              488.466
+            ],
+            "content": "[7] Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. React: Synergizing reasoning and acting in language models. In International Conference on Learning Representations (ICLR), 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.483,
+              420.4,
+              505.121,
+              451.13
+            ],
+            "content": "[8] Maxwell Nye, Anders Johan Andreassen, Guy Gur-Ari, Henryk Michalewski, Jacob Austin, David Bieber, David Dohan, Aitor Lewkowycz, Maarten Bosma, David Luan, et al. Show your work: Scratchpads for intermediate computation with language models. 2021.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              112.483,
+              383.064,
+              505.244,
+              413.794
+            ],
+            "content": "[9] Noah Shinn, Federico Cassano, Ashwin Gopinath, Karthik Narasimhan, and Shunyu Yao. Reflexion: Language agents with verbal reinforcement learning. Advances in Neural Information Processing Systems, 36:8634–8652, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              355.69,
+              504.0,
+              376.458
+            ],
+            "content": "[10] Xinyun Chen, Maxwell Lin, Nathanael Schärli, and Denny Zhou. Teaching large language models to self-debug. arXiv preprint arXiv:2304.05128, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              318.354,
+              505.57,
+              349.085
+            ],
+            "content": "[11] Yaojie Hu, Qiang Zhou, Qihong Chen, Xiaopeng Li, Linbo Liu, Dejiao Zhang, Amit Kachroo, Talha Oz, and Omer Tripp. Qualityflow: An agentic workflow for program synthesis controlled by llm quality checks. arXiv preprint arXiv:2501.17167, 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              281.018,
+              505.491,
+              311.749
+            ],
+            "content": "[12] Dong Huang, Jie M Zhang, Michael Luck, Qingwen Bu, Yuhao Qing, and Heming Cui. Agentcoder: Multiagent-based code generation with iterative testing and optimisation. arXiv preprint arXiv:2312.13010, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              253.645,
+              504.0,
+              274.413
+            ],
+            "content": "[13] Md Ashraful Islam, Mohammed Eunus Ali, and Md Rizwan Parvez. Mapcoder: Multi-agent code generation for competitive problem solving. arXiv preprint arXiv:2405.11403, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              216.309,
+              505.122,
+              247.039
+            ],
+            "content": "[14] Md Ashraful Islam, Mohammed Eunus Ali, and Md Rizwan Parvez. Codesim: Multi-agent code generation and problem solving through simulation-driven planning and debugging. arXiv preprint arXiv:2502.05664, 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              188.936,
+              504.001,
+              209.704
+            ],
+            "content": "[15] Thomas D LaToza and Brad A Myers. Developers ask reachability questions. In Proceedings of the 32Nd ACM/IEEE International Conference on Software Engineering-Volume 1, pages 185–194, 2010.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              151.6,
+              503.998,
+              182.33
+            ],
+            "content": "[16] Amy J Ko, Brad A Myers, Michael J Coblenz, and Htet Htet Aung. An exploratory study of how developers seek, relate, and collect relevant information during software maintenance tasks. IEEE Transactions on software engineering, 32(12):971–987, 2006.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              124.227,
+              504.0,
+              144.994
+            ],
+            "content": "[17] Thomas R. G. Green and Marian Petre. Usability analysis of visual programming environments: a ‘cognitive dimensions’ framework. Journal of Visual Languages & Computing, 7(2):131–174, 1996.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              96.853,
+              504.0,
+              117.621
+            ],
+            "content": "[18] Ari Holtzman, Jan Buys, Li Du, Maxwell Forbes, and Yejin Choi. The curious case of neural text degeneration. arXiv preprint arXiv:1904.09751, 2019.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              69.48,
+              504.0,
+              90.248
+            ],
+            "content": "[19] Nan Wang, Yafei Liu, Chen Chen, and Haonan Lu. Genx: Mastering code and test generation with execution feedback. arXiv preprint arXiv:2412.13464, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 11,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 258,
+        "number of list items": 19,
+        "numbering style": "arabic numbers",
+        "page number": 11,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          69.48,
+          505.574,
+          718.322
+        ],
+        "id": 258,
+        "level": "6",
+        "list items": [
+          {
+            "bounding box": [
+              108.0,
+              687.592,
+              503.999,
+              718.322
+            ],
+            "content": "[20] Xuezhi Wang, Jason Wei, Dale Schuurmans, Quoc Le, Ed Chi, Sharan Narang, Aakanksha Chowdhery, and Denny Zhou. Self-consistency improves chain of thought reasoning in language models. arXiv preprint arXiv:2203.11171, 2022.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              648.825,
+              505.574,
+              679.555
+            ],
+            "content": "[21] Shunyu Yao, Dian Yu, Jeffrey Zhao, Izhak Shafran, Tom Griffiths, Yuan Cao, and Karthik Narasimhan. Tree of thoughts: Deliberate problem solving with large language models. Advances in neural information processing systems, 36:11809–11822, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              620.02,
+              505.574,
+              640.788
+            ],
+            "content": "[22] Bei Chen, Fengji Zhang, Anh Nguyen, Daoguang Zan, Zeqi Lin, Jian-Guang Lou, and Weizhu Chen. Codet: Code generation with generated tests. arXiv preprint arXiv:2207.10397, 2022.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              591.215,
+              505.125,
+              611.983
+            ],
+            "content": "[23] Jonathan Ho and Tim Salimans. Classifier-free diffusion guidance. arXiv preprint arXiv:2207.12598, 2022.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              552.448,
+              505.122,
+              583.178
+            ],
+            "content": "[24] Aixin Liu, Bei Feng, Bing Xue, Bingxuan Wang, Bochao Wu, Chengda Lu, Chenggang Zhao, Chengqi Deng, Chenyu Zhang, Chong Ruan, et al. Deepseek-v3 technical report. arXiv preprint arXiv:2412.19437, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              513.68,
+              505.125,
+              544.411
+            ],
+            "content": "[25] Sirui Hong, Mingchen Zhuge, Jonathan Chen, Xiawu Zheng, Yuheng Cheng, Jinlin Wang, Ceyao Zhang, Zili Wang, Steven Ka Shing Yau, Zijuan Lin, et al. Metagpt: Meta programming for a multi-agent collaborative framework. In The Twelfth International Conference on Learning Representations, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              484.876,
+              503.997,
+              505.643
+            ],
+            "content": "[26] Chao Lei, Yanchuan Chang, Nir Lipovetzky, and Krista A Ehinger. Planning-driven programming: A large language model programming workflow. arXiv preprint arXiv:2411.14503, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              456.071,
+              503.998,
+              476.838
+            ],
+            "content": "[27] Li Zhong, Zilong Wang, and Jingbo Shang. Debug like a human: A large language model debugger via verifying runtime execution step-by-step. arXiv preprint arXiv:2402.16906, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              427.266,
+              505.571,
+              448.034
+            ],
+            "content": "[28] Dan Hendrycks, Collin Burns, Steven Basart, Andy Zou, Mantas Mazeika, Dawn Song, and Jacob Steinhardt. Measuring massive multitask language understanding. arXiv preprint arXiv:2009.03300, 2020.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              398.461,
+              503.997,
+              419.229
+            ],
+            "content": "[29] Richard J Waldinger and Richard CT Lee. Prow: A step toward automatic program writing. In Proceedings of the 1st international joint conference on Artificial intelligence, pages 241–252, 1969.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              369.657,
+              504.0,
+              390.424
+            ],
+            "content": "[30] Zohar Manna and Richard J Waldinger. Toward automatic program synthesis. Communications of the ACM, 14(3):151–165, 1971.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              330.889,
+              505.122,
+              361.619
+            ],
+            "content": "[31] Yuhang Lai, Chengxi Li, Yiming Wang, Tianyi Zhang, Ruiqi Zhong, Luke Zettlemoyer, Scott Wen tau Yih, Daniel Fried, Sida Wang, and Tao Yu. Ds-1000: A natural and reliable benchmark for data science code generation. ArXiv, abs/2211.11501, 2022.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              292.122,
+              505.125,
+              322.852
+            ],
+            "content": "[32] Yihong Dong, Jiazheng Ding, Xue Jiang, Ge Li, Zhuo Li, and Zhi Jin. Codescore: Evaluating code generation by learning code execution. ACM Transactions on Software Engineering and Methodology, 34(3):1–22, 2025.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              243.392,
+              505.57,
+              284.085
+            ],
+            "content": "[33] Aida Amini, Saadia Gabriel, Shanchuan Lin, Rik Koncel-Kedziorski, Yejin Choi, and Hannaneh Hajishirzi. Mathqa: Towards interpretable math word problem solving with operation-based formalisms. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers), pages 2357–2367, 2019.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              204.624,
+              505.569,
+              235.355
+            ],
+            "content": "[34] Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, et al. Language models are few-shot learners. Advances in neural information processing systems, 33:1877–1901, 2020.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              165.857,
+              504.311,
+              196.587
+            ],
+            "content": "[35] Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Fei Xia, Ed Chi, Quoc V Le, Denny Zhou, et al. Chain-of-thought prompting elicits reasoning in large language models. Advances in neural information processing systems, 35:24824–24837, 2022.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              127.09,
+              504.002,
+              157.82
+            ],
+            "content": "[36] Timo Schick, Jane Dwivedi-Yu, Roberto Dessì, Roberta Raileanu, Maria Lomeli, Eric Hambro, Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom. Toolformer: Language models can teach themselves to use tools. Advances in Neural Information Processing Systems, 36:68539–68551, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              98.285,
+              503.997,
+              119.052
+            ],
+            "content": "[37] Yuling Shi, Songsong Wang, Chengcheng Wan, and Xiaodong Gu. From code to correctness: Closing the last mile of code generation with hierarchical debugging. arXiv preprint arXiv:2410.01215, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              69.48,
+              504.0,
+              90.248
+            ],
+            "content": "[38] Prafulla Dhariwal and Alexander Nichol. Diffusion models beat gans on image synthesis. Advances in neural information processing systems, 34:8780–8794, 2021.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 12,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 260,
+        "number of list items": 19,
+        "numbering style": "arabic numbers",
+        "page number": 12,
+        "pdfua_tag": "L",
+        "previous list id": 256,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          330.93,
+          505.574,
+          718.322
+        ],
+        "id": 260,
+        "level": "6",
+        "list items": [
+          {
+            "bounding box": [
+              108.0,
+              697.555,
+              504.0,
+              718.322
+            ],
+            "content": "[39] Guillaume Sanchez, Honglu Fan, Alexander Spangher, Elad Levi, Pawan Sasanka Ammanamanchi, and Stella Biderman. Stay on topic with classifier-free guidance. arXiv preprint arXiv:2306.17806, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              659.697,
+              505.117,
+              690.427
+            ],
+            "content": "[40] Guillaume Sanchez, Alexander Spangher, Honglu Fan, Elad Levi, and Stella Biderman. Stay on topic with classifier-free guidance. In International Conference on Machine Learning, pages 43197–43234. PMLR, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              621.839,
+              505.125,
+              652.569
+            ],
+            "content": "[41] Daya Guo, Qihao Zhu, Dejian Yang, Zhenda Xie, Kai Dong, Wentao Zhang, Guanting Chen, Xiao Bi, Yu Wu, YK Li, et al. Deepseek-coder: When the large language model meets programming–the rise of code intelligence. arXiv preprint arXiv:2401.14196, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              574.018,
+              505.119,
+              614.711
+            ],
+            "content": "[42] Mohammad Abdullah Matin Khan, M Saiful Bari, Do Long, Weishi Wang, Md Rizwan Parvez, and Shafiq Joty. Xcodeeval: An execution-based large scale multilingual multitask benchmark for code understanding, generation, translation and retrieval. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 6766–6805, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              546.123,
+              504.0,
+              566.89
+            ],
+            "content": "[43] Yihong Dong, Xue Jiang, Zhi Jin, and Ge Li. Self-collaboration code generation via chatgpt. ACM Transactions on Software Engineering and Methodology, 33(7):1–38, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              508.265,
+              505.574,
+              538.995
+            ],
+            "content": "[44] Xue Jiang, Yihong Dong, Lecheng Wang, Zheng Fang, Qiwei Shang, Ge Li, Zhi Jin, and Wenpin Jiao. Self-planning code generation with large language models. ACM Transactions on Software Engineering and Methodology, 33(7):1–30, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              480.369,
+              505.571,
+              501.137
+            ],
+            "content": "[45] Michihiro Yasunaga, Xinyun Chen, Yujia Li, Panupong Pasupat, Jure Leskovec, Percy Liang, Ed H Chi, and Denny Zhou. Large language models as analogical reasoners. arXiv preprint arXiv:2310.01714, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              452.474,
+              503.997,
+              473.241
+            ],
+            "content": "[46] Jingyao Li, Pengguang Chen, Bin Xia, Hong Xu, and Jiaya Jia. Motcoder: Elevating large language models with modular of thought for challenging programming tasks. arXiv preprint arXiv:2312.15960, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              424.578,
+              504.003,
+              445.346
+            ],
+            "content": "[47] Shuyang Jiang, Yuhao Wang, and Yu Wang. Selfevolve: A code evolution framework via large language models. arXiv preprint arXiv:2306.02907, 2023.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              396.683,
+              505.244,
+              417.451
+            ],
+            "content": "[48] Xinyi He, Jiaru Zou, Yun Lin, Mengyu Zhou, Shi Han, Zejian Yuan, and Dongmei Zhang. Conline: Complex code generation and refinement with online searching and correctness testing. CoRR, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              368.788,
+              505.243,
+              389.555
+            ],
+            "content": "[49] Shuyan Zhou, Uri Alon, Frank F Xu, Zhiruo Wang, Zhengbao Jiang, and Graham Neubig. Docprompting: Generating code by retrieving the docs. arXiv preprint arXiv: 2207.05987, 2022.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              330.93,
+              505.122,
+              361.66
+            ],
+            "content": "[50] Shai Shalev-Shwartz, Amnon Shashua, Gal Beniamini, Yoav Levine, Or Sharir, Noam Wies, Ido Ben-Shaul, Tomer Nussbaum, and Shir Granot Peled. Artificial expert intelligence through pac-reasoning. arXiv preprint arXiv:2412.02441, 2024.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 13,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 12,
+        "numbering style": "arabic numbers",
+        "page number": 13,
+        "pdfua_tag": "L",
+        "previous list id": 258,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          705.526,
+          341.967,
+          721.514
+        ],
+        "content": "A The two pinst prompts used by our method",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 262,
+        "level": "Subtitle",
+        "page number": 14,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.691,
+          651.398,
+          505.741,
+          696.129
+        ],
+        "content": "The two basic instruction prompts used by our method are provided in Figure 5 and Figure 6. The former is the standard DeepSeek-Coder 3-shot prompt [41], consisting of concise instructions accompanied by short illustrative examples, and the latter is an alternative prompt explicitly designed to encourage the generation of step-by-step solutions with more atomic logic.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 263,
+        "page number": 14,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.591,
+          707.149,
+          311.016,
+          717.954
+        ],
+        "content": "Raw DeepSeek-Instruct Prompt for MBPP Task 395",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 266,
+        "page number": 15,
+        "pdfua_tag": "P",
+        "text color": "[1.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.591,
+          636.462,
+          490.679,
+          697.062
+        ],
+        "content": "You are an AI programming assistant, utilizing the Deepseek Coder model, developed by Deepseek Company, and you only answer questions related to computer science. ### Instruction: Please refer the given examples and generate a python function for my problem. Examples are listed as follows:",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 267,
+        "page number": 15,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.591,
+          267.844,
+          514.204,
+          637.286
+        ],
+        "id": 268,
+        "level": "7",
+        "list items": [
+          {
+            "bounding box": [
+              123.591,
+              566.723,
+              485.964,
+              637.286
+            ],
+            "content": "- Example 1: >>> Problem: Write a function to find the similar elements from the given two tuple lists. >>> Test Cases: assert similar_elements((3, 4, 5, 6),(5, 7, 4, 10)) == (4, 5) assert similar_elements((1, 2, 3, 4),(5, 4, 3, 7)) == (3, 4) assert similar_elements((11, 12, 14, 13),(17, 15, 14, 13)) == (13, 14)",
+            "font": "SFTT0900",
+            "font size": 8.966,
+            "kids": [
+              {
+                "bounding box": [
+                  123.591,
+                  536.835,
+                  325.962,
+                  557.585
+                ],
+                "content": ">>> Code: def similar_elements(test_tup1, test_tup2):",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "id": 60,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  133.003,
+                  516.91,
+                  340.073,
+                  537.66
+                ],
+                "content": "res = tuple(set(test_tup1) & set(test_tup2)) return (res)",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "id": 61,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              123.591,
+              437.209,
+              377.728,
+              507.772
+            ],
+            "content": "- Example 2: >>> Problem: Write a python function to identify non-prime numbers. >>> Test Cases: assert is_not_prime(2) == False assert is_not_prime(10) == True assert is_not_prime(35) == True",
+            "font": "SFTT0900",
+            "font size": 8.966,
+            "kids": [
+              {
+                "bounding box": [
+                  123.591,
+                  397.358,
+                  217.712,
+                  428.07
+                ],
+                "content": ">>> Code: import math def is_not_prime(n):",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "id": 62,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  142.415,
+                  377.433,
+                  330.66,
+                  398.183
+                ],
+                "content": "result = False for i in range(2,int(math.sqrt(n)) + 1):",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "id": 63,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  161.24,
+                  367.47,
+                  227.126,
+                  378.257
+                ],
+                "content": "if n % i == 0:",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "id": 64,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  142.415,
+                  347.545,
+                  241.242,
+                  368.295
+                ],
+                "content": "result = True return result",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "id": 65,
+                "page number": 15,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              123.591,
+              267.844,
+              514.204,
+              338.407
+            ],
+            "content": "- Example 3: >>> Problem: Write a function to find the largest integers from a given list of numbers using... >>> Test Cases: assert heap_queue_largest([25, 35, 22, 85, 14, 65, 75, 22, 58],3) == [85, ... assert heap_queue_largest([25, 35, 22, 85, 14, 65, 75, 22, 58],2) == [85, ... assert heap_queue_largest([25, 35, 22, 85, 14, 65, 75, 22, 58],5) == [85, ...",
+            "font": "SFTT0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "unordered",
+        "page number": 15,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          123.591,
+          227.993,
+          269.483,
+          258.706
+        ],
+        "content": ">>> Code: import heapq as hq def heap_queue_largest(nums,n):",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 269,
+        "page number": 15,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          133.003,
+          208.068,
+          297.723,
+          228.818
+        ],
+        "content": "largest_nums = hq.nlargest(n, nums) return largest_nums",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 270,
+        "page number": 15,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.591,
+          118.404,
+          476.56,
+          198.93
+        ],
+        "content": "Here is my problem: >>> Problem: Write a python function to find the first non-repeated character in a given string. >>> Test Cases: assert first_non_repeating_character(\"abcabc\") == None assert first_non_repeating_character(\"abc\") == \"a\" assert first_non_repeating_character(\"ababc\") == \"c\"",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 271,
+        "page number": 15,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.591,
+          98.479,
+          184.776,
+          109.266
+        ],
+        "content": "### Response:",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 272,
+        "page number": 15,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          57.481,
+          504.001,
+          80.395
+        ],
+        "id": 273,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              108.0,
+              57.481,
+              504.001,
+              80.395
+            ],
+            "content": "Figure 5: The DeepSeek-Instruct prompt used for MBPP Task 395. This prompt includes multiple solved examples followed by the target task.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 15,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "next list id": 295,
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 15,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          123.591,
+          706.993,
+          297.024,
+          717.954
+        ],
+        "content": "Long-Instruct Prompt for MBPP Task 395 (pinst)",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 8.966,
+        "id": 276,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[1.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.591,
+          646.424,
+          476.56,
+          697.062
+        ],
+        "content": "You are an AI programming assistant, utilizing the Deepseek Coder model, developed by Deepseek Company, ... ### Instruction: Write a python function to find the first non-repeated character in a given string.",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 277,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.591,
+          606.574,
+          424.786,
+          637.286
+        ],
+        "content": "Write a Python function that satisfies the following test cases: >>> Test Cases: [’assert first_non_repeating_character(\"abcabc\") == None’,",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 278,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          128.297,
+          586.648,
+          387.137,
+          607.398
+        ],
+        "content": "’assert first_non_repeating_character(\"abc\") == \"a\"’, ’assert first_non_repeating_character(\"ababc\") == \"c\"’]",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 279,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.591,
+          546.798,
+          467.145,
+          577.51
+        ],
+        "content": "Your solution should be written in as many lines as possible. This ensures that prefixes of your function remain valid Python programs. Allowing **incremental execution and debugging**.",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 280,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.591,
+          506.947,
+          514.21,
+          537.66
+        ],
+        "content": "Write the function **step by step**, progressively introducing variables and logic. Avoid using list comprehensions, lambda functions, or overly compact one-liners. Instead, follow these guidelines:**",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 281,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.591,
+          467.097,
+          335.368,
+          497.809
+        ],
+        "content": "Avoid list comprehensions, use loops instead: Incorrect: def square_numbers(lst):",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 282,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          142.415,
+          457.134,
+          274.193,
+          467.921
+        ],
+        "content": "return [x ** 2 for x in lst]",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 283,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.591,
+          427.246,
+          236.538,
+          447.996
+        ],
+        "content": "Correct: def square_numbers(lst):",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 284,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          142.415,
+          407.321,
+          213.006,
+          428.07
+        ],
+        "content": "squares = [] for num in lst:",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 285,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          161.24,
+          387.396,
+          297.718,
+          408.145
+        ],
+        "content": "squared_value = num ** 2 squares.append(squared_value)",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 286,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          142.415,
+          377.433,
+          208.306,
+          388.22
+        ],
+        "content": "return squares",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 287,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.591,
+          337.582,
+          344.781,
+          368.295
+        ],
+        "content": "Avoid inline expressions, use variables instead Incorrect: def calculate_area(length, width):",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 288,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.591,
+          307.694,
+          283.604,
+          338.407
+        ],
+        "content": "return (length * width) / 2 Correct: def calculate_area(length, width):",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 289,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          142.415,
+          277.806,
+          255.365,
+          308.519
+        ],
+        "content": "product = length * width area = product / 2 return area",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 290,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.591,
+          208.068,
+          250.659,
+          278.631
+        ],
+        "content": "Incorrect: result.append(x + y) Correct: z = x + y result.append(z) Incorrect: def compute_value(a, b, c):",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 291,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.591,
+          178.18,
+          377.727,
+          208.892
+        ],
+        "content": "return (a + b) * (c / (a - b) + (a * c) / (b + c)) Correct: def compute_value(a, b, c):",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 292,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          142.415,
+          118.404,
+          293.018,
+          179.004
+        ],
+        "content": "term1 = a + b term2 = a - b term3 = c / term2 term4 = a * c / (b + c) result = term1 * (term3 + term4) return result",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 293,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          123.591,
+          98.479,
+          184.767,
+          109.266
+        ],
+        "content": "### Response:",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 294,
+        "page number": 16,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          57.481,
+          503.997,
+          80.395
+        ],
+        "id": 295,
+        "level": "1",
+        "list items": [
+          {
+            "bounding box": [
+              108.0,
+              57.481,
+              503.997,
+              80.395
+            ],
+            "content": "Figure 6: Long-Instruct prompt for MBPP Task 395. This instruction-only prompt includes stylistic constraints that encourage traceable, step-by-step completions suitable for dynamic signal extraction.",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 16,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 1,
+        "numbering style": "arabic numbers",
+        "page number": 16,
+        "pdfua_tag": "L",
+        "previous list id": 273,
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          705.96,
+          315.769,
+          721.514
+        ],
+        "content": "B Example Dynamic Prompt Structure",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 297,
+        "level": "Subtitle",
+        "page number": 17,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.691,
+          672.428,
+          504.004,
+          696.129
+        ],
+        "content": "This appendix provides a concrete example illustrating the structure of the dynamic prompt pdyn used by our EG-CFG method (described at the end of Section 3.1). Figure 7 below shows how the different",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 298,
+        "page number": 17,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.671,
+          618.671,
+          504.004,
+          674.311
+        ],
+        "content": "components are assembled into the dynamic prompt pdyn. It displays the original task instruction (pinst), followed by the dynamically injected signal (psignal). This signal begins with the dynamic signal instruction (pdyn-inst) and includes execution traces for each candidate, obtained in this example by executing s = 2 candidates against a single test case (|T| = 1). Finally, the figure shows the model’s partially completed response generated up to that point.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 299,
+        "page number": 17,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          117.465,
+          666.579,
+          494.539,
+          719.213
+        ],
+        "content": "Instruction from pinst: Write a python function to find the first non-repeated character in a given string. assert first_non_repeating_character(\"aabc\") == \"b\" assert first_non_repeating_character(\"abcabc\") == None assert first_non_repeating_character(\"abc\") == \"a\"",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 302,
+        "page number": 18,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          119.706,
+          656.617,
+          364.427,
+          667.404
+        ],
+        "content": "assert first_non_repeating_character(\"ababc\") == \"c\"",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 303,
+        "page number": 18,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          117.229,
+          584.138,
+          489.256,
+          654.496
+        ],
+        "content": "Dynamic Signal Instruction (pdyn-inst) starts at idyn Below are execution traces from running the response function after appending several possible future continuations. These continuations represent plausible ways the function might continue from its current state. They are not necessarily full solutions - some may be partial, exploratory, or incomplete. For each candidate continuation, multiple test cases (invocations) were executed to observe its behavior under different inputs. Each entry includes:",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 305,
+        "page number": 18,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          125.074,
+          554.25,
+          360.386,
+          584.962
+        ],
+        "id": 306,
+        "level": "3",
+        "list items": [
+          {
+            "bounding box": [
+              125.074,
+              574.175,
+              299.201,
+              584.962
+            ],
+            "content": "- A candidate version of the function",
+            "font": "SFTT0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              125.074,
+              564.213,
+              322.734,
+              575.0
+            ],
+            "content": "- A specific test case used for invocation",
+            "font": "SFTT0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              125.074,
+              554.25,
+              360.386,
+              565.037
+            ],
+            "content": "- The resulting execution trace for that test case",
+            "font": "SFTT0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 3,
+        "numbering style": "unordered",
+        "page number": 18,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          117.229,
+          496.866,
+          489.259,
+          555.074
+        ],
+        "content": "These dynamic signals can help you better understand how different plausible continuations behave at runtime, and guide you toward a more accurate solution. Execution feedback for a single test (|T| = 1) and s = 2 candidates: # Function: def first_non_repeating_character(s):",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 307,
+        "page number": 18,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          140.76,
+          476.94,
+          224.142,
+          497.69
+        ],
+        "content": "char_count = {} for char in s:",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 312,
+        "page number": 18,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          140.76,
+          457.015,
+          421.956,
+          477.765
+        ],
+        "content": "char_count[char] = char_count.get(char , 0) + 1 for char in s:",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 315,
+        "page number": 18,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          163.272,
+          447.052,
+          303.209,
+          457.839
+        ],
+        "content": "if char_count[char] == 1:",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 318,
+        "page number": 18,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          140.861,
+          427.127,
+          246.6,
+          447.877
+        ],
+        "content": "return char return None",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 320,
+        "page number": 18,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          117.465,
+          400.228,
+          355.551,
+          420.978
+        ],
+        "content": "# Invocation: first_non_repeating_character(\"aabc\") # Execution Trace:",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 323,
+        "page number": 18,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          117.935,
+          385.085,
+          269.322,
+          395.872
+        ],
+        "content": "s = ’aabc’, char_count = {}",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 325,
+        "page number": 18,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          118.17,
+          365.16,
+          404.856,
+          385.909
+        ],
+        "content": "... char = ’c’ -> char_count = {’a’: 2, ’b’: 1, ’c’: 1}",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 327,
+        "level": "4",
+        "page number": 18,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          118.17,
+          181.448,
+          404.856,
+          365.984
+        ],
+        "id": 330,
+        "level": "5",
+        "list items": [
+          {
+            "bounding box": [
+              118.17,
+              323.117,
+              326.106,
+              365.984
+            ],
+            "content": "char = ’b’ -> count = 1 -> return ’b’ # Function: def first_non_repeating_character(s):",
+            "font": "SFTT0900",
+            "font size": 8.966,
+            "kids": [
+              {
+                "bounding box": [
+                  140.76,
+                  303.192,
+                  224.142,
+                  323.942
+                ],
+                "content": "char_count = {} for char in s:",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "id": 43,
+                "page number": 18,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  140.76,
+                  283.267,
+                  421.956,
+                  304.016
+                ],
+                "content": "char_count[char] = char_count.get(char , 0) + 1 for char in s:",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "id": 46,
+                "page number": 18,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  163.272,
+                  273.304,
+                  303.209,
+                  284.091
+                ],
+                "content": "if char_count[char] == 2:",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "id": 49,
+                "page number": 18,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  140.861,
+                  253.379,
+                  246.6,
+                  274.128
+                ],
+                "content": "return char return None",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "id": 51,
+                "page number": 18,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  117.465,
+                  226.48,
+                  355.551,
+                  247.229
+                ],
+                "content": "# Invocation: first_non_repeating_character(\"aabc\") # Execution Trace:",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "id": 54,
+                "page number": 18,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  117.935,
+                  211.336,
+                  269.322,
+                  222.123
+                ],
+                "content": "s = ’aabc’, char_count = {}",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "id": 56,
+                "page number": 18,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              },
+              {
+                "bounding box": [
+                  118.17,
+                  201.374,
+                  133.697,
+                  212.161
+                ],
+                "content": "...",
+                "font": "SFTT0900",
+                "font size": 8.966,
+                "id": 58,
+                "level": "4",
+                "page number": 18,
+                "pdfua_tag": "P",
+                "text color": "[0.0]",
+                "type": "paragraph"
+              }
+            ],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              118.218,
+              181.448,
+              404.856,
+              202.198
+            ],
+            "content": "char = ’c’ -> char_count = {’a’: 2, ’b’: 1, ’c’: 1} char = ’a’ -> count = 2 -> return ’a’",
+            "font": "SFTT0900",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 18,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "english letters",
+        "page number": 18,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          117.465,
+          137.414,
+          325.952,
+          173.306
+        ],
+        "content": "### Response: ‘‘‘python def first_non_repeating_character(s):",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 333,
+        "page number": 18,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          140.76,
+          117.488,
+          224.142,
+          138.238
+        ],
+        "content": "char_count = {} for char in s:",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 337,
+        "page number": 18,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          163.5,
+          107.526,
+          421.956,
+          118.313
+        ],
+        "content": "char_count[char] = char_count.get(char , 0) + 1",
+        "font": "SFTT0900",
+        "font size": 8.966,
+        "id": 340,
+        "page number": 18,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          68.304,
+          110.491,
+          80.308
+        ],
+        "content": ".",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 343,
+        "level": "4",
+        "page number": 18,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          189.024,
+          78.558,
+          422.478,
+          91.217
+        ],
+        "content": "Figure 7: Example of pdyn with injected psignal at index idyn",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 342,
+        "page number": 18,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          108.0,
+          705.733,
+          235.562,
+          721.514
+        ],
+        "content": "C EG-CFG Pseudo-Code",
+        "font": "NimbusRomNo9L-Medi",
+        "font size": 11.955,
+        "heading level": 3,
+        "id": 345,
+        "level": "Subtitle",
+        "page number": 19,
+        "pdfua_tag": "H3",
+        "text color": "[0.0]",
+        "type": "heading"
+      },
+      {
+        "bounding box": [
+          107.691,
+          629.58,
+          505.74,
+          696.129
+        ],
+        "content": "To complement the formal description in Section 3, we provide full pseudo-code for our method in this appendix. Algorithm 1 outlines the controller responsible for coordinating a multi-agent parallel inference process, where each agent explores diverse reasoning paths using a unique configuration. Each agent independently invokes the core decoding routine defined in Algorithm 2, which integrates dynamic execution feedback via classifier-free guidance (CFG). This loop incrementally generates a solution by incorporating real-time execution feedback into the prompt.",
+        "font": "NimbusRomNo9L-Regu",
+        "font size": 9.963,
+        "id": 346,
+        "page number": 19,
+        "pdfua_tag": "P",
+        "text color": "[0.0]",
+        "type": "paragraph"
+      },
+      {
+        "bounding box": [
+          107.641,
+          458.289,
+          461.894,
+          621.166
+        ],
+        "id": 348,
+        "level": "5",
+        "list items": [
+          {
+            "bounding box": [
+              107.641,
+              587.953,
+              461.894,
+              621.166
+            ],
+            "content": "Algorithm 1 Multi-Agent Parallel Inference Controller Input: Task τ = (ptask, T, fname) (Eq.1), Model M, EG-CFG Configurations H = {(p0, s, d, t, γ)}",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [
+              {
+                "bounding box": [
+                  111.784,
+                  503.66,
+                  504.004,
+                  594.866
+                ],
+                "id": 38,
+                "level": "6",
+                "list items": [
+                  {
+                    "bounding box": [
+                      111.784,
+                      577.991,
+                      275.998,
+                      594.866
+                    ],
+                    "content": "1: Launch parallel agents A = {ah : h ∈ H}",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "kids": [],
+                    "page number": 19,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      111.784,
+                      568.028,
+                      346.595,
+                      585.226
+                    ],
+                    "content": "2: for all agents ah ∈ A with config (p0, s, d, t, γ) in parallel do",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "kids": [],
+                    "page number": 19,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      111.784,
+                      558.065,
+                      503.996,
+                      574.94
+                    ],
+                    "content": "3: pinst ← BUILDINSTRUCTIONPROMPT(p0, τ) ▷ Build instruction prompt, Equation 3",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "kids": [],
+                    "page number": 19,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      111.784,
+                      548.103,
+                      345.932,
+                      564.978
+                    ],
+                    "content": "4: psol ← EG-CFG-INFERENCELOOP(pinst, T, M, s, d, t, γ)",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "kids": [],
+                    "page number": 19,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      111.784,
+                      538.14,
+                      504.004,
+                      555.338
+                    ],
+                    "content": "5: if Execute(psol, tj) = success, ∀tj ∈ T then ▷ Verify solution, Equation 2",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "kids": [],
+                    "page number": 19,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      111.784,
+                      533.709,
+                      504.003,
+                      545.375
+                    ],
+                    "content": "6: return psol ▷ Return first valid solution and terminate other agents",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "kids": [],
+                    "page number": 19,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      111.784,
+                      523.747,
+                      158.364,
+                      535.413
+                    ],
+                    "content": "7: end if",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "kids": [],
+                    "page number": 19,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      111.784,
+                      513.784,
+                      150.662,
+                      525.45
+                    ],
+                    "content": "8: end for",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "kids": [],
+                    "page number": 19,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  },
+                  {
+                    "bounding box": [
+                      111.784,
+                      503.66,
+                      503.997,
+                      515.487
+                    ],
+                    "content": "9: return null ▷ Failure: No correct solution found",
+                    "font": "NimbusRomNo9L-Regu",
+                    "font size": 8.966,
+                    "kids": [],
+                    "page number": 19,
+                    "pdfua_tag": "LI",
+                    "text color": "[0.0]",
+                    "type": "list item"
+                  }
+                ],
+                "number of list items": 9,
+                "numbering style": "arabic numbers",
+                "page number": 19,
+                "pdfua_tag": "L",
+                "type": "list"
+              }
+            ],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              107.641,
+              458.289,
+              445.114,
+              485.472
+            ],
+            "content": "Algorithm 2 Execution-Guided Classifier-Free Guidance (EG-CFG) Inference Loop Input: pinst, T, M, s, d, t, γ",
+            "font": "NimbusRomNo9L-Medi",
+            "font size": 9.963,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 2,
+        "numbering style": "arabic numbers",
+        "page number": 19,
+        "pdfua_tag": "L",
+        "type": "list"
+      },
+      {
+        "bounding box": [
+          108.0,
+          102.453,
+          504.677,
+          459.67
+        ],
+        "id": 350,
+        "level": "6",
+        "list items": [
+          {
+            "bounding box": [
+              111.784,
+              442.795,
+              503.997,
+              459.67
+            ],
+            "content": "1: ppre ← M(pinst) ▷ Generate initial output sequence, Equation 4",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              111.784,
+              438.746,
+              213.618,
+              449.707
+            ],
+            "content": "2: Locate isolution, idyn in ppre",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              111.784,
+              422.87,
+              504.002,
+              439.745
+            ],
+            "content": "3: ppre-sol ← ppre[: isolution] ▷ Extract reasoning prefix before solution code, Equation 5",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              111.784,
+              412.907,
+              170.904,
+              429.782
+            ],
+            "content": "4: psol ← ppre-sol",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              111.784,
+              402.944,
+              175.804,
+              419.819
+            ],
+            "content": "5: psignal ← null",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              111.784,
+              398.514,
+              171.563,
+              410.18
+            ],
+            "content": "6: while true do",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              111.784,
+              384.946,
+              340.629,
+              400.217
+            ],
+            "content": "7: if psignal = null or (wi−1 exists and ’\\n’ in wi−1) then",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              111.784,
+              373.056,
+              503.999,
+              389.931
+            ],
+            "content": "8: Craw ← [] ▷ Initialize list for executable candidates",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              111.784,
+              368.626,
+              251.648,
+              380.292
+            ],
+            "content": "9: for all each j = 1, . . . , s do",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              353.131,
+              225.759,
+              370.006
+            ],
+            "content": "10: Initialize cj ← []",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              348.7,
+              504.0,
+              360.366
+            ],
+            "content": "11: while CountLines(cj) < d do ▷ Generate a candidate continuation, Equation 6",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              331.97,
+              310.022,
+              348.852
+            ],
+            "content": "12: Sample wckj ∼ M(wk | psol, wc<kj ; t)",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              323.714,
+              241.043,
+              336.089
+            ],
+            "content": "13: Append wckj to cj",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              313.758,
+              200.91,
+              325.424
+            ],
+            "content": "14: end while",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              298.263,
+              504.451,
+              315.145
+            ],
+            "content": "15: cˆj ← ExtractExecutable(cj) ▷ Extract executable part, Equation 7",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              287.256,
+              232.167,
+              304.138
+            ],
+            "content": "16: Append cˆj to Craw",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              282.825,
+              178.261,
+              294.491
+            ],
+            "content": "17: end for",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              267.331,
+              504.002,
+              284.206
+            ],
+            "content": "18: C ← Unique(Craw) ▷ Filter for unique candidate continuations, Equation 8",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              257.368,
+              504.002,
+              274.243
+            ],
+            "content": "19: E ← [] ▷ Initialize list for feedback tuples",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              253.476,
+              504.0,
+              264.281
+            ],
+            "content": "20: ▷ Candidate execution against test cases are running in parallel, Equation 9",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              237.443,
+              232.772,
+              254.641
+            ],
+            "content": "21: for all each cˆj ∈ C do",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              227.48,
+              248.128,
+              244.678
+            ],
+            "content": "22: for all each tm ∈ T do",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              217.518,
+              346.128,
+              234.4
+            ],
+            "content": "23: ej,m ← ExtractExecutionFeedback(ˆcj, tm)",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              206.51,
+              274.914,
+              223.392
+            ],
+            "content": "24: Append (ˆcj, tm, ej,m) to E",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              202.08,
+              191.71,
+              213.746
+            ],
+            "content": "25: end for",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              192.117,
+              178.261,
+              203.783
+            ],
+            "content": "26: end for",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              176.622,
+              504.677,
+              193.497
+            ],
+            "content": "27: psignal ← [pdyn-inst, E] ▷ Construct the full dynamic signal, Equation 11",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              172.192,
+              159.064,
+              183.858
+            ],
+            "content": "28: end if",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              156.697,
+              504.001,
+              173.572
+            ],
+            "content": "29: pdyn ← [ psol[: idyn], psignal, psol[idyn :] ] ▷ Inject signal into the prompt, Equation 12",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              146.734,
+              503.996,
+              163.609
+            ],
+            "content": "30: wi ← arg max MCFG(w | psol, pdyn) ▷ Sample next token using CFG, Eq.13 Eq.14",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              142.686,
+              504.001,
+              153.647
+            ],
+            "content": "31: Append wi to psol ▷ Append new token to the solution, Eq.13 Eq.14",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              126.809,
+              284.544,
+              144.007
+            ],
+            "content": "32: if wi = EOT or length(psol) ≥ Nmax then",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              122.379,
+              189.288,
+              134.045
+            ],
+            "content": "33: return psol",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              112.416,
+              159.064,
+              124.082
+            ],
+            "content": "34: end if",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          },
+          {
+            "bounding box": [
+              108.0,
+              102.453,
+              160.561,
+              114.119
+            ],
+            "content": "35: end while",
+            "font": "NimbusRomNo9L-Regu",
+            "font size": 8.966,
+            "kids": [],
+            "page number": 19,
+            "pdfua_tag": "LI",
+            "text color": "[0.0]",
+            "type": "list item"
+          }
+        ],
+        "number of list items": 35,
+        "numbering style": "arabic numbers",
+        "page number": 19,
+        "pdfua_tag": "L",
+        "type": "list"
+      }
+    ],
+    "modification date": null,
+    "number of pages": 19,
+    "title": "Execution Guided Line-by-Line Code Generation"
+  }
+}

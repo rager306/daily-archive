@@ -1,0 +1,1110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">AutoSafeCoder: A Multi-Agent Framework for Securing LLM Code Generation through Static Analysis and Fuzz Testing</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-11-05">5 Nov 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Ana</forename><surname>Nunez</surname></persName>
+							<email>ana.nunez@utsa.edu</email>
+							<affiliation key="aff4">
+								<orgName type="laboratory">Secure AI and Autonomy Laboratory</orgName>
+								<orgName type="institution">University of Texas at San Antonio 38th Conference on Neural Information Processing Systems</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Nafis</forename><forename type="middle">Tanveer</forename><surname>Islam</surname></persName>
+							<email>n.t.islam@uva.nl</email>
+						</author>
+						<author>
+							<persName><forename type="first">Sumit</forename><surname>Jha</surname></persName>
+							<email>sjha@fiu.edu</email>
+						</author>
+						<author>
+							<persName><forename type="first">Paul</forename><surname>Rad</surname></persName>
+							<affiliation key="aff4">
+								<orgName type="laboratory">Secure AI and Autonomy Laboratory</orgName>
+								<orgName type="institution">University of Texas at San Antonio 38th Conference on Neural Information Processing Systems</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Texas at San Antonio San Antonio</orgName>
+								<address>
+									<postCode>78249</postCode>
+									<settlement>Texas</settlement>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Amsterdam</orgName>
+								<address>
+									<postCode>1012 WP</postCode>
+									<settlement>Amsterdam</settlement>
+									<country key="NL">Netherlands</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="institution">Florida International University Miami</orgName>
+								<address>
+									<postCode>33199</postCode>
+									<settlement>Florida</settlement>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff3">
+								<orgName type="institution">University of Texas at San Antonio San Antonio</orgName>
+								<address>
+									<postCode>78249</postCode>
+									<settlement>Texas</settlement>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">AutoSafeCoder: A Multi-Agent Framework for Securing LLM Code Generation through Static Analysis and Fuzz Testing</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-11-05">5 Nov 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">A7F1BFE843E1E2B427AFC15D2D30BCB0</idno>
+					<idno type="arXiv">arXiv:2409.10737v2[cs.SE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-11T03:38+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recent advancements in automatic code generation using large language models (LLMs) have brought us closer to fully automated secure software development. However, existing approaches often rely on a single agent for code generation, which struggles to produce secure, vulnerability-free code. Traditional program synthesis with LLMs has primarily focused on functional correctness, often neglecting critical dynamic security implications that happen during runtime. To address these challenges, we propose AutoSafeCoder, a multi-agent framework that leverages LLM-driven agents for code generation, vulnerability analysis, and security enhancement through continuous collaboration. The framework consists of three agents: a Coding Agent responsible for code generation, a Static Analyzer Agent identifying vulnerabilities, and a Fuzzing Agent performing dynamic testing using a mutation-based fuzzing approach to detect runtime errors. Our contribution focuses on ensuring the safety of multi-agent code generation by integrating dynamic and static testing in an iterative process during code generation by LLM that improves security. Experiments using the SecurityEval dataset demonstrate a 13% reduction in code vulnerabilities compared to baseline LLMs, with no compromise in functionality.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Software vulnerabilities-security flaws, glitches, or weaknesses in systems-pose significant risks, often exploited by attackers for malicious purposes <ref type="bibr" target="#b0">[1]</ref>. A recent report from IBM research estimates that these vulnerabilities cost companies an average of $3.9 million annually <ref type="bibr" target="#b1">[2]</ref>. Globally, the cost of security breaches is projected to exceed $1.75 trillion between 2021 and 2025 <ref type="bibr" target="#b2">[3]</ref>. With the growing integration of Large Language Models (LLMs) into the software development lifecycle <ref type="bibr" target="#b3">[4]</ref>, studies show that their use as coding assistants can increase the occurrence of vulnerabilities by 10% <ref type="bibr" target="#b4">[5]</ref>, raising new concerns about the security implications of LLM-driven code generation <ref type="bibr" target="#b5">[6]</ref>.</p><p>While code generated by LLMs excel in functional correctness, they often produce code with security issues <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b6">7]</ref>. Although this democratization of coding using LLMs has increased the developers' productivity by enabling more people to engage in programming <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b8">9]</ref>, code produced by large language models often fails to meet software security standards, potentially containing vulnerabilities in around 40% of cases. <ref type="bibr" target="#b9">[10]</ref>. This evaluation was reused in <ref type="bibr" target="#b10">[11]</ref>, which further found that other state-of-the-art Language Models <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b12">13]</ref> have similar concerning security levels as Copilot <ref type="bibr" target="#b13">[14]</ref>. Another study in <ref type="bibr" target="#b14">[15]</ref> found that in 16 out of 21 security-relevant cases, ChatGPT generates code below minimal security standards.</p><p>In order to mitigate the risks of using LLMs as an assistant to developers, it is crucial to analyze the static and dynamic vulnerabilities in code before they are passed to the developer. Code vulnerabilities pose significant risks, making it crucial to assist developers in mitigating these issues. While efforts like VUDDY <ref type="bibr" target="#b15">[16]</ref>, MVP <ref type="bibr" target="#b16">[17]</ref>, and Movery <ref type="bibr" target="#b17">[18]</ref> have focused on identifying Vulnerable Code Clones (VCC), they generally overlook vulnerability repair. Recent work has demonstrated the potential of pre-trained LLMs for automating this process <ref type="bibr" target="#b18">[19]</ref>, but research such as VulRepair <ref type="bibr" target="#b19">[20]</ref> and AIBUGHUNTER <ref type="bibr" target="#b20">[21]</ref> lacks dynamic execution-based techniques to assess whether LLM-generated code is vulnerable. Additionally, while dynamic analysis tools exist, they often focus on functionality without addressing security concerns.</p><p>To address the challenges of generating secure code while ensuring functionality during software development, we propose a multi-agent solution to create safe and functionally correct code by having a static analysis review agent, a fuzzing agent, and a coding agent that receives feedback from both agents. Our work focuses on the Python programming language since it is one of the most popular languages <ref type="bibr" target="#b21">[22,</ref><ref type="bibr" target="#b22">23]</ref> among developers. Hence, we propose a three-tier system consisting of a Coding Agent, a Static Analyzer Agent, and an Fuzzing Agent to generate, detect, and repair vulnerabilities using a multi-agent system powered by GPT4 for code generation as well as static and dynamic analysis of source code using a multi-agent based system. In summary, the contributions of this paper are:</p><p>• We introduce a new multi-agent system leveraging large language models (LLMs) to generate secure and correct-by-construction code autonomously. Our system combines feedback from static analysis and a fuzzing agent that performs dynamic code analysis.</p><p>• We apply few-shot learning and in-context learning techniques within the LLM framework, enabling agents to identify vulnerabilities in a continuous feedback loop effectively.</p><p>• We provide a comprehensive evaluation, demonstrating both the efficiency and security of the collaborative code generation system, supported by both quantitative and qualitative evaluations.</p><p>2 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Multi-Agent Systems for Code Generation</head><p>Several innovative multi-agent code generation approaches driven by large language models (LLMs) <ref type="bibr" target="#b23">[24,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b26">27,</ref><ref type="bibr" target="#b27">28]</ref> have recently emerged in software development. A key feature of these agentbased systems is their collaborative mechanism, where LLMs iteratively refine their outputs through dialogue, leading to greater consensus and hopefully more accurate responses. These systems assign agents specific roles, such as programmers or designers, and some incorporate Standardized Operating Procedures (SOPs) as a communication protocol to enhance coordination <ref type="bibr" target="#b25">[26]</ref>. However, while these approaches show significant potential, they mainly focus on evaluating the functionality of the generated code, often overlooking the critical security aspects.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Static and Dynamic Analysis</head><p>Static analysis methods, such as those using Abstract Syntax Trees (ASTs) <ref type="bibr" target="#b28">[29]</ref> or deep learning approaches <ref type="bibr" target="#b19">[20]</ref>, help identify issues by analyzing source code without execution. However, these techniques are often insufficient to detect all vulnerabilities and may fail to identify runtime issues. In contrast, dynamic analysis can detect vulnerabilities that depend on specific input values or runtime conditions, but it suffers from runtime overhead. Recently, new approaches for dynamic testing, deep learning libraries, and compilers have emerged <ref type="bibr" target="#b29">[30,</ref><ref type="bibr" target="#b30">31]</ref>. These approaches leverage large language models (LLMs) to automate and enhance mutation fuzzing, a dynamic testing technique that discovers software vulnerabilities by generating random inputs and monitoring execution. Thus, both static and dynamic testing are essential for a thorough vulnerability assessment, as static analysis captures early coding flaws while dynamic analysis identifies issues that surface during execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head><p>Our approach introduces a multi-agent framework to enhance code generation security by integrating static and dynamic analysis through multiple agents driven by large language models (LLMs). This section outlines our agents and their interactions, as illustrated in Figure <ref type="figure" target="#fig_0">1</ref>. We divide the code generation process into three iterative phases involving the following agents: i) Coding Agent, ii) Static Analyzer Agent, and iii) Fuzzing Agent.</p><p>The process starts with the Coding Agent, which generates initial code based on code requirements or descriptions. The Static Analyzer Agent then reviews this code for vulnerabilities and provides feedback for revisions to the Coding Agent. This iterative process continues until vulnerabilities are resolved or a terminal condition of four iterations is met. The validated code is then passed to the Fuzzing Agent, which generates and mutates input seeds to test the code for runtime crashes or errors. Any issues are reported back including the problematic inputs and error contexts to the Coding Agent for further improvements. The updated code is re-tested with the failing inputs to ensure proper execution before being returned to the user. The following sections will provide detailed descriptions of each of our three agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Coding Agent</head><p>The Coding Agent is an LLM-driven tool designed for both code generation and code repair, powered by GPT-4. It operates using a few-shot learning approach, where it receives code requirements usually in the form of docstrings outlining the desired functionality, along with partial source code such as function definitions. Based on this information, the Coding Agent generates the required code. However, code produced by LLMs may still have security vulnerabilities <ref type="bibr" target="#b31">[32]</ref>; this is similar to a human programmer inadvertently producing vulnerable code. To address these issues, the Coding Agent modifies the code based on feedback from specialized agents. It iteratively receives input from the Static Analyzer Agent and the Fuzzing Agent until all vulnerabilities are resolved and no further issues are detected or until the limit of iterations is reached.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Static Analyzer Agent</head><p>The next agent, also powered by GPT-4, is the Static Analyzer Agent. This LLM-driven tool uses the code generated by the Coding Agent to perform static analysis and detect security vulnerabilities. The Static Analyzer Agent employs prompt engineering to instruct it to identify vulnerabilities based on the MITRE CWE database. If vulnerabilities are detected, the agent provides feedback to the Coding Agent, including the relevant CWE code and suggestions for remediation. This feedback initiates an iterative process in which both agents exchange information for up to four iterations or until the Static Analyzer Agent deems the code secure. Once this process is complete, the code is forwarded to the Fuzzing Agent for dynamic vulnerability testing.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Fuzzing Agent</head><p>The primary objective of the Fuzzing agent is to generate diverse inputs for execution-driven dynamic testing of the generated code. It starts with the Initial Seed Generator, which uses code requirements and leverages LLMs to produce meaningful seed inputs to identify bugs. Once generated, these seeds undergo type-aware mutation <ref type="bibr" target="#b32">[33]</ref> to iteratively produce fuzzing inputs.</p><p>The fuzzing seed inputs generated throughout the fuzzing loop are used to assess system behavior and detect crashes, which indicate potential bugs. Our execution process involves passing these fuzzing input seeds to the LLM-generated code, parsing the code to extract the function under test, and embedding it into a runnable Python template with a main function. After each run, the exit code is analyzed to detect crashes. Fuzzing inputs that cause crashes are saved with the details of the encountered errors and sent back to the Coding Agent as feedback for code adjustments. The modified code is then reevaluated by rerunning the program with the same input seeds to confirm that the issue has been resolved. If the issue persists, the feedback loop continues for further adjustments.</p><p>To generate valid and effective input, we utilize a type-aware mutation strategy based on the data type of each parameter. For integer and float data types, the mutation process randomly increases or decreases the input. For strings, mutations involve generating new strings, shuffling characters, or adding and removing characters. For boolean data types, a random boolean value is returned. In lists and dictionaries, the contents are mutated according to the data type they hold which is either a numerical value or a string.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Dataset</head><p>We use SecurityEval <ref type="bibr" target="#b33">[34]</ref> to assess the security of generated code. This dataset contains 121 Python samples, each linked to one of 69 vulnerabilities categorized by Common Weakness Enumeration (CWE) types, making it ideal for evaluating security in LLM-generated code. For functionality testing, we use HumanEval <ref type="bibr" target="#b34">[35]</ref>, a benchmark dataset with handwritten prompts from competitive programming. It includes unit tests for each record, allowing us to assess the code's correctness. We measure functional accuracy using the pass@k metric <ref type="bibr" target="#b34">[35]</ref>. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Experimental Setup</head><p>In our experiments, we evaluated the multi-agent framework using GPT-4o model provided by OpenAI <ref type="bibr" target="#b35">[36]</ref> for the LLM agents. The Static Analysis Agent provides feedback until the code is analyzed as secure or after four communication rounds. We configured the fuzzing mutation loop to run for 150 iterations. To execute the code in a separate process, we used the 'multiprocessing' Python library. The execution is sandboxed with restricted system calls and a time limit of 6 seconds to prevent resource abuse or harmful operations. The sandbox is configured with Python 3.10.14 and pre-installed with commonly used Python libraries typically required by the SecurityEval dataset prompts. The running time of the experiment was of 45 minutes and was run on a computer with Red Hat Enterprise Linux 8.10 and a Tesla V100S GPU with 32GB of GPU memory and 376GB main memory.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Results and Discussions</head><p>To illustrate our approach, we use GPT-4o as a baseline and employ Bandit <ref type="bibr" target="#b28">[29]</ref> to identify security vulnerabilities in code from both methods. Table <ref type="table" target="#tab_0">1</ref> (a) shows the number of vulnerable code snippets detected by Bandit. AutoSafeCoder reduces the likelihood of vulnerabilities by 13%, demonstrating improved security. The multi-agent framework outperforms GPT-4o by mitigating more vulnerabilities, highlighting the advantages of integrating static and dynamic analysis agents. Further looking into Bandit's results, it shows a recurring vulnerability CWE-94. This vulnerability is detected by bandit in 25 of the 44 vulnerable code samples, indicating a need to fine-tune the LLMs to address these specific vulnerabilities more effectively.</p><p>We evaluated our approach's effectiveness in fixing vulnerable code, as shown in Table <ref type="table" target="#tab_1">2</ref>. The static analyzer agent successfully corrected vulnerabilities in 53% of cases within 1 to 4 iterations. Table <ref type="table" target="#tab_0">1</ref> (b) shows that the Fuzzing Agent processed 65 samples, with 60 running without crashes detected, and 5 with crashes successfully fixed. We believe using a more robust fuzzer like Python-AFL [37] and extending fuzzing iterations could improve this rate even further. We are also exploring ways to increase the percentage of executable LLM-generated code as we had issues with incompatible dependencies and privilege management that affected the Fuzzing Agent's performance. Finally, we assessed the functionality of our code using HumanEval. As shown in Tabe 1 (c), while our multi-agent system focuses on generating secure code, it maintains functionality with only a 3% decrease compared to GPT-4o, demonstrating a successful balance between enhanced security and high functionality. We are currently exploring ways for adding a functional testing agent to verify correctness of generated code in AutoSafeCoder.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusions</head><p>We introduced AutoSafeCoder, a multi-agent framework that enhances automated code generation with focus on static and dynamic security analysis. Unlike traditional single-agent approaches, AutoSafeCoder integrates multiple agents, including a Coding Agent for code generation, a Static Analyzer for vulnerability detection, and a Fuzzing Agent for dynamic testing using mutation-based fuzzing. This iterative process ensures that vulnerabilities are detected and addressed through realtime analysis during code execution. Our experiments on the SecurityEval dataset demonstrated a 13% reduction in vulnerabilities compared to baseline LLMs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Social Impact Statement</head><p>Code is the foundation of modern society, powering communication, healthcare, and transportation. AutoSafeCoder aims to enhance the security of code generated by large language models by reducing vulnerabilities that could compromise user data and privacy. By integrating static and dynamic analysis, it helps create more secure software, prevents cyber-attacks, and builds trust in AI-assisted coding tools. However, potential negative impacts exist. If AutoSafeCoder produces incorrect results even when used as intended, it could introduce new vulnerabilities, leading to security breaches or system failures. Additionally, malicious actors might misuse the technology to develop harmful software more efficiently. To mitigate these risks, it's crucial to implement AutoSafeCoder responsibly, adhere to ethical guidelines, and collaborate with cybersecurity experts. Our code and outcome by our proposed agent are available here <ref type="url" target="https://github.com/SecureAIAutonomyLab/AutoSafeCoder">https://github.com/SecureAIAutonomyLab/  AutoSafeCoder</ref>.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Overview of our multi-agent framework integrating three agents: i) Coding Agent, ii) Static Analyzer Agent, and iii) Fuzzing Agent. The process begins with the Coding Agent generating code from code requirements. The Static Analyzer Agent performs code auditing. The Fuzzing Agent then mutates inputs to identify potential crashes. Any errors are fed back to the Coding Agent for further revisions.</figDesc><graphic coords="3,108.00,72.00,396.00,318.79" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><graphic coords="9,207.00,102.40,198.00,290.98" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>(a) Number of vulnerable code samples generated by GPT-4o and our AutoSafeCoder (b) Performance of the Fuzzing Agent (c) Comparison of functionality for code generated by GPT-4o and AutoSafeCoder using Pass@1</figDesc><table><row><cell cols="2">(a) Code Generation Approach Comparison</cell><cell cols="2">(b) Fixes by Fuzzing Agent</cell><cell cols="2">(c) Functionality Eval.</cell></row><row><cell>Approach</cell><cell cols="4">Vul. Code Gen. Fix Status No. of Samples Approach</cell><cell>Pass@1</cell></row><row><cell>GPT-4o</cell><cell>59/121 (49%)</cell><cell>No Crash</cell><cell>60 (47%)</cell><cell>GPT-4o</cell><cell>0.9085</cell></row><row><cell cols="2">AutoSafeCoder 44/121 (36%)</cell><cell>Fixed</cell><cell>5 (4%)</cell><cell cols="2">AutoSafeCoder 0.8780</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Contribution of the static analyzer agent. This table shows the number of code samples successfully fixed through feedback provided by the static analyzer agent, categorized by the number of iterations required.</figDesc><table><row><cell cols="2">Number of Iterations to Fix Code Number of Samples</cell></row><row><cell>No Iterations Required</cell><cell>19 (16%)</cell></row><row><cell>1 Iteration Required</cell><cell>25 (22%)</cell></row><row><cell>2 Iteration Required</cell><cell>20 (17%)</cell></row><row><cell>3 Iteration Required</cell><cell>12 (10%)</cell></row><row><cell>4 Iteration Required</cell><cell>6 (4%)</cell></row><row><cell>Unable to Fully Fix</cell><cell>39 (31%)</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>A Appendix / supplemental material     </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Prompt template used by coding agent for code generation.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 :</head><label>3</label><figDesc>Prompt template used by static analyzer agent to detect vulnerabilities.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Prompt template used to generate initial inputs for fuzzing</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Prompt template used by coding agent to receive feedback from static analyzer.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6 :</head><label>6</label><figDesc>Prompt template used by coding agent to receive feedback from fuzzing agent</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Automation support for security control assessments</title>
+		<author>
+			<persName><forename type="first">Kelley</forename><surname>Dempsey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Eavy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Moore</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<publisher>Overview</publisher>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="8011" to="8011" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Ibm</surname></persName>
+		</author>
+		<ptr target="https://newsroom.ibm.com/2020-07-29-IBM" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Report-Compromised-Employee-Accounts-Led-to-Most-Expensive-Data-Breaches-Over-Past-Year</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ventures</surname></persName>
+		</author>
+		<ptr target="https://cybersecurityventures.com/cybersecurity-spending-2021-2025/" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Code llama: Open foundation models for code</title>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Baptiste Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sten</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Itai</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Xiaoqing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yossi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyu</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Romain</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tal</forename><surname>Sauvestre</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Remez</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.12950</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Lost at c: A user study on the security implications of large language model code assistants</title>
+		<author>
+			<persName><forename type="first">Gustavo</forename><surname>Sandoval</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hammond</forename><surname>Pearce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teo</forename><surname>Nys</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramesh</forename><surname>Karri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddharth</forename><surname>Garg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brendan</forename><surname>Dolan-Gavitt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2208.09727</idno>
+	</analytic>
+	<monogr>
+		<title level="m">USENIX Security</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sanka</forename><surname>Rasnayaka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ridwan</forename><surname>Shariffdeen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ganesh Neelakanta</forename><surname>Iyer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.16186</idno>
+		<title level="m">An empirical study on usage and perceptions of llms in a software engineering project</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Examining zero-shot vulnerability repair with large language models</title>
+		<author>
+			<persName><forename type="first">Hammond</forename><surname>Pearce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baleegh</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramesh</forename><surname>Karri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brendan</forename><surname>Dolan-Gavitt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2023 IEEE Symposium on Security and Privacy (SP)</title>
+		<imprint>
+			<publisher>IEEE Computer Society</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1" to="18" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title/>
+		<ptr target="https://jukkaniiranen.com/2021/04/democratizing-code/" />
+	</analytic>
+	<monogr>
+		<title level="j">Jukka Niiranen. Democratizing code</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Democratizing programming: How ai enables everyone to become a programmer</title>
+		<author>
+			<persName><forename type="first">Consulting</forename><surname>Akilek Akilek</surname></persName>
+		</author>
+		<ptr target="https://www.linkedin.com/pulse/democratizing-programming-how-ai-enables-everyone-become/" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Asleep at the keyboard? assessing the security of github copilot&apos;s code contributions</title>
+		<author>
+			<persName><forename type="first">Hammond</forename><surname>Pearce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baleegh</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brendan</forename><surname>Dolan-Gavitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramesh</forename><surname>Karri</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2022 IEEE Symposium on Security and Privacy (SP)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="754" to="768" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Raymond</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Loubna</forename><surname>Ben Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangtian</forename><surname>Zi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denis</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Marone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Chim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.06161</idno>
+		<title level="m">Starcoder: may the source be with you! arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Codegen: An open large language model for code with multi-turn program synthesis</title>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Nijkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroaki</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifu</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingbo</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armen</forename><surname>Aghajanyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jessy</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wallace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Freda</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2204.05999</idno>
+		<title level="m">Incoder: A generative model for code infilling and synthesis</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Github copilot: Your ai pair programmer</title>
+		<author>
+			<persName><surname>Github</surname></persName>
+		</author>
+		<ptr target="https://github.com/features/copilot" />
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="2024" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Raphaël</forename><surname>Khoury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anderson</forename><forename type="middle">R</forename><surname>Avila</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Brunelle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baba Mamadou</forename><surname>Camara</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.09655</idno>
+		<title level="m">How secure is code generated by chatgpt? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Vuddy: A scalable approach for vulnerable code clone discovery</title>
+		<author>
+			<persName><forename type="first">Seulbae</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seunghoon</forename><surname>Woo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heejo</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hakjoo</forename><surname>Oh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2017 IEEE Symposium on Security and Privacy (SP)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="595" to="614" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">{MVP}: Detecting vulnerabilities using {Patch-Enhanced} vulnerability signatures</title>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bihuan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chendong</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengzi</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zimu</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Feng</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Binghong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Huo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Zou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">29th USENIX Security Symposium (USENIX Security 20)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="1165" to="1182" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">{MOVERY}: A precise approach for modified vulnerable code clone discovery from modified {Open-Source} software components</title>
+		<author>
+			<persName><forename type="first">Seunghoon</forename><surname>Woo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyunji</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eunjin</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heejo</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">31st USENIX Security Symposium (USENIX Security 22)</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="3037" to="3053" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Pre-trained model-based automated software vulnerability repair: How far are we?</title>
+		<author>
+			<persName><forename type="first">Quanjun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunrong</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bowen</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weisong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tongke</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenyu</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Dependable and Secure Computing</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Vulrepair: a t5-based automated software vulnerability repair</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chakkrit</forename><surname>Tantithamthavorn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trung</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Van</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dinh</forename><surname>Phung</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 30th ACM Joint European Software Engineering Conference and Symposium on the Foundations of Software Engineering</title>
+		<meeting>the 30th ACM Joint European Software Engineering Conference and Symposium on the Foundations of Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="935" to="947" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Aibughunter: A practical tool for predicting, classifying and repairing software vulnerabilities</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chakkrit</forename><surname>Tantithamthavorn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trung</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuki</forename><surname>Kume</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dinh</forename><surname>Van Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Phung</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Grundy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Empirical Software Engineering</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">4</biblScope>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">The top programming languages</title>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Cass</surname></persName>
+		</author>
+		<ptr target="https://spectrum.ieee.org/top-programming-languages-2024" />
+		<imprint>
+			<date type="published" when="2022">2024. 2022</date>
+			<biblScope unit="page" from="2024" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Stack</forename><surname>Overflow</surname></persName>
+		</author>
+		<ptr target="https://survey.stackoverflow.co/2024/technology#most-popular-technologies-language-other" />
+		<title level="m">Stack overflow developer survey 2024: Most popular technologies</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2024" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongzhang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nuo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufan</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiahao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dahai</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chatdev</surname></persName>
+		</author>
+		<title level="m">Communicative agents for software development</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Agentcoder: Multi-agent-based code generation with iterative testing and optimisation</title>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><forename type="middle">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Luck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingwen</forename><surname>Bu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuhao</forename><surname>Qing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heming</forename><surname>Cui</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiawu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ceyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zili</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Ka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shing</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijuan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyang</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyu</forename><surname>Ran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingfeng</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenglin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jürgen</forename><surname>Schmidhuber</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Metagpt</surname></persName>
+		</author>
+		<title level="m">Meta programming for a multi-agent collaborative framework</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Mapcoder: Multi-agent code generation for competitive problem solving</title>
+		<author>
+			<persName><forename type="middle">Ashraful</forename><surname>Md</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammed</forename><forename type="middle">Eunus</forename><surname>Islam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Md</forename><surname>Ali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Parvez</forename><surname>Rizwan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Self-organized agents: A llm multi-agent framework toward ultra large-scale code generation and optimization</title>
+		<author>
+			<persName><forename type="first">Yoichi</forename><surname>Ishibashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshimasa</forename><surname>Nishimura</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Pycqa</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bandit</surname></persName>
+		</author>
+		<ptr target="https://github.com/PyCQA/bandit/tree/main" />
+		<imprint>
+			<biblScope unit="page" from="2024" to="2029" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Fuzz4all: Universal fuzzing with large language models</title>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matteo</forename><surname>Paltenghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Le Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Pradel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Large language models are zero-shot fuzzers: Fuzzing deep-learning libraries via large language models</title>
+		<author>
+			<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunqiu</forename><surname>Steven Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haoran</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingming</forename><surname>Zhang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Asleep at the keyboard? assessing the security of github copilot&apos;s code contributions</title>
+		<author>
+			<persName><forename type="first">Hammond</forename><surname>Pearce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baleegh</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brendan</forename><surname>Dolan-Gavitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramesh</forename><surname>Karri</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">On the unusual effectiveness of typeaware operator mutations for testing smt solvers</title>
+		<author>
+			<persName><forename type="first">Dominik</forename><surname>Winterer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chengyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhendong</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the ACM on Programming Languages</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page" from="1" to="25" />
+			<date type="published" when="2020-11">November 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Securityeval dataset: mining vulnerability examples to evaluate machine learning-based code generation techniques</title>
+		<author>
+			<persName><forename type="first">Mohammed</forename><surname>Latif</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siddiq</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joanna Cs</forename><surname>Santos</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 1st International Workshop on Mining Software Repositories Applications for Privacy and Security</title>
+		<meeting>the 1st International Workshop on Mining Software Repositories Applications for Privacy and Security</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="29" to="33" />
+		</imprint>
+	</monogr>
+	<note>Licensed under the CC-BY 4.0 License</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>Licensed under the MIT License</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Hello gpt</title>
+		<ptr target="https://openai.com/index/hello-gpt-4o" />
+		<imprint>
+			<date type="published" when="2024">2024</date>
+			<biblScope unit="page" from="2024" to="2029" />
+		</imprint>
+		<respStmt>
+			<orgName>OpenAI</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

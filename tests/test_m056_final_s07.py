@@ -55,7 +55,7 @@ def test_candidate_edges_json_schema() -> None:
     assert payload["graph_writes_authorized"] is False
     assert payload["production_import_authorized"] is False
     assert set(payload) >= {"nodes", "edges", "summary", "safety_defaults", "safety_flags"}
-    assert payload["summary"]["corpus_unique_pdf_count"] == 149
+    assert payload["summary"]["corpus_unique_pdf_count"] == 166
     assert payload["summary"]["node_count"] == len(payload["nodes"])
     assert payload["summary"]["edge_count"] == len(payload["edges"])
     assert payload["summary"]["edge_count"] > 0

@@ -1,0 +1,2263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">AgentCoder: Multi-Agent Code Generation with Effective Testing and Self-optimisation</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-05-24">24 May 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Dong</forename><surname>Huang</surname></persName>
+							<email>dhuang@cs.hku.hk</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">University of Hong Kong</orgName>
+								<orgName type="institution" key="instit2">University of Sussex</orgName>
+								<orgName type="institution" key="instit3">Shanghai Jiao Tong University</orgName>
+								<orgName type="institution" key="instit4">University of Hong Kong</orgName>
+								<orgName type="institution" key="instit5">University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jie</forename><forename type="middle">M</forename><surname>Zhang</surname></persName>
+							<email>jie.zhang@kcl.ac.uk</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">University of Hong Kong</orgName>
+								<orgName type="institution" key="instit2">University of Sussex</orgName>
+								<orgName type="institution" key="instit3">Shanghai Jiao Tong University</orgName>
+								<orgName type="institution" key="instit4">University of Hong Kong</orgName>
+								<orgName type="institution" key="instit5">University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Michael</forename><surname>Luck</surname></persName>
+							<email>michael.luck@sussex.ac.uk</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">University of Hong Kong</orgName>
+								<orgName type="institution" key="instit2">University of Sussex</orgName>
+								<orgName type="institution" key="instit3">Shanghai Jiao Tong University</orgName>
+								<orgName type="institution" key="instit4">University of Hong Kong</orgName>
+								<orgName type="institution" key="instit5">University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Qingwen</forename><surname>Bu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">University of Hong Kong</orgName>
+								<orgName type="institution" key="instit2">University of Sussex</orgName>
+								<orgName type="institution" key="instit3">Shanghai Jiao Tong University</orgName>
+								<orgName type="institution" key="instit4">University of Hong Kong</orgName>
+								<orgName type="institution" key="instit5">University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yuhao</forename><surname>Qing</surname></persName>
+							<email>yhqing@cs.hku.hk</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">University of Hong Kong</orgName>
+								<orgName type="institution" key="instit2">University of Sussex</orgName>
+								<orgName type="institution" key="instit3">Shanghai Jiao Tong University</orgName>
+								<orgName type="institution" key="instit4">University of Hong Kong</orgName>
+								<orgName type="institution" key="instit5">University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Heming</forename><surname>Cui</surname></persName>
+							<email>heming@cs.hku.hk</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">University of Hong Kong</orgName>
+								<orgName type="institution" key="instit2">University of Sussex</orgName>
+								<orgName type="institution" key="instit3">Shanghai Jiao Tong University</orgName>
+								<orgName type="institution" key="instit4">University of Hong Kong</orgName>
+								<orgName type="institution" key="instit5">University of Hong Kong</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">AgentCoder: Multi-Agent Code Generation with Effective Testing and Self-optimisation</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-05-24">24 May 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">11F1CC17B36838539883E543628B9A31</idno>
+					<idno type="arXiv">arXiv:2312.13010v3[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-11T03:38+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>Code Generation Test Case Generation Execution Local Environment Error Feedback</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Advances in natural language processing (NLP) have been significantly boosted by the development of transformer-based large language models (LLMs). These models have revolutionized NLP tasks, particularly in code generation, aiding developers in creating software with enhanced efficiency. Despite their advances, challenges remain in balancing code snippet generation with effective test cases. To address these issues, this paper introduces AgentCoder, a novel code generation solution comprising a multi-agent framework with a specialized test designer agents in addition to the programmer agent and the test executor agent. During the coding procedure, the test designer agent generates effective test cases for the generated code, and the test executor agent runs the code with the test cases and writes feedback to the programmer agent for it to refine the code. This collaborative system enhances code generation efficiency with less cost, outperforming both single-agent models and earlier multi-agent strategies, demonstrated by our extensive experiments on 14 LLMs and 16 baseline approaches. For example, AgentCoder (GPT-4) achieves 96.3% and 91.8% pass@1 in HumanEval and MBPP datasets with an overall token overhead of 56.9K and 66.3K, while stateof-the-art obtains only 90.2% and 78.9% pass@1 with an overall token overhead of 138.2K and 206.5K.</p><p>Preprint. Under review.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>In recent years, natural language processing (NLP) has been dramatically transformed by transformer-based large language models (LLMs). These models, notably exemplified by the GPT-x series <ref type="bibr">[4,</ref><ref type="bibr" target="#b28">29]</ref> developed by OpenAI, have consistently set the benchmark for performance across a wide array of standard NLP tasks. One of the most pivotal applications for these LLMs is code generation for downstream tasks, where they play a vital role in aiding developers in creating software <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b33">34,</ref><ref type="bibr" target="#b35">36,</ref><ref type="bibr" target="#b27">28,</ref><ref type="bibr" target="#b26">27,</ref><ref type="bibr" target="#b23">24]</ref>. Through extensive pretraining on substantial code-related datasets, such as publicly available data on GitHub, these code LLMs acquire intricate contextual understanding that can be effectively applied to diverse code-related tasks.</p><p>Numerous recent efforts have been made to improve the effectiveness of LLMs by incorporating in-context learning and its variations <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b36">37,</ref><ref type="bibr" target="#b19">20,</ref><ref type="bibr" target="#b17">18,</ref><ref type="bibr" target="#b41">42,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b25">26]</ref>, where an important optimisation path is single-agent self-refinement within the same conversation. For example, Zhang et al. <ref type="bibr" target="#b41">[42]</ref> proposed Self-Edit to enhance the performance of LLMs in code generation. In particular, Self-Edit runs the generated code against test cases that are manually written by developers. It then prompts the LLMs to refine the code based on the error messages of failed tests. Huang et al. <ref type="bibr" target="#b17">[18]</ref> introduced To address the above-mentioned challenge, in this paper, we propose AgentCoder, a multi-agent code generation framework with effective test generation and small token overhead. AgentCoder has only three simple agents, i.e., the programmer agent, the test designer agent, and the test executor agent. The programmer agent interacts with advanced code generation models to create code based on coding requirements. The test designer agent designs accurate, diverse, and comprehensive test cases with code generation models independently based on the coding requirements. The test executor agent interacts with both the programmer agent and the test designer agent: it executes the tests from the test designer agent against the code generated by the programmer agent and then provides test execution results to the programmer agent. Once the feedback is obtained by the test executor agent from the local environment (i.e., local terminal), it checks whether the feedback contains error information (e.g., runtime error and assertion error). If all test cases pass the generated code, the test executor agent provides the code snippets to the human developer. Otherwise, the test executor agent feeds back to the programmer agent and then requires it to fix the bug reported in the feedback. The iteration then continues once the feedback is that all test cases pass the code snippets or the iteration budget is done.</p><p>The test executor agent plays a pivotal role by designing effective tests to critically evaluate the code. Compared to existing test generation methods such as those used by CodeCoT and MetaGPT, AgentCoder has three unique features. First, AgentCoder generates tests without seeing the whole code snippet, because the tests generated immediately following the code in one conversation can be biased and affected by the code, losing objectivity and diversity in the testing (See Tab. 5). Second, AgentCoder proposes generating tests independently from the source code generation, intentionally separating the code generation and test generation processes. This choice is made based on previous findings that as the model achieves high performance in generating code snippets, there may be a corresponding decrease in the effectiveness of test case generation <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b40">41]</ref>. This trade-off scenario occurs due to the model's limited resources and its focus on optimizing one aspect of the code generation process, which might inadvertently compromise the quality of other tasks <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b40">41]</ref>. Third, the test designer agent in AgentCoder is carefully designed and prompted to generate basic, edge, and large scale tests, yielding high accuracy and test coverage.</p><p>Our extensive experiments with 14 LLMs and 16 optimisation baselines demonstrate that Agent-Coder significantly improves the effectiveness and efficiency of code generation, outperforming all baseline approaches. In particular, AgentCoder obtains an average of 91.5% and 84.1% pass@1 on all the datasets with GPT-4 and GPT-3.5, respectively, while the state-of-the-art obtains 86.8% and 75.3%. The overall token overhead for AgentCoder is 56.9K for HumanEval and 66.3K for MBPP, significantly lower than other state-of-the-art muti-agent frameworks including MetaGPT (138.2K / 206.5K respectively), ChatDev (183.7K / 259.3K), and AgentVerse (149.2K / 193.6K). Moreover, our test designer agent achieves a test generation accuracy of 89.6% and 91.4% for for HumanEval and MBPP with GPT-4, respectively, outperforming the second-best method MetaGPT whose accuracy is 79.3% and 84.4%. In terms of code coverage, our test designer agent achieves a line coverage of 91.7% for HumanEval and 92.3% for MBPP with GPT-4, while the coverage for MetaGPT is 81.7% and 80.5%, respectively.</p><p>Our main contributions are as follows:</p><p>• We propose AgentCoder, a multi-agent framework for code generation with effective test generation and small token overhead. AgentCoder contains three distinct agents, i.e., the programmer agent, the test designer agent, and the test executor agent.</p><p>• We conduct an extensive evaluation with 14 LLMs and 16 LLM-based optimisation approaches which demonstrates that AgentCoder outperforms all the baselines in code generation. In particular, AgentCoder obtains 77.4% and 89.1% pass@1 with GPT-3.5, while state-of-the-art obtains only 69.5% and 63.0%.</p><p>• We conduct a deep analysis of our results and ablation studies, which demonstrate the contribution of different agents, the effectiveness of the tests generated by the test designer agent, and the necessity of using separate agents for code generation and test case design.</p><p>2 Related Work</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Large Language Model for Code Generation</head><p>Various architectures have been explored in these models, some notable examples being Code-BERT <ref type="bibr" target="#b12">[13]</ref>, PLBART <ref type="bibr">[1]</ref>, and CodeGPT <ref type="bibr" target="#b39">[40]</ref>. These models are pre-trained on code corpora to develop a deep understanding of code syntax, semantics, and idiomatic constructs. Some innovative approaches integrate structured representations to enhance their comprehension of the complexities in code. For example, GraphCodeBERT <ref type="bibr" target="#b14">[15]</ref> incorporates graph-based representations, while CodeT5+ <ref type="bibr" target="#b35">[36]</ref> combines the encoder-decoder paradigm with the structural essence of code. These enhancements aim to give the models a more fine-grained understanding of code relationships and dependencies beyond just syntactic patterns. A current trend is the construction of large scale models (e.g., Codex <ref type="bibr" target="#b5">[6]</ref> and CodeGen <ref type="bibr" target="#b27">[28]</ref>) with billions of parameters, which have illustrated the performance of state-of-the-art in code generation tasks. Recently, foundation models (e.g., GPT-3.5-turbo, GPT-4) have also been used for code generations <ref type="bibr" target="#b25">[26,</ref><ref type="bibr" target="#b17">18]</ref>. These foundation models illustrated the state-of-the-art performance for code generation tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Enhancing Code Generation through Prompt Engineering</head><p>Recent advances in code generation have been significantly influenced by the integration of fewshot learning techniques with LLMs. A notable contribution in this realm is the concept of selfrefinement with few-shot prompting, as proposed by Madaan et al. <ref type="bibr" target="#b25">[26]</ref>. This approach involves an LLM iteratively refining its own generated code, leading to significant improvement in code quality.</p><p>Another approach is the Self-Debugging technique introduced by Chen et al. <ref type="bibr" target="#b8">[9]</ref>, which involves testing the generated code against user-provided test cases. In scenarios where such test cases are unavailable, the model engages in direct debugging by explaining the code, thus addressing potential issues. Complementing these methods, Huang et al. <ref type="bibr" target="#b17">[18]</ref> introduced CodeCoT, employing a Self-Exam Chain of Thought (CoT) process. This technique guides the model to generate code alongside test cases, particularly useful when external test cases are not available. CodeCoT adds a layer of logical reasoning to the code generation process. However, it is important to note that while this method can identify syntax errors, functional errors may still go undetected as both the code and its test cases are generated by the same model. Building upon these concepts, Dong et al. <ref type="bibr" target="#b10">[11]</ref> proposed the Self-Collaboration model, which divides the LLMs into different roles: an analyst, a coder, and a tester. The tester is powered by an LLM which predicts whether the code is buggy. Such practice may ignore many bugs in the code because the code is not executed in the local environments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Multi-agent Collaboration</head><p>In recent months, LLM-based multi-agent frameworks have gained significant attention from both industry and academia. These frameworks can be broadly categorized into two groups: non-code generation and code generation multi-agent frameworks. Non-code generation multi-agent frameworks have been explored in various contexts. For example, Stable-Alignment <ref type="bibr" target="#b24">[25]</ref> generates instruction datasets by establishing consensus on value judgments through interactions among LLM agents in a sandbox environment. Generative Agents <ref type="bibr" target="#b29">[30]</ref> simulate a "town" of 25 agents to investigate language interaction, social understanding, and collective memory. NLSOM <ref type="bibr" target="#b43">[44]</ref> employs agents with different functions to solve complex tasks through multiple rounds of "mindstorms". Cai et al. <ref type="bibr" target="#b4">[5]</ref> propose a model for cost reduction by combining large models as tool makers and small models as tool users. Other works focus on cooperation and competition in planning and strategy <ref type="bibr" target="#b11">[12]</ref> or propose LLM-based economies <ref type="bibr" target="#b43">[44]</ref>. While these works have made significant contributions Several code generation multi-agent frameworks <ref type="bibr" target="#b16">[17,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b30">31]</ref> have been proposed concurrently with AgentCoder in recent months. For example, MetaGPT <ref type="bibr" target="#b16">[17]</ref> simulates the software development life cycle using multiple agents. However, these frameworks often face two significant challenges. First, they may have less effective feedback mechanisms to provide the LLMs with valuable information. For example, the accuracy of the generated tests from MetaGPT <ref type="bibr" target="#b16">[17]</ref> is only 79% for HumanEval, which limits the effectiveness of the feedback provided to the code generation agents. Second, these frameworks often require an excessive number of agents (e.g., MetaGPT has 5 agents, ChatDev has 7 agents), which can lead to significant token overhead for communication and coordination among different agents. Different from these multi-agent frameworks, AgentCoder addresses these challenges by introducing a more efficient and effective approach. First, AgentCoder employs a dedicated test designer agent that generates accurate, diverse, and comprehensive test cases independently of the code generation process, ensuring the objectivity and effectiveness of the generated tests. Second, AgentCoder streamlines the multi-agent collaboration by utilizing only three agents: the programmer agent, the test designer agent, and the test executor agent. This design choice significantly reduces the token overhead associated with communication and coordination among agents, while still leveraging the benefits of multi-agent collaboration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Methodology</head><p>The framework of AgentCoder and its pipeline are illustrated in Fig. <ref type="figure" target="#fig_0">1</ref>. The process begins by inputting tasks/code generation requirements/descriptions into the code generation agent (Agent#1: the programmer agent). Subsequently, the test case generator (Agent#2: the test designer agent) is tasked with generating test cases, which are used to evaluate the correctness of the code snippets produced by the programmer agent. The code snippets and test cases are collected by the test executor agent (Agent#3) and executed in the local environment (local terminal) to obtain feedback (i.e., whether the code passes all tests and the error message if the code fails for some tests). If the test executor agent finds that the code snippets pass all test cases, it will return the code to the user and finish the iteration. Otherwise, the test executor agent will return the test execution error messages to the programmer agent. The iteration then continues, with the programmer agent regenerating code snippets to address the issues identified in the feedback, and the test executor agent re-executes the new code and provides new feedback to the programmer agent, until the test executor agent finds that the code passes all the tests.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Programmer agent: code generation with Chain-of-Thought instruction</head><p>In our framework, The programmer agent is powered by LLMs. It needs to consider two scenarios, i.e., code generation and code refinement. Specifically, as shown in Fig. <ref type="figure" target="#fig_0">1</ref>, during the code generation stage, the human developer will require the programmer agent to generate code snippets to complete specific tasks, the programmer agent employs a Chain-of-Thought approach to simulate the typical programming process, methodically breaking down the task into smaller, manageable steps. The Chain-of-Thought process is instructed to contain four steps, i.e., problem understanding and clarification, algorithm and method selection, pseudocode creation, and code generation (the prompt and response example is shown in Appendix A.3 Figure <ref type="figure">6</ref> and <ref type="figure">7</ref>).</p><p>Taking the coding task Check if in given list of numbers, are any two numbers closer to each other than given threshold (shown in Fig. <ref type="figure" target="#fig_0">1</ref>) as an example, during the initial code generation, the programmer agent will try to understand and clarify the given task, in this case interpreting the requirement to identify pairs of numbers in a list that are within a specified threshold of each other. The programmer agent will then decide on an algorithm or method to solve the problem. This could involve choosing an efficient way to compare each pair of numbers in the list. Next, during the pseudocode creation, the programmer agent will develop a step-by-step guide or pseudocode for the solution, ensuring a logical flow of operations. Finally, in the code generation stage, the programmer will translate the pseudocode into executable code.</p><p>Code snippets generated by the programmer agent can be incorrect, containing various types of errors (e.g., syntax and runtime errors), leading to failed test cases provided by the test designer agent. Under such circumstances, the programmer agent will take feedback from other agents and refine the code snippets. The refinement process is iterative, with the programmer agent continuously enhancing the code based on feedback until the code successfully passes all test cases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Test designer agent: generating basic, edge, and large scale tests</head><p>The test designer agent is also powered by LLMs. It is a crucial component of our AgentCoder's framework to test the code and provide reliable feedback for the programmer agent to optimise the code iteratively. We carefully designed the prompts for the test designer agent to satisfy the following three expectations: (i) to generate basic test cases, (ii) to cover edge test cases, and (iii) to cover large scale inputs (the test designer agent's prompt and response example is shown in Appendix Figure <ref type="figure">8</ref> and <ref type="figure">9</ref>). The first aspect expects that the test designer agent designs test cases that cover the fundamental functionality of the code. These tests are designed to ensure that the code performs as expected under normal conditions. For instance, in a task that involves sorting a list, the basic test cases verify that the list is sorted correctly for typical inputs. The second aspect ensures that the code performs well under edge scenarios, which are critical for evaluating the code's behavior under extreme or unusual conditions. These tests are designed to challenge the code with boundary conditions, unexpected inputs, and rare scenarios, to help in identifying potential bugs or weaknesses in the code that might not be evident during basic testing, such as using an empty list or a list with extremely large numbers to test the sorting algorithm. Finally, the test designer agent will also generate test cases with large scale values to assess the code's performance and scalability,, such as testing the sorting algorithm with a list of millions of elements. This involves testing the code under high-load conditions to evaluate whether it maintains its functionality and performance. Different from existing methods, AgentCoder generates tests independently without seeing the whole code snippet to keep objectivity and avoid being biased and affected by the incorrect code. The test accuracy and adequacy are compared in Section 4.4 and Section 4.5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Test executor agent: code validation and feedback Integration</head><p>Distinct from the programmer agent and test designer agent that are powered by LLMs, the test executor agent in our framework is implemented through a Python script interacting with a local environment and the other two agents (an example of the test executor agent is shown in Appendix Figure <ref type="figure" target="#fig_0">10</ref>). As illustrated in Fig. <ref type="figure" target="#fig_0">1</ref>, the test executor agent plays a pivotal role in the final stage of the code generation process. Upon receiving code snippets generated by the programmer agent and test cases generated by the test designer agent, the test executor agent validates these code snippets along with the test cases in a local environment. The test executor agent closely monitors the return information from the execution environment (i.e., the terminal). This involves analyzing the output and determining whether the code snippets successfully pass all the test cases. If all test cases are passed, it returns the code to the human developer. Otherwise, if the execution results contain error information (e.g., syntax errors), the test executor agent will then return the error information to the programmer agent to fix the reported error.</p><p>Table <ref type="table">1</ref>: End-to-end results of AgentCoder and baseline approaches for HumanEval, HumanEval-ET, MBPP, and MBPP-ET datasets. The best approach is highlighted in bold. The baseline results are obtained from its paper report. We use "-" to indicate the cases where the results are absent. The percentages in brackets are the improvement rate over the base LLMs (zero-shot prompting). For the last three rows, no baseline optimisation approaches report effectiveness on these LLMs, therefore, we report the results of AgentCoder only.</p><p>Models HumanEval HumanEval-ET MBPP MBPP-ET Mean Zero-Shot LLMs AlphaCode (1.1B) 17.1 ---17.1 Incoder (6.7B) 15.2 11.6 17.6 14.3 14.7 CodeGeeX (13B) 18.9 15.2 26.9 20.4 20.4 StarCoder (15.5B) 34.1 25.6 43.6 33.4 34.2 CodeLlama (34B) 51.8 -69.3 -60.6 Llama3 (8B) 62.2 ----CodeGen-Mono (16.1B) 32.9 25.0 38.6 31.6 32.0 CodeX (175B) 47.0 31.7 58.1 38.8 43.9 CodeX (175B)+CodeT 65.8 51.7 67.7 45.1 57.6 GPT-3.5-turbo 57.3 42.7 52.2 36.8 47.3 PaLM Coder 43.9 36.6 32.3 27.2 35.0 Claude-instant-1 31.1 28.1 26.9 19.9 26.5 GPT-4-turbo 57.9 48.8 63.4 47.5 54.4 GPT-4 67.6 50.6 68.3 52.2 59.7 LLM-based optimisation methods with GPT-3.5-turbo Few-Shot 67.7 (18.2%) 54.9 (28.6%) 65.8 (26.1%) 48.3 (31.2%) 59.2 (25.2%) CoT 44.6 (-22.2%) 37.2 (-12.9%) 46.1 (-11.7%) 34.8 (-5.4%) 40.7 (-14.0%) ReAct 56.9 (-0.7%) 49.4 (15.7%) 67.0 (28.4%) 45.9 (24.7%) 54.8 (15.9%) Reflexion 68.1 (18.8%) 50.6 (18.5%) 70.0 (34.1%) 47.5 (29.1%) 59.1 (24.9%) ToT 54.4 (-5.1%) 42.7 (0.0%) 65.8 (26.1%) 40.8 (10.9%) 50.9 (7.6%) RAP 63.1 (10.1%) 52.4 (22.7%) 71.4 (36.8%) 46.7 (26.9%) 58.4 (23.5%) Self-Edit 62.2 (8.6%) 54.3 (27.2%) 56.4 (8.0%) 45.9 (24.7%) 54.7 (15.6%) Self-Planing 65.2 (13.8%) 48.8 (14.3%) 58.6 (12.3%) 41.5 (12.8%) 53.5 (13.1%) Self-debugging 61.6 (7.5%) 45.8 (7.3%) 60.1 (15.1%) 52.3 (42.1%) 55.0 (16.3%) INTERVENOR 75.6 (31.9%) 54.8 (28.3%) 69.8 (33.7%) 47.1 (28.0%) 61.8 (30.7%) CodeCoT 79.3 (38.4%) 69.5 (62.8%) 89.5 (71.5%) 63.0 (71.2%) 75.3 (59.2%) Self-Collaboration 74.4 (29.8%) 56.1 (31.4%) 68.2 (30.7%) 49.5 (34.5%) 62.1 (31.3%) AgentCoder (GPT-3.5-turbo) 79.9 (39.4%) 77.4 (81.3%) 89.9 (72.2%) 89.1 (142.1%) 84.1 (77.8%) LLM-based optimisation methods with GPT-4 Reflexion 91.0 (34.6%) -77.1 (12.9%) -84.1 (40.9%) Self-Debugging --80.6 (18.0%) -80.6 (35.0%) Self-Collaboration 90.2 (33.4%) 70.7 (39.7%) 78.9 (15.5%) 62.1 (19.0%) 75.5 (26.5%) ChatDev 84.1 (24.4%) -79.8 (12.9%) -84.1 (40.9%) AgentVerse 89.0 (24.4%) -73.5 (7.6%) -81.3 (19.6%) MetaGPT 85.9 (27.1%) -87.7 (28.4%) -86.8 (45.4%) AgentCoder (GPT-4) 96.3 (42.5%) 86.0 (70.0%) 91.8 (34.4%) 91.8 (75.9%) 91.5 (53.3%) LLM-based optimisation methods with other backbone LLMs AgentCoder (PaLM Coder) 64.0 (45.8%) 55.5 (51.6%) 75.9 (135.0%) 75.5 (177.6%) 67.7 (93.4%) AgentCoder (Claude-instant-1) 67.7 (117.7%) 57.9 (106.0%) 76.3 (183.6%) 75.1 (277.4%) 69.3 (161.5%) AgentCoder (GPT-4-turbo) 89.6 (54.7%) 76.2 (56.1%) 91.4 (44.2%) 91.4 (92.4%) 87.2 (60.3%) 4 Evaluation</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experiment Setup</head><p>We use pass@1 as the evaluation metric for code correctness, the most widely adopted metric in the literature of automatic code generation <ref type="bibr">[2,</ref><ref type="bibr" target="#b6">7,</ref><ref type="bibr" target="#b9">10,</ref><ref type="bibr" target="#b41">42,</ref><ref type="bibr" target="#b10">11]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Datasets.</head><p>In this paper, we evaluate AgentCoder's effectiveness with four widely used code generation datasets, i.e., HumanEval <ref type="bibr" target="#b5">[6]</ref> and MBPP <ref type="bibr">[2]</ref>, and their enhanced versions, i.e., HumanEval-ET and MBPP-ET <ref type="bibr" target="#b9">[10]</ref>. HumanEval and HumanEval-ET focus on a range of programming challenges, offering a diverse set of problems to test the model's problem-solving skills and adaptability. On the other hand, MBPP and MBPP-ET provide a comprehensive collection of Python programming problems, designed to evaluate the model's proficiency in Python syntax and its ability to handle a variety of coding scenarios. The enhanced versions, HumanEval-ET and MBPP-ET, include more adequate test cases, making them more challenging and better suited for evaluating advanced models. We study the effectiveness of AgentCoder powered by five state-of-the-art LLMs, including GPT-4, GPT-4-turbo, GPT-3.5-turbo, PaLM Coder, and Claude (Claude-instant-1). Baselines. To illustrate the effectiveness of AgentCoder, we compare AgentCoder with 12 Large Language Models (LLMs), including open-source and closed-source ones, such as AlphaCode <ref type="bibr" target="#b20">[21]</ref>, Llama3, CodeLlama <ref type="bibr" target="#b31">[32]</ref>, Incoder <ref type="bibr" target="#b13">[14]</ref>, CodeGeeX <ref type="bibr" target="#b42">[43]</ref>, StarCoder <ref type="bibr" target="#b23">[24]</ref>, CodeGen-Mono <ref type="bibr" target="#b27">[28]</ref>, CodeX <ref type="bibr">[3]</ref>, GPT-3.5-turbo, and GPT4 <ref type="bibr" target="#b28">[29]</ref>. These models vary in architecture, training methodologies, and application scopes. Additionally, we compare AgentCoder with 16 state-of-the-art (SOTA) code generation methods that are based on LLMs but with various optimisation strategies, including Few-shot learning, Chain-of-Thought <ref type="bibr" target="#b36">[37]</ref>, ReAct <ref type="bibr" target="#b37">[38]</ref>, Reflexion <ref type="bibr" target="#b32">[33]</ref>, ToT <ref type="bibr" target="#b38">[39]</ref>, RAP <ref type="bibr" target="#b15">[16]</ref>, Self-Edit <ref type="bibr" target="#b41">[42]</ref>, Self-Planing <ref type="bibr" target="#b18">[19]</ref>, Self-Debugging <ref type="bibr" target="#b8">[9]</ref>, Self-Collaboration <ref type="bibr" target="#b10">[11]</ref>, SCOT <ref type="bibr" target="#b22">[23]</ref>, Code-CoT <ref type="bibr" target="#b17">[18]</ref>, and INTERVENOR <ref type="bibr" target="#b34">[35]</ref>. These methods have been shown to significantly enhance the performance of LLMs in complex problem-solving scenarios.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">RQ1: How does AgentCoder perform?</head><p>As shown in Tab. 1, we can observe that AgentCoder outpeforms all the base LLM models and all the baseline optimisation approaches in all the datasets. Specifically, if we focus on the improvement that AgentCoder achieves over the base LLMs, take GPT-3.5-turbo as an example, GPT-3.5-turbo obtains 57.3% pass@1 in the HumanEval dataset, while AgentCoder obtains 79.9%. For GPT-4, the mean pass@1 of AgentCoder is 91.5% across all the datasets, 32.7% improvement over the baseline zero-shot GPT-4 model. For PaLM Coder, Claude-instant-1, and GPT-4-turbo, the mean improvement of AgentCoder over the base models are 32.7%, 42.8%, 32.8%, respectively.</p><p>AgentCoder also demonstrates superiority over all optimisation baselines. For example, for MBPP-ET with GPT-3.5-turbo, AgentCoder obtains 89.1% pass@1, while CodeCoT, the state-of-the-art approach, achieves only 63.0%. On average, the pass@1 of AgentCoder is 84.1%, 8.8% more than the state-of-the-art approach CodeCoT. One reason for AgentCoder's superiority over CodeCoT is that CodeCoT generates tests and code at the same time with only one agent, while AgentCoder has the test designer agent which generates more powerful test cases. RQ4 and RQ5 introduce more analysis on their comparison in terms of the effectiveness of test cases.</p><p>The HumanEval-ET and MBPP-ET datasets contain more comprehensive tests and are more challenging for code generation approaches to get high pass@1. We can observe that the base LLMs and the baseline optimisation approaches perform significantly worse on these two enhanced versions. However, AgentCoder's performance on these enhanced datasets is comparative to the original datasets, which is another superiority of AgentCoder, largely because the test designer agent generates rigorous tests to ensure that the generated code is indeed reliable.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">RQ2: How do different agents contribute to the effectiveness of AgentCoder?</head><p>As illustrated in Fig. <ref type="figure" target="#fig_0">1</ref>, AgentCoder contains three agents, i.e., the programmer agent, the test designer agent, and the test executor agent, where the programmer agent focuses on generating code snippets based on the code generation requirements and feedback from other agents. The test designer agent focuses on generating test cases, which are used to evaluate the correctness of the code snippets produced by the programmer agent. The test executor agent interacts with the other two agents to collect the code snippets and test cases and executes them in a local environment to prepare feedback. This research question investigates how each agent contributes to AgentCoder's effectiveness with four agent combination scenarios, i.e., the programmer agent itself, the programmer + test designer agent, where we feed the function and test cases into the programmer agent and require it to analyze whether it needs to refine the code to pass all test cases, and the programmer + test executor agent, where we directly run the generated code with the tests provided in the prompt<ref type="foot" target="#foot_0">foot_0</ref> (we provide the programmer + test designer/executor agent prompts in Appendix Figure <ref type="figure" target="#fig_0">11</ref> and <ref type="figure" target="#fig_0">12</ref>). The evaluation results are shown in Tab. 2. We can observe that first, with the assistant of the test designer and the test executor agent, the pass@1 increases compared with the result of only the programmer agent. For example, with both the programmer and the test designer agent, the pass@1 increases from 61.0% to 64.0%. However, without the test executor agent, the programmer agent is not able to get reliable feedback from dynamic test case execution. Therefore, the performance is significantly below AgentCoder. For the programer + test executor agent, it obtains 64.6% and 69.3% pass@1 in HumanEval and MBPP, which is also higher than the programmer agent itself which obtains 61.0% and 47.9%. This is because test executor agent detects some bugs in the code with the test cases provided by the prompt. However, the number of test cases is very limited, with only two to three tests in HumanEval and MBPP. The effectiveness of these tests are far below from the tests generated by the test designer agent. Therefore, without the test designer agent, the performance is also significantly below AgentCoder.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">RQ3: How do code refinement iterations affect AgentCoder's effectiveness?</head><p>AgentCoder refines code snippets based on the feedback provided by the test executor agent. In this experiment, we evaluate how the number of refinement iterations affect AgentCoder's effectiveness. Specifically, we analyze AgentCoder's effectiveness with its result for each refinement iteration. Table <ref type="table" target="#tab_1">3</ref> shows the results, we can observe that the pass@1 increase with more iterations. In particular, when we increase the number of iterations from 1 to 5, the pass@1 of HumanEval and HumanEval-ET increases from 74.4% to 79.9% and 73.2% to 77.4%. We can also observe these behaviors for the MBPP and MBPP-ET datasets, where the pass@1 increases from 84.1% to 89.9% and 80.3% to 89.1%.</p><p>4.5 RQ4: How accurate are the tests generated by the test designer agent? The test designer agent focuses on generating test cases to analyze whether the code has bugs and plays a crucial role in AgentCoder. However, once the test cases are incorrect (e.g., with incorrect test oracles), the feedback the test cases provide will be problematic, misleading the programmer agent and decreasing AgentCoder's overall effectiveness. Therefore, this research question investigates how reliable the test designer agent is in generating accurate tests to aid the programmer agent. We evaluate the accuracy of the test cases under the datasets' canonical solution<ref type="foot" target="#foot_1">foot_1</ref> on GPT-3.5-turbo and GPT-4. The tests that pass the canonical solution are correct. To demonstrate the effectiveness of the test designer agent in AgentCoder, we compare the accuracy of the tests generated by AgentCoder, the GPT-3.5-turbo, CodeCoT, and MetaGPT, where the tests are generated at the same time with the code in a non-independent way.</p><p>The evaluation results are shown in Tab. 4. First, we observe that the accuracy of the tests cases produced by the test designer agent in AgentCoder is 87.8% and 89.9%, respectively in HumanEval and MBPP datasets for GPT-3.5-turbo backbone, while GPT-3.5-turbo obtains only 47.0% and 57.2%.</p><p>In addition, we observe that the test designer agent in AgentCoder (GPT-4) is also more accurate than MetaGPT (GPT-4) in test generation. For example, on HumanEval, the accuracy is 89.6% v.s. 79.3% for AgentCoder and MetaGPT. The superiority of AgentCoder demonstrates the effectiveness of the prompt engineering strategies we designed for the test designer agent.   The evaluation results are shown in Tab. 7, Tab. 6, and Tab. 8. We can observe that the pass@1 of using a single agent to generate both code and tests is lower than assigning the two tasks to different agents. For example, the pass@1 of the single agent has only 71.3% and 79.4% pass@1 for HumanEval and MBPP, while the multi-agent setup (AgentCoder) obtains 79.9% and 89.9% for HumanEval and MBPP. We also observe that the test case accuracy for the single agent is also lower than the multi-agent setting (AgentCoder). Specifically, the single agent only obtains 61.0% and 51.8% in HumanEval and MBPP datasets, while the multi-agent setup (AgentCoder) obtains 87.8% and 89.9% in HumanEval and MBPP. Finally, as shown in Tab. 8, we can also observe that the tests' coverage results of the single agent are also lower than in the multi-agent setup. For example, the single agent only obtains 72.5% and 75.9% code line coverage while multiple agents obtain 87.5% and 89.5% code line coverage. There are two possible reasons for the superiority of the multi-agent setup. First, letting a single agent do both code generation and test case design may distract the agent's focus; second, the tests designed by the same agent that generates the code can be biased by the code and lose objectivity, for example, if the generated code ignores the handling of edge cases, the generated tests can be affected by flaws in the code. These results demonstrate the necessity of using multiple agents to collaborate in code generation, with different agents taking different roles. Such benefit of multi-agent collaborations with LLMs has also been illustrated in other multi-agent systems <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b40">41]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>In this paper, we have proposed AgentCoder, which contains multiple agents to improve the code generation effectiveness of code generation models with effective and accurate automated test generation. AgentCoder contains three agents, i.e., the programmer, the test designer, and the test executor agent. Throughout our evaluations, AgentCoder demonstrated state-of-the-art performance, outperforming existing LLMs and prompt engineering methods in a variety of coding scenarios. For example, GPT-4 achieves a pass@1 rate of 96.3% on the HumanEval dataset and 91.8% on the MBPP dataset, with a token overhead of 56.9K and 66.3K, respectively. In contrast, the current state-of-the-art models achieve a pass@1 rate of 90.2% and 78.9% on these datasets, with significantly higher token overheads of 138.2K and 206.5K, respectively. The limitations and broader impact are discussed in the Appendix.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Pipeline of AgentCoder with a code generation example from HumanEval to non-code generation tasks, AgentCoder, specifically addresses code generation tasks, presenting unique challenges and opportunities for multi-agent collaboration in software development.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Contribution of different agents in AgentCoder.</figDesc><table><row><cell>Agents</cell><cell cols="2">HumanEval HumanEval-ET</cell><cell>MBPP</cell><cell>MBPP-ET</cell></row><row><cell>programmer agent only</cell><cell>61.0</cell><cell>52.4</cell><cell>47.9</cell><cell>35.0</cell></row><row><cell cols="2">programmer + test designer 64.0 (11.7%)</cell><cell cols="2">54.3 (27.2%) 62.3 (19.3%)</cell><cell>45.9 (24.7%)</cell></row><row><cell cols="2">programmer + test executor 64.6 (12.7%)</cell><cell cols="2">55.5 (30.0%) 69.3 (32.8%)</cell><cell>51.4 (39.7%)</cell></row><row><cell>AgentCoder</cell><cell>79.9 (39.4%)</cell><cell cols="3">77.4 (81.3%) 89.9 (72.2%) 89.1 (142.1%)</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>Pass@1 of AgentCoder with different number of iterations on GPT-3.5-turbo.</figDesc><table><row><cell cols="3">Iterations HumanEval HumanEval-ET</cell><cell>MBPP</cell><cell>MBPP-ET</cell></row><row><cell>1</cell><cell>74.4 (29.8%)</cell><cell>73.2 (71.4%)</cell><cell cols="2">84.1 (61.1%) 80.3 (118.2%)</cell></row><row><cell>2</cell><cell>75.6 (31.9%)</cell><cell>73.2 (71.4%)</cell><cell cols="2">86.4 (65.5%) 85.6 (132.6%)</cell></row><row><cell>3</cell><cell>76.2 (33.0%)</cell><cell>75.0 (75.6%)</cell><cell cols="2">87.9 (68.4%) 87.6 (138.0%)</cell></row><row><cell>4</cell><cell>78.7 (37.3%)</cell><cell>76.8 (79.9%)</cell><cell cols="2">88.7 (69.9%) 88.7 (141.0%)</cell></row><row><cell>5</cell><cell>79.9 (39.4%)</cell><cell>77.4 (81.3%)</cell><cell cols="2">89.9 (72.2%) 89.1 (142.1%)</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Accuracy of the test cases.</figDesc><table><row><cell>Models</cell><cell>HumanEval</cell><cell>MBPP</cell></row><row><cell>GPT-3.5-turbo</cell><cell>47.0</cell><cell>57.2</cell></row><row><cell>CodeCoT</cell><cell>67.1</cell><cell>79.0</cell></row><row><cell>AgentCoder (GPT-3.5-turbo)</cell><cell>87.8</cell><cell>89.9</cell></row><row><cell>MetaGPT (GPT-4)</cell><cell>79.3</cell><cell>84.4</cell></row><row><cell>AgentCoder (GPT-4)</cell><cell>89.6</cell><cell>91.4</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 7 :</head><label>7</label><figDesc>Pass@1 for a single agent and multiple agents.</figDesc><table><row><cell>Models</cell><cell cols="4">HumanEval HumanEval-ET MBPP MBPP-ET</cell></row><row><cell>Single Agent</cell><cell>71.3</cell><cell>61.6</cell><cell>79.4</cell><cell>59.1</cell></row><row><cell>Multiple Agents</cell><cell>79.9</cell><cell>77.4</cell><cell>89.9</cell><cell>89.1</cell></row><row><cell cols="5">4.6 RQ5: How adequate are AgentCoder's test cases in code coverage?</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>Line coverage of the tests.This research question explores the adequacy of the test cases generated by the test designer agent in code coverage. Specifically, we evaluate how many lines of code in the canonical solution are covered by the test cases generated by the original GPT-3.5-turbo, CodeCoT, MetaGPT, and AgentCoder. The evaluation results were illustrated in Tab. 5, where we can observe that the tests generated by AgentCoder have the highest code coverage. For example, AgentCoder (GPT-3.5-turbo) obtains 87.5% and 89.5% code coverage compared with CodeCoT (GPT-3.5-turbo), which only obtains 77.2% and 82.9%, on the two datasets when we calculate the code line coverage with the all tests generated by each strategy. Besides, AgentCoder (GPT-4) also obtains 91.7% code line coverage in the HumanEval dataset, while MetaGPT (GPT-4) only obtains 81.7% code line coverage.</figDesc><table><row><cell>Models</cell><cell>HumanEval</cell><cell>MBPP</cell></row><row><cell>GPT-3.5-turbo</cell><cell>70.2</cell><cell>61.3</cell></row><row><cell>CodeCoT</cell><cell>77.2</cell><cell>82.9</cell></row><row><cell>AgentCoder (GPT-3.5-turbo)</cell><cell>87.5</cell><cell>89.5</cell></row><row><cell>MetaGPT (GPT-4)</cell><cell>81.7</cell><cell>80.5</cell></row><row><cell>AgentCoder (GPT-4)</cell><cell>91.7</cell><cell>92.3</cell></row></table><note><p>4.7 RQ6: Should programmer and test designer be separated to different agents?</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 6 :</head><label>6</label><figDesc>Accuracy of the tests generated by single-and multi-agents.AgentCoder requires separate agents for generating code and tests (i.e., the programmer and test designer agent). An alternative way is to let a single agent first generate code and then generate tests, within the same conversation. This research question investigates whether requiring one agent to finish two tasks, i.e., code generation and test case generation, is as effective as using separate agents.</figDesc><table><row><cell>Models</cell><cell>HumanEval</cell><cell>MBPP</cell></row><row><cell>Single Agent</cell><cell>61.0</cell><cell>51.8</cell></row><row><cell>Multiple Agents</cell><cell>87.8</cell><cell>89.9</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 8 :</head><label>8</label><figDesc>Code line coverage of tests generated by single agent and multi-agent setup.</figDesc><table><row><cell>Models</cell><cell>HumanEval</cell><cell>MBPP</cell></row><row><cell>Single Agent</cell><cell>72.5</cell><cell>75.9</cell></row><row><cell>Multiple Agents</cell><cell>87.5</cell><cell>89.5</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>The code generation prompts in HumanEval and MBPP contain a few test cases.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>Each coding task in the datasets has a canonical solution, which is the ground truth for code generation.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Appendix</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 Response Setup</head><p>To ensure that the output of each agent follows our requirements for the execution of the test executor agent, we will require each agent's output follow the architecture of '''py[Code]''' and '''py[TestCases]''', where the [Code] and [TestCases] will be in the '''py'''. With this format, the test executor agent can directly obtain <ref type="bibr">[Code]</ref> and <ref type="bibr">[TestCases]</ref> by removing the other sentences before and after these code blocks, ensuring an accurate and focused analysis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Overhead</head><p>In Tab. 1, we only discuss the pass@1 of AgentCoder and simultaneous multi-agent works. In this section, we further discuss the overhead of AgentCoder and these baselines. The evaluation results are demonstrated in Tab. 9, where we can observe that AgentCoder requires lower tokens and execution time compared with baseline multi-agent frameworks. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Case Illustration for CodeCoT and AgentCoder</head><p>To provide a comprehensive illustration for CodeCoT and AgentCoder, we provide two code and tests generation examples for HumanEval and MBPP datasets from Fig. <ref type="figure">2</ref> to Fig. <ref type="figure">5</ref>. We can observe that AgentCoder can generate more fine-grained tests for the generated code. For example, Agent-Coder will consider the code execution results when the input list does not contain element (Fig. <ref type="figure">3</ref> and Fig. <ref type="figure">5</ref>), which can improve code snippet reliability for edge behaviors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 Case Illustration on HumanEval dataset using AgentCoder</head><p>We also provide each agent's prompt and response example (Fig. <ref type="figure">6</ref> to Fig. <ref type="figure">10</ref>) to illustrate Agent-Coder's workflow. Fig. <ref type="figure">6</ref> and Fig. <ref type="figure" target="#fig_4">7</ref> illustrate AgentCoder's programmer prompt and response example. Fig. <ref type="figure" target="#fig_5">8</ref> and Fig. <ref type="figure" target="#fig_6">9</ref> provide AgentCoder's test designer prompt and response example. Fig. <ref type="figure">10</ref> illustrates AgentCoder's test executor source code.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.5 Case Illustration of the programmer + test executor agent</head><p>We illustrate the pipeline of the programmer + the test executor agent in Fig. <ref type="figure" target="#fig_9">11</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.6 Case Illustration of the programmer + test designer</head><p>We illustrate the pipeline of the programmer + the test designer agent in Fig. <ref type="figure" target="#fig_10">12</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>HumanEval Task 1 Code Generation</head><p>from typing import List def has_close_elements(numbers: List 3) True """ for i in range(len(numbers)): for j in range(i + 1, len(numbers)): if numbers[i] -numbers[j] &lt;= threshold: return True return False AgentCoder from typing import List def has_close_elements(numbers: List[float], threshold: float) -&gt; bool: """ Check if in given list of numbers, are any two numbers closer to each other than given threshold. &gt;&gt;&gt; has_close_elements([1.0, 2.0, 3.0], 0.5) False &gt;&gt;&gt; has_close_elements([1.0, 2.8, 3.0, 4.0, 5.0, 2.0], 0.3) True """ for i in range(len(numbers)): for j in range(i + 1, len(numbers)): if abs(numbers[i] -numbers[j]) &lt;= threshold: return True return False </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MBPP Example Task Code Generation</head><p>Write a python function to check whether the given array is monotonic or not.</p><p>CodeCoT def is_Monotonic(array): """ Check whether the given array is monotonic or not. :param array: List of integers :return: True if the array is monotonic, False otherwise """ increasing = decreasing = True for i in range(1, len(array)): if array[i] &gt; array[i -1]: decreasing = False elif array[i] &lt; array[i -1]: increasing = False return increasing or decreasing AgentCoder def is_Monotonic(arr): """ Check whether the given array is monotonic or not. Args: arr (list): Input list of integers Returns: bool: True if the array is monotonic, False otherwise """ # Check if array is increasing or decreasing increasing = decreasing = True for i in range(len(arr)-1): if arr[i] &gt; arr[i+1]: increasing = False if arr[i] &lt; arr[i+1]: decreasing = False # Check if either increasing or decreasing flag is True return increasing or decreasing </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MBPP Example Task Tests Generation</head><p>Write a python function to check whether the given array is monotonic or not.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>CodeCoT</head><p># Self-examination with test cases assert isMonotonic([1, 2, 3, 4, 5]) == True # Increasing sequence, should return True assert isMonotonic([5, 4, 3, 2, 1]) == True # Decreasing sequence, should return True assert isMonotonic([1, 2, 2, 3, 2]) == False # Non-monotonic sequence, should return False AgentCoder # Basic test cases assert isMonotonic([1, 2, 3, 4, 5]) == True # Increasing sequence assert isMonotonic([5, 4, 3, 2, 1]) == True # Decreasing sequence assert isMonotonic([1, 2, 2, 3, 2]) == False # Non-monotonic sequence # Edge test cases assert isMonotonic([1]) == True # Single-element sequence assert isMonotonic([]) == True # Empty sequence assert isMonotonic([1, 2]) == True # Two-element increasing sequence assert isMonotonic([2, 1]) == True # Two-element decreasing sequence assert isMonotonic([1, 1, 1, 1, 1]) == True # All elements are equal, considered monotonic assert isMonotonic([1, 1, 1, 2, 1]) == False # Mixed values, not monotonic # Large input large_input = [i for i in range(1, 100001)] # An increasing sequence of 100,000 elements assert isMonotonic(large_input) == True # Should be considered monotonic # Create a large decreasing sequence large_decreasing_input = [i for i in range(100000, 0, -1)] # A decreasing sequence of 100,000 elements assert isMonotonic(large_decreasing_input) == True # Should be considered monotonic Figure 5: A case illustration of CodeCoT and AgentCoder generated tests for MBPP task. CodeCoT ignores to consider the list does not contain values and in its generated code this scenario is also ignored. However, AgentCoder's edge cases will cover these edge scenarios. As a software developer, I'll follow the Chain-of-Thought approach outlined in the prompt to complete the `has_close_elements` function. Let's break it down into the four steps: 1. **Understand and Clarify**: -The task is to write a function that checks if any two numbers in a given list are closer to each other than a specified threshold. -The function should return `True` if such a pair exists, otherwise `False`. 2. **Algorithm/Method Selection**: -A straightforward way to solve this would be to compare each number with every other number in the list. -We can use a nested loop where each number is compared to every number that comes after it in the list. -The absolute difference between each pair will be calculated and compared to the threshold. 3. **Pseudocode Creation**: ``` function has_close_elements(numbers, threshold): loop through each number in the list (i) for each number, loop through the remaining numbers in the list (j) if the absolute difference between numbers[i] and numbers[j] is less than or equal to the threshold return True if no such pair is found, return False ``4 . **Code Generation**: -Now, I'll translate the pseudocode into Python code. Here's the complete function: ```python from typing import List def has_close_elements(numbers: List[float], threshold: float) -&gt; bool: """ Check if in given list of numbers, are any two numbers closer to each other than given threshold. &gt;&gt;&gt; has_close_elements([1.0, 2.0, 3.0], 0.5) False &gt;&gt;&gt; has_close_elements([1.0, 2.8, 3.0, 4.0, 5.0, 2.0], 0.3) True """ # Loop through each number in the list for i in range(len(numbers)): # For each number, loop through the remaining numbers for j in range(i + 1, len(numbers)): # If the absolute difference is less than or equal to the threshold, return True if abs(numbers[i] -numbers[j]) &lt;= threshold: return True # If no such pair is found, return False return False ``À gentCoder: Programmer Response   from codegeex.benchmark.execution import check_correctness def process_humaneval_test(sample, problems, example_test=False,language=language, test_case=True): task_id = sample["task_id"] task_id = problems.index(sample) prompt = sample["prompt"] code = sample["completion"] # Pre-process for different languages if language == "python" or language == "py": test_case = sample["test_list"] tests = "" for test in test_case: tests+="\n"+test test_string = code + "\n" + tests return test_string def preprocess_data(task): if f"```py" in task["completion"]: task["completion"] = task["completion"][task["completion"].find(f"```py") +len(f"```py"):] task["completion"] = task["completion"][:task["completion"].find("```")] elif "```" in task["completion"]: task["completion"] = task["completion"][task["completion"].find("```") +3:] task["completion"] = task["completion"][:task["completion"].find("```")] return task def test_report(dataset,lg): correct = 0 for i in tqdm(range(len(dataset))): dataset[i]["full_code"] = process_humaneval_test(dataset[i], dataset, example_test=False,language=lg,test_case=False) result = check_correctness(dataset[i]["task_id"],dataset[i],lg,5,"./tmp") if result["passed"]==True: correct+=1 dataset[i]["report_passed"] = result["passed"] dataset[i]["report_result"] = result["result"] print("==============Start Report Testing==============") correct_percent = correct/len(dataset)*100 print(f"test_report, {correct_percent:0.2f}") return dataset def test_agent(dataset,lg): correct = 0 for i in tqdm(range(len(dataset))): dataset[i]["full_code"] = process_humaneval_test(dataset[i], dataset, example_test=False,language=lg,test_case=False) result = check_correctness(dataset[i]["task_id"],dataset[i],lg,5,"./tmp") if result["passed"]==True: correct+=1 dataset[i]["result"] = result["result"] dataset[i]   3) True ''' for i in range(len(numbers)): for j in range(i + 1, len(numbers)): if abs(numbers[i] -numbers[j]) &lt;= threshold: return True return False """ # Execute the function definition exec(text) # Run doctest if __name__ == "__main__": doctest.testmod() </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>AgentCoder: Test Designer Prompt</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Programmer+Test Designer</head><note type="other">Programmer+Test Executor</note></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>[float], threshold: float) -&gt; bool: """ Check if in given list of numbers, are any two numbers closer to each other than given threshold. &gt;&gt;&gt; has_close_elements([1.0, 2.0, 3.0], 0.5) False &gt;&gt;&gt; has_close_elements([1.0, 2.8, 3.0, 4.0, 5.0, 2.0], 0.3) True """ CodeCoT from typing import List def has_close_elements(numbers: List[float], threshold: float) -&gt; bool: """ Check if in given list of numbers, are any two numbers closer to each other than given threshold. &gt;&gt;&gt; has_close_elements([1.0, 2.0, 3.0], 0.5) False &gt;&gt;&gt; has_close_elements([1.0, 2.8, 3.0, 4.0, 5.0, 2.0], 0.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :#Figure 3 :</head><label>23</label><figDesc>A case illustration of CodeCoT and AgentCoder generated code for HumanEval task. CodeCoT ignores to use of abs() function to check further the absolute values are lower than the threshold, while Agent-Coder employs it to handle the negative values.HumanEval Task 1 Tests Generationfrom typing import List def has_close_elements(numbers: List[float], threshold: float) -&gt; bool: """ Check if in given list of numbers, are any two numbers closer to each other than given thresholdTesting the function with various cases assert not has_close_elements([1.0, 2.0, 3.0], 0.5) # No two numbers are closer than 0.5, should return False assert has_close_elements([1.0, 1.4, 2.5, 3.6], 0.5) # 1.0 and 1.4 are closer than 0.5, should return True assert not has_close_elements([], 1.0) # Empty list, should return False assert has_close_elements([0.1, 0.15, 0.3], 0.06) # 0.1 and 0.15 are closer than 0.06, should return True assert not has_close_elements([10, 20, 30, 40], 5) # No two numbers are closer than 5, should return False AgentCoder # Basic Cases # Test 1: Standard list with some close elements assert has_close_elements([1.0, 2.5, 3.5, 5.0], 1.0) == True # Test 2: Standard list with no close elements assert has_close_elements([1.0, 3.0, 5.0, 7.0], 1.5) == False # Edge Cases # Test 1: Empty list assert has_close_elements([], 1.0) == False # Test 2: List with all elements the same assert has_close_elements([3.0, 3.0, 3.0], 0.0) == True # Test 3: Very small threshold assert has_close_elements([1.0, 1.01, 2.0], 0.005) == False # Test 4: List with only two elements assert has_close_elements([1.0, 2.0], 1.5) == True # Large Cases large_list = [i * 0.1 for i in range(100000)] # Creates a list [0, 0.1, 0.2, ..., 9999.9] # Test with a threshold where we know the outcome # Since the list is in increments of 0.1, a threshold of 0.05 should return False assert has_close_elements(large_list, 0.05) == False # Test with a larger threshold where we expect a True result # With a threshold of 0.15, adjacent elements (0.1 apart) will be within the threshold assert has_close_elements(large_list, 0.15) == True A case illustration of CodeCoT and AgentCoder generated tests for HumanEval task. CodeCoT only considers the left values to be lower than the right values, which is due to the tests generated with its code where it also ignores the use of the abs() function, while AgentCoder considers two scenarios (i.e., left value lower/larger than the right values).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>A case illustration of CodeCoT and AgentCoder generated code for MBPP task. Both CodeCoT and AgentCoder's code are correct. However, CodeCoT ignores the edge cases (e.g., the list does not contain values).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 7 :</head><label>7</label><figDesc>AgentCoder programmer response example.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 8 :</head><label>8</label><figDesc>AgentCoder tester prompt example.As a tester responding to the prompt, I will create and execute a series of Basic, Edge, and Large Scale Test Cases for the `has_close_elements` function to ensure its robustness and reliability. Let's begin: scale testing, I'll focus on the function's performance with a significantly large list. Due to the constraints of this platform, I'll conceptualize the test case: ```python # Large Scale Test 1: List with 100,000 elements in a predictable pattern large_list = [i * 0.1 for i in range(100000)] # Creates a list [0, 0.1, 0.2, ..., 9999.9] # Test with a threshold where we know the outcome # Since the list is in increments of 0.1, a threshold of 0.05 should return False assert has_close_elements(large_list, 0.05) == False # Test with a larger threshold where we expect a True result # With a threshold of 0.15, adjacent elements (0.1 apart) will be within the threshold assert has_close_elements(large_list, 0.15) == True ``À gentCoder: Test Designer Response</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 9 :</head><label>9</label><figDesc>AgentCoder test designer response example.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><figDesc>["passed"] = result["passed"] print("============Start Agent Testing=================") print("test_agent",correct) return dataset model_list = ["gpt-3.5-turbo","palm-2-codechat-bison","claude-instant-1","gpt-4-1106-preview","gpt-</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 10 : 1 :</head><label>101</label><figDesc>AgentCoder test executor script. **Role**: As a programmer, you are required to complete the function `has_close_elements`. This function should check if any two numbers in a given list are closer to each other than a specified threshold. Use a Chain-of-Thought approach to break down the problem, create pseudocode, and then write the final code in Python. Ensure that your code is efficient, readable, and well-commented. given list of numbers, are any two numbers closer to each other than given threshold. range(len(numbers)): for j in range(i + 1, len(numbers)): if abs(numbers[i] -numbers[j]) &lt;= threshold: List with 100,000 elements in a predictable pattern large_list = [i * 0.1 for i in range(100000)] # Creates a list [0, 0.1, 0.2, ..., 9999.9] # Test with a threshold where we know the outcome # Since the list is in increments of 0.1, a threshold of 0.05 should return False assert has_close_elements(large_list, 0.05) == False # Test with a larger threshold where we expect a True result # With a threshold of 0.15, adjacent elements (0.1 apart) will be within the threshold assert has_close_elements(large_list, 0and Clarify**: Make sure you understand the task. If necessary, write down what the function should do. 2. **Algorithm/Method Selection**: Decide on the most efficient way to compare the numbers in the list to find if any two are within the threshold. 3. **Pseudocode Creation**: Write down the steps you will follow in pseudocode. This should outline how you will iterate through the list and compare the numbers. 4. **Code Generation**: Translate your pseudocode into executable Python code. Remember to test your function with the provided examples and any additional cases you think are relevant.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 11 :</head><label>11</label><figDesc>Programmer + test designer example.import doctest # Function definition as a string text = """ from typing import List def has_close_elements(numbers: List[float], threshold: float) -&gt; bool: ''' Check if in given list of numbers, are any two numbers closer to each other than given threshold.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 12 :</head><label>12</label><figDesc>Programmer + test executor example.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 9 :</head><label>9</label><figDesc>pass@1 of AgentCoder and baselines in GPT4. We utilize the tiktoken package to calculate agent response token usage. Tokens and Overhead are calculated for the HumanEval / MBPP.</figDesc><table><row><cell>Model</cell><cell cols="2">HEval MBPP</cell><cell>Tokens</cell><cell>Overhead</cell><cell>Status</cell></row><row><cell>SelfCollaboration</cell><cell>90.2</cell><cell>78.9</cell><cell>74.3k / 89.2K</cell><cell>249.2 / 395.6</cell><cell>Not Yet</cell></row><row><cell>AgentVerse</cell><cell>89.0</cell><cell cols="4">73.5 149.2K / 193.6K 1573.2 / 1875.5 ICLR (16-01-2024)</cell></row><row><cell>ChatDev</cell><cell>84.1</cell><cell cols="3">79.8 183.7K / 259.3K 1925.7 / 2493.4</cell><cell>Not Yet</cell></row><row><cell>MetaGPT</cell><cell>85.9</cell><cell cols="4">87.7 138.2K / 206.5K 1248.5 / 1583.6 ICLR (16-01-2024)</cell></row><row><cell>AgentCoder</cell><cell>96.3</cell><cell>91.8</cell><cell>56.9K / 66.3K</cell><cell>228.7 / 365.9</cell><cell>--</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Unified pretraining for program understanding and generation</title>
+		<author>
+			<persName><forename type="first">Ahmad</forename><surname>Wasi Uddin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saikat</forename><surname>Chakraborty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Baishakhi</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2103.06333</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Augustus</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henryk</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><forename type="middle">J</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2108.07732</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandhini</forename><surname>Askell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">J</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rewon</forename><surname>Henighan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Child</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">M</forename><surname>Ramesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mateusz</forename><surname>Sigler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Litwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jack</forename><surname>Chess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Berner</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mccandlish</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2005.14165</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Alec Radford, Ilya Sutskever, and Dario Amodei</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Language models are few-shot learners</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Brown</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Mann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Subbiah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prafulla</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Dhariwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Shyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanda</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Askell</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2005.14165</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tianle</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengyu</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.17126</idno>
+		<title level="m">Large language models as tool makers</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde De Oliveira Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harri</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuri</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heewoo</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiming</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henrique</forename><surname>Ponde</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jared</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harrison</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yura</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raul</forename><surname>Puri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gretchen</forename><surname>Krueger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heidy</forename><surname>Khlaaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Girish</forename><surname>Sastry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamela</forename><surname>Mishkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brooke</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Gray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Ryder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikhail</forename><surname>Pavlov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alethea</forename><surname>Power</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Bavarian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Clemens</forename><surname>Winter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Tillet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felipe</forename><forename type="middle">Petroski</forename><surname>Such</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">W</forename><surname>Cummings</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Plappert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fotios</forename><surname>Chantzis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elizabeth</forename><surname>Barnes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ariel</forename><surname>Herbert-Voss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">H</forename><surname>Guss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Nichol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">Arun</forename><surname>Balaji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shantanu</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Carr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><surname>Achiam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vedant</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Morikawa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alec</forename><surname>Radford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">M</forename><surname>Knight</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miles</forename><surname>Brundage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mira</forename><surname>Murati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bob</forename><surname>Mcgrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dario</forename><surname>Amodei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sam</forename><surname>Mccandlish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2107.03374</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note>Evaluating large language models trained on code</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Agentverse: Facilitating multi-agent collaboration and exploring emergent behaviors in agents</title>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingwei</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenfei</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chi-Min</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ya-Ting</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruobing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2308.10848</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Teaching large language models to self-debug</title>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxwell</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathanael</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2304.05128</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Codescore: Evaluating code generation by learning code execution</title>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2301.09043</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Self-collaboration code generation via chatgpt</title>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2304.07590</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Human-level play in the game of diplomacy by combining language models with strategic reasoning</title>
+		<author>
+			<persName><forename type="first">Anton</forename><surname>Fair) †</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Meta Fundamental AI Research Diplomacy Team</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Bakhtin</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Meta Fundamental AI Research Diplomacy Team</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Brown</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Meta Fundamental AI Research Diplomacy Team</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriele</forename><surname>Dinan</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Meta Fundamental AI Research Diplomacy Team</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Farina</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Meta Fundamental AI Research Diplomacy Team</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Flaherty</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Meta Fundamental AI Research Diplomacy Team</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Fried</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Meta Fundamental AI Research Diplomacy Team</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Goff</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Meta Fundamental AI Research Diplomacy Team</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><forename type="first">Hengyuan</forename><surname>Gray</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Meta Fundamental AI Research Diplomacy Team</orgName>
+			</affiliation>
+		</author>
+		<author>
+			<persName><surname>Hu</surname></persName>
+			<affiliation>
+				<orgName type="collaboration">Meta Fundamental AI Research Diplomacy Team</orgName>
+			</affiliation>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">378</biblScope>
+			<biblScope unit="issue">6624</biblScope>
+			<biblScope unit="page" from="1067" to="1074" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">CodeBERT: A pre-trained model for programming and natural languages</title>
+		<author>
+			<persName><forename type="first">Zhangyin</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daya</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duyu</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaocheng</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linjun</forename><surname>Shou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ting</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics: EMNLP 2020</title>
+		<meeting><address><addrLine>Online</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2020-11">November 2020</date>
+			<biblScope unit="page" from="1536" to="1547" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Incoder: A generative model for code infilling and synthesis</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armen</forename><surname>Aghajanyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jessy</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sida</forename><forename type="middle">I</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Wallace</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Freda</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruiqi</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen</forename><surname>Tau Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2204.05999</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Daya Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhangyin</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duyu</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shujie</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Long</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daxin</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Graphcodebert</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2009.08366</idno>
+		<title level="m">Pre-training code representations with data flow</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Reasoning with language model is planning with world model</title>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haodi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">Jiahua</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daisy</forename><forename type="middle">Zhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiting</forename><surname>Hu</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2305.14992</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sirui</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiawu</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuheng</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinlin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ceyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zili</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Ka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shing</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zijuan</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liyang</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.00352</idno>
+		<title level="m">Meta programming for multi-agent collaborative framework</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Codecot and beyond: Learning to program and test like a developer</title>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Bu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heming</forename><surname>Cui</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2308.08784</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Self-planning code generation with large language model</title>
+		<author>
+			<persName><forename type="first">Xue</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihong</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lecheng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiwei</forename><surname>Shang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2303.06689</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Codechain: Towards modular code generation through chain of self-revisions with representative sub-modules</title>
+		<author>
+			<persName><forename type="first">Hung</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amrita</forename><surname>Saha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akash</forename><surname>Gokul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doyen</forename><surname>Sahoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shafiq</forename><forename type="middle">R</forename><surname>Joty</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2310.08992</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Competition-level code generation with alphacode</title>
+		<author>
+			<persName><forename type="first">Yujia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">H</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyoung</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rémi</forename><surname>Leblond</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Eccles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Keeling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Agustin</forename><forename type="middle">Dal</forename><surname>Gimeno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Lago</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Hubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cyprien</forename><surname>Choy</surname></persName>
+		</author>
+		<author>
+			<persName><surname>De</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Igor</forename><surname>Masson D'autume</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyun</forename><surname>Babuschkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Po-Sen</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sven</forename><surname>Welbl</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gowal</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Alexey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Cherepanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">Jaymin</forename><surname>Molloy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Esme</forename><surname>Mankowitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pushmeet</forename><surname>Sutherland Robson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nando</forename><surname>Kohli</surname></persName>
+		</author>
+		<author>
+			<persName><surname>De</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koray</forename><surname>Freitas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriol</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vinyals</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">378</biblScope>
+			<biblScope unit="page" from="1092" to="1097" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">CAMEL: Communicative agents for &quot;mind&quot; exploration of large language model society</title>
+		<author>
+			<persName><forename type="first">Guohao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hasan</forename><surname>Abed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Al</forename><surname>Kader Hammoud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hani</forename><surname>Itani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitrii</forename><surname>Khizbullin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernard</forename><surname>Ghanem</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-seventh Conference on Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Structured chain-of-thought prompting for code generation</title>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongming</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Raymond</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Loubna</forename><surname>Ben Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangtian</forename><surname>Zi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niklas</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denis</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenghao</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Marone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jenny</forename><surname>Chim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Evgenii</forename><surname>Zheltonozhskii</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Terry</forename><surname>Yue Zhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Dehaene</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mishig</forename><surname>Davaadorj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Lamy-Poirier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">João</forename><surname>Monteiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oleh</forename><surname>Shliazhko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Gontier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Meade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armel</forename><surname>Zebaze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Ho</forename><surname>Yee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Logesh</forename><surname>Kumar Umapathi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Lipkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muhtasham</forename><surname>Oblokulov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiruo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rudra</forename><surname>Murthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Stillerman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sankalp</forename><surname>Siva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Abulkhanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manan</forename><surname>Zocca</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhihan</forename><surname>Dey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nourhan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Urvashi</forename><surname>Fahmy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Bhattacharyya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swayam</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sasha</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paulo</forename><surname>Luccioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxim</forename><surname>Villegas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fedor</forename><surname>Kunakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manuel</forename><surname>Zhdanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tony</forename><surname>Romero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nadav</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennifer</forename><surname>Timor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailey</forename><surname>Schlesinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jana</forename><surname>Schoelkopf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tri</forename><surname>Ebert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mayank</forename><surname>Dao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennifer</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carolyn</forename><forename type="middle">Jane</forename><surname>Robinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brendan</forename><surname>Anderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danish</forename><surname>Dolan-Gavitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siva</forename><surname>Contractor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Reddy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dzmitry</forename><surname>Fried</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yacine</forename><surname>Bahdanau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Jernite</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><forename type="middle">M</forename><surname>Muñoz Ferrandis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Hughes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arjun</forename><surname>Wolf</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Guha</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>Leandro von Werra, and Harm de Vries. Starcoder: may the source be with you! ArXiv, abs/2305.06161</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ruibo</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruixin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyan</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diyi</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soroush</forename><surname>Vosoughi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.16960</idno>
+		<title level="m">Training socially aligned language models in simulated human society</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Self-refine: Iterative refinement with self-feedback</title>
+		<author>
+			<persName><forename type="first">Aman</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niket</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Skyler</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luyu</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Uri</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nouha</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shrimai</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiming</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prasad</forename><surname>Bodhisattwa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shashank</forename><surname>Majumder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Yazdanbakhsh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Clark</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2303.17651</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Codegen2: Lessons for training llms on programming and natural languages</title>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Nijkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroaki</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingbo</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Codegen: An open large language model for code with multi-turn program synthesis</title>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Nijkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hiroaki</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lifu</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yingbo</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Caiming</forename><surname>Xiong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ICLR</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title/>
+		<idno>ArXiv, abs/2303.08774</idno>
+	</analytic>
+	<monogr>
+		<title level="j">OpenAI. Gpt-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Generative agents: Interactive simulacra of human behavior</title>
+		<author>
+			<persName><forename type="first">Sung</forename><surname>Joon</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O'</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><forename type="middle">Jun</forename><surname>Brien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meredith</forename><forename type="middle">Ringel</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Morris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">S</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bernstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 36th Annual ACM Symposium on User Interface Software and Technology</title>
+		<meeting>the 36th Annual ACM Symposium on User Interface Software and Technology</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="1" to="22" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Cong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weize</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yusheng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juyuan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.07924</idno>
+		<title level="m">Communicative agents for software development</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Code llama: Open foundation models for code</title>
+		<author>
+			<persName><forename type="first">Jonas</forename><surname>Baptiste Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sten</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Itai</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellen</forename><surname>Xiaoqing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yossi</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingyu</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tal</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jérémy</forename><surname>Remez</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rapin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.12950</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Reflexion: Language agents with verbal reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Shinn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Federico</forename><surname>Cassano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Beck</forename><surname>Labash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Codet5: Identifier-aware unified pre-trained encoder-decoder models for code understanding and generation</title>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weishi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shafiq</forename><surname>Joty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><forename type="middle">C H</forename><surname>Hoi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Intervenor: Prompt the coding ability of large language models with the interactive chain of repairing</title>
+		<author>
+			<persName><forename type="first">Hanbin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenghao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ganqu</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Yu</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2311.09868</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hung</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Akhilesh</forename><surname>Deepak Gotmare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">Q</forename><surname>Nghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junnan</forename><surname>Bui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven Ch</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hoi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.07922</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Open code large language models for code understanding and generation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">5</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Chain of thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuezhi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dale</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ed</forename><surname>Huai Hsin Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Denny</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2201.11903</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">React: Synergizing reasoning and acting in language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2210.03629</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Tree of thoughts: Deliberate problem solving with large language models</title>
+		<author>
+			<persName><forename type="first">Shunyu</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dian</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Izhak</forename><surname>Shafran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">L</forename><surname>Griffiths</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karthik</forename><surname>Narasimhan</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2305.10601</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">CERT: Continual pre-training on sketches for library-oriented code generation</title>
+		<author>
+			<persName><forename type="first">Daoguang</forename><surname>Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dejian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeqi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minsu</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bei</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongji</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weizhu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian-Guang</forename><surname>Lou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The 2022 International Joint Conference on Artificial Intelligence</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Proagent: Building proactive cooperative ai with large language models</title>
+		<author>
+			<persName><forename type="first">Ceyao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaijie</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siyi</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanghe</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><forename type="middle">Eve</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaowei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anji</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song-Chun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojun</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junge</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitao</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaodong</forename><surname>Yang</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2308.11339</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Self-edit: Fault-aware code editor for code generation</title>
+		<author>
+			<persName><forename type="first">Kechi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhi</forename><surname>Jin</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2305.04087</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Codegeex: A pre-trained model for code generation with multilingual evaluations on humaneval-x</title>
+		<author>
+			<persName><forename type="first">Qinkai</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxiao</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shanshan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yufei</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zi-Yuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teng</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhilin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2303.17568</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">Mingchen</forename><surname>Zhuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haozhe</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Faccio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dylan</forename><forename type="middle">R</forename><surname>Ashley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Róbert</forename><surname>Csordás</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anand</forename><surname>Gopalakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abdullah</forename><surname>Hamdi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abed</forename><surname>Hasan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kader</forename><surname>Al</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Hammoud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kazuki</forename><surname>Herrmann</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Irie</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.17066</idno>
+		<title level="m">Mindstorms in natural language-based societies of mind</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">You are a software programmer</title>
+		<author>
+			<persName><forename type="first">**</forename><surname>Role</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">*</forename></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Use a Chain-of-Thought approach to break down the problem, create pseudocode, and then write the code in Python language. Ensure that your code is efficient, readable, and well-commented. For example: **Input Code Snippet**: ```python from typing import List def has_close_elements(numbers: List[float], threshold: float) -&gt; bool</title>
+		<author>
+			<persName><forename type="first">**</forename><surname>Task</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">*</forename></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>As a programmer, you are required to complete the function Check if in given list of numbers, are any two numbers closer to each other than given threshold. &gt;&gt;&gt; has_close_elements 1.0, 2.0, 3.0], 0.5</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main"># TODO: Implement the logic to determine if any two numbers are closer than the threshold pass # Add your code here to complete the function</title>
+	</analytic>
+	<monogr>
+		<title level="m">False &gt;&gt;&gt; has_close_elements</title>
+		<imprint>
+			<date type="published" when="2003">1.0, 2.8, 3.0, 4.0, 5.0, 2.0], 0.3</date>
+		</imprint>
+	</monogr>
+	<note>) True</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Make sure you understand the task</title>
+		<author>
+			<persName><forename type="first">**</forename><surname>Understand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">**</forename><surname>Clarify</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">**</forename><surname>Algorithm</surname></persName>
+		</author>
+		<title level="m">Method Selection**: Decide on the most efficient way</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">**</forename><surname>Pseudocode</surname></persName>
+		</author>
+		<title level="m">Creation**: Write down the steps you will follow in pseudocode</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Code Generation**: Translate your pseudocode into executable Python code</title>
+	</analytic>
+	<monogr>
+		<title level="j">AgentCoder: Programmer Prompt Figure</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+		</imprint>
+	</monogr>
+	<note>AgentCoder programmer prompt example</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

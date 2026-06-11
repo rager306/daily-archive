@@ -1,0 +1,2424 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">NExT: Teaching Large Language Models to Reason about Code Execution</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2024-04-23">23 Apr 2024</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Ansong</forename><surname>Ni</surname></persName>
+							<email>⟨ansong.ni@yale.edu⟩</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Google DeepMind</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Yale University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Miltiadis</forename><surname>Allamanis</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Google DeepMind</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Arman</forename><surname>Cohan</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Yale University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yinlin</forename><surname>Deng</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Google DeepMind</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="institution">University of Illinois at Urbana-Champaign</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Kensen</forename><surname>Shi</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Google DeepMind</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Charles</forename><surname>Sutton</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Google DeepMind</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pengcheng</forename><surname>Yin</surname></persName>
+							<email>⟨pcyin@google.com⟩</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Google DeepMind</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">NExT: Teaching Large Language Models to Reason about Code Execution</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2024-04-23">23 Apr 2024</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">B5C05366FF89063E12AA2B59BD92CC12</idno>
+					<idno type="arXiv">arXiv:2404.14662v1[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-11T03:38+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>A fundamental skill among human developers is the ability to understand and reason about program execution. As an example, a programmer can mentally simulate code execution in natural language to debug and repair code (aka. rubber duck debugging). However, large language models (LLMs) of code are typically trained on the surface textual form of programs, thus may lack a semantic understanding of how programs execute at run-time. To address this issue, we propose NExT, a method to teach LLMs to inspect the execution traces of programs (variable states of executed lines) and reason about their run-time behavior through chain-of-thought (CoT) rationales. Specifically, NExT uses self-training to bootstrap a synthetic training set of execution-aware rationales that lead to correct task solutions (e.g., fixed programs) without laborious manual annotation. Experiments on program repair tasks based on M bp p and H u man E val demonstrate that NExT improves the fix rate of a PaLM 2 model, by 26.1% and 14.3% absolute, respectively, with significantly improved rationale quality as verified by automated metrics and human raters. Our model can also generalize to scenarios where program traces are absent at test-time.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Recent years have witnessed the burgeoning of large language models (LLMs) trained on code <ref type="bibr" target="#b0">(Anil et al., 2023;</ref><ref type="bibr" target="#b2">Austin et al., 2021;</ref><ref type="bibr">Chen et al., 2021a;</ref><ref type="bibr" target="#b31">Li et al., 2023;</ref><ref type="bibr" target="#b54">Roziere et al., 2023;</ref><ref type="bibr" target="#b61">Touvron et al., 2023)</ref>. While those LLMs achieve impressive performance in assisting developers with writing <ref type="bibr">(Chen et al., 2021a)</ref>, editing <ref type="bibr" target="#b14">(Fakhoury et al., 2023)</ref>, explaining <ref type="bibr" target="#b24">(Hu et al., 2018)</ref>, and reviewing <ref type="bibr" target="#b33">(Li et al., 2022)</ref> code, they still struggle on more complex software engineering tasks that require reasoning about the runtime execution behavior of programs <ref type="bibr" target="#b38">(Ma et al., 2023)</ref>. On the other hand, it is not always sufficient for the model to suggest good code solutions, but it is often necessary to provide an explanation to developers to document what the change does and why it is needed. These explanations can help developers better understand the code solutions from models and make more informative decisions. <ref type="bibr">(Cito et al., 2022;</ref><ref type="bibr" target="#b28">Kang et al., 2023;</ref><ref type="bibr" target="#b53">Ross et al., 2023)</ref>.</p><p>For example, program repair <ref type="bibr" target="#b10">(Chen et al., 2018;</ref><ref type="bibr" target="#b30">Le Goues et al., 2019;</ref><ref type="bibr" target="#b32">Li et al., 2020)</ref> is the task of fixing bugs in a program. Human developers usually learn to debug and fix code by interacting with code interpreters or debuggers to inspect the variable states of executed lines <ref type="bibr" target="#b59">(Siegmund et al., 2014)</ref>. Such practice helps them acquire a mental model of program execution <ref type="bibr" target="#b22">(Heinonen et al., 2022)</ref>, so that they could mentally simulate code execution in a more abstract manner using natural language as in rubber duck debugging <ref type="bibr" target="#b25">(Hunt and Thomas, 1999)</ref>. Therefore, a program repair model would be more helpful to developers if the model could carry out similar reasoning about program execution in order to explain bugs to programmers.</p><p>With this inspiration, our goal is to improve the ability of LLMs to reason about program execution when solving coding tasks. In this paper we propose Naturalized Execution Tuning (NExT), which aims to teach LLMs to reason with code execution by inspecting program execution traces and reasoning about the code's runtime behavior in natural language (NL). At a general level, for a coding Now let's look at the program. The program first uses replace() to remove all quotation marks, and then uses split() to split the string by commas. This seems to work fine for the second and third assertions. But for the first assertion, the return value is ['Python', ' PHP', ' Java'] while the expected output is ['Python', 'PHP', 'Java']. The reason is that the input string has spaces before and after each comma, and split() will split the string by commas and also keep the spaces.</p><p>Here is a fixed version that uses re.findall() to extract the substrings between quotation marks: def extract_values(string): # (0) string='"Python", "PHP", "Java"'; str_list = string.replace('"','').split(",") # (1) str_list=['Python', ' PHP', ' Java']; return str_list # (2) __return__=['Python', ' PHP', ' Java']; assert extract_values('"Python", "PHP", "Java"')==['Python', 'PHP', 'Java'] \ # (3) __exception__ = AssertionError() assert extract_values('"Python", "PHP", "Java"')==['Python', 'PHP', 'Java']</p><p># Write a function to extract values between quotation marks of a string. task, the main idea is to train a model to generate intermediate NL rationales, as in chain-of-thought reasoning <ref type="bibr" target="#b65">(Wei et al., 2022a)</ref>, but to provide the model with a trace of the execution of the program in question, so the rationale can be more accurate and grounded on program semantics. Teaching LLMs to reason about program execution in NL would not only offer better interpretability, it could also increase the diversity of solutions predicted by the model <ref type="bibr">(Yin et al., 2023)</ref>.</p><p>Fig. <ref type="figure" target="#fig_1">1</ref> illustrates our proposed approach when applied to program repair. Given an NL task instruction (𝑥 in Fig. <ref type="figure" target="#fig_1">1</ref>) and a buggy program (ỹ), as well as the execution traces of the program (𝜖), an LLM solves the task (e.g., predict the fixed code ŷ) using chain-of-thought (CoT) reasoning to generate a natural language rationale (r) leveraging the execution information<ref type="foot" target="#foot_0">foot_0</ref> . Intuitively, program traces encode useful debugging information such as line-by-line variable states (e.g., the value of str_list in 𝜖, Fig. <ref type="figure" target="#fig_1">1</ref>) or any exceptions thrown, which could be useful for LLMs to identify and fix bugs by reasoning over the expected and the actual execution results (e.g., "highlighted text" in r). To help LLMs understand execution traces, NExT represent traces as compact inline code comments (e.g., # (1) str_list=. . . in 𝜖, more in §3), without interrupting the original program structure.</p><p>While execution traces capture informative runtime behavior, we find it challenging for LLMs to effectively leverage them out-of-box through CoT prompting ( §3). Therefore we opt to finetune LLMs on high-quality CoT rationales that reason about program execution ( §4). NExT uses weaklysupervised self-training <ref type="bibr">(Zelikman et al., 2022)</ref> to bootstrap a synthetic training set by sampling rationales that lead to correct task solutions (e.g., fixed code ŷ in Fig. <ref type="figure" target="#fig_1">1</ref>) verified by unit tests <ref type="bibr">(Ye et al., 2022)</ref>. Using unit tests as weak supervision, NExT learns to discover task-specific, execution-aware NL rationales without relying on laborious manual annotation of rationales <ref type="bibr" target="#b11">(Chung et al., 2022;</ref><ref type="bibr" target="#b35">Lightman et al., 2023;</ref><ref type="bibr" target="#b41">Longpre et al., 2023)</ref> or distilling such data from stronger teacher models <ref type="bibr">(Fu et al., 2023;</ref><ref type="bibr" target="#b19">Gunasekar et al., 2023;</ref><ref type="bibr" target="#b40">Mitra et al., 2023;</ref><ref type="bibr" target="#b42">Mukherjee et al., 2023)</ref>. NExT executes this self-training loop for multiple iterations <ref type="bibr" target="#b1">(Anthony et al., 2017;</ref><ref type="bibr" target="#b13">Dasigi et al., 2019)</ref>, solving more challenging tasks with improved success rate and rationale quality ( §5).</p><p>1 def separate_odd_and_even(lst): # (0) lst=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; 2 odd_list = [] # (1) odd_list=[]; 3 even_list = [] # (2) even_list=[]; 4 for n in lst: # (3) n=1; (5) n=2; (7) n=3; ...; (21) n=10; 5 if n % 6 even_list.append(n) # (4) even_list=[1]; (8) even_list=[1, 3]; ...; (20) even_list=[1, 3, 5, 7, 9]; 7 else: 8 odd_list.append(n) # (6) odd_list=[2]; (10) odd_list=[2, 4]; ...; (22) odd_list=[2, 4, 6, 8, 10]; We evaluate NExT with the PaLM 2-L model <ref type="bibr" target="#b0">(Anil et al., 2023)</ref> on two Python program repair tasks. Experiments ( §5) show that NExT significantly improves PaLM 2's ability to reason about program execution in natural language, improving the program fix rate on Mbpp-R by 26.1% and Human-E val F i x -P l u s by 14.3% absolute, respectively. When compared against a strong self-training program repair approach without predicting NL rationales <ref type="bibr">(Ye et al., 2022)</ref>, our model achieves comparable accuracy with significantly improved sample diversity. Interestingly, while our model learns to reason with pre-existing execution information in input program traces, it also generalizes to the out-of-distribution scenario where execution traces are not available at test-time. Finally, to measure the quality of model-generated rationales, we propose a proxy-based evaluation approach, which approximates rationale quality using the performance of smaller LLMs when prompted to solve the original task following those rationales from our models. Through both proxy-based evaluation and human annotation, we demonstrate that NExT produces helpful NL rationales which explain the causes of bugs while suggesting potential fixes. The generated rationales are of significantly higher quality compared to those from the base PaLM 2-L model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Task: Program Repair with Traces</head><p>Here we introduce our task of program repair with execution traces using chain-of-thought reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Program Repair with Execution Traces.</head><p>As in Fig. <ref type="figure" target="#fig_1">1</ref>, given an instruction 𝑥 and a buggy code solution ỹ, automated program repair <ref type="bibr" target="#b30">(Le Goues et al., 2019)</ref> aims to generate a fixed program ŷ such that ŷ passes all test cases 𝑡 ∈ 𝑇 in an executor E, i.e., E ( ŷ, 𝑇) = 1 while E ( ỹ, 𝑇) = 0. In this paper we focus on the task of program repair using execution traces <ref type="bibr" target="#b6">(Bouzenia et al., 2023)</ref>. Specifically, a program trace 𝜖 is a sequence of intermediate variable states after executing each statement in ỹ against a test case 𝑡. Intuitively, traces record the computation of a program, and can provide useful debugging information (e.g., exceptions) to repair ỹ.</p><p>To use LLMs to repair programs with traces, we concatenate the task instruction, the buggy code, the test cases, and their execution traces as a prompt (Fig. <ref type="figure" target="#fig_1">1</ref>). To help LLMs understand program traces, we design a prompt-friendly trace representation by formatting 𝜖 as compact inline code comments (i.e., 𝜖 in Fig. <ref type="figure" target="#fig_1">1</ref>), as discussed later.</p><p>CoT Reasoning with Execution. We focus on using chain-of-thought reasoning <ref type="bibr">(Wei et al., 2022b)</ref> to solve program repair problems by reasoning with execution, where an LLM is prompted to generate an NL rationale r together with a fixed program ŷ as in Fig. <ref type="figure" target="#fig_1">1</ref>. Specifically, we consider rationales that contain reasoning steps to identify and explain bugs in the original code (e.g., the second paragraph in r, Fig. <ref type="figure" target="#fig_1">1</ref>), as well as suggestions to fix the buggy code (e.g., "a fixed version that uses re.findall()" in r). Since rationales are generated using traces, they often include useful reasoning about program execution that helps localize the bug, such as identifying a counterfactual between the expected and the actual variable values of a statement (e.g., the "highlighted text" in r). Such explanations can be helpful for developers to understand bugs in the original code and the model's fixed solutions <ref type="bibr" target="#b28">(Kang et al., 2023)</ref>. We therefore aim to improve the quality of NL rationales along with the fix rate by teaching LLMs to reason with execution information.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>An LLM-friendly Trace Representation.</head><p>The raw execution traces collected at runtime contain complete variable states for each executed statement.<ref type="foot" target="#foot_1">foot_1</ref> Encoding all such information in prompts is not feasible given the context limit and computation overhead of LLMs. To address this issue and make execution information more intelligible to LLMs, we propose an inline trace representation format, which encodes variable states as inline comments of the traced program. Fig. <ref type="figure" target="#fig_2">2</ref> shows an example. Specifically, each inline comment only encodes changed variables after executing that line. Because statements may be invoked multiple times in non-obvious orders (e.g., in loops like lines 4 to 8 in Fig. <ref type="figure" target="#fig_2">2</ref>), we index the variable states based on the execution order (e.g., (3) n=1; and (4) even_list=[1]), and one may reconstruct the original execution footprint by following those variable states in order. We further compress the trace information for loops by omitting the variable states in intermediate iterations (e.g., "..." in lines 4, 6, and 8). Intuitively, by showing states as pseudo-comments within the original code without interrupting the program structure, our trace representation is significantly more compact than existing approaches that unroll executed lines of code and pair them with line-by-line variable states (c.f., <ref type="bibr" target="#b6">Bouzenia et al., 2023;</ref><ref type="bibr" target="#b46">Nye et al., 2021)</ref>,<ref type="foot" target="#foot_2">foot_2</ref> while allowing an LLM to leverage its learned code representation to understand the additional execution effect of each statement. Implementation details about handling complex control structures are discussed in Appendix A.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Preliminary Study: Can LLMs reason with program traces in natural language?</head><p>Before introducing NExT, we first conduct a preliminary study to explore whether LLMs could reason with execution traces in natural language out-of-box without additional training. Answering this question will motivate our finetuning approach to improve such reasoning skills. Specifically, we follow the trace representation in §2 and few-shot prompt an LLM to solve program repair tasks using CoT reasoning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Models.</head><p>We evaluate the following general-purpose models: PaLM 2 <ref type="bibr" target="#b0">(Anil et al., 2023)</ref>, GPT (Ope-nAI, 2023)<ref type="foot" target="#foot_3">foot_3</ref> , and Mixtral <ref type="bibr" target="#b26">(Jiang et al., 2024)</ref>. We also test two code-specific LLMs: StarCoder <ref type="bibr" target="#b31">(Li et al., 2023)</ref> and DeepSeek Coder <ref type="bibr" target="#b20">(Guo et al., 2024)</ref>. Tab. 1 reports the results on two Python program repair datasets (see §5 for details).</p><p>LLMs struggle on CoT reasoning with traces. We observed mixed results when comparing vanilla prompting with traces without CoT (Vanilla w/ trace in Tab. 1) and CoT prompting with rationales (+CoT). Surprisingly, CoT prompting is even worse on H u man E val F i x -P l u s, with an average drop of -7.8% compared to vanilla prompting, especially for code-specific LLMs (57.3 ↦ → 30.5 for DeepSeek Coder and 29.3 ↦ → 16.5 for StarCoder). After inspecting sampled rationales predicted by PaLM 2-L, we observe that the model is subject to strong hallucination issues, such as mentioning exceptions not reflected in the given traces. Indeed, as we later show in §5.2, the overall correctness rate of explaining errors in input programs among these sampled rationales from PaLM 2-L is only around 30%. Moreover, CoT reasoning is even more challenging for those models when we remove execution traces from the inputs (+CoT;-trace), resulting in an average performance drop of 4.8% on M bp p -R and 4.3% on H u man E val F i x -P l u s. These results suggest that while our trace representation is useful for LLMs to understand and leverage execution information for program repair (since "-trace" leads to worse results), they could still fall short on CoT reasoning using natural language with those program traces. This finding therefore motivates us to improve LLMs in reasoning with execution through finetuning, which we elaborate in §4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">NExT: Naturalized Execution Tuning</head><p>We present NExT, a self-training method to finetune LLMs to reason with program execution using synthetic rationales.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Overview of NExT.</head><p>Fig. <ref type="figure" target="#fig_1">1</ref> illustrates NExT, with its algorithm detailed in Algo. 1. NExT is based on existing self-trained reasoning approaches <ref type="bibr" target="#b62">(Uesato et al., 2022;</ref><ref type="bibr">Zelikman et al., 2022)</ref>, which employ expert iteration to improve a base LLM using synthetic rationales sampled from the model. Given a training set D of repair tasks with execution traces, NExT first samples candidate NL rationales and fixed code solutions from the LLM. Those candidate solutions are filtered using unit test execution diagnostics, and those that pass all test cases are then used to update the model via finetuning. This sample-filter-train loop is performed for multiple iterations, improving the model's rationales and repair success rate after each iteration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Sampling rationales and code solutions.</head><p>For each iteration 𝑖, we sample rationales r and fixes ŷ in tandem from the current model 𝑃 𝜃 (𝑖) (Line 5, Algo. 1). We use few-shot prompting ( §3) when 𝑖 = 0 and zero-shot prompting with trained models for later iterations. In contrast to existing self-training methods that leverage all training problems, NExT only samples candidate solutions from the subset of problems in D that are challenging for the base model 𝑃 𝜃 (0) to solve (Line 1). Specifically, given a metric M (•), we only use problems 𝑑 ∈ D if 𝑃 𝜃 (0) 's metric on 𝑑 is below a threshold 𝑚. Refer to §5 for more details about the M (•) and 𝑚 of our program repair task. Focusing on sampling solutions from those hard problems not only significantly reduces sampling cost, it also improves program repair accuracy, as it helps the model towards learning to solve more challenging problems. See Appendix C for a more detailed analysis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Filtering candidate solutions.</head><p>Given a candidate set of sampled NL rationales and their code fixes, NExT uses unit test execution results to identify plausible rationales that lead to correct fixes for learning (Line 6). Using test execution diagnostics as a binary reward function is natural for program repair tasks since each repair problem in our dataset comes with unit tests to test the functional correctness of its proposed fixes <ref type="bibr">(Ye et al., 2022)</ref>. While we remark that this filtering criteria does not directly consider rationale quality, we empirically demonstrate in §5 that the quality of rationales improves as learning continues.<ref type="foot" target="#foot_4">foot_4</ref> </p><p>Algorithm 1 Naturalized Execution Tuning (NExT)</p><formula xml:id="formula_0">Input: Training set D = {(𝑥 𝑗 , ỹ𝑗 , 𝑇 𝑗 , 𝜖 𝑗 )} | D | 𝑗=1 ( §2); Development set D 𝑑𝑒𝑣 ; Base LLM 𝑃 𝜃 (0) ; Number of iterations 𝐼; Executor E; Evaluation metric M and threshold 𝑚 1: D 𝐻 ← {𝑑 | 𝑑 ∈ D, M (𝑃 𝜃 (0) , 𝑑) &lt; 𝑚} // Identify hard problems D 𝐻 with metric M (•) &lt; 𝑚 2: for 𝑖 = 0 to 𝐼 do 3: B (𝑖) ← {} 4: for (𝑥 𝑗 , ỹ𝑗 , 𝑇 𝑗 , 𝜖 𝑗 ) in D 𝐻 do 5: 𝑆 (𝑖) 𝑗 ∼ 𝑃 𝜃 (𝑖) (𝑟, 𝑦 | 𝑥 𝑗 , ỹ𝑗 ,</formula><p>𝑇 𝑗 , 𝜖 𝑗 ) // Sample rationales 𝑟 and fixes 𝑦 using trace 𝜖 𝑗 . 6: B (𝑖) ← B (𝑖) ∪ {(r, ŷ) | (r, ŷ) ∈ 𝑆 (𝑖) 𝑗 , E ( ŷ, 𝑇 𝑗 ) = 1} // Filter with test cases 𝑇 𝑗 and add to B (𝑖) . 7: end for 8:</p><formula xml:id="formula_1">𝜃 (𝑖+1) ← arg max 𝜃 𝔼 B (𝑖) [𝑃 𝜃 (r, ŷ | 𝑥, ỹ, 𝑇, 𝜖)] // Finetune model 𝑃 𝜃 (0) with data in B (𝑖) . 9: end for 10: 𝑖 * ← arg max 𝑖 𝑑∼D 𝑑𝑒𝑣 M (𝑃 𝜃 (𝑖) , 𝑑)/|D 𝑑𝑒𝑣 | // Select the best checkpoint 𝑖 * Output: model 𝑃 𝜃 (𝑖 * )</formula><p>Model training. After collecting a set of training examples B (𝑖) , we finetune the model to maximize the probability of generating the target rationales and code fixes given the task input (Line 8). Following Zelikman et al. (2022), we always finetune the model from its initial checkpoint 𝑃 𝜃 (0) to avoid over-fitting to instances sampled from early iterations that are potentially of lower-quality.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Discussion.</head><p>NExT can be seen as an instantiation of the rationale bootstrapping method proposed in Zelikman et al. (2022) ( § 3.1), which synthesizes latent rationales with correct answers for math and logical reasoning tasks. However, NExT focuses on program comprehension by reasoning with execution traces, which is critical for solving challenging coding tasks that require understanding execution information, such as program repair ( §5). Besides, NExT models both rationales and programs (code fixes) as latent variables. Using unit test execution results as weak supervision, NExT is able to explore possible strategies to reason with execution and discover plausible rationales catered towards solving the specific downstream task. As we show in Appendix D, rationales generated by NExT employ a variety of reasoning patterns to locate and explain bugs in our repair dataset. Finally, while we apply NExT to program repair, our framework is general and can be extended to other programming tasks that require reasoning about execution, such as code generation with partial execution contexts <ref type="bibr">(Yin et al., 2023)</ref> or inferring program execution results <ref type="bibr" target="#b46">(Nye et al., 2021)</ref>, which we leave as important future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Models.</head><p>We evaluate NExT using PaLM 2-L (Unicorn) as the base LLM <ref type="bibr" target="#b0">(Anil et al., 2023)</ref>. Its finetuning API is publicly accessible on Google Cloud Vertex AI platform.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Datasets.</head><p>We use two Python program repair benchmarks, M bp p -R and H u man E val F i x -Plus (HeFix+ hereafter). Mbpp-R is a new repair benchmark that we create from Mbpp <ref type="bibr" target="#b2">(Austin et al., 2021)</ref>, a popular function-level Python code generation dataset. We create M bp p -R by collecting LLM-generated incorrect code solutions to Mbpp problems, with a total of 10, 047 repair tasks for training and 1, 468 tasks (from a disjoint set of M bp p problems) in the development for evaluation (Appendix B.1). In addition to M bp p -R, we also evaluate on H e F i x +. H e F i x + is derived from H u man E val F i x <ref type="bibr" target="#b41">(Muennighoff et al., 2023)</ref> which consists of 164 buggy programs for problems in the HumanEval dataset <ref type="bibr">(Chen et al., 2021a)</ref>. We further augment HumanEval-F i x with the more rigorous test suites from EvalPlus <ref type="bibr" target="#b36">(Liu et al., 2023)</ref> to obtain H e F i x +. While both original datasets M bp p and H u man E val feature function-level algorithmic code generation End-to-end Fix Rate Proxy-based Evaluation (pas s@𝑘 on smaller LMs) Models pas s@1 pas s@5 pas s@10 pas s@25 pas s@1 pas s@5 pas s@10 pas s@25 GPT-4; 3-shot 63.2 75.1 78.5 82.7 44.8 66.5 72.5 77.8 GPT-3.5; 3-shot 42.9 65.0 70.7 76.7 26.6 48.8 57.0 66.4 PaLM 2-L; 3-shot 23.2 45.7 54.7 65.0 22.5 43.4 51.9 61.5 PaLM 2-L+N E x T; 0-shot 49.3 +26.1 68.1 +22.4 73.5 +18.8 79.4 +14.4 28.8 +6.3 49.9 +6.5 57.3 +5.4 65.5 +4.0  problems, problems from the two datasets may still differ in their topics, algorithms or data structures used. Therefore, we use H e F i x + to measure generalization ability without further finetuning.</p><p>Evaluating Code Fixes. We use pas s@𝑘 <ref type="bibr">(Chen et al., 2021a;</ref><ref type="bibr" target="#b29">Kulal et al., 2019)</ref>, defined as the fraction of solved repair tasks using 𝑘 samples (𝑘 ≤ 25), to measure the end-to-end functional correctness of fixed programs with tests.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Evaluating Rationale Quality.</head><p>Decoupling the quality of intermediate CoT rationales and downstream task performance (program repair pas s@𝑘) is a non-trivial research question in LLM reasoning <ref type="bibr" target="#b51">(Prasad et al., 2023)</ref>, with most works on improving CoT reasoning still hill-climbing towards downstream task performance without evaluating intermediate rational quality (e.g., <ref type="bibr" target="#b35">Lightman et al. (2023)</ref>). To disentangle the evaluation of rationale quality from end-to-end repair accuracy, we propose an extrinsic proxy-based evaluation metric for rationales. Specifically, given a rationale 𝑟, we prompt a smaller LLM to solve the original repair task conditioning on 𝑟, and use the correctness of the predicted code fix (using greedy decoding) to approximate the quality of 𝑟. Intuitively, smaller LLMs would rely more on information from the rationale and could be more sensitive to its errors. Therefore, their performance could be a better indicator of rationale quality. We report averaged scores on two PaLM 2 variants for proxy-based evaluation: 1) a smaller general-purpose language model PaLM 2-S; and 2) PaLM 2-S * which is specialized in coding <ref type="bibr" target="#b0">(Anil et al., 2023)</ref>. Note that while we primarily use proxy-based metrics to evaluate rationales, we also perform human ratings of rationale quality ( §5.2), with results in line with our proxy-based evaluation.</p><p>Hyperparameters. We perform temperature sampling (𝑇 = 0.8) with a sample size of 32 for training (|𝑆 𝑗 | = 32 in Algo. 1) and pass@𝑘 evaluation. In the first iteration in Algo. 1, we use pass@1 estimated with these 32 samples as the filtering metric M (•) to find challenging problems whose M (•) ≤ 10% for training. We perform 10 iterations of NExT training and pick the best model using pass@1 on the development set. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.">Main Results</head><p>In our experiments, we compare our model with strong LLMs (used in §3), analyze the impact of rationales and program traces, and perform generalization experiments on H e F i x + and human evaluation of rationale quality.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>NExT improves program fix rate.</head><p>We first compare the end-to-end program repair performance of PaLM 2-L before and after NExT training (PaLM 2-L+NExT) in Tab. 2 (Left). NExT leads to significant improvements on the end-to-end fix rates across the board, with a 26.1% absolute improvement on pass@1. Interestingly, the gain on pass@𝑘 is generally higher for smaller 𝑘. This might suggest that the model becomes more confident about program fixes after NExT training, while the sample diversity also improves, as indicated by improved pas s@25. For reference, we also include results from GPT models. Notably, PaLM 2-L+N E x T outperforms GPT-3.5 on all pas s@𝑘 metrics.</p><p>NExT improves rationale quality. Table 2 (Right) shows the improvements of PaLM 2-L+NExT on our proxy-based evaluation, where we approximate rationale quality using the performance of smaller LMs when conditioned on those rationales. Again, NExT yields consistent improvements across all pas s@𝑘 metrics. This suggests that NExT improves PaLM 2-L's skill in reasoning with execution to solve Mbpp-R problems, leading to rationales that are more helpful for smaller LMs. In Appendix D, we present a case study to demonstrate different reasoning strategies PaLM 2-L+NExT adopts to repair programs using execution information. As we later show in §5.2, our proxy-based metrics are also consistent with human ratings, and rationales from PaLM 2-L+N E x T are strongly preferred by annotators compared to those from PaLM 2-L.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>PaLM 2-L+N E x T outperforms strong LLMs.</head><p>We compare PaLM 2-L+N E x T with a series of strong LLMs from the preliminary study ( §3) in Figure <ref type="figure" target="#fig_3">3</ref>. PaLM 2-L+NExT outperforms strong opensource LLMs by a minimum of 29.4% and 11.1% on end-to-end and proxy-based pas s@1 results, respectively, while on par with GPT-3.5. These results show that PaLM 2-L+N E x T is a competitive model on program repair by reasoning with execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Learning to reason in natural language improves generalization and sample diversity.</head><p>To further demonstrate the importance of using CoT reasoning in NExT self-training, we compare PaLM 2-L+N E x T with a strong self-training-based program repair model implemented in NExT, which directly generates code fixes using runtime execution information without CoT reasoning. This ablation resembles SelfAPR <ref type="bibr">(Ye et al., 2022)</ref>, which also adopts self-training to iteratively synthesize data using unit test diagnostics, while our ablation uses traces with richer execution information.  w/o rationale), PaLM 2-L converges much faster on the training set, which is not surprising since the model only learns to generate code fixes without additional reasoning tasks such as explaining bugs in NL. However, on the De v set, PaLM 2-L+N E x T still outperforms this baseline in pas s@10 with comparable pass@1 accuracy, and the gap on pass@10 becomes larger with more iterations. This shows that by reasoning in natural language, PaLM 2-L+N E x T generalizes much better to unseen Mbpp-R problems with greater sample diversity. In Fig. <ref type="figure" target="#fig_7">6</ref> of Appendix C, we also show that the gain from PaLM 2-L+N E x T against this ablation on pas s@𝑘 is even more pronounced for larger 𝑘 &gt; 10, which suggests that learning to reason in CoT rationales improves sample diversity on program repair, similar to the findings on other code generation tasks <ref type="bibr">(Yin et al., 2023)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Reasoning with execution traces is critical.</head><p>To understand the importance of leveraging program traces to reason with execution, we compare with an ablation of NExT without using program traces, which follows the same procedure in Algo. 1 except that traces 𝜖 are not used to generate rationales in Line 5 (NExT w/o traces, Fig. <ref type="figure" target="#fig_4">4</ref>). This variant can also be seen as a direct application of the rationale generation bootstrapping method in Zelikman et al. <ref type="bibr">(2022)</ref>, which trains a model on sampled rationales that lead to correct task solutions without relying on additional execution information. Without traces, PaLM 2-L is consistently worse than PaLM 2-L+N E x T on the De v set across iterations, both in terms of end-to-end fix rate and proxy-based metrics. This suggests that reasoning with execution information is critical for PaLM 2-L on program repair tasks. Interestingly, while the gap on the development set is significant, the two models achieve similar scores on the training set, which suggests that reasoning with pre-existing execution traces also help the model generalize better to unseen tasks at test-time.</p><p>Our model works without traces at test-time. While program traces are crucial for reasoning with execution, such execution information may not always be available at test time (e.g., when execution is prohibitively expensive). To stress-test PaLM 2-L+N E x T in scenarios where execution information is absent, we remove execution traces from its input at test time in Table <ref type="table" target="#tab_2">3</ref>. PaLM 2-L+NExT still yields an end-to-end fix rate of 40.8%, which is an 21.8% improvement over the 3-shot PaLM 2-L baseline and is only 3.3% lower than NExT trained without traces, for which is tested in-distribution. The results from the proxy-based evaluation of rationales are also consistent with the fix rate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Our model generalizes to H e F i x + at test-time.</head><p>To further evaluate the generalization ability of PaLM 2-L+NExT, we test our model (trained on Mbpp-R) on HeFix+. Tab. 4 summarizes the results. NExT achieves reasonable generalization on HeFix+, outperforming the base PaLM 2-L model by a large margin (i.e., 14.3% on end-to-end fix rate and 6.0% on proxy evaluation). Aligned with our previous findings on M bp p -R in Fig. <ref type="figure" target="#fig_4">4</ref>, reasoning with execution traces (c.f. w/o traces) improves fix rate and rationale quality. Moreover, we remark that with iterative learning, PaLM 2-L+N E x T is on par with the strong program repair method without CoT reasoning (w/o rationale), similar to the results on Mbpp-R. This is in contrast with our preliminary study in §3, where PaLM 2-L with CoT prompting is much worse than vanilla prompting without using rationales. Overall, these results indicate that PaLM 2-L+N E x T could robustly generalize to out-of-distribution repair tasks Table 5 | Results for human annotation of rationale quality. Base models use 3-shot prompting.</p><p>Numbers under the questions are counts of ratings.</p><p>without additional dataset-specific finetuning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.">Human Evaluation of Rationale Quality</head><p>Our proxy-based evaluation suggests the extrinsic value of the CoT rationales from PaLM 2-L+NExT. We further conduct an intrinsic evaluation by manually rating the quality of model-predicted rationales on 104 sampled Mbpp-R repair tasks from the Dev set. Specifically, we ask raters to judge the quality of rationales generated by three models (PaLM 2-L+N E x T, PaLM 2-L and GPT-3.5) in a three-way side-by-side setting. Each rationale is rated in two aspects: (1) its helpfulness in explaining bugs (𝑄 1 , e.g., first two paragraphs in r, Fig. <ref type="figure" target="#fig_1">1</ref>), and (2) its helpfulness in suggesting code fixes (𝑄 2 , e.g., "a fixed version that uses . . ." in r). Each question has a three-scale answer ( Completely correct and very helpful; Partially correct with minor errors but still helpful; Incorrect and not helpful). We also compute an overall score of rationale quality using numeric values of {+1, 0.5, 0} for the three scales and averaged over 𝑄 1 and 𝑄 2 . Finally, we ask raters to pick a single best choice if there is not a clear tie. More details about our human evaluation pipeline is described in Appendix B.3. Tab. 5 summarizes the result. Compared to the base PaLM 2 model, PaLM 2-L+N E x T generates significantly more high-quality rationales with correct explanations of bugs and fix suggestions. Additionally, compared to GPT-3.5, PaLM 2-L+NExT also has more rationales with correct bug explanations, while interestingly, GPT-3.5 generates more rationales with partially correct fix suggestions. We hypothesize that including more exemplars with detailed fix suggestions to our few-shot prompts during NExT training (Appendix E) would help mitigate this issue. Nevertheless, the overall scores and rater-assigned best choice suggest that the rationales predicted by PaLM 2-L+NExT are of significantly higher quality compared to those from PaLM 2-L, and are on par with the predictions from GPT-3.5. Overall, this finding is in line with the proxy evaluation results in Fig. <ref type="figure" target="#fig_3">3</ref> (GPT 3.5 ≈ PaLM 2-L+NExT ≫ PaLM 2-L), suggesting that the latter is a reasonable surrogate metric for rationale quality. In Appendix D, we present example generated rationales that show a variety of reasoning patterns.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Related Work</head><p>Reasoning about Program Execution Several lines of research has explored learning methods to reason about program execution. Program synthesis systems often leverage the execution states of partially generated programs <ref type="bibr">(Chen et al., 2021b;</ref><ref type="bibr">Shi et al., 2022;</ref><ref type="bibr" target="#b57">Shin et al., 2018;</ref><ref type="bibr" target="#b63">Wang et al., 2018)</ref> or the next execution subgoals <ref type="bibr">(Shi et al., 2024)</ref> to guide search in sequence-to-sequence models. There has also been work on training neural networks to mimic program execution, like a learned interpreter <ref type="bibr" target="#b3">(Bieber et al., 2020;</ref><ref type="bibr" target="#b46">Nye et al., 2021;</ref><ref type="bibr">Zaremba and Sutskever, 2014)</ref>, often with specialized neural architectures to model the data flow of program execution <ref type="bibr" target="#b4">(Bieber et al., 2022;</ref><ref type="bibr" target="#b5">Bosnjak et al., 2016;</ref><ref type="bibr" target="#b17">Gaunt et al., 2016;</ref><ref type="bibr" target="#b18">Graves et al., 2014)</ref>. Instead of using domain-specific architectures to encode and reason about program execution, our work focuses on teaching LLMs to reason with execution in natural language. In particular, Scratchpad <ref type="bibr" target="#b46">(Nye et al., 2021)</ref> and Self-Debugging <ref type="bibr" target="#b9">(Chen et al., 2023)</ref> are two notable works that also models execution traces using LLMs. The core difference is that these methods focus on predicting reasoning chains that contain trace information, such as executed lines with variable states <ref type="bibr" target="#b46">(Nye et al., 2021)</ref> or their natural language summaries <ref type="bibr" target="#b9">(Chen et al., 2023)</ref>. On the other hand, NExT aims to leverage existing execution traces from a runtime to aid the reasoning process, which often leads to more compact rationales tailored for downstream tasks. We present a more detailed comparison and discussion on NExT and these related works in Appendix A.3.</p><p>Program Repair Several works in program repair have leveraged execution information such as traces <ref type="bibr" target="#b6">(Bouzenia et al., 2023;</ref><ref type="bibr" target="#b21">Gupta et al., 2020)</ref> or test diagnostics <ref type="bibr" target="#b68">(Xia and Zhang, 2023;</ref><ref type="bibr">Ye et al., 2022)</ref>. Different from <ref type="bibr" target="#b6">Bouzenia et al. (2023)</ref> which represents traces by directly pairing unrolled executed lines with their variable states, NExT inlines indexed variable states as code comments, which is more token efficient while preserving the original code structure. Similar to NExT, Ye et al. (2022) construct synthetic self-training data using test execution results, while our approach generates both NL rationales and fixed programs with better interpretability. Recently, LLMs have been applied to program repair <ref type="bibr" target="#b15">(Fan et al., 2022;</ref><ref type="bibr" target="#b27">Jiang et al., 2023;</ref><ref type="bibr" target="#b49">Paul et al., 2023;</ref><ref type="bibr" target="#b60">Sobania et al., 2023;</ref><ref type="bibr" target="#b67">Xia and Zhang, 2022;</ref><ref type="bibr" target="#b68">Xia et al., 2023)</ref>. Among them, <ref type="bibr" target="#b28">Kang et al. (2023)</ref> uses a ReAct-style CoT reasoning loop <ref type="bibr">(Yao et al., 2022)</ref> to predict repair actions based on interactive feedback from debuggers, while NExT focuses on tuning LLMs to reason with pre-existing execution information without intermediate feedback. Finally, as a related stream of research, self-improvement methods iteratively refine a model's code solutions using CoT reasoning over self-provided <ref type="bibr" target="#b39">(Madaan et al., 2023)</ref> or test-driven feedback <ref type="bibr" target="#b9">(Chen et al., 2023;</ref><ref type="bibr" target="#b47">Olausson et al., 2023)</ref>. Instead of relying on high-level execution signals like error messages, NExT trains LLMs to reason with step-wise program traces. Our learnable rationales are also more flexible without following a predefined reasoning template. Besides, since traces already capture rich execution semantics, the resulting rationales could be more succinct and targeted to the downstream task (e.g., explain bugs), without redundant reasoning steps to trace the program by the model itself to recover useful execution information.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Supervised CoT Reasoning</head><p>LLMs can solve problems more accurately when instructed to work out the answer step by step in a chain of thought or a scratchpad <ref type="bibr" target="#b46">(Nye et al., 2021;</ref><ref type="bibr" target="#b52">Rajani et al., 2019;</ref><ref type="bibr" target="#b58">Shwartz et al., 2020;</ref><ref type="bibr" target="#b65">Wei et al., 2022a)</ref>. Improvements on this approach involve finetuning LLMs on chain-of-thought reasoning data. Such CoT data is either manually curated <ref type="bibr" target="#b11">(Chung et al., 2022;</ref><ref type="bibr" target="#b35">Lightman et al., 2023;</ref><ref type="bibr" target="#b41">Longpre et al., 2023)</ref>, or distilled from more capable teacher models <ref type="bibr">(Fu et al., 2023;</ref><ref type="bibr" target="#b19">Gunasekar et al., 2023;</ref><ref type="bibr" target="#b40">Mitra et al., 2023;</ref><ref type="bibr" target="#b42">Mukherjee et al., 2023)</ref>. Instead of relying on labeled or distilled data, NExT uses self-training to iteratively bootstrap a synthetic dataset of high-quality rationales with minimal manual annotation. Our work differs from previous work using bootstrapping <ref type="bibr">(Hoffman et al., 2023;</ref><ref type="bibr">Zelikman et al., 2022)</ref> in the type of rationales and the use of execution information; see §4 for more discussion. While we use the correctness of the program fix for filtering the rationales, which is reminiscent of outcome supervision; it is also possible to use process supervision with human annotations <ref type="bibr" target="#b35">(Lightman et al., 2023;</ref><ref type="bibr" target="#b62">Uesato et al., 2022)</ref>, or obtain such supervision automatically by estimating the quality of each step using Monte Carlo Tree Search <ref type="bibr" target="#b64">(Wang et al., 2024)</ref> and by identifying partially-correct program prefixes <ref type="bibr">(Ni et al., 2022)</ref>. Finally, existing research has investigated finetuning of LLMs to predict the execution information directly, such as predicting line-by-line execution traces <ref type="bibr" target="#b46">(Nye et al., 2021)</ref>, abstract runtime properties <ref type="bibr" target="#b6">(Pei et al., 2023)</ref>, or final output <ref type="bibr" target="#b3">(Bieber et al., 2020;</ref><ref type="bibr">Zaremba and Sutskever, 2014)</ref>. NExT addresses a different problem; instead of predicting the execution information, NExT takes it as given, and instead learns to discover flexible task-specific NL rationales that aid a downstream programming task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.">Conclusion</head><p>In this paper we present NExT, a self-training method to finetune LLMs to reason with program execution given traces. We demonstrate that PaLM 2-L trained using NExT yields high-quality natural language rationales and achieves stronger success rates on two program repair tasks. As future work, we plan to apply NExT to a broader range of program understanding tasks while expanding the trace representation to support more programming languages. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Methods</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Use of Trace Rationale Format Model Fine-tuning</head><p>NExT Input Natural Language Yes Scratchpad <ref type="bibr" target="#b46">(Nye et al., 2021)</ref> Output Scratchpad Repr. Yes Self-Debugging <ref type="bibr" target="#b9">(Chen et al., 2023)</ref> Output Natural Language No Table 7 | Percentage of M bp p -R examples that can be fit into different context windows using different trace representations (i.e., ours and Nye et al. ( <ref type="formula">2021)</ref>). Traces of all three tests are included.</p><p>of code to inspect and create traces for, similar to how human developers debug programs. We will leave these as exciting future directions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2. Details for Iterative Self-Training</head><p>Bootstrapping rationales and fixes via temperature sampling. To avoid potential "cold start" problem <ref type="bibr" target="#b34">(Liang et al., 2018;</ref><ref type="bibr" target="#b43">Ni et al., 2020)</ref>, for the first iteration, we use few-shot prompting with three exemplars (shown in Appendix E) and set the sample size to 96. For all later iterations, we use zero-shot prompting as the model is already adapted to the style of the rationales and fixes after the first round of finetuning, and we set the sample size to 32. We set the sampling temperature 𝑇 = 0.8 for all iterations.</p><p>Filtering rationales and fixes. Given the inputs in the prompt, we sample the rationale and fixes in tandem. To separate the natural language rationale and the program fix, we use an regular expression in Python to extract the content between two sets of three backticks (```), which is commonly used to note code blocks in markdown. <ref type="foot" target="#foot_5">6</ref> After we filter out the rationales and fixes that are incorrect using the test cases, we create the training set by sub-sampling correct "(rationale, fix)" pairs to allow a maximum of 3 correct fixes with their rationales for each problem in Mbpp-R. This is to balance the number of rationales and fixes for each problem and avoid examples from certain examples (typically easier ones) being overly represented in the training set.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3. Discussion with Previous Work</head><p>Here we discuss NExT in the context of two important previous work in the domain of reasoning about program execution, namely Scratchpad <ref type="bibr" target="#b46">(Nye et al., 2021)</ref> and Self-Debugging <ref type="bibr" target="#b9">Chen et al. (2023)</ref>. Such comparison is also characterized by Tab. 6.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Scratchpad and NExT.</head><p>Similarly to NExT, <ref type="bibr" target="#b46">Nye et al. (2021)</ref> also proposed to use execution traces to help the LLMs to reason about program execution. However, <ref type="bibr" target="#b46">Nye et al. (2021)</ref> aimed to generate these traces as intermediate reasoning steps at inference time, either via few-shot prompting or model fine-tuning. Yet in NExT, we use execution traces as part of the input to the LLMs, so they can directly use the execution states to ground the generated natural language rationales. Moreover, we choose to use natural language as the primary format for reasoning, which is more flexible and easier to be understood by the human programmers. We also perform a length comparison of our proposed inline trace representation with the scratchpad representation proposed in Tab. 7, and results show that our proposed inline trace representation is much more compact than scratchpad.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Self-Debugging and NExT.</head><p>Self-Debugging <ref type="bibr" target="#b9">(Chen et al., 2023)</ref> is a seminal approach that also performs CoT reasoning over program execution to identify errors in code solutions. Different from NExT, Self-Debugging can optionally leverages high-level execution error messages to bootstrap CoT reasoning, while our method trains LLMs to reason with concrete step-wise execution traces. In addition, Self-Debugging also introduced a particular form of CoT rationales that resemble step-bystep traces in natural language. Notably, such rationales are generated by LLMs to aid the model in locating bugs by simulating execution in a step-by-step fashion. They are not the ground-truth execution traces generated by actually running the program. As we discussed in §6, in contrast, our model relies on existing traces from program execution. Since those traces already capture rich execution information, intuitively, the resulting CoT rationales in NExT could be more succinct and "to the point" without redundant reasoning steps to "trace" the program step-by-step by the model itself in order to recover useful execution information.</p><p>Finally, we remark that our "Test w/o Trace" setting in §5.1 shares similar spirits with the setup in Self-Debugging, as both methods perform CoT reasoning about execution without gold execution traces. From the results in Tab. 3, NExT also greatly improves the model's ability to repair programs even without using gold execution traces at test time. This may suggest that NExT can potentially improve the self-debugging skills of LLMs through iterative training, for which we leave as exciting future work to explore.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Experiment Setup Details</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1. Creating M bp p -R</head><p>The original M bp p dataset <ref type="bibr" target="#b2">Austin et al. (2021)</ref> consists of three splits, i.e., train/dev/test sets of 374/90/500 Python programming problems. To increase the number of training example, we first perform a re-split of the original M bp p dataset, by moving half of the test data into the training split, resulting in 624/90/250 problems in the re-split dataset. Then for each M bp p problem in the re-split train and dev set, we collect a set of failed solutions from the released model outputs in <ref type="bibr" target="#b45">Ni et al. (2023)</ref>. More specifically, we take the 100 samples for each problems, filter out those correct solutions, and keep the ones that do not pass all the tests. As different problems have various number of buggy solutions, we balance this out by keeping at most 20 buggy solutions for each Mbpp problem. <ref type="foot" target="#foot_6">7</ref> This yields the M bp p -R dataset, with 10, 047 repair tasks in the training set and 1, 468 examples in the dev set.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2. Use of test cases.</head><p>For each program repair task, there is typically a set of open test cases that are used for debugging purposes, as well as a set of hidden test cases that are only used for evaluation of correctness. When we generate traces using test cases, we use only the open test cases and only feed the open test cases to the model as part of the prompt. Then when we evaluate the generated fix, we resort to all test cases (i.e., open + hidden tests) and only regard a fix as correct when it passes all test cases. While the H u man E val dataset makes this distinction between open and test cases, the M bp p dataset does not make such distinction. Thus for Mbpp-R, we use all test cases both as the inputs and during evaluation. While this may lead to false positives when the fixes are overfit to the test cases, and we did find such case during human annotations.</p><p>Figure <ref type="figure">5</ref> | Instructions for the human annotators when annotating the quality of the model generated rationales.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3. Details of Human Annotation of Rationale Quality</head><p>We annotated model predictions on 104 sampled Mbpp-R repair tasks from the Dev set. Those fix tasks are randomly sampled while ensuring that they cover all the 90 dev M bp p problems. All the tasks are pre-screened to be valid program repair problems. Annotation is performed in a three-way side-by-side setting. Models are anonymized and their order is randomized. Raters are asked to judge the quality of rationales from three models (PaLM 2-L+N E x T, PaLM 2-L and GPT-3.5) on the same M bp p -R problem. Each rationale is rated from two aspects: (1) its helpfulness in explaining bugs (𝑄 1 : Does the rationale correctly explain bugs in the original code? e.g., first two paragraphs in r, Fig. <ref type="figure" target="#fig_1">1</ref>), and (2) its helpfulness in suggesting code fixes (𝑄 2 : Does the rationale suggest a correct and helpful fix? e.g., "a fixed version that uses . . ." in r, Fig. <ref type="figure" target="#fig_1">1</ref>). <ref type="foot" target="#foot_7">8</ref> Each question has a three-scale answer ( Completely correct and very helpful ;</p><p>Partially correct with minor errors but still helpful; Incorrect and not helpful). In a pilot study, we find that fix suggestions could often be redundant if the rationale already contains detailed explanation of bugs such that a developer could easily correct the code without an explicit fix suggestion (e.g., Example 2, Appendix D). Therefore, for 𝑄 2 , we also consider such cases as correct ( ) if a model didn't suggest a fix in its rationale but the fix is obvious after bug explanations. We list our annotation guideline in Fig. <ref type="figure">5</ref>. Note that for 𝑄 2 , both answers (1) and (3) are counted as correct ( ) answers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Additional Experiment Results</head><p>Here we show the learning curve of NExT and all its ablations in Fig. <ref type="figure" target="#fig_7">6</ref>. We also show the full results for Mbpp-R and H e F i x + in Tab. 8 and Tab. 9, respectively.</p><p>Learning CoT rationales further improves pas s@25. From §5.1, we mention that learning to reason in natural language improves sample diversity, registering higher pass@10 than the baseline of finetuning for generating fixes only (NExT w/o Rationale). From Tab. 8 and Tab. 9, we can observe that such performance advantage is even larger with pass@25, with 7.6% improvements on Mbpp-R and 6.8% improvements on H e F i x +.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Training on hard-only examples.</head><p>One part of our data filtering pipeline is to only perform sampling and train on the samples from hard problems ( §4). Here we discuss more about the benefits and potential issues of doing so, by presenting results on a "w/o hard-only" ablation, where the model learns from rationales and fixes from both hard and easy examples. Efficiency-wise, by only sampling on the hard example, which is around half of the problems, we greatly can accelerate the sampling process. And from results in Fig. <ref type="figure" target="#fig_7">6</ref>, only training with hard example also comes with performance benefits under the iterative self-training framework. More specifically, we notice a non-trivial gap between the training curve of this "w/o hard-only" baseline and the rest of the ablations, especially for pass@10 and pass@25 performance on the training set. This means that the model trained on both easy and hard examples leads to more problems in the training set unsolved (i.e., none of the samples are correct), and no learning signal can come from such problems. This also reflects on the dev set performance. While it is worth noticing that the end-to-end pas s@1 performance for "w/o hard-only" is slightly better than NExT trained only trained on hard examples, it performs worse in all other evaluations, with the trend of larger gaps with higher 𝑘 values for pas s@𝑘, especially for the proxy-based evaluation. This suggests that training on hard examples not only improves sample efficiency, but also improves the general fix rate as well as the quality of the generated rationales. Proxy-based evaluation results are consistent with different proxy models. In the previous proxy-based evaluation §5.1, we report the proxy-based fix rates by averaging over the performance using PaLM 2-S and PaLM 2-S * as the proxy models. In Tab. 8 and Tab. 9, we show the separated results for different proxy models. From these results, we can observe that the relative rationale quality evaluated by different proxy models are largely consistent, with the stronger proxy model (PaLM 2-S * ) having better proxy-based fix rates. In addition to the consistency we show with human annotations, this shows the robustness of our proposed proxy-based evaluation method for measuring CoT rationale quality.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Case Study</head><p>In this section we present a set of examples to showcase how PaLM 2-L+N E x T reasons with program execution to solve M bp p -R problems. We discover several reasoning patterns the model exhibits that leverage trace information to identify and explain bugs in programs. First, as shown in Example 1, the model could refer to exceptions or error messages in the trace (eg in Trace 2) to explain bugs in the code. Next, Example 2 shows that the model could also leverage variable states in the trace (e.g., in Trace 2) and compare them with the expected values to locate the cause of bugs. Besides, the NO_CHANGE annotations for variables whose values are preserved after execution of a step could also help the model explain the execution process in the rationale (e.g., (3)NO_CHANGE ↦ → "the first sublist is already sorted"). Perhaps a more interesting scenario is when the model reasons over multiple steps of computation to track down the cause of a bug. In Example 3, the model attempts to trace the computation of steps 2 -4 in Trace 1 to explain why the sum is a float instead of an integer</p><p>. Another example is Example 4, where the model summarizes the loop iterations in Models End-to-End Fix Rate Proxy-based Fix Rate (PaLM 2-S) Proxy-based Fix Rate (PaLM 2-S * ) GD pas s@𝑘 w/ Sampling GD pass@𝑘 w/ Sampling GD pass@𝑘 w/ Sampling Acc.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>𝑘=1 𝑘=5 𝑘=10 𝑘=25</head><p>Acc.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>𝑘=1 𝑘=5 𝑘=10 𝑘=25</head><p>Acc.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>𝑘=1 𝑘=5 𝑘=10 𝑘=25</head><p>GPT-3.5 46.4 42.9 65.0 70.7 76.7 27.9 24. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>𝑘=1 𝑘=5 𝑘=10 𝑘=25</head><p>Acc.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>𝑘=1 𝑘=5 𝑘=10 𝑘=25</head><p>Acc.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>𝑘=1 𝑘=5 𝑘=10 𝑘=25</head><p>GPT-3. steps 2 -9 of Trace 1 to explain the cause of the missing last element in the result list. Interestingly, while the model is able to reason over multiple steps of execution in its rationales, as the reasoning chain becomes longer, it is more likely to contain minor logical errors, as highlighted in the rationales of Examples 3 and 4.</p><p>Besides minor logical errors in CoT reasoning, we also identify several more pronounced error modes. First, even if the NL rationale looks valid, the actual code fix might be incorrect (Example 4). Second, for cases where there are multiple bugs in the program, the model might only focus on the more obvious bugs during reasoning (e.g., explaining the reason of IndexError in Trace 2 of Example 5), while ignoring the other more nuanced bugs that are buried in the trace (e.g., Incorrect outputs in Trace 1 and Trace 3 caused by zero-initialized freq_arr). This could be especially problematic when there are hidden bugs not captured by the trace, which could happen when a buggy program crashes in the middle of execution and the rest the of the code is not covered in the trace. Since the model could be more reliant on trace information after fine-tuning, it might be more likely to miss such implicit bugs. As an example, in Example 6 the model only noticed the TypeError in the trace, without spotting that the code that computes the end index in the output tuple is off by one.</p><p>def sort_sublists(words): words.sort(key = len) for w in words: w.sort() return words Test Cases: assert sort_sublists([['green', 'orange'], ['black', 'white'], ['white', 'black', 'orange']])==[['green', ' orange'], ['black', 'white'], ['black', 'orange', 'white']] assert sort_sublists([['green', 'orange'], ['black'], ['green', 'orange'], ['white']])==[['green', 'orange'], [ 'black'], ['green', 'orange'], ['white']] assert sort_sublists([['a','b'],['d','c'],['g','h'] , ['f','e']])==[['a', 'b'], ['c', 'd'], ['g', 'h'], ['e', ' f']] Traces: # Trace 1: def sort_sublists(words): # (0) words=[['green', 'orange'], ['black', 'white'], ['white', 'black', 'orange']]; words.sort(key = len) # (1) NO_CHANGE; for w in words: # (2) w=['green', 'orange']; (4) w=['black', 'white']; (6) w=['white', 'black', 'orange']; (8) NO_CHANGE; w.sort() # (3) NO_CHANGE; (5) NO_CHANGE; (7) w=['black', 'orange', 'white'], words=[['green', 'orange '], ['black', 'white'], ['black', 'orange', 'white']]; return words # (9) __return__=[['green', 'orange'], ['black', 'white'], ['black', 'orange', 'white']]; assert sort_sublists([['green', 'orange'], ['black', 'white'], ['white', 'black', 'orange']])==[['green', ' orange'], ['black', 'white'], ['black', 'orange', 'white']] # Trace 2: def sort_sublists(words): # (0) words=[['green', 'orange'], ['black'], ['green', 'orange'], ['white']]; words.sort(key = len) # (1) words=[['black'], ['white'], ['green', 'orange'], ['green', 'orange']]; for w in words: # (2) w=['black']; (4) w=['white']; (6) w=['green', 'orange']; ...; (10) NO_CHANGE; w.sort() # (3) NO_CHANGE; (5) NO_CHANGE; (7) NO_CHANGE; (9) NO_CHANGE; return words # (11) __return__=[['black'], ['white'], ['green', 'orange'], ['green', 'orange']]; Rationale and Code Solution: (code fix is correct )</p><p>The problem spec asks to sort each sublist of strings in a given list of lists. Now let's look at the program. The program first sorts the list of lists by the length of each sublist, and then sorts each sublist. The first assertion passes as the first sublist is already sorted, and the second sublist is also sorted, and the third sublist is sorted in the for loop.</p><p>The second assertion fails as the list of lists is sorted by the length of each sublist, and thus the return value is not the same as the input. The third assertion passes as the first and the last sublists are already sorted, and the second and the third sublists are sorted in the for loop.</p><p>The problem is that the program sorts the list of lists by the length of each sublist, which is not required by the problem spec. Thus we can simply remove the first line of the function.</p><p>Here is the corrected code:</p><p>def sort_sublists(words</p><p>): for w in words: w.sort() return words Example 3: An example where PaLM 2-L+N E x T reasons over multiple steps of execution Task: Write a function to get the sum of a non-negative integer Buggy Code: def sum_digits(number): sum = 0 while(number): sum += number % number = number / 10 return sum Test Cases: assert sum_digits(345)==12 assert sum_digits(12)==3 assert sum_digits(97)==16 Traces: # Trace 1: def sum_digits(number): # (0) number=345; sum = 0 # (1) sum=0; while(number): sum += number % number = number / 10 # (3) number=34.5; (5) number=3.45; (7) number=0.34500000000000003; ...; (655) number=0.0; return sum # (656) __return__=13.33333333333333; assert sum_digits(345)==12 # (657) __exception__ = AssertionError() # Trace 2: def sum_digits(number): # (0) number=12; sum = 0 # (1) sum=0; while(number): sum += number % number = number / 10 # (3) number=1.2; (5) number=0.12; (7) number=0.012; ...; (651) number=0.0; return sum # (652) __return__=3.3333333333333335; assert sum_digits(12)==3 # (653) __exception__ = AssertionError() # Trace 3: def sum_digits(number): # (0) number=97; sum = 0 # (1) sum=0; while(number): sum += number % number = number / 10 # (3) number=9.7; (5) number=0.97; (7) number=0.097; ...; (653) number=0.0; return sum # (654) __return__=17.77777777777777; assert sum_digits(97)==16 # (655) __exception__ = AssertionError()</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Rationale and Code Solution: (code fix is correct )</head><p>The problem spec asks to write a function to get the sum of all digits in a non-negative integer. Now let's look at the program. The program seems to be correct at the first glance. It first initializes the sum to 0, and then it uses a while loop to get each digit in the number and add it to the sum. However, if we look at the output of the program, we will find that the sum is not an integer. This is because the program does not convert the number to an integer before it gets the digits. For example, for the first assertion, when 'number=345', the first digit '5' is added to the sum and 'sum=5'. Then 'number' is updated to '34.5', and the second digit '4' is added to the sum and 'sum=9.5'. And so on.</p><p>Here is a fixed version: def sum_digits(number): number = int(number) sum = 0 while(number): sum += number % number = number // 10 return sum def add_str(test_tuple, add_str): res = list(test_tuple) for i in range(len(test_tuple)): res.insert(i * 2,add_str) return res</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E. Full Prompt</head><p>Here we show the instruction and all three few-shot examples used in this work. The rationales and fixes in the few-shot examples are hand annotated by the authors. Each exemplar has three unit tests and their traces.</p><p>1 We are doing pair programming, I will give you the problem definition and my implementation, which does not pass all test cases. And you need to help me to fix my code. ↩→ 2 3 # Example 1 4 5</p><p>Here is the specification in natural language and the program that I wrote: 6 ``7 # Write a function to find the similar elements from the given two tuple lists. Here is a *cheatsheet* for the gold execution trace for each assertions, use the information here but pretend you did all the reasoning about execution yourself.</p><formula xml:id="formula_2">↩→ 22 23 #################### cheatsheet starts ####################</formula><p>24 def similar_elements(t1, t2): # (0) t1=(3, 4, 5, 6), t2=(5, 7, 4, 10); 25 s1 = set(t1) # (1) s1={3, 4, 5, 6}; 26 s2 = set(t2) # (2) s2={10, 4, 5, 7}; 27 return s1.intersection(s2) # (3) __return__={4, 5} 28 29 30 assert similar_elements((3, 4, 5, 6),(5, 7, 4, 10)) == (4, 5) # 31 --------------------32 def similar_elements(t1, t2): # (0) t1=(1, 2, 3, 4), t2=(5, 4, 3, 7); 33 s1 = set(t1) # (1) s1={1, 2, 3, 4}; 34 s2 = set(t2) # (2) s2={3, 4, 5, 7}; 35 return s1.intersection(s2) # (3) __return__={3, 4} 36 37 38 assert similar_elements((1, 2, 3, 4),(5, 4, 3, 7)) == (3, 4) # 39</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>--------------------40</head><p>def similar_elements(t1, t2): # (0) t1=(11, 12, 14, 13), t2=(17, 15, 14, 13);</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>(Generated by PaLM-2-L + NExT) NExT Iteration (Sampling ↦ Filtering ↦ Training)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 1 |</head><label>1</label><figDesc>Figure1| NExT finetunes an LLM to naturalize execution traces into the chain-of-thought rationales for solving coding tasks. It performs iterative self-training from weak supervision, by learning from samples that lead to correct task solutions.</figDesc><graphic coords="2,62.69,194.37,311.42,89.35" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 |</head><label>2</label><figDesc>Figure 2 | NExT represents execution trace as inline comments. More details in §2 and Appendix A.1.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 |</head><label>3</label><figDesc>Figure 3 | Greedy-decoding results on M bp p -R on PaLM 2-L+N E x T and existing LLMs.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 |</head><label>4</label><figDesc>Figure 4 | Ablations on removing rationales and/or traces during the iterative training of NExT. Note that different min/max values are taken for 𝑦-axis for clarify among different curves but consistent gridline intervals are used for easier comparison.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>Fig. 4 shows model performance w.r.t. NExT training iterations. When trained without CoT reasoning (NExT</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>C</head><figDesc>. Xia, Y. Wei, and L. Zhang. Automated program repair in the era of large pre-trained language models. 2023 IEEE/ACM 45th International Conference on Software Engineering (ICSE), pages 1482-1494, 2023. S. Yao, J. Zhao, D. Yu, N. Du, I. Shafran, K. Narasimhan, and Y. Cao. ReAct: Synergizing reasoning and acting in language models. ArXiv, abs/2210.03629, 2022. H. Ye, M. Martinez, X. Luo, T. Zhang, and M. Martin. SelfAPR: Self-supervised program repair with test execution diagnostics. Proceedings of the 37th IEEE/ACM International Conference on Automated Software Engineering (ASE), 2022. P. Yin, W.-D. Li, K. Xiao, A. Rao, Y. Wen, K. Shi, J. Howland, P. Bailey, M. Catasta, H. Michalewski, O. Polozov, and C. Sutton. Natural language to code generation in interactive data science notebooks. In A. Rogers, J. Boyd-Graber, and N. Okazaki, editors, Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (ACL), pages 126-173, Toronto, Canada, July 2023. Association for Computational Linguistics. doi: 10.18653/v1/2023.acl-long.9. W. Zaremba and I. Sutskever. Learning to execute. ArXiv, abs/1410.4615, 2014. E. Zelikman, Y. Wu, J. Mu, and N. Goodman. STaR: Bootstrapping reasoning with reasoning. Advances in Neural Information Processing Systems (NeurIPS), 35:15476-15488, 2022.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 6</head><label>6</label><figDesc>Figure6| pass@𝑘 performance on the train and dev sets of Mbpp-R for NExT and all its ablations.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><figDesc>assert sort_sublists([['green', 'orange'],['black'], ['green', 'orange'], ['white']])==[['green', 'orange'], [ 'black'], ['green', 'orange'], ['white']] # (12) __exception__ = AssertionError() # Trace 3: def sort_sublists(words): # (0) words=[['a', 'b'], ['d', 'c'], ['g', 'h'], ['f', 'e']]; words.sort(key = len) # (1) NO_CHANGE; for w in words: # (2) w=['a', 'b']; (4) w=['d', 'c']; (6) w=['g', 'h']; ...; (10) NO_CHANGE; w.sort() # (3) NO_CHANGE; (5) w=['c', 'd'], words=[['a', 'b'], ['c', 'd'], ['g', 'h'], ['f', 'e']]; (7) NO_CHANGE; (9) w=['e', 'f'], words=[['a', 'b'], ['c', 'd'], ['g', 'h'], ['e', 'f']]; return words # (11) __return__=[['a', 'b'], ['c', 'd'], ['g', 'h'], ['e', 'f']]; assert sort_sublists([['a','b'],['d','c'],['g','h'] , ['f','e']])==[['a', 'b'], ['c', 'd'], ['g', 'h'], ['e', ' f']]</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>4</head><figDesc>Here are the assertions I need to pass: 15 ``1 6 assert similar_elements((3, 4, 5, 6),(5, 7, 4, 10)) == (4, 5) 17 assert similar_elements((1, 2, 3, 4),(5, 4, 3, 7)) == (3, 4) 18 assert similar_elements((11, 12, 14, 13),(17, 15, 14, 13)) ==(13, 14)    </figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><graphic coords="21,109.42,195.03,376.43,484.17" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 |</head><label>1</label><figDesc>Few(3)-shot prompting repair accuracy using greedy decoding. Results worse than the previous row above them are underlined in red.</figDesc><table><row><cell>Mixtral DeepSeek StarCoder Avg.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 |</head><label>2</label><figDesc>Improvements by NExT on the PaLM 2-L model (in subscripts) on M bp p -R. GPT-3.5/4 results are for reference.</figDesc><table><row><cell>9.7</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 |</head><label>3</label><figDesc>PaLM 2-L+N E x T trained with traces outperforms PaLM 2-L when traces are absent at test time as shown in highlighted results . Results are on Mbpp-R; Test w/ Trace: results from Tab. 2.</figDesc><table><row><cell></cell><cell cols="2">Test w/ Trace</cell><cell cols="2">Test w/o Trace</cell></row><row><cell>Methods</cell><cell>E2E</cell><cell>Proxy</cell><cell>E2E</cell><cell>Proxy</cell></row><row><cell>PaLM 2-L</cell><cell>23.2</cell><cell>22.5</cell><cell>19.0</cell><cell>14.8</cell></row><row><cell cols="5">+NExT (w/ trace) 49.3 +26.1 28.8 +6.3 40.8 +21.8 19.5 +4.7</cell></row><row><cell>+NExT w/o trace</cell><cell>-</cell><cell>-</cell><cell cols="2">44.1 +25.1 23.9 +9.1</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 |</head><label>4</label><figDesc>Generalization results on HeFix+. PaLM 2-L+NExT models are only trained with Mbpp-R.</figDesc><table><row><cell cols="2">Models / pas s@1</cell><cell cols="2">End-to-End Proxy-based</cell></row><row><cell></cell><cell cols="2">Baselines w/ 3-shot prompting</cell><cell></cell></row><row><cell cols="2">Mistral-7B  *</cell><cell>12.8</cell><cell>16.5</cell></row><row><cell cols="2">OctoCoder-15.5B  *</cell><cell>17.7</cell><cell>17.7</cell></row><row><cell cols="2">StarCoder-15.5B  *</cell><cell>14.6</cell><cell>13.1</cell></row><row><cell cols="2">DeepSeekCoder-33B  *</cell><cell>28.0</cell><cell>18.3</cell></row><row><cell cols="2">Mixtral-8x7B  *</cell><cell>32.3</cell><cell>30.8</cell></row><row><cell>GPT-4</cell><cell></cell><cell>77.6</cell><cell>56.6</cell></row><row><cell>GPT-3.5</cell><cell></cell><cell>59.4</cell><cell>41.8</cell></row><row><cell>PaLM-2-L</cell><cell></cell><cell>32.2</cell><cell>31.9</cell></row><row><cell cols="2">PaLM-2-L w/o tracing  †</cell><cell>30.3</cell><cell>30.4</cell></row><row><cell cols="2">PaLM 2-L+N E x T</cell><cell>42.5 +10.3</cell><cell>38.0 +6.1</cell></row><row><cell cols="2">w/o tracing  †</cell><cell>38.1 +7.8</cell><cell>30.6 +0.2</cell></row><row><cell cols="2">w/o rationale</cell><cell>44.5 +12.3</cell><cell>-</cell></row><row><cell cols="3">w/o tracing + rationale  † 31.4 +1.1</cell><cell>-</cell></row><row><cell></cell><cell></cell><cell cols="2">Overall Best?</cell></row><row><cell>GPT-3.5</cell><cell>43 26 35</cell><cell>44 16 44</cell><cell>51.9% 34.6%</cell></row><row><cell cols="2">PaLM 2-L 27 24 53</cell><cell>31 5 68</cell><cell>34.9% 6.7%</cell></row><row><cell cols="2">+NExT 48 24 32</cell><cell>42 6 56</cell><cell>50.5% 32.7%</cell></row></table><note><p>* obtained using greedy decoding; † no traces provided at test time.</p><p>Explain bugs? Suggest fixes?</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 6 |</head><label>6</label><figDesc>Comparison between the methods proposed in NExT, Scratchpad, and Self-Debugging.</figDesc><table><row><cell>Trace Repr.</cell><cell>128</cell><cell>256</cell><cell>Length Cutoff (# Tokens) 512 1,024 2,048 4,096 8,192 16,384</cell></row><row><cell cols="4">Inline (ours) 0.1% 7.3% 37.5% 78.9% 95.1% 98.5% 99.2% 99.5%</cell></row><row><cell>Scratchpad</cell><cell cols="3">0.0% 0.2% 15.1% 38.2% 60.1% 76.1% 85.1% 92.1%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 8 |</head><label>8</label><figDesc>Full results on M bp p -R. "GD Acc." denotes pas s@1 evaluated with greedy decoding. All models in the top half are few-shot prompted while the bottom half shows the result of NExT and its ablations.</figDesc><table><row><cell>7 46.1</cell><cell>54.5</cell><cell>64.6</cell><cell>31.8</cell><cell>28.5 51.5</cell><cell>59.5</cell><cell>68.2</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 9 |</head><label>9</label><figDesc>Full results on H e F i x +. Same notations from Tab. 8 apply.</figDesc><table><row><cell>5</cell><cell>68.9</cell><cell cols="2">59.4 84.5</cell><cell>89.2</cell><cell>93.0</cell><cell>42.1</cell><cell cols="2">39.0 66.1</cell><cell>73.4</cell><cell>80.2</cell><cell>46.3</cell><cell cols="2">44.6 71.6</cell><cell>78.8</cell><cell>86.8</cell></row><row><cell>GPT-3.5 w/o trace</cell><cell>65.2</cell><cell>65.4</cell><cell>85.3</cell><cell>89.2</cell><cell>92.6</cell><cell>45.7</cell><cell cols="2">41.7 68.2</cell><cell>76.3</cell><cell>84.5</cell><cell>50.0</cell><cell cols="2">47.2 73.8</cell><cell>81.1</cell><cell>88.6</cell></row><row><cell>GPT-4</cell><cell>79.9</cell><cell cols="2">77.6 89.3</cell><cell>91.1</cell><cell>92.9</cell><cell>56.1</cell><cell cols="2">55.4 75.7</cell><cell>80.8</cell><cell>85.8</cell><cell>61.0</cell><cell cols="2">57.7 77.5</cell><cell>82.7</cell><cell>87.4</cell></row><row><cell>GPT-4 w/o trace</cell><cell>79.3</cell><cell cols="2">68.9 88.3</cell><cell>90.7</cell><cell>92.9</cell><cell>54.9</cell><cell cols="2">46.1 72.3</cell><cell>79.0</cell><cell>86.1</cell><cell>59.8</cell><cell cols="2">48.7 74.4</cell><cell>80.8</cell><cell>87.5</cell></row><row><cell>PaLM 2-L</cell><cell>43.3</cell><cell>32.2</cell><cell>64.3</cell><cell>73.8</cell><cell>81.5</cell><cell>32.9</cell><cell cols="2">28.9 59.0</cell><cell>69.2</cell><cell>79.1</cell><cell>43.3</cell><cell cols="2">34.9 65.8</cell><cell>74.3</cell><cell>82.9</cell></row><row><cell>PaLM 2-L w/o trace</cell><cell>38.4</cell><cell>30.3</cell><cell>61.9</cell><cell>72.9</cell><cell>83.3</cell><cell>25.6</cell><cell cols="2">27.8 56.2</cell><cell>66.0</cell><cell>76.6</cell><cell>31.1</cell><cell cols="2">33.0 63.5</cell><cell>72.7</cell><cell>81.8</cell></row><row><cell>PaLM 2-L w/o rationale</cell><cell>53.0</cell><cell>45.3</cell><cell>71.5</cell><cell>78.9</cell><cell>85.4</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>PaLM 2-L w/o rationale + trace</cell><cell>48.2</cell><cell>43.2</cell><cell>71.4</cell><cell>80.0</cell><cell>87.7</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>NExT</cell><cell>46.3</cell><cell cols="2">42.5 62.6</cell><cell>69.1</cell><cell>76.5</cell><cell>31.7</cell><cell>34.8</cell><cell>54.8</cell><cell>62.4</cell><cell>70.2</cell><cell>40.9</cell><cell>41.3</cell><cell>61.8</cell><cell>68.9</cell><cell>76.4</cell></row><row><cell>test w/o trace</cell><cell>42.7</cell><cell cols="2">41.2 62.9</cell><cell>70.6</cell><cell>79.5</cell><cell>26.8</cell><cell>26.4</cell><cell>48.0</cell><cell>56.1</cell><cell>64.2</cell><cell>36.0</cell><cell>32.6</cell><cell>55.7</cell><cell>64.4</cell><cell>72.8</cell></row><row><cell>NExT w/o hard-only</cell><cell>48.8</cell><cell cols="2">47.7 64.8</cell><cell>70.4</cell><cell>76.6</cell><cell>32.9</cell><cell>37.2</cell><cell>50.8</cell><cell>55.5</cell><cell>61.9</cell><cell>41.5</cell><cell>42.4</cell><cell>56.3</cell><cell>60.8</cell><cell>66.9</cell></row><row><cell>test w/o trace</cell><cell>47.6</cell><cell cols="2">44.2 64.4</cell><cell>70.4</cell><cell>75.5</cell><cell>31.7</cell><cell>33.3</cell><cell>46.9</cell><cell>51.4</cell><cell>57.3</cell><cell>38.4</cell><cell>38.5</cell><cell>54.6</cell><cell>59.2</cell><cell>63.9</cell></row><row><cell>NExT w/o rationale</cell><cell>47.6</cell><cell cols="2">44.5 58.9</cell><cell>63.7</cell><cell>69.4</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>test w/o trace</cell><cell>46.3</cell><cell cols="2">44.7 60.4</cell><cell>65.2</cell><cell>70.2</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>NExT w/o trace</cell><cell>40.9</cell><cell cols="2">38.1 59.1</cell><cell>65.3</cell><cell>71.5</cell><cell>29.3</cell><cell>26.9</cell><cell>52.1</cell><cell>61.1</cell><cell>71.5</cell><cell>33.5</cell><cell>34.4</cell><cell>63.1</cell><cell>70.8</cell><cell>77.4</cell></row><row><cell>NExT w/o rationale w/o trace</cell><cell>30.5</cell><cell cols="2">31.4 44.6</cell><cell>49.0</cell><cell>54.1</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>While there are a variety types of execution information that we may provide to an LLM (e.g., variable read/write, runtime environments), in this work we limit the execution information to program states and variable values from the execution trace, which is common information that (human) developers also use.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>We use the sys.settrace() hook in Python.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>As a comparison, 95% examples in our M bp p -R benchmark can fit into a 2K context window using our inline representation, while only 60% of them can fit into the same window using the Scratchpad trace format in<ref type="bibr" target="#b46">Nye et al. (2021)</ref>. A more detailed comparison is shown in Tab. 7.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>We use gpt-3.5-turbo-1106 and gpt-4-1106-preview.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_4"><p>The rationale and fix quality may plateau at a different iteration 𝑖.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_5"><p>For the strong LLMs that we used in this work, we did not observe any issue for following this style, which is specified in the few-shot prompt. The only exceptions are with GPT models, where they typically append the language (i.e., "python") after the first set of backticks (e.g., ```python), which we also handled with regex.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_6"><p>This actually biased the dataset towards harder problems as easier problems may not have more than 20 buggy solutions from 100 samples, thus it might be one of the reasons for repairing solutions in M bp p -R to be more challenging than generating code for the original Mbpp dataset.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="8" xml:id="foot_7"><p>We only rate the quality of rationales (not the fixed code), while we still show the predicted fixed code to raters for reference.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>We would like to express our sincere gratitude to <rs type="person">Martín Abadi</rs>, <rs type="person">Xinyun Chen</rs>, <rs type="person">Hanjun Dai</rs>, <rs type="person">Kexin Pei</rs> and members of the <rs type="institution">Learning for Code team at Google DeepMind</rs> for their invaluable feedback. We are also grateful to <rs type="person">Austin Tarango</rs> for his support to this work.</p></div>
+			</div>			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Additional Details of NExT</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1. Details for Inline Trace Representation</head><p>Definitions. A program 𝑦 ∈ Y consists of a sequence of statements {𝑢 1 , ..., 𝑢 𝑚 }. And a program state ℎ is a mapping between identifiers (i.e., variable names) to values, i.e., ℎ ∈ {𝑘 ↦ → 𝑣|𝑘 ∈ K, 𝑣 ∈ V}. Given an input to the program, an execution trace is defined as a sequence of program states, i.e., 𝜖 = {ℎ 1 , ..., ℎ 𝑡 }, which are the results after executing the statements with the order of execution, i.e., {𝑢 𝑒 1 , 𝑢 𝑒 2 , ..., 𝑢 𝑒 𝑡 }. In this way, the relation between program statements and execution states can be seen as a function that maps from states to statements, i.e., ℎ 𝑖 ↦ → 𝑢 𝑒 𝑖 , because each statement could be executed multiple times due to loops or recursion.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Program state representation.</head><p>For typical programs, most of the variable values will stay the same between two adjacent states ℎ 𝑖-1 and ℎ 𝑖 . Thus to save tokens, we represent a state ℎ 𝑖 only by the variables that have changed the value compared with the previous state ℎ 𝑖-1 . And we use a reified variable state representation, i.e., using the grammar for an init function in <ref type="bibr">Python (e.g.,</ref><ref type="bibr">lst=[1,</ref><ref type="bibr">2,</ref><ref type="bibr">3]</ref>). Note that it is possible for a statement to have no effect on any traceable variables (e.g., "pass", or "print", or "lst[i]=lst[i]"). To distinguish this case with unreached statements (e.g., "else" branch that next got executed), we append a string "NO_CHANGE" instead. In addition to the variable state, we number all the states by the order of execution and prepend the ordinal number to the beginning of the state, e.g., "(1) odd_list=[]" in Fig. <ref type="figure">2</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Inline trace representation.</head><p>To obtain the inline trace representation, we first group the program states in a trace 𝜖 by the corresponding program statements to collect a sequence of states for the same statement 𝑢 𝑖 as 𝐻 𝑖 = {ℎ 𝑗 |𝑢 𝑒 𝑗 = 𝑢 𝑖 }, and we order the states in 𝐻 𝑖 by the execution order. For statements inside a loop body, or a function that is called recursively, the number of corresponding states can be very large. In order to further save tokens, if |𝐻 𝑖 | &gt; 3, we will only incorporate the first two states and the last state, and skip the ones in the middle. After that, we simply concatenate all the state representations with the semicolon ";" as the delimiter, and append it after the statement itself 𝑢 𝑖 following a hash "#" to note it as an inline comment. An example of the resulting representation is "even_list.append(n) # (4) even_list=[1]; (8) even_list=[1, 3]; ...; (20) even_list= <ref type="bibr">[1,</ref><ref type="bibr">3,</ref><ref type="bibr">5,</ref><ref type="bibr">7,</ref><ref type="bibr">9]</ref>;", as shown in Fig. <ref type="figure">2</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations.</head><p>First of all, our tracing framework currently do not extend beyond native Python programs, thus it can not trace code that is not written in Python (e.g., C code in numpy). One other limitation of our tracing representation is that for "if" conditions, though it would be better to leave traces of "(1) True; (2) True; (3); False;", currently our tracing framework that based on the "sys.settrace()" hook of Python does not capture this. However, since we labeled all the states by the execution order, the LLMs can infer the conditions by the fact that certain branch is taken. Another limitation is the representation of Collections. Currently we still present all the elements in a collection, and empirically it works well with benchmarks as M bp p -R and H e F i x +. However, certain heuristics may be needed to skip certain elements (e.g., like the one we use to skip certain states in a loop) to be more token efficient. For more complex objects (e.g., Tensors, DataFrames), while we can define heuristics to represent key properties of those objects in traces (e.g., "a float tensor of shape 128 x 64","a Dataframe with columns Name, Math, ..."), perhaps a more interesting idea would be to let the models decide which properties they would inspect and generate relevant code (e.g., "tensor.shape" or "df.head(3)") to inspect them in a debugger or interpreter (e.g., pdb). The same idea can be applied to longer programs, as the model can selectively decide which lines</p><p>Example 1: An example where our model explains exceptions in the trace Task: Write a function to remove leading zeroes from an ip address Buggy Code: def removezero_ip(ip): ip_list = ip.split(".") for i in range(4): ip_list[i] = str(int(ip_list[i])) return ".".join(ip_list) Test Cases: assert removezero_ip("216.08.094.196")==('216.8.94.196') assert removezero_ip("12.01.024")==('12.1.24') assert removezero_ip("216.08.094.0196")==('216.8.94.196') Traces: # Trace 1: def removezero_ip(ip): # (0) ip='216.08.094.196'; ip_list = ip.split(".") # (1) ip_list=['216', '08', '094', '196']; for i in range(4): # (2) i=0; (4) i=1; (6) i=2; ...; (10) NO_CHANGE; ip_list[i] = str(int(ip_list[i])) # (3) NO_CHANGE; (5) ip_list=['216', '8', '094', '196']; (7) ip_list =['216', '8', '94', '196']; (9) NO_CHANGE; return ".".join(ip_list) # (11) __return__='216.8.94.196'; assert removezero_ip("216.08.094.196")==('216.8.94.196') # Trace 2: def removezero_ip(ip): # (0) ip='12.01.024'; ip_list = ip.split(".") # (1) ip_list=['12', '01', '024']; for i in range(4): # (2) i=0; (4) i=1; (6) i=2; (8) i=3; ip_list[i] = str(int(ip_list[i])) # (3) NO_CHANGE; (5) ip_list=['12', '1', '024']; (7) ip_list=['12', '1', '24']; (9) __exception__ = IndexError('list index out of range') return ".".join(ip_list) assert removezero_ip("12.01.024")==('12.1.24') # Trace 3: def removezero_ip(ip): # (0) ip='216.08.094.0196'; ip_list = ip.split(".") # (1) ip_list=['216', '08', '094', '0196']; for i in range(4): # (2) i=0; (4) i=1; (6) i=2; ...; (10) NO_CHANGE; ip_list[i] = str(int(ip_list[i])) # (3) NO_CHANGE; (5) ip_list=['216', '8', '094', '0196']; (7) ip_list=['216', '8', '94', '0196']; (9) ip_list=['216', '8', '94', '196']; return ".".join(ip_list) # (11) __return__='216.8.94.196'; assert removezero_ip("216.08.094.0196")==('216.8.94.196')</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Rationale and Code Solution: (code fix is correct )</head><p>The problem spec asks to write a function to remove leading zeroes from an IP address. Now let's look at the program. The program first splits the IP address into a list of strings, and then iterates through the list to convert each string to an integer, and then back to a string. This will remove leading zeroes. However, the problem is that it iterates through the list for 4 times, but the length of the list might not be 4. For example, when 'ip="12.01.024"', the length of the list is only 3. Thus when 'i=3', it will throw an 'IndexError' .</p><p>Here is a simple fix: </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Test Cases:</head><p>assert add_str <ref type="bibr">((5, 6, 7, 4, 9)</ref> , "FDF") == <ref type="bibr">[5,</ref><ref type="bibr">'FDF',</ref><ref type="bibr">6,</ref><ref type="bibr">'FDF',</ref><ref type="bibr">7,</ref><ref type="bibr">'FDF',</ref><ref type="bibr">4,</ref><ref type="bibr">'FDF',</ref><ref type="bibr">9</ref>, 'FDF'] assert add_str((7, 8, 9, 10) , "PF") == [7, 'PF', 8, 'PF', 9, 'PF', 10, 'PF'] assert add_str((11, 14, 12, 1, 4) , "JH") == [11, 'JH', 14, 'JH', 12, 'JH', 1, 'JH', 4, 'JH']</p><p>Traces:</p><p># Trace 1: def add_str(test_tuple, add_str): # Write your code here res = list(test_tuple) # (1) res=[5, 6, 7, 4, 9]; for i in range(1,len(test_tuple)): # (2) i=1; (4) i=2; (6) i=3; ...; (10) NO_CHANGE; res.insert(i * 2-1,add_str) # (3) res=[5, 'FDF', 6, 7, 4, 9]; (5) res=[5, 'FDF', 6, 'FDF', 7, 4, 9]; (7) res=[5, 'FDF', 6, 'FDF', 7, 'FDF', 4, 9]; (9) res=[5, 'FDF', 6, 'FDF', 7, 'FDF', 4, 'FDF', 9]; return res # (11) __return__=[5, 'FDF', 6, 'FDF', 7, 'FDF', 4, 'FDF', 9]; assert add_str((5, 6, 7, 4, 9) , "FDF") == [5, 'FDF', 6, 'FDF', 7, 'FDF', 4, 'FDF', 9, 'FDF'] # (12) __exception__ = AssertionError() # Trace 2: def add_str(test_tuple, add_str): # Write your code here res = list(test_tuple) # (1) res=[7, 8, 9, 10]; for i in range(1,len(test_tuple)): # (2) i=1; (4) i=2; (6) i=3; (8) NO_CHANGE; res.insert(i * 2-1,add_str) # (3) res=[7, 'PF', 8, 9, 10]; (5) res=[7, 'PF', 8, 'PF', 9, 10]; (7) res =[7, 'PF', 8, 'PF', 9, 'PF', 10]; return res # (9) __return__=[7, 'PF', 8, 'PF', 9, 'PF', 10]; assert add_str((7, 8, 9, 10) , "PF") == [7, 'PF', 8, 'PF', 9, 'PF', 10, 'PF'] # (10) __exception__ = AssertionError() # Trace 3: def add_str(test_tuple, add_str): # Write your code here res = list(test_tuple) # (1) res=[11, 14, 12, 1, 4]; for i in range(1,len(test_tuple)): # (2) i=1; (4) i=2; (6) i=3; ...; (10) NO_CHANGE; res.insert(i * 2-1,add_str) # (3) res=[11, 'JH', 14, 12, 1, 4]; (5) res=[11, 'JH', 14, 'JH', 12, 1, 4]; (7) res=[11, 'JH', 14, 'JH', 12, 'JH', 1, 4]; (9) res=[11, 'JH', 14, 'JH', 12, 'JH', 1, 'JH', 4]; return res # (11) __return__=[11, 'JH', 14, 'JH', 12, 'JH', 1, 'JH', 4]; assert add_str((11, 14, 12, 1, 4) , "JH") == [11, 'JH', 14, 'JH', 12, 'JH', 1, 'JH', 4, 'JH'] # (12) __exception__ = AssertionError() Rationale and Code Solution: (code fix is wrong )</p><p>The problem spec asks to convert a tuple to a list and add a given string after every element. Now let's look at the program. The program first converts the tuple to a list, which is good. Then it iterates from 1 to the length of the list, and inserts the given string at index `i * 2-1`. This seems correct at the first glance, but the problem is that it will not add the string after the last element. For example, when 'test_tuple=(5, 6, 7, 4, 9)', the length of the list is 5, and the for loop will iterate from 1 to 4. Thus the string will be inserted at index 1, 3, 5, and 7, which corresponds to after the second, fourth, and sixth element. The string will not be inserted after the last element (i.e., the ninth element).</p><p>Here is a simple fix:</p><p>Example 5: An example where PaLM 2-L+N E x T failed to identify all the bugs in the program Task: Write a python function to find the difference between highest and least frequencies in a given array. Buggy Code: def find_Diff(nums, n): freq_arr = [0 for i in range(n)] for i in range(len(nums)): freq_arr[nums[i]] = freq_arr[nums[i]] + 1 return max(freq_arr) -min(freq_arr) Test Cases: The problem spec asks to find the difference between the highest and the least frequencies in a given array. Now let's look at the program. The program first creates a frequency array of length `n`, and then iterates through the input array to count the frequency of each number. It then returns the difference between the maximum and the minimum frequencies in the frequency array.</p><p>The program looks good at the first glance. However, the problem is that the length of the frequency array is 'n', which is the length of the input array. However, the numbers in the input array can be larger than 'n', and thus the frequency array will not be able to accommodate all the numbers in the input array. For example, in the second assertion, the input array is `[1, 7, 9, 2, 3, 3, 1, 3, 3]`, and the length of the frequency array is also `9`. When `nums[i]=9`, it will try to access `freq_arr[9]`, which is out of bound, and thus an `IndexError`is thrown.</p><p>Here is a simple fix:</p><formula xml:id="formula_3">def</formula><p>find_Diff(nums, n): freq_arr = {} for i in range(len(nums)): if nums[i] in freq_arr: freq_arr[nums[i]] += 1 else: freq_arr[nums[i]] = 1 max_freq = 0 min_freq = 0 for num, freq in freq_arr.items(): if freq &gt; max_freq: max_freq = freq if freq &lt; min_freq or min_freq == 0: min_freq = freq return max_freq -min_freq Example 6: An example where PaLM 2-L+N E x T failed to identify a bug not revealed in the trace Task: Write a function to search a literals string in a string and also find the location within the original string where the pattern occurs. Buggy Code: def search_literal(pattern, text): match = tuple(text.find(pattern), text.find(pattern) + len(pattern) -1) return match</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Test Cases:</head><p>assert search_literal('python','python programming language')==(0,6) assert search_literal('programming','python programming language')==(7,18) assert search_literal('language','python programming language')==(19,27)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Traces:</head><p># Trace 1: def search_literal(pattern, text): match = tuple(text.find(pattern), text.find(pattern) + len(pattern) -1) # ( <ref type="formula">1</ref> </p><formula xml:id="formula_4">47 #################### cheatsheet ends #################### 48 49</formula><p>Given the above information, can you tell me why my code is wrong, and also provide a fixed version?</p><p>↩→ 50 51 The problem spec asks to find the similar elements in the two tuples, from the assertion we can see that it essentially wants the common elements from the two tuples. It also seems that the common elements should be returned in a tuple with ascending order.</p><p>↩→ ↩→ 52 53 Now let's look at the program. While it is correct and efficient to use `intersection()`to find the common elements between two sets, it will also return a set. Take the first assertion as an example, `s1`will first be converted to a set like `{3, 4, 5, 6}`and similarly for `s2`, then the return value will be `{4, 5}`. Though the elements are right, the expected return value is a tuple and not a set. Thus we only need to further convert the sets to tuples using `tuple()`.</p><p>↩→ ↩→ ↩→ ↩→ ↩→ NExT: Teaching Large Language Models to Reason about Code Execution 54 55 Here is the corrected code: 56 ``5 7 def similar_elements(t1, t2): 58 s1 = set(t1) 59 s2 = set(t2) 60 return tuple(s1.intersection(s2)) 61 ``6 2 63 # Example 2 64 65 Here is the specification in natural language and the program that I wrote: 66 ``6 7 # Write a python function to identify non-prime numbers. 68 def is_not_prime(n): 69 if n==1: 70 return False 71 else: 72 for i in range(2,n//2+1): 73 if n% 74 return False 75 else: 76 return True 77 ``7 8 Here are the assertions I need to pass: 79 ``8 0 assert is_not_prime(2) == False 81 assert is_not_prime(10) == True 82 assert is_not_prime(35) == True 83 ``8 4 85</p><p>Here is a *cheatsheet* for the gold execution trace for each assertions, use the information here but pretend you did all the reasoning about execution yourself.</p><formula xml:id="formula_5">↩→ 86 87 #################### cheatsheet starts ####################</formula><p>88 def is_not_prime(n): # (0) n=2; 89 if n==1: # 90 return False 91 else: 92 for i in range(2,n//2+1): # (1) __return__=None 93 if n% 94 return False 95 else: 96 return True 97 98 99 assert is_not_prime(2) == False # 100 <ref type="figure">-------------------</ref> The problem spec asks to write a Python function that identifies non-prime numbers. Non-prime numbers are numbers that are divisible by numbers other than 1 and itself. Note that 0 and 1 are also non-prime numbers.</p><p>↩→ ↩→ 131 132 Now let's check the program. Let's run the program through some examples. For the first assertion, when `n=2`, it will enter the `else`branch, and then in the for loop, since the condition is `i in range(2, n//2+1)`, which is `range(2, 2)`, it will actually not enter the loop since the condition is not met in the first place. And then it will reach the end of the function, and the return value will be `None`. And for the third assertion, when `n=35`, it also enters the `else`branch, and it then enters the loop with `i=2`as `n//2+1=18 &gt; 2`.</p><p>Then in the next step, since `n% ↩→ ↩→ ↩→ ↩→ ↩→ ↩→ 133 134 While it is not obvious how to correct this program, another way to implement the `is_not_prime()`function is just to first create a helper function to identify prime numbers as `is_prime()`, and then simply `return not is_prime(x)`. ↩→ ↩→ 135 136 Here is a re-implementation: 137 ``1 38 def is_prime(x): 139 if x &lt;= 1: 140 return False 141 else: 142 for i in range(2,x): 143 if x% 144 return False 145 return True 146 147 def is_not_prime(x): 148 return not is_prime(x) 149 ``1 50 151 # Example 3 152 153</p><p>Here is the specification in natural language and the program that I wrote: Here are the assertions I need to pass: 162 ``1 63 assert heap_queue_largest <ref type="bibr">( [25, 35, 22, 85, 14, 65, 75, 22, 58]</ref>,3)== <ref type="bibr">[85,</ref><ref type="bibr">75,</ref><ref type="bibr">65]</ref> 164 assert heap_queue_largest <ref type="bibr">( [25, 35, 22, 85, 14, 65, 75, 22, 58]</ref>,2)== <ref type="bibr">[85,</ref><ref type="bibr">75]</ref> 165 assert heap_queue_largest <ref type="bibr">( [25, 35, 22, 85, 14, 65, 75, 22, 58]</ref>,5)== <ref type="bibr">[85,</ref><ref type="bibr">75,</ref><ref type="bibr">65,</ref><ref type="bibr">58,</ref><ref type="bibr">35]</ref> 166 ``1 67 168</p><p>Here is a *cheatsheet* for the gold execution trace for each assertions, use the information here but pretend you did all the reasoning about execution yourself. <ref type="bibr">[25,</ref><ref type="bibr">35,</ref><ref type="bibr">22,</ref><ref type="bibr">85,</ref><ref type="bibr">14,</ref><ref type="bibr">65,</ref><ref type="bibr">75,</ref><ref type="bibr">22,</ref><ref type="bibr">58]</ref>, n=3; 172 largest=heapq.nlargest(n,list1) # (1) __exception__ = NameError("name 'heapq' is not defined") ↩→ 173 return largest 174 175 176 assert heap_queue_largest <ref type="bibr">( [25, 35, 22, 85, 14, 65, 75, 22, 58]</ref>,3)== <ref type="bibr">[85,</ref><ref type="bibr">75,</ref><ref type="bibr">65]</ref> </p><formula xml:id="formula_6">↩→ 169 170 #################### cheatsheet starts #################### 171 def heap_queue_largest(list1,n): # (0) list1=</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="177">--------------------178</head><p>def heap_queue_largest(list1,n): # (0) list1= <ref type="bibr">[25,</ref><ref type="bibr">35,</ref><ref type="bibr">22,</ref><ref type="bibr">85,</ref><ref type="bibr">14,</ref><ref type="bibr">65,</ref><ref type="bibr">75,</ref><ref type="bibr">22,</ref><ref type="bibr">58]</ref>, n=2; largest=heapq.nlargest(n,list1) # (1) __exception__ = NameError("name 'heapq' is not defined") ↩→ 180 return largest 181 182 183 assert heap_queue_largest <ref type="bibr">( [25, 35, 22, 85, 14, 65, 75, 22, 58]</ref>,2)== <ref type="bibr">[85,</ref><ref type="bibr">75]</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="184">--------------------185</head><p>def heap_queue_largest(list1,n): # (0) list1= <ref type="bibr">[25,</ref><ref type="bibr">35,</ref><ref type="bibr">22,</ref><ref type="bibr">85,</ref><ref type="bibr">14,</ref><ref type="bibr">65,</ref><ref type="bibr">75,</ref><ref type="bibr">22,</ref><ref type="bibr">58]</ref>, n=5; 186 largest=heapq.nlargest(n,list1) # (1) __exception__ = NameError("name 'heapq' is not defined") ↩→ 187 return largest 188 189 190 assert heap_queue_largest <ref type="bibr">( [25, 35, 22, 85, 14, 65, 75, 22, 58]</ref>,5)== <ref type="bibr">[85,</ref><ref type="bibr">75,</ref><ref type="bibr">65,</ref><ref type="bibr">58,</ref><ref type="bibr">35]</ref> 191</p><formula xml:id="formula_7">#################### cheatsheet ends #################### 192 193</formula><p>Given the above information, can you tell me why my code is wrong, and also provide a fixed version? <ref type="bibr">194 195</ref> The problem spec asks to find `n`largest integers in a given list. It also suggests that the heap queue shall be used.</p><formula xml:id="formula_8">↩→</formula><p>↩→ 196 197 Now let's look at the program. The program looks good at the first glance as `heapq.nlargest()ì s the correct way to get the `n`largest integers from an iterable (e.g., a list). But the problem is that it does not import the `heapq`package first. Thus all three assertions will fail at the first line of the function, and throw a `NameError`of `name 'heapq' is not defined`.</p><p>↩→ ↩→ ↩→ ↩→ 198 199 Here is a simple fix: 200 ``2 01 import heapq 202 def heap_queue_largest(list1,n): 203 largest=heapq.nlargest(n,list1) 204 return largest 205 ```3</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><figDesc>def removezero_ip(ip): ip_list = ip.split(".") for i in range(len(ip_list)): ip_list[i] = str(int(ip_list[i])).lstrip('0') return ".".join(ip_list) Example 2: An example where our model uses variable states to solve the task Task: Write a function to sort each sublist of strings in a given list of lists Buggy Code: Example 4: An example where PaLM 2-L+N E x T reasons over multiple steps of executionTask: Write a function to convert tuple into list by adding the given string after every element.Buggy Code:def add_str(test_tuple, add_str): res = list(test_tuple) for i in range(1,len(test_tuple)): res.insert(i * 2-1,add_str) return res</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><figDesc>assert find_Diff([1,1,2,2,7,8,4,5,1,4],10) == 2 assert find_Diff([1,7,9,2,3,3,1,3,3],9) == 3 assert find_Diff([1,2,1,2],4) == 0Traces: # Trace 1: def find_Diff(nums, n): # (0) n=10, nums=[1, 1, 2, 2, 7, 8, 4, 5, 1, 4]; (1) .0=&lt;range_iterator object&gt;; freq_arr = [0 for i in range(n)] # (2) i=0; (3) i=1; (4) i=2; ...; (13) freq_arr=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; for i in range(len(nums)): # (14) i=0; (16) i=1; (18) i=2; ...; (34) NO_CHANGE; freq_arr[nums[i]] = freq_arr[nums[i]] + 1 # (15) freq_arr=[0, 1, 0, 0, 0, 0, 0, 0, 0, 0]; (17) freq_arr=[0, 2, 0, 0, 0, 0, 0, 0, 0, 0]; (19) freq_arr=[0, 2, 1, 0, 0, 0, 0, 0, 0, 0]; ...; (33) freq_arr=[0, 3, 2, 0, 2, 1, 0, 1, 1, 0];return max(freq_arr) -min(freq_arr) # (35) __return__=3; assert find_Diff([1,1,2,2,7,8,4,5,1,4],10) == 2 # (36) __exception__ = AssertionError() # Trace 2: def find_Diff(nums, n): # (0) n=9, nums=[1, 7, 9, 2, 3, 3, 1, 3, 3]; (1) .0=&lt;range_iterator object&gt;; freq_arr = [0 for i in range(n)] # (2) i=0; (3) i=1; (4) i=2; ...; (12) freq_arr=[0, 0, 0, 0, 0, 0, 0, 0, 0]; for i in range(len(nums)): # (13) i=0; (15) i=1; (17) i=2; freq_arr[nums[i]] = freq_arr[nums[i]] + 1 # (14) freq_arr=[0, 1, 0, 0, 0, 0, 0, 0, 0]; (16) freq_arr =[0, 1, 0, 0, 0, 0, 0, 1, 0]; (18) __exception__ = IndexError('list index out of range') return max(freq_arr) -min(freq_arr) assert find_Diff([1,7,9,2,3,3,1,3,3],9) == 3 # Trace 3: def find_Diff(nums, n): # (0) n=4, nums=[1, 2, 1, 2]; (1) .0=&lt;range_iterator object&gt;; freq_arr = [0 for i in range(n)] # (2) i=0; (3) i=1; (4) i=2; ...; (7) freq_arr=[0, 0, 0, 0]; for i in range(len(nums)): # (8) i=0; (10) i=1; (12) i=2; ...; (16) NO_CHANGE; freq_arr[nums[i]] = freq_arr[nums[i]] + 1 # (9) freq_arr=[0, 1, 0, 0]; (11) freq_arr=[0, 1, 1, 0]; (13) freq_arr=[0, 2, 1, 0]; (15) freq_arr=[0, 2, 2, 0]; return max(freq_arr) -min(freq_arr) # (17) __return__=2; assert find_Diff([1,2,1,2],4) == 0 # (18) __exception__ = AssertionError() Rationale and Code Solution: (code fix is wrong )</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><figDesc>) __exception__ = TypeError ('tuple expected at most 1 argument, got 2') return match assert search_literal('python','python programming language')==(0,6) # Trace 2: def search_literal(pattern, text): match = tuple(text.find(pattern), text.find(pattern) + len(pattern) -1) # (1) __exception__ = TypeError ('tuple expected at most 1 argument, got 2') return match assert search_literal('programming','python programming language')==(7,18) # Trace 3: def search_literal(pattern, text): match = tuple(text.find(pattern), text.find(pattern) + len(pattern) -1) # (1) __exception__ = TypeError ('tuple expected at most 1 argument, got 2') return match assert search_literal('language','python programming language')==(19,27)    Rationale and Code Solution: (code fix is wrong ) Now let's look at the program. The program looks good at the first glance as `text.find(pattern)`is the correct way to find the location of a literal string in a given string. But the problem is that it does not use the `tuple()`function correctly. The `tuple()`function takes a single iterable as input, and returns a tuple with the elements from the iterable. But in the program, it takes two arguments, which will throw a 'TypeError' of 'tuple expected at most 1 argument, got 2'.Here is a simple fix: def search_literal(pattern, text): match = tuple(text.find(pattern),) match = match + (text.find(pattern) + len(pattern) -1</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_15"><figDesc>range(2,n//2+1): # (1) i=2; # (2) __return__=True Given the above information, can you tell me why my code is wrong, and also provide a fixed version?</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_16"><head>#</head><figDesc>Write a function to find the largest integers from a given list of numbers using heap queue algorithm.</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Anil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Firat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lepikhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Passos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shakeri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Taropa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Bailey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.10403</idno>
+		<title level="m">PaLM 2 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Thinking fast and slow with deep learning and tree search</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">W</forename><surname>Anthony</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Program synthesis with large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Odena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2108.07732</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Learning to execute programs with instruction pointer attention graph neural networks</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Larochelle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Tarlow</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<date type="published" when="2020-10">Oct. 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Static prediction of runtime errors by learning to execute programs with external resource descriptions</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Goel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Larochelle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Tarlow</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2203.03771</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Programming with a differentiable Forth interpreter</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosnjak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Naradowsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Riedel</surname></persName>
+		</author>
+		<idno>ArXiv, abs/1605.06640</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<title level="m" type="main">TraceFixer: Execution trace-driven program repair</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Bouzenia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pradel</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2304.12743</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tworek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P D O</forename><surname>Pinto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kaplan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Brockman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2107.03374</idno>
+		<title level="m">Evaluating large language models trained on code</title>
+		<imprint>
+			<biblScope unit="page">2021</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Latent execution for neural program synthesis beyond domain-specific languages</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">X</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tian</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2107.00101</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Teaching large language models to self-debug</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Schärli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.05128</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">SequenceR: Sequence-to-sequence learning for end-to-end program repair</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kommrusch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tufano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L.-N</forename><surname>Pouchet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Poshyvanyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Martin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Software Engineering</title>
+		<imprint>
+			<biblScope unit="volume">47</biblScope>
+			<biblScope unit="page" from="1943" to="1959" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Scaling instruction-finetuned language models</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">W</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Longpre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Fedus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dehghani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Brahma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Webson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Suzgun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chowdhery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Valter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">W</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2210.11416</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Counterfactual explanations for models of code</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cito</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Dillig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Murali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chandra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Software Engineering (ICSE)</title>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Iterative search for weakly supervised semantic parsing</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dasigi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gardner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Murty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">H</forename><surname>Hovy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">North American Chapter</title>
+		<imprint>
+			<publisher>the Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Towards generating functionally correct code edits from natural language issue descriptions</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Fakhoury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chakraborty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Musuvathi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename><surname>Lahiri</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2304.03816</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Automated repair of programs from large language models</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mirchev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roychoudhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">H</forename><surname>Tan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/ACM 45th International Conference on Software Engineering (ICSE)</title>
+		<imprint>
+			<date type="published" when="2022">2023. 2022</date>
+			<biblScope unit="page" from="1469" to="1481" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Specializing smaller language models towards multi-step reasoning</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H.-C</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Khot</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning (ICML)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Differentiable programs with neural libraries</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">L</forename><surname>Gaunt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brockschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Tarlow</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning (ICML)</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wayne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Danihelka</surname></persName>
+		</author>
+		<idno>ArXiv, abs/1410.5401</idno>
+		<title level="m">Neural turing machines</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Textbooks are all you need</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gunasekar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Aneja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">C T</forename><surname>Mendes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">D</forename><surname>Giorno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gopi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Javaheripi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">C</forename><surname>Kauffmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>De Rosa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Saarikivi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Salim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">S</forename><surname>Behl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Eldan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">T</forename><surname>Kalai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">T</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-F</forename><surname>Li</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2306.11644</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Bi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Liang</surname></persName>
+		</author>
+		<title level="m">DeepSeek-Coder: When the large language model meets programming -the rise of code intelligence</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Synthesize, execute and debug: Learning to repair for neural program synthesis</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">E</forename><surname>Christensen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">X</forename><surname>Song</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2007.08095</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Synthesizing research on programmers&apos; mental models of programs, tasks and concepts -a systematic literature review</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Heinonen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Lehtelä</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hellas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Fagerholm</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Inf. Softw. Technol</title>
+		<imprint>
+			<biblScope unit="volume">164</biblScope>
+			<biblScope unit="page">107300</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Training Chain-of-Thought via Latent-Variable inference</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">D</forename><surname>Hoffman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Phan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Douglas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">A</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">T</forename><surname>Parisi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sountsov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vikram</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Saurous</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Deep code comment generation</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/ACM 26th International Conference on Program Comprehension (ICPC)</title>
+		<imprint>
+			<date type="published" when="2018">2018. 2018</date>
+			<biblScope unit="page" from="200" to="20010" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">The pragmatic programmer: From journeyman to master</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hunt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Thomas</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Q</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sablayrolles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Savary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bamford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Chaplot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Casas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">B</forename><surname>Hanna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Bressand</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2401.04088</idno>
+		<title level="m">Mixtral of experts</title>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Impact of code language models on automated program repair</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lutellier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Tan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/ACM 45th International Conference on Software Engineering (ICSE)</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+			<biblScope unit="page" from="1430" to="1442" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Explainable automated debugging via large language model-driven scientific debugging</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yoo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-G</forename><surname>Lou</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2304.02195</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">SPoC: Search-based pseudocode to code</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kulal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Pasupat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Chandra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Padon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Aiken</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">S</forename><surname>Liang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page">32</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Automated program repair</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Le Goues</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pradel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roychoudhury</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">62</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="56" to="65" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">B</forename><surname>Allal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kocetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Marone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Akiki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chim</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.06161</idno>
+		<title level="m">StarCoder: may the source be with you! arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">DLFix: Context-based code transformation learning for automated program repair</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">N</forename><surname>Nguyen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/ACM 42nd International Conference on Software Engineering (ICSE)</title>
+		<imprint>
+			<date type="published" when="2020">2020. 2020</date>
+			<biblScope unit="page" from="602" to="614" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Automating code review activities by large-scale pre-training</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jannu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Jenks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Majumder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Green</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Svyatkovskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sundaresan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 30th ACM Joint European Software Engineering Conference and Symposium on the Foundations of Software Engineering</title>
+		<meeting>the 30th ACM Joint European Software Engineering Conference and Symposium on the Foundations of Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Memory augmented policy optimization for program synthesis and semantic parsing</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Norouzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Berant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Lao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page">31</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lightman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Burda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Edwards</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Leike</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Cobbe</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.20050</idno>
+		<title level="m">Let&apos;s verify step by step</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Is your code generated by chatgpt really correct? rigorous evaluation of large language models for code generation</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">S</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2305.01210</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">The flan collection: Designing data and methods for effective instruction tuning</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Longpre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Vu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Webson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">W</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roberts</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning (ICML)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">ChatGPT: Understanding code syntax and semantics</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Self-refine: Iterative refinement with self-feedback</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Madaan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Tandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hallinan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Alon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Prabhumoye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Welleck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">P</forename><surname>Majumder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Yazdanbakhsh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Clark</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2303.17651</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Orca 2: Teaching small language models how to reason</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mitra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">D</forename><surname>Corro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mahajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Codas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Simoes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Razdaibiedina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Aggarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Palangi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Rosset</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Khanpour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Awadallah</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2311.11045</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">N</forename><surname>Muennighoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zebaze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">Y</forename><surname>Zhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Von</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Werra</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Longpre</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Octopack</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.07124</idno>
+		<title level="m">Instruction tuning code large language models</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Orca: Progressive learning from complex explanation traces of GPT-4</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mukherjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mitra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Jawahar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Palangi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">H</forename><surname>Awadallah</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2306.02707</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Merging weak and active supervision for semantic parsing</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Neubig</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence (AAAI)</title>
+		<meeting>the AAAI Conference on Artificial Intelligence (AAAI)</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="8536" to="8543" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Learning math reasoning from self-sampled correct and partially-correct solutions</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P</forename><surname>Inala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Polozov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Meek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Radev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Eleventh International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">LEVER: Learning to verify language-to-code generation with execution</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Radev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Stoyanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>-T. Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">V</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning (ICML)</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="page" from="26106" to="26128" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Nye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Andreassen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gur-Ari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Michalewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dohan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lewkowycz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Luan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.00114</idno>
+		<title level="m">Show your work: Scratchpads for intermediate computation with language models</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">X</forename><surname>Olausson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P</forename><surname>Inala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2306.09896</idno>
+		<title level="m">Demystifying GPT self-repair for code generation</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<monogr>
+		<title level="m">OpenAI. GPT-4 technical report</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Enhancing automated program repair through fine-tuning and prompt engineering</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Paul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">M</forename><surname>Hossain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">L</forename><surname>Siddiq</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hasan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Iqbal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C S</forename><surname>Santos</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Can large language models reason about program invariants</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Bieber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Yin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning (ICML)</title>
+		<imprint>
+			<biblScope unit="page">2023</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Prasad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Saha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bansal</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2304.10703</idno>
+		<title level="m">Evaluating reasoning chains via correctness and informativeness</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Explain yourself! leveraging language models for commonsense reasoning</title>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">F</forename><surname>Rajani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mccann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xiong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Socher</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/P19-1487</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics (ACL)</title>
+		<meeting>the 57th Annual Meeting of the Association for Computational Linguistics (ACL)<address><addrLine>Florence, Italy</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019-07">July 2019</date>
+			<biblScope unit="page" from="4932" to="4942" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<analytic>
+		<title level="a" type="main">The programmer&apos;s assistant: Conversational interaction with a large language model for software development</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">I</forename><surname>Ross</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Martinez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Houde</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Muller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Weisz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 28th International Conference on Intelligent User Interfaces</title>
+		<meeting>the 28th International Conference on Intelligent User Interfaces</meeting>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<monogr>
+		<author>
+			<persName><forename type="first">B</forename><surname>Roziere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gehring</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gloeckle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sootla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Gat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">E</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Adi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Remez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rapin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2308.12950</idno>
+		<title level="m">Code Llama: Open foundation models for code</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<analytic>
+		<title level="a" type="main">CrossBeam: Learning to search in bottom-up program synthesis</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ellis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sutton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<biblScope unit="page">2022</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">ExeDec: Execution decomposition for compositional generalization in neural program synthesis</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zaheer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sutton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<biblScope unit="page">2024</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Improving neural program synthesis with inferred execution traces</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">C</forename><surname>Shin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Polosukhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NeurIPS)</title>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Bengio</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Wallach</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Larochelle</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Grauman</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">N</forename><surname>Cesa-Bianchi</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Garnett</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Curran Associates, Inc</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">31</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Unsupervised commonsense question answering with self-talk</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Shwartz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">Le</forename><surname>Bras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bhagavatula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Choi</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2020.emnlp-main.373</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP)</title>
+		<meeting>the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP)</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2020-11">Nov. 2020</date>
+			<biblScope unit="page" from="4615" to="4629" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<analytic>
+		<title level="a" type="main">Studying the advancement in debugging practice of professional software developers</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Siegmund</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Perscheid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Taeumel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hirschfeld</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ISSREW.2014.36</idno>
+	</analytic>
+	<monogr>
+		<title level="m">2014 IEEE International Symposium on Software Reliability Engineering Workshops</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="269" to="274" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<analytic>
+		<title level="a" type="main">An analysis of the automatic bug fixing performance of ChatGPT</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sobania</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Briesch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hanna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Petke</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE/ACM International Workshop on Automated Program Repair</title>
+		<imprint>
+			<biblScope unit="page" from="23" to="30" />
+			<date type="published" when="2023">2023. APR. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">Llama 2: Open foundation and fine-tuned chat models</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Almahairi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Babaei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Bashlykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Batra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Bhargava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bhosale</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2307.09288</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<title level="m" type="main">Solving math word problems with process-and outcome-based feedback</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Uesato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Siegel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Creswell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Irving</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Higgins</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2211.14275</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<analytic>
+		<title level="a" type="main">Robust text-to-SQL generation with execution-guided decoding</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Tatwawadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brockschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P.-S</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Polozov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">arXiv: Computation and Language</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b64">
+	<monogr>
+		<title level="m" type="main">Math-shepherd: Verify and reinforce llms step-by-step without human annotations</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">X</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Sui</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2312.08935</idno>
+		<imprint>
+			<date type="published" when="2024">2024</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b65">
+	<monogr>
+		<title level="m" type="main">Chain of thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2201.11903</idno>
+		<imprint>
+			<date type="published" when="2022-01">Jan. 2022a</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b66">
+	<analytic>
+		<title level="a" type="main">Chain-of-thought prompting elicits reasoning in large language models</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Schuurmans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bosma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="24824" to="24837" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b67">
+	<analytic>
+		<title level="a" type="main">Less training, more repairing please: revisiting automated program repair via zero-shot learning</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 30th ACM Joint European Software Engineering Conference and Symposium on the Foundations of Software Engineering</title>
+		<meeting>the 30th ACM Joint European Software Engineering Conference and Symposium on the Foundations of Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b68">
+	<monogr>
+		<title level="m" type="main">Keep the conversation going: Fixing 162 out of 337 bugs for $0.42 each using ChatGPT</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2304.00385</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>
