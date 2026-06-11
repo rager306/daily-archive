@@ -105,7 +105,7 @@ def test_report_md_exists() -> None:
         "## 6. Combined graph",
         "## 7. Graph-readiness gate v1",
         "## 8. ADR-011 decision",
-        "## 9. Marker недоступен в env",
+        "## 9. Marker env fix",
         "## 10. Lessons + next milestones",
     ]:
         assert heading in text
@@ -152,7 +152,7 @@ def test_decision_deferred_documented() -> None:
     assert "Marker re-extraction" in text
     assert "transformers.onnx" in text
     assert "M059" in text
-    assert "is not authorized" in text
+    assert "is disabled" in text
     assert "http://127.0.0.1:8000" in text
     assert FORBIDDEN_LOOPBACK_ALIAS not in text
 

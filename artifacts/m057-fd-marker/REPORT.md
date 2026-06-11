@@ -84,11 +84,17 @@ ADR-011 принимает content graph v1 через fd как supplementary e
 
 Binding consequence: дальнейшие graph-readiness работы должны учитывать content layers, а не оценивать corpus только по citation overlap. При этом все safety defaults остаются false, и production import is disabled.
 
-## 9. Marker недоступен в env
+## 9. Marker env fix (S01-fix)
 
-Marker re-extraction не закрыт в M057 из-за проблемы окружения `transformers.onnx`. Это зафиксировано как deferred decision, а не как скрытый пропуск. M057 опирается на OpenDataLoader tables/figures и fd embeddings; Marker будет возвращён в M059 после исправления env.
+Первоначальный M057 S01 не смог запустить Marker из-за проблемы окружения: `transformers 5.8.1` удалил submodule `transformers.onnx`, который импортируется в `surya-ocr 0.17.1` (через `from transformers.onnx import OnnxConfig` в `surya/ocr_error/model/config.py`).
 
-Решение defer: Marker re-extraction is disabled for production use in M057. M059 должен сначала исправить `transformers.onnx` env path, затем повторить extraction и сравнить Marker output с OpenDataLoader output.
+**Env fix применён**: `uv add 'transformers>=4.45.2,<5'` (downgrade с 5.8.1 на 4.57.6, что возвращает и `transformers.onnx`, и `find_pruneable_heads_and_indices`). После фикса Marker импортируется, `marker_single` и `marker` CLI работают.
+
+**Smoke-тест 1 PDF** (2605.28617v1, 0.4 MB, 19 pages) — 5:41 processing time, 94715 chars markdown, layout + OCR + tables all working. По сравнению с OpenDataLoader для того же PDF: Marker markdown на 14.8% больше (94715 vs 82491 bytes) и OpenDataLoader для этой PDF помечен `low_quality_source`, а Marker извлёк full body text.
+
+**Стоимость**: Marker в 162x медленнее OpenDataLoader (341 sec vs 2.1 sec на 0.4 MB). Полная re-extraction 166 PDF оценивается в 8-15 часов single-threaded, или 2-4 часа с 4-way parallelism. ROI пограничный.
+
+Решение: M057 S01-fix документирует env fix + 1-PDF real extraction в `artifacts/m057-fd-marker/marker-vs-opendataloader.{json,md}`. Полная re-extraction всех 166 PDF deferred to M059 (где решается с учётом ROI + стоимости).
 
 ## 10. Lessons + next milestones
 
@@ -99,10 +105,11 @@ Lessons:
 - Figure similarity даёт низкий overlap, однако сохраняет ценность как независимый diagnostic signal.
 - fd service достаточно быстрый для локального диагностического прохода: 7/7 validation tests pass, p95 около 253 ms, cache speedup около 82x.
 - Safety posture должен оставаться явным в каждом artefact, иначе следующие агенты могут перепутать diagnostic graph с production graph.
+- **Env fix lesson**: проблема `transformers.onnx` блокировала M057 S01, хотя `uv.lock` явно пиннил конфликтующую версию. При установке конфликтующих версий через `uv pip install` без `uv add` пинн в lock-файле приводит к reinstall на старую версию. Правильный путь: `uv add 'pkg<version>'` для постоянного фикса.
 
 Next milestones:
 
-1. M059: chart extraction via PlotExtract, Marker env fix, повторная Marker extraction и 2-hop BFS/content graph evaluation.
+1. M059: chart extraction via PlotExtract (pilot на 5-10 PDF), Marker 5-10 PDF re-extraction, 2-hop BFS/content graph evaluation.
 2. M058/M059 graph expansion: проверить, даёт ли 2-hop BFS больше внутренних связей, чем 1-hop baseline ADR-010.
 3. Следующий graph-readiness gate: добавить quality checks для edge evidence, duplicate control, paper-id canonicalization и failure diagnostics.
 
