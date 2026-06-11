@@ -1,0 +1,104 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "expected_model": "deepvk/USER-bge-m3",
+  "safety_defaults": {
+    "external_network_authorized": false,
+    "fact_promotion_authorized": false,
+    "graph_writes_authorized": false,
+    "llm_calls_authorized": false,
+    "production_import_authorized": false
+  },
+  "schema_version": "m057-fd-marker.fd-validation.v1",
+  "summary": {
+    "all_passed": true,
+    "cache_hit_rate": 1.0,
+    "failed": 0,
+    "latency_p50_ms": 151.551,
+    "latency_p95_ms": 253.397,
+    "passed": 7,
+    "total": 7
+  },
+  "tests": [
+    {
+      "details": {
+        "health_status": "ok",
+        "health_status_code": 200,
+        "latency_ms": 156.847,
+        "model": "deepvk/USER-bge-m3",
+        "model_probe_status_code": 200
+      },
+      "name": "test_health",
+      "passed": true
+    },
+    {
+      "details": {
+        "dimension": 1024,
+        "latency_ms": 248.669,
+        "status_code": 200
+      },
+      "name": "test_single_embedding_1024d",
+      "passed": true
+    },
+    {
+      "details": {
+        "dimensions": [
+          1024
+        ],
+        "error": null,
+        "latency_ms": 5194.664,
+        "returned": 32,
+        "status_code": 200
+      },
+      "name": "test_batch_embedding",
+      "passed": true
+    },
+    {
+      "details": {
+        "first_latency_ms": 148.858,
+        "second_latency_ms": 1.815,
+        "speedup_ratio": 81.994
+      },
+      "name": "test_cache_behavior",
+      "passed": true
+    },
+    {
+      "details": {
+        "call_count": 100,
+        "max_ms": 289.04,
+        "p50_ms": 151.551,
+        "p95_ms": 253.397,
+        "target_p95_ms": 500
+      },
+      "name": "test_latency_p95",
+      "passed": true
+    },
+    {
+      "details": {
+        "dimension_1024_length": 1024,
+        "dimension_1024_status_code": 200,
+        "dimension_512_length": 512,
+        "dimension_512_status_code": 200
+      },
+      "name": "test_dimensions_1024_512",
+      "passed": true
+    },
+    {
+      "details": {
+        "empty_string": {
+          "error": "embedding generation failed",
+          "status_code": 500
+        },
+        "invalid_dimension": {
+          "error": "dimensions must be 1024 or 512",
+          "status_code": 400
+        },
+        "too_long": {
+          "error": "embedding generation failed",
+          "status_code": 500
+        }
+      },
+      "name": "test_error_handling",
+      "passed": true
+    }
+  ]
+}
