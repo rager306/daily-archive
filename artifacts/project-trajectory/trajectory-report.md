@@ -15,7 +15,7 @@
 | architecture | tracked | none | .gsd/DECISIONS.md, doc/adr/, .codebase-memory/governance-graph.json |
 | functionality | tracked | none | requirements=65, statuses={'active': 17, 'validated': 48} |
 | module_code | tracked | uncommitted_changes_present | git_changed_files=14 |
-| evidence | tracked | none | .gsd/milestones/M052-xifwu6/M052-xifwu6-SUMMARY.md, .gsd/milestones/M058-cmjp1u/M058-cmjp1u-SUMMARY.md, .gsd/milestones/M059-y6osma/M059-y6osma-SUMMARY.md |
+| evidence | tracked | none | .gsd/milestones/M058-cmjp1u/M058-cmjp1u-SUMMARY.md, .gsd/milestones/M059-y6osma/M059-y6osma-SUMMARY.md, .gsd/milestones/M060-gakmo0/M060-gakmo0-SUMMARY.md |
 | safety | clear | none | prohibited-claim scan over PROJECT/README/recent summaries |
 | operations | tracked | none | runtime/service state is artifact-derived; live process management remains external |
 | next_gate | clear | none | README.md, recent milestone summaries |
@@ -31,12 +31,12 @@
 
 | Milestone | Title | Status |
 |---|---|---|
-| M053-ool5c4 | Live GROBID Pilot on 5 Acquired PDFs | complete |
 | M056-lchpnp | Hybrid Parser BFS Acquisition 2605.18747 1-Hop All 166 Refs in Waves | complete |
 | M057-s70wkm | Graph-Readiness Gate v1 via fd Embeddings + Marker Re-extraction | complete |
 | M052-xifwu6 | RLM S09 Document Workflow Harness on M050 Worker Pool | complete |
 | M058-cmjp1u | M059 Pilot Cycle plotextractor v2 + Marker Iterative Expansion | complete |
 | M059-y6osma | M060 Manifest Driven PDF Ingest Architecture | complete |
+| M060-gakmo0 | M059b MiniMax Figure QA Judge Pilot Dual Model | complete |
 
 ## Next actions
 

@@ -190,6 +190,7 @@
 | ADR-011 | Accepted (binding) | `doc/adr/ADR-011-content-graph-via-fd.md` | Content Graph via fd for M057 |
 | ADR-012 | Accepted (binding) | `doc/adr/ADR-012-figure-caption-v2.md` | Figure Caption v2 via TeX Provenance for M058 |
 | ADR-013 | Accepted (binding) | `doc/adr/ADR-013-manifest-driven-pdf-ingest.md` | Manifest-Driven PDF Ingest Architecture |
+| ADR-014 | Accepted (binding) | `doc/adr/ADR-014-minimax-judge-m3-multimodal.md` | MiniMax M3 Multimodal as Figure QA Judge |
 
 ## Typed Graph Projection
 
