@@ -1,0 +1,234 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://daily-archive.local/schemas/m057-fd-table-similarity.v1.json",
+  "title": "M057 fd Table Similarity v1",
+  "description": "Schema for fd table embedding similarity summaries and edges emitted during M057 content graph diagnostics.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "edges_total",
+    "inter_doc_edges",
+    "intra_doc_edges",
+    "threshold",
+    "similarity_stats",
+    "edges",
+    "safety_defaults"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "edges_total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "inter_doc_edges": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "intra_doc_edges": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "threshold": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "total_pairs": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "total_tables": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "similarity_stats": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "min",
+        "max",
+        "mean"
+      ],
+      "properties": {
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "mean": {
+          "type": "number"
+        },
+        "median": {
+          "type": "number"
+        },
+        "p95": {
+          "type": "number"
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/table_edge"
+      }
+    },
+    "safety_defaults": {
+      "$ref": "#/definitions/safety_defaults"
+    }
+  },
+  "definitions": {
+    "safety_defaults": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "external_network_authorized",
+        "graph_writes_authorized",
+        "production_import_authorized",
+        "fact_promotion_authorized",
+        "llm_calls_authorized"
+      ],
+      "properties": {
+        "external_network_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "External network access is not authorized for manifest replay by default."
+        },
+        "graph_writes_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "Graph writes are disabled unless a later binding explicitly changes this."
+        },
+        "production_import_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "Production import is not authorized for diagnostic parser outputs."
+        },
+        "fact_promotion_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "Fact promotion is disabled for retroactive manifests."
+        },
+        "llm_calls_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "LLM calls are not authorized by this ingest contract."
+        }
+      },
+      "examples": [
+        {
+          "external_network_authorized": false,
+          "graph_writes_authorized": false,
+          "production_import_authorized": false,
+          "fact_promotion_authorized": false,
+          "llm_calls_authorized": false
+        }
+      ]
+    },
+    "table_edge": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "paper_a",
+        "table_a_idx",
+        "paper_b",
+        "table_b_idx",
+        "similarity",
+        "source_a_caption",
+        "source_b_caption"
+      ],
+      "properties": {
+        "paper_a": {
+          "type": "string"
+        },
+        "table_a_idx": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "paper_b": {
+          "type": "string"
+        },
+        "table_b_idx": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "similarity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "source_a_caption": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_b_caption": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "edge_scope": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema_version": "m057.table-similarity-edges.v1",
+      "edges_total": 1,
+      "inter_doc_edges": 0,
+      "intra_doc_edges": 1,
+      "threshold": 0.85,
+      "similarity_stats": {
+        "min": 0.9,
+        "max": 0.9,
+        "mean": 0.9
+      },
+      "edges": [
+        {
+          "paper_a": "1804.02767",
+          "table_a_idx": 1,
+          "paper_b": "1804.02767",
+          "table_b_idx": 2,
+          "similarity": 0.963821,
+          "source_a_caption": "Darknet-53.",
+          "source_b_caption": "Darknet-53."
+        }
+      ],
+      "safety_defaults": {
+        "external_network_authorized": false,
+        "graph_writes_authorized": false,
+        "production_import_authorized": false,
+        "fact_promotion_authorized": false,
+        "llm_calls_authorized": false
+      }
+    }
+  ],
+  "x_contract_notes": [
+    "Table similarity edges are diagnostic evidence and graph writes are disabled by default.",
+    "This schema is intentionally permissive for retroactive artifacts.",
+    "Unknown fields are retained so historical parser outputs remain replayable.",
+    "Consumers should validate required contract fields first, then inspect optional diagnostics.",
+    "Relative paths are resolved from the repository root unless stated otherwise.",
+    "Timestamps use ISO-8601 strings with timezone when available.",
+    "All write-like safety switches default to false and must remain explicit.",
+    "Batch processing is diagnostic-only until a later ADR grants production authority.",
+    "Schema evolution should add a v2 file rather than weakening this v1 contract in place.",
+    "Examples are normative shape examples, not a complete corpus manifest.",
+    "Parser-specific fields may be richer than the fields listed here.",
+    "Consumers should preserve arxiv_id strings exactly, including version suffixes.",
+    "SHA-256 values describe local content bytes, not remote HTTP responses.",
+    "Paths may point to historical artifacts generated by earlier milestones.",
+    "Network endpoints in examples use 127.0.0.1 when a loopback endpoint is needed.",
+    "This schema is a contract boundary, not an authorization boundary."
+  ]
+}

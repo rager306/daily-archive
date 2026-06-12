@@ -1,0 +1,292 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://daily-archive.local/schemas/opendataloader-pdf.v1.json",
+  "title": "OpenDataLoader PDF Layout Output v1",
+  "description": "Daily-archive provenance wrapper for OpenDataLoader PDF native layout, markdown, image, and table outputs.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "source_arxiv_id",
+    "manifest_batch_id",
+    "parser_version_pinned",
+    "safety_defaults"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "source_arxiv_id": {
+      "type": "string"
+    },
+    "manifest_batch_id": {
+      "type": "string"
+    },
+    "parser_version_pinned": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "format": {
+      "type": "string"
+    },
+    "normalized_format": {
+      "type": "string"
+    },
+    "runner": {
+      "type": "string"
+    },
+    "pdf_path": {
+      "type": "string"
+    },
+    "layout_path": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "markdown_path": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "markdown_size_bytes": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "page_count": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "section_count": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "table_count": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "image_count": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "bounding_box_count": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "page_number": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "width": {
+            "type": "number"
+          },
+          "height": {
+            "type": "number"
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "tables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "table_idx": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "page_number": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "cells": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "figures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "figure_idx": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "image_path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "sha256_actual": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sha256_matches_manifest": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "error": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "safety_defaults": {
+      "$ref": "#/definitions/safety_defaults"
+    }
+  },
+  "definitions": {
+    "safety_defaults": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "external_network_authorized",
+        "graph_writes_authorized",
+        "production_import_authorized",
+        "fact_promotion_authorized",
+        "llm_calls_authorized"
+      ],
+      "properties": {
+        "external_network_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "External network access is not authorized for manifest replay by default."
+        },
+        "graph_writes_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "Graph writes are disabled unless a later binding explicitly changes this."
+        },
+        "production_import_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "Production import is not authorized for diagnostic parser outputs."
+        },
+        "fact_promotion_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "Fact promotion is disabled for retroactive manifests."
+        },
+        "llm_calls_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "LLM calls are not authorized by this ingest contract."
+        }
+      },
+      "examples": [
+        {
+          "external_network_authorized": false,
+          "graph_writes_authorized": false,
+          "production_import_authorized": false,
+          "fact_promotion_authorized": false,
+          "llm_calls_authorized": false
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "schema_version": "opendataloader-pdf.v1",
+      "source_arxiv_id": "1804.02767",
+      "manifest_batch_id": "m054-pdf-acquisition",
+      "parser_version_pinned": "retroactive-m055",
+      "status": "ok",
+      "pdf_path": "data/article_catalog/article_catalog/arxiv/cs-cv/1804.02767/source/1804.02767.pdf",
+      "pages": [
+        {
+          "page_number": 1,
+          "blocks": []
+        }
+      ],
+      "tables": [],
+      "figures": [],
+      "safety_defaults": {
+        "external_network_authorized": false,
+        "graph_writes_authorized": false,
+        "production_import_authorized": false,
+        "fact_promotion_authorized": false,
+        "llm_calls_authorized": false
+      }
+    }
+  ],
+  "x_contract_notes": [
+    "OpenDataLoader native layout remains authoritative; this schema adds daily-archive provenance fields only.",
+    "This schema is intentionally permissive for retroactive artifacts.",
+    "Unknown fields are retained so historical parser outputs remain replayable.",
+    "Consumers should validate required contract fields first, then inspect optional diagnostics.",
+    "Relative paths are resolved from the repository root unless stated otherwise.",
+    "Timestamps use ISO-8601 strings with timezone when available.",
+    "All write-like safety switches default to false and must remain explicit.",
+    "Batch processing is diagnostic-only until a later ADR grants production authority.",
+    "Schema evolution should add a v2 file rather than weakening this v1 contract in place.",
+    "Examples are normative shape examples, not a complete corpus manifest.",
+    "Parser-specific fields may be richer than the fields listed here.",
+    "Consumers should preserve arxiv_id strings exactly, including version suffixes.",
+    "SHA-256 values describe local content bytes, not remote HTTP responses.",
+    "Paths may point to historical artifacts generated by earlier milestones.",
+    "Network endpoints in examples use 127.0.0.1 when a loopback endpoint is needed.",
+    "This schema is a contract boundary, not an authorization boundary."
+  ]
+}

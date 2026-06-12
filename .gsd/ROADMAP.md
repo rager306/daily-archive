@@ -60,3 +60,4 @@
 - ✅ **M056-lchpnp: Hybrid Parser BFS Acquisition 2605.18747 1-Hop All 166 Refs in Waves** (`depends:[M051-aaw9j7, M033-732r1t]`)
 - ✅ **M057-s70wkm: Graph-Readiness Gate v1 via fd Embeddings + Marker Re-extraction** (`depends:[M056-lchpnp, M033-732r1t]`)
 - ✅ **M058-cmjp1u: M059 Pilot Cycle plotextractor v2 + Marker Iterative Expansion** (`depends:[—]`)
+- 🔄 **M059-y6osma: M060 Manifest Driven PDF Ingest Architecture** (`depends:[—]`)

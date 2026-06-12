@@ -1,0 +1,498 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://daily-archive.local/schemas/grobid-tei.v1.json",
+  "title": "GROBID TEI JSON Adapter v1",
+  "description": "Permissive schema for a GROBID TEI-to-JSON adapter plus retroactive daily-archive GROBID diagnostic outputs.",
+  "type": "object",
+  "additionalProperties": true,
+  "oneOf": [
+    {
+      "$ref": "#/definitions/tei_adapter"
+    },
+    {
+      "$ref": "#/definitions/daily_archive_diagnostic"
+    }
+  ],
+  "definitions": {
+    "safety_defaults": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "external_network_authorized",
+        "graph_writes_authorized",
+        "production_import_authorized",
+        "fact_promotion_authorized",
+        "llm_calls_authorized"
+      ],
+      "properties": {
+        "external_network_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "External network access is not authorized for manifest replay by default."
+        },
+        "graph_writes_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "Graph writes are disabled unless a later binding explicitly changes this."
+        },
+        "production_import_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "Production import is not authorized for diagnostic parser outputs."
+        },
+        "fact_promotion_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "Fact promotion is disabled for retroactive manifests."
+        },
+        "llm_calls_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "LLM calls are not authorized by this ingest contract."
+        }
+      },
+      "examples": [
+        {
+          "external_network_authorized": false,
+          "graph_writes_authorized": false,
+          "production_import_authorized": false,
+          "fact_promotion_authorized": false,
+          "llm_calls_authorized": false
+        }
+      ]
+    },
+    "author": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "forename": {
+          "type": "string"
+        },
+        "surname": {
+          "type": "string"
+        },
+        "full_name": {
+          "type": "string"
+        },
+        "affiliations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "header": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "title",
+        "authors"
+      ],
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "authors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/author"
+          }
+        },
+        "doi": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "date": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "language": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "biblStruct": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "authors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/author"
+          }
+        },
+        "raw_reference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "doi": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "arxiv_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "body_section": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "heading": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "level": {
+          "type": "integer"
+        },
+        "paragraphs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tables": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "figures": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "tei_adapter": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "schema_version",
+        "tei_xml_sha256",
+        "header",
+        "biblStruct",
+        "abstract",
+        "body_sections"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string"
+        },
+        "source_arxiv_id": {
+          "type": "string"
+        },
+        "manifest_batch_id": {
+          "type": "string"
+        },
+        "tei_xml_path": {
+          "type": "string"
+        },
+        "tei_xml_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "header": {
+          "$ref": "#/definitions/header"
+        },
+        "biblStruct": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/biblStruct"
+          }
+        },
+        "abstract": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "body_sections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/body_section"
+          }
+        },
+        "safety_defaults": {
+          "$ref": "#/definitions/safety_defaults"
+        }
+      }
+    },
+    "daily_archive_diagnostic": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "schema_version",
+        "arxiv_id",
+        "status",
+        "pdf_path",
+        "safety_defaults"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string"
+        },
+        "article_key": {
+          "type": "string"
+        },
+        "arxiv_id": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "pdf_path": {
+          "type": "string"
+        },
+        "tei_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tei_size_bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "sha256_actual": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sha256_matches_manifest": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "header_title_present": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "header_author_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "bibl_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "ref_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "body_element_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "endpoint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "grobid_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "http_status": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "duration_ms": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "safety_defaults": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/safety_defaults"
+            },
+            {
+              "$ref": "#/definitions/legacy_safety_defaults"
+            }
+          ]
+        }
+      }
+    },
+    "legacy_safety_defaults": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Legacy daily-archive parser safety block retained for retroactive M054/M055 outputs. Every recognized flag must be false.",
+      "properties": {
+        "graph_import_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "graphdb_written": {
+          "type": "boolean",
+          "const": false
+        },
+        "import_eligible": {
+          "type": "boolean",
+          "const": false
+        },
+        "ladybugdb_written": {
+          "type": "boolean",
+          "const": false
+        },
+        "production_import_attempted": {
+          "type": "boolean",
+          "const": false
+        },
+        "external_network_authorized": {
+          "type": "boolean",
+          "const": false
+        },
+        "fact_promotion_authorized": {
+          "type": "boolean",
+          "const": false
+        },
+        "graph_writes_authorized": {
+          "type": "boolean",
+          "const": false
+        },
+        "llm_calls_authorized": {
+          "type": "boolean",
+          "const": false
+        },
+        "production_import_authorized": {
+          "type": "boolean",
+          "const": false
+        }
+      },
+      "examples": [
+        {
+          "graph_import_allowed": false,
+          "graphdb_written": false,
+          "import_eligible": false,
+          "ladybugdb_written": false,
+          "production_import_attempted": false
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "schema_version": "grobid-tei.v1",
+      "source_arxiv_id": "1804.02767",
+      "manifest_batch_id": "m054-pdf-acquisition",
+      "tei_xml_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "header": {
+        "title": "Example paper",
+        "authors": [
+          {
+            "full_name": "A. Researcher"
+          }
+        ]
+      },
+      "biblStruct": [
+        {
+          "id": "b0",
+          "title": "Prior work"
+        }
+      ],
+      "abstract": "Example abstract.",
+      "body_sections": [
+        {
+          "heading": "Introduction",
+          "level": 1,
+          "paragraphs": [
+            "Example paragraph."
+          ]
+        }
+      ],
+      "safety_defaults": {
+        "external_network_authorized": false,
+        "graph_writes_authorized": false,
+        "production_import_authorized": false,
+        "fact_promotion_authorized": false,
+        "llm_calls_authorized": false
+      }
+    },
+    {
+      "schema_version": "m055-grobid-only-per-pdf.v1",
+      "arxiv_id": "1804.02767",
+      "status": "ok",
+      "pdf_path": "data/article_catalog/article_catalog/arxiv/cs-cv/1804.02767/source/1804.02767.pdf",
+      "safety_defaults": {
+        "external_network_authorized": false,
+        "graph_writes_authorized": false,
+        "production_import_authorized": false,
+        "fact_promotion_authorized": false,
+        "llm_calls_authorized": false
+      }
+    }
+  ],
+  "x_contract_notes": [
+    "The retroactive diagnostic branch exists so M054/M055 proof-of-concept validation can run against historical outputs.",
+    "Retroactive diagnostic outputs may carry the pre-M059 safety key names; schema validation still requires recognized flags to be false.",
+    "This schema is intentionally permissive for retroactive artifacts.",
+    "Unknown fields are retained so historical parser outputs remain replayable.",
+    "Consumers should validate required contract fields first, then inspect optional diagnostics.",
+    "Relative paths are resolved from the repository root unless stated otherwise.",
+    "Timestamps use ISO-8601 strings with timezone when available.",
+    "All write-like safety switches default to false and must remain explicit."
+  ]
+}

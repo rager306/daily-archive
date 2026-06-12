@@ -1,0 +1,262 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://daily-archive.local/schemas/m058-plotextractor-figure-caption.v1.json",
+  "title": "M058 PlotExtractor Figure Caption v1",
+  "description": "Schema for PlotExtractor per-PDF TeX figure caption extraction and similarity summary artifacts.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "per_pdf",
+    "safety_defaults"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "sample_size": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sample_arxiv_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tex_ok_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "total_figures": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "total_captions": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "edges_total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "threshold": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "per_pdf": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/per_pdf"
+      }
+    },
+    "similarity_stats": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "safety_defaults": {
+      "$ref": "#/definitions/safety_defaults"
+    }
+  },
+  "definitions": {
+    "safety_defaults": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "external_network_authorized",
+        "graph_writes_authorized",
+        "production_import_authorized",
+        "fact_promotion_authorized",
+        "llm_calls_authorized"
+      ],
+      "properties": {
+        "external_network_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "External network access is not authorized for manifest replay by default."
+        },
+        "graph_writes_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "Graph writes are disabled unless a later binding explicitly changes this."
+        },
+        "production_import_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "Production import is not authorized for diagnostic parser outputs."
+        },
+        "fact_promotion_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "Fact promotion is disabled for retroactive manifests."
+        },
+        "llm_calls_authorized": {
+          "type": "boolean",
+          "const": false,
+          "description": "LLM calls are not authorized by this ingest contract."
+        }
+      },
+      "examples": [
+        {
+          "external_network_authorized": false,
+          "graph_writes_authorized": false,
+          "production_import_authorized": false,
+          "fact_promotion_authorized": false,
+          "llm_calls_authorized": false
+        }
+      ]
+    },
+    "figure": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "name",
+        "label",
+        "caption_text",
+        "image_path"
+      ],
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "caption_text": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "image_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "figure_idx": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "page_number": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "source_tex_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "per_pdf": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "arxiv_id",
+        "tex_status",
+        "figure_count",
+        "figures"
+      ],
+      "properties": {
+        "arxiv_id": {
+          "type": "string"
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tex_status": {
+          "type": "string"
+        },
+        "figure_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "caption_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tex_tarball_size": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "figures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/figure"
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema_version": "m058.plotextractor.summary.v2",
+      "sample_size": 1,
+      "sample_arxiv_ids": [
+        "2605.18747"
+      ],
+      "tex_ok_count": 1,
+      "total_figures": 12,
+      "total_captions": 12,
+      "per_pdf": [
+        {
+          "arxiv_id": "2605.18747",
+          "category": "cs-cl",
+          "tex_status": "ok",
+          "figure_count": 12,
+          "caption_count": 12,
+          "figures": [
+            {
+              "name": "fig:example",
+              "label": "fig:example",
+              "caption_text": "Example caption.",
+              "image_path": "figures/example.png"
+            }
+          ]
+        }
+      ],
+      "safety_defaults": {
+        "external_network_authorized": false,
+        "graph_writes_authorized": false,
+        "production_import_authorized": false,
+        "fact_promotion_authorized": false,
+        "llm_calls_authorized": false
+      }
+    }
+  ],
+  "x_contract_notes": [
+    "PlotExtractor outputs are used as parser evidence only; production import is not authorized.",
+    "This schema is intentionally permissive for retroactive artifacts.",
+    "Unknown fields are retained so historical parser outputs remain replayable.",
+    "Consumers should validate required contract fields first, then inspect optional diagnostics.",
+    "Relative paths are resolved from the repository root unless stated otherwise.",
+    "Timestamps use ISO-8601 strings with timezone when available.",
+    "All write-like safety switches default to false and must remain explicit.",
+    "Batch processing is diagnostic-only until a later ADR grants production authority.",
+    "Schema evolution should add a v2 file rather than weakening this v1 contract in place.",
+    "Examples are normative shape examples, not a complete corpus manifest.",
+    "Parser-specific fields may be richer than the fields listed here.",
+    "Consumers should preserve arxiv_id strings exactly, including version suffixes.",
+    "SHA-256 values describe local content bytes, not remote HTTP responses.",
+    "Paths may point to historical artifacts generated by earlier milestones.",
+    "Network endpoints in examples use 127.0.0.1 when a loopback endpoint is needed.",
+    "This schema is a contract boundary, not an authorization boundary."
+  ]
+}
