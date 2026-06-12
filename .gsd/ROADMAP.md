@@ -59,4 +59,4 @@
 - 🔄 **M055-kyxuqm: Hybrid Parser Deep-Dive: GROBID Fulltext + OpenDataLoader Correctness + 20 PDFs** (`depends:[M051-aaw9j7, M033-732r1t]`)
 - ✅ **M056-lchpnp: Hybrid Parser BFS Acquisition 2605.18747 1-Hop All 166 Refs in Waves** (`depends:[M051-aaw9j7, M033-732r1t]`)
 - ✅ **M057-s70wkm: Graph-Readiness Gate v1 via fd Embeddings + Marker Re-extraction** (`depends:[M056-lchpnp, M033-732r1t]`)
-- 🔄 **M058-cmjp1u: M059 Pilot Cycle plotextractor v2 + Marker Iterative Expansion** (`depends:[—]`)
+- ✅ **M058-cmjp1u: M059 Pilot Cycle plotextractor v2 + Marker Iterative Expansion** (`depends:[—]`)

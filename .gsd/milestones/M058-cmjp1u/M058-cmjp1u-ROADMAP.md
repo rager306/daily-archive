@@ -10,13 +10,13 @@
 - [x] **S02: Marker pilot stage 1: 5 PDF + quality eval** `risk:low` `depends:[S01]`
   > After this: 5 PDFs Marker-extracted, OpenDataLoader comparison, decision: continue to 15 PDF or stop
 
-- [ ] **S03: Marker pilot stage 2: 10 more PDF (cumulative 15) + eval** `risk:low` `depends:[S02]`
+- [x] **S03: Marker pilot stage 2: 10 more PDF (cumulative 15) + eval** `risk:low` `depends:[S02]`
   > After this: 15 PDFs cumulative Marker-extracted, comparison report, decision: continue to 45 PDF or stop
 
-- [ ] **S04: Marker pilot stage 3: 30 more PDF (cumulative 45) + final eval** `risk:medium` `depends:[S03]`
+- [x] **S04: Marker pilot stage 3: 30 more PDF (cumulative 45) + final eval** `risk:medium` `depends:[S03]`
   > After this: 45 PDFs cumulative Marker-extracted, full comparison report, decision: scale to 166 or stop
 
-- [ ] **S05: Synthesis + ADR-012 + decision deferred** `risk:low` `depends:[S01,S02,S03,S04]`
+- [x] **S05: Synthesis + ADR-012 + decision deferred** `risk:low` `depends:[S01,S02,S03,S04]`
   > After this: Combined pilot evidence, ADR-012 emitted, M060 scope proposal
 
 ## Boundary Map
