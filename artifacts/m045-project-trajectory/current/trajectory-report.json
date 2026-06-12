@@ -17,9 +17,9 @@
     },
     "evidence": {
       "evidence": [
-        ".gsd/milestones/M043-cqiqeq/M043-cqiqeq-SUMMARY.md",
-        ".gsd/milestones/M044-qq02k8/M044-qq02k8-SUMMARY.md",
-        ".gsd/milestones/M045-4s8e44/M045-4s8e44-SUMMARY.md"
+        ".gsd/milestones/M053-ool5c4/M053-ool5c4-SUMMARY.md",
+        ".gsd/milestones/M056-lchpnp/M056-lchpnp-SUMMARY.md",
+        ".gsd/milestones/M057-s70wkm/M057-s70wkm-SUMMARY.md"
       ],
       "flags": [],
       "status": "tracked"
@@ -34,9 +34,11 @@
     },
     "module_code": {
       "evidence": [
-        "git_changed_files=0"
+        "git_changed_files=22"
       ],
-      "flags": [],
+      "flags": [
+        "uncommitted_changes_present"
+      ],
       "status": "tracked"
     },
     "next_gate": {
@@ -54,6 +56,15 @@
       "flags": [],
       "status": "tracked"
     },
+    "reverse_adr_audit": {
+      "evidence": [
+        "rule_count=8",
+        "src/ (rule: no_ladybugdb_import_in_src, anchor: ADR-002 (Defer Final GraphDB Selection), ADR-005 (No Direct Extractor to GraphDB))",
+        "artifacts/ (rule: no_graph_import_allowed_true_in_artifacts, anchor: ADR-005 (No Direct Extractor to GraphDB Path))"
+      ],
+      "flags": [],
+      "status": "clear"
+    },
     "safety": {
       "evidence": [
         "prohibited-claim scan over PROJECT/README/recent summaries"
@@ -62,115 +73,123 @@
       "status": "clear"
     }
   },
-  "drift_flags": [],
+  "drift_flags": [
+    {
+      "evidence": "22 files",
+      "flag": "uncommitted_changes_present",
+      "phase_override": true,
+      "severity": "info"
+    }
+  ],
   "graph_write_allowed": false,
   "import_eligible": false,
   "next_actions": [
-    "Proceed with next planned gate; keep using trajectory check before planning and closeout."
+    "Run focused verification and commit or intentionally leave a handoff."
   ],
+  "phase": "closeout",
   "production_import_attempted": false,
   "progress_summary": {
     "decisions": {
-      "count": 80,
+      "count": 84,
       "latest": [
-        {
-          "choice": "Generate a typed governance graph projection artifact from canonical GSD/ADR sources and expose it through codebase-memory-indexed files now; reserve direct MCP graph-edge ingestion for a future upgrade when codebase-memory implements runtime/custom edge creation.",
-          "decision": "How to add typed ADR/R/D graph semantics on top of codebase-memory MCP",
-          "id": "D076",
-          "scope": "governance-memory",
-          "when": "M039 planning"
-        },
-        {
-          "choice": "Use a mixed 20-30 article no-write batch: retain the current 10 normalized articles, add fresh arXiv articles, and add reference-linked candidate articles when references can be discovered safely; keep all graph/import/promotion flags false.",
-          "decision": "How to expand the next validation batch for connectivity checks",
-          "id": "D077",
-          "scope": "real-corpus-expansion",
-          "when": "M041 planning"
-        },
-        {
-          "choice": "Use candidate-only sidecar comparison packets with explicit ready/replay/blocker statuses, prior artifact references, source summaries, and false graph/import/promotion flags.",
-          "decision": "How combined parser sidecar outputs should be represented after M043",
-          "id": "D078",
-          "scope": "sidecar-evidence",
-          "when": "M043-cqiqeq"
-        },
-        {
-          "choice": "Require the M044 sidecar architecture guardrail context pack and verifier before GROBID, OpenDataLoader, Adaptix, quant-mind, sidecar packet, or graph-readiness execution.",
-          "decision": "How future parser/sidecar work should avoid drifting from accepted architecture decisions",
-          "id": "D079",
-          "scope": "sidecar-architecture-guardrail",
-          "when": "M044-qq02k8"
-        },
         {
           "choice": "Use a unified project trajectory checker as a planning and closeout preflight, composing GSD/ADR/governance/GitNexus/codebase-memory evidence instead of adding narrow one-off guardrails.",
           "decision": "How agents should preserve overall project trajectory across sessions and milestones",
           "id": "D080",
           "scope": "trajectory-governance",
           "when": "M045-4s8e44"
+        },
+        {
+          "choice": "Drafted and accepted ADR-001 in M046-3b7gp0 QW-1 follow-up. ADR-001 isolates the first-domain framing previously implicit in ADR-000, names paper-domain requirements (R024, R027, R029, R031-R033, R050, R058, R060) as first-domain validation constraints, and defines a forward decision point for second-domain selection (R024 graph-readiness threshold). Status changed from Planned to Accepted; all 8 ADRs are now binding or deferred (zero Planned).",
+          "decision": "Accept ADR-001 (Scientific Papers as First Domain)",
+          "id": "D081",
+          "scope": "adr-framework",
+          "when": "M046-3b7gp0 QW-1 (2026-06-09)"
+        },
+        {
+          "choice": "GROBID (header/citations) + OpenDataLoader (body/tables/layout)",
+          "decision": "Hybrid Parser Architecture",
+          "id": "D082",
+          "scope": "architecture",
+          "when": "M055"
+        },
+        {
+          "choice": "Keep hybrid routing as the default, but require a fulltext-aware GROBID fallback when OpenDataLoader body evidence is low-quality, unavailable, or below threshold.",
+          "decision": "How M055deep should amend ADR-008 after 20-PDF GROBID fulltext versus OpenDataLoader routing evidence",
+          "id": "D083",
+          "scope": "parser-benchmark / hybrid-parser-architecture / fulltext-routing",
+          "when": "M055-kyxuqm S06 ADR-009 amendment"
+        },
+        {
+          "choice": "1-hop saturation observed; 2-hop BFS recommended for M058 graph-readiness",
+          "decision": "BFS scale evidence for M056 1-hop expansion from 2605.18747",
+          "id": "D084",
+          "scope": "parser-benchmark / graph-readiness",
+          "when": "M056-lchpnp S07 final synthesis"
         }
       ]
     },
     "governance_graph": {
       "edge_count": 13,
-      "node_count": 160,
+      "node_count": 168,
       "node_types": {
-        "ADR": 7,
+        "ADR": 11,
         "Artifact": 2,
-        "Decision": 80,
+        "Decision": 84,
         "Milestone": 5,
         "Requirement": 65,
         "SafetyBoundary": 1
       }
     },
     "latest_milestone": {
-      "id": "M045-4s8e44",
+      "id": "M057-s70wkm",
       "mentions_no_import": false,
-      "path": ".gsd/milestones/M045-4s8e44/M045-4s8e44-SUMMARY.md",
+      "path": ".gsd/milestones/M057-s70wkm/M057-s70wkm-SUMMARY.md",
       "status": "complete",
-      "title": "Unified Project Trajectory Check"
+      "title": "Graph-Readiness Gate v1 via fd Embeddings + Marker Re-extraction"
     },
     "recent_milestones": [
       {
-        "id": "M040-4flhk6",
-        "mentions_no_import": true,
-        "path": ".gsd/milestones/M040-4flhk6/M040-4flhk6-SUMMARY.md",
-        "status": "complete",
-        "title": "Real Corpus Continuity Normalization and Expansion"
-      },
-      {
-        "id": "M041-8k3kv4",
-        "mentions_no_import": true,
-        "path": ".gsd/milestones/M041-8k3kv4/M041-8k3kv4-SUMMARY.md",
-        "status": "complete",
-        "title": "Mixed Corpus Connectivity Smoke"
-      },
-      {
-        "id": "M042-m64cj9",
-        "mentions_no_import": true,
-        "path": ".gsd/milestones/M042-m64cj9/M042-m64cj9-SUMMARY.md",
-        "status": "complete",
-        "title": "Linked Metadata and Connectivity Readiness"
-      },
-      {
-        "id": "M043-cqiqeq",
-        "mentions_no_import": true,
-        "path": ".gsd/milestones/M043-cqiqeq/M043-cqiqeq-SUMMARY.md",
-        "status": "complete",
-        "title": "Combined Sidecar Evidence Probe"
-      },
-      {
-        "id": "M044-qq02k8",
-        "mentions_no_import": true,
-        "path": ".gsd/milestones/M044-qq02k8/M044-qq02k8-SUMMARY.md",
-        "status": "complete",
-        "title": "Live GROBID Probe and Architecture Guardrail"
-      },
-      {
-        "id": "M045-4s8e44",
+        "id": "M049-ndk541",
         "mentions_no_import": false,
-        "path": ".gsd/milestones/M045-4s8e44/M045-4s8e44-SUMMARY.md",
+        "path": ".gsd/milestones/M049-ndk541/M049-ndk541-SUMMARY.md",
         "status": "complete",
-        "title": "Unified Project Trajectory Check"
+        "title": "Models Registry Foundation"
+      },
+      {
+        "id": "M050-l8os7p",
+        "mentions_no_import": false,
+        "path": ".gsd/milestones/M050-l8os7p/M050-l8os7p-SUMMARY.md",
+        "status": "complete",
+        "title": "Bounded LLM Helper v2 Worker Pool"
+      },
+      {
+        "id": "M051-aaw9j7",
+        "mentions_no_import": false,
+        "path": ".gsd/milestones/M051-aaw9j7/M051-aaw9j7-SUMMARY.md",
+        "status": "complete",
+        "title": "Bounded PDF Acquisition for Linked Target Records"
+      },
+      {
+        "id": "M053-ool5c4",
+        "mentions_no_import": false,
+        "path": ".gsd/milestones/M053-ool5c4/M053-ool5c4-SUMMARY.md",
+        "status": "complete",
+        "title": "Live GROBID Pilot on 5 Acquired PDFs"
+      },
+      {
+        "id": "M056-lchpnp",
+        "mentions_no_import": false,
+        "path": ".gsd/milestones/M056-lchpnp/M056-lchpnp-SUMMARY.md",
+        "status": "complete",
+        "title": "Hybrid Parser BFS Acquisition 2605.18747 1-Hop All 166 Refs in Waves"
+      },
+      {
+        "id": "M057-s70wkm",
+        "mentions_no_import": false,
+        "path": ".gsd/milestones/M057-s70wkm/M057-s70wkm-SUMMARY.md",
+        "status": "complete",
+        "title": "Graph-Readiness Gate v1 via fd Embeddings + Marker Re-extraction"
       }
     ],
     "requirements": {
@@ -316,6 +335,15 @@
     }
   },
   "promotion_allowed": false,
+  "reverse_adr_audit_details": {
+    "evidence": [
+      "src/ (rule: no_ladybugdb_import_in_src, anchor: ADR-002 (Defer Final GraphDB Selection), ADR-005 (No Direct Extractor to GraphDB))",
+      "artifacts/ (rule: no_graph_import_allowed_true_in_artifacts, anchor: ADR-005 (No Direct Extractor to GraphDB Path))"
+    ],
+    "rule_count": 8,
+    "status": "clear",
+    "violations": []
+  },
   "schema_version": "m045.project-trajectory.v1",
   "verdict": "on_track"
 }

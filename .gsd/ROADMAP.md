@@ -57,4 +57,5 @@
 - ✅ **M053-ool5c4: Live GROBID Pilot on 5 Acquired PDFs** (`depends:[M051-aaw9j7, M044-qq02k8]`)
 - 🔄 **M054-proc4f: Parser Hybrid Benchmark on 5 M051 PDFs** (`depends:[M051-aaw9j7, M033-732r1t, M043-cqiqeq]`)
 - 🔄 **M055-kyxuqm: Hybrid Parser Deep-Dive: GROBID Fulltext + OpenDataLoader Correctness + 20 PDFs** (`depends:[M051-aaw9j7, M033-732r1t]`)
-- 🔄 **M056-lchpnp: Hybrid Parser BFS Acquisition 2605.18747 1-Hop All 166 Refs in Waves** (`depends:[M051-aaw9j7, M033-732r1t]`)
+- ✅ **M056-lchpnp: Hybrid Parser BFS Acquisition 2605.18747 1-Hop All 166 Refs in Waves** (`depends:[M051-aaw9j7, M033-732r1t]`)
+- ✅ **M057-s70wkm: Graph-Readiness Gate v1 via fd Embeddings + Marker Re-extraction** (`depends:[M056-lchpnp, M033-732r1t]`)

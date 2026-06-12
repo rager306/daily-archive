@@ -6,9 +6,7 @@ import copy
 import datetime
 import hashlib
 import json
-import tempfile
 from dataclasses import InitVar, dataclass, field
-from pathlib import Path
 from typing import Any, Literal
 
 from arxiv_archive.article_artifact_minimax import request_article_artifact_classification
@@ -27,7 +25,8 @@ _SAFETY_KEYS: tuple[str, ...] = (
 
 
 def _canonical_json(value: Any) -> str:
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
+    encoder = json.JSONEncoder(ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
+    return encoder.encode(value)
 
 
 def _sha256_prefix(value: Any, *, length: int = 16) -> str:
@@ -240,14 +239,12 @@ def run_document_workflow(
         )
 
     if work_requests:
-        with tempfile.TemporaryDirectory(prefix="m052-rlm-workflow-") as tmp_dir:
-            completed = run_worker_pool(
-                work_requests,
-                structures=structures_by_work_id,
-                transport=MockTransport(),
-                max_workers=1,
-                storage_dir=Path(tmp_dir),
-            )
+        completed = run_worker_pool(
+            work_requests,
+            structures=structures_by_work_id,
+            transport=MockTransport(),
+            max_workers=1,
+        )
         aggregate_summary = merge_article_artifact_results([item.to_sanitized_dict() for item in completed])
     else:
         aggregate_summary = merge_article_artifact_results([])

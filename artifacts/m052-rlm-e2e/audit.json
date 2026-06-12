@@ -1,0 +1,325 @@
+{
+  "comparison": {
+    "baseline_count": 4,
+    "baseline_labels": [
+      "vector_only",
+      "graph_one_hop",
+      "hybrid",
+      "heuristic_bfs"
+    ],
+    "baselines": [
+      {
+        "label": "vector_only",
+        "metrics": {
+          "evidence_path_hit_rate": 1.0,
+          "missing_expected_evidence_path_ids": [],
+          "missing_expected_result_ids": [],
+          "retrieval_recall": 1.0
+        },
+        "question_id": "m052-s02-e2e-pageindex",
+        "returned_evidence_path_ids": [
+          "evidence:2605.12345:conclusion:2605.12345:conclusion:chunk-0001",
+          "evidence:2605.12345:method:2605.12345:method:chunk-0001"
+        ],
+        "returned_semantic_chunk_ids": [
+          "2605.12345:conclusion:chunk-0001",
+          "2605.12345:method:chunk-0001"
+        ],
+        "source_diagnostics": {
+          "empty_graph_candidates": null,
+          "empty_graph_reason": null,
+          "empty_vector_candidates": false,
+          "graph_candidate_count": null,
+          "graph_evidence_path_ids": [],
+          "missing_evidence_path_links": [],
+          "mode": "vector_only",
+          "vector_candidate_count": 2
+        }
+      },
+      {
+        "label": "graph_one_hop",
+        "metrics": {
+          "evidence_path_hit_rate": 0.0,
+          "missing_expected_evidence_path_ids": [
+            "evidence:2605.12345:conclusion:2605.12345:conclusion:chunk-0001",
+            "evidence:2605.12345:method:2605.12345:method:chunk-0001"
+          ],
+          "missing_expected_result_ids": [
+            "2605.12345:conclusion:chunk-0001",
+            "2605.12345:method:chunk-0001"
+          ],
+          "retrieval_recall": 0.0
+        },
+        "question_id": "m052-s02-e2e-pageindex",
+        "returned_evidence_path_ids": [],
+        "returned_semantic_chunk_ids": [],
+        "source_diagnostics": {
+          "candidate_count": 0,
+          "mode": "graph_one_hop"
+        }
+      },
+      {
+        "label": "hybrid",
+        "metrics": {
+          "evidence_path_hit_rate": 1.0,
+          "missing_expected_evidence_path_ids": [],
+          "missing_expected_result_ids": [],
+          "retrieval_recall": 1.0
+        },
+        "question_id": "m052-s02-e2e-pageindex",
+        "returned_evidence_path_ids": [
+          "evidence:2605.12345:conclusion:2605.12345:conclusion:chunk-0001",
+          "evidence:2605.12345:method:2605.12345:method:chunk-0001"
+        ],
+        "returned_semantic_chunk_ids": [
+          "2605.12345:conclusion:chunk-0001",
+          "2605.12345:method:chunk-0001"
+        ],
+        "source_diagnostics": {
+          "empty_graph_candidates": true,
+          "empty_graph_reason": "no_scientific_kg_matches",
+          "empty_vector_candidates": false,
+          "graph_candidate_count": 0,
+          "graph_evidence_path_ids": [],
+          "missing_evidence_path_links": [],
+          "mode": "hybrid",
+          "vector_candidate_count": 2
+        }
+      },
+      {
+        "label": "heuristic_bfs",
+        "metrics": {
+          "evidence_path_hit_rate": 0.5,
+          "missing_expected_evidence_path_ids": [
+            "evidence:2605.12345:conclusion:2605.12345:conclusion:chunk-0001"
+          ],
+          "missing_expected_result_ids": [
+            "2605.12345:conclusion:chunk-0001"
+          ],
+          "retrieval_recall": 0.5
+        },
+        "question_id": "m052-s02-e2e-pageindex",
+        "returned_evidence_path_ids": [
+          "evidence:2605.12345:method:2605.12345:method:chunk-0001"
+        ],
+        "returned_semantic_chunk_ids": [
+          "2605.12345:method:chunk-0001"
+        ],
+        "source_diagnostics": {
+          "budget_exhausted": false,
+          "mode": "heuristic_bfs",
+          "visited_count": 1
+        }
+      }
+    ],
+    "config": {
+      "max_neighbors_per_step": 3,
+      "max_steps": 4,
+      "top_k": 4
+    },
+    "diagnostics": {
+      "baseline_labels": [
+        "vector_only",
+        "graph_one_hop",
+        "hybrid",
+        "heuristic_bfs"
+      ],
+      "budget_exhausted": false,
+      "missing_expected_evidence_path_ids": [],
+      "missing_expected_result_ids": [],
+      "policy_label": "rlm_style_deterministic",
+      "question_id": "m052-s02-e2e-pageindex",
+      "returned_count": 2,
+      "stop_reason": "target_recall_reached",
+      "visited_count": 2
+    },
+    "question_id": "m052-s02-e2e-pageindex",
+    "rlm_traversal": {
+      "budget_exhausted": false,
+      "candidates": [
+        {
+          "depth": 0,
+          "evidence_path_id": "evidence:2605.12345:method:2605.12345:method:chunk-0001",
+          "page_index_node_id": "2605.12345:method",
+          "route_policy": "rlm_style_deterministic",
+          "score_metadata": {
+            "seed_score": 1.0
+          },
+          "semantic_chunk_id": "2605.12345:method:chunk-0001"
+        },
+        {
+          "depth": 1,
+          "evidence_path_id": "evidence:2605.12345:conclusion:2605.12345:conclusion:chunk-0001",
+          "page_index_node_id": "2605.12345:conclusion",
+          "route_policy": "rlm_style_deterministic",
+          "score_metadata": {
+            "selection_score": 0.9962405881956831
+          },
+          "semantic_chunk_id": "2605.12345:conclusion:chunk-0001"
+        }
+      ],
+      "diagnostics": {
+        "budget_exhausted": false,
+        "duplicate_candidate_ids": [
+          "2605.12345:method:chunk-0001"
+        ],
+        "empty_neighborhood": false,
+        "missing_expected_evidence_path_ids": [],
+        "missing_expected_result_ids": [],
+        "returned_count": 2,
+        "stop_reason": "target_recall_reached",
+        "visited_count": 2
+      },
+      "metrics": {
+        "evidence_path_hit_rate": 1.0,
+        "missing_expected_evidence_path_ids": [],
+        "missing_expected_result_ids": [],
+        "retrieval_recall": 1.0
+      },
+      "policy_label": "rlm_style_deterministic",
+      "question_id": "m052-s02-e2e-pageindex",
+      "returned_evidence_path_ids": [
+        "evidence:2605.12345:conclusion:2605.12345:conclusion:chunk-0001",
+        "evidence:2605.12345:method:2605.12345:method:chunk-0001"
+      ],
+      "returned_semantic_chunk_ids": [
+        "2605.12345:conclusion:chunk-0001",
+        "2605.12345:method:chunk-0001"
+      ],
+      "stop_reason": "target_recall_reached",
+      "trajectory": [
+        {
+          "action": "seed",
+          "depth": 0,
+          "evidence_path_id": "evidence:2605.12345:method:2605.12345:method:chunk-0001",
+          "from_id": null,
+          "score": 1.0,
+          "source_edge_label": null,
+          "status": "selected",
+          "step_index": 0,
+          "stop_reason": null,
+          "to_id": "2605.12345:method:chunk-0001"
+        },
+        {
+          "action": "expand_neighbor",
+          "depth": 1,
+          "evidence_path_id": "evidence:2605.12345:conclusion:2605.12345:conclusion:chunk-0001",
+          "from_id": "2605.12345:method:chunk-0001",
+          "score": 0.9962405881956831,
+          "source_edge_label": "vector",
+          "status": "selected",
+          "step_index": 1,
+          "stop_reason": null,
+          "to_id": "2605.12345:conclusion:chunk-0001"
+        },
+        {
+          "action": "stop",
+          "depth": 1,
+          "evidence_path_id": null,
+          "from_id": "2605.12345:conclusion:chunk-0001",
+          "score": 0.9962405881956831,
+          "source_edge_label": null,
+          "status": "target_recall_reached",
+          "step_index": 2,
+          "stop_reason": "target_recall_reached",
+          "to_id": null
+        }
+      ],
+      "visited_semantic_chunk_ids": [
+        "2605.12345:method:chunk-0001",
+        "2605.12345:conclusion:chunk-0001"
+      ]
+    }
+  },
+  "fixture": {
+    "article_structure_path": "tests/fixtures/article_artifacts/basic_article_structure.json",
+    "full_text_fixture_path": "tests/fixtures/full_text/structured_paper.md",
+    "graph_fixture": "ladybug://127.0.0.1/in-memory-disabled-network"
+  },
+  "helper_candidate_set": [
+    {
+      "binding_id": "article-artifact-classify",
+      "model_id": "minimax-m3-512k-anthropic",
+      "section_id": "fixture-paper-0001:section:methods",
+      "work_id": "f33bdc7e3a81d671619686caae3a6ba7b6fb8476c7f2f9767b2147f4e82f73cd"
+    },
+    {
+      "binding_id": "article-artifact-classify",
+      "model_id": "minimax-m3-512k-anthropic",
+      "section_id": "fixture-paper-0001:section:results",
+      "work_id": "b474f868ab9770b592ce2f36eb0341ac60f97c36e0661710c54d355549e63672"
+    }
+  ],
+  "metrics": {
+    "evidence_path_hit_rate": {
+      "duplicate_evidence_path_ids": [],
+      "hit_evidence_path_ids": [
+        "evidence:2605.12345:conclusion:2605.12345:conclusion:chunk-0001",
+        "evidence:2605.12345:method:2605.12345:method:chunk-0001"
+      ],
+      "hit_rate": 1.0,
+      "missing_expected_evidence_path_ids": [],
+      "none_evidence_path_count": 0,
+      "result_count": 2,
+      "returned_evidence_path_ids": [
+        "evidence:2605.12345:conclusion:2605.12345:conclusion:chunk-0001",
+        "evidence:2605.12345:method:2605.12345:method:chunk-0001"
+      ],
+      "unexpected_evidence_path_ids": []
+    },
+    "retrieval_recall": {
+      "duplicate_result_ids": [],
+      "matched_expected_result_ids": [
+        "2605.12345:conclusion:chunk-0001",
+        "2605.12345:method:chunk-0001"
+      ],
+      "missing_expected_result_ids": [],
+      "none_result_id_count": 0,
+      "recall": 1.0,
+      "result_count": 2,
+      "returned_result_ids": [
+        "2605.12345:conclusion:chunk-0001",
+        "2605.12345:method:chunk-0001"
+      ],
+      "unexpected_result_ids": []
+    }
+  },
+  "safety_defaults": {
+    "all_5_safety_defaults_false": true,
+    "keys": [
+      "graph_import_allowed",
+      "graphdb_written",
+      "ladybugdb_written",
+      "production_import_attempted",
+      "import_eligible"
+    ],
+    "network_endpoint": "127.0.0.1 disabled",
+    "persistent_graph_writes": false,
+    "values": {
+      "graph_import_allowed": false,
+      "graphdb_written": false,
+      "import_eligible": false,
+      "ladybugdb_written": false,
+      "production_import_attempted": false
+    }
+  },
+  "schema_version": "m052-s02-rlm-e2e-audit.v1",
+  "trajectory": {
+    "run_id": "m052-s02-e2e",
+    "step_count": 8,
+    "step_types": [
+      "section_navigate",
+      "section_navigate",
+      "section_navigate",
+      "span_visit",
+      "span_visit",
+      "span_visit",
+      "helper_invoke",
+      "helper_invoke"
+    ],
+    "work_ids": [
+      "f33bdc7e3a81d671619686caae3a6ba7b6fb8476c7f2f9767b2147f4e82f73cd",
+      "b474f868ab9770b592ce2f36eb0341ac60f97c36e0661710c54d355549e63672"
+    ]
+  }
+}

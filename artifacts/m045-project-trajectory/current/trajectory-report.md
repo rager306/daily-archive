@@ -1,6 +1,7 @@
 # Project Trajectory Report
 
 - Verdict: `on_track`
+- Phase: `closeout`
 - Derived, not canonical: true
 - Graph writes: disabled
 - Production import: disabled
@@ -13,29 +14,30 @@
 |---|---|---|---|
 | architecture | tracked | none | .gsd/DECISIONS.md, doc/adr/, .codebase-memory/governance-graph.json |
 | functionality | tracked | none | requirements=65, statuses={'active': 17, 'validated': 48} |
-| module_code | tracked | none | git_changed_files=0 |
-| evidence | tracked | none | .gsd/milestones/M043-cqiqeq/M043-cqiqeq-SUMMARY.md, .gsd/milestones/M044-qq02k8/M044-qq02k8-SUMMARY.md, .gsd/milestones/M045-4s8e44/M045-4s8e44-SUMMARY.md |
+| module_code | tracked | uncommitted_changes_present | git_changed_files=22 |
+| evidence | tracked | none | .gsd/milestones/M053-ool5c4/M053-ool5c4-SUMMARY.md, .gsd/milestones/M056-lchpnp/M056-lchpnp-SUMMARY.md, .gsd/milestones/M057-s70wkm/M057-s70wkm-SUMMARY.md |
 | safety | clear | none | prohibited-claim scan over PROJECT/README/recent summaries |
 | operations | tracked | none | runtime/service state is artifact-derived; live process management remains external |
 | next_gate | clear | none | README.md, recent milestone summaries |
+| reverse_adr_audit | clear | none | rule_count=8, src/ (rule: no_ladybugdb_import_in_src, anchor: ADR-002 (Defer Final GraphDB Selection), ADR-005 (No Direct Extractor to GraphDB)), artifacts/ (rule: no_graph_import_ |
 
 ## Drift flags
 
 | Severity | Flag | Evidence |
 |---|---|---|
-| info | none | No drift flags detected |
+| info | uncommitted_changes_present | 22 files |
 
 ## Recent milestones
 
 | Milestone | Title | Status |
 |---|---|---|
-| M040-4flhk6 | Real Corpus Continuity Normalization and Expansion | complete |
-| M041-8k3kv4 | Mixed Corpus Connectivity Smoke | complete |
-| M042-m64cj9 | Linked Metadata and Connectivity Readiness | complete |
-| M043-cqiqeq | Combined Sidecar Evidence Probe | complete |
-| M044-qq02k8 | Live GROBID Probe and Architecture Guardrail | complete |
-| M045-4s8e44 | Unified Project Trajectory Check | complete |
+| M049-ndk541 | Models Registry Foundation | complete |
+| M050-l8os7p | Bounded LLM Helper v2 Worker Pool | complete |
+| M051-aaw9j7 | Bounded PDF Acquisition for Linked Target Records | complete |
+| M053-ool5c4 | Live GROBID Pilot on 5 Acquired PDFs | complete |
+| M056-lchpnp | Hybrid Parser BFS Acquisition 2605.18747 1-Hop All 166 Refs in Waves | complete |
+| M057-s70wkm | Graph-Readiness Gate v1 via fd Embeddings + Marker Re-extraction | complete |
 
 ## Next actions
 
-- Proceed with next planned gate; keep using trajectory check before planning and closeout.
+- Run focused verification and commit or intentionally leave a handoff.
