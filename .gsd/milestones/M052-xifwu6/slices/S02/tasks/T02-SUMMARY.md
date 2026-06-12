@@ -10,7 +10,7 @@ key_files:
 key_decisions:
   - Keep the e2e script production-like by using source dataclasses and helpers instead of importing test modules.
   - Record 127.0.0.1 disabled in audit outputs and avoid localhost strings.
-duration:
+duration: 
 verification_result: passed
 completed_at: 2026-06-12T03:53:50.064Z
 blocker_discovered: false

@@ -7,7 +7,7 @@ key_files:
   - artifacts/m045-project-trajectory/current/trajectory-report.md
 key_decisions:
   - Use M045 closeout phase for the final on_track gate because active phase intentionally flags uncommitted closeout work.
-duration:
+duration: 
 verification_result: passed
 completed_at: 2026-06-12T03:54:02.404Z
 blocker_discovered: false

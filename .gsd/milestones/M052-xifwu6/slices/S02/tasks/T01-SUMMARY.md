@@ -8,7 +8,7 @@ key_files:
 key_decisions:
   - Do not reintroduce the removed extractor hook; align the stale contract tests to the current S09 redacted-structure workflow API.
   - Keep five safety defaults false and preserve English import authority text as 'import is not authorized'.
-duration:
+duration: 
 verification_result: passed
 completed_at: 2026-06-12T03:53:37.340Z
 blocker_discovered: false

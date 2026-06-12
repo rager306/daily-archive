@@ -4,7 +4,7 @@
 
 ## Slices
 
-- [ ] **S01: RLM navigation + workflow harness core** `risk:medium` `depends:[M050-l8os7p]`
+- [x] **S01: RLM navigation + workflow harness core** `risk:medium` `depends:[M050-l8os7p]`
   > After this: RLM harness navigates a real fixture (basic_article_structure.json) via M050 worker pool + emits typed trajectory events.
 
 - [x] **S02: RLM harness end-to-end test + audit** `risk:low` `depends:[S01]`
