@@ -170,6 +170,7 @@
 | D081 | M046-3b7gp0 QW-1 (2026-06-09) | adr-framework | Accept ADR-001 (Scientific Papers as First Domain) | Drafted and accepted ADR-001 in M046-3b7gp0 QW-1 follow-up. ADR-001 isolates the first-domain framing previously implicit in ADR-000, names paper-domain requirements (R024, R027, R029, R031-R033, R050, R058, R060) as first-domain validation constraints, and defines a forward decision point for second-domain selection (R024 graph-readiness threshold). Status changed from Planned to Accepted; all 8 ADRs are now binding or deferred (zero Planned). |
 | D082 | M055 | architecture | Hybrid Parser Architecture | GROBID (header/citations) + OpenDataLoader (body/tables/layout) |
 | D083 | M055-kyxuqm S06 ADR-009 amendment | parser-benchmark / hybrid-parser-architecture / fulltext-routing | How M055deep should amend ADR-008 after 20-PDF GROBID fulltext versus OpenDataLoader routing evidence | Keep hybrid routing as the default, but require a fulltext-aware GROBID fallback when OpenDataLoader body evidence is low-quality, unavailable, or below threshold. |
+| D084 | M056-lchpnp S07 final synthesis | parser-benchmark / graph-readiness | BFS scale evidence for M056 1-hop expansion from 2605.18747 | 1-hop saturation observed; 2-hop BFS recommended for M058 graph-readiness |
 
 ## ADR Index
 
@@ -185,6 +186,10 @@
 | ADR-001 | Accepted | `doc/adr/ADR-001-scientific-papers-as-first-domain.md` | Scientific Papers as First Domain |
 | ADR-008 | Accepted (binding) | `doc/adr/ADR-008-hybrid-parser-architecture.md` | Hybrid Parser Architecture |
 | ADR-009 | Accepted (binding) | `doc/adr/ADR-009-amend-hybrid-parser.md` | Fulltext-Aware Hybrid Parser Routing |
+| ADR-010 | Accepted (binding) | `doc/adr/ADR-010-bfs-scale-167-pdf.md` | BFS Scale Evidence from 167-PDF 1-hop Run |
+| ADR-011 | Accepted (binding) | `doc/adr/ADR-011-content-graph-via-fd.md` | Content Graph via fd for M057 |
+| ADR-012 | Accepted (binding) | `doc/adr/ADR-012-figure-caption-v2.md` | Figure Caption v2 via TeX Provenance for M058 |
+| ADR-013 | Accepted (binding) | `doc/adr/ADR-013-manifest-driven-pdf-ingest.md` | Manifest-Driven PDF Ingest Architecture |
 
 ## Typed Graph Projection
 
