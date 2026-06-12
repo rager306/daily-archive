@@ -1,0 +1,99 @@
+{
+  "comparison": {
+    "dimension_deltas_m3_minus_m27": {
+      "caption_accuracy": -0.15,
+      "figure_completeness": 0.15,
+      "structural_fidelity": 0.1
+    },
+    "total_delta": 0.1,
+    "winner": "figure-qa-judge-quality"
+  },
+  "diagnostic_llm_calls_override": {
+    "llm_calls_authorized": true,
+    "reason": "Live LLM calls are enabled only for this QA diagnostic; graph writes are not authorized, production import is not authorized, and fact promotion is not authorized.",
+    "scope": "M060-gakmo0 S02 MiniMax figure QA diagnostic pilot only"
+  },
+  "figure": {
+    "arxiv_id": "1804.02767",
+    "caption": "These two hypothetical detectors are perfect according to mAP over these two images. They are both perfect. Totally equal.",
+    "category": "data_plot",
+    "figure_id": "1804.02767::5",
+    "figure_idx": 5,
+    "judge_png_path": "/root/daily-archive/artifacts/m060g-judge/image-cache/1804.02767__5.png",
+    "label": "chart",
+    "name": "chart",
+    "page_context_excerpt": "No M056 OpenDataLoader markdown context was found for this arXiv id.",
+    "safe_id": "1804.02767__5",
+    "source_image_path": "/tmp/m058_tex/1804.02767/baddet2.pdf",
+    "source_json": "artifacts/m058-plotextractor/per-pdf/1804.02767.json"
+  },
+  "models": {
+    "figure-qa-judge-fast": {
+      "attempts": 1,
+      "binding_id": "figure-qa-judge-fast",
+      "cost_estimate_note": "Usage tokens are captured when returned; cost is not measurable without an external MiniMax pricing table.",
+      "cost_estimate_usd": null,
+      "error": null,
+      "latency_ms": 19389.91,
+      "modality": "text-only",
+      "model_id": "minimax-m27-highspeed-anthropic",
+      "model_used": "MiniMax-M2.7-highspeed",
+      "response_text": "{\n  \"caption_accuracy\": 0.65,\n  \"figure_completeness\": 0.75,\n  \"structural_fidelity\": 0.70,\n  \"missing_elements\": [\"unclear axis labels\", \"unclear legend\", \"unclear numeric values\"]\n}",
+      "scores": {
+        "caption_accuracy": 0.65,
+        "figure_completeness": 0.75,
+        "missing_elements": [
+          "unclear axis labels",
+          "unclear legend",
+          "unclear numeric values"
+        ],
+        "structural_fidelity": 0.7
+      },
+      "status": "passed",
+      "status_code": 200,
+      "usage": {
+        "input_tokens": 365,
+        "output_tokens": 1100
+      }
+    },
+    "figure-qa-judge-quality": {
+      "attempts": 1,
+      "binding_id": "figure-qa-judge-quality",
+      "cost_estimate_note": "Usage tokens are captured when returned; cost is not measurable without an external MiniMax pricing table.",
+      "cost_estimate_usd": null,
+      "error": null,
+      "latency_ms": 8351.62,
+      "modality": "multimodal",
+      "model_id": "minimax-m3-multimodal-anthropic",
+      "model_used": "MiniMax-M3",
+      "response_text": "```json\n{\n  \"caption_accuracy\": 0.5,\n  \"figure_completeness\": 0.9,\n  \"structural_fidelity\": 0.8,\n  \"missing_elements\": [\n    \"Caption claims both detectors are 'perfect' and 'totally equal' per mAP, but Detector #2 shows clearly imperfect, lower-confidence detections (e.g., Camel 10%, Dog 45%, Person 11%) that contradict the caption\",\n    \"No mAP values or quantitative comparison is shown in the figure itself\",\n    \"No explicit ground truth annotations are shown, so 'perfect' claim cannot be visually verified from the figure alone\",\n    \"Page context / surrounding text not available to corroborate caption narrative\"\n  ]\n}\n```",
+      "scores": {
+        "caption_accuracy": 0.5,
+        "figure_completeness": 0.9,
+        "missing_elements": [
+          "Caption claims both detectors are 'perfect' and 'totally equal' per mAP, but Detector #2 shows clearly imperfect, lower-confidence detections (e.g., Camel 10%, Dog 45%, Person 11%) that contradict the caption",
+          "No mAP values or quantitative comparison is shown in the figure itself",
+          "No explicit ground truth annotations are shown, so 'perfect' claim cannot be visually verified from the figure alone",
+          "Page context / surrounding text not available to corroborate caption narrative"
+        ],
+        "structural_fidelity": 0.8
+      },
+      "status": "passed",
+      "status_code": 200,
+      "usage": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 2347,
+        "input_tokens": 14,
+        "output_tokens": 154,
+        "service_tier": "standard"
+      }
+    }
+  },
+  "safety_defaults": {
+    "external_network_authorized": false,
+    "fact_promotion_authorized": false,
+    "graph_writes_authorized": false,
+    "llm_calls_authorized": false,
+    "production_import_authorized": false
+  }
+}

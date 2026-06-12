@@ -1,0 +1,99 @@
+{
+  "comparison": {
+    "dimension_deltas_m3_minus_m27": {
+      "caption_accuracy": -0.05,
+      "figure_completeness": 0.1,
+      "structural_fidelity": 0.1
+    },
+    "total_delta": 0.15,
+    "winner": "figure-qa-judge-quality"
+  },
+  "diagnostic_llm_calls_override": {
+    "llm_calls_authorized": true,
+    "reason": "Live LLM calls are enabled only for this QA diagnostic; graph writes are not authorized, production import is not authorized, and fact promotion is not authorized.",
+    "scope": "M060-gakmo0 S02 MiniMax figure QA diagnostic pilot only"
+  },
+  "figure": {
+    "arxiv_id": "2507.19457",
+    "caption": "GEPA with GPT-4o is able to iteratively refine and improve CUDA Kernel Code. The graphs shows $fast_p$ vs. rollouts plot for p=$[0.5, 1]$, where the speedup is calculated over Pytorch-eager. $fast_p$ is a metric described in~\\citep{kernelbench} that measures the fraction of tasks for which the method generated a kernel executing faster than $p$ times the baseline. As can be seen, GEPA with GPT-4o is able to generate cuda kernels executing faster than Pytorch-eager for over 20\\% of the 35 representative tasks.",
+    "category": "data_plot",
+    "figure_id": "2507.19457::16",
+    "figure_idx": 16,
+    "judge_png_path": "/root/daily-archive/artifacts/m060g-judge/image-cache/2507.19457__16.png",
+    "label": "fig:kb_fastp_vs_budget",
+    "name": "fig:kb_fastp_vs_budget",
+    "page_context_excerpt": "No M056 OpenDataLoader markdown context was found for this arXiv id.",
+    "safe_id": "2507.19457__16",
+    "source_image_path": "/tmp/m058_tex/2507.19457/figures/kernelcode/kernelbench_fastp_vs_budget.pdf",
+    "source_json": "artifacts/m058-plotextractor/per-pdf/2507.19457.json"
+  },
+  "models": {
+    "figure-qa-judge-fast": {
+      "attempts": 1,
+      "binding_id": "figure-qa-judge-fast",
+      "cost_estimate_note": "Usage tokens are captured when returned; cost is not measurable without an external MiniMax pricing table.",
+      "cost_estimate_usd": null,
+      "error": null,
+      "latency_ms": 18654.58,
+      "modality": "text-only",
+      "model_id": "minimax-m27-highspeed-anthropic",
+      "model_used": "MiniMax-M2.7-highspeed",
+      "response_text": "{\"caption_accuracy\": 0.9, \"figure_completeness\": 0.8, \"structural_fidelity\": 0.85, \"missing_elements\": [\"Axis titles\", \"Legend entries for p=0.5 and p=1\", \"Tick marks/labels\", \"Data points or line markers\"]}",
+      "scores": {
+        "caption_accuracy": 0.9,
+        "figure_completeness": 0.8,
+        "missing_elements": [
+          "Axis titles",
+          "Legend entries for p=0.5 and p=1",
+          "Tick marks/labels",
+          "Data points or line markers"
+        ],
+        "structural_fidelity": 0.85
+      },
+      "status": "passed",
+      "status_code": 200,
+      "usage": {
+        "input_tokens": 484,
+        "output_tokens": 1121
+      }
+    },
+    "figure-qa-judge-quality": {
+      "attempts": 1,
+      "binding_id": "figure-qa-judge-quality",
+      "cost_estimate_note": "Usage tokens are captured when returned; cost is not measurable without an external MiniMax pricing table.",
+      "cost_estimate_usd": null,
+      "error": null,
+      "latency_ms": 7421.03,
+      "modality": "multimodal",
+      "model_id": "minimax-m3-multimodal-anthropic",
+      "model_used": "MiniMax-M3",
+      "response_text": "```json\n{\n  \"caption_accuracy\": 0.85,\n  \"figure_completeness\": 0.9,\n  \"structural_fidelity\": 0.95,\n  \"missing_elements\": [\n    \"X-axis title in caption mentions 'rollouts' as the independent variable, but visible plot shows 'Budget (Number of rollouts)' \u2014 minor wording difference, acceptable\",\n    \"Caption states fast_0.5 plateau near 0.23 (~23%) matching 'over 20%' claim, but the comparison text about 20% of 35 tasks is not directly verifiable from the plot alone without raw counts\",\n    \"No explicit data point markers distinguishing individual task threshold values beyond the two curves\"\n  ]\n}\n```",
+      "scores": {
+        "caption_accuracy": 0.85,
+        "figure_completeness": 0.9,
+        "missing_elements": [
+          "X-axis title in caption mentions 'rollouts' as the independent variable, but visible plot shows 'Budget (Number of rollouts)' \u2014 minor wording difference, acceptable",
+          "Caption states fast_0.5 plateau near 0.23 (~23%) matching 'over 20%' claim, but the comparison text about 20% of 35 tasks is not directly verifiable from the plot alone without raw counts",
+          "No explicit data point markers distinguishing individual task threshold values beyond the two curves"
+        ],
+        "structural_fidelity": 0.95
+      },
+      "status": "passed",
+      "status_code": 200,
+      "usage": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 370,
+        "input_tokens": 1112,
+        "output_tokens": 151,
+        "service_tier": "standard"
+      }
+    }
+  },
+  "safety_defaults": {
+    "external_network_authorized": false,
+    "fact_promotion_authorized": false,
+    "graph_writes_authorized": false,
+    "llm_calls_authorized": false,
+    "production_import_authorized": false
+  }
+}

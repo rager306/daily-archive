@@ -1,0 +1,99 @@
+{
+  "comparison": {
+    "dimension_deltas_m3_minus_m27": {
+      "caption_accuracy": 0.05,
+      "figure_completeness": 0.15,
+      "structural_fidelity": 0.15
+    },
+    "total_delta": 0.35,
+    "winner": "figure-qa-judge-quality"
+  },
+  "diagnostic_llm_calls_override": {
+    "llm_calls_authorized": true,
+    "reason": "Live LLM calls are enabled only for this QA diagnostic; graph writes are not authorized, production import is not authorized, and fact promotion is not authorized.",
+    "scope": "M060-gakmo0 S02 MiniMax figure QA diagnostic pilot only"
+  },
+  "figure": {
+    "arxiv_id": "1804.02767",
+    "caption": "We adapt this figure from the Focal Loss paper \\cite{focal}. YOLOv3 runs significantly faster than other detection methods with comparable performance. Times from either an M40 or Titan X, they are basically the same GPU.",
+    "category": "data_plot",
+    "figure_id": "1804.02767::2",
+    "figure_idx": 2,
+    "judge_png_path": "/root/daily-archive/artifacts/m060g-judge/image-cache/1804.02767__2.png",
+    "label": "fig:teaser",
+    "name": "fig:teaser",
+    "page_context_excerpt": "No M056 OpenDataLoader markdown context was found for this arXiv id.",
+    "safe_id": "1804.02767__2",
+    "source_image_path": "/tmp/m058_tex/1804.02767/yolov3.pdf",
+    "source_json": "artifacts/m058-plotextractor/per-pdf/1804.02767.json"
+  },
+  "models": {
+    "figure-qa-judge-fast": {
+      "attempts": 1,
+      "binding_id": "figure-qa-judge-fast",
+      "cost_estimate_note": "Usage tokens are captured when returned; cost is not measurable without an external MiniMax pricing table.",
+      "cost_estimate_usd": null,
+      "error": null,
+      "latency_ms": 18616.13,
+      "modality": "text-only",
+      "model_id": "minimax-m27-highspeed-anthropic",
+      "model_used": "MiniMax-M2.7-highspeed",
+      "response_text": "{\"caption_accuracy\":0.80,\"figure_completeness\":0.80,\"structural_fidelity\":0.75,\"missing_elements\":[\"axis_labels_unconfirmed\",\"legend_not_verified\",\"data_points_unconfirmed\",\"possible_cropping\"]}",
+      "scores": {
+        "caption_accuracy": 0.8,
+        "figure_completeness": 0.8,
+        "missing_elements": [
+          "axis_labels_unconfirmed",
+          "legend_not_verified",
+          "data_points_unconfirmed",
+          "possible_cropping"
+        ],
+        "structural_fidelity": 0.75
+      },
+      "status": "passed",
+      "status_code": 200,
+      "usage": {
+        "input_tokens": 394,
+        "output_tokens": 960
+      }
+    },
+    "figure-qa-judge-quality": {
+      "attempts": 1,
+      "binding_id": "figure-qa-judge-quality",
+      "cost_estimate_note": "Usage tokens are captured when returned; cost is not measurable without an external MiniMax pricing table.",
+      "cost_estimate_usd": null,
+      "error": null,
+      "latency_ms": 9872.19,
+      "modality": "multimodal",
+      "model_id": "minimax-m3-multimodal-anthropic",
+      "model_used": "MiniMax-M3",
+      "response_text": "```json\n{\n  \"caption_accuracy\": 0.85,\n  \"figure_completeness\": 0.95,\n  \"structural_fidelity\": 0.9,\n  \"missing_elements\": [\n    \"No explicit x-axis label units stated as ms in caption, but visible\",\n    \"GPU model (M40 vs Titan X) clarification mentioned in caption but not visually distinguished in the figure\",\n    \"Y-axis label 'COCO AP' visible but mAP column header in table says 'mAP' (minor terminology inconsistency between chart and table)\"\n  ]\n}\n```",
+      "scores": {
+        "caption_accuracy": 0.85,
+        "figure_completeness": 0.95,
+        "missing_elements": [
+          "No explicit x-axis label units stated as ms in caption, but visible",
+          "GPU model (M40 vs Titan X) clarification mentioned in caption but not visually distinguished in the figure",
+          "Y-axis label 'COCO AP' visible but mAP column header in table says 'mAP' (minor terminology inconsistency between chart and table)"
+        ],
+        "structural_fidelity": 0.9
+      },
+      "status": "passed",
+      "status_code": 200,
+      "usage": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 114,
+        "input_tokens": 3500,
+        "output_tokens": 119,
+        "service_tier": "standard"
+      }
+    }
+  },
+  "safety_defaults": {
+    "external_network_authorized": false,
+    "fact_promotion_authorized": false,
+    "graph_writes_authorized": false,
+    "llm_calls_authorized": false,
+    "production_import_authorized": false
+  }
+}

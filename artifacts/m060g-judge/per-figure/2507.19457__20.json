@@ -1,0 +1,99 @@
+{
+  "comparison": {
+    "dimension_deltas_m3_minus_m27": {
+      "caption_accuracy": 0.15,
+      "figure_completeness": 0.15,
+      "structural_fidelity": 0.2
+    },
+    "total_delta": 0.5,
+    "winner": "figure-qa-judge-quality"
+  },
+  "diagnostic_llm_calls_override": {
+    "llm_calls_authorized": true,
+    "reason": "Live LLM calls are enabled only for this QA diagnostic; graph writes are not authorized, production import is not authorized, and fact promotion is not authorized.",
+    "scope": "M060-gakmo0 S02 MiniMax figure QA diagnostic pilot only"
+  },
+  "figure": {
+    "arxiv_id": "2507.19457",
+    "caption": "\\texttt{GPT-4.1 Mini} - MIPRO",
+    "category": "schema_diagram",
+    "figure_id": "2507.19457::20",
+    "figure_idx": 20,
+    "judge_png_path": "/root/daily-archive/artifacts/m060g-judge/image-cache/2507.19457__20.png",
+    "label": "fig:hotpotqa_gpt41mini",
+    "name": "fig:hotpotqa_gpt41mini",
+    "page_context_excerpt": "No M056 OpenDataLoader markdown context was found for this arXiv id.",
+    "safe_id": "2507.19457__20",
+    "source_image_path": "/tmp/m058_tex/2507.19457/figures/HotpotQABench_gpt-41-mini_False_rollout_vs_score.pdf",
+    "source_json": "artifacts/m058-plotextractor/per-pdf/2507.19457.json"
+  },
+  "models": {
+    "figure-qa-judge-fast": {
+      "attempts": 1,
+      "binding_id": "figure-qa-judge-fast",
+      "cost_estimate_note": "Usage tokens are captured when returned; cost is not measurable without an external MiniMax pricing table.",
+      "cost_estimate_usd": null,
+      "error": null,
+      "latency_ms": 17869.37,
+      "modality": "text-only",
+      "model_id": "minimax-m27-highspeed-anthropic",
+      "model_used": "MiniMax-M2.7-highspeed",
+      "response_text": "{\n  \"caption_accuracy\": 0.45,\n  \"figure_completeness\": 0.75,\n  \"structural_fidelity\": 0.70,\n  \"missing_elements\": [\n    \"Caption lacks diagram details\",\n    \"Visual evidence unavailable\",\n    \"Schema components not described\"\n  ]\n}",
+      "scores": {
+        "caption_accuracy": 0.45,
+        "figure_completeness": 0.75,
+        "missing_elements": [
+          "Caption lacks diagram details",
+          "Visual evidence unavailable",
+          "Schema components not described"
+        ],
+        "structural_fidelity": 0.7
+      },
+      "status": "passed",
+      "status_code": 200,
+      "usage": {
+        "input_tokens": 372,
+        "output_tokens": 870
+      }
+    },
+    "figure-qa-judge-quality": {
+      "attempts": 1,
+      "binding_id": "figure-qa-judge-quality",
+      "cost_estimate_note": "Usage tokens are captured when returned; cost is not measurable without an external MiniMax pricing table.",
+      "cost_estimate_usd": null,
+      "error": null,
+      "latency_ms": 9701.93,
+      "modality": "multimodal",
+      "model_id": "minimax-m3-multimodal-anthropic",
+      "model_used": "MiniMax-M3",
+      "response_text": "```json\n{\n  \"caption_accuracy\": 0.6,\n  \"figure_completeness\": 0.9,\n  \"structural_fidelity\": 0.9,\n  \"missing_elements\": [\n    \"Caption specifies 'MIPRO' but figure compares MIPROv2 vs GEPA, so caption is ambiguous/misleading\",\n    \"No x-axis units explicitly stated beyond 'Number of Rollouts'\",\n    \"Test-set performance for GEPA (star ~69) is not labeled with a series; only MIPROv2 has a visible test star\",\n    \"Baseline test-set star at ~38 lacks an associated series line context\"\n  ]\n}\n```",
+      "scores": {
+        "caption_accuracy": 0.6,
+        "figure_completeness": 0.9,
+        "missing_elements": [
+          "Caption specifies 'MIPRO' but figure compares MIPROv2 vs GEPA, so caption is ambiguous/misleading",
+          "No x-axis units explicitly stated beyond 'Number of Rollouts'",
+          "Test-set performance for GEPA (star ~69) is not labeled with a series; only MIPROv2 has a visible test star",
+          "Baseline test-set star at ~38 lacks an associated series line context"
+        ],
+        "structural_fidelity": 0.9
+      },
+      "status": "passed",
+      "status_code": 200,
+      "usage": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 370,
+        "input_tokens": 1287,
+        "output_tokens": 138,
+        "service_tier": "standard"
+      }
+    }
+  },
+  "safety_defaults": {
+    "external_network_authorized": false,
+    "fact_promotion_authorized": false,
+    "graph_writes_authorized": false,
+    "llm_calls_authorized": false,
+    "production_import_authorized": false
+  }
+}

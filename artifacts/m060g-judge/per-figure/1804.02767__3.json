@@ -1,0 +1,96 @@
+{
+  "comparison": {
+    "dimension_deltas_m3_minus_m27": {
+      "caption_accuracy": 0.05,
+      "figure_completeness": 0.1,
+      "structural_fidelity": 0.18
+    },
+    "total_delta": 0.33,
+    "winner": "figure-qa-judge-quality"
+  },
+  "diagnostic_llm_calls_override": {
+    "llm_calls_authorized": true,
+    "reason": "Live LLM calls are enabled only for this QA diagnostic; graph writes are not authorized, production import is not authorized, and fact promotion is not authorized.",
+    "scope": "M060-gakmo0 S02 MiniMax figure QA diagnostic pilot only"
+  },
+  "figure": {
+    "arxiv_id": "1804.02767",
+    "caption": "\\small \\textbf{Bounding boxes with dimension priors and location prediction.} We predict the width and height of the box as offsets from cluster centroids. We predict the center coordinates of the box relative to the location of filter application using a sigmoid function. This figure blatantly self-plagiarized from \\cite{redmon2017yolo9000}.",
+    "category": "schema_diagram",
+    "figure_id": "1804.02767::3",
+    "figure_idx": 3,
+    "judge_png_path": "/root/daily-archive/artifacts/m060g-judge/image-cache/1804.02767__3.png",
+    "label": "box",
+    "name": "box",
+    "page_context_excerpt": "No M056 OpenDataLoader markdown context was found for this arXiv id.",
+    "safe_id": "1804.02767__3",
+    "source_image_path": "/tmp/m058_tex/1804.02767/bbox.pdf",
+    "source_json": "artifacts/m058-plotextractor/per-pdf/1804.02767.json"
+  },
+  "models": {
+    "figure-qa-judge-fast": {
+      "attempts": 1,
+      "binding_id": "figure-qa-judge-fast",
+      "cost_estimate_note": "Usage tokens are captured when returned; cost is not measurable without an external MiniMax pricing table.",
+      "cost_estimate_usd": null,
+      "error": null,
+      "latency_ms": 26167.29,
+      "modality": "text-only",
+      "model_id": "minimax-m27-highspeed-anthropic",
+      "model_used": "MiniMax-M2.7-highspeed",
+      "response_text": "{\n  \"caption_accuracy\": 0.9,\n  \"figure_completeness\": 0.85,\n  \"structural_fidelity\": 0.75,\n  \"missing_elements\": [\n    \"arrow indicating filter application location\",\n    \"sigmoid function node\",\n    \"cluster centroid markers\",\n    \"width/height offset labels\",\n    \"legend or color key\"\n  ]\n}",
+      "scores": {
+        "caption_accuracy": 0.9,
+        "figure_completeness": 0.85,
+        "missing_elements": [
+          "arrow indicating filter application location",
+          "sigmoid function node",
+          "cluster centroid markers",
+          "width/height offset labels",
+          "legend or color key"
+        ],
+        "structural_fidelity": 0.75
+      },
+      "status": "passed",
+      "status_code": 200,
+      "usage": {
+        "input_tokens": 412,
+        "output_tokens": 1439
+      }
+    },
+    "figure-qa-judge-quality": {
+      "attempts": 1,
+      "binding_id": "figure-qa-judge-quality",
+      "cost_estimate_note": "Usage tokens are captured when returned; cost is not measurable without an external MiniMax pricing table.",
+      "cost_estimate_usd": null,
+      "error": null,
+      "latency_ms": 10062.2,
+      "modality": "multimodal",
+      "model_id": "minimax-m3-multimodal-anthropic",
+      "model_used": "MiniMax-M3",
+      "response_text": "```json\n{\n  \"caption_accuracy\": 0.95,\n  \"figure_completeness\": 0.95,\n  \"structural_fidelity\": 0.93,\n  \"missing_elements\": []\n}\n```",
+      "scores": {
+        "caption_accuracy": 0.95,
+        "figure_completeness": 0.95,
+        "missing_elements": [],
+        "structural_fidelity": 0.93
+      },
+      "status": "passed",
+      "status_code": 200,
+      "usage": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 114,
+        "input_tokens": 2636,
+        "output_tokens": 45,
+        "service_tier": "standard"
+      }
+    }
+  },
+  "safety_defaults": {
+    "external_network_authorized": false,
+    "fact_promotion_authorized": false,
+    "graph_writes_authorized": false,
+    "llm_calls_authorized": false,
+    "production_import_authorized": false
+  }
+}

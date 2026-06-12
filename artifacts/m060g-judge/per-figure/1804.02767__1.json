@@ -1,0 +1,100 @@
+{
+  "comparison": {
+    "dimension_deltas_m3_minus_m27": {
+      "caption_accuracy": -0.1,
+      "figure_completeness": 0.2,
+      "structural_fidelity": 0.25
+    },
+    "total_delta": 0.35,
+    "winner": "figure-qa-judge-quality"
+  },
+  "diagnostic_llm_calls_override": {
+    "llm_calls_authorized": true,
+    "reason": "Live LLM calls are enabled only for this QA diagnostic; graph writes are not authorized, production import is not authorized, and fact promotion is not authorized.",
+    "scope": "M060-gakmo0 S02 MiniMax figure QA diagnostic pilot only"
+  },
+  "figure": {
+    "arxiv_id": "1804.02767",
+    "caption": "Zero-axis charts are probably more intellectually honest... and we can still screw with the variables to make ourselves look good!",
+    "category": "data_plot",
+    "figure_id": "1804.02767::1",
+    "figure_idx": 1,
+    "judge_png_path": "/root/daily-archive/artifacts/m060g-judge/image-cache/1804.02767__1.png",
+    "label": "chart",
+    "name": "chart",
+    "page_context_excerpt": "No M056 OpenDataLoader markdown context was found for this arXiv id.",
+    "safe_id": "1804.02767__1",
+    "source_image_path": "/tmp/m058_tex/1804.02767/both.pdf",
+    "source_json": "artifacts/m058-plotextractor/per-pdf/1804.02767.json"
+  },
+  "models": {
+    "figure-qa-judge-fast": {
+      "attempts": 1,
+      "binding_id": "figure-qa-judge-fast",
+      "cost_estimate_note": "Usage tokens are captured when returned; cost is not measurable without an external MiniMax pricing table.",
+      "cost_estimate_usd": null,
+      "error": null,
+      "latency_ms": 9495.63,
+      "modality": "text-only",
+      "model_id": "minimax-m27-highspeed-anthropic",
+      "model_used": "MiniMax-M2.7-highspeed",
+      "response_text": "{\n  \"caption_accuracy\": 0.55,\n  \"figure_completeness\": 0.7,\n  \"structural_fidelity\": 0.6,\n  \"missing_elements\": [\"axis labels\", \"legend\", \"title\"]\n}",
+      "scores": {
+        "caption_accuracy": 0.55,
+        "figure_completeness": 0.7,
+        "missing_elements": [
+          "axis labels",
+          "legend",
+          "title"
+        ],
+        "structural_fidelity": 0.6
+      },
+      "status": "passed",
+      "status_code": 200,
+      "usage": {
+        "input_tokens": 365,
+        "output_tokens": 486
+      }
+    },
+    "figure-qa-judge-quality": {
+      "attempts": 1,
+      "binding_id": "figure-qa-judge-quality",
+      "cost_estimate_note": "Usage tokens are captured when returned; cost is not measurable without an external MiniMax pricing table.",
+      "cost_estimate_usd": null,
+      "error": null,
+      "latency_ms": 13023.32,
+      "modality": "multimodal",
+      "model_id": "minimax-m3-multimodal-anthropic",
+      "model_used": "MiniMax-M3",
+      "response_text": "```json\n{\n  \"caption_accuracy\": 0.45,\n  \"figure_completeness\": 0.9,\n  \"structural_fidelity\": 0.85,\n  \"missing_elements\": [\n    \"Caption is commentary/opinion rather than a descriptive figure caption, so direct match to figure content is weak\",\n    \"No page context (markdown) available to corroborate figure purpose\",\n    \"x-axis label on left plot ('Execution time (ms)') appears to read as 'Execution' due to image rendering, but the intended label is unclear from extraction alone\",\n    \"No legend distinguishing magenta stars (YOLOv3) from blue circles (other models) beyond in-plot text annotations\",\n    \"Unclear whether the two subplots are meant to be interpreted as the same data rescaled or as a before/after comparison\"\n  ]\n}\n```",
+      "scores": {
+        "caption_accuracy": 0.45,
+        "figure_completeness": 0.9,
+        "missing_elements": [
+          "Caption is commentary/opinion rather than a descriptive figure caption, so direct match to figure content is weak",
+          "No page context (markdown) available to corroborate figure purpose",
+          "x-axis label on left plot ('Execution time (ms)') appears to read as 'Execution' due to image rendering, but the intended label is unclear from extraction alone",
+          "No legend distinguishing magenta stars (YOLOv3) from blue circles (other models) beyond in-plot text annotations",
+          "Unclear whether the two subplots are meant to be interpreted as the same data rescaled or as a before/after comparison"
+        ],
+        "structural_fidelity": 0.85
+      },
+      "status": "passed",
+      "status_code": 200,
+      "usage": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 114,
+        "input_tokens": 2031,
+        "output_tokens": 176,
+        "service_tier": "standard"
+      }
+    }
+  },
+  "safety_defaults": {
+    "external_network_authorized": false,
+    "fact_promotion_authorized": false,
+    "graph_writes_authorized": false,
+    "llm_calls_authorized": false,
+    "production_import_authorized": false
+  }
+}

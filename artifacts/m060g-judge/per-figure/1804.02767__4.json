@@ -1,0 +1,100 @@
+{
+  "comparison": {
+    "dimension_deltas_m3_minus_m27": {
+      "caption_accuracy": 0.1,
+      "figure_completeness": 0.1,
+      "structural_fidelity": 0.12
+    },
+    "total_delta": 0.32,
+    "winner": "figure-qa-judge-quality"
+  },
+  "diagnostic_llm_calls_override": {
+    "llm_calls_authorized": true,
+    "reason": "Live LLM calls are enabled only for this QA diagnostic; graph writes are not authorized, production import is not authorized, and fact promotion is not authorized.",
+    "scope": "M060-gakmo0 S02 MiniMax figure QA diagnostic pilot only"
+  },
+  "figure": {
+    "arxiv_id": "1804.02767",
+    "caption": "Again adapted from the \\cite{focal}, this time displaying speed/accuracy tradeoff on the mAP at .5 IOU metric. You can tell YOLOv3 is good because it's very high and far to the left. Can you cite your own paper? Guess who's going to try, this guy $\\rightarrow$ \\cite{yolov3}. Oh, I forgot, we also fix a data loading bug in YOLOv2, that helped by like 2 mAP. Just sneaking this in here to not throw off layout.",
+    "category": "data_plot",
+    "figure_id": "1804.02767::4",
+    "figure_idx": 4,
+    "judge_png_path": "/root/daily-archive/artifacts/m060g-judge/image-cache/1804.02767__4.png",
+    "label": "chart",
+    "name": "chart",
+    "page_context_excerpt": "No M056 OpenDataLoader markdown context was found for this arXiv id.",
+    "safe_id": "1804.02767__4",
+    "source_image_path": "/tmp/m058_tex/1804.02767/map50.pdf",
+    "source_json": "artifacts/m058-plotextractor/per-pdf/1804.02767.json"
+  },
+  "models": {
+    "figure-qa-judge-fast": {
+      "attempts": 1,
+      "binding_id": "figure-qa-judge-fast",
+      "cost_estimate_note": "Usage tokens are captured when returned; cost is not measurable without an external MiniMax pricing table.",
+      "cost_estimate_usd": null,
+      "error": null,
+      "latency_ms": 32528.95,
+      "modality": "text-only",
+      "model_id": "minimax-m27-highspeed-anthropic",
+      "model_used": "MiniMax-M2.7-highspeed",
+      "response_text": "{\n  \"caption_accuracy\": 0.85,\n  \"figure_completeness\": 0.85,\n  \"structural_fidelity\": 0.8,\n  \"missing_elements\": [\n    \"Axis labels (e.g., 'Inference Time (ms)' and 'mAP@0.5')\",\n    \"Legend with model names (e.g., YOLOv2, YOLOv3, RetinaNet)\",\n    \"Citation markers for focal and yolov3\",\n    \"Annotation for bug fix (+2 mAP)\"\n  ]\n}",
+      "scores": {
+        "caption_accuracy": 0.85,
+        "figure_completeness": 0.85,
+        "missing_elements": [
+          "Axis labels (e.g., 'Inference Time (ms)' and 'mAP@0.5')",
+          "Legend with model names (e.g., YOLOv2, YOLOv3, RetinaNet)",
+          "Citation markers for focal and yolov3",
+          "Annotation for bug fix (+2 mAP)"
+        ],
+        "structural_fidelity": 0.8
+      },
+      "status": "passed",
+      "status_code": 200,
+      "usage": {
+        "input_tokens": 451,
+        "output_tokens": 1750
+      }
+    },
+    "figure-qa-judge-quality": {
+      "attempts": 1,
+      "binding_id": "figure-qa-judge-quality",
+      "cost_estimate_note": "Usage tokens are captured when returned; cost is not measurable without an external MiniMax pricing table.",
+      "cost_estimate_usd": null,
+      "error": null,
+      "latency_ms": 7555.9,
+      "modality": "multimodal",
+      "model_id": "minimax-m3-multimodal-anthropic",
+      "model_used": "MiniMax-M3",
+      "response_text": "```json\n{\n  \"caption_accuracy\": 0.95,\n  \"figure_completeness\": 0.95,\n  \"structural_fidelity\": 0.92,\n  \"missing_elements\": [\n    \"x-axis tick labels are partially cut off (numbers like 150, 200, 250 are not fully visible)\",\n    \"y-axis label 'COCO mAP-50' is slightly truncated on the left edge\",\n    \"no explicit title for the plot\",\n    \"text-only judge: visual pixel inspection not possible, scores estimated from figure description and page context\"\n  ]\n}\n```",
+      "scores": {
+        "caption_accuracy": 0.95,
+        "figure_completeness": 0.95,
+        "missing_elements": [
+          "x-axis tick labels are partially cut off (numbers like 150, 200, 250 are not fully visible)",
+          "y-axis label 'COCO mAP-50' is slightly truncated on the left edge",
+          "no explicit title for the plot",
+          "text-only judge: visual pixel inspection not possible, scores estimated from figure description and page context"
+        ],
+        "structural_fidelity": 0.92
+      },
+      "status": "passed",
+      "status_code": 200,
+      "usage": {
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 114,
+        "input_tokens": 3485,
+        "output_tokens": 124,
+        "service_tier": "standard"
+      }
+    }
+  },
+  "safety_defaults": {
+    "external_network_authorized": false,
+    "fact_promotion_authorized": false,
+    "graph_writes_authorized": false,
+    "llm_calls_authorized": false,
+    "production_import_authorized": false
+  }
+}
