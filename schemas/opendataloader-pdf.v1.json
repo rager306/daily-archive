@@ -5,199 +5,359 @@
   "description": "Daily-archive provenance wrapper for OpenDataLoader PDF native layout, markdown, image, and table outputs.",
   "type": "object",
   "additionalProperties": true,
-  "required": [
-    "schema_version",
-    "source_arxiv_id",
-    "manifest_batch_id",
-    "parser_version_pinned",
-    "safety_defaults"
-  ],
-  "properties": {
-    "schema_version": {
-      "type": "string"
-    },
-    "source_arxiv_id": {
-      "type": "string"
-    },
-    "manifest_batch_id": {
-      "type": "string"
-    },
-    "parser_version_pinned": {
-      "type": "string"
-    },
-    "status": {
-      "type": "string"
-    },
-    "format": {
-      "type": "string"
-    },
-    "normalized_format": {
-      "type": "string"
-    },
-    "runner": {
-      "type": "string"
-    },
-    "pdf_path": {
-      "type": "string"
-    },
-    "layout_path": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "markdown_path": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "markdown_size_bytes": {
-      "type": [
-        "integer",
-        "null"
-      ],
-      "minimum": 0
-    },
-    "page_count": {
-      "type": [
-        "integer",
-        "null"
-      ],
-      "minimum": 0
-    },
-    "section_count": {
-      "type": [
-        "integer",
-        "null"
-      ],
-      "minimum": 0
-    },
-    "table_count": {
-      "type": [
-        "integer",
-        "null"
-      ],
-      "minimum": 0
-    },
-    "image_count": {
-      "type": [
-        "integer",
-        "null"
-      ],
-      "minimum": 0
-    },
-    "bounding_box_count": {
-      "type": [
-        "integer",
-        "null"
-      ],
-      "minimum": 0
-    },
-    "pages": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": true,
-        "properties": {
-          "page_number": {
-            "type": "integer",
-            "minimum": 1
-          },
-          "width": {
-            "type": "number"
-          },
-          "height": {
-            "type": "number"
-          },
-          "blocks": {
-            "type": "array",
-            "items": {
-              "type": "object"
-            }
-          }
-        }
-      }
-    },
-    "tables": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": true,
-        "properties": {
-          "table_idx": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "caption": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "page_number": {
-            "type": [
-              "integer",
-              "null"
-            ]
-          },
-          "cells": {
-            "type": "array",
-            "items": {
-              "type": "object"
-            }
-          }
-        }
-      }
-    },
-    "figures": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": true,
-        "properties": {
-          "figure_idx": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "caption": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "image_path": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        }
-      }
-    },
-    "sha256_actual": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "sha256_matches_manifest": {
-      "type": [
-        "boolean",
-        "null"
-      ]
-    },
-    "error": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "safety_defaults": {
-      "$ref": "#/definitions/safety_defaults"
-    }
-  },
   "definitions": {
+    "opendataloader_adapter": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "schema_version",
+        "source_arxiv_id",
+        "manifest_batch_id",
+        "parser_version_pinned",
+        "safety_defaults"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string"
+        },
+        "source_arxiv_id": {
+          "type": "string"
+        },
+        "manifest_batch_id": {
+          "type": "string"
+        },
+        "parser_version_pinned": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+        "normalized_format": {
+          "type": "string"
+        },
+        "runner": {
+          "type": "string"
+        },
+        "pdf_path": {
+          "type": "string"
+        },
+        "layout_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "markdown_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "markdown_size_bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "page_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "section_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "table_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "image_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "bounding_box_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "pages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "page_number": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "width": {
+                "type": "number"
+              },
+              "height": {
+                "type": "number"
+              },
+              "blocks": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "table_idx": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "caption": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "page_number": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "cells": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "figures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "figure_idx": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "caption": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "image_path": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "sha256_actual": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sha256_matches_manifest": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "safety_defaults": {
+          "$ref": "#/definitions/safety_defaults"
+        }
+      }
+    },
+    "daily_archive_diagnostic": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "schema_version",
+        "arxiv_id",
+        "status",
+        "pdf_path",
+        "safety_defaults"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string"
+        },
+        "article_key": {
+          "type": "string"
+        },
+        "arxiv_id": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "runner": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+        "normalized_format": {
+          "type": "string"
+        },
+        "pdf_path": {
+          "type": "string"
+        },
+        "layout_path": {
+          "type": "string"
+        },
+        "markdown_path": {
+          "type": "string"
+        },
+        "manifest_sha256": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sha256_actual": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sha256_matches_manifest": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "page_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "section_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "table_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "image_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "bounding_box_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "markdown_size_bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "duration_ms": {
+          "type": [
+            "integer",
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "http_status": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "low_quality_source": {
+          "type": "boolean"
+        },
+        "attempts": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          ]
+        },
+        "bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "generated_at": {
+          "type": "string"
+        },
+        "safety_defaults": {
+          "$ref": "#/definitions/diagnostic_safety_defaults"
+        }
+      }
+    },
     "safety_defaults": {
       "type": "object",
       "additionalProperties": true,
@@ -244,6 +404,39 @@
           "llm_calls_authorized": false
         }
       ]
+    },
+    "diagnostic_safety_defaults": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "graph_import_allowed",
+        "graphdb_written",
+        "import_eligible",
+        "ladybugdb_written",
+        "production_import_attempted"
+      ],
+      "properties": {
+        "graph_import_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "graphdb_written": {
+          "type": "boolean",
+          "const": false
+        },
+        "import_eligible": {
+          "type": "boolean",
+          "const": false
+        },
+        "ladybugdb_written": {
+          "type": "boolean",
+          "const": false
+        },
+        "production_import_attempted": {
+          "type": "boolean",
+          "const": false
+        }
+      }
     }
   },
   "examples": [
@@ -288,5 +481,13 @@
     "Paths may point to historical artifacts generated by earlier milestones.",
     "Network endpoints in examples use 127.0.0.1 when a loopback endpoint is needed.",
     "This schema is a contract boundary, not an authorization boundary."
+  ],
+  "oneOf": [
+    {
+      "$ref": "#/definitions/opendataloader_adapter"
+    },
+    {
+      "$ref": "#/definitions/daily_archive_diagnostic"
+    }
   ]
 }
