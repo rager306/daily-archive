@@ -32,6 +32,20 @@ models:
     tool_version: 2026-05-15
     policy_version: m049-v0.1
 
+  - id: minimax-m27-highspeed-anthropic
+    provider: anthropic
+    endpoint: https://api.minimax.io/anthropic/v1/messages
+    model_name: MiniMax-M2.7-highspeed
+    tool_version: 2026-05-15
+    policy_version: m060g-v0.1
+
+  - id: minimax-m3-multimodal-anthropic
+    provider: anthropic
+    endpoint: https://api.minimax.io/anthropic/v1/messages
+    model_name: MiniMax-M3
+    tool_version: 2026-05-15
+    policy_version: m060g-v0.1
+
 bindings:
   # bindings map a usage purpose to a model id
   # used by M050 worker pool and downstream helper code
@@ -46,3 +60,11 @@ bindings:
   - binding_id: rlm-trajectory-capture
     model_id: minimax-m3-512k-anthropic
     description: "RLM trajectory capture with deterministic work_id (M052)"
+
+  - binding_id: figure-qa-judge-fast
+    model_id: minimax-m27-highspeed-anthropic
+    description: "Diagnostic-only figure QA judge fast path using MiniMax-M2.7-highspeed"
+
+  - binding_id: figure-qa-judge-quality
+    model_id: minimax-m3-multimodal-anthropic
+    description: "Diagnostic-only figure QA judge quality path using MiniMax-M3 multimodal"

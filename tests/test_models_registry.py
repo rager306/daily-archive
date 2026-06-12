@@ -85,7 +85,7 @@ def test_duplicate_model_id_fails():
     assert any("duplicate id" in e for e in errors)
 
 
-def test_duplicate_endpoint_fails():
+def test_duplicate_endpoint_is_allowed_for_provider_compatible_models():
     payload = {
         **VALID_REGISTRY,
         "models": [
@@ -94,7 +94,7 @@ def test_duplicate_endpoint_fails():
         ],
     }
     errors = validate_models_yaml.validate_registry(payload)
-    assert any("duplicate endpoint" in e for e in errors)
+    assert errors == []
 
 
 def test_invalid_provider_fails():

@@ -84,7 +84,6 @@ def validate_registry(payload: dict[str, Any]) -> list[str]:
 
     # Per-model validation.
     seen_ids: set[str] = set()
-    seen_endpoints: set[str] = set()
     for index, model in enumerate(payload.get("models", [])):
         if not isinstance(model, dict):
             errors.append(f"models[{index}]: must be a mapping")
@@ -103,9 +102,6 @@ def validate_registry(payload: dict[str, Any]) -> list[str]:
             errors.append(f"{prefix}.provider='{model['provider']}': must be one of {sorted(ALLOWED_PROVIDERS)}")
         if not ENDPOINT_PATTERN.match(model["endpoint"]):
             errors.append(f"{prefix}.endpoint='{model['endpoint']}': must start with https://")
-        if model["endpoint"] in seen_endpoints:
-            errors.append(f"{prefix}.endpoint='{model['endpoint']}': duplicate endpoint")
-        seen_endpoints.add(model["endpoint"])
         if not isinstance(model["model_name"], str) or not model["model_name"].strip():
             errors.append(f"{prefix}.model_name: must be non-empty string")
         if not _is_version_like(model["tool_version"]):
