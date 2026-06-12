@@ -287,6 +287,24 @@ After M046:
 - Reverse ADR audit: 0 violations at code level.
 - Next gate (per M045 follow-ups, M051 closed): live GROBID/OpenDataLoader/Adaptix pilot on the 5 acquired PDFs (M052 RLM S09 on Track A, M055 GROBID expansion on Track B).
 
+Recent milestones (post M046 roadmap):
+- M050-l8os7p closed: Bounded LLM Helper v2 Worker Pool.
+- M051-aaw7j7 closed: Bounded PDF Acquisition for 5 linked target records.
+- M052-xifwu6 closed: RLM S09 Document Workflow Harness on M050 worker pool, e2e + audit (Track A closure).
+- M053-ool5c4 closed: Live GROBID Pilot on 5 acquired PDFs.
+- M054-proc4f closed: Parser Hybrid Benchmark 5 PDF, ADR-008 binding.
+- M055-kyxuqm closed: Hybrid Parser Deep-Dive 20 PDF, ADR-009 binding, fulltext uplift.
+- M056-lchpnp closed: BFS 1-hop acquisition 166 PDF, 4454 citation edges, ADR-010 binding.
+- M057-s70wkm closed: Graph-Readiness Gate v1 via fd Embeddings + Marker re-extraction, 4-layer diagnostic graph (9403 edges), ADR-011 binding.
+- M058-cmjp1u closed: M059 Pilot Cycle (plotextractor v2 from TeX source + Marker iterative expansion, 3/5 slices), ADR-012 binding.
+- M059-y6osma closed: M060 Manifest-Driven PDF Ingest Architecture (6 JSON schemas + 5 retroactive manifests + jsonschema validation + replay tooling), ADR-013 binding.
+
+Next gate (per M059-y6osma decision):
+- M061 2-hop BFS with manifest-first ingest (5 anchors × 2-hop → 2000-5000 PDF).
+- M062 fd production hardening (persistent storage, monitoring, multi-worker).
+- M063 ADR-002 GraphDB selection (FalkorDB vs LadybugDB vs Neo4j).
+- M059b MiniMax-M3 figure QA judge pilot (LLM-as-judge on 30 figures, bounded).
+
 M046 roadmap proposal: Quick wins (M044 pre-commit, trajectory severity tuning, M048 patterns review, M049 models registry) → parallel tracks A (M050 LLM helper worker pool, M052 RLM S09, M053 RLM S10) and B (M051 bounded PDF acquisition, M055 GROBID expansion, M056 GraphDB comparison, M057 hybrid pilot) → convergence at M058 (graph-readiness gate v1) or explicit deferral.
 
 M045 unified trajectory preflight for planning and closeout:
