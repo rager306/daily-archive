@@ -63,3 +63,5 @@
 - ✅ **M059-y6osma: M060 Manifest Driven PDF Ingest Architecture** (`depends:[—]`)
 - ✅ **M060-gakmo0: M059b MiniMax Figure QA Judge Pilot Dual Model** (`depends:[—]`)
 - ✅ **M061-0fib2i: M060c Graph Library Alternatives Research and Applicability** (`depends:[—]`)
+- 🔄 **M062-b4porb: M060d ADR Template Canonicalization and Library Selection Finalization** (`depends:[—]`)
+- 🔄 **M063-8d01zz: M060b NetworkX Graph Validation Intermediate Layer** (`depends:[—]`)
