@@ -1,0 +1,431 @@
+{
+  "aggregate_score_ge_2_count": {
+    "DGL": 0,
+    "GraphScope": 1,
+    "NetworkX": 5,
+    "NetworkX-Temporal": 0,
+    "PyG": 0,
+    "graph-tool": 0,
+    "igraph": 5,
+    "rustworkx": 3
+  },
+  "artifact": "m060c_s02_applicability_matrix",
+  "binding_recommendation": {
+    "deferred": [
+      "graph-tool",
+      "PyG",
+      "DGL",
+      "NetworkX-Temporal",
+      "GraphScope except as a future GraphDB-selection candidate"
+    ],
+    "primary": "NetworkX remains the primary graph representation and correctness baseline.",
+    "supplementary": [
+      "igraph is adopted for algorithm-heavy read-only operations when benchmarks justify conversion.",
+      "rustworkx is adopted when available for traversal/path hot spots with parity checks."
+    ]
+  },
+  "cells": [
+    {
+      "applicability_score": 3,
+      "decision": "Keep as primary graph representation.",
+      "integration_cost": "Low; already used as the baseline and requires no new dependency.",
+      "library": "NetworkX",
+      "milestone": "M060b (intermediate layer)",
+      "research_reference": "artifacts/m060c-benchmark/benchmark.json",
+      "use_case_fit": "Canonical authoring and readable control graph for the intermediate layer."
+    },
+    {
+      "applicability_score": 2,
+      "decision": "Use as control path; accelerate only measured hot spots.",
+      "integration_cost": "Low; slower than igraph/rustworkx on heavy operations.",
+      "library": "NetworkX",
+      "milestone": "M061 (2-hop BFS)",
+      "research_reference": "artifacts/m060c-benchmark/benchmark.json",
+      "use_case_fit": "Reliable correctness baseline for 2-hop BFS and regression checks."
+    },
+    {
+      "applicability_score": 3,
+      "decision": "Use as primary library.",
+      "integration_cost": "Low; mature API and no conversion boundary.",
+      "library": "NetworkX",
+      "milestone": "M062 (fd hardening)",
+      "research_reference": "artifacts/m060c-benchmark/benchmark.json",
+      "use_case_fit": "Best fit for deterministic read-only hardening and reviewable diagnostics."
+    },
+    {
+      "applicability_score": 2,
+      "decision": "Use as benchmark harness and semantic control.",
+      "integration_cost": "Low; does not solve persistence or query substrate choice.",
+      "library": "NetworkX",
+      "milestone": "M063 (GraphDB selection)",
+      "research_reference": "artifacts/m060c-benchmark/benchmark.json",
+      "use_case_fit": "Portable reference model for comparing GraphDB candidates."
+    },
+    {
+      "applicability_score": 2,
+      "decision": "Keep primary for read-only control operations.",
+      "integration_cost": "Low; performance limits remain for larger algorithm-heavy jobs.",
+      "library": "NetworkX",
+      "milestone": "M064+ (production)",
+      "research_reference": "artifacts/m060c-benchmark/benchmark.json",
+      "use_case_fit": "Safe control-plane graph for production checks, not the only scaling path."
+    },
+    {
+      "applicability_score": 3,
+      "decision": "Adopt as supplementary accelerator.",
+      "integration_cost": "Medium; requires conversion from the NetworkX/control representation.",
+      "library": "igraph",
+      "milestone": "M060b (intermediate layer)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/python-igraph.md",
+      "use_case_fit": "Strong supplementary backend for PageRank/components and other algorithm-heavy reads."
+    },
+    {
+      "applicability_score": 3,
+      "decision": "Use for algorithm-heavy 2-hop BFS adjacent analysis where benchmarks justify it.",
+      "integration_cost": "Medium; keep NetworkX parity tests around conversion.",
+      "library": "igraph",
+      "milestone": "M061 (2-hop BFS)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/python-igraph.md",
+      "use_case_fit": "Measured 5-10x-class speedups on heavy operations, with especially strong PageRank/components results."
+    },
+    {
+      "applicability_score": 2,
+      "decision": "Use only for measured hot paths.",
+      "integration_cost": "Medium; conversion adds another failure surface.",
+      "library": "igraph",
+      "milestone": "M062 (fd hardening)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/python-igraph.md",
+      "use_case_fit": "Useful for heavy diagnostic scans, but not needed for authoring or safety gates."
+    },
+    {
+      "applicability_score": 2,
+      "decision": "Use as benchmark comparator, not as GraphDB replacement.",
+      "integration_cost": "Medium; remains an algorithm library, not a database.",
+      "library": "igraph",
+      "milestone": "M063 (GraphDB selection)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/python-igraph.md",
+      "use_case_fit": "Good in-process comparator before choosing an external GraphDB substrate."
+    },
+    {
+      "applicability_score": 2,
+      "decision": "Allow as supplementary read-only accelerator after gate approval.",
+      "integration_cost": "Medium; binary packaging and parity checks required.",
+      "library": "igraph",
+      "milestone": "M064+ (production)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/python-igraph.md",
+      "use_case_fit": "Candidate production accelerator after explicit performance and packaging proof."
+    },
+    {
+      "applicability_score": 2,
+      "decision": "Adopt as optional supplementary accelerator.",
+      "integration_cost": "Medium; less direct authoring ergonomics than NetworkX.",
+      "library": "rustworkx",
+      "milestone": "M060b (intermediate layer)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/rustworkx.md",
+      "use_case_fit": "Useful low-latency traversal/path backend for selected heavy reads."
+    },
+    {
+      "applicability_score": 3,
+      "decision": "Use for BFS/path hot paths if local availability remains stable.",
+      "integration_cost": "Medium; conversion and parity checks required.",
+      "library": "rustworkx",
+      "milestone": "M061 (2-hop BFS)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/rustworkx.md",
+      "use_case_fit": "Strong fit for BFS and shortest-path hot spots when available."
+    },
+    {
+      "applicability_score": 1,
+      "decision": "Defer except for measured traversal bottlenecks.",
+      "integration_cost": "Medium; not worth broadening unless a hot spot appears.",
+      "library": "rustworkx",
+      "milestone": "M062 (fd hardening)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/rustworkx.md",
+      "use_case_fit": "Niche fit for traversal diagnostics only."
+    },
+    {
+      "applicability_score": 1,
+      "decision": "Use only in benchmark comparisons.",
+      "integration_cost": "Medium; does not address persistence/query requirements.",
+      "library": "rustworkx",
+      "milestone": "M063 (GraphDB selection)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/rustworkx.md",
+      "use_case_fit": "Useful performance comparator, but not a GraphDB substrate."
+    },
+    {
+      "applicability_score": 2,
+      "decision": "Allow as optional read-only accelerator after gate approval.",
+      "integration_cost": "Medium; Rust extension packaging and fallback path required.",
+      "library": "rustworkx",
+      "milestone": "M064+ (production)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/rustworkx.md",
+      "use_case_fit": "Production accelerator candidate for traversal/path workloads."
+    },
+    {
+      "applicability_score": 0,
+      "decision": "Do not adopt.",
+      "integration_cost": "High; conda/system-package friction is disproportionate now.",
+      "library": "graph-tool",
+      "milestone": "M060b (intermediate layer)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/graph-tool.md",
+      "use_case_fit": "Potentially fast but not vendored or source-verified in S01."
+    },
+    {
+      "applicability_score": 1,
+      "decision": "Defer pending scale failure evidence.",
+      "integration_cost": "High; runtime packaging risk remains unresolved.",
+      "library": "graph-tool",
+      "milestone": "M061 (2-hop BFS)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/graph-tool.md",
+      "use_case_fit": "May be valuable only if pip-installable accelerators miss latency targets."
+    },
+    {
+      "applicability_score": 0,
+      "decision": "Do not use.",
+      "integration_cost": "High.",
+      "library": "graph-tool",
+      "milestone": "M062 (fd hardening)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/graph-tool.md",
+      "use_case_fit": "No hardening benefit over already available libraries."
+    },
+    {
+      "applicability_score": 1,
+      "decision": "Revisit only as a later benchmark candidate.",
+      "integration_cost": "High.",
+      "library": "graph-tool",
+      "milestone": "M063 (GraphDB selection)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/graph-tool.md",
+      "use_case_fit": "Could be a performance reference, not a GraphDB decision."
+    },
+    {
+      "applicability_score": 1,
+      "decision": "Deferred.",
+      "integration_cost": "High; deployment complexity blocks adoption now.",
+      "library": "graph-tool",
+      "milestone": "M064+ (production)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/graph-tool.md",
+      "use_case_fit": "Possible future high-performance backend if packaging becomes acceptable."
+    },
+    {
+      "applicability_score": 0,
+      "decision": "Do not adopt.",
+      "integration_cost": "High; model/data-loader stack is unnecessary.",
+      "library": "PyG",
+      "milestone": "M060b (intermediate layer)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/pytorch_geometric.md",
+      "use_case_fit": "GNN/tensor workflow mismatch for deterministic graph diagnostics."
+    },
+    {
+      "applicability_score": 0,
+      "decision": "Do not use.",
+      "integration_cost": "High.",
+      "library": "PyG",
+      "milestone": "M061 (2-hop BFS)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/pytorch_geometric.md",
+      "use_case_fit": "Not a direct BFS/read-only graph analytics surface."
+    },
+    {
+      "applicability_score": 0,
+      "decision": "Do not use.",
+      "integration_cost": "High.",
+      "library": "PyG",
+      "milestone": "M062 (fd hardening)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/pytorch_geometric.md",
+      "use_case_fit": "No fit for fd hardening."
+    },
+    {
+      "applicability_score": 1,
+      "decision": "Defer.",
+      "integration_cost": "High.",
+      "library": "PyG",
+      "milestone": "M063 (GraphDB selection)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/pytorch_geometric.md",
+      "use_case_fit": "Only relevant if a future GNN requirement appears."
+    },
+    {
+      "applicability_score": 1,
+      "decision": "Out of scope until ML requirement exists.",
+      "integration_cost": "High.",
+      "library": "PyG",
+      "milestone": "M064+ (production)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/pytorch_geometric.md",
+      "use_case_fit": "Possible future ML layer, not current graph substrate."
+    },
+    {
+      "applicability_score": 0,
+      "decision": "Do not adopt.",
+      "integration_cost": "High; dependency and data-model overhead.",
+      "library": "DGL",
+      "milestone": "M060b (intermediate layer)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/dgl.md",
+      "use_case_fit": "Deep-learning graph framework is mismatched for lightweight read-only analytics."
+    },
+    {
+      "applicability_score": 0,
+      "decision": "Do not use.",
+      "integration_cost": "High.",
+      "library": "DGL",
+      "milestone": "M061 (2-hop BFS)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/dgl.md",
+      "use_case_fit": "Not a clean replacement for deterministic BFS diagnostics."
+    },
+    {
+      "applicability_score": 0,
+      "decision": "Do not use.",
+      "integration_cost": "High.",
+      "library": "DGL",
+      "milestone": "M062 (fd hardening)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/dgl.md",
+      "use_case_fit": "No direct fit for fd hardening."
+    },
+    {
+      "applicability_score": 1,
+      "decision": "Defer.",
+      "integration_cost": "High.",
+      "library": "DGL",
+      "milestone": "M063 (GraphDB selection)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/dgl.md",
+      "use_case_fit": "Relevant only for a future GNN/heterograph evaluation."
+    },
+    {
+      "applicability_score": 1,
+      "decision": "Out of scope until ML requirement exists.",
+      "integration_cost": "High.",
+      "library": "DGL",
+      "milestone": "M064+ (production)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/dgl.md",
+      "use_case_fit": "Possible future ML substrate, not current production graph layer."
+    },
+    {
+      "applicability_score": 1,
+      "decision": "Defer.",
+      "integration_cost": "Low-to-medium; extends NetworkX but adds premature modeling.",
+      "library": "NetworkX-Temporal",
+      "milestone": "M060b (intermediate layer)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/networkx-temporal.md",
+      "use_case_fit": "Conceptually adjacent, but current graph is typed evidence rather than time-sliced state."
+    },
+    {
+      "applicability_score": 0,
+      "decision": "Do not use.",
+      "integration_cost": "Medium.",
+      "library": "NetworkX-Temporal",
+      "milestone": "M061 (2-hop BFS)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/networkx-temporal.md",
+      "use_case_fit": "No direct acceleration for 2-hop BFS."
+    },
+    {
+      "applicability_score": 1,
+      "decision": "Defer.",
+      "integration_cost": "Medium.",
+      "library": "NetworkX-Temporal",
+      "milestone": "M062 (fd hardening)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/networkx-temporal.md",
+      "use_case_fit": "Could model temporal hardening later, but not needed now."
+    },
+    {
+      "applicability_score": 1,
+      "decision": "Defer.",
+      "integration_cost": "Medium.",
+      "library": "NetworkX-Temporal",
+      "milestone": "M063 (GraphDB selection)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/networkx-temporal.md",
+      "use_case_fit": "Temporal semantics may inform future requirements, not substrate selection now."
+    },
+    {
+      "applicability_score": 1,
+      "decision": "Defer until temporal requirement is explicit.",
+      "integration_cost": "Medium.",
+      "library": "NetworkX-Temporal",
+      "milestone": "M064+ (production)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/networkx-temporal.md",
+      "use_case_fit": "Possible future temporal layer if requirements become time-sliced."
+    },
+    {
+      "applicability_score": 0,
+      "decision": "Do not adopt.",
+      "integration_cost": "High; operational footprint is disproportionate.",
+      "library": "GraphScope",
+      "milestone": "M060b (intermediate layer)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/graphscope.md",
+      "use_case_fit": "Distributed graph system is too heavy for the intermediate layer."
+    },
+    {
+      "applicability_score": 0,
+      "decision": "Do not use.",
+      "integration_cost": "High.",
+      "library": "GraphScope",
+      "milestone": "M061 (2-hop BFS)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/graphscope.md",
+      "use_case_fit": "Distributed execution is unnecessary for current 2-hop BFS scale."
+    },
+    {
+      "applicability_score": 0,
+      "decision": "Do not use.",
+      "integration_cost": "High.",
+      "library": "GraphScope",
+      "milestone": "M062 (fd hardening)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/graphscope.md",
+      "use_case_fit": "No fit for fd hardening."
+    },
+    {
+      "applicability_score": 2,
+      "decision": "Evaluate as a candidate only during GraphDB selection.",
+      "integration_cost": "High; repo was not available in GitNexus during S01.",
+      "library": "GraphScope",
+      "milestone": "M063 (GraphDB selection)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/graphscope.md",
+      "use_case_fit": "Potentially relevant only if GraphDB selection requires distributed analytics comparison."
+    },
+    {
+      "applicability_score": 1,
+      "decision": "Defer until production scale proves need.",
+      "integration_cost": "High.",
+      "library": "GraphScope",
+      "milestone": "M064+ (production)",
+      "research_reference": "artifacts/m060c-benchmark/library-research/graphscope.md",
+      "use_case_fit": "Future distributed option if single-process libraries fail production scale."
+    }
+  ],
+  "libraries": [
+    "NetworkX",
+    "igraph",
+    "rustworkx",
+    "graph-tool",
+    "PyG",
+    "DGL",
+    "NetworkX-Temporal",
+    "GraphScope"
+  ],
+  "loopback_host": "127.0.0.1",
+  "metadata": {
+    "idempotent": true,
+    "json_path": "/root/daily-archive/artifacts/m060c-benchmark/applicability-matrix.json",
+    "markdown_path": "/root/daily-archive/artifacts/m060c-benchmark/applicability-matrix.md",
+    "research_dir": "artifacts/m060c-benchmark/library-research",
+    "source_benchmark": "artifacts/m060c-benchmark/benchmark.json"
+  },
+  "milestone": "M061-0fib2i",
+  "milestones": [
+    "M060b (intermediate layer)",
+    "M061 (2-hop BFS)",
+    "M062 (fd hardening)",
+    "M063 (GraphDB selection)",
+    "M064+ (production)"
+  ],
+  "safety_defaults": {
+    "external_network_enabled": false,
+    "fact_promotion_authorized": false,
+    "graph_writes_authorized": false,
+    "llm_calls_enabled": false,
+    "production_import_authorized": false
+  },
+  "safety_statements": [
+    "Graph writes are not authorized.",
+    "Production import is not authorized.",
+    "Fact promotion is not authorized.",
+    "External network default is disabled.",
+    "LLM calls default is disabled."
+  ],
+  "schema_version": 1,
+  "slice": "S02"
+}
