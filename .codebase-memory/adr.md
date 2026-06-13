@@ -193,6 +193,21 @@
 | ADR-014 | Accepted (binding) | `doc/adr/ADR-014-minimax-judge-m3-multimodal.md` | MiniMax M3 Multimodal as Figure QA Judge |
 | ADR-016 | Accepted (binding) | `doc/adr/ADR-016-graph-library-selection.md` | Graph Library Selection for M060b-M064+ |
 
+## ADR Decision Highlights
+
+Generated excerpts for ADRs whose current binding status affects implementation defaults.
+
+### ADR-016: Graph Library Selection for M060b-M064+
+
+| Library | Decision | Authorized role | Rationale |
+|---|---|---|---|
+| NetworkX | PRIMARY | Read-only control-plane graph representation, manifest validation, fixture surface, simple algorithms, and correctness baseline. | Most readable and already aligned with project diagnostics. |
+| igraph | ADOPTED supplementary | Heavy algorithm operations such as Leiden, PageRank, and BFS at 10k+ nodes when benchmark evidence justifies conversion. | Covers the needed high-scale algorithm role while keeping the supplementary set to one library. |
+| rustworkx | NOT ADOPTED | None for runtime adoption in M060b-M064+. Historical benchmark evidence only. | Overlaps with igraph, is less mature for this project context, and has an integer-index API mismatch with the manifest-first graph layer. |
+| graph-tool | DEFER | Future high-scale comparator only. | Conda/system packaging friction is greater than the speedup value at the current scale. |
+| PyG / DGL / NetworkX-Temporal / GraphScope | DEFER to M065+ | Future ML, temporal, distributed, or GraphDB-selection research only. | Current work is deterministic read-only graph diagnostics, not GNN, temporal, or distributed graph processing. |
+
+
 ## Typed Graph Projection
 
 The graph-shaped projection lives in `.codebase-memory/governance-graph.json`. It is generated mirror state, not canonical state, and exists for codebase-memory search/readback and future typed ingestion once supported.

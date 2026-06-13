@@ -176,6 +176,25 @@ def extract_bullet(block: str, name: str) -> str | None:
     return match.group(1).strip() if match else None
 
 
+def extract_adoption_table_rows(text: str) -> list[str]:
+    table_match = re.search(
+        r"^### Adoption Table\s*\n\n(?P<table>(?:\|.*\|\s*\n)+)",
+        text,
+        flags=re.MULTILINE,
+    )
+    if not table_match:
+        return []
+
+    rows: list[str] = []
+    for line in table_match.group("table").splitlines():
+        if not line.startswith("|") or re.fullmatch(r"\|[-:| ]+\|", line):
+            continue
+        cells = [clean_cell(cell) for cell in line.strip("|").split("|")]
+        if len(cells) >= 4 and cells[0] != "Library":
+            rows.append(f"| {cells[0]} | {cells[1]} | {cells[2]} | {cells[3]} |")
+    return rows
+
+
 def render_digest(
     requirements: list[RequirementEntry], decisions: list[DecisionEntry], adrs: list[AdrEntry]
 ) -> str:
@@ -224,6 +243,30 @@ def render_digest(
     ])
     for adr in adrs:
         lines.append(f"| {adr.adr_id} | {adr.status} | `{adr.path}` | {adr.title} |")
+
+    highlighted_adrs = [adr for adr in adrs if adr.adr_id == "ADR-016"]
+    if highlighted_adrs:
+        lines.extend([
+            "",
+            "## ADR Decision Highlights",
+            "",
+            "Generated excerpts for ADRs whose current binding status affects implementation defaults.",
+            "",
+        ])
+        for adr in highlighted_adrs:
+            adr_text = read_text(ROOT / adr.path)
+            lines.extend([
+                f"### {adr.adr_id}: {adr.title}",
+                "",
+                "| Library | Decision | Authorized role | Rationale |",
+                "|---|---|---|---|",
+            ])
+            adoption_rows = extract_adoption_table_rows(adr_text)
+            if adoption_rows:
+                lines.extend(adoption_rows)
+            else:
+                lines.append("| unavailable | unknown | unknown | Adoption table not found in canonical ADR. |")
+            lines.append("")
 
     lines.extend([
         "",

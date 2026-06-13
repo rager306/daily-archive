@@ -21,6 +21,13 @@ A future agent should be able to ingest scientific papers locally, inspect durab
 - S07 documented that the stale S02 direct `FAIL` assessment is historical artifact conflict superseded by S06/S07 scoped evidence for M031 validation.
 - R024, R027, R029, and R050 remain active globally; M031 advanced them only within refusal-boundary scope and did not claim positive graph/import readiness.
 
+## Architecture Decision Records
+
+- Canonical ADR template: `doc/adr/ADR-TEMPLATE.md`.
+- ADR index: `doc/adr/ADR-INDEX.md`.
+- All new ADRs (ADR-017 onwards) MUST use the canonical template.
+- Current graph-library decision: ADR-016 keeps NetworkX as primary and igraph as the only supplementary read-only accelerator; rustworkx is not adopted.
+
 ## Current Research Direction
 
 The next project question is whether article parsing/conversion quality and throughput can be improved by studying external PDF-processing and paper-knowledge frameworks:

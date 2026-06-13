@@ -39,6 +39,7 @@ Core rules:
 
 Authoritative documents:
 
+- ADRs: `doc/adr/ADR-TEMPLATE.md` (template), `doc/adr/ADR-INDEX.md` (index). All new ADRs MUST use this template.
 - `doc/adr/m034/ADR-000-universal-kb-north-star.md`
 - `doc/adr/m034/ADR-INDEX.md`
 - `doc/contracts/m034-universal-kb/SAFETY-INVARIANTS.md`

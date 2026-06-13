@@ -1,22 +1,33 @@
 # ADR-016: Graph Library Selection for M060b-M064+
 
 **Status:** Accepted (binding)  
+**Amendment Status:** Amended 2026-06-13 by M062-b4porb S01  
 **Date:** 2026-06-13  
 **Deciders:** agent  
-**Milestone:** M061-0fib2i  
+**Milestone:** M061-0fib2i; amended by M062-b4porb S01  
 **Scope:** graph-layer / algorithm-backend / benchmark / diagnostics / graphdb-selection  
 **Binding Level:** binding supplement to ADR-010, ADR-011, ADR-013  
-**Revisable:** yes, after M061 2-hop BFS and M063 GraphDB-selection evidence show a different scale or substrate requirement
+**Revisable:** yes, after M063 GraphDB-selection evidence or M064+ production-gate evidence shows a different scale or substrate requirement
+
+> Amendment note: Originally accepted with rustworkx; amended 2026-06-13 to drop rustworkx per M062-b4porb S01 follow-up. User rationale: keep graph layer simple (1 primary + 1 supplementary, not 3 libs).
+
+## Amendment Log
+
+| Date | Milestone | Change | Rationale |
+|---|---|---|---|
+| 2026-06-13 | M062-b4porb S01 | Dropped rustworkx from the adopted graph-library set and kept NetworkX + igraph only. | Keep the graph layer simple: one primary library plus one supplementary accelerator, not three graph libraries. |
 
 ## 0. One-line Decision
 
-> We will keep NetworkX as the primary graph representation and correctness baseline, adopt igraph as the supplementary read-only accelerator for algorithm-heavy graph operations, and adopt rustworkx when available for traversal/path hot spots with parity checks.
+> We will keep NetworkX as the primary graph representation and correctness baseline, and adopt igraph as the single supplementary read-only accelerator for algorithm-heavy graph operations.
 
-We will not replace NetworkX as the canonical graph layer in M060b-M062, adopt graph-tool/PyG/DGL/NetworkX-Temporal for runtime integration now, or treat GraphScope as authorized outside a future M063 GraphDB-selection evaluation.
+We will not replace NetworkX as the canonical graph layer in M060b-M062, adopt rustworkx, adopt graph-tool/PyG/DGL/NetworkX-Temporal for runtime integration now, or treat GraphScope as authorized outside a future M063 GraphDB-selection evaluation.
 
 ## 1. Context
 
-The project has a manifest-first graph layer for diagnostics and algorithms, not a production graph import path. M060c S01 benchmarked NetworkX, igraph, and rustworkx across BFS, PageRank, shortest path, and connected components using the M058 4-layer graph and synthetic graphs. The benchmark showed igraph and rustworkx can be materially faster than NetworkX on heavy operations, with representative 5-10x-class gains and larger gains for some workloads.
+The project has a manifest-first graph layer for diagnostics and algorithms, not a production graph import path. M060c S01 benchmarked NetworkX, igraph, and rustworkx across BFS, PageRank, shortest path, and connected components using the M058 4-layer graph and synthetic graphs. The benchmark showed both igraph and rustworkx can be faster than NetworkX on some heavy operations.
+
+The follow-up decision in M062-b4porb S01 deliberately narrows the adopted set. The project needs the graph layer to stay easy for future agents to reason about: one readable primary representation and one supplementary accelerator are enough at the current scale. Adding a third library would increase conversion, parity, dependency, and API-shape obligations without a proven need that igraph cannot satisfy.
 
 The next milestones need a safe answer to two questions:
 
@@ -34,26 +45,36 @@ flowchart TD
     A --> D[rustworkx speed evidence]
     B --> E[M060b intermediate layer]
     C --> F[M061 algorithm-heavy reads]
-    D --> F
-    E --> G[M062 fd hardening]
-    F --> H[M063 GraphDB selection]
-    H --> I[M064+ production gate]
+    D --> G[M062 simplification review]
+    G --> H[rustworkx not adopted]
+    F --> I[M063 GraphDB selection]
+    I --> J[M064+ production gate]
 ```
 
 ## 2. Decision
 
 We will keep NetworkX as the primary graph representation, fixture surface, and correctness baseline.
 
-We will adopt igraph as a supplementary read-only accelerator for algorithm-heavy operations where conversion cost is justified by benchmark evidence. M060b and M061 may use igraph for heavy diagnostic/algorithm paths while preserving NetworkX parity checks.
+We will adopt igraph as the only supplementary read-only accelerator for algorithm-heavy operations where conversion cost is justified by benchmark evidence. In compatibility terms, this preserves the binding phrase: igraph as the supplementary read-only accelerator. M060b and M061 may use igraph for heavy diagnostic/algorithm paths while preserving NetworkX parity checks.
 
-We will adopt rustworkx as an optional supplementary read-only accelerator when available for traversal and path workloads, especially 2-hop BFS and shortest-path hot spots.
+We will not adopt rustworkx in the M060b-M064+ graph layer at this time. Its performance evidence is useful background, but igraph already covers the supplementary accelerator role with a broader algorithm surface. rustworkx also adds overlap with igraph, a less mature ecosystem fit for this project, and an integer-index API mismatch that makes future agent maintenance harder.
+
+### Adoption Table
+
+| Library | Decision | Authorized role | Rationale |
+|---|---|---|---|
+| NetworkX | PRIMARY | Read-only control-plane graph representation, manifest validation, fixture surface, simple algorithms, and correctness baseline. | Most readable and already aligned with project diagnostics. |
+| igraph | ADOPTED supplementary | Heavy algorithm operations such as Leiden, PageRank, and BFS at 10k+ nodes when benchmark evidence justifies conversion. | Covers the needed high-scale algorithm role while keeping the supplementary set to one library. |
+| rustworkx | NOT ADOPTED | None for runtime adoption in M060b-M064+. Historical benchmark evidence only. | Overlaps with igraph, is less mature for this project context, and has an integer-index API mismatch with the manifest-first graph layer. |
+| graph-tool | DEFER | Future high-scale comparator only. | Conda/system packaging friction is greater than the speedup value at the current scale. |
+| PyG / DGL / NetworkX-Temporal / GraphScope | DEFER to M065+ | Future ML, temporal, distributed, or GraphDB-selection research only. | Current work is deterministic read-only graph diagnostics, not GNN, temporal, or distributed graph processing. |
 
 This decision authorizes:
 
-- deterministic conversion from the canonical NetworkX/control graph into igraph or rustworkx for read-only analysis;
+- deterministic conversion from the canonical NetworkX/control graph into igraph for read-only analysis;
 - benchmark-backed use of igraph in M060b and M061;
-- benchmark-backed use of rustworkx for traversal/path hot spots when installed;
-- NetworkX as the default library for read-only control-plane operations.
+- NetworkX as the default library for read-only control-plane operations;
+- historical comparison against rustworkx benchmark artifacts without adopting it as a runtime dependency.
 
 This decision does not authorize:
 
@@ -61,20 +82,21 @@ This decision does not authorize:
 - production graph import;
 - fact promotion;
 - GraphDB selection;
-- adoption of graph-tool, PyG, DGL, NetworkX-Temporal, or GraphScope as runtime dependencies for M060b-M062.
+- adoption of rustworkx, graph-tool, PyG, DGL, NetworkX-Temporal, or GraphScope as runtime dependencies for M060b-M062.
 
 ### Decision Boundary
 
 ```mermaid
 flowchart LR
-    IN[In scope] --> D[ADR-016]
+    IN[In scope] --> D[ADR-016 amended]
     D --> OUT[Out of scope]
     IN --> I1[Read-only algorithms]
     IN --> I2[Library applicability matrix]
-    IN --> I3[Benchmark-backed acceleration]
+    IN --> I3[Benchmark-backed igraph acceleration]
     OUT --> O1[Production graph import]
     OUT --> O2[GraphDB writes]
-    OUT --> O3[GNN runtime adoption]
+    OUT --> O3[Runtime rustworkx adoption]
+    OUT --> O4[GNN runtime adoption]
 ```
 
 ## 3. Applies To
@@ -92,9 +114,9 @@ This decision applies to:
 
 ```mermaid
 flowchart TB
-    ADR[ADR-016] --> A[NetworkX primary]
+    ADR[ADR-016 amended] --> A[NetworkX primary]
     ADR --> B[igraph supplementary]
-    ADR --> C[rustworkx optional supplementary]
+    ADR --> C[rustworkx not adopted]
     ADR --> D[Deferred libraries]
     D --> E[graph-tool]
     D --> F[PyG/DGL]
@@ -108,20 +130,20 @@ flowchart TB
 
 | Requirement | Impact | Notes |
 |---|---|---|
-| M060c benchmark evidence | supports | S01 produced benchmark and research evidence; S02 binds library applicability. |
-| M061 2-hop BFS proof | constrains | Must keep NetworkX parity while allowing igraph/rustworkx acceleration. |
-| M062 fd hardening | supports | Defaults to NetworkX for clear read-only diagnostics; accelerators only for measured hot paths. |
-| M063 GraphDB selection | constrains | igraph/rustworkx are comparators, not GraphDB substitutes. |
+| M060c benchmark evidence | supports | S01 produced benchmark and research evidence; S02 binds library applicability after simplification. |
+| M061 2-hop BFS proof | constrains | Must keep NetworkX parity while allowing igraph acceleration where needed. |
+| M062 fd hardening | supports | Defaults to NetworkX for clear read-only diagnostics; igraph only for measured hot paths. |
+| M063 GraphDB selection | constrains | igraph is a comparator, not a GraphDB substitute; rustworkx is not an adopted comparator backend. |
 | M064+ production | constrains | Production use requires explicit gate approval and packaging proof. |
 
 ### Decisions
 
 | Decision | Impact | Notes |
 |---|---|---|
-| ADR-010 | consistent | Preserves BFS scale concerns while adding measured accelerator choices. |
-| ADR-011 | consistent | Keeps graph construction manifest/control-plane first. |
-| ADR-013 | consistent | Maintains manifest-driven ingest and no-write safety boundaries. |
-| ADR-016 | binding | Selects graph-library defaults for M060b-M064+. |
+| ADR-010 | consistent | Keeps graph traversal and diagnostic semantics read-only. |
+| ADR-011 | consistent | Maintains fd/content-graph safety boundaries. |
+| ADR-013 | consistent | Keeps manifest-driven ingest as the canonical source of graph evidence. |
+| ADR-016 original acceptance | narrowed | Removes rustworkx from the adopted set while preserving NetworkX and igraph. |
 
 ## 5. Options Considered
 
@@ -148,16 +170,16 @@ flowchart TB
 - Benchmark evidence shows slower heavy algorithms.
 - Risks making M061+ scale work artificially slow.
 
-### Option B — NetworkX primary with igraph/rustworkx supplementary
+### Option B — NetworkX primary with igraph supplementary
 
 | Dimension | Assessment |
 |---|---|
 | Local-first fit | High |
 | Safety fit | High |
-| Complexity | Medium |
+| Complexity | Medium-Low |
 | Reversibility | High |
 | GraphDB portability | High |
-| Agent/tooling dependency | Medium |
+| Agent/tooling dependency | Medium-Low |
 | Human review compatibility | High |
 
 **Pros**
@@ -165,15 +187,40 @@ flowchart TB
 - Keeps the readable NetworkX baseline.
 - Uses S01 benchmark evidence for heavy operations.
 - Preserves fallback and parity checks.
+- Keeps the graph layer to one primary and one supplementary library.
 - Avoids premature GraphDB or distributed-system adoption.
 
 **Cons**
 
 - Requires conversion boundaries.
-- Requires library availability checks.
-- Adds another parity-test obligation.
+- Requires igraph availability checks.
+- Adds a parity-test obligation for accelerated paths.
 
-### Option C — Replace NetworkX with a faster library
+### Option C — NetworkX primary with igraph and rustworkx supplementary
+
+| Dimension | Assessment |
+|---|---|
+| Local-first fit | High |
+| Safety fit | Medium |
+| Complexity | Medium-High |
+| Reversibility | Medium |
+| GraphDB portability | High |
+| Agent/tooling dependency | Medium-High |
+| Human review compatibility | Medium |
+
+**Pros**
+
+- Maximizes optional speed choices for traversal and path workloads.
+- Preserves the original benchmark-backed broad accelerator set.
+
+**Cons**
+
+- Adds a third graph library without current necessity.
+- Overlaps heavily with igraph.
+- Introduces integer-index API mismatch and additional parity/fallback obligations.
+- Makes future agent reasoning and dependency handling harder.
+
+### Option D — Replace NetworkX with a faster library
 
 | Dimension | Assessment |
 |---|---|
@@ -196,7 +243,7 @@ flowchart TB
 - Forces conversion of existing diagnostics and tests.
 - Premature before M061 and M063 evidence.
 
-### Option D — Adopt graph-tool / PyG / DGL / NetworkX-Temporal / GraphScope now
+### Option E — Adopt graph-tool, GNN, temporal, or distributed graph libraries now
 
 | Dimension | Assessment |
 |---|---|
@@ -216,6 +263,7 @@ flowchart TB
 
 - Current use case is deterministic read-only graph analytics.
 - Packaging and operational cost are not justified now.
+- graph-tool has conda/system friction greater than the speedup value at the current scale.
 - PyG/DGL are GNN-focused, not primary graph diagnostics layers.
 - GraphScope is too heavy except as a future GraphDB-selection candidate.
 
@@ -223,40 +271,42 @@ flowchart TB
 
 | Trade-off | Chosen side | Why |
 |---|---|---|
-| Correctness baseline vs speed | NetworkX baseline plus accelerators | Keeps reviewability while using benchmark evidence for hot paths. |
-| One library vs multiple backends | Multiple read-only backends with fallback | The heavy algorithms benefit, but writes remain unauthorized. |
-| Immediate replacement vs reversible supplement | Reversible supplement | M061 and M063 can revisit with better evidence. |
-| Local simple runtime vs distributed graph system | Local simple runtime | Current scale does not justify GraphScope-style operational footprint. |
-| Graph analytics vs GNN frameworks | Graph analytics | PyG/DGL do not match current deterministic diagnostic requirements. |
-
-The chosen option wins now because it moves algorithm-heavy work forward without weakening safety defaults or making the GraphDB decision prematurely.
+| Correctness baseline vs speed | NetworkX baseline plus igraph accelerator | Keeps reviewability while using benchmark evidence for hot paths. |
+| One library vs multiple backends | One primary plus one supplementary backend | Captures most current value without three-library complexity. |
+| Maximum optional speed vs maintenance clarity | Maintenance clarity | Future agents need a small, obvious graph stack more than another overlapping accelerator. |
+| Runtime breadth vs dependency safety | Defer extra runtimes | graph-tool, PyG, DGL, NetworkX-Temporal, GraphScope, and rustworkx need stronger future evidence before adoption. |
 
 ## 7. Consequences
 
 ### Positive
 
-- Future agents have a binding default: NetworkX first, igraph/rustworkx only for read-only acceleration.
-- M061 can optimize hot algorithms without changing graph semantics.
+- Future agents have a binding default: NetworkX first, igraph only for read-only acceleration.
+- M061 can optimize heavy algorithms without changing graph semantics.
 - M063 can compare GraphDB candidates against a stable in-process baseline.
+- The graph layer avoids a third runtime dependency and its parity surface.
 
 ### Negative
 
-- Conversion/parity tests are now required when using igraph or rustworkx.
+- rustworkx benchmark wins remain historical evidence rather than an adopted runtime path.
+- Conversion/parity tests are still required when using igraph.
 - Binary-package availability can affect optional accelerator behavior.
 - The project must avoid treating speed benchmarks as authorization for writes.
 
 ### New obligations
 
-- Any igraph/rustworkx path must keep a NetworkX parity or fallback check.
+- Any igraph path must keep a NetworkX parity or fallback check.
 - Any production use must prove packaging, fallback, and diagnostic behavior first.
 - Applicability decisions must remain in artifacts before runtime adoption.
+- Future reconsideration of rustworkx requires new evidence that igraph cannot cover the need.
 
 ### What becomes harder
 
-- A single-library mental model is no longer sufficient for hot paths.
+- Some traversal/path hot spots may need igraph tuning instead of switching to rustworkx.
 - Agents must distinguish graph library selection from GraphDB selection.
 
 ## 8. Safety and Non-Authorization
+
+This ADR does not authorize graph writes, production graph import, fact promotion, GraphDB selection, external network calls, or LLM calls.
 
 This ADR does **not** authorize:
 
@@ -267,7 +317,7 @@ This ADR does **not** authorize:
 - parser output as graph-ready truth;
 - external network calls;
 - LLM calls;
-- adoption of graph-tool, PyG, DGL, NetworkX-Temporal, or GraphScope for M060b-M062 runtime work.
+- adoption of rustworkx, graph-tool, PyG, DGL, NetworkX-Temporal, or GraphScope for M060b-M062 runtime work.
 
 Required safety defaults:
 
@@ -294,7 +344,7 @@ Any local-only check must bind to `127.0.0.1`.
 ```mermaid
 flowchart LR
     A[NetworkX graph] --> B[Optional conversion]
-    B --> C[igraph/rustworkx read-only algorithm]
+    B --> C[igraph read-only algorithm]
     C --> D[Parity/fallback check]
     D --> E{Explicit production authorization?}
     E -- no --> F[No-write boundary]
@@ -313,9 +363,10 @@ Affected contracts:
 
 Required contract changes or drafts:
 
-- Add an explicit backend label when algorithm outputs come from igraph or rustworkx.
+- Add an explicit backend label when algorithm outputs come from igraph.
 - Preserve NetworkX fallback metadata for accelerated outputs.
 - Preserve safety defaults in every decision artifact that cites this ADR.
+- Do not define rustworkx as an adopted `GraphAlgorithmBackend` without a future amendment.
 
 ### Contract Relationship Map
 
@@ -343,10 +394,10 @@ classDiagram
     }
 
     GraphLayerDiagnostic --> GraphAlgorithmBackend
-    GraphLayerDiagnostic --> SafetyDefaults
+    GraphAlgorithmBackend --> SafetyDefaults
 ```
 
-## 10. Validation / Evidence Required
+## 10. Validation and Evidence
 
 Evidence already produced:
 
@@ -358,7 +409,7 @@ Evidence already produced:
 
 Future validation required:
 
-- M061 parity tests for NetworkX vs igraph/rustworkx where accelerators are used;
+- M061 parity tests for NetworkX vs igraph where accelerators are used;
 - M062 diagnostic checks that keep safety defaults false;
 - M063 GraphDB-selection matrix that does not confuse algorithm libraries with databases;
 - M064+ production proof before any accelerator becomes a production dependency.
@@ -367,7 +418,7 @@ Future validation required:
 
 ```mermaid
 flowchart TD
-    A[ADR-016 accepted] --> B[M061 parity tests]
+    A[ADR-016 amended] --> B[M061 parity tests]
     B --> C[M062 hardening diagnostics]
     C --> D[M063 GraphDB matrix]
     D --> E{Production authorization?}
@@ -379,22 +430,24 @@ flowchart TD
 
 | Question | Owner | Needed by | Blocking? |
 |---|---|---|---|
-| Does M061 2-hop BFS need rustworkx for traversal latency, or is igraph sufficient? | agent | M061 | no |
+| Does M061 2-hop BFS perform adequately with NetworkX plus igraph only? | agent | M061/M062 | no |
 | Does M063 require a separate GraphDB benchmark suite? | agent | M063 | yes |
 | What package constraints apply before M064+ production use? | agent | M064+ | yes |
+| What new evidence would justify reconsidering rustworkx after M064? | agent | M065+ | no |
 
 ## 12. Follow-up Actions
 
 - [ ] In M061, add parity tests for any accelerated 2-hop BFS path.
 - [ ] In M062, keep NetworkX as the default for fd hardening diagnostics unless a measured hot spot appears.
 - [ ] In M063, evaluate GraphDB candidates separately from in-process graph algorithm libraries.
+- [ ] In M065+, reconsider rustworkx only if igraph cannot satisfy a measured algorithm requirement.
 - [ ] Before M064+ production, require explicit authorization and packaging/fallback proof.
 
 ## 13. Supersedes / Superseded By
 
 ### Supersedes
 
-- None.
+- Original ADR-016 adopted rustworkx as an optional supplementary accelerator. This amended ADR narrows that choice and supersedes only that part of the original text.
 
 ### Superseded By
 
@@ -406,13 +459,13 @@ This section is intentionally explicit for future agents.
 
 - Binding decision:
   - NetworkX remains the primary graph representation and correctness baseline.
-  - igraph is adopted as the supplementary read-only accelerator for algorithm-heavy M060b and M061 work.
-  - rustworkx is adopted when available for traversal/path hot spots with parity checks.
+  - igraph is adopted as the single supplementary read-only accelerator for algorithm-heavy M060b and M061 work.
+  - rustworkx is not adopted for runtime use in M060b-M064+.
 - Do not infer:
   - This ADR does not authorize graph writes, production graph import, fact promotion, GraphDB selection, external network calls, or LLM calls.
-  - This ADR does not authorize graph-tool, PyG, DGL, NetworkX-Temporal, or GraphScope runtime integration for M060b-M062.
+  - This ADR does not authorize rustworkx, graph-tool, PyG, DGL, NetworkX-Temporal, or GraphScope runtime integration for M060b-M062.
   - GraphScope may be considered in M063 only as a GraphDB-selection candidate.
 - Safe next action:
-  - Use NetworkX for read-only control operations and add igraph/rustworkx only behind benchmark-backed parity checks.
+  - Use NetworkX for read-only control operations and add igraph only behind benchmark-backed parity checks.
 - Blocked until:
   - Any production adoption is blocked until M064+ has explicit authorization, packaging proof, fallback proof, and safety-default verification.
