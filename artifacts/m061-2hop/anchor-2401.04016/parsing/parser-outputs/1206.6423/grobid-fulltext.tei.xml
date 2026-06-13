@@ -1,0 +1,775 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">A Joint Model of Language and Perception for Grounded Attribute Learning</title>
+				<funder ref="#_TQNBN7x">
+					<orgName type="full">Intel Science and Technology Center for Pervasive Computing</orgName>
+				</funder>
+				<funder ref="#_BvuN2Wu">
+					<orgName type="full">National Science Foundation</orgName>
+					<orgName type="abbreviated">NSF</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Cynthia</forename><surname>Matuszek</surname></persName>
+							<email>cynthia@cs.washington.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Washington</orgName>
+								<address>
+									<postCode>98195-2350</postCode>
+									<settlement>Seattle</settlement>
+									<region>WA</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Nicholas</forename><surname>Fitzgerald</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Washington</orgName>
+								<address>
+									<postCode>98195-2350</postCode>
+									<settlement>Seattle</settlement>
+									<region>WA</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Washington</orgName>
+								<address>
+									<postCode>98195-2350</postCode>
+									<settlement>Seattle</settlement>
+									<region>WA</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Liefeng</forename><surname>Bo</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Washington</orgName>
+								<address>
+									<postCode>98195-2350</postCode>
+									<settlement>Seattle</settlement>
+									<region>WA</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Dieter</forename><surname>Fox</surname></persName>
+							<email>fox@cs.washington.edu</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Washington</orgName>
+								<address>
+									<postCode>98195-2350</postCode>
+									<settlement>Seattle</settlement>
+									<region>WA</region>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">A Joint Model of Language and Perception for Grounded Attribute Learning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">1F1EFBC163F36750146F9E3319D86327</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-13T10:30+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>As robots become more ubiquitous and capable, it becomes ever more important for untrained users to easily interact with them. Recently, this has led to study of the language grounding problem, where the goal is to extract representations of the meanings of natural language tied to the physical world. We present an approach for joint learning of language and perception models for grounded attribute induction. The perception model includes classifiers for physical characteristics and a language model based on a probabilistic categorial grammar that enables the construction of compositional meaning representations. We evaluate on the task of interpreting sentences that describe sets of objects in a physical workspace, and demonstrate accurate task performance and effective latent-variable concept induction in physical grounded scenes.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Physically grounded settings provide exciting opportunities for learning. For example, a person might be able to teach a robot about objects in its environment. However, to do this, a robot must jointly reason about the different modalities encountered (for example language and vision), and induce rich associations with as little guidance as possible.</p><p>Consider a simple sentence such as "These are the yellow blocks," uttered in a setting where there is a phys-Appearing in Proceedings of the 29 th International Conference on Machine Learning, Edinburgh, Scotland, UK, 2012. Copyright 2012 by the author(s)/owner(s).</p><p>ical workspace that contains a number of objects that vary in shape and color. We assume that a robot can understand sentences like this if it can solve the associated grounded object selection task. Specifically, it must realize that words such as "yellow" and "blocks" refer to object attributes, and ground the meaning of such words by mapping them to a perceptual system that will enable it to identify the specific physical objects referred to. To do so robustly, even in cases where words or attributes are new, our robot must learn (1) visual classifiers that identify the appropriate object properties, (2) representations of the meaning of individual words that incorporate these classifiers, and (3) a model of compositional semantics used to analyze complete sentences.</p><p>In this paper, we present an approach for jointly learning these components. Our approach builds on existing work on visual attribute classification <ref type="bibr" target="#b2">(Bo et al., 2011)</ref> and probabilistic categorial grammar induction for semantic parsing <ref type="bibr" target="#b26">(Zettlemoyer &amp; Collins, 2005;</ref><ref type="bibr" target="#b12">Kwiatkowski et al., 2011)</ref>. Specifically, our system induces new grounded concepts (groups of words along with the parameters of the attribute classifier they are paired with) from a set of scenes containing only sentences, images, and indications of what objects are being referred to. As a result, it can be taught to recognize previously unknown object attributes by someone describing objects while pointing out the relevant objects in a set of training scenes. Learning is online, adding one scene at a time, and EM-like, in that the parameters are updated to maximize the expected marginal likelihood of the latent language and visual components of the model. This integrated approach allows for effective model updates with no explicit labeling of logical meaning representations or attribute classifier outputs.</p><p>We evaluate this approach on data gathered on Ama-zon Mechanical Turk, in which people describe sets of objects on a table. Experiments demonstrate that the joint learning approach can effectively extend the set of grounded concepts in an incomplete model initialized with supervised training on a small dataset. This provides a simple mechanism for learning vocabulary in a physical environment. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Overview of the Approach</head><p>Problem We wish to learn a joint language and perception model for the object selection task. The goal is to automatically map a natural language sentence x and a set of scene objects O to the subset G ⊆ O of objects described by x. The left panel of Fig. <ref type="figure" target="#fig_0">1</ref> shows an example scene. Here, O is the set of objects present in this scene. The individual objects o ∈ O are extracted from the scene via segmentation (the right panel of Fig. <ref type="figure" target="#fig_0">1</ref> shows example segments). Given the sentence x ="Here are the yellow ones," the goal is to select the five yellow objects for the named set G.</p><p>Model Components Given a sentence and segmented scene objects, we learn a distribution P (G | x, O) over the selected set. Our approach combines recent models of language and vision, including:</p><p>(1) A semantic parsing model that defines P (z|x), a distribution over logical meaning representations z for each sentence x. In our running example, the desired representation z = λx.color(x, yellow) is a lambdacalculus expression that defines a set of objects that are yellow. For this task, we build on an existing semantic parsing model <ref type="bibr" target="#b12">(Kwiatkowski et al., 2011)</ref>.</p><p>(2) A set of visual attribute classifiers C, where each classifier c ∈ C defines a distribution P (c = true|o) of the classifier returning true for each possible object o ∈ O in the scene. For example, there would be a unique classifier c ∈ C for each possible color or shape an object can have. We use logistic regression to train classifiers on color and shape features extracted from object segments recorded using a Kinect depth camera.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Joint Model</head><p>We combine these language and vision models in two ways. First, we introduce an explicit model of alignment between the logical constants in the logical form z and classifiers in the set C. This alignment would, for example, enable us to learn that the logical constant yellow should be paired with a classifier c ∈ C that fires on yellow objects.</p><p>Next, we introduce an execution model that allows us to determine what scene objects in O would be selected by a logical expression z, given the classifiers in C. This allows us to, for example, execute λx.color(x, green)∧shape(x, triangle) by testing all of the objects with the appropriate classifiers (for green and triangle), then selecting objects on which both classifiers return true. This execution model includes uncertainty from the semantic parser P (z|x), classifier confidences P (c = true|o), and a deterministic groundtruth constraint that encodes what objects are actually intended to be selected. Full details are in Sec. 5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model Learning</head><p>We present an approach that learns the meaning of new words from a dataset D = {(x i , O i , G i ) | i = 1 . . . n}, where each example i contains a sentence x i , the objects O i , and the selected set G i . This setup is an abstraction of the situation where a teacher mentions x i while pointing to the objects G i ⊆ O i she describes. As described in detail in Sec. 6, learning proceeds in an online, EMlike fashion by repeatedly estimating expectations over the latent logical forms z i and the outputs of the classifiers c ∈ C, then using these expectations to update the parameters of the component models for language P (z|x) and visual classification P (c|o). To bootstrap the learning approach, we first train a limited language and perception system in a fully supervised way: in this stage, each example additionally contains labeled logical meaning expressions and classifier outputs, as described in Sec. 6.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Related Work</head><p>To the best of our knowledge, this paper presents the first approach for jointly learning visual classifiers and semantic parsers, to produce rich, compositional models that span directly from sensors to meaning. However, there is significant related work on the model components, and on grounded learning in general.</p><p>Vision Current state-of-the-art object recognition systems <ref type="bibr" target="#b6">(Felzenszwalb et al., 2009;</ref><ref type="bibr" target="#b23">Yang et al., 2009)</ref> are based on local image descriptors, for example SIFT over images <ref type="bibr" target="#b15">(Lowe, 2004)</ref> and Spin Images over 3D point clouds <ref type="bibr" target="#b10">(Johnson &amp; Hebert, 1999)</ref>. Visual this red block is in the shape of a half-pipe N/N N N \N S\N/N N/N N/N P N P/N P N P λf.f λx.color(x, red) λf.f λf.λg.λx.f (x) ∧ g(x) λf.f λy.λx.shape(x, y) λx.x arch N N/N P N P λx.color(x, red) λy.λx.shape(x, y) arch N N λx.color(x, red) λx.shape(x, arch) S\N λg.λx.shape(x, arch) ∧ g(x) S λx.shape(x, arch) ∧ color(x, red) attributes provide rich descriptions of objects, and have become a popular topic in the vision community <ref type="bibr" target="#b5">(Farhadi et al., 2009;</ref><ref type="bibr" target="#b18">Parikh &amp; Grauman, 2011)</ref>; although very successful, we still lack a deep understanding of the design rules underlying them and how they measure similarity. Recent work on kernel descriptors <ref type="bibr" target="#b1">(Bo et al., 2010)</ref> shows that these hand-designed features are equivalent to a type of match kernel that performs similarly to sparse coding <ref type="bibr" target="#b23">(Yang et al., 2009;</ref><ref type="bibr" target="#b24">Yu &amp; Zhang, 2010)</ref> and deep networks <ref type="bibr" target="#b13">(Lee et al., 2009)</ref> on many object recognition benchmarks <ref type="bibr" target="#b1">(Bo et al., 2010)</ref>. We adapt kernel descriptors as feature extractors for attribute classifiers because of their strong empirical performance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Semantic Parsing</head><p>There has been significant work on supervised learning for inducing semantic parsers <ref type="bibr" target="#b25">(Zelle &amp; Mooney, 1996;</ref><ref type="bibr" target="#b9">He &amp; Young, 2006;</ref><ref type="bibr" target="#b22">Wong &amp; Mooney, 2007)</ref>. Our research builds on work on supervised learning of CCG parsers <ref type="bibr" target="#b26">(Zettlemoyer &amp; Collins, 2005;</ref><ref type="bibr" target="#b12">Kwiatkowski et al., 2011)</ref>; there is also work on performing semantic analysis with alternate forms of supervision. <ref type="bibr" target="#b4">Clarke (2010)</ref> and <ref type="bibr" target="#b14">Liang (2011)</ref> describe approaches to learning semantic parsers from questions paired with database answers, while Goldwasser (2011) presents work on unsupervised learning. However, none of these approaches include joint models of language and vision.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Grounding</head><p>There has been significant work on grounded learning more generally in the robotics and vision communities. A full review is beyond the scope of this paper, so we highlight a few examples. Roy developed a series of techniques for grounding words in visual scenes <ref type="bibr" target="#b17">(Mavridis &amp; Roy, 2006;</ref><ref type="bibr" target="#b20">Reckman et al., 2010;</ref><ref type="bibr" target="#b8">Gorniak &amp; Roy, 2003)</ref>. In computer vision, the grounding problem often relates to detecting objects and attributes in visual information (e.g., see <ref type="bibr" target="#b0">(Barnard et al., 2003)</ref>); however, these approaches primarily focus on isolated word meaning, rather than compositional semantic analyses. Most closely related to our work are approaches that learn probabilistic language models from natural language input <ref type="bibr" target="#b16">(Matuszek et al., 2012;</ref><ref type="bibr" target="#b3">Chen &amp; Mooney, 2011)</ref>, especially those that include a visual component <ref type="bibr" target="#b21">(Tellex et al., 2011)</ref>. However, these approaches ground language into predefined language formalisms, rather than extending the model to account for entirely novel input.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Background on Semantic Parsing</head><p>Our grounded language learning incorporates a stateof-the-art model, FUBL, for semantic parsing, as reviewed in this section. FUBL <ref type="bibr" target="#b12">(Kwiatkowski et al., 2011)</ref> is an algorithm for learning factored Combinatory Categorial Grammar (CCG) lexicons for semantic parsing. Given a dataset {(x i , z i ) | i = 1...n} of natural language sentences x i , which are paired with logical forms z i that represent their meaning, UBL learns a factored lexicon Λ made up of a set of lexemes L and a set of lexical templates T . Lexemes combine with templates in order to form lexical items, which can be used by a semantic parser to parse natural language sentences into logical forms. For example, given the sentence x ="this red block is in the shape of a half-pipe" and the logical form z i = λx.color(x, red) ∧ shape(x, arch), FUBL learns a parse like the example in figure <ref type="figure" target="#fig_1">2</ref>. In this parse, the lexeme (half-pipe, <ref type="bibr">[arch]</ref>) has combined with the template λ(ω, v). [ω N P : v 1 ] to yield the lexical item half -pipe N P : arch.</p><p>FUBL also learns a log-linear model which produces the probability of a parse y that yields logical form z given the sentence x:</p><formula xml:id="formula_0">P (y, z | x; Θ L , Λ) = e Θ L •φ(x,y,z) (y ,z ) e Θ L •φ(x,y ,z )<label>(1)</label></formula><p>where φ(x, y, z) is a feature vector encompassing the lexemes and lexical templates used to generate y, amongst other things.</p><p>In this work, we initialize our parse model using the standard FUBL approach, followed by automatically inducing lexemes paired with new visual attributes not present in the initial training set, as we will see in the next section.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Joint Language/Perception Model</head><p>As described in Sec. 2, the object selection task is to identify a subset of objects, G, given a scene O and an NL sentence x. We define a possible world w to be a set of classifier outputs, where w o,c ∈ {T, F } specifies the boolean output of classifier c for object o. Our joint probabilistic model is:</p><formula xml:id="formula_1">P (G | x, O) = z w P (G, z, w | x, O)<label>(2)</label></formula><p>where the latent variable z over logical forms models linguistic uncertainty and the latent w over possible worlds models perceptual uncertainty.</p><p>We further decompose (2) into a product of models for language, vision, and grounded execution. This final model selects the named objects G, motivated in Sec. 2 and described below; the final decomposition is:</p><formula xml:id="formula_2">P (G, z, w | x, O) = P (z | x)P (w | O)P (G | z, w)<label>(3)</label></formula><p>Here, the language model P (z|x) and vision model P (w|O) are held in agreement by the conditional probability term P (G|z, w). Let z(w) be the set of objects that are selected, under the assignment in w, when z is applied to them. For example, the expression z = λx.shape(x, cube)∧color(x, red) would return true when applied to the objects in w for which the classifiers for the cube and red logical constants return true. Now, P (G|z, w) forces agreement and models object selection by putting all of its probability mass on the set G that equals z(w).</p><p>In this formulation, the language and vision distributions are conditionally independent given this agreement.</p><p>The semantic parsing model P (z|x) builds on previous work, as described in eqn. (1). The perceptual classification P (w|O) is defined as follows: we assume each perceptual classifier is applied independently, decomposing this term into:</p><formula xml:id="formula_3">P (w | O) = o∈O c∈C P (wo,c|o) (<label>4</label></formula><formula xml:id="formula_4">)</formula><p>where the probability of a world is simply the product of the probabilities of the individual classifier assignments for all of the objects.</p><p>Each classifier is a logistic regression model, where the probability of a classifier c on a given object o is:</p><formula xml:id="formula_5">P (wo,c = 1|o; Θ P ) = e Θ P c •φ(o) 1 + e Θ P c •φ(o)<label>(5)</label></formula><p>where Θ P c is the parameters in Θ P for classifier c. This approach provides a simple, direct way to couple the individual language and vision components to model the object selection task.</p><p>Inference There are two key inference problems in a model of this type. During learning, we need to compute the marginal distribution P (z, w|x, O, G) over latent logical forms z and perceptual assignments w (see next section). At test time, we must compute arg max G P (G|x, O) to find the set of named objects.</p><p>Computing this probability distribution requires summing the total probability of all world/logical form pairs that name G. For each possible world w, determining if z names G is equivalent to a SAT problem, as z can theoretically encode an arbitrary logical expression that will name the appropriate G only when satisfied. Computing the marginal probability is then a weighted model counting problem, which is in #-P. However, the logical expressions allowed by our current grammar-conjunctions of unary attribute descriptors-admit efficient exact computation, described below.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Model Learning</head><p>The physically grounded joint learning problem is to induce a model P (G|x, O), given data of the form D = {(x i , O i , G i ) | i = 1 . . . n}, where each example i contains a sentence x i , the objects O i , and the selected set G i . We consider the case where the learner already has a partial model, including a CCG parser with a small vocabulary and a small set of attribute classifiers. The goal is to automatically extend the model to induce new classifiers that are tied to new words in the semantic parser. We first describe the learning algorithm, then present how we initialize the approach by learning decoupled models from small datasets with more extensive annotations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Aligning Words to Classifiers</head><p>One key challenge is to learn to create new attribute classifiers associated with unseen words in the sentences x i in the data D. We take a simple, exhaustive approach by creating a set of k new classifiers, initialized to uniform distributions. Each classifier is additionally paired with a new logical constant in the FUBL lambda-calculus language. Finally, a new lexeme is created by pairing each previously unknown word in a sentence in D with either one of these new classifier constants, or the logical expressions from an existing lexeme in the lexicon. The parsing weights for the indicator features for each of these additions are set to 0. This approach learns, through the probabilistic updates described below, to jointly reestimate the parameters of both the new classifiers and the expanded semantic parsing model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Parameter Estimation</head><p>We aim to estimate the language parameters Θ L and perception parameters Θ P from data D = {(x i , O i , G i ) | i = 1 . . . n}, as defined above. We want to find parameter settings that maximize the marginal log likelihood of D:</p><formula xml:id="formula_6">LL(D; Θ L , Θ P ) = i=1...n ln P (Gi|xi, Oi; Θ L , Θ P ) (<label>6</label></formula><formula xml:id="formula_7">)</formula><p>This objective is non-convex due to the sum over latent assignments for the logical form z and attribute classifier outputs w in the definition of P (G i |x i , O i ; Θ L , Θ P ) from eqn. (2). However, if z and w are labeled, the overall algorithm reduces to simply training the loglinear models for the semantic parser P (z|x i ; Θ L ) and attribute classifiers P (w|O i ; Θ P ), both well-studied problems. In this situation, we can use an EM algorithm to first estimate the marginal P (z, w | x i , O i , G i ; Θ L , Θ P ), then maximize the expected likelihood according to the distribution, with a weighted version of our familiar log-linear model parameter updates. We present an online version of this approach, with updates computed one example at a time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Computing Expectations</head><p>For each example i, we must compute the marginal over latent variables given by:</p><formula xml:id="formula_8">P (z, w | xi, Oi, Gi; Θ L , Θ P ) = P (z | xi; Θ L )P (w | Oi; Θ P )P (Gi|z, w) z w P (z | xi; Θ L )P (w | Oi; Θ P )P (Gi|z , w ) (<label>7</label></formula><formula xml:id="formula_9">)</formula><p>Since computing all possible parses z is exponential in the length of the sentence, we use beam search to find the top-N parses. This exact inference could be replaced with an approximate method, such as MC-SAT, to accommodate a more permissive grammar.</p><p>Conditional Expected Gradient For each example, we update the parameters with the expected gradient, according to the marginal distribution above. For the language parameters Θ L , the gradient is</p><formula xml:id="formula_10">∆ L = z w P (z , w | xi, Oi, Gi; Θ L , Θ P ) * (E P (y|x i ,z ;Θ L ) φ L j (xi, y, z ) - E P (y,z|x i ;Θ L ) φ L j (xi, y, z) ) (<label>8</label></formula><formula xml:id="formula_11">)</formula><p>where the inner difference of expectations is the familiar gradient of a log-linear model for conditional random fields with hidden variables <ref type="bibr" target="#b19">(Quattoni et al., 2007;</ref><ref type="bibr" target="#b11">Kwiatkowski et al., 2010)</ref>, and is weighted according to the expectation.</p><p>Similarly, for the perception parameters Θ P , the gradient is:</p><formula xml:id="formula_12">∆ P c = z w P (z , w | xi, Oi, Gi; Θ L , Θ P ) * o∈O i w o,c -P (w o,c = 1 | φ(o); Θ P ) φ(o)<label>(9)</label></formula><p>where the inner sum ranges over the objects and adds in the familiar gradient for logistic regression binaryclassification models.</p><p>Online Updates We use a simple, online parameter estimation scheme that loops over the data K = 10 (picked on validation set) times. For each data point i consisting of the tuple (x i , O i , G i ), we perform an update where we take a step according to the above expected gradient over the latent variables. We use a learning rate of 0.1 with a constant decay of .00001 per update for all experiments.</p><p>Discussion This complete learning approach provides an efficient online algorithm that closely matches the style of interactive, grounded language learning we are pursuing in this work. Given the decayed learning rate, the algorithm is guaranteed to converge, but little can be said about the optimality of the solution. However, as we see in Sec. 7, the approach works well in practice for the object set selection task we consider.</p><p>Bootstrapping To construct the initial limited language and perceptual models, we make use of a small, supervised data set</p><formula xml:id="formula_13">D sup = {(x i , z i , w i , O i , G i ) | i = 1 .</formula><p>. . m}, which matches our previous setup but additionally labels the latent logical form z i and classifier outputs w i . As mentioned above, learning in this setting is completely decoupled and we can estimate the semantic parsing distribution P (z i |x i ; Θ L ) with the FUBL learning algorithm <ref type="bibr" target="#b12">(Kwiatkowski et al., 2011)</ref> and the attribute classifiers P (w i |O i ; Θ P ) with gradient ascent for logistic regression. As we show experimentally, D sup can often be quite small, and will in general not contain many of the words and attributes that must be additionally learned in the full approach. Exploring approaches for learning without D sup , such as replacing it with interactive dialog with a human teacher, is an important area for future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.">Experimental Setup</head><p>Data Set Data was collected using a selection of toys, including wooden blocks, plastic food, and building bricks. For each scene, we collected short RGB-D videos with a Kinect depth camera, showing a person gesturing to a subset of the objects. Natural language annotations were gathered using Mechanical Turk; workers were asked to describe the objects being pointed to in the video (see Fig. <ref type="figure" target="#fig_2">3</ref>). The referenced objects were then marked as belonging to G, the positive set of objects for that scene. A total of 142 scenes were shown, eliciting descriptions of 12 attributes, divided evenly into shapes and colors. In total, there were 1003 sentence/annotation pairs.</p><p>Perceptual Features To automatically segment objects from each scene, we performed RANSAC plane fitting on the Kinect depth values to find the table plane, then extracted connected components (segments) of points more than a minimum distance above that plane. After getting segmented objects, features for every object are extracted using kernel descriptors <ref type="bibr" target="#b2">(Bo et al., 2011)</ref>. We extract two types of features, for depth values and RGB values; these correspond to shape and color attributes, respectively. During training, the system learns logistic regression classifiers using these features. In the initialization phase used to bootstrap the model, the annotation provides information about which language attributes relate to shape or color. However, this information is not provided in the training phase.</p><p>Language Features We follow <ref type="bibr" target="#b12">(Kwiatkowski et al., 2011)</ref> in including a standard set of binary indicator features to define the log-linear model P (z|x; Θ L ) over logical forms, given sentences. This includes indicators for which lexical entries were used and properties of the logical forms that are constructed. These features allow the joint learning approach to weight lexical selection against evidence provided by the compositional analysis and the visual model components.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8.">Results</head><p>This section presents results and a discussion of our evaluation. We demonstrate effective learning in the full model for the object set selection task. We then briefly describe ablation studies and examples of learned models..</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8.1.">Object Set Selection</head><p>To measure set selection task performance, we divided the data according to attribute. To initialize the model, we used the data for six of the attributes to train supervised classifiers, and provided logical forms for the corresponding sentences to train the initial semantic parsing model, as described at the end of Sec. 6. Data for the remaining six attributes were used for evaluation, with 80% allocated for training and 20% held out for testing. Here, all of the visual scenes are previously unseen, the words in the sentences describing the new attributes are unknown, and the only available labels are the output object set G.</p><p>We report precision, recall, and F1-score on the set selection task. Results are averaged over 10 different runs with the training data presented in different randomized orders. The system performs well, achieving an average precision of 82%, recall of 71%, and a 76% F1-score. This level of performance is achieved relatively quickly; performance generally converges within five passes over the training data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8.2.">Ablation Studies</head><p>To examine the need for a joint model, we measure performance of two models in which either the language or the visual component is sharply limited. In each case, performance significantly degrades. These results are summarized in Fig. <ref type="figure" target="#fig_3">4</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Vision</head><p>In order to measure how a set of classifiers would perform on the set selection task with only a simple language model, we manually created a thesaurus of words used in the dataset to refer to target attributes containing, on average, 5 different ways of referring to each color and shape. To learn the unsupervised concepts for this baseline, we first extracted a list of all words appearing in the training corpus but not in the initialization data; words which appear in the thesaurus are grouped into synonym sets. To train classifiers, we collect objects from scenes in which only terms from the given synonym set appear. Any synonym set which does not occur in at least 2 distinct scenes is discarded. The resulting positive and negative objects are used to train classifiers. To generate a predicted set of objects at test time, we find all synonym sets which occur in the sentence x, and determine whether the classifiers associated with those words successfully identify the object.</p><p>Averaged across our trials, the results are as follows: Precision=0.92; Recall=0.41; F1-score=0.55. These results are, on average, notably worse than the performance of the jointly trained model.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Semantic Parsing</head><p>As a baseline for testing how well a pure parsing model will perform when the perception model is ablated, we run the parsing model obtained during initialization directly on the test set, training no new classifiers. Since the parser is capable of generating parses by skipping unknown words, this baseline is equivalent to treating the unknown concept words as if they are semantically empty.</p><p>Averaged across our trials, the results are as follows: Precision=0.52; Recall=0.09; F1-score=0.14. Not surprisingly, a substantial number of parses selected no objects, as the parser has no way of determining the meaning of an unknown word.</p><p>Precision Recall F1-Score Vision 0.92 0.41 0.55 Language 0.52 0.09 0.14 Joint 0.82 0.71 0.76 </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8.3.">Discussion and Examples</head><p>This section discusses typical training runs and data requirements. We present examples of learned models, highlighting what is learned and typical errors, and then describe simple experiment investigating the amount of supervised data required for initialization.</p><p>Classifier performance after training effects the system's ability to perform the set selection task. During a sample trial, average accuracy of color and shape classifiers for newly learned concepts are 97% and 74%, respectively. Although these values are sufficient for reasonable task performance, there are some failuresfor example, the shape attributes "cube" and "cylinder" are sometimes challenging to differentiate.</p><p>As noted in Sec. 4, the semantic parser contains lexemes that pair words with learned classifiers, and features that indicate lexeme use during parsing. Fig. <ref type="figure" target="#fig_4">5</ref> shows some selected word/classifier pairs, along with the weight for their associated feature (each trial pro- duces a large number of such lexemes). The classifiers new0-new2 and new3-new5 are color and shape classifiers, respectively. As can be seen, each of the novel attributes is most strongly associated with a newly-created classifier, while irrelevant words such as "thing" tend to parse to null. The system must identify which of the classifier types to use for novel words.</p><p>We ran additional tests investigating whether the system is able to learn synonyms. Here, we split the data so that the training set has attributes learned during initialization, but are referred to by new, synonymous words. These runs performed comparably to those reported above; the approach easily learns lexemes that pair these new words with the appropriate classifiers.</p><p>Finally, we briefly discuss the effects of reducing the amount of annotated data used to initialize the language and perception model (see Fig. <ref type="figure">6</ref>). As can be seen, with fewer than 150 sentences, the learned grammar does not seem to have sufficient coverage to model unknown words in joint learning; however, beyond that, performance is quite stable.</p><p>Figure <ref type="figure">6</ref>. Example F1-score on object recognition from models initialized with reduced amounts of labeled data, reported over one particular data split. The F1-score for this split peaks at roughly 73%.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="9.">Conclusion</head><p>This paper presents a joint model of language and perception for grounded attribute learning. Our approach learns representations of the meanings of natural language, using visual perception to ground those meanings in the physical world. Learning is performed via optimizing the data log-likelihood using an online, EM-like training algorithm. This system is able to learn accurate language and attribute models for the object set selection task, given data containing only language, raw percepts, and the target objects. By jointly learning language and perception models, the approach can identify which novel words are color attributes, shape attributes, or no attributes at all.</p><p>We believe our approach has significant potential to scale to general language grounding problems. In particular, our modular framework was designed to easily incorporate future advances in visual classification and semantic parsing. We are also working to scale the complexity of the language and physical scenes, with the eventual goal of robust learning in completely unconstrained environments.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. An example of an RGB-D object identification scene. Columns on the right show example segments, identified as positive (far right) and negative (center).</figDesc><graphic coords="2,78.84,162.22,187.16,110.45" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2. An example semantic analysis for a sentence from our dataset.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 .</head><label>3</label><figDesc>Figure3. Example scenes presented on Mechanical Turk. Left: A scene that elicited the descriptions "here are some red things" and "these are various types of red colored objects", both labeled as λx.color(x, red). Right: A scene associated with sentence/meaning pairs such as "this toy is orange cube" and λx.color(x, orange) ∧ shape(x, cube).</figDesc><graphic coords="6,67.14,67.07,210.55,84.07" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 .</head><label>4</label><figDesc>Figure 4. A summary of precision, recall, and F1 for ablated models and the joint learning model.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 .</head><label>5</label><figDesc>Figure5. Feature weights for hypothesized lexemes pairing natural language words (rows) with newly created terms referring to novel classifiers (columns), as well as the special null token. Each weight serves as an unnormalized indicator of which associations are preferred.</figDesc><graphic coords="7,67.14,584.04,210.61,74.99" type="bitmap" /></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>This work was funded in part by the <rs type="funder">Intel Science and Technology Center for Pervasive Computing</rs>, the <rs type="institution">Robotics Consortium</rs> sponsored by the <rs type="institution">U.S. Army Research Laboratory</rs> under the <rs type="programName">Collaborative Technology Alliance Program</rs> (<rs type="grantNumber">W911NF-10-2-0016</rs>), and <rs type="funder">NSF</rs> grant <rs type="grantNumber">IIS-1115966</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_TQNBN7x">
+					<idno type="grant-number">W911NF-10-2-0016</idno>
+					<orgName type="program" subtype="full">Collaborative Technology Alliance Program</orgName>
+				</org>
+				<org type="funding" xml:id="_BvuN2Wu">
+					<idno type="grant-number">IIS-1115966</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Matching words and pictures</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Barnard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Duygulu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Forsyth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>De Freitas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">M</forename><surname>Blei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">I</forename><surname>Jordan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="1107" to="1135" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Kernel descriptors for visual recognition</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Neural Information Processing Systems (NIPS)</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Depth kernel descriptors for object recognition</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/RSJ Int&apos;l Conf. on Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Learning to interpret natural language navigation instructions from observations</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">L</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Mooney</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the 25th AAAI Conf. on Artificial Intelligence (AAAI-2011)</title>
+		<meeting>of the 25th AAAI Conf. on Artificial Intelligence (AAAI-2011)</meeting>
+		<imprint>
+			<date type="published" when="2011-08">August 2011</date>
+			<biblScope unit="page" from="859" to="865" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Driving semantic parsing from the world&apos;s response</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Clarke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Goldwasser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Roth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the Conf. on Computational Natural Language Learning</title>
+		<meeting>of the Conf. on Computational Natural Language Learning</meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Describing objects by their attributes</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Farhadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Endres</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hoiem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Forsyth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Conf. on Computer Vision and Pattern Recognition</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Object detection with discriminatively trained part based models</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Felzenszwalb</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Girshick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mcallester</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ramanan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Pattern Analysis and Machine Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="1627" to="1645" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Confidence driven unsupervised semantic parsing</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Goldwasser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Reichart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Clarke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Roth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings. of the Association of Computational Linguistics</title>
+		<meeting>of the Association of Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Understanding complex visually referring utterances</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Gorniak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the HLT-NAACL 2003 Workshop on Learning Word Meaning from Non-Linguistic Data</title>
+		<meeting>of the HLT-NAACL 2003 Workshop on Learning Word Meaning from Non-Linguistic Data</meeting>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Spoken language understanding using the hidden vector state model</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Young</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Speech Communication</title>
+		<imprint>
+			<biblScope unit="volume">48</biblScope>
+			<biblScope unit="issue">3-4</biblScope>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Using spin images for efficient object recognition in cluttered 3D scenes</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hebert</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Pattern Analysis and Machine Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Inducing probabilistic CCG grammars from logical form with higher-order unification</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kwiatkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">S</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Goldwater</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Steedman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the Conf. on Empirical Methods in Natural Language Processing</title>
+		<meeting>of the Conf. on Empirical Methods in Natural Language essing</meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Lexical generalization in CCG grammar induction for semantic parsing</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kwiatkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">S</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Goldwater</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Steedman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the Conf. on Empirical Methods in Natural Language Processing</title>
+		<meeting>of the Conf. on Empirical Methods in Natural Language essing</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Convolutional deep belief networks for scalable unsupervised learning of hierarchical representations</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Grosse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ranganath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the Int&apos;l Conf. on Machine Learning (ICML)</title>
+		<meeting>of the Int&apos;l Conf. on Machine Learning (ICML)</meeting>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Learning dependency-based compositional semantics</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Liang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">I</forename><surname>Jordan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Klein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the</title>
+		<meeting>of the</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Distinctive image features from scale-invariant keypoints</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lowe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Int&apos;l Journal of Computer Vision (IJCV)</title>
+		<imprint>
+			<biblScope unit="volume">60</biblScope>
+			<biblScope unit="page" from="91" to="110" />
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Learning to parse natural language commands to a robot control system</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Matuszek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Herbst</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the 13th Int&apos;l Symposium on Experimental Robotics (ISER)</title>
+		<meeting>of the 13th Int&apos;l Symposium on Experimental Robotics (ISER)</meeting>
+		<imprint>
+			<date type="published" when="2012-06">June 2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Grounded situation models for robots: Where words and percepts meet</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Mavridis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/RSJ Int&apos;l Conf. on Intelligent Robots and Systems</title>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Relative attributes</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Grauman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int&apos;l Conf. on Computer Vision</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Hidden-state conditional random fields</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Quattoni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Morency</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Collins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Darrell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mit</forename><surname>Csail</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Transactions on Pattern Analysis and Machine Intelligence</title>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Learning meanings of words and constructions, grounded in a virtual game</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Reckman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Orkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the 10th Conf. on Natural Language Processing (KONVENS)</title>
+		<meeting>of the 10th Conf. on Natural Language essing (KONVENS)</meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Understanding natural language commands for robotic navigation and mobile manipulation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tellex</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kollar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dickerson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Walter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G</forename><surname>Banerjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Teller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the National Conf. on Artificial Intelligence (AAAI)</title>
+		<meeting>of the National Conf. on Artificial Intelligence (AAAI)</meeting>
+		<imprint>
+			<date type="published" when="2011-08">August 2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Learning synchronous grammars for semantic parsing with lambda calculus</title>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">W</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Mooney</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the Ass&apos;n for Computational Linguistics</title>
+		<meeting>of the Ass&apos;n for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Linear spatial pyramid matching using sparse coding for image classification</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Huang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Conf. on Computer Vision and Pattern Recognition</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Improved local coordinate coding using local tangents</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the Int&apos;l Conf. on Machine Learning (ICML)</title>
+		<meeting>of the Int&apos;l Conf. on Machine Learning (ICML)</meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Learning to parse database queries using inductive logic programming</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Zelle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Mooney</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the National Conf. on Artificial Intelligence</title>
+		<meeting>of the National Conf. on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="1996">1996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Learning to map sentences to logical form: Structured classification with probabilistic categorial grammars</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">S</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Collins</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the Conf. on Uncertainty in Artificial Intelligence</title>
+		<meeting>of the Conf. on Uncertainty in Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

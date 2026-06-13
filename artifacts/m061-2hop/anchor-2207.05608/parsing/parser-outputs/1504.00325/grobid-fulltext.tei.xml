@@ -1,0 +1,1249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Microsoft COCO Captions: Data Collection and Evaluation Server</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2015-04-03">3 Apr 2015</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Xinlei</forename><surname>Chen</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Hao</forename><surname>Fang</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Tsung-Yi</forename><forename type="middle">Y</forename><surname>Lin</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Ramakrishna</forename><surname>Vedantam</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Saurabh</forename><surname>Gupta</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Piotr</forename><surname>Doll Ár</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Lawrence</forename><surname>Zitnick</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Cornell</forename><surname>Nyc</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">P</forename><surname>Dollár</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">A</forename><forename type="middle">I</forename><surname>Research</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">C</forename><forename type="middle">L</forename><surname>Zitnick</surname></persName>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Carnegie Mellon University</orgName>
+								<orgName type="institution" key="instit2">University of Washington</orgName>
+								<orgName type="institution" key="instit3">Univeristy of California</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="institution">Microsoft Research</orgName>
+								<address>
+									<region>Redmond</region>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Microsoft COCO Captions: Data Collection and Evaluation Server</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2015-04-03">3 Apr 2015</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">5380B0D3A0B6E4A5720BF0843B565805</idno>
+					<idno type="arXiv">arXiv:1504.00325v2[cs.CV]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-13T10:15+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>In this paper we describe the Microsoft COCO Caption dataset and evaluation server. When completed, the dataset will contain over one and a half million captions describing over 330,000 images. For the training and validation images, five independent human generated captions will be provided. To ensure consistency in evaluation of automatic caption generation algorithms, an evaluation server is used. The evaluation server receives candidate captions and scores them using several popular metrics, including BLEU, METEOR, ROUGE and CIDEr. Instructions for using the evaluation server are provided.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>The automatic generation of captions for images is a long standing and challenging problem in artificial intelligence <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b1">[2]</ref>, <ref type="bibr" target="#b2">[3]</ref>, <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b4">[5]</ref>, <ref type="bibr" target="#b5">[6]</ref>, <ref type="bibr" target="#b6">[7]</ref>, <ref type="bibr" target="#b7">[8]</ref>, <ref type="bibr" target="#b8">[9]</ref>, <ref type="bibr" target="#b9">[10]</ref>, <ref type="bibr" target="#b10">[11]</ref>, <ref type="bibr" target="#b11">[12]</ref>, <ref type="bibr" target="#b12">[13]</ref>, <ref type="bibr" target="#b13">[14]</ref>, <ref type="bibr" target="#b14">[15]</ref>, <ref type="bibr" target="#b15">[16]</ref>, <ref type="bibr" target="#b16">[17]</ref>, <ref type="bibr" target="#b17">[18]</ref>, <ref type="bibr" target="#b18">[19]</ref>. Research in this area spans numerous domains, such as computer vision, natural language processing, and machine learning. Recently there has been a surprising resurgence of interest in this area <ref type="bibr" target="#b19">[20]</ref>, <ref type="bibr" target="#b20">[21]</ref>, <ref type="bibr" target="#b21">[22]</ref>, <ref type="bibr" target="#b22">[23]</ref>, <ref type="bibr" target="#b23">[24]</ref>, <ref type="bibr" target="#b24">[25]</ref>, <ref type="bibr" target="#b25">[26]</ref>, <ref type="bibr" target="#b26">[27]</ref>, <ref type="bibr" target="#b27">[28]</ref>, <ref type="bibr" target="#b28">[29]</ref>, <ref type="bibr" target="#b29">[30]</ref>, due to the renewed interest in neural network learning techniques <ref type="bibr" target="#b30">[31]</ref>, <ref type="bibr" target="#b31">[32]</ref> and increasingly large datasets <ref type="bibr" target="#b32">[33]</ref>, <ref type="bibr" target="#b33">[34]</ref>, <ref type="bibr" target="#b34">[35]</ref>, <ref type="bibr" target="#b6">[7]</ref>, <ref type="bibr" target="#b35">[36]</ref>, <ref type="bibr" target="#b36">[37]</ref>, <ref type="bibr" target="#b37">[38]</ref>.</p><p>In this paper, we describe our process of collecting captions for the Microsoft COCO Caption dataset, and the evaluation server we have set up to evaluate performance of different algorithms. The MS COCO caption dataset contains human generated captions for images contained in the Microsoft Common Objects in COntext (COCO) dataset <ref type="bibr" target="#b37">[38]</ref>. Similar to previous datasets <ref type="bibr" target="#b6">[7]</ref>, <ref type="bibr" target="#b35">[36]</ref>, we collect our captions using Amazon's Mechanical Turk (AMT). Upon completion of the dataset it will contain over a million captions.</p><p>When evaluating image caption generation algorithms, it is essential that a consistent evaluation protocol is used. Comparing results from different approaches can be difficult since numerous evaluation metrics exist <ref type="bibr" target="#b38">[39]</ref>, <ref type="bibr" target="#b39">[40]</ref>, <ref type="bibr" target="#b40">[41]</ref>, <ref type="bibr" target="#b41">[42]</ref>. To further complicate matters the implementations of these metrics often differ. To help alleviate these issues, we have built an evaluation server to enable consistency in evaluation of different caption generation approaches. Using the testing data, our evaluation server evaluates captions output by different approaches using numerous automatic metrics: BLEU <ref type="bibr" target="#b38">[39]</ref>, METEOR <ref type="bibr" target="#b40">[41]</ref>, Fig. <ref type="figure">1</ref>: Example images and captions from the Microsoft COCO Caption dataset. ROUGE <ref type="bibr" target="#b39">[40]</ref> and CIDEr <ref type="bibr" target="#b41">[42]</ref>. We hope to augment these results with human evaluations on an annual basis.</p><p>This paper is organized as follows: First we describe the data collection process. Next, we describe the caption evaluation server and the various metrics used. Human performance using these metrics are provided. Finally the annotation format and instructions for using the evaluation server are described for those who wish to submit results. We conclude by discussing future directions and known issues.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">DATA COLLECTION</head><p>In this section we describe how the data is gathered for the MS COCO captions dataset. For images, we use the dataset collected by Microsoft COCO <ref type="bibr" target="#b37">[38]</ref>. These images are split into training, validation and testing sets.</p><p>The images were gathered by searching for pairs of 80 object categories and various scene types on Flickr. The goal of the MS COCO image collection process was to gather images containing multiple objects in their natural context. Given the visual complexity of most images in the dataset, they pose an interesting and difficult challenge for image captioning.</p><p>For generating a dataset of image captions, the same training, validation and testing sets were used as in the original MS COCO dataset. Two datasets were collected. The first dataset MS COCO c5 contains five reference captions for every image in the MS COCO training, validation and testing datasets. The second dataset MS COCO c40 contains 40 reference sentences for a randomly chosen 5,000 images from the MS COCO testing dataset. MS COCO c40 was created since many automatic evaluation metrics achieve higher correlation with human judgement when given more reference sentences <ref type="bibr" target="#b41">[42]</ref>. MS COCO c40 may be expanded to include the MS COCO validation dataset in the future.</p><p>Our process for gathering captions received significant inspiration from the work of Young etal. <ref type="bibr" target="#b35">[36]</ref> and Hodosh etal. <ref type="bibr" target="#b6">[7]</ref> that collected captions on Flickr images using Amazon's Mechanical Turk (AMT). Each of our captions are also generated using human subjects on AMT. Each subject was shown the user interface in Figure <ref type="figure" target="#fig_0">2</ref>. The subjects were instructed to:</p><p>• Describe all the important parts of the scene.</p><p>• Do not start the sentences with "There is.</p><p>• Do not describe unimportant details.</p><p>• Do not describe things that might have happened in the future or past.</p><p>• Do not describe what a person might say.</p><p>• Do not give people proper names.</p><p>• The sentences should contain at least 8 words. The number of captions gathered is 413,915 captions for 82,783 images in training, 202,520 captions for 40,504 images in validation and 379,249 captions for 40,775 images in testing including 179,189 for MS COCO c5 and 200,060 for MS COCO c40. For each testing image, we collected one additional caption to compute the scores of human performance for comparing scores of machine generated captions. The total number of collected captions is 1,026,459. We plan to collect captions for the MS COCO 2015 dataset when it is released, which should approximately double the size of the caption dataset. The AMT interface may be obtained from the MS COCO website.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">CAPTION EVALUATION</head><p>In this section we describe the MS COCO caption evaluation server. Instructions for using the evaluation server are provided in Section 5. As input the evaluation server receives candidate captions for both the validation and testing datasets in the format specified in Section 5. The validation and test images are provided to the submitter. However, the human generated reference sentences are only provided for the validation set. The reference sentences for the testing set are kept private to reduce the risk of overfitting.</p><p>Numerous evaluation metrics are computed on both MS COCO c5 and MS COCO c40. These include BLEU-1, BLEU-2, BLEU-3, BLEU-4, ROUGE-L, METEOR and CIDEr-D. The details of the these metrics are described next.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Tokenization and preprocessing</head><p>Both the candidate captions and the reference captions are pre-processed by the evaluation server. To tokenize the captions, we use Stanford PTBTokenizer in Stanford CoreNLP tools (version 3.4.1) <ref type="bibr" target="#b42">[43]</ref> which mimics Penn Treebank 3 tokenization. In addition, punctuations 1 are removed from the tokenized captions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Evaluation metrics</head><p>Our goal is to automatically evaluate for an image I i the quality of a candidate caption c i given a set of reference captions S i = {s i1 , . . . , s im } ∈ S. The caption sentences are represented using sets of n-grams, where an n-gram ω k ∈ Ω is a set of one or more ordered words. In this paper we explore n-grams with one to four words. No stemming is performed on the words. The number of times an n-gram ω k occurs in a sentence s ij is denoted h k (s ij ) or h k (c i ) for the candidate sentence c i ∈ C.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">BLEU</head><p>BLEU <ref type="bibr" target="#b38">[39]</ref> is a popular machine translation metric that analyzes the co-occurrences of n-grams between the candidate and reference sentences. It computes a corpuslevel clipped n-gram precision between sentences as follows:</p><formula xml:id="formula_0">CP n (C, S) = i k min(h k (c i ), max j∈m h k (s ij )) i k h k (c i ) , (<label>1</label></formula><formula xml:id="formula_1">)</formula><p>1. The full list of punctuations: {", ", ', ', -LRB-, -RRB-, -LCB-, -RCB-, ., ?, !, ,, :, -, -, ..., ;}.</p><p>where k indexes the set of possible n-grams of length n. The clipped precision metric limits the number of times an n-gram may be counted to the maximum number of times it is observed in a single reference sentence. Note that CP n is a precision score and it favors short sentences. So a brevity penalty is also used:</p><formula xml:id="formula_2">b(C, S) = 1 if l C &gt; l S e 1-l S /l C if l C ≤ l S ,<label>(2)</label></formula><p>where l C is the total length of candidate sentences c i 's and l S is the length of the corpus-level effective reference length. When there are multiple references for a candidate sentence, we choose to use the closest reference length for the brevity penalty.</p><p>The overall BLEU score is computed using a weighted geometric mean of the individual n-gram precision:</p><formula xml:id="formula_3">BLEU N (C, S) = b(C, S) exp N n=1 w n log CP n (C, S) ,<label>(3)</label></formula><p>where N = 1, 2, 3, 4 and w n is typically held constant for all n.</p><p>BLEU has shown good performance for corpuslevel comparisons over which a high number of ngram matches exist. However, at a sentence-level the n-gram matches for higher n rarely occur. As a result, BLEU performs poorly when comparing individual sentences.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">ROUGE</head><p>ROUGE <ref type="bibr" target="#b39">[40]</ref> is a set of evaluation metrics designed to evaluate text summarization algorithms.</p><p>1) ROUGE N : The first ROUGE metric computes a simple n-gram recall over all reference summaries given a candidate sentence:</p><formula xml:id="formula_4">ROU GE N (c i , S i ) = j k min(h k (c i ), h k (s ij )) j k h k (s ij )<label>(4)</label></formula><p>2) ROUGE L : ROUGE L uses a measure based on the Longest Common Subsequence (LCS). An LCS is a set words shared by two sentences which occur in the same order. However, unlike n-grams there may be words in between the words that create the LCS. Given the length l(c i , s ij ) of the LCS between a pair of sentences, ROUGE L is found by computing an F-measure:</p><formula xml:id="formula_5">R l = max j l(c i , s ij ) |s ij |<label>(5)</label></formula><formula xml:id="formula_6">P l = max j l(c i , s ij ) |c i | (<label>6</label></formula><formula xml:id="formula_7">)</formula><formula xml:id="formula_8">ROU GE L (c i , S i ) = (1 + β 2 )R l P l R l + β 2 P l<label>(7)</label></formula><p>R l and P l are recall and precision of LCS. β is usually set to favor recall (β = 1.2). Since ngrams are implicit in this measure due to the use of the LCS, they need not be specified. 3) ROUGE S : The final ROUGE metric uses skip bigrams instead of the LCS or n-grams. Skip bi-grams are pairs of ordered words in a sentence. However, similar to the LCS, words may be skipped between pairs of words. Thus, a sentence with 4 words would have C 4 2 = 6 skip bi-grams. Precision and recall are again incorporated to compute an Fmeasure score. If f k (s ij ) is the skip bi-gram count for sentence s ij , ROUGE S is computed as:</p><formula xml:id="formula_9">R s = max j k min(f k (c i ), f k (s ij )) k f k (s ij )<label>(8)</label></formula><formula xml:id="formula_10">P s = max j k min(f k (c i ), f k (s ij )) k f k (c i ) (<label>9</label></formula><formula xml:id="formula_11">)</formula><formula xml:id="formula_12">ROU GE S (c i , S i ) = (1 + β 2 )R s P s R s + β 2 P s (<label>10</label></formula><formula xml:id="formula_13">)</formula><p>Skip bi-grams are capable of capturing long range sentence structure. In practice, skip bi-grams are computed so that the component words occur at a distance of at most 4 from each other.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5">METEOR</head><p>METEOR <ref type="bibr" target="#b40">[41]</ref> is calculated by generating an alignment between the words in the candidate and reference sentences, with an aim of 1:1 correspondence. This alignment is computed while minimizing the number of chunks, ch, of contiguous and identically ordered tokens in the sentence pair. The alignment is based on exact token matching, followed by WordNet synonyms <ref type="bibr" target="#b43">[44]</ref>, stemmed tokens and then paraphrases. Given a set of alignments, m, the METEOR score is the harmonic mean of precision P m and recall R m between the best scoring reference and candidate:</p><formula xml:id="formula_14">P en = γ ch m θ (<label>11</label></formula><formula xml:id="formula_15">)</formula><formula xml:id="formula_16">F mean = P m R m αP m + (1 -α)R m<label>(12)</label></formula><formula xml:id="formula_17">P m = |m| k h k (c i )<label>(13)</label></formula><formula xml:id="formula_18">R m = |m| k h k (s ij ) (<label>14</label></formula><formula xml:id="formula_19">)</formula><formula xml:id="formula_20">M ET EOR = (1 -P en)F mean (<label>15</label></formula><formula xml:id="formula_21">)</formula><p>Thus, the final METEOR score includes a penalty P en based on chunkiness of resolved matches and a harmonic mean term that gives the quality of the resolved matches. The default parameters α, γ and θ are used for this evaluation. Note that similar to BLEU, statistics of precision and recall are first aggregated over the entire corpus, which are then combined to give the corpus-level METEOR score.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.6">CIDEr</head><p>The CIDEr metric <ref type="bibr" target="#b41">[42]</ref> measures consensus in image captions by performing a Term Frequency Inverse Document Frequency (TF-IDF) weighting for each n-gram.</p><p>The number of times an n-gram ω k occurs in a reference sentence s ij is denoted by h k (s ij ) or h k (c i ) for the candidate sentence c i . CIDEr computes the TF-IDF weighting g k (s ij ) for each n-gram ω k using:</p><formula xml:id="formula_22">g k (s ij ) = h k (s ij ) ω l ∈Ω h l (s ij ) log |I| Ip∈I min(1, q h k (s pq )) , (<label>16</label></formula><formula xml:id="formula_23">)</formula><p>where Ω is the vocabulary of all n-grams and I is the set of all images in the dataset. The first term measures the TF of each n-gram ω k , and the second term measures the rarity of ω k using its IDF. Intuitively, TF places higher weight on n-grams that frequently occur in the reference sentences describing an image, while IDF reduces the weight of n-grams that commonly occur across all descriptions. That is, the IDF provides a measure of word saliency by discounting popular words that are likely to be less visually informative. The IDF is computed using the logarithm of the number of images in the dataset |I| divided by the number of images for which ω k occurs in any of its reference sentences.</p><p>The CIDEr n score for n-grams of length n is computed using the average cosine similarity between the candidate sentence and the reference sentences, which accounts for both precision and recall:</p><formula xml:id="formula_24">CIDEr n (c i , S i ) = 1 m j g n (c i ) • g n (s ij ) g n (c i ) g n (s ij ) ,<label>(17)</label></formula><p>where g n (c i ) is a vector formed by g k (c i ) corresponding to all n-grams of length n and g n (c i ) is the magnitude of the vector g n (c i ). Similarly for g n (s ij ).</p><p>Higher order (longer) n-grams to are used to capture grammatical properties as well as richer semantics. Scores from n-grams of varying lengths are combined as follows:</p><formula xml:id="formula_25">CIDEr(c i , S i ) = N n=1 w n CIDEr n (c i , S i ),<label>(18)</label></formula><p>Uniform weights are used w n = 1/N . N = 4 is used. CIDEr-D is a modification to CIDEr to make it more robust to gaming. Gaming refers to the phenomenon where a sentence that is poorly judged by humans tends to score highly with an automated metric. To defend the CIDEr metric against gaming effects, <ref type="bibr" target="#b41">[42]</ref> add clipping and a length based gaussian penalty to the CIDEr metric described above. This results in the following equations for CIDEr-D: </p><formula xml:id="formula_26">CIDEr-D n (c i , S i ) = 10 m j e -(l(c i )-l(s ij )) 2 2σ 2 * min(g n (c i ), g n (s ij )) • g n (s ij ) g n (c i ) g n (s ij ) ,<label>(19)</label></formula><p>Where l(c i ) and l(s ij ) denote the lengths of candidate and reference sentences respectively. σ = 6 is used. A factor of 10 is used in the numerator to make the CIDEr-D scores numerically similar to the other metrics.</p><p>The final CIDEr-D metric is computed in a similar manner to CIDEr (analogous to eqn. 18):</p><formula xml:id="formula_27">CIDEr-D(c i , S i ) = N n=1 w n CIDEr-D n (c i , S i ),<label>(20)</label></formula><p>Note that just like the BLEU and ROUGE metrics, CIDEr-D does not use stemming. We adopt the CIDEr-D metric for the evaluation server.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">HUMAN PERFORMANCE</head><p>In this section, we study the human agreement among humans at this task. We start with analyzing the interhuman agreement for image captioning (Section. 4.1) and then analyze human agreement for the word prediction sub-task and provide a simple model which explains human agreement for this sub-task (Section. 4.2).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Human Agreement for Image Captioning</head><p>When examining human agreement on captions, it becomes clear that there are many equivalent ways to say essentially the same thing. We quantify this by conducting the following experiment: We collect one additional human caption for each image in the test set and treat this caption as the prediction. Using the MS COCO caption evaluation server we compute the various metrics. The results are tabulated in Table <ref type="table" target="#tab_0">1</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Human Agreement for Word Prediction</head><p>We can do a similar analysis for human agreement at the sub-task of word prediction. Consider the task of tagging the image with words that occur in the captions. For this task, we can compute the human precision and recall for a given word w by benchmarking words used in the k+1 human caption with respect to words used in the first k reference captions. Note that we use weighted versions of precision and recall, where each negative image has a weight of 1 and each positive image has a weight equal to the number of captions containing the word w. Human precision (H p ) and human recall (H r ) can be computed from the counts of how many subjects out of k use the word w to describe a given image over the whole dataset. We plot H p versus H r for a set of nouns, verbs and adjectives, and all 1000 words considered in Figure <ref type="figure">3</ref>. Nouns referring to animals like 'elephant' have a high recall, which means that if an 'elephant' exists in the image, a subject is likely to talk about it (which makes intuitive sense, given 'elephant' images are somewhat rare, and there are no alternative words that could be used instead of 'elephant'). On the other hand, an adjective like 'bright' is used inconsistently and hence has low recall. Interestingly, words with high recall also have high precision. Indeed, all the points of human agreement appear to lie on a one-dimensional curve in the two-dimension precision-recall space.</p><p>This observation motivates us to propose a simple model for when subjects use a particular word w for describing an image. Let o denote an object or visual concept associated with word w, n be the total number of images, and k be the number of reference captions. Next, let q = P (o = 1) be the probability that object o exists in an image. For clarity these definitions are summarized in Table <ref type="table" target="#tab_1">2</ref>. We make two simplifications. First, we ignore image level saliency and instead focus on word level saliency. Specifically, we only model p = P (w = 1|o = 1), the probability a subject uses w given that o is in the image, without conditioning on the image itself. Second, we assume that P (w = 1|o = 0) = 0, i.e. that a subject does not use w unless o is in the image. As we will show, even with these simplifications our model suffices to explain the empirical observations in Figure <ref type="figure">3</ref> to a reasonable degree of accuracy.</p><p>Given these assumptions, we can model human precision H p and recall H r for a word w given only p and k. First, given k captions per image, we need to compute the expected number of (1) captions containing w (cw), (2) true positives (tp), and (3) false positives (f p). Note that in our definition there can be up to k true positives per image (if cw = k, i.e. each of the k captions contains word w) but at most 1 false positive (if none of the k captions contains w). The expectations, in terms of k, p, and q are:</p><formula xml:id="formula_28">E[cw] = Σ k i=1 P (w i = 1) = Σ i P (w i = 1|o = 1)P (o = 1) +Σ i P (w i = 1|o = 0)P (o = 0) = kpq + 0 = kpq E[tp] = Σ k i=1 P (w i = 1 ∧ w k+1 = 1) = Σ i P (w i = 1 ∧ w k+1 = 1|o = 1)P (o = 1) +Σ i P (w i = 1 ∧ w k+1 = 1|o = 0)P (o = 0) = kppq + 0 = kp 2 q E[f p] = P (w 1 . . . w k = 0 ∧ w k+1 = 1) = P (o = 1 ∧ w 1 . . . w k = 0 ∧ w k+1 = 1) +P (o = 0 ∧ w 1 . . . w k = 0 ∧ w k+1 = 1) = q(1 -p) k p + 0 = q(1 -p) k p</formula><p>In the above w i = 1 denotes that w appeared in the i th caption. Note that we are also assuming independence between subjects conditioned on o. We can now define model precision and recall as:</p><formula xml:id="formula_29">H p := nE[tp] nE[tp] + nE[f p] = pk pk + (1 -p) k H r := nE[tp] nE[cw] = p</formula><p>Note that these expressions are independent of q and only depend on p. Interestingly, because of the use of weighted precision and recall, the recall for a category comes out to be exactly equal to p, the probability a subject uses w given that o is in the image. We set k = 4 and vary p to plot H p versus H r , getting the curve as shown in blue in Figure <ref type="figure">3</ref> (bottom left). The curve explains the observed data quite well, closely matching the precision-recall tradeoffs of the empirical data (although not perfectly). We can also reduce the number of captions from four, and look at how the empirical and predicted precision and recall change. Figure <ref type="figure">3</ref> (bottom right), shows this variation as we reduce the number of reference captions per image from four to one annotations. We see that the points of human agreement remain at the same recall value, but decrease in their precision, which is consistent with what the model predicts. Also, the human precision at infinite subjects will approach one, which is again reasonable given that a subject will only use the word w if the corresponding object is in the image (and in the presence of infinite subjects someone else will also use the word w).</p><p>In fact, the fixed recall value can help us recover p, the probability that a subject will use the word w in describing the image given the object is present. Nouns like 'elephant' and 'tennis' have large p, which is reasonable. Verbs and adjectives, on the other hand, have smaller p values, which can be justified from the fact that a) subjects are less likely to describe attributes</p><p>0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 Recall Precision man person tennis bed boy road elephant sky kite sidewalk bike ski bottle railroad rug pier apartment Nouns 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 Recall Precision black red wooden teddy hot double bright huge dry polar blurry Adjectives 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 Recall Precision sitting looking flying driving grazing cutting running making working kneeling Verbs 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 Recall Precision 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 Recall Precision number of reference = 1 number of reference = 2 number of reference = 3 number of reference = 4</p><p>Fig. <ref type="figure">3</ref>: Precision-recall points for human agreement: we compute precision and recall by treating one human caption as prediction and benchmark it against the others to obtain points on the precision recall curve. We plot these points for example nouns (top left), adjectives (top center), and verbs (top right), and for all words (bottom left). We also plot the fit of our model for human agreement with the empirical data (bottom left) and show how the human agreement changes with different number of captions being used (bottom right). We see that the human agreement point remains at the same recall value but dips in precision when using fewer captions.</p><p>of objects and b) subjects might use a different word (synonym) to describe the same attribute. This analysis of human agreement also motivates using a different metric for measuring performance. We propose Precision at Human Recall (PHR) as a metric for measuring performance of a vision system performing this task. Given that human recall for a particular word is fixed and precision varies with the number of annotations, we can look at system precision at human recall and compare it with human precision to report the performance of the vision system.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">EVALUATION SERVER INSTRUCTIONS</head><p>Directions on how to use the MS COCO caption evaluation server can be found on the <ref type="url" target="http://mscoco.org/dataset/#upload">MS COCO website</ref>. The evaluation server is hosted by <ref type="url" target="https://www.codalab.org/competitions/3221">CodaLab</ref>. To participate, a user account on CodaLab must be created. The participants need to generate results on both the validation and testing datasets. When training for the generation of results on the test dataset, the training and validation dataset may be used as the participant sees fit. That is, the validation dataset may be used for training if desired. However, when generating results on the validation set, we ask participants to only train on the training dataset, and only use the validation dataset for tuning meta-parameters. Two JSON files should be created corresponding to results on each dataset in the following format: [{ "image id" : int, "caption" : str, }]</p><p>The results may then be placed into a zip file and uploaded to the server for evaluation. Code is also provided on <ref type="url" target="https://github.com/tylin/coco-caption">GitHub</ref> to evaluate results on the validation dataset without having to upload to the server. The number of submissions per user is limited to a fixed amount.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">DISCUSSION</head><p>Many challenges exist when creating an image caption dataset. As stated in <ref type="bibr" target="#b6">[7]</ref>, <ref type="bibr" target="#b41">[42]</ref>, <ref type="bibr" target="#b44">[45]</ref> the captions generated by human subjects can vary significantly. However even though two captions may be very different, they may be judged equally "good" by human subjects. Designing effective automatic evaluation metrics that are highly correlated with human judgment remains a difficult challenge <ref type="bibr" target="#b6">[7]</ref>, <ref type="bibr" target="#b41">[42]</ref>, <ref type="bibr" target="#b44">[45]</ref>, <ref type="bibr" target="#b45">[46]</ref>. We hope that by releasing results on the validation data, we can help enable future research in this area.</p><p>Since automatic evaluation metrics do not always correspond to human judgment, we hope to conduct experiments using human subjects to judge the quality of automatically generated captions, which are most similar to human captions, and whether they are grammatically correct <ref type="bibr" target="#b44">[45]</ref>, <ref type="bibr" target="#b41">[42]</ref>, <ref type="bibr" target="#b6">[7]</ref>, <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b4">[5]</ref>. This is essential to determining whether future algorithms are indeed improving, or whether they are merely over fitting to a specific metric. These human experiments will also allow us to evaluate the automatic evaluation metrics themselves, and see which ones are correlated to human judgment.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 2 :</head><label>2</label><figDesc>Fig. 2: Example user interface for the caption gathering task.</figDesc><graphic coords="2,311.97,53.14,251.06,168.00" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><graphic coords="1,311.97,268.33,251.06,225.08" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>TABLE 1 :</head><label>1</label><figDesc>Human Agreement for Image Captioning: Various metrics when benchmarking a human generated caption against ground truth captions.</figDesc><table><row><cell cols="3">Metric Name MS COCO c5 MS COCO c40</cell></row><row><cell>BLEU 1</cell><cell>0.663</cell><cell>0.880</cell></row><row><cell>BLEU 2</cell><cell>0.469</cell><cell>0.744</cell></row><row><cell>BLEU 3</cell><cell>0.321</cell><cell>0.603</cell></row><row><cell>BLEU 4</cell><cell>0.217</cell><cell>0.471</cell></row><row><cell>METEOR</cell><cell>0.252</cell><cell>0.335</cell></row><row><cell>ROUGE L</cell><cell>0.484</cell><cell>0.626</cell></row><row><cell>CIDEr-D</cell><cell>0.854</cell><cell>0.910</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>TABLE 2 :</head><label>2</label><figDesc>Model defintions.</figDesc><table><row><cell>o</cell><cell>= object or visual concept</cell></row><row><cell>w</cell><cell>= word associated with o</cell></row><row><cell cols="2">n = total number of images</cell></row><row><cell>k</cell><cell>= number of captions per image</cell></row><row><cell>q</cell><cell>= P (o = 1)</cell></row><row><cell>p</cell><cell>= P (w = 1|o = 1)</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Learning the semantics of words and pictures</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Barnard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Forsyth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ICCV</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="408" to="415" />
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Matching words and pictures</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Barnard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Duygulu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Forsyth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">De</forename><surname>Freitas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">M</forename><surname>Blei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">I</forename><surname>Jordan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">JMLR</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="1107" to="1135" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">A model for learning the semantics of pictures</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Lavrenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Manmatha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jeon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">NIPS</title>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Baby talk: Understanding and generating simple image descriptions</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kulkarni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Premraj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dhar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Berg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">L</forename><surname>Berg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Midge: Generating image descriptions from computer vision detections</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dodge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mensch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Berg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Yamaguchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Berg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Stratos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Daumé</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EACL</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Every picture tells a story: Generating sentences from images</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Farhadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hejrati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Sadeghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Young</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Rashtchian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hockenmaier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Forsyth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Framing image description as a ranking task: Data, models and evaluation metrics</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hodosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Young</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hockenmaier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">JAIR</title>
+		<imprint>
+			<biblScope unit="volume">47</biblScope>
+			<biblScope unit="page" from="853" to="899" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Collective generation of natural image descriptions</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kuznetsova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Ordonez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Berg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">L</forename><surname>Berg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Corpusguided sentence generation of natural images</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">L</forename><surname>Teo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Daumé</surname><genName>III</genName></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Aloimonos</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">EMNLP</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Choosing linguistics over vision to describe images</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Verma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Jawahar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">AAAI</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Distributional semantics in technicolor</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Bruni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Boleda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Baroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N.-K</forename><surname>Tran</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Automatic caption generation for news images</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lapata</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">TPAMI</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="797" to="812" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Image description using visual dependency representations</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Elliott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Keller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="1292" to="1302" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Deep fragment embeddings for bidirectional image sentence mapping</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Karpathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F.-F</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">NIPS</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Improving image-sentence embeddings using large weakly annotated photo collections</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hodosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hockenmaier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lazebnik</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="529" to="545" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Nonparametric method for datadriven image captioning</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Charniak</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Treetalk: Composition and compression of trees for image descriptions</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kuznetsova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Ordonez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Berg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">TACL</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="351" to="362" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Autocaption: Automatic caption generation for personal photos</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ramnath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Baker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Vanderwende</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>El-Saban</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">N</forename><surname>Sinha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kannan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Hassan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Galley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ramanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bergamo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Torresani</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<publisher>WACV</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Is this a wampimuk? cross-modal mapping between distributional semantics and the visual world</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lazaridou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Bruni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Baroni</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Multimodal neural language models</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kiros</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zemel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Explain images with multimodal recurrent neural networks</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">L</forename><surname>Yuille</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1410.1090</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Show and tell: A neural image caption generator</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Erhan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1411.4555</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Deep visual-semantic alignments for generating image descriptions</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Karpathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1412.2306</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Unifying visualsemantic embeddings with multimodal neural language models</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kiros</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">S</forename><surname>Zemel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1411.2539</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Long-term recurrent convolutional networks for visual recognition and description</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Donahue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">A</forename><surname>Hendricks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Guadarrama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rohrbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Venugopalan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Saenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Darrell</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1411.4389</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">From captions to visual concepts and back</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Iandola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dollár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Platt</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1411.4952</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Learning a recurrent visual representation for image caption generation</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">L</forename><surname>Zitnick</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1411.5654</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Phrase-based image captioning</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lebret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">O</forename><surname>Pinheiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Collobert</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1502.03671</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Simple image description generator via a linear phrasebased approach</title>
+		<idno type="arXiv">arXiv:1412.8419</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Combining language and vision with a multimodal skip-gram model</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lazaridou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">T</forename><surname>Pham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Baroni</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1501.02598</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">ImageNet classification with deep convolutional neural networks</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Krizhevsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Hinton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">NIPS</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Long short-term memory</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hochreiter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schmidhuber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural computation</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="1735" to="1780" />
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Im-ageNet: A Large-Scale Hierarchical Image Database</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Socher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L.-J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fei-Fei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">The iapr tc-12 benchmark: A new evaluation resource for visual information systems</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Grubinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Clough</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Deselaers</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">LREC Workshop on Language Resources for Contentbased Image Retrieval</title>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Im2text: Describing images using 1 million captioned photographs</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Ordonez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kulkarni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Berg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">NIPS</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">From image descriptions to visual denotations: New similarity metrics for semantic inference over event descriptions</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Young</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hodosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hockenmaier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">TACL</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="67" to="78" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Déjá imagecaptions: A corpus of expressive image descriptions in repetition</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kuznetsova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Warren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NAACL</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Maire</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Belongie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hays</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Perona</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ramanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dollár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">L</forename><surname>Zitnick</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note>Microsoft COCO: Common objects in context,&quot; in ECCV</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Bleu: a method for automatic evaluation of machine translation</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Papineni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Roukos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-J</forename><surname>Zhu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<imprint>
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Rouge: A package for automatic evaluation of summaries</title>
+		<author>
+			<persName><forename type="first">C.-Y</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL Workshop</title>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Meteor universal: Language specific translation evaluation for any target language</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Denkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lavie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EACL Workshop on Statistical Machine Translation</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Cider: Consensus-based image description evaluation</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Vedantam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">L</forename><surname>Zitnick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1411.5726</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">The Stanford CoreNLP natural language processing toolkit</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Surdeanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Finkel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Bethard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mcclosky</surname></persName>
+		</author>
+		<ptr target="http://www.aclweb.org/anthology/P/P14/P14-5010" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of 52nd Annual Meeting of the Association for Computational Linguistics: System Demonstrations</title>
+		<meeting>52nd Annual Meeting of the Association for Computational Linguistics: System Demonstrations</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="55" to="60" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Wordnet: a lexical database for english</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">A</forename><surname>Miller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Communications of the ACM</title>
+		<imprint>
+			<date type="published" when="1995">1995</date>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page" from="39" to="41" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Comparing automatic evaluation measures for image description</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Elliott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Keller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 52nd Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 52nd Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="452" to="457" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Re-evaluation the role of bleu in machine translation research</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Callison-Burch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Osborne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Koehn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EACL</title>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="page" from="249" to="256" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

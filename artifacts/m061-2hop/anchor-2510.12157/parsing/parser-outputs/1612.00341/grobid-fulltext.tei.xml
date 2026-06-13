@@ -1,0 +1,1258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">A COMPOSITIONAL OBJECT-BASED APPROACH TO LEARNING PHYSICAL DYNAMICS</title>
+				<funder ref="#_WDx29AT">
+					<orgName type="full">ONR</orgName>
+				</funder>
+				<funder ref="#_82mFZ7B">
+					<orgName type="full">Center for Minds, Brains and Machines under NSF</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2017-03-04">4 Mar 2017</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Michael</forename><forename type="middle">B</forename><surname>Chang</surname></persName>
+							<email>mbchang@mit.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Electrical Engineering and Computer Science</orgName>
+								<orgName type="institution">MIT *</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department">Department of Brain and Cognitive Sciences</orgName>
+								<address>
+									<country>MIT</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tomer</forename><surname>Ullman</surname></persName>
+							<email>tomeru@mit.edu</email>
+						</author>
+						<author>
+							<persName><forename type="first">Antonio</forename><surname>Torralba</surname></persName>
+							<email>torralba@mit.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Electrical Engineering and Computer Science</orgName>
+								<orgName type="institution">MIT *</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department">Department of Brain and Cognitive Sciences</orgName>
+								<address>
+									<country>MIT</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+						</author>
+						<title level="a" type="main">A COMPOSITIONAL OBJECT-BASED APPROACH TO LEARNING PHYSICAL DYNAMICS</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2017-03-04">4 Mar 2017</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">659C6945E4B7197C2CB5055A19AC3FDC</idno>
+					<idno type="arXiv">arXiv:1612.00341v2[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-13T10:24+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We present the Neural Physics Engine (NPE), a framework for learning simulators of intuitive physics that naturally generalize across variable object count and different scene configurations. We propose a factorization of a physical scene into composable object-based representations and a neural network architecture whose compositional structure factorizes object dynamics into pairwise interactions. Like a symbolic physics engine, the NPE is endowed with generic notions of objects and their interactions; realized as a neural network, it can be trained via stochastic gradient descent to adapt to specific object properties and dynamics of different worlds. We evaluate the efficacy of our approach on simple rigid body dynamics in two-dimensional worlds. By comparing to less structured architectures, we show that the NPE's compositional representation of the structure in physical interactions improves its ability to predict movement, generalize across variable object count and different scene configurations, and infer latent properties of objects such as mass.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Endowing an agent with a program for physical reasoning constrains the agent's representation of the environment by establishing a prior on the environment's physics. The agent can leverage these constraints to rapidly learn new tasks, to flexibly adapt to changes in inputs and goals, and to naturally generalize reasoning to novel scenes <ref type="bibr" target="#b29">(Lake et al., 2016)</ref>.</p><p>For example, a foundational sense of intuitive physics is a prior that guides humans to decompose a scene into objects and carry expectations of object boundaries and motion across different scenarios <ref type="bibr" target="#b42">(Spelke, 1990)</ref>. Humans perceive balls on a billiard table not as meaningless patches of color but rather as impermeable objects. They expect balls moving toward each other to bounce a certain way after a collision rather than pass through each other, crumble into pieces, or disperse into smoke. Replace one billiard ball with a bowling ball and expectations for ball-to-ball interactions will differ, but the underlying sense of inertia and collisions remain. Arrange immovable wooden obstacles on the table and expectations for how a ball's surface interacts with wood remain constant regardless of how the obstacles are arranged. The ability to plan trajectories in this space without having to relearn physics from scratch each time, regardless of whether there are three balls or eight balls, whether there are obstacles or not, whether obstacles are arranged in one way or another, whether or not the configuration of objects has been seen before, suggests that humans leverage a prior on physics to reason at a level of abstraction where objects, relations, and events are primitive.</p><p>This paper explores the question of building this prior into an agent as a program. We view this program as a simulator that takes input provided by a physical scene and the past states of objects, and outputs the future states and physical properties of relevant objects <ref type="bibr" target="#b3">(Anderson, 1990;</ref><ref type="bibr" target="#b7">Battaglia et al., 2013;</ref><ref type="bibr" target="#b19">Goodman and Tenenbaum, 2016)</ref>. Our goal is to design a program that naturally generalizes across variable object count and different scene configurations without additional retraining. Our proposed framework, the Neural Physics Engine (NPE), outlines several ingredients useful for realizing these two generalization capabilities. We describe these ingredients in the context of a specific instantiation of the NPE applied to two-dimensional worlds of balls and obstacles.</p><p>Published as a conference paper at ICLR 2017 1.1 A HYBRID DESIGN Two general approaches have emerged in the search for a program that captures common-sense physical reasoning. The top-down approach <ref type="bibr" target="#b5">(Bates et al., 2015;</ref><ref type="bibr" target="#b7">Battaglia et al., 2013;</ref><ref type="bibr" target="#b21">Hamrick et al., 2011;</ref><ref type="bibr" target="#b46">Ullman et al., 2014;</ref><ref type="bibr" target="#b48">Wu et al., 2015)</ref> formulates the problem as inference over the parameters of a symbolic physics engine, while the bottom-up approach <ref type="bibr" target="#b1">(Agrawal et al., 2016;</ref><ref type="bibr">Fragkiadaki et al., 2015b;</ref><ref type="bibr" target="#b31">Lerer et al., 2016;</ref><ref type="bibr" target="#b32">Li et al., 2016;</ref><ref type="bibr" target="#b34">Mottaghi et al., 2015;</ref><ref type="bibr">2016;</ref><ref type="bibr" target="#b44">Sutskever et al., 2009)</ref> learns to directly map observations to motion prediction or physical judgments. A program under the top-down approach can generalize across any scenario supported by the entities and operators in its description language. However, it may be brittle under scenarios not supported by its description language, and adapting to these new scenarios requires modifying the code or generating new code for the physics engine itself. In contrast, gradient-based bottom-up approaches can apply the same model architecture and learning algorithm to specific scenarios without requiring the physical dynamics of the scenario to be pre-specified. This often comes at the cost of reduced generality: transferring knowledge to new scenes may require extensive retraining, even in cases that seem trivial to human reasoning.</p><p>The NPE takes a step toward bridging the gap between expressivity and adaptability by combining the strengths of both approaches. The NPE framework is realized as a differentiable physics simulator that combines rough symbolic structure with gradient-based learning. It exhibits several strong inductive biases that are explicitly present in symbolic physics engines, such as a notion of objects-specific properties and object interactions. Implemented as a neural network, the NPE can also flexibly tailor itself to specific object properties and dynamics of a given world through training. By design, it can extrapolate to a variable number of objects and different scene configurations with only spatially and temporally local computation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.2">INGREDIENTS USEFUL FOR GENERALIZATION</head><p>Our framework proposes four key ingredients useful for generalization across variable object count and different scene configurations without additional retraining. The first ingredient is the view of objects as primitives of physical reasoning. The second is a mechanism for selecting context objects given a particular object. Together, these ingredients reflect two natural assumptions about a physical environment: There exist objects and these objects interact in a factorized manner.</p><p>The third and fourth ingredients are factorization and compositionality, which are both applied on two levels: the scene and the network architecture. On the level of the physical scene, the NPE factorizes the scene into object-based representations, and composes smaller building blocks to form larger objects. This method of representation adapts to scene configurations of variable complexity and shape. On the level of the network architecture, the NPE explicitly reflects a causal structure in object interactions by factorizing object dynamics into pairwise interactions. The NPE models the future state of a single object as a function composition of the pairwise interactions between itself and other context objects in the scene. This structure serves to guide learning towards objectbased reasoning and is designed for physical knowledge to transfer across variable number objects anywhere in the scene.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.3">A STEP TOWARDS EMULATING A GENERAL-PURPOSE PHYSICS ENGINE</head><p>While previous bottom-up approaches (Sec. 4) have coupled learning vision and learning physical dynamics, we take a different approach for two reasons. First, we see that disentangling the visual properties of an object from its physical dynamics is a step toward achieving the generality of a physics engine. Both vision and dynamics are necessary, but we believe that keeping these functionalities separate is important for common-sense generalization that is robust to cases where the visual appearance changes but the dynamics remain the same. Second, we are optimistic that those two components indeed can be decoupled, that a vision model can map visual input to an intermediate state space, and a dynamics model can evolve objects in that state space through time. For example, there is work in object detection and localization (e.g. <ref type="bibr" target="#b13">Eslami et al. 2016</ref>) for extracting position and velocity, as well as work for extracting latent object properties <ref type="bibr" target="#b48">(Wu et al., 2015;</ref><ref type="bibr">2016)</ref>. Therefore this paper focuses on learning dynamics in that state space, taking a small step toward emulating a general-purpose physics engine, with the eventual goal of building a system that exhibits the compo-Figure <ref type="figure">1</ref>: Physics Programs: We consider the space of physics programs over object-based representations under physical laws that are Markovian and translation-invariant. We consider each object in turn and predict its future state conditioned on the past states of itself and its context objects. sitionality, modularity, and generality of a physics engine whose internal components can be learned through observation.</p><p>In Sec. 2 we present a specific instantiation of the NPE that uses a neighborhood mask to select context objects. In Sec. 3 we apply that instantiation to investigate variations on two-dimensional worlds of balls and obstacles from the matter-js physics engine <ref type="bibr" target="#b9">(Brummitt, 2014)</ref> as a testbed for exploring the NPE's capabilities to model simple rigid-body dynamics. While these worlds are generated from a simplified physics engine, we believe that learning to model such simple physics under the NPE's framework is a first and necessary step towards emulating the full capacity of a general physics engine, while maintaining a differentiability that can allow it to eventually learn complex real-world physical phenomena that would be challenging to engineer into conventional physics engines. This paper establishes that important step.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">APPROACH</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">NEURAL PHYSICS ENGINE</head><p>We consider in detail a specific instantiation of the NPE that uses a neighborhood mask to select context objects. This section discusses each of the four ingredients of the NPE framework, that, when combined, comprise a neural network-based physics simulator that learns from observation.</p><p>Object-Based Representations We make two observations (Fig. <ref type="figure">1</ref>) in our factorization of the scene. The first regards spatially local computation. Because physics does not change across inertial frames, it suffices to separately predict the future state of each object conditioned on the past states of itself and the other objects in its neighborhood, similar to <ref type="bibr">Fragkiadaki et al. (2015b)</ref>. Sec. 3.5 shows that when large structures are represented as a composition of smaller objects, a spatially local attention window helps achieve invariance to scene configuration. The second observation regards temporally local computation. Because physics is Markovian, this prediction need only be for the immediate next timestep, which we show in Sec. 3 is enough to predict physics effectively over long timescales. Given these two observations, it is natural to choose an object-based state representation. A state vector comprises extrinsic properties (position, velocity, orientation, angular velocity), intrinsic properties (mass, object type, object size), and global properties (gravitational, frictional, and pairwise forces) at a given time instance.</p><p>Pairwise Factorization Letting a particular object be the focus object f and all other objects in the scene be context objects c, the NPE models the focus object's velocity v</p><p>[t+1] f</p><p>as a composition of the pairwise interactions between itself and other neighboring context objects in the scene during time t -1 and t. This input is represented as pairs of object state vectors {(o f , o c1 ) [t-1,t] , (o f , o c2 ) [t-1,t] , ...}. As shown in Fig. <ref type="figure" target="#fig_0">2b</ref>, the NPE composes an encoder function and a decoder function. The encoder function f enc summarizes the interaction of a single object pair. The sum of encodings of all pairs is then concatenated with the focus object's past state as input to the decoder function. The focus object is a necessary input to the decoder because if there are no neighboring context objects, the summed encoder output would be zero. The decoder function then predicts the focus object's velocity v</p><p>[t+1] f</p><p>. In practice, the NPE predicts the change ∆v between t and t + 1 to compute v [t+1] = v [t] + ∆v, and updates position using the velocity as a first-order approximation<ref type="foot" target="#foot_0">foot_0</ref> . We predict velocity rather than position to help avoid memorizing the environment; training the network to predict position conditions the network on the worlds in the training domain, making it more difficult to transfer knowledge across environments. We do not include acceleration in the state representation because position and velocity fully parametrize an object's state. Thus acceleration (e.g. collisions) can be learned by observing velocity for two consecutive timesteps, hence our choice for two input timesteps. We explored longer input durations as well and found no additional benefit.</p><p>Context Selection Each (o f , o c ) pair is selected to be in the set of neighbors of f by the neighborhood masking function 1 [||p c -p f )|| &lt; N (o f )], which takes value 1 if the Euclidean distance between the positions p f and p c of the focus and context object respectively at time t is less the neighborhood threshold N (o f ). Many physics engines use a collision detection scheme with two phases. Broad phase is used for computational efficiency and uses a neighborhood threshold to select objects that might, but not necessarily will, collide an object. Narrow phase performs the actual collision detection on that smaller subset of objects and also resolves the collisions for the objects that do collide. Analogously, our neighborhood mask implements broad phase, and the NPE implements narrow phase. The mask only constrains the search space of context objects, and the network figures out how to detect and resolve collisions. This mask is a specific case of a more general attention mechanism to select contextual elements of a scene.</p><p>Function Composition Symbolic physics engines evolve objects through time based on dynamics that dictate their independent behavior (e.g. inertia) and their behavior with other objects (e.g. collisions). Notably, in a particular object's reference frame, the forces it feels from other objects are additive. The NPE architecture incorporates several inductive biases that reflect this recipe. The composition of f enc and f dec induce a causal structure on the pairs of objects. We provide a loose interpretation of the encoder output e c,f as the effect of object c on object f , and require that these effects are additive as forces are. This design allows the NPE to scale naturally to different numbers of neighboring context objects. These inductive biases have the effect of strongly constraining the space of possible simulators that the NPE can learn, focusing on compositional programs that reflect pairwise causal structure in object interactions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">BASELINES</head><p>The purpose of contrasting the NPE with the following two baselines is to illustrate the benefit of pairwise factorization and function composition, which are the key architectural features of the NPE. As the architectures for both baselines have been shown to work well in similar tasks, it is not immediately clear whether the NPE's assumptions are useful or necessary, so these are good baselines for comparison. Viewed in another way, comparing with these baselines is a lesion study on the NPE because each baseline lacks an aspect of the NPE structure.</p><p>No-Pairwise The No-Pairwise (NP) baseline is summarized by Fig. <ref type="figure" target="#fig_0">2c</ref>. It is very similar to the NPE but does not compute pairwise interactions; otherwise its encoder and decoder are the same as the NPE's. Therefore the NP most directly highlights the value of the NPE's pairwise factorization. The NP is also a Markovian variant of the Social LSTM <ref type="bibr" target="#b2">(Alahi et al., 2016)</ref>; it sums the encodings of context objects after encoding each object independently, similar to the Social LSTM's "social pooling." Information for modeling how objects interact would only be present after the encoding step. A possible mechanism for predicting dynamics with the NP is if the encoder's object encoding consists of an abstract object representation and a force field created by that object. Therefore the decoder could apply the sum of the force fields of all context objects to the focus object's abstract object representation to predict the focus object's velocity. As <ref type="bibr" target="#b2">Alahi et al. (2016)</ref> has demonstrated the Social LSTM's performance in modeling human trajectories, it would be interesting to see how the same architectural assumptions perform for the physics of moving objects. LSTM Long Short-Term Memory (LSTM) networks <ref type="bibr" target="#b23">(Hochreiter and Schmidhuber, 1997)</ref> have been shown to sequentially attend to objects <ref type="bibr" target="#b13">(Eslami et al., 2016)</ref>, so it is interesting to test whether a LSTM is well-suited for modeling object interactions, when the object states are explicitly given as input. From a cognitive science viewpoint, an LSTM can be interpreted as a serial mechanism in object tracking <ref type="bibr" target="#b36">(Pylyshyn and Annan, 2006)</ref>. Our LSTM architecture (Fig. <ref type="figure" target="#fig_0">2d</ref>) accepts the state of each context object until the last step, at which it takes in the focus object's state and predicts its velocity. Because the LSTM moves through the object space sequentially, its lack of factorized compositional structure highlights the value of the NPE's function composition of the independent interactions between an object and its neighbors. Our notion of compositionality treats each object and pairwise interaction as independently encapsulated in a separate computational entity that can be reused and rearranged; the NPE encoder is a function that is applied to each (o f , o c ) pair. This function encapsulates this computation and can be repeatedly applied to all neighboring context objects equally, such that the NPE composes this repeated encoding function with the decoder function to predict velocity. The LSTM does not exhibit this notion of compositionality because it is not designed to take advantage of the factorized structure of the scene. Unlike the NPE and NP, the LSTM's structure does not differentiate between focus and context object, so we add a flag to the state representation to indicate to whether an object is a context or focus object. We shuffle the order of the context objects to account for an ordering bias.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">EXPERIMENTS</head><p>Object-based representations (ingredient 1) are necessary for the other three ingredients, and having explained the motivation for object-based representations in Sec. 1.3 and Sec. 2.1, we now analyze the other three ingredients in the context of several experiments. In the prediction task (Sec. 3.1), we first test if the NPE is even capable of predicting physics when the number of objects is held constant. In the generalization task (Sec. 3.2), we test the NPE's capability to generalize across variable object count. In the inference task (Sec. 3.3), we test if the NPE can be inverted to infer mass in both the prediction and generalization settings. In these experiments, we compare against the NPE-NN, a modified NPE without the neighborhood mask, to analyze the context selection mechanism (ingredient 2), the NP to analyze factorization (ingredient 3), the LSTM to analyze compositionality (ingredient 4). Sec. 3.4 analyzes the neighborhood mask in depth. We test the NPE's capability to generalize across different scene configurations in Sec. 3.5.</p><p>Using the matter-js physics engine, we evaluate the NPE on worlds of balls and obstacles. These worlds exhibit nonlinear dynamics and support a wide variety of scenarios. Bouncing balls have been of interest in cognitive science to study causality and counterfactual reasoning, as in <ref type="bibr" target="#b18">Gerstenberg et al. (2012)</ref>. We trained on 3-timestep windows in trajectories of 60 timesteps (10 timesteps ≈ 1 second). For a world of k objects, we generate 50,000 such trajectories. For experiments where we train on multiple worlds together, we shuffle the examples across all training worlds and train without a curriculum schedule. All worlds have a vertical dimension of 600 pixels and a horizontal dimension of 800 pixels, and we constrain the maximum velocity of an object to be 60 pixels/second. We normalize positions to [0, 1] by dividing by the horizontal dimension, and we normalize velocities to [-1, 1] by dividing by the maximum velocity.</p><p>Like those of <ref type="bibr" target="#b6">Battaglia et al. (2016)</ref> the NPE predictions can be effective over long timescales even when the NPE is only trained to predict the immediate next time step. Randomly selected simulation videos can be found at <ref type="url" target="https://goo.gl/BWYuOF">https://goo.gl/BWYuOF</ref>. Plots show results over three independent runs averaged over held-out test data with different random seeds. As shown in the graphs in Fig. <ref type="figure" target="#fig_1">3</ref> (top two rows) and Fig. <ref type="figure" target="#fig_3">5</ref>, both the NP and LSTM's predicted trajectories diverge from the ground truth, but for different reasons, which the videos illuminate. While the NP and LSTM fail to predict plausible physical movement entirely, the NPE's predictions initially adhere closely to the ground truth, then slowly diverge due to the accumulation of subtle errors, just as the human perceptual system also accumulates errors <ref type="bibr" target="#b39">(Smith and Vul, 2013)</ref>. However, the NPE preserves the general intuitive physical dynamics that may roughly be consistent with people's intuitive expectations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">PREDICTION TASK</head><p>We consider simple worlds of four balls of uniform mass (Fig. <ref type="figure" target="#fig_1">3a</ref>). To measure performance in simulation, we visualize the cosine similarity between the predicted velocity and the ground truth velocity as well as the relative error in magnitude between the predicted velocity and the ground truth velocity over 50 timesteps of simulation. The models take timesteps 1 and 2 as initial input, and then use previous predictions as input to future predictions. To measure progress through training, we also display the Mean Squared Error (MSE) on the normalized velocity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">GENERALIZATION TASK</head><p>We test whether learned knowledge of these simple physics concepts can be transferred and extrapolated to worlds with a number of objects previously unseen (Fig. <ref type="figure" target="#fig_1">3b</ref>). The unseen worlds (6, 7, 8 balls) in the test data are combinatorially more complex and varied than the observed worlds (3, 4, 5 balls) in the training data. All objects have equal mass. During simulation, the NPE's predictions are more consistent, whereas the NP and LSTM's prediction begin to diverge wildly towards the end of 50 timesteps of simulation (Fig. <ref type="figure" target="#fig_1">3b</ref>, middle row). The NPE consistently outperforms the baselines by 0.5 to 1 order of magnitude in velocity prediction (Fig. <ref type="figure" target="#fig_1">3b</ref>, bottom row).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">INFERENCE TASK</head><p>We now show that the NPE can infer latent properties such as mass. This proposal is motivated by the experiments in <ref type="bibr" target="#b7">Battaglia et al. (2013)</ref>, which uses a probabilistic physics simulator to infer various properties of a scene configuration. Whereas the physical rules of their simulator were manually pre-specified, the NPE learns these rules from observation. We train on the same worlds used in both the prediction and generalization tasks, but we uniformly sampled the mass for each ball from the log-spaced set {1, 5, 25}. We chose to use discrete-valued masses to simplify our qualitative understanding of the model's capacity to infer. For future work we would like to investigate continuously valued masses and evaluate with binary comparisons (e.g. "Which is heavier?").</p><p>As summarized by Fig. <ref type="figure" target="#fig_1">3c</ref> and Fig. <ref type="figure" target="#fig_2">4a</ref>, we select scenarios exhibiting collisions with the focus object, fix the masses of all other objects, and score the NPE's prediction under all possible mass hypotheses for the focus object. The prediction is scored against the ground-truth under the same MSE loss used in training. The hypothesis whose prediction yields the lowest error is the NPE's maximum likelihood estimate of the focus object's mass. Outperforming all baselines, the NPE achieves about 90% accuracy, meaning it has 90% probability of inferring the correct mass.</p><p>The NPE predicts outputs given inputs and infers inputs given outputs. Though we adopted a particular parametrization of an object, the NPE is not limited to the semantic meaning of the elements of its input, so we expect other latent object properties can be inferred this way. Because the NPE is differentiable, we expect that it can also infer object properties by backpropagating prediction error to its a randomly sampled input. This would be useful for inferring non-categorical values, such as positions of "invisible" objects, whose effects are felt but whose positions are unknown.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">NEIGHBORHOOD MASK</head><p>In Fig. <ref type="figure" target="#fig_1">3d</ref> we vary the NPE's neighborhood threshold N (o f ) and evaluate performance on the constant-mass prediction task. N (o f ) is in units of ball radii, so N (o f ) = 2 means that a context object is only detected if it is exactly touching the focus object. Because ball radii are 60 pixels and the maximum velocity is 60 pixels per timestep, the maximum distance two balls can initially be before touching at the next timestep is 4 ball radii. Given that velocities were sampled uniformly, it makes sense that the NPE performs well in and is robust<ref type="foot" target="#foot_1">foot_1</ref> to the range N (o f ) ∈ [3, 5], but performance drops off with smaller and larger N (o f ). It is important to note that different N (o f ) may work better for different domains and object geometries. We include analysis in the prediction and generalization tasks on an NPE without the neighborhood mask, the NPE-NN (NN = No Neighborhood). The neighborhood mask gives the NPE about an order of magnitude improvement in velocity prediction loss (Fig. <ref type="figure" target="#fig_1">3a</ref>,<ref type="figure">b</ref>: bottom row and Fig. <ref type="figure">6</ref>). While the NPE loss continues to improve through training, the NPE-NN loss quickly plateaus. It is interesting that the NPE-NN performs no better than both the NP and LSTM in predictive error, but outperforms the LSTM in mass inference. These two observations suggest that computing the interactions the focus object shares with each context object is more effective for inferring a property of the focus object than disregarding these factorized effects. They also suggest that the additional spatial structure from constraining the context space with the neighborhood mask prevents the NPE from naively finding associations with objects that cannot influence the focus object.</p><p>In our experiments, the neighborhood mask has the additional practical benefit of reducing computational complexity from O(k) to O(1), where k is the number of objects in the scene, because the number of context-focus object pairs the NPE considers is bounded above by the neighborhood mask at a constant number. Though beyond the scope of this work, to extend the functionality of such context selection mechanism to include worlds that contain forces that act from a distance, future instantiations of the NPE may investigate a more general context selection mechanism that can be learned jointly with the other model parameters.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5">DIFFERENT SCENE CONFIGURATIONS</head><p>We demonstrate representing large structures as a composition of smaller objects as building blocks. This is important for testing the NPE's invariance to scene configuration; the scene configuration should not matter if the underlying physical laws remain the same. These worlds contain 2 balls bouncing around in variations of 4 different wall geometries. "O" and "L" geometries have no internal obstacles and are in the shape of a rectangle and "L" respectively. "U" and "I" have internal obstacles. Obstacles in "U" are linearly attached to the wall like a protrusion, while obstacles in "I" The compositional state representation simplifies the physical prediction problem to only be over local arrangements of context balls and obstacles, even when the wall geometries are more complex and varied on a macroscopic scale. Therefore, it is not surprising that the models perform consistently across wall geometries. Note that the NPE consistently outperforms the other models, and this gap in performance increases with more varied internal obstacles for the cosine similarity of the velocity angle. This gap is more prominent in "L" and "U" geometries for relative error in magnitude.</p><p>have no constraint in position. We randomly vary the position and orientation of the "L" concavity and the "U" protrusion. We randomly sample the positions of the "I" internal obstacles.</p><p>We train on conceptually simpler "O" and "L" worlds and test on more complex "U" and "I" worlds. Variations in wall geometries adds to the difficulty of this extrapolation task. At most 12 context objects are present in the focus object's neighborhood at a time. The "U" geometries have 33 objects in the scene, the most out of all the wall geometries. As shown in Fig. <ref type="figure" target="#fig_2">4b</ref> and 5, the NPE is robust to scenes with internal obstacles, even when it has not observed such scenes during training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.6">ANALYSIS</head><p>We explain the NPE's superior performance in generalization from the perspective of context selection, factorization, and compositionality. By design, all three ingredients transform the testing data distribution to be similar to the training data distribution, such that generalization across variable object count and different scene configurations happens naturally.</p><p>Consider generalizing across variable object count. The neighborhood mask selects context objects such that the NPE need only focus on a bounded subset of the objects regardless of the total number of objects. Factorizing the scene into pairwise interactions induces a causal structure between each context object and the focus object, such that no matter the object count, this causal structure remains consistent because the input is merely a set of object pairs. Composing these pairwise interactions together with a summation encourages the encoder output to be additive, such that the decoder receives the appropriate net effect from the context objects, regardless of how many there are.</p><p>Consider generalizing across different scene configurations. Our state representation composes larger structures from smaller objects, just as many real-world objects are composed of smaller components. Therefore, even when wall geometries are complex and varied on a macroscopic scale, the input distribution to the NPE remains roughly the same, because the prediction problem still remains only over objects in a local glimpse the entire scene.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">RELATED WORK</head><p>Top-down and bottom-up approaches A recent set of top-down approaches investigate probabilistic game physics engines as computational models for physical simulation in humans <ref type="bibr" target="#b5">(Bates et al., 2015;</ref><ref type="bibr" target="#b7">Battaglia et al., 2013;</ref><ref type="bibr" target="#b21">Hamrick et al., 2011;</ref><ref type="bibr" target="#b46">Ullman et al., 2014)</ref>. However, these models require a full specification of the physical laws and object geometries. Given such a specification, inferring how physical laws compose and apply to a given scenario are their strength, but automatically inferring from visual data what physical laws and object properties are present requires more work in inverse graphics <ref type="bibr" target="#b10">(Chen et al., 2016;</ref><ref type="bibr" target="#b25">Kulkarni et al., 2014;</ref><ref type="bibr">2015a;</ref><ref type="bibr">b;</ref><ref type="bibr" target="#b47">Whitney et al., 2016)</ref> and physics-based visual understanding <ref type="bibr" target="#b8">(Brand, 1997;</ref><ref type="bibr" target="#b48">Wu et al., 2015;</ref><ref type="bibr">2016)</ref>. The NPE builds on top of the key structural assumptions of these top-down approaches, but its differentiable architecture opens a possible path for joint training with a vision model that can automatically adapt to the specific physical properties of the scene.</p><p>Bottom-up approaches attempt to bypass the intermediate step of finding physics representations and directly map visual observations to physical judgments <ref type="bibr" target="#b31">(Lerer et al., 2016;</ref><ref type="bibr" target="#b32">Li et al., 2016;</ref><ref type="bibr" target="#b34">Mottaghi et al., 2015;</ref><ref type="bibr">2016)</ref> or passive <ref type="bibr" target="#b31">(Lerer et al., 2016;</ref><ref type="bibr" target="#b43">Srivastava et al., 2015;</ref><ref type="bibr" target="#b44">Sutskever et al., 2009)</ref> and action-conditioned <ref type="bibr" target="#b1">(Agrawal et al., 2016;</ref><ref type="bibr" target="#b14">Finn et al., 2016;</ref><ref type="bibr">Fragkiadaki et al., 2015b</ref>) motion prediction. Because these work historically have not been compositional in nature, they have had limited flexibility to transfer knowledge to conceptually similar worlds where the physics remain the same, but the number of objects or complexity of object configurations varies. Moreover, these approaches above do not infer latent properties as the NPE does.</p><p>Other work have taken similar hybrid approaches as the NPE, such as the NeuroAnimator <ref type="bibr" target="#b20">(Grzeszczuk et al., 1998)</ref>, one of the first work to train a neural network to emulate a physics simulator, and the interaction network <ref type="bibr" target="#b6">(Battaglia et al., 2016)</ref>, which learns to simulate physics over a graph of objects and their relations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Sketching</head><p>The NPE combines a symbolic structure that assumes generic objects and interactions with a differentiability that allows the specific nature of these interactions to be learned from training. This approach of starting with a general sketch of a program and filling in the specifics is inspired by ideas from the program synthesis community <ref type="bibr" target="#b12">(Ellis et al., 2015;</ref><ref type="bibr" target="#b17">Gaunt et al., 2016;</ref><ref type="bibr" target="#b41">Solar-Lezama, 2008)</ref>. Examples of other work that combine symbolic with neural approaches via sketching include graph-based neural networks <ref type="bibr" target="#b24">(Jain et al., 2016;</ref><ref type="bibr" target="#b33">Li et al., 2015;</ref><ref type="bibr" target="#b38">Scarselli et al., 2009)</ref> and transforming autoencoders <ref type="bibr" target="#b22">(Hinton et al., 2011)</ref>.</p><p>Composing functions for reuse Just as the NPE repeatedly applies the same encoder to each object pair, iteratively applies itself to each object in the scene as a focus object, and recursively predicts future timesteps using predictions from previous timesteps, employing function reuse to achieve generalization is also featured in work such as <ref type="bibr" target="#b0">Abelson et al. (1996)</ref>; <ref type="bibr" target="#b4">Andreas et al. (2016)</ref>; <ref type="bibr" target="#b28">Lake et al. (2015)</ref>; <ref type="bibr" target="#b37">Reed and de Freitas (2015)</ref>; <ref type="bibr" target="#b40">Socher et al. (2011)</ref>. These work all assemble small subprograms to form larger programs. The NPE also dynamically composes its internal modules (encoder and decoder) based on the number of objects and the arrangement of context objects.</p><p>Object-based approaches <ref type="bibr">Fragkiadaki et al. (2015b)</ref> and <ref type="bibr" target="#b6">Battaglia et al. (2016)</ref> are two notably similar work in the sense that our work and theirs all take an object-based approach to model the bouncing balls environment. Our work was inspired by <ref type="bibr">Fragkiadaki et al. (2015b)</ref>'s iterative approach to predicting the motion of each object in turn, conditioned on a context. The key contrast is that their model assumes no relational structure between objects beyond a visual attention window centered around the focus object, whereas ours explicitly processes the interaction between the focus and each context object.</p><p>If we compare <ref type="url" target="https://sites.google.com/site/intuitivephysicsnips15/home">their simulation videos</ref>  <ref type="bibr">(Fragkiadaki et al., 2015a)</ref> to <ref type="url" target="https://drive.google.com/drive/folders/0BxCJLi4FnT_6QW4tcF94d1doLWs">ours,</ref> we see some specific and significant improvements evident in our approach. For example, in their work, the balls appear attracted to each other and to the walls; the balls appear to bounce along the walls even when no attractive force should be present. The balls rarely touch during collisions, but magnetically repel each other when at a short distance. The NPE does not exhibit these behaviors and tends to preserve the intuitive physical dynamics of colliding balls. In addition to these differences, we show strong predictive performance on generalizing to eight balls, five more than the balls in their videos. We also crucially show this performance under stronger generalization conditions, variable mass, and more complex scene configurations.</p><p>Recently, <ref type="bibr" target="#b6">Battaglia et al. (2016)</ref> independently and in parallel developed an architecture that they call the interaction network for learning to model physical systems. They show how such an architecture can apply to several different kinds of physical systems, including n-body gravitational interactions and a string falling under gravity. Like their work, our model can simulate over many timesteps very effectively when only trained for next-timestep prediction, and can generalize to different world configurations and different numbers of objects.</p><p>Compared to the interaction network, a main difference in our architecture is that ours does not take object relations as explicit input, but instead learns the nature of these relations by constraining attention to a neighborhood set of objects. Another difference is in function reuse: we demonstrated that a trained NPE can automatically infer properties of its input such as mass without further retraining. In contrast, they train an additional classifier on top of their model to do inference. Their work also exhibits the four ingredients in our framework, and we view the similarities between their and our work as converging evidence for the utility of object-based representations and compositional model architectures in learning to emulate general-purpose physics engines.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">DISCUSSION</head><p>While this paper is not the first to explore learning a physics simulator, here we take the opportunity to highlight the value of this paper's contributions. We hope these contributions can seed further research that builds on the NPE framework this paper proposes.</p><p>We showed that object-based representations, a context selection mechanism, factorization, and compositionality are useful ingredients for learning a physics simulator that generalizes across variable object count and different scene configurations with only spatially and temporally local computation. This generalization is possible because these ingredients transform the testing data distribution to be similar to the training data distribution.</p><p>The NPE makes few but strong assumptions about the nature of objects in a physical environment. These assumptions are inductive biases that not only give the NPE enough structure to help constrain it to model physical phenomena in terms of objects but also are general enough for the NPE to learn physical dynamics almost exclusively from observation.</p><p>We applied the NPE to simple two-dimensional worlds of bouncing balls ranging in complexity. We showed that NPE achieves low prediction error, extrapolates learned physical knowledge to previously unseen number of objects and world configurations, and can infer latent properties such as mass. We compared against several baselines designed to test the ingredients of the NPE framework and found superior performance when all these ingredients are combined in the NPE. Though we demonstrated the NPE in the balls environment with nonlinear dynamics and complex scene configurations, the state representation and NPE architecture we propose are quite general-purpose because they assume little about the specific dynamics of a scene. This paper works toward emulating a general purpose physics engine under a framework where visual and physical aspects of a scene are disentangled. Next steps include linking the NPE with perceptual models that extract properties such as position and mass from visual input. Learning to simulate is unsupervised learning of the structure of the environment. When a simulator like the NPE is incorporated into an agent in the context of model-based planning and model-based reinforcement learning, it becomes a prior on the environment that guides learning and reasoning. By combining the expressiveness of physics engines and the adaptability of neural networks in a compositional architecture that supports generalization in fundamental aspects of physical reasoning, the Neural Physics Engine is an important step towards lifting an agent's ability to think at a level of abstraction where the concept of physics is primitive.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A IMPLEMENTATION</head><p>We trained all models using the rmsprop <ref type="bibr" target="#b45">(Tieleman and Hinton, 2012)</ref> backpropagation algorithm with a Euclidean loss for 1,200,000 iterations with a learning rate of 0.0003 and a learning rate decay of 0.99 every 2,500 training iterations, beginning at iteration 50,000. We used minibatches of size 50 and used a 70-15-15 split for training, validation, and test data.</p><p>All models are implemented using the neural network libraries built by <ref type="bibr" target="#b11">Collobert et al. (2011);</ref><ref type="bibr" target="#b30">Léonard et al. (2015)</ref>. The NPE encoder consists of a pairwise layer of 25 hidden units and a 5-layer feedforward network of 50 hidden units per layer each with rectified linear activations. Because we use a binary mask to zero out non-neighboring objects, we implement the encoder layers without bias such that non-neighboring objects do not contribute to the encoder activations. The encoding parameters are shared across all object pairs. The decoder is a five-layer network with 50 hidden units per layer and rectified linear activations after all but the last layer. The NP encoder architecture is the same as the NPE encoder, but without the pairwise layer. The NP decoder architecture is the same as the NPE decoder. The LSTM has three layers of 100 hidden units and a linear layer after the last layer. It has rectified linear activations after each layer.</p><p>We informally explored several hyperparameters, varying the number of layers from 2 to 5, the hidden dimension from 50 to 100, and learning rates in {10 -5 , 3 × 10 -5 , 10 -4 , 3 × 10 -4 , 10 -3 , 3 × 10 -3 }. Though this is far from an exhaustive search, we found that the above hyperparameter settings work well.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B QUANTITATIVE ANALYSIS</head><p>Figure <ref type="figure">6</ref>: Error analysis on velocity and position: We summarize the error in velocity and position for each train-test variant of each experiment. Normalized velocity MSE is shown in the gray columns (multiplying these values by the maximum velocity of 60 would give the actual velocity in pixels/timestep, where each timestep is about 0.1 seconds). The white columns show the error in Euclidean distance between the predicted position and the ground truth position of the ball. These have been normalized by the radius of the ball (60 pixels), so multiplying these values by 60 would give the actual Euclidean distance in pixels. The NPE consistently outperforms all baselines by 0.5 to 1 order of magnitude, and this is also reflected in the bottom row of Fig. <ref type="figure" target="#fig_1">3a</ref>,<ref type="figure">b</ref>. Notice that experiments with variable mass exhibit only slightly higher error than their constant-mass variants, even when the variable mass experiments contain masses that differ by a factor of 25. For the experiments with different scene configurations, we do not report error for NPE-NN; the unnecessary computational complexity of operating on over 30 objects, and the degradation in performance without this mask, evident from the other experiments, make the need for the neighborhood mask clear.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Scenario and Models: This figure compares the NPE, the NP and the LSTM architectures in predicting the velocity of object 3 for an example scenario [a] of two heavy balls (cyan) and two light balls (yellow-green). Objects 2 and 4 are in object 3's neighborhood, so object 1 is ignored. [b]: The NPE encoder consists of a pairwise layer (yellow) and a feedforward network (red) and its decoder (blue) is also a feedforward network. The input to the decoder is the concatenation of the summed pairwise encodings and the input state of object 3. [c]: The NP encoder is the same as the NPE encoder, but without the pairwise layer. The NP decoder is the same as the NPE decoder. The input to the decoder is the concatenation of the summed context encodings and the encoding of object 3. [d]: We shuffle the context objects inputted into the LSTM and use a binary flag to indicate whether an object is a context or focus object.</figDesc><graphic coords="5,147.60,81.86,316.80,179.08" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Quantitative evaluation (balls): [a,b]: Prediction and generalization tasks. Top two rows: The cosine similarity and the relative error in magnitude. Bottom row: The MSE of velocity on the test set over the course of training. Because these worlds are chaotic systems, it is not surprising that all predictions diverge from the ground truth with time, but NPE consistently outperforms the other two baselines on all fronts, especially when testing on 6, 7, and 8 objects in the generalization task. The NPE's performance continues to improve with training while the NPE-NN (an NPE without a neighborhood mask, see Sec. 3.4), NP and LSTM quickly plateau. We hypothesize that the NPE's structured factorization of the state space guides it from wasting time exploring suboptimal programs. [c]: The NPE's accuracy is significantly greater than the baseline models' in mass inference. Notably, the NPE achieves similar inference performance whether in the prediction or generalization settings, further showcasing its strong generalization capabilities. The LSTM performs poorest, reaching just above random guessing (33% accuracy). [d]: We analyze the effectiveness of different neighborhood thresholds for the NPE on the constant-mass prediction task. The neighborhood threshold is quite robust from 3 to 5 ball radii.</figDesc><graphic coords="7,108.02,81.87,395.94,216.32" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: Visualizations: The NPE scales to complex dynamics and world configurations while the NP and LSTM cannot. The masses are visualized as: cyan = 25, red = 5, yellow-green = 1.[a] Consider the collision in the 7 balls world (circled). In the ground truth, the collision happens between balls 1 and 2, and the NPE correctly predicts this. The NP predicts a slower movement for ball 1, so ball 2 overlaps with ball 3. The LSTM predicts a slower movement and incorrect angle off the world boundary, so ball 2 overlaps with ball 3. [b] At first glance, all models seem to handle collisions well in the "O" world (diamond), but when there are internal obstacles (cloud), only the NPE can successfully resolve collisions. This suggests that the NPE pairwise factorization handles object interactions well, letting it generalize to different world configurations, whereas the NP and LSTM have only memorized the geometry of the "O" world.</figDesc><graphic coords="8,108.02,81.86,395.97,206.07" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure5: Quantitative evalution (walls and obstacles): The compositional state representation simplifies the physical prediction problem to only be over local arrangements of context balls and obstacles, even when the wall geometries are more complex and varied on a macroscopic scale. Therefore, it is not surprising that the models perform consistently across wall geometries. Note that the NPE consistently outperforms the other models, and this gap in performance increases with more varied internal obstacles for the cosine similarity of the velocity angle. This gap is more prominent in "L" and "U" geometries for relative error in magnitude.</figDesc><graphic coords="9,108.00,81.86,396.00,163.27" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><graphic coords="15,108.02,363.43,395.96,192.17" type="bitmap" /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>The NPE as currently implemented also predicts angular velocity along with velocity, but for the experiments in this paper we always set angular velocity, as well as gravity, friction, and pairwise forces, to zero. We included these parameters in the implementation because in future work we are planning to test situations and scenarios in which angular velocity is important, such as block towers, magnetism. However, in the current work they are vestigial and set to zero and do not appear in the evaluation.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>The results reported in this paper were with N (o f ) =</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_2"><p>3.5 ball radii, which we found initially with a coarser search than the results in Fig.3d, although any threshold in the range N (o f ) ∈ [3, 5] performs similarly.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGMENTS</head><p>We thank <rs type="person">Tejas Kulkarni</rs> for insightful discussions and guidance. We thank <rs type="person">Ilker Yildirim</rs>, <rs type="person">Erin Reynolds</rs>, <rs type="person">Feras Saad</rs>, <rs type="person">Andreas Stuhlmüller</rs>, <rs type="person">Adam Lerer</rs>, <rs type="person">Chelsea Finn</rs>, <rs type="person">Jiajun Wu</rs>, and the anonymous reviewers for valuable feedback. We thank <rs type="person">Liam Brummit</rs>, <rs type="person">Kevin Kwok</rs>, and <rs type="person">Guillermo Webster</rs> for help with matter-js. This work was supported <rs type="institution">MIT</rs>'s SuperUROP and UROP programs, and by the <rs type="funder">Center for Minds, Brains and Machines under NSF</rs> <rs type="grantName">STC award</rs> <rs type="grantNumber">CCF-1231216</rs> and an <rs type="funder">ONR</rs> grant <rs type="grantNumber">N00014-16-1-2007</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_82mFZ7B">
+					<idno type="grant-number">CCF-1231216</idno>
+					<orgName type="grant-name">STC award</orgName>
+				</org>
+				<org type="funding" xml:id="_WDx29AT">
+					<idno type="grant-number">N00014-16-1-2007</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Structure and interpretation of computer programs</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Abelson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">J</forename><surname>Sussman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sussman</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1996">1996</date>
+			<pubPlace>Justin Kelly</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">P</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Malik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1606.07419</idno>
+		<title level="m">Learning to poke by poking: Experiential learning of intuitive physics</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Social lstm: Human trajectory prediction in crowded spaces</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Alahi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Goel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Ramanathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Robicquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fei-Fei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Cognitive psychology and its implications</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">R</forename><surname>Anderson</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1990">1990</date>
+			<publisher>WH Freeman/Times Books/Henry Holt &amp; Co</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Learning to compose neural networks for question answering</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Andreas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rohrbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Darrell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Klein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of NAACL-HLT</title>
+		<meeting>NAACL-HLT</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="1545" to="1554" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Humans predict liquid dynamics using probabilistic simulation</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Bates</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Yildirim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">W</forename><surname>Battaglia</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Interaction networks for learning about objects, relations and physics</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Battaglia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pascanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jimenez Rezende</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Koray</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Simulation as an engine of physical scene understanding</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">W</forename><surname>Battaglia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Hamrick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the National Academy of Sciences</title>
+		<imprint>
+			<biblScope unit="volume">110</biblScope>
+			<biblScope unit="issue">45</biblScope>
+			<biblScope unit="page" from="18327" to="18332" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Physics-based visual understanding</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brand</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computer Vision and Image Understanding</title>
+		<imprint>
+			<biblScope unit="volume">65</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="192" to="205" />
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">L</forename><surname>Brummitt</surname></persName>
+		</author>
+		<ptr target="http://brm.io/matter-js" />
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Infogan: Interpretable representation learning by information maximizing generative adversarial nets</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Houthooft</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="2172" to="2180" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Torch7: A matlab-like environment for machine learning</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Collobert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Farabet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">BigLearn, NIPS Workshop, number EPFL-CONF-192376</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Unsupervised learning by program synthesis</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ellis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tenenbaum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="973" to="981" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Eslami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Heess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Weber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tassa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">E</forename><surname>Hinton</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1603.08575</idno>
+		<title level="m">Attend, infer, repeat: Fast scene understanding with generative models</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Unsupervised learning for physical interaction through video prediction</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Goodfellow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1605.07157</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Intuitive physics</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Fragkiadaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Malik</surname></persName>
+		</author>
+		<ptr target="https://sites.google.com/site/intuitivephysicsnips15/" />
+		<imprint>
+			<date type="published" when="2015">2015. 2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<author>
+			<persName><forename type="first">K</forename><surname>Fragkiadaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Malik</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1511.07404</idno>
+		<title level="m">Learning visual predictive models of physics for playing billiards</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Terpret: A probabilistic programming language for program induction</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">L</forename><surname>Gaunt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brockschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kohli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Taylor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Tarlow</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1608.04428</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Noisy newtons: Unifying process and dependency accounts of causal attribution</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Gerstenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goodman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">A</forename><surname>Lagnado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<publisher>Citeseer</publisher>
+		</imprint>
+	</monogr>
+	<note>In In proceedings of the 34th</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Probabilistic models of cognition</title>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">D</forename><surname>Goodman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<ptr target="http://probmods.org" />
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Neuroanimator: Fast neural network emulation and control of physics-based models</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Grzeszczuk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Terzopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Hinton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 25th annual conference on Computer graphics and interactive techniques</title>
+		<meeting>the 25th annual conference on Computer graphics and interactive techniques</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="1998">1998</date>
+			<biblScope unit="page" from="9" to="20" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hamrick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Battaglia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<title level="m">Internal physics models guide probabilistic judgments about object dynamics</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Transforming auto-encoders</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">E</forename><surname>Hinton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Krizhevsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">D</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Artificial Neural Networks and Machine Learning-ICANN 2011</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="44" to="51" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Long short-term memory</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hochreiter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schmidhuber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural computation</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="1735" to="1780" />
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Structural-rnn: Deep learning on spatio-temporal graphs</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">R</forename><surname>Zamir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Savarese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Saxena</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="5308" to="5317" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">D</forename><surname>Kulkarni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">K</forename><surname>Mansinghka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kohli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1407.1339</idno>
+		<title level="m">Inverse graphics with probabilistic cad models</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Picture: A probabilistic programming language for scene perception</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">D</forename><surname>Kulkarni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kohli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Mansinghka</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="4390" to="4399" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Deep convolutional inverse graphics network</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">D</forename><surname>Kulkarni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">F</forename><surname>Whitney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kohli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tenenbaum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="2530" to="2538" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Human-level concept learning through probabilistic program induction</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">M</forename><surname>Lake</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">350</biblScope>
+			<biblScope unit="issue">6266</biblScope>
+			<biblScope unit="page" from="1332" to="1338" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Building machines that learn and think like people</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">M</forename><surname>Lake</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">D</forename><surname>Ullman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Gershman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1604.00289</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">N</forename><surname>Léonard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Waghmare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1511.07889</idno>
+		<title level="m">Recurrent library for torch</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Learning physical intuition of block towers by example</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gross</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fergus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Malik</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1603.01312</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">To fall or not to fall: A visual approach to physical stability prediction</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Azimi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Leonardis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fritz</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1604.00066</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Tarlow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brockschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zemel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1511.05493</idno>
+		<title level="m">Gated graph sequence neural networks</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Newtonian image understanding: Unfolding the dynamics of objects in static images</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Bagherinezhad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rastegari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Farhadi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1511.04048</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mottaghi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rastegari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Farhadi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1603.05600</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>what happens if...&quot; learning to predict the effect of forces in images</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Dynamics of target selection in multiple object tracking (mot)</title>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">W</forename><surname>Pylyshyn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Annan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Spatial vision</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="485" to="504" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">S</forename><surname>Reed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>De Freitas</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1511.06279</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Neural programmer-interpreters. arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">The graph neural network model</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Scarselli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gori</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Tsoi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hagenbuchner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Monfardini</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Neural Networks</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="61" to="80" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Sources of uncertainty in intuitive physics</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Vul</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Topics in cognitive science</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="185" to="199" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Dynamic pooling and unfolding recursive autoencoders for paraphrase detection</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Socher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">H</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pennington</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Y</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Program synthesis by sketching</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<publisher>ProQuest</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Principles of object perception</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">S</forename><surname>Spelke</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Cognitive science</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="29" to="56" />
+			<date type="published" when="1990">1990</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Unsupervised learning of video representations using lstms</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Mansimov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">The recurrent temporal restricted boltzmann machine</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">E</forename><surname>Hinton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">W</forename><surname>Taylor</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="1601" to="1608" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Lecture 6.5-RmsProp: Divide the gradient by a running average of its recent magnitude. COURSERA: Neural Networks for Machine Learning</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Tieleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Hinton</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Learning physics from dynamical scenes</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ullman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Stuhlmüller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goodman</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<monogr>
+		<title level="m" type="main">Understanding visual concepts with continuation learning</title>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">F</forename><surname>Whitney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kulkarni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1602.06822</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Galileo: Perceiving physical object properties by integrating a physics engine with deep learning</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Yildirim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">J</forename><surname>Lim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Freeman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tenenbaum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="127" to="135" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Learning physical object properties from unlabeled videos</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">J</forename><surname>Lim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">T</forename><surname>Freeman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">British Machine Vision Conference</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="volume">101</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

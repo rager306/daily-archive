@@ -1,0 +1,1023 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Modular Multitask Reinforcement Learning with Policy Sketches</title>
+				<funder ref="#_QFXt2TT #_eJX6T6d">
+					<orgName type="full">unknown</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Jacob</forename><surname>Andreas</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Dan</forename><surname>Klein</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+						</author>
+						<title level="a" type="main">Modular Multitask Reinforcement Learning with Policy Sketches</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">C774DDBF438F275830A838867CAA538D</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-13T10:30+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We describe a framework for multitask deep reinforcement learning guided by policy sketches. Sketches annotate tasks with sequences of named subtasks, providing information about high-level structural relationships among tasks but not how to implement them-specifically not providing the detailed guidance used by much previous work on learning policy abstractions for RL (e.g. intermediate rewards, subtask completion signals, or intrinsic motivations). To learn from sketches, we present a model that associates every subtask with a modular subpolicy, and jointly maximizes reward over full task-specific policies by tying parameters across shared subpolicies. Optimization is accomplished via a decoupled actor-critic training objective that facilitates learning common behaviors from multiple dissimilar reward functions. We evaluate the effectiveness of our approach in three environments featuring both discrete and continuous control, and with sparse rewards that can be obtained only after completing a number of high-level subgoals. Experiments show that using our approach to learn policies guided by sketches gives better performance than existing techniques for learning task-specific or shared policies, while naturally inducing a library of interpretable primitive behaviors that can be recombined to rapidly adapt to new tasks.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>This paper describes a framework for learning composable deep subpolicies in a multitask setting, guided only by abstract sketches of high-level behavior. General reinforcement learning algorithms allow agents to solve tasks in complex environments. But tasks featuring extremely  The figure shows simplified versions of two tasks (make planks and make sticks, each associated with its own policy (Π1 and Π2 respectively). These policies share an initial high-level action b1: both require the agent to get wood before taking it to an appropriate crafting station. Even without prior information about how the associated behavior π1 should be implemented, knowing that the agent should initially follow the same subpolicy in both tasks is enough to learn a reusable representation of their shared structure.</p><p>delayed rewards or other long-term structure are often difficult to solve with flat, monolithic policies, and a long line of prior work has studied methods for learning hierarchical policy representations <ref type="bibr" target="#b30">(Sutton et al., 1999;</ref><ref type="bibr" target="#b11">Dietterich, 2000;</ref><ref type="bibr" target="#b16">Konidaris &amp; Barto, 2007;</ref><ref type="bibr" target="#b13">Hauser et al., 2008)</ref>. While unsupervised discovery of these hierarchies is possible <ref type="bibr" target="#b9">(Daniel et al., 2012;</ref><ref type="bibr" target="#b4">Bacon &amp; Precup, 2015)</ref>, practical approaches often require detailed supervision in the form of explicitly specified high-level actions, subgoals, or behavioral primitives <ref type="bibr" target="#b24">(Precup, 2000)</ref>. These depend on state representations simple or structured enough that suitable reward signals can be effectively engineered by hand.</p><p>But is such fine-grained supervision actually necessary to achieve the full benefits of hierarchy? Specifically, is it necessary to explicitly ground high-level actions into the representation of the environment? Or is it sufficient to simply inform the learner about the abstract structure of policies, without ever specifying how high-level behaviors should make use of primitive percepts or actions?</p><p>To answer these questions, we explore a multitask reinforcement learning setting where the learner is pre-arXiv:1611.01796v2 <ref type="bibr">[cs.</ref>LG] 17 Jun 2017 sented with policy sketches. Policy sketches are short, ungrounded, symbolic representations of a task that describe its component parts, as illustrated in Figure <ref type="figure" target="#fig_1">1</ref>. While symbols might be shared across tasks (get wood appears in sketches for both the make planks and make sticks tasks), the learner is told nothing about what these symbols mean, in terms of either observations or intermediate rewards.</p><p>We present an agent architecture that learns from policy sketches by associating each high-level action with a parameterization of a low-level subpolicy, and jointly optimizes over concatenated task-specific policies by tying parameters across shared subpolicies. We find that this architecture can use the high-level guidance provided by sketches, without any grounding or concrete definition, to dramatically accelerate learning of complex multi-stage behaviors. Our experiments indicate that many of the benefits to learning that come from highly detailed low-level supervision (e.g. from subgoal rewards) can also be obtained from fairly coarse high-level supervision (i.e. from policy sketches). Crucially, sketches are much easier to produce: they require no modifications to the environment dynamics or reward function, and can be easily provided by nonexperts. This makes it possible to extend the benefits of hierarchical RL to challenging environments where it may not be possible to specify by hand the details of relevant subtasks. We show that our approach substantially outperforms purely unsupervised methods that do not provide the learner with any task-specific guidance about how hierarchies should be deployed, and further that the specific use of sketches to parameterize modular subpolicies makes better use of sketches than conditioning on them directly.</p><p>The present work may be viewed as an extension of recent approaches for learning compositional deep architectures from structured program descriptors <ref type="bibr" target="#b2">(Andreas et al., 2016;</ref><ref type="bibr" target="#b25">Reed &amp; de Freitas, 2016)</ref>. Here we focus on learning in interactive environments. This extension presents a variety of technical challenges, requiring analogues of these methods that can be trained from sparse, non-differentiable reward signals without demonstrations of desired system behavior.</p><p>Our contributions are:</p><p>• A general paradigm for multitask, hierarchical, deep reinforcement learning guided by abstract sketches of task-specific policies.</p><p>• A concrete recipe for learning from these sketches, built on a general family of modular deep policy representations and a multitask actor-critic training objective.</p><p>The modular structure of our approach, which associates every high-level action symbol with a discrete subpolicy, naturally induces a library of interpretable policy fragments that are easily recombined. This makes it possible to evaluate our approach under a variety of different data conditions: (1) learning the full collection of tasks jointly via reinforcement, (2) in a zero-shot setting where a policy sketch is available for a held-out task, and (3) in a adaptation setting, where sketches are hidden and the agent must learn to adapt a pretrained policy to reuse high-level actions in a new task. In all cases, our approach substantially outperforms previous approaches based on explicit decomposition of the Q function along subtasks <ref type="bibr" target="#b23">(Parr &amp; Russell, 1998;</ref><ref type="bibr" target="#b34">Vogel &amp; Jurafsky, 2010)</ref>, unsupervised option discovery <ref type="bibr" target="#b4">(Bacon &amp; Precup, 2015)</ref>, and several standard policy gradient baselines.</p><p>We consider three families of tasks: a 2-D Minecraftinspired crafting game (Figure <ref type="figure" target="#fig_2">3a</ref>), in which the agent must acquire particular resources by finding raw ingredients, combining them together in the proper order, and in some cases building intermediate tools that enable the agent to alter the environment itself; a 2-D maze navigation task that requires the agent to collect keys and open doors, and a 3-D locomotion task (Figure <ref type="figure" target="#fig_2">3b</ref>) in which a quadrupedal robot must actuate its joints to traverse a narrow winding cliff.</p><p>In all tasks, the agent receives a reward only after the final goal is accomplished. For the most challenging tasks, involving sequences of four or five high-level actions, a taskspecific agent initially following a random policy essentially never discovers the reward signal, so these tasks cannot be solved without considering their hierarchical structure. We have released code at <ref type="url" target="http://github.com/jacobandreas/psketch">http://github.com/   jacobandreas/psketch</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Related Work</head><p>The agent representation we describe in this paper belongs to the broader family of hierarchical reinforcement learners. As detailed in Section 3, our approach may be viewed as an instantiation of the options framework first described by <ref type="bibr" target="#b30">Sutton et al. (1999)</ref>. A large body of work describes techniques for learning options and related abstract actions, in both single-and multitask settings. Most techniques for learning options rely on intermediate supervisory signals, e.g. to encourage exploration <ref type="bibr" target="#b15">(Kearns &amp; Singh, 2002)</ref> or completion of pre-defined subtasks <ref type="bibr" target="#b18">(Kulkarni et al., 2016</ref>). An alternative family of approaches employs post-hoc analysis of demonstrations or pretrained policies to extract reusable sub-components <ref type="bibr" target="#b29">(Stolle &amp; Precup, 2002;</ref><ref type="bibr" target="#b17">Konidaris et al., 2011;</ref><ref type="bibr" target="#b22">Niekum et al., 2015)</ref>. Techniques for learning options with less guidance than the present work include <ref type="bibr" target="#b4">Bacon &amp; Precup (2015)</ref> and <ref type="bibr" target="#b33">Vezhnevets et al. (2016)</ref>, and other general hierarchical policy learners include <ref type="bibr" target="#b9">Daniel et al. (2012)</ref>, <ref type="bibr" target="#b5">Bakker &amp; Schmidhuber (2004)</ref> and <ref type="bibr" target="#b20">Menache et al. (2002)</ref>. We will see that the minimal supervision provided by policy sketches re-sults in (sometimes dramatic) improvements over fully unsupervised approaches, while being substantially less onerous for humans to provide compared to the grounded supervision (such as explicit subgoals or feature abstraction hierarchies) used in previous work.</p><p>Once a collection of high-level actions exists, agents are faced with the problem of learning meta-level (typically semi-Markov) policies that invoke appropriate high-level actions in sequence <ref type="bibr" target="#b24">(Precup, 2000)</ref>. The learning problem we describe in this paper is in some sense the direct dual to the problem of learning these meta-level policies: there, the agent begins with an inventory of complex primitives and must learn to model their behavior and select among them; here we begin knowing the names of appropriate high-level actions but nothing about how they are implemented, and must infer implementations (but not, initially, abstract plans) from context. Our model can be combined with these approaches to support a "mixed" supervision condition where sketches are available for some tasks but not others (Section 4.5).</p><p>Another closely related line of work is the Hierarchical Abstract Machines (HAM) framework introduced by <ref type="bibr" target="#b23">Parr &amp; Russell (1998)</ref>. Like our approach, HAMs begin with a representation of a high-level policy as an automaton (or a more general computer program; <ref type="bibr" target="#b0">Andre &amp; Russell, 2001;</ref><ref type="bibr" target="#b19">Marthi et al., 2004)</ref> and use reinforcement learning to fill in low-level details. Because these approaches attempt to learn a single representation of the Q function for all subtasks and contexts, they require extremely strong formal assumptions about the form of the reward function and state representation <ref type="bibr" target="#b1">(Andre &amp; Russell, 2002)</ref> that the present work avoids by decoupling the policy representation from the value function. They perform less effectively when applied to arbitrary state representations where these assumptions do not hold (Section 4.3). We are additionally unaware of past work showing that HAM automata can be automatically inferred for new tasks given a pre-trained model, while here we show that it is easy to solve the corresponding problem for sketch followers (Section 4.5).</p><p>Our approach is also inspired by a number of recent efforts toward compositional reasoning and interaction with structured deep models. Such models have been previously used for tasks involving question answering <ref type="bibr" target="#b14">(Iyyer et al., 2014;</ref><ref type="bibr" target="#b2">Andreas et al., 2016)</ref> and relational reasoning <ref type="bibr" target="#b28">(Socher et al., 2012)</ref>, and more recently for multi-task, multi-robot transfer problems <ref type="bibr" target="#b10">(Devin et al., 2016)</ref>. In the present work-as in existing approaches employing dynamically assembled modular networks-task-specific training signals are propagated through a collection of composed discrete structures with tied weights. Here the composed structures specify time-varying policies rather than feedforward computations, and their parameters must be learned via interaction rather than direct supervision. Another closely related family of models includes neural programmers <ref type="bibr" target="#b21">(Neelakantan et al., 2015)</ref> and programmer-interpreters <ref type="bibr" target="#b25">(Reed &amp; de Freitas, 2016)</ref>, which generate discrete computational structures but require supervision in the form of output actions or full execution traces.</p><p>We view the problem of learning from policy sketches as complementary to the instruction following problem studied in the natural language processing literature. Existing work on instruction following focuses on mapping from natural language strings to symbolic action sequences that are then executed by a hard-coded interpreter <ref type="bibr" target="#b7">(Branavan et al., 2009;</ref><ref type="bibr" target="#b8">Chen &amp; Mooney, 2011;</ref><ref type="bibr" target="#b3">Artzi &amp; Zettlemoyer, 2013;</ref><ref type="bibr" target="#b31">Tellex et al., 2011)</ref>. Here, by contrast, we focus on learning to execute complex actions given symbolic representations as a starting point. Instruction following models may be viewed as joint policies over instructions and environment observations (so their behavior is not defined in the absence of instructions), while the model described in this paper naturally supports adaptation to tasks where no sketches are available. We expect that future work might combine the two lines of research, bootstrapping policy learning directly from natural language hints rather than the semi-structured sketches used here.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Learning Modular Policies from Sketches</head><p>We consider a multitask reinforcement learning problem arising from a family of infinite-horizon discounted Markov decision processes in a shared environment. This environment is specified by a tuple (S, A, P, γ), with S a set of states, A a set of low-level actions, P : S × A × S → R a transition probability distribution, and γ a discount factor. Each task τ ∈ T is then specified by a pair (R τ , ρ τ ), with R τ : S → R a task-specific reward function and ρ τ : S → R an initial distribution over states. For a fixed sequence {(s i , a i )} of states and actions obtained from a rollout of a given policy, we will denote the empirical return starting in state s i as</p><formula xml:id="formula_0">q i := ∞ j=i+1 γ j-i-1 R(s j ).</formula><p>In addition to the components of a standard multitask RL problem, we assume that tasks are annotated with sketches K τ , each consisting of a sequence (b τ 1 , b τ 2 , . . .) of high-level symbolic labels drawn from a fixed vocabulary B.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Model</head><p>We exploit the structural information provided by sketches by constructing for each symbol b a corresponding subpolicy π b . By sharing each subpolicy across all tasks annotated with the corresponding symbol, our approach naturally learns the shared abstraction for the corresponding subtask, without requiring any information about the grounding of that task to be explicitly specified by annotation.</p><p>Algorithm 1 TRAIN-STEP(Π, curriculum) 1: D ← ∅ 2: while |D| &lt; D do 3: // sample task τ from curriculum (Section 3.3) 4: τ ∼ curriculum(•) 5:</p><p>// do rollout 6:</p><formula xml:id="formula_1">d = {(s i , a i , (b i = K τ,i ), q i , τ ), . . .} ∼ Π τ 7: D ← D ∪ d 8: // update parameters 9: for b ∈ B, τ ∈ T do 10: d = {(s i , a i , b , q i , τ ) ∈ D : b = b, τ = τ } 11: // update subpolicy 12: θ b ← θ b + α D d ∇ log π b (a i |s i ) q i -c τ (s i ) 13: // update critic 14: η τ ← η τ + β D d ∇c τ (s i ) q i -c τ (s i )</formula><p>At each timestep, a subpolicy may select either a low-level action a ∈ A or a special STOP action. We denote the augmented state space A + := A ∪ {STOP}. At a high level, this framework is agnostic to the implementation of subpolicies: any function that takes a representation of the current state onto a distribution over A + will do.</p><p>In this paper, we focus on the case where each π b is represented as a neural network. 1 These subpolicies may be viewed as options of the kind described by <ref type="bibr" target="#b30">Sutton et al. (1999)</ref>, with the key distinction that they have no initiation semantics, but are instead invokable everywhere, and have no explicit representation as a function from an initial state to a distribution over final states (instead implicitly using the STOP action to terminate).</p><p>Given a fixed sketch (b 1 , b 2 , . . . ), a task-specific policy Π τ is formed by concatenating its associated subpolicies in sequence. In particular, the high-level policy maintains a subpolicy index i (initially 0), and executes actions from π bi until the STOP symbol is emitted, at which point control is passed to π bi+1 . We may thus think of Π τ as inducing a Markov chain over the state space S × B, with transitions:</p><formula xml:id="formula_2">(s, b i ) → (s , b i ) with pr. a∈A π bi (a|s) • P (s |s, a) → (s, b i+1 ) with pr. π bi (STOP|s)</formula><p>Note that Π τ is semi-Markov with respect to projection of the augmented state space S × B onto the underlying state space S. We denote the complete family of task-specific policies Π := τ {Π τ }, and let each π b be an arbitrary function of the current environment state parameterized by some weight vector θ b . The learning problem is to optimize 1 For ease of presentation, this section assumes that these subpolicy networks are independently parameterized. As described in Section 4.2, it is also possible to share parameters between subpolicies, and introduce discrete subtask structure by way of an embedding of each symbol b.</p><p>Algorithm 2 TRAIN-LOOP() 1: // initialize subpolicies randomly 2: Π = INIT() 3: ℓ max ← 1 4: loop 5: r min ← -∞ 6: // initialize ℓ max -step curriculum uniformly 7: T = {τ ∈ T : |K τ | ≤ ℓ max } 8: curriculum(•) = Unif(T ) 9: while r min &lt; r good do 10: // update parameters (Algorithm 1) 11: TRAIN-STEP(Π, curriculum) 12:</p><formula xml:id="formula_3">curriculum(τ ) ∝ 1[τ ∈ T ](1 -Êr τ ) ∀τ ∈ T 13: r min ← min τ ∈T Êr τ 14: ℓ max ← ℓ max + 1 over all θ b to maximize expected discounted reward J(Π) := τ J(Π τ ) := τ E si∼Πτ i γ i R τ (s i )</formula><p>across all tasks τ ∈ T .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Policy Optimization</head><p>Here that optimization is accomplished via a simple decoupled actor-critic method. In a standard policy gradient approach, with a single policy π with parameters θ, we compute gradient steps of the form <ref type="bibr" target="#b35">(Williams, 1992)</ref>:</p><formula xml:id="formula_4">∇ θ J(π) = i ∇ θ log π(a i |s i ) q i -c(s i ) , (<label>1</label></formula><formula xml:id="formula_5">)</formula><p>where the baseline or "critic" c can be chosen independently of the future without introducing bias into the gradient. Recalling our previous definition of q i as the empirical return starting from s i , this form of the gradient corresponds to a generalized advantage estimator <ref type="bibr">(Schulman et al., 2015a)</ref> with λ = 1. Here c achieves close to the optimal variance <ref type="bibr" target="#b12">(Greensmith et al., 2004)</ref> when it is set</p><formula xml:id="formula_6">s 4 s 5 s 6 s 7 a 4 a 5 a 6 stop a 1 a 2 a 3 stop s 1 s 2 s 3 s 4 π1 π2 b 2 b 1 Figure 2: Model overview.</formula><p>Each subpolicy π is uniquely associated with a symbol b implemented as a neural network that maps from a state si to distributions over A + , and chooses an action ai by sampling from this distribution. Whenever the STOP action is sampled, control advances to the next subpolicy in the sketch.</p><p>exactly equal to the state-value function V π (s i ) = E π q i for the target policy π starting in state s i .</p><p>The situation becomes slightly more complicated when generalizing to modular policies built by sequencing subpolicies. In this case, we will have one subpolicy per symbol but one critic per task. This is because subpolicies π b might participate in a number of composed policies Π τ , each associated with its own reward function R τ . Thus individual subpolicies are not uniquely identified with value functions, and the aforementioned subpolicy-specific statevalue estimator is no longer well-defined. We extend the actor-critic method to incorporate the decoupling of policies from value functions by allowing the critic to vary persample (that is, per-task-and-timestep) depending on the reward function with which the sample is associated. Noting that ∇ θ b J(Π) = t:b∈Kτ ∇ θ b J(Π τ ), i.e. the sum of gradients of expected rewards across all tasks in which π b participates, we have:</p><formula xml:id="formula_7">∇ θ J(Π) = τ ∇ θ J(Π τ ) = τ i ∇ θ b log π b (a τ i |s τ i ) q i -c τ (s τ i ) , (<label>2</label></formula><formula xml:id="formula_8">)</formula><p>where each state-action pair (s τ i , a τ i ) was selected by the subpolicy π b in the context of the task τ .</p><p>Now minimization of the gradient variance requires that each c τ actually depend on the task identity. (This follows immediately by applying the corresponding argument in <ref type="bibr" target="#b12">Greensmith et al. (2004)</ref> individually to each term in the sum over τ in Equation 2.) Because the value function is itself unknown, an approximation must be estimated from data. Here we allow these c τ to be implemented with an arbitrary function approximator with parameters η τ . This is trained to minimize a squared error criterion, with gradients given by</p><formula xml:id="formula_9">∇ ητ - 1 2 i (q i -c τ (s i )) 2 = i ∇ ητ c τ (s i ) q i -c τ (s i ) . (3)</formula><p>Alternative forms of the advantage estimator (e.g. the TD residual R τ (s i )+γV τ (s i+1 )-V τ (s i ) or any other member of the generalized advantage estimator family) can be easily substituted by simply maintaining one such estimator per task. Experiments (Section 4.4) show that conditioning on both the state and the task identity results in noticeable performance improvements, suggesting that the variance reduction provided by this objective is important for efficient joint learning of modular policies.</p><p>The complete procedure for computing a single gradient step is given in Algorithm 1. (The outer training loop over these steps, which is driven by a curriculum learning procedure, is specified in Algorithm 2.) This is an on-policy algorithm. In each step, the agent samples tasks from a task distribution provided by a curriculum (described in the following subsection). The current family of policies Π is used to perform rollouts in each sampled task, accumulating the resulting tuples of (states, low-level actions, highlevel symbols, rewards, and task identities) into a dataset D. Once D reaches a maximum size D, it is used to compute gradients w.r.t. both policy and critic parameters, and the parameter vectors are updated accordingly. The step sizes α and β in Algorithm 1 can be chosen adaptively using any first-order method.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.">Curriculum Learning</head><p>For complex tasks, like the one depicted in Figure <ref type="figure" target="#fig_2">3b</ref>, it is difficult for the agent to discover any states with positive reward until many subpolicy behaviors have already been learned. It is thus a better use of the learner's time to focus on "easy" tasks, where many rollouts will result in high reward from which appropriate subpolicy behavior can be inferred. But there is a fundamental tradeoff involved here: if the learner spends too much time on easy tasks before being made aware of the existence of harder ones, it may overfit and learn subpolicies that no longer generalize or exhibit the desired structural properties.</p><p>To avoid both of these problems, we use a curriculum learning scheme <ref type="bibr" target="#b6">(Bengio et al., 2009</ref>) that allows the model to smoothly scale up from easy tasks to more difficult ones while avoiding overfitting. Initially the model is presented with tasks associated with short sketches. Once average reward on all these tasks reaches a certain threshold, the length limit is incremented. We assume that rewards across tasks are normalized with maximum achievable reward 0 &lt; q i &lt; 1. Let Êr τ denote the empirical estimate of the expected reward for the current policy on task τ . Then at each timestep, tasks are sampled in proportion to 1-Êr τ , which by assumption must be positive.</p><p>Intuitively, the tasks that provide the strongest learning signal are those in which (1) the agent does not on average achieve reward close to the upper bound, but (2) many episodes result in high reward. The expected reward component of the curriculum addresses condition (1) by ensuring that time is not spent on nearly solved tasks, while the length bound component of the curriculum addresses condition (2) by ensuring that tasks are not attempted until high-reward episodes are likely to be encountered. Experiments show that both components of this curriculum learning scheme improve the rate at which the model converges to a good policy (Section 4.4).</p><p>The complete curriculum-based training procedure is specified in Algorithm 2. Initially, the maximum sketch length ℓ max is set to 1, and the curriculum initialized to sample length-1 tasks uniformly. (Neither of the environments we consider in this paper feature any length-1 tasks; in this case, observe that Algorithm 2 will simply advance to length-2 tasks without any parameter updates.) For each setting of ℓ max , the algorithm uses the current collection of task policies Π to compute and apply the gradient step described in Algorithm 1. The rollouts obtained from the call to TRAIN-STEP can also be used to compute reward estimates Êr τ ; these estimates determine a new task distribution for the curriculum. The inner loop is repeated until the reward threshold r good is exceeded, at which point ℓ max is incremented and the process repeated over a (nowexpanded) collection of tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Experiments</head><p>We evaluate the performance of our approach in three environments: a crafting environment, a maze navigation environment, and a cliff traversal environment. These environments involve various kinds of challenging low-level control: agents must learn to avoid obstacles, interact with various kinds of objects, and relate fine-grained joint activation to high-level locomotion goals. They also feature hierarchical structure: most rewards are provided only after the agent has completed two to five high-level actions in the appropriate sequence, without any intermediate goals to indicate progress towards completion.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Implementation</head><p>In all our experiments, we implement each subpolicy as a feedforward neural network with ReLU nonlinearities and a hidden layer with 128 hidden units, and each critic as a linear function of the current state. Each subpolicy network receives as input a set of features describing the current state of the environment, and outputs a distribution over actions. The agent acts at every timestep by sampling from this distribution. The gradient steps given in lines 8 and 9 of Algorithm 1 are implemented using RMSPROP (Tieleman, 2012) with a step size of 0.001 and gradient clipping to a unit norm. We take the batch size D in Algorithm 1 to be 2000, and set γ = 0.9 in both environments. For curriculum learning, the improvement threshold r good is 0.8.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Environments</head><p>The crafting environment (Figure <ref type="figure" target="#fig_2">3a</ref>) is inspired by the popular game Minecraft, but is implemented in a discrete 2-D world. The agent may interact with objects in the world by facing them and executing a special USE action.</p><p>Interacting with raw materials initially scattered around the environment causes them to be added to an inventory. Interacting with different crafting stations causes objects in the agent's inventory to be combined or transformed. Each task in this game corresponds to some crafted object the agent must produce; the most complicated goals require the agent to also craft intermediate ingredients, and in some cases build tools (like a pickaxe and a bridge) to reach ingredients located in initially inaccessible regions of the environment.</p><p>The maze environment (not pictured) corresponds closely to the the "light world" described by <ref type="bibr" target="#b16">Konidaris &amp; Barto (2007)</ref>. The agent is placed in a discrete world consisting of a series of rooms, some of which are connected by doors. Some doors require that the agent first pick up a key to open them. For our experiments, each task corresponds to a goal room (always at the same position relative to the agent's starting position) that the agent must reach by navigating through a sequence of intermediate rooms.</p><p>The agent has one sensor on each side of its body, which reports the distance to keys, closed doors, and open doors in the corresponding direction. Sketches specify a particular sequence of directions for the agent to traverse between rooms to reach the goal. The sketch always corresponds to a viable traversal from the start to the goal position, but other (possibly shorter) traversals may also exist.</p><p>The cliff environment (Figure <ref type="figure" target="#fig_2">3b</ref>) is intended to demonstrate the applicability of our approach to problems involving high-dimensional continuous control. In this environment, a quadrupedal robot <ref type="bibr" target="#b27">(Schulman et al., 2015b</ref>) is placed on a variable-length winding path, and must navi- Modular is the approach described in this paper, while Independent learns a separate policy for each task, Joint learns a shared policy that conditions on the task identity, Q automaton learns a single network to map from states and action symbols to Q values, and Opt-Crit is an unsupervised option learner. Performance for the best iteration of the (off-policy) Q automaton is plotted. Performance is shown in (a) the crafting environment, (b) the maze environment, and (c) the cliff environment. The modular approach is eventually able to achieve high reward on all tasks, while the baseline models perform considerably worse on average.</p><p>gate to the end without falling off. This task is designed to provide a substantially more challenging RL problem, due to the fact that the walker must learn the low-level walking skill before it can make any progress, but has simpler hierarchical structure than the crafting environment. The agent receives a small reward for making progress toward the goal, and a large positive reward for reaching the goal square, with a negative reward for falling off the path.</p><p>A listing of tasks and sketches is given in Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Multitask Learning</head><p>The primary experimental question in this paper is whether the extra structure provided by policy sketches alone is enough to enable fast learning of coupled policies across tasks. We aim to explore the differences between the approach described in Section 3 and relevant prior work that performs either unsupervised or weakly supervised multitask learning of hierarchical policy structure. Specifically, we compare our modular to approach to:</p><p>1. Structured hierarchical reinforcement learners:</p><p>(a) the fully unsupervised option-critic algorithm of Bacon &amp; Precup (2015) (b) a Q automaton that attempts to explicitly represent the Q function for each task / subtask combination (essentially a HAM <ref type="bibr" target="#b1">(Andre &amp; Russell, 2002)</ref> with a deep state abstraction function) 2. Alternative ways of incorporating sketch data into standard policy gradient methods:</p><p>(c) learning an independent policy for each task (d) learning a joint policy across all tasks, conditioning directly on both environment features and a representation of the complete sketch</p><p>The joint and independent models performed best when trained with the same curriculum described in Section 3.3, while the option-critic model performed best with a length-weighted curriculum that has access to all tasks from the beginning of training.</p><p>Learning curves for baselines and the modular model are shown in Figure <ref type="figure" target="#fig_3">4</ref>. It can be seen that in all environments, our approach substantially outperforms the baselines: it induces policies with substantially higher average reward and converges more quickly than the policy gradient baselines. It can further be seen in Figure <ref type="figure" target="#fig_3">4c</ref> that after policies have been learned on simple tasks, the model is able to rapidly adapt to more complex ones, even when the longer tasks involve high-level actions not required for any of the short tasks (Appendix A).</p><p>Having demonstrated the overall effectiveness of our approach, our remaining experiments explore (1) the importance of various components of the training procedure, and (2) the learned models' ability to generalize or adapt to held-out tasks. For compactness, we restrict our consideration on the crafting domain, which features a larger and more diverse range of tasks and high-level actions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.">Ablations</head><p>In addition to the overall modular parameter-tying structure induced by our sketches, the key components of our training procedure are the decoupled critic and the curriculum. Our next experiments investigate the extent to which these are necessary for good performance.</p><p>To evaluate the the critic, we consider three ablations: (1) removing the dependence of the model on the environment state, in which case the baseline is a single scalar per task;</p><p>(2) removing the dependence of the model on the task, in which case the baseline is a conventional generalized advantage estimator; and (3) removing both, in which case</p><p>0.0 0.5 1.0 1.5 2.0 2.5 3.0 Episode ×10 6 0.0 0.2 0.4 0.6 0.8 1.0 avg. reward {task, state} {task} {state} {} Critics 0.0 0.5 1.0 1.5 2.0 2.5 3.0 Episode ×10 6 0.0 0.2 0.4 0.6 0.8 1.0 avg. reward {len, wgt} {len} {wgt} {} Curricula (a) (b) 0.0 0.5 1.0 1.5 2.0 2.5 3.0 Episode ×10 6 0.0 0.2 0.4 0.6 0.8 1.0 avg. reward Performance by task (c) Figure 5: Training details in the crafting domain. (a) Critics: lines labeled "task" include a baseline that varies with task identity, while lines labeled "state" include a baseline that varies with state identity. Estimating a baseline that depends on both the representation of the current state and the identity of the current task is better than either alone or a constant baseline. (b) Curricula: lines labeled "len" use a curriculum with iteratively increasing sketch lengths, while lines labeled "wgt" sample tasks in inverse proportion to their current reward. Adjusting the sampling distribution based on both task length and performance return improves convergence. (c) Individual task performance. Colors correspond to task length. Sharp steps in the learning curve correspond to increases of ℓmax in the curriculum.</p><p>the baseline is a single scalar, as in a vanilla policy gradient approach. Results are shown in Figure <ref type="figure">5a</ref>. Introducing both state and task dependence into the baseline leads to faster convergence of the model: the approach with a constant baseline achieves less than half the overall performance of the full critic after 3 million episodes. Introducing task and state dependence independently improve this performance; combining them gives the best result.</p><p>We also investigate two aspects of our curriculum learning scheme: starting with short examples and moving to long ones, and sampling tasks in inverse proportion to their accumulated reward. Experiments are shown in Figure <ref type="figure">5b</ref>. Both components help; prioritization by both length and weight gives the best results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5.">Zero-shot and Adaptation Learning</head><p>In our final experiments, we consider the model's ability to generalize beyond the standard training condition. We first consider two tests of generalization: a zero-shot setting, in which the model is provided a sketch for the new task and must immediately achieve good performance, and a adaptation setting, in which no sketch is provided and the model must learn the form of a suitable sketch via interaction in the new task. We hold out two length-four tasks from the full inventory used in Section 4.3, and train on the remaining tasks. For zero-shot experiments, we simply form the concatenated policy described by the sketches of the held-out tasks, and repeatedly execute this policy (without learning) in order to obtain an estimate of its effectiveness. For adaptation experiments, we consider ordinary RL over high-level actions B rather than low-level actions A, implementing the highlevel learner with the same agent architecture as described in Section 3.1. Note that the Independent and Option-Critic models cannot be applied to the zero-shot evaluation, while the Joint model cannot be applied to the adaptation baseline (because it depends on pre-specified sketch features). Results are shown in Table <ref type="table" target="#tab_0">1</ref>. The held-out tasks are sufficiently challenging that the baselines are unable to obtain more than negligible reward: in particular, the joint model overfits to the training tasks and cannot generalize to new sketches, while the independent model cannot discover enough of a reward signal to learn in the adaptation setting. The modular model does comparatively well: individual subpolicies succeed in novel zero-shot configurations (suggesting that they have in fact discovered the behavior suggested by the semantics of the sketch) and provide a suitable basis for adaptive discovery of new high-level policies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Conclusions</head><p>We have described an approach for multitask learning of deep multitask policies guided by symbolic policy sketches. By associating each symbol appearing in a sketch with a modular neural subpolicy, we have shown that it is possible to build agents that share behavior across tasks in order to achieve success in tasks with sparse and delayed rewards. This process induces an inventory of reusable and interpretable subpolicies which can be employed for zeroshot generalization when further sketches are available, and hierarchical reinforcement learning when they are not. Our work suggests that these sketches, which are easy to produce and require no grounding in the environment, provide an effective scaffold for learning hierarchical policies from minimal supervision.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Tasks and Sketches</head><p>The complete list of tasks, sketches, and symbols is given below. Tasks marked with an asterisk * are held out for the generalization experiments described in Section 4.5, but included in the multitask training experiments in Sections 4.3 and 4.4.</p><p>Goal Sketch Crafting environment make plank get wood use toolshed make stick get wood use workbench make cloth get grass use factory make rope get grass use toolshed make bridge get iron get wood use factory make bed * get wood use toolshed get grass use workbench make axe * get wood use workbench get iron use toolshed make shears get wood use workbench get iron use workbench get gold get iron get wood use factory use bridge get gem get wood use workbench get iron use toolshed use axe Maze environment room 1 left left room 2 left down room 3 right down room 4 up left room 5 up right room 6 up right up room 7 down right up room 8 left left down room 9 right down down room 10 left up right Cliff environment path 0 north path 1 east path 2 south path 3 west path 4 west south path 5 west north north path 6 north east north path 7 west north path 8 east south path 9 north west west path 10 east north east path 11 south east path 12 south west path 13 south south path 14 south south west path 15 east south south path 16 east east path 17 east north path 18 north east path 19 west west path 20 north north path 21 north west path 22 west west south path 23 south east south</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><figDesc>Proceedings of the 34 th International Conference on Machine Learning, Sydney, Australia, PMLR 70, 2017. Copyright 2017 by the author(s).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: Learning from policy sketches. The figure shows simplified versions of two tasks (make planks and make sticks, each associated with its own policy (Π1 and Π2 respectively). These policies share an initial high-level action b1: both require the agent to get wood before taking it to an appropriate crafting station. Even without prior information about how the associated behavior π1 should be implemented, knowing that the agent should initially follow the same subpolicy in both tasks is enough to learn a reusable representation of their shared structure.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: Examples from the crafting and cliff environments used in this paper. An additional maze environment is also investigated. (a) In the crafting environment, an agent seeking to pick up the gold nugget in the top corner must first collect wood (1) and iron (2), use a workbench to turn them into a bridge (3), and use the bridge to cross the water (4). (b) In the cliff environment, the agent must reach a goal position by traversing a winding sequence of tiles without falling off. Control takes place at the level of individual joint angles; high-level behaviors like "move north" must be learned.</figDesc><graphic coords="6,360.40,175.99,91.24,91.24" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: Comparing modular learning from sketches with standard RL baselines. Modular is the approach described in this paper, while Independent learns a separate policy for each task, Joint learns a shared policy that conditions on the task identity, Q automaton learns a single network to map from states and action symbols to Q values, and Opt-Crit is an unsupervised option learner. Performance for the best iteration of the (off-policy) Q automaton is plotted. Performance is shown in (a) the crafting environment, (b) the maze environment, and (c) the cliff environment. The modular approach is eventually able to achieve high reward on all tasks, while the baseline models perform considerably worse on average.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Accuracy and generalization of learned models in the crafting domain. The table shows the task completion rate for each approach after convergence under various training conditions. Multitask is the multitask training condition described in Section 4.3, while 0-Shot and Adaptation are the generalization experiments described in Section 4.5. Our modular approach consistently achieves the best performance.</figDesc><table><row><cell>Model</cell><cell cols="3">Multitask 0-shot Adaptation</cell></row><row><cell>Joint Independent Option-Critic Modular (ours)</cell><cell>.49 .44 .47 .89</cell><cell>.01 --.77</cell><cell>-.01 .42 .76</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>University of California, Berkeley. Correspondence to: Jacob Andreas &lt;jda@cs.berkeley.edu&gt;.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>JA is supported by a <rs type="grantName">Facebook Graduate Fellowship</rs> and a <rs type="grantName">Berkeley AI / Huawei Fellowship</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_QFXt2TT">
+					<orgName type="grant-name">Facebook Graduate Fellowship</orgName>
+				</org>
+				<org type="funding" xml:id="_eJX6T6d">
+					<orgName type="grant-name">Berkeley AI / Huawei Fellowship</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Programmable reinforcement learning agents</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Andre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stuart</forename><surname>Russell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">State abstraction for programmable reinforcement learning agents</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Andre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stuart</forename><surname>Russell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Meeting of the Association for the Advancement of Artificial Intelligence</title>
+		<meeting>the Meeting of the Association for the Advancement of Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Learning to compose neural networks for question answering</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Andreas</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rohrbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Darrell</forename><surname>Marcus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Annual Meeting of the North American Chapter</title>
+		<meeting>the Annual Meeting of the North American Chapter</meeting>
+		<imprint>
+			<publisher>the Association for Computational Linguistics</publisher>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Weakly supervised learning of semantic parsers for mapping instructions to actions</title>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Artzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="49" to="62" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">The option-critic architecture</title>
+		<author>
+			<persName><forename type="first">Pierre-Luc And</forename><surname>Bacon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doina</forename><surname>Precup</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NIPS Deep Reinforcement Learning Workshop</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Hierarchical reinforcement learning based on subgoal discovery and subpolicy specialization</title>
+		<author>
+			<persName><forename type="first">Bram</forename><surname>Bakker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jürgen</forename><surname>Schmidhuber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the 8-th Conf. on Intelligent Autonomous Systems</title>
+		<meeting>of the 8-th Conf. on Intelligent Autonomous Systems</meeting>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+			<biblScope unit="page" from="438" to="445" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Curriculum learning</title>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Louradour</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jérôme</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Collobert</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ronan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="41" to="48" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Reinforcement learning for mapping instructions to actions</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">R K</forename><surname>Branavan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Harr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><forename type="middle">S</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Regina</forename><surname>Barzilay</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="82" to="90" />
+		</imprint>
+	</monogr>
+	<note>Association for Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Learning to interpret natural language navigation instructions from observations</title>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">L</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raymond</forename><forename type="middle">J</forename><surname>Mooney</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Meeting of the Association for the Advancement of Artificial Intelligence</title>
+		<meeting>the Meeting of the Association for the Advancement of Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="1" to="2" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Hierarchical relative entropy policy search</title>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Daniel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gerhard</forename><surname>Neumann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Peters</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Artificial Intelligence and Statistics</title>
+		<meeting>the International Conference on Artificial Intelligence and Statistics</meeting>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="273" to="281" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Coline</forename><surname>Devin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Abhishek</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Darrell</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Trevor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1609.07088</idno>
+		<title level="m">Learning modular neural network policies for multi-task and multi-robot transfer</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Hierarchical reinforcement learning with the maxq value function decomposition</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">G</forename><surname>Dietterich</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Artif. Intell. Res. (JAIR)</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="page" from="227" to="303" />
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Variance reduction techniques for gradient estimates in reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Greensmith</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bartlett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Peter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Baxter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="page" from="1471" to="1530" />
+			<date type="published" when="2004-11">Nov. 2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Using motion primitives in probabilistic sample-based planning for humanoid robots</title>
+		<author>
+			<persName><forename type="first">Kris</forename><surname>Hauser</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bretl</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Timothy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kensuke</forename><surname>Harada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Claude</forename><surname>Latombe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Algorithmic foundation of robotics</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="507" to="522" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">A neural network for factoid question answering over paragraphs</title>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Iyyer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Boyd-Graber</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jordan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Claudino</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Leonardo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Socher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iii</forename><surname>Daumé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hal</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Near-optimal reinforcement learning in polynomial time</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Kearns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Satinder</forename><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine Learning</title>
+		<imprint>
+			<biblScope unit="volume">49</biblScope>
+			<biblScope unit="issue">2-3</biblScope>
+			<biblScope unit="page" from="209" to="232" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Building portable options: Skill transfer in reinforcement learning</title>
+		<author>
+			<persName><forename type="first">George</forename><surname>Konidaris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">G</forename><surname>Barto</surname></persName>
+		</author>
+		<editor>IJ-CAI</editor>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="895" to="900" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Robot learning from demonstration by constructing skill trees</title>
+		<author>
+			<persName><forename type="first">George</forename><surname>Konidaris</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kuindersma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grupen</forename><surname>Scott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roderic</forename><surname>Barto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The International Journal of Robotics Research</title>
+		<imprint>
+			<biblScope unit="page">0278364911428653</biblScope>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tejas</forename><forename type="middle">D</forename><surname>Kulkarni</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Narasimhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Karthik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ardavan</forename><surname>Saeedi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1604.06057</idno>
+		<title level="m">Hierarchical deep reinforcement learning: Integrating temporal abstraction and intrinsic motivation</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Concurrent hierarchical reinforcement learning</title>
+		<author>
+			<persName><surname>Marthi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bhaskara</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lantham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guestrin</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Russell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stuart</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Meeting of the Association for the Advancement of Artificial Intelligence</title>
+		<meeting>the Meeting of the Association for the Advancement of Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Q-cutdynamic discovery of sub-goals in reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Ishai</forename><surname>Menache</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mannor</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Shie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nahum</forename><surname>Shimkin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European Conference on Machine Learning</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2002">2002</date>
+			<biblScope unit="page" from="295" to="306" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Neural programmer: Inducing latent programs with gradient descent</title>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1511.04834</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Learning grounded finite-state representations from unstructured demonstrations</title>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Niekum</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Osentoski</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sarah</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Konidaris</surname></persName>
+		</author>
+		<author>
+			<persName><surname>George</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chitta</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sachin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Marthi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bhaskara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">G</forename><surname>Barto</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The International Journal of Robotics Research</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="131" to="157" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Reinforcement learning with hierarchies of machines</title>
+		<author>
+			<persName><forename type="first">Ron</forename><surname>Parr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stuart</forename><surname>Russell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="1998">1998</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Temporal abstraction in reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Doina</forename><surname>Precup</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">PhD thesis</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Neural programmerinterpreters</title>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Reed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nando</forename><surname>Freitas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Learning Representations</title>
+		<meeting>the International Conference on Learning Representations</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">High-dimensional continuous control using generalized advantage estimation</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Moritz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Philipp</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jordan</forename><surname>Sergey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename></persName>
+		</author>
+		<idno type="arXiv">arXiv:1506.02438</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Trust region policy optimization</title>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Moritz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Philipp</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jordan</forename><surname>Sergey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2015">2015b</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Semantic compositionality through recursive matrix-vector spaces</title>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Socher</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Huval</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Brody</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Ng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the Conference on Empirical Methods in Natural Language Processing<address><addrLine>Jeju, Korea</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="1201" to="1211" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Learning options in reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Stolle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Doina</forename><surname>Precup</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Symposium on Abstraction, Reformulation, and Approximation</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2002">2002</date>
+			<biblScope unit="page" from="212" to="223" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Between MDPs and semi-MDPs: A framework for temporal abstraction in reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">S</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Precup</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Doina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Satinder</forename><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial intelligence</title>
+		<imprint>
+			<biblScope unit="volume">112</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="181" to="211" />
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Understanding natural language commands for robotic navigation and mobile manipulation</title>
+		<author>
+			<persName><forename type="first">Stefanie</forename><surname>Tellex</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kollar</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Thomas</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Dickerson</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Steven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">R</forename><surname>Walter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashis</forename><surname>Banerjee</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gopal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seth</forename><surname>Teller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the National Conference on Artificial Intelligence</title>
+		<meeting>the National Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Tijmen</forename><surname>Tieleman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rmsprop</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note>unpublished</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Strategic attentive writer for learning macro-actions</title>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Vezhnevets</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mnih</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Volodymyr</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Agapiou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>John</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Osindero</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Simon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Oriol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koray</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1606.04695</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Learning to follow navigational directions</title>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Vogel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Jurafsky</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="806" to="814" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Simple statistical gradient-following algorithms for connectionist reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Ronald</forename><forename type="middle">J</forename><surname>Williams</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine learning</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">3-4</biblScope>
+			<biblScope unit="page" from="229" to="256" />
+			<date type="published" when="1992">1992</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

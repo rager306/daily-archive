@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Beam Search Strategies for Neural Machine Translation</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2017-06-14">14 Jun 2017</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Markus</forename><surname>Freitag</surname></persName>
+							<email>freitagm@us.ibm.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">IBM T.J. Watson Research Center</orgName>
+								<address>
+									<addrLine>1101 Kitchawan Rd</addrLine>
+									<postCode>10598</postCode>
+									<settlement>Yorktown Heights</settlement>
+									<region>NY</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yaser</forename><surname>Al-Onaizan</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">IBM T.J. Watson Research Center</orgName>
+								<address>
+									<addrLine>1101 Kitchawan Rd</addrLine>
+									<postCode>10598</postCode>
+									<settlement>Yorktown Heights</settlement>
+									<region>NY</region>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Beam Search Strategies for Neural Machine Translation</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2017-06-14">14 Jun 2017</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">0BF10492C639AFDDA73B5DDD55B78330</idno>
+					<idno type="arXiv">arXiv:1702.01806v2[cs.CL]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-13T10:24+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The basic concept in Neural Machine Translation (NMT) is to train a large Neural Network that maximizes the translation performance on a given parallel corpus. NMT is then using a simple left-toright beam-search decoder to generate new translations that approximately maximize the trained conditional probability. The current beam search strategy generates the target sentence word by word from left-toright while keeping a fixed amount of active candidates at each time step. First, this simple search is less adaptive as it also expands candidates whose scores are much worse than the current best. Secondly, it does not expand hypotheses if they are not within the best scoring candidates, even if their scores are close to the best one. The latter one can be avoided by increasing the beam size until no performance improvement can be observed. While you can reach better performance, this has the drawback of a slower decoding speed. In this paper, we concentrate on speeding up the decoder by applying a more flexible beam search strategy whose candidate size may vary at each time step depending on the candidate scores. We speed up the original decoder by up to 43% for the two language pairs German→English and Chinese→English without losing any translation quality.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Due to the fact that Neural Machine Translation (NMT) is reaching comparable or even better performance compared to the traditional statistical machine translation (SMT) models <ref type="bibr" target="#b6">(Jean et al., 2015;</ref><ref type="bibr" target="#b8">Luong et al., 2015)</ref>, it has become very popular in the recent years <ref type="bibr" target="#b7">(Kalchbrenner and Blunsom, 2013;</ref><ref type="bibr" target="#b11">Sutskever et al., 2014;</ref><ref type="bibr" target="#b0">Bahdanau et al., 2014)</ref>. With the recent success of NMT, attention has shifted towards making it more practical. One of the challenges is the search strategy for extracting the best translation for a given source sentence. In NMT, new sentences are translated by a simple beam search decoder that finds a translation that approximately maximizes the conditional probability of a trained NMT model. The beam search strategy generates the translation word by word from left-to-right while keeping a fixed number (beam) of active candidates at each time step. By increasing the beam size, the translation performance can increase at the expense of significantly reducing the decoder speed. Typically, there is a saturation point at which the translation quality does not improve any more by further increasing the beam. The motivation of this work is two folded. First, we prune the search graph, thus, speed up the decoding process without losing any translation quality. Secondly, we observed that the best scoring candidates often share the same history and often come from the same partial hypothesis. We limit the amount of candidates coming from the same partial hypothesis to introduce more diversity without reducing the decoding speed by just using a higher beam.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>The original beam search for sequence to sequence models has been introduced and described by <ref type="bibr" target="#b4">(Graves, 2012;</ref><ref type="bibr" target="#b3">Boulanger-Lewandowski et al., 2013)</ref> and by <ref type="bibr" target="#b11">(Sutskever et al., 2014)</ref> for neural machine translation. <ref type="bibr" target="#b5">(Hu et al., 2015;</ref><ref type="bibr" target="#b9">Mi et al., 2016)</ref> improved the beam search with a constraint softmax function which only considered a limited word set of translation candidates to reduce the computation complexity. This has the advantage that they normalize only a small set of candidates and thus improve the decoding speed. <ref type="bibr" target="#b12">(Wu et al., 2016)</ref> only consider tokens that have local scores that are not more than beamsize below the best token during their search. Further, the authors prune all partial hypotheses whose score are beamsize lower than the best final hypothesis (if one has already been generated). In this work, we investigate different absolute and relative pruning schemes which have successfully been applied in statistical machine translation for e.g. phrase table pruning <ref type="bibr" target="#b13">(Zens et al., 2012)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Original Beam Search</head><p>The original beam-search strategy finds a translation that approximately maximizes the conditional probability given by a specific model. It builds the translation from left-to-right and keeps a fixed number (beam) of translation candidates with the highest log-probability at each time step. For each end-of-sequence symbol that is selected among the highest scoring candidates the beam is reduced by one and the translation is stored into a final candidate list. When the beam is zero, it stops the search and picks the translation with the highest log-probability (normalized by the number of target words) out of the final candidate list.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Search Strategies</head><p>In this section, we describe the different strategies we experimented with. In all our extensions, we first reduce the candidate list to the current beam size and apply on top of this one or several of the following pruning schemes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Relative Threshold Pruning.</head><p>The relative threshold pruning method discards those candidates that are far worse than the best active candidate. Given a pruning threshold rp and an active candidate list C, a candidate cand ∈ C is discarded if:</p><p>score(cand) ≤ rp * max c∈C {score(c)} (1) Absolute Threshold Pruning. Instead of taking the relative difference of the scores into account, we just discard those candidates that are worse by a specific threshold than the best active candidate. Given a pruning threshold ap and an active candidate list C, a candidate cand ∈ C is discarded if: score(cand) ≤ max c∈C {score(c)}ap (2) Relative Local Threshold Pruning. In this pruning approach, we only consider the score score w of the last generated word and not the total score which also include the scores of the previously generated words. Given a pruning threshold rpl and an active candidate list C, a candidate cand ∈ C is discarded if: score w (cand) ≤ rpl * max c∈C {score w (c)} (3) Maximum Candidates per Node We observed that at each time step during the decoding process, most of the partial hypotheses share the same predecessor words. To introduce more diversity, we allow only a fixed number of candidates with the same history at each time step. Given a maximum candidate threshold mc and an active candidate list C, a candidate cand ∈ C is discarded if already mc better scoring partial hyps with the same history are in the candidate list.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Experiments</head><p>For the German→English translation task, we train an NMT system based on the WMT 2016 training data <ref type="bibr" target="#b2">(Bojar et al., 2016)</ref> (3.9M parallel sentences). For the Chinese→English experiments, we use an NMT system trained on 11 million sentences from the BOLT project. In all our experiments, we use our in-house attention-based NMT implementation which is similar to <ref type="bibr" target="#b0">(Bahdanau et al., 2014)</ref>. For German→English, we use sub-word units extracted by byte pair encoding <ref type="bibr" target="#b10">(Sennrich et al., 2015)</ref> instead of words which shrinks the vocabulary to 40k sub-word symbols for both source and target. For Chinese→English, we limit our vocabularies to be the top 300K most frequent words for both source and target language. Words not in these vocabularies are converted into an unknown token. During translation, we use the alignments (from the attention mechanism) to replace the unknown tokens either with potential targets (obtained from an IBM Model-1 trained on the parallel data) or with the source word itself (if no target was found) <ref type="bibr" target="#b9">(Mi et al., 2016)</ref>. We use an embedding dimension of 620 and fix the RNN GRU lay- 25.4 25.6 25.8 26 26.2 26.4 26.6 26.8 27 27.2 27.4 0 0.2 0.4 0.6 0.8 1 1 1.5 2 2.5 3 3.5 4 4.5 5 BLEU average fan out per sentence relative pruning, beam size = 5 BLEU average fan out Figure 2: German→English: Different values of relative pruning measured on newstest2014.</p><p>ers to be of 1000 cells each. For the training procedure, we use SGD <ref type="bibr" target="#b1">(Bishop, 1995)</ref> to update model parameters with a mini-batch size of 64. The training data is shuffled after each epoch.</p><p>We measure the decoding speed by two numbers. First, we compare the actual speed relative to the same setup without any pruning. Secondly, we measure the average fan out per time step. For each time step, the fan out is defined as the number of candidates we expand. Fan out has an upper bound of the size of the beam, but can be decreased either due to early stopping (we reduce the beam every time we predict a end-of-sentence symbol) or by the proposed pruning schemes. For each pruning technique, we run the experiments with different pruning thresholds and chose the largest threshold that did not degrade the translation performance based on a selection set.</p><p>In Figure <ref type="figure">1</ref>, you can see the German→English translation performance and the average fan out per sentence for different beam sizes. Based on this experiment, we decided to run our pruning experiments for beam size 5 and 14. The German→English results can be found in Table <ref type="table">1</ref>. By using the combination of all pruning techniques, we can speed up the decoding process by 13% for beam size 5 and by 43% for beam size 14 without any drop in performance. The relative pruning technique is the best working one for beam size 5 whereas the absolute pruning technique works best for a beam size 14. In Figure <ref type="figure" target="#fig_0">2</ref> the decoding speed with different relative pruning threshold for beam size 5 are illustrated. Setting the threshold higher than 0.6 hurts the translation performance. A nice side effect is that it has become possible to decode without any fix beam size when we apply pruning. Nevertheless, the decoding speed drops while the translation performance did not change. Further, we looked at the number of search errors introduced by our pruning schemes (number of times we prune the best scoring hypothesis). 5% of the sentences change due to search errors for beam size 5 and 9% of the sentences change for beam size 14 when using all four pruning techniques together.</p><p>The Chinese→English translation results can be found in Table <ref type="table">2</ref>. We can speed up the decoding process by 10% for beam size 5 and by 24% for beam size 14 without loss in translation quality. In addition, we measured the number of search errors introduced by pruning the search. Only 4% of the sentences change for beam size 5, whereas 22% of the sentences change for beam size 14.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>The original beam search decoder used in Neural Machine Translation is very simple. It generated translations from left-to-right while looking at a fix number (beam) of candidates from the last time step only. By setting the beam size large enough, we ensure that the best translation performance can be reached with the drawback that many candidates whose scores are far away from the best are also explored. In this paper, we introduced several pruning techniques which prune candidates whose scores are far away from the best one. By applying a combination of absolute and relative pruning schemes, we speed up the decoder by up to 43% without losing any translation quality. Putting more diversity into the decoder did not improve the translation quality.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 1: German→English: Original beamsearch strategy with different beam sizes on new-stest2014.</figDesc></figure>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Table 2: Results Chinese→English: relative pruning(rp), absolute pruning(ap), relative local pruning(rpl) and maximum candidates per node(mc).</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Results German→English: relative pruning(rp), absolute pruning(ap), relative local pruning(rpl) and maximum candidates per node(mc). Average fan out is the average number of candidates we keep at each time step during decoding.</figDesc><table><row><cell>pruning</cell><cell cols="5">beam speed avg fan out tot fan out newstest2014 newstest2015</cell></row><row><cell></cell><cell>size</cell><cell>up</cell><cell>per sent</cell><cell cols="2">per sent BLEU TER BLEU TER</cell></row><row><cell>no pruning</cell><cell>1</cell><cell>-</cell><cell>1.00</cell><cell>25</cell><cell>25.5 56.8 26.1 55.4</cell></row><row><cell>no pruning</cell><cell>5</cell><cell>-</cell><cell>4.54</cell><cell>122</cell><cell>27.3 54.6 27.4 53.7</cell></row><row><cell>rp=0.6</cell><cell>5</cell><cell>6%</cell><cell>3.71</cell><cell>109</cell><cell>27.3 54.7 27.3 53.8</cell></row><row><cell>ap=2.5</cell><cell>5</cell><cell>5%</cell><cell>4.11</cell><cell>116</cell><cell>27.3 54.6 27.4 53.7</cell></row><row><cell>rpl=0.02</cell><cell>5</cell><cell>5%</cell><cell>4.25</cell><cell>118</cell><cell>27.3 54.7 27.4 53.8</cell></row><row><cell>mc=3</cell><cell>5</cell><cell>0%</cell><cell>4.54</cell><cell>126</cell><cell>27.4 54.6 27.5 53.8</cell></row><row><cell>rp=0.6,ap=2.5,rpl=0.02,mc=3</cell><cell>5</cell><cell>13%</cell><cell>3.64</cell><cell>101</cell><cell>27.3 54.6 27.3 53.8</cell></row><row><cell>no pruning</cell><cell>14</cell><cell>-</cell><cell>12.19</cell><cell>363</cell><cell>27.6 54.3 27.6 53.5</cell></row><row><cell>rp=0.3</cell><cell>14</cell><cell>10%</cell><cell>10.38</cell><cell>315</cell><cell>27.6 54.3 27.6 53.4</cell></row><row><cell>ap=2.5</cell><cell>14</cell><cell>29%</cell><cell>9.49</cell><cell>279</cell><cell>27.6 54.3 27.6 53.5</cell></row><row><cell>rpl=0.3</cell><cell>14</cell><cell>24%</cell><cell>10.27</cell><cell>306</cell><cell>27.6 54.4 27.7 53.4</cell></row><row><cell>mc=3</cell><cell>14</cell><cell>1%</cell><cell>12.21</cell><cell>347</cell><cell>27.6 54.4 27.7 53.4</cell></row><row><cell>rp=0.3,ap=2.5,rpl=0.3,mc=3</cell><cell>14</cell><cell>43%</cell><cell>8.44</cell><cell>260</cell><cell>27.6 54.5 27.6 53.4</cell></row><row><cell>rp=0.3,ap=2.5,rpl=0.3,mc=3</cell><cell>-</cell><cell>-</cell><cell>28.46</cell><cell>979</cell><cell>27.6 54.4 27.6 53.3</cell></row><row><cell>pruning</cell><cell cols="5">beam speed avg fan out tot fan out MT08 nw MT08 wb</cell></row><row><cell></cell><cell>size</cell><cell>up</cell><cell>per sent</cell><cell cols="2">per sent BLEU TER BLEU TER</cell></row><row><cell>no pruning</cell><cell>1</cell><cell>-</cell><cell>1.00</cell><cell>29</cell><cell>27.3 61.7 26.0 60.3</cell></row><row><cell>no pruning</cell><cell>5</cell><cell>-</cell><cell>4.36</cell><cell>137</cell><cell>34.4 57.3 30.6 58.2</cell></row><row><cell>rp=0.2</cell><cell>5</cell><cell>1%</cell><cell>4.32</cell><cell>134</cell><cell>34.4 57.3 30.6 58.2</cell></row><row><cell>ap=5</cell><cell>5</cell><cell>4%</cell><cell>4.26</cell><cell>132</cell><cell>34.3 57.3 30.6 58.2</cell></row><row><cell>rpl=0.01</cell><cell>5</cell><cell>1%</cell><cell>4.35</cell><cell>135</cell><cell>34.4 57.5 30.6 58.3</cell></row><row><cell>mc=3</cell><cell>5</cell><cell>0%</cell><cell>4.37</cell><cell>139</cell><cell>34.4 57.4 30.7 58.2</cell></row><row><cell>rp=0.2,ap=5,rpl=0.01,mc=3</cell><cell>5</cell><cell>10%</cell><cell>3.92</cell><cell>121</cell><cell>34.3 57.3 30.6 58.2</cell></row><row><cell>no pruning</cell><cell>14</cell><cell>-</cell><cell>11.96</cell><cell>376</cell><cell>35.3 57.1 31.2 57.8</cell></row><row><cell>rp=0.2</cell><cell>14</cell><cell>3%</cell><cell>11.62</cell><cell>362</cell><cell>35.2 57.2 31.2 57.8</cell></row><row><cell>ap=2.5</cell><cell>14</cell><cell>14%</cell><cell>10.15</cell><cell>321</cell><cell>35.2 56.9 31.1 57.9</cell></row><row><cell>rpl=0.3</cell><cell>14</cell><cell>10%</cell><cell>10.93</cell><cell>334</cell><cell>35.3 57.2 31.1 57.9</cell></row><row><cell>mc=3</cell><cell>14</cell><cell>0%</cell><cell>11.98</cell><cell>378</cell><cell>35.3 56.9 31.1 57.8</cell></row><row><cell cols="2">rp=0.2,ap=2.5,rpl=0.3,mc=3 14</cell><cell>24%</cell><cell>8.62</cell><cell>306</cell><cell>35.3 56.9 31.1 57.8</cell></row><row><cell>rp=0.2,ap=2.5,rpl=0.3,mc=3</cell><cell>-</cell><cell>-</cell><cell>38.76</cell><cell>1411</cell><cell>35.2 57.3 31.1 57.9</cell></row></table></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Neural machine translation by jointly learning to align and translate</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Bahdanau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bengio</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note>ArXiv e-prints</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Neural networks for pattern recognition</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Christopher</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bishop</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1995">1995</date>
+			<publisher>Oxford university press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ondrej</forename><surname>Bojar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rajen</forename><surname>Chatterjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Federmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yvette</forename><surname>Graham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barry</forename><surname>Haddow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Huck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Jimeno Yepes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Koehn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varvara</forename><surname>Logacheva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christof</forename><surname>Monz</surname></persName>
+		</author>
+		<title level="m">Findings of the 2016 conference on machine translation</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note>wmt16 Proceedings of WMT</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Audio chord recognition with recurrent neural networks</title>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Boulanger-Lewandowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pascal</forename><surname>Vincent</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">In ISMIR. Citeseer</title>
+		<imprint>
+			<biblScope unit="page" from="335" to="340" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Graves</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1211.3711</idno>
+		<title level="m">Sequence transduction with recurrent neural networks</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Improved beam search with constrained softmax for nmt</title>
+		<author>
+			<persName><forename type="first">Xiaoguang</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hua</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haifeng</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of MT Summit XV page 297</title>
+		<meeting>MT Summit XV page 297</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">On using very large target vocabulary for neural machine translation</title>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Jean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roland</forename><surname>Memisevic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of ACL</title>
+		<meeting>ACL<address><addrLine>Beijing, China</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="1" to="10" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Recurrent continuous translation models</title>
+		<author>
+			<persName><forename type="first">Nal</forename><surname>Kalchbrenner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phil</forename><surname>Blunsom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2013 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2013 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Seattle</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Addressing the rare word problem in neural machine translation</title>
+		<author>
+			<persName><forename type="first">Thang</forename><surname>Luong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriol</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of ACL</title>
+		<meeting>ACL<address><addrLine>Beijing, China</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="11" to="19" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Haitao</forename><surname>Mi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiguo</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abe</forename><surname>Ittycheriah</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1605.03209</idno>
+		<title level="m">Vocabulary manipulation for neural machine translation</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">Rico</forename><surname>Sennrich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barry</forename><surname>Haddow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandra</forename><surname>Birch</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1508.07909</idno>
+		<title level="m">Neural machine translation of rare words with subword units</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Sequence to sequence learning with neural networks</title>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriol</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Le</surname></persName>
+		</author>
+		<ptr target="http://papers.nips.cc/paper/5346-sequence-to-sequence-learning-with-neural-networks" />
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 27: Annual Conference on Neural Information Processing Systems</title>
+		<meeting><address><addrLine>Montreal, Quebec, Canada</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2014-12-08">2014. 2014. December 8-13 2014</date>
+			<biblScope unit="page" from="3104" to="3112" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yonghui</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Schuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhifeng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wolfgang</forename><surname>Norouzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maxim</forename><surname>Macherey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuan</forename><surname>Krikun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qin</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Klaus</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Macherey</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1609.08144</idno>
+		<title level="m">Google&apos;s neural machine translation system: Bridging the gap between human and machine translation</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">A systematic comparison of phrase table pruning techniques</title>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Zens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daisy</forename><surname>Stanton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peng</forename><surname>Xu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2012 Joint Conference on Empirical Methods in Natural Language Processing and Computational Natural Language Learning. Association for Computational Linguistics</title>
+		<meeting>the 2012 Joint Conference on Empirical Methods in Natural Language Processing and Computational Natural Language Learning. Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="972" to="983" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

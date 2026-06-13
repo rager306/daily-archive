@@ -1,0 +1,1534 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main"></title>
+				<funder ref="#_gZ8nDWh #_3dBXwkd #_FUddxma">
+					<orgName type="full">National Science Foundation</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Mechanical Engineering and Materials Science</orgName>
+								<orgName type="institution">Yale University</orgName>
+								<address>
+									<settlement>New Haven</settlement>
+									<region>CT</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">University of California at Berkeley</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="department">Robotics Institute</orgName>
+								<orgName type="institution">Carnegie Mellon University</orgName>
+								<address>
+									<settlement>Pittsburgh</settlement>
+									<region>PA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">5E6199C90BB6422F5F15EA4A0E5A3D35</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-13T10:15+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>In this paper we present the Yale-CMU-Berkeley (YCB) Object and Model set, intended to be used to facilitate benchmarking in robotic manipulation, prosthetic design and rehabilitation research. The objects in the set are designed to cover a wide range of aspects of the manipulation problem; it includes objects of daily life with different shapes, sizes, textures, weight and rigidity, as well as some widely used manipulation tests. The associated database provides highresolution RGBD scans, physical properties, and geometric models of the objects for easy incorporation into manipulation and planning software platforms. In addition to describing the objects and models in the set along with how they were chosen and derived, we provide a framework and a number of example task protocols, laying out how the set can be used to quantitatively evaluate a range of manipulation approaches including planning, learning, mechanical design, control, and many others. A comprehensive literature survey on existing benchmarks and object datasets is also presented and their scope and limitations are discussed. The set will be freely distributed to research groups worldwide at a series of tutorials at robotics conferences, and will be otherwise available at a reasonable purchase cost. It is our hope that the ready availability of this set along with the ground laid in terms of protocol templates will enable the community of manipulation researchers to more easily compare approaches as well as continually evolve benchmarking tests as the field matures.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>Benchmarks are crucial for the progress of a research field, allowing performance to be quantified in order to give insight into the effectiveness of an approach. In manipulation research, particularly in robotic manipulation, prosthetic design and rehabilitation, benchmarking and performance metrics are challenging due largely to the enormous breadth of the application and task space for which researchers are working towards. The majority of research groups have therefore selected for themselves a set of objects and/or tasks that they believe are representative of the functionality that they would like to achieve/assess. Unfortunately such an approach prevents the analysis of experimental results against a common basis, and therefore makes it difficult to quantitatively interpret the performance of the described approach. Object and model sets are generally the fundamental elements involved in benchmarks for</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>manipulation. Substantial effort has already been put into providing mesh model databases of objects (e.g. <ref type="bibr" target="#b0">[1]</ref><ref type="bibr" target="#b1">[2]</ref><ref type="bibr" target="#b2">[3]</ref><ref type="bibr">[4]</ref> with a thorough overview provided in section II), generally for object recognition or planning purposes. There have, however, been very few instances of proposed object/task sets for which the physical objects are available to researchers. Access to the objects is crucial to performance benchmarking as many aspects of the manipulation process cannot be modeled, thereby requiring experiments to demonstrate success or examine failure modes.</p><p>In this paper, we present an object set for manipulation research in the fields of robotics, prosthetic design and rehabilitation, a framework for standard task protocols, and a number of example protocols along with experimental implementation of them. The object set is specifically designed to allow for widespread dissemination of the physical objects and manipulation scenarios selected based on a survey of the most common objects utilized in research in the target fields along with a number of additional practical constraints. Along with the physical objects, textured mesh models and high quality images are provided together with their physical properties to enable realistic simulations. These models are integrated into the MoveIt motion planning tool <ref type="bibr">[5]</ref> and the ROS manipulation stack. The set will be freely distributed to research groups worldwide at a series of tutorials at robotics conferences, and will be otherwise available at a reasonable purchase cost. Our goal is to do as much as possible to facilitate the widespread usage of a common set of objects and tasks in order to allow easy comparison of results between research groups worldwide.</p><p>In choosing the set of objects and data provided, a number of issues were considered. The objects should span a variety of shapes, sizes, weight, rigidity and texture, as well as span a wide range of manipulation applications and challenges. Still, several practical constraints must be considered, including the number and size of the objects to allow for easy shipping and storage, keeping the overall cost reasonable, providing objects that are durable so as to not substantially degrade over time or with usage, as well as to choose objects that are likely to be available in a similar form in the future. Preliminary data in the repository includes high-resolution 3D point cloud data with associated meshes and texture (visual) information, object mechanical properties such as major dimensions and mass, as well as models for integration into planning and simulation software, all available at: <ref type="url" target="http://rll.eecs.berkeley.edu/ycb/">http://rll.eecs.berkeley.edu/ycb/</ref>.</p><p>In addition to the object and model set, we provide a systematic approach to define manipulation protocols and benchmarks using the set. Guidelines for designing welldefined manipulation protocols and benchmarks are provided through a template for easy protocol and benchmark design. Furthermore, using this template, example protocols and benchmarks are derived for the assessment of various aspects of robotic manipulation i.e. mechanical design, manipulation planning, dexterity and learning. The implementation of these</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Benchmarking in Manipulation Research: The YCB Object and Model Set and Benchmarking Protocols</head><p>Berk Calli, Member, IEEE, Aaron Walsman, Student Member, Arjun Singh, Student Member, IEEE, IEEE, Siddhartha Srinivasa, Senior Member, IEEE, Pieter Abbeel, Senior Member, IEEE, and Aaron M. Dollar, Senior Member, IEEE benchmarks on real robotic systems are also provided to demonstrate the benchmarks' abilities to quantitatively evaluate the manipulation capabilities of various systems. We expect to continually expand this work by including additional data on the objects (i.e. inertial properties), by proposing additional benchmarks for manipulation, but more importantly, by creating a web portal for the user community to engage in this effort, proposing changes to the object set and putting forth their own protocols and benchmarks, among others.</p><p>The remainder of this paper is organized as follows: First a comprehensive literature survey on object sets and benchmarks is presented in Section II. Following that our object set is presented and explained in Section III. In Section IV, guidelines are provided for designing protocols and benchmarks. In Section V, the example protocols and benchmarks are presented. The paper is concluded with discussions and future work in Section VI. II. RELATED WORK For benchmarking in manipulation, specifying an object set is essential. Table <ref type="table">1</ref> summarizes the object sets proposed in prior work. Even though there are a large number of efforts that provide datasets of object mesh models which are useful for many simulation and planning applications, as well as for benchmarking in shape retrieval, these datasets have limited utility for manipulation benchmarking due to several reasons: First, since most of them are not designed specifically for manipulation benchmarking, the selected objects do not usually cover the shape and function variety needed for a range of manipulation experiments. Second, none of these databases provide the objects' physical properties, which are necessary to conduct realistic simulations. Lastly and perhaps most importantly, the vast majority of objects in these sets are not easily accessible by other researchers, preventing their use in experimental work. Exceptions to this include <ref type="bibr">[6]</ref>, which provides an online shopping list (but it is outdated with many dead links), the recently-announced Amazon Picking Challenge <ref type="bibr">[7]</ref>, which provides a shopping list to purchase objects meant for a narrow bin-picking task, and commercial kits available for some rehabilitation-focused tests <ref type="bibr" target="#b6">[8]</ref><ref type="bibr" target="#b7">[9]</ref><ref type="bibr" target="#b8">[10]</ref><ref type="bibr" target="#b9">[11]</ref> that provide limited set of objects but are not representative of a wide range of manipulation tasks. The current effort is unique in that it provides a large amount of information about the objects necessary for many simulation and planning approaches, makes the actual objects readily available for researchers to utilize experimentally, and includes a wide range of objects to span many different manipulation applications.</p><p>In the following sections, we provide a detailed overview of prior related benchmarking efforts, discussing their scope and limitations. For organization purposes, we first discuss work primarily related to robotic manipulation (including vision and learning applications), then efforts in rehabilitation, including prosthetics.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Robotic Manipulation:</head><p>The necessity of manipulation benchmarks is highly recognized in the robotics community <ref type="bibr" target="#b10">[12]</ref><ref type="bibr" target="#b11">[13]</ref><ref type="bibr" target="#b12">[14]</ref> and continues to be an active topic of discussion at workshops on robotic manipulation (e.g. <ref type="bibr" target="#b13">[15]</ref>). As mentioned earlier, the majority of prior work related to object sets has involved just the models and images of those objects (with varying degrees of information, from purely shape information to textural plus shape), often created for research in computer vision (e.g. <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b14">16,</ref><ref type="bibr" target="#b15">17]</ref>). There have also been a number of shape/texture sets designed for/by the robotics community, particularly for applications such as planning and learning. The Columbia Grasp Database (CGD) <ref type="bibr" target="#b2">[3]</ref> rearranges the object models of the Princeton Shape Benchmark (PSB) <ref type="bibr" target="#b16">[18]</ref> for robotic manipulation and provides mesh models of 8000 objects together with assigned successful grasps per model. Such a database is especially useful for implementing machine learning-based grasp synthesis algorithms in which large amounts of labeled data are required for training the system. A multi-purpose object set which also targets manipulation is the KIT Object Models Database <ref type="bibr" target="#b17">[19]</ref> which provides stereo images and textured mesh models of 100 objects. While there are a large number of objects, the shape variety is limited, and like the previously mentioned datasets, the objects are not easily accessible to other researchers.</p><p>There have only been two robotics-related efforts in which the objects are made relatively available. The household objects list <ref type="bibr">[6]</ref> provides good shape variety that is appropriate for manipulation benchmarking, as well as a shopping list for making the objects more easily accessible to researchers. Unfortunately, the list is outdated, and most objects are not available anymore. Also, the 3D models of the objects are not supplied which prevents the use of the object set in simulations. Very recently, the Amazon Picking Challenge [7] also provides a shopping list for items, but those were chosen specific to the bin-picking application and do not have models associated with them.</p><p>In terms of other robotic manipulation benchmarking efforts, a number of simulation tools have been presented in the literature. The OpenGRASP benchmarking suite <ref type="bibr" target="#b18">[20]</ref> presents a simulation framework for robotic manipulation. The benchmarking suite provides test cases and setups, and a standard evaluation scheme for the simulation results. So far, a benchmark for grasping known objects has been presented using this suite. VisGraB <ref type="bibr" target="#b19">[21]</ref> provides a benchmark framework for grasping unknown objects. The unique feature of this software is utilizing real stereo images of the target objects for grasp synthesis, and executing and evaluating the result in a simulation environment. For gripper and hand design, benchmark tests <ref type="bibr" target="#b20">[22,</ref><ref type="bibr" target="#b21">23]</ref> are proposed for evaluating the ability of the grippers to hold an object, but only cylindrical objects are used.</p><p>Table I: Object Datasets in Literature (Sorted by Year) Dataset name Year Data Type Purpose Object number / Category Physical objects available ? Website 1 BigBIRD [1] 2014 Meshes with texture + HQ images Object recognition 100 No <ref type="url" target="http://rll.eecs.berkeley.edu/bigbird">http://rll.eecs.berkeley.edu/bigbird</ref> 2 Amazon Picking Challenge [7] 2014 Shopping list Grasping 27 Yes <ref type="url" target="http://amazonpickingchallenge.org/">http://amazonpickingchallenge.org/</ref> 3 SHREC'14 [2] 2014 Mesh models Object retrieval 8987 / 171 No <ref type="url" target="http://www.itl.nist.gov/iad/vug/sharp/contest/2014/Generic3D/">http://www.itl.nist.gov/iad/vug/sharp/contest/  2014/Generic3D/</ref> 4 SHREC'12 [24] 2012 Mesh models Object retrieval 1200 / 60 No <ref type="url" target="http://www.itl.nist.gov/iad/vug/sharp/contest/2012/Generic3D/">http://www.itl.nist.gov/iad/vug/sharp/contest/  2012/Generic3D/</ref> 5 The KIT object models database [19] 2012 Mesh with texture, stereo images Recognition, localization and manipulation 100 No <ref type="url" target="http://i61p109.ira.uka.de/ObjectModelsWebUI/">http://i61p109.ira.uka.de/ObjectModelsWebU  I/</ref> 6 VisGraB [21] 2012 Stereo images Manipulation 18 No <ref type="url" target="http://www.robwork.dk/visgrab/">http://www.robwork.dk/visgrab/</ref> 7 The Object Segmentation Database [17] 2012 RGB-D images Object segmentation N/A No <ref type="url" target="http://users.acin.tuwien.ac.at/arichtsfeld/?site=4">http://users.acin.tuwien.ac.at/arichtsfeld/?site  =4</ref> 8 Toyohashi shape benchmark [25] 2012 Mesh models Object retrieval 10k / 352 No <ref type="url" target="http://www.kde.cs.tut.ac.jp/benchmark/tsb/">http://www.kde.cs.tut.ac.jp/benchmark/tsb/</ref> 9 The Willow Garage Object Recognition Challenge [26] 2012 RGB-D images Object recognition N/A No <ref type="url" target="http://www.acin.tuwien.ac.at/forschung/v4r/mitarbeiterprojekte/willow/">http://www.acin.tuwien.ac.at/forschung/v4r/m  itarbeiterprojekte/willow/</ref> 10 SHREC'11 [27] 2011 Mesh models Object retrieval 600 No <ref type="url" target="http://www.itl.nist.gov/iad/vug/sharp/contest/2011/NonRigid/">http://www.itl.nist.gov/iad/vug/sharp/contest/  2011/NonRigid/</ref> 11 Berkeley 3-D Object Dataset [28] 2011 RGB-D dataset of room scenes Object detection N/A No <ref type="url" target="http://kinectdata.com/">http://kinectdata.com/</ref> 12 RGB-D Object Dataset [29] 2011 RGB-D dataset Object detection and recognition 300 / 51 No <ref type="url" target="http://rgbd-dataset.cs.washington.edu/">http://rgbd-dataset.cs.washington.edu/</ref> 13 The OpenGRASP benchmarking suite [20] 2011 Mesh with texture, stereo images Grasping Uses KIT database No <ref type="url" target="http://opengrasp.sourceforge.net/benchmarks.html">http://opengrasp.sourceforge.net/benchmarks.  html</ref> 14 SHREC'10 [30] 2010 Mesh models Object retrieval 3168 / 43 No <ref type="url" target="http://tosca.cs.technion.ac.il/book/shrec_robustness2010.html">http://tosca.cs.technion.ac.il/book/shrec_robus  tness2010.html</ref> 15 The Columbia Grasp Database [3] 2009 Mesh models Grasping ~8000 No <ref type="url" target="http://grasping.cs.columbia.edu/">http://grasping.cs.columbia.edu/</ref> 16 Benchmark Set of Domestic Objects [6] 2009 Shopping list Robotic manipulation 43 Yes <ref type="url" target="http://www.hsi.gatech.edu/hrl/object_list_v092008.shtml">http://www.hsi.gatech.edu/hrl/object_list_v09  2008.shtml</ref> 17 Bonn Architecture Benchmark [31] 2009 Mesh models Object retrieval 2257 No <ref type="url" target="ftp://ftp.cg.cs.uni-bonn.de/pub/outgoing/ArchitectureBenchmark">ftp://ftp.cg.cs.uni- bonn.de/pub/outgoing/ArchitectureBenchmar  k</ref> 18 Engineering Shape Benchmark [32] 2008 Mesh models Object retrieval 867 No <ref type="url" target="https://engineering.purdue.edu/PRECISE/shrec08">https://engineering.purdue.edu/PRECISE/shre  c08</ref> 19 [3D Object Retrieval Benchmark] [33] 2008 Mesh models Object retrieval 800 / 40 No <ref type="url" target="http://www.itl.nist.gov/iad/vug/sharp/benchmark/">http://www.itl.nist.gov/iad/vug/sharp/benchm  ark/</ref> 20 McGill 3D Shape Benchmark [34] 2008 Mesh models Shape retrieval N/A No <ref type="url" target="http://www.cim.mcgill.ca/~shape/benchMark/">http://www.cim.mcgill.ca/~shape/benchMark/</ref> The Toronto Rehabilitation Institute Hand Function Test [35] 2008 Commercial Kit / No model data Prosthetics and Rehabilitation 14 No <ref type="url" target="http://www.rehabmeasures.org/Lists/RehabMeasures/PrintView.aspx?ID=1044">http://www.rehabmeasures.org/Lists/RehabM  easures/PrintView.aspx?ID=1044</ref> 22 GRASSP [9] 2007 Commercial Kit / No model data Prosthetics and Rehabilitation N/A Yes <ref type="url" target="http://grassptest.com/">http://grassptest.com/</ref> 23 AIM@SHAPE Shape Repository [16] 2006 Mesh models General 1180 No <ref type="url" target="http://shapes.aim-at-shape.net/viewmodels.php">http://shapes.aim-at- shape.net/viewmodels.php</ref> 24 The Princeton Shape Benchmark [18] 2004 Mesh models Shape-based retrieval 1,814 No <ref type="url" target="http://shape.cs.princeton.edu/benchmark/">http://shape.cs.princeton.edu/benchmark/</ref> 25 [Mesh Deformation Dataset] [36] 2004 Mesh models Mesh transformation N/A / 13 No <ref type="url" target="http://people.csail.mit.edu/sumner/research/deftransfer/data.html">http://people.csail.mit.edu/sumner/research/de  ftransfer/data.html</ref> 26 NTU 3D model benchmark [37] 2003 Mesh models Shape retrieval 1,833 No <ref type="url" target="http://3d.csie.ntu.edu.tw/">http://3d.csie.ntu.edu.tw/</ref> 27 SHAP [8] 2002 Commercial Kit / No model data Prosthetics and Rehabilitation -Yes <ref type="url" target="http://www.shap.ecs.soton.ac.uk/">http://www.shap.ecs.soton.ac.uk/</ref> 28 Action Research Arm Test [10] 1981 Commercial Kit / No model data Prosthetics and Rehabilitation 19 Yes <ref type="url" target="http://saliarehab.com/actionresearcharmtestarat.html">http://saliarehab.com/actionresearcharmtestar  at.html</ref> 29 Jebsen-Taylor Hand Function Test [11] 1969 Commercial Kit / No model data Prosthetics and Rehabilitation N/A Yes N/A 30 The ITI database [38] N/A Mesh models Object retrieval 544 / 13 No <ref type="url" target="http://vcl.iti.gr/3d-object-retrieval/">http://vcl.iti.gr/3d-object-retrieval/</ref> 31 Model Bank Library [39] N/A Mesh with texture General 1200 No <ref type="url" target="http://digimation.com/3d-libraries/model-bank-library/">http://digimation.com/3d-libraries/model- bank-library/</ref> 32 SketchUp [4] N/A Mesh with and w/o texture General N/A No <ref type="url" target="https://3dwarehouse.sketchup.com/">https://3dwarehouse.sketchup.com/</ref> 33 Robocup @home [40] Multi. no data Manipulation N/A No <ref type="url" target="http://www.robocupathome.org/">http://www.robocupathome.org/</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Prosthetics and Rehabilitation</head><p>In the general field of rehabilitation, including prosthetics, there are a number of evaluation tools used by therapists to attempt to quantify upper-limb function. Some of these are common, commercially-available, and have been substantially published on, including "normative" data to compare the patient's performance to others. Other tests have only been proposed in the literature and not (yet, at least) widely utilized.</p><p>The tests that have a commercial setup available are Box and Blocks Test <ref type="bibr" target="#b40">[41]</ref>, 9-hole-peg test <ref type="bibr" target="#b41">[42]</ref>, Jebsen-Taylor Hand Function Test <ref type="bibr" target="#b9">[11]</ref>, Action Research Arm Test (ARAT) <ref type="bibr" target="#b8">[10]</ref>, the Southampton Hand Assessment Procedure (SHAP) <ref type="bibr" target="#b6">[8]</ref> and Graded Redefined Assessment of Strength, Sensibility and Prehension (GRASSP) test <ref type="bibr" target="#b7">[9]</ref>. The setups for Box and Blocks Test and 9-hole-peg tests are very specific for these protocols, including timed movements of simple objects. The setup for Jebsen-Taylor Hand Function Test also consists of quite limited set of objects that are specific to limited tasks. ARAT assesses upper limb function and its commercial set <ref type="bibr" target="#b42">[43]</ref> contain objects such as wooden blocks of various sizes, glasses, a stone, a marble, washers and bolts. The test proposes actions like placing a washer over a bolt and pouring water from a glass to another. Again, this set is far from providing an adequate object variety for deriving manipulation benchmarks. GRASSP measure has been proposed for the assessment of upper limb impairment. This measure is based on a commercial kit available in <ref type="bibr" target="#b43">[44]</ref>. Apart from a specialized manipulation setup, the kit also includes 9-hole peg test, jars and a bottle. The SHAP setup includes some objects of daily living such as a bowl, a drink carton, and a jar, together with some geometrical shapes, for which subjects are requested to do a variety of manipulation tasks, including pouring the drink, opening the jar etc. Despite enabling a larger possibility of manipulation tasks than the previously mentioned setups, the GRASSP and SHAP setups are still bounded to a limited number of tasks, and both are pricey.</p><p>Some well-known tests that do not provide a commercial setup are Grasp and Release Test [45], The Toronto Rehabilitation Institute Hand Function Test <ref type="bibr" target="#b34">[35]</ref> and Activities Measure for Upper Limp Amputees (AM-ULA) <ref type="bibr" target="#b44">[46]</ref>. The Grasp and Release Test is proposed for evaluating the performance of neuroprosthetic hands. For this test, detailed descriptions of the objects are given, but these objects are not easily obtainable, and the set includes an outdated object i.e. a videotape. The Toronto Rehabilitation Institute Hand Function Test (also known as Rehabilitation Engineering Laboratory Hand Function Test <ref type="bibr" target="#b45">[47]</ref>) evaluates palmer (power) and lateral (precision) grasp abilities of individuals by using an object set consist of a mug, a book, a paper, a soda can, dices, a pencil etc. Even though it is claimed that the objects used in this test are easily obtainable, maintaining the exact object definition is hard and one of the objects is an outdated cellular phone. AM-ULA defines several quality measures for assessing the manipulation tasks, and various daily activities are proposed for the assessment. The objects used in these activities are not standardized.</p><p>In addition to these test, some works in literature use their own setups for assessment. In <ref type="bibr" target="#b46">[48]</ref>, tasks such as "use a hammer and nail", "stir a bowl", "fold a bath towel", "use a key in a lock" are proposed for evaluating upper limb prosthesis. In <ref type="bibr" target="#b47">[49]</ref>, the performance of the neuroprosthesis are evaluated by asking the patient to perform grasping and lifting tasks, as well as phone dialing, pouring liquid from a pitcher and using spoon and fork. In <ref type="bibr" target="#b48">[50]</ref>, for evaluating the outcomes of a protocol for stoke rehabilitation, blocks, Lego and pegs are used together with daily life activities like folding, buttoning, pouring and lifting. In <ref type="bibr" target="#b49">[51]</ref>, the outcomes of the neuroprosthesis are measured with Box and Blocks Test and Clothes Pin Relocation Task together with the evaluation of actions of daily living i.e. using a fork and a knife, opening a jar, stirring a spoon in a bowl. In none of the abovementioned assessment procedures, the descriptions of the objects are provided, however.</p><p>In our object set, we have included the objects that are commonly used in these assessment procedures (i.e. a mug, a bowl, a pitcher, washers, bolts, kitchen inventories, pens, key-padlock etc.). We also included objects that will allow designing protocols which focus on activities of daily living. Moreover, widely used manipulation tests such as 9-hole peg, box and blocks and clothes peg allocation are also provided.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. THE OBJECT AND DATA SET</head><p>The proposed object set can be seen in Figures <ref type="figure" target="#fig_0">1</ref><ref type="figure" target="#fig_1">2</ref><ref type="figure" target="#fig_2">3</ref><ref type="figure" target="#fig_3">4</ref><ref type="figure">5</ref><ref type="figure">6</ref><ref type="figure" target="#fig_5">7</ref>and listed in Table <ref type="table">I</ref>. In this section, we describe the object set and the reasoning behind the choices (section III.A), a description of the process and data involved in the scans of the objects (III.B), and the models and integration into simulation and planning packages (III.C) and a brief functional demonstration (III.D).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Objects</head><p>We aimed to choose objects that are frequently used in daily life, and went through the literature to take into account the objects that are frequently used in simulations and experiments. We also benefit from the studies on objects of daily living <ref type="bibr" target="#b50">[52]</ref> and daily activities checklist such as <ref type="bibr" target="#b51">[53]</ref>.</p><p>In compiling the proposed object and task set, we needed to take a number of additional practical issues into consideration:     Variety: In order to cover as many aspects of robotic manipulation as possible, we included objects that have a wide variety of shape, size, transparency, deformability, and texture. Grasping and manipulation difficulty was also a criterion: for instance, some objects in the set are well approximated by simple geometric shapes and relatively easy for grasp synthesis and execution, while other objects have higher shape complexity and more challenging for grasp synthesis and execution.</p><p> Use: We included objects that are not only interesting for grasping, but also have a range of manipulation uses. For example, a pitcher and a cup; nails and a hammer; pegs, cloths and rope. We also included "assembly" items/tasks: a set of children's stacking cups, a toy airplane (Fig. <ref type="figure">6</ref>) that must be assembled and screwed together and Lego (Fig. <ref type="figure" target="#fig_5">7</ref>). Additionally, widely used standard manipulation tests in rehabilitation, such as the box and blocks <ref type="bibr" target="#b40">[41]</ref> and 9-hole-peg test <ref type="bibr" target="#b41">[42]</ref>, are included. As above, these tasks are intended to span a wide range of difficulty, from relatively easy to very difficult. Furthermore, the ability to quantify task performance was also prioritized, including aspects such as level of difficulty, time-to-completion, and success rate, among others.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head> Durability:</head><p>We aimed for objects that can be useful long term, and therefore avoid objects that are fragile or perishable. Also, to increase the longevity of the object set, we chose the objects that are likely to remain in circulation and change relatively little in the near future.</p><p> Cost: We aimed to keep the cost of the object set as low as possible to broaden accessibility. We therefore selected standard consumer products, rather than, for instance, custom-fabricated objects and tests. Current cost for the objects is approximately $350.</p><p> Portability: We aimed to have an object set that fits in a large-sized suitcase and be below the normal airline weight limit (22kg) in order to allow easy shipping and storage.</p><p>After considering these practical issues and reviewing the literature, the final objects were selected (Table <ref type="table">II</ref>, Figs. <ref type="figure" target="#fig_0">1</ref><ref type="figure" target="#fig_1">2</ref><ref type="figure" target="#fig_2">3</ref><ref type="figure" target="#fig_3">4</ref><ref type="figure">5</ref><ref type="figure">6</ref><ref type="figure" target="#fig_5">7</ref>). The objects in the set can be divided into the following categories: food items, kitchen items, tool items, shape items, task items. Objects from ID 1 to 19 are the food items, containing real boxed and canned items, as well as wooden fruits of complex shapes. The objects from ID 20 to 33 are kitchen items, containing objects for food preparation and</p><p>Table II (cont): Object Set Items and Properties ID Class Object Mass Dims. (mm) 39 Tool Items Padlock 208g 24 x 47 x 65 40 Hammer 688g 32 x 40 x 160 41 Nails [2,2.7,4.8] g [4x25, 3x53, 4x63] 42 Phillips Screwdriver 70g 23 x 198 43 Flat Screwdriver 70g 23 x 198 44 Adjustable Wrench 247g 10 x 26 x 204 45 2x4 Wood block 414g 38 x 90 x 300 46 4x4 Wood block, long 1720g 90 x 90 x 410 47 4x4 Wood block, short 638 90 x 90 x 152 48 XS Clamp 8.3g 50 x 65 x 11 49 S Clamp 30g 80 x 91 x 25 50 M Clamp 59g 90 x 115 x 27 51 L Clamp 125g 125 x 165 x 32 52 XL Clamp 202g 165 x 213 x 37 53 Power Drill 895g 35 x 46 x 184 54 Shape Items Credit Card blank 5.2g 54 x 85 x 1 55 Soft Ball 191g 96 56 Tennis Ball 58g 64.7 57 Racquetball 41g 55.3 58 Golf Ball 46g 42.7 59 S Marble 3.6g 14 60 M Marble 5.3g 16 61 L Marble 20g 24.7 62 XL Marble 59g 35.2 63 Cups [13,14,17,19, 21,26,28,31,3 5,38] g [55x60, 60x62, 65x64, 70x66, 75x68, 80x70, 85x72, 90x74, 95x76, 100x78] 64 Foam Brick 28g 50 x 75 x 50 65 Dice 5.2g 16.2 66 Washers [0.1,0.7,1.1,3 ,5.3,19,48] g [6.4, 10, 13.3, 18.8, 25.4, 37.3, 51] 67 Rope 20g 6.4 x 1440 68 Chain 100g 2 x 4 x 130 69 Task Items Clear Box 302g 292 x 429 x 149 70 Box Lid 159g 292 x 429 x 20 71 Colored Wood Blocks 10.8g 26 72 9-Peg-Hole Test 1435g 1150 x 1200 x 1200 73 Toy Airplane 570g 171 x 266 x 280 Table II: Object Set Items and Properties ID Class Object Mass Dims. (mm) 1 Food items Cereal Box 510g 80 x 195 x 295 2 Cracker Box 453g 60 x 160 x 230 3 Sugar Box 514g 38 x 89 x 175 4 Pudding Box 187g 35 x 110 x 89 5 Gelatin Box 97g 28 x 85 x 73 6 Potted Meat Can 370g 50 x 97 x 82 7 Master Chef Can 414g 102 x 139 8 Tuna fish can 171g 85 x 33 9 Chips Can 205g 75 x 250 10 Mustard Bottle 431g 50 x 85 x 175 11 Tomato Soup Can 349g 66 x 101 12 Banana 66g 36 x 190 13 Strawberry 18g 43.8 x 55 14 Apple 68g 75 15 Lemon 29g 54 x 68 16 Peach 33g 59 17 Pear 49g 66.2 x 100 18 Orange 47g 73 19 Plum 25g 52 20 Kitchen Items Windex Bottle 1022g 80 x 105 x 270 21 Sponge 6.2g 72 x 114 x 14 22 Pitcher Base 178g 108 x 235 23 Pitcher Lid 66g 123 x 48 24 Plate 279g 258 x 24 25 Bowl 147g 159 x 53 26 Fork 34g 14 x 20 x 198 27 Spoon 30g 14 x 20 x 195 28 Knife 31g 14 x 20 x 215 29 Slotted Turner 105g 25 x 35 x 410 30 Wine glass 133g 89 x 137 31 Mug 118g 80 x 82 32 Skillet 950g 270 x 25 x 30 33 Skillet Lid 652g 270 x 10 x 22 34 Tool Items Scissors 82g 87 x 200 x 14 35 Permanent Marker 10g 11.5 x 137 36 S Erasable Marker 8.3g 10.5 x 136 37 L Erasable Marker 16g 19 x 119 38 Keys 6g 23 x 43 x 2.2</p><p>serving, as well as glass cleaner and a sponge. The objects from 34 to 53 form the tool category, containing not only common tools, but also items such as nails, screws, and wood to utilize them. The shape items are from ID 54 to 68, which span a range of sizes (spheres, cups, and washers), as well as compliant objects such as foam bricks, rope, and chain. The manipulation task items are the objects with IDs 69 to 73, and include two widely used tasks in rehabilitation benchmarking (box-and-blocks <ref type="bibr" target="#b40">[41]</ref> and 9-hole peg test <ref type="bibr" target="#b41">[42]</ref>) as well as a simple and a complex assembly task (Lego and children's airplane toy respectively). We also include a timer in the kit, which not only provides accurate timing of the task, but also can specify the initial position of the hand at the beginning of the task execution. While there are an unlimited number of manipulation tasks that might be able to be done with these objects, we provide some examples for each category in Table <ref type="table">III</ref> (with in-depth discussion of tasks and protocols in Section IV). Fig. 6: Assembly object: toy airplane disassembled (left), including toy power screwdriver, and fully assembled (right). </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Scans</head><p>In order to ease adoption, we collect visual data that is commonly required for grasping algorithms and generate 3D models for use in simulation. We use the scanning rig used to collect the BigBIRD dataset <ref type="bibr" target="#b0">[1]</ref>. The rig, shown in Fig. <ref type="figure" target="#fig_6">8</ref>, has 5 RGBD sensors and 5 high-resolution RGB cameras arranged in a quarter-circular arc. Each object is placed on a computer-controlled turntable, which is rotated by 3 degrees at a time, yielding 120 turntable orientations. Together, this yields 600 RGBD images and 600 high-resolution RGB images. The process is completely automated, and the total collection time for each object is under 5 minutes.</p><p>We then use Poisson surface reconstruction to generate watertight meshes. Afterwards, we project the meshes onto each image to generate segmentation masks. Note that Poisson reconstruction fails on certain objects with missing depth data; specifically, transparent or reflective regions of objects usually do not register depth data. We will later provide better models for these objects using algorithms that take advantage of the high-resolution RGB images for building models.</p><p>In total, for each object, we provide:  600 RGBD images  600 high-resolution RGB images  Segmentation masks for each image  Calibration information for each image  Texture-mapped 3D mesh models The object scans can be found at <ref type="bibr">[54]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Models</head><p>Based on the scans of the objects, there are several ways in which object models can be easily integrated into a variety of robot simulation packages. For example, in the MoveIt <ref type="bibr">[5]</ref> simulation package, the mesh can be used as a collision object directly. Furthermore, a Unified Robot Description Format (URDF) file can be automatically constructed to integrate with ROS <ref type="bibr" target="#b52">[55]</ref>. This provides a way of specifying mass properties, and can link to alternate representations of the mesh for visualization and collision. Integration with the OpenRAVE <ref type="bibr" target="#b53">[56]</ref> simulation package is similarly straightforward where we link to the display and collision meshes from a KinBody XML file. Using the scans, we have created URDF and KinBody files for all of the objects in the dataset, provided alongside the scans at <ref type="bibr">[54]</ref>.</p><p>Once in a simulation environment, a variety of motion planners and optimizers can use these models either as collision or manipulation objects. Some algorithms, such as CHOMP <ref type="bibr" target="#b54">[57]</ref>, require signed-distance fields to avoid collisions which can be computed from the included</p><p>Table III Suggestions for Manipulation Tasks Object Category Suggested Tasks Food items  Packing/unpacking the groceries. Kitchen items  Table setting,  Wipe down table with sponge and Windex,  Cooking scenarios. Tool items  Nailing,  Drilling,  Unlocking the pad using the key,  Placing the pegs on the rope.  Unscrewing a bolt using the wrench,  Cutting a paper with the scissors,  Writing on a paper.  Screwing the nut on the bolt. Shape items  Sorting marbles into the plastic blocks,  Unstacking/stacking the cups,  Placing the washers onto the bolt. Other items  Box and blocks test,  Toy plane assembly/disassembly,  9-peg hole tests,  Lego assembly/disassembly.  watertight meshes. In other cases such as CBiRRT <ref type="bibr" target="#b55">[58]</ref> compute collisions directly using an optimized mesh collision checker. In many cases, collision checking is a computational bottleneck for motion planning. Execution time can be reduced using a simplified mesh produced either by hand or with automatic decimation methods <ref type="bibr" target="#b56">[59]</ref>. We have not yet provided simplified meshes in this dataset, but view this as an opportunity in future work to further explore mesh approximation algorithms and their impact on motion planning problems using the standardized benchmarks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Functional Demonstration</head><p>Fig. <ref type="figure" target="#fig_8">10</ref> demonstrates the entire pipeline. Here, we see the HERB robot <ref type="bibr" target="#b57">[60]</ref> preparing to grasp the virtual drill object. This demonstration uses an integration of ROS and OpenRAVE. ROS is used to provide communication between the various hardware and software components of the robot, while OpenRave handles planning and collision checking.</p><p>Inside OpenRAVE, the HERB robot uses CBiRRT, the OMPL <ref type="bibr" target="#b58">[61]</ref> library and CHOMP to plan and optimize motion trajectories. Using these tools, chains of several actions can be executed in sequence. The simulation environment also provides a mechanism for incorporating feedback from perception systems, which similarly benefit from this dataset. The provided images, meshes and physical objects can all be used as training data for various object detection and pose estimation algorithms, which can then be incorporated into the manipulation pipeline.</p><p>Access to both the physical object and a corresponding model for simulation is important for developing and testing new planning and manipulation algorithms. This dataset vastly reduced the time required to set up this example by providing access to objects and meshes that have already been prepared for this purpose. This removed the burden of scanning or modeling new objects and provides benchmark environments that streamline experimental design.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. PROTOCOL DESIGN FOR MANIPULATION</head><p>A standard set of objects and associated models are a great starting point for common replicable research and benchmarking in manipulation, but there must be a sufficient amount of specification about what should be done with the objects in order to directly compare approaches and results. Given the wide range of technical interests, research approaches, and applications being examined in the manipulation research community, along with how quickly the field moves, we cannot possibly provide sufficient task descriptions that will span the range of interests and remain relevant long-term. Instead, we seek to lay the groundwork for those to be driven by the research community and subcommunities. We therefore focus on two efforts: developing a framework for task protocols, setting, formatting and content guidelines to facilitate effective community-driven specification of standard tasks; and a preliminary set of example protocols that we believe are relevant for our respective communities and approaches, along with experimental implementation of those, including reporting the performance outcomes.</p><p>In order to enable effective community-driven evolution of protocols and benchmarks, the web portal associated with this effort will serve as a jumping-off point. Protocols are hosted on arxiv.org, allowing them to be easily posted, shared, and cited, as well as easily updated as the community gives feedback and identifies shortcomings. Our portal will provide links to all protocols that meet the standards laid out in the template, and will provide a forum for discussion on individual protocols. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Protocol guidelines</head><p>While developing protocols and benchmarks, one challenging aspect is to decide on the level of detail. Providing only high level descriptions of the experiment, in other words setting too few constraints, makes the repeatability of a benchmark questionable as well as its ability to assess the performance; variations caused by incomplete descriptions of test setups and execution processes induce discrepancy in measurements and won't speak to some quantifiable performance. On the other hand, supplying too many constraints may limit a protocol's applicability, and therefore narrows down its scope. For example, due to the variety of utilized hardware by different research groups in robotics field, satisfying constrained hardware descriptions is not usually possible or preferred.</p><p>The aim of this section is to provide guidelines that help to maintain both reliable and widely applicable benchmarks for manipulation. For this purpose, five categories of information are introduced for defining manipulation protocols, namely (1) task description, (2) setup description, (3) robot/hardware/subject description, (4) procedure, and (5) execution constraints. These categories are explained below, and the protocol template provided in Appendix A:</p><p>1) Task description: Task description is the highest level of information about the protocol. It describes the main action(s) of a task and (most of the time implicitly) the expected outcome(s). In this level, no constraints are given on the setup layout or how the task should be executed. Some task description examples are "pouring liquid from a pitcher to a glass," "hammering a nail on a wood," or "grasping an apple".</p><p>2) Setup Description: This category provides the list of target objects of the manipulation experiment, their descriptions and initial poses with respect to each other. Also, if there are any other objects used as obstacles or clutter in the manipulation scenario, their description and layout need to be described. For instance, if the task is pouring a liquid from a pitcher to a glass, the object properties of the pitcher and glass should be provided, and their initial poses should be defined. As discussed in the previous sections, the usage of non-standard objects introduces uncertainty to many manipulation experiments presented in literature. We believe that removing uncertainties in this category of information is crucial to maintain well-defined benchmarks. Providing the YCB object and model set is a step towards that purpose. Also, in the protocols proposed in this paper, the initial poses of the objects are accurately provided. Naturally, a task description can have various setup descriptions designed to assess the manipulation performance in different conditions.</p><p>3) Robot/Hardware/Subject Description: This category provides information about the task executor. If the protocol is designed for a robotic system, the initial state of the robot with respect to the target object(s) and a priori information provided to the robot about the manipulation operation (e.g. the semantic information about the task, whether or not object shape models are provided etc.) are specified in this category. Also, if the protocol is designed for a specific hardware setup (including sensory suite), the description is given. If the task executor is a human subject, how the subject is positioned with respect to the manipulation setup is described here.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>4) Procedure:</head><p>In this category, actions that are needed to be taken by the person who conducts the experiment are explained step by step.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>5) Execution Constraints:</head><p>In this category, the constraints on how to execute the task are provided. For instance in Box and Blocks Test the subject is expected to use his/her dominant hand, and needs to transfer one block at a time, or if the task is "fetching a mug", the robot may be required to grasp the mug from its handle.</p><p>In Appendix A, we provide a template for easily designing manipulation protocols using the abovementioned categories. The amount and specifics of the detail in a specific protocol will naturally vary based on the particular problem being examined, and therefore the insight of the authors about the intended application will be crucial in crafting an effective set of task descriptions and constraints.</p><p>Related to this point, we anticipate protocols to be regularly improved and updated with feedback from the research community.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Benchmark guidelines:</head><p>After the task description, the second major part of each protocol is the specification of the associated benchmark specifying the details of the performance on the protocol. Benchmarks allow the researchers to specify the performance of their system or approach, and enable direct comparison with other approaches. The following categories of information are introduced for defining manipulation benchmarks. 1) Adopted Protocol: A well-defined description can be obtained for a manipulation benchmark by adopting a protocol that is defined considering the abovementioned aspects.</p><p>2) Scoring: Providing descriptive assessment measures is crucial for a benchmark. The output of the benchmark should give reasonable insight of the performance of a system. While designing the scoring criteria, it is usually a good practice to avoid binary (success/fail) measures; if possible, the scoring should include the intermediate steps of the task, giving partial points for a reasonable partial execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>3) To Submit:</head><p>This field specifies what it is expected from the user of the benchmark. Ideally, the user gives detailed information about anything that is not specified by the protocol (if a robotic manipulation benchmark is considered, these could be robot type, gripper type, grasping strategy, motion planning algorithm, grasp synthesis algorithm, etc.). The user should also submit the resulting score of the test. Moreover, asking the user to submit the reasons of the failed attempts and the factors that bring success would be quite useful for people who analyze the results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V. YCB PROTOCOLS AND BENCHMARKS:</head><p>While this protocol structure definition (and template provided in Appendix A) helps to guide the development of effective task specification for various manipulation benchmarks, we have developed a number of example protocols to both provide more concrete samples of the types of task definitions that can be put forward as well as specific and useful benchmarks for actually quantifying performance. We have defined five protocols to date:  Pitcher-Mug Protocol,  Gripper Assessment Protocol,  Table <ref type="table">Setting</ref> Protocol,  Block Pick and Place Protocol,  Peg Insertion Learning Assessment Protocol. From each protocol, a benchmark of reported performance is derived with the same name. We have implemented each of the protocols experimentally and report the benchmark performance of our implementations for each. These protocols and benchmarks can be found in Appendix B and the benchmarking results are presented in Appendix C. (Note that we intend to move the appendices to arxiv.org after peer review and not have them directly printed with the article.).</p><p>We have also implemented the Box and Blocks Test for maintaining a baseline performance of this test for robotic manipulation. Short descriptions for the protocol and benchmarks and summary of the benchmarking results are provided below.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>1) Pitcher-Mug Protocol and Benchmark:</head><p>One of the popular tasks among robotics researchers is pouring a liquid from a container. This task is interesting as it necessitates semantic interpretation, and smooth and precise manipulation of the target object. In Appendix B.1, a protocol is designed for executing this manipulation task. The protocol uses the pitcher and the mug of YCB object and model set, and provides a scenarios by specifying ten initial configurations of the pitcher and the mug. By standardizing the objects and providing detailed initial state information, it is aimed to maintain a common basis of comparison between different research groups. The benchmark derived from this protocol uses a scoring scheme that penalties the amount of liquid that remains in the pitcher or spilled on the table. This benchmark was applied using the HERB robot platform <ref type="bibr" target="#b57">[60]</ref> which can be seen in Fig. <ref type="figure" target="#fig_9">11</ref>. The reported results show that the task is successfully executed for 8 out of 10 pitcher mug configurations. For the two failed cases, the robot is able to grasp the pitcher, but cannot generate a suitable path for pouring the liquid. This shows the importance of planning the manipulation task as a whole rather than in segments. The details of the experimental results can be seen at Appendix C.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>2) YCB Gripper Assessment Protocol and Benchmark:</head><p>The abilities of a robot's gripper affect its manipulation performance significantly. In literature and in commercial market, various gripper designs are available each of which have different manipulation capabilities. The protocol presented in Appendix B.2 defines a test procedure for assessing the performance of grippers for grasping objects of various shapes and sizes. This protocol utilizes objects from the shape and tool categories of the YCB object and model set. Using this protocol, a benchmark is defined based on a scoring table. We applied this benchmark to two grippers designed in Yale GRAB Lab, the Model T and Model T42 <ref type="bibr" target="#b59">[62]</ref>, which can be seen in Fig. <ref type="figure" target="#fig_1">12</ref>. The results show that the Model T can provide successful grasp for only a limited range of object sizes. This gripper is not suitable for grasping small and flat object. However, the ability to interlace its fingers increases the contact surface with the object and brings an advantage especially for grasping concave and articulated objects. The Model T42 is able to provide stable power grasps for large objects and precision grasps for small objects. This model is also successful in grasping flat objects thanks to its nail-like finger tips. However, not being able to interlace its fingers brings a disadvantage while grasping articulated objects. Using the same benchmark for evaluating different gripper designs did not only provide a basis of comparison, but also gave many clues about how to improve the designs. The details of the experimental results are presented in Appendix C.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>3) YCB Protocol and Benchmark for Table Setting:</head><p>Pick-and-place is an essential ability for service robots. The benchmark provided in Appendix B.3 assesses this ability by the daily task of table setting. The protocol uses the mug, fork, knife, spoon, bowl and plate of the YCB object and model set. These objects are placed to predefined initial locations, and the robot is expected to replace them to specific final configurations. The benchmark scores the performance of the robot by the accuracy of the final object poses. This benchmark can also be applied in a simulation environment since the models of the objects are provided by the YCB Object and Model Set. A URDF file which spawns the scenario for Gazebo simulation environment is given at <ref type="url" target="http://rll.eecs.berkeley.edu/ycb/">http://rll.eecs.berkeley.edu/ycb/</ref>. A snapshot of this setting can be seen in Fig. <ref type="figure" target="#fig_2">13</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>4) Block Pick and Place Protocol and Benchmark:</head><p>Manual dexterity and the manipulation of small objects are critical skills for robots in several contexts. The block pick and place protocol presented in Appendix B.4 is designed to test a robot's ability to grasp small objects and transfer them to a specified location. This task is an important test of both arm and gripper hardware and motion planning software, as both contribute to overall dexterity. Points are awarded based on completion and precision of the manipulation. We executed this test on the HERB robot <ref type="bibr" target="#b57">[60]</ref> as seen in Fig. <ref type="figure" target="#fig_3">14</ref>. An image of the printed layout with the placed blocks after task completion can be seen in Fig. <ref type="figure" target="#fig_0">15</ref>. The results show that the robot is not able to success in precise pick and place task. The main reason is the utilized open loop grasping approach: The robot executes a robust push grasp strategy which allows it to grasp the blocks successfully. However, the pose of the block with respect to the gripper is not known precisely after the grasp. This prevents placing the blocks accurately to the target locations. The details of the experimental results are presented in Appendix C.3. Fig. 14: HERB robot implementing Block Pick and Place Benchmark Fig. 15: The results of the Block Pick and Place Benchmark (a) (b) Fig. 12: Grippers compared with Gripper Assessment Benchmark. (a) Model T, (b) Model T42.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>5) Peg Insertion Learning Assessment Protocol and Benchmark:</head><p>The Peg Insertion Learning Assessment Benchmark is designed for allowing comparison between various learning techniques. The benchmark measures the performance of a learned peg insertion action under various positioning perturbations. The perturbations are applied by moving the peg board to a random direction for certain amount of distance. We applied this benchmark to assess the performance of a learned linear-Gaussian controller using a PR2 robot <ref type="bibr" target="#b60">[63]</ref> (Fig. <ref type="figure" target="#fig_12">16</ref>). The state of the controller consists of the joint angles and angular velocities of the robot, and the positions and velocities of three points in the space of the end effector (3 points in order to fully define a rigid body configuration). No information is available to the controller at run time except for this state information. The results show that, the learned controller shows reasonable performance, 4 success out of 10 trials, for the case of 5mm position perturbation to a random direction. This success rate can be achieved by executing the controller for only one second. However, the performance does not improve even if the controller is run for a longer period of time. In the case of 10mm position perturbation, the controller fails completely. We are planning to learn the same task with different learning techniques and compare their performances using the benchmark.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>6) Box and Blocks Test:</head><p>As mentioned previously in Section 2, the Box and Blocks Test <ref type="bibr" target="#b40">[41]</ref> is a widely used assessment technique that is utilized in prosthetics and rehabilitation fields. The test evaluates how many blocks can be grasped and moved from one side of the box (Fig. <ref type="figure" target="#fig_11">17</ref>) to the other in a fixed amount of time. We believe that the application of this test can also be quite useful for assessing the manipulation capabilities of robots. In order to establish a baseline performance for this test for robotic manipulators, we applied the Box and Blocks Test with a PR2 robot (Fig. <ref type="figure" target="#fig_11">17</ref>) by implementing a very simple heuristic rules: The robot picks a location from a uniform distribution over the box and attempts to pick up a block. The gripper's pose aligns with the length of the box. The gripper is then closed, and checked if it is fully closed. If the gripper closes fully, this means no blocks have been grasped and therefore the robot chooses a new location to attempt another pick. The robot repeats this heuristic until the gripper is not fully closed. When a grasp is detected, the robot moves to the destination box and releases the block. By using this heuristic, we run 10 experiments of 2 minutes each, and report the results in Appendix C.5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VI. CONCLUSIONS AND FUTURE WORK</head><p>This paper proposes a set of objects and related tasks, as well as high-resolution scans and models of those objects, intended to serve as a widely-distributed and widely-utilized set of standard objects to facilitate the implementation of standard performance benchmarks for robotic grasping and manipulation research. The objects were chosen based on an in-depth literature review of other objects and tasks previously proposed and utilized in robotics research, with additional consideration to efforts in prosthetics and rehabilitation. Furthermore, a number of practical constraints were considered, including a reasonable total size and mass of the set for portability, low cost, durability of the objects, and the likelihood that the objects would remain mostly unchanged in years to come. High-resolution RGBD scans of the objects were done and models of the objects have been constructed to allow easy portability into simulation and planning environments. All of these data are freely available in the associated repository <ref type="bibr">[54]</ref>. The objects sets will be freely distributed to a large number of research groups through workshops/tutorials associated with this effort, and will be made available to purchase otherwise.</p><p>While a common set of widely-available objects is a much-needed contribution to the manipulation research community, the objects themselves are just the beginning. The generation of appropriate detailed tasks and protocols involving the objects is ultimately what will allow for replicable research and performance comparison. We make inroads into that problem in this paper by proposing a structure for protocols and benchmarks, implemented in a template, as well as six example protocols. The specification of protocols and benchmarks will necessarily need to be subcommunity driven and continually evolvingspecific aspects of the manipulation and specific research questions  and interests will naturally require different task particulars (e.g. specified and free parameters). We therefore plan to involve the research community in this effort via a web portal and arXiv-style working documents for proposed protocols, and will work towards having the majority of those protocols come from the user community rather than the authors. Additionally, we plan to have on this portal a "records" keeping functionality to keep track of the current "world records" for the different tasks and protocols, along with video and detailed descriptions of the approaches utilized, generating excitement, buzz, motivation, and inspiration for the manipulation community to compare approaches and push forward the state of the art.</p><p>Other efforts that we plan to undertake include more detail about the objects proposed, including information about the inertia of the objects, as well as frictional properties between the objects and common surfaced. Additionally, we will expand our treatment of the modelling of the objects, including addressing the tradeoffs between number of "triangles" and the reliable representation of the object geometry. Furthermore, before final publication and distribution of the object set, we will seek additional input from the research community on the specific objects in the set.</p><p>It is our hope that this work will help to address the longstanding need for common performance comparisons and benchmarks in the research community and will provide a starting point for further focused discussion and iterations on the topic.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Pitcher-Mug Benchmark</head><p>Reference No / Version Authors B-PM-0.01 Aaron Walsman, Berk Calli Institution CMU, Yale University Contact information aaronwalsman@gmail.com, berk.calli@yale.edu Adopted Protocol Pitcher-Mug Protocol (Reference No: P-PM-0.01) Scoring  At least half of the mug should be filled. Otherwise, the system gets 0 points.  It is aimed to pour the water without spilling it to the table. The following calculation gives 1 point for the perfectly executed task and applies penalties for the spilled water. o Measure the weight of the mug and the pitcher before the execution (M before and P before respectively). o Execute the task. o Measure the weight of the mug and pitcher after the execution (M after and P after respectively). o Calculate (M after -M before )/ (P before -P after ).  Implement the protocols for all ten printable layouts and sum up the points for each execution for the overall score. To Submit  Scores for individual scenarios, and overall score.  Detailed description of the system.  Detailed comments on: o What makes the system successful? o What makes the system fail? Targeted robots/hardware: Any. Initial state of the robot with respect to the setup: For each object in the round, flat, and tools categories, any desired grasping pose can be chosen when the object is at SP1. This position should be kept the same while conducting experiments with SP2, SP3 and SP4 (see the procedure part for details.) Prior information provided to the robot: None. Procedure For each object in the round, flat, and tools categories, 1. Place the object to SP1. 2. Set a desired grasping pose of the gripper, and record this pose. 3. Execute the grasp. 4. Lift the object. 5. Hold for 3 seconds. 6. Rotate the grasped object 90 degrees in the x direction of the grid. 7. Hold for 3 seconds. 8. Move the gripper to the pose recorded at step 2, and repeat the steps 3 to 7 for set points SP2, SP3 and if applicable SP4. If the grasp fails at step 3, 4, 5, 6 or 7 when the object is at SP1, skip to the next object. If the grasp fails when the object is at SP2, SP3 or SP4, jump to step 8. For articulated objects: 1. Place the object randomly inside the grid. 2. Set a desired grasping pose of the gripper, and record this pose. 3. Execute the grasp. 4. Lift the object 15 cms. 5. Hold for 3 seconds. 6. Keeping the recorded pose of the gripper at step 2, repeat the experiment for 20 times. Execution Constraints Any grasping strategy can be utilized while grasping the objects. The grasping strategy can differ from object to object. However, the grasping strategy and the motion applied for SP1 should be kept the same for SP2, SP3 and SP4 for each object. It is not allowed to move the object to the edges of the planar object or the table. Gripper Assessment Benchmark Reference No / Version Authors Institution B-GA-0.01 Berk Calli, Aaron Dollar Yale University Contact information berk.calli@yale.edu Adopted Protocol Gripper Assessment Protocol (P-GA-0.01) Scoring Fill the attached table with the following rules: For each set points, and for each object category other than articulated objects:  After step 5 of the procedure, if the object is not dropped and if no visible motion of the object is detected within the gripper during steps 4 and 5, the gripper gets 2 points. If the object is not dropped, but visible object motion is detected during steps 4 and 5, the gripper gets 1 point.  If the object is still not dropped after step 7 and no visible motion of the object is detected within the grip during steps 6 and 7, add 2 more points. If the object is not dropped, but visible object motion is detected during steps 6 and 7 add 1 point. Write the score to the corresponding cell. For articulated objects:  If no part of the object is touching the table after step 5, the grasp is considered successful. Add 0.5 points for each successful grasp. To submit  Scoring table (attached to the benchmark)  Detailed descriptions of the gripper (or a reference that provide detailed descriptions).  Detailed comments on: o The advantages of the gripper. o The disadvantages of the gripper. o Reasons for the failed grasps. Benchmark for Table Setting Reference No / Version Authors B-TS-0.01 Berk Calli Institution Yale University Contact information berk.calli@yale.edu Adopted Protocol Protocol for Table Setting (P-TS-0.01) Scoring  For each object that is placed fully inside the correct colored area, the system gets 4 points.  For each object that touches the correct color, but has some part outside the colored area, the system gets 2 points.  For each object that is grasped and lifted successfully, but placed totally outside the correct color area, the system gets 1 point.  Sum up the points for the overall score. To Submit  The resulting score.  System Description  Provide detailed comments on: o What makes the system successful? o What makes the system fail? o What kind of improvements are necessary in  the hardware design,  the grasp synthesis algorithm,  the manipulation strategy,  and semantic modeling of the task? Score Round objects 43/187 Flat objects 12/96 Tools 50/144 Articulated 17/20 Total 122/447</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Comments</head><p>Comments: The Model T gripper provided stable grasps for a limited range of object sizes. It was unsuccessful for flat objects with round edges (washers), but maintained robust results for flat objects with straight edges. For most of the tool items, the gripper failed to provide a stable grasps. The reason of failure while grasping large objects appears to be due to the flexure joints at the finger bases: When the object gets bigger, these flexure joints apply torsional forces on the object which degrades the stability of the grasp. While grasping small objects, the ability of the gripper fingers to interlace works as a disadvantage: The objects smaller than the gaps between the fingers cannot be grasped with this gripper. The ability to interlace brings an advantage while grasping articulated objects: While grasping the chain and the rope, the gripper fingers can tightly wrap around the object and provide stable grasps. Interlacing appears to be an advantage while grasping objects like driller and hammer: The fingers can wrap around these objects and provide large amount of contact surfaces. However, the flexure joints at the finger bases are not able to provide enough stiffness to lift these heavy objects. While grasping the clippers, it is observed that the gripper can take significant advantage of the concavities of the object. To summarize, even though the flexure joints at the finger bases provide adaptability, they are not able to supply the stiffness to grasp large and heavy objects. The performance of this gripper can be improved significantly, if these base flexure joints are replaced with pin joints.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Scoring Table for Gripper Assessment</head><p>Gripper name/model: Model T42</p><p>(Raymond R. Ma, Lael U. Odhner, Aaron M. Dollar "A Modular, Open-Source 3D Printed Underactuated Hands," Proceedings of the 2013 IEEE International Conference on Robotics and Automation (ICRA), Karlsruhe, Germany, May 6-10, 2013.) Manufacturer: Yale GRAB LAB Name/Institution: Yale GRAB LAB Contact info: berk.calli@yale.edu SP1 SP2 (x offset) SP3 (y offset) SP4 (z offset) Round Objects Soccer Ball 3 2 3 3 Softball 4 4 4 4 Tennis ball 4 4 4 4 Racquetball 4 4 4 4 Golf ball 4 4 4 4 Marble XL 4 4 4 4 Marble L 4 4 4 4 Marble M 4 4 4 4 Marble S 4 4 4 4 Flat Objects Washer 1 (largest) 4 4 4 Washer 2 4 4 4 Washer 3 4 4 4 Washer 4 4 4 4 4 Washer 5 4 4 4 Washer 6 4 4 4 4 Washer 7 (smallest) 0 0 0 Credit card 4 4 4 Tools Pen 4 4 4 4 Scissors 4 4 4 4 Hammer 0 0 0 0 Screwdriver 4 4 4 4 Driller 3 3 3 3 Peg XL 4 4 4 4 Peg L 4 3 3 4 Peg M 4 4 4 3 Peg S 4 4 4 4 Articulated Chain 2 Rope</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 :</head><label>1</label><figDesc>Fig. 1: Food items in the YCB Object Set: back row: coffee can, cereal box, cracker box, chips can, box of sugar; middle row: mustard container, chocolate pudding box, tomato soup can, gelatin box, potted meat can; front: plastic fruit (lemon, apple, pear, orange, banana, peach, strawberries, plum).</figDesc><graphic coords="6,74.70,59.70,216.00,144.00" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Fig. 2 :</head><label>2</label><figDesc>Fig. 2: Kitchen items in the YCB Object Set: back row: pitcher, plastic wine glass, abrasive sponge, glass cleaner; front: enamelcoated metal dishware (bowl, coffee mug and plate), eating utensils (knife, spoon, and fork), cooking skillet with glass lid, plastic turner.</figDesc><graphic coords="6,74.70,263.52,216.00,144.00" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Fig. 3 :</head><label>3</label><figDesc>Fig. 3: Tool items in the YCB Object Set: back: wood blocks (four items, three sizes), power drill; front: nails (three sizes), hammer, plastic bolt and nut; adjustable wrench, wood screw, phillips and flat screwdrivers, padlock and keys, spring clamps (five sizes), scissors, markers (three sizes/types).</figDesc><graphic coords="6,329.82,63.54,216.00,144.00" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 4 :</head><label>4</label><figDesc>Fig. 4: Shape items in the YCB Object Set: back: stacking blocks (set of 10), credit card blank, foam bricks (set of 3), spherical objects (softball, tennis ball, racquetball, golf ball, marble assortment); front: plastic chain, nylon rope, washer assortment (7 sizes), dice (set of 12).</figDesc><graphic coords="6,329.82,267.36,216.00,144.00" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Fig. 5 :Fig. 6 :</head><label>56</label><figDesc>Fig. 5: (left) Box-and-blocks test objects: set of 100 wooden cubes, two containers and height obstacle (container lid) between them. (right) 9-hole peg test: wooden pegs are placed in</figDesc><graphic coords="8,60.12,59.28,105.90,86.34" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Fig. 7 :</head><label>7</label><figDesc>Fig. 7: Assembly object: Lego pieces.</figDesc><graphic coords="8,58.80,354.95,233.80,102.80" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Fig. 8 :</head><label>8</label><figDesc>Fig. 8: BigBIRD Object Scanning Rig: the box contains a computercontrolled turntable.</figDesc><graphic coords="9,57.90,59.28,233.04,169.50" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Fig. 9 :</head><label>9</label><figDesc>Fig. 9: Point cloud and textural data overlays on two YCB objects: mustard bottle and power drill.</figDesc><graphic coords="9,70.56,267.90,86.04,129.54" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Fig. 10 :</head><label>10</label><figDesc>Fig. 10: (left) Screen-capture from Openrave simulation and planning environment showing the HERB robot [34] planning a grasp of the power drill object in the set. (right) actual grasp being executed by the robot on the physical object.</figDesc><graphic coords="10,63.12,57.78,296.88,172.50" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Fig. 11 :</head><label>11</label><figDesc>Fig. 11: HERB robot implementing Pitcher-Mug Benchmark</figDesc><graphic coords="11,320.64,589.44,226.86,119.58" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Fig. 13 :Fig. 14 :Fig. 15 :Fig. 12 :</head><label>13141512</label><figDesc>Fig. 13: The simulation environment forTable Setting Benchmark. This environment can be spawned by using the URDF provided at http://rll.eecs.berkeley.edu/ycb</figDesc><graphic coords="12,317.28,57.60,226.08,132.36" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Fig. 17 :</head><label>17</label><figDesc>Fig. 17: PR2 executing the Box and Blocks Test.</figDesc><graphic coords="13,320.60,222.70,230.90,194.40" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Fig. 16 :</head><label>16</label><figDesc>Fig. 16: PR2 executing the Peg Insertion Learning Assessment Benchmark.</figDesc><graphic coords="13,320.10,57.70,226.55,127.40" type="bitmap" /></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGMENT</head><p>The authors would like to thank <rs type="person">Michael Leddy</rs> for his efforts in measuring the physical properties of the objects in the set. We would also like to thank <rs type="person">Peter Allen</rs> and <rs type="person">Jeff Trinkle</rs> for their feedback on the objects in the set and the overall approach taken here.</p></div>
+			</div>
+			<div type="funding">
+<div><p>Funding for this work was provided in part by the <rs type="funder">National Science Foundation</rs>, grants <rs type="grantNumber">IIS-0953856</rs>, <rs type="grantNumber">IIS-1139078</rs>, and <rs type="grantNumber">IIS-1317976</rs>. <rs type="person">B. Calli</rs> and <rs type="person">A. Dollar</rs> are with the</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_gZ8nDWh">
+					<idno type="grant-number">IIS-0953856</idno>
+				</org>
+				<org type="funding" xml:id="_3dBXwkd">
+					<idno type="grant-number">IIS-1139078</idno>
+				</org>
+				<org type="funding" xml:id="_FUddxma">
+					<idno type="grant-number">IIS-1317976</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Pitcher-Mug Protocol</head><p>Reference No / Version Authors P-PM-0.01 Aaron Walsman, Berk Calli Institution CMU, Yale University Contact information aaronwalsman@gmail.com, berk.calli@yale.edu Purpose To assess the ability of a robot to execute a common daily task. Task Description Pour a liquid from the pitcher to the mug.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Setup Description</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>List of objects and their descriptions:</head><p>The following objects from the YCB object set are used: The mug, the pitcher and the white table cloth.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Initial poses of the objects:</head><p>The initial poses of the mug and the pitcher are defined for ten different scenarios. Printable layouts provided are provided for all these configurations are in <ref type="url" target="http://rll.eecs.berkeley.edu/ycb/">http://rll.eecs.berkeley.edu/ycb/</ref>. Print the layouts to an A3 paper, and place them on the table one by one for each scenario.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Description of the manipulation environment:</head><p>Conduct the experiment on the white table cloth provided by the object set. Avoid background clutter. Instead of water, rice can be used to avoid hazardous conditions. Robot/Hardware Description</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Targeted robots:</head><p>The protocol is designed for robots that have on board sensors. No sensors fixed to the environment should be used.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Initial state of the robot/subject with respect to the setup:</head><p>In the initial state, the robot's vision sensor should be aligned with the corresponding marker on the printable layouts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prior information provided to the robot:</head><p>The robot does not know the model of the pitcher or the mug. The robot knows:  both the pitcher and the mug have a handle,  the pitcher's handle is bigger than the mug's handle,  the opening of the pitcher is at the top and opposite side of the handle.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>APPENDIX B.2 GRIPPER ASSESSMENT PROTOCOL AND BENCHMARK:</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Gripper Assessment Protocol</head><p>Reference No / Version Authors P-GA-0.01 Berk Calli, Aaron Dollar Institution Yale University Contact information berk.calli@yale.edu Purpose Assessing the abilities of a gripper to firmly grasp objects of different sizes and shapes.</p><p>Task Description Grasp objects with various sizes and shapes one by one. Setup Description</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>List of objects and their descriptions:</head><p>The following objects from the YCB object and model set are used:  Round objects: Soccer ball, softball, tennis ball, racquetball, golf ball, marbles (4 different sizes).  Flat objects: Washers (7 different sizes.), credit card.  Tools: Pen, scissors, screwdriver, driller, hammer, clamps (4 different sizes).  Articulated objects: Plastic chain, rope. Other objects: a 1 cm thick planar object (not included in the set, for applying position offset to the objects as explained below). The user of the protocol may prefer to use any combination of the above mentioned object categories depending on the scope of the performance assessment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Description of the manipulation environment:</head><p>Print the grid provided at <ref type="url" target="http://rll.eecs.berkeley.edu/ycb/">http://rll.eecs.berkeley.edu/ycb/</ref> and place it on a table. This grid is used to easily apply position offsets to the object in Cartesian directions. Print another copy of the grid and stick it on the 1 cm thick planar object as explained at <ref type="url" target="http://rll.eecs.berkeley.edu/ycb/">http://rll.eecs.berkeley.edu/ycb/</ref>. Place the planar object on the table by aligning the grids.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Initial poses of the objects:</head><p>In order to assess the robustness of a gripper, position offsets will be applied to the objects while keeping the gripper position fixed. For this purpose, four set points (SP) are defined as follows:  SP 1: grid on the planar object, x = 0 cm, y = 0 cm,  SP 2: grid on the planar object, x = 1 cm, y = 0 cm,  SP 3: grid on the planar object, x = 0 cm, y = 1 cm,  SP 4: grid on the table, x = 0 cm, y = 0cm. For round objects: Four initial positions are defined by placing the objects at SP1, SP2, SP3 and SP4. (To stabilize the round objects, they can be placed on the washers). For flat objects: Three initial positions are defined for each object by aligning the center of the objects with SP1, SP2 and SP3. Set the orientation of the credit card such that the long edge is parallel to the x axis of the grid. For tools: Four initial positions are defined by aligning the (approximate) center of the objects with SP1, SP2, SP3, SP4. Set their orientation such that the major axis is parallel to the x axis of the grid. Articulated objects: Place the objects randomly inside the grid area.</p><p>Manufacturer: Name/Institution: Contact info: SP1 SP2 (x offset) SP3 (y offset) SP4 (z offset) Round Objects Soccer Ball Softball Tennis ball Racquetball Golf ball Marble XL Marble L Marble M Marble S Flat Objects Washer 1 (largest) Washer 2 Washer 3 Washer 4 Washer 5 Washer 6 Washer 7 (smallest) Credit card Tools Pen Scissors Hammer Screwdriver Driller Peg XL Peg L Peg M Peg S Articulated Chain Rope APPENDIX B.3 YCB GRIPPER ASSESSMENT PROTOCOL AND BENCHMARK: Protocol for Table Setting Reference No / Version Authors Institutions P-TS-0.01 Berk Calli Yale University Contact information berk.calli@yal.edu Purpose To assess the pick and place ability of a robotic system. Task Description Set up a table by placing kitchen inventories to predefined places. Setup Description</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>List of objects and their descriptions:</head><p>The following objects from the YCB object set are used: The mug, the plate, the fork, the spoon, the knife, the bowl and the white table cloth.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Initial poses of the objects</head><p>The initial positions of each object are defined with a printable layout provided in <ref type="url" target="http://rll.eecs.berkeley.edu/ycb/">http://rll.eecs.berkeley.edu/ycb/</ref>. Print the layout to an A3 paper, and place it on the table.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Description of the manipulation environment:</head><p>Conduct the experiment on the white table cloth provided by the object set. Avoid background clutter. The target positions of the objects are defined with a printable layout provided in <ref type="url" target="http://rll.eecs.berkeley.edu/ycb/">http://rll.eecs.berkeley.edu/ycb/</ref>. The final position of each object is designated with a different colored region.</p><p>Print the layout to an A3 paper, and place it next to the first printable layout as explained on the website. Robot/Hardware Description Targeted robots/hardware: The protocol is designed for robots that have on board sensors. No sensors fixed to the environment should be used.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Initial state of the robot with respect to the setup:</head><p>The manipulator of the robot can start from any initial configuration that is at least 10 cm away from the target objects.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prior information provided to the robot:</head><p>In order to avoid the use of object recognition algorithms and to evaluate only the manipulation performance, the object-color order is known to the robot: From left to right, the first object should be placed on the yellow region, the second object to the magenta region and the third object to the green region, forth object to the cyan region, fifth object to the blue region and sixed object to the red region. If a grasp synthesis algorithm for known objects is used, the models provided by the YCB model and object set can be utilized. If an algorithm for unknown objects is used, no a priori shape information should be provided to the robot. Procedure 1. Place the objects to the initial positions indicated by the printable layout. 2.</p><p>Run the system. APPENDIX B.4 BLOCK PICK AND PLACE PROTOCOL AND BENCHMARK: Block Pick and Place Protocol Reference No / Version Authors Institution P-BP-0.01 Aaron Walsman, Siddhartha Srinivasa CMU Contact information aaronwalsman@gmail.com Purpose Assess the dexterity of a robotic manipulator using a pick-and-place task. Task Description Arrange blocks into a specified pattern. Setup Description Description of the manipulation environment: Print the template provided at <ref type="url" target="http://rll.eecs.berkeley.edu/ycb/">http://rll.eecs.berkeley.edu/ycb/</ref>, and place it in front of the robot. The template signifies the target final positions of the blocks. List of objects and their descriptions: Eight wooden blocks that are provided by YCB object and models set (as a part of the Box and Blocks Test) are used. Initial poses of the objects: The blocks are placed on the table randomly but at least ten centimeters away from the printed template. Robot/Hardware/Subject Description Targeted robots/hardware/subjects: Any robotic manipulator. Initial state of the robot/hardware/subject with respect to the setup: The robot may start in any configuration such that the manipulator is at least ten centimeters from the blocks and template. Prior information provided to the robot/hardware/subject: The starting configuration of the template and blocks can either be specified a-priori, or perceived using on-board sensors. Procedure 1) Place the blocks as described. 2) Run the system. Execution Constraints None. Block Pick and Place Benchmark Reference No / Version Authors Institution B-BP-0.01 Aaron Walsman CMU Contact information aaronwalsman@gmail.com Adopted Protocol Block Pick and Place Protocol (P-BP-0.01) Scoring The robot is awarded one point for each block that is touching a unique target area on the printed template. Two blocks touching the same target area does not score two points. Additionally, if the robot is awarded one additional point for any block that is entirely contained within the target area (does not touch the border of the target area). Finally, the robot loses one point for any block that is either partially or fully off of the printed template. To submit  Score.  Provide detailed comments on: o What makes the system successful? o What makes the system fail? o What kind of improvements are necessary? APPENDIX B.5 PEG INSERTION LEARNING ASSESSMENT PROTOCOL AND BENCHMARK: Peg Insertion Learning Assessment Protocol Reference No / Version Authors P-PI-0.01 Arjun Singh, Pieter Abbeel Institution UC Berkeley Contact information arjun810@gmail.com, pabbeel@cs.berkeley.edu Purpose To assess the learning performance of a robot by the task of inserting a single peg to a hole.</p><p>Task Description Insert a peg to a hole with a learned policy. Setup Description</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Description of the manipulation environment:</head><p>List of objects and their descriptions: 9-peg hole test provided by YCB Object and model set is used.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Initial poses of the objects:</head><p>The robot gripper holds the peg in a pose specified by the user. The pose of the peg with respect to the gripper is kept the same for all executions.</p><p>A home position for the peg board is defined by the user. 20 perturbed initial positions are defined for the peg board as follows:  Two perturbation levels are defined as 5mm perturbation and 10mm perturbation.  The peg board is moved away from the home position following a random direction with the specified amount of perturbation. This process is repeated 10 times for each perturbation level, and the positions are recorded. Robot/Hardware/Subject Description Targeted robots/hardware/subjects: Any robotic manipulator that can translate the peg in x, y and z directions in the Cartesian space. Initial state of the robot/hardware/subject with respect to the setup: The initial pose of the manipulator is set in such a way that the initial position of the peg is 10 cm above the target hole.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Prior information provided to the robot/hardware/subject:</head><p>The home position of the peg board (thus the hole) is known by the robot. The perturbation amount and direction are unknown to the robot. Procedure Four execution durations are defined as 0.5 seconds, 1 second, 3 second and 5 second. The procedure is as follows: 1) Place the peg board to the initial position.</p><p>2) Move the robot to the initial position.</p><p>3) Run the peg insertion procedure. 4) Terminate the procedure after the execution duration.  Execute this procedure 10 times for all four execution durations by setting the initial position of the peg board to the home position (40 experiments).  Execute this procedure once for each (recorded) perturbed initial positions for all four execution durations (80 experiments in total). Execution Constraints None.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Peg Insertion Learning Assessment Benchmark</head><p>Reference No / Version Authors Institution B-PI-0.01 Arjun Singh, Pieter Abbeel UC Berkeley Contact information arjun810@gmail.com, pabbeel@cs.berkeley.edu Adopted Protocol Peg Insertion Learning Assessment Protocol (P-PI-0.01) Scoring Fill the attached scoring table with the number of successful trials. To Submit  Scoring table.  System Description.  Provide detailed comments on: o Utilized learning technique. o What makes the system successful? o What makes the system fail? o What kind of improvements are necessary? Scoring table for Peg Insertion Learning Assessment Benchmark Execution time 0.5 sec 1 sec 3 secs 5 secs No Perturbation /10 /10 /10 /10 5 mm Perturbation /10 /10 /10 /10 10 mm Perturbation /10 /10 /10 /10 APPENDIX C. BENCHMARKING RESULTS: APPENDIX C.1 PITCHER-MUG BENCHMARKING RESULTS Score Trial Pitcher Before Cup Before Pitcher After Cup After Score 1 .475 .115 .280 .305 0.974 2 .470 .115 .265 .320 1.0 3 .475 .115 .250 .330 0 4 .470 .115 .275 .305 0.974 5 .470 .115 .315 .270 0 6 .520 .115 .250 .385 1.0 7 .525 .115 .330 .305 0.974 8 .520 .115 .315 .320 1.0 9 .525 .115 .265 .370 .981 10 .520 .115 .275 .355 0.980 Avg .497 .115 .282 .3265 0.7884 System Description Robot platform: HERB (Siddhartha Srinivasa, Dmitry Berenson, Maya Cakmak, Alvaro Collet Romea, Mehmet Dogar, Anca Dragan, Ross Alan Knepper, Tim D. Niemueller, Kyle Strabala, J Michael Vandeweghe, and Julius Ziegler, "HERB 2.0: Lessons Learned from Developing a Mobile Manipulator for the Home," Proceedings of the IEEE, Vol. 100, No. 8, July, 2012, pp. 1-19) Gripper: Barrett BH280 (<ref type="url" target="http://web.barrett.com/support/BarrettHand_Documentation/BH8-280_Datasheet.pdf">http://web.barrett.com/support/BarrettHand_Documentation/BH8- 280_Datasheet.pdf</ref>)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Comments</head><p>The table above shows the results of the Pitcher-Mug benchmark on the HERB robot platform using the CBiRRT planner with TSR constraints. In this test, the locations of the pitcher and mug were known a priori. Due to the robot's large hands we were unable to make use of the pitcher's handle and instead opted to pour by grasping the bottom of the pitcher cylinder itself. For each test run the robot planned to an arm configuration offset slightly from the pitcher, then ran an open loop action to push the hand towards the pitcher and close the hand. Once grasped, the robot lifted the pitcher and planned a pouring motion using the CBiRRT planner with TSR constraints to rotate the pitcher about a fixed point in front of the spout. We did not have the ability to estimate the pitcher mass in the hand to determine pouring progress, so we instead waited a fixed number of seconds before returning the pitcher to an upright position and placing it back on the table. On one run the robot was not able to replace the pitcher in an upright position. In another, it did not manage to fill the cup halfway. Both runs scored zero. Because we used a randomized planner for most of the motions, the path taken between endpoints is nondeterministic. This is one potential source of failure as occasionally the planner will find one path to an intermediate goal position, but then be unable to find a path to the next goal. This is indeed what happened in failure case on trial 3 above. The planner found a trajectory to get into the pour position, but was then unable to find a trajectory to set the pitcher back down. The other failure case in which the mug was not filled was caused by the pitcher not being tilted far enough when pouring the water. This was also a problem with planning. When setting up this experiment, we built in a backup mechanism whereby if the robot was unable to find a plan to tilt the pitcher all the way, it would attempt to plan to a different pose that was almost as far. This increased reliability, but also led to this failure case in which the water was not poured out all the way. The HERB robot performed well on this protocol in the non-failure cases. The results show that the robot's greatest room for improvement is in reliability rather than precision.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>APPENDIX C.2 GRIPPER BENCHMARKING RESULTS</head><p>The YCB Gripper Benchmark is applied to two grippers designed in Yale GRAB lab: Gripper Model T, Gripper Model T42. The results are presented below.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Scoring Table for Gripper Assessment</head><p>Gripper name/model: Model T</p><p>(Raymond R. Ma, Lael U. Odhner, Aaron M. Dollar "A Modular, Open-Source 3D Printed Underactuated Hands," Proceedings of the 2013 IEEE International Conference on Robotics and Automation (ICRA), Karlsruhe, Germany, May 6-10, 2013.) Manufacturer: Yale GRAB LAB Name/Institution: Yale GRAB LAB Contact info: berk.calli@yale.edu SP1 SP2 (x offset) SP3 (y offset) SP4 (z offset) Round Objects Soccer Ball 0 0 0 0 Softball 4 3 2 2 Tennis ball 4 4 4 4 Racquetball 4 4 4 4</p><p>Golf ball 0 0 0 0</p><formula xml:id="formula_0">Marble XL 0 0 0 0 Marble L 0 0 0 0 Marble M 0 0 0 0 Marble S 0 0 0 0 Flat Objects Washer 1 (largest) 0 0 0 Washer 2 0 0 0 Washer 3 0 0 0 Washer 4 0 0 0 Washer 5 0 0 0 Washer 6 0 0 0 Washer 7 (smallest) 0 0 0 Credit card 4 4 4 Tools Pen 0 0 0 0 Scissors 0 0 0 0 Hammer 0 0 0 0 Screwdriver 0 0 0 0 Driller 0 0 0 0 Peg XL</formula><p>4 4 4 4 Peg L 4 4 4 4 Peg M 4 4 4 4 Peg S 2 0 0 0 Articulated Chain 7 Rope Score Round objects 182/187 Flat objects 84/96 Tools 91/114 Articulated 12/20 Total 379/447</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Comments</head><p>The Model T42 gripper provided stable grasps for a large range of object sizes and shapes. It is observed that it can provide power grasps by adapting to large shapes, and can provide precision grasps while grasping small objects thanks to its finger design. By utilizing its nails, the gripper was able to grasp very tiny and flat objects (i.e. small washers and credit card) robustly. The main disadvantage appears to be the non-interlacing fingers. For objects like hammer and driller, the non-interlacing fingers prevent to acquire firm grasps due to insufficient contact surfaces. The same disadvantage also applies while grasping articulated objects. It is also observed that concavities on the object surface sometimes leads to insufficient contact which prevents a firm grasp. This has been observed while grasping the clippers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>APPENDIX C.3 BLOCK PICK AND PLACE BENCHMARKING RESULTS:</head><note type="other">Trial</note><p>Blocks Touching Target Areas Blocks Entirely Within Target Areas Blocks Partially Off Printed Template Score 1 7 0 1 6 2 7 1 1 7 3 6 0 1 5 4 0 0 8 -8 5 1 0 7 -6 6 7 0 0 7 Avg 4.67 0.17 3.0 1.83 System Description Robot platform: HERB (Siddhartha Srinivasa, Dmitry Berenson, Maya Cakmak, Alvaro Collet Romea, Mehmet Dogar, Anca Dragan, Ross Alan Knepper, Tim D. Niemueller, Kyle Strabala, J Michael Vandeweghe, and Julius Ziegler, "HERB 2.0: Lessons Learned from Developing a Mobile Manipulator for the Home," Proceedings of the IEEE, Vol. 100, No. 8, July, 2012, pp. 1-19) Gripper: Barrett BH280 (<ref type="url" target="http://web.barrett.com/support/BarrettHand_Documentation/BH8-280_Datasheet.pdf">http://web.barrett.com/support/BarrettHand_Documentation/BH8- 280_Datasheet.pdf</ref>)</p><p>Comments The table above shows six test runs of the block placement protocol on the HERB robot platform using the CBiRRT planner with TSR constraints. Because of the relatively large hands of the HERB robot and the small size of the blocks, we developed a block grasping strategy that consisted of using CBiRRT to plan the end effector to a position above and slightly behind a selected block. The system then runs a series of open-loop actions that lower the hand to the table height and push the end-effector forward while the hand is in a position designed to funnel the block into a graspable position. The hand then closes, grasping the block and the end-effector pulls away from the table again. In order to place the block, CBiRRT plans the end-effector to a position above the desired final location of the block, then another open-loop action lowers the hand to the table and gently sets the block down to avoid unnecessary bouncing. We found this strategy was largely successful at placing the blocks such that they at least touched the target locations, however due to uncertainties introduced by the open-loop motions, we were not able to reliably place the blocks such that they were entirely within the target squares. In these results, trial 4 and 5 encountered irrecoverable conditions early into the run, which dropped the overall average substantially. If greater reliability could be achieved, an average score above 6.0 would be reasonable. Note that this is well below the 16.0 perfect score that would awarded if all blocks we placed entirely within their respective target areas. In order to achieve this score, more development would be required to achieve a grasp and place action that resulted in less uncertainty and more repeatability. For these tests, the failure cases were caused by planning failures with our randomized planner in which no paths were found either to pick the block up or to place it. This is partially because we specified relatively small goal regions for these actions, but also because some of the target regions were close to the edge of the robot's reachable workspace. The results provide a reasonable assessment of the robot's precision and repeatability when performing this task, and revealed a clear path towards improvement.</p><p>APPENDIX C.4 PEG INSERTION LEARNING BENCHMARKING RESULTS: Execution time 0.5 sec 1 sec 3 secs 5 secs No Perturbation 7/10 9/10 10/10 10/10 5 mm Perturbation 2/10 4/10 4/10 4/10 10 mm Perturbation 0/10 0/10 0/10 0/10 System Description PR2 (<ref type="url" target="https://www.willowgarage.com/pages/pr2/overview">https://www.willowgarage.com/pages/pr2/overview</ref></p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>) Comments</head><p>Utilized learning technique: In order to achieve the manipulation task, a linear-Gaussian controller is learned. The state consists of the joint angles and angular velocities of the robot, and the positions and velocities of three points in the space of the end effector (3 points in order to fully define a rigid body configuration).The objective during training depends on the distance between these points and the target position (measured before the random, unknown perturbations are added, which help to train a more robust controller).</p><p>No information is available to the controller at test time except joint angles, angular velocities, and the positions &amp; velocities of those three points. A random perturbation in the horizontal plane is sampled from a normal distribution with standard deviation of 3 mm for each trial.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>APPENDIX C.5 BOX AND BLOCKS TEST RESULTS:</head><p>Utilized approach: The robot picks a location from a uniform distribution over the box and attempts to pick up a block.</p><p>The gripper's pose aligns with the length of the box. The gripper is then closed, and checked if it is fully closed. If the gripper closes fully, this means no blocks have been grasped and therefore the robot chooses a new location to attempt another pick. The robot repeats this heuristic until the gripper is not fully closed. When a grasp is detected, the robot moves to the destination box and releases the box. By using this heuristic, we run 10 experiments of 2 minutes each, and the results are presented in the table below. System Description PR2 (<ref type="url" target="https://www.willowgarage.com/pages/pr2/overview">https://www.willowgarage.com/pages/pr2/overview</ref>) Trial Miss** Pick 1* Pick 2* Pick 3* Pick 4* Successful Transfers Blocks Transfered Transfer fail*** 1 6 4 4 0 0 8 12 0 2 4 3 6 0 0 9 15 1 3 5 6 2 0 0 8 10 1 4 7 3 2 0 1 6 11 1 5 7 5 2 0 0 7 9 1 6 6 7 1 0 0 8 9 0 7 7 4 3 0 0 7 10 1 8 4 9 0 0 0 9 9 0 9 12 0 4 0 0 4 8 1 10 7 0 6 1 0 7 15 1 Mean 6.5 4.1 3 0.1 0.1 7.3 10.8 0.7 Standard devation 2.15 2.7 1.89 0.3 0.3 1.41 2.35 0.45 *Pick x: the number of times the robot successfully picked and dropped off x blocks. **Miss: the number of times the gripper closed and there was no block in it. ***Transfer fail: the number of times the robot fails to pick up a block and performs a drop off anyways.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><figDesc>the robot/hardware/subject with respect to the setup: Prior information provided to the robot/hardware/subject:</figDesc></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">BigBIRD: A Large-Scale 3D Database of Object Instances</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">S</forename><surname>Narayan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Achim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Robotics and Automation</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">B</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Godil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schreck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Aono</surname></persName>
+		</author>
+		<ptr target="http://www.itl.nist.gov/iad/vug/sharp/contest/2014/Generic3D/" />
+		<title level="m">SHREC&apos;14 Track: Large Scale Comprehensive 3D Shape Retrieval</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">The Columbia Grasp Database</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Goldfeder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ciocarlie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">K</forename><surname>Allen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Robotics and Automation</title>
+		<imprint>
+			<date type="published" when="2009">2009. 2009</date>
+			<biblScope unit="page" from="1710" to="1716" />
+		</imprint>
+	</monogr>
+	<note>ICRA &apos;09</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<ptr target="http://www.sketchup.com/" />
+		<title level="m">Sketchup. Available</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">MoveIt!</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chitta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sucan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Cousins</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics Automation Magazine</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="page" from="18" to="19" />
+			<date type="published" when="2012-03">March 2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">A list of household objects for robotic retrieval prioritized by people with ALS</title>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">S</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Deyle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Glass</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">C</forename><surname>Kemp</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Rehabilitation Robotics</title>
+		<imprint>
+			<biblScope unit="page" from="510" to="517" />
+			<date type="published" when="2009">2009. 2009. 2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Test-retest Reliability of the Southampton Hand Assessment Procedure</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Adams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hodges</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kujawa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Metcalf</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Rehabilitation Research</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Development of the Graded Redefined Assessment of Strength, Sensibility and Prehension (GRASSP): reviewing measurement specific to the upper limb in tetraplegia</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kalsi-Ryan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Curt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Verrier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Mg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Neurosurg Spine</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="65" to="76" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">A standardized approach to performing the action research arm test</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Yozbatiran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Der-Yeghiaian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sc</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neurorehabil Neural Repair</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="78" to="90" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Validity and responsiveness of the Jebsen-Taylor Hand Function Test</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">D</forename><surname>Sears</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">C</forename><surname>Chung</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J Hand Surg Am</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="page" from="30" to="37" />
+			<date type="published" when="2010-01">Jan 2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">P</forename><surname>Del Pobil</surname></persName>
+		</author>
+		<title level="m">Benchmarks in Robotics Research</title>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Benchmarking and standardization of intelligent robotic systems</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Madhavan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lakaemper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kalmar-Nagy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advanced Robotics</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="7" />
+			<date type="published" when="2009">2009. 2009. 2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Towards Benchmarking of Domestic Robotic Assistants</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Iossifidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Lawitzky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Knoop</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zöllner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Human-Robot Interaction</title>
+		<meeting><address><addrLine>Berlin Heidelberg</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2005">2005</date>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="page" from="403" to="414" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">International Workshop on Autonomous Grasping and Manipulation: An Open Challenge</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Detry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Kroemer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kragic</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<ptr target="http://shapes.aim-at-shape.net/viewmodels.php" />
+		<title level="m">AIM@SHAPE Shape</title>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<monogr>
+		<title level="m" type="main">The Object Segmentation Database (OSD)</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Richtsfeld</surname></persName>
+		</author>
+		<ptr target="http://www.acin.tuwien.ac.at/?id=289" />
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">The Princeton Shape Benchmark</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shilane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Min</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kazhdan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Funkhouser</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Shape Modeling Applications</title>
+		<imprint>
+			<date type="published" when="2004">2004. 2004</date>
+			<biblScope unit="page" from="167" to="178" />
+		</imprint>
+	</monogr>
+	<note>Proceedings</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">The KIT object models database: An object model database for object recognition, localization and manipulation in service robotics</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kasper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dillmann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The International Journal of Robotics Research</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">The OpenGRASP benchmarking suite: An environment for the comparative analysis of grasping and dexterous manipulation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ulbrich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kappler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Asfour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Vahrenkamp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bierbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Przybylski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">VisGraB: A benchmark for vision-based grasping</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kootstra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Popovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Jorgensen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kragic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">G</forename><surname>Petersen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kruger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Paladyn</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="54" to="62" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Ability to hold grasped objects by underactuated hands: Performance prediction and experiments</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kragten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Kool</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Herder</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="2493" to="2498" />
+		</imprint>
+	</monogr>
+	<note>in Robotics and Automation, 2009. ICRA &apos;09</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">A proposal for benchmark tests for underactuated or compliant hands</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">A</forename><surname>Kragten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Meijneke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Herder</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Mechanical Sciences</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="13" to="18" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">B</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Godil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Aono</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Furuya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<ptr target="http://www.itl.nist.gov/iad/vug/sharp/contest/2012/Generic3D/" />
+		<title level="m">SHREC&apos;12 Track: Generic 3D Shape Retrieval</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">A large-scale Shape Benchmark for 3D object retrieval: Toyohashi shape benchmark</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tatsuma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Koyanagi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Aono</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Signal Information Processing Association Annual Summit and Conference</title>
+		<imprint>
+			<biblScope unit="page">2012</biblScope>
+		</imprint>
+		<respStmt>
+			<orgName>APSIPA ASC</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Asia-Pacific</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="1" to="10" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<monogr>
+		<title level="m" type="main">NIST and Willow Garage: Solutions in Perception Challenge</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">B</forename><surname>Rusu</surname></persName>
+		</author>
+		<ptr target="http://www.willowgarage.com/blog/2011/02/28/nist-and-willow-garage-solutions-perception-challenge" />
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">SHREC&apos;11 Track: Generic Shape Retrieval</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Dutagaci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Godil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Daras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Axenopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Litos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Manolopoulou</surname></persName>
+		</author>
+		<ptr target="http://www.itl.nist.gov/iad/vug/sharp/contest/2011/NonRigid/" />
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">A category-level 3-D object dataset: Putting the Kinect to work</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Janoch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Karayev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">T</forename><surname>Barron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fritz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Saenko</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Vision Workshops (ICCV Workshops)</title>
+		<imprint>
+			<date type="published" when="2011">2011. 2011</date>
+			<biblScope unit="page" from="1168" to="1174" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">A large-scale hierarchical multiview RGB-D object dataset</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Robotics and Automation (ICRA)</title>
+		<imprint>
+			<date type="published" when="2011">2011. 2011</date>
+			<biblScope unit="page" from="1817" to="1824" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Godil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Fabry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Furuya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hermans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ohbuchi</surname></persName>
+		</author>
+		<ptr target="http://tosca.cs.technion.ac.il/book/shrec_robustness2010.html" />
+		<title level="m">SHREC&apos;10 Track: Non-rigid 3D Shape Retrieval</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">A 3D Shape Benchmark for Retrieval and Automatic Classification of Architectural Data</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Wessel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bl\"u, Ina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Klein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Eurographics 2009 Workshop on 3D Object Retrieval</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="53" to="56" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">An Engineering Shape Benchmark for 3D Models</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jayanti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ramani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of IDETC/CIE 2005 ASME 2005 International Design Engineering Technical Conferences \&amp; Computers and Information in Engineering Conference</title>
+		<meeting>IDETC/CIE 2005 ASME 2005 International Design Engineering Technical Conferences \&amp; Computers and Information in Engineering Conference</meeting>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">A New Shape Benchmark for 3D Object Retrieval</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Godil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Wagan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 4th International Symposium on Advances in Visual Computing</title>
+		<meeting>the 4th International Symposium on Advances in Visual Computing<address><addrLine>Berlin, Heidelberg</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="381" to="392" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<ptr target="http://www.cim.mcgill.ca/~shape/benchMark/" />
+		<title level="m">McGill 3D Shape Benchmark</title>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Assessment of Gross Motor Function in Individuals With Spinal Cord Injury</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kapadia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Zivanovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Verrier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Popovic</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Topics in Spinal Cord Injury Rehabilitation</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+		<respStmt>
+			<orgName>Toronto Rehabilitation Institute-Hand Function Test</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Deformation Transfer for Triangle Meshes</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">W</forename><surname>Sumner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Popovic</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Graphics</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<ptr target="http://3d.csie.ntu.edu.tw/" />
+		<title level="m">NTU 3D Model Benchmark</title>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<ptr target="http://vcl.iti.gr/3d-object-retrieval/" />
+		<title level="m">the ITI database</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<ptr target="http://digimation.com/3d-libraries/model-bank-library/" />
+		<title level="m">Model Bank Library</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wisspeintner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Van Der Zan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Iocchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Schiffer</surname></persName>
+		</author>
+		<title level="m">RoboCup@Home: Results in Benchmarking Domestic Service Robots</title>
+		<meeting><address><addrLine>Berlin Heidelberg</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="volume">5949</biblScope>
+			<biblScope unit="page" from="390" to="401" />
+		</imprint>
+	</monogr>
+	<note>RoboCup 2009: Robot Soccer World Cup XIII</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Adult norms for the box and blocks test of manual dexterity</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Mathiowetz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Volland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kashman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Wever</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The American journal of occupational therapy</title>
+		<imprint>
+			<biblScope unit="volume">89</biblScope>
+			<biblScope unit="page" from="386" to="391" />
+			<date type="published" when="1985">1985</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Adult norms for the Nine Hole Peg Test of finger dexterity</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Mathiowetz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Weber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kashman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Volland</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Occupational Therapy Journal of Research</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="page" from="24" to="38" />
+			<date type="published" when="1985">1985</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">S</forename><surname>Rehab</surname></persName>
+		</author>
+		<ptr target="http://saliarehab.com/" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Available: grassptest.com [45] Grasp and Release Test</title>
+		<author>
+			<persName><surname>Grassp</surname></persName>
+		</author>
+		<ptr target="http://www.rehabmeasures.org/Lists/RehabMeasures/DispForm.aspx?ID=1053" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Development and Evaluation of the Activities Measure for Upper Limb Amputees</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Resnik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Adams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Borgia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Delikat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Disla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ebner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Archives of Physical Medicine and Rehabilitation</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page" from="488" to="494" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Rehabilitation Engineering Laboratory Hand Function Test For Functional Electrical Stimulation Assisted Grasping</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Popovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Contway</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Validation of the Orthotics and Prosthetics User Survey Upper Extremity Functional Status Module in People with Unilateral Upper Limb Amputation</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Burger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Franchignoni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">W</forename><surname>Heinemann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kotnik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Giordano</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Rehabilitation M</title>
+		<imprint>
+			<biblScope unit="volume">40</biblScope>
+			<biblScope unit="page" from="393" to="399" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Surface-stimulation technology for grasping and walking neuroprostheses</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Popovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Keller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">P I</forename><surname>Papas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Dietz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Morari</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Engineering in Medicine and Biology Magazine</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="82" to="93" />
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b48">
+	<analytic>
+		<title level="a" type="main">A self-administered Graded Repetitive Arm Supplementary Program (GRASP) improves arm function during inpatient stroke rehabilitation: a multi-site randomized controlled trial</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Harris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Eng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>As</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Stroke</title>
+		<imprint>
+			<biblScope unit="volume">40</biblScope>
+			<biblScope unit="page" from="2123" to="2131" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Occupational Therapy Outcomes with Targeted Hyper-Reinnervation Nerve Transfer Surgery: Two Case Studies</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">A</forename><surname>Stubblefield</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">A</forename><surname>Milller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">D</forename><surname>Lipschutz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">E</forename><surname>Phillips</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">W</forename><surname>Heckathorne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">A</forename><surname>Kuiken</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the MyoElectric Controls/Powered Prosthetics Symposium</title>
+		<meeting>the MyoElectric Controls/Powered Prosthetics Symposium</meeting>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Benchmarking grasping and manipulation: Properties of the Objects of Daily Living</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Matheus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Dollar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IROS</title>
+		<imprint>
+			<biblScope unit="page" from="5020" to="5027" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b51">
+	<monogr>
+		<ptr target="http://dash.iwh.on.ca/system/files/dash_questionnaire_2010.pdf" />
+		<title level="m">Disabilities of the Arm, Shoulder and Hand</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b52">
+	<analytic>
+		<title level="a" type="main">ROS: an open-source Robot Operating System</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Quigley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Conley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Gerkey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Faust</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Foote</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Leibs</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ICRA workshop on open source software</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page">5</biblScope>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b53">
+	<monogr>
+		<title level="m" type="main">OpenRAVE: A Planning Architecture for Autonomous Robotics</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Diankov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kuffner</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b54">
+	<analytic>
+		<title level="a" type="main">CHOMP: Gradient Optimization Techniques for Efficient Motion Planning</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ratliff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Bagnell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Srinivasa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Icra: 2009 Ieee International Conference on Robotics and Automation</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="4030" to="4035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Manipulation planning on constraint manifolds</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Berenson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Srinivasa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ferguson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">J</forename><surname>Kuffner</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="625" to="632" />
+		</imprint>
+	</monogr>
+	<note>in Robotics and Automation, 2009. ICRA &apos;09</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Surface simplification using quadric error metrics</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Garland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">S</forename><surname>Heckbert</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 24th annual conference on Computer graphics and interactive techniques</title>
+		<meeting>the 24th annual conference on Computer graphics and interactive techniques</meeting>
+		<imprint>
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Herb 2.0: Lessons Learned From Developing a Mobile Manipulator for the Home</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Srinivasa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Berenson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Cakmak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Collet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Dogar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">D</forename><surname>Dragan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE</title>
+		<meeting>the IEEE</meeting>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="volume">100</biblScope>
+			<biblScope unit="page" from="2410" to="2428" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b58">
+	<analytic>
+		<title level="a" type="main">The Open Motion Planning Library</title>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">A</forename><surname>Sucan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Moll</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">E</forename><surname>Kavraki</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Ieee Robotics &amp; Automation Magazine</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="page" from="72" to="82" />
+			<date type="published" when="2012-12">Dec 2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b59">
+	<analytic>
+		<title level="a" type="main">A Modular, Open-Source 3D Printed Underactuated Hands</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">M</forename><surname>Raymond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><forename type="middle">O</forename><surname>Lael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Dollar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE International Conference on Robotics and Automation (ICRA)</title>
+		<meeting><address><addrLine>Karlsruhe, Germany</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b60">
+	<monogr>
+		<author>
+			<persName><forename type="first">W</forename><surname>Garage</surname></persName>
+		</author>
+		<ptr target="http://www.willowgarage.com/pages/pr2/overview" />
+		<title level="m">Overview of the PR2 robot</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b61">
+	<monogr>
+		<title level="m" type="main">Run the system</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b62">
+	<monogr>
+		<title level="m">Empty the pitcher and the mug</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b63">
+	<monogr>
+		<title level="m" type="main">Execution Constraints Same strategy should be used for each layout</title>
+		<imprint/>
+	</monogr>
+	<note>Repeat steps 1 to 5 for all ten scenarios</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

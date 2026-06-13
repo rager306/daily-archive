@@ -1,0 +1,1334 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Automatic Repair of Real Bugs: An Experience Report on the Defects4J Dataset</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Matias</forename><surname>Martinez</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Lille</orgName>
+								<address>
+									<country></country>
+								</address>
+							</affiliation>
+							<affiliation key="aff1">
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Thomas</forename><surname>Durieux</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Lille</orgName>
+								<address>
+									<country></country>
+								</address>
+							</affiliation>
+							<affiliation key="aff1">
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jifeng</forename><surname>Xuan</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">Wuhan University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Romain</forename><surname>Sommerard</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Lille</orgName>
+								<address>
+									<country></country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Martin</forename><surname>Monperrus</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Lille</orgName>
+								<address>
+									<country></country>
+								</address>
+							</affiliation>
+							<affiliation key="aff1">
+							</affiliation>
+						</author>
+						<title level="a" type="main">Automatic Repair of Real Bugs: An Experience Report on the Defects4J Dataset</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">AA80C5444BC49D7A99CEE4E3C06E9493</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-13T10:19+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Defects4J is a large, peer-reviewed, structured dataset of real-world Java bugs. Each bug in Defects4J is provided with a test suite and at least one failing test case that triggers the bug. In this paper, we report on an experiment to explore the effectiveness of automatic repair on Defects4J. The result of our experiment shows that 47 bugs of the De-fects4J dataset can be automatically repaired by state-ofthe-art repair. This sets a baseline for future research on automatic repair for Java. We have manually analyzed 84 different patches to assess their real correctness. In total, 9 real Java bugs can be correctly fixed with test-suite based repair. This analysis shows that test-suite based repair suffers from under-specified bugs, for which trivial and incorrect patches still pass the test suite. With respect to practical applicability, it takes in average 14.8 minutes to find a patch. The experiment was done on a scientific grid, totaling 17.6 days of computation time. All their systems and experimental results are publicly available on Github in order to facilitate future research on automatic repair.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">INTRODUCTION</head><p>Automatic software repair is the process of automatically fixing bugs. Test-suite based repair, notably introduced by GenProg <ref type="bibr" target="#b25">[25]</ref>, consists in synthesizing a patch that passes a given test suite with at least one failing test case. In this recent research field, few empirical evaluations have been made to evaluate the practical ability of current techniques to repair real bugs. For instance, Le Goues et al. <ref type="bibr" target="#b22">[22]</ref> reported on an experiment where they ran the GenProg repair system on 105 bugs in C code.</p><p>The key for a valuable empirical evaluation of automatic repair is a good dataset of bugs. Here, "good" means that the bugs are real (as opposed to seeded) and in large software applications (as opposed to small programs). In the context of test-suite based repair, the bugs must also come with a test suite that encodes the expected behavior. Defects4J is such a dataset <ref type="bibr" target="#b19">[19]</ref>, which consists of 357 real-world Java bugs. It has been peer-reviewed, is publicly available, and is structured in a way that eases systematic experiments. Each bug in Defects4J comes with a test suite including failing test cases. To explore whether automatic repair can be applied in practice, this paper asks the following question: could bugs in Defects4J be repaired with state-of-the-art repair approaches?</p><p>But actually, a concrete bug cannot be repaired by a "repair approach". It is repaired by a "repair tool". For instance, the same term "GenProg" refers to both the approach and the tool, while they are different. To repair the bugs of Defects4J, we need executable tools.</p><p>However, leaving aside the repair system developed in our group <ref type="bibr">[9]</ref>, there are no other available test-suite based repair tools for Java, outside Arcuri's pioneering prototype <ref type="bibr" target="#b4">[4]</ref> which is a small project incompatible with the scale and complexity of Defects4J. So we chose to re-implement two key repair approaches. Re-implementing a repair system that works on real test suites and real code is a significant engineering effort. We have re-implemented GenProg <ref type="bibr" target="#b25">[25]</ref> and Kali <ref type="bibr" target="#b39">[39]</ref>. The motivation for choosing those two is as follows. First, GenProg is arguably a baseline in the field. Second, Kali will help us to assess the quality of the test suites in Defects4J. It is a repair system only based on code deletion <ref type="bibr" target="#b39">[39]</ref> whose main goal is to identify under-specified bugs. An "under-specified" bug is a bug for which the test cases that specify the expected behavior are weak. These test cases have a low coverage and bad assertions. Indeed, if Kali fixes a failing test case by removing some code, it often means that the buggy code contained unspecified functionality. In the rest of this paper, we will use jGenProg and jKali to refer to these repair tools, in addition to Nopol <ref type="bibr">[9,</ref><ref type="bibr" target="#b45">45]</ref>, our repair tool based on speculative execution and code synthesis. All of them are publicly available on Github.</p><p>In this paper, we present the results of an evaluation experiment consisting of running jGenProg, jKali, and Nopol on the bugs of Defects4J. Our experiment aims to answer to the following Research Questions (RQs):</p><p>RQ1. Can the bugs of the Defects4J dataset be fixed with the considered repair techniques? Answering this question is essential to consolidate the field of automatic repair. First, previous evaluations of automatic repair techniques were made on a bug dataset that was specifically built for the evaluation of those techniques. In other words, the authors of a technique and the authors of its evaluation dataset were the same. This increases the risk of potential biases due to the cherry-picking data. On the contrary, we are not authors of the Defects4J dataset. Second, while previous work has shown that real bugs in large scale C code <ref type="bibr" target="#b22">[22,</ref><ref type="bibr" target="#b39">39,</ref><ref type="bibr" target="#b26">26]</ref> can be repaired, there is no reproducible work showing that real bugs from large scale Java projects can be repaired.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>RQ2.</head><p>In test-suite based repair, are the generated patches correct, beyond passing the test suite? By "correct", we mean that the patch is meaningful, really fixes the bug, and is not a partial fix that only works for the input data encoded in the test cases. Indeed, a key concern behind test-suite based repair is whether test suites are acceptable to drive the generation of correct patches, where correct me accept-able. Since the inception of the field, this question has been raised many times and is still a hot question: Qi et al.'s recent results <ref type="bibr" target="#b39">[39]</ref> show that most GenProg's patches on the classical GenProg benchmark of 105 bugs are incorrect. We will answer RQ2 with a manual analysis of patches synthesized for Defects4J.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>RQ3.</head><p>Which bugs in Defects4j are under-specified? For those bugs, current repair approaches fail to synthesize a correct patch due to the lack of test cases. Those bugs are the most challenging bugs: to automatically repair them, one needs to reason on the expected functionality below what is encoded in the test suite, to take into account a source of information other than the test suite execution.</p><p>RQ4. How long is the execution time of each repair approach? The answer to this question also contributes to assess the practical applicability of automatic repair on real code.</p><p>Our experiment considers 224 bugs that are spread over 231K lines of code and 12K test cases in total. We ran the experiment for over 17.6 days of computational time on Grid'5000 <ref type="bibr" target="#b5">[5]</ref>, a large-scale grid for scientific experiments.</p><p>Our contributions are as follows:</p><p>• Answer to RQ1. The Defects4J dataset contains bugs that can be automatically repaired with state-ofthe-art techniques. Our implementations of jGenProg, jKali, and Nopol fix together 47 out of 224 bugs with 84 different patches. Nopol is the technique that fixes the largest number of bugs (35/47); some bugs are repaired by all three considered repair approaches <ref type="bibr">(12/47)</ref>. This work can be viewed as a baseline for future usage of Defects4J in automatic repair research.</p><p>• Answer to RQ2. Our manual analysis of all 84 generated patches shows that 11/84 are correct, 61/84 are incorrect, and 12/84 require a domain expertise, which we do not have. The incorrect patches tend to overfit the test cases. This is a novel piece of evidence that either the current test suites are too weak or the current automatic repair techniques are too dumb.</p><p>• Answer to RQ3. Defects4J contains very weakly specified bugs. Correctly fixing those bugs by an automatic repair approach that reasons beyond the test suite execution, using other sources of information, can be considered as the next milestone for the field.</p><p>• Answers to RQ4. The process of searching for a patch is a matter of minutes for a single bug (RQ4). This is an encouraging piece of evidence for this research have an impact on practitioners.</p><p>For sake of open science and reproducible research, our code and experimental data are publicly available on Github: <ref type="url" target="http://github.com/Spirals-Team/defects4j-repair/">http://github.com/Spirals-Team/defects4j-repair/</ref>, <ref type="url" target="http://github.com/SpoonLabs/nopol">http://github.com/SpoonLabs/nopol</ref>, <ref type="url" target="http://github.com/SpoonLabs/astor">http://github.com/SpoonLabs/astor</ref> </p><p>The remainder of this paper is organized as follows. Section 2 provides the background of test-suite based repair and the dataset. Section 3 presents our experimental protocol. Section 4 details answers to our research questions. Section 5 studies three generated patches in details. Section 6 discusses our results and Section 7 presents the related work. Section 8 concludes this paper and proposes future work. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Buggy program</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Fault localization</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Patch validation</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">BACKGROUND</head><p>In this paper, we consider one kind of automatic repair called test-suite based repair. We now give the corresponding background and present the dataset and repair approaches that are used in our experiment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Test-Suite Based Repair</head><p>Test-suite based repair generates a patch according to failing and passing test cases. Different kinds of techniques can be used, such as genetic programming search in GenProg <ref type="bibr" target="#b25">[25]</ref> and SMT based program synthesis in SemFix <ref type="bibr" target="#b34">[34]</ref>. Often, before patch generation, a fault localization method is applied to rank the statements according to their suspiciousness. The intuition is that the patch generation technique is more likely to be successful on suspicious statements.</p><p>Fig. <ref type="figure" target="#fig_0">1</ref> presents a general overview of test-suite based repair approaches. In a repair approach, the input is a buggy program as well as its test suite; the output is a patch that makes the test suite pass, if any. To generate a patch for the buggy program, the executed statements are ranked to identify the most suspicious statements. Fault localization is a family of techniques for ranking potential buggy statements <ref type="bibr" target="#b18">[18,</ref><ref type="bibr" target="#b3">3,</ref><ref type="bibr" target="#b46">46]</ref>. Based on the statement ranking, patch generation tries to modify a suspicious statement. For instance, GenProg <ref type="bibr" target="#b25">[25]</ref> adds, removes, and replaces AST nodes. Once a patch is found, the whole test suite is executed to validate the patch; if the patch is not validated by the test suite, the repair approach goes on with next statement and repeats the repair process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Defects4J</head><p>Defects4J by Just et al. <ref type="bibr" target="#b19">[19]</ref> is a bug database that consists Defects4J provides research with reproducible software bugs and enables controlled studies in software testing research (e.g., <ref type="bibr" target="#b35">[35,</ref><ref type="bibr" target="#b20">20]</ref>). To our knowledge, Defects4J is the largest open database of well-organized real-world Java bugs. In our work, we use four out of five projects, i.e., Commons Lang, <ref type="foot" target="#foot_0">1</ref> JFreeChart, <ref type="foot" target="#foot_1">2</ref> Commons Math, <ref type="foot" target="#foot_2">3</ref> and Joda-Time. <ref type="foot" target="#foot_3">4</ref> We do not use the Closure Compiler project <ref type="foot" target="#foot_4">5</ref> because the test cases in Closure Compiler are organized in a non-conventional way, using scripts rather than standard JUnit test cases. This prevents us from running with our platform and is left for future work. Table <ref type="table" target="#tab_0">1</ref> presents the main descriptive statistics of bugs in Defects4J.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">Repair Approaches</head><p>GenProg <ref type="bibr" target="#b25">[25]</ref> repairs programs as follows. It randomly deletes, adds, and replaces abstract syntax tree nodes in the program. The modification point is steered by spectrum based fault localization. Pieces of code that are inserted through addition or replacement always come from the same program, based on the "redundancy hypothesis" <ref type="bibr" target="#b31">[31]</ref>. Gen-Prog is a generic repair approach and does not target any particular fault class.</p><p>Kali <ref type="bibr" target="#b39">[39]</ref> performs program repair by only removing or skipping code. Even if "repair" is achieved in the sense that the patches make the test suite passing, its primary goal is not repair per se. Instead, the goal of Kali is to identify weak test suites and under-specified bugs.</p><p>Nopol <ref type="bibr">[9,</ref><ref type="bibr" target="#b45">45]</ref> targets a specific fault class: conditional bugs. It repairs programs by either modifying an existing if-condition or adding a precondition (aka. a guard) to any statement or block in the code. The modified or inserted condition is synthesized via input-output based code synthesis with SMT <ref type="bibr" target="#b16">[16]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">EXPERIMENTAL PROTOCOL</head><p>We present an experimental protocol to assess the effectiveness of different automatic repair approaches on the realworld bugs of Defects4J. The protocol supports the analysis</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Research Questions</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.1">RQ1. Fixability</head><p>Which bugs of Defects4J can be automatically repaired? How many bugs can be repaired by each system?</p><p>Fixability is the basic evaluation criterion of automatic repair research. In test-suite based repair, a bug is said to be fixed if the whole test suite passes. To answer this question, we run each repair approach on each buggy program of the dataset under consideration and count the number of bugs, which are patched and can pass the test suite.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.2">RQ2.</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Patch Correctness</head><p>Which bug fixes are semantically correct (beyond passing the test suite)?</p><p>A patch that passes the whole test suite may not be exactly the same as the patch written by developers. It may be syntactically different yet correct. It may also be incorrect when the test suite is not well-designed and misses important test cases and assertions. To answer this question, we manually examine all synthesized patches to identify the correctness as explained in 3.2.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.3">RQ3.</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Under-Specified Bugs</head><p>Which bugs in Defects4j are not sufficiently specified by the test suite?</p><p>In test-suite based repair, the quality of a synthesized patch is highly dependent on the quality of the test suite. In this paper, we define an "under-specified bug" as a bug for which the test cases (that specify the expected behavior) have a low coverage and weak assertions. To find such under-specified bugs, we use two pieces of evidence. First, we closely look at the results of jKali. Since this repair system removes code and skips code execution, if it finds a patch, it hints that a functionality is not specified at all. Second, for patches found by jGenProg or Nopol, our manual analysis of the patch may also reveal an under-specification.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.4">RQ4. Performance (Execution Time)</head><p>How long is the execution time of each repair approach? It is time-consuming to manually repair a bug. Test-suite based repair automates the process of patch generation. To conduct a quantitative analysis on the performance of automatic repair, we evaluate the execution time of each repair approach.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Protocol</head><p>We run three repair systems jGenProg, jKali and Nopol on the Defects4J dataset (Section 2.2). Since the experiment requires a large amount of computation, we run it on a grid (Section 3.2.2). We then manually analyze all the synthesized patches (Section 3.2.3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.1">Repair Systems Under Study</head><p>In this experiment, we consider a dataset of bugs in software written in the Java programming language, so we study repair systems that are able to handle this programming language. This is the first selection criterion. The second one is that it is publicly available. This left us with Nopol, which comes from our previous work <ref type="bibr">[9]</ref>. For instance, GenProg <ref type="bibr" target="#b25">[25]</ref> and Kali <ref type="bibr" target="#b39">[39]</ref> only repair C code. Par <ref type="bibr" target="#b21">[21]</ref> is for Java but not available.</p><p>However, we have re-implemented GenProg and Kali for Java software in a repair framework called Astor <ref type="bibr" target="#b29">[29]</ref>. In the rest of this paper, we will use jGenProg and jKali to refer to their re-implementations in Java. Our motivation of re-implementing GenProg and Kali is the following. First, GenProg can be considered as a baseline in the field and is a de-facto point of comparison in the literature. Second, Kali is a baseline system to identify under-specified bugs since it consists of only removing and skipping code. For sake of open research and replication, all three systems are made publicly available on Github <ref type="bibr" target="#b2">[2]</ref>.</p><p>It can be argued that the results based on a re-implementation do not reflect the actual performance of the original system. For instance, a difference in the core algorithms or a bug in the re-implementation may produce invalid empirical results. In jGenProg and jKali, we have carefully followed the description in the corresponding literature. We consider that jKali, our implementation of Kali, is the exact counterpart of the C implementation. For jGenProg, we had to make certain decisions on parts due to undefined behaviors or implementation constraints. In any case, all implementation decisions can be consulted in the source code that is publicly available <ref type="bibr" target="#b2">[2]</ref>. For future replication, we note that all repair systems and in particular jGenProg are fully deterministic thanks to the use of a seedable random number generator.</p><p>This implementation work represents 9.5K lines of Java code for jGenProg and jKali (as measured in Astor), and Nopol has 25K lines of Java code.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.2">Large Scale Execution</head><p>We assess three repair approaches on 224 bugs. One repair attempt may take hours to be completed. Hence, we need a large amount of computation power. Consequently, we deploy our experiment in Grid'5000, a grid for high performance computing <ref type="bibr" target="#b5">[5]</ref>. In our experiment, we manually set the computing nodes in Grid'5000 to the same hardware architecture. This avoids potential biases of the time cost measurement. All the experiments are deployed in the Nancy site of Grid'5000 (located in Nancy, France). The cluster management mechanism of Grid'5000 assists our experiments to be reproducible both in fixability and in time cost.</p><p>For each repair approach, we set the timeout to three hours per repair attempt, in order to have a maximum bound on the experiment time (our experiment still takes in total 17.6 days of computation on Grid'5000).</p><p>We stop the execution of a repair attempt after finding the first patch.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.3">Manual Analysis</head><p>For correctness assesment, we manually examine the generated patches. For each patch, one of the authors (called thereafter an "analyst") analyzed the patch correctness, readability, and the difficulty of validating the correctness.</p><p>The correctness of a patch can be correct, incorrect, or unknown. The term "correct" denotes that a patch is exactly the same or equivalent to the patch that is written by developers. The equivalence is assessed according to the analyst's understanding of the patch. Analyzing one patch requires a period between a couple of minutes and several hours of work, depending on the complexity of the synthesized patch. On one hand, a patch that is identical to the one written by developers is obviously true; on the other hand, several patches require a domain expertise that none of the authors has.</p><p>The readability of the patch can be easy, medium, or hard; and it results from the analyst opinion on the length and complexity of the patch (such as number of variables and method calls used).</p><p>The difficulty can be easy, medium, hard, or expert. It is related to the effort an analyst carries out for understanding the human patch and the generated patch correctness. For some bugs, it is enough to examine the source code of the patch for determining it correctness, for others the analyst has to debug the buggy and/or the patched application. A patch with difficulty "expert" means that is impossible for us to validate the correctness due to the required expertise in domain knowledge.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">EMPIRICAL RESULTS</head><p>We present and discuss our answers to the research questions that guide this work. The total execution of the experiment costs 17.6 days.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Fixability</head><p>RQ1. Which bugs can be automatically repaired? How many bugs can be repaired by each system under study?</p><p>The three automatic repair approaches in this experiment are able to together fix 47 bugs of the Defects4J dataset. jGenProg finds a patch for 27 bugs; jKali identifies a patch for 22 bugs; and Nopol synthesizes a condition that makes the test suite passing for 35 bugs. Table <ref type="table">2</ref> shows the bug identifiers, for which at least one patch is found. Each line corresponds to one bug in Defects4J and each column denotes the fixability of one repair approach. For instance, Bug M2 from Commons Math has been automatically fixed by jGenProg and jKali.</p><p>As shown in Table <ref type="table">2</ref>, some bugs such as T11 can be fixed by all systems, others by only a single one. For instance, bug L39 can only be fixed by Nopol and bug M5 can only be fixed by jGenProg. After the controversy about GenProg's effectiveness <ref type="bibr" target="#b39">[39]</ref>, it is notable to see that there are bugs for which only jGenProg works.</p><p>Moreover, Table <ref type="table">2</ref> shows that in project Commons Lang all the bugs are only fixed by Nopol while jGenProg and jKali fail to synthesize a single patch. A possible reason is that the program of Commons Lang is more complex than that of Commons Math; both jGenProg and jKali cannot handle such a complex search space.</p><p>Fig. <ref type="figure">2</ref> shows the intersections between the fixed bugs among the three repair approaches as a Venn diagram. Nopol can fix 18 bugs that neither jGenProg nor jKali could repair. All the fixed bugs by jKali can be fixed by jGenProg or Nopol. For 12 bugs, all three repair systems can generate a patch to pass the test suite.</p><p>To our knowledge, those results are the very first on automatic repair with the Defects4J benchmark. Recall that they are done with an open-science ethics, all the implementations, experimental code, and results are available on Github <ref type="bibr" target="#b2">[2]</ref>. Future research in automatic repair may try to fix more bugs than our work. Our experimental frame-</p><p>Table 2: Results on the Fixability of 224 Bugs in Defects4J with Three Repair Approaches. In Total, the Three Repair Approaches can Repair 47 Bugs (21%)</p><p>.</p><formula xml:id="formula_0">Project Bug Id jGenProg jKali Nopol JFreeChart C1 Fixed Fixed - C3 Fixed - Fixed C5 Fixed Fixed Fixed C7 Fixed - - C13 Fixed Fixed Fixed C15 Fixed Fixed - C21 - - Fixed C25 Fixed Fixed Fixed C26 - Fixed Fixed Commons Lang L39 - - Fixed L44 - - Fixed L46 - - Fixed L51 - - Fixed L53 - - Fixed L55 - - Fixed L58 - - Fixed Commons Math M2 Fixed Fixed - M5 Fixed - - M8 Fixed Fixed - M28 Fixed Fixed - M32 - Fixed Fixed M33 - - Fixed M40 Fixed Fixed Fixed M42 - - Fixed M49 Fixed Fixed Fixed M50 Fixed Fixed Fixed M53 Fixed - - M57 - - Fixed M58 - - Fixed M69 - - Fixed M70 Fixed - - M71 Fixed - Fixed M73 Fixed - Fixed M78 Fixed Fixed Fixed M80 Fixed Fixed Fixed M81 Fixed Fixed Fixed M82 Fixed Fixed Fixed M84 Fixed Fixed - M85 Fixed Fixed Fixed M87 - - Fixed M88 - - Fixed M95 Fixed Fixed - M97 - - Fixed M104 - - Fixed M105 - - Fixed Time T4 Fixed Fixed - T11</formula><p>Fixed Fixed Fixed Total 47 (21%) 27 (12%) 22 (9.8%) 35 (15.6%) work can be used to facilitate future comparisons by other researchers. Answer to RQ1. In Defects4J, 47 out of 224 bugs can be fixed by an automatic repair system. Nopol can fix the largest number of bugs (35 bugs). All the fixed bugs by jKali can be fixed by jGenProg or Nopol.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Patch Correctness</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>RQ2.</head><p>Which bug fixes are semantically correct (beyond passing the test suite)? We manually evaluate the correctness of generated patches by the three repair approaches under study as explained in 3.2.3. In short, a generated patch is considered correct if this patch is the same or equivalent as the manually-written patch by developers. A generated patch is incorrect if it actually does not completely fix the bug (beyond making the failing test case to pass -a kind of incomplete bug oracle) or if it breaks an expected behavior (beyond keeping the rest of the test suite passing).</p><p>Recall the history of automatic repair research. It has been hypothesized that a major pitfall of test-suite based repair is that a test suite cannot completely express the program specifications, so it is hazardous to drive the synthesis of a correct patch with a test suite. This comment has been made during conference talks and is common in peer reviews. Previous works have studied the maintainability of automatic generated patches <ref type="bibr" target="#b12">[12]</ref> or their aids for debugging task <ref type="bibr" target="#b44">[44]</ref>. However, only recent work by Qi et al. <ref type="bibr" target="#b39">[39]</ref> has invested resources to manually analyze the correctness previously-generated patches by test-suite based repair. They found that the vast majority of patches by GenProg in the GenProg benchmark of C bugs are incorrect.</p><p>To answer the question of patch correctness, we have manually analyzed all the patches generated by Nopol, jGenProg and jKali in our experiment, 84 patches in total. This represents more than ten full days of work. To our knowledge, only Qi et al. <ref type="bibr" target="#b39">[39]</ref> have performed a similar manual assessment of patch synthesized with automatic repair. The results of this analysis may be fallible due to the subjective nature of the assessment. For future research, all patches as well as a detailed case study for each of them are made publicly available on Github <ref type="bibr" target="#b2">[2]</ref>.</p><p>Table <ref type="table" target="#tab_1">3</ref> shows the results of this manual analysis. The "bug id" column refers to the Defects4J identifier, while "Patch id" is an unique identifier of each patch, for easily identifying the patch on our empirical result page <ref type="bibr" target="#b2">[2]</ref>. The three main columns give the correctness, readability and difficulty as explained in 3.2.3. In total, we have analyzed 84 patches. Among these patches, 27, 22, and 35 patches are synthesized by jGenProg, jKali, and Nopol, respectively.</p><p>As shown in Table <ref type="table" target="#tab_1">3</ref>, 11 out of 84 analyzed patches are correct and 61 are incorrect. Meanwhile, for the other 12 patches, it is not possible to clearly validate the correctness, due to the lack of domain expertise (labeled as unknown). Section 5 will present three case studies of generated patches via manual analysis.</p><p>Among the 11 correct patches, jGenProg, jKali, and Nopol contribute to 5, 1, and 5 patches, respectively. All the correct patches by jGenProg and jKali come from Commons Math; 3 correct patches by Nopol come from Commons Lang, one comes from JFreeChart and the other from Commons Math.</p><p>For the incorrect patches, the main reasons are as follows. First, all three approaches are able to remove some code (pure removal for jKali, replacement for jGenProg, precondition addition for Nopol). The corresponding patches simply exploit some under-specification and remove the faulty but otherwise not used behavior. This goes along the line of Qi et al.'s results <ref type="bibr" target="#b39">[39]</ref>. When the expected behavior seems to be well-specified (according to our understanding of the domain), the incorrect patches tend to overfit to the test data. For instance, if a failing test case handles a 2 × 2 matrix, the patch may use such test data to incorrectly force the patch to be suitable only for matrices of size of 2 × 2. This overfitting characteristic has recently been studied by Smith and colleagues <ref type="bibr" target="#b42">[42]</ref>.</p><p>Among 84 analyzed patches, 61 patches are identified as easy to read and understand. For the difficulty of patch validation, 21 patches are labeled as hard or expert. This result shows that it is hard and time consuming to conduct the validation of patches.</p><p>Overall, our experimental results confirm the conclusion of Qi et al. <ref type="bibr" target="#b39">[39]</ref> about incorrect patches due to underspecification: most patches found by test-suite based repair are incorrect. This confirmation is two-sided. First, both results by Qi et al. and by us have the same conclusion, but come from different bug benchmarks. Second, the finding holds for different systems: while Qi et al.'s results were made on GenProg, the same finding holds for Nopol.</p><p>This leads to two directions for future work. First, test case generation and test suite amplification may be able to reduce the risk that the synthesized patches overfit the test case data. Second, we imagine that different repair algorithms may be more or less subject to overfitting. Answer to RQ2. Based on manual examination of patch correctness, we find out that only 11 out of 84 generated patches are semantically correct. The repair systems under study tend to suffer from weak test suite. There exists large room for improving the effectiveness of test-suite based repair.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Under-specified bugs</head><p>RQ3. Which bugs in Defects4j are not sufficiently specified by the test suite?</p><p>As shown in Section 4.1, the repair system jKali can generate a patch for 22 bugs. Among these generated patches, from our manual evaluation, we find out that 18 patches are incorrect (other 3 patches are unknown). In each of those generated patches by jKali, one statement is removed or skipped to eliminate the failing program behavior, instead of making it correct. This kind of patches shows that the corresponding test suite is too weak with respect to the buggy functionality. The assertions that specify the expected behavior of the removed statement and the surrounding code are inexistent or too weak.</p><p>One exception among 22 patches by jKali is the patch of</p><p>Table 4: The Most Challenging Bugs of Defects4J Because of Under-specification.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Project</head><p>Bug ID Commons Math M2, M8,M28,M32,M40, M49, M78, M80, M81, M82,M84, M85,M95 JFreeChart C1,C5, C13, C15, C25,C26 Time T4,T11 Bug M50. As shown in Section 4.2, the patch of Bug M50 is correct. That is, the statement removal is the correct patch. Another special case is Bug C5 which is patched by jKali (incorrect) and by Nopol (correct). The latter approach produces a patch similar to that one done by the developer. A patch (written by developer or automatically generated) that fixes an under-specifier bug could introduce new bugs (studied previously by Gu et al. <ref type="bibr" target="#b15">[15]</ref>) or it could not be completely correct due to a weak test suite used as bug oracle <ref type="bibr" target="#b39">[39]</ref>. Table <ref type="table">4</ref> summarizes this finding and list the underspecified bugs. This result is important for future research on automatic repair with Defects4J. First, any repair system that claims to correctly fix one of those bugs should be validated with a detailed manual analysis of patch correctness, to check whether the patch is not a variation on the trivial removal solution. Second, those bugs can be considered as the most challenging ones of Defects4J. To fix them, a repair system must somehow reason on the expected functionality below what is encoded in the test suite. This is what was actually been done by the human developer. A repair system that is able to produce a correct patch for those bugs would be a great advance for the field. Answer to RQ3. There are under-specified bugs in the Defects4J dataset. For them, the test suite does not accurately specify the expected behavior and can be trivially repaired by removing code. To us, they are the most challenging bugs: to automatically repair them, one needs to reason on the expected functionality below what is encoded in the test suite, to take into account a source of information other than the test suite execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Performance</head><p>RQ4. How long is the execution time for each repair approach on one bug?</p><p>For real applicability in industry, automatic repair approaches must execute fast enough. By "fast enough", we mean an acceptable time period, which depends on the usage scenario of automatic repair and on the hardware. For instance, if automatic repair is meant to be done in the IDE, repair time should last at most some minutes on a standard desktop machine. On the contrary, if automatic repair is meant to be done on a continuous integration server, it is acceptable to last hours on a more powerful server hardware configuration.</p><p>The experiments in this paper are run on a grid where most of nodes have comparable characteristics. Typically, we use machines with Intel Xeon X3440 Quad-core processor and 15GB RAM. Table <ref type="table" target="#tab_2">5</ref> shows the time cost of patch generation in hours for bugs without timeout. As shown in Table <ref type="table" target="#tab_2">5</ref>, the median time for one bug by jGenProg is around one hour. The fastest repair attempt yields a patch in 31 seconds (for Nopol). The median time to synthesize a patch When a repair exists, it is found within minutes. This means that most of the time of the 17.6 days of computation for the experiment is spent on unfixed bugs, which reach the timeout. For jGenProg, it is always the case, because the search space is extremely large. For jKali, we often completely explore the search space, and we only reach the timeout in 20 cases. For Nopol, the timeout is reached in 26 cases, either due to the search space of covered statements or the SMT synthesis that becomes slow in certain cases. One question is whether a larger timeout would improve the effectiveness. According to this experiment, the answer is no. The repairability is quite binary: either a patch is found fast, or the patch cannot be found at all. This preliminary observation calls for future research. Answer to RQ4. For real bugs on large Java projects, the average repair time of the three systems under study is resp. 23, 30 and 55 minutes. This means that the performance time of the considered repair systems is within reach of practical applicability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.5">Other Findings in Defects4J</head><p>Our manual analysis of results enables us to uncover two problems in Defects4J. First, we found that bug #8 from project JFreeChart (C8) is flaky, which depends on the machine configuration. Second, bug #99 from Commons Math (M99) is identical to bug M97. Both issues were reported to the authors of Defects4J and will be solved in future releases of Defects4J.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">CASE STUDIES</head><p>In this section, we present three case studies of generated patches by jGenProg, jKali, and Nopol, respectively. These case studies are pieces of evidence that:</p><p>• Automatic repair is able to find correct patches (Sections 5.1 and 5.3), but also fails with incorrect patches (Section 5.2).</p><p>• It is possible to automatically generate the same patch as the manual patch written by the developer (Section 5.1).</p><p>• To pass the whole test suite, an automatic repair approach may generate useless patches (Section 5.2).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Case Study of M70, Bug that is Only Fixed by jGenProg</head><p>In this section, we study Bug M70, which is fixed by jGen-Prog, but cannot be fixed by jKali and Nopol. 1 double solve(UnivariateRealFunction f, 2 double min, double max, double initial) 3</p><p>throws MaxIterationsExceededException, 4 FunctionEvaluationException { 5 // FIX: return solve(f, min, max); 6 return solve(min, max); 7 } Figure <ref type="figure">3</ref>: Code snippet of Bug M70. The manuallywritten patch and the patch by jGenProg are the same, which is shown in the FIX comment at Line 5, which adds a parameter to the method call.</p><p>Bug M70 in Commons Math is about univariate real function analysis. Fig. <ref type="figure">3</ref> presents the buggy method of Bug M70. This buggy method contains only one statement, a method call to an overloaded method. In order to perform the correct calculation, the call has to be done to a with an additional parameter UnivariateRealFunction f (at Line 1) to the method call. Both the manually-written patch and the patch by jGenProg add the parameter f to the method call (at Line 5). This patch generated by jGenProg is considered correct since the it is the same as that by developers.</p><p>To fix Bug M70, jGenProg generates a patch by replacing the method call by another one, which is picked elsewhere in the same class. This bug cannot be fixed by either jKali or Nopol. jKali removes and skips statements; Nopol only handles bugs that are related to if conditions. Indeed, the fact that certain bugs are only fixed by one tool confirms that the fault classes addressed by each approach are not identical. To sum up, Bug M7 shows that the GenProg algorithm, as implemented in jGenProg, is capable of uniquely repairing real Java bugs (only GenProg succeeds).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Case Study of M8, Bug that is Incorrectly Fixed by jKali and jGenProg</head><p>In this section, we present a case study of Bug M8, which is fixed by jKali as well as jGenProg, but fails to be fixed by Nopol.</p><p>Bug M8 6 in Commons Math, is about the failure to create an array of a random sample from a discrete distribution. Listing 4 shows an excerpt of the buggy code and the corresponding manual and synthesized fixes (from class DiscreteDistribution&lt;T&gt;). The method sample receives the expected number sampleSize of random values and returns an array of the type T[].</p><p>The bug is due to an exception thrown at line 11 during the assignment to out[i]. The method Array.newInstance(class, int) requires a class of a data type as the first parameter. The bug occurs when a) the first parameter is of type T1, which is a sub-class of T and b) one of the samples is an object which is of type T2, which is a sub-class of T, but not of type T1. Due to the incompatibility of types T1 and T2, an ArrayStoreException is thrown when this object is assigned to the array.</p><p>In the manual patch, the developers change the array type in its declaration (from T[] to Object[]) and the way the 6 Bug ID in the bug tracking system of Commons Math is Math-942, <ref type="url" target="http://issues.apache.org/jira/browse/MATH-942">http://issues.apache.org/jira/browse/  MATH-942</ref>.</p><p>1 T[] sample(int sampleSize) { 2 if (sampleSize &lt;= 0) { 3 throw new NotStrictlyPositiveException([...]); 4 } 5 // MANUAL FIX: 6 // Object[] out = new Object[sampleSize]; 7 T[] out = (T[]) Array.newInstance( 8 singletons.get(0).getClass(), sampleSize); 9 for (int i = 0; i &lt; sampleSize; i++) { 10 // FIX: removing the following line 11 out[i] = sample(); 12 } 13 return out; 14 } array is instantiated. The patch generated by jKali simply removes the statement, which assigns sample() to the array. As consequence, method sample never throws an exception but returns an empty array (only containing null values). This patch passes the failing test case and the full test suite as well. The reason of this is that the test case has only one assertion: it asserts that the array size is equal to 1. There is no assertion on the content of the returned array. However, despite passing the test suite, the patch is clearly incorrect. This is an example of a bug that is not well specified by the test suite. For this bug, jGenProg can also generate a patch by replacing the assignment by a side-effect free statement, which is semantically equivalent to removing the code. To sum up, Bug M8 is an archetypal example of underspecified bugs as detected by the jKali system.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Case Study of L55, Bug that is Fixed by Nopol, Equivalent to the Manual Patch</head><p>In this section, we present a case study of Bug L55, which is only fixed by Nopol, but cannot be fixed by jGenProg or jKali. Recall that Nopol <ref type="bibr">[9]</ref> focuses on condition-related bugs.</p><p>Bug L55 in Commons Lang relates a utility class for timing. The bug appears when the user stops a suspended timer: the stop time saved by the suspend action is overwritten by the stop action. Fig. <ref type="figure" target="#fig_3">5</ref> presents the buggy method of Bug L55. In order to solve this problem, the assignment at Line 10 has to be done only if the timer state is running.</p><p>As shown in Fig. <ref type="figure" target="#fig_3">5</ref>, the manually-written patch by the developer adds a precondition before the assignment at Line 10 and it checks that the current timer state is running (at Line 7). The patch by Nopol is different from the manuallywritten one. The Nopol patch compares the stop time variable to a integer constant (at Line 9), which is pre-defined in the program class and equals to 1. In fact, when the timer is running, the stop time variable is equals to -1; when it is suspended, the stop time variable contains the stop time in millisecond. Consequently, both preconditions by developers and by Nopol are equivalent and correct. Despite being equivalent, the manual patch remains more understandable.</p><p>1 void stop() { 2 if (this.runningState != STATE RUNNING 3 &amp;&amp; this.runningState != STATE SUSPENDED) { 4 throw new IllegalStateException(...); 5 } 6 // MANUAL FIX: 7 // if (this.runningState == STATE RUNNING) 8 // NOPOL FIX: 9 // if (stopTime &lt; StopWatch.STATE RUNNING) 10 stopTime = System.currentTimeMillis(); 11 this.runningState = STATE STOPPED; 12 } This bug is neither fixed by jGenProg nor jKali. To our knowledge, Nopol is the only approach that contains a strategy of adding preconditions to original statements, which does not exist in jGenProg or jKali. To sum up, Bug L55 shows an example of a repaired bug, 1) that is in a hard-to-repair project (only Nopol succeeds) and 2) whose specification by the test suite is good enough to drive the synthesis of a correct patch.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">Summary</head><p>. In this section, we have presented detailed case studies of three patches that are automatically generated for three real-world bugs of Defects4J. Our case studies show that automatic repair approaches are able to fix real bugs. However, different factors, in particular the weakness of some test cases, yield clearly incorrect patches.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">DISCUSSION</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">Threats to Validity</head><p>Implementations of GenProg and Kali. In jGenProg and jKali, we have re-implemented the GenProg and Kali algorithms in Java, according to the related papers. Although we have tried our best to understand and implement these two approaches, there still exists a threat that our implementations do not exactly produce the same results as the original systems would. Since GenProg and Kali are not written for Java, the re-implementation was the only way to conduct a comparison. To find re-implementation issues, our systems are publicly available on Github.</p><p>Bias of assessing the correctness, readability, and difficulty. In our work, each patch in Table <ref type="table" target="#tab_1">3</ref> is validated by an analyst, which is one of the authors. An analyst manually identifies the correctness of a patch and labels the related readability and difficulty. However, it may happen that the judgment by analysts is incorrect. In our experiment, since manual analysis is very tedious, we did not cross analysis (more than one analyst per patch). However, we share our results online on the experiment Github repository to let readers have a preliminary idea of the difficulty of our analysis work and the correctness of generated patches (see Sec-tion 4.1). For assessing the equivalence, one solution would be to use automatic technique, as done in mutation testing. However, whether the current equivalence detection techniques scale on large real Java code is an open question.</p><p>Random nature of jGenProg. jGenProg, as the original GenProg implementation, has a random component. Statements and mutations are randomly chosen based on rules during the search. Consequently, it may happen that a different run of jGenProg with the same timeout would repair more bugs. Due to the ultra large computation time of the experiment, it was impossible for us to run jGenProg enough times to assess this. We leave this to future work.</p><p>Presence of multiple patches. In this experiment, we stop the execution of a repair system once the first patch is found. This is the patch that is manually analyzed. However, as also experienced by others, there are often several if not dozens of different patches per bug. It might happen that a correct patch lies somewhere in this set of generated patches. We did not manually analyze all generated patches because it would require months of manual work. This finding shows that there is a need for research on approaches that order the generated patches so as to reveal the most likely to be correct.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">Impact of Flaky Tests on Repair</head><p>Our experiment uncovered one flaky test in Defects4J (C8). We realized that flaky tests have a direct impact on automatic repair. If the failing test case is flaky, the repair system might conclude that a correct patch has been found while it is actually correct. If one of the passing test cases is flaky, the repair system might conclude that a patch has introduced a regression while it is not the case, this results in an underestimation of the effectiveness of the repair technique.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3">Reflections on GenProg</head><p>The largest evaluations of GenProg are by Le Goues et al. <ref type="bibr" target="#b23">[23]</ref> and Qi et al. <ref type="bibr" target="#b39">[39]</ref>. The former reports that 55/105 bugs are fixed (under the definition that the patch passes the test suite), while the latter argued that only 2/105 bugs are correctly fixed (under the definition that the patch passes the test suite and that the patch is correct and acceptable from the viewpoint of the developer). The difference is due to an experimental error and the presence of under-specified bugs.</p><p>In this paper, we find that our re-implementation of Gen-Prog, jGenProg correctly fixes 5/224 (2.2%) bugs. In addition, it uniquely fixes 4 bugs, such as M70 discussed in Section 5.1.</p><p>We interpret those results as follows. First, having correctly and uniquely fixed bugs indicates that the core intuition of GenProg is valid, and that GenProg can be a component of an integrated repair tool that would mix different repair techniques. Second, the difference in repair rate is probably due to the inclusion criteria of both benchmarks (GenProg and Defects4J). To our opinion, none of them reflect the actual distribution of all bug kinds and difficulty in nature. Also, one factor may be the programming language under repair. One could hypothesize that GenProg is better suited to fix procedural code (as C is), whereas the complexity of OO code written in Java does not lie in the control flow of the methods, but in the class design and interactions. New experiments have to be designed to validate or invalidate this hypothesis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.">RELATED WORK</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.1">Real-World Datasets of Bugs</head><p>The academic community has set up real-world bug data to evaluate their software testing methods and to analyze their performance in practice. For instance, Do et al. <ref type="bibr" target="#b10">[10]</ref> propose a controlled experimentation platform for testing techniques. Their dataset is included in SIR database, which provides a widely-used testbed in debugging and test suite optimization.</p><p>Dallmeier et al. <ref type="bibr" target="#b7">[7]</ref> propose iBugs, a benchmark for bug localization obtained by extracting historical bug data. Bug-Bench by Lu et al. <ref type="bibr" target="#b28">[28]</ref> and BegBunch by Cifuentes et al. <ref type="bibr" target="#b6">[6]</ref> are two benchmarks that have been built to evaluate bug detection tools. The PROMISE repository <ref type="bibr" target="#b1">[1]</ref> is a collection of datasets in various fields of software engineering. Le Goues et al. <ref type="bibr" target="#b24">[24]</ref> have designed a benchmark of C bugs which is an extension of the GenProg benchmark.</p><p>In this experience report, we employ Defects4J by Just et al. <ref type="bibr" target="#b19">[19]</ref> to evaluate software repair. This database includes well-organized programs, bugs, and their test suites. The bug data in Defects4J has been extracted from the recent history of five widely-used Java projects. To us, Defects4J is the best dataset of real world Java bugs, both in terms of size and quality. To our knowledge, our experiment is the first that evaluates automatic repair techniques via Defects4J.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.2">Test-Suite Based Repair Approaches</head><p>The idea of applying evolutionary optimization to repair derives from Arcuri &amp; Yao <ref type="bibr" target="#b4">[4]</ref>. Their work applies co-evolutionary computation to automatically generate bug fixes. GenProg by Le Goues et al. <ref type="bibr" target="#b25">[25]</ref> applies genetic programming to the AST of a buggy program and generates patches by adding, deleting, or replacing AST nodes. PAR by Kim et al. <ref type="bibr" target="#b21">[21]</ref> leverages patch patterns learned from human-written patches to find readable patches. RSRepair by Qi et al. <ref type="bibr" target="#b38">[38]</ref> uses random search instead of genetic programming. This work shows that random search is more efficient in finding patches than genetic programming. Their follow-up work <ref type="bibr" target="#b37">[37]</ref> uses test case prioritization to reduce the cost of patch generation.</p><p>Debroy &amp; Wong <ref type="bibr" target="#b8">[8]</ref> propose a mutation-based repair method inspired from mutation testing. This work combines fault localization with program mutation to exhaustively explore a space of possible patches. Kali by Qi et al. <ref type="bibr" target="#b39">[39]</ref> has recently been proposed to examine the fixability power of simple actions, such as statement removal.</p><p>SemFix by Nguyen et al. <ref type="bibr" target="#b34">[34]</ref> is a notable constraint based repair approach. This approach provides patches for assignments and conditions by combining symbolic execution and code synthesis. Nopol by DeMarco et al. <ref type="bibr">[9]</ref> is also a constraint based method, which focuses on fixing bugs in if conditions and missing preconditions. DirectFix by Mechtaev et al. <ref type="bibr" target="#b32">[32]</ref> achieves the simplicity of patch generation with a Maximum Satisfiability (MaxSAT) solver to find the most concise patches. Relifix <ref type="bibr" target="#b43">[43]</ref> focuses on regression bugs. SPR <ref type="bibr" target="#b26">[26]</ref> defines a set of staged repair operators so as to early discard many candidate repairs that cannot pass the supplied test suite and eventually to exhaustively explore a small and valuable search space.</p><p>Besides test-suite based repair, other repair setups have been proposed. Yu et al. <ref type="bibr" target="#b36">[36]</ref> proposed a contract based method for automatic repair. Other related repair methods include atomicity-violation fixing (e.g. <ref type="bibr" target="#b17">[17]</ref>), runtime error repair (e.g. <ref type="bibr" target="#b27">[27]</ref>), and domain-specific repair (e.g. <ref type="bibr" target="#b40">[40,</ref><ref type="bibr" target="#b14">14]</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.3">Empirical Investigation of Automatic Repair</head><p>Beyond proposing new repair techniques, there is a thread of research on empirically investigating the foundations, impact and applicability of automatic repair.</p><p>On the goodness of synthesized patches, Fry et al. <ref type="bibr" target="#b13">[13]</ref> conducted a study of machine-generated patches based on 150 participants and 32 real-world defects. Their work shows that machine-generated patches are slightly less maintainable than human-written ones. Tao et al. <ref type="bibr" target="#b44">[44]</ref> performed a similar study to study whether machine-generated patches assist human debugging. Monperrus <ref type="bibr" target="#b33">[33]</ref> discussed in depth the acceptability criteria of synthesized patches.</p><p>Martinez &amp; Monperrus <ref type="bibr" target="#b30">[30]</ref> studied thousands of commits to mine repair models from manually-written patches. They later investigated <ref type="bibr" target="#b31">[31]</ref> the redundancy assumption in automatic repair (whether you can fix bugs by rearranging existing code). Zhong &amp; Su <ref type="bibr" target="#b47">[47]</ref> conducted a case study on over 9,000 real-world patches and found two important facts for automatic repair: for instance, their analysis outlines that some bugs are repaired with changing the configuration files.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8.">CONCLUSION</head><p>We have presented an experience report of a large scale evaluation of automatic repair approaches. Our experiment was conducted with three automatic repair systems on 224 bugs in the Defects4J dataset. We find out that the systems under consideration can synthesize a patch for 47 out of 224. Since the dataset only contains real bugs from largescale Java software, this is a piece of evidence about the applicability of automatic repair in practice.</p><p>Our findings indicate that there is a need for better repair algorithms, for instance, better code synthesis with multiple method calls or more complex patches applied at multiple locations. This may "unlock" other bugs from Defects4J. Also, we suggest that the presence of multiple patches indicate a need for research on approaches that order the generated patches so as to reveal the most likely to be correct. Preliminary work is being done on this topic <ref type="bibr" target="#b11">[11]</ref>.</p><p>To our opinion, there is also a need for research on test suites. For instance, any approach that automatically enriches test suites with new tests <ref type="bibr" target="#b41">[41]</ref> or stronger assertions would have a direct impact on repair, by preventing the synthesis of incorrect patches.</p><p>The three repair systems and all experimental results are publicly available at <ref type="url" target="http://github.com/Spirals-Team/defects4j-repair/">http://github.com/Spirals-Team/defects4j-repair/</ref>.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: Overview of test-suite based repair: it takes a buggy program and its test suite as input, incl. a failing test case; the output is the patch that passes the whole test suite if such patch exists.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>2 Figure 2 :</head><label>22</label><figDesc>Figure 2: Venn diagram that illustrates the bugs commonly fixed by different repair approaches. All fixed bugs by jKali are also fixed by jGenProg or Nopol.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Code snippet of Bug M8. The manuallywritten patch is shown in the MANUAL FIX comment at Lines 5 and 6 (changing a variable type). The patch by jKali in the FIX comment removes the loop body at Line 11.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Code snippet of Bug L55. The manuallywritten patch is shown in the MANUAL FIX comment at Lines 6 and 7 while the patch by Nopol is shown in the NOPOL FIX at Lines 8 and 9. The patch by Nopol is equivalent to the manually-written patch by developers.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>The Main Descriptive Statistics of Considered Bugs in Defects4J. The Number of Lines of Code and the Number of Test Cases are Extracted from the Most Recent Version of Each Project.</figDesc><table><row><cell>Project</cell><cell cols="4">#Bugs Source KLoC Test KLoC #Test cases</cell></row><row><cell>Commons Lang</cell><cell>65</cell><cell>22</cell><cell>6</cell><cell>2,245</cell></row><row><cell>JFreeChart</cell><cell>26</cell><cell>96</cell><cell>50</cell><cell>2,205</cell></row><row><cell cols="2">Commons Math 106</cell><cell>85</cell><cell>19</cell><cell>3,602</cell></row><row><cell>Joda-Time</cell><cell>27</cell><cell>28</cell><cell>53</cell><cell>4,130</cell></row><row><cell>Total</cell><cell>224</cell><cell>231</cell><cell>128</cell><cell>12,182</cell></row><row><cell cols="5">of 357 real-world bugs from five widely-used and large open-</cell></row><row><cell cols="5">source Java projects. Bugs in Defects4J are organized in a</cell></row><row><cell cols="5">unified structure that abstracts over programs, test cases,</cell></row><row><cell>and patches.</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>The Results of the Manual Assessment of 84 Patches that are Generated by Three Repair Approaches.</figDesc><table><row><cell cols="6">Project Bug id Patch id Approach Correctness Readability</cell><cell>Difficulty</cell></row><row><cell></cell><cell>C1</cell><cell>1</cell><cell cols="2">jGenProg Incorrect</cell><cell>Easy</cell><cell>Easy</cell></row><row><cell></cell><cell>C1</cell><cell>2</cell><cell>jKali</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Easy</cell></row><row><cell></cell><cell>C3</cell><cell>3</cell><cell cols="2">jGenProg Unknown</cell><cell>Medium</cell><cell>Medium</cell></row><row><cell></cell><cell>C3</cell><cell>4</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>C5</cell><cell>5</cell><cell cols="2">jGenProg Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>C5</cell><cell>6</cell><cell>jKali</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>C5</cell><cell>7</cell><cell>Nopol</cell><cell>Correct</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell>JFreeChart</cell><cell>C7 C13 C13 C13 C15</cell><cell>8 9 10 11 12</cell><cell cols="2">jGenProg Incorrect jGenProg Incorrect jKali Incorrect Nopol Incorrect jGenProg Incorrect</cell><cell>Easy Easy Easy Easy Easy</cell><cell>Easy Easy Easy Easy Medium</cell></row><row><cell></cell><cell>C15</cell><cell>13</cell><cell>jKali</cell><cell>Incorrect</cell><cell>Medium</cell><cell>Medium</cell></row><row><cell></cell><cell>C21</cell><cell>14</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Hard</cell><cell>Expert</cell></row><row><cell></cell><cell>C25</cell><cell>15</cell><cell cols="2">jGenProg Incorrect</cell><cell>Medium</cell><cell>Medium</cell></row><row><cell></cell><cell>C25</cell><cell>16</cell><cell>jKali</cell><cell>Incorrect</cell><cell>Medium</cell><cell>Medium</cell></row><row><cell></cell><cell>C25</cell><cell>17</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Easy</cell></row><row><cell></cell><cell>C26</cell><cell>18</cell><cell>jKali</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>C26</cell><cell>19</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell>Commons Lang</cell><cell>L39 L44 L46 L51 L53 L55 L58</cell><cell>20 21 22 23 24 25 26</cell><cell>Nopol Nopol Nopol Nopol Nopol Nopol Nopol</cell><cell>Incorrect Correct Incorrect Incorrect Incorrect Correct Correct</cell><cell>Easy Easy Easy Easy Hard Easy Easy</cell><cell>Medium Medium Medium Easy Expert Medium Medium</cell></row><row><cell></cell><cell>M2</cell><cell>27</cell><cell cols="2">jGenProg Incorrect</cell><cell>Easy</cell><cell>Hard</cell></row><row><cell></cell><cell>M2</cell><cell>28</cell><cell>jKali</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Hard</cell></row><row><cell></cell><cell>M5</cell><cell>29</cell><cell cols="2">jGenProg Correct</cell><cell>Easy</cell><cell>Easy</cell></row><row><cell></cell><cell>M8</cell><cell>30</cell><cell cols="2">jGenProg Incorrect</cell><cell>Easy</cell><cell>Easy</cell></row><row><cell></cell><cell>M8</cell><cell>31</cell><cell>jKali</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Easy</cell></row><row><cell></cell><cell>M28</cell><cell>32</cell><cell cols="2">jGenProg Incorrect</cell><cell>Medium</cell><cell>Hard</cell></row><row><cell></cell><cell>M28</cell><cell>33</cell><cell>jKali</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Hard</cell></row><row><cell></cell><cell>M32</cell><cell>34</cell><cell>jKali</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Easy</cell></row><row><cell></cell><cell>M32</cell><cell>35</cell><cell>Nopol</cell><cell>Unknown</cell><cell>Hard</cell><cell>Expert</cell></row><row><cell></cell><cell>M33</cell><cell>36</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Medium</cell><cell>Medium</cell></row><row><cell></cell><cell>M40</cell><cell>37</cell><cell cols="2">jGenProg Incorrect</cell><cell>Hard</cell><cell>Hard</cell></row><row><cell></cell><cell>M40</cell><cell>38</cell><cell>jKali</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>M40</cell><cell>39</cell><cell>Nopol</cell><cell>Unknown</cell><cell>Hard</cell><cell>Expert</cell></row><row><cell></cell><cell>M42</cell><cell>40</cell><cell>Nopol</cell><cell>Unknown</cell><cell>Medium</cell><cell>Expert</cell></row><row><cell></cell><cell>M49</cell><cell>41</cell><cell cols="2">jGenProg Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>M49</cell><cell>42</cell><cell>jKali</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>M49</cell><cell>43</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>M50</cell><cell>44</cell><cell cols="2">jGenProg Correct</cell><cell>Easy</cell><cell>Easy</cell></row><row><cell></cell><cell>M50</cell><cell>45</cell><cell>jKali</cell><cell>Correct</cell><cell>Easy</cell><cell>Easy</cell></row><row><cell></cell><cell>M50</cell><cell>46</cell><cell>Nopol</cell><cell>Correct</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>M53</cell><cell>47</cell><cell cols="2">jGenProg Correct</cell><cell>Easy</cell><cell>Easy</cell></row><row><cell></cell><cell>M57</cell><cell>48</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Medium</cell><cell>Medium</cell></row><row><cell></cell><cell>M58</cell><cell>49</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Medium</cell><cell>Hard</cell></row><row><cell>Commons Math</cell><cell>M69 M70 M71 M71 M73 M73 M78</cell><cell>50 51 52 53 54 55 56</cell><cell cols="2">Nopol jGenProg Correct Unknown jGenProg Unknown Nopol Incorrect jGenProg Correct Nopol Incorrect jGenProg Unknown</cell><cell>Medium Easy Medium Medium Easy Easy Easy</cell><cell>Expert Easy Hard Hard Easy Easy Hard</cell></row><row><cell></cell><cell>M78</cell><cell>57</cell><cell>jKali</cell><cell>Unknown</cell><cell>Easy</cell><cell>Hard</cell></row><row><cell></cell><cell>M78</cell><cell>58</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Medium</cell><cell>Hard</cell></row><row><cell></cell><cell>M80</cell><cell>59</cell><cell cols="2">jGenProg Incorrect</cell><cell>Hard</cell><cell>Medium</cell></row><row><cell></cell><cell>M80</cell><cell>60</cell><cell>jKali</cell><cell>Unknown</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>M80</cell><cell>61</cell><cell>Nopol</cell><cell>Unknown</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>M81</cell><cell>62</cell><cell cols="2">jGenProg Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>M81</cell><cell>63</cell><cell>jKali</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>M81</cell><cell>64</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>M82</cell><cell>65</cell><cell cols="2">jGenProg Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>M82</cell><cell>66</cell><cell>jKali</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>M82</cell><cell>67</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>M84</cell><cell>68</cell><cell cols="2">jGenProg Incorrect</cell><cell>Easy</cell><cell>Easy</cell></row><row><cell></cell><cell>M84</cell><cell>69</cell><cell>jKali</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Easy</cell></row><row><cell></cell><cell>M85</cell><cell>70</cell><cell cols="2">jGenProg Unknown</cell><cell>Easy</cell><cell>Easy</cell></row><row><cell></cell><cell>M85</cell><cell>71</cell><cell>jKali</cell><cell>Unknown</cell><cell>Easy</cell><cell>Easy</cell></row><row><cell></cell><cell>M85</cell><cell>72</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Easy</cell></row><row><cell></cell><cell>M87</cell><cell>73</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Medium</cell><cell>Expert</cell></row><row><cell></cell><cell>M88</cell><cell>74</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>M95</cell><cell>75</cell><cell cols="2">jGenProg Incorrect</cell><cell>Easy</cell><cell>Hard</cell></row><row><cell></cell><cell>M95</cell><cell>76</cell><cell>jKali</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Hard</cell></row><row><cell></cell><cell>M97</cell><cell>77</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell></cell><cell>M104</cell><cell>78</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Hard</cell><cell>Expert</cell></row><row><cell></cell><cell>M105</cell><cell>79</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Medium</cell><cell>Medium</cell></row><row><cell></cell><cell>T4</cell><cell>80</cell><cell cols="2">jGenProg Incorrect</cell><cell>Easy</cell><cell>Medium</cell></row><row><cell>Time</cell><cell>T4 T11 T11</cell><cell>81 82 83</cell><cell cols="2">jKali jGenProg Incorrect Incorrect jKali Incorrect</cell><cell>Easy Easy Easy</cell><cell>Medium Easy Easy</cell></row><row><cell></cell><cell>T11</cell><cell>84</cell><cell>Nopol</cell><cell>Incorrect</cell><cell>Medium</cell><cell>Medium</cell></row><row><cell></cell><cell cols="3">84 Patches for 47 bugs</cell><cell>11 Correct</cell><cell cols="2">61 Easy 21 Hard/Expert</cell></row><row><cell></cell><cell cols="6">5 patches correct from jGenProg, 1 from jKali and 5 from Nopol</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 5 :</head><label>5</label><figDesc>Time Cost of Patch Generation</figDesc><table><row><cell>Time cost</cell><cell>jGenProg</cell><cell>jKali</cell><cell>Nopol</cell></row><row><cell>Min</cell><cell>40 sec</cell><cell>36 sec</cell><cell>31sec</cell></row><row><cell>Median</cell><cell>1h 01m</cell><cell cols="2">18m 45sec 22m 30sec</cell></row><row><cell>Max</cell><cell>1h 16m</cell><cell>1h 27m</cell><cell>1h 54m</cell></row><row><cell>Average</cell><cell cols="3">55m 50sec 23m 33sec 30m 53sec</cell></row><row><cell>Total</cell><cell cols="2">8 days 12h 3 days 6h</cell><cell>7 days 3h</cell></row><row><cell cols="4">is 6.7 minutes. This means that the execution time of auto-</cell></row><row><cell cols="4">matic repair approaches is comparable to the time of manual</cell></row><row><cell cols="4">repair by developers. It may be even faster, but we don't</cell></row><row><cell cols="4">know the actual repair time by real developers for the bug</cell></row><row><cell>of the dataset.</cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Apache Commons Lang, http://commons.apache.org/ lang.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>JFreeChart, http://jfree.org/jfreechart/.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>Apache Commons Math, http://commons.apache.org/ math.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>Joda-Time, http://joda.org/joda-time/.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_4"><p>Google Closure Compiler, http://code.google.com/ closure/compiler/.of several dimensions of automatic repair: fixability, patch correctness, under-specified bugs, performance. We first list the Research Questions (RQs) of our work; then we describe the research protocol of our experiment; finally, we present the implementation details.</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>References</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<ptr target="http://openscience.us/repo/" />
+		<title level="m">Promise repository</title>
+		<imprint>
+			<date type="published" when="2015-05-01">2015-05-01</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<ptr target="https://github.com/Spirals-Team/defects4j-repair" />
+		<title level="m">The github repository of the experimental data</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">On the accuracy of spectrum-based fault localization</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Abreu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zoeteweij</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Van Gemund</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Testing: Academic and Industrial Conference Practice and Research Techniques-MUTATION, 2007. TAICPART-MUTATION 2007</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="page" from="89" to="98" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">A novel co-evolutionary approach to automatic software bug fixing</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Arcuri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE Congress on Evolutionary Computation</title>
+		<meeting>the IEEE Congress on Evolutionary Computation</meeting>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="162" to="168" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Grid&apos;5000: a large scale and highly reconfigurable experimental grid testbed</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bolze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Cappello</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Caron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Daydé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Desprez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Jeannot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jégou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lanteri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Leduc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Melab</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<publisher>SAGE Publications</publisher>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="page" from="481" to="494" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Begbunch: Benchmarking for c bug detection tools</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cifuentes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hoermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Keynes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Mealy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mounteney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Scholz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of ISSTA</title>
+		<meeting>ISSTA<address><addrLine>New York, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="16" to="20" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Extraction of Bug Localization Benchmarks from History</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Dallmeier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zimmermann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Twenty-second IEEE/ACM International Conference on Automated Software Engineering</title>
+		<meeting>the Twenty-second IEEE/ACM International Conference on Automated Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="page" from="433" to="436" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Using mutation to automatically suggest fixes for faulty programs</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Debroy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">E</forename><surname>Wong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Third International Conference on Software Testing, Verification and Validation, ICST 2010</title>
+		<meeting><address><addrLine>Paris, France</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2010">April 7-9, 2010. 2010</date>
+			<biblScope unit="page" from="65" to="74" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Automatic repair of buggy if conditions and missing preconditions with smt</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Demarco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">L</forename><surname>Berre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Monperrus</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 6th International Workshop on Constraints in Software Testing, Verification, and Analysis</title>
+		<meeting>the 6th International Workshop on Constraints in Software Testing, Verification, and Analysis</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="30" to="39" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Supporting controlled experimentation with testing techniques: An infrastructure and its potential impact</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Do</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Elbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Rothermel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Empirical Software Engineering</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="405" to="435" />
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Prophet: Automatic Patch Generation via Learning from Successful Human Patches</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fanlong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rinard</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">MIT</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">A human study of patch maintainability</title>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">P</forename><surname>Fry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Landau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Weimer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2012 International Symposium on Software Testing and Analysis</title>
+		<meeting>the 2012 International Symposium on Software Testing and Analysis<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2012">2012. 2012</date>
+			<biblScope unit="page" from="177" to="187" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">A human study of patch maintainability</title>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">P</forename><surname>Fry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Landau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Weimer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Symposium on Software Testing and Analysis</title>
+		<meeting>the International Symposium on Software Testing and Analysis</meeting>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="177" to="187" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Data-guided repair of selection statements</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gopinath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Khurshid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Saha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chandra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 36th International Conference on Software Engineering</title>
+		<meeting>the 36th International Conference on Software Engineering</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="243" to="253" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Has the bug really been fixed?</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Barr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hamilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Software Engineering, 2010 ACM/IEEE 32nd International Conference on</title>
+		<imprint>
+			<date type="published" when="2010-05">May 2010</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="55" to="64" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Oracle-guided component-based program synthesis</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gulwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">A</forename><surname>Seshia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tiwari</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Software Engineering</title>
+		<meeting>the International Conference on Software Engineering</meeting>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="215" to="224" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Automated atomicity-violation fixing</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Liblit</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 32nd ACM SIGPLAN Conference on Programming Language Design and Implementation</title>
+		<meeting>the 32nd ACM SIGPLAN Conference on Programming Language Design and Implementation</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="389" to="400" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Visualization of test information to assist fault localization</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Harrold</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Stasko</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 24th international conference on Software engineering</title>
+		<meeting>the 24th international conference on Software engineering</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2002">2002</date>
+			<biblScope unit="page" from="467" to="477" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Defects4J: A database of existing faults to enable controlled testing studies for Java programs</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Just</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jalali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">D</forename><surname>Ernst</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Symposium on Software Testing and Analysis (ISSTA)</title>
+		<meeting>the International Symposium on Software Testing and Analysis (ISSTA)</meeting>
+		<imprint>
+			<date type="published" when="2014">July 23-25 2014</date>
+			<biblScope unit="page" from="437" to="440" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Are mutants a valid substitute for real faults in software testing</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Just</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jalali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Inozemtseva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">D</forename><surname>Ernst</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Holmes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Fraser</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">22nd International Symposium on the Foundations of Software Engineering (FSE 2014)</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Automatic patch generation learned from human-written patches</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Nam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kim</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 35th International Conference on Software Engineering</title>
+		<meeting>the 35th International Conference on Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="802" to="811" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">A systematic study of automated program repair: Fixing 55 out of 105 bugs for $8 each</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Le Goues</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dewey-Vogt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Forrest</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Weimer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Software Engineering (ICSE), 2012 34th International Conference on</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="3" to="13" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">A systematic study of automated program repair: Fixing 55 out of 105 bugs for $8 each</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Le Goues</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dewey-Vogt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Forrest</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Weimer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 34th International Conference on Software Engineering</title>
+		<meeting>the 34th International Conference on Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="3" to="13" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">The manybugs and introclass benchmarks for automated repair of c programs</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Le Goues</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Holtschulte</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">K</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Brun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Devanbu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Forrest</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Weimer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Software Engineering</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<publisher>TSE), in press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Genprog: A generic method for automatic software repair. Software Engineering</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Le Goues</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Forrest</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Weimer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on</title>
+		<imprint>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="54" to="72" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Staged program repair with condition synthesis</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">C</forename><surname>Rinard</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of ESE/FSE</title>
+		<meeting>ESE/FSE</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Automatic runtime error repair and containment via recovery shepherding</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sidiroglou-Douskos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">C</forename><surname>Rinard</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM SIGPLAN Conference on Programming Language Design and Implementation, PLDI &apos;14</title>
+		<meeting><address><addrLine>Edinburgh, United Kingdom</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2014">June 09 -11, 2014. 2014</date>
+			<biblScope unit="page">26</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Bugbench: Benchmarks for evaluating bug detection tools</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Workshop on the Evaluation of Software Defect Detection Tools</title>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">ASTOR: Evolutionary Automatic Software Repair for Java</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Martinez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Monperrus</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<publisher>Inria</publisher>
+		</imprint>
+	</monogr>
+	<note type="report_type">Technical report</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Mining software repair models for reasoning on the search space of automated program fixing</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Martinez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Monperrus</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Empirical Software Engineering</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="176" to="205" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Do the fix ingredients already exist? an empirical inquiry into the redundancy assumptions of program repair approaches</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Martinez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Weimer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Monperrus</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 36th International Conference on Software Engineering</title>
+		<meeting>the 36th International Conference on Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="492" to="495" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Directfix: Looking for simple program repairs</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mechtaev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roychoudhury</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 37th International Conference on Software Engineering</title>
+		<meeting>the 37th International Conference on Software Engineering</meeting>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">A critical review of automatic patch generation learned from human-written patches: essay on the problem statement and the evaluation of automatic software repair</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Monperrus</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 36th International Conference on Software Engineering</title>
+		<meeting>the 36th International Conference on Software Engineering</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="234" to="242" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Semfix: Program repair via semantic analysis</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">D T</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roychoudhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chandra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2013 International Conference on Software Engineering</title>
+		<meeting>the 2013 International Conference on Software Engineering</meeting>
+		<imprint>
+			<publisher>IEEE Press</publisher>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="772" to="781" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Test case analytics: Mining test case traces to improve risk-driven testing</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Noor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hemmati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE 1st International Workshop on Software Analytics</title>
+		<meeting>the IEEE 1st International Workshop on Software Analytics</meeting>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="13" to="16" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Automated fixing of programs with contracts</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">A</forename><surname>Furia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Nordio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Meyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Software Eng</title>
+		<imprint>
+			<biblScope unit="volume">40</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="427" to="449" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Efficient automated program repair through fault-recorded testing prioritization</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2013 IEEE International Conference on Software Maintenance</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="180" to="189" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<analytic>
+		<title level="a" type="main">The strength of random search on automated program repair</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 36th International Conference on Software Engineering</title>
+		<meeting>the 36th International Conference on Software Engineering</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="254" to="265" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<analytic>
+		<title level="a" type="main">An analysis of patch plausibility and correctness for generate-and-validate patch generation systems</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Long</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Achour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rinard</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of ISSTA</title>
+		<meeting>ISSTA</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Automated repair of HTML generation errors in PHP applications using string constraint solving</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Samimi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Schäfer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Artzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">D</forename><surname>Millstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Tip</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">J</forename><surname>Hendren</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 34th International Conference on Software Engineering</title>
+		<meeting>the 34th International Conference on Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="277" to="287" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Do automatically generated unit tests find real faults? an empirical study of effectiveness and challenges</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shamshiri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Just</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Rojas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Fraser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mcminn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Arcuri</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Automated Software Engineering</title>
+		<meeting>the International Conference on Automated Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Is the cure worse than the disease? overfitting in automated program repair</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">K</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Barr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">Le</forename><surname>Goues</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Brun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 10th Joint Meeting of the European Software Engineering Conference and ACM SIGSOFT Symposium on the Foundations of Software Engineering (ESEC/FSE)</title>
+		<meeting>the 10th Joint Meeting of the European Software Engineering Conference and ACM SIGSOFT Symposium on the Foundations of Software Engineering (ESEC/FSE)<address><addrLine>Bergamo, Italy</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2015-09">September 2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<analytic>
+		<title level="a" type="main">relifix: Automated repair of software regressions</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">H</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roychoudhury</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of ICSE</title>
+		<meeting>ICSE</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Automatically generated patches as debugging aids: a human study</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Xu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 22nd ACM SIGSOFT International Symposium on Foundations of Software Engineering</title>
+		<meeting>the 22nd ACM SIGSOFT International Symposium on Foundations of Software Engineering</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="64" to="74" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Nopol: Automatic repair of conditional statement bugs in large-scale object-oriented programs. Under 2nd review at</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Matias</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Demarco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Sebastian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Thomas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">Le</forename><surname>Berre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Monperrus</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Software Engineering</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Test case purification for improving fault localization</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Monperrus</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 22nd ACM SIGSOFT International Symposium on Foundations of Software Engineering (FSE)</title>
+		<meeting>the 22nd ACM SIGSOFT International Symposium on Foundations of Software Engineering (FSE)</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b47">
+	<analytic>
+		<title level="a" type="main">An empirical study on real bug fixes</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 37th International Conference on Software Engineering (ICSE)</title>
+		<meeting>the 37th International Conference on Software Engineering (ICSE)</meeting>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

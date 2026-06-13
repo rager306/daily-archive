@@ -1,0 +1,1183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">RobustFill: Neural Program Learning under Noisy I/O</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2017-03-21">21 Mar 2017</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+							<email>&lt;jdevlin@microsoft.com&gt;.</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research</orgName>
+								<address>
+									<addrLine>Washing- ton</addrLine>
+									<settlement>Redmond</settlement>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jonathan</forename><surname>Uesato</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">MIT</orgName>
+								<address>
+									<settlement>New London Cambridge</settlement>
+									<region>Massachusetts</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Surya</forename><surname>Bhupatiraju</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">MIT</orgName>
+								<address>
+									<settlement>New London Cambridge</settlement>
+									<region>Massachusetts</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Rishabh</forename><surname>Singh</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research</orgName>
+								<address>
+									<addrLine>Washing- ton</addrLine>
+									<settlement>Redmond</settlement>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Abdel-Rahman</forename><surname>Mohamed</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research</orgName>
+								<address>
+									<addrLine>Washing- ton</addrLine>
+									<settlement>Redmond</settlement>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pushmeet</forename><surname>Kohli</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Microsoft Research</orgName>
+								<address>
+									<addrLine>Washing- ton</addrLine>
+									<settlement>Redmond</settlement>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">RobustFill: Neural Program Learning under Noisy I/O</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2017-03-21">21 Mar 2017</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">12A9A8E262F8F7D1575B3393FAE362E0</idno>
+					<idno type="arXiv">arXiv:1703.07469v1[cs.AI]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-13T10:24+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The problem of automatically generating a computer program from some specification has been studied since the early days of AI. Recently, two competing approaches for automatic program learning have received significant attention: (1) neural program synthesis, where a neural network is conditioned on input/output (I/O) examples and learns to generate a program, and (2) neural program induction, where a neural network generates new outputs directly using a latent program representation.</p><p>Here, for the first time, we directly compare both approaches on a large-scale, real-world learning task. We additionally contrast to rule-based program synthesis, which uses hand-crafted semantics to guide the program generation. Our neural models use a modified attention RNN to allow encoding of variable-sized sets of I/O pairs. Our best synthesis model achieves 92% accuracy on a real-world test set, compared to the 34% accuracy of the previous best neural synthesis approach. The synthesis model also outperforms a comparable induction model on this task, but we more importantly demonstrate that the strength of each approach is highly dependent on the evaluation metric and end-user application. Finally, we show that we can train our neural models to remain very robust to the type of noise expected in real-world data (e.g., typos), while a highlyengineered rule-based system fails entirely.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>The problem of program learning, i.e. generating a program consistent with some specification, is one of the oldest problems in machine learning and artificial intelligence Waldinger &amp; <ref type="bibr">Lee (1969)</ref>; <ref type="bibr" target="#b14">Manna &amp; Waldinger (1975)</ref>. The classical approach has been that of rule-based program synthesis <ref type="bibr" target="#b15">(Manna &amp; Waldinger, 1980)</ref>, where a formal grammar is used to derive a program from a well-defined specification. Providing a formal specification is often more difficult than writing the program itself, so modern program synthesis methods generally rely on input/output examples (I/O examples) to act as an approximate specification. Modern rule-based synthesis methods are typically centered around hand-crafted function semantics and pruning rules to search for programs consistent with the I/O examples <ref type="bibr" target="#b8">(Gulwani et al., 2012;</ref><ref type="bibr">Alur et al., 2013)</ref>. These hand-engineered systems are often difficult to extend and fragile to noise, so statistical program learning methods have recently gained popularity, with a particular focus on neural network models. This work has fallen into two overarching categories: (1) neural program synthesis, where the program is generated by a neural network conditioned on the I/O examples <ref type="bibr">(Balog et al., 2016;</ref><ref type="bibr" target="#b18">Parisotto et al., 2017;</ref><ref type="bibr" target="#b4">Gaunt et al., 2016;</ref><ref type="bibr" target="#b21">Riedel et al., 2016)</ref>, and (2) neural program induction, where network learns to generate the output directly using a latent program representation <ref type="bibr" target="#b5">(Graves et al., 2014;</ref><ref type="bibr" target="#b3">2016;</ref><ref type="bibr" target="#b12">Kurach et al., 2016;</ref><ref type="bibr" target="#b11">Kaiser &amp; Sutskever, 2015;</ref><ref type="bibr" target="#b10">Joulin &amp; Mikolov, 2015;</ref><ref type="bibr" target="#b20">Reed &amp; de Freitas, 2016;</ref><ref type="bibr" target="#b17">Neelakantan et al., 2016)</ref>. Although many of these papers have achieved impressive results on a variety of tasks, none have thoroughly compared induction and synthesis approaches on a real-world test set. In this work, we not only demonstrate strong empirical results compared to past work, we also directly contrast the strengths and weaknesses of both neural program learning approaches for the first time.</p><p>The primary task evaluated for this work is a Programming By Example (PBE) system for string transformations similar to FlashFill <ref type="bibr" target="#b8">(Gulwani et al., 2012;</ref><ref type="bibr" target="#b7">Gulwani, 2011)</ref>. FlashFill allows Microsoft Excel end-users to perform regular expression-based string transformations using examples without having to write complex macros. For example, a user may want to extract zip codes from a text field containing addresses, or transform a timestamp to a different format. An example is shown in Figure <ref type="figure" target="#fig_0">1</ref>. A user manually provides a small number of example output strings to convey the desired intent and the goal of FlashFill is to generalize the examples to automatically generate the corresponding outputs for the remaining input strings. Since the end goal is to emit the correct output strings, and not a program, the task itself is agnostic to whether a synthesis or induction approach is taken.</p><p>For modeling, we develop novel variants of the attentional RNN architecture <ref type="bibr" target="#b1">(Bahdanau et al., 2014)</ref> to encode a variable-length unordered set of input-output examples. For program representation, we have developed a domain-specific language (DSL), similar to that of <ref type="bibr" target="#b8">Gulwani et al. (2012)</ref>, that defines an expressive class of regular expression-based string transformations. The neural network is then used to generate a program in the DSL (for synthesis) or an output string (for induction). Both systems are trained end-to-end using a large set of input-output examples and programs uniformly sampled from the DSL.</p><p>We compare our neural induction model, neural synthesis model, and the rule-based architecture of <ref type="bibr" target="#b8">Gulwani et al. (2012)</ref> on a real-world FlashFill test set. We also inject varying amounts of noise (i.e., simulated typos) into the FlashFill test examples to model the robustness of different learning approaches. While the manual approaches work reasonably well for well-formed I/O examples, we show that its performance degrades dramatically in presence of even small amounts of noise. We show that our neural architectures are significantly more robust in presence of noise and moreover obtain an accuracy comparable to manual approaches even for non-noisy examples. This paper makes the following key contributions:</p><p>• We present a novel variant of the attentional RNN architecture, which allows for encoding of a variablesize set of input-output examples.</p><p>• We evaluate the architecture on 205 real-world Flash-Fill instances and significantly outperform the previous best statistical system (92% vs. 34% accuracy).</p><p>• We compare the model to a hand-crafted synthesis algorithm and show that while both systems achieve similar performance on clean test data, our model is significantly more robust to realistic noise (with noise, 80% accuracy vs. 6% accuracy).</p><p>• We compare our neural synthesis architecture with a neural induction architecture, and demonstrate that each approach has its own strengths under different evaluation metrics and decoding constraints.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Related Work</head><p>There has been an abundance of recent work on neural program induction and synthesis.</p><p>Neural Program Induction: Neural Turing Machine (NTM) <ref type="bibr" target="#b5">(Graves et al., 2014)</ref> uses a neural controller to read and write to an external memory tape using soft attention and is able to learn simple algorithmic tasks such as array copying and sorting. Stack-RNNs <ref type="bibr" target="#b10">(Joulin &amp; Mikolov, 2015)</ref> augment a neural controller with an external stackstructured memory and is able to learn algorithmic patterns of small description length. Neural GPU <ref type="bibr" target="#b11">(Kaiser &amp; Sutskever, 2015)</ref> presents a Turing-complete model similar to NTM, but with a parallel and shallow design similar to that of GPUs, and is able to learn complex algorithms such as long binary multiplication. Neural Programmer-Interpreters <ref type="bibr" target="#b20">(Reed &amp; de Freitas, 2016)</ref> teach a controller to learn algorithms from program traces as opposed to examples. Neural Random-Access Machines <ref type="bibr" target="#b12">(Kurach et al., 2016)</ref> uses a continuous representation of 14 high-level modules consisting of simple arithmetic functions and reading/writing to a variable-size random-access memory to learn algorithmic tasks requiring pointer manipulation and dereferencing to memory. The domain of string transformations is different than the domains handled by these approaches and moreover, unlike RobustFill, these approaches need to be re-trained per problem instance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Neural Program Synthesis:</head><p>The most closely related work to ours uses a Recursive-Reverse-Recursive neural network (R3NN) to learn string transformation programs from examples <ref type="bibr" target="#b18">(Parisotto et al., 2017)</ref>, and is directly compared in Section 5.1. DeepCoder <ref type="bibr">(Balog et al., 2016)</ref> trains a neural network to predict a distribution over possible functions useful for a given task from input-output examples, which is used to augment an external search algorithm. Unlike DeepCoder, RobustFill performs an end-toend synthesis of programs from examples. Terpret <ref type="bibr" target="#b4">(Gaunt et al., 2016)</ref> and Neural Forth <ref type="bibr" target="#b21">(Riedel et al., 2016)</ref> allow programmers to write sketches of partial programs to express prior procedural knowledge, which are then completed by training neural networks on examples.</p><p>DSL-based synthesis: Non-statistical DSL-based synthesis approaches <ref type="bibr" target="#b8">(Gulwani et al., 2012)</ref> exploit independence properties of DSL operators to develop a divide-and-conquer based search algorithm with several hand-crafted pruning and ranking heuristics <ref type="bibr" target="#b19">(Polozov &amp; Gulwani, 2015)</ref>.</p><p>In this work, we present a neural architecture to automatically learn an efficient synthesis algorithm. There is also some work on using learnt clues to guide the search in DSL expansions <ref type="bibr" target="#b16">(Menon et al., 2013)</ref>, but this requires handcoded textual features of examples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Problem Overview</head><p>We now formally define the problem setting and the domain-specific language of string transformations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Problem Formulation</head><p>Given a set of input-output (I/O) string examples (I 1 , O 1 ), ..., (I n , O n ), and a set of unpaired input strings I y 1 , ..., I y m , the goal of of this task is to generate the corresponding output strings, O y 1 , ..., O y m . For each example set, we assume there exists at least one program P that will correctly transform all of these examples, i.e., P (I 1 ) → O 1 , ..., P (I y 1 ) → O y 1 , ... Throughout this work, we refer to (I j , O j ) as observed examples and (I y j , O y j ) as assessment examples. We use InStr and OutStr to generically refer to I/O examples that may be observed or assessment. We refer to this complete set of information as an instance:</p><formula xml:id="formula_0">I 1 = January O 1 = jan I 2 = February O 2 = feb I 3 = March O 3 = mar I y 1 = April O y 1 = apr I y 2 = May O y 2 = may P = ToCase(Lower, SubStr(1,3))</formula><p>Intuitively, imagine that a (non-programmer) user has a large list of InStr which they wish to process in some way. The goal is to only require the user to manually create a small number of corresponding OutStr, and the system will generate the remaining OutStr automatically.</p><p>In the program synthesis approach, we train a neural model which takes (I 1 , O 1 ), ..., (I n , O n ) as input and generates P as output, token-by-token. It is trained fully supervised on a large corpus of synthetic I/O Example + Program pairs. It is not conditioned on the assessment input strings I y j , but it could be in future work. At test time, the model is provided with new set of observed I/O examples and attempts to generate the corresponding P which it (maybe) has never seen in training. Crucially, the system can actually execute the generated P on each observed input string I j and check if it produces O j . <ref type="foot" target="#foot_0">1</ref> If not, it knows that P cannot be the correct program, and it can search for a different P . Of course, even if P is consistent on all observed examples, there is no guarantee that it will generalize to new examples (i.e., assessment examples). We can think of consistency as a necessary, but not sufficient, condition. The actual success metric is whether this program generalizes to the corresponding assessment examples, i.e., P (I y j ) = O y j . There also may be multiple valid programs.</p><p>In the program induction approach, we train a neural model which takes (I 1 , O 1 ), ..., (I n , O n ) and I y as input and generates O y as output, character-by-character. Our current model decodes each assessment example independently. Crucially, the induction model makes no explicit use use of program P at training or test time. Instead, we say that it induces a latent representation of the program. If we had a large corpus of real-world I/O examples, we could in fact train an induction model without any explicit program representation. Since such a corpus is not available, it is trained on the same synthesized I/O Examples as the synthesis model. Note that since the program representation is latent, there is no way to measure consistency.</p><p>We can comparably evaluate both approaches by measuring generalization accuracy, which is the percent of test instances for which the system has successfully produced the correct OutStr for all assessment examples. For synthesis this means P (I y j ) = O y j ∀(I y j , O y j ). For induction this means all O y generated by the system are exactly correct. We typically use four observed examples and six assessment examples per test instance. All six must be exactly correct for the model to get credit.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">The Domain Specific Language</head><p>The Domain Specific Language (DSL) used here to represent P models a rich set of string transformations based on substring extractions, string conversions, and constant strings. The DSL is similar to the DSL described in <ref type="bibr" target="#b18">Parisotto et al. (2017)</ref>, but is extended to include nested expressions, arbitrary constant strings, and a powerful regexbased substring extraction function. The syntax of the DSL is shown in Figure <ref type="figure" target="#fig_1">2</ref> and the formal semantics are presented in the supplementary material.</p><p>A program P : string ⇒ string in the DSL takes as input a string and returns another string as output. The top-level operator in the DSL is the Concat operator that concatenates a finite list of string expressions e i . A string expression e can either be a substring expression f , a nesting expression n, or a constant string expression. A substring expression can either be defined using two constant positions indices k 1 and k 2 (where negative indices denote positions from the right), or using the GetSpan(r 1 , i i , y 1 , r 2 , i 2 , y 2 ) construct that returns the substring between the i th 1 occurrence of regex r 1 and the i th 2 occurrence of regex r 2 , where y 1 and y 2 denotes either the start or end of the corresponding regex matches. The Program p := Concat(e 1 , e 2 , e 3 , ...)</p><formula xml:id="formula_1">Expression e := f | n | n 1 (n 2 ) | n(f ) | ConstStr(c) Substring f := SubStr(k 1 , k 2 ) | GetSpan(r 1 , i 1 , y 1 , r 2 , i 2 , y 2 ) Nesting n := GetToken(t, i) | ToCase(s) | Replace(δ 1 , δ 2 ) | Trim() | GetUpto(r) | GetFrom(r) | GetFirst(t, i) | GetAll(t) Regex r := t 1 | • • • | t n | δ 1 | • • • | δ m Type t := Number | Word | Alphanum | AllCaps | PropCase | Lower | Digit | Char Case s := Proper | AllCaps | Lower</formula><p>Position k := -100, -99, ..., 1, 2, ..., 100 Index i := -5, -4, -3, -2, 1, 2, 3, 4, 5</p><p>Character c := A -Z, az, 0 -9, !?, @... nesting expressions allow for further nested string transformations on top of the substring expressions allowing to extract k th occurrence of certain regex, perform casing transformations, and replacing a delimiter with another delimiter. The notation e 1 | e 2 | ... is sometimes used as a shorthand for Concat(e 1 , e 2 , ...). The nesting and substring expressions take a string as input (implicitly as a lambda parameter). We sometimes refer expressions such as ToCase(Lower)(v) as ToCase(Lower,v).</p><formula xml:id="formula_2">Delimiter δ := &amp;, .?!@()[]%{}/ :; $#" Boundary y := Start | End</formula><p>There are approximately 30 million unique string expressions e, which can be concatenated to create arbitrarily long programs. Any search method that does not encode inverse function semantics (either by hand or with a statistical model) cannot prune partial expressions. Thus, even efficient techniques like dynamic programming (DP) with black-box expression evaluation would still have to search over many millions of candidates.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.">Training Data and Test Sets</head><p>Since there are only a few hundred real-world FlashFill instances, the data used to train the neural networks was synthesized automatically. To do this, we use a strategy of random sampling and generation. First, we randomly sample programs from our DSL, up to a maximum length (10 expressions). Given a sampled program, we compute a simple set of heuristic requirements on the InStr such that the program can be executed without throwing an exception. For example, if an expression in the program retrieves the 4th number, the InStr must have at least 4 numbers. Then, each InStr is generated as a random sequence of ASCII characters, constrained to satisfy the requirements. The corresponding OutStr is generated by executing the program on the InStr.</p><p>For evaluating the trained models, we use FlashFillTest, a set of 205 real-world examples collected from Microsoft Excel spreadsheets, and provided to us by the authors of <ref type="bibr" target="#b8">Gulwani et al. (2012)</ref> and <ref type="bibr" target="#b18">Parisotto et al. (2017)</ref>. Each FlashFillTest instance has ten I/O examples, of which the first four are used as observed examples and the remaining six are used as assessment examples. <ref type="foot" target="#foot_1">2</ref> Some examples of FlashFillTest instances are provided in the supplementary material. Intuitively, it is possible to generalize to a realword test set using randomly synthesized training because the model is learning function semantics, rather than a particular data distribution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Program Synthesis Model Architecture</head><p>We model program synthesis as a sequence-to-sequence generation task, along the lines of past work in machine translation <ref type="bibr" target="#b1">(Bahdanau et al., 2014)</ref>, image captioning <ref type="bibr">(Xu et al., 2015)</ref>, and program induction <ref type="bibr">(Zaremba &amp; Sutskever, 2014)</ref>. In the most general description, we encode the observed I/O using a series of recurrent neural networks (RNN), and generate P using another RNN one token at a time. The key challenge here is that in typical sequenceto-sequence modeling, the input to the model is a single sequence. In this case, the input is a variable-length, unordered set of sequence pairs, where each pair (i.e., an I/O example) has an internal conditional dependency. We describe and evaluate several multi-attentional variants of the attentional RNN architecture <ref type="bibr" target="#b1">(Bahdanau et al., 2014)</ref> to model this scenario.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Single-Example Representation</head><p>We first consider a model which only takes a single observed example (I, O) as input, and produces a program P as output. Note that this model is not conditioned on the assessment input I y . In all models described here, P is generated using a sequential RNN, rather than a hierarchical RNN <ref type="bibr" target="#b18">(Parisotto et al., 2017;</ref><ref type="bibr">Tai et al., 2015)</ref>. <ref type="foot" target="#foot_2">3</ref> As demonstrated in <ref type="bibr" target="#b22">Vinyals et al. (2015)</ref>, sequential RNNs can be surprisingly strong at representing hierarchical structures.</p><p>We explore four increasingly complex model architectures, shown visually in Figure <ref type="figure" target="#fig_2">3</ref>:</p><p>• Basic Seq-to-Seq: Each sequence is encoded with a non-attentional LSTM, and the final hidden state is used as the initial hidden state of the next LSTM.</p><p>• Attention-A: O and P are attentional LSTMs, with O attending to I and P attending to O.<ref type="foot" target="#foot_3">foot_3</ref> • Attention-B: Same as Attention-A, but P uses a double attention architecture, attending to both O and I simultaneously.</p><p>• Attention-C: Same as Attention-B, but I and O are bidirectional LSTMs.</p><p>In all cases, the InStr and OutStr are processed at the character level, so the input to I and O are character embeddings. The vocabulary consists of all 95 printable ASCII tokens.</p><p>The inputs and targets for the P layer is the source-codeorder linearization of the program. The vocabulary consists of 430 total program tokens, which includes all function names and parameter values, as well as special tokens for concatenation and end-of-sequence. Note that numerical parameters are also represented with embedding tokens. The model is trained to maximize the log-likelihood of the reference program P .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Double Attention</head><p>Double attention is a straightforward extension to the standard attentional architecture, similar to the multimodal attention described in <ref type="bibr" target="#b9">Huang et al. (2016)</ref>. A typical attentional layer takes the following form:</p><formula xml:id="formula_3">s i = Attention(h i-1 , x i , S) h i = LST M (h i-1 , x i , s i )</formula><p>Where S is the set of vectors being attended to, h i-1 is the previous recurrent state, and x i is the current input. The Attention() function takes the form of the "general" model from <ref type="bibr" target="#b13">Luong et al. (2015)</ref>. Double attention takes the form:</p><formula xml:id="formula_4">s A i = Attention(h i-1 , x i , S A ) s B i = Attention(h i-1 , x i , s A i , S B ) h i = LST M (h i-1 , x i , s A i , s B i ) Note that s A</formula><p>i is concatenated to h i-1 when computing attention on S B , so there is a directed dependence between the two attentions. Here, S A is O and S B is I. In the LSTM, s A i and s B i are concatenated.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Multi-Example Pooling</head><p>The previous section only describes an architecture for encoding a single I/O example. However, in general we assume the input to consist of multiple I/O examples. The number of I/O examples can be variable between test instances, and the examples are unordered, which suggests a pooling-based approach. Previous work <ref type="bibr" target="#b18">(Parisotto et al., 2017)</ref> has pooled on the final encoder hidden states, but this approach cannot be used for attentional models.</p><p>Instead, we take an approach which we refer to as late pooling. Here, each I/O example has its own layers for I, O, and P (with shared weights across examples), but the hidden states of P 1 , ..., P n are pooled at each timestep before being fed into a single output softmax layer. The architecture is shown at the bottom of Figure <ref type="figure" target="#fig_2">3</ref>. We did not find it beneficial to add another fully-connected layer or recurrent layer after pooling.</p><p>Formally, the layers labeled "FC" and "MaxPool" perform the operation m i = MaxPool j∈n (tanh(W h ji )), where i is the current timestep, n is the number of observed examples, h ji ∈ R d is the output of P j at the timestep i, and W ∈ R d×d is a set of learned weights. The layer denoted as "Output Softmax" performs the operation y i = Softmax(V m i ), where V ∈ R d×v is the output weight matrix, and v is the number of tokens in the program vocabulary. The model is trained to maximize the log-softmax of the reference program sequence, as is standard.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.">Hyperparameters and Training</head><p>In all experiments, the size of the recurrent and fully connected layers is 512, and the size of the embeddings is 128. Models were trained with plain SGD + gradient clipping. All models were trained for 2 million minibatch updates, where each minibatch contained 128 training instances (i.e., 128 programs with four I/O examples each).</p><p>Each minibatch was re-sampled, so the model saw 256 million random programs and 1024 million random I/O examples during training. Training took approximately 24 hours of 2 Titan X GPUs, using an in-house toolkit. A small amount of hyperparameter tuning was done on a synthetic validation set that was generated like the training.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Program Synthesis Results</head><p>Once training is complete, the synthesis models can be decoded with a beam search decoder <ref type="bibr">(Sutskever et al., 2014)</ref>. Unlike a typical sequence generation task, where the model is decoded with a beam k and then only the 1-best output is taken, here all k-best candidates are executed one-by-one to determine consistency. If multiple program candidates are consistent with all observed examples, the program with the highest model score is taken as the output. <ref type="foot" target="#foot_4">5</ref> This program is referred to as P * .</p><p>In addition to standard beam search, we also propose a variant referred to as "DP-Beam," which adds a search constraint similar to the dynamic programming algorithm mentioned in Section 3.3. Here, each time an expression is completed during the search, the partial program is executed in a black-box manner. If any resulting partial OutStr is not a string prefix of the observed OutStr, the partial program is removed from the beam. This technique is effective because our DSL is largely concatenative. Consistency is evaluated in Section 5.2.</p><p>Results are shown in Figure <ref type="figure" target="#fig_3">4</ref>. The most evident result is that all attentional variants outperform the basic seq-toseq model by a very large margin -roughly 25% absolute improvement. The difference between the three variants is smaller, but there is a clear improvement in accuracy as the models progress in complexity. Both Attention-B and Attention-C each add roughly 2-5% absolute accu-racy, and this improvement appears even for a large beam. The DP-Beam variant also improves accuracy by roughly 5%. Overall, the best absolute accuracy achieved is 92% by Attention-C-DP w/ Beam=1000. Although we have not optimized our decoder for speed, the amortized end-to-end cost of decoding is roughly 0.3 seconds per test instance for Attention-C-DP w/ Beam=100 and four observed examples (89% accuracy), on a Titan X GPU.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.">Comparison to Past Work</head><p>Prior to this work, the strongest statistical model for solving FlashFillTest was <ref type="bibr" target="#b18">Parisotto et al. (2017)</ref>.</p><p>The generalization accuracy is shown below: System Beam 100 1000 Parisotto et al. (2017) 23% 34% Basic Seq-to-Seq 51% 56% Attention-C 83% 86% Attention-C-DP 89% 92% We believe that this improvement in accuracy is due to several reasons. First, late pooling allows us to effectively incorporate powerful attention mechanisms into our model. Because the architecture in Parisotto et al. (2017) performed pooling at the I/O encoding level, it could not exploit the attention mechanisms which we show our critical to achieving high accuracy. Second, the DSL used here is more expressive, especially the GetSpan() function, which was required to solve approximately 20% of the test instances. 6</p><p>Comparison to the FlashFill implementation currently deployed in Microsoft Excel is given in Section 7. for both beam sizes, although this is significantly more pronounced for a Beam=100. Interestingly, the consistency is relatively constant when the number of observed examples increases. There was no a priori expectation about whether consistency would increase or decrease, since more examples are consistent with fewer total programs, but also give the network a stronger input signal. Finally, we can see that the Beam=1 decoding only generates consistent output roughly 50% of the time, which implies that the latent function semantics learned by the model are still far from perfect.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.">Consistency vs. Generalization Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Program Induction Results</head><p>An alternative approach to solving the FlashFill problem is program induction, where the output string is generated directly by the neural network without the need for a DSL. More concretely, we can train a neural network which takes as input a set of n observed examples (I 1 , O 1 ), ...(I n , O n ) as well an unpaired InStr, I y , and generates the corresponding OutStr, O y . As an example, from Figure <ref type="figure" target="#fig_0">1</ref>, I 1 = "john Smith", O 1 = "Smith, Jhn", I 2 = "DOUG Q. Macklin", ... , I y = "Steve P. Green", O y = "Green, Steve". Both approaches have the same end goal -determine the O y corresponding to I y -but have several important conceptual differences.</p><p>The first major difference is that the induction model does not use the program P anywhere. The synthesis model generates P , which is executed by the DSL to produced O y . The induction model generates O y directly by sequentially predicting each character. In fact, in cases where it is possible to obtain a very large amount of real-world I/O example sets, induction is a very appealing approach since it does not require an explicit DSL. <ref type="foot" target="#foot_5">7</ref> The core idea is the model learns some latent program representation which can generalize beyond a specific DSL. It also eliminates the need to hand-design the DSL, unless the DSL is needed to synthesize training data.</p><p>The second major difference is that program induction has no concept of consistency. As described previously, in program synthesis, a k-best list of program candidates is executed one-by-one, and the first program consistent with all observed examples is taken as the output. As shown in Section 5.2, if a consistent program can be found, it is likely to generalize to new inputs. Program induction, on the other hand, is essentially a standard sequence generation task akin to neural machine translation or image captioning -we directly decode O y with a beam search and take the highest-scoring candidate as our output.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1.">Comparison of Induction and Synthesis Models</head><p>Despite these differences, it is possible to model both approaches using nearly-identical network architectures. The induction model evaluated here is identical to synthesis Attention-A with late pooling, except for the following two modifications:</p><p>1. Instead of generating P , the system generates the new OutStr O y character-by-character. 2. There is an additional LSTM to encode I y . The decoder layer O y uses double attention on O j and I y .</p><p>The induction network diagram is given in the supplementary material. Each (I y , O y ) pair is decoded independently, but conditioned on all observed examples. The attention, pooling, hidden sizes, training details, and decoder are otherwise identical to synthesis. The induction model was trained on the same synthetic data as the synthesis models. Results are shown in Figure <ref type="figure" target="#fig_5">6</ref>. The induction model is compared to synthesis Attention-A using the same measure of generalization accuracy as previous sections -all six assessment examples must be exactly correct. Induction performs similarly to synthesis w/ beam=1, but both are significantly outperformed by synthesis w/ beam=100. The generalization accuracy achieved by the induction model is 53%, compared to 81% for the synthesis model. The induction model uses a beam of 3, and does not improve with a larger search because there is no way to evaluate candidates after decoding.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2.">Average-Example Accuracy</head><p>All previous sections have used a strict definition of "generalization accuracy," requiring all six assessment examples to be exactly correct. We refer to this as all-example accuracy. However, another useful metric is to measure the total percent of correct assessment examples, averaged over all instances. <ref type="foot" target="#foot_6">8</ref> With this metric, generalizing on 5-out-of-6 assessment examples accumulates more credit than 0. We refer to this as average-example accuracy. Average-example results are presented in Figure <ref type="figure" target="#fig_6">7</ref>. The outcome matches our intuitions: Synthesis models tend to be "all or nothing," since it must find a single program that is jointly consistent with all observed examples. For both synthesis conditions, less than 10% of the test instances are partially correct. Induction models, on the other hand, have a much higher chance of getting some of the assessment examples correct, since they are decoded independently.</p><p>Here, 33% of the test instances are partially correct. Examining the right side of the figure, the induction model shows relative strength under the average-example accuracy metric. However, in terms of absolute performance, the synthesis model still bests the induction model by 10%.</p><p>It is difficult to suggest which metric should be given more credence, since the utility depends on the downstream application. For example, if a user wanted to automatically fill in an entire column in a spreadsheet, they may prioritize all-example accuracy -If the system proposes a solution, they can be confident it will be correct for all rows. However, if the application instead offered auto-complete suggestions on a per-cell basis, then a model with higher average-example accuracy might be preferred.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.">Handling Noisy I/O Examples</head><p>For the FlashFill task, real-world I/O examples are typically manually composed by the user, so noise (e.g., typos) is expected and should be well-handled. An example is given in Figure <ref type="figure" target="#fig_0">1</ref>.</p><p>Because neural network methods (1) are inherently probabilistic, and (2) operate in a continuous space representation, it is reasonable to believe that they can learn to be robust to this type of noise. In order to explicitly account for noise, we only made two small modifications. First, noise was synthetically injected into the training data using random character transformations. 9 Second, the best program P * was selected by using character edit rate (CER) <ref type="bibr" target="#b15">(Marzal &amp; Vidal, 1993)</ref> to the observed examples, rather 9 This did not degrade the results on the noise-free test set.</p><p>than exact match. 10   Since the FlashFillTest set does not contain any noisy examples, noise was synthetically injected into the observed examples. All noise was applied with uniform random probability into the InStr or OutStr using character insertions, deletions, or substitutions. Noise is not applied to the assessment examples, as this would make evaluation impossible.</p><p>We compare the models in this paper to the actual Flash-Fill implementation found in Microsoft Excel, as described in <ref type="bibr" target="#b8">Gulwani et al. (2012)</ref>. An overview of this model is described in Section 2. The results were obtained using a macro in Microsoft Excel 2016. The noise results are shown in Figure <ref type="figure" target="#fig_7">8</ref>. The neural models behave very similarly, each degrading approximately 2% absolute accuracy for each noise character introduced. The behavior of Excel FlashFill is quite different. Without noise, it achieves 92% accuracy, 11 matching the best result reported earlier in this paper. However, with just one or two characters of noise, Excel FlashFill is effectively "broken." This result is expected, since the efficiency of their algorithm is critically centered around exact string matching <ref type="bibr" target="#b8">(Gulwani et al., 2012)</ref>. We believe that this robustness to noise is one of the strongest attributes of DNN-based approaches to program synthesis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8.">Conclusions</head><p>We have presented a novel variant of an attentional RNN architecture for program synthesis which achieves 92% accuracy on a real-world Programming By Example task. This matches the performance of a hand-engineered system and outperforms the previous-best neural synthesis model by 58%. Moreover, we have demonstrated that our model remains robust to moderate levels of noise in the I/O examples, while the hand-engineered system fails for even small amounts of noise. Additionally, we carefully contrasted our 10 Standard beam is also used instead of DP-Beam. 11 FlashFill was manually developed on this exact set. neural program synthesis system with a neural program induction system, and showed that even though the synthesis system performs better on this task, both approaches have their own strength under certain evaluation conditions. In particular, synthesis systems have an advantage when evaluating if all outputs are correct, while induction systems have strength when evaluating which system has the most correct outputs.</p><p>Waldinger, Richard J. and Lee, Richard C. T. Prow: A step toward automatic program writing. In IJCAI, 1969.</p><p>Xu, Kelvin, Ba, Jimmy, Kiros, Ryan, Cho, Kyunghyun, Courville, Aaron C, Salakhutdinov, Ruslan, Zemel, Richard S, and Bengio, Yoshua. Show, attend and tell: Neural image caption generation with visual attention.</p><p>In ICML, 2015.</p><p>Zaremba, Wojciech and Sutskever, Ilya. Learning to execute. arXiv preprint arXiv:1410.4615, 2014.</p><p>Figure <ref type="figure" target="#fig_8">10</ref> shows the accuracy of each model on the synthetically generated validation set. Model accuracy on the synthetic validation set is generally consistent with accuracy on the FlashFill dataset, with stronger models on the synthetic dataset also demonstrating stronger performance on the real-world data. C. Examples of Synthesized Programs Figure <ref type="figure" target="#fig_3">14</ref> shows several examples which were hand-selected to demonstrate interesting limitations of the model. In the case of the first example, the task is to reformat international telephone numbers. Here, the task is underconstrained given the observed input-output examples, because there are many different programs which are consistent with the observed examples. Note that to extract the first two digits, there are many other possible functions which would produce the correct output in the observed examples, some of which would generalize and some which would not: for exampling, getting the second and third characters, getting the first two digits, or getting the first number. In this case, the predicted program extracts the country code by taking the first two digits, a strategy which fails to generalize to examples with different country codes. The third example demonstrates a difficulty of using real world data. Because examples can come from a variety of sources, they may be irregularly formatted. In this case, although the program is consistent with the observed examples, it does not generalize when the second space in the address is removed. In the final example, the synthesis model completely fails, and none of the 100 highest scoring programs from the model were consistent with the observed output examples. The selected program is the closest program scored by character edit distance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Induction Network Architecture</head><p>The network architecture used in the program induction setting is described in Section 6.1 of the paper. The network structure is a modification of synthesis Attention-A, using double attention to jointly attend to I x and O j , and an additional LSTM to encode I x . We include a complete diagram below in Figure <ref type="figure" target="#fig_10">11</ref>. Reference program: GetToken_Alphanum_3 | GetFrom_Colon | GetFirst_Char_4 Ud 9:25,JV3 Obb 2525,JV3 ObbUd92 zLny xmHg 8:43 A44q 843 A44qzLny A6 g45P 10:63 Jf 1063 JfA6g4 cuL.zF.dDX,12:31 dDX31cuLz ZiG OE bj3u 7:11 bj3u11ZiGO Reference program: Get_Word_-1(GetSpan(Word, 1, Start, '(', 5, Start)) | GetToken_Number_-5 | GetAll_Proper | SubStr(-24, -14) | GetToken_Alphanum_-2 | EOS 4 Kw ( )SrK (11 (3 CHA xVf )4 )8 Qagimg ) ( )(vs Qagimg4Kw Sr Vf QagimgVf )4 )8 QaQagimg iY) )hspA.5 ( )8,ZsLL (nZk.6 (E4w )2(Hpprsqr )2(Z Hpgjprsqr8Zs Zk Hpprsqrk.6 (E4w )22 Cqg) ) ( (1005 ( ( )VCE hz ) (10 Hadj )zg Tqwpaxft-7 5 6 hz10005Cqg Hadj Tqwpaxft Hadj )zg T5 JvY) (Ihitux ) ) ( (6 SFl (7 XLTD sfs ) )11,lU7 (6 9 lU7Jv Ihitux Frl XLTD sfs )6 NjtT(D7QV (4 (yPuY )8.sa ( ) )6 aX 4 )DXR ( @6 ) Ztje DXR4Njt Pu Ztje)6 aX 4 )DX6 Reference program: GetToken_AllCaps_-2(GetSpan(AllCaps, 1, Start, AllCaps, 5, Start)) | EOS YDXJZ @ZYUD Wc-YKT GTIL BNX W JUGRB.MPKA.MTHV,tEczT-GZJ.MFT MTHV VXO.OMQDK.JC-OAR,HZGH-DJKC JC HCUD-WDOC,RTTRQ-KVETK-whx-DIKDI RTTRQ JFNB.Avj,ODZBT-XHV,KYB @,RHVVW ODZBT Reference program: SubStr(-20, -8) | GetToken_AllCaps_-3 | SubStr(11, 19) | GetToken_Alphanum_-5 | EOS DvD 6X xkd6 OZQIN ZZUK,nCF aQR IOHR IN ZZUK,nCF aCFv OZQIN ZOZQIN BHP-euSZ,yy,44-CRCUC,ONFZA.mgOJ.Hwm CRCUC,ONFZA.mONFZAy,44-CRCU44 NGM-8nay,xrL.GmOc.PFLH,CMFEX-JPFA,iIcj,329 ,CMFEX-JPFA,iCMFEXrL.GmOc.PPFLH hU TQFLD Lycb NCPYJ oo FS TUM l6F NCPSYJ oo FS FScb NCPYJ NCPYJ OHHS NNDQ XKQRN KDL 8Ucj dUqh Cpk Kafj L 8Ucj dUqh CUXKQRN KDLKDL </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. An anonymized example from FlashFillTest with noise (typos). The goal of the task is to fill in the blank (i.e., '?' = 'Green, Steve'). Synthesis approaches achieve this by generating a program like the one shown. Induction approaches generate the new output string directly, conditioned on the the other examples.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2. Syntax of the string transformation DSL.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 .</head><label>3</label><figDesc>Figure 3. The network architectures used for program synthesis. A dotted line from x to y means that x attends to y.</figDesc><graphic coords="5,324.44,67.07,199.98,206.34" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 .</head><label>4</label><figDesc>Figure 4. Generalization results for program synthesis using several network architectures.Generalization accuracy is computed by applying P * to all six assessment examples. The percentage score reported in the figures represents the proportion of test instances for which a consistent program was found and it resulted in the exact correct output for all six assessment examples. Consistency is evaluated in Section 5.2.</figDesc><graphic coords="6,59.94,363.41,225.00,116.30" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 .</head><label>5</label><figDesc>Figure 5. Results were obtained using Attention-C. The conceptual difference between consistency and generalization is detailed in Section 3.1. Results for different beam sizes and different number of observed IO examples are presented in Figure 5. As expected, the generalization accuracy increases with the number of observed examples 6 However, this increased the search space of the DSL by 10x.</figDesc><graphic coords="6,316.94,497.42,215.01,117.14" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 .</head><label>6</label><figDesc>Figure 6. The synthesis model uses Attention-A + standard beam search.</figDesc><graphic coords="7,311.94,282.72,225.00,115.98" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 .</head><label>7</label><figDesc>Figure 7. All experiments use four observed examples.</figDesc><graphic coords="8,63.70,93.50,215.01,141.00" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8 .</head><label>8</label><figDesc>Figure 8. All results use four observed examples, and all synthesis models use beam=100.</figDesc><graphic coords="8,315.70,237.56,215.00,135.69" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 10 .</head><label>10</label><figDesc>Figure 10. Generalization accuracy for different models on the synthetic validation set</figDesc><graphic coords="12,110.94,145.93,375.01,199.91" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 13</head><label>13</label><figDesc>Figure 13 shows several randomly sampled (anonymized) examples from the FlashFill test set, along with their predicted programs outputted by the synthesis model.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 11 .</head><label>11</label><figDesc>Figure 11. The network architecture used for program induction. A dotted line from x to y means that x attends to y.</figDesc><graphic coords="13,185.94,246.03,225.00,267.20" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 12 .</head><label>12</label><figDesc>Figure 12. Randomly sampled programs and corresponding input-output examples, drawn from training data. Multi-line examples are all broken into lines on spaces.</figDesc></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>This execution is deterministic, not neural.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>In cases where less than 4 observed examples are used, only the 6 assessment examples are used to measure generalization.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>Even though the DSL does allow limited hierarchy, preliminary experiments indicated that using a hierarchical representation did not add enough value to justify the computational cost.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>A variant where O and I are reversed performs significantly worse.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_4"><p>We tried several alternative heuristics, such as taking the shortest program, but these did not perform better.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_5"><p>In the results shown here, the induction model is trained on data synthesized with the DSL, but the model training is agnostic to this fact.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="8" xml:id="foot_6"><p>The example still must be exactly correct -character edit rate is not measured here.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Supplementary Material A. DSL Extended Description</head><p>Section 3.2 of the paper provides the grammar of our domain specific language, which both defines the space of possible programs, and allows us to easily sample programs. The formal semantics of this language are defined below in Figure <ref type="figure">9</ref>. The program takes as input a string v and produces a string as output (result of Concat operator).</p><p>As an implementational detail, we note that after sampling a program from the grammar, we flatten calls to nesting functions (as defined in Figure <ref type="figure">2</ref> of the paper) into a single token. For example, the function GetToken(t, i) would be tokenized as a single token GetToken t,i rather than 3 separate tokens. This is possible because for nesting functions, the size of the total parameter space is small. For all other functions, the parameter space is too large for us to flatten function calls without dramatically increasing the vocabulary size, so we treat parameters as separate tokens.</p><p>Concat(e 1 , e 2 , e 3 , ...</p><formula xml:id="formula_5">) v = Concat( e 1 v , e 2 v , e 3 v , ...) n 1 (n 2 ) v = n 1 v1 , where v 1 = n 2 v n(f ) v = n v1 , where v 1 = f v ConstStr(c) v = c SubStr(k 1 , k 2 ) v = v[p 1 ..p 2 ], where p 1 = k 1 &gt; 0 ? k 1 : len(v) + k 1 p 2 = k 2 &gt; 0 ? k 2 : len(v) + k 2 GetSpan(r 1 , i 1 , y 1 , r 2 , i 2 , y 2 ) v = v[p 1 ..p 2 ] ,</formula><p>where</p><formula xml:id="formula_6">p 1 = y 1 (Start or End) of |i 1 | th match of r 1 in v from beginning (end if i i &lt; 0) p 2 = y 2 (Start or End) of |i 2 | th match of r 2 in v from beginning (end if i 2 &lt; 0) GetToken(t, i) v = |i| th match of t in v from beginning (end if i &lt; 0) GetUpto(r) v = v[0..i], where i is the index of end of first match of r in v from beginning GetFrom(r) v = v[j.</formula><p>.len(v)], where j is the end of last match of r in v from end</p><formula xml:id="formula_7">GetFirst(t, i) v = Concat(s 1 , • • • , s i ), where s j denotes the j th match of t in v GetAll(t) v = Concat(s 1 , • • • , s m )</formula><p>, where s i denotes the i th match of t in v and m denotes the total matches</p><formula xml:id="formula_8">ToCase(s) v = ToCase(s, v) Trim() v = Trim(v) Replace(δ 1 , δ 2 ) v = Replace(v, δ 1 , δ 2 )</formula><p>Figure <ref type="figure">9</ref>. The semantics of the DSL for string transformations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Synthetic Evaluation Details</head><p>Results on synthetically generated examples are largely omitted from the paper since, in a vacuum, the synthetic dataset can be made arbitrarily easy or difficult via different generation procedures, making summary statistics difficult to interpret. We instead report results on an external real-world dataset to verify that the model has learned function semantics which are at least as expressive as programs observed in real data.</p><p>Nevertheless, we include additional details about our experiments on synthetically generated programs for readers interested in the details of our approach. As described in the paper, programs were randomly generated from the DSL by first determining a program length up to a maximum of 10 expressions, and then independently sampling each expression. We used a simple set of heuristics to restrict potential inputs to strings which will produce non-empty outputs (e.g. any program which references the third occurrence of a number will cause us to sample strings containing at least three numbers). We rejected any degenerate samples e.g. those resulting in empty outputs, or outputs longer than 100 characters.</p><p>Figure <ref type="figure">12</ref> shows several random synthetically generated samples.</p><p>Model prediction: GetToken_Proper_1 | Const(.) | GetToken_Char_1(GetToken_Proper_-1) | Const(@) | EOS Mason Smith Mason.S@ Mason.S@ Lucas Janckle Lucas.J@ Lucas.J@ Emily Jacobnette Emily.B@ Emily.B@ Charlotte Ford Charlotte.F@ Charlotte.F@ Harper Underwood Harper.U@ Harper.U@ Emma Stevens Emma.S@ Emma.S@ Chris Charles Chris.C@ Chris.C@ Liam Lewis Liam.L@ Liam.L@ Olivia Berglun Olivia.B@ Olivia.B@ Abigail Jones Abigail.J@ Abigail.J@ Figure 13. Random samples from the FlashFill test set. The first two columns are InStr and OutStr respectively, and the third column is the execution result of the predicted program. Example strings which do not fit on a single line are broken on spaces, or hyphenated when necessary. All line-ending hyphens are inserted for readability, and are not part of the example. Model prediction: GetFirst_Digit_2 | Const(.) | GetToken_Number_2 | Const(.) | GetToken_Number_3 | Const(.) | GetToken_Alpha_-1 | EOS +32-2-704-33 32.2.704.33 32.2.704.33 +44-118-909-3574 44.118.909.3574 44.118.909.3574 +90-212-326 5264 90.212.326.5264 90.212.326.5264 +44 118 909 3843 44.118.909.3843 44.118.909.3843 +386 1 5800 839 386.1.5800.839 38.1.5800.839 +1 617 225 2121 1.617.225.2121 16.617.225.2121 +91-2-704-33 91.2.704.33 91.2.704.33 +44-101-909-3574 44.101.909.3574 44.101.909.3574 +90-212-326 2586 90.212.326.2586 90.212.326.2586 +44 118 212 3843 44.118.212.3843 44.118.212.3843 Model prediction: GetFirst_Char_1 | Const(.) | GetFirst_Char_1( GetToken_Proper_4 ) | Const(.) | EOS Milk 4, Yoghurt 12, Juice 2 Lassi 5 M.L. M.L. Alpha 10 Beta 20 Charlie 40 60 Epsilon A.E. A.E. Sumit 7 Rico 12 Wolfram 15 Rick 19 S.R. S.R. Us 38 China 35 Russia 27 India 1 U.I. U.I. 10 Apple 2 Oranges 13 Bananas 40 Pears A.P. 1.P. 10 Bpple 2 Oranges 13 Bananas 40 Pears B.P. 1.P. Milk 4, Yoghurt 12, Juice 2 Massi 5 M.M. M.M. Alpha 10 Beta 20 Charlie 40 60 Delta A.D. A.D. Parul 7 Rico 12 Wolfram 15 Rick 19 P.R. P.R. Us 38 China 35 Russia 27 America 1 U.A. U.A.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Rajeev</forename><surname>Alur</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bodik</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rastislav</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Juniwal</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Garvit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Milo</forename><forename type="middle">Mk</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Raghothaman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mukund</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Seshia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sanjit</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rishabh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armando</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Torlak</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Emina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Udupa</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+	<note>Syntax-guided synthesis</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Neural machine translation by jointly learning to align and translate</title>
+		<author>
+			<persName><forename type="first">Dzmitry</forename><surname>Bahdanau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1409.0473</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Matej</forename><surname>Balog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">L</forename><surname>Gaunt</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Brockschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nowozin</forename><surname>Marc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Tarlow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><surname>Deepcoder</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1611.01989</idno>
+		<title level="m">Learning to write programs</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Terpret: A probabilistic programming language for program induction</title>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">L</forename><surname>Gaunt</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Brockschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Marc</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rishabh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Nate</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kohli</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pushmeet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Taylor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Tarlow</surname></persName>
+		</author>
+		<idno>CoRR, abs/1608.04428</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Wayne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivo</forename><surname>Danihelka</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1410.5401</idno>
+		<title level="m">Neural turing machines</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Hybrid computing using a neural network with dynamic external memory</title>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Wayne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Reynolds</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Harley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Danihelka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Grabska-Barwiska</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Colmenarejo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Grefenstette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ramalho</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Agapiou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ap</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Badia</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">538</biblScope>
+			<biblScope unit="issue">7626</biblScope>
+			<biblScope unit="page" from="471" to="476" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Automating string processing in spreadsheets using input-output examples</title>
+		<author>
+			<persName><forename type="first">Sumit</forename><surname>Gulwani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM SIGPLAN Notices</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Spreadsheet data manipulation using examples. Communications of the</title>
+		<author>
+			<persName><surname>Gulwani</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sumit</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Harris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>William</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishabh</forename><surname>Singh</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<publisher>ACM</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Attention-based multimodal neural machine translation</title>
+		<author>
+			<persName><forename type="first">Po-</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Frederick</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Shiang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sz-Rung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean</forename><surname>Oh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Dyer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the First Conference on Machine Translation</title>
+		<meeting>the First Conference on Machine Translation<address><addrLine>Berlin, Germany</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Inferring algorithmic patterns with stack-augmented recurrent nets</title>
+		<author>
+			<persName><forename type="first">Armand</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomas</forename><surname>Mikolov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NIPS</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="190" to="198" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Neural gpus learn algorithms</title>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<idno>CoRR, abs/1511.08228</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Neural random-access machines</title>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Kurach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrychowicz</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcin</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ICLR</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Effective approaches to attention-based neural machine translation</title>
+		<author>
+			<persName><forename type="first">Minh</forename><forename type="middle">-</forename><surname>Luong</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Thang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pham</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hieu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1508.04025</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Knowledge and reasoning in program synthesis</title>
+		<author>
+			<persName><forename type="first">Zohar</forename><surname>Manna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Waldinger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial intelligence</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="175" to="208" />
+			<date type="published" when="1975">1975</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Computation of normalized edit distance and applications</title>
+		<author>
+			<persName><forename type="first">Zohar</forename><surname>Manna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">;</forename><surname>Waldinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andres</forename><surname>Marzal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enrique</forename><surname>Vidal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE transactions on pattern analysis and machine intelligence</title>
+		<imprint>
+			<date type="published" when="1980">1980. 1993</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="90" to="121" />
+		</imprint>
+	</monogr>
+	<note>A deductive approach to program synthesis</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">A machine learning framework for programming by example</title>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Menon</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Krishna</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tamuz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Omer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gulwani</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sumit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Butler</forename><forename type="middle">W</forename><surname>Lampson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Kalai</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="187" to="195" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Neural programmer: Inducing latent programs with gradient descent</title>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quov</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ICLR</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Pushmeet. Neuro-symbolic program synthesis</title>
+		<author>
+			<persName><forename type="first">Emilio</forename><surname>Parisotto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohamed</forename><surname>Abdel-Rahman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rishabh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lihong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dengyong</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kohli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ICLR</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Flashmeta: a framework for inductive program synthesis</title>
+		<author>
+			<persName><forename type="first">Oleksandr</forename><surname>Polozov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sumit</forename><surname>Gulwani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">OOP-SLA</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="107" to="126" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Neural programmerinterpreters</title>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Reed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nando</forename><surname>Freitas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ICLR</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Programming with a differentiable forth interpreter</title>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bosnjak</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Matko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+		</author>
+		<idno>CoRR, abs/1605.06640</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Sequence to sequence learning with neural networks</title>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Oriol</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1503.00075</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Christopher D. Improved semantic representations from treestructured long short-term memory networks</title>
+		<editor>
+			<persName><surname>Nips</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Kai</forename><surname>Tai</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Sheng</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Richard</forename><surname>Socher</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Manning</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Grammar as a foreign language</title>
+		<author>
+			<persName><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Oriol</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Łukasz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Koo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Terry</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Petrov</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Slav</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ilya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Hinton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NIPS, 2015. Model prediction: GetSpan</title>
+		<meeting><address><addrLine>Start, Number, 1, End) | Const</addrLine></address></meeting>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title/>
+		<idno>CPT-101 [CPT-101] [CPT-101] [CPT-11] [CPT-11] [CPT-11</idno>
+	</analytic>
+	<monogr>
+		<title level="j">EOS</title>
+		<imprint/>
+	</monogr>
+	<note>CPT-101</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Random samples from the FlashFill test set. The first two columns are InStr and OutStr respectively, and the third column is the execution result of the predicted program. Example strings which do not fit on a single line are broken on spaces, or hyphenated when necessary. All line-ending hyphens are inserted for readability, and are not part of the example. Model prediction: GetToken_Word_1 | Const(-) | GetToken_Proper_1(GetSpan(&apos;;&apos;, -5, Start</title>
+		<author>
+			<persName><forename type="first">|</forename><surname>Eos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Ethan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Alexander</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Jacob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander.-Michael</forename><surname>Jacob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander.-</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elijah</forename><surname>Daniel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiden</forename><surname>Matthew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Elijah</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Daniel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew.-Lucas</forename><surname>Aiden</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Elijah</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Daniel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew.-Lucas</forename><surname>Aiden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jackson</forename><surname>Oliver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jayden</forename><surname>Chris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Jackson</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Oliver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris.-Kevin</forename><surname>Jayden</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jackson</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Oliver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Jayden</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Fire</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wind</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Water</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Earth</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Fire</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wind</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Water</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minnie</forename><surname>Mickey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daffy</forename><surname>Donald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mickey</forename><surname>Tom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minnie</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donald.Daffy</forename><surname>Tom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mickey</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minnie</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donald</forename><surname>Daffy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Mickey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minnie</forename><surname>Donald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daffy</forename><surname>Jacob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mickey</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minnie</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donald.-Daffy</forename><surname>Jacob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mickey</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minnie</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donald.-Daffy</forename><surname>Gabriel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><forename type="middle">James</forename><surname>Alexander</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Gabriel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">- Michael</forename><surname>Gabriel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ethan</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander.-Michael Rahul</forename><surname>Daniel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aiden</forename><surname>Matthew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Rahul</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Daniel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew.-Lucas</forename><surname>Aiden</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rahul</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Daniel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew.-Lucas Steph</forename><surname>Aiden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jayden</forename><surname>Oliver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Chris</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Steph</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Oliver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><forename type="middle">Kevin</forename><surname>Jayden</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Steph</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Oliver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Jayden</surname></persName>
+		</author>
+		<idno>CPT-101</idno>
+	</analytic>
+	<monogr>
+		<title level="m">EOS 28-Meetings-OneNote-Word PowerPoint-Meetings Excel PowerPoint-Meetings-OneNote-Excel PowerPoint-Meetings Figure 14</title>
+		<editor>
+			<persName><forename type="first">|</forename><surname>Getall_Proper</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Emma</forename><surname>Eos</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Emma</forename><surname>Anders</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Emma</forename><surname>Anders</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Olivia</forename><surname>Anders</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Olivia</forename><surname>Berglun</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Olivia</forename><surname>Berglun</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Madison</forename><surname>Berglun</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Madison</forename><surname>Ashworth</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Madison</forename><surname>Ashworth</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Ava</forename><surname>Ashworth</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Ava</forename><surname>Truillo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Ava</forename><surname>Truillo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Isabella</forename><surname>Truillo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Isabella</forename><surname>Isabella</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Mia</forename><surname>Mia</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Emma</forename><surname>Mia</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Emma</forename><surname>Stevens</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Emma</forename><surname>Stevens</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Chris</forename><surname>Stevens</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Chris</forename><surname>Charles</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Chris</forename><surname>Charles</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Liam</forename><surname>Charles</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Liam</forename><surname>Lewis</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Liam</forename><surname>Lewis</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Abigail</forename><surname>Lewis</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Abigail</forename><surname>Jones</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Abigail</forename><surname>Jones</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Jones Figure 13</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Start</addrLine></address></meeting>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+		</imprint>
+	</monogr>
+	<note>CPT-101 CPT-101] Model prediction Kevin Earth Fire Wind Water Sun Earth Kevin Pluto Fire Wind Water Sun Pluto,Fire,Wind,Water.Sun Pluto,Fire,Wind,Water.Sun Model prediction GetToken_Number_-5 | GetSpan GetUpto_Comma Replace_Space_Dash | GetToken_Word_1(GetSpan(Proper, 4, End Selected samples of incorrect model predictions on the Flashfill test set. These include both inconsistent programs, and consistent programs which failed to generalize</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

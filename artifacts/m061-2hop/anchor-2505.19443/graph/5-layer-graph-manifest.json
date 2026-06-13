@@ -1,0 +1,80 @@
+{
+  "anchor_arxiv_id": "2505.19443",
+  "diagnostic_llm_calls_override": {
+    "binding_id": "figure-qa-judge-quality",
+    "llm_calls_authorized": true,
+    "model": "MiniMax-M3",
+    "reason": "Live LLM calls are disabled by default; M3 diagnostic scores are reused from artifacts/m060g-judge. Graph writes is not authorized, production import is not authorized, and fact promotion is not authorized.",
+    "scope": "M061 S01 M3 diagnostic-only evidence reuse from M060g"
+  },
+  "diagnostic_only": true,
+  "generated_at": "2026-06-13T10:20:31+00:00",
+  "generated_by": "scripts/m061_full_5_anchors.py",
+  "layer_count": 5,
+  "layers": [
+    {
+      "edge_count": 8796,
+      "name": "citation_m056_plus_m061_2hop",
+      "node_count": 2662,
+      "source_artifacts": [
+        "artifacts/m056-bfs-graph/candidate-edges.json",
+        "artifacts/m061-2hop/anchor-2505.19443/acquisition/two-hop-bfs.json"
+      ]
+    },
+    {
+      "edge_count": 4934,
+      "name": "table_similarity_m057",
+      "node_count": 83,
+      "source_artifacts": [
+        "artifacts/m057-fd-marker/table-similarity/edges.json"
+      ]
+    },
+    {
+      "edge_count": 15,
+      "name": "figure_similarity_m057_v1",
+      "node_count": 1,
+      "source_artifacts": [
+        "artifacts/m057-fd-marker/figure-links/edges.json"
+      ]
+    },
+    {
+      "edge_count": 15,
+      "name": "figure_similarity_m058_v2",
+      "node_count": 16,
+      "source_artifacts": [
+        "artifacts/m058-plotextractor/edges.json"
+      ]
+    },
+    {
+      "edge_count": 30,
+      "name": "judge_scores_m3_m060g_diagnostic",
+      "node_count": 30,
+      "source_artifacts": [
+        "artifacts/m060g-judge/comparison.json"
+      ]
+    }
+  ],
+  "queue_execution": false,
+  "safety_defaults": {
+    "external_network_authorized": false,
+    "fact_promotion_authorized": false,
+    "graph_writes_authorized": false,
+    "llm_calls_authorized": false,
+    "production_import_authorized": false
+  },
+  "schema_version": "m061-2hop.5-layer-graph-manifest.v1",
+  "sync_execution": true,
+  "total_edge_count": 13790,
+  "total_node_count_by_layer_sum": 2792,
+  "validation": {
+    "figure_v2_layer_errors": [
+      "'per_pdf' is a required property"
+    ],
+    "table_layer_errors": [
+      "'edges_total' is a required property",
+      "'inter_doc_edges' is a required property",
+      "'intra_doc_edges' is a required property",
+      "'similarity_stats' is a required property"
+    ]
+  }
+}

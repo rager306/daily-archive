@@ -1,0 +1,1334 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Programming with a Differentiable Forth Interpreter</title>
+				<funder ref="#_pwkkKnK #_YZPbBWj">
+					<orgName type="full">unknown</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2017-07-23">23 Jul 2017</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Matko</forename><surname>Bošnjak</surname></persName>
+							<email>&lt;m.bosnjak@cs.ucl.ac.uk&gt;.</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">University College Lon- don</orgName>
+								<address>
+									<settlement>London</settlement>
+									<country key="GB">UK</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Tim</forename><surname>Rocktäschel</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">University of Oxford</orgName>
+								<address>
+									<settlement>Oxford</settlement>
+									<country key="GB">UK</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jason</forename><surname>Naradowsky</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="department">Department of Theoretical and Ap- plied Linguistics</orgName>
+								<orgName type="institution">University of Cambridge</orgName>
+								<address>
+									<settlement>Cambridge</settlement>
+									<country key="GB">UK</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science</orgName>
+								<orgName type="institution">University College Lon- don</orgName>
+								<address>
+									<settlement>London</settlement>
+									<country key="GB">UK</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Programming with a Differentiable Forth Interpreter</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2017-07-23">23 Jul 2017</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">5B908BE24CEA162D68B751C1D72896ED</idno>
+					<idno type="arXiv">arXiv:1605.06640v3[cs.NE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-13T10:15+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Given that in practice training data is scarce for all but a small set of problems, a core question is how to incorporate prior knowledge into a model. In this paper, we consider the case of prior procedural knowledge for neural networks, such as knowing how a program should traverse a sequence, but not what local actions should be performed at each step. To this end, we present an end-to-end differentiable interpreter for the programming language Forth which enables programmers to write program sketches with slots that can be filled with behaviour trained from program input-output data. We can optimise this behaviour directly through gradient descent techniques on user-specified objectives, and also integrate the program into any larger neural computation graph. We show empirically that our interpreter is able to effectively leverage different levels of prior program structure and learn complex behaviours such as sequence sorting and addition. When connected to outputs of an LSTM and trained jointly, our interpreter achieves state-of-the-art accuracy for end-to-end reasoning about quantities expressed in natural language stories.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>A central goal of Artificial Intelligence is the creation of machines that learn as effectively from human instruction as they do from data. A recent and important step towards this goal is the invention of neural architectures that learn to perform algorithms akin to traditional computers, using primitives such as memory access and stack manipulation <ref type="bibr" target="#b9">(Graves et al., 2014;</ref><ref type="bibr" target="#b14">Joulin &amp; Mikolov, 2015;</ref><ref type="bibr" target="#b11">Grefenstette et al., 2015;</ref><ref type="bibr">Kaiser &amp; Sutskever, 2015;</ref><ref type="bibr" target="#b21">Kurach et al., 2016;</ref><ref type="bibr" target="#b10">Graves et al., 2016)</ref>. These architectures can be trained through standard gradient descent methods, and enable machines to learn complex behaviour from input-output pairs or program traces. In this context, the role of the human programmer is often limited to providing training data. However, training data is a scarce resource for many tasks. In these cases, the programmer may have Proceedings of the 34 th International Conference on Machine Learning, Sydney, Australia, PMLR 70, 2017. Copyright 2017 by the author(s). partial procedural background knowledge: one may know the rough structure of the program, or how to implement several subroutines that are likely necessary to solve the task. For example, in programming by demonstration <ref type="bibr" target="#b23">(Lau et al., 2001)</ref> or query language programming <ref type="bibr">(Neelakantan et al., 2015a)</ref> a user establishes a larger set of conditions on the data, and the model needs to set out the details. In all these scenarios, the question then becomes how to exploit various types of prior knowledge when learning algorithms.</p><p>To address the above question we present an approach that enables programmers to inject their procedural background knowledge into a neural network. In this approach, the programmer specifies a program sketch <ref type="bibr" target="#b33">(Solar-Lezama et al., 2005)</ref> in a traditional programming language. This sketch defines one part of the neural network behaviour. The other part is learned using training data. The core insight that enables this approach is the fact that most programming languages can be formulated in terms of an abstract machine that executes the commands of the language. We implement these machines as neural networks, constraining parts of the networks to follow the sketched behaviour. The resulting neural programs are consistent with our prior knowledge and optimised with respect to the training data.</p><p>In this paper, we focus on the programming language Forth <ref type="bibr" target="#b5">(Brodie, 1980)</ref>, a simple yet powerful stack-based language that facilitates factoring and abstraction. Underlying Forth's semantics is a simple abstract machine. We introduce ∂4, an implementation of this machine that is differentiable with respect to the transition it executes at each time step, as well as distributed input representations. Sketches that users write define underspecified behaviour which can then be trained with backpropagation.</p><p>For two neural programming tasks introduced in previous work <ref type="bibr" target="#b29">(Reed &amp; de Freitas, 2015)</ref> we present Forth sketches that capture different degrees of prior knowledge. For example, we define only the general recursive structure of a sorting problem. We show that given only input-output pairs, ∂4 can learn to fill the sketch and generalise well to problems of unseen size. In addition, we apply ∂4 to the task of solving word algebra problems. We show that when provided with basic algorithmic scaffolding and trained jointly with an upstream LSTM <ref type="bibr" target="#b13">(Hochreiter &amp; Schmidhuber, 1997)</ref>, ∂4 is able to learn to read natural language narratives, extract important numerical quantities, and reason with these, ultimately answering corresponding mathematical questions without the need for explicit intermediate representations used in previous work.</p><p>The contributions of our work are as follows: i) We present a neural implementation of a dual stack machine underlying Forth, ii) we introduce Forth sketches for programming with partial procedural background knowledge, iii) we apply Forth sketches as a procedural prior on learning algorithms from data, iv) we introduce program code optimisations based on symbolic execution that can speed up neural execution, and v) using Forth sketches we obtain state-of-the-art for end-to-end reasoning about quantities expressed in natural language narratives.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">The Forth Abstract Machine</head><p>Forth is a simple Turing-complete stack-based programming language <ref type="bibr" target="#b3">(ANSI, 1994;</ref><ref type="bibr" target="#b5">Brodie, 1980)</ref>. We chose Forth as the host language of our work because i) it is an established, general-purpose high-level language relatively close to machine code, ii) it promotes highly modular programs through use of branching, loops and function calls, thus bringing out a good balance between assembly and higher level languages, and importantly iii) its abstract machine is simple enough for a straightforward creation of its continuous approximation. Forth's underlying abstract machine is represented by a state S = (D, R, H, c), which contains two stacks: a data evaluation pushdown stack D (data stack) holds values for manipulation, and a return address pushdown stack R (return stack) assists with return pointers and subroutine calls. These are accompanied by a heap or random memory access buffer H, and a program counter c.</p><p>A Forth program P is a sequence 1 of Forth words (i.e. commands) P = w 1 ...w n . The role of a word varies, encompassing language keywords, primitives, and user-defined subroutines (e.g. DROP discards the top element of the data stack, or DUP duplicates the top element of the data stack). 2 Each word w i defines a transition function between machine states w i : S → S. Therefore, a program P itself defines a transition function by simply applying the word at the current program counter to the current state. Although usually considered as a part of the heap H, we consider Forth programs P separately to ease the analysis.</p><p>An example of a Bubble sort algorithm implemented in Forth is shown in Listing 1 in everything except lines 3b-4c. The execution starts from line 12 where literals are pushed on the data stack and the SORT is called. Line 10 executes the main loop over the sequence. Lines 2-7 1 Forth is a concatenative language. 2 In this work, we restrict ourselves to a subset of all Forth words, detailed in Appendix A. denote the BUBBLE procedure -comparison of top two stack numbers (line 3a), and the recursive call to itself (line 4a). A detailed description of how this program is executed by the Forth abstract machine is provided in Appendix B. Notice that while Forth provides common control structures such as looping and branching, these can always be reduced to low-level code that uses jumps and conditional jumps (using the words BRANCH and BRANCH0, respectively). Likewise, we can think of sub-routine definitions as labelled code blocks, and their invocation amounts to jumping to the code block with the respective label.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">∂4: Differentiable Abstract Machine</head><p>When a programmer writes a Forth program, they define a sequence of Forth words, i.e., a sequence of known state transition functions. In other words, the programmer knows exactly how computation should proceed. To accommodate for cases when the developer's procedural background knowledge is incomplete, we extend Forth to support the definition of a program sketch. As is the case with Forth programs, sketches are sequences of transition functions. However, a sketch may contain transition functions whose behaviour is learned from data.</p><p>To learn the behaviour of transition functions within a program we would like the machine output to be differentiable with respect to these functions (and possibly representations of inputs to the program). This enables us to choose parameterised transition functions such as neural networks.</p><p>To this end, we introduce ∂4, a TensorFlow <ref type="bibr" target="#b0">(Abadi et al., 2015)</ref> implementation of a differentiable abstract machine with continuous state representations, differentiable words and sketches. Program execution in ∂4 is modelled by a recurrent neural network (RNN), parameterised by the transition functions at each time step. Low-level code d D H ... &gt;R CURRENT_REPR &gt;R {permute...} {choose...} {choose...} {choose...} ... P c θ S i Execution RNN P x y BiLSTM Ned had to wash 3 shorts … … R r Figure 1: Left: Neural Forth Abstract Machine. A forth sketch P is translated to a low-level code P θ , with slots {...} substituted by a parametrised neural networks. Slots are learnt from input-output examples (x,y) through the differentiable machine whose state S i comprises the low-level code, program counter c, data stack D (with pointer d), return stack R (with pointer r), and the heap H. Right: BiLSTM trained on Word Algebra Problems. Output vectors corresponding to a representation of the entire problem, as well as context representations of numbers and the numbers themselves are fed into H to solve tasks. The entire system is end-to-end differentiable.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Machine State Encoding</head><p>We map the symbolic machine state S = (D, R, H, c) to a continuous representation S = (D, R, H, c) into two differentiable stacks (with pointers), the data stack D = (D,d) and the return stack R = (R,r), a heap H, and an attention vector c indicating which word of the sketch P θ is being executed at the current time step. Figure <ref type="figure" target="#fig_1">1</ref> depicts the machine together with its elements. All three memory structures, the data stack, the return stack and the heap, are based on differentiable flat memory buffers M ∈ {D,R,H}, where D,R,H ∈ R l×v , for a stack size l and a value size v.</p><p>Each has a differentiable read operation read M (a) = a T M and write operation write M (x,a) : M ← M-(a1 T ) M+xa T akin to the Neural Turing Machine (NTM) memory <ref type="bibr" target="#b9">(Graves et al., 2014)</ref>, where is the element-wise multiplication, and a is the address pointer. 3 In addition to the memory buffers D and R, the data stack and the return stack contain pointers to the current top-of-the-stack (TOS) element d,r ∈ R l , respectively. This allows us to implement pushing as writing a value x into M and incrementing the TOS pointer as: push M (x) : write M (x,p) (side-effect: p ← inc(p))</p><p>where p ∈ {d,r}, inc(p) = p T R 1 +, dec(p) = p T R -, and R 1 + and R 1are increment and decrement matrices (left and right circular shift matrices). 3 The equal widths of H and D allow us to directly move vector representations of values between the heap and the stack.</p><p>Popping is realized by multiplying the TOS pointer and the memory buffer, and decreasing the TOS pointer:</p><formula xml:id="formula_0">pop M ( ) = read M (p) (side-effect: p ← dec(p))</formula><p>Finally, the program counter c ∈ R p is a vector that, when one-hot, points to a single word in a program of length p, and is equivalent to the c vector of the symbolic state machine. <ref type="foot" target="#foot_0">4</ref> We use S to denote the space of all continuous representations S.</p><p>Neural Forth Words It is straightforward to convert Forth words, defined as functions on discrete machine states, to functions operating on the continuous space S.</p><p>For example, consider the word DUP, which duplicates the top of the data stack. A differentiable version of DUP first calculates the value e on the TOS address of D, as e = d T D.</p><p>It then shifts the stack pointer via d ← inc(d), and writes e to D using write D (e,d). The complete description of implemented Forth Words and their differentiable counterparts can be found in Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Forth Sketches</head><p>We define a Forth sketch P θ as a sequence of continuous transition functions P = w 1 ... w n . Here, w i ∈ S → S either corresponds to a neural Forth word or a trainable transition function (neural networks in our case). We will call these trainable functions slots, as they correspond to underspecified "slots" in the program code that need to be filled by learned behaviour.</p><p>We allow users to define a slot w by specifying a pair of a state encoder w enc and a decoder w dec . The encoder produces a latent representation h of the current machine state using a multi-layer perceptron, and the decoder consumes this representation to produce the next machine state. We hence have w = w dec • w enc . To use slots within Forth program code, we introduce a notation that reflects this decomposition. In particular, slots are defined by the syntax { encoder -&gt; decoder } where encoder and decoder are specifications of the corresponding slot parts as described below.</p><p>Encoders We provide the following options for encoders: static produces a static representation, independent of the actual machine state. observe e 1 ...e m : concatenates the elements e 1 ...e m of the machine state. An element can be a stack item Di at relative index i, a return stack item Ri, etc. linear N, sigmoid, tanh represent chained transformations, which enable the multilayer perceptron architecture. Linear N projects to N dimensions, and sigmoid and tanh apply same-named functions elementwise.</p><p>Decoders Users can specify the following decoders: </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.">The Execution RNN</head><p>We model execution using an RNN which produces a state S n+1 conditioned on a previous state S n . It does so by first passing the current state to each function w i in the program, and then weighing each of the produced next states by the component of the program counter vector c i that corresponds to program index i, effectively using c as an attention vector over code. Formally we have:</p><formula xml:id="formula_1">S n+1 = RNN(S n ,P θ ) = |P | i=1 c i w i (S n )</formula><p>Clearly, this recursion, and its final state, are differentiable with respect to the program code P θ , and its inputs. Furthermore, for differentiable Forth programs the final state of this RNN will correspond to the final state of a symbolic execution (when no slots are present, and one-hot values are used).</p><p>: BUBBLE DUP BRANCH0 8 &gt;R {...} 1-BUBBLE R&gt; 0 1 2 3 4 5 6 7 8 P d c D R r 0 1 2 3 4 DROP : BUBBLE DUP BRANCH0 8 &gt;R {...} 1-BUBBLE R&gt; DROP : BUBBLE DUP BRANCH0 8 &gt;R {...} 1-BUBBLE R&gt; DROP : BUBBLE DUP BRANCH0 8 &gt;R {...} 1-BUBBLE R&gt; DROP 0 1 2 3 4 0 1 2 3 4 0 1 2 3 4 0 1 2 3 0 1 2 3 Figure 2: ∂4 segment of the RNN execution of a Forth sketch in blue in Listing 1. The pointers (d, r) and values (rows of R and D) are all in one-hot state (colours simply denote values observed, defined by the top scale), while the program counter maintains the uncertainty. Subsequent states are discretised for clarity. Here, the slot {...} has learned its optimal behaviour.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4.">Program Code Optimisations</head><p>The ∂4 RNN requires one-time step per transition. After each time step, the program counter is either incremented, decremented, explicitly set or popped from the stack. In turn, a new machine state is calculated by executing all words in the program and then weighting the result states by the program counter. As this is expensive, it is advisable to avoid full RNN steps wherever possible. We use two strategies to avoid full RNN steps and significantly speed-up ∂4: symbolic execution and interpolation of if-branches.</p><p>Symbolic Execution Whenever we have a sequence of Forth words that contains no branch entry or exit points, we can collapse this sequence into a single transition instead of naively interpreting words one-by-one. We symbolically execute <ref type="bibr" target="#b16">(King, 1976)</ref> a sequence of Forth words to calculate a new machine state. We then use the difference between the new and the initial state to derive the transition function of the sequence. For example, the sequence R&gt; SWAP &gt;R that swaps top elements of the data and the return stack yields the symbolic state</p><formula xml:id="formula_2">D = r 1 d 2 ...d l . and R = d 1 r 2 ...r l .</formula><p>Comparing it to the initial state, we derive a single neural transition that only needs to swap the top elements of D and R.</p><p>Interpolation of If-Branches We cannot apply symbolic execution to code with branching points as the branching behaviour depends on the current machine state, and we cannot resolve it symbolically. However, we can still collapse if-branches that involve no function calls or loops by executing both branches in parallel and weighing their output states by the value of the condition. If the if-branch does contain function calls or loops, we simply fall back to execution of all words weighted by the program counter.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5.">Training</head><p>Our training procedure assumes input-output pairs of machine start and end states (x i , y i ) only. The output y i defines a target memory Y D i and a target pointer y d i on the data stack D. Additionally, we have a mask K i that indicates which components of the stack should be included in the loss (e.g. we do not care about values above the stack depth). We use D T (θ,x i ) and d T (θ,x i ) to denote the final state of D and d after T steps of execution RNN and using an initial state x i . We define the loss function as</p><formula xml:id="formula_3">L(θ) = H(K i D T (θ,x i ),K i Y D i ) +H(K i d T (θ,x i ),K i y d i )</formula><p>where H(x, y) = -x log y is the cross-entropy loss, and θ are parameters of slots in the program P . We can use backpropagation and any variant of gradient descent to optimise this loss function. Note that at this point it would be possible to include supervision of the intermediate states (trace-level), as done by the Neural Program Interpreter <ref type="bibr" target="#b29">(Reed &amp; de Freitas, 2015)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Experiments</head><p>We evaluate ∂4 on three tasks. Two of these are simple transduction tasks, sorting and addition as presented in <ref type="bibr" target="#b29">(Reed &amp; de Freitas, 2015)</ref>, with varying levels of program structure. For each problem, we introduce two sketches.</p><p>We also test ∂4 on the more difficult task of answering word algebra problems. We show that not only can ∂4 act as a standalone solver for such problems, bypassing the intermediary task of producing formula templates which must then be executed, but it can also outperform previous work when trained on the same data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Experimental Setup</head><p>Specific to the transduction tasks, we discretise memory elements during testing. This effectively allows the trained model to generalise to any sequence length if the correct sketch behaviour has been learned. We also compare against a Seq2Seq <ref type="bibr" target="#b35">(Sutskever et al., 2014)</ref> baseline. Full details of the experimental setup can be found in Appendix E.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Sorting</head><p>Sorting sequences of digits is a hard task for RNNs, as they fail to generalise to sequences even marginally longer than the ones they have been trained on <ref type="bibr" target="#b29">(Reed &amp; de Freitas, 2015)</ref>. We investigate several strong priors based on Bubble sort for this transduction task and present two ∂4 sketches in Listing 1 that enable us to learn sorting from only a few hundred training examples (see Appendix C.1 for more detail): In both sketches, the outer loop can be specified in ∂4 (Listing 1, line 10), which repeatedly calls a function BUBBLE. In doing so, it defines sufficient structure so that the behaviour of the network is invariant to the input sequence length.</p><p>Results on Bubble sort A quantitative comparison of our models on the Bubble sort task is provided in Table <ref type="table" target="#tab_0">1</ref>. For a given test sequence length, we vary the training set lengths to illustrate the model's ability to generalise to sequences longer than those it observed during training. We find that ∂4 quickly learns the correct sketch behaviour, and it is able to generalise perfectly to sort sequences of 64 elements after observing only sequences of length two and three during training. In comparison, the Seq2Seq baseline falters when attempting similar generalisations, and performs close to chance when tested on longer sequences. Both ∂4 sketches perform flawlessly when trained on short sequence lengths, but under-perform when trained on sequences of length 4 due to arising computational difficulties (COMPARE sketch performs better due to more structure it imposes). We discuss this issue further in Section 5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Addition</head><p>Next, we applied ∂4 to the problem of learning to add two n-digit numbers. We rely on the standard elementary school addition algorithm, where the goal is to iterate over pairs of aligned digits, calculating the sum of each to yield the resulting sum. The key complication arises when two digits sum to a two-digit number, requiring that the correct extra digit (a carry) be carried over to the subsequent column. We assume aligned pairs of digits as input, with a carry for the least significant digit (potentially 0), and the length of the respective numbers. The sketches define the high-level operations through recursion, leaving the core addition to be learned from data.</p><p>The specified high-level behaviour includes the recursive call template and the halting condition of the recursion (no remaining digits, line 2-3). The underspecified addition operation must take three digits from the previous call, the two digits to sum and a previous carry, and produce a single digit (the sum) and the resultant carry (lines 6a, 6b and 7a, 7b). We introduce two sketches for inducing this behaviour: MANIPULATE. This sketch provides little prior procedural knowledge as it directly manipulates the ∂4 machine state, filling in a carry and the result digits, based on the top three elements on the data stack (two digits and the carry). Depicted in Listing 2 in green.</p><p>CHOOSE. Incorporating additional prior information, CHOOSE exactly specifies the results of the computation, namely the output of the first slot (line 6b) is the carry, and the output of the second one (line 7b) is the result digit, both conditioned on the two digits and the carry on the data stack. Depicted in Listing 2 in blue.</p><p>The rest of the sketch code reduces the problem size by one and returns the solution by popping it from the return stack.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Quantitative Evaluation on Addition</head><p>In a set of experiments analogous to those in our evaluation on Bubble sort, we demonstrate the performance of ∂4 on the addition task by examining test set sequence lengths of 8 and 64 while varying the lengths of the training set instances (Table <ref type="table" target="#tab_1">2</ref>). The Seq2Seq model again fails to generalise 100.0 100.0 100.0 100.0 100.0 100.0 ∂4 Manipulate 98.58 100.0 100.0 99.49 100.0 100.0 to longer sequences than those observed during training. In comparison, both the CHOOSE sketch and the less structured MANIPULATE sketch learn the correct sketch behaviour and generalise to all test sequence lengths (with an exception of MANIPULATE which required more data to train perfectly). In additional experiments, we were able to successfully train both the CHOOSE and the MANIPULATE sketches from sequences of input length 24, and we tested them up to the sequence length of 128, confirming their perfect training and generalisation capabilities.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.">Word Algebra Problems</head><p>Word algebra problems (WAPs) are often used to assess the numerical reasoning abilities of schoolchildren. Questions are short narratives which focus on numerical quantities, culminating with a question. For example:</p><p>A florist had 50 roses. If she sold 15 of them and then later picked 21 more, how many roses would she have?</p><p>Answering such questions requires both the understanding of language and of algebra -one must know which numeric operations correspond to which phrase and how to execute these operations.</p><p>Previous work cast WAPs as a transduction task by mapping a question to a template of a mathematical formula, thus requiring manuall labelled formulas. For instance, one formula that can be used to correctly answer the question in the example above is (50 -15) + 21 = 56. In previous work, local classifiers <ref type="bibr">(Roy &amp; Roth, 2015;</ref><ref type="bibr">Roy et al., 2015)</ref>, hand-crafted grammars <ref type="bibr" target="#b19">(Koncel-Kedziorski et al., 2015)</ref>, and recurrent neural models <ref type="bibr" target="#b4">(Bouchard et al., 2016)</ref> have been used to perform this task. Predicted formula templates may be marginalised during training <ref type="bibr" target="#b22">(Kushman et al., 2014)</ref>, or evaluated directly to produce an answer.</p><p>In contrast to these approaches, ∂4 is able to learn both, a soft mapping from text to algebraic operations and their execution, without the need for manually labelled equations and no explicit symbolic representation of a formula.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model description</head><p>Our model is a fully end-to-end differentiable structure, consisting of a ∂4 interpreter, a \ first copy data from H: vectors to R and numbers to D</p><formula xml:id="formula_4">1 { observe R0 R-1 R-2 R-3 -&gt; permute D0 D-1 D-2 } 2 { observe R0 R-1 R-2 R-3 -&gt; choose + -* / } 3 { observe R0 R-1 R-2 R-3 -&gt; choose SWAP NOP } 4 { observe R0 R-1 R-2 R-3 -&gt; choose + -* / }</formula><p>\ lastly, empty out the return stack Listing 3: Core of the Word Algebra Problem sketch. The full sketch can be found in the Appendix.</p><p>sketch, and a Bidirectional LSTM (BiLSTM) reader.</p><p>The BiLSTM reader reads the text of the problem and produces a vector representation (word vectors) for each word, concatenated from the forward and the backward pass of the BiLSTM network. We use the resulting word vectors corresponding only to numbers in the text, numerical values of those numbers (encoded as one-hot vectors), and a vector representation of the whole problem (concatenation of the last and the first vector of the opposite passes) to initialise the ∂4 heap H. This is done in an end-to-end fashion, enabling gradient propagation through the BiLSTM to the vector representations. The process is depicted in Figure <ref type="figure" target="#fig_1">1</ref>.</p><p>The sketch, depicted in Listing 3 dictates the differentiable computation. 5 First, it copies values from the heap H -word vectors to the return stack R, and numbers (as one-hot vectors) on the data stack D. Second, it contains four slots that define the space of all possible operations of four operators on three operands, all conditioned on the vector representations on the return stack. These slots are i) permutation of the elements on the data stack, ii) choosing the first operator, iii) possibly swapping the intermediate result and the last operand, and iv) the choice of the second operator. The final set of commands simply empties out the return stack R. These slots define the space of possible operations, however, the model needs to learn how to utilise these operations in order to calculate the correct result.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results</head><p>We evaluate the model on the Common Core (CC) dataset, introduced by <ref type="bibr">Roy &amp; Roth (2015)</ref>. CC is notable for having the most diverse set of equation patterns, consisting of four operators (+, -, ×, ÷), with up to three operands.</p><p>We compare against three baseline systems: (1) a local classifier with hand-crafted features <ref type="bibr">(Roy &amp; Roth, 2015)</ref>, (2) a Seq2Seq baseline, and (3) the same model with a data generation component (GeNeRe) <ref type="bibr" target="#b4">Bouchard et al. (2016)</ref>.</p><p>All baselines are trained to predict the best equation, which is executed outside of the model to obtain the answer. In contrast, ∂4 is trained end-to-end from input-output pairs and predicts the answer directly without the need for an intermediate symbolic representation of a formula.</p><p>Results are shown in Table <ref type="table">3</ref>. All RNN-based methods 5 Due to space constraints, we present the core of the sketch here. For the full sketch, please refer to Listing 4 in the Appendix.</p><p>Table 3: Accuracies of models on the CC dataset. Asterisk denotes results obtained from <ref type="bibr" target="#b4">Bouchard et al. (2016)</ref>. Note that GeNeRe makes use of additional data</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Model Accuracy (%)</head><p>Template Mapping <ref type="bibr">Roy &amp; Roth (2015)</ref> 55.5 Seq2Seq * <ref type="bibr" target="#b4">(Bouchard et al., 2016)</ref> 95.0 GeNeRe * <ref type="bibr" target="#b4">(Bouchard et al., 2016)</ref> 98.5</p><p>Fully End-to-End ∂4 96.0 (bottom three) outperform the classifier-based approach.</p><p>Our method slightly outperforms a Seq2Seq baseline, achieving the highest reported result on this dataset without data augmentation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Discussion</head><p>∂4 bridges the gap between a traditional programming language and a modern machine learning architecture. However, as we have seen in our evaluation experiments, faithfully simulating the underlying abstract machine architecture introduces its own unique set of challenges.</p><p>One such challenge is the additional complexity of performing even simple tasks when they are viewed in terms of operations on the underlying machine state. As illustrated in Table <ref type="table" target="#tab_0">1</ref>, ∂4 sketches can be effectively trained from small training sets (see Appendix C.1), and generalise perfectly to sequences of any length. However, difficulty arises when training from sequences of modest lengths. Even when dealing with relatively short training length sequences, and with the program code optimisations employed, the underlying machine can unroll into a problematically large number states. For problems whose machine execution is quadratic, like the sorting task (which at input sequences of length 4 has 120 machine states), we observe significant instabilities during training from backpropagating through such long RNN sequences, and consequent failures to train. In comparison, the addition problem was easier to train due to a comparatively shorter underlying execution RNNs.</p><p>The higher degree of prior knowledge provided played an important role in successful learning. For example, the COMPARE sketch, which provides more structure, achieves higher accuracies when trained on longer sequences. Similarly, employing softmax on the directly manipulated memory elements enabled perfect training for the MANIP-ULATE sketch for addition. Furthermore, it is encouraging to see that ∂4 can be trained jointly with an upstream LSTM to provide strong procedural prior knowledge for solving a real-world NLP task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Related Work Program Synthesis</head><p>The idea of program synthesis is as old as Artificial Intelligence, and has a long history in computer science <ref type="bibr" target="#b25">(Manna &amp; Waldinger, 1971)</ref>. Whereas a large body of work has focused on using genetic programming <ref type="bibr" target="#b20">(Koza, 1992)</ref> to induce programs from the given inputoutput specification <ref type="bibr" target="#b28">(Nordin, 1997)</ref>, there are also various Inductive Programming approaches <ref type="bibr" target="#b18">(Kitzelmann, 2009)</ref> aimed at inducing programs from incomplete specifications of the code to be implemented <ref type="bibr" target="#b1">(Albarghouthi et al., 2013;</ref><ref type="bibr" target="#b34">Solar-Lezama et al., 2006)</ref>. We tackle the same problem of sketching, but in our case, we fill the sketches with neural networks able to learn the slot behaviour.</p><p>Probabilistic and Bayesian Programming Our work is closely related to probabilistic programming languages such as Church <ref type="bibr" target="#b8">(Goodman et al., 2008)</ref>. They allow users to inject random choice primitives into programs as a way to define generative distributions over possible execution traces. In a sense, the random choice primitives in such languages correspond to the slots in our sketches. A core difference lies in the way we train the behaviour of slots: instead of calculating their posteriors using probabilistic inference, we estimate their parameters using backpropagation and gradient descent. This is similar in-kind to TerpreT's FMGD algorithm <ref type="bibr" target="#b7">(Gaunt et al., 2016)</ref>, which is employed for code induction via backpropagation. In comparison, our model which optimises slots of neural networks surrounded by continuous approximations of code, enables the combination of procedural behaviour and neural networks. In addition, the underlying programming and probabilistic paradigm in these programming languages is often functional and declarative, whereas our approach focuses on a procedural and discriminative view. By using an end-to-end differentiable architecture, it is easy to seamlessly connect our sketches to further neural input and output modules, such as an LSTM that feeds into the machine heap.</p><p>Neural approaches Recently, there has been a surge of research in program synthesis, and execution in deep learning, with increasingly elaborate deep models. Many of these models were based on differentiable versions of abstract data structures <ref type="bibr" target="#b14">(Joulin &amp; Mikolov, 2015;</ref><ref type="bibr" target="#b11">Grefenstette et al., 2015;</ref><ref type="bibr" target="#b21">Kurach et al., 2016)</ref>, and a few abstract machines, such as the NTM <ref type="bibr" target="#b9">(Graves et al., 2014)</ref>, Differentiable Neural Computers <ref type="bibr" target="#b10">(Graves et al., 2016)</ref>, and Neural GPUs <ref type="bibr">(Kaiser &amp; Sutskever, 2015)</ref>. All these models are able to induce algorithmic behaviour from training data. Our work differs in that our differentiable abstract machine allows us to seemingly integrate code and neural networks, and train the neural networks specified by slots via backpropagation. Related to our efforts is also the Autograd <ref type="bibr" target="#b24">(Maclaurin et al., 2015)</ref>, which enables automatic gradient computation in pure Python code, but does not define nor use differentiable access to its underlying abstract machine.</p><p>The work in neural approximations to abstract structures and machines naturally leads to more elaborate machinery able to induce and call code or code-like behaviour. <ref type="bibr">Neelakantan et al. (2015a)</ref> learned simple SQL-like behaviour--querying tables from the natural language with simple arithmetic operations. Although sharing similarities on a high level, the primary goal of our model is not induction of (fully expressive) code but its injection. <ref type="bibr" target="#b2">(Andreas et al., 2016)</ref> learn to compose neural modules to produce the desired behaviour for a visual QA task. Neural Programmer-Interpreters <ref type="bibr" target="#b29">(Reed &amp; de Freitas, 2015)</ref> learn to represent and execute programs, operating on different modes of an environment, and are able to incorporate decisions better captured in a neural network than in many lines of code (e.g. using an image as an input). Users inject prior procedural knowledge by training on program traces and hence require full procedural knowledge. In contrast, we enable users to use their partial knowledge in sketches.</p><p>Neural approaches to language compilation have also been researched, from compiling a language into neural networks <ref type="bibr" target="#b32">(Siegelmann, 1994)</ref>, over building neural compilers <ref type="bibr" target="#b12">(Gruau et al., 1995)</ref> to adaptive compilation <ref type="bibr" target="#b6">(Bunel et al., 2016)</ref>. However, that line of research did not perceive neural interpreters and compilers as a means of injecting procedural knowledge as we did. To the best of our knowledge, ∂4 is the first working neural implementation of an abstract machine for an actual programming language, and this enables us to inject such priors in a straightforward manner.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.">Conclusion and Future Work</head><p>We have presented ∂4, a differentiable abstract machine for the Forth programming language, and showed how it can be used to complement programmers' prior knowledge through the learning of unspecified behaviour in Forth sketches. The ∂4 RNN successfully learns to sort and add, and solve word algebra problems, using only program sketches and program input-output pairs. We believe ∂4, and the larger paradigm it helps establish, will be useful for addressing complex problems where low-level representations of the input are necessary, but higher-level reasoning is difficult to learn and potentially easier to specify.</p><p>In future work, we plan to apply ∂4 to other problems in the NLP domain, like machine reading and knowledge base inference. In the long-term, we see the integration of non-differentiable transitions (such as those arising when interacting with a real environment), as an exciting future direction which sits at the intersection of reinforcement learning and probabilistic programming.</p><p>Table <ref type="table">5</ref>: Implementation of Forth words described in Table <ref type="table">4</ref>. Note that the variable creation words are implemented as fixed address allocation, and MACRO words are implemented with inlining.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Symbol Explanation</head><p>M Stack, M ∈ {D,R} M Memory buffer, M ∈ {D,R,H} p Pointer, p ∈ {d,r,c} R 1±</p><p>Increment and decrement matrices (circular shift)</p><formula xml:id="formula_5">R 1± ij = 1 i±1 ≡ j(mod n)) 0 otherwise R + ,R -,R * ,R / Circular arithmetic operation tensors R {op} ijk = 1 i{op}j ≡ k(mod n)) 0 otherwise</formula><p>Pointer and value manipulation Expression</p><formula xml:id="formula_6">Increment a (or value x) inc(a) = a T R 1+ Decrement a (or value x) dec(a) = a T R 1- Algebraic operation application {op}(a,b) = a T R {op} b Conditional jump a jump(c,a) : p = (pop D ()=T RU E) c ← pc+(1-p)a a -1 Next on stack, a ← a T R 1- Buffer manipulation READ from M read M (a) = a T M WRITE to M write M (x,a) : M ← M-a⊗1•M+x⊗a PUSH x onto M push M (x) : write M (x,a) [side-effect: d ← inc(d)] POP an element from M pop M () = read M (a) [side-effect: d ← dec(d)] Forth Word Literal x push D (x) 1+ write D (inc(read D (d)),d) 1- write D (dec(read D (d)),d) DUP push D (read D (d)) SWAP x = read D (d), y = read D (d -1 ) :write D (d,y) , write D (d -1 ,x) OVER push D (read D (d)) DROP pop D () +, -, * , / write D ({op}(read D (d -1 ),read D (d)),d) @ read H (d) ! write H (d,d -1 ) &lt; SWAP &gt; &gt; e 1 = n-1 i=0 i * d i , e 2 = n-1 i=0 i * d -1 i p = φ pwl (e 1 -e 2 ), where φ pwl (x) = min(max(0,x+0.5),1) p1+(p-1)0 = p = φ pwl (d,d -1 ) p1+(p-1)0 &gt;R push R (d) R&gt; pop R () @R write D (d,read R (r)) IF.. 1 ELSE.. 2 THEN p = (pop D ()=0) p * .. 1 +(1-p) * .. 2 BEGIN.. 1 WHILE.. 2 REPEAT</formula><p>.. 1 jump(c,.. 2 ) DO..LOOP start = c,current = inc(pop D ()),limit = pop D () p = (current = limit) jump(p,..),jump(c,start)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Bubble sort algorithm description</head><p>An example of a Forth program that implements the Bubble sort algorithm is shown in Listing 1. We provide a description of how the first iteration of this algorithm is executed by the Forth abstract machine:</p><p>The program begins at line 11, putting the sequence [2 4 2 7] on the data stack D, followed by the sequence length 4. <ref type="foot" target="#foot_1">6</ref> It then calls the SORT word.</p><p>D R c comment 1 [] [] 11 execution start 2 [2 4 2 7 4] [] 8 pushing sequence to D, calling SORT subroutine puts A SORT to R For a sequence of length 4, SORT performs a do-loop in line 9 that calls the BUBBLE sub-routine 3 times. It does so by decrementing the top of D with the 1-word to 3. Subsequently, 3 is duplicated on D by using DUP, and 0 is pushed onto D. 3 [2 4 2 7 3] [A SORT ] 9 1-4 [2 4 2 7 3 3] [A SORT ] 9 DUP 6 [2 4 2 7 3 3 0] [A SORT ] 9 0 DO consumes the top two stack elements 3 and 0 as the limit and starting point of the loop, leaving the stack D to be [2,4,2,7,3]. We use the return stack R as a temporary variable buffer and push 3 onto it using the word &gt;R. This drops 3 from D, which we copy from R with R@ 7 [2 4 2 7 3] [Addr SORT ] 9 DO 8 [2 4 2 7] [Addr SORT 3] 9 &gt;R 9 [2 4 2 7 3] [Addr SORT 3] 9 @R Next, we call BUBBLE to perform one iteration of the bubble pass, (calling BUBBLE 3 times internally), and consuming 3. Notice that this call puts the current program counter onto R, to be used for the program counter c when exiting BUBBLE. Inside the BUBBLE subroutine, DUP duplicates 3 on R. IF consumes the duplicated 3 and interprets is as TRUE. &gt;R puts 3 on R. 10 [2 4 2 7 3] [A SORT 3 A BUBBLE ] 0 calling BUBBLE subroutine puts A BUBBLE to R 11 [2 4 2 7 3 3] [A SORT 3 A BUBBLE ] 1 DUP 12 [2 4 2 7 3] [A SORT 3 A BUBBLE ] 1 IF 13 [2 4 2 7] [A SORT 3 A BUBBLE 3] 1 &gt;R Calling OVER twice duplicates the top two elements of the stack, to test them with &lt;, which tests whether 2 &lt; 7. IF tests if the result is TRUE (0), which it is, so it executes SWAP. 14 [2 4 2 7 2 7] [A SORT 3 A BUBBLE 3] 2 OVER OVER 15 [2 4 2 7 1] [A SORT 3 A BUBBLE 3] 2 &lt; 16 [2 4 2 7] [A SORT 3 A BUBBLE 3] 2 IF 17 [2 4 7 2] [A SORT 3 A BUBBLE 3] 2 SWAP To prepare for the next call to BUBBLE we move 3 back from the return stack R to the data stack D via R&gt;, SWAP it with the next element, put it back to R with &gt;R, decrease the TOS with 1-and invoke BUBBLE again. Notice that R will accumulate the analysed part of the sequence, which will be recursively taken back. 18 [2 4 7 2 3] [A SORT 3 A BUBBLE ] 3 R &gt; 19 [2 4 7 3 2] [A SORT 3 A BUBBLE ] 3 SWAP 20 [2 4 7 3] [A SORT 3 A BUBBLE 2] 3 &gt;R 21 [2 4 7 2] [A SORT 3 A BUBBLE 2] 3 1-22 [2 4 7 2] [A SORT 3 A BUBBLE 2] 0 ...BUBBLE When we reach the loop limit we drop the length of the sequence and exit SORT using the ; word, which takes the return address from R. At the final point, the stack should contain the ordered sequence [7 4 2 2].</p><p>are expected on the data stack. After the length (n -1) is duplicated for further use with DUP, the machine tests whether it is non-zero (using IF, which consumes the TOS during the check). If n-1 &gt; 0, it is stored on the R stack for future use (line 2).</p><p>At this point (line 3b) the programmer only knows that a decision must be made based on the top two data stack elements D0 and D-1 (comparison elements), and the top return stack, R0 (length decremented by 1). Here the precise nature of this decision is unknown but is limited to variants of permutation of these elements, the output of which produce the input state to the decrement -1 and the recursive BUBBLE call (line 4b). At the culmination of the call, R0, the output of the learned slot behaviour, is moved onto the data stack using R&gt;, and execution proceeds to the next step.</p><p>Figure <ref type="figure">2</ref> illustrates how portions of this sketch are executed on the ∂4 RNN. The program counter initially resides at &gt;R (line 3 in P), as indicated by the vector c, next to program P. Both data and return stacks are partially filled (R has 1 element, D has 4), and we show the content both through horizontal one-hot vectors and their corresponding integer values (colour coded). The vectors d and r point to the top of both stacks, and are in a one-hot state as well. In this execution trace, the slot at line 4 is already showing optimal behaviour: it remembers the element on the return stack (4) is larger and executes BUBBLE on the remaining sequence with the counter n subtracted by one, to 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E. Experimental details</head><p>The parameters of each sketch are trained using Adam <ref type="bibr" target="#b17">(Kingma &amp; Ba, 2015)</ref>, with gradient clipping (set to 1.0) and gradient noise <ref type="bibr">(Neelakantan et al., 2015b)</ref>. We tuned the learning rate, batch size, and the parameters of the gradient noise in a random search on a development variant of each task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.1. Seq2Seq baseline</head><p>The Seq2Seq baseline models are single-layer networks with LSTM cells of 50 dimensions.</p><p>The training procedure for these models consists of 500 epochs of Adam optimisation, with a batch size of 128, a learning rate of 0.01, and gradient clipping when the L2 norm of the model parameters exceeded 5.0. We vary the size of training and test data (Fig. <ref type="figure">3</ref>), but observe no indication of the models failing to reach convergence under these training conditions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.2. Sorting</head><p>The Permute and Compare sketches in Table <ref type="table" target="#tab_0">1</ref> were trained on a randomly generated train, development and test set containing 256, 32 and 32 instances, respectively. Note that the low number of dev and test instances was due to the computational complexity of the sketch.</p><p>The batch size was set to a value between 64 and 16, depending on the problem size, and we used an initial learning rate of 1.0.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.3. Addition</head><p>We trained the addition Choose and Manipulate sketches presented in Table <ref type="table" target="#tab_1">2</ref> on a randomly generated train, development and test sets of sizes 512, 256, and 1024 respectively. The batch size was set to 16, and we used an initial learning rate of 0.05</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E.4. Word Algebra Problem</head><p>The Common Core (CC) dataset <ref type="bibr">(Roy &amp; Roth, 2015)</ref> is partitioned into a train, dev, and test set containing 300, 100, and 200 questions, respectively. The batch size was set to 50, and we used an initial learning rate of 0.02. The BiLSTM word vectors were initialised randomly to vectors of length 75. The stack width was set to 150 and the stack size to 5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F. Qualitative Analysis on BubbleSort of PC traces</head><p>In Figure <ref type="figure" target="#fig_4">6</ref> we visualise the program counter traces. The trace follows a single example from start, to middle, and the end of the training process. In the beginning of training, the program counter starts to deviate from the one-hot representation in the first 20 steps (not observed in the figure due to unobservable changes), and after two iterations of SORT, ∂4 fails to correctly determine the next word. After a few training epochs ∂4 learns better permutations which enable the algorithm to take crisp decisions and halt in the correct state.  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>1</head><figDesc>: BUBBLE ( a1 ... an n-1 --one pass ) 0 DO &gt;R R@ BUBBLE R&gt; LOOP DROP 11 ; 12 2 4 2 7 4 SORT \ Example call Listing 1: Three code alternatives (white lines are common to all, coloured/lettered lines are alternative-specific): i) Bubble sort in Forth (a lines -green), ii) PERMUTE sketch (b lines -blue), and iii) COMPARE sketch (c lines -yellow).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>choose w 1</head><label>1</label><figDesc>...w m : chooses from the Forth words w 1 ...w m . Takes an input vector h of length m to produce a weighted combination of machine states m i h i w i (S). manipulate e 1 ...e m : directly manipulates the machine state elements e 1 ... e m by writing the appropriately reshaped and softmaxed output of the encoder over the machine state elements with write M . permute e 1 ...e m : permutes the machine state elements e 1 ...e m via a linear combination of m! state vectors.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>Manipulate sketch (a lines -green) and the choose sketch (b lines -blue) for Elementary Addition. Input data is used to fill data stack externally</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><figDesc>Program Counter trace in early stages of training.Program Counter trace at the end of training.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Program Counter traces for a single example at different stages of training BubbleSort in Listing 1 (red: successive recursion calls to BUBBLE, green: successive returns from the recursion, and blue: calls to SORT). The last element in the last row is the halting command, which only gets executed after learning the correct slot behaviour.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Accuracy (Hamming distance) of Permute and Compare sketches in comparison to a Seq2Seq baseline on the sorting problem., and the top of the return stack must be permuted based on the values of the former (line 3b). Both the value comparison and the permutation behaviour must be learned. The core of this sketch is depicted in Listing 1 (b lines), and the sketch is explained in detail in Appendix D. COMPARE. This sketch provides additional prior procedural knowledge to the model. In contrast to PERMUTE, only the comparison between the top two elements on the stack must be learned (line 3c). The core of this sketch is depicted in Listing 1 (c lines).</figDesc><table><row><cell></cell><cell cols="2">Test Length 8</cell><cell></cell><cell cols="3">Test Length: 64</cell></row><row><cell>Train Length:</cell><cell>2</cell><cell>3</cell><cell>4</cell><cell>2</cell><cell>3</cell><cell>4</cell></row><row><cell>Seq2Seq</cell><cell>26.2</cell><cell>29.2</cell><cell>39.1</cell><cell>13.3</cell><cell>13.6</cell><cell>15.9</cell></row><row><cell>∂4 Permute</cell><cell cols="5">100.0 100.0 19.82 100.0 100.0</cell><cell>7.81</cell></row><row><cell>∂4 Compare</cell><cell cols="6">100.0 100.0 49.22 100.0 100.0 20.65</cell></row><row><cell cols="7">PERMUTE. A sketch specifying that the top two elements</cell></row><row><cell>of the stack</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Accuracy (Hamming distance) of Choose and Manipulate sketches in comparison to a Seq2Seq baseline on the addition problem. Note that lengths corresponds to the length of the input sequence (two times the number of digits of both numbers).</figDesc><table><row><cell></cell><cell cols="2">Test Length 8</cell><cell></cell><cell cols="3">Test Length 64</cell></row><row><cell>Train Length:</cell><cell>2</cell><cell>4</cell><cell>8</cell><cell>2</cell><cell>4</cell><cell>8</cell></row><row><cell>Seq2Seq</cell><cell>37.9</cell><cell>57.8</cell><cell>99.8</cell><cell>15.0</cell><cell>13.5</cell><cell>13.3</cell></row><row><cell>∂4 Choose</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_0"><p>During training c can become distributed and is considered as attention over the program code.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_1"><p>Note that Forth uses Reverse Polish Notation and that the top of the data stack is 4 in this example.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGMENTS</head><p>We thank <rs type="person">Guillaume Bouchard</rs>, <rs type="person">Danny Tarlow</rs>, <rs type="person">Dirk Weissenborn</rs>, <rs type="person">Johannes Welbl</rs> and the anonymous reviewers for fruitful discussions and helpful comments on previous drafts of this paper. This work was supported by a Microsoft Research PhD Scholarship, an <rs type="grantName">Allen Distinguished Investigator Award</rs>, and a <rs type="grantName">Marie Curie Career Integration Award</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_pwkkKnK">
+					<orgName type="grant-name">Allen Distinguished Investigator Award</orgName>
+				</org>
+				<org type="funding" xml:id="_YZPbBWj">
+					<orgName type="grant-name">Marie Curie Career Integration Award</orgName>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendix A. Forth Words and their implementation</head><p>We implemented a small subset of available Forth words in ∂4. The table of these words, together with their descriptions is given in Table <ref type="table" target="#tab_2">4</ref>, and their implementation is given in Table <ref type="table">5</ref>. The commands are roughly divided into 7 groups. These groups, line-separated in the table, are:  Invoking the variable name returns its address. CREATE..ALLOT Creates a variable with a fixed address. Do not allocate the next N addresses to any other variable (effectively reserve that portion of heap to the variable) C. Learning and Run Time Efficiency C.1. Accuracy per training examples Sorter When measuring the performance of the model as the number of training instances varies, we can observe the benefit of additional prior knowledge to the optimisation process. We find that when stronger prior knowledge is provided (COMPARE), the model quickly maximises the training accuracy. Providing less structure (PERMUTE) results in lower testing accuracy initially, however, both sketches learn the correct behaviour and generalise equally well after seeing 256 training instances. Additionally, it is worth noting that the PERMUTE sketch was not always able to converge into a result of the correct length, and both sketches are not trivial to train. In comparison, Seq2Seq baseline is able to generalise only to the sequence it was trained on (Seq2Seq trained and tested on sequence length 3). When training it on sequence length 3, and testing it on a much longer sequence length of 8, Seq2Seq baseline is not able to achieve more than 45% accuracy. 4 8 16 32 64 128 256 512 1024 # training examples 0.2 0.4 0.6 0.8 1.0 Accuracy compare permute Seq2Seq (test 3) Seq2Seq (test 8) Figure 3: Accuracy of models for varying number of training examples, trained on input sequence of length 3 for the Bubble sort task. Compare, permute, and Seq2Seq (test 8) were tested on sequence lengths 8, and Seq2Seq (test 3) was tested on sequence length 3. Adder We tested the models to train on datasets of increasing size on the addition task. The results, depicted in Table 4 show that both the choose and the manipulate sketch are able to perfectly generalise from 256 examples, trained on sequence lengths of 8, tested on 16. In comparison, the Seq2Seq baseline achieves 98% when trained on 16384 examples, but only when tested on the input of the same length, 8. If we test Seq2Seq as we tested the sketches, it is unable to achieve more 19.7%. 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 # training examples 0.2 0.4 0.6 0.8 1.0 Accuracy choose manipulate Seq2Seq (test 8) Seq2Seq (test 16) Figure 4: Accuracy of models for varying number of training examples, trained on input sequence of length 8 for the addition task. Manipulate, choose, and Seq2Seq (test 16) were tested on sequence lengths 16, and Seq2Seq (test 8) was tested on sequence length 8.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.2. Program Code Optimisations</head><p>We measure the runtime of Bubble sort on sequences of varying length with and without the optimisations described in Section 3.4. The results of ten repeated runs are shown in Figure <ref type="figure" target="#fig_7">5</ref> and demonstrate large relative improvements for symbolic execution and interpolation of if-branches compared to non-optimised ∂4 code.</p><p>2 3 4 5 6 7 8 9 10 11 12 13 14 80 100 120 140 160 180 200 220 240 260 Relative Runtime Improvement [%] </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. ∂4 execution of a Bubble sort sketch</head><p>Listing 1 (lines 3b and 4b -in blue) defines the BUBBLE word as a sketch capturing several types of prior knowledge.</p><p>In this section, we describe the PERMUTE sketch. In it, we assume BUBBLE involves a recursive call, that terminates at length 1, and that the next BUBBLE call takes as input some function of the current length and the top two stack elements.</p><p>The input to this sketch are the sequence to be sorted and its length decremented by one, n -1 (line 1). These inputs</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G. The complete Word Algebra Problem sketch</head><p>The Word Algebra Problem (WAP) sketch described in Listing 3 is the core of the model that we use for WAP problems. However, there were additional words before and after the core which took care of copying the data from the heap to data and return stacks, and finally emptying out the return stack.</p><p>The full WAP sketch is given in Listing 4. We define a QUESTION variable which will denote the address of the question vector on the heap. Lines 4 and 5 create REPR BUFFER and NUM BUFFER variables and denote that they will occupy four sequential memory slots on the heap, where we will store the representation vectors and numbers, respectively. Lines 7 and 8 create variables REPR and NUM which will denote addresses to current representations and numbers on the heap. Lines 10 and 11 store REPR BUFFER to REPR and NUM BUFFER to NUM, essentially setting the values of variables REPR and NUM to starting addresses allotted in lines 4 and 5. Lines 14-16 and 19-20 create macro functions STEP NUM and STEP REPR which increment the NUM and REPR values on call. These macro functions will be used to iterate through the heap space. Lines 24-25 define macro functions CURRENT NUM for fetching the current number, and CURRENT REPR for fetching representation values. Lines 28-32 essentially copy values of numbers from the heap to the data stack by using the CURRENT NUM and STEP NUM macros. After that line 35 pushes the question vector, and lines 36-40 push the word representations of numbers on the return stack.</p><p>Following that, we define the core operations of the sketch. Line 43 permutes the elements on the data stack (numbers) as a function of the elements on the return stack (vector representations of the question and numbers). Line 45 chooses an operator to execute over the TOS and NOS elements of the data stack (again, conditioned on elements on the return stack). Line 47 executes a possible swap of the two elements on the data stack (the intermediate result and the last operand) conditioned on the return stack. Finally, line 49 chooses the last operator to execute on the data stack, conditioned on the return stack.</p><p>The sketch ends with lines 52-55 which empty out the return stack.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><figDesc>Data stack operations {num}, 1+, 1-, DUP, SWAP, OVER, DROP, +, -, * , / Heap operations @, ! Comparators &gt;, &lt;, = Return stack operations &gt;R, R&gt;, @R Control statements IF..ELSE..THEN, BEGIN..WHILE..REPEAT, DO..LOOP Subroutine control :, {sub}, ;, MACRO Variable creation VARIABLE, CREATE..ALLOT</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 5 :</head><label>5</label><figDesc>Relative speed improvements of program code optimisations for different input sequence lengths (bottom).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>Forth words and their descriptions. TOS denotes top-of-stack, NOS denotes next-on-stack, DSTACK denotes the data stack, RSTACK denotes the return stack, and HEAP denotes the heap.</figDesc><table><row><cell>Forth Word</cell><cell>Description</cell></row><row><cell>{num}</cell><cell>Pushes {num} to DSTACK.</cell></row><row><cell>1+</cell><cell>Increments DSTACK TOS by 1.</cell></row><row><cell>1-</cell><cell>Decrements DSTACK TOS by 1.</cell></row><row><cell>DUP</cell><cell>Duplicates DSTACK TOS.</cell></row><row><cell>SWAP</cell><cell>Swaps TOS and NOS.</cell></row><row><cell>&gt;R</cell><cell>Pushes DSTACK TOS to RSTACK TOS, removes it from DSTACK.</cell></row><row><cell>R&gt;</cell><cell>Pushes RSTACK TOS to DSTACK TOS, removes it from RSTACK.</cell></row><row><cell>@R</cell><cell>Copies the RSTACK TOS TO DSTACK TOS.</cell></row><row><cell>IF..ELSE..THEN</cell><cell>Consumes DSTACK TOS, if it equals to a non-zero number (TRUE), executes</cell></row><row><cell></cell><cell>commands between IF and ELSE. Otherwise executes commands between</cell></row><row><cell></cell><cell>ELSE and THEN.</cell></row><row><cell>BEGIN..WHILE..REPEAT</cell><cell>Continually executes commands between WHILE and REPEAT while the code</cell></row><row><cell></cell><cell>between BEGIN and WHILE evaluates to a non-zero number (TRUE).</cell></row><row><cell>DO..LOOP</cell><cell>Consumes NOS and TOS, assumes NOS as a limit, and TOS as a current index.</cell></row><row><cell></cell><cell>Increases index by 1 until equal to NOS. At every increment, executes commands</cell></row><row><cell></cell><cell>between DO and LOOP.</cell></row><row><cell>:</cell><cell>Denotes the subroutine, followed by a word defining it.</cell></row><row><cell>{sub}</cell><cell>Subroutine invocation, puts the program counter PC on RSTACK, sets PC to the</cell></row><row><cell></cell><cell>subroutine address.</cell></row><row><cell>;</cell><cell>Subroutine exit. Consumest TOS from the RSTACK and sets the PC to it.</cell></row><row><cell>MACRO</cell><cell>Treats the subroutine as a macro function.</cell></row></table><note><p>OVER</p><p>Copies NOS and pushes it on the TOS.</p><p>DROP</p><p>Pops the TOS (non-destructive). +, -, * , / Consumes DSTACK NOS and TOS. Returns NOS operator TOS.</p><p>@</p><p>Fetches the HEAP value from the DSTACK TOS address. ! Stores DSTACK NOS to the DSTACK TOS address on the HEAP. &gt;, &lt;, = Consumes DSTACK NOS and TOS. Returns 1 (TRUE) if NOS &gt; | &lt; | = TOS respectivelly, 0 (FALSE) otherwise.</p><p>VARIABLE</p><p>Creates a variable with a fixed address.</p></note></figure>
+			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">TensorFlow: Large-scale machine learning on heterogeneous systems</title>
+		<author>
+			<persName><forename type="first">Martín</forename><surname>Abadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Paul</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Brevdo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Eugene</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhifeng</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Citro</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Craig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><forename type="middle">S</forename><surname>Corrado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Dean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devin</forename><surname>Jeffrey</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Matthieu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ghemawat</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sanjay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Goodfellow</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Harp</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Andrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Irving</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Isard</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yangqing</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jozefowicz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rafal</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lukasz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kudlur</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Manjunath</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Levenberg</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Josh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mané</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Dan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Monga</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rajat</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Moore</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sherry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Derek</forename><surname>Murray</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Olah</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Chris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Schuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathon</forename><surname>Shlens</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Steiner</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Benoit</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ilya</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Talwar</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kunal</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tucker</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Paul</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vincent</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vasudevan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vijay</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Viégas</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Fernanda</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Oriol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pete</forename><surname>Warden</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wattenberg</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wicke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoqiang</forename><surname>Zheng</surname></persName>
+		</author>
+		<ptr target="http://tensorflow.org/.Softwareavailablefromtensorflow.org" />
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Recursive program synthesis</title>
+		<author>
+			<persName><forename type="first">Aws</forename><surname>Albarghouthi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gulwani</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sumit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachary</forename><surname>Kincaid</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Aided Verification</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="934" to="950" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Neural module networks</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Andreas</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rohrbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Darrell</forename><surname>Marcus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of IEEE Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>IEEE Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">American National Standard for Information Systems</title>
+		<author>
+			<persName><surname>Ansi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ANSI X</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="215" to="1994" />
+			<date type="published" when="1994">1994</date>
+		</imprint>
+	</monogr>
+	<note>Programming Languages -Forth</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Learning to generate textual data</title>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Bouchard</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Stenetorp</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pontus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="1608" to="1616" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Leo</forename><surname>Brodie</surname></persName>
+		</author>
+		<title level="m">Starting Forth. Forth Inc</title>
+		<imprint>
+			<date type="published" when="1980">1980</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Adaptive neural compilation</title>
+		<author>
+			<persName><forename type="first">Rudy</forename><surname>Bunel</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Desmaison</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Alban</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kohli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Torr</forename><surname>Pushmeet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">S</forename><surname>Philip</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pawan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Conference on Neural Information Processing Systems (NIPS)</title>
+		<meeting>the Conference on Neural Information Processing Systems (NIPS)</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">L</forename><surname>Gaunt</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Brockschmidt</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Marc</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rishabh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Nate</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kohli</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pushmeet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Taylor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Tarlow</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1608.04428</idno>
+		<title level="m">TerpreT: A Probabilistic Programming Language for Program Induction</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Church: a language for generative models</title>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>Goodman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mansinghka</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vikash</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Daniel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keith</forename><surname>Bonawitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joshua</forename><forename type="middle">B</forename><surname>Tenenbaum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Conference in Uncertainty in Artificial Intelligence (UAI)</title>
+		<meeting>the Conference in Uncertainty in Artificial Intelligence (UAI)</meeting>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="220" to="229" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Wayne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivo</forename><surname>Danihelka</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1410.5401</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Neural Turing Machines. arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Hybrid computing using a neural network with dynamic external memory</title>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Wayne</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Reynolds</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Malcolm</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Harley</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Danihelka</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ivo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Grabska-Barwińska</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Agnieszka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergio</forename><surname>Colmenarejo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gómez</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Grefenstette</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Edward</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ramalho</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tiago</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Agapiou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>John</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">538</biblScope>
+			<biblScope unit="issue">7626</biblScope>
+			<biblScope unit="page" from="471" to="476" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Learning to Transduce with Unbounded Memory</title>
+		<author>
+			<persName><forename type="first">Edward</forename><surname>Grefenstette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karl</forename><surname>Hermann</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Moritz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mustafa</forename><surname>Suleyman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Phil</forename><surname>Blunsom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Conference on Neural Information Processing Systems (NIPS)</title>
+		<meeting>the Conference on Neural Information Processing Systems (NIPS)</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="1819" to="1827" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">A Neural compiler</title>
+		<author>
+			<persName><forename type="first">Frédéric</forename><surname>Gruau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Yves</forename><surname>Ratajszczak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gilles</forename><surname>Wiber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Theoretical Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">141</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="52" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Long shortterm memory</title>
+		<author>
+			<persName><forename type="first">Sepp</forename><surname>Hochreiter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jürgen</forename><surname>Schmidhuber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural Computation</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="1735" to="1780" />
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Inferring Algorithmic Patterns with Stack-Augmented Recurrent Nets</title>
+		<author>
+			<persName><forename type="first">Armand</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomas</forename><surname>Mikolov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Conferences on Neural Information Processing Systems (NIPS)</title>
+		<meeting>the Conferences on Neural Information Processing Systems (NIPS)</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="190" to="198" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Neural GPUs learn algorithms</title>
+		<author>
+			<persName><forename type="first">Łukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Learning Representations (ICLR)</title>
+		<meeting>the International Conference on Learning Representations (ICLR)</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Symbolic Execution and Program Testing</title>
+		<author>
+			<persName><forename type="first">James</forename><forename type="middle">C</forename><surname>King</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Commun. ACM</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="385" to="394" />
+			<date type="published" when="1976">1976</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Adam: A Method for Stochastic Optimization</title>
+		<author>
+			<persName><forename type="first">Diederik</forename><surname>Kingma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Ba</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference for Learning Representations (ICLR)</title>
+		<meeting>the International Conference for Learning Representations (ICLR)</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Inductive Programming: A Survey of Program Synthesis Techniques</title>
+		<author>
+			<persName><forename type="first">Emanuel</forename><surname>Kitzelmann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Workshop on Approaches and Applications of Inductive Programming</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="50" to="73" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Parsing Algebraic Word Problems into Equations</title>
+		<author>
+			<persName><forename type="first">Rik</forename><surname>Koncel-Kedziorski</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hajishirzi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hannaneh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sabharwal</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ashish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oren</forename><surname>Etzioni</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Siena</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics (TACL)</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="585" to="597" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Genetic Programming: On the Programming of Computers by Means of Natural Selection</title>
+		<author>
+			<persName><forename type="first">John</forename><forename type="middle">R</forename><surname>Koza</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1992">1992</date>
+			<publisher>MIT press</publisher>
+			<biblScope unit="volume">1</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Neural Random-Access Machines</title>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Kurach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrychowicz</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcin</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Learning Representations (ICLR)</title>
+		<meeting>the International Conference on Learning Representations (ICLR)</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Learning to Automatically Solve Algebra Word Problems</title>
+		<author>
+			<persName><forename type="first">Nate</forename><surname>Kushman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Artzi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yoav</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Regina</forename><surname>Barzilay</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Annual Meeting of the Association for Computational Linguistics (ACL)</title>
+		<meeting>the Annual Meeting of the Association for Computational Linguistics (ACL)</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="271" to="281" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Learning repetitive text-editing procedures with smartedit</title>
+		<author>
+			<persName><forename type="first">Tessa</forename><surname>Lau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><forename type="middle">A</forename><surname>Wolfman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pedro</forename><surname>Domingos</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Weld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Daniel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Your Wish is My Command</title>
+		<imprint>
+			<publisher>Morgan Kaufmann Publishers Inc</publisher>
+			<date type="published" when="2001">2001</date>
+			<biblScope unit="page" from="209" to="226" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Gradient-based Hyperparameter Optimization through Reversible Learning</title>
+		<author>
+			<persName><forename type="first">Dougal</forename><surname>Maclaurin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Duvenaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><forename type="middle">P</forename><surname>Adams</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Machine Learning (ICML)</title>
+		<meeting>the International Conference on Machine Learning (ICML)</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Toward automatic program synthesis</title>
+		<author>
+			<persName><forename type="first">Zohar</forename><surname>Manna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">J</forename><surname>Waldinger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="151" to="165" />
+			<date type="published" when="1971">1971</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Neural Programmer: Inducing latent programs with gradient descent</title>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Learning Representations (ICLR)</title>
+		<meeting>the International Conference on Learning Representations (ICLR)</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note>a</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Adding Gradient Noise Improves Learning for Very Deep Networks</title>
+		<author>
+			<persName><forename type="first">Arvind</forename><surname>Neelakantan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vilnis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Luke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ilya</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lukasz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Kurach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Martens</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1511.06807</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Evolutionary Program Induction of Binary Machine Code and its Applications</title>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Nordin</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1997">1997</date>
+		</imprint>
+		<respStmt>
+			<orgName>der Universitat Dortmund am Fachereich Informatik</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">PhD thesis</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Neural programmerinterpreters</title>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Reed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nando</forename><surname>Freitas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Learning Representations (ICLR)</title>
+		<meeting>the International Conference on Learning Representations (ICLR)</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Solving General Arithmetic Word Problems</title>
+		<author>
+			<persName><forename type="first">Subhro</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Roth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="1743" to="1752" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Reasoning about quantities in natural language</title>
+		<author>
+			<persName><forename type="first">Subhro</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Vieira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Roth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the Association for Computational Linguistics (TACL)</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="1" to="13" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Neural Programming Language</title>
+		<author>
+			<persName><forename type="first">Hava</forename><forename type="middle">T</forename><surname>Siegelmann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Twelfth AAAI National Conference on Artificial Intelligence</title>
+		<meeting>the Twelfth AAAI National Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="1994">1994</date>
+			<biblScope unit="page" from="877" to="882" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Programming by Sketching for Bit-streaming Programs</title>
+		<author>
+			<persName><forename type="first">Armando</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rabbah</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rodric</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bodík</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rastislav</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ebcioglu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Programming Language Design and Implementation (PLDI)</title>
+		<meeting>Programming Language Design and Implementation (PLDI)</meeting>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+			<biblScope unit="page" from="281" to="294" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Combinatorial Sketching for Finite Programs</title>
+		<author>
+			<persName><forename type="first">Armando</forename><surname>Solar-Lezama</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tancau</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liviu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bodik</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rastislav</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Seshia</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sanjit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vijay</forename><surname>Saraswat</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM Sigplan Notices</title>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="volume">41</biblScope>
+			<biblScope unit="page" from="404" to="415" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Sequence to Sequence Learning with Neural Networks</title>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Oriol</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Conference on Neural Information Processing Systems (NIPS)</title>
+		<meeting>the Conference on Neural Information Processing Systems (NIPS)</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="3104" to="3112" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">\ macro functions for fetching current numbers and representations 24 MACRO</title>
+		<imprint>
+			<publisher>CURRENT_NUM NUM @ @</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Macro: Current_Repr Repr @ @ ;</surname></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">\ copy question vector, and representations of numbers to R 35 QUESTION</title>
+		<idno>&gt;R 36 CURRENT_REPR &gt;R 37 STEP_REPR 38 CURRENT_REPR &gt;R 39 STEP_REPR 40 CURRENT_REPR &gt;R</idno>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">\ permute stack elements, based on the question and number representations 43 { observe R0 R-1 R-2 R-3 -&gt; permute D0 D-1 D-2 } 44 \ choose the first operation 45 { observe R0 R-1 R-2 R-3 -&gt; choose</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">\ choose whether to swap intermediate result and the bottom number 47 { observe R0 R-1 R-2 R-3 -&gt; choose SWAP NOP } 48 \ choose the second operation 49 { observe R0 R-1 R-2 R-3 -&gt; choose + -* / } 51 \ empty out R 52 R&gt; DROP 53 R&gt; DROP 54 R&gt; DROP 55 R&gt; DROP Listing 4: The complete Word Algebra Problem sketch</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

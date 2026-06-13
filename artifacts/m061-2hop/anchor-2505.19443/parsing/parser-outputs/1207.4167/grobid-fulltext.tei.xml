@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Predictive State Representations: A New Theory for Modeling Dynamical Systems</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Satinder</forename><surname>Singh</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Computer Science and Engineering</orgName>
+								<orgName type="institution">University of Michigan Ann Arbor</orgName>
+								<address>
+									<postCode>48109</postCode>
+									<region>MI</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Michael</forename><forename type="middle">R</forename><surname>James</surname></persName>
+							<email>mrjames@umich.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Computer Science and Engineering</orgName>
+								<orgName type="institution">University of Michigan Ann Arbor</orgName>
+								<address>
+									<postCode>48109</postCode>
+									<region>MI</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Matthew</forename><forename type="middle">R</forename><surname>Rudary</surname></persName>
+							<email>mrudary@umich.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Computer Science and Engineering</orgName>
+								<orgName type="institution">University of Michigan Ann Arbor</orgName>
+								<address>
+									<postCode>48109</postCode>
+									<region>MI</region>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Predictive State Representations: A New Theory for Modeling Dynamical Systems</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">2C0E23FB4C1C82D48A6A3AF3A65EB20A</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-13T10:19+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Modeling dynamical systems, both for control purposes and to make predictions about their behavior, is ubiquitous in science and engineering. Predictive state representations (PSRs) are a recently introduced class of models for discrete-time dynamical systems.</p><p>The key idea behind PSRs and the closely related OOMs (Jaeger's observable operator models) is to represent the state of the system as a set of predictions of observable outcomes of experiments one can do in the system. This makes PSRs rather different from history-based models such as n th -order Markov models and hidden-state-based models such as HMMs and POMDPs. We introduce an interesting construct, the systemdynamics matrix, and show how PSRs can be derived simply from it. We also use this construct to show formally that PSRs are more general than both n th -order Markov models and HMMs/POMDPs. Finally, we discuss the main difference between PSRs and OOMs and conclude with directions for future work.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Modeling dynamical systems, both for control purposes and to make predictions about their behavior, is ubiquitous in science and engineering. Different disciplines often develop different mathematical formalisms for building models-differential equations in physics, finite-automata in computer science, logic and graphical models in artificial intelligence (AI), sequential decision processes in operations research (OR); these are but a few examples. Often the differences among the formalisms are motivated by properties of the class of dynamical systems of interest to the different fields. In this paper, we are exclusively interested in the class of general discrete-time, finite-observation, and stochastic dynamical systems. This class includes many of the problems of interest to the AI subfields of machine learning, reinforcement learning (RL), and planning. At the heart of current research in these subfields are hidden Markov models (HMMs) and their controlled counterparts partially observable Markov decision processes (POMDPs). Recently, <ref type="bibr" target="#b4">Littman, Sutton, and Singh (2001)</ref> proposed a class of models called predictive state representations (PSRs) as an alternative to HMMs and POMDPs.</p><p>The key idea behind PSRs, and the closely related observable operator models or OOMs <ref type="bibr" target="#b1">(Jaeger, 1997)</ref>, is to represent the state of the system as a set of predictions of observable outcomes of tests or experiments one could do in the system. Thus, unlike hiddenstate-based POMDP models, PSRs are expressed entirely in terms of observable quantities. Learning PSR models of dynamical systems from observation data should therefore be easier and less prone to local minima problems than learning POMDP models from observation data <ref type="bibr" target="#b6">(Shatkay &amp; Kaelbling, 1997)</ref>. At the same time, PSRs do not have the severe limitations of history-based n th -order Markov models, another class of models of dynamical systems based on purely observable quantities. Recent work on PSRs has begun to theoretically and empirically explore these advantages <ref type="bibr" target="#b7">(Singh, Littman, Jong, Pardoe, &amp; Stone, 2003;</ref><ref type="bibr" target="#b3">James &amp; Singh, 2004)</ref>.</p><p>In this paper we present a new and more comprehensive theory of PSRs than was available heretofore. The original development of PSRs by <ref type="bibr" target="#b4">Littman et al. (2001)</ref> focused on their relationship to POMDPs and in particular showed how to convert a POMDP model to a PSR model. Here we present a new mathematical construct, the system-dynamics matrix (D), that can be used to describe any controlled or uncontrolled dynamical system. This matrix D is not a model of the system but should be viewed as the system itself. We define the linear dimension of a dynamical sys-tem as the rank of its system-dynamics matrix. We use D to re-derive predictive state representations in a more general way than the derivation in <ref type="bibr" target="#b4">Littman et al. (2001)</ref>. We prove that dynamical systems with linear dimension n can always be modeled by PSRs of size n but that there exist such systems that cannot be modeled by any finite HMM/POMDP and any finite-order Markov model. Finally, we discuss the relationship between PSRs and the earlier work on OOMs by <ref type="bibr" target="#b1">Jaeger (1997)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">The System-Dynamics Matrix</head><p>An uncontrolled dynamical system can be viewed abstractly as a generator of observations. At time step i, it produces an observation o i from some set O. The system itself can be viewed as a probability distribution over all possible futures of all lengths. A future is just a sequence of observations from the beginning of time. The prediction of a length-k future t = o 1 o 2 . . . o k , denoted p(t), is the probability that the first k observations are precisely t, i.e.,</p><formula xml:id="formula_0">p(t) = prob(o 1 = o 1 , . . . , o k = o k )</formula><p>where o i is the actual observation at time step i. A controlled dynamical system, on the other hand, takes inputs from some set A and generates observations from set O. Thus a future in a controlled system is a sequence of actionobservation pairs from the beginning of time. Again the system itself can be viewed as a probability distribution over all possible futures, but in this case conditional on the actions input to the system. Accordingly, a prediction for a length-k future</p><formula xml:id="formula_1">t = a 1 o 1 • • • a k o k is the probability that the first k observations are o 1 • • • o k given that the first k actions are a 1 • • • a k , i.e., p(t) = prob(o 1 = o 1 , . . . o k = o k |a 1 = a 1 , . . . a k = a k ),</formula><p>where a i is the actual action at time step i. In controlled systems it is convenient to think of futures as tests or experiments one can do on the system. Thus, for test t the prediction p(t) is the probability of that test succeeding, i.e., of observing t's sequence of observations upon doing t's sequence of actions. Hereafter, we will refer to futures as tests for both controlled and uncontrolled systems.</p><p>Given an ordering over all possible tests t 1 t 2 . . ., the system's probability distribution over all tests, defines an infinite system-dynamics vector d, such that the i th element of d is the prediction of the i th test in the ordering, i.e., d i = p(t i ). Throughout, we will assume that the tests are arranged in order of increasing length and within the same length in lexicographic order. Figure <ref type="figure">1a</ref> presents a pictorial view of the vector d. The predictions in d have the following properties, illustrated in Figure <ref type="figure">1b</ref>:</p><formula xml:id="formula_2">• ∀i 0 ≤ d i ≤ 1 1 1 1 1 1 2 1 1 1 n 1 2 1 n 1 1 1 1 ) p( p<label>(</label></formula><p>) ) ) p( ) p( ) p( p( b) a) ... p(t ) p(t ) t t t t ... ... t p(t ) p(t ) n 1 k k+1 k+2 p(t ) k+1 p(t ) k+2 tests of length 1 tests of length 2 ... ... ... ... Σ = 1 Σ t o a a o a o a o a o a o a o a o o a o a o a o a o a o a o a o a a 2</p><formula xml:id="formula_3">o a o 2 1 n 1 1 1 2 1 1 1 1 1 1 1 1 1 n 1 1 2 k n</formula><p>Figure 1: a) Each of d's entries corresponds to the prediction of a test. b) Properties of the predictions imply structure in d.</p><p>• Let T (ā) be the set of tests whose action sequences equal ā. Then ∀k ∀ā ∈ A k , t∈T (ā) p(t) = 1</p><p>• ∀t ∀a ∈ A, p(t) = o∈O p(tao).</p><p>These properties imply that the infinite systemdynamics vector d has a good deal of structure. One way to make this structure explicit is to consider a matrix, D, whose columns correspond to tests and whose rows correspond to histories (see Figure <ref type="figure">2</ref>). In an uncontrolled system a history is the sequence of observations from the beginning of time while in a controlled system a history is the sequence of action-observation pairs from the beginning of time. The interpretation is that a history is a future or test that has already happened. We define a history-conditional prediction for a test t = a</p><formula xml:id="formula_4">1 o 1 • • • a k o k given a history h = a 1 o 1 • • • a j o j , as p(t|h) = prob(o j+1 = o 1 , . . . , o j+k = o k |h, a j+1 = a 1 , . . . , a j+k = a k ).</formula><p>The history-conditional prediction in the uncontrolled case can be defined analogously.</p><p>We define an ordering over histories h 1 h 2 . . . similar to the ordering over tests, though we include the zerolength or initial history, φ, as the first history in the ordering. Then</p><formula xml:id="formula_5">D ij = p(t j |h i ) = p(h i t j ) p(h i ) ,<label>(1)</label></formula><p>and each row of D has the same properties as d had. In fact, the system-dynamics vector d is the first row of the matrix D (see Figure <ref type="figure">2</ref>). The matrix D with its infinitely many rows and columns is uniquely determined by the vector d because both the numerator and the denominator of the rightmost term in Equation 1 are elements of d. We call D the system-dynamics matrix.</p><formula xml:id="formula_6">φ h t h = 1 j p(t | h ) 2 h 1 t p(t | h ) p(t | h ) p(t | h ) j j 1 1 1 i i 1 i ... ... ... ... Figure 2:</formula><p>The rows in the system-dynamics matrix correspond to all possible histories (pasts), while the columns correspond to all possible tests (futures). The entries in the matrix are the predictions of tests given histories.</p><p>Because uncontrolled systems can be viewed as special cases of controlled systems in which there is only one action available, we will develop and present our results below for the controlled case. All of our results apply to the uncontrolled case unless noted otherwise.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Models</head><p>We emphasize that the system-dynamics matrix is not a model of the system; rather it is the system itself. Indeed, we will use D and dynamical system interchangeably. In other words, D places no constraints on the dynamical system at all other than our starting assumptions of discrete-time and finite actions and observations; for example, there is no assumption of stationarity of any sort. The matrix D forms the basis of our new theory of PSRs.</p><p>We begin by defining the concept of the linear dimension of a dynamical system as the rank of its corresponding system-dynamics matrix. The linear dimension of a system is equal to the dimension of the system as defined by <ref type="bibr" target="#b2">Jaeger (1998)</ref> and, in the uncontrolled case, the minimum effective degree of freedom as defined by <ref type="bibr" target="#b0">Ito, Amari, and Kobayashi (1992)</ref>. We will show why the rank of D corresponds to a linear rather than nonlinear dimension later in this paper. But first, we remark that the rank of D is a measure of the complexity of the dynamical system and thus we should expect that a model of the dynamical system should have a complexity that is a function of the linear dimension.</p><p>Traditionally, a model of a dynamical system is something that can be used both as a simulator-to generate sequences of observations given sequences of actions-and as a predictor-to maintain state and make predictions about future behaviors while interacting with a system. In our context, an equivalent definition is that a model is something that can generate the system-dynamics matrix exactly. Most models are composed of the following pieces: a state representation that is a sufficient statistic of history, a specification of the initial state, and model parameters and update function that together define how the model updates the state as actions get taken and observations noted.</p><p>Before we derive a PSR model of a dynamical system from D, we consider the relationship between n th -order Markov models and D and then between HMMs/POMDPs and D.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">History-Based Models</head><p>An n th -order Markov model makes the assumption that the next observation probabilities are conditionally independent of the history given the last n actionobservation pairs. The state of such a system in history h, denoted s(h), is represented by the length-n suffix of h; the initial state is the suffix that is equivalent to the null history. There are k = (|A||O|) n possible states.</p><p>The parameters of this model are the k|A||O| observation probabilities, arranged into |A| matrices {O a }, where O a ij = prob(o j |s(h i ), a). The state is maintained simply; when a new action-observation pair is observed, the state is updated to the length-n suffix of the new history.</p><formula xml:id="formula_7">Generating D from this model is straightforward: us- ing the chain rule, p(a 1 o 1 • • • a n o n |h) is given by com- puting prob(o n |ha 1 o 1 • • • a n-1 o n-1 a n ) • • • prob(o 1 |ha 1 ).</formula><p>Each of the probabilities in the product is obtained directly from the parameter matrices {O a } by mapping histories to states by using length-n suffixes.</p><p>But how complex a dynamical system can be modeled by a n th -order Markov model? In other words, what is the maximal rank of D that can be generated by such a model?</p><p>Theorem 1 The dynamical system corresponding to an n th -order Markov model cannot have linear dimension greater than k = (|A||O|) n .</p><p>Proof Given that an n th -order Markov model cannot distinguish between any two histories that have the same length-n suffix, it is clear that the D matrix generated by such a model cannot have more than k = (|A||O|) n unique rows, and thus has rank at most k. The rank and therefore the linear dimension of the D generated by such a model is at most k.</p><p>Later, we will show that there are systems with finite linear dimension that cannot be represented by an n thorder Markov model for any finite n. Intuitively, this is because a matrix with finite rank may have infinitely many distinct rows. Taken together, these results show the known fact that n th -order Markov models are quite limited in scope.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Models with Hidden States</head><p>POMDPs/HMMs are models based on the notion of underlying hidden or nominal states and directly address the limitations of history-based models. They maintain state information by keeping track of the probabilities of being in each of these nominal states as a function of history. Thus, the state representation of a k-state POMDP is a k × 1 belief state vector b(h), where b i (h) is the probability that the system is in nominal state i given that history h has been observed. The initial state is b(φ). The parameters of this model are the transition probabilities of the underlying MDP (that describes the unseen dynamics of the nominal states) and the observation probabilities; that is, a set of k × k stochastic matrices {T a }, where T a ij is the probability of transitioning from nominal state i to nominal state j, and a set of k × k diagonal matrices {O ao } where O ao ii is the probability of observing o while leaving state i by means of action a. Note that ∀a o∈O O ao = I. The state is updated by computing</p><formula xml:id="formula_8">b T (hao) = b T (h)T a O ao b T (h)T a O ao 1 , (<label>2</label></formula><formula xml:id="formula_9">)</formula><p>where 1 is a k × 1 vector of all 1's.</p><p>D can be generated from a POMDP by generating each test's prediction as follows:</p><formula xml:id="formula_10">p(a 1 o 1 • • • a n o n |h) = b(h)T a 1 O a 1 o 1 • • • T a n O a n o n 1</formula><p>Again, we ask what the linear dimension is of systems that can be perfectly modeled by a POMDP.</p><p>Theorem 2 A POMDP with k nominal states cannot model a dynamical system with linear dimension greater than k.</p><formula xml:id="formula_11">t t t t h h s s s s = 1 1 1 1 1 k k i 1 D U B i j j b (h ) b (h ) T T</formula><p>Figure 3: The system-dynamics matrix generated by a POMDP model with k nominal states is the product of an ∞ × k matrix (B) and a k × ∞ matrix (U ).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Proof</head><p>Let p(t|s i ) be the prediction for test t generated by the POMDP for a belief state that assigns probability 1 to the system being in nominal state s i (note that it need not be possible to manipulate the system into such a belief state). Let U be the (k × ∞) matrix whose (ij) th entry is p(t j |s i ). U has k rows, and so it has rank no more than k. Now consider the D matrix generated by the POMDP. The row of D corresponding to a history h is simply b T (h)U , where b(h) is the belief state after observing h. Thus D may be generated by computing the matrix multiplication BU , where B is a (∞ × k) matrix with whose i th row is the belief state corresponding to history h i (see Figure <ref type="figure">3</ref>). Because both B and U have rank no more than k, D has rank no more than k. Thus, no dynamical system that can be modeled by a POMDP with k nominal states may have a linear dimension that is greater than k.</p><p>Because an HMM is simply a POMDP with a single action, we can use Theorem 2 to assert: Corollary 3 A HMM with k nominal states cannot model a dynamical system with linear dimension greater than k.</p><p>Although POMDPs are more expressive than n thorder Markov models, there are dynamical systems with finite linear dimension that cannot be modeled by any finite POMDP. Jaeger (1998) presents an uncontrolled system that has a linear dimension of 3, but that cannot be modeled by any finite HMM. We do not repeat the construction here. And because all n thorder Markov models can be represented as POMDPs, there are some dynamical systems with finite linear dimension that cannot be modeled by a finite POMDP or an n th -order Markov model for any finite n.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Predictive State Representations</head><p>We now derive PSR models directly from the systemdynamics matrix. For any D with rank k, there must exist k linearly independent columns and rows; these may not be unique. Consider any set of k linearly independent columns of D and let the tests corresponding to those columns be Q = {q 1 q 2 • • • q k }. We call the tests in Q the core tests (see Figure <ref type="figure" target="#fig_0">4</ref>). Let the submatrix of D that contains just the columns for the core tests be denoted D(Q). The state representation of the PSR model is the set of predictions for the core tests. Thus, for any history h, the state of the PSR model is given by the column vector</p><formula xml:id="formula_12">p(Q|h) = [p(q 1 |h) p(q 2 |h) • • • p(q k |h)]. The initial state is p(Q|φ), the entries of the first row in D(Q). ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¡ ¢ ¢ ¢ £ £ £ ¤ ¤ ¤ ¥ ¥ ¥ } Q = {q 1 q k ... φ h h = 1 2 h i ... ...</formula><p>1 t ... j t core tests D( ) Q D = ... Note that by the definition of rank of a matrix, all the columns of D are a linear combination of the columns in D(Q). In fact, for every test t, there exists a weight vector of length k, m t , such that D(t), the column of D corresponding to test t, is given by D(t) = D(Q)m t . This means that for any history h, p(t|h) = p T (Q|h)m t ; thus this PSR is called a linear PSR. This allows us to compute a state update:</p><formula xml:id="formula_13">p(q i |hao) = p(aoq i |h) p(ao|h) = p T (Q|h)m aoqi p T (Q|h)m ao</formula><p>We can combine the entire update into a single equation by defining the matrices M ao , where the j th column of M ao is simply m aoqj ; then the update is given by</p><formula xml:id="formula_14">p T (Q|hao) = p T (Q|h)M ao p T (Q|h)m ao .<label>(3)</label></formula><p>Therefore the model parameters in a PSR are {m aoq } a∈A,o∈O,q∈Q and {m ao } a∈A,o∈O . Note that the model parameters may contain negative numbers in them; this sets them apart from POMDP model parameters.</p><p>Finally, a PSR model generates D as follows: for any test <ref type="bibr" target="#b4">Littman et al., 2001</ref>) can be computed from the model parameters and then used to generate the column D(t).</p><formula xml:id="formula_15">t = a 1 o 1 • • • a n o n , its weight vector m t = M a 1 o 1 • • • M a n-1 o n-1 m a n o n (</formula><p>Lemma 4 A dynamical system with linear dimension k can be modeled by a linear PSR with k core tests.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Proof</head><p>This follows from the derivation of PSRs from D above.</p><p>Because linear PSRs with k core tests generate predictions for a test through a linear operation, they cannot represent systems with linear dimension more than k.</p><p>Lemma 5 A linear PSR with k core tests cannot model a dynamical system with linear dimension greater than k.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Proof</head><p>In a PSR with k core tests Q, the prediction for any test t for a history h is given by p(t|h) = p T (Q|h)m t for some weight vector m t . Thus in the D matrix generated by the PSR, the column corresponding to t, D(t), satisfies D(t) = D(Q)m t . Thus, each column of D is a linear combination of the k columns corresponding to the core tests, and D has rank no more than k.</p><p>Thus, there is an equivalence between systems of finite linear dimension and systems that are modeled by linear PSRs with a finite number of core tests.</p><p>Theorem 6 Linear PSRs with k core tests are equivalent to dynamical systems with linear dimension k.</p><p>Proof This follows from Lemmas 4 and 5.</p><p>Why is it that linear PSRs can model a larger class of dynamical systems than POMDPs? The main reason is that the update parameters of a PSR (see Equation 3) are not constrained to be non-negative while the update parameters of a POMDP (see Equation <ref type="formula" target="#formula_8">2</ref>) are constrained to be non-negative.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Nonlinear Models</head><p>We defined the linear dimension of a dynamical system as the rank of the D matrix because, as we showed in deriving PSRs, there always exists a set of predictions of that size that allowed linear computation of the prediction for any test. In this sense the linear PSR state is a linearly sufficient statistic of the history. There may of course be a set of tests N = {n 1 . . . n c } of size less than |Q| whose predictions constitute a nonlinear sufficient statistic, such that for all tests t, p(t|h) = f t (p(N |h)) for some nonlinear function f t . Note that it is crucial that f t is independent of h, or else p(N |h) won't be a sufficient statistic. When such a nonlinear sufficient statistic exists, a nonlinear PSR can be defined with update function</p><formula xml:id="formula_16">p(n i |hao) = p(aon i |h) p(ao|h) = f aoni (p(Q|h)) f ao (p(Q|h)) .</formula><p>It is helpful to see an example system in which a nonlinear PSR models a system more compactly than a linear PSR. <ref type="bibr" target="#b4">Littman et al. (2001)</ref> created the floatreset problem, a POMDP with 5 states, illustrated in Figure <ref type="figure" target="#fig_1">5</ref>. There are two actions and two observations. The float action moves to the state on the right or left with equal probability, and always results in observing 0. The reset action moves to the state on the far right. If the system was already in that state, this results in an observation of 1; otherwise, the observation is 0. The system always starts in the far-right state.</p><p>Any linear PSR that models this system has (at least) 5 core tests. One such PSR has the core tests {r1, f 0r1, f 0f 0r1, f 0f 0f 0r1, f 0f 0f 0f 0r1}. Initially, and after a reset action, the predictions for these core tests are [1, 0.5, 0.5, 0.375, 0.375]. After a float action, each prediction is shifted left one place, and the last prediction is updated by p(f 0f 0f 0f 0r1|hf 0) = 0.0625p(r1|h) -0.0625p(f 0r1|h) -0.75p(f 0f 0r1|h) + 0.75p(f 0f 0f 0r1|h) + p(f 0f 0f 0f 0r1|h).</p><p>A glance at the initial prediction vector suggests there may be a pattern to the values that p(r1|h) takes on. In fact, this is borne out by continuing the series; after the first transition (from 1 to 0.5), p(r1|h) takes on the same value twice in a row as long as the float action is repeated. This twice-repeated value decreases monotonically and so p(r1|h) and p(f 0r1|h) together uniquely determine the index into this infinite series. Therefore, one can always look up the new prediction for p(f 0r1|h) for a float action from the series. Even though we have not shown the explicit nonlinear calculation underlying the series, this argument suffices to show that the predictions for these two tests constitute a nonlinear sufficient statistic of the history. Thus there exists a nonlinear PSR for float-reset with the predictions for just two tests as state.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>This can be taken further.</head><p>Theorem 7 There exist systems with nonlinear dimension exponentially smaller than their linear dimension.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Proof</head><p>(Sketch) <ref type="bibr" target="#b5">Rudary and Singh (2004)</ref> present the rotate register system. This system is a k-bit rotate register, but only the far-left bit is observable. There are three actions: The register can be rotated either to the left or the right, and the visible bit can be "flipped" (i.e. changed from 0 to 1 or vice versa). A POMDP that models this system requires 2 k states, and a linear PSR requires 2 k core tests. However, a nonlinear PSR can model this system using only k + 1 core tests. Thus, there is a nonlinear dimension to this system that is exponentially smaller than its linear dimension. See <ref type="bibr" target="#b5">Rudary and Singh (2004)</ref> for details.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">PSRs and OOMs</head><p>So far we have shown that linear PSRs are more general than two currently popular models in AI, namely n th -order Markov models and POMDPs. In fact, PSRs share many of their properties with Jaeger's OOMs. <ref type="bibr" target="#b2">Jaeger (1998)</ref> has also developed many algorithms for OOMs and thus it is critical to understand the relationship between OOMs and PSRs so that research in PSRs can leverage existing work on OOMs correctly. We provide a beginning to this understanding in this paper.</p><p>Motivated by the fact that HMMs can be difficult to learn from observations of a system, <ref type="bibr" target="#b1">Jaeger (1997)</ref> developed OOMs as an alternative model for uncontrolled dynamical systems.<ref type="foot" target="#foot_0">foot_0</ref> Subsequently, he extended OOMs to Input/Output OOMs (IO-OOMs), which model controlled dynamical systems <ref type="bibr" target="#b2">(Jaeger, 1998)</ref>. In addition, Jaeger presented two versions each of OOMs and IO-OOMs: an uninterpretable version, in which the state vector has no interpretation, and an interpretable version, in which the elements of the state vector can be interpreted as predictions for a special kind of test in the system. Uninterpretable OOMs and IO-OOMs, while interesting, are not amenable to learning algorithms and thus we will focus on the interpretable versions of these models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">Interpretable OOMs for Uncontrolled Systems</head><p>The state vector in an interpretable OOM for an uncontrolled system is the set of predictions for a special set of tests. Consider all tests (as we defined them for uncontrolled systems) of some fixed length m and partition them into k subsets. Let each subset, so produced, be a union-test. The prediction of a union-test is the sum of the predictions for the tests in the union. Thus, for a given m and k, the state vector for an OOM is a k-dimensional stochastic vector, i.e., for every history h its state vector sums to one and each entry in the state vector is a probability.</p><p>On the one hand, union-tests are more general than the tests used in uncontrolled-PSRs because the former are unions of the latter tests. On the other hand, uniontests are less general than uncontrolled-PSR tests because they all have to be of the same length. In any case, OOM states are always stochastic vectors while PSR states have no such constraint. Given these differences what is the relationship between OOMs and uncontrolled PSRs?</p><p>Theorem 8 OOMs, both interpretable and uninterpretable, with dimension k are equivalent to uncontrolled linear PSRs with k core tests.</p><p>Proof A linear PSR with k core tests can model any system with linear dimension ≤ k. Jaeger (1998) proved that k-dimensional interpretable OOMs are equivalent to k-dimensional uninterpretable OOMs, which in turn are equivalent to uncontrolled dynamical systems of linear dimension k. Thus, any system that can be modeled by an uncontrolled linear PSR with k core tests can be modeled by an interpretable OOM of dimension k, and vice versa.</p><p>So even though uncontrolled PSRs and interpretable OOMs have slightly different forms for uncontrolled dynamical systems, they are equivalent in power and in fact we have developed efficient algorithms (we omit these here for lack of space) for converting one to the other. The result for controlled dynamical systems is very different and we turn to that next.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">Interpretable IO-OOMs for Controlled Systems</head><p>As with OOMs, the state in an interpretable IO-OOM is a vector of predictions for a special set of tests. Consider all tests (as we defined them for controlled systems) of some fixed length m that share a particular action sequence ā of length m. Partition this set of tests into k union-tests. The prediction of a uniontest is again the sum of the predictions for the tests in the union. Thus, for a given m, ā, and k, the state vector for an interpretable IO-OOM is a k-dimensional stochastic vector. The interesting constraint in interpretable IO-OOMs is the requirement that all uniontests share the same action sequence ā. This guarantees a stochastic vector as state but, as we will show below, places a crucial limit on the ability of interpretable IO-OOMs to model general dynamical systems.</p><p>Theorem 9 There exist controlled dynamical systems with finite linear dimension that cannot be modeled by any interpretable IO-OOM of any dimension.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Proof</head><p>We prove this theorem by presenting such a system. Figure <ref type="figure" target="#fig_2">6</ref> shows a POMDP with 4 nominal states that cannot be modeled by any interpretable IO-OOM. Recall (from Theorem 2) that any system that can be modeled by a POMDP with k states has</p><p>1 1 4 s o o o 1 s 3 s 0 s 3 s 1 0 0 o Action a s 0 s 2 2 s 4 o o 2 o 0 3 o o 2 o o 0 3 o Action b linear dimension ≤ k, and so the POMDP in Figure 6 has a finite linear dimension.</p><p>The key property of this system is that predicting the outcome of action a will not differentiate between nominal states s 2 and s 3 , while predicting the outcome of action b will not differentiate between s 1 and s 3 .</p><p>State s 0 is the initial nominal state of the system. Both actions produce the same transitions: When in nominal state s 0 , the next nominal state is s 1 , s 2 , or s 3 with equal probability. When in one of the other nominal states, the next nominal state is s 0 . When moving from s 0 , both actions cause the same observations to be emitted: o i when entering s i . However, when moving back to nominal state s 0 , each action causes different observations. The observation emitted when moving to s 0 from s 1 using action a is o 4 and o 0 otherwise; when action b is executed, the observation is o 4 when leaving s 2 and o 0 otherwise.</p><p>It is easy to see that history provides enough information to determine the nominal state with certainty. At times 0, 2, 4, . . ., the system is in nominal state s 0 ; the observation emitted by the system identifies the next nominal state. Since the observation emitted when returning to s 0 is deterministic given the nominal state and action, any complete model of the system should predict perfectly the observations at times 1, 3, 5, . . .. We now prove that no interpretable IO-OOM can model this system. We start by showing that no interpretable IO-OOM with an input sequence of length 1 can model the system and complete the proof by showing that no longer input sequence is sufficient.</p><p>Let us start with the input sequence ā = a. There are five observations, so there are five events that use this as their action sequence. None of these events has a different probability when starting in s 2 than it does when starting in s 3 . Thus the state vector for an interpretable IO-OOM with input sequence a would be the same when the system was in either of these states, and would be unable to predict the observation emitted when leaving those nominal states using action b.</p><p>Similarly, an interpretable IO-OOM with input sequence ā = b would be unable to differentiate between s 1 and s 3 and would not correctly predict the observation emitted when leaving those nominal states using action a.</p><p>Furthermore, no longer sequence is sufficient. Because the system always returns to s 0 on even time steps, effectively resetting the system, knowing the behavior of the system two time steps or more in advance does not provide any information about the current state of the system. Thus, no interpretable IO-OOM can model this system.</p><p>A corollary follows directly from Theorems 6 and 9:</p><p>Corollary 10 There exist controlled dynamical systems that can be modeled by PSRs that cannot be modeled by any interpretable IO-OOM; PSRs are more general than interpretable IO-OOMs.</p><p>This severely limits the utility of IO-OOMs. Because uninterpretable IO-OOMs are not verifiable in the sense that they are not directly based on data produced by the system, it is difficult to infer them from such data. In fact, the learning algorithm that Jaeger (1998) presents for IO-OOMs only works for the interpretable version.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Conclusion and Future Work</head><p>We have introduced the system-dynamics matrix, a mathematical construct that provides an interesting way of looking at discrete dynamical systems. Using this matrix, we have re-derived PSRs in a very simple way and showed that they are strictly more general than both POMDPs and n th -order Markov models. The original formulation of PSRs by <ref type="bibr" target="#b4">Littman et al. (2001)</ref>, though it resulted in exactly the same model as this derivation, was arrived at through POMDPs and was therefore more limited and complex. In addition, we have shown that there exist dynamical systems with nonlinear dimension that is exponentially smaller than the linear dimension of those systems. Finally, we have shown that in the case of uncontrolled dynamical systems, linear PSRs and interpretable OOMs are equivalent, while in the case of controlled dynamical systems, interpretable IO-OOMs are less general than linear PSRs.</p><p>Taken together our results form the beginnings of a theory of PSRs though, of course, much remains to be done. We are currently pursuing the development of general nonlinear models by attempting to estimate the nonlinear dimension directly from the system-dynamics matrix.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: The core tests of a PSR are selected by finding k linearly independent columns of D.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: The float-reset problem.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 6 :</head><label>6</label><figDesc>Figure6: The POMDP representation of a system that cannot be correctly represented by an interpretable IO-OOM. The labels on the arcs are observations.</figDesc></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>The notation used in this paper to describe OOMs departs somewhat from Jaeger's in order to remain consistent with the rest of the paper; instead of using a for actions, he uses r, and instead of o for observations, he uses a. In addition, we use the terms action and observation as opposed to Jaeger's terms input and output, and define interpretable OOMs and IO-OOMs in terms of tests instead of in terms of characteristic events.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>The authors gratefully acknowledge many insightful discussions on the content of this paper and on PSRs more generally with <rs type="person">Richard Sutton</rs>, <rs type="person">Michael Littman</rs> and <rs type="person">Britton Wolfe</rs>. The authors also thank the anonymous reviewers for their helpful comments.</p></div>
+			</div>			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Identifiability of hidden markov information sources and their minimum degrees of freedom</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ito</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-I</forename><surname>Amari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kobayashi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Information Theory</title>
+		<imprint>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="324" to="333" />
+			<date type="published" when="1992">1992</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Observable operator processes and conditioned continuation representations</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jaeger</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Discrete-time, discrete-valued observable operator models: a tutorial</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jaeger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">GMD Report</title>
+		<imprint>
+			<biblScope unit="volume">42</biblScope>
+			<date type="published" when="1998">1998</date>
+			<publisher>German National Reserach Center for Information Technology</publisher>
+		</imprint>
+	</monogr>
+	<note type="report_type">Tech. rep</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Learning and discovery of predictive state representations in dynamical systems with reset</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>James</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning (ICML)</title>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Predictive representations of state</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">L</forename><surname>Littman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">S</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances In Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2001">2001</date>
+			<biblScope unit="volume">14</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">A nonlinear predictive state representation</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Rudary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 16</title>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+	<note>To appear</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Learning topological maps with weak local odometric information</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Shatkay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kaelbling</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Fifteenth International Joint Conference on Artificial Intelligence(IJCAI-97)</title>
+		<meeting>Fifteenth International Joint Conference on Artificial Intelligence(IJCAI-97)</meeting>
+		<imprint>
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Learning predictive state representations</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">L</forename><surname>Littman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">E</forename><surname>Jong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pardoe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Stone</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Twentieth International Conference on Machine Learning (ICML-2003)</title>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>
