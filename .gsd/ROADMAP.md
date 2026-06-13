@@ -62,3 +62,4 @@
 - ✅ **M058-cmjp1u: M059 Pilot Cycle plotextractor v2 + Marker Iterative Expansion** (`depends:[—]`)
 - ✅ **M059-y6osma: M060 Manifest Driven PDF Ingest Architecture** (`depends:[—]`)
 - ✅ **M060-gakmo0: M059b MiniMax Figure QA Judge Pilot Dual Model** (`depends:[—]`)
+- 🔄 **M061-0fib2i: M060c Graph Library Alternatives Research and Applicability** (`depends:[—]`)
