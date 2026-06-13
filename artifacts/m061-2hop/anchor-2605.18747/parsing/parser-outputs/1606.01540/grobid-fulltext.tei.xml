@@ -1,0 +1,533 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">OpenAI Gym</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2016-06-05">5 Jun 2016</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Greg</forename><surname>Brockman</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">OpenAI</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Vicki</forename><surname>Cheung</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">OpenAI</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ludwig</forename><surname>Pettersson</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">OpenAI</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jonas</forename><surname>Schneider</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">OpenAI</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">OpenAI</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jie</forename><surname>Tang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">OpenAI</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">OpenAI</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">OpenAI Gym</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2016-06-05">5 Jun 2016</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">9D351247CB04D66DB8552E3CC21517DD</idno>
+					<idno type="arXiv">arXiv:1606.01540v1[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-13T09:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>OpenAI Gym 1 is a toolkit for reinforcement learning research. It includes a growing collection of benchmark problems that expose a common interface, and a website where people can share their results and compare the performance of algorithms. This whitepaper discusses the components of OpenAI Gym and the design decisions that went into the software.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Reinforcement learning (RL) is the branch of machine learning that is concerned with making sequences of decisions. RL has a rich mathematical theory and has found a variety of practical applications <ref type="bibr" target="#b0">[1]</ref>. Recent advances that combine deep learning with reinforcement learning have led to a great deal of excitement in the field, as it has become evident that general algorithms such as policy gradients and Q-learning can achieve good performance on difficult problems, without problem-specific engineering <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b2">3,</ref><ref type="bibr" target="#b3">4]</ref>.</p><p>To build on recent progress in reinforcement learning, the research community needs good benchmarks on which to compare algorithms. A variety of benchmarks have been released, such as the Arcade Learning Environment (ALE) <ref type="bibr" target="#b4">[5]</ref>, which exposed a collection of Atari 2600 games as reinforcement learning problems, and recently the RLLab benchmark for continuous control <ref type="bibr" target="#b5">[6]</ref>, to which we refer the reader for a survey on other RL benchmarks, including <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b9">10,</ref><ref type="bibr" target="#b10">11]</ref>. OpenAI Gym aims to combine the best elements of these previous benchmark collections, in a software package that is maximally convenient and accessible. It includes a diverse collection of tasks (called environments) with a common interface, and this collection will grow over time. The environments are versioned in a way that will ensure that results remain meaningful and reproducible as the software is updated.</p><p>Alongside the software library, OpenAI Gym has a website (<ref type="url" target="file://localhost/opt/grobid/grobid-home/tmp/gym.openai.com">gym.openai.com</ref>) where one can find scoreboards for all of the environments, showcasing results submitted by users. Users are encouraged to provide links to source code and detailed instructions on how to reproduce their results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Background</head><p>Reinforcement learning assumes that there is an agent that is situated in an environment. Each step, the agent takes an action, and it receives an observation and reward from the environment. An RL algorithm seeks to maximize some measure of the agent's total reward, as the agent interacts with the environment. In the RL literature, the environment is formalized as a partially observable Markov decision process (POMDP) <ref type="bibr" target="#b11">[12]</ref>.</p><p>OpenAI Gym focuses on the episodic setting of reinforcement learning, where the agent's experience is broken down into a series of episodes. In each episode, the agent's initial state is randomly sampled from a distribution, and the interaction proceeds until the environment reaches a terminal state. The goal in episodic reinforcement learning is to maximize the expectation of total reward per episode, and to achieve a high level of performance in as few episodes as possible.</p><p>The following code snippet shows a single episode with 100 timesteps. It assumes that there is an object called agent, which takes in the observation at each timestep, and an object called env, which is the environment. OpenAI Gym does not include an agent class or specify what interface the agent should use; we just include an agent here for demonstration purposes. ob0 = env.reset() # sample environment state, return first observation a0 = agent.act(ob0) # agent chooses first action ob1, rew0, done0, info0 = env.step(a0) # environment returns observation, # reward, and boolean flag indicating if the episode is complete. a1 = agent.act(ob1) ob2, rew1, done1, info1 = env.step(a1) ... a99 = agent.act(o99) ob100, rew99, done99, info2 = env.step(a99) # done99 == True =&gt; terminal</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Design Decisions</head><p>The design of OpenAI Gym is based on the authors' experience developing and comparing reinforcement learning algorithms, and our experience using previous benchmark collections. Below, we will summarize some of our design decisions.</p><p>Environments, not agents. Two core concepts are the agent and the environment. We have chosen to only provide an abstraction for the environment, not for the agent. This choice was to maximize convenience for users and allow them to implement different styles of agent interface. First, one could imagine an "online learning" style, where the agent takes (observation, reward, done) as an input at each timestep and performs learning updates incrementally. In an alternative "batch update" style, a agent is called with observation as input, and the reward information is collected separately by the RL algorithm, and later it is used to compute an update. By only specifying the agent interface, we allow users to write their agents with either of these styles.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Emphasize sample complexity, not just final performance.</head><p>The performance of an RL algorithm on an environment can be measured along two axes: first, the final performance; second, the amount of time it takes to learn-the sample complexity. To be more specific, final performance refers to the average reward per episode, after learning is complete. Learning time can be measured in multiple ways, one simple scheme is to count the number of episodes before a threshold level of average performance is exceeded. This threshold is chosen per-environment in an ad-hoc way, for example, as 90% of the maximum performance achievable by a very heavily trained agent. Both final performance and sample complexity are very interesting, however, arbitrary amounts of computation can be used to boost final performance, making it a comparison of computational resources rather than algorithm quality.</p><p>Encourage peer review, not competition. The OpenAI Gym website allows users to compare the performance of their algorithms. One of its inspiration is <ref type="url" target="http://kaggle.com">Kaggle,</ref> which hosts a set of machine learning contests with leaderboards. However, the aim of the OpenAI Gym scoreboards is not to create a competition, but rather to stimulate the sharing of code and ideas, and to be a meaningful benchmark for assessing different methods. RL presents new challenges for benchmarking. In the supervised learning setting, performance is measured by prediction accuracy on a test set, where the correct outputs are hidden from contestants. In RL, it's less straightforward to measure generalization performance, except by running the users' code on a collection of unseen environments, which would be computationally expensive. Without a hidden test set, one must check that an algorithm did not "overfit" on the problems it was tested on (for example, through parameter tuning). We would like to encourage a peer review process for interpreting results submitted by users. Thus, OpenAI Gym asks users to create a Writeup describing their algorithm, parameters used, and linking to code. Writeups should allow other users to reproduce the results. With the source code available, it is possible to make a nuanced judgement about whether the algorithm "overfit" to the task at hand.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Strict versioning for environments.</head><p>If an environment changes, results before and after the change would be incomparable. To avoid this problem, we guarantee than any changes to an environment will be accompanied by an increase in version number. For example, the initial version of the CartPole task is named Cartpole-v0, and if its functionality changes, the name will be updated to Cartpole-v1.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Environments</head><p>OpenAI Gym contains a collection of Environments (POMDPs), which will grow over time. See Figure <ref type="figure" target="#fig_0">1</ref> for examples. At the time of Gym's initial beta release, the following environments were included:</p><p>• Classic control and toy text: small-scale tasks from the RL literature.</p><p>• Algorithmic: perform computations such as adding multi-digit numbers and reversing sequences. Most of these tasks require memory, and their difficulty can be chosen by varying the sequence length.</p><p>• Atari: classic Atari games, with screen images or RAM as input, using the Arcade Learning Environment <ref type="bibr" target="#b4">[5]</ref>.</p><p>• Board games: currently, we have included the game of Go on 9x9 and 19x19 boards, where the Pachi engine <ref type="bibr" target="#b12">[13]</ref> serves as an opponent.</p><p>• 2D and 3D robots: control a robot in simulation. These tasks use the MuJoCo physics engine, which was designed for fast and accurate robot simulation <ref type="bibr" target="#b13">[14]</ref>. A few of the tasks are adapted from RLLab <ref type="bibr" target="#b5">[6]</ref>.</p><p>Since the initial release, more environments have been created, including ones based on the open source physics engine Box2D or the Doom game engine via VizDoom <ref type="bibr" target="#b14">[15]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Future Directions</head><p>In the future, we hope to extend OpenAI Gym in several ways.</p><p>• Multi-agent setting. It will be interesting to eventually include tasks in which agents must collaborate or compete with other agents.</p><p>• Curriculum and transfer learning. Right now, the tasks are meant to be solved from scratch. Later, it will be more interesting to consider sequences of tasks, so that the algorithm is trained on one task after the other.</p><p>Here, we will create sequences of increasingly difficult tasks, which are meant to be solved in order.</p><p>• Real-world operation. Eventually, we would like to integrate the Gym API with robotic hardware, validating reinforcement learning algorithms in the real world.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Images of some environments that are currently part of OpenAI Gym.</figDesc><graphic coords="3,87.90,157.23,141.82,84.24" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><figDesc>Monitoring by default. By default, environments are instrumented with a Monitor, which keeps track of every time step (one step of simulation) and reset (sampling a new initial state) are called. The Monitor's behavior is configurable, and it can record a video periodically. It also is sufficient to produce learning curves. The videos and learning curve data can be easily posted to the OpenAI Gym website.</figDesc></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>gym.openai.com</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Dynamic programming and optimal control</title>
+		<author>
+			<persName><forename type="first">Dimitri</forename><forename type="middle">P</forename><surname>Dimitri P Bertsekas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dimitri</forename><forename type="middle">P</forename><surname>Bertsekas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dimitri</forename><forename type="middle">P</forename><surname>Bertsekas</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bertsekas</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1995">1995</date>
+			<pubPlace>Athena Scientific Belmont, MA</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Human-level control through deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Mnih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">A</forename><surname>Rusu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Veness</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">G</forename><surname>Bellemare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Riedmiller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">K</forename><surname>Fidjeland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Ostrovski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Petersen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sadik</forename><surname>Beattie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">I</forename><surname>King</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kumaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wierstra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Legg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hassabis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">518</biblScope>
+			<biblScope unit="issue">7540</biblScope>
+			<biblScope unit="page" from="529" to="533" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Trust region policy optimization</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">I</forename><surname>Jordan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Moritz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="1889" to="1897" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">Volodymyr</forename><surname>Mnih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adria</forename><forename type="middle">Puigdomenech</forename><surname>Badia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mehdi</forename><surname>Mirza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><forename type="middle">P</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Harley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Koray</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1602.01783</idno>
+		<title level="m">Asynchronous methods for deep reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">The Arcade Learning Environment: An evaluation platform for general agents</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">G</forename><surname>Bellemare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Naddaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Veness</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bowling</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Artif. Intell. Res</title>
+		<imprint>
+			<biblScope unit="volume">47</biblScope>
+			<biblScope unit="page" from="253" to="279" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Benchmarking deep reinforcement learning for continuous control</title>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rein</forename><surname>Houthooft</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1604.06778</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">RLPy: A value-function-based reinforcement learning framework for education and research</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Geramifard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Dann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">H</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Dabney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P</forename><surname>How</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Mach. Learn. Res</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="page" from="1573" to="1578" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">RL-Glue: Language-independent software for reinforcement-learning experiments</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tanner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>White</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Mach. Learn. Res</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="2133" to="2136" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title/>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schaul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wierstra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Felder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Sehnke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rückstieß</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schmidhuber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PyBrain. J. Mach. Learn. Res</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="page" from="743" to="746" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Abeyruwan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rllib</surname></persName>
+		</author>
+		<ptr target="http://web.cs.miami.edu/home/saminda/rilib.html" />
+		<title level="m">Lightweight standard and on/off policy reinforcement learning library (C++)</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">The reinforcement learning competition</title>
+		<author>
+			<persName><forename type="first">Christos</forename><surname>Dimitrakakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guangliang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikoalos</forename><surname>Tziortziotis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">AI Magazine</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="61" to="65" />
+			<date type="published" when="2014">2014. 2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Reinforcement Learning: An Introduction</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">S</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G</forename><surname>Barto</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1998">1998</date>
+			<publisher>MIT Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Pachi: State of the art open source go program</title>
+		<author>
+			<persName><forename type="first">Petr</forename><surname>Baudiš</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Loup</forename><surname>Gailly</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Computer Games</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="24" to="38" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Mujoco: A physics engine for model-based control</title>
+		<author>
+			<persName><forename type="first">Emanuel</forename><surname>Todorov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Erez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuval</forename><surname>Tassa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2012">2012. 2012</date>
+			<biblScope unit="page" from="5026" to="5033" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Vizdoom: A doom-based ai research platform for visual reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Michał</forename><surname>Kempka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marek</forename><surname>Wydmuch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grzegorz</forename><surname>Runc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakub</forename><surname>Toczek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Jaśkowski</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1605.02097</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

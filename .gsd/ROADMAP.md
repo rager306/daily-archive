@@ -65,3 +65,4 @@
 - ✅ **M061-0fib2i: M060c Graph Library Alternatives Research and Applicability** (`depends:[—]`)
 - 🔄 **M062-b4porb: M060d ADR Template Canonicalization and Library Selection Finalization** (`depends:[—]`)
 - ✅ **M063-8d01zz: M060b NetworkX Graph Validation Intermediate Layer** (`depends:[—]`)
+- 🔄 **M064-wqfgfa: M061 2-hop BFS with M3 Judge Integration at Scale** (`depends:[—]`)

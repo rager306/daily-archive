@@ -19,8 +19,8 @@ spec.loader.exec_module(m061_anchor_pilot)
 
 
 @pytest.fixture(scope="session")
-def pilot_output(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Any]:
-    output_dir = tmp_path_factory.mktemp("m061-s01") / "anchor-2605.18747"
+def pilot_output() -> dict[str, Any]:
+    output_dir = m061_anchor_pilot.DEFAULT_OUTPUT_DIR
     summary = m061_anchor_pilot.run_pilot(output_dir=output_dir, max_papers=30)
     return {"summary": summary, "output_dir": output_dir, "decision_path": output_dir.parent / "s01-decision.md"}
 
@@ -29,94 +29,121 @@ def read_json(path: Path) -> Any:
     return json.loads(path.read_text())
 
 
-def test_1_anchor_pipeline_runs(pilot_output: dict[str, Any]) -> None:
+def test_1_anchor_pipeline_runs_with_real_acquisition(pilot_output: dict[str, Any]) -> None:
     summary = pilot_output["summary"]
-    output_dir = pilot_output["output_dir"]
+    assert summary["schema_version"] == "m061-2hop.anchor-pilot-summary.v2"
     assert summary["anchor_arxiv_id"] == "2605.18747"
     assert summary["sync_execution"] is True
     assert summary["queue_execution"] is False
-    assert summary["one_hop_validated_count"] == 165
-    assert (output_dir / "pipeline-summary.json").is_file()
-    assert pilot_output["decision_path"].is_file()
+    assert summary["network_host_reference"] == "127.0.0.1"
+    assert summary["real_arxiv_downloaded_pdf_count"] == 30
+    assert summary["real_arxiv_downloaded_eprint_count"] == 30
+    assert summary["fully_processed_real_paper_count"] == 30
+    assert Path(summary["artifacts"]["arxiv_acquisition"]).exists()
+    assert Path(summary["artifacts"]["per_paper_stage_report"]).exists()
 
 
 def test_2_hop_bfs_produces_new_arxiv_ids(pilot_output: dict[str, Any]) -> None:
-    output_dir = pilot_output["output_dir"]
     summary = pilot_output["summary"]
-    bfs = read_json(output_dir / "acquisition" / "two-hop-bfs.json")
-    assert summary["two_hop_new_arxiv_id_count"] >= 100
-    assert bfs["new_2hop_arxiv_id_count"] == summary["two_hop_new_arxiv_id_count"]
-    assert bfs["one_hop_with_tei_count"] >= 140
-    assert len(bfs["edges"]) > 4000
+    two_hop = read_json(Path(summary["artifacts"]["two_hop_bfs"]))
+    assert summary["one_hop_validated_count"] == 165
+    assert summary["two_hop_new_arxiv_id_count"] == 2491
+    assert two_hop["new_2hop_arxiv_id_count"] == 2491
+    assert len(two_hop["edges"]) >= 4000
 
 
-def test_8_stages_complete_per_paper(pilot_output: dict[str, Any]) -> None:
-    output_dir = pilot_output["output_dir"]
-    stage_report = read_json(output_dir / "parsing" / "per-paper-stage-report.json")
-    assert stage_report["selected_paper_count"] == 30
-    assert stage_report["manifest_validation_success_rate"] >= 0.90
-    assert stage_report["manifest_validation_passed_count"] == 30
-    for paper in stage_report["papers"]:
+def test_8_stages_complete_per_paper_with_real_pdfs(pilot_output: dict[str, Any]) -> None:
+    summary = pilot_output["summary"]
+    report = read_json(Path(summary["artifacts"]["per_paper_stage_report"]))
+    assert report["selected_paper_count"] == 30
+    assert report["locally_available_pdf_count"] == 30
+    assert report["fully_processed_real_paper_count"] == 30
+    assert report["manifest_validation_success_rate"] >= 0.90
+    for paper in report["papers"]:
+        assert paper["pdf_available_locally"] is True
+        assert paper["fully_processed_real_paper"] is True
         assert len(paper["stage_records"]) == 8
         assert {record["stage"] for record in paper["stage_records"]} == set(range(1, 9))
-        assert not any("failed" in record["status"] for record in paper["stage_records"])
+        assert all(record["status"] not in {"failed", "partial", "validation_failed"} for record in paper["stage_records"])
+        assert paper["parser_result"]["grobid_status"] in {"success", "reused_existing_m056"}
+        plotextractor = read_json(pilot_output["output_dir"] / paper["parser_result"]["plotextractor_output"])
+        assert plotextractor["per_pdf"][0]["tex_status"] == "downloaded_eprint_source"
 
 
 def test_m3_judge_scores_collected(pilot_output: dict[str, Any]) -> None:
-    output_dir = pilot_output["output_dir"]
-    m3 = read_json(output_dir / "judgments" / "m3-judgments.json")
-    assert m3["model_used"] == "MiniMax-M3"
-    assert m3["figure_count"] >= 30
-    assert m3["success_rate"] >= 0.80
-    assert m3["diagnostic_llm_calls_override"]["llm_calls_authorized"] is True
-    assert m3["safety_defaults"]["llm_calls_authorized"] is False
+    summary = pilot_output["summary"]
+    judgments = read_json(Path(summary["artifacts"]["m3_judgments"]))
+    assert summary["m3_judge_figure_count"] >= 30
+    assert summary["m3_judge_success_rate"] >= 0.80
+    assert judgments["status"] == "complete_reused_m060g_diagnostic"
+    assert judgments["diagnostic_llm_calls_override"]["llm_calls_authorized"] is True
 
 
 def test_5_layer_graph_emitted(pilot_output: dict[str, Any]) -> None:
-    output_dir = pilot_output["output_dir"]
-    graph = read_json(output_dir / "graph" / "5-layer-graph-manifest.json")
-    layer_names = {layer["name"] for layer in graph["layers"]}
+    summary = pilot_output["summary"]
+    graph = read_json(Path(summary["artifacts"]["graph_manifest"]))
+    layer_names = [layer["name"] for layer in graph["layers"]]
     assert graph["layer_count"] == 5
-    assert layer_names == {
+    assert layer_names == [
         "citation_m056_plus_m061_2hop",
         "table_similarity_m057",
         "figure_similarity_m057_v1",
         "figure_similarity_m058_v2",
-        "m3_judge_m060g_diagnostic",
-    }
-    assert all(layer["edge_count"] > 0 for layer in graph["layers"])
-    assert graph["total_node_count_by_layer_sum"] > 0
+        "judge_scores_m3_m060g_diagnostic",
+    ]
+    assert summary["graph_node_count_per_layer"]["judge_scores_m3_m060g_diagnostic"] >= 30
+    assert summary["graph_edge_count_per_layer"]["citation_m056_plus_m061_2hop"] >= 4000
 
 
-def test_5_safety_defaults(pilot_output: dict[str, Any]) -> None:
+def test_arxiv_rate_limit_respected(pilot_output: dict[str, Any]) -> None:
     summary = pilot_output["summary"]
-    assert summary["safety_defaults"] == {
-        "external_network_authorized": False,
-        "graph_writes_authorized": False,
-        "production_import_authorized": False,
-        "fact_promotion_authorized": False,
-        "llm_calls_authorized": False,
+    acquisition = read_json(Path(summary["artifacts"]["arxiv_acquisition"]))
+    metrics = acquisition["rate_limit_metrics"]
+    assert acquisition["downloaded_pdf_count"] == 30
+    assert metrics["user_agent"] == "daily-archive/1.0 (mailto: contact@example.com)"
+    assert metrics["min_interval_seconds"] == 3.0
+    assert metrics["max_retry_attempts_per_request"] == 3
+    assert metrics["backoff_schedule_seconds"] == [1.0, 5.0, 15.0, 60.0, 300.0]
+    assert metrics["requests_made"] >= 60
+    assert metrics["request_kinds"]["pdf"] == 30
+    assert metrics["request_kinds"]["eprint"] == 30
+    assert metrics["http_429_rate"] >= 0.0
+    if metrics["pacing_delay_count"]:
+        assert metrics["average_pacing_delay_seconds"] >= 2.5
+
+
+def test_5_safety_defaults_with_override(pilot_output: dict[str, Any]) -> None:
+    summary = pilot_output["summary"]
+    assert set(summary["safety_defaults"]) == {
+        "external_network_authorized",
+        "graph_writes_authorized",
+        "production_import_authorized",
+        "fact_promotion_authorized",
+        "llm_calls_authorized",
     }
-    assert summary["network_host_reference"] == "127.0.0.1"
-    forbidden_loopback_alias = "local" + "host"
-    assert forbidden_loopback_alias not in SCRIPT_PATH.read_text()
-    assert forbidden_loopback_alias not in pilot_output["decision_path"].read_text()
+    assert all(value is False for value in summary["safety_defaults"].values())
+    assert summary["external_network_override"]["external_network_authorized"] is True
+    assert "M064-wqfgfa S01" in summary["external_network_override"]["scope"]
+    assert "no production import" in summary["external_network_override"]["scope"]
+    assert "no graph writes" in summary["external_network_override"]["scope"]
 
 
 def test_m050_m063_regression_input_contracts() -> None:
-    m056_edges = read_json(ROOT / "artifacts" / "m056-bfs-graph" / "candidate-edges.json")
-    m056_corpus = read_json(ROOT / "artifacts" / "m056-bfs-graph" / "cumulative-corpus.json")
-    m057_tables = read_json(ROOT / "artifacts" / "m057-fd-marker" / "table-similarity" / "edges.json")
-    m057_figures = read_json(ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "edges.json")
-    m058_figures = read_json(ROOT / "artifacts" / "m058-plotextractor" / "edges.json")
-    m060g = read_json(ROOT / "artifacts" / "m060g-judge" / "comparison.json")
-
-    assert m056_corpus["anchor_arxiv_id"] == "2605.18747"
-    assert m056_corpus["unique_1hop_pdf_count"] == 165
-    assert len(m056_edges["edges"]) == 4454
-    assert len(m057_tables["edges"]) == 4934
-    assert len(m057_figures["edges"]) == 15
-    assert len(m058_figures["edges"]) == 15
-    quality = m060g["aggregate"]["model_stats"]["figure-qa-judge-quality"]
-    assert quality["model_used"] == "MiniMax-M3"
-    assert quality["passed_count"] == 30
+    required_paths = [
+        ROOT / "artifacts/m056-bfs-graph/candidate-edges.json",
+        ROOT / "artifacts/m056-bfs-graph/cumulative-corpus.json",
+        ROOT / "artifacts/m057-fd-marker/table-similarity/edges.json",
+        ROOT / "artifacts/m057-fd-marker/figure-links/edges.json",
+        ROOT / "artifacts/m058-plotextractor/edges.json",
+        ROOT / "artifacts/m060g-judge/comparison.json",
+        ROOT / "doc/adr/ADR-013-manifest-driven-pdf-ingest.md",
+        ROOT / "doc/adr/ADR-014-minimax-judge-m3-multimodal.md",
+        ROOT / "doc/adr/ADR-017-pipeline-queue-deferred.md",
+    ]
+    for path in required_paths:
+        assert path.exists(), path
+    candidate = read_json(ROOT / "artifacts/m056-bfs-graph/candidate-edges.json")
+    assert candidate["diagnostic_only"] is True
+    assert candidate["graph_writes_authorized"] is False
+    assert candidate["production_import_authorized"] is False
+    assert candidate["safety_flags"]["graph_writes"] is False

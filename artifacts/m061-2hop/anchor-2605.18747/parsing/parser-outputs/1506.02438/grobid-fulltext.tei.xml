@@ -1,0 +1,729 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">HIGH-DIMENSIONAL CONTINUOUS CONTROL USING GENERALIZED ADVANTAGE ESTIMATION</title>
+				<funder>
+					<orgName type="full">Office of Naval Research</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2018-10-20">20 Oct 2018</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Electrical Engineering and Computer Science</orgName>
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Philipp</forename><surname>Moritz</surname></persName>
+							<email>pcmoritz@eecs.berkeley.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Electrical Engineering and Computer Science</orgName>
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sergey</forename><surname>Levine</surname></persName>
+							<email>levine@eecs.berkeley.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Electrical Engineering and Computer Science</orgName>
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Michael</forename><forename type="middle">I</forename><surname>Jordan</surname></persName>
+							<email>jordan@eecs.berkeley.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Electrical Engineering and Computer Science</orgName>
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+							<email>pabbeel@eecs.berkeley.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Electrical Engineering and Computer Science</orgName>
+								<orgName type="institution">University of California</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">HIGH-DIMENSIONAL CONTINUOUS CONTROL USING GENERALIZED ADVANTAGE ESTIMATION</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2018-10-20">20 Oct 2018</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">A1FD8D69A7CC1E25B82AEDFDA742B947</idno>
+					<idno type="arXiv">arXiv:1506.02438v6[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-13T09:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Policy gradient methods are an appealing approach in reinforcement learning because they directly optimize the cumulative reward and can straightforwardly be used with nonlinear function approximators such as neural networks. The two main challenges are the large number of samples typically required, and the difficulty of obtaining stable and steady improvement despite the nonstationarity of the incoming data. We address the first challenge by using value functions to substantially reduce the variance of policy gradient estimates at the cost of some bias, with an exponentially-weighted estimator of the advantage function that is analogous to TD(λ). We address the second challenge by using trust region optimization procedure for both the policy and the value function, which are represented by neural networks. Our approach yields strong empirical results on highly challenging 3D locomotion tasks, learning running gaits for bipedal and quadrupedal simulated robots, and learning a policy for getting the biped to stand up from starting out lying on the ground. In contrast to a body of prior work that uses hand-crafted policy representations, our neural network policies map directly from raw kinematics to joint torques. Our algorithm is fully model-free, and the amount of simulated experience required for the learning tasks on 3D bipeds corresponds to 1-2 weeks of real time.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>The typical problem formulation in reinforcement learning is to maximize the expected total reward of a policy. A key source of difficulty is the long time delay between actions and their positive or negative effect on rewards; this issue is called the credit assignment problem in the reinforcement learning literature <ref type="bibr" target="#b14">(Minsky, 1961;</ref><ref type="bibr" target="#b18">Sutton &amp; Barto, 1998)</ref>, and the distal reward problem in the behavioral literature <ref type="bibr" target="#b7">(Hull, 1943)</ref>. Value functions offer an elegant solution to the credit assignment problem-they allow us to estimate the goodness of an action before the delayed reward arrives. Reinforcement learning algorithms make use of value functions in a variety of different ways; this paper considers algorithms that optimize a parameterized policy and use value functions to help estimate how the policy should be improved.</p><p>When using a parameterized stochastic policy, it is possible to obtain an unbiased estimate of the gradient of the expected total returns <ref type="bibr" target="#b23">(Williams, 1992;</ref><ref type="bibr" target="#b19">Sutton et al., 1999;</ref><ref type="bibr" target="#b1">Baxter &amp; Bartlett, 2000)</ref>; these noisy gradient estimates can be used in a stochastic gradient ascent algorithm. Unfortunately, the variance of the gradient estimator scales unfavorably with the time horizon, since the effect of an action is confounded with the effects of past and future actions. Another class of policy gradient algorithms, called actor-critic methods, use a value function rather than the empirical returns, obtaining an estimator with lower variance at the cost of introducing bias <ref type="bibr" target="#b11">(Konda &amp; Tsitsiklis, 2003;</ref><ref type="bibr" target="#b5">Hafner &amp; Riedmiller, 2011)</ref>. But while high variance necessitates using more samples, bias is more pernicious-even with an unlimited number of samples, bias can cause the algorithm to fail to converge, or to converge to a poor solution that is not even a local optimum.</p><p>We propose a family of policy gradient estimators that significantly reduce variance while maintaining a tolerable level of bias. We call this estimation scheme, parameterized by γ ∈ [0, 1] and λ ∈ [0, 1], the generalized advantage estimator (GAE). Related methods have been proposed in the context of online actor-critic methods <ref type="bibr" target="#b10">(Kimura &amp; Kobayashi, 1998;</ref><ref type="bibr" target="#b22">Wawrzyński, 2009)</ref>. We provide a more general analysis, which is applicable in both the online and batch settings, and discuss an interpretation of our method as an instance of reward shaping <ref type="bibr" target="#b15">(Ng et al., 1999)</ref>, where the approximate value function is used to shape the reward. We present experimental results on a number of highly challenging 3D locomotion tasks, where we show that our approach can learn complex gaits using high-dimensional, general purpose neural network function approximators for both the policy and the value function, each with over 10 4 parameters. The policies perform torque-level control of simulated 3D robots with up to 33 state dimensions and 10 actuators.</p><p>The contributions of this paper are summarized as follows:</p><p>1. We provide justification and intuition for an effective variance reduction scheme for policy gradients, which we call generalized advantage estimation (GAE). While the formula has been proposed in prior work <ref type="bibr" target="#b10">(Kimura &amp; Kobayashi, 1998;</ref><ref type="bibr" target="#b22">Wawrzyński, 2009)</ref>, our analysis is novel and enables GAE to be applied with a more general set of algorithms, including the batch trust-region algorithm we use for our experiments. 2. We propose the use of a trust region optimization method for the value function, which we find is a robust and efficient way to train neural network value functions with thousands of parameters. 3. By combining (1) and ( <ref type="formula" target="#formula_3">2</ref>) above, we obtain an algorithm that empirically is effective at learning neural network policies for challenging control tasks. The results extend the state of the art in using reinforcement learning for high-dimensional continuous control. Videos are available at <ref type="url" target="https://sites.google.com/site/gaepapersupp">https://sites.google.com/site/gaepapersupp</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">PRELIMINARIES</head><p>We consider an undiscounted formulation of the policy optimization problem. The initial state s 0 is sampled from distribution ρ 0 . A trajectory (s 0 , a 0 , s 1 , a 1 , . . . ) is generated by sampling actions according to the policy a t ∼ π(a t | s t ) and sampling the states according to the dynamics s t+1 ∼ P (s t+1 | s t , a t ), until a terminal (absorbing) state is reached. A reward r t = r(s t , a t , s t+1 ) is received at each timestep. The goal is to maximize the expected total reward ∞ t=0 r t , which is assumed to be finite for all policies. Note that we are not using a discount as part of the problem specification; it will appear below as an algorithm parameter that adjusts a bias-variance tradeoff. But the discounted problem (maximizing ∞ t=0 γ t r t ) can be handled as an instance of the undiscounted problem in which we absorb the discount factor into the reward function, making it time-dependent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Policy gradient methods maximize the expected total reward by repeatedly estimating the gradient</head><formula xml:id="formula_0">g := ∇ θ E [ ∞ t=0 r t ].</formula><p>There are several different related expressions for the policy gradient, which have the form</p><formula xml:id="formula_1">g = E ∞ t=0 Ψ t ∇ θ log π θ (a t | s t ) ,<label>(1)</label></formula><p>where Ψ t may be one of the following:</p><p>1.</p><p>∞ t=0 r t : total reward of the trajectory. 2. ∞ t =t r t : reward following action a t . 3. ∞ t =t r t -b(s t ): baselined version of previous formula. 4. Q π (s t , a t ): state-action value function. 5. A π (s t , a t ): advantage function.</p><formula xml:id="formula_2">6. r t + V π (s t+1 ) -V π (s t ): TD residual.</formula><p>The latter formulas use the definitions</p><formula xml:id="formula_3">V π (s t ) := Est+1:∞, at:∞ ∞ l=0 r t+l Q π (s t , a t ) := Est+1:∞, at+1:∞ ∞ l=0 r t+l<label>(2)</label></formula><formula xml:id="formula_4">A π (s t , a t ) := Q π (s t , a t ) -V π (s t ), (Advantage function).<label>(3)</label></formula><p>Here, the subscript of E enumerates the variables being integrated over, where states and actions are sampled sequentially from the dynamics model P (s t+1 | s t , a t ) and policy π(a t | s t ), respectively. The colon notation a : b refers to the inclusive range (a, a + 1, . . . , b). These formulas are well known and straightforward to obtain; they follow directly from Proposition 1, which will be stated shortly.</p><p>The choice Ψ t = A π (s t , a t ) yields almost the lowest possible variance, though in practice, the advantage function is not known and must be estimated. This statement can be intuitively justified by the following interpretation of the policy gradient: that a step in the policy gradient direction should increase the probability of better-than-average actions and decrease the probability of worse-thanaverage actions.</p><p>The advantage function, by it's definition A π (s, a) = Q π (s, a) -V π (s), measures whether or not the action is better or worse than the policy's default behavior. Hence, we should choose Ψ t to be the advantage function A π (s t , a t ), so that the gradient term Ψ t ∇ θ log π θ (a t | s t ) points in the direction of increased π θ (a t | s t ) if and only if A π (s t , a t ) &gt; 0. See Greensmith et al. <ref type="bibr">(2004)</ref> for a more rigorous analysis of the variance of policy gradient estimators and the effect of using a baseline.</p><p>We will introduce a parameter γ that allows us to reduce variance by downweighting rewards corresponding to delayed effects, at the cost of introducing bias. This parameter corresponds to the discount factor used in discounted formulations of MDPs, but we treat it as a variance reduction parameter in an undiscounted problem; this technique was analyzed theoretically by <ref type="bibr" target="#b13">Marbach &amp; Tsitsiklis (2003)</ref>; <ref type="bibr">Kakade (2001b)</ref>; <ref type="bibr" target="#b20">Thomas (2014)</ref>. The discounted value functions are given by:</p><formula xml:id="formula_5">V π,γ (s t ) := Est+1:∞, at:∞ ∞ l=0 γ l r t+l Q π,γ (s t , a t ) := Est+1:∞, at+1:∞ ∞ l=0 γ l r t+l<label>(4)</label></formula><formula xml:id="formula_6">A π,γ (s t , a t ) := Q π,γ (s t , a t ) -V π,γ (s t ).<label>(5)</label></formula><p>The discounted approximation to the policy gradient is defined as follows:</p><formula xml:id="formula_7">g γ := Es0:∞ a0:∞ ∞ t=0 A π,γ (s t , a t )∇ θ log π θ (a t | s t ) .<label>(6)</label></formula><p>The following section discusses how to obtain biased (but not too biased) estimators for A π,γ , giving us noisy estimates of the discounted policy gradient in Equation (6).</p><p>Before proceeding, we will introduce the notion of a γ-just estimator of the advantage function, which is an estimator that does not introduce bias when we use it in place of A π,γ (which is not known and must be estimated) in Equation ( <ref type="formula" target="#formula_7">6</ref>) to estimate g γ . <ref type="foot" target="#foot_0">1</ref> Consider an advantage estimator Ât (s 0:∞ , a 0:∞ ), which may in general be a function of the entire trajectory.</p><formula xml:id="formula_8">Definition 1. The estimator Ât is γ-just if Es0:∞ a0:∞ Ât (s 0:∞ , a 0:∞ )∇ θ log π θ (a t | s t ) = Es0:∞ a0:∞ [A π,γ (s t , a t )∇ θ log π θ (a t | s t )] .<label>(7)</label></formula><p>It follows immediately that if Ât is γ-just for all t, then</p><formula xml:id="formula_9">Es0:∞ a0:∞ ∞ t=0 Ât (s 0:∞ , a 0:∞ )∇ θ log π θ (a t | s t ) = g γ<label>(8)</label></formula><p>One sufficient condition for Ât to be γ-just is that Ât decomposes as the difference between two functions Q t and b t , where Q t can depend on any trajectory variables but gives an unbiased estimator of the γ-discounted Q-function, and b t is an arbitrary function of the states and actions sampled before a t . Proposition 1. Suppose that Ât can be written in the form Ât (s 0:∞ , a 0:∞ ) = Q t (s t:∞ , a t:∞ )b t (s 0:t , a 0:t-1 ) such that for all (s t , a t ), E st+1:∞,at+1:∞ | st,at [Q t (s t:∞ , a t:∞ )] = Q π,γ (s t , a t ).</p><p>Then Â is γ-just.</p><p>The proof is provided in Appendix B. It is easy to verify that the following expressions are γ-just advantage estimators for Ât :</p><formula xml:id="formula_10">• ∞ l=0 γ l r t+l • Q π,γ (s t , a t ) • A π,γ (s t , a t ) • r t + γV π,γ (s t+1 ) -V π,γ (s t ).</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">ADVANTAGE FUNCTION ESTIMATION</head><p>This section will be concerned with producing an accurate estimate Ât of the discounted advantage function A π,γ (s t , a t ), which will then be used to construct a policy gradient estimator of the following form:</p><formula xml:id="formula_11">ĝ = 1 N N n=1 ∞ t=0 Ân t ∇ θ log π θ (a n t | s n t )<label>(9)</label></formula><p>where n indexes over a batch of episodes.</p><p>Let V be an approximate value function. Define δ V t = r t + γV (s t+1 ) -V (s t ), i.e., the TD residual of V with discount γ <ref type="bibr" target="#b18">(Sutton &amp; Barto, 1998)</ref>. Note that δ V t can be considered as an estimate of the advantage of the action a t . In fact, if we have the correct value function V = V π,γ , then it is a γ-just advantage estimator, and in fact, an unbiased estimator of A π,γ :</p><formula xml:id="formula_12">E st+1 δ V π,γ t = E st+1 [r t + γV π,γ (s t+1 ) -V π,γ (s t )] = E st+1 [Q π,γ (s t , a t ) -V π,γ (s t )] = A π,γ (s t , a t ).<label>(10)</label></formula><p>However, this estimator is only γ-just for V = V π,γ , otherwise it will yield biased policy gradient estimates.</p><p>Next, let us consider taking the sum of k of these δ terms, which we will denote by Â(k</p><formula xml:id="formula_13">) t Â(1) t := δ V t = -V (s t ) + r t + γV (s t+1 ) (11) Â(2) t := δ V t + γδ V t+1 = -V (s t ) + r t + γr t+1 + γ 2 V (s t+2 ) (12) Â(3) t := δ V t + γδ V t+1 + γ 2 δ V t+2 = -V (s t ) + r t + γr t+1 + γ 2 r t+2 + γ 3 V (s t+3 )<label>(13)</label></formula><formula xml:id="formula_14">Â(k) t := k-1 l=0 γ l δ V t+l = -V (s t ) + r t + γr t+1 + • • • + γ k-1 r t+k-1 + γ k V (s t+k )<label>(14)</label></formula><p>These equations result from a telescoping sum, and we see that Â(k) t involves a k-step estimate of the returns, minus a baseline term -V (s t ). Analogously to the case of δ V t = Â(1) t , we can consider Â(k) t to be an estimator of the advantage function, which is only γ-just when V = V π,γ . However, note that the bias generally becomes smaller as k → ∞, since the term γ k V (s t+k ) becomes more heavily discounted, and the term -V (s t ) does not affect the bias. Taking k → ∞, we get</p><formula xml:id="formula_15">Â(∞) t = ∞ l=0 γ l δ V t+l = -V (s t ) + ∞ l=0 γ l r t+l ,<label>(15)</label></formula><p>which is simply the empirical returns minus the value function baseline.</p><p>The generalized advantage estimator GAE(γ, λ) is defined as the exponentially-weighted average of these k-step estimators:</p><formula xml:id="formula_16">ÂGAE(γ,λ) t := (1 -λ) Â(1) t + λ Â(2) t + λ 2 Â(3) t + . . . = (1 -λ) δ V t + λ(δ V t + γδ V t+1 ) + λ 2 (δ V t + γδ V t+1 + γ 2 δ V t+2 ) + . . . = (1 -λ)(δ V t (1 + λ + λ 2 + . . . ) + γδ V t+1 (λ + λ 2 + λ 3 + . . . ) + γ 2 δ V t+2 (λ 2 + λ 3 + λ 4 + . . . ) + . . . ) = (1 -λ) δ V t 1 1 -λ + γδ V t+1 λ 1 -λ + γ 2 δ V t+2 λ 2 1 -λ + . . . = ∞ l=0 (γλ) l δ V t+l (<label>16</label></formula><formula xml:id="formula_17">)</formula><p>From Equation ( <ref type="formula" target="#formula_16">16</ref>), we see that the advantage estimator has a remarkably simple formula involving a discounted sum of Bellman residual terms. Section 4 discusses an interpretation of this formula as the returns in an MDP with a modified reward function. The construction we used above is closely analogous to the one used to define TD(λ) <ref type="bibr" target="#b18">(Sutton &amp; Barto, 1998)</ref>, however TD(λ) is an estimator of the value function, whereas here we are estimating the advantage function.</p><p>There are two notable special cases of this formula, obtained by setting λ = 0 and λ = 1.</p><formula xml:id="formula_18">GAE(γ, 0) : Ât := δ t = r t + γV (s t+1 ) -V (s t )<label>(17)</label></formula><formula xml:id="formula_19">GAE(γ, 1) : Ât := ∞ l=0 γ l δ t+l = ∞ l=0 γ l r t+l -V (s t )<label>(18)</label></formula><p>GAE(γ, 1) is γ-just regardless of the accuracy of V , but it has high variance due to the sum of terms. GAE(γ, 0) is γ-just for V = V π,γ and otherwise induces bias, but it typically has much lower variance. The generalized advantage estimator for 0 &lt; λ &lt; 1 makes a compromise between bias and variance, controlled by parameter λ.</p><p>We've described an advantage estimator with two separate parameters γ and λ, both of which contribute to the bias-variance tradeoff when using an approximate value function. However, they serve different purposes and work best with different ranges of values. γ most importantly determines the scale of the value function V π,γ , which does not depend on λ. Taking γ &lt; 1 introduces bias into the policy gradient estimate, regardless of the value function's accuracy. On the other hand, λ &lt; 1 introduces bias only when the value function is inaccurate. Empirically, we find that the best value of λ is much lower than the best value of γ, likely because λ introduces far less bias than γ for a reasonably accurate value function.</p><p>Using the generalized advantage estimator, we can construct a biased estimator of g γ , the discounted policy gradient from Equation ( <ref type="formula" target="#formula_7">6</ref>):</p><formula xml:id="formula_20">g γ ≈ E ∞ t=0 ∇ θ log π θ (a t | s t ) ÂGAE(γ,λ) t = E ∞ t=0 ∇ θ log π θ (a t | s t ) ∞ l=0 (γλ) l δ V t+l , (<label>19</label></formula><formula xml:id="formula_21">)</formula><p>where equality holds when λ = 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">INTERPRETATION AS REWARD SHAPING</head><p>In this section, we discuss how one can interpret λ as an extra discount factor applied after performing a reward shaping transformation on the MDP. We also introduce the notion of a response function to help understand the bias introduced by γ and λ.</p><p>Reward shaping <ref type="bibr" target="#b15">(Ng et al., 1999)</ref> refers to the following transformation of the reward function of an MDP: let Φ : S → R be an arbitrary scalar-valued function on state space, and define the transformed reward function r by r(s, a, s ) = r(s, a, s ) + γΦ(s</p><formula xml:id="formula_22">) -Φ(s),<label>(20)</label></formula><p>which in turn defines a transformed MDP. This transformation leaves the discounted advantage function A π,γ unchanged for any policy π. To see this, consider the discounted sum of rewards of a trajectory starting with state s t :</p><formula xml:id="formula_23">∞ l=0 γ l r(s t+l , a t , s t+l+1 ) = ∞ l=0 γ l r(s t+l , a t+l , s t+l+1 ) -Φ(s t ).<label>(21)</label></formula><p>Letting Qπ,γ , Ṽ π,γ , Ãπ,γ be the value and advantage functions of the transformed MDP, one obtains from the definitions of these quantities that Qπ,γ (s, a) = Q π,γ (s, a) -Φ(s)</p><formula xml:id="formula_24">Ṽ π,γ (s, a) = V π,γ (s) -Φ(s) (23) Ãπ,γ (s, a) = (Q π,γ (s, a) -Φ(s)) -(V π,γ (s) -Φ(s)) = A π,γ (s, a).<label>(22)</label></formula><p>(24) Note that if Φ happens to be the state-value function V π,γ from the original MDP, then the transformed MDP has the interesting property that Ṽ π,γ (s) is zero at every state.</p><p>Note that <ref type="bibr" target="#b15">(Ng et al., 1999)</ref> showed that the reward shaping transformation leaves the policy gradient and optimal policy unchanged when our objective is to maximize the discounted sum of rewards ∞ t=0 γ t r(s t , a t , s t+1 ). In contrast, this paper is concerned with maximizing the undiscounted sum of rewards, where the discount γ is used as a variance-reduction parameter.</p><p>Having reviewed the idea of reward shaping, let us consider how we could use it to get a policy gradient estimate. The most natural approach is to construct policy gradient estimators that use discounted sums of shaped rewards r. However, Equation ( <ref type="formula" target="#formula_23">21</ref>) shows that we obtain the discounted sum of the original MDP's rewards r minus a baseline term. Next, let's consider using a "steeper" discount γλ, where 0 ≤ λ ≤ 1. It's easy to see that the shaped reward r equals the Bellman residual term δ V , introduced in Section 3, where we set Φ = V . Letting Φ = V , we see that</p><formula xml:id="formula_25">∞ l=0 (γλ) l r(s t+l , a t , s t+l+1 ) = ∞ l=0 (γλ) l δ V t+l = ÂGAE(γ,λ) t .<label>(25)</label></formula><p>Hence, by considering the γλ-discounted sum of shaped rewards, we exactly obtain the generalized advantage estimators from Section 3. As shown previously, λ = 1 gives an unbiased estimate of g γ , whereas λ &lt; 1 gives a biased estimate.</p><p>To further analyze the effect of this shaping transformation and parameters γ and λ, it will be useful to introduce the notion of a response function χ, which we define as follows:</p><formula xml:id="formula_26">χ(l; s t , a t ) = E [r t+l | s t , a t ] -E [r t+l | s t ] .<label>(26)</label></formula><p>Note that A π,γ (s, a) = ∞ l=0 γ l χ(l; s, a), hence the response function decomposes the advantage function across timesteps. The response function lets us quantify the temporal credit assignment problem: long range dependencies between actions and rewards correspond to nonzero values of the response function for l 0.</p><p>Next, let us revisit the discount factor γ and the approximation we are making by using A π,γ rather than A π,1 . The discounted policy gradient estimator from Equation ( <ref type="formula" target="#formula_7">6</ref>) has a sum of terms of the form</p><formula xml:id="formula_27">∇ θ log π θ (a t | s t )A π,γ (s t , a t ) = ∇ θ log π θ (a t | s t ) ∞ l=0 γ l χ(l; s t , a t ).<label>(27)</label></formula><p>Using a discount γ &lt; 1 corresponds to dropping the terms with l 1/(1 -γ). Thus, the error introduced by this approximation will be small if χ rapidly decays as l increases, i.e., if the effect of an action on rewards is "forgotten" after ≈ 1/(1 -γ) timesteps.</p><p>If the reward function r were obtained using Φ = V π,γ , we would have E [r t+l | s t , a t ] = E [r t+l | s t ] = 0 for l &gt; 0, i.e., the response function would only be nonzero at l = 0. Therefore, this shaping transformation would turn temporally extended response into an immediate response. Given that V π,γ completely reduces the temporal spread of the response function, we can hope that a good approximation V ≈ V π,γ partially reduces it. This observation suggests an interpretation of Equation ( <ref type="formula" target="#formula_16">16</ref>): reshape the rewards using V to shrink the temporal extent of the response function, and then introduce a "steeper" discount γλ to cut off the noise arising from long delays, i.e., ignore terms ∇ θ log π θ (a t | s t )δ V t+l where l 1/(1 -γλ).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">VALUE FUNCTION ESTIMATION</head><p>A variety of different methods can be used to estimate the value function (see, e.g., <ref type="bibr" target="#b2">Bertsekas (2012)</ref>). When using a nonlinear function approximator to represent the value function, the simplest approach is to solve a nonlinear regression problem:</p><formula xml:id="formula_28">minimize φ N n=1 V φ (s n ) -Vn 2 ,<label>(28)</label></formula><p>where Vt = ∞ l=0 γ l r t+l is the discounted sum of rewards, and n indexes over all timesteps in a batch of trajectories. This is sometimes called the Monte Carlo or TD(1) approach for estimating the value function <ref type="bibr" target="#b18">(Sutton &amp; Barto, 1998</ref>). 2   For the experiments in this work, we used a trust region method to optimize the value function in each iteration of a batch optimization procedure. The trust region helps us to avoid overfitting to the most recent batch of data. To formulate the trust region problem, we first compute</p><formula xml:id="formula_29">σ 2 = 1 N N n=1 V φold (s n ) -Vn 2</formula><p>, where φ old is the parameter vector before optimization. Then we solve the following constrained optimization problem:</p><formula xml:id="formula_30">minimize φ N n=1 V φ (s n ) -Vn 2 subject to 1 N N n=1 V φ (s n ) -V φold (s n ) 2 2σ 2 ≤ . (<label>29</label></formula><formula xml:id="formula_31">)</formula><p>This constraint is equivalent to constraining the average KL divergence between the previous value function and the new value function to be smaller than , where the value function is taken to parameterize a conditional Gaussian distribution with mean V φ (s) and variance σ 2 .</p><p>We compute an approximate solution to the trust region problem using the conjugate gradient algorithm <ref type="bibr" target="#b24">(Wright &amp; Nocedal, 1999)</ref>. Specifically, we are solving the quadratic program</p><formula xml:id="formula_32">minimize φ g T (φ -φ old ) subject to 1 N N n=1 (φ -φ old ) T H(φ -φ old ) ≤ . (<label>30</label></formula><formula xml:id="formula_33">)</formula><p>where g is the gradient of the objective, and H = 1 N n j n j T n , where j n = ∇ φ V φ (s n ). Note that H is the "Gauss-Newton" approximation of the Hessian of the objective, and it is (up to a σ 2 factor) the Fisher information matrix when interpreting the value function as a conditional probability distribution. Using matrix-vector products v → Hv to implement the conjugate gradient algorithm, we compute a step direction s ≈ -H -1 g. Then we rescale s → αs such that 1 2 (αs) T H(αs) = and take φ = φ old + αs. This procedure is analogous to the procedure we use for updating the policy, which is described further in Section 6 and based on <ref type="bibr" target="#b17">Schulman et al. (2015)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">EXPERIMENTS</head><p>We designed a set of experiments to investigate the following questions:</p><p>1. What is the empirical effect of varying λ ∈ [0, 1] and γ ∈ [0, 1] when optimizing episodic total reward using generalized advantage estimation? 2. Can generalized advantage estimation, along with trust region algorithms for policy and value function optimization, be used to optimize large neural network policies for challenging control problems?</p><p>2 Another natural choice is to compute target values with an estimator based on the TD(λ) backup <ref type="bibr" target="#b2">(Bertsekas, 2012;</ref><ref type="bibr" target="#b18">Sutton &amp; Barto, 1998)</ref>, mirroring the expression we use for policy gradient estimation:</p><formula xml:id="formula_34">V λ t = V φ old (sn)+ ∞ l=0<label>(</label></formula><p>γλ) l δ t+l . While we experimented with this choice, we did not notice a difference in performance from the λ = 1 estimator in Equation ( <ref type="formula" target="#formula_28">28</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">POLICY OPTIMIZATION ALGORITHM</head><p>While generalized advantage estimation can be used along with a variety of different policy gradient methods, for these experiments, we performed the policy updates using trust region policy optimization (TRPO) <ref type="bibr" target="#b17">(Schulman et al., 2015)</ref>. TRPO updates the policy by approximately solving the following constrained optimization problem each iteration:</p><formula xml:id="formula_35">minimize θ L θ old (θ) subject to D θ old KL (π θ old , π θ ) ≤ where L θ old (θ) = 1 N N n=1 π θ (a n | s n ) π θ old (a n | s n ) Ân D θ old KL (π θ old , π θ ) = 1 N N n=1 D KL (π θ old (• | s n ) π θ (• | s n )) (<label>31</label></formula><formula xml:id="formula_36">)</formula><p>As described in <ref type="bibr" target="#b17">(Schulman et al., 2015)</ref>, we approximately solve this problem by linearizing the objective and quadraticizing the constraint, which yields a step in the direction θ -θ old ∝ -F -1 g, where F is the average Fisher information matrix, and g is a policy gradient estimate. This policy update yields the same step direction as the natural policy gradient <ref type="bibr">(Kakade, 2001a)</ref> and natural actor-critic <ref type="bibr" target="#b16">(Peters &amp; Schaal, 2008)</ref>, however it uses a different stepsize determination scheme and numerical procedure for computing the step.</p><p>Since prior work <ref type="bibr" target="#b17">(Schulman et al., 2015)</ref> compared TRPO to a variety of different policy optimization algorithms, we will not repeat these comparisons; rather, we will focus on varying the γ, λ parameters of policy gradient estimator while keeping the underlying algorithm fixed.</p><p>For completeness, the whole algorithm for iteratively updating policy and value function is given below:</p><p>Initialize policy parameter θ 0 and value function parameter φ 0 . for i = 0, 1, 2, . . . do Simulate current policy π θi until N timesteps are obtained. Compute δ V t at all timesteps t ∈ {1, 2, . . . , N },</p><formula xml:id="formula_37">using V = V φi . Compute Ât = ∞ l=0 (γλ) l δ V</formula><p>t+l at all timesteps. Compute θ i+1 with TRPO update, Equation ( <ref type="formula" target="#formula_35">31</ref>). Compute φ i+1 with Equation ( <ref type="formula" target="#formula_32">30</ref>). end for Note that the policy update θ i → θ i+1 is performed using the value function V φi for advantage estimation, not V φi+1 . Additional bias would have been introduced if we updated the value function first. To see this, consider the extreme case where we overfit the value function, and the Bellman residual r t + γV (s t+1 ) -V (s t ) becomes zero at all timesteps-the policy gradient estimate would be zero.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">EXPERIMENTAL SETUP</head><p>We evaluated our approach on the classic cart-pole balancing problem, as well as several challenging 3D locomotion tasks: (1) bipedal locomotion; (2) quadrupedal locomotion; (3) dynamically standing up, for the biped, which starts off laying on its back. The models are shown in Figure <ref type="figure" target="#fig_0">1</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2.1">ARCHITECTURE</head><p>We used the same neural network architecture for all of the 3D robot tasks, which was a feedforward network with three hidden layers, with 100, 50 and 25 tanh units respectively. The same architecture was used for the policy and value function. The final output layer had linear activation. The value function estimator used the same architecture, but with only one scalar output. For the simpler cartpole task, we used a linear policy, and a neural network with one 20-unit hidden layer as the value function. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2.2">TASK DETAILS</head><p>For the cart-pole balancing task, we collected 20 trajectories per batch, with a maximum length of 1000 timesteps, using the physical parameters from <ref type="bibr" target="#b0">Barto et al. (1983)</ref>.</p><p>The simulated robot tasks were simulated using the MuJoCo physics engine <ref type="bibr" target="#b21">(Todorov et al., 2012)</ref>. The humanoid model has 33 state dimensions and 10 actuated degrees of freedom, while the quadruped model has 29 state dimensions and 8 actuated degrees of freedom. The initial state for these tasks consisted of a uniform distribution centered on a reference configuration. We used 50000 timesteps per batch for bipedal locomotion, and 200000 timesteps per batch for quadrupedal locomotion and bipedal standing. Each episode was terminated after 2000 timesteps if the robot had not reached a terminal state beforehand. The timestep was 0.01 seconds.</p><p>The reward functions are provided in the table below.</p><formula xml:id="formula_38">Task Reward 3D biped locomotion v fwd -10 -5 u 2 -10 -5 f impact 2 + 0.2 Quadruped locomotion v fwd -10 -6 u 2 -10 -3 f impact 2 + 0.05 Biped getting up -(h head -1.5) 2 -10 -5 u 2</formula><p>Here, v fwd := forward velocity, u := vector of joint torques, f impact := impact forces, h head := height of the head.</p><p>In the locomotion tasks, the episode is terminated if the center of mass of the actor falls below a predefined height: .8 m for the biped, and .2 m for the quadruped. The constant offset in the reward function encourages longer episodes; otherwise the quadratic reward terms might lead lead to a policy that ends the episodes as quickly as possible.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3">EXPERIMENTAL RESULTS</head><p>All results are presented in terms of the cost, which is defined as negative reward and is minimized. Videos of the learned policies are available at <ref type="url" target="https://sites.google.com/site/gaepapersupp">https://sites.google.com/site/  gaepapersupp</ref>. In plots, "No VF" means that we used a time-dependent baseline that did not depend on the state, rather than an estimate of the state value function. The time-dependent baseline was computed by averaging the return at each timestep over the trajectories in the batch.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3.1">CART-POLE</head><p>The results are averaged across 21 experiments with different random seeds. Results are shown in Figure <ref type="figure">2</ref>, and indicate that the best results are obtained at intermediate values of the parameters: γ ∈ [0.96, 0.99] and λ ∈ [0.92, 0.99]. 0 100 200 300 400 500 number of policy iterations 2.5 2.0 1.5 1.0 0.5 0.0 cost 3D Biped γ =0.96,λ =0.96 γ =0.98,λ =0.96 γ =0.99,λ =0.96 γ =0.995,λ =0.92 γ =0.995,λ =0.96 γ =0.995,λ =0.98 γ =0.995,λ =0.99 γ =0.995,λ =1.0 γ =1,λ =0.96 γ =1, No value fn 0 200 400 600 800 1000 number of policy iterations 12 10 8 6 4 2 0 2 cost 3D Quadruped γ =0.995, No value fn γ =0.995,λ =1 γ =0.995,λ =0.96 Figure 3: Left: Learning curves for 3D bipedal locomotion, averaged across nine runs of the algorithm. Right: learning curves for 3D quadrupedal locomotion, averaged across five runs. 6.3.2 3D BIPEDAL LOCOMOTION</p><p>Each trial took about 2 hours to run on a 16-core machine, where the simulation rollouts were parallelized, as were the function, gradient, and matrix-vector-product evaluations used when optimizing the policy and value function. Here, the results are averaged across 9 trials with different random seeds. The best performance is again obtained using intermediate values of γ ∈ [0.99, 0.995], λ ∈ [0.96, 0.99]. The result after 1000 iterations is a fast, smooth, and stable gait that is effectively completely stable. We can compute how much "real time" was used for this learning process: 0.01 seconds /timestep×50000 timesteps /batch×1000 batches/3600•24 seconds /day = 5.8 days. Hence, it is plausible that this algorithm could be run on a real robot, or multiple real robots learning in parallel, if there were a way to reset the state of the robot and ensure that it doesn't damage itself.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3.3">OTHER 3D ROBOT TASKS</head><p>The other two motor behaviors considered are quadrupedal locomotion and getting up off the ground for the 3D biped. Again, we performed 5 trials per experimental condition, with different random seeds (and initializations). The experiments took about 4 hours per trial on a 32-core machine. We performed a more limited comparison on these domains (due to the substantial computational resources required to run these experiments), fixing γ = 0.995 but varying λ = {0, 0.96}, as well as an experimental condition with no value function. For quadrupedal locomotion, the best results are obtained using a value function with λ = 0.96 Section 6.3.2. For 3D standing, the value function always helped, but the results are roughly the same for λ = 0.96 and λ = 1. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">DISCUSSION</head><p>Policy gradient methods provide a way to reduce reinforcement learning to stochastic gradient descent, by providing unbiased gradient estimates. However, so far their success at solving difficult control problems has been limited, largely due to their high sample complexity. We have argued that the key to variance reduction is to obtain good estimates of the advantage function.</p><p>We have provided an intuitive but informal analysis of the problem of advantage function estimation, and justified the generalized advantage estimator, which has two parameters γ, λ which adjust the bias-variance tradeoff. We described how to combine this idea with trust region policy optimization and a trust region algorithm that optimizes a value function, both represented by neural networks. Combining these techniques, we are able to learn to solve difficult control tasks that have previously been out of reach for generic reinforcement learning methods.</p><p>Our main experimental validation of generalized advantage estimation is in the domain of simulated robotic locomotion. As shown in our experiments, choosing an appropriate intermediate value of λ in the range [0.9, 0.99] usually results in the best performance. A possible topic for future work is how to adjust the estimator parameters γ, λ in an adaptive or automatic way.</p><p>One question that merits future investigation is the relationship between value function estimation error and policy gradient estimation error. If this relationship were known, we could choose an error metric for value function fitting that is well-matched to the quantity of interest, which is typically the accuracy of the policy gradient estimation. Some candidates for such an error metric might include the Bellman error or projected Bellman error, as described in <ref type="bibr" target="#b3">Bhatnagar et al. (2009)</ref>.</p><p>Another enticing possibility is to use a shared function approximation architecture for the policy and the value function, while optimizing the policy using generalized advantage estimation. While formulating this problem in a way that is suitable for numerical optimization and provides convergence guarantees remains an open question, such an approach could allow the value function and policy representations to share useful features of the input, resulting in even faster learning.</p><p>Investigator Award and under grant number N00014-11-1-0688, DARPA through a Young Faculty Award, by the Army Research Office through the MAST program.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A FREQUENTLY ASKED QUESTIONS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1 WHAT'S THE RELATIONSHIP WITH COMPATIBLE FEATURES?</head><p>Compatible features are often mentioned in relation to policy gradient algorithms that make use of a value function, and the idea was proposed in the paper On Actor-Critic Methods by <ref type="bibr" target="#b11">Konda &amp; Tsitsiklis (2003)</ref>. These authors pointed out that due to the limited representation power of the policy, the policy gradient only depends on a certain subspace of the space of advantage functions. This subspace is spanned by the compatible features ∇ θi log π θ (a t |s t ), where i ∈ {1, 2, . . . , dim θ}. This theory of compatible features provides no guidance on how to exploit the temporal structure of the problem to obtain better estimates of the advantage function, making it mostly orthogonal to the ideas in this paper.</p><p>The idea of compatible features motivates an elegant method for computing the natural policy gradient <ref type="bibr">(Kakade, 2001a;</ref><ref type="bibr" target="#b16">Peters &amp; Schaal, 2008)</ref>. Given an empirical estimate of the advantage function Ât at each timestep, we can project it onto the subspace of compatible features by solving the following least squares problem:</p><formula xml:id="formula_39">minimize r t r • ∇ θ log π θ (a t | s t ) -Ât 2 . (<label>32</label></formula><formula xml:id="formula_40">)</formula><p>If Â is γ-just, the least squares solution is the natural policy gradient <ref type="bibr">(Kakade, 2001a)</ref>. Note that any estimator of the advantage function can be substituted into this formula, including the ones we derive in this paper. For our experiments, we also compute natural policy gradient steps, but we use the more computationally efficient numerical procedure from <ref type="bibr" target="#b17">Schulman et al. (2015)</ref>, as discussed in Section 6.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 WHY DON'T YOU JUST USE A Q-FUNCTION?</head><p>Previous actor critic methods, e.g. in <ref type="bibr" target="#b11">Konda &amp; Tsitsiklis (2003)</ref>, use a Q-function to obtain potentially low-variance policy gradient estimates. Recent papers, including <ref type="bibr" target="#b6">Heess et al. (2015)</ref>; <ref type="bibr" target="#b12">Lillicrap et al. (2015)</ref>, have shown that a neural network Q-function approximator can used effectively in a policy gradient method. However, there are several advantages to using a state-value function in the manner of this paper. First, the state-value function has a lower-dimensional input and is thus easier to learn than a state-action value function. Second, the method of this paper allows us to smoothly interpolate between the high-bias estimator (λ = 0) and the low-bias estimator (λ = 1). On the other hand, using a parameterized Q-function only allows us to use a high-bias estimator. We have found that the bias is prohibitively large when using a one-step estimate of the returns, i.e., the λ = 0 estimator, Ât = δ V t = r t + γV (s t+1 ) -V (s t ). We expect that similar difficulty would be encountered when using an advantage estimator involving a parameterized Q-function, Ât = Q(s, a) -V (s). There is an interesting space of possible algorithms that would use a parameterized Q-function and attempt to reduce bias, however, an exploration of these possibilities is beyond the scope of this work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B PROOFS</head><p>Proof of Proposition 1: First we can split the expectation into terms involving Q and b, </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Top figures: robot models used for 3D locomotion. Bottom figures: a sequence of frames from the learned gaits. Videos are available at https://sites.google.com/site/ gaepapersupp.</figDesc><graphic coords="9,145.11,81.86,158.40,118.80" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :Figure 3 :</head><label>23</label><figDesc>Figure 2: Left: learning curves for cart-pole task, using generalized advantage estimation with varying values of λ at γ = 0.99. The fastest policy improvement is obtain by intermediate values of λ in the range [0.92, 0.98]. Right: performance after 20 iterations of policy optimization, as γ and λ are varied. White means higher reward. The best results are obtained at intermediate values of both.</figDesc><graphic coords="10,334.20,88.97,153.62,109.83" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><figDesc>Figure 4: (a) Learning curve from quadrupedal walking, (b) learning curve for 3D standing up, (c) clips from 3D standing up.</figDesc><graphic coords="11,307.25,83.46,178.20,127.29" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>E</head><figDesc>s0:∞,a0:∞ [∇ θ log π θ (a t | s t )(Q t (s 0:∞ , a 0:∞ ) -b t (s 0:t , a 0:t-1 ))] = E s0:∞,a0:∞ [∇ θ log π θ (a t | s t )(Q t (s 0:∞ , a 0:∞ ))] -E s0:∞,a0:∞ [∇ θ log π θ (a t | s t )(b t (s 0:t , a 0:t-1 ))]</figDesc></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Note, that we have already introduced bias by using A π,γ in place of A π ; here we are concerned with obtaining an unbiased estimate of g γ , which is a biased estimate of the policy gradient of the undiscounted MDP.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_1"><p>In concurrent work, researchers have been developing policy gradient methods that involve differentiation with respect to the continuous-valued action<ref type="bibr" target="#b12">(Lillicrap et al., 2015;</ref><ref type="bibr" target="#b6">Heess et al., 2015)</ref>. While we found empirically that the one-step return (λ = 0) leads to excessive bias and poor performance, these papers show that such methods can work when tuned appropriately. However, note that those papers consider control problems with substantially lower-dimensional state and action spaces than the ones considered here. A comparison between both classes of approach would be useful for future work.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGEMENTS</head><p>We thank <rs type="person">Emo Todorov</rs> for providing the simulator as well as insightful discussions, and we thank <rs type="person">Greg Wayne</rs>, <rs type="person">Yuval Tassa</rs>, <rs type="person">Dave Silver</rs>, <rs type="person">Carlos Florensa Campo</rs>, and <rs type="person">Greg Brockman</rs> for insightful discussions. This research was funded in part by the <rs type="funder">Office of Naval Research</rs> through a Young</p></div>
+			</div>
+			<listOrg type="funding">
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We'll consider the terms with Q and b in turn.</p><formula xml:id="formula_42">E s0:∞,a0:∞ [∇ θ log π θ (a t | s t )Q t (s 0:∞ , a 0:∞ )] =</formula><p>E s0:t,a0:t E st+1:∞,at+1:∞ [∇ θ log π θ (a t | s t )Q t (s 0:∞ , a 0:∞ )] = E s0:t,a0:t ∇ θ log π θ (a t | s t )E st+1:∞,at+1:∞ [Q t (s 0:∞ , a 0:∞ )] = E s0:t,a0:t-1 [∇ θ log π θ (a t | s t )A π (s t , a t )] Next, E s0:∞,a0:∞ [∇ θ log π θ (a t | s t )b t (s 0:t , a 0:t-1 )] = E s0:t,a0:t-1 E st+1:∞,at:∞ [∇ θ log π θ (a t | s t )b t (s 0:t , a 0:t-1 )] = E s0:t,a0:t-1 E st+1:∞,at:∞ [∇ θ log π θ (a t | s t )] b t (s 0:t , a 0:t-1 ) = E s0:t,a0:t-1 [0 • b t (s 0:t , a 0:t-1 )] = 0.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Neuronlike adaptive elements that can solve difficult learning control problems. Systems, Man and Cybernetics</title>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">G</forename><surname>Barto</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Richard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anderson</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><forename type="middle">W</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on</title>
+		<imprint>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="834" to="846" />
+			<date type="published" when="1983">1983</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Reinforcement learning in POMDPs via direct gradient ascent</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Baxter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">L</forename><surname>Bartlett</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2000">2000</date>
+			<biblScope unit="page" from="41" to="48" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Dynamic programming and optimal control</title>
+		<author>
+			<persName><forename type="first">Dimitri</forename><forename type="middle">P</forename><surname>Bertsekas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Athena Scientific</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Convergent temporal-difference learning with arbitrary smooth function approximation</title>
+		<author>
+			<persName><surname>Bhatnagar</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Shalabh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Precup</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Doina</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">S</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Maei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hamid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Csaba</forename><surname>Szepesvári</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="1204" to="1212" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Variance reduction techniques for gradient estimates in reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Evan</forename><surname>Greensmith</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bartlett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Peter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Baxter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="page" from="1471" to="1530" />
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Reinforcement learning in feedback control</title>
+		<author>
+			<persName><forename type="first">Roland</forename><surname>Hafner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Riedmiller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine learning</title>
+		<imprint>
+			<biblScope unit="volume">84</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="137" to="169" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Heess</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><surname>Wayne</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Timothy</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tassa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Erez</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1510.09142</idno>
+		<title level="m">Learning continuous control policies by stochastic value gradients</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Principles of behavior</title>
+		<author>
+			<persName><forename type="first">Clark</forename><surname>Hull</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1943">1943</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">A natural policy gradient</title>
+		<author>
+			<persName><forename type="first">Sham</forename><surname>Kakade</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NIPS</title>
+		<imprint>
+			<date type="published" when="2001">2001</date>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="page" from="1531" to="1538" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Optimizing average reward using discounted rewards</title>
+		<author>
+			<persName><forename type="first">Sham</forename><surname>Kakade</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computational Learning Theory</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2001">2001</date>
+			<biblScope unit="page" from="605" to="615" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">An analysis of actor/critic algorithms using eligibility traces: Reinforcement learning with imperfect value function</title>
+		<author>
+			<persName><forename type="first">Hajime</forename><surname>Kimura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shigenobu</forename><surname>Kobayashi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="1998">1998</date>
+			<biblScope unit="page" from="278" to="286" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">On actor-critic algorithms</title>
+		<author>
+			<persName><forename type="first">Vijay</forename><forename type="middle">R</forename><surname>Konda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><forename type="middle">N</forename><surname>Tsitsiklis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIAM journal on Control and Optimization</title>
+		<imprint>
+			<biblScope unit="volume">42</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1143" to="1166" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Timothy</forename><forename type="middle">P</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><forename type="middle">J</forename><surname>Hunt</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pritzel</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Alexander</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Heess</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Nicolas</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Erez</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tom</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tassa</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yuval</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daan</forename><surname>Wierstra</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1509.02971</idno>
+		<title level="m">Continuous control with deep reinforcement learning</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Approximate gradient methods in policy-space optimization of markov reward processes</title>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Marbach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><forename type="middle">N</forename><surname>Tsitsiklis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Discrete Event Dynamic Systems</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="111" to="148" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Steps toward artificial intelligence</title>
+		<author>
+			<persName><forename type="first">Marvin</forename><surname>Minsky</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IRE</title>
+		<meeting>the IRE</meeting>
+		<imprint>
+			<date type="published" when="1961">1961</date>
+			<biblScope unit="volume">49</biblScope>
+			<biblScope unit="page" from="8" to="30" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Policy invariance under reward transformations: Theory and application to reward shaping</title>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">Y</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daishi</forename><surname>Harada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stuart</forename><surname>Russell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="1999">1999</date>
+			<biblScope unit="volume">99</biblScope>
+			<biblScope unit="page" from="278" to="287" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Natural actor-critic</title>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Peters</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Schaal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neurocomputing</title>
+		<imprint>
+			<biblScope unit="volume">71</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="1180" to="1190" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">John</forename><surname>Schulman</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sergey</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Moritz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jordan</forename><surname>Philipp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Abbeel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1502.05477</idno>
+		<title level="m">Trust region policy optimization</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Introduction to reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">S</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">G</forename><surname>Barto</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1998">1998</date>
+			<publisher>MIT Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Policy gradient methods for reinforcement learning with function approximation</title>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">S</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">A</forename><surname>Mcallester</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Satinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yishay</forename><surname>Mansour</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NIPS</title>
+		<imprint>
+			<publisher>Citeseer</publisher>
+			<date type="published" when="1999">1999</date>
+			<biblScope unit="volume">99</biblScope>
+			<biblScope unit="page" from="1057" to="1063" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Bias in natural actor-critic algorithms</title>
+		<author>
+			<persName><forename type="first">Philip</forename><surname>Thomas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of The 31st International Conference on Machine Learning</title>
+		<meeting>The 31st International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="441" to="448" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Mujoco: A physics engine for model-based control</title>
+		<author>
+			<persName><surname>Todorov</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Emanuel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Erez</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tassa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2012">2012. 2012</date>
+			<biblScope unit="page" from="5026" to="5033" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Real-time reinforcement learning by sequential actor-critics and experience replay</title>
+		<author>
+			<persName><forename type="first">Paweł</forename><surname>Wawrzyński</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural Networks</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page" from="1484" to="1497" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Simple statistical gradient-following algorithms for connectionist reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Ronald</forename><forename type="middle">J</forename><surname>Williams</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine learning</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">3-4</biblScope>
+			<biblScope unit="page" from="229" to="256" />
+			<date type="published" when="1992">1992</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Numerical optimization</title>
+		<author>
+			<persName><forename type="first">Stephen</forename><forename type="middle">J</forename><surname>Wright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jorge</forename><surname>Nocedal</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1999">1999</date>
+			<publisher>Springer</publisher>
+			<pubPlace>New York</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

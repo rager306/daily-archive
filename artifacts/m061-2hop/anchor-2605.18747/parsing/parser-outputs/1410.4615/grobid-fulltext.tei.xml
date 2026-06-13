@@ -1,0 +1,963 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Under review as a conference paper at ICLR 2015 LEARNING TO EXECUTE</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability  status="unknown">
+					<licence/>
+				</availability>
+				<date type="published" when="2015-02-19">19 Feb 2015</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct status="extracted">
+					<analytic>
+						<author>
+							<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+							<email>woj.zaremba@gmail.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">New York University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+							<email>ilyasu@google.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">New York University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Under review as a conference paper at ICLR 2015 LEARNING TO EXECUTE</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2015-02-19">19 Feb 2015</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">E195E7B441A5837D96BA1C87B999CBF9</idno>
+					<idno type="arXiv">arXiv:1410.4615v3[cs.NE]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.9.0" ident="GROBID" when="2026-06-13T09:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<label type="revision">0.9.0</label>
+					<label type="parameters">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[], flavor=null</label>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recurrent Neural Networks (RNNs) with Long Short-Term Memory units (LSTM) are widely used because they are expressive and are easy to train. Our interest lies in empirically evaluating the expressiveness and the learnability of LSTMs in the sequence-to-sequence regime by training them to evaluate short computer programs, a domain that has traditionally been seen as too complex for neural networks. We consider a simple class of programs that can be evaluated with a single left-to-right pass using constant memory. Our main result is that LSTMs can learn to map the character-level representations of such programs to their correct outputs. Notably, it was necessary to use curriculum learning, and while conventional curriculum learning proved ineffective, we developed a new variant of curriculum learning that improved our networks' performance in all experimental conditions. The improved curriculum had a dramatic impact on an addition problem, making it possible to train an LSTM to add two 9-digit numbers with 99% accuracy.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Execution of computer programs requires dealing with a number of nontrivial concepts. To execute a program, a system has to understand numerical operations, if-statements, variable assignments, the compositionality of operations, and many more.</p><p>We show that Recurrent Neural Networks (RNN) with Long Short-Term Memory (LSTM) units can accurately evaluate short simple programs in the sequence-to-sequence framework of <ref type="bibr" target="#b21">Sutskever et al. (2014)</ref>. The LSTM reads the program character-by-character and computes the program's output. We consider a constrained set of computer programs that can be evaluated in linear time and constant memory, because the LSTM reads the program only once and its memory capacity is limited (Section 3). We found it difficult to train LSTMs to execute computer programs, so we used curriculum learning to simplify the learning problem. We design a curriculum procedure which outperforms both conventional training that uses no curriculum learning (baseline) as well as the naive curriculum learning of strategy of <ref type="bibr" target="#b0">Bengio et al. (2009)</ref> (Section 4). We provide a plausible explanation for the effectiveness of our procedure relative to naive curriculum learning (Section 7).</p><p>Finally, in addition to curriculum learning strategies, we examine two simple input transformations that further simplify the sequence-to-sequence learning problem. We show that, in many cases, reversing the input sequence <ref type="bibr" target="#b21">(Sutskever et al., 2014)</ref> and replicating the input sequence improves the LSTM's performance on a memorization task (Section 3.2).</p><p>The code for replicating most of the experiments in this work can be found in <ref type="url" target="https://github.com/wojciechz/learning_to_execute">https://github.  com/wojciechz/learning_to_execute</ref>.</p><p>Input: j=8584 for x in range(8): j+=920 b=(1500+j) print((b+7567))</p><p>Target: 25011.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input:</head><p>i=8827 c=(i-5347) print((c+8704) if 2641&lt;8500 else 5308) Target: 12184.</p><p>Figure <ref type="figure">1</ref>: Example programs on which we train the LSTM. The output of each program is a single integer. A "dot" symbol indicates the end of the integer, which has to be predicted by the LSTM.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">RELATED WORK</head><p>There has been related research that used Tree Neural Networks (also known as Recursive Neural Networks) to evaluate symbolic mathematical expressions and logical formulas <ref type="bibr">(Zaremba et al., 2014a;</ref><ref type="bibr" target="#b3">Bowman et al., 2014;</ref><ref type="bibr" target="#b2">Bowman, 2013)</ref>, which is close in spirit to our work. Computer programs are more complex than mathematical or logical expressions because it is possible to simulate either with an appropriate computer program.</p><p>From a methodological perspective, we formulate the program evaluation task as a sequenceto-sequence learning problem with a recurrent neural network <ref type="bibr" target="#b21">(Sutskever et al., 2014)</ref> (see also <ref type="bibr" target="#b14">(Mikolov, 2012;</ref><ref type="bibr" target="#b20">Sutskever, 2013;</ref><ref type="bibr" target="#b17">Pascanu et al., 2013)</ref>). Other interesting applications of recurrent neural networks include speech recognition <ref type="bibr" target="#b19">(Robinson et al., 1996;</ref><ref type="bibr" target="#b5">Graves et al., 2013)</ref>, machine translation <ref type="bibr" target="#b4">(Cho et al., 2014;</ref><ref type="bibr" target="#b21">Sutskever et al., 2014)</ref>, handwriting recognition <ref type="bibr" target="#b18">(Pham et al., 2013;</ref><ref type="bibr" target="#b23">Zaremba et al., 2014b)</ref>, and many more. <ref type="bibr" target="#b12">Maddison &amp; Tarlow (2014)</ref> trained a language model of program text, and <ref type="bibr" target="#b16">Mou et al. (2014)</ref> used a neural network to determine whether two programs are equivalent. Both of these approaches require the parse trees of programs, while the input to our model is a string of character representing our program.</p><p>Predicting program output requires that the model deals with long term dependencies that arise from variable assignment. For this reason, we chose to use the Long Short-Term Memory model <ref type="bibr" target="#b7">(Hochreiter &amp; Schmidhuber, 1997)</ref>, although there are many other RNN variants that perform well on tasks with long term dependencies <ref type="bibr" target="#b4">(Cho et al., 2014;</ref><ref type="bibr" target="#b8">Jaeger et al., 2007;</ref><ref type="bibr" target="#b9">Koutník et al., 2014;</ref><ref type="bibr" target="#b13">Martens, 2010;</ref><ref type="bibr" target="#b1">Bengio et al., 2013)</ref>.</p><p>Initially, we found it difficult to train LSTMs to accurately evaluate programs. The compositional nature of computer programs suggests that the LSTM would learn faster if we first taught it about the individual operators and how to combine them. This approach can be implemented with curriculum learning <ref type="bibr" target="#b0">(Bengio et al., 2009;</ref><ref type="bibr" target="#b10">Kumar et al., 2010;</ref><ref type="bibr" target="#b11">Lee &amp; Grauman, 2011)</ref>, which prescribes to gradually increase the "difficulty level" of the examples presented to the LSTM. It is partially motivated by fact that humans and animals learn much faster when they are given hard but manageable tasks. Unfortunately, we found the naive curriculum learning strategy of <ref type="bibr" target="#b0">Bengio et al. (2009)</ref> to sometimes be harmful. One of our key contributions is the formulation of a new curriculum learning strategy that substantially improves the speed and the quality of training in every experimental setting that we considered.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">PROGRAM SUBCLASS</head><p>We train RNNs on the class of short programs that can be evaluated in O (n) time and constant memory. This restriction is dictated by the computational structure of the RNN itself, as it can only Input: vqppkn sqdvfljmnc y2vxdddsepnimcbvubkomhrpliibtwztbljipcc</p><p>Target: hkhpg Figure <ref type="figure">2</ref>: A sample program with its outputs when the characters are scrambled. It helps illustrate the difficulty faced by our neural network. perform a single pass over the program and its memory is limited. Our programs use the Python syntax and are constructed from a small number of operations and their compositions (nesting). We allow the following operations: addition, subtraction, multiplication, variable assignments, ifstatements, and for-loops, but we forbid double loops. Every program ends with a single "print" statement whose output is an integer. Two example programs are shown in Figure <ref type="figure">1</ref>.</p><p>We select our programs from a family of distributions parametrized by their length and nesting. The length parameter is the number of digits in the integers that appear in the programs (so the integers are chosen uniformly from [1, 10 length ]). The appendix presents the pseudocode 1 of the algorithm used to generate our programs. For example, two programs that are generated with length = 4 and nesting = 3 are shown in Figure <ref type="figure">1</ref>.</p><p>We impose restrictions on the operands of multiplication and on the ranges of for-loop, since they pose a greater difficulty to our model. We constrain one of the arguments of multiplication and the range of for-loops to be chosen uniformly from the much smaller range <ref type="bibr">[1, 4• length]</ref>. We do so since our models are able to perform linear-time computation while generic integer multiplication requires superlinear time. Similar considerations apply to for-loops, since nested for-loops can implement integer multiplication.</p><p>The nesting parameter is the number of times we are allowed to combine the operations with each other. Higher values of nesting yield programs with deeper parse trees. Nesting makes the task much harder for the LSTMs, because they do not have a natural way of dealing with compositionality, unlike Tree Neural Networks. It is surprising that the LSTMs can handle nested expressions at all. The programs also do not receive an external input.</p><p>It is important to emphasize that the LSTM reads the entire input one character at a time and produces the output one character at a time. The characters are initially meaningless from the model's perspective; for instance, the model does not know that "+" means addition or that 6 is followed by 7. In fact, scrambling the input characters (e.g., replacing "a" with "q", "b" with "w", etc.,) has no effect on the model's ability to solve this problem. We demonstrate the difficulty of the task by presenting an input-output example with scrambled characters in Figure <ref type="figure">2</ref>.</p><p>Finally, we wanted to verify that our program are not trivial to evaluate, by ensuring that the bias coming from Benford's law <ref type="bibr" target="#b6">(Hill, 1995)</ref> is not too strong. Our setup has 12 possible output characters, that is 10 digits, the end of sequence character, and minus. Their output distribution is not uniform, which can be seen by noticing that the minus sign and the dot do not occur with the same frequency as the other digits. If we assume that the output characters are independent, the probability of guessing the correct character is ∼ 8.3%. The most common character is 1 which occurs with probability 12.7% over the entire output.</p><p>However, there is a bias in the distribution of the first character. There are 11 possible choices, which can be randomly guessed with a probability of 9%. The most common character is 1, and it occurs with a probability 20.3% in its first position, indicating a strong bias. Still, this value is far below our model prediction accuracy. Moreover, the most probable second character in the first position of the output occurs with probability 12.6%, which is indistinguishable from probability distribution of digits in the other positions. The last character is always the end of sequence. The most common digit prior to the last character is 4, and it occures with probability 10.3%. These statistics are computed with 10000 randomly generated programs with length = 4 and nesting = 1. The absence of a strong bias for this configuration suggests that there will be even less bias in with greater nesting and longer digits, which we have also confirmed numerically.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: print(398345+425098)</head><p>Target: 823443 Figure <ref type="figure">3</ref>: A typical data sample for the addition task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">ADDITION TASK</head><p>It is difficult to intuitively assess the accuracy of an LSTM on a program evaluation task. For example, it is not clear whether an accuracy of 50% is impressive. Thus, we also evaluate our models on a more familiar addition task, where the difficulty is measured by the length of the inputs. We consider the addition of only two numbers of the same length (Figure <ref type="figure">3</ref>) that are chosen uniformly from [1, 10 length ]. Adding two number of the same length is simpler than adding variable length numbers. Model doesn't need to align them.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">MEMORIZATION TASK</head><p>In addition to program evaluation and addition, we also investigate the task of memorizing a random sequence of numbers. Given an example input 123456789, the LSTM reads it one character at a time, stores it in memory, and then outputs 123456789 one character at a time. We present and explore two simple performance enhancing techniques: input reversing <ref type="bibr" target="#b21">Sutskever et al. (2014)</ref> and input doubling.</p><p>The idea of input reversing is to reverse the order of the input (987654321) while keeping the desired output unchanged (123456789). It may appear to be a neutral operation because the average distance between each input and its corresponding target does not change. However, input reversing introduces many short term dependencies that make it easier for the LSTM to learn to make correct predictions. This strategy was first introduced by <ref type="bibr" target="#b21">Sutskever et al. (2014)</ref>.</p><p>The second performance enhancing technique is input doubling, where we present the input sequence twice (so the example input becomes 123456789; 123456789), while the output remains unchanged (123456789). This method is meaningless from a probabilistic perspective as RNNs approximate the conditional distribution p(y|x), yet here we attempt to learn p(y|x, x). Still, it gives noticeable performance improvements. By processing the input several times before producing the output, the LSTM is given the opportunity to correct any mistakes or omissions it made before.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">CURRICULUM LEARNING</head><p>Our program generation procedure is parametrized by length and nesting. These two parameters allow us control the complexity of the program. When length and nesting are large enough, the learning problem becomes nearly intractable. This indicates that in order to learn to evaluate programs of a given length = a and nesting = b, it may help to first learn to evaluate programs with length a and nesting b. We evaluate the following curriculum learning strategies:</p><p>No curriculum learning (baseline) The baseline approach does not use curriculum learning. This means that we generate all the training samples with length = a and nesting = b. This strategy is the most "sound" from statistical perspective, since it is generally recommended to make the training distribution identical to test distribution.</p><p>Naive curriculum strategy (naive) We begin with length = 1 and nesting = 1. Once learning stops making progress on the validation set, we increase length by 1. We repeat this process until its length reaches a, in which case we increase nesting by one and reset length to 1. We can also choose to first increase nesting and then length. However, it does not make a noticeable difference in performance. We skip this option in the rest of paper, and increase length first in all our experiments. This strategy is has been examined in previous work on curriculum learning <ref type="bibr" target="#b0">(Bengio et al., 2009)</ref>. However, we show that sometimes it gives even worse performance than baseline.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Mixed strategy (mix)</head><p>To generate a random sample, we first pick a random length from [1, a] and a random nesting from [1, b] independently for every sample. The Mixed strategy uses a balanced mixture of easy and difficult examples, so at every point during training, a sizable fraction of the training samples will have the appropriate difficulty for the LSTM.</p><p>Combining the mixed strategy with naive curriculum strategy (combined) This strategy combines the mix strategy with the naive strategy. In this approach, every training case is obtained either by the naive strategy or by the mix strategy. As a result, the combined strategy always exposes the network at least to some difficult examples, which is the key way in which it differs from the naive curriculum strategy. We noticed that it always outperformed the naive strategy and would generally (but not always) outperform the mix strategy. We explain why our new curriculum learning strategies outperform the naive curriculum strategy in Section 7.</p><p>We evaluate these four strategies on the program evaluation task (Section 6.1) and on the memorization task (Section 6.3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">LSTM</head><p>In this section we briefly describe the deep LSTM (Section 5). All vectors are n-dimensional unless explicitly stated otherwise. Let h l t ∈ R n be a hidden state in layer l in timestep t. Let T n,m : R n → R m be a biased linear mapping (x → W x + b for some W and b). We let be element-wise multiplication and let h 0 t be the input to the deep LSTM at timestep t. We use the activations at the top layer L (namely h L t ) to predict y t where L is the depth of our LSTM. The structure of the LSTM allows it to train on problems with long term dependencies relatively easily. The "long term" memory is stored in a vector of memory cells c l t ∈ R n . Although many LSTM architectures differ slightly in their connectivity structure and activation functions, all LSTM architectures have additive memory cells that make it easy to learn to store information for long periods of time. We used an LSTM described by the following equations ( <ref type="formula">from Graves et al. (2013)</ref></p><formula xml:id="formula_0">): LSTM : h l-1 t , h l t-1 , c l t-1 → h l t , c l t    i f o g    =    sigm sigm sigm tanh    T 2n,4n h l-1 t h l t-1 c l t = f c l t-1 + i g h l t = o tanh(c l t )</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">EXPERIMENTS</head><p>In this section, we report the results of our curriculum learning strategies on the program evaluation and memorization tasks. In both experiments, we used the same LSTM architecture.</p><p>Our LSTM has two layers and is unrolled for 50 steps in both experiments. It has 400 cells per layer and its parameters are initialized uniformly in [-0.08, 0.08]. This gives total ∼ 2.5M parameters.</p><p>We initialize the hidden states to zero. We then use the final hidden states of the current minibatch as the initial hidden state of the subsequent minibatch. Thus it is possible that a program and its output could be separated across different minibatches. The size of minibatch is 100. We constrain the norm of the gradients (normalized by minibatch size) to be no greater than 5 <ref type="bibr" target="#b15">(Mikolov et al., 2010)</ref>. We keep the learning rate equal to 0.5 until we reach the target length and nesting (we only vary the length, i.e., the number of digits, in the memorization task).</p><p>After reaching the target accuracy (95%) we decrease the learning rate by 0.8. We keep the learning rate on the same level until there is no improvement on the training set. We decrease it again, when there is no improvement on training set. The only difference between experiments is the termination criteria. For the program output prediction, we stop when learning rate becomes smaller than 0.001.</p><p>For copying task, we stop training after 20 epochs, where each epoch has 0.5M samples.</p><p>We begin training with length = 1 and nesting = 1 (or length=1 for the memorization task). We ensure that the training, validation, and test sets are disjoint. It is achieved computing the hash value of each sample and taking it modulo 3.</p><p>Important note on error rates: We use teacher forcing when we compute the accuracy of our LSTMs. That is, when predicting the i-th digit of the target, the LSTM is provided with the correct first i -1 digits of the target. This is different from using the LSTM to generate the entire output on its own, as done by <ref type="bibr" target="#b21">Sutskever et al. (2014)</ref>, which would almost surely result in lower numerical accuracies. To help make intuitive sense of our results, we present a large number of test cases and the outputs computed by the LSTM, albeit with teacher forcing.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">RESULTS ON PROGRAM EVALUATION</head><p>We train our LSTMs using the four strategies described in Section 4:</p><p>• No curriculum learning (baseline),</p><p>• Naive curriculum strategy (naive)</p><p>• Mixed strategy (mix), and • Combined strategy (combined).</p><p>Figure <ref type="figure" target="#fig_0">4</ref> shows the absolute performance of the baseline strategy (training on the original target distribution), and of the best performing strategy, combined. Moreover, Figure <ref type="figure" target="#fig_1">5</ref> shows the performance of the three curriculum strategies relative to baseline. Finally, we provide several example predictions on test data in the supplementary materials. The accuracy of a random predictor would be ∼ 8.3%, since there are 12 possible output symbols.  The Naive curriculum strategy was found to sometime perform worse than baseline. A possible explanation is provided in Section 7. The combined strategy outperforms all other strategies in every configuration on program evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">RESULTS ON THE ADDITION TASK</head><p>Figure <ref type="figure" target="#fig_2">6</ref> presents the accuracy achieved by the LSTM with the various curriculum strategies on the addition task. Remarkably, the combined curriculum strategy resulted in 99% accuracy on the addition of 9-digit long numbers, which is a massive improvement over the naive curriculum.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3">RESULTS ON THE MEMORIZATION TASK</head><p>Recall that the goal of the memorization task is to read a sequence of digits into the hidden state and then to reconstruct it from the hidden state. Namely, given an input such as 123456789, the goal is  to produce the output 123456789. The model processes the input one input character at the time and has to reconstruct the output only after loading the entire input into its memory. This task provides insight into the LSTM's ability to learn to remember. We have evaluated our model on sequences of lengths ranging from 5 to 65. We use the four curriculum strategies of Section 4. In addition, we investigate two strategies to modify the input which increase performance:</p><p>• Inverting input <ref type="bibr" target="#b21">(Sutskever et al., 2014)</ref> • Doubling Input Both strategies are described in Section 3.2. Figure <ref type="figure" target="#fig_3">7</ref> shows the absolute performance of the baseline strategy and of the combined strategy. This Figure shows the performance at convergence. We further present in Supplementary material (Section 9) results after 20 epochs (Figure <ref type="figure" target="#fig_4">8</ref>).</p><p>For this task, the combined strategy no longer outperforms the mixed strategy in every experimental setting, although both strategies are always better than using no curriculum and the naive curriculum strategy. Each graph contains 4 settings, which correspond to the possible combinations of input inversion and input doubling. The result clearly shows that the simultaneously doubling and reversing the input achieves the best results. Random guessing would achieve an accuracy of ∼ 9%, since there are 11 possible output symbols.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">HIDDEN STATE ALLOCATION HYPOTHESIS</head><p>Our experimental results suggest that a proper curriculum learning strategy is critical for achieving good performance on very hard problems where conventional stochastic gradient descent (SGD)</p><p>performs poorly. The results on both of our problems (Sections 6.3 and 6.1) show that the combined strategy is better than all other curriculum strategies, including both naive curriculum learning, and training on the target distribution. We have a plausible explanation for why this is the case.</p><p>It seems natural to train models with examples of increasing difficulty. This way the models have a chance to learn the correct intermediate concepts, and then utilize them for the more difficult problem instances. Otherwise, learning the full task might be just too difficult for SGD from a random initialization. This explanation has been proposed in previous work on curriculum learning <ref type="bibr" target="#b0">Bengio et al. (2009)</ref>. However, based the on empirical results, the naive strategy of curriculum learning can sometimes be worse than learning with the target distribution.</p><p>In our tasks, the neural network has to perform a lot of memorization. The easier examples usually require less memorization than the hard examples. For instance, in order to add two 5-digit numbers, one has to remember at least 5 digits before producing any output. The best way to accurately memorize 5 numbers could be to spread them over the entire hidden state / memory cell (i.e., use a distributed representation). Indeed, the network has no incentive to utilize only a fraction of its state, and it is always better to make use of its entire memory capacity. This implies that the harder examples would require a restructuring of its memory patterns. It would need to contract its representations of 5 digit numbers in order to free space for the 6-th number. This process of memory pattern restructuring might be difficult to implement, so it could be the reason for the sometimes poor performance of the naive curriculum learning strategy relative to baseline.</p><p>The combined strategy reduces the need to restructure the memory patterns. The combined strategy is a combination of the naive curriculum strategy and of the mix strategy, which is a mixture of examples of all difficulties. The examples produced by the naive curriculum strategy help to learn the intermediate input-output mapping, which is useful for solving the target task, while the extra samples from the mix strategy prevent the network from utilizing all the memory on the easy examples, thus eliminating the need to restructure its memory patterns.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">CRITIQUE</head><p>Perfect prediction of program output requires a complete understanding of all operands and concepts, and of the precise way in which they are combined. However, imperfect prediction might be achieved in a multitude of ways, and could heavily rely on memorization, without a genuine understanding of the underlying concepts. For instance, perfect addition is relatively intricate, as the LSTM needs to know the order of numbers and to correctly compute the carry.</p><p>There are many alternatives to the addition algorithm if perfect output is not required. For instance, one can perform element-wise addition, and as long as there is no carry then the output would be perfectly correct. Another alternative, which requires more memory, but is also more simpler, is to memorize all results of addition for 2 digit numbers. Then multi-digit addition can be broken down to multiple 2-digits additions element-wise. Once again, such an algorithm would have a reasonably high prediction accuracy, although it would be far from correct.</p><p>We do not know how heavily our model relies on memorization and how far the learned algorithm is from the actual, correct algorithm. This could be tested by creating a big discrepancy between the training and test data, but in this work, the training and the test distributions are the same. We plan to examine how well our models would generalize on very different new examples in future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="9">DISCUSSION</head><p>We have shown that it is possible to learn to evaluate programs with limited prior knowledge. This work demonstrate the power and expressiveness of sequence-to-sequence LSTMs. We also showed that correct curriculum learning is crucial for achieving good results on very difficult tasks that cannot be optimized with standard SGD. We also found that the general method of doubling the input reliably improves the performance of sequence-to-sequence LSTMs.</p><p>Our results are encouraging but they leave many questions open. For example, we are not able to evaluate arbitrary programs (e.g., ones that run in more than O (n) time). This cannot be achieved with conventional RNNs or LSTMs due to their runtime restrictions. We also do not know the optimal curriculum learning strategy. To understand it, it may be necessary to identify the training samples that are most beneficial to the model. print((5997-738)).</p><p>Target: 5259. "Baseline" prediction:</p><p>5101. "Naive" prediction:</p><p>5101. "Mix" prediction:</p><p>5249. "Combined" prediction: 5229.</p><p>Input: print((16 * 3071)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>49136. "Baseline" prediction:</p><p>49336. "Naive" prediction:</p><p>48676. "Mix" prediction:</p><p>57026. "Combined" prediction: 49626.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: c=2060; print((c-4387)).</head><p>Target:</p><p>-2327. "Baseline" prediction:</p><p>-2320. "Naive" prediction:</p><p>-2201. "Mix" prediction:</p><p>-2377. "Combined" prediction: -2317.</p><p>Input: print((2 * 5172)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>10344. "Baseline" prediction:</p><p>10344. "Naive" prediction:</p><p>10324. "Mix" prediction:</p><p>10344. "Combined" prediction: 10344.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: print((9891-4715)).</head><p>Target:</p><p>5176. "Baseline" prediction:</p><p>5196. "Naive" prediction:</p><p>5104. "Mix" prediction:</p><p>4246. "Combined" prediction: 5196.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: print(4849).</head><p>Target:</p><p>4849. "Baseline" prediction:</p><p>4849. "Naive" prediction:</p><p>4849. "Mix" prediction:</p><p>4849. "Combined" prediction: 4849.</p><p>Input: print((4 * 7054)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>28216. "Baseline" prediction:</p><p>28216. "Naive" prediction:</p><p>28116. "Mix" prediction:</p><p>28216. "Combined" prediction: 28216.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: print((4635-5257)).</head><p>Target:</p><p>-622. "Baseline" prediction:</p><p>-688. "Naive" prediction:</p><p>-628. "Mix" prediction:</p><p>-692. "Combined" prediction: -632.</p><p>Input: e=1079 for x in range(10):e+=4729 print(e).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>48369. "Baseline" prediction:</p><p>48017. "Naive" prediction:</p><p>48011. "Mix" prediction:</p><p>48101. "Combined" prediction: 48009.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="12.2">EXAMPLES OF PROGRAM EVALUATION PREDICTION. LENGTH = 4, NESTING = 2</head><p>Input: e=6653 for x in range(14):e+=6311 print(e).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>95007. "Baseline" prediction:</p><p>94093. "Naive" prediction:</p><p>90013. "Mix" prediction:</p><p>95015. "Combined" prediction: 94103.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: i=6404; print((i+8074)).</head><p>Target:</p><p>14478. "Baseline" prediction:</p><p>14498. "Naive" prediction:</p><p>14444. "Mix" prediction:</p><p>14482. "Combined" prediction: 14478.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: print((8 * (5051-648))).</head><p>Target:</p><p>35224. "Baseline" prediction:</p><p>34044. "Naive" prediction:</p><p>32180. "Mix" prediction:</p><p>33284. "Combined" prediction: 33004.</p><p>Input: h=(3681 if 9279&lt;3033 else 6191) for x in range(7):h-=9910 print(h).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>-63179. "Baseline" prediction:</p><p>-62049. "Naive" prediction:</p><p>-63117. "Mix" prediction:</p><p>-62013. "Combined" prediction: -62009.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: print(((3210+2472)+1477)).</head><p>Target:</p><p>7159. "Baseline" prediction:</p><p>7009. "Naive" prediction:</p><p>7019. "Mix" prediction:</p><p>7995. "Combined" prediction: 7079.</p><p>Input: b=8494 for x in range(2):b+=7484 print((b * 14)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>328468. "Baseline" prediction:</p><p>318004. "Naive" prediction:</p><p>338088. "Mix" prediction: 329220. "Combined" prediction: 338080.</p><p>Input: j=6447; print((12 * (j-4689))).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>21096. "Baseline" prediction:</p><p>21266. "Naive" prediction:</p><p>10046. "Mix" prediction:</p><p>10606. "Combined" prediction: 20402.</p><p>Input: print((13 * 9201)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>119613. "Baseline" prediction:</p><p>118313. "Naive" prediction:</p><p>118011. "Mix" prediction:</p><p>117669. "Combined" prediction: 119533.</p><p>Input: g=1054; print <ref type="bibr">((6028+(g-1953)</ref>)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>5129. "Baseline" prediction:</p><p>4013. "Naive" prediction:</p><p>5035. "Mix" prediction:</p><p>4015. "Combined" prediction: 4009.</p><p>Input: d=6817 for x in range(7):d-=(4581-2186) print(d).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>-9948. "Baseline" prediction:</p><p>-1996. "Naive" prediction:</p><p>-1610. "Mix" prediction:</p><p>-1882. "Combined" prediction: -1980.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="12.3">EXAMPLES OF PROGRAM EVALUATION PREDICTION. LENGTH = 4, NESTING = 3</head><p>Input: f=4692 for x in range(4):f-=1664 j=1443 for x in range(8):j+=f d=j for x in range(11):d-=4699 print(d).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>-65958. "Baseline" prediction:</p><p>-13262. "Naive" prediction:</p><p>-73194. "Mix" prediction:</p><p>-40188. "Combined" prediction: -12004.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>47736. "Baseline" prediction:</p><p>-0666. "Naive" prediction:</p><p>11262. "Mix" prediction:</p><p>48666. "Combined" prediction: 48766.</p><p>Input: j=(1 * 5057); print(((j+1215)+6931)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>13203. "Baseline" prediction:</p><p>13015. "Naive" prediction:</p><p>12007. "Mix" prediction:</p><p>13379. "Combined" prediction: 13205.</p><p>Input: print(((1090-3305)+9466)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>7251. "Baseline" prediction:</p><p>7111. "Naive" prediction: 7099. "Mix" prediction:</p><p>7595. "Combined" prediction: 7699.</p><p>Input: a=8331; print((a-(15 * 7082))).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>-97899. "Baseline" prediction:</p><p>-96991. "Naive" prediction:</p><p>-19959. "Mix" prediction:</p><p>-95551. "Combined" prediction: -96397.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="12.4">EXAMPLES OF PROGRAM EVALUATION PREDICTION. LENGTH = 6, NESTING = 1</head><p>Input: print((71647-548966)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>-477319. "Baseline" prediction:</p><p>-472122. "Naive" prediction:</p><p>-477591. "Mix" prediction:</p><p>-479705. "Combined" prediction: -475009.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: print(1508).</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>1508. "Baseline" prediction:</p><p>1508. "Naive" prediction:</p><p>1508. "Mix" prediction:</p><p>1508. "Combined" prediction: 1508.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input:</head><p>Input: print((8 * 786463)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>6291704. "Baseline" prediction:</p><p>6270804. "Naive" prediction:</p><p>6271904. "Mix" prediction:</p><p>6297644. "Combined" prediction: 6270004.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: print((498592-570324)).</head><p>Target:</p><p>-71732. "Baseline" prediction:</p><p>-61086. "Naive" prediction:</p><p>-73582. "Mix" prediction:</p><p>-19000. "Combined" prediction: -72842.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="12.5">EXAMPLES OF PROGRAM EVALUATION PREDICTION. LENGTH = 6, NESTING = 2</head><p>Input: print((39007+416968)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>455975. "Baseline" prediction:</p><p>559917. "Naive" prediction:</p><p>438887. "Mix" prediction:</p><p>458993. "Combined" prediction: 450031.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: print((586051+664462)).</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>1250513. "Baseline" prediction:</p><p>1250939. "Naive" prediction:</p><p>1240719. "Mix" prediction:</p><p>1230881. "Combined" prediction: 1240551.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: print(948950).</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>948950. "Baseline" prediction: 948950. "Naive" prediction: 948950. "Mix" prediction: 948950. "Combined" prediction: 948950.</p><p>Input: i=849846 for x in range(15):i-=557574 print((362961 if 881013&lt;597832 else i)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>-7513764. "Baseline" prediction:</p><p>-7422756. "Naive" prediction:</p><p>-7011048. "Mix" prediction:</p><p>-2617777. "Combined" prediction: -7101146.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: g=977055; print((g-(592222+268807))).</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>116026. "Baseline" prediction:</p><p>132440. "Naive" prediction:</p><p>101488. "Mix" prediction:</p><p>114988. "Combined" prediction: 125682.</p><p>Input: print(((17 * 711621) if 224989&gt;711768 else 267900)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>267900. "Baseline" prediction: 267900. "Naive" prediction: 267900. "Mix" prediction: 267900. "Combined" prediction: 267900.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: j=114940; print((j+482118)).</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>597058. "Baseline" prediction:</p><p>590006. "Naive" prediction:</p><p>690004. "Mix" prediction:</p><p>599816. "Combined" prediction: 599990.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: print((171932 * 19)).</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>3266708. "Baseline" prediction:</p><p>3249998. "Naive" prediction:</p><p>3131798. "Mix" prediction:</p><p>3390158. "Combined" prediction: 3100388.</p><p>Input: h=411671; print((242648 if (h+31605)&gt;679390 else 449699)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>449699. "Baseline" prediction: 449699. "Naive" prediction: 449699. "Mix" prediction: 449699. "Combined" prediction: 449699.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: print(11332).</head><p>Target:</p><p>-445994. "Baseline" prediction:</p><p>-333153. "Naive" prediction:</p><p>-488724. "Mix" prediction:</p><p>-440880. "Combined" prediction: -447944.</p><p>Input: f=483654 for x in range(9):f-=913681 a=f for x in range(12):a-=926785 print((124798 if a&gt;326533 else 576599)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>576599. "Baseline" prediction: 176599. "Naive" prediction: 576599. "Mix" prediction: 576599. "Combined" prediction: 576599.</p><p>Input: f=136315; h=(f+37592); g=418652; print((g-(h+234728))).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>10017. "Baseline" prediction:</p><p>12115. "Naive" prediction:</p><p>-1123. "Mix" prediction:</p><p>-000.. "Combined" prediction: -0033.</p><p>Input: a=768606 for x in range(11):a+=454841 f=a for x in range(3):f-=696226 print((340434 if f&lt;287035 else 523084)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>523084. "Baseline" prediction:</p><p>523084. "Naive" prediction:</p><p>523084. "Mix" prediction:</p><p>523084. "Combined" prediction: 523084.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: b=468503; print((b-(326264+406077))).</head><p>Target:</p><p>-263838. "Baseline" prediction:</p><p>-278797. "Naive" prediction:</p><p>-241144. "Mix" prediction:</p><p>-252080. "Combined" prediction: -277882.</p><p>Input: g=801925; print((58095+(g+(824920 if 842317&gt;176260 else 570318)))).</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Absolute prediction accuracy of the baseline strategy and of the combined strategy (see Section 4) on the program evaluation task. Deeper nesting and longer integers make the task more difficult. Overall, the combined strategy outperformed the baseline strategy in every setting.</figDesc><graphic coords="6,200.55,298.32,102.95,103.65" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Relative prediction accuracy of the different strategies with respect to the baseline strategy.The Naive curriculum strategy was found to sometime perform worse than baseline. A possible explanation is provided in Section 7. The combined strategy outperforms all other strategies in every configuration on program evaluation.</figDesc><graphic coords="6,147.83,461.54,102.95,103.65" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: The effect of curriculum strategies on the addition task.</figDesc><graphic coords="7,216.16,81.86,182.16,93.96" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 7 :</head><label>7</label><figDesc>Figure7: Prediction accuracy on the memorization task for the four curriculum strategies. The input length ranges from 5 to 65 digits. Every strategy is evaluated with the following 4 input modification schemes: no modification; input inversion; input doubling; and input doubling and inversion. The training time was not limited; the network was trained till convergence.</figDesc><graphic coords="7,117.10,299.02,182.16,92.10" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Prediction accuracy on the memorization task for the four curriculum strategies. The input length ranges from 5 to 65 digits. Every strategy is evaluated with the following 4 input modification schemes: no modification; input inversion; input doubling; and input doubling and inversion. The training time is limited to 20 epochs.</figDesc><graphic coords="11,116.14,191.90,186.11,94.10" type="bitmap" /></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head n="10">ACKNOWLEDGMENTS</head><p>We wish to thank <rs type="person">Oriol Vinyals</rs> for useful discussions, and to <rs type="person">Koray Kavukcuoglu</rs> for help during code development. Moreover, we wish to acknowledge <rs type="person">Marc'Aurelio Ranzato</rs> for useful comments on the first version of the paper. Some chunks of our code origin from Google Deepmind repository. We thank to unknown developers of LSTM function, and auxiliary functions.</p></div>
+			</div>			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>SUPPLEMENTARY MATERIAL Input: length, nesting stack = EmptyStack() Operations = Addition, Subtraction, Multiplication, If-Statement, For-Loop, Variable Assignment for i = 1 to nesting do Operation = a random operation from Operations Values = List Code = List for params in Operation.params do if not empty stack and Uniform(1) &gt; 0.5 then value, code = stack.pop() else value = random.int(10 length ) code = toString(value) end if values.append(value) code.append(code) end for new value= Operation.evaluate(values) new code = Operation.generate code(codes) stack.push((new value, new code)) end for final value, final code = stack.pop() datasets = training, validation, testing idx = hash(final code) modulo 3 datasets[idx].add((final value, final code))</p><p>Algorithm 1: Pseudocode of the algorithm used to generate the distribution over the python program. Programs produced by this algorithm are guaranteed to never have dead code. The type of the sample (train, test, or validation) is determined by its hash modulo 3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="11">ADDITIONAL RESULTS ON THE MEMORIZATION PROBLEM</head><p>We present the algorithm for generating the training cases, and present an extensive qualitative evaluation of the samples and the kinds of predictions made by the trained LSTMs.</p><p>We emphasize that these predictions rely on teacher forcing. That is, even if the LSTM made an incorrect prediction in the i-th output digit, the LSTM will be provided as input the correct i-th output digit for predicting the i + 1-th digit. While teacher forcing has no effect whenever the LSTM makes no errors at all, a sample that makes an early error and gets the remainder of the digits correctly needs to be interpreted with care.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="12">QUALITATIVE EVALUATION OF THE CURRICULUM STRATEGIES</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="12.1">EXAMPLES OF PROGRAM EVALUATION PREDICTION. LENGTH = 4, NESTING = 1</head><p>Input: print(6652).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>6652. "Baseline" prediction:</p><p>6652. "Naive" prediction:</p><p>6652. "Mix" prediction:</p><p>6652. "Combined" prediction: 6652.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input:</head><p>Input: b=9930 for x in range(11):b-=4369 g=b; print(((g-8043)+9955)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>-36217. "Baseline" prediction:</p><p>-37515. "Naive" prediction:</p><p>-38609. "Mix" prediction:</p><p>-35893. "Combined" prediction: -35055.</p><p>Input: d=5446 for x in range(8):d+=(2678 if 4803&lt;2829 else 9848) print((d if 5935&lt;4845 else 3043)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>3043. "Baseline" prediction:</p><p>3043. "Naive" prediction:</p><p>3043. "Mix" prediction:</p><p>3043. "Combined" prediction: 3043.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: print((((2578 if 7750&lt;1768 else 8639)-2590)+342)).</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>6391. "Baseline" prediction:</p><p>-555. "Naive" prediction:</p><p>6329. "Mix" prediction:</p><p>6461. "Combined" prediction: 6105.</p><p>Input: print((((841 if 2076&lt;7326 else 1869) * 10) if 7827&lt;317 else 7192)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>7192. "Baseline" prediction:</p><p>7192. "Naive" prediction:</p><p>7192. "Mix" prediction:</p><p>7192. "Combined" prediction: 7192.</p><p>Input: d=8640; print((7135 if 6710&gt;((d+7080) * 14) else 7200)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>7200. "Baseline" prediction: 7200. "Naive" prediction: 7200. "Mix" prediction: 7200. "Combined" prediction: 7200.</p><p>Input: b=6968 for x in range(10):b-=(299 if 3389&lt;9977 else 203) print((12 * b)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>11332. "Baseline" prediction:</p><p>11332. "Naive" prediction:</p><p>11332. "Mix" prediction:</p><p>11332. "Combined" prediction: 11332.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="12.6">EXAMPLES OF PROGRAM EVALUATION PREDICTION. LENGTH = 6, NESTING = 3</head><p>Input: c=335973; b=(c+756088); print((6 * (b+66858))).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>6953514. "Baseline" prediction:</p><p>1099522. "Naive" prediction:</p><p>7773362. "Mix" prediction:</p><p>6993124. "Combined" prediction: 1044444.</p><formula xml:id="formula_1">Input: c=935280; print((765618 if 409621&lt;(c-(329375 if 806201&lt;240281 else 81797)) else<label>805944</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>)).</head><p>Target: 765618. "Baseline" prediction:</p><p>800988. "Naive" prediction:</p><p>765644. "Mix" prediction:</p><p>765616. "Combined" prediction: 865618.</p><p>Input: print(((670421 if 144271&gt;805597 else 364643) * 20)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>7292860. "Baseline" prediction:</p><p>1774640. "Naive" prediction:</p><p>7134660. "Mix" prediction:</p><p>7292860. "Combined" prediction: 7292860.</p><p>Input: print((108196 if 714126&gt;847153 else (888873-(381812 * 13)))).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>-4074683. "Baseline" prediction:</p><p>13205544. "Naive" prediction:</p><p>-4011899. "Mix" prediction:</p><p>-4422909. "Combined" prediction: -4048381.</p><p>Input: j=(181489 if 467875&gt;46774 else (127738 if 866523&lt;633391 else 592486)) ; print((j-627483)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Target:</head><p>43112517. "Baseline" prediction:</p><p>43178441. "Naive" prediction:</p><p>43112917. "Mix" prediction:</p><p>43112517. "Combined" prediction: 43112517.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: print(61854571+75028157).</head><p>Target:</p><p>136882728. "Baseline" prediction:</p><p>136860087. "Naive" prediction:</p><p>136883928. "Mix" prediction:</p><p>136882728. "Combined" prediction: 136882728.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Input: print(13828700+10188872).</head><p>Target:</p><p>24017572. "Baseline" prediction:</p><p>24000349. "Naive" prediction:</p><p>24018872. "Mix" prediction:</p><p>23017572. "Combined" prediction: 24017572.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct status="extracted" xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Curriculum learning</title>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Louradour</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jérôme</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Collobert</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ronan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 26th annual international conference on machine learning</title>
+		<meeting>the 26th annual international conference on machine learning</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="41" to="48" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Advances in optimizing recurrent networks</title>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Boulanger-Lewandowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Razvan</forename><surname>Pascanu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Acoustics, Speech and Signal Processing</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="8624" to="8628" />
+		</imprint>
+	</monogr>
+	<note>2013 IEEE International Conference on</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">Samuel</forename><forename type="middle">R</forename><surname>Bowman</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1312.6192</idno>
+		<title level="m">Can recursive neural tensor networks learn logical reasoning? arXiv preprint</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Recursive neural networks for learning logical semantics</title>
+		<author>
+			<persName><forename type="first">Samuel</forename><forename type="middle">R</forename><surname>Bowman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Potts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1406.1827</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Learning phrase representations using rnn encoder-decoder for statistical machine translation</title>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Van Merrienboer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bart</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gulcehre</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Caglar</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bougares</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Fethi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schwenk</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Holger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1406.1078</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Speech recognition with deep recurrent neural networks</title>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Graves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohamed</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abdel-Rahman</forename><surname>Hinton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Acoustics, Speech and Signal Processing (ICASSP)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2013">2013. 2013</date>
+			<biblScope unit="page" from="6645" to="6649" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b6">
+	<analytic>
+		<title level="a" type="main">A statistical derivation of the significant-digit law</title>
+		<author>
+			<persName><forename type="first">Theodore</forename><forename type="middle">P</forename><surname>Hill</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Statistical Science</title>
+		<imprint>
+			<biblScope unit="page" from="354" to="363" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Long short-term memory</title>
+		<author>
+			<persName><forename type="first">Sepp</forename><surname>Hochreiter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jürgen</forename><surname>Schmidhuber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural computation</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="1735" to="1780" />
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Optimization and applications of echo state networks with leaky-integrator neurons</title>
+		<author>
+			<persName><forename type="first">Herbert</forename><surname>Jaeger</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lukoševičius</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mantas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Popovici</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Udo</forename><surname>Siewert</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural Networks</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="335" to="352" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Koutník</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Greff</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Klaus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Faustino</forename><surname>Gomez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jürgen</forename><surname>Schmidhuber</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1402.3511</idno>
+		<title level="m">A clockwork rnn</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Self-paced learning for latent variable models</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pawan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Packer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daphne</forename><surname>Koller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="1189" to="1197" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Learning the easy things first: Self-paced visual category discovery</title>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jae</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristen</forename><surname>Grauman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Vision and Pattern Recognition (CVPR), 2011 IEEE Conference on</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="1721" to="1728" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">Chris</forename><forename type="middle">J</forename><surname>Maddison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Tarlow</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1401.0514</idno>
+		<title level="m">Structured generative models of natural source code</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Deep learning via hessian-free optimization</title>
+		<author>
+			<persName><forename type="first">James</forename><surname>Martens</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 27th International Conference on Machine Learning (ICML-10)</title>
+		<meeting>the 27th International Conference on Machine Learning (ICML-10)</meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="735" to="742" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Statistical language models based on neural networks</title>
+		<author>
+			<persName><forename type="first">Tomáš</forename><surname>Mikolov</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+		<respStmt>
+			<orgName>Brno University of Technology</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">PhD thesis</note>
+	<note>Ph. D. thesis</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Recurrent neural network based language model</title>
+		<author>
+			<persName><forename type="first">Tomas</forename><surname>Mikolov</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Karafiát</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Burget</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lukas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Cernockỳ</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Khudanpur</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sanjeev</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">INTERSPEECH</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="1045" to="1048" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Building program vector representations for deep learning</title>
+		<author>
+			<persName><forename type="first">Lili</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yuxuan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zhi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1409.3358</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b17">
+	<monogr>
+		<title level="m" type="main">How to construct deep recurrent neural networks</title>
+		<author>
+			<persName><forename type="first">Razvan</forename><surname>Pascanu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gulcehre</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Caglar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyunghyun</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1312.6026</idno>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Dropout improves recurrent neural networks for handwriting recognition</title>
+		<author>
+			<persName><surname>Pham</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Kermorvant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jérôme</forename><surname>Louradour</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1312.4569</idno>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b19">
+	<analytic>
+		<title level="a" type="main">The use of recurrent neural networks in continuous speech recognition</title>
+		<author>
+			<persName><forename type="first">Tony</forename><surname>Robinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Hochberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steve</forename><surname>Renals</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Automatic speech and speaker recognition</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="1996">1996</date>
+			<biblScope unit="page" from="233" to="258" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Training Recurrent Neural Networks</title>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+		<respStmt>
+			<orgName>University of Toronto</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">PhD thesis</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b21">
+	<monogr>
+		<title level="m" type="main">Sequence to sequence learning with neural networks</title>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Oriol</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Quoc</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1409.3215</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b22">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karol</forename><surname>Kurach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rob</forename><surname>Fergus</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1406.1584</idno>
+		<title level="m">Learning to discover efficient mathematical identities</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Zaremba</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ilya</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Oriol</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1409.2329</idno>
+		<title level="m">Recurrent neural network regularization</title>
+		<imprint>
+			<date type="published" when="2014">2014b. j=611989</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+	<note>print((j+763864)</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Baseline</title>
+		<idno>Target: 1375853</idno>
+		<imprint/>
+	</monogr>
+	<note>prediction: 1379920. &quot;Naive&quot; prediction: 1378991. &quot;Mix&quot; prediction: 1375119. &quot;Combined&quot; prediction: 1375173.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Baseline&quot; prediction: -1840831</title>
+		<idno>Input: print((151108 if 289653&gt;33296 else 564130)). Target: 151108</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Mix&quot; prediction: 151108. &quot;Combined&quot; prediction: 151108. Input: c=142012 for x in range(12):c-=166776 print(c)</title>
+		<imprint/>
+	</monogr>
+	<note>Naive&quot; prediction: 151108 Target: -1859300 Baseline&quot; prediction: 154973 Naive&quot; prediction: -1840000. &quot;Mix&quot; prediction: -1979720. &quot;Combined&quot; prediction: -1820700</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Baseline</title>
+		<idno>Input: print((678740+203140)). Target: 881880</idno>
+		<imprint/>
+	</monogr>
+	<note>prediction: 880475. &quot;Naive&quot; prediction: 881666. &quot;Mix&quot; prediction: 880190. &quot;Combined&quot; prediction: 885920.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Baseline&quot; prediction: 851233</title>
+	</analytic>
+	<monogr>
+		<title level="m">Combined&quot; prediction: 853009. Input: d=960350 for x in range(24):d-=187946 print(d)</title>
+		<imprint/>
+	</monogr>
+	<note>Input: print((929067-75246 Target: 853821 Naive&quot; prediction: 867113 Mix&quot; prediction: 855615 Target: -3550354 Baseline&quot; prediction: -3571998. &quot;Naive&quot; prediction: -3699993. &quot;Mix&quot; prediction: -3899220. &quot;Combined&quot; prediction: -3507790</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Baseline&quot; prediction: 1602221</title>
+		<idno>Target: 1684940</idno>
+		<imprint/>
+	</monogr>
+	<note>Naive&quot; prediction: 1799892. &quot;Mix&quot; prediction: 1677788. &quot;Combined&quot; prediction: 1611888.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Target: 566171</title>
+		<imprint>
+			<date>284993+281178</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">print</note>
+	<note>Baseline prediction: 566199. &quot;Naive&quot; prediction: 566151. &quot;Mix&quot; prediction: 566171. &quot;Combined&quot; prediction: 566171.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Target: 1039705</title>
+		<imprint>
+			<date>616216+423489</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">print</note>
+	<note>Baseline prediction: 1039712. &quot;Naive&quot; prediction: 1039605. &quot;Mix&quot; prediction: 1039605. &quot;Combined&quot; prediction: 1039705.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Target: 1397692</title>
+		<imprint/>
+	</monogr>
+	<note>Input: print(559794+837898 Baseline prediction: 1397694. &quot;Naive&quot; prediction: 1397662. &quot;Mix&quot; prediction: 1397792. &quot;Combined&quot; prediction: 1397692.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b32">
+	<monogr>
+		<title level="m" type="main">Target: 1381508</title>
+		<imprint/>
+	</monogr>
+	<note>Input: print(830194+551314 Baseline prediction: 1381401. &quot;Naive&quot; prediction: 1381518. &quot;Mix&quot; prediction: 1381508. &quot;Combined&quot; prediction: 1381508.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Target: 1126026</title>
+		<imprint/>
+	</monogr>
+	<note>Input: print(252849+873177 Baseline prediction: 1126020. &quot;Naive&quot; prediction: 1126006. &quot;Mix&quot; prediction: 1125026. &quot;Combined&quot; prediction: 1126026.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Baseline&quot; prediction: 181398</title>
+		<imprint>
+			<date>17513+163744</date>
+			<biblScope unit="page">181257</biblScope>
+		</imprint>
+	</monogr>
+	<note type="report_type">print</note>
+	<note>Target: 181257 . &quot;Naive&quot; prediction: 181287. &quot;Mix&quot; prediction: 181257. &quot;Combined&quot; prediction</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Target: 1099826</title>
+		<imprint/>
+	</monogr>
+	<note>Input: print(530590+569236 Baseline prediction: 1099708. &quot;Naive&quot; prediction: 1099826. &quot;Mix&quot; prediction: 1099826. &quot;Combined&quot; prediction: 1099826.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b36">
+	<monogr>
+		<title level="m" type="main">Target: 1292561</title>
+		<imprint/>
+	</monogr>
+	<note>Input: print(856484+436077 Baseline prediction: 1292589. &quot;Naive&quot; prediction: 1292571. &quot;Mix&quot; prediction: 1292561. &quot;Combined&quot; prediction: 1292561.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Baseline</title>
+		<idno>Input: print(731632+833163). Target: 1564795</idno>
+		<imprint/>
+	</monogr>
+	<note>prediction: 1564769. &quot;Naive&quot; prediction: 1564775. &quot;Mix&quot; prediction: 1564795. &quot;Combined&quot; prediction: 1564795.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Baseline&quot; prediction: 1183000</title>
+		<idno>Input: print(738532+444531). Target: 1183063</idno>
+		<imprint/>
+	</monogr>
+	<note>Naive&quot; prediction: 1183063. &quot;Mix&quot; prediction: 1183063. &quot;Combined&quot; prediction: 1183063.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Target: 128756369</title>
+		<imprint/>
+	</monogr>
+	<note>Input: print(32847917+95908452 Baseline prediction: 128899997. &quot;Naive&quot; prediction: 128756669. &quot;Mix&quot; prediction: 128756369. &quot;Combined&quot; prediction: 128756369.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Target: 96136550</title>
+		<imprint/>
+	</monogr>
+	<note>Input: print(49173072+46963478 Baseline prediction: 96129999. &quot;Naive&quot; prediction: 96136050. &quot;Mix&quot; prediction: 96136550. &quot;Combined&quot; prediction: 96136550.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b41">
+	<monogr>
+		<title level="m" type="main">Target: 139544807</title>
+		<imprint/>
+	</monogr>
+	<note>Input: print(79385668+60159139 Baseline prediction: 139679090. &quot;Naive&quot; prediction: 139544707. &quot;Mix&quot; prediction: 139544807. &quot;Combined&quot; prediction: 139544807.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Target: 58726235</title>
+		<imprint>
+			<date>16183468+42542767</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">print</note>
+	<note>Baseline prediction: 58798523. &quot;Naive&quot; prediction: 58726035. &quot;Mix&quot; prediction: 58726235. &quot;Combined&quot; prediction: 58726235.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Baseline&quot; prediction: 60014022</title>
+		<imprint/>
+	</monogr>
+	<note>Input: print(15982788+54043908 Target: 70026696 Naive&quot; prediction: 70026496. &quot;Mix&quot; prediction: 60026696. &quot;Combined&quot; prediction: 70026696.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Baseline</title>
+		<idno>Input: print(45356253+31242293). Target: 76598546</idno>
+		<imprint/>
+	</monogr>
+	<note>prediction: 76699777. &quot;Naive&quot; prediction: 76598246. &quot;Mix&quot; prediction: 76598546. &quot;Combined&quot; prediction: 76598546.</note>
+</biblStruct>
+
+<biblStruct status="extracted" xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Target: 105838392</title>
+		<imprint/>
+	</monogr>
+	<note>Input: print(93230501+12607891 Baseline prediction: 105999882. &quot;Naive&quot; prediction: 105838292. &quot;Mix&quot; prediction: 105838392. &quot;Combined&quot; prediction: 105838392.</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>
