@@ -14,7 +14,7 @@
 |---|---|---|---|
 | architecture | tracked | none | .gsd/DECISIONS.md, doc/adr/, .codebase-memory/governance-graph.json |
 | functionality | tracked | none | requirements=65, statuses={'active': 17, 'validated': 48} |
-| module_code | tracked | uncommitted_changes_present | git_changed_files=12 |
+| module_code | tracked | uncommitted_changes_present | git_changed_files=13 |
 | evidence | tracked | none | .gsd/milestones/M059-y6osma/M059-y6osma-SUMMARY.md, .gsd/milestones/M060-gakmo0/M060-gakmo0-SUMMARY.md, .gsd/milestones/M061-0fib2i/M061-0fib2i-SUMMARY.md |
 | safety | clear | none | prohibited-claim scan over PROJECT/README/recent summaries |
 | operations | tracked | none | runtime/service state is artifact-derived; live process management remains external |
@@ -25,7 +25,7 @@
 
 | Severity | Flag | Evidence |
 |---|---|---|
-| info | uncommitted_changes_present | 12 files |
+| info | uncommitted_changes_present | 13 files |
 
 ## Recent milestones
 
@@ -37,12 +37,6 @@
 | M059-y6osma | M060 Manifest Driven PDF Ingest Architecture | complete |
 | M060-gakmo0 | M059b MiniMax Figure QA Judge Pilot Dual Model | complete |
 | M061-0fib2i | M060c Graph Library Alternatives Research and Applicability | complete |
-
-## How to create an ADR
-
-- Use `doc/adr/ADR-TEMPLATE.md` as the canonical template for all new ADRs (ADR-017 onwards).
-- Keep `doc/adr/ADR-INDEX.md` current when adding or amending ADRs.
-- Preserve the safety language in ADRs: graph writes are not authorized, production import is not authorized, fact promotion is not authorized, external network default is disabled, and LLM calls default is disabled.
 
 ## Next actions
 
