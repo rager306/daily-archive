@@ -192,6 +192,8 @@
 | ADR-013 | Accepted (binding) | `doc/adr/ADR-013-manifest-driven-pdf-ingest.md` | Manifest-Driven PDF Ingest Architecture |
 | ADR-014 | Accepted (binding) | `doc/adr/ADR-014-minimax-judge-m3-multimodal.md` | MiniMax M3 Multimodal as Figure QA Judge |
 | ADR-016 | Accepted (binding) | `doc/adr/ADR-016-graph-library-selection.md` | Graph Library Selection for M060b-M064+ |
+| ADR-017 | Accepted (binding) | `doc/adr/ADR-017-pipeline-queue-deferred.md` | Pipeline Queue Deferred Until Pipeline End-to-End Complete |
+| ADR-018 | Accepted (binding) | `doc/adr/ADR-018-m061-2-hop-evidence-and-m064-trigger.md` | M061 2-hop Evidence and M064 Trigger Evaluation |
 
 ## ADR Decision Highlights
 
