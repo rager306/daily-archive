@@ -482,7 +482,28 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.extend(["", "## Next actions", ""])
     for action in report["next_actions"]:
         lines.append(f"- {action}")
+
+    lines.extend([
+        "",
+        "## How to create an ADR",
+        "",
+        "1. Use the canonical template: `doc/adr/ADR-TEMPLATE.md` (14 sections, Mermaid-assisted, LLM Reading Notes required).",
+        "2. Number sequentially after the highest existing ADR number (e.g., next is `ADR-017`).",
+        "3. Filename pattern: `doc/adr/ADR-NNN-short-title.md` (use hyphens, no slashes).",
+        "4. Update `doc/adr/ADR-INDEX.md` table with the new entry.",
+        "5. After commit, run `uv run python scripts/sync_codebase_memory_governance.py` to mirror.",
+        "6. For amendments to existing ADRs, add an \"Amendment Log\" section with date + milestone + rationale.",
+        "",
+        "## Next gate (post-M062-b4porb)",
+        "",
+        "- M060b: NetworkX graph validation (intermediate layer)",
+        "- M061: 2-hop BFS with M3 judge integration",
+        "- M062: fd production hardening",
+        "- M063: ADR-002 GraphDB selection (FalkorDB vs LadybugDB vs Neo4j)",
+        "- M060d (current) closeout: 1 primary (NetworkX) + 1 supplementary (igraph) per amended ADR-016.",
+    ])
     lines.append("")
+
     return "\n".join(lines)
 
 
