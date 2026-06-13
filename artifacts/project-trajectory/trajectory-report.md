@@ -14,8 +14,8 @@
 |---|---|---|---|
 | architecture | tracked | none | .gsd/DECISIONS.md, doc/adr/, .codebase-memory/governance-graph.json |
 | functionality | tracked | none | requirements=65, statuses={'active': 17, 'validated': 48} |
-| module_code | tracked | uncommitted_changes_present | git_changed_files=14 |
-| evidence | tracked | none | .gsd/milestones/M059-y6osma/M059-y6osma-SUMMARY.md, .gsd/milestones/M060-gakmo0/M060-gakmo0-SUMMARY.md, .gsd/milestones/M061-0fib2i/M061-0fib2i-SUMMARY.md |
+| module_code | tracked | uncommitted_changes_present | git_changed_files=12 |
+| evidence | tracked | none | .gsd/milestones/M060-gakmo0/M060-gakmo0-SUMMARY.md, .gsd/milestones/M061-0fib2i/M061-0fib2i-SUMMARY.md, .gsd/milestones/M063-8d01zz/M063-8d01zz-SUMMARY.md |
 | safety | clear | none | prohibited-claim scan over PROJECT/README/recent summaries |
 | operations | tracked | none | runtime/service state is artifact-derived; live process management remains external |
 | next_gate | clear | none | README.md, recent milestone summaries |
@@ -25,18 +25,18 @@
 
 | Severity | Flag | Evidence |
 |---|---|---|
-| info | uncommitted_changes_present | 14 files |
+| info | uncommitted_changes_present | 12 files |
 
 ## Recent milestones
 
 | Milestone | Title | Status |
 |---|---|---|
-| M057-s70wkm | Graph-Readiness Gate v1 via fd Embeddings + Marker Re-extraction | complete |
 | M052-xifwu6 | RLM S09 Document Workflow Harness on M050 Worker Pool | complete |
 | M058-cmjp1u | M059 Pilot Cycle plotextractor v2 + Marker Iterative Expansion | complete |
 | M059-y6osma | M060 Manifest Driven PDF Ingest Architecture | complete |
 | M060-gakmo0 | M059b MiniMax Figure QA Judge Pilot Dual Model | complete |
 | M061-0fib2i | M060c Graph Library Alternatives Research and Applicability | complete |
+| M063-8d01zz | M060b NetworkX Graph Validation Intermediate Layer | complete |
 
 ## Next actions
 
