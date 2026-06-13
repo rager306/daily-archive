@@ -111,3 +111,29 @@ def test_m050_m060g_regression_surfaces_remain_read_only() -> None:
     assert "graph-tool" not in SCRIPT_PATH.read_text(encoding="utf-8")
     assert "PyG" not in SCRIPT_PATH.read_text(encoding="utf-8")
     assert "DGL" not in SCRIPT_PATH.read_text(encoding="utf-8")
+
+
+def test_library_research_reports_exist() -> None:
+    research_dir = ROOT / "artifacts" / "m060c-benchmark" / "library-research"
+    expected_reports = {
+        "python-igraph.md",
+        "rustworkx.md",
+        "pytorch_geometric.md",
+        "dgl.md",
+        "networkx-temporal.md",
+        "graphscope.md",
+    }
+    for report_name in expected_reports:
+        report_path = research_dir / report_name
+        assert report_path.exists(), report_name
+        report = report_path.read_text(encoding="utf-8")
+        assert "## Architecture summary" in report
+        assert "## Algorithm support table" in report
+        assert "## Our use case fit" in report
+        assert "## Decision" in report
+
+    graph_tool_note = research_dir / "graph-tool.md"
+    assert graph_tool_note.exists()
+    graph_tool_text = graph_tool_note.read_text(encoding="utf-8")
+    assert "**NOT_VENDORED**" in graph_tool_text
+    assert "**DEFER**" in graph_tool_text
