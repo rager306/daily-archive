@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import time
 from collections.abc import Awaitable, Callable, Sequence
 from email.utils import parsedate_to_datetime
@@ -14,14 +15,63 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_ENDPOINT = "http://127.0.0.1:8000/v1/embeddings"
-DEFAULT_DIMENSIONS = 1024
-DEFAULT_BATCH_SIZE = 32
-DEFAULT_TIMEOUT_SECONDS = 120.0
-DEFAULT_RETRY_SCHEDULE_SECONDS = (1.0, 5.0, 15.0, 60.0, 300.0)
-DEFAULT_MAX_ATTEMPTS = 3
-DEFAULT_CIRCUIT_FAILURE_THRESHOLD = 3
-DEFAULT_CIRCUIT_OPEN_SECONDS = 60.0
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.environ.get(name, str(default)))
+    except ValueError:
+        logger.warning(
+            "invalid integer env value; using default",
+            extra={"event": "fd_config_invalid_env", "env_var": name, "default": default},
+        )
+        return default
+
+
+def _env_float(name: str, default: float) -> float:
+    try:
+        return float(os.environ.get(name, str(default)))
+    except ValueError:
+        logger.warning(
+            "invalid float env value; using default",
+            extra={"event": "fd_config_invalid_env", "env_var": name, "default": default},
+        )
+        return default
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.lower() in ("true", "1", "yes")
+
+
+def _env_str(name: str, default: str) -> str:
+    return os.environ.get(name, default)
+
+
+def _env_list(name: str, default: list[float]) -> list[float]:
+    raw = os.environ.get(name)
+    if not raw:
+        return default
+    try:
+        return [float(x.strip()) for x in raw.split(",") if x.strip()]
+    except ValueError:
+        logger.warning(
+            "invalid list env value; using default",
+            extra={"event": "fd_config_invalid_env", "env_var": name, "default": default},
+        )
+        return default
+
+
+DEFAULT_ENDPOINT = _env_str("FD_EMBEDDINGS_ENDPOINT", "http://127.0.0.1:8000/v1/embeddings")
+DEFAULT_MODEL_NAME = _env_str("FD_MODEL_NAME", "deepvk/USER-bge-m3")
+DEFAULT_DIMENSIONS = _env_int("FD_DIMENSIONS", 1024)
+DEFAULT_BATCH_SIZE = _env_int("FD_BATCH_SIZE", 32)
+DEFAULT_TIMEOUT_SECONDS = _env_float("FD_REQUEST_TIMEOUT_SECONDS", 120.0)
+DEFAULT_RETRY_SCHEDULE_SECONDS = tuple(_env_list("FD_RETRY_BACKOFF_SECONDS", [1.0, 5.0, 15.0, 60.0, 300.0]))
+DEFAULT_MAX_ATTEMPTS = _env_int("FD_MAX_RETRIES", 3)
+DEFAULT_CIRCUIT_FAILURE_THRESHOLD = _env_int("FD_CIRCUIT_FAILURE_THRESHOLD", 3)
+DEFAULT_CIRCUIT_OPEN_SECONDS = _env_float("FD_CIRCUIT_OPEN_SECONDS", 60.0)
+DEFAULT_GRACEFUL_DEGRADATION_ENABLED = _env_bool("FD_GRACEFUL_DEGRADATION_ENABLED", True)
 
 SAFETY_DEFAULTS: dict[str, bool] = {
     "graph_writes_authorized": False,
@@ -46,6 +96,7 @@ class Embedder:
     def __init__(
         self,
         endpoint: str = DEFAULT_ENDPOINT,
+        model_name: str = DEFAULT_MODEL_NAME,
         dimensions: int = DEFAULT_DIMENSIONS,
         batch_size: int = DEFAULT_BATCH_SIZE,
         *,
@@ -54,6 +105,7 @@ class Embedder:
         retry_schedule_seconds: Sequence[float] = DEFAULT_RETRY_SCHEDULE_SECONDS,
         circuit_failure_threshold: int = DEFAULT_CIRCUIT_FAILURE_THRESHOLD,
         circuit_open_seconds: float = DEFAULT_CIRCUIT_OPEN_SECONDS,
+        graceful_degradation_enabled: bool = DEFAULT_GRACEFUL_DEGRADATION_ENABLED,
         client: httpx.AsyncClient | None = None,
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
         time_fn: Callable[[], float] = time.monotonic,
@@ -62,6 +114,7 @@ class Embedder:
 
         Args:
             endpoint: OpenAI-compatible fd embeddings endpoint.
+            model_name: fd embedding model name.
             dimensions: Matryoshka dimension limit; fd supports 1024 and 512.
             batch_size: Max number of texts to send in one request.
             timeout_seconds: Per-request timeout for the fd HTTP call.
@@ -69,11 +122,13 @@ class Embedder:
             retry_schedule_seconds: Backoff schedule used between retry attempts.
             circuit_failure_threshold: Consecutive failed attempts before opening the circuit.
             circuit_open_seconds: Cooldown before probing fd in half-open state.
+            graceful_degradation_enabled: Return zero embeddings instead of raising when the circuit opens.
             client: Optional injected AsyncClient for tests or shared lifecycle management.
             sleep: Async sleep function, injectable to keep retry tests fast.
             time_fn: Monotonic clock, injectable for circuit-breaker tests.
         """
         self.endpoint = endpoint
+        self.model_name = model_name
         self.dimensions = dimensions
         self.batch_size = batch_size
         self.timeout_seconds = timeout_seconds
@@ -81,6 +136,7 @@ class Embedder:
         self.retry_schedule_seconds = tuple(retry_schedule_seconds)
         self.circuit_failure_threshold = circuit_failure_threshold
         self.circuit_open_seconds = circuit_open_seconds
+        self.graceful_degradation_enabled = graceful_degradation_enabled
         self._client = client
         self._owns_client = client is None
         self._sleep = sleep
@@ -124,9 +180,11 @@ class Embedder:
 
         self._refresh_circuit_state()
         if self._circuit_state == CIRCUIT_OPEN:
-            return self._zero_embeddings(texts, reason="circuit_open")
+            if self.graceful_degradation_enabled:
+                return self._zero_embeddings(texts, reason="circuit_open")
+            raise FdEmbeddingError("fd circuit is open")
 
-        payload = {"input": texts, "dimensions": self.dimensions}
+        payload = {"input": texts, "model": self.model_name, "dimensions": self.dimensions}
         last_error: Exception | None = None
 
         for attempt in range(1, self.max_attempts + 1):
@@ -191,7 +249,9 @@ class Embedder:
                 )
 
                 if self._circuit_state == CIRCUIT_OPEN:
-                    return self._zero_embeddings(texts, reason="circuit_open_after_failure")
+                    if self.graceful_degradation_enabled:
+                        return self._zero_embeddings(texts, reason="circuit_open_after_failure")
+                    raise FdEmbeddingError("fd circuit opened after repeated failures")
                 if attempt >= self.max_attempts or not self._is_retriable_exception(exc):
                     break
 

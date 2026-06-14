@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 from statistics import mean
 from typing import Any
@@ -20,6 +21,7 @@ DEFAULT_TABLE_EDGES = ROOT / "artifacts" / "m057-fd-marker" / "table-similarity"
 DEFAULT_FIGURE_EDGES = ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "edges.json"
 DEFAULT_COMBINED_EDGES = ROOT / "artifacts" / "m057-fd-marker" / "combined-edges.json"
 DEFAULT_LAYER_SUMMARY = ROOT / "artifacts" / "m057-fd-marker" / "per-layer-summary.json"
+DEFAULT_BASE_URL = os.environ.get("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000")
 
 SAFETY_DEFAULTS: dict[str, bool] = {
     "graph_writes_authorized": False,
@@ -135,7 +137,7 @@ def build_manifest(
     manifest = {
         "schema_version": "m057.combined-edges.v1",
         "diagnostic_only": True,
-        "base_url": "http://127.0.0.1:8000",
+        "base_url": DEFAULT_BASE_URL,
         "safety_defaults": SAFETY_DEFAULTS,
         "edge_count": len(combined_edges),
         "edges": combined_edges,
@@ -143,7 +145,7 @@ def build_manifest(
     summary = {
         "schema_version": "m057.per-layer-summary.v1",
         "diagnostic_only": True,
-        "base_url": "http://127.0.0.1:8000",
+        "base_url": DEFAULT_BASE_URL,
         "safety_defaults": SAFETY_DEFAULTS,
         "total_edges": len(combined_edges),
         "layers": {layer: summarize_layer(edges) for layer, edges in layers.items()},

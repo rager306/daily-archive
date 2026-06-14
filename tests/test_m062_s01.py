@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import importlib
 import inspect
 import json
+import os
 from collections.abc import Awaitable, Callable
+from contextlib import contextmanager
 
 import httpx
 import pytest
@@ -16,6 +19,36 @@ from arxiv_archive.embedder import (
     DEFAULT_ENDPOINT,
     Embedder,
 )
+
+FD_ENV_KEYS = (
+    "FD_EMBEDDINGS_ENDPOINT",
+    "FD_MODEL_NAME",
+    "FD_DIMENSIONS",
+    "FD_BATCH_SIZE",
+    "FD_REQUEST_TIMEOUT_SECONDS",
+    "FD_MAX_RETRIES",
+    "FD_RETRY_BACKOFF_SECONDS",
+    "FD_CIRCUIT_FAILURE_THRESHOLD",
+    "FD_CIRCUIT_OPEN_SECONDS",
+    "FD_GRACEFUL_DEGRADATION_ENABLED",
+)
+
+
+@contextmanager
+def _embedder_env(**overrides: str):
+    original = {key: os.environ.get(key) for key in FD_ENV_KEYS}
+    try:
+        for key in FD_ENV_KEYS:
+            os.environ.pop(key, None)
+        os.environ.update(overrides)
+        yield importlib.reload(embedder_module)
+    finally:
+        for key, value in original.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        importlib.reload(embedder_module)
 
 
 def _openai_embedding_response(request: httpx.Request, *, dimensions: int = DEFAULT_DIMENSIONS) -> httpx.Response:
@@ -75,7 +108,9 @@ async def test_embedder_uses_openai_shape() -> None:
 
     await embedder.embed_batch(["alpha", "beta"])
 
-    assert observed_payloads == [{"input": ["alpha", "beta"], "dimensions": DEFAULT_DIMENSIONS}]
+    assert observed_payloads == [
+        {"input": ["alpha", "beta"], "model": "deepvk/USER-bge-m3", "dimensions": DEFAULT_DIMENSIONS}
+    ]
     assert "inputs" not in observed_payloads[0]
     assert "truncate" not in observed_payloads[0]
 
@@ -87,6 +122,40 @@ def test_embedder_dimensions_default_1024() -> None:
 
     assert embedder.dimensions == 1024
     assert DEFAULT_DIMENSIONS == 1024
+
+
+def test_env_override_endpoint() -> None:
+    endpoint = "http://127.0.0.1:9000/v1/embeddings"
+
+    with _embedder_env(FD_EMBEDDINGS_ENDPOINT=endpoint) as module:
+        assert module.DEFAULT_ENDPOINT == endpoint
+        assert module.Embedder().endpoint == endpoint
+
+
+def test_env_override_dimensions() -> None:
+    with _embedder_env(FD_DIMENSIONS="512") as module:
+        assert module.DEFAULT_DIMENSIONS == 512
+        assert module.Embedder().dimensions == 512
+
+
+def test_env_default_values() -> None:
+    with _embedder_env() as module:
+        assert module.DEFAULT_ENDPOINT == "http://127.0.0.1:8000/v1/embeddings"
+        assert module.DEFAULT_MODEL_NAME == "deepvk/USER-bge-m3"
+        assert module.DEFAULT_DIMENSIONS == 1024
+        assert module.DEFAULT_BATCH_SIZE == 32
+        assert module.DEFAULT_TIMEOUT_SECONDS == 120.0
+        assert module.DEFAULT_MAX_ATTEMPTS == 3
+        assert module.DEFAULT_RETRY_SCHEDULE_SECONDS == (1.0, 5.0, 15.0, 60.0, 300.0)
+        assert module.DEFAULT_CIRCUIT_FAILURE_THRESHOLD == 3
+        assert module.DEFAULT_CIRCUIT_OPEN_SECONDS == 60.0
+        assert module.DEFAULT_GRACEFUL_DEGRADATION_ENABLED is True
+
+
+def test_env_invalid_value_falls_back() -> None:
+    with _embedder_env(FD_DIMENSIONS="invalid") as module:
+        assert module.DEFAULT_DIMENSIONS == 1024
+        assert module.Embedder().dimensions == 1024
 
 
 @pytest.mark.asyncio

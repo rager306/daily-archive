@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 import urllib.error
@@ -13,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_BASE_URL = "http://127.0.0.1:8000"
+DEFAULT_BASE_URL = os.environ.get("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000")
 DEFAULT_CORPUS = ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "figure-caption-corpus.json"
 DEFAULT_OUTPUT = ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "embeddings.json"
 DEFAULT_BATCH_SIZE = 32

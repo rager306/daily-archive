@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 import urllib.error
 import urllib.request
@@ -13,7 +14,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT_ROOT = ROOT / "artifacts" / "m058-plotextractor"
-DEFAULT_BASE_URL = "http://127.0.0.1:8000"
+DEFAULT_BASE_URL = os.environ.get("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000")
 DEFAULT_CORPUS = ARTIFACT_ROOT / "figure-caption-corpus.json"
 DEFAULT_OUTPUT = ARTIFACT_ROOT / "embeddings.json"
 DEFAULT_BATCH_SIZE = 32
