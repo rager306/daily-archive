@@ -302,7 +302,7 @@ Recent milestones (post M046 roadmap):
 
 Next gate (per M059-y6osma decision):
 - M061 2-hop BFS with manifest-first ingest (5 anchors × 2-hop → 2000-5000 PDF).
-- M062 fd production hardening (persistent storage, monitoring, multi-worker).
+- M062 fd production hardening (persistent storage, monitoring, multi-worker). Closed M065-vq0do4: unified embedder + retry+circuit+graceful+metrics, env-driven config (10 FD_* env vars), ADR-019 binding + amended, 52 contract tests + gap report.
 - M063 ADR-002 GraphDB selection (FalkorDB vs LadybugDB vs Neo4j).
 - M059b MiniMax-M3 figure QA judge pilot (LLM-as-judge on 30 figures, bounded).
 
