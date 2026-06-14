@@ -13,6 +13,8 @@ This index lists project-level ADRs and points to historical ADR packages kept u
 
 ## Project-Level ADRs
 
+Project-level ADR count: 20
+
 | ADR | Status | Title | Path | Notes |
 | --- | --- | --- | --- | --- |
 | ADR-001 | Accepted | Scientific Papers as First Domain | `doc/adr/ADR-001-scientific-papers-as-first-domain.md` | Establishes scientific papers as the first proving domain. |
@@ -28,6 +30,7 @@ This index lists project-level ADRs and points to historical ADR packages kept u
 | ADR-017 | Accepted (binding) | Pipeline Queue Deferred Until Pipeline End-to-End Complete | `doc/adr/ADR-017-pipeline-queue-deferred.md` | M064 (smart queue + per-article DAG + SQLAlchemy Core + SQLite) DEFERRED until M061+M062+M063 complete. Design preserved for future implementation. |
 | ADR-018 | Accepted (binding) | M061 2-hop Evidence and M064 Trigger Evaluation | `doc/adr/ADR-018-m061-2-hop-evidence-and-m064-trigger.md` | M064 S03: confirms M061 2-hop evidence and keeps ADR-017 queue deferral in place until M062/M063 evidence changes the trigger. |
 | ADR-019 | Accepted (binding) | M062 fd Embedding Service Contract | `doc/adr/ADR-019-fd-embedding-service-contract.md` | Formalizes `/root/fd-v2.md` as the binding fd v2 contract for M062 fd production hardening. |
+| ADR-020 | Accepted (binding) | M063 GraphDB Selection (LadybugDB primary) | `doc/adr/ADR-020-graphdb-selection.md` | M063 GraphDB Selection (LadybugDB primary). |
 
 ## Historical ADR Packages
 
