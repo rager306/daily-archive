@@ -26,6 +26,8 @@ This index lists project-level ADRs and points to historical ADR packages kept u
 | ADR-015 | Accepted (binding) | NetworkX as Intermediate Graph Layer | `doc/adr/ADR-015-networkx-intermediate.md` | M060b: NetworkX is primary for read-only ops, manifest validation, simple algorithms. Use igraph only when scale demands. |
 | ADR-016 | Accepted (binding) | Graph Library Selection for M060b-M064+ | `doc/adr/ADR-016-graph-library-selection.md` | Amended 2026-06-13 to drop rustworkx: NetworkX primary, igraph supplementary. |
 | ADR-017 | Accepted (binding) | Pipeline Queue Deferred Until Pipeline End-to-End Complete | `doc/adr/ADR-017-pipeline-queue-deferred.md` | M064 (smart queue + per-article DAG + SQLAlchemy Core + SQLite) DEFERRED until M061+M062+M063 complete. Design preserved for future implementation. |
+| ADR-018 | Accepted (binding) | M061 2-hop Evidence and M064 Trigger Evaluation | `doc/adr/ADR-018-m061-2-hop-evidence-and-m064-trigger.md` | M064 S03: confirms M061 2-hop evidence and keeps ADR-017 queue deferral in place until M062/M063 evidence changes the trigger. |
+| ADR-019 | Accepted (binding) | M062 fd Embedding Service Contract | `doc/adr/ADR-019-fd-embedding-service-contract.md` | Formalizes `/root/fd-v2.md` as the binding fd v2 contract for M062 fd production hardening. |
 
 ## Historical ADR Packages
 
