@@ -427,6 +427,29 @@ fd_model_loaded 1
 
 ---
 
+## 4.5 Configuration: env-driven
+
+Per M062 S01v2 user feedback (2026-06-14), all FD service configuration MUST be env-driven, not hardcoded in source code.
+
+| Env var | Default | Description |
+|---|---|---|
+| FD_EMBEDDINGS_ENDPOINT | http://127.0.0.1:8000/v1/embeddings | Full URL to embeddings endpoint |
+| FD_EMBEDDINGS_ENDPOINT_BASE | http://127.0.0.1:8000 | Base URL (used by scripts) |
+| FD_MODEL_NAME | deepvk/USER-bge-m3 | Model identifier (in error messages, X-Model-Id) |
+| FD_DIMENSIONS | 1024 | Embedding dimensions (1024 or 512) |
+| FD_BATCH_SIZE | 32 | Max batch size |
+| FD_REQUEST_TIMEOUT_SECONDS | 30 | Per-request timeout |
+| FD_MAX_RETRIES | 3 | Max retry attempts |
+| FD_RETRY_BACKOFF_SECONDS | 1,5,15,60,300 | Retry backoff schedule (comma-separated seconds) |
+| FD_CIRCUIT_FAILURE_THRESHOLD | 3 | Failures before circuit opens |
+| FD_CIRCUIT_OPEN_SECONDS | 60 | Circuit open duration |
+
+See `.env.example` for defaults and `src/arxiv_archive/embedder.py` for the implementation.
+
+**Rationale**: hardcoded values (endpoint, model name, dimensions) prevent deployment to different environments (CI, staging, production). Env-driven config is the standard 12-factor app pattern.
+
+---
+
 ## 5. Error Catalog
 
 The fd v2 error catalog is machine-readable and binding. Callers must classify failures by `error.code`, `error.type`, and HTTP status, not by free-form message text. There are exactly 16 canonical error codes.
@@ -809,6 +832,12 @@ T-E-5: GET /docs → 200 (NOT 404)
 - `tests/test_m062_s01.py` — M062 S01 regression tests for wrapper hardening.
 - M062 S03 — planned contract validation suite against fd service behavior.
 - `doc/adr/ADR-014-minimax-judge-m3-multimodal.md` — binding model/tooling ADR referenced by M062 dependency chain.
+
+## Amendment Log
+
+| Date | Author | Change | Rationale |
+|---|---|---|---|
+| 2026-06-14 | user feedback (executor-01) | Added section 4.5 (env-driven configuration). 10 FD_* env vars added to .env.example. Embedder (src/arxiv_archive/embedder.py) + 4 scripts (scripts/m057_*, scripts/m058_*) updated to read from os.environ via _env_str/_env_int/_env_float/_env_bool/_env_list helpers. | User explicit feedback: 'all FD service config should be env-driven, not hardcoded'. 12-factor app pattern. Backward compatible: same defaults if env not set. |
 
 ## 14. LLM Reading Notes
 
