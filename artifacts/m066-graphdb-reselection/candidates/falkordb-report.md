@@ -3,8 +3,9 @@
 ## 0. One-line summary
 Strong graph-vector fit with server-side serialized writes and GraphBLAS lineage, but weaker UDF and full transaction depth than Neo4j or PostgreSQL-backed AGE.
 
-**Total score:** 68/90  
-**M066 rank:** #2  
+**Total score:** 70/90
+**M066 rank:** #2 before M067 license correction
+**M067 self-hosted rank:** #1
 **M063 baseline:** 35/45
 
 ## 1. Native vector support
@@ -33,7 +34,7 @@ M066 retains the M063 evidence category and rescales it as an explicit 1-5 crite
 
 ## 7. License fit
 Score: **4/5**.
-M066 retains the M063 evidence category and rescales it as an explicit 1-5 criterion for FalkorDB.
+M067 corrects the M066 license analysis: FalkorDB is SSPLv1, not AGPLv3. Under the M067 distribution model assumption (daily-archive is a self-hosted research project), SSPLv1 is viable without source disclosure. SaaS or a hosted service for third parties triggers SSPLv1 Section 13 disclosure obligations unless a commercial FalkorDB license is obtained. Internal proprietary applications are allowed when FalkorDB itself is not exposed as a third-party service, and evaluation, prototyping, and internal testing are freely allowed.
 
 ## 8. Community size and activity
 Score: **3/5**.
@@ -111,5 +112,7 @@ Server-side serialization avoids lost writes in the 3-writer harness.
 
 ## Deployment notes
 Use DB_HOST/DB_PORT for local service discovery. Offline benchmark mode keeps network access disabled by default.
+
+Self-hosting is fully supported through Docker, Kubernetes, and standalone deployment modes, with Redis 8.0+ required. FalkorDB Cloud is optional and cloud-only: Free is limited, Startup is $73 per 1GB-month, Pro is $350 per 8GB-month, and Enterprise is tailored.
 
 Safety note: production graph import is not authorized; real DB connections are disabled by default.
