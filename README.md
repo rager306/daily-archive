@@ -303,7 +303,7 @@ Recent milestones (post M046 roadmap):
 Next gate (per M059-y6osma decision):
 - M061 2-hop BFS with manifest-first ingest (5 anchors × 2-hop → 2000-5000 PDF).
 - M062 fd production hardening (persistent storage, monitoring, multi-worker). Closed M065-vq0do4: unified embedder + retry+circuit+graceful+metrics, env-driven config (10 FD_* env vars), ADR-019 binding + amended, 52 contract tests + gap report.
-- M063 ADR-002 GraphDB selection (FalkorDB vs LadybugDB vs Neo4j). Closed M065-u29n4f: 5 candidates evaluated, LadybugDB chosen (39/45 score), ADR-020 binding, networkx->ladybug migration plan. SUPERSEDED by M066 (Neo4j 76/90, concurrent writes 5/5, GRAFBLAS 4/5, UDF 5/5).
+- M063 ADR-002 GraphDB selection (FalkorDB vs LadybugDB vs Neo4j). Closed M065-u29n4f: 5 candidates evaluated, LadybugDB chosen (39/45 score), ADR-020 binding, networkx->ladybug migration plan. SUPERSEDED by M066 (Neo4j 76/90, concurrent writes 5/5, GRAFBLAS 4/5, UDF 5/5). SUPERSEDED again by M067 (FalkorDB 70/90 for self-hosted, SSPLv1 license correction, supersedes ADR-021 Neo4j AGPLv3).
 - M059b MiniMax-M3 figure QA judge pilot (LLM-as-judge on 30 figures, bounded).
 
 M046 roadmap proposal: Quick wins (M044 pre-commit, trajectory severity tuning, M048 patterns review, M049 models registry) → parallel tracks A (M050 LLM helper worker pool, M052 RLM S09, M053 RLM S10) and B (M051 bounded PDF acquisition, M055 GROBID expansion, M056 GraphDB comparison, M057 hybrid pilot) → convergence at M058 (graph-readiness gate v1) or explicit deferral.
