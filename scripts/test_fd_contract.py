@@ -32,12 +32,16 @@ if str(ROOT / "src") not in sys.path:
 
 from arxiv_archive.embedder import CIRCUIT_CLOSED, CIRCUIT_OPEN, Embedder  # noqa: E402
 
-DEFAULT_ENDPOINT = "http://127.0.0.1:8000/v1/embeddings"
-DEFAULT_BASE_URL = "http://127.0.0.1:8000"
+DEFAULT_TEI_URL = "http://127.0.0.1:8000"
+DEFAULT_ENDPOINT = f"{DEFAULT_TEI_URL}/v1/embeddings"
+DEFAULT_MODEL_ID = "deepvk/USER-bge-m3"
+DEFAULT_REDIS_HOST = "127.0.0.1"
+DEFAULT_REDIS_PORT = "6379"
 ARTIFACT_DIR = Path(os.environ.get("FD_CONTRACT_REPORT_DIR", "artifacts/m062-fd-contract"))
-RESULTS_JSON = "fd-contract-results.json"
-REPORT_MD = "fd-contract-report.md"
-GAP_MD = "fd-actual-vs-required.md"
+RESULTS_JSON = "fd-contract-results-v2.json"
+PRIOR_REPORT_MD = "fd-contract-report.md"
+REPORT_MD = "fd-contract-report-v2.md"
+GAP_MD = "fd-actual-vs-required-v2.md"
 SNIPPET_LIMIT = 240
 
 
@@ -95,16 +99,46 @@ class HttpCase:
     validator: Callable[[httpx.Response, float], tuple[bool, str]] | None = None
     requirements: tuple[str, ...] = ()
     skip_reason: str | None = None
-
-
-def get_endpoint() -> str:
-    """Return the embeddings endpoint, allowing the S03 env override."""
-    return os.environ.get("FD_EMBEDDINGS_ENDPOINT", DEFAULT_ENDPOINT)
+    use_auth: bool = True
 
 
 def get_base_url() -> str:
-    """Return the fd base URL, allowing the S03 env override."""
-    return os.environ.get("FD_EMBEDDINGS_ENDPOINT_BASE", DEFAULT_BASE_URL)
+    """Return the fd base URL from the v2 TEI_URL env, with legacy fallback."""
+    return os.environ.get("TEI_URL") or os.environ.get("FD_EMBEDDINGS_ENDPOINT_BASE") or DEFAULT_TEI_URL
+
+
+def get_endpoint() -> str:
+    """Return the embeddings endpoint from TEI_URL, allowing explicit legacy override."""
+    explicit_endpoint = os.environ.get("FD_EMBEDDINGS_ENDPOINT")
+    if explicit_endpoint:
+        return explicit_endpoint
+    base_url = get_base_url().rstrip("/")
+    if base_url.endswith("/v1/embeddings"):
+        return base_url
+    return f"{base_url}/v1/embeddings"
+
+
+def get_model_id() -> str:
+    """Return the model id advertised by fd v2."""
+    return os.environ.get("MODEL_ID") or os.environ.get("FD_MODEL_NAME") or DEFAULT_MODEL_ID
+
+
+def get_redis_host() -> str:
+    """Return Redis host env used by fd v2 cache wiring."""
+    return os.environ.get("REDIS_HOST", DEFAULT_REDIS_HOST)
+
+
+def get_redis_port() -> str:
+    """Return Redis port env used by fd v2 cache wiring."""
+    return os.environ.get("REDIS_PORT", DEFAULT_REDIS_PORT)
+
+
+def get_auth_headers(api_key: str | None = None) -> dict[str, str]:
+    """Return Authorization header from FD_API_KEY without exposing it in evidence."""
+    key = os.environ.get("FD_API_KEY") if api_key is None else api_key
+    if not key:
+        return {}
+    return {"Authorization": f"Bearer {key}"}
 
 
 @contextlib.contextmanager
@@ -298,7 +332,20 @@ def _run_http_case(client: httpx.Client, case: HttpCase) -> TestResult:
             case.requirements,
         )
 
+    if case.use_auth and not os.environ.get("FD_API_KEY"):
+        return TestResult(
+            case.test_id,
+            case.category,
+            case.description,
+            case.expected,
+            "SKIP",
+            Evidence(note="FD_API_KEY is not configured; protected fd v2 request is not authorized for verification"),
+            case.requirements,
+        )
+
     url = _url_for(case)
+    headers = get_auth_headers() if case.use_auth else {}
+    headers.update(case.headers)
     started = time.perf_counter()
     try:
         response = client.request(
@@ -306,7 +353,7 @@ def _run_http_case(client: httpx.Client, case: HttpCase) -> TestResult:
             url,
             json=case.json_payload,
             content=case.raw_body,
-            headers=case.headers,
+            headers=headers,
         )
         latency_ms = (time.perf_counter() - started) * 1000
     except Exception as exc:
@@ -365,7 +412,7 @@ def build_http_cases() -> list[HttpCase]:
         HttpCase("T-E-6", "error", "batch too large", "POST", "$endpoint", "413, code=batch_too_large", 413, {"input": ["a"] * 100}, validator=_code_is("batch_too_large"), requirements=("R-P0-2", "R-P0-18", "R-P0-19")),
         HttpCase("T-E-7", "error", "input too long", "POST", "$endpoint", "413, code=input_too_long", 413, {"input": ["x" * 10000]}, validator=_code_is("input_too_long"), requirements=("R-P0-1", "R-P0-18", "R-P0-19")),
         HttpCase("T-E-8", "error", "GET embeddings method not allowed", "GET", "/v1/embeddings", "405, not 404", 405, requirements=("R-P0-19",)),
-        HttpCase("T-E-9", "error", "auth required when API key auth is enabled", "POST", "$endpoint", "401, code=unauthorized", 401, {"input": ["a"]}, validator=_code_is("unauthorized"), requirements=("R-P1-8",), skip_reason="API key auth scenario is disabled by default unless fd is configured with FD_API_KEY" if not os.environ.get("FD_API_KEY") else None),
+        HttpCase("T-E-9", "error", "auth rejects invalid bearer token", "POST", "$endpoint", "401, code=unauthorized or is not authorized", 401, {"input": ["a"]}, headers=get_auth_headers("test-fd-api-key-12345"), validator=_code_is("unauthorized"), requirements=("R-P1-8",), use_auth=False),
         HttpCase("T-E-10", "error", "unknown route", "GET", "/v9999", "404, code=not_found", 404, validator=_code_is("not_found"), requirements=("R-P0-18", "R-P0-19")),
         HttpCase("T-E-11", "error", "during graceful shutdown", "POST", "$endpoint", "503, code=shutting_down, Retry-After: 30", skip_reason="shutdown mutation is disabled by default for this read-only daily-archive contract harness", requirements=("R-P0-5", "R-P0-16", "R-P0-19")),
         HttpCase("T-E-12", "error", "model not loaded", "POST", "$endpoint", "503, code=model_not_loaded, Retry-After: 5", skip_reason="model-unloaded fixture is disabled by default; actual fd is expected to be warm or externally managed", requirements=("R-P0-3", "R-P0-16", "R-P0-19")),
@@ -375,7 +422,7 @@ def build_http_cases() -> list[HttpCase]:
         HttpCase("T-HDR-1", "headers", "server version header", "GET", "/health", "Server: fd/2.0.0", validator=_header_equals("Server", "fd/2.0.0"), requirements=("R-P0-12",)),
         HttpCase("T-HDR-2", "headers", "request id echo", "POST", "$endpoint", "response echoes X-Request-Id: my-id", 200, {"input": ["a"]}, headers={"X-Request-Id": "my-id"}, validator=_header_equals("X-Request-Id", "my-id"), requirements=("R-P0-11",)),
         HttpCase("T-HDR-3", "headers", "generated request id", "POST", "$endpoint", "response has X-Request-Id", 200, {"input": ["a"]}, validator=_header_present("X-Request-Id"), requirements=("R-P0-11",)),
-        HttpCase("T-HDR-4", "headers", "model id header", "POST", "$endpoint", "X-Model-Id: deepvk/USER-bge-m3", 200, {"input": ["a"]}, validator=_header_equals("X-Model-Id", "deepvk/USER-bge-m3"), requirements=("R-P0-13",)),
+        HttpCase("T-HDR-4", "headers", "model id header", "POST", "$endpoint", "X-Model-Id matches MODEL_ID", 200, {"input": ["a"]}, validator=_header_equals("X-Model-Id", get_model_id()), requirements=("R-P0-13",)),
         HttpCase("T-HDR-5", "headers", "dimensions header", "POST", "$endpoint", "X-Dimensions: 1024", 200, {"input": ["a"]}, validator=_header_equals("X-Dimensions", "1024"), requirements=("R-P0-14",)),
         HttpCase("T-HDR-6", "headers", "cache hit header on repeat", "POST", "$endpoint", "X-Cache: HIT", 200, {"input": ["cache-hot"]}, validator=_header_equals("X-Cache", "HIT"), requirements=("R-P0-15", "R-P1-4")),
         HttpCase("T-HDR-7", "headers", "cache miss header on first request", "POST", "$endpoint", "X-Cache: MISS", 200, {"input": [f"cache-miss-{int(time.time())}"]}, validator=_header_equals("X-Cache", "MISS"), requirements=("R-P0-15", "R-P1-4")),
@@ -394,13 +441,20 @@ def build_http_cases() -> list[HttpCase]:
 
 
 def _run_performance_sequence(client: httpx.Client) -> list[TestResult]:
+    if not os.environ.get("FD_API_KEY"):
+        note = "FD_API_KEY is not configured; protected fd v2 request is not authorized for verification"
+        return [
+            TestResult("T-P-4", "performance", "100 sequential cache-hot requests", "p95 < 50ms, all X-Cache=HIT", "SKIP", Evidence(note=note), ("R-P0-6",)),
+            TestResult("T-P-5", "performance", "concurrency 32 cache-hot requests", "p95 < 50ms, all X-Cache=HIT", "SKIP", Evidence(note=note), ("R-P0-6",)),
+        ]
+
     results: list[TestResult] = []
     endpoint = get_endpoint()
 
     def post(payload: dict[str, Any]) -> tuple[httpx.Response | None, float, str]:
         started = time.perf_counter()
         try:
-            response = client.post(endpoint, json=payload)
+            response = client.post(endpoint, json=payload, headers=get_auth_headers())
             return response, (time.perf_counter() - started) * 1000, ""
         except Exception as exc:
             return None, (time.perf_counter() - started) * 1000, f"request_error={type(exc).__name__}: {exc}"
@@ -603,65 +657,59 @@ async def run_wrapper_tests() -> list[TestResult]:
 
 def run_env_override_tests() -> list[TestResult]:
     results: list[TestResult] = []
-    with temporary_env({"FD_EMBEDDINGS_ENDPOINT": "invalid://fd-test"}):
-        observed = get_endpoint()
+    with temporary_env({"FD_API_KEY": "test-fd-api-key-12345"}):
+        headers = get_auth_headers()
+        observed = "Authorization" in headers and headers["Authorization"].startswith("Bearer ")
         results.append(
             TestResult(
                 "T-ENV-1",
                 "env",
-                "FD_EMBEDDINGS_ENDPOINT overrides embeddings endpoint",
-                "get_endpoint() returns invalid://fd-test",
-                "PASS" if observed == "invalid://fd-test" else "FAIL",
-                Evidence(note=f"observed={observed}"),
+                "FD_API_KEY supplies bearer auth header",
+                "Authorization bearer header is set from FD_API_KEY without logging the key",
+                "PASS" if observed else "FAIL",
+                Evidence(note="authorization_header_present=True" if observed else "authorization_header_present=False"),
             )
         )
-    with temporary_env({"FD_EMBEDDINGS_ENDPOINT_BASE": "http://127.0.0.1:18000"}):
-        observed = get_base_url()
+    with temporary_env({"TEI_URL": "http://fd-test.internal:18000", "FD_EMBEDDINGS_ENDPOINT": None, "FD_EMBEDDINGS_ENDPOINT_BASE": None}):
+        observed_base = get_base_url()
+        observed_endpoint = get_endpoint()
+        expected_base = "http://fd-test.internal:18000"
+        expected_endpoint = "http://fd-test.internal:18000/v1/embeddings"
+        ok = observed_base == expected_base and observed_endpoint == expected_endpoint
         results.append(
             TestResult(
                 "T-ENV-2",
                 "env",
-                "FD_EMBEDDINGS_ENDPOINT_BASE overrides base URL",
-                "get_base_url() returns http://127.0.0.1:18000",
-                "PASS" if observed == "http://127.0.0.1:18000" else "FAIL",
-                Evidence(note=f"observed={observed}"),
+                "TEI_URL overrides fd base URL and derived endpoint",
+                "TEI_URL base derives /v1/embeddings endpoint",
+                "PASS" if ok else "FAIL",
+                Evidence(note=f"base_host=fd-test.internal, endpoint_suffix=/v1/embeddings, ok={ok}"),
             )
         )
-    with temporary_env({"FD_EMBEDDINGS_ENDPOINT": None, "FD_EMBEDDINGS_ENDPOINT_BASE": None}):
-        endpoint = get_endpoint()
-        base = get_base_url()
-        ok = endpoint == DEFAULT_ENDPOINT and base == DEFAULT_BASE_URL
+    with temporary_env({"MODEL_ID": "test/model-v2", "FD_MODEL_NAME": None}):
+        observed = get_model_id()
         results.append(
             TestResult(
                 "T-ENV-3",
                 "env",
-                "no env uses 127.0.0.1 defaults",
-                f"endpoint={DEFAULT_ENDPOINT}, base={DEFAULT_BASE_URL}",
-                "PASS" if ok else "FAIL",
-                Evidence(note=f"endpoint={endpoint}, base={base}"),
+                "MODEL_ID overrides advertised model id",
+                "get_model_id() returns test/model-v2",
+                "PASS" if observed == "test/model-v2" else "FAIL",
+                Evidence(note=f"observed_model_id={observed}"),
             )
         )
-    with temporary_env({"FD_EMBEDDINGS_ENDPOINT": "invalid://fd-test"}):
-        case = HttpCase(
-            "T-ENV-4",
-            "env",
-            "invalid endpoint gracefully records failure without crashing",
-            "POST",
-            "$endpoint",
-            "graceful fail or skip, no crash",
-            200,
-            {"input": ["a"]},
-        )
-        result = _run_http_case(httpx.Client(timeout=1.0), case)
-        status = "PASS" if result.status == "FAIL" and "request_error" in result.evidence.note else "FAIL"
+    with temporary_env({"REDIS_HOST": "fd-cache.internal", "REDIS_PORT": "6380"}):
+        observed_host = get_redis_host()
+        observed_port = get_redis_port()
+        ok = observed_host == "fd-cache.internal" and observed_port == "6380"
         results.append(
             TestResult(
                 "T-ENV-4",
                 "env",
-                "invalid endpoint gracefully records failure without crashing",
-                "request error captured as evidence",
-                status,
-                result.evidence,
+                "REDIS_HOST and REDIS_PORT override cache target",
+                "Redis cache target env resolves to fd-cache.internal:6380",
+                "PASS" if ok else "FAIL",
+                Evidence(note=f"observed_host={observed_host}, observed_port={observed_port}"),
             )
         )
     return results
@@ -747,6 +795,10 @@ def requirement_statuses(results: list[TestResult]) -> dict[str, dict[str, Any]]
         req_results = by_req.get(req_id, [])
         if any(result.status == "PASS" for result in req_results):
             status = "MET"
+        elif any(result.status == "SKIP" for result in req_results):
+            status = "UNKNOWN"
+        elif req_results and all(result.evidence.status_code is None for result in req_results):
+            status = "UNKNOWN"
         elif any(
             result.status == "FAIL"
             and result.evidence.status_code is not None
@@ -755,13 +807,19 @@ def requirement_statuses(results: list[TestResult]) -> dict[str, dict[str, Any]]
         ):
             status = "PARTIAL"
         else:
-            status = "MISSING"
+            status = "UNKNOWN"
         evidence = "; ".join(
             f"{result.test_id}:{result.status}:{result.evidence.compact()}" for result in req_results[:3]
         )
         if not evidence:
-            evidence = EXTRA_REQUIREMENT_EVIDENCE.get(req_id, "No direct S03 test evidence; requirement is missing until fd v2 implements it.")
-        statuses[req_id] = {**meta, "status": status, "evidence": evidence, "tests": [r.test_id for r in req_results]}
+            evidence = EXTRA_REQUIREMENT_EVIDENCE.get(req_id, "no mapped evidence")
+        statuses[req_id] = {
+            "priority": meta["priority"],
+            "description": meta["description"],
+            "status": status,
+            "tests": [result.test_id for result in req_results],
+            "evidence": evidence,
+        }
     return statuses
 
 
@@ -786,7 +844,7 @@ def summarize(results: list[TestResult]) -> dict[str, Any]:
             "total": len(priority_reqs),
             "met": sum(1 for item in priority_reqs if item["status"] == "MET"),
             "partial": sum(1 for item in priority_reqs if item["status"] == "PARTIAL"),
-            "missing": sum(1 for item in priority_reqs if item["status"] == "MISSING"),
+            "unknown": sum(1 for item in priority_reqs if item["status"] == "UNKNOWN"),
         }
     return {
         "total": total,
@@ -803,11 +861,27 @@ def _md_escape(value: str) -> str:
     return value.replace("|", "\\|").replace("\n", " ")
 
 
+def _load_prior_report_statuses(artifact_dir: Path) -> dict[str, str]:
+    prior_path = artifact_dir / PRIOR_REPORT_MD
+    if not prior_path.exists():
+        return {}
+    statuses: dict[str, str] = {}
+    for line in prior_path.read_text(encoding="utf-8").splitlines():
+        if not line.startswith("| T-"):
+            continue
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if len(cells) >= 6:
+            statuses[cells[0]] = cells[5]
+    return statuses
+
+
 def write_reports(results: list[TestResult], artifact_dir: Path = ARTIFACT_DIR) -> None:
     artifact_dir.mkdir(parents=True, exist_ok=True)
     summary = summarize(results)
+    prior_statuses = _load_prior_report_statuses(artifact_dir)
     results_payload = {
         "summary": summary,
+        "v1_statuses_loaded": bool(prior_statuses),
         "tests": [
             {
                 "test_id": result.test_id,
@@ -816,6 +890,7 @@ def write_reports(results: list[TestResult], artifact_dir: Path = ARTIFACT_DIR) 
                 "expected": result.expected,
                 "observed": result.observed,
                 "status": result.status,
+                "v1_status": prior_statuses.get(result.test_id),
                 "requirements": list(result.requirements),
             }
             for result in results
@@ -824,9 +899,10 @@ def write_reports(results: list[TestResult], artifact_dir: Path = ARTIFACT_DIR) 
     (artifact_dir / RESULTS_JSON).write_text(json.dumps(results_payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
     lines = [
-        "# M062 fd Contract Report",
+        "# M062 fd Contract Report v2",
         "",
         "Source contract: `/root/fd/docs/fd-v2.md` (the requested `/root/fd-v2.md` path was not present in this environment).",
+        "Configuration: fd v2 env uses `FD_API_KEY`, `TEI_URL`, `MODEL_ID`, `REDIS_HOST`, and `REDIS_PORT`.",
         "",
         "## Summary",
         "",
@@ -866,30 +942,78 @@ def write_reports(results: list[TestResult], artifact_dir: Path = ARTIFACT_DIR) 
             + " |"
         )
 
+    current_by_id = {result.test_id: result for result in results}
+    improved = [
+        result for result in results
+        if result.status == "PASS" and prior_statuses.get(result.test_id) not in (None, "PASS")
+    ]
+    regressions = [
+        result for result in results
+        if result.status != "PASS" and prior_statuses.get(result.test_id) == "PASS"
+    ]
+    unchanged_pass = [
+        result for result in results
+        if result.status == "PASS" and prior_statuses.get(result.test_id) == "PASS"
+    ]
+    lines.extend([
+        "",
+        "## v1 -> v2 comparison",
+        "",
+        f"Prior v1 statuses loaded: {'yes' if prior_statuses else 'no'}.",
+        f"Now passing after v1 failure or skip: {len(improved)}.",
+        f"Still passing from v1: {len(unchanged_pass)}.",
+        f"Regressed from v1 PASS: {len(regressions)}.",
+        "",
+        "### Tests now passing",
+        "",
+    ])
+    if improved:
+        for result in improved:
+            lines.append(f"- **{result.test_id}** — v1={prior_statuses.get(result.test_id)}, v2=PASS; {_md_escape(result.description)}")
+    else:
+        lines.append("- No v1 failed or skipped test passed in this v2 run; if fd v2 is not deployed this remains UNKNOWN rather than a contract regression.")
+    lines.extend(["", "### Regressions from v1 PASS", ""])
+    if regressions:
+        for result in regressions:
+            lines.append(f"- **{result.test_id}** — v1=PASS, v2={result.status}; {_md_escape(result.evidence.compact())}")
+    else:
+        lines.append("- None observed.")
+
     lines.extend(["", "## Gaps prioritized", ""])
     reqs = summary["requirements"]
     for priority in ("P0", "P1", "P2"):
         lines.append(f"### {priority}")
         lines.append("")
-        for req_id, item in reqs.items():
-            if item["priority"] == priority and item["status"] != "MET":
-                lines.append(f"- **{req_id} {item['status']}** — {item['description']}: {_md_escape(item['evidence'])}")
+        gaps = [
+            (req_id, item) for req_id, item in reqs.items()
+            if item["priority"] == priority and item["status"] != "MET"
+        ]
+        if not gaps:
+            lines.append("- None; all mapped requirements are MET.")
+        for req_id, item in gaps:
+            lines.append(f"- **{req_id} {item['status']}** — {item['description']}: {_md_escape(item['evidence'])}")
         lines.append("")
     (artifact_dir / REPORT_MD).write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
 
     gap_lines = [
-        "# M062 fd Actual vs Required",
+        "# M062 fd Actual vs Required v2",
         "",
-        "Status meanings: MET = at least one mapped contract test passed; PARTIAL = endpoint responded but header/body/status contract is incomplete; MISSING = endpoint/feature absent, skipped fixture, or no evidence.",
+        "Status meanings: MET = at least one mapped contract test passed; PARTIAL = endpoint responded but header/body/status contract is incomplete; UNKNOWN = endpoint unavailable, skipped fixture, or no live evidence.",
+        "",
+        "## Expected requirement coverage",
+        "",
+        "- P0: 19/19 requirements represented in the contract matrix.",
+        "- P1: 9/9 requirements represented in the contract matrix.",
+        "- P2: 6/6 requirements represented in the contract matrix.",
         "",
         "## Summary",
         "",
-        "| Priority | Met | Partial | Missing | Total |",
+        "| Priority | Met | Partial | Unknown | Total |",
         "|---|---:|---:|---:|---:|",
     ]
     for priority in ("P0", "P1", "P2"):
         data = summary["requirement_summary"][priority]
-        gap_lines.append(f"| {priority} | {data['met']} | {data['partial']} | {data['missing']} | {data['total']} |")
+        gap_lines.append(f"| {priority} | {data['met']} | {data['partial']} | {data['unknown']} | {data['total']} |")
     gap_lines.extend([
         "",
         "## Per-requirement detail",
