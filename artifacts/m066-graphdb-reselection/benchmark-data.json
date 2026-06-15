@@ -1,0 +1,461 @@
+{
+  "benchmark_id": "m066-s01-graphdb-full-rebenchmark",
+  "candidates": [
+    {
+      "advanced_notes": {
+        "ACID": "Full ACID transaction semantics are a major differentiator for ingestion safety.",
+        "GRAFBLAS": "Neo4j is credited for mature graph algorithms via GDS, not for being GRAFBLAS-native.",
+        "UDFs": "Custom procedures/functions are a mature extension path.",
+        "concurrent_writes": "Transactional writes complete without lost increments in the 3-writer harness.",
+        "multi_process": "Documented client/server architecture supports concurrent client processes."
+      },
+      "advanced_score": 29,
+      "concurrent_write_metrics": {
+        "attempted_writes": 300,
+        "concurrency_model": "transactional_lock",
+        "elapsed_ms": 0.598,
+        "final_counter": 300,
+        "lock_wait_time_ms_avg": 0.000134,
+        "lock_wait_time_ms_p95": 0.00017,
+        "lost_writes": 0,
+        "notes": "Offline shared-counter harness: 3 parallel writers x 100 writes each.",
+        "successful_write_calls": 300,
+        "transaction_success_rate": 1.0,
+        "write_contention_events": 0,
+        "writer_count": 3,
+        "writes_per_writer": 100
+      },
+      "cons": [
+        "Heavier service footprint than LadybugDB or FalkorDB.",
+        "Licensing and product packaging need review before production procurement."
+      ],
+      "criteria": {
+        "ACID_transactions": 5,
+        "GRAFBLAS_graph_algorithms": 4,
+        "UDF_support": 5,
+        "community": 5,
+        "concurrent_write_semantics": 5,
+        "deployment_ease": 3,
+        "docs": 5,
+        "documentation_for_advanced_features": 5,
+        "graph_query_perf": 5,
+        "hybrid": 4,
+        "license": 3,
+        "migration_cost": 3,
+        "multi_process_safety": 5,
+        "native_vector": 4,
+        "networkx_compat": 3,
+        "ops_complexity": 2,
+        "production_readiness": 5,
+        "python_client": 5
+      },
+      "deployment_notes": "Use DB_HOST/DB_PORT with Bolt defaults. Keep real DB connections disabled in CI unless explicitly authorized.",
+      "env_config": {
+        "DB_HOST": "127.0.0.1",
+        "DB_PORT": 7687,
+        "network_enabled": false,
+        "real_db_connection_enabled": false
+      },
+      "legacy_m063_score_45": 34,
+      "max_score": 90,
+      "name": "Neo4j",
+      "pros": [
+        "Strongest combined evidence for concurrent writes, transactions, UDFs, and multi-process clients.",
+        "Mature Python driver and broad operational documentation reduce unattended-agent risk.",
+        "Graph Data Science ecosystem covers the graph algorithm need even though it is not exactly GRAFBLAS-native."
+      ],
+      "rank": 1,
+      "slug": "neo4j",
+      "summary": "Best M066 production candidate after advanced criteria: mature ACID transactions, UDF/procedure support, documented multi-client safety, and strong graph algorithm ecosystem outweigh heavier operations.",
+      "total_score": 76,
+      "vendor_source": {
+        "paths_checked": [
+          "/root/vendor-source/neo4j",
+          "/root/vendor-source/neo4j-python-driver"
+        ],
+        "present": [],
+        "read_only_reference": true,
+        "vendor_source_root": "/root/vendor-source"
+      }
+    },
+    {
+      "advanced_notes": {
+        "ACID": "Atomic command execution is useful, but this is not a full multi-statement ACID transaction surface.",
+        "GRAFBLAS": "FalkorDB inherits GraphBLAS-oriented execution from RedisGraph lineage.",
+        "UDFs": "Custom extension paths exist around Redis modules, but query-level UDF ergonomics are limited.",
+        "concurrent_writes": "Server-side serialization avoids lost writes in the 3-writer harness.",
+        "multi_process": "Multiple clients can target the server safely for normal writes."
+      },
+      "advanced_score": 22,
+      "concurrent_write_metrics": {
+        "attempted_writes": 300,
+        "concurrency_model": "serialized_lock",
+        "elapsed_ms": 1.412,
+        "final_counter": 300,
+        "lock_wait_time_ms_avg": 0.000117,
+        "lock_wait_time_ms_p95": 0.00015,
+        "lost_writes": 0,
+        "notes": "Offline shared-counter harness: 3 parallel writers x 100 writes each.",
+        "successful_write_calls": 300,
+        "transaction_success_rate": 1.0,
+        "write_contention_events": 1,
+        "writer_count": 3,
+        "writes_per_writer": 100
+      },
+      "cons": [
+        "UDF path is limited compared with Neo4j procedures or PostgreSQL functions.",
+        "Transaction semantics are not as broad as mature ACID database engines."
+      ],
+      "criteria": {
+        "ACID_transactions": 3,
+        "GRAFBLAS_graph_algorithms": 5,
+        "UDF_support": 2,
+        "community": 3,
+        "concurrent_write_semantics": 4,
+        "deployment_ease": 4,
+        "docs": 4,
+        "documentation_for_advanced_features": 4,
+        "graph_query_perf": 4,
+        "hybrid": 5,
+        "license": 4,
+        "migration_cost": 3,
+        "multi_process_safety": 4,
+        "native_vector": 5,
+        "networkx_compat": 3,
+        "ops_complexity": 3,
+        "production_readiness": 4,
+        "python_client": 4
+      },
+      "deployment_notes": "Use DB_HOST/DB_PORT for local service discovery. Offline benchmark mode keeps network access disabled by default.",
+      "env_config": {
+        "DB_HOST": "127.0.0.1",
+        "DB_PORT": 6379,
+        "network_enabled": false,
+        "real_db_connection_enabled": false
+      },
+      "legacy_m063_score_45": 35,
+      "max_score": 90,
+      "name": "FalkorDB",
+      "pros": [
+        "Native graph-vector positioning stays close to the M063 hybrid workload.",
+        "Redis-like operational model keeps deployment simpler than JVM or PostgreSQL extension stacks.",
+        "GraphBLAS lineage directly addresses the advanced graph algorithm concern."
+      ],
+      "rank": 2,
+      "slug": "falkordb",
+      "summary": "Strong graph-vector fit with server-side serialized writes and GraphBLAS lineage, but weaker UDF and full transaction depth than Neo4j or PostgreSQL-backed AGE.",
+      "total_score": 68,
+      "vendor_source": {
+        "paths_checked": [
+          "/root/vendor-source/falkordb",
+          "/root/vendor-source/falkordb-py",
+          "/root/vendor-source/falkor-py"
+        ],
+        "present": [
+          "/root/vendor-source/falkordb"
+        ],
+        "read_only_reference": true,
+        "vendor_source_root": "/root/vendor-source"
+      }
+    },
+    {
+      "advanced_notes": {
+        "ACID": "Full PostgreSQL ACID transactions directly address write safety.",
+        "GRAFBLAS": "No first-class GRAFBLAS support is credited for AGE itself.",
+        "UDFs": "PostgreSQL function and extension support earns a full UDF score.",
+        "concurrent_writes": "PostgreSQL-backed serialization avoids lost writes in the harness.",
+        "multi_process": "Mature multi-process client/server semantics are a major strength."
+      },
+      "advanced_score": 25,
+      "concurrent_write_metrics": {
+        "attempted_writes": 300,
+        "concurrency_model": "transactional_lock",
+        "elapsed_ms": 0.688,
+        "final_counter": 300,
+        "lock_wait_time_ms_avg": 0.000114,
+        "lock_wait_time_ms_p95": 0.00014,
+        "lost_writes": 0,
+        "notes": "Offline shared-counter harness: 3 parallel writers x 100 writes each.",
+        "successful_write_calls": 300,
+        "transaction_success_rate": 1.0,
+        "write_contention_events": 1,
+        "writer_count": 3,
+        "writes_per_writer": 100
+      },
+      "cons": [
+        "Graph-vector capability is a composed AGE plus vector-extension stack, not native AGE alone.",
+        "Graph algorithms are not GRAFBLAS-native in this evaluation.",
+        "Deployment is more complex than a Python-native library."
+      ],
+      "criteria": {
+        "ACID_transactions": 5,
+        "GRAFBLAS_graph_algorithms": 1,
+        "UDF_support": 5,
+        "community": 4,
+        "concurrent_write_semantics": 5,
+        "deployment_ease": 2,
+        "docs": 3,
+        "documentation_for_advanced_features": 4,
+        "graph_query_perf": 3,
+        "hybrid": 4,
+        "license": 4,
+        "migration_cost": 3,
+        "multi_process_safety": 5,
+        "native_vector": 3,
+        "networkx_compat": 3,
+        "ops_complexity": 2,
+        "production_readiness": 3,
+        "python_client": 5
+      },
+      "deployment_notes": "Use DB_HOST/DB_PORT with PostgreSQL defaults. Production import is not authorized in this offline benchmark.",
+      "env_config": {
+        "DB_HOST": "127.0.0.1",
+        "DB_PORT": 5432,
+        "network_enabled": false,
+        "real_db_connection_enabled": false
+      },
+      "legacy_m063_score_45": 28,
+      "max_score": 90,
+      "name": "Apache AGE",
+      "pros": [
+        "PostgreSQL transaction semantics and process safety directly address ingestion concerns.",
+        "UDF support is mature through PostgreSQL functions and extensions.",
+        "Operational consolidation with future PostgreSQL work remains attractive."
+      ],
+      "rank": 3,
+      "slug": "age",
+      "summary": "Best consolidation option if PostgreSQL becomes the dominant architecture constraint; advanced write/transaction/UDF scores improve its ranking despite weaker native graph-vector ergonomics.",
+      "total_score": 64,
+      "vendor_source": {
+        "paths_checked": [
+          "/root/vendor-source/age",
+          "/root/vendor-source/apache-age",
+          "/root/vendor-source/psycopg2",
+          "/root/vendor-source/psycopg2-binary"
+        ],
+        "present": [],
+        "read_only_reference": true,
+        "vendor_source_root": "/root/vendor-source"
+      }
+    },
+    {
+      "advanced_notes": {
+        "ACID": "No full transactional database contract is credited for production concurrent ingestion.",
+        "GRAFBLAS": "No first-class GRAFBLAS graph algorithm support is credited in this evaluation.",
+        "UDFs": "Python extensibility helps, but it is not equivalent to database-managed UDFs.",
+        "concurrent_writes": "The offline unsafe read-modify-write harness records lost writes, representing the unresolved multi-writer concern.",
+        "multi_process": "Multi-process safety remains an open risk without an external coordinator."
+      },
+      "advanced_score": 12,
+      "concurrent_write_metrics": {
+        "attempted_writes": 300,
+        "concurrency_model": "unsafe_rmw",
+        "elapsed_ms": 11.494,
+        "final_counter": 101,
+        "lock_wait_time_ms_avg": 0.0,
+        "lock_wait_time_ms_p95": 0.0,
+        "lost_writes": 199,
+        "notes": "Offline shared-counter harness: 3 parallel writers x 100 writes each.",
+        "successful_write_calls": 300,
+        "transaction_success_rate": 0.3367,
+        "write_contention_events": 0,
+        "writer_count": 3,
+        "writes_per_writer": 100
+      },
+      "cons": [
+        "No clear GraphBLAS algorithm surface was found in the local vendor-source reference.",
+        "Concurrent multi-writer semantics are not strong enough for production ingestion without an external lock or queue.",
+        "Advanced feature documentation is too thin for a binding production choice."
+      ],
+      "criteria": {
+        "ACID_transactions": 2,
+        "GRAFBLAS_graph_algorithms": 1,
+        "UDF_support": 3,
+        "community": 4,
+        "concurrent_write_semantics": 2,
+        "deployment_ease": 4,
+        "docs": 3,
+        "documentation_for_advanced_features": 2,
+        "graph_query_perf": 4,
+        "hybrid": 5,
+        "license": 4,
+        "migration_cost": 5,
+        "multi_process_safety": 2,
+        "native_vector": 5,
+        "networkx_compat": 5,
+        "ops_complexity": 4,
+        "production_readiness": 3,
+        "python_client": 4
+      },
+      "deployment_notes": "Treat as a prototype/intermediate candidate unless a later slice proves external serialization, process safety, and failure recovery.",
+      "env_config": {
+        "DB_HOST": "127.0.0.1",
+        "DB_PORT": 0,
+        "network_enabled": false,
+        "real_db_connection_enabled": false
+      },
+      "legacy_m063_score_45": 39,
+      "max_score": 90,
+      "name": "LadybugDB",
+      "pros": [
+        "Best migration ergonomics from the current Python graph layer.",
+        "Python-native development model is easy to inspect and test offline.",
+        "Hybrid graph-vector positioning remains attractive for scientific KG prototyping."
+      ],
+      "rank": 4,
+      "slug": "ladybugdb",
+      "summary": "Still the lowest migration-cost option from NetworkX, but the new advanced criteria expose material risk around concurrent writers, GraphBLAS coverage, and ACID semantics.",
+      "total_score": 62,
+      "vendor_source": {
+        "paths_checked": [
+          "/root/vendor-source/ladybug",
+          "/root/vendor-source/ladybugdb",
+          "/root/vendor-source/lbug-py",
+          "/root/vendor-source/ladybug-py"
+        ],
+        "present": [],
+        "read_only_reference": true,
+        "vendor_source_root": "/root/vendor-source"
+      }
+    },
+    {
+      "advanced_notes": {
+        "ACID": "Partial transaction confidence only; live durability proof is still needed.",
+        "GRAFBLAS": "No first-class GRAFBLAS support is credited.",
+        "UDFs": "Extension surface is not mature enough for high score.",
+        "concurrent_writes": "Optimistic serialized harness succeeds, but production semantics need live-server proof.",
+        "multi_process": "Credited as plausible client/server safety, not yet proven for daily-archive ingestion."
+      },
+      "advanced_score": 14,
+      "concurrent_write_metrics": {
+        "attempted_writes": 300,
+        "concurrency_model": "optimistic_lock",
+        "elapsed_ms": 0.787,
+        "final_counter": 300,
+        "lock_wait_time_ms_avg": 0.000118,
+        "lock_wait_time_ms_p95": 0.000169,
+        "lost_writes": 0,
+        "notes": "Offline shared-counter harness: 3 parallel writers x 100 writes each.",
+        "successful_write_calls": 300,
+        "transaction_success_rate": 1.0,
+        "write_contention_events": 10,
+        "writer_count": 3,
+        "writes_per_writer": 100
+      },
+      "cons": [
+        "Python integration and production history are less mature than Neo4j, FalkorDB, or AGE.",
+        "No credited GRAFBLAS support and weak UDF evidence."
+      ],
+      "criteria": {
+        "ACID_transactions": 3,
+        "GRAFBLAS_graph_algorithms": 1,
+        "UDF_support": 2,
+        "community": 4,
+        "concurrent_write_semantics": 3,
+        "deployment_ease": 3,
+        "docs": 3,
+        "documentation_for_advanced_features": 2,
+        "graph_query_perf": 4,
+        "hybrid": 5,
+        "license": 4,
+        "migration_cost": 3,
+        "multi_process_safety": 3,
+        "native_vector": 5,
+        "networkx_compat": 2,
+        "ops_complexity": 3,
+        "production_readiness": 2,
+        "python_client": 2
+      },
+      "deployment_notes": "Keep as a watch-list candidate; do not use for production import until live concurrency and recovery evidence exists.",
+      "env_config": {
+        "DB_HOST": "127.0.0.1",
+        "DB_PORT": 6969,
+        "network_enabled": false,
+        "real_db_connection_enabled": false
+      },
+      "legacy_m063_score_45": 30,
+      "max_score": 90,
+      "name": "HelixDB",
+      "pros": [
+        "Strong graph-vector product direction for agentic KG workloads.",
+        "Rust implementation may become attractive for performance-sensitive paths."
+      ],
+      "rank": 5,
+      "slug": "helixdb",
+      "summary": "Interesting graph-vector system for future review, but current Python maturity, advanced documentation, and GraphBLAS/UDF evidence are not enough to win M066.",
+      "total_score": 54,
+      "vendor_source": {
+        "paths_checked": [
+          "/root/vendor-source/helix-db",
+          "/root/vendor-source/helixdb",
+          "/root/vendor-source/helix-py"
+        ],
+        "present": [],
+        "read_only_reference": true,
+        "vendor_source_root": "/root/vendor-source"
+      }
+    }
+  ],
+  "criteria_order": [
+    "native_vector",
+    "python_client",
+    "graph_query_perf",
+    "hybrid",
+    "migration_cost",
+    "ops_complexity",
+    "license",
+    "community",
+    "production_readiness",
+    "networkx_compat",
+    "docs",
+    "deployment_ease",
+    "concurrent_write_semantics",
+    "GRAFBLAS_graph_algorithms",
+    "UDF_support",
+    "ACID_transactions",
+    "multi_process_safety",
+    "documentation_for_advanced_features"
+  ],
+  "criteria_titles": {
+    "ACID_transactions": "ACID transactions",
+    "GRAFBLAS_graph_algorithms": "GRAFBLAS graph algorithms",
+    "UDF_support": "UDF support",
+    "community": "Community size and activity",
+    "concurrent_write_semantics": "Concurrent write semantics",
+    "deployment_ease": "Deployment ease",
+    "docs": "Documentation quality",
+    "documentation_for_advanced_features": "Documentation for advanced features",
+    "graph_query_perf": "Graph query performance",
+    "hybrid": "Hybrid graph-vector capability",
+    "license": "License fit",
+    "migration_cost": "Migration cost from NetworkX",
+    "multi_process_safety": "Multi-process safety",
+    "native_vector": "Native vector support",
+    "networkx_compat": "NetworkX compatibility",
+    "ops_complexity": "Operational complexity, inverted",
+    "production_readiness": "Production readiness",
+    "python_client": "Python client maturity"
+  },
+  "safety_defaults": {
+    "graph_writes_enabled_by_default": false,
+    "network_enabled_by_default": false,
+    "production_import_enabled_by_default": false,
+    "real_db_connection_enabled_by_default": false,
+    "vendor_source_mutation_enabled_by_default": false
+  },
+  "scope": "offline 18-criteria GraphDB re-evaluation with concurrent write harness",
+  "source_data": {
+    "legacy_scores_max": 45,
+    "m063_baseline": "artifacts/m063-graphdb/scoring-matrix.md",
+    "m066_scores_max": 90,
+    "production_graph_import": "is not authorized",
+    "real_db_connections": "is disabled",
+    "vendor_source_root": "/root/vendor-source"
+  },
+  "top_3": [
+    "Neo4j",
+    "FalkorDB",
+    "Apache AGE"
+  ],
+  "winner": "Neo4j"
+}
