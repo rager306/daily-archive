@@ -21,7 +21,7 @@ DEFAULT_OUTPUT = ROOT / ".codebase-memory" / "adr.md"
 DEFAULT_GRAPH_OUTPUT = ROOT / ".codebase-memory" / "governance-graph.json"
 REQUIREMENTS_PATH = ROOT / ".gsd" / "REQUIREMENTS.md"
 DECISIONS_PATH = ROOT / ".gsd" / "DECISIONS.md"
-ADR_DIR = ROOT / "doc" / "adr" / "m034"
+ADR_DIR = ROOT / "doc" / "adr"
 
 SECRET_PATTERNS = (
     re.compile(r"sk-[A-Za-z0-9_-]{12,}"),
@@ -151,7 +151,9 @@ def parse_decisions(text: str) -> list[DecisionEntry]:
 
 def parse_adrs(adr_dir: Path) -> list[AdrEntry]:
     entries: list[AdrEntry] = []
-    for path in sorted(adr_dir.glob("ADR-*.md")):
+    for path in sorted(adr_dir.rglob("ADR-*.md")):
+        if "TEMPLATE" in path.name or "INDEX" in path.name:
+            continue
         text = read_text(path)
         header = re.search(r"^#\s+(ADR-\d+):\s+(.+)$", text, flags=re.MULTILINE)
         if not header:

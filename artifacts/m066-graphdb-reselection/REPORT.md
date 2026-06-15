@@ -1,93 +1,81 @@
-# M066: повторный выбор GraphDB
+# M067: повторный выбор GraphDB для самостоятельного размещения
 
-## 0. Резюме M066
+## 0. Резюме M067
 
-M066 завершает повторную оценку GraphDB для daily-archive и выбирает **Neo4j** как целевую production GraphDB. В расширенном бенчмарке M066 S01 Neo4j получил **76/90** и занял первое место; прежний выбор **LadybugDB** из ADR-020 получил **62/90** и больше не является выбранной production GraphDB.
+M067 завершает корректирующий повторный выбор production GraphDB для daily-archive в модели самостоятельного размещения. Итоговый выбор — **FalkorDB**: после исправления лицензии он получил **70/90** и стал первым кандидатом для текущей модели эксплуатации.
 
-Итог M066 закреплён в **ADR-021**, который supersedes ADR-020. ADR-020 остаётся историческим решением M063/M065, но его binding-выбор LadybugDB заменён новым binding-решением: Neo4j.
+Ключевая поправка M067: FalkorDB лицензирован как **SSPLv1, не AGPLv3**. В M066 он был ошибочно оценён строже, чем требовалось для самостоятельного размещения. Эта поправка подняла лицензионный критерий FalkorDB с **3/5** до **4/5** и общий результат с **68/90** до **70/90**.
+
+Решение M067 закреплено в **ADR-022**. Оно заменяет прежние binding-решения: **ADR-021** с выбором Neo4j на AGPLv3 и **ADR-020** с выбором LadybugDB. ADR-020 и ADR-021 остаются историческими решениями, но больше не определяют production GraphDB для текущей модели daily-archive.
 
 ## 1. Контекст
 
-M063/M065 выбрали LadybugDB по 12-критериальному сравнению: LadybugDB тогда набрал **39/45** и выглядел лучшим вариантом из-за низкой стоимости миграции от NetworkX и сильной graph-vector позиции. После этого возникли дополнительные production-вопросы: конкурентные записи, транзакционность, UDF, GRAFBLAS-класс алгоритмов, multi-process safety и полнота документации по advanced-возможностям.
+M067 был создан как короткий корректирующий milestone после M066. M066 выбрал Neo4j с результатом **76/90**, но в ходе последующей проверки обнаружилась ошибка в лицензионной модели FalkorDB: решение M066 фактически обращалось с FalkorDB как с AGPLv3-кандидатом, хотя актуальная лицензия — SSPLv1.
 
-M066 был создан как повторная оценка с расширенными критериями. Главный риск, который изменил решение: в offline shared-counter harness LadybugDB показал только **101 успешную запись из 300**, то есть **33,67% success** и **199 lost writes**. Для будущей ingestion-нагрузки scientific KG это неприемлемый сигнал.
+Для daily-archive это существенно, потому что M067 явно зафиксировал модель распространения: проект является самостоятельным исследовательским контуром, не предоставляет GraphDB как внешнюю размещённую услугу третьим сторонам и использует графовую базу как внутренний компонент научного knowledge graph.
 
-## 2. S01: 18-критериальный benchmark
+При такой модели SSPLv1 остаётся приемлемой для самостоятельного размещения. Если модель изменится на коммерческую размещённую услугу, выбор должен быть пересмотрен: тогда нужен коммерческий путь FalkorDB или переход на более разрешительный вариант, прежде всего Apache AGE.
 
-S01 расширил исходные 12 критериев M063 до 18 критериев и сравнил пять кандидатов: FalkorDB, LadybugDB, Neo4j, HelixDB и Apache AGE. Новые advanced-критерии покрывали concurrent writes, GRAFBLAS graph algorithms, UDF support, ACID transactions, multi-process safety и advanced-feature documentation.
+## 2. S01: повторная оценка FalkorDB
 
-Ключевые результаты:
+S01 пересчитал FalkorDB с исправленной лицензией и сохранил результаты в scoring matrix и distribution model. Новый результат FalkorDB — **70/90** вместо прежних **68/90**.
 
-| Кандидат | M063 baseline | M066 score | M066 rank | Advanced |
-|---|---:|---:|---:|---:|
-| Neo4j | 34/45 | 76/90 | #1 | 29/30 |
-| FalkorDB | 35/45 | 68/90 | #2 | 22/30 |
-| Apache AGE | 28/45 | 64/90 | #3 | 25/30 |
-| LadybugDB | 39/45 | 62/90 | #4 | 12/30 |
-| HelixDB | 30/45 | 54/90 | #5 | 15/30 |
+Единственное численное изменение произошло в лицензионном критерии: **4/5** вместо **3/5**. Остальные технические оценки остались прежними: FalkorDB сохраняет сильную hybrid graph-vector позицию, зрелый Cypher-подобный путь миграции и существенные advanced-возможности.
 
-Concurrent write harness также изменил картину: Neo4j, FalkorDB и Apache AGE прошли 300/300 без lost writes; LadybugDB потерял 199 записей; HelixDB потерял 299 записей. Поэтому прежний лидер по M063 перестал быть приемлемым production-выбором.
+После пересчёта self-hosted ranking стал: **FalkorDB 70/90 > Apache AGE 64/90 > LadybugDB 62/90**. Neo4j остаётся самым высоким общим скорером с **76/90**, но его AGPLv3-профиль хуже подходит текущей модели самостоятельного размещения.
 
-## 3. S02: ADR-021
+## 3. S02: ADR-022
 
-S02 выпустил **ADR-021: GraphDB Re-Selection for M066** в формате M034-style binding ADR. Документ закрепляет Neo4j как production GraphDB target, связывает выбор с evidence из S01 и явно supersedes ADR-020.
+S02 оформил **ADR-022: GraphDB Re-Selection Self-Hosted** как binding-решение для daily-archive. ADR-022 использует расширенный шаблон M034 с 16+ разделами, фиксирует decision scope, assumptions, evidence, migration impact, safety posture, failure modes, observability и amendment log.
 
-ADR-021 оставляет важную границу: M066 выбирает базу и migration target, но не включает production-import или запись в production graph. Практическая миграция должна идти отдельным milestone с Cypher rewrite, Neo4j transactions, schema mapping и проверкой safety defaults.
+ADR-022 явно выбирает FalkorDB как production GraphDB для самостоятельного размещения. Он также документирует, что **ADR-021** и **ADR-020** superseded by ADR-022: Neo4j больше не является выбранной production GraphDB для self-hosted модели, а LadybugDB остаётся важным историческим и исследовательским кандидатом, но не текущим binding-выбором.
 
-## 4. Top-3 M066
+Эта структура важна для будущих агентов: при чтении ADR-020 или ADR-021 они должны видеть, что актуальное решение находится в ADR-022 и основано на corrected license analysis M067.
 
-Top-3 после расширенного benchmark:
+## 4. Верхние кандидаты для самостоятельного размещения
 
-1. **Neo4j — 76/90.** Лучший общий баланс: зрелые транзакции, процедуры/UDF, многопроцессная безопасность, документация и graph algorithms.
-2. **FalkorDB — 68/90.** Сильная graph-vector позиция и хорошие concurrent writes, но ниже advanced-production профиль и меньше binding-evidence для текущих требований.
-3. **Apache AGE — 64/90.** Привлекателен за счёт PostgreSQL-соседства и ACID-профиля, но уступает по graph/vector ergonomics и migration fit; остаётся условной будущей альтернативой, если PostgreSQL-консолидация станет главным ограничением.
+В текущей модели daily-archive итоговый порядок кандидатов такой:
 
-LadybugDB опустился на четвёртое место из-за concurrent write evidence и слабых advanced-критериев.
+| Место | Кандидат | Балл | Почему |
+|---:|---|---:|---|
+| 1 | FalkorDB | 70/90 | лучший баланс лицензии, Cypher-миграции, advanced-функций и self-hosted эксплуатации |
+| 2 | Apache AGE | 64/90 | более разрешительная лицензия и PostgreSQL-путь, но выше операционная сложность и слабее advanced-профиль |
+| 3 | LadybugDB | 62/90 | низкая стоимость миграции от NetworkX и сильная research-позиция, но слабее production-evidence для concurrent writes и ACID |
 
-## 5. Почему Neo4j
+Neo4j с **76/90** остаётся сильным техническим ориентиром, но не выбран для текущей модели из-за AGPLv3-условий. HelixDB остаётся ниже по суммарному evidence-профилю и не стал preferred self-hosted вариантом.
 
-Neo4j выигрывает не потому, что он самый простой в эксплуатации, а потому что лучше закрывает production-риск scientific KG.
+## 5. Почему FalkorDB
 
-Главные плюсы:
+FalkorDB выбран не потому, что он максимальный общий скорер, а потому что он лучший кандидат под зафиксированную модель daily-archive: самостоятельное размещение, локальный научный knowledge graph, controlled ingestion и миграция от NetworkX к persisted graph layer.
 
-- **Concurrent writes: 5/5.** Harness показал 300 успешных записей из 300 и 0 lost writes.
-- **GRAFBLAS-class algorithms: 4/5.** Экосистема graph algorithms сильнее, чем у большинства кандидатов, даже если не является прямой заменой каждого NetworkX/GRAFBLAS-паттерна.
-- **UDF support: 5/5.** Процедуры и расширения дают ясный путь для domain-specific graph logic.
-- **ACID transactions: 5/5.** Транзакционная модель подходит для ingestion, retries и auditability.
-- **Multi-process safety: 5/5.** Production-клиенты и транзакции соответствуют будущему worker/queue режиму лучше, чем embedded/shared-state варианты.
-- **Advanced documentation: 5/5.** Документация и operational knowledge уменьшают риск следующего milestone.
+Главные причины выбора:
 
-## 6. Tradeoffs
+- **SSPLv1 приемлема для самостоятельного размещения** в текущей модели проекта.
+- **70/90** — лучший self-hosted результат после исправления лицензии.
+- Advanced-блок остаётся сильным: **22/30** по concurrent writes, GRAFBLAS-классу алгоритмов, UDF, ACID, multi-process safety и документации.
+- **FLEX UDFs** дают путь к расширяемым вычислениям рядом с графом.
+- GRAFBLAS-подобная основа делает FalkorDB естественным кандидатом для graph algorithms в научном knowledge graph.
+- Cypher-подобный интерфейс снижает риск миграции от NetworkX по сравнению с полностью новым query-подходом.
 
-Выбор Neo4j имеет цену:
+## 6. Компромиссы
 
-- **Operational complexity: 2/5.** Появляется отдельный сервис, deployment surface, backup/restore, monitoring, credentials и lifecycle management.
-- **License posture: mixed.** Нужно держать edition/license constraints видимыми при production-планировании.
-- **Migration cost from NetworkX: 3/5.** Требуется переписать часть graph logic в Cypher, транзакционные операции и Neo4j driver patterns.
-- **Graph-vector ergonomics: 4/5.** Neo4j силён, но не всегда проще специализированных graph-vector систем.
-- **Не мгновенная замена.** M066 закрывает decision risk, но не делает production migration.
+Выбор FalkorDB остаётся условным на текущую distribution model. Главный риск — сценарий SaaS или размещённой GraphDB-услуги для третьих сторон: в такой модели SSPLv1 требует отдельного анализа, коммерческой лицензии или смены GraphDB.
 
-Эти tradeoffs ниже риска lost writes и неполной транзакционной модели для будущей ingestion-нагрузки.
+Второй компромисс — FalkorDB Cloud является платным сервисом, а M067 выбирает именно self-hosted FalkorDB, а не managed cloud path. Это нормально для текущего проекта, но будущая операционная модель должна учитывать стоимость, бэкапы, мониторинг, восстановление и upgrade-процедуры.
 
-## 7. Migration plan, lessons и следующие milestones
+Третий компромисс — Neo4j всё ещё имеет лучший общий score: **76/90** против **70/90** у FalkorDB. M067 сознательно предпочитает более подходящий self-hosted license fit и migration profile вместо максимального общего technical score.
 
-План миграции:
+## 7. План миграции, уроки и следующие milestones
 
-1. Составить schema mapping: article, citation, table, figure, judge/evidence, queue/work-state и provenance nodes/relationships.
-2. Переписать NetworkX-зависимые graph paths в Cypher queries и Neo4j driver transactions.
-3. Ввести transaction wrapper для ingestion steps: idempotency keys, retry boundaries, rollback semantics и audit state.
-4. Перенести queue/worker graph touches на Neo4j transactions только после отдельной verification slice.
-5. Сохранить safety defaults: no production import, no graph writes и no external connectivity без явного override.
-6. Проверить migration evidence на real fixture corpus до любого production включения.
+Следующий implementation path: перейти от in-memory NetworkX к FalkorDB через Cypher-представление графа. Миграция должна начаться с узкого tracer bullet: одна статья, один набор сущностей, минимальные relationships, проверяемая round-trip запись/чтение и явные transaction boundaries.
 
-Уроки M066:
+Redis остаётся важным компонентом для очередей, work-state и транзакционных coordination-паттернов вокруг ingestion. FalkorDB должен стать persisted graph layer, а не заменой всей orchestration-инфраструктуры.
 
-- 12-критериальный выбор был недостаточен: advanced concurrency and transaction evidence должен входить в binding GraphDB decision.
-- Простая миграция от NetworkX не компенсирует lost writes.
-- ADR должен явно supersede прежнее binding-решение, а не оставлять два конкурирующих источника правды.
+Урок M067: GraphDB-решения нельзя закрывать без явной distribution model и точной лицензии. Score без лицензионного контекста может привести к формально сильному, но практически неверному выбору.
 
-Следующие milestones:
+Дальше:
 
-- **M064 queue work** должен проектироваться вокруг Neo4j transactions как целевой production GraphDB path.
-- **PostgreSQL conditional path** остаётся только как future option через Apache AGE, если consolidation станет важнее Neo4j-функций.
-- **M062-fd-v2-verification** остаётся upstream quality gate для embedding/input evidence перед graph ingestion.
+1. **M064 queue** должен открываться с FalkorDB как production GraphDB target.
+2. **M066+ PostgreSQL conditional** остаётся fallback-направлением, особенно если self-hosted assumptions изменятся.
+3. **M062-fd-v2-verification** должен сохранить safety posture и не включать production graph writes без отдельного milestone.
+4. Если daily-archive станет SaaS или размещённой услугой для третьих сторон, нужно перейти к коммерческому FalkorDB пути или мигрировать на **Apache AGE** как более разрешительный fallback.

@@ -176,13 +176,6 @@
 
 | ADR | Status | Path | Title |
 |---|---|---|---|
-| ADR-000 | Accepted | `doc/adr/m034/ADR-000-universal-kb-north-star.md` | Universal KB North Star |
-| ADR-002 | Deferred | `doc/adr/m034/ADR-002-defer-final-graphdb-selection.md` | Defer Final GraphDB Selection |
-| ADR-003 | Accepted | `doc/adr/m034/ADR-003-durable-lazy-async-evidence-pipeline.md` | Durable Lazy Async Evidence Pipeline |
-| ADR-004 | Accepted | `doc/adr/m034/ADR-004-sidecars-as-candidate-evidence-producers.md` | Sidecars as Candidate Evidence Producers |
-| ADR-005 | Accepted | `doc/adr/m034/ADR-005-no-direct-extractor-to-graphdb-path.md` | No Direct Extractor to GraphDB Path |
-| ADR-006 | Accepted | `doc/adr/m034/ADR-006-agent-boundary.md` | Agent Boundary |
-| ADR-007 | Accepted | `doc/adr/m034/ADR-007-quantmind-pattern-source-not-runtime-dependency.md` | Quant-mind Pattern Source Not Runtime Dependency |
 | ADR-001 | Accepted | `doc/adr/ADR-001-scientific-papers-as-first-domain.md` | Scientific Papers as First Domain |
 | ADR-008 | Accepted (binding) | `doc/adr/ADR-008-hybrid-parser-architecture.md` | Hybrid Parser Architecture |
 | ADR-009 | Accepted (binding) | `doc/adr/ADR-009-amend-hybrid-parser.md` | Fulltext-Aware Hybrid Parser Routing |
@@ -198,6 +191,13 @@
 | ADR-020 | Accepted (binding) | `doc/adr/ADR-020-graphdb-selection.md` | GraphDB Selection for M063 |
 | ADR-021 | Accepted (binding) | `doc/adr/ADR-021-graphdb-reselection.md` | GraphDB Re-Selection for M066 |
 | ADR-022 | Accepted (binding) | `doc/adr/ADR-022-graphdb-reselection-self-hosted.md` | GraphDB Re-Selection Self-Hosted |
+| ADR-000 | Accepted | `doc/adr/m034/ADR-000-universal-kb-north-star.md` | Universal KB North Star |
+| ADR-002 | Deferred | `doc/adr/m034/ADR-002-defer-final-graphdb-selection.md` | Defer Final GraphDB Selection |
+| ADR-003 | Accepted | `doc/adr/m034/ADR-003-durable-lazy-async-evidence-pipeline.md` | Durable Lazy Async Evidence Pipeline |
+| ADR-004 | Accepted | `doc/adr/m034/ADR-004-sidecars-as-candidate-evidence-producers.md` | Sidecars as Candidate Evidence Producers |
+| ADR-005 | Accepted | `doc/adr/m034/ADR-005-no-direct-extractor-to-graphdb-path.md` | No Direct Extractor to GraphDB Path |
+| ADR-006 | Accepted | `doc/adr/m034/ADR-006-agent-boundary.md` | Agent Boundary |
+| ADR-007 | Accepted | `doc/adr/m034/ADR-007-quantmind-pattern-source-not-runtime-dependency.md` | Quant-mind Pattern Source Not Runtime Dependency |
 
 ## ADR Decision Highlights
 
