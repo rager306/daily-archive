@@ -446,6 +446,16 @@ Per M062 S01v2 user feedback (2026-06-14), all FD service configuration MUST be 
 
 See `.env.example` for defaults and `src/arxiv_archive/embedder.py` for the implementation.
 
+M068 S03 confirms the fd v2 env surface used by the integration path:
+
+| Env var | Role in fd v2 integration |
+|---|---|
+| FD_API_KEY | Bearer token for protected fd v2 requests; never persisted in artifacts |
+| MODEL_ID | Primary model identifier sent in embedding requests |
+| TEI_URL | Base fd v2 URL used to derive `/v1/embeddings` |
+| REDIS_HOST | Queue/cache host for the M064 integration path |
+| REDIS_PORT | Queue/cache port for the M064 integration path |
+
 **Rationale**: hardcoded values (endpoint, model name, dimensions) prevent deployment to different environments (CI, staging, production). Env-driven config is the standard 12-factor app pattern.
 
 ---
@@ -838,6 +848,7 @@ T-E-5: GET /docs → 200 (NOT 404)
 | Date | Author | Change | Rationale |
 |---|---|---|---|
 | 2026-06-14 | user feedback (executor-01) | Added section 4.5 (env-driven configuration). 10 FD_* env vars added to .env.example. Embedder (src/arxiv_archive/embedder.py) + 4 scripts (scripts/m057_*, scripts/m058_*) updated to read from os.environ via _env_str/_env_int/_env_float/_env_bool/_env_list helpers. | User explicit feedback: 'all FD service config should be env-driven, not hardcoded'. 12-factor app pattern. Backward compatible: same defaults if env not set. |
+| 2026-06-15 | M068 S03 (executor) | Recorded fd v2 env config for `FD_API_KEY`, `MODEL_ID`, `TEI_URL`, `REDIS_HOST`, and `REDIS_PORT`; tied the config to the 150-paper integration evidence in `artifacts/m068-fd-v2-integration-test/`. | M068 S01-S03 proved daily-archive can select the M061 150-paper corpus, authenticate via env-only Bearer config, and skip safely when the protected fd v2 service is not authorized in the current environment. |
 
 ## 14. LLM Reading Notes
 
