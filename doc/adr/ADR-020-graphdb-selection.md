@@ -200,6 +200,12 @@ Until these pass, LadybugDB is the selected target but production graph writes a
 - M048 graph/evidence lineage — source for guarded graph-write posture.
 - M062 fd production hardening — source for embedding-service and observability patterns.
 
+## Amendment Log
+
+| Date | Author | Change | Rationale |
+|---|---|---|---|
+| 2026-06-15 | M066 (executor-01) | SUPERSEDED by ADR-021. Neo4j chosen as production GraphDB (76/90 score) instead of LadybugDB (62/90). M063 S01 scoring matrix missed 3 critical features: concurrent write semantics (LadybugDB 33% success under load), GRAFBLAS (LadybugDB 1/5), UDF support (LadybugDB 3/5). | User feedback: concurrent writes, GRAFBLAS, UDFs not in M063 evaluation. M066 re-benchmark with 18 criteria identifies Neo4j as new winner. |
+
 ## 13. LLM Reading Notes
 
 For future agents:

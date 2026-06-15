@@ -196,6 +196,7 @@
 | ADR-018 | Accepted (binding) | `doc/adr/ADR-018-m061-2-hop-evidence-and-m064-trigger.md` | M061 2-hop Evidence and M064 Trigger Evaluation |
 | ADR-019 | Accepted (binding) | `doc/adr/ADR-019-fd-embedding-service-contract.md` | M062 fd Embedding Service Contract |
 | ADR-020 | Accepted (binding) | `doc/adr/ADR-020-graphdb-selection.md` | GraphDB Selection for M063 |
+| ADR-021 | Accepted (binding) | `doc/adr/ADR-021-graphdb-reselection.md` | GraphDB Re-Selection for M066 |
 
 ## ADR Decision Highlights
 
