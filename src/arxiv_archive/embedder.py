@@ -62,8 +62,13 @@ def _env_list(name: str, default: list[float]) -> list[float]:
         return default
 
 
-DEFAULT_ENDPOINT = _env_str("FD_EMBEDDINGS_ENDPOINT", "http://127.0.0.1:8000/v1/embeddings")
-DEFAULT_MODEL_NAME = _env_str("FD_MODEL_NAME", "deepvk/USER-bge-m3")
+DEFAULT_TEI_URL = _env_str("TEI_URL", _env_str("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000"))
+DEFAULT_ENDPOINT = _env_str("FD_EMBEDDINGS_ENDPOINT", f"{DEFAULT_TEI_URL.rstrip('/')}/v1/embeddings")
+DEFAULT_API_KEY = os.environ.get("FD_API_KEY")
+DEFAULT_MODEL_ID = _env_str("MODEL_ID", _env_str("FD_MODEL_NAME", "deepvk/USER-bge-m3"))
+DEFAULT_MODEL_NAME = DEFAULT_MODEL_ID
+DEFAULT_REDIS_HOST = _env_str("REDIS_HOST", "127.0.0.1")
+DEFAULT_REDIS_PORT = _env_int("REDIS_PORT", 6379)
 DEFAULT_DIMENSIONS = _env_int("FD_DIMENSIONS", 1024)
 DEFAULT_BATCH_SIZE = _env_int("FD_BATCH_SIZE", 32)
 DEFAULT_TIMEOUT_SECONDS = _env_float("FD_REQUEST_TIMEOUT_SECONDS", 120.0)
@@ -106,6 +111,7 @@ class Embedder:
         circuit_failure_threshold: int = DEFAULT_CIRCUIT_FAILURE_THRESHOLD,
         circuit_open_seconds: float = DEFAULT_CIRCUIT_OPEN_SECONDS,
         graceful_degradation_enabled: bool = DEFAULT_GRACEFUL_DEGRADATION_ENABLED,
+        api_key: str | None = DEFAULT_API_KEY,
         client: httpx.AsyncClient | None = None,
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
         time_fn: Callable[[], float] = time.monotonic,
@@ -123,12 +129,15 @@ class Embedder:
             circuit_failure_threshold: Consecutive failed attempts before opening the circuit.
             circuit_open_seconds: Cooldown before probing fd in half-open state.
             graceful_degradation_enabled: Return zero embeddings instead of raising when the circuit opens.
+            api_key: Optional fd API key used only as a bearer token header.
             client: Optional injected AsyncClient for tests or shared lifecycle management.
             sleep: Async sleep function, injectable to keep retry tests fast.
             time_fn: Monotonic clock, injectable for circuit-breaker tests.
         """
         self.endpoint = endpoint
         self.model_name = model_name
+        self.model_id = model_name
+        self.api_key = api_key
         self.dimensions = dimensions
         self.batch_size = batch_size
         self.timeout_seconds = timeout_seconds
@@ -156,6 +165,13 @@ class Embedder:
         """Current circuit breaker state."""
         self._refresh_circuit_state()
         return self._circuit_state
+
+    @property
+    def request_headers(self) -> dict[str, str]:
+        headers = {"X-Model-Id": self.model_id}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        return headers
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
@@ -203,7 +219,7 @@ class Embedder:
                         "circuit_state": self._circuit_state,
                     },
                 )
-                response = await client.post(self.endpoint, json=payload)
+                response = await client.post(self.endpoint, json=payload, headers=self.request_headers)
                 latency = self._time_fn() - started_at
                 self._latencies.append(latency)
 

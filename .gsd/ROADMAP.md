@@ -66,3 +66,7 @@
 - 🔄 **M062-b4porb: M060d ADR Template Canonicalization and Library Selection Finalization** (`depends:[—]`)
 - ✅ **M063-8d01zz: M060b NetworkX Graph Validation Intermediate Layer** (`depends:[—]`)
 - 🔄 **M064-wqfgfa: M061 2-hop BFS with M3 Judge Integration at Scale** (`depends:[—]`)
+- ⬜ **M065-u29n4f: M065-u29n4f** (`depends:[—]`)
+- 🔄 **M065-vq0do4: M062 fd production hardening** (`depends:[—]`)
+- ✅ **M067-oqsavh: M067-oqsavh** (`depends:[—]`)
+- 🔄 **M068-hlcxny: M062-fd-v2-verification** (`depends:[—]`)

@@ -22,7 +22,13 @@ from arxiv_archive.embedder import (
 
 FD_ENV_KEYS = (
     "FD_EMBEDDINGS_ENDPOINT",
+    "TEI_URL",
+    "FD_API_KEY",
+    "MODEL_ID",
+    "REDIS_HOST",
+    "REDIS_PORT",
     "FD_MODEL_NAME",
+    "FD_EMBEDDINGS_ENDPOINT_BASE",
     "FD_DIMENSIONS",
     "FD_BATCH_SIZE",
     "FD_REQUEST_TIMEOUT_SECONDS",
@@ -132,6 +138,57 @@ def test_env_override_endpoint() -> None:
         assert module.Embedder().endpoint == endpoint
 
 
+async def test_fd_api_key_in_authorization_header() -> None:
+    observed_headers: dict[str, str | None] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        observed_headers["authorization"] = request.headers.get("Authorization")
+        return _openai_embedding_response(request)
+
+    with _embedder_env(FD_API_KEY="test-key-12345") as module:
+        async with _client(handler) as client:
+            await module.Embedder(client=client).embed_batch(["hello"])
+
+    assert observed_headers["authorization"] == "Bearer test-key-12345"
+
+
+async def test_model_id_in_x_model_id_header() -> None:
+    observed: dict[str, Any] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        observed["x_model_id"] = request.headers.get("X-Model-Id")
+        observed["payload"] = json.loads(request.content.decode("utf-8"))
+        return _openai_embedding_response(request)
+
+    with _embedder_env(MODEL_ID="deepvk/test-bge-m3") as module:
+        async with _client(handler) as client:
+            await module.Embedder(client=client).embed_batch(["hello"])
+
+    assert observed["x_model_id"] == "deepvk/test-bge-m3"
+    assert observed["payload"]["model"] == "deepvk/test-bge-m3"
+
+
+def test_tei_url_override() -> None:
+    with _embedder_env(TEI_URL="http://127.0.0.1:19000") as module:
+        assert module.DEFAULT_TEI_URL == "http://127.0.0.1:19000"
+        assert module.DEFAULT_ENDPOINT == "http://127.0.0.1:19000/v1/embeddings"
+        assert module.Embedder().endpoint == "http://127.0.0.1:19000/v1/embeddings"
+
+
+def test_redis_host_env() -> None:
+    with _embedder_env(REDIS_HOST="redis.internal", REDIS_PORT="6380") as module:
+        assert module.DEFAULT_REDIS_HOST == "redis.internal"
+        assert module.DEFAULT_REDIS_PORT == 6380
+
+
+def test_backward_compat_fd_embeddings_endpoint() -> None:
+    endpoint = "http://127.0.0.1:18000/custom/embeddings"
+
+    with _embedder_env(FD_EMBEDDINGS_ENDPOINT=endpoint, TEI_URL="http://127.0.0.1:19000") as module:
+        assert module.DEFAULT_ENDPOINT == endpoint
+        assert module.Embedder().endpoint == endpoint
+
+
 def test_env_override_dimensions() -> None:
     with _embedder_env(FD_DIMENSIONS="512") as module:
         assert module.DEFAULT_DIMENSIONS == 512
@@ -140,8 +197,13 @@ def test_env_override_dimensions() -> None:
 
 def test_env_default_values() -> None:
     with _embedder_env() as module:
+        assert module.DEFAULT_TEI_URL == "http://127.0.0.1:8000"
         assert module.DEFAULT_ENDPOINT == "http://127.0.0.1:8000/v1/embeddings"
+        assert module.DEFAULT_API_KEY is None
+        assert module.DEFAULT_MODEL_ID == "deepvk/USER-bge-m3"
         assert module.DEFAULT_MODEL_NAME == "deepvk/USER-bge-m3"
+        assert module.DEFAULT_REDIS_HOST == "127.0.0.1"
+        assert module.DEFAULT_REDIS_PORT == 6379
         assert module.DEFAULT_DIMENSIONS == 1024
         assert module.DEFAULT_BATCH_SIZE == 32
         assert module.DEFAULT_TIMEOUT_SECONDS == 120.0
@@ -287,6 +349,26 @@ async def test_metrics_export() -> None:
     assert metrics["latency"]["count"] == 1
 
     await embedder.close()
+
+
+@pytest.mark.asyncio
+async def test_m050_m062_s01_s02_regression_openai_request_and_safety_defaults() -> None:
+    observed_payloads: list[dict[str, Any]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        observed_payloads.append(json.loads(request.content.decode("utf-8")))
+        return _openai_embedding_response(request)
+
+    with _embedder_env() as module:
+        async with _client(handler) as client:
+            await module.Embedder(client=client).embed_batch(["regression"])
+
+        assert observed_payloads == [
+            {"input": ["regression"], "model": "deepvk/USER-bge-m3", "dimensions": 1024}
+        ]
+        assert "inputs" not in observed_payloads[0]
+        assert "truncate" not in observed_payloads[0]
+        assert all(value is False for value in module.SAFETY_DEFAULTS.values())
 
 
 def test_5_safety_defaults_explicit() -> None:

@@ -14,7 +14,11 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_BASE_URL = os.environ.get("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000")
+DEFAULT_BASE_URL = os.environ.get("TEI_URL", os.environ.get("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000"))
+DEFAULT_API_KEY = os.environ.get("FD_API_KEY")
+DEFAULT_MODEL_ID = os.environ.get("MODEL_ID", os.environ.get("FD_MODEL_NAME", "deepvk/USER-bge-m3"))
+DEFAULT_REDIS_HOST = os.environ.get("REDIS_HOST", "127.0.0.1")
+DEFAULT_REDIS_PORT = os.environ.get("REDIS_PORT", "6379")
 DEFAULT_CORPUS = ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "figure-caption-corpus.json"
 DEFAULT_OUTPUT = ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "embeddings.json"
 DEFAULT_BATCH_SIZE = 32
@@ -34,16 +38,27 @@ class FdEmbeddingError(RuntimeError):
 
 
 class FdEmbeddingClient:
-    def __init__(self, base_url: str = DEFAULT_BASE_URL, timeout_seconds: float = 120.0) -> None:
+    def __init__(
+        self,
+        base_url: str = DEFAULT_BASE_URL,
+        timeout_seconds: float = 120.0,
+        api_key: str | None = DEFAULT_API_KEY,
+        model_id: str = DEFAULT_MODEL_ID,
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
+        self.api_key = api_key
+        self.model_id = model_id
 
     def embed_batch(self, texts: list[str], *, dimensions: int = DEFAULT_DIMENSIONS) -> list[list[float]]:
-        payload = {"input": texts, "dimensions": dimensions}
+        payload = {"input": texts, "model": self.model_id, "dimensions": dimensions}
+        headers = {"Content-Type": "application/json", "X-Model-Id": self.model_id}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
         request = urllib.request.Request(
             f"{self.base_url}/v1/embeddings",
             data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
+            headers=headers,
             method="POST",
         )
         try:

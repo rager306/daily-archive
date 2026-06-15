@@ -20,8 +20,11 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_BASE_URL = os.environ.get("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000")
-EXPECTED_MODEL = os.environ.get("FD_MODEL_NAME", "deepvk/USER-bge-m3")
+DEFAULT_BASE_URL = os.environ.get("TEI_URL", os.environ.get("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000"))
+DEFAULT_API_KEY = os.environ.get("FD_API_KEY")
+EXPECTED_MODEL = os.environ.get("MODEL_ID", os.environ.get("FD_MODEL_NAME", "deepvk/USER-bge-m3"))
+DEFAULT_REDIS_HOST = os.environ.get("REDIS_HOST", "127.0.0.1")
+DEFAULT_REDIS_PORT = os.environ.get("REDIS_PORT", "6379")
 DEFAULT_OUTPUT = ROOT / "artifacts" / "m057-fd-marker" / "fd-validation.json"
 
 SAFETY_DEFAULTS: dict[str, bool] = {
@@ -41,26 +44,37 @@ class HttpResult:
 
 
 class FdClient:
-    def __init__(self, base_url: str = DEFAULT_BASE_URL, timeout_seconds: float = 30.0) -> None:
+    def __init__(
+        self,
+        base_url: str = DEFAULT_BASE_URL,
+        timeout_seconds: float = 30.0,
+        api_key: str | None = DEFAULT_API_KEY,
+        model_id: str = EXPECTED_MODEL,
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
+        self.api_key = api_key
+        self.model_id = model_id
 
     def get_health(self) -> HttpResult:
         return self._request("GET", "/health")
 
     def embed(self, text_or_texts: str | list[str], *, dimensions: int | None = None) -> HttpResult:
-        payload: dict[str, Any] = {"input": text_or_texts, "model": EXPECTED_MODEL}
+        payload: dict[str, Any] = {"input": text_or_texts, "model": self.model_id}
         if dimensions is not None:
             payload["dimensions"] = dimensions
         return self._request("POST", "/v1/embeddings", payload)
 
     def _request(self, method: str, path: str, payload: dict[str, Any] | None = None) -> HttpResult:
         data = json.dumps(payload).encode("utf-8") if payload is not None else None
+        headers = {"Content-Type": "application/json", "X-Model-Id": self.model_id}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
         request = urllib.request.Request(
             f"{self.base_url}{path}",
             data=data,
             method=method,
-            headers={"Content-Type": "application/json"},
+            headers=headers,
         )
         started = time.perf_counter()
         try:
