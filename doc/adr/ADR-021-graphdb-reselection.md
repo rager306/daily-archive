@@ -214,3 +214,4 @@ For future agents:
 
 | Date | Author | Change | Rationale |
 |---|---|---|---|
+| 2026-06-15 | M067 (executor-01) | SUPERSEDED by ADR-022. FalkorDB chosen for self-hosted daily-archive (70/90 score) instead of Neo4j (76/90). M066 S01 had license error: Neo4j = AGPLv3 (viral) and FalkorDB = SSPLv1 (NOT AGPLv3, NOT RSAL 2.0). User research per official FalkorDB sources: SSPLv1 allows self-hosted/internal use without source disclosure; SaaS triggers Section 13 OR commercial license. For self-hosted daily-archive (current distribution model), SSPLv1 is acceptable; AGPLv3 is not. FalkorDB 70/90 (corrected license) wins over Neo4j 76/90 (AGPLv3 viral) for self-hosted use. | M067 corrected the license/distribution analysis and bound FalkorDB for the current self-hosted project model. |

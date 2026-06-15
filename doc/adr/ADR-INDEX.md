@@ -13,7 +13,7 @@ This index lists project-level ADRs and points to historical ADR packages kept u
 
 ## Project-Level ADRs
 
-Project-level ADR count: 21
+Project-level ADR count: 22
 
 | ADR | Status | Title | Path | Notes |
 | --- | --- | --- | --- | --- |
@@ -30,8 +30,9 @@ Project-level ADR count: 21
 | ADR-017 | Accepted (binding) | Pipeline Queue Deferred Until Pipeline End-to-End Complete | `doc/adr/ADR-017-pipeline-queue-deferred.md` | M064 (smart queue + per-article DAG + SQLAlchemy Core + SQLite) DEFERRED until M061+M062+M063 complete. Design preserved for future implementation. |
 | ADR-018 | Accepted (binding) | M061 2-hop Evidence and M064 Trigger Evaluation | `doc/adr/ADR-018-m061-2-hop-evidence-and-m064-trigger.md` | M064 S03: confirms M061 2-hop evidence and keeps ADR-017 queue deferral in place until M062/M063 evidence changes the trigger. |
 | ADR-019 | Accepted (binding) | M062 fd Embedding Service Contract | `doc/adr/ADR-019-fd-embedding-service-contract.md` | Formalizes `/root/fd-v2.md` as the binding fd v2 contract for M062 fd production hardening. |
-| ADR-020 | Superseded by ADR-021 | M063 GraphDB Selection (LadybugDB primary) | `doc/adr/ADR-020-graphdb-selection.md` | Superseded by ADR-021 after M066 18-criteria re-evaluation. |
-| ADR-021 | Accepted (binding) | M066 GraphDB Re-Selection (Neo4j primary) | `doc/adr/ADR-021-graphdb-reselection.md` | M066 GraphDB Re-Selection (Neo4j primary). |
+| ADR-020 | Superseded by ADR-022 | M063 GraphDB Selection (LadybugDB primary) | `doc/adr/ADR-020-graphdb-selection.md` | Superseded by ADR-022 after M067 corrected the self-hosted license analysis. |
+| ADR-021 | Superseded by ADR-022 | M066 GraphDB Re-Selection (Neo4j primary) | `doc/adr/ADR-021-graphdb-reselection.md` | Superseded by ADR-022 after M067 selected FalkorDB for self-hosted daily-archive. |
+| ADR-022 | Accepted (binding) | M067 GraphDB Re-Selection Self-Hosted (FalkorDB primary) | `doc/adr/ADR-022-graphdb-reselection-self-hosted.md` | M067 GraphDB Re-Selection Self-Hosted (FalkorDB primary). |
 
 ## Historical ADR Packages
 

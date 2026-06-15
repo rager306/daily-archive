@@ -205,6 +205,7 @@ Until these pass, LadybugDB is the selected target but production graph writes a
 | Date | Author | Change | Rationale |
 |---|---|---|---|
 | 2026-06-15 | M066 (executor-01) | SUPERSEDED by ADR-021. Neo4j chosen as production GraphDB (76/90 score) instead of LadybugDB (62/90). M063 S01 scoring matrix missed 3 critical features: concurrent write semantics (LadybugDB 33% success under load), GRAFBLAS (LadybugDB 1/5), UDF support (LadybugDB 3/5). | User feedback: concurrent writes, GRAFBLAS, UDFs not in M063 evaluation. M066 re-benchmark with 18 criteria identifies Neo4j as new winner. |
+| 2026-06-15 | M067 (executor-01) | SUPERSEDED again by ADR-022. Original M063 LadybugDB choice 39/45 superseded by ADR-021 (Neo4j 76/90) in M066 due to 33% concurrent write success. Now both superseded by ADR-022 (FalkorDB 70/90 for self-hosted) due to license analysis correction. | M067 corrected the FalkorDB and Neo4j license analysis and bound FalkorDB for the self-hosted daily-archive distribution model. |
 
 ## 13. LLM Reading Notes
 

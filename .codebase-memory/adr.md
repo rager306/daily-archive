@@ -197,6 +197,7 @@
 | ADR-019 | Accepted (binding) | `doc/adr/ADR-019-fd-embedding-service-contract.md` | M062 fd Embedding Service Contract |
 | ADR-020 | Accepted (binding) | `doc/adr/ADR-020-graphdb-selection.md` | GraphDB Selection for M063 |
 | ADR-021 | Accepted (binding) | `doc/adr/ADR-021-graphdb-reselection.md` | GraphDB Re-Selection for M066 |
+| ADR-022 | Accepted (binding) | `doc/adr/ADR-022-graphdb-reselection-self-hosted.md` | GraphDB Re-Selection Self-Hosted |
 
 ## ADR Decision Highlights
 
