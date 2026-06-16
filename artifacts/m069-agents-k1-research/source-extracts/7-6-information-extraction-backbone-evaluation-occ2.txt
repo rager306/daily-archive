@@ -1,0 +1,803 @@
+1.00
+
+35.00
+
+Ours
+
+63.50
+
+67.80
+
+67.10
+
+64.80
+
+31.10
+
+36.20
+
+7.5.3 
+Results and Analysis
+
+The comparative results are presented in Table 
+
+7
+
+. Our framework (
+
+denoted as Ours
+
+) demonstrates superior performance across the evaluated datasets, validating the effectiveness of the tri-source adaptive retrieval and semantic-anchored knowledge graph.
+
+Superiority over Vanilla and Standard RAG:
+
+Vanilla LLMs struggle significantly with specific factual queries across all datasets. While incorporating standard retrieval augmentation (e.g., Top-5 chunks) noticeably improves performance, these text-only approaches still lack the structural awareness necessary to handle complex multi-hop dependencies effectively, consistently lagging behind graph-enhanced methods.
+
+Comparison with Advanced Graph Methods:
+
+Our method consistently demonstrates competitive or superior performance against strong baselines like RAPTOR and LightRAG, as well as recent advanced models like GFM-RAG and HippoRAG2. On datasets like HotpotQA and 2WikiMultiHopQA, while some baselines achieve competitive surface-level string matching, our framework consistently secures the highest GPT-Acc. This distinct advantage in semantic correctness over mere keyword containment demonstrates the robustness of our semantic anchors in capturing true underlying entity relationships and logical reasoning chains.
+
+Robustness on Complex Datasets:
+
+The MuSiQue dataset presents a significantly higher level of difficulty, causing a sharp performance drop across most baselines, including advanced graph approaches like LightRAG and E
+
+2
+
+GraphRAG. In contrast, our method maintains strong and robust performance, outperforming these competitors in both containment and semantic accuracy. This resilience indicates that our hierarchical knowledge graph structure effectively bridges the gap between disparate pieces of loosely connected evidence, a crucial capability for the hard multi-hop reasoning required by such complex queries.
+
+7.6 
+Information Extraction Backbone Evaluation
+
+We evaluate our trained model extraction backbone against its own base checkpoint and two substantially larger open-source references to quantify how much of the scaling gap can be closed by task-specific reinforcement learning.
+
+7.6.1 
+Setup
+
+We evaluate on ten English information extraction benchmarks (12,078 test instances in total) covering three regimes: (i) five held-out cross-domain NER datasets that are absent from the training mix, namely CrossNER-AI, CrossNER-Literature, CrossNER-Music, CrossNER-Politics, and CrossNER-Science; (ii) three in-distribution NER benchmarks, CoNLL2003, NCBI, and BC5CDR; and (iii) two relation extraction benchmarks, SciERC and CoNLL04. Decoding is greedy with a 2,048 response token budget. Unlike the training reward, evaluation reports pure task F1 (entity set F1 for NER and relation triple set F1 for RE); the format and JSON terms are excluded so that comparisons are on a common semantic basis. All models are served with identical prompts on a single H200 GPU.
+
+Baselines.
+
+ We compare four models. Qwen3-4B-Instruct and Qwen3-8B serve as open-source base references at the scales immediately at and above our backbone. Qwen3-32B is a substantially larger reference checkpoint (roughly eight times the parameter count of our backbone) and is included to measure how much raw scale buys on these tasks; it is not fine-tuned for information extraction. Our trained model is initialised from Qwen3-4B-Instruct.
+
+7.6.2 
+Main Results
+
+Table 
+
+8
+
+ reports per-dataset F1 and Table 
+
+9
+
+ summarises the results by regime. From the results in these tables, our trained model improves over its own base and a larger open-source base. Our trained model improves over the 4B base on every one of the ten benchmarks, and over the 8B base on eight of ten benchmarks. Averaged over the ten datasets, our trained model lifts the 4B backbone by 3.3 F1 points (from 0.5316 to 0.5647) and beats the 8B base by 2.7 points (0.5382 to 0.5647), despite using half of the parameter count of the 8B reference.
+
+Table 8: 
+Per-dataset F1 on the information extraction evaluation suite.
+
+Bold
+ marks the best score in each row. Qwen3-4B, Qwen3-8B, and Qwen3-32B are open-source base checkpoints without fine-tuning. Our 4B backbone is trained by GRPO on IEPile.
+
+Dataset
+
+Task
+
+Qwen3-4B
+
+Qwen3-8B
+
+Qwen3-32B
+
+Ours (4B)
+
+Held out NER (cross domain generalisation)
+
+CrossNER-AI
+
+NER
+
+0.4862
+
+0.4933
+
+0.5489
+
+0.5400
+
+CrossNER-Literature
+
+NER
+
+0.5462
+
+0.5581
+
+0.5419
+
+0.5736
+
+CrossNER-Music
+
+NER
+
+0.5791
+
+0.5650
+
+0.6059
+
+0.6050
+
+CrossNER-Politics
+
+NER
+
+0.6611
+
+0.6719
+
+0.6855
+
+0.6855
+
+CrossNER-Science
+
+NER
+
+0.5928
+
+0.5984
+
+0.6207
+
+0.6132
+
+In distribution NER
+
+CoNLL2003
+
+NER
+
+0.6547
+
+0.6396
+
+0.6400
+
+0.7007
+
+NCBI
+
+NER
+
+0.6737
+
+0.7095
+
+0.7563
+
+0.7340
+
+BC5CDR
+
+NER
+
+0.7126
+
+0.7195
+
+0.7214
+
+0.7494
+
+Relation extraction
+
+SciERC
+
+RE
+
+0.1166
+
+0.0965
+
+0.1485
+
+0.1270
+
+CoNLL04
+
+RE
+
+0.2933
+
+0.3306
+
+0.4768
+
+0.3181
+
+Average over all ten datasets
+
+0.5316
+
+0.5382
+
+0.5746
+
+0.5647
+
+Table 9: 
+Average F1 by evaluation regime. Our trained backbone exceeds both the 4B and the 8B open-source base on every regime, and exceeds the 32B base on held-out and in-distribution NER, despite having roughly one-eighth of the parameter count. The relation extraction gap to the 32B base is the main remaining limitation.
+
+Regime
+
+Qwen3-4B
+
+Qwen3-8B
+
+Qwen3-32B
+
+Ours
+
+Held out NER (5 sets)
+
+0.5731
+
+0.5773
+
+0.6006
+
+0.6035
+
+In distribution NER (3 sets)
+
+0.6803
+
+0.6895
+
+0.7059
+
+0.7280
+
+Relation extraction (2 sets)
+
+0.2050
+
+0.2136
+
+0.3127
+
+0.2226
+
+Overall (10 sets)
+
+0.5316
+
+0.5382
+
+0.5746
+
+0.5647
+
+Our model closes the roughly eight times scaling gap to Qwen3-32B and surpasses it on NER.
+
+On the overall average, our model lags the 32B base by only 0.99 F1 points (0.5647 versus 0.5746). Broken down by regime, our model slightly exceeds the 32B base on held-out NER (0.6035 versus 0.6006) and clearly exceeds it on in-distribution NER (0.7280 versus 0.7059, an improvement of 2.2 F1 points). Per dataset, our trained model beats the 32B base on CoNLL2003 (0.7007 versus 0.6400, an improvement of 6.1 F1 points), on BC5CDR (0.7494 versus 0.7214, an improvement of 2.8 F1 points), on CrossNER-Literature (0.5736 versus 0.5419, an improvement of 3.2 F1 points), and on CrossNER-Politics (0.6855 versus 0.6855, a marginal lead at the fourth decimal). These results show that for structured information extraction, a targeted reinforcement learning run can recover most, and in many cases all, of the benefit that comes from raw parameter scaling.
+
+Remaining gap on relation extraction.
+
+From the results above, the 32B base retains a clear lead on relation extraction, especially on CoNLL04 (0.4768 versus 0.3181, a gap of 15.9 F1 points). SciERC is low across the board, at or below 0.15 F1 for every model, reflecting the intrinsic difficulty of fine-grained scientific relation typing. Closing the relation extraction gap will likely require substantially more relation supervision in the training mixture, or targeted schema-conditioned reward shaping.
+
+In this way, one can observe that a compact 4B extraction backbone, trained for roughly one hour of GRPO on a single eight GPU node with a rule based reward, produces an extractor that (i) uniformly outperforms its own base model, (ii) outperforms the next open-source scale on eight of ten benchmarks, and (iii) matches or exceeds a checkpoint eight times larger on held out and on in distribution NER. This makes our model the default extractor in the Agents-K1 pipeline: it delivers the extraction quality of a much larger model at a fraction of the inference cost.
+
+8 
+Conclusion
+
+We presented Agents-K1, an agent-native knowledge orchestration that turns raw documents into scientific knowledge graphs for research agents. Agents-K1 unifies three layers: a KG infrastructure that parses full papers and builds Scholar-KG over 2.46 million scientific papers, with a schema-adaptive General-KG extension for arbitrary documents; an LLM infrastructure built around a 4B reinforcement-learned extraction backbone; and GraphAnything CLI, an agent-facing interface that connects web search, multimodal graph retrieval, and cross-document traversal. This design turns scholarly knowledge from scattered papers and citation links into reusable, evidence-grounded graph knowledge that agents can retrieve, inspect, and act on. Empirically, Agents-K1 lifts Gemini-3 overall accuracy from 7.9% to 24.6% and GPT-5.2 from 25.2% to 39.4% on the 
+
+FrontierScience-Research
+
+ benchmark, while also improving geoscience research reasoning and multi-hop question answering. Our analysis further supports the central design choice: organizing evidence in connected graphs enables more reliable cross-source reasoning than repeatedly searching separate text fragments. We release a one-million-paper subset of Scholar-KG together with the extraction backbone, aiming to provide the community with a practical knowledge infrastructure for research agents that reason over structured scientific knowledge rather than rebuilding it from raw text at every query.
+
+References
+
+References
+
+Appendix
+
+A 
+Citation Context Classification Schema
+
+To precisely quantify the intellectual lineage and contextual dependency of the referenced literature, we formulate the citation analysis as a fine-grained classification task. Each citation mention extracted from the full text is categorized into one of five hierarchical levels based on its contextual significance and direct impact on the proposed research. The scoring rubric is defined as follows:
+
+Level 5: Foundational Citation.
+
+The current research is inextricably built upon this prior work. Without this reference, the core theory, model, or methodology of the paper would lack its foundational basis. Typical contextual markers include phrases such as 
+
+“We build upon…”
+
+ or 
+
+“Following the methodology of…”
+
+.
+
+Level 4: Strong Citation.
+
+The referenced work serves as a primary pillar of support or a critical benchmark. It directly influences the study’s experimental design, validation, or conclusions. Contextual markers often include 
+
+“As demonstrated by…”
+
+ or 
+
+“We compare our framework against…”
+
+.
+
+Level 3: Moderate Citation.
+
+The citation provides supporting background, empirical evidence, or conceptual inspiration, yet it does not constitute the absolute core foundation. It is frequently utilized to justify the research motivation or establish theoretical associations (e.g., 
+
+“Inspired by…”
+
+ or 
+
+“Consistent with findings in…”
+
+).
+
+Level 2: Contextual Citation.
+
+The reference is utilized primarily to map the broader research landscape or delineate related work. The direct methodological link to the current study is relatively weak, commonly appearing in comprehensive literature reviews (e.g., 
+
+“Several recent studies have explored…”
+
+).
+
+Level 1: Peripheral Citation.
+
+The work is mentioned strictly for academic breadth, historical context, or general overview, exerting no substantive impact on the paper’s core logic (e.g., 
+
+“For a general overview, see…”
+
+).
+
+Aggregation Strategy
+
+Given that a single reference may be cited multiple times across different sections of a manuscript, we apply a max-pooling aggregation strategy. Specifically, the definitive classification for a given reference is determined by the maximum score it achieves across all its mentions within the text. Furthermore, references that are listed in the bibliography but lack explicit in-text mentions are conservatively assigned a default score of Level 1 (Peripheral Citation) to prevent logical anomalies in the final reference graph. For quantitative aggregation, each level is explicitly assigned a corresponding integer score ranging from 5 (Foundational) to 1 (Peripheral).
+
+B 
+Proofs and Constructive Details for Section 
+
+4.5
+
+This appendix gives the projection rules used in the proofs, the proofs of Propositions 
+
+1
+
+, 
+
+2
+
+, and 
+
+3
+
+, and the witness construction that certifies the strict gap term of (
+
+8
+
+). We keep the notation of Section 
+
+4.5
+
+: a payload is 
+
+𝒫
+
+D
+
+=
+
+(
+
+𝒱
+
+,
+
+ℰ
+
+h
+
+)
+
+\mathcal{P}_{D}=(\mathcal{V},\mathcal{E}_{h})
+
+, and every view is identifier preserving on 
+
+𝒱
+
+\mathcal{V}
+
+.
+
+B.1 
+Projection Rules
+
+For a hyperedge 
+
+e
+
+=
+
+(
+
+v
+
+1
+
+,
+
+…
+
+,
+
+v
+
+k
+
+)
+
+∈
+
+ℰ
+
+h
+
+e=(v_{1},\ldots,v_{k})\in\mathcal{E}_{h}
+
+, write 
+
+|
+
+e
+
+|
+
+=
+
+k
+
+|e|=k
+
+ and 
+
+set
+
+​
+
+(
+
+e
+
+)
+
+=
+
+{
+
+v
+
+1
+
+,
+
+…
+
+,
+
+v
+
+k
+
+}
+
+\mathrm{set}(e)=\{v_{1},\ldots,v_{k}\}
+
+. The two views invoked in the proofs below are:
+
+•
+ 
+
+Binary view 
+
+Φ
+
+b
+
+\Phi_{b}
+
+.
+
+ Keep only arity-
+
+2
+
+2
+
+ edges: 
+
+Φ
+
+b
+
+​
+
+(
+
+𝒫
+
+D
+
+)
+
+=
+
+(
+
+𝒱
+
+,
+
+{
+
+e
+
+∈
+
+ℰ
+
+h
+
+:
+
+|
+
+e
+
+|
+
+=
+
+2
+
+}
+
+)
+
+\Phi_{b}(\mathcal{P}_{D})=\big(\mathcal{V},\,\{e\in\mathcal{E}_{h}:|e|=2\}\big)
+
+.
+
+•
+ 
+
+N
+
+N
+
+-ary view 
+
+Φ
+
+n
+
+\Phi_{n}
+
+.
+
+ Keep 
+
+{
+
+e
+
+∈
+
+ℰ
+
+h
+
+:
+
+|
+
+e
+
+|
+
+≥
+
+3
+
+}
+
+\{e\in\mathcal{E}_{h}:|e|\geq 3\}
+
+ and add hyperedges produced by the upgrade operator 
+
+U
+
+n
+
+U_{n}
+
+ from the binary skeleton, where 
+
+U
+
+n
+
+U_{n}
+
+ promotes any clique whose pairwise edges share a chunk to a single hyperedge.
+
+The temporal, person, event, DIY, and scientific-KG views are described in Section 
+
+4.3
+
+ and Section 
+
+4.1
+
+; each is a deterministic projection on the same 
+
+𝒱
+
+\mathcal{V}
+
+, so the arguments below apply to them without modification.
+
+B.2 
+Proof of Proposition 
+
+1
+
+ (Identifier Preserving Joins)
+
+Upper bound.
+
+Φ
+
+u
+
+​
+
+(
+
+𝒫
+
+D
+
+)
+
+\Phi_{u}(\mathcal{P}_{D})
+
+ and 
+
+Φ
+
+v
+
+​
+
+(
+
+𝒫
+
+D
+
+)
+
+\Phi_{v}(\mathcal{P}_{D})
+
+ live over the same 
+
+𝒱
+
+\mathcal{V}
+
+ with identical identifiers. Build a hash table on 
+
+Φ
+
+u
+
+↾
+
+K
+
+\Phi_{u}\!\restriction\!K
+
+ keyed by node identifier in 
+
+𝒪
+
+​
+
+(
+
+|
+
+K
+
+|
+
+)
+
+\mathcal{O}(|K|)
+
+ time, then for each 
+
+v
+
+∈
+
+K
+
+∩
+
+Φ
+
+v
+
+v\in K\cap\Phi_{v}
+
+ look up 
+
+H
+
+u
+
+​
+
+[
+
+v
+
+]
+
+H_{u}[v]
+
+ in expected 
+
+𝒪
+
+​
+
+(
+
+1
+
+)
+
+\mathcal{O}(1)
+
+. The total cost is 
+
+𝒪
+
+​
+
+(
+
+|
+
+K
+
+|
+
+)
+
+\mathcal{O}(|K|)
+
+, and matches are exact because identifiers compare by equal

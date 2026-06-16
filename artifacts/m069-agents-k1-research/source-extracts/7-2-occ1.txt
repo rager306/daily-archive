@@ -1,0 +1,834 @@
+cs
+
+To comprehensively assess the quality of the constructed knowledge graph, we employ a rigorous 
+
+LLM-as-a-Judge
+
+ evaluation protocol. Unlike traditional exact-matching metrics, our framework utilizes a state-of-the-art large language model (DeepSeek-V3 
+
+[
+
+deepseekai2025deepseekv3technicalreport
+
+]
+
+) acting as an “Expert Scientific Editor” to evaluate the extraction results based on semantic correctness and scientific essence.
+
+7.2.1 
+Metric Formulations
+
+We quantify performance using three standard metrics: 
+
+Precision (
+
+P
+
+P
+
+)
+
+, 
+
+Recall (
+
+R
+
+R
+
+)
+
+, and the 
+
+F1-score (
+
+F
+
+​
+
+1
+
+F1
+
+)
+
+.
+Let 
+
+N
+
+e
+
+​
+
+x
+
+​
+
+t
+
+N_{ext}
+
+ denote the total number of items extracted by the model. Through the LLM evaluation process, we identify 
+
+N
+
+e
+
+​
+
+r
+
+​
+
+r
+
+N_{err}
+
+ as the count of incorrect extractions (hallucinations or factual errors) and 
+
+N
+
+m
+
+​
+
+i
+
+​
+
+s
+
+​
+
+s
+
+N_{miss}
+
+ as the count of critical information omitted from the source text.
+
+Accordingly, the number of correctly extracted items (True Positives) is defined as 
+
+N
+
+c
+
+​
+
+o
+
+​
+
+r
+
+​
+
+r
+
+​
+
+e
+
+​
+
+c
+
+​
+
+t
+
+=
+
+N
+
+e
+
+​
+
+x
+
+​
+
+t
+
+−
+
+N
+
+e
+
+​
+
+r
+
+​
+
+r
+
+N_{correct}=N_{ext}-N_{err}
+
+. The estimated ground truth size is derived as the sum of correct items and missed items. The metrics are formulated as follows:
+
+P
+
+=
+
+N
+
+e
+
+​
+
+x
+
+​
+
+t
+
+−
+
+N
+
+e
+
+​
+
+r
+
+​
+
+r
+
+N
+
+e
+
+​
+
+x
+
+​
+
+t
+
+,
+
+R
+
+=
+
+N
+
+e
+
+​
+
+x
+
+​
+
+t
+
+−
+
+N
+
+e
+
+​
+
+r
+
+​
+
+r
+
+(
+
+N
+
+e
+
+​
+
+x
+
+​
+
+t
+
+−
+
+N
+
+e
+
+​
+
+r
+
+​
+
+r
+
+)
+
++
+
+N
+
+m
+
+​
+
+i
+
+​
+
+s
+
+​
+
+s
+
+,
+
+F
+
+​
+
+1
+
+=
+
+2
+
+⋅
+
+P
+
+⋅
+
+R
+
+P
+
++
+
+R
+
+P=\frac{N_{ext}-N_{err}}{N_{ext}},\qquad R=\frac{N_{ext}-N_{err}}{(N_{ext}-N_{err})+N_{miss}},\qquad F1=\frac{2\cdot P\cdot R}{P+R}
+
+(25)
+
+•
+ 
+
+Precision (
+
+P
+
+P
+
+)
+
+: Reflects the 
+
+trustworthiness
+
+ of the system by penalizing hallucinations and factual contradictions.
+
+•
+ 
+
+Recall (
+
+R
+
+R
+
+)
+
+: Reflects the 
+
+completeness
+
+ of the system by penalizing the omission of core scientific concepts.
+
+•
+ 
+
+F1-score
+
+: Serves as the harmonic mean to provide a holistic performance index.
+
+7.2.2 
+Semantic-Aware Evaluation Criteria
+
+To address the inherent complexity and heterogeneity of scientific literature, we developed a multi-dimensional evaluation protocol that transcends rigid keyword matching. Our framework distinguishes between 
+
+pedantic precision
+
+ (required for metadata) and 
+
+semantic understanding
+
+ (required for abstract concepts). As illustrated below, the evaluation is structured into four distinct modules, each governed by a specific judicial logic tailored to the nature of the information being extracted:
+
+Module A: Meta/Factual Entities (Strict Verification)
+
+This module evaluates the precision of objective metadata extraction (e.g., Authors, DOI, Affiliations). The evaluation follows a 
+
+“Zero-Tolerance for Hallucination”
+
+ policy:
+
+•
+ 
+
+Fine-Grained Verification:
+
+ The judge validates every single author name and institutional affiliation individually.
+
+•
+ 
+
+Fact vs. Inference:
+
+ Information is marked as 
+
+Incorrect
+
+ if it contains factual errors (e.g., wrong publication year). However, valid logical inferences (e.g., deriving the venue ‘arXiv’ from a specific DOI pattern) are accepted as correct.
+
+Module B: Textually Mentioned Entities (Semantic Tolerance)
+
+This module assesses explicit entities such as Tasks, Methods, and Datasets. We adopt a 
+
+“Lenient on Format, Strict on Facts”
+
+ policy to handle terminological diversity:
+
+•
+ 
+
+Synonym Recognition:
+
+ Linguistic variations and abbreviations are deemed correct. For instance, extracting “ConvNet” when the text says “Convolutional Neural Network” is a valid match.
+
+•
+ 
+
+Core-Focus Recall:
+
+ The evaluation penalizes the omission of 
+
+primary
+
+ methods or 
+
+main
+
+ datasets. Missing trivial details (e.g., auxiliary hyperparameters like learning rates or generic terms like “computer”) does not negatively impact the Recall score.
+
+Module C: Implicit/Abstracted Entities (Abstractive Equivalence)
+
+This module tests the system’s ability to synthesize high-level knowledge (Contributions, Findings, Limitations). The evaluation prioritizes 
+
+semantic essence over specific wording
+
+:
+
+•
+ 
+
+Summarization Acceptance:
+
+ High-level summaries are accepted. If the text details specific numerical gains (e.g., “accuracy +5%”), an extraction stating “Performance Improvement” is considered correct.
+
+•
+ 
+
+Centrality-Based Assessment:
+
+ The system is penalized only if the 
+
+central scientific contribution
+
+ or the 
+
+main conclusion
+
+ is completely absent. Partial omissions of minor findings are tolerated.
+
+Module D: Citation Relationships (Hallucination Check)
+
+This module evaluates the fidelity of the constructed citation network, ensuring the academic lineage is accurately preserved:
+
+•
+ 
+
+Existence Verification:
+
+ The judge strictly penalizes 
+
+hallucinated references
+
+—citations generated by the model that do not exist in the source text’s bibliography.
+
+•
+ 
+
+Intent Consistency:
+
+ The inferred citation intent (e.g., whether a paper is cited as a baseline to 
+
+Contrast
+
+ or as a foundation to 
+
+Support
+
+) must logically align with the context provided in the source text.
+
+Module E: Knowledge Relations Between Entities (Durable & Fine-Grained Triples)
+
+This module extracts fine-grained relational triples to build a reasoning graph, enforcing a 
+
+“Durable Knowledge Only”
+
+ policy:
+
+•
+ 
+
+Noise Filtration:
+
+ Extracts must encode reusable scientific knowledge (e.g., causal claims, mechanisms). Ephemeral details like numerical results or hyperparameters are strictly penalized.
+
+•
+ 
+
+Strict Grounding:
+
+ 
+
+Controlled relations
+
+ must strictly align with entities in Module B. 
+
+Open relations
+
+ allow new concepts but require precise verbatim evidence from the text.
+
+Table 4: 
+
+Performance Comparison across Different Domains.
+ Note that the reported Precision (P), Recall (R), and F1 values represent the document-level macro-averages calculated over 100 distinct papers per domain and module.
+
+Module
+
+Metric
+
+cs
+
+chem
+
+bio
+
+earth
+
+physics
+
+material
+
+Module A
+
+P
+
+85.16
+
+90.17
+
+90.29
+
+90.07
+
+91.53
+
+94.38
+
+R
+
+87.81
+
+81.54
+
+77.77
+
+84.24
+
+74.48
+
+80.94
+
+F1
+
+85.12
+
+84.72
+
+82.65
+
+85.88
+
+81.24
+
+86.52
+
+Module B
+
+P
+
+91.03
+
+89.86
+
+95.40
+
+91.55
+
+78.90
+
+91.80
+
+R
+
+82.00
+
+74.14
+
+80.18
+
+76.82
+
+68.36
+
+79.31
+
+F1
+
+85.78
+
+80.16
+
+86.59
+
+82.78
+
+72.82
+
+83.31
+
+Module C
+
+P
+
+94.05
+
+96.06
+
+90.71
+
+97.25
+
+96.76
+
+97.50
+
+R
+
+90.23
+
+93.51
+
+84.92
+
+92.02
+
+86.94
+
+88.94
+
+F1
+
+91.84
+
+94.59
+
+87.22
+
+94.33
+
+90.90
+
+92.55
+
+Module D
+
+P
+
+89.77
+
+91.34
+
+89.50
+
+96.03
+
+89.18
+
+87.17
+
+R
+
+79.44
+
+83.74
+
+84.16
+
+85.33
+
+75.04
+
+79.06
+
+F1
+
+83.48
+
+87.04
+
+85.99
+
+89.74
+
+79.85
+
+82.39
+
+Module E
+
+P
+
+93.07
+
+81.48
+
+80.00
+
+87.53
+
+76.17
+
+77.37
+
+R
+
+86.69
+
+72.82
+
+71.79
+
+76.39
+
+68.02
+
+70.58
+
+F1
+
+89.33
+
+75.64
+
+74.23
+
+80.39
+
+70.54
+
+72.67
+
+AVG
+
+F1
+
+87.11
+
+84.43
+
+83.34
+
+86.62
+
+79.07
+
+83.49
+
+7.3 
+Cross-Domain Performance Analysis
+
+Table 
+
+4
+
+ presents the comprehensive evaluation results across six distinct scientific domains. The framework demonstrates robust generalization capabilities, with the Average F1-score (AVG F1) consistently ranging from 79.07% to 87.11%. This stability confirms that our semantic-anchored architecture effectively adapts to the varied terminologies and reasoning patterns inherent to different disciplines.
+
+Domain-Specific Nuances
+
+The performance variations reveal the unique characteristics of each scientific field:
+
+•
+ 
+
+Computer Science & Earth Science (Highest Consistency):
+
+ These domains achieved the top aggregate performances, with AVG F1 scores of 87.11% and 86.62%, respectively. The high scores in Module D (Citations) for Earth Science (89.74%) and the balanced results for Computer Science across all modules suggest that these fields follow highly standardized structural norms, facilitating precise information extraction.
+
+•
+ 
+
+Chemistry & Material Science (Deep Understanding):
+
+ Both fields exhibited remarkable performance in Module C (Implicit Entities), with Chemistry reaching an F1 of 94.59% and Material Science achieving 92.55%. This indicates the model’s superior capability to abstract complex reaction mechanisms and experimental properties into high-level conceptual findings.
+
+•
+ 
+
+Physics & Biology (Terminological Challenges):
+
+ While Precision remains high across most modules, these domains show a noticeable dip in Recall for explicit entities (e.g., Physics Module B Recall at 68.36%). This is attributed to the extreme diversity of non-standardized nomenclature and abbreviations prevalent in these disciplines, which poses a challenge for explicit entity matching.
+
+Module-Level Capabilities
+
+Beyond domain differences, the module-wise breakdown highlights specific system strengths and sensitivities. Module C (Implicit Entities) emerges as the most robust component across the board, providing empirical evidence that the framework successfully transcends shallow pattern matching to capture the “scientific essence.” Module D (Citation Relationships) also consistently yields reliable scores, confirming the system’s fidelity in reconstructing academic lineages. Conversely, the newly introduced Module E (Knowledge Relations) shows the highest variance across fields (ranging from an F1 of 70.54% in Physics to 89.33% in CS), demonstrating that fine-grained structural alignment is highly sensitive to the explicit reporting habits of specific scientific communities.
+
+7.4 
+Performance Comparison on Knowledgeable and Research Questions
+
+Efficiency for Geoscience Research.
+
+ In this section, we validate the effectiveness of the proposed scholarly knowledge graph framework in a geoscience-specific setting by performing a targeted schema adaptation. Building upon a general paper-citation graph backbone, we extend the schema with domain-specific entity and relation types to better capture key characteristics of geoscience research, namely, complex study objects, a multi-layered conceptual system, and strong dependence on spatiotemporal context. Concretely, we introduce and explicitly model several core concept nodes, including Region, Domain Terms, Geoscience Variables (e.g., carbon flux and seismic wave velocity), Geoscience Tasks (e.g., climate prediction and remote-sensing inversion), and Geoscience Formulae and Methods. These domain-specific entities are identified and extracted by a large language model through atomic-sentence–level parsing of paper content, and are then semantically linked to their corresponding paper nodes in the graph. This layered design preserves the universal citation structure while making the logical relationships among geoscience entities explicit, thereby providing structured support for scientific retrieval and reasoning.
+
+Building on this schema extension, we construct a geoscience knowledge graph using Agents-K1 under a review-centric seeding with a citation-based expansion principle. We select 114 surveys/reviews from top-tier venues (AGU family journals, Reviews of Geophysics) published since 2025 as seed documents; their reference lists, after bibliographic normalization and deduplication, yield a citation corpus of 7,219 unique papers. Applying our information extraction pipeline to this corpus produces a heterogeneous graph with 602,132 nodes and 609,812 edges, mirroring how researchers in practice start from surveys and trace citation chains back to primary studies. The same review narratives further serve as expert-level references for evaluation, from which we derive two question categories: Knowledgeable Questions, targeting objective components such as variable definitions and formula applicability, and Research Questions, targeting field-level synthesis, competing viewpoints, and open problems. To prioritize multi-step reasoning, we retain questions whose answers require tracing citation links to source papers and integrating evidence across multiple atomic sentences; each test instance comprises a question, an answer, and a reasoning trace.
+
+To quantify the benefit of Agents-K1, we conduct a controlled comparison between a standard large language model baseline and a graph-augmented retrieval generation model based on GraphRAG. The baseline relies on an LLM. In contrast, the GraphRAG-based model performs structured navigation and evidence retrieval over the geoscience knowledge graph before generation. It follows citation edges to identify relevant papers and their associated atomic-sentence evidence, and then conditions the final response on the retrieved evidence.
+Given the complexity of scientific reasoning, we adopt an LLM-as-a-judge protocol for automated evaluation. We use GPT-5.2 as the judge model and treat the review text as the reference ground truth (GT). For each output, the judge assigns a binary score (1/0) jointly over the reasoning trace and the final answer. The rubric evaluates, first, the validity of the reasoning process, namely, whether the model follows a coherent logical chain and integrates supporting evidence, and second, the correctness of the answer, namely, whether the conclusion is consistent with the expert statements in the review. This protocol evaluates not only outcome accuracy but also the traceability and rigor of the underlying reasoning.
+
+Table 
+
+5
+
+ reports the performance of different models on knowledgeable questions and research questions, evaluated in terms of rationale accuracy and answer accuracy. Experimental results show that incorporating the graph substantially improves performance on multi-hop reasoning QA in geoscience. Overall, the GraphRAG-based model achieves higher accuracy than the baseline LLM. The gain is more pronounced on Research QA. This category requires synthesizing evidence across multiple papers, for example when summarizing methodological limitations or comparing findings across studies. The citation structure in the graph makes such scholarly dependencies and contrasts explicit, which provides a stable structural prior for retrieval and reasoning. Qualitative inspection further indicates that, for questions requiring precise evidential support, such as 

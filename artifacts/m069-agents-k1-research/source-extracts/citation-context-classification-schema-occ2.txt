@@ -1,0 +1,818 @@
+lags and scope; extract 
+
+Findings/Claims
+
+ with quantitative effect sizes and qualitative patterns (consistency, robustness, scaling behavior); record 
+
+Explanations/Mechanisms
+
+ (causal, mechanistic, or heuristic rationales) that account for observed results; and document 
+
+Limitations/Threats
+
+ (external validity, biases, compute cost, ethics), 
+
+Design Rationales
+
+, 
+
+Future Work/Open Questions
+
+, and 
+
+Error Analyses/Case Studies
+
+. These abstracted nodes are evidence-linked and confidence-calibrated, merged across documents when semantically equivalent, and provide a structured infrastructure for causal-aware synthesis, systematic reviews, and meta-analyses.
+
+D. Citation Relationships.
+
+We represent how the literature positions a focal work by encoding 
+
+who cites whom, how strongly, and to what argumentative effect
+
+. Each 
+
+Citation
+
+ edge stores the cited paper’s identity (title, authors, year, DOI/venue), 
+
+Cite Type
+
+ (strong/weak, direct support vs. indirect mention, core reference flag), a one-sentence 
+
+Relation
+
+ (support/contrast/extend/background) with its argumentative role, fine-grained 
+
+Evidence
+
+ (section/paragraph indices, in-text spans, frequency), temporal information (publication date and timeline ordering), and enriched 
+
+Author/Team
+
+ and 
+
+Source
+
+ signals (affiliations, collaborations, venue prestige). We compute a citation-strength score from frequency, rhetorical-zone coverage, lexical cues (e.g., “we adopt”, “we improve upon”), and proximity to key entities, and threshold it to label strong vs. weak citations; relation roles are predicted with cue-based classifiers and verified for high-impact cases via human-in-the-loop. The resulting citation layer, together with Modules A–C, yields a heterogeneous, provenance-rich knowledge graph that supports evidence-grounded retrieval, lineage tracing of datasets/metrics, identification of pivotal works, and causal mapping of how claims propagate and evolve across disciplines. For the detailed citation context classification schema, please refer to Appendix 
+
+A
+
+.
+
+E. Knowledge Relations Between Entities.
+
+Modules B and C already capture scientific knowledge, but at a coarse, paper-level granularity: B records explicitly mentioned objects and their attributes, while C aggregates motivations, mechanisms, and limitations as high-level nodes attached to each paper. Module E refines this into fine-grained triples between specific entities, so that knowledge previously encoded as paragraph-level abstraction becomes directly queryable. We organize the triples into two complementary families. Controlled relations require head and tail to already exist in Module B, preserving ontological discipline over the method, task, and dataset space; they include 
+
+BUILDS_ON
+
+, 
+
+USES_COMPONENT
+
+, 
+
+ALTERNATIVE_TO
+
+, 
+
+SOLVES
+
+, 
+
+APPLIED_TO
+
+, and 
+
+TARGETS
+
+. Open relations admit new concepts when a mechanism lacks a canonical name, spanning four semantic zones: causal (
+
+CAUSES
+
+, 
+
+ENABLES
+
+, 
+
+INHIBITS
+
+, 
+
+MODULATES
+
+, 
+
+CORRELATED_WITH
+
+), internal composition (
+
+USES_TECHNIQUE
+
+, 
+
+CONSISTS_OF
+
+, 
+
+IMPLEMENTS
+
+, 
+
+COMBINES
+
+, 
+
+REQUIRES
+
+), methodological comparison (
+
+DERIVED_FROM
+
+, 
+
+DIFFERS_FROM
+
+, 
+
+HAS_LIMITATION
+
+, 
+
+ADDRESSES_PROBLEM
+
+, 
+
+MOTIVATED_BY
+
+), and domain structure (
+
+HAS_PROPERTY
+
+, 
+
+SUBSET_OF
+
+). By design, this layer admits only durable knowledge: numerical results, hyperparameters, and experimental setups are excluded, because they either already reside under Module B or vary across replications and would dilute the graph with ephemeral noise. Triples arrive through two reinforcing channels. Structural edges are materialized deterministically from Modules A and B, for instance 
+
+AFFILIATED_WITH
+
+ built from author metadata or 
+
+USES_COMPONENT
+
+ from declared submodules. Semantic edges are mined with section awareness, harvesting causal claims primarily from Introduction and Discussion, internal composition from Methods, comparative gaps from Related Work, and failure modes from Limitations, with alias reconciliation against Module B to prevent entity fragmentation. Each triple records 
+
+⟨
+
+head
+
+,
+
+head_type
+
+,
+
+relation
+
+,
+
+tail
+
+,
+
+tail_type
+
+⟩
+
+\langle\text{head},\text{head\_type},\text{relation},\text{tail},\text{tail\_type}\rangle
+
+ with a verbatim evidence span, calibrated confidence, and a source tag distinguishing semantic from structural provenance; semantically equivalent triples are merged across documents via canonicalization over entity embeddings. Together with Modules A through D, this relational layer refines coarse abstractions into a structure that can be traversed and reasoned over, turning the graph from a catalog of entities into a navigable reasoning surface that supports multihop causal tracing, architectural provenance, methodological lineage comparison, and cross-paper synthesis of limitations and design rationales that would otherwise remain buried in prose.
+
+4.2 
+Dataset Construction via LLM-Guided Multi-Hop QA Generation.
+
+Beyond constructing Scholar-KG, the same structured paper representation can be reused to synthesize evidence-grounded multi-hop QA data, which serves as an additional downstream artifact of the KG construction pipeline.
+
+Given a corpus of academic papers 
+
+𝒫
+
+=
+
+{
+
+p
+
+j
+
+}
+
+j
+
+=
+
+1
+
+M
+
+\mathcal{P}=\{p_{j}\}_{j=1}^{M}
+
+, where each paper is represented as a structured JSON object containing metadata and full text, our objective is to automatically construct a high-quality multi-hop reasoning QA dataset 
+
+𝒟
+
+\mathcal{D}
+
+. Each QA instance is designed to probe deep paper understanding and consists of a complex question requiring 3–5 explicit reasoning steps, an exact and unambiguous answer that is a concrete term or method stated in the paper, an ordered chain of factual statements sufficient to derive the answer, explicit textual evidence from the source paper, and a structured entity–relation graph. To make the generation tractable within the model context window while preserving sufficient information, we first transform each paper 
+
+p
+
+p
+
+ into a compact prompt representation
+
+S
+
+(
+
+p
+
+)
+
+≜
+
+concat
+
+(
+
+metadata
+
+,
+
+abstract
+
+,
+
+content
+
+[
+
+:
+
+L
+
+]
+
+)
+
+,
+
+S(p)\triangleq\text{concat}(\texttt{metadata},\texttt{abstract},\texttt{content}[:L]),
+
+where 
+
+L
+
+L
+
+ is a fixed truncation threshold. This summary is embedded into a unified prompt 
+
+Π
+
+​
+
+(
+
+p
+
+)
+
+\Pi(p)
+
+ composed of a reusable schema-constrained template and task-specific instructions, ensuring that the model produces exactly five QA instances per paper with consistent structure and explicit evidence grounding.
+
+Structured Generation, Validation, and Quality Control.
+
+We formulate QA construction as a conditional text-to-structure generation problem using a large language model 
+
+ℳ
+
+θ
+
+\mathcal{M}_{\theta}
+
+, which maps the paper-specific prompt to a structured JSON output:
+
+Y
+
+^
+
+​
+
+(
+
+p
+
+)
+
+∼
+
+ℳ
+
+θ
+
+​
+
+(
+
+Π
+
+​
+
+(
+
+p
+
+)
+
+;
+
+τ
+
+)
+
+,
+
+\hat{Y}(p)\sim\mathcal{M}_{\theta}(\Pi(p);\tau),
+
+where 
+
+τ
+
+\tau
+
+ denotes the decoding temperature. The model is strictly instructed to output a valid JSON array of five objects, each containing a question, an exact answer, a multi-hop chain of key facts, source evidence excerpts, and an entity tree encoding entities and typed relations. To ensure reliability and suitability for benchmark construction, we apply a robust post-processing and validation pipeline that enforces structural correctness, non-emptiness of all fields, answer faithfulness to the paper text, logical sufficiency of the reasoning chain, and well-formedness of the entity graph. This combination of constrained prompting and deterministic validation yields a scalable and reproducible procedure for generating high-quality, evidence-grounded multi-hop QA data from scientific literature, while remaining agnostic to the underlying inference backend (API-based or locally hosted models).
+
+4.3 
+General-KG: A Multi-View, Schema-Adaptive Extension to Arbitrary Documents
+
+Our KG schema introduced above specialises to peer-reviewed scientific literature and commits to the five-module Module A through E decomposition. Many downstream deployments require the same infrastructure to run over heterogeneous corpora such as medical reports, legal filings, and financial disclosures, and require different graph granularities over the same document: lexical retrieval prefers compact binary triples, multi-hop reasoning prefers 
+
+n
+
+n
+
+-ary hyperedges that keep co-occurring arguments bundled, and event tracking prefers edges carrying explicit temporal qualifiers. General-KG addresses these requirements with a multi-view, schema-adaptive extension that reuses the OCR front-end, the semantic-anchor layer, and our model extraction backbone, while replacing the fixed schema with a family of pluggable views and a cold-start procedure that adapts to new verticals without weight updates.
+
+Multi-View Mode Family.
+
+General-KG exposes the same document through six complementary views, each implemented as an independently registered mode that produces a uniform payload with typed nodes 
+
+𝒱
+
+\mathcal{V}
+
+, hyperedges 
+
+ℰ
+
+h
+
+\mathcal{E}_{h}
+
+, evidence spans, and source-chunk provenance. Table 
+
+1
+
+ lists the modes and their target tasks. The modes are compositional rather than exclusive: a typical deployment activates several at once and lets the agent layer route per query. The set is open; registering a new mode requires a decorator in a new module directory, with no change to the shared pipeline.
+
+Table 1: 
+The six graph views exposed by General-KG. All modes share a common output schema so that downstream retrieval and agent code remain mode-agnostic. Projection modes derive their output deterministically from the core artifact; upgrade modes issue one additional LLM pass per chunk on top of the core.
+
+Mode
+
+Graph form
+
+Best-fit downstream task
+
+LLM calls / chunk
+
+binary
+
+triple 
+
+(
+
+h
+
+,
+
+r
+
+,
+
+t
+
+)
+
+(h,r,t)
+
+lexical retrieval, path queries
+
+0
+
+ (projection)
+
+nary
+
+hyperedge, 
+
+k
+
+≥
+
+3
+
+k\geq 3
+
+multi-hop QA with bundled arguments
+
+1
+
+1
+
+ (upgrade)
+
+temporal
+
+edge 
+
++
+
++
+
+ time qualifier
+
+timeline reasoning, change tracking
+
+1
+
+1
+
+ (upgrade)
+
+person
+
+person-centric subgraph
+
+biography, compliance, author graph
+
+0
+
+ (projection)
+
+event
+
+event node 
+
++
+
++
+
+ roles
+
+narrative, FrameNet-style analysis
+
+1
+
+1
+
+ (upgrade)
+
+diy
+
+YAML-declared schema
+
+medical, legal, financial verticals
+
+1
+
+1
+
+ (upgrade)
+
+Core-then-Modes Architecture.
+
+Running 
+
+M
+
+M
+
+ independent extraction pipelines would multiply LLM cost by 
+
+M
+
+M
+
+ and would defeat the multi-view story on corpora of realistic size. We instead factor the extraction into a shared core stage and a family of mode stages. Given a document segmented into chunks 
+
+{
+
+c
+
+i
+
+}
+
+i
+
+=
+
+1
+
+n
+
+\{c_{i}\}_{i=1}^{n}
+
+, the core stage produces a canonical typed entity set and a binary relation skeleton,
+
+(
+
+𝒱
+
+doc
+
+,
+
+ℰ
+
+skel
+
+)
+
+=
+
+f
+
+core
+
+​
+
+(
+
+{
+
+c
+
+i
+
+}
+
+i
+
+=
+
+1
+
+n
+
+)
+
+,
+
+\big(\mathcal{V}_{\text{doc}},\;\mathcal{E}_{\text{skel}}\big)=f_{\text{core}}\!\left(\{c_{i}\}_{i=1}^{n}\right),
+
+(3)
+
+using two LLM passes per chunk: the first extracts typed entities and merges them across chunks by case-insensitive canonical name, and the second is conditioned on the merged entity set and extracts strictly binary relations with evidence quotes, rejecting any triple whose head or tail falls outside 
+
+𝒱
+
+doc
+
+\mathcal{V}_{\text{doc}}
+
+. Each mode then consumes 
+
+(
+
+𝒱
+
+doc
+
+,
+
+ℰ
+
+skel
+
+,
+
+{
+
+c
+
+i
+
+}
+
+)
+
+(\mathcal{V}_{\text{doc}},\mathcal{E}_{\text{skel}},\{c_{i}\})
+
+ and dispatches to one of two strategies. Projection modes (
+
+binary
+
+, 
+
+person
+
+) derive their output deterministically by filtering and relabelling the skeleton, and cost zero additional LLM calls. Upgrade modes (
+
+nary
+
+, 
+
+temporal
+
+, 
+
+event
+
+, 
+
+diy
+
+) issue one LLM pass per chunk that takes the skeleton as a structural anchor and lifts it into the target form, for example by merging co-occurring binary edges into hyperedges of arity 
+
+k
+
+≥
+
+3
+
+k\geq 3
+
+, or by attaching time qualifiers drawn from 
+
+{
+
+point_time
+
+,
+
+start_time
+
+,
+
+end_time
+
+,
+
+before
+
+,
+
+after
+
+}
+
+\{\textsc{point\_time},\textsc{start\_time},\textsc{end\_time},\textsc{before},\textsc{after}\}
+
+. Because the entity set is canonicalised once in the core, every upgrade pass operates on a strictly smaller hypothesis space than an end-to-end extractor would face, which both shortens the prompt and empirically reduces hallucinated participants. Letting 
+
+n
+
+up
+
+n_{\text{up}}
+
+ denote the number of activated upgrade modes and 
+
+M
+
+M
+
+ the total number of activated modes, the per-document cost satisfies
+
+𝒞
+
+ours
+
+=
+
+n
+
+⋅
+
+(
+
+c
+
+core
+
++
+
+n
+
+up
+
+)
+
+≤
+
+𝒞
+
+naive
+
+=
+
+c
+
+core
+
+⋅
+
+n
+
+⋅
+
+M
+
+,
+
+\mathcal{C}_{\text{ours}}=n\cdot(c_{\text{core}}+n_{\text{up}})\;\leq\;\mathcal{C}_{\text{naive}}=c_{\text{core}}\cdot n\cdot M,
+
+(4)
+
+with 
+
+c
+
+core
+
+=
+
+2
+
+c_{\text{core}}=2
+
+ in our implementation. For a representative all-views configuration with 
+
+n
+
+=
+
+8
+
+n=8
+
+, 
+
+n
+
+up
+
+=
+
+4
+
+n_{\text{up}}=4
+
+, and 
+
+M
+
+=
+
+6
+
+M=6
+
+, the factoring reduces LLM calls from 
+
+96
+
+96
+
+ to 
+
+48
+
+48
+
+, a fifty percent saving, while producing the full six-view output. A second structural benefit is that every view references the same node identifiers, so cross-view joins such as pivoting from a 
+
+binary
+
+ retrieval hit to the 
+
+nary
+
+ hyperedges that contain the same head entity reduce to identifier lookup rather than fuzzy string matching. This property is what later allows the CLI layer to treat different views as interchangeable retrieval sources.
+
+The mode family above answers how a document is viewed; it does not answer what the extractor should look for in a vertical that our model has never seen. Hand-authoring a prompt for every vertical is slow, does not scale across customers, and loses ground as the corpus drifts. We therefore attach a weight-frozen self-improvement loop that distils a reusable skill library from a small seed of gold annotations. Given 

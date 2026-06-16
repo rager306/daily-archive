@@ -1,0 +1,1889 @@
+sis. Typical contextual markers include phrases such as 
+
+“We build upon…”
+
+ or 
+
+“Following the methodology of…”
+
+.
+
+Level 4: Strong Citation.
+
+The referenced work serves as a primary pillar of support or a critical benchmark. It directly influences the study’s experimental design, validation, or conclusions. Contextual markers often include 
+
+“As demonstrated by…”
+
+ or 
+
+“We compare our framework against…”
+
+.
+
+Level 3: Moderate Citation.
+
+The citation provides supporting background, empirical evidence, or conceptual inspiration, yet it does not constitute the absolute core foundation. It is frequently utilized to justify the research motivation or establish theoretical associations (e.g., 
+
+“Inspired by…”
+
+ or 
+
+“Consistent with findings in…”
+
+).
+
+Level 2: Contextual Citation.
+
+The reference is utilized primarily to map the broader research landscape or delineate related work. The direct methodological link to the current study is relatively weak, commonly appearing in comprehensive literature reviews (e.g., 
+
+“Several recent studies have explored…”
+
+).
+
+Level 1: Peripheral Citation.
+
+The work is mentioned strictly for academic breadth, historical context, or general overview, exerting no substantive impact on the paper’s core logic (e.g., 
+
+“For a general overview, see…”
+
+).
+
+Aggregation Strategy
+
+Given that a single reference may be cited multiple times across different sections of a manuscript, we apply a max-pooling aggregation strategy. Specifically, the definitive classification for a given reference is determined by the maximum score it achieves across all its mentions within the text. Furthermore, references that are listed in the bibliography but lack explicit in-text mentions are conservatively assigned a default score of Level 1 (Peripheral Citation) to prevent logical anomalies in the final reference graph. For quantitative aggregation, each level is explicitly assigned a corresponding integer score ranging from 5 (Foundational) to 1 (Peripheral).
+
+B 
+Proofs and Constructive Details for Section 
+
+4.5
+
+This appendix gives the projection rules used in the proofs, the proofs of Propositions 
+
+1
+
+, 
+
+2
+
+, and 
+
+3
+
+, and the witness construction that certifies the strict gap term of (
+
+8
+
+). We keep the notation of Section 
+
+4.5
+
+: a payload is 
+
+𝒫
+
+D
+
+=
+
+(
+
+𝒱
+
+,
+
+ℰ
+
+h
+
+)
+
+\mathcal{P}_{D}=(\mathcal{V},\mathcal{E}_{h})
+
+, and every view is identifier preserving on 
+
+𝒱
+
+\mathcal{V}
+
+.
+
+B.1 
+Projection Rules
+
+For a hyperedge 
+
+e
+
+=
+
+(
+
+v
+
+1
+
+,
+
+…
+
+,
+
+v
+
+k
+
+)
+
+∈
+
+ℰ
+
+h
+
+e=(v_{1},\ldots,v_{k})\in\mathcal{E}_{h}
+
+, write 
+
+|
+
+e
+
+|
+
+=
+
+k
+
+|e|=k
+
+ and 
+
+set
+
+​
+
+(
+
+e
+
+)
+
+=
+
+{
+
+v
+
+1
+
+,
+
+…
+
+,
+
+v
+
+k
+
+}
+
+\mathrm{set}(e)=\{v_{1},\ldots,v_{k}\}
+
+. The two views invoked in the proofs below are:
+
+•
+ 
+
+Binary view 
+
+Φ
+
+b
+
+\Phi_{b}
+
+.
+
+ Keep only arity-
+
+2
+
+2
+
+ edges: 
+
+Φ
+
+b
+
+​
+
+(
+
+𝒫
+
+D
+
+)
+
+=
+
+(
+
+𝒱
+
+,
+
+{
+
+e
+
+∈
+
+ℰ
+
+h
+
+:
+
+|
+
+e
+
+|
+
+=
+
+2
+
+}
+
+)
+
+\Phi_{b}(\mathcal{P}_{D})=\big(\mathcal{V},\,\{e\in\mathcal{E}_{h}:|e|=2\}\big)
+
+.
+
+•
+ 
+
+N
+
+N
+
+-ary view 
+
+Φ
+
+n
+
+\Phi_{n}
+
+.
+
+ Keep 
+
+{
+
+e
+
+∈
+
+ℰ
+
+h
+
+:
+
+|
+
+e
+
+|
+
+≥
+
+3
+
+}
+
+\{e\in\mathcal{E}_{h}:|e|\geq 3\}
+
+ and add hyperedges produced by the upgrade operator 
+
+U
+
+n
+
+U_{n}
+
+ from the binary skeleton, where 
+
+U
+
+n
+
+U_{n}
+
+ promotes any clique whose pairwise edges share a chunk to a single hyperedge.
+
+The temporal, person, event, DIY, and scientific-KG views are described in Section 
+
+4.3
+
+ and Section 
+
+4.1
+
+; each is a deterministic projection on the same 
+
+𝒱
+
+\mathcal{V}
+
+, so the arguments below apply to them without modification.
+
+B.2 
+Proof of Proposition 
+
+1
+
+ (Identifier Preserving Joins)
+
+Upper bound.
+
+Φ
+
+u
+
+​
+
+(
+
+𝒫
+
+D
+
+)
+
+\Phi_{u}(\mathcal{P}_{D})
+
+ and 
+
+Φ
+
+v
+
+​
+
+(
+
+𝒫
+
+D
+
+)
+
+\Phi_{v}(\mathcal{P}_{D})
+
+ live over the same 
+
+𝒱
+
+\mathcal{V}
+
+ with identical identifiers. Build a hash table on 
+
+Φ
+
+u
+
+↾
+
+K
+
+\Phi_{u}\!\restriction\!K
+
+ keyed by node identifier in 
+
+𝒪
+
+​
+
+(
+
+|
+
+K
+
+|
+
+)
+
+\mathcal{O}(|K|)
+
+ time, then for each 
+
+v
+
+∈
+
+K
+
+∩
+
+Φ
+
+v
+
+v\in K\cap\Phi_{v}
+
+ look up 
+
+H
+
+u
+
+​
+
+[
+
+v
+
+]
+
+H_{u}[v]
+
+ in expected 
+
+𝒪
+
+​
+
+(
+
+1
+
+)
+
+\mathcal{O}(1)
+
+. The total cost is 
+
+𝒪
+
+​
+
+(
+
+|
+
+K
+
+|
+
+)
+
+\mathcal{O}(|K|)
+
+, and matches are exact because identifiers compare by equality.
+
+Lower bound.
+
+If the two pipelines produce 
+
+𝒱
+
+u
+
+∩
+
+𝒱
+
+v
+
+=
+
+∅
+
+\mathcal{V}_{u}\cap\mathcal{V}_{v}=\varnothing
+
+, no shared key is available and alignment must rely on a per-pair surface-form similarity test 
+
+sim
+
+​
+
+(
+
+u
+
+,
+
+v
+
+)
+
+\mathrm{sim}(u,v)
+
+. Without a blocking key or metric structure, all 
+
+|
+
+𝒱
+
+u
+
+|
+
+⋅
+
+|
+
+𝒱
+
+v
+
+|
+
+|\mathcal{V}_{u}|\cdot|\mathcal{V}_{v}|
+
+ pairs must be considered in the worst case, giving 
+
+Ω
+
+​
+
+(
+
+|
+
+𝒱
+
+u
+
+|
+
+⋅
+
+|
+
+𝒱
+
+v
+
+|
+
+)
+
+\Omega(|\mathcal{V}_{u}|\cdot|\mathcal{V}_{v}|)
+
+.
+
+False merge probability.
+
+Let 
+
+σ
+
+​
+
+(
+
+v
+
+)
+
+\sigma(v)
+
+ denote the surface form of node 
+
+v
+
+v
+
+, and let 
+
+H
+
+=
+
+{
+
+v
+
+∈
+
+𝒱
+
+:
+
+|
+
+σ
+
+−
+
+1
+
+​
+
+(
+
+σ
+
+​
+
+(
+
+v
+
+)
+
+)
+
+|
+
+≥
+
+2
+
+}
+
+H=\{v\in\mathcal{V}:|\sigma^{-1}(\sigma(v))|\geq 2\}
+
+ be the homonym set. If 
+
+H
+
+H
+
+ is empty, there is no surface-form homonym to merge. Otherwise, sample 
+
+v
+
+∼
+
+Unif
+
+​
+
+(
+
+H
+
+)
+
+v\sim\mathrm{Unif}(H)
+
+ and a uniform target 
+
+w
+
+∼
+
+Unif
+
+​
+
+(
+
+𝒱
+
+)
+
+w\sim\mathrm{Unif}(\mathcal{V})
+
+. For each 
+
+v
+
+∈
+
+H
+
+v\in H
+
+, there are 
+
+|
+
+σ
+
+−
+
+1
+
+​
+
+(
+
+σ
+
+​
+
+(
+
+v
+
+)
+
+)
+
+|
+
+−
+
+1
+
+|\sigma^{-1}(\sigma(v))|-1
+
+ wrong targets with the same surface form. Averaging over 
+
+H
+
+H
+
+ gives (
+
+6
+
+). A matcher that merges identical surface forms therefore has this probability of selecting a spurious merge target under the same sampling model. Shared identifiers do not remove homonyms from the text; they avoid this error because joins compare identifiers rather than 
+
+σ
+
+​
+
+(
+
+v
+
+)
+
+\sigma(v)
+
+. Thus the surface-form false-merge probability is zero for ID-based joins. 
+
+□
+
+\square
+
+B.3 
+Proof of Proposition 
+
+2
+
+ (Cross View Reachability)
+
+(1) Monotonicity.
+
+Every view shares 
+
+𝒱
+
+\mathcal{V}
+
+ and contributes its edges to 
+
+ℰ
+
+∪
+
+\mathcal{E}_{\cup}
+
+, so any 
+
+h
+
+h
+
+-hop walk in 
+
+Φ
+
+v
+
+​
+
+(
+
+𝒫
+
+D
+
+)
+
+\Phi_{v}(\mathcal{P}_{D})
+
+ is also an 
+
+h
+
+h
+
+-hop walk in 
+
+𝒫
+
+∪
+
+\mathcal{P}_{\cup}
+
+.
+
+(2) Strict gap.
+
+Pick a query 
+
+q
+
+q
+
+ and a gold hyperedge 
+
+e
+
+=
+
+(
+
+v
+
+1
+
+,
+
+…
+
+,
+
+v
+
+k
+
+)
+
+∈
+
+H
+
+≥
+
+3
+
+(
+
+h
+
+)
+
+​
+
+(
+
+q
+
+)
+
+e=(v_{1},\ldots,v_{k})\in H_{\geq 3}^{(h)}(q)
+
+ with 
+
+k
+
+≥
+
+3
+
+k\geq 3
+
+. The binary view 
+
+Φ
+
+b
+
+\Phi_{b}
+
+ discards 
+
+e
+
+e
+
+ entirely; the 
+
+n
+
+n
+
+-ary view 
+
+Φ
+
+n
+
+\Phi_{n}
+
+ exposes all 
+
+k
+
+k
+
+ endpoints in one hop. For each such 
+
+e
+
+e
+
+, let 
+
+B
+
+e
+
+B_{e}
+
+ be the endpoints of 
+
+e
+
+e
+
+ that are reachable from 
+
+S
+
+​
+
+(
+
+q
+
+)
+
+S(q)
+
+ only through 
+
+e
+
+e
+
+ and are not retained by the binary view. Every node in 
+
+⋃
+
+e
+
+B
+
+e
+
+\bigcup_{e}B_{e}
+
+ is reachable in 
+
+𝒫
+
+∪
+
+\mathcal{P}_{\cup}
+
+ and not reachable in 
+
+Φ
+
+b
+
+​
+
+(
+
+𝒫
+
+D
+
+)
+
+\Phi_{b}(\mathcal{P}_{D})
+
+, which gives (
+
+7
+
+). In the two-anchor witness used below, 
+
+B
+
+e
+
+=
+
+set
+
+​
+
+(
+
+e
+
+)
+
+∖
+
+{
+
+v
+
+a
+
+,
+
+v
+
+b
+
+}
+
+B_{e}=\mathrm{set}(e)\setminus\{v_{a},v_{b}\}
+
+; if these hidden endpoint sets are disjoint across gold hyperedges, the bound reduces to 
+
+∑
+
+e
+
+(
+
+|
+
+e
+
+|
+
+−
+
+2
+
+)
+
+\sum_{e}(|e|-2)
+
+.
+
+(3) Hardness.
+
+The main text only uses the monotonicity and strict-gap parts of Proposition 
+
+2
+
+. For completeness, we also record why a compact hyperedge explanation cannot in general be recovered cheaply from the binary projection alone. We reduce from 
+
+Edge-Clique-Cover
+
+ (ECC), which asks whether the edges of a graph 
+
+G
+
+G
+
+ admit a cover by at most 
+
+k
+
+k
+
+ cliques. Define 
+
+Hyper-Recover
+
+​
+
+(
+
+G
+
+b
+
+,
+
+k
+
+)
+
+\textsc{Hyper-Recover}(G_{b},k)
+
+ as the decision problem that asks whether a binary graph 
+
+G
+
+b
+
+G_{b}
+
+ is the clique expansion of at most 
+
+k
+
+k
+
+ hyperedges of arity at least two. Given an ECC instance 
+
+(
+
+G
+
+,
+
+k
+
+)
+
+(G,k)
+
+, set 
+
+G
+
+b
+
+:=
+
+G
+
+G_{b}\!:=\!G
+
+ and ask 
+
+Hyper-Recover
+
+(
+
+G
+
+b
+
+,
+
+k
+
+)
+
+(G_{b},k)
+
+. A YES instance is exactly an edge clique cover of 
+
+G
+
+G
+
+ of size 
+
+≤
+
+k
+
+\leq k
+
+, because each hyperedge induces one clique and each clique in the cover can be represented as one hyperedge. The reduction is polynomial, so exact minimum recovery under this projection model is NP-hard. 
+
+□
+
+\square
+
+B.4 
+Proof of Proposition 
+
+3
+
+ (Candidate Coverage)
+
+For any single view 
+
+v
+
+v
+
+, edge monotonicity of 
+
+Φ
+
+R
+
+\Phi_{R}
+
+ gives 
+
+Φ
+
+R
+
+​
+
+(
+
+𝒫
+
+∪
+
+,
+
+q
+
+)
+
+⊇
+
+Φ
+
+R
+
+​
+
+(
+
+Φ
+
+v
+
+​
+
+(
+
+𝒫
+
+D
+
+)
+
+,
+
+q
+
+)
+
+\Phi_{R}(\mathcal{P}_{\cup},q)\supseteq\Phi_{R}(\Phi_{v}(\mathcal{P}_{D}),q)
+
+ before final ranking and truncation. Therefore the gold candidates retrieved by the best single view are also retrieved by the union view. The extra gold candidates counted by 
+
+Δ
+
+h
+
+​
+
+(
+
+q
+
+)
+
+\Delta_{h}(q)
+
+ are, by definition, outside every single-view candidate set, so the two contributions are disjoint:
+
+|
+
+Φ
+
+R
+
+​
+
+(
+
+𝒫
+
+∪
+
+,
+
+q
+
+)
+
+∩
+
+A
+
+h
+
+⋆
+
+​
+
+(
+
+q
+
+)
+
+|
+
+≥
+
+max
+
+v
+
+⁡
+
+|
+
+Φ
+
+R
+
+​
+
+(
+
+Φ
+
+v
+
+​
+
+(
+
+𝒫
+
+D
+
+)
+
+,
+
+q
+
+)
+
+∩
+
+A
+
+h
+
+⋆
+
+​
+
+(
+
+q
+
+)
+
+|
+
++
+
+|
+
+A
+
+h
+
+⋆
+
+​
+
+(
+
+q
+
+)
+
+∩
+
+(
+
+Φ
+
+R
+
+​
+
+(
+
+𝒫
+
+∪
+
+,
+
+q
+
+)
+
+∖
+
+⋃
+
+v
+
+Φ
+
+R
+
+​
+
+(
+
+Φ
+
+v
+
+​
+
+(
+
+𝒫
+
+D
+
+)
+
+,
+
+q
+
+)
+
+)
+
+|
+
+.
+
+\bigl|\Phi_{R}(\mathcal{P}_{\cup},q)\cap A_{h}^{\star}(q)\bigr|\;\geq\;\max_{v}\bigl|\Phi_{R}(\Phi_{v}(\mathcal{P}_{D}),q)\cap A_{h}^{\star}(q)\bigr|\;+\;\big|A_{h}^{\star}(q)\cap\big(\Phi_{R}(\mathcal{P}_{\cup},q)\setminus\bigcup_{v}\Phi_{R}(\Phi_{v}(\mathcal{P}_{D}),q)\big)\big|.
+
+Dividing by 
+
+|
+
+A
+
+h
+
+⋆
+
+​
+
+(
+
+q
+
+)
+
+|
+
+|A_{h}^{\star}(q)|
+
+ yields (
+
+8
+
+). The Scholar-KG case follows because its view is also identifier preserving on the same 
+
+𝒱
+
+\mathcal{V}
+
+, so it contributes another summand to the union without renaming nodes. 
+
+□
+
+\square
+
+B.5 
+Witness Construction for the Strict-Gap Term
+
+The following procedure instantiates a query for which 
+
+Δ
+
+h
+
+​
+
+(
+
+q
+
+)
+
+\Delta_{h}(q)
+
+ in (
+
+8
+
+) is strictly positive: (i) pick a hyperedge 
+
+e
+
+∈
+
+ℰ
+
+h
+
+e\in\mathcal{E}_{h}
+
+ with 
+
+|
+
+e
+
+|
+
+≥
+
+3
+
+|e|\geq 3
+
+ that carries a nonempty qualifier 
+
+κ
+
+​
+
+(
+
+e
+
+)
+
+\kappa(e)
+
+; (ii) choose two endpoints 
+
+v
+
+a
+
+,
+
+v
+
+b
+
+∈
+
+set
+
+​
+
+(
+
+e
+
+)
+
+v_{a},v_{b}\in\mathrm{set}(e)
+
+ as anchors; (iii) form the query “which entities appear with 
+
+v
+
+a
+
+v_{a}
+
+ and 
+
+v
+
+b
+
+v_{b}
+
+ under qualifier 
+
+κ
+
+​
+
+(
+
+e
+
+)
+
+\kappa(e)
+
+?”. The gold answer set is 
+
+set
+
+​
+
+(
+
+e
+
+)
+
+∖
+
+{
+
+v
+
+a
+
+,
+
+v
+
+b
+
+}
+
+\mathrm{set}(e)\setminus\{v_{a},v_{b}\}
+
+. The binary view drops the bundled edge 
+
+e
+
+e
+
+; the temporal bundled view 
+
+Φ
+
+t
+
+∘
+
+Φ
+
+n
+
+\Phi_{t}\circ\Phi_{n}
+
+ exposes 
+
+set
+
+​
+
+(
+
+e
+
+)
+
+\mathrm{set}(e)
+
+ in a single hop. Therefore, for this query family, the union view retrieves gold candidates that the binary view does not expose. Iterating over 
+
+ℰ
+
+h
+
+≥
+
+3
+
+\mathcal{E}_{h}^{\geq 3}
+
+ generates the witness corpus used in Section 
+
+7
+
+.
+
+C 
+Knowledge Graph Visualization
+
+(a) 
+Macroscopic view of 30 seminal papers
+
+(b) 
+Focal Paper Node: “Chain-of-Thought Prompting Elicits Reasoning in Large Language Models”(CoT)
+
+(c) 
+Paper 
+
+→
+
+\to
+
+ Content: CoT 
+
+→
+
+authored_by
+
+\xrightarrow{\textit{authored\_by}}
+
+ Jason Wei 
+
+(Module A: Meta/Factual Entities)
+
+(d) 
+Paper 
+
+→
+
+\to
+
+ Content: CoT 
+
+→
+
+proposes
+
+\xrightarrow{\textit{proposes}}
+
+ CoT Prompting 
+
+(Module B: Textually Mentioned Entities)
+
+(e) 
+Paper 
+
+→
+
+\to
+
+ Content: 
+
+CoT 
+
+→
+
+involved_task
+
+\xrightarrow{\textit{involved\_task}}
+
+ Symbolic Reasoning
+
+(Module C: Implicit/Abstracted Entities)
+
+(f) 
+Paper 
+
+→
+
+\to
+
+ Paper:
+
+CoT 
+
+→
+
+cites
+
+\xrightarrow{\textit{cites}}
+
+ “Explain yourself! Leveraging language models for commonsense reasoning”
+
+(Module D: Citation Relationships)
+
+(g) 
+Content 
+
+→
+
+\to
+
+ Content: 
+
+CoT 
+
+→
+
+implements
+
+\xrightarrow{\textit{implements}}
+
+ few-shot prompting
+
+(h) 
+Temporal Evolution: Longitudinal timeline of CoT citations
+
+Figure 6: 
+Comprehensive, multi-dimensional visualization of the knowledge network. Subfigures (a)–(b) present the global topology and focal nodes. Subfigures (c)–(g) explicitly detail the rich variety of extracted semantic triplets, covering authorship, methodological claims, involved tasks, document citations, and technical implementations. Finally, subfigure (h) maps the focal paper’s citation network onto a longitudinal temporal timeline.
+
+To provide comprehensive insight into the constructed knowledge network, Figure 
+
+6
+
+ illustrates a hierarchical breakdown of the extracted subgraphs. Progressively zooming from a macroscopic community structure down to influential focal nodes and specific relational triplets, the visualization highlights our framework’s fine-grained parsing capabilities. The densely populated edges denote heterogeneous relationships that integrate the network across multiple granularities: document citations (Paper 
+
+→
+
+\to
+
+ Paper), methodological groundings (Paper 
+
+→
+
+\to
+
+ Content), and semantic dependencies (Content 
+
+→
+
+\to
+
+ Content). Together, these links weave isolated scientific literature into a unified reasoning space.
+
+To further elucidate the extraction capabilities demonstrated in Figure 
+
+6
+
+, we provide a detailed examination of the focal node representing the seminal “Chain-of-Thought Prompting” (CoT) paper. While subfigures (a) and (b) contextualize the document within the macroscopic topology, subfigures (c) through (f) systematically break down the extracted relational triplets according to our proposed modular taxonomy.
+
+Specifically, 
+
+Module A
+
+ (Figure 
+
+6
+
+c) handles explicit meta-factual attributes, accurately anchoring the document to its real-world entities (e.g., the author, Jason Wei). Moving into the semantic content of the PDF, 
+
+Module B
+
+ (Figure 
+
+6
+
+d) captures textually explicit entities, correctly identifying that the document 
+
+proposes
+
+ the “CoT Prompting” methodology. Beyond surface-level extraction, 
+
+Module C
+
+ (Figure 
+
+6
+
+e) highlights the framework’s advanced natural language understanding by extracting implicit or abstracted entities. It deduces that the paper’s 
+
+involved_task
+
+ is “Symbolic Reasoning”—an abstraction that requires synthesizing the paper’s core contributions rather than merely executing exact keyword matching.
+
+Furthermore, while 
+
+Module D
+
+ (Figure 
+
+6
+
+f) preserves traditional documen
