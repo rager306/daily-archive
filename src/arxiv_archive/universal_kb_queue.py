@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -39,6 +39,42 @@ STATUSES = frozenset(
         "skipped",
     }
 )
+
+PAYLOAD_METADATA_KEYS = frozenset(
+    {
+        "schema_version",
+        "stable_id_version",
+        "metric_bundle_id",
+        "extractor_version",
+        "prompt_program_hash",
+        "source_artifact_refs",
+        "evidence_path_refs",
+        "cost_estimate",
+        "latency_ms",
+        "retry_count",
+        "diagnostics",
+        "write_eligibility",
+        "promotion_eligibility",
+    }
+)
+
+
+def _default_payload_metadata() -> dict[str, Any]:
+    return {
+        "schema_version": None,
+        "stable_id_version": None,
+        "metric_bundle_id": None,
+        "extractor_version": None,
+        "prompt_program_hash": None,
+        "source_artifact_refs": [],
+        "evidence_path_refs": [],
+        "cost_estimate": None,
+        "latency_ms": None,
+        "retry_count": 0,
+        "diagnostics": {},
+        "write_eligibility": False,
+        "promotion_eligibility": False,
+    }
 
 
 def _utc_now() -> str:
@@ -110,6 +146,7 @@ class UniversalKBQueue:
                     tool_version TEXT NOT NULL,
                     contract_version TEXT NOT NULL,
                     output_paths TEXT NOT NULL,
+                    payload_metadata TEXT NOT NULL DEFAULT '{}',
                     last_error_code TEXT,
                     last_error_message TEXT,
                     created_at TEXT NOT NULL,
@@ -117,6 +154,7 @@ class UniversalKBQueue:
                 )
                 """
             )
+            self._ensure_jobs_column("payload_metadata", "TEXT NOT NULL DEFAULT '{}'")
             self.connection.execute(
                 """
                 CREATE TABLE IF NOT EXISTS job_dependencies (
@@ -172,6 +210,7 @@ class UniversalKBQueue:
         output_paths: Iterable[str] | None = None,
         priority: int = 0,
         max_attempts: int = 3,
+        payload_metadata: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         self._require_non_empty(job_id, "job_id")
         self._require_non_empty(stage, "stage")
@@ -184,6 +223,7 @@ class UniversalKBQueue:
         for input_ref in input_refs_tuple:
             self._require_metadata_ref(input_ref, "input_ref")
 
+        sanitized_payload_metadata = self._sanitize_payload_metadata(payload_metadata)
         now = self.clock()
         with self.connection:
             existing = self._fetch_job(job_id)
@@ -194,9 +234,9 @@ class UniversalKBQueue:
                 INSERT INTO jobs (
                     job_id, stage, status, priority, attempt_count, max_attempts,
                     retry_after, lease_owner, lease_until, heartbeat_at, input_refs,
-                    input_hash, tool_version, contract_version, output_paths,
+                    input_hash, tool_version, contract_version, output_paths, payload_metadata,
                     last_error_code, last_error_message, created_at, updated_at
-                ) VALUES (?, ?, 'pending', ?, 0, ?, NULL, NULL, NULL, NULL, ?, ?, ?, ?, ?, NULL, NULL, ?, ?)
+                ) VALUES (?, ?, 'pending', ?, 0, ?, NULL, NULL, NULL, NULL, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?)
                 """,
                 (
                     job_id,
@@ -208,6 +248,7 @@ class UniversalKBQueue:
                     tool_version,
                     contract_version,
                     _json_list(output_paths),
+                    json.dumps(sanitized_payload_metadata, sort_keys=True),
                     now,
                     now,
                 ),
@@ -215,6 +256,59 @@ class UniversalKBQueue:
             self._insert_event(job_id, "enqueue", None, "pending", "job enqueued", None, None, now)
             row = self._fetch_job(job_id)
         return self._row_to_job(row)
+
+    def update_payload_diagnostics(
+        self,
+        job_id: str,
+        *,
+        diagnostics: Mapping[str, Any] | None = None,
+        cost_estimate: int | float | None = None,
+        latency_ms: int | None = None,
+        retry_count: int | None = None,
+        evidence_path_refs: Iterable[str] | None = None,
+    ) -> dict[str, Any]:
+        """Persist research diagnostics without changing queue lifecycle state."""
+        row = self._fetch_job(job_id)
+        if row is None:
+            raise KeyError(f"unknown job_id: {job_id}")
+        current_metadata = self._row_to_job(row)["payload_metadata"]
+        updated_metadata = dict(current_metadata)
+        if diagnostics is not None:
+            updated_metadata["diagnostics"] = {
+                **current_metadata.get("diagnostics", {}),
+                **dict(diagnostics),
+            }
+        if cost_estimate is not None:
+            updated_metadata["cost_estimate"] = cost_estimate
+        if latency_ms is not None:
+            updated_metadata["latency_ms"] = latency_ms
+        if retry_count is not None:
+            updated_metadata["retry_count"] = retry_count
+        if evidence_path_refs is not None:
+            updated_metadata["evidence_path_refs"] = [str(ref) for ref in evidence_path_refs]
+        sanitized_payload_metadata = self._sanitize_payload_metadata(updated_metadata)
+        now = self.clock()
+        with self.connection:
+            self.connection.execute(
+                """
+                UPDATE jobs
+                SET payload_metadata = ?, updated_at = ?
+                WHERE job_id = ?
+                """,
+                (json.dumps(sanitized_payload_metadata, sort_keys=True), now, job_id),
+            )
+            self._insert_event(
+                job_id,
+                "payload_diagnostics_update",
+                row["status"],
+                row["status"],
+                "payload diagnostics updated",
+                None,
+                None,
+                now,
+            )
+            updated_row = self._fetch_job(job_id)
+        return self._row_to_job(updated_row)
 
     def unblock_ready_jobs(self) -> list[dict[str, Any]]:
         """Move pending/retryable jobs whose gates are open to ready."""
@@ -534,6 +628,104 @@ class UniversalKBQueue:
                 return False
         return True
 
+    def _ensure_jobs_column(self, column_name: str, column_sql: str) -> None:
+        columns = {
+            row["name"]
+            for row in self.connection.execute("PRAGMA table_info(jobs)").fetchall()
+        }
+        if column_name not in columns:
+            self.connection.execute(f"ALTER TABLE jobs ADD COLUMN {column_name} {column_sql}")
+
+    def _sanitize_payload_metadata(self, metadata: Mapping[str, Any] | None) -> dict[str, Any]:
+        sanitized = _default_payload_metadata()
+        if metadata is None:
+            return sanitized
+        unknown_keys = set(metadata) - PAYLOAD_METADATA_KEYS
+        if unknown_keys:
+            unknown = ", ".join(sorted(str(key) for key in unknown_keys))
+            raise ValueError(f"payload_metadata contains unsupported keys: {unknown}")
+
+        for key, value in metadata.items():
+            if key in {
+                "schema_version",
+                "stable_id_version",
+                "metric_bundle_id",
+                "extractor_version",
+                "prompt_program_hash",
+            }:
+                sanitized[key] = self._sanitize_optional_metadata_code(value, key)
+            elif key in {"source_artifact_refs", "evidence_path_refs"}:
+                sanitized[key] = self._sanitize_metadata_ref_list(value, key)
+            elif key == "cost_estimate":
+                sanitized[key] = self._sanitize_optional_non_negative_number(value, key)
+            elif key == "latency_ms":
+                sanitized[key] = self._sanitize_optional_non_negative_integer(value, key)
+            elif key == "retry_count":
+                sanitized[key] = self._sanitize_non_negative_integer(value, key)
+            elif key == "diagnostics":
+                sanitized[key] = self._sanitize_diagnostics(value)
+            elif key in {"write_eligibility", "promotion_eligibility"}:
+                sanitized[key] = self._sanitize_disabled_eligibility(value, key)
+        return sanitized
+
+    def _sanitize_optional_metadata_code(self, value: Any, field_name: str) -> str | None:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError(f"{field_name} must be a metadata code")
+        self._require_metadata_code(value, field_name)
+        return value
+
+    def _sanitize_metadata_ref_list(self, value: Any, field_name: str) -> list[str]:
+        if not isinstance(value, list | tuple):
+            raise ValueError(f"{field_name} must be a list of metadata references")
+        refs = [str(item) for item in value]
+        for ref in refs:
+            self._require_metadata_ref(ref, field_name)
+        return refs
+
+    @staticmethod
+    def _sanitize_optional_non_negative_number(value: Any, field_name: str) -> float | int | None:
+        if value is None:
+            return None
+        if not isinstance(value, int | float) or isinstance(value, bool) or value < 0:
+            raise ValueError(f"{field_name} must be a non-negative number")
+        return value
+
+    @staticmethod
+    def _sanitize_optional_non_negative_integer(value: Any, field_name: str) -> int | None:
+        if value is None:
+            return None
+        return UniversalKBQueue._sanitize_non_negative_integer(value, field_name)
+
+    @staticmethod
+    def _sanitize_non_negative_integer(value: Any, field_name: str) -> int:
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            raise ValueError(f"{field_name} must be a non-negative integer")
+        return value
+
+    def _sanitize_diagnostics(self, value: Any) -> dict[str, Any]:
+        if not isinstance(value, Mapping):
+            raise ValueError("diagnostics must be a metadata dictionary")
+        sanitized: dict[str, Any] = {}
+        for key, item in value.items():
+            key_text = str(key)
+            self._require_metadata_code(key_text, "diagnostics key")
+            if isinstance(item, str):
+                self._require_metadata_code(item, f"diagnostics.{key_text}")
+                sanitized[key_text] = item
+            elif item is None or isinstance(item, bool | int | float):
+                sanitized[key_text] = item
+            else:
+                raise ValueError(f"diagnostics.{key_text} must be metadata-only")
+        return sanitized
+
+    @staticmethod
+    def _sanitize_disabled_eligibility(value: Any, field_name: str) -> bool:
+        if value is not False:
+            raise ValueError(f"{field_name} must remain false")
+        return False
+
     @staticmethod
     def _require_safe_diagnostic(value: str) -> None:
         lowered = value.lower()
@@ -610,5 +802,10 @@ class UniversalKBQueue:
         data = dict(row)
         data["input_refs"] = _loads_list(data["input_refs"])
         data["output_paths"] = _loads_list(data["output_paths"])
+        payload_metadata = _default_payload_metadata()
+        stored_payload = data.get("payload_metadata")
+        if stored_payload:
+            payload_metadata.update(json.loads(stored_payload))
+        data["payload_metadata"] = payload_metadata
         data["safety_flags"] = SafetyFlags().to_dict()
         return data

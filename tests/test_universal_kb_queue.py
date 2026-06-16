@@ -81,6 +81,213 @@ def test_rejects_secret_shaped_persisted_diagnostics(tmp_path: Path) -> None:
     assert "sk-live" not in serialized
 
 
+def test_enqueue_adds_safe_payload_metadata_defaults(tmp_path: Path) -> None:
+    queue = _queue(tmp_path)
+
+    job = queue.enqueue(
+        job_id="job-default-payload-metadata",
+        stage="extract",
+        input_refs=("artifact:paper-manifest",),
+        input_hash="sha256:input",
+        tool_version="tool-v1",
+        contract_version="contract-v1",
+    )
+
+    assert job["payload_metadata"] == {
+        "schema_version": None,
+        "stable_id_version": None,
+        "metric_bundle_id": None,
+        "extractor_version": None,
+        "prompt_program_hash": None,
+        "source_artifact_refs": [],
+        "evidence_path_refs": [],
+        "cost_estimate": None,
+        "latency_ms": None,
+        "retry_count": 0,
+        "diagnostics": {},
+        "write_eligibility": False,
+        "promotion_eligibility": False,
+    }
+    assert job["safety_flags"]["graphdb_written"] is False
+    assert job["safety_flags"]["import_eligible"] is False
+
+
+def test_enqueue_roundtrips_m069_payload_metadata(tmp_path: Path) -> None:
+    queue = _queue(tmp_path)
+
+    job = queue.enqueue(
+        job_id="job-m069-payload-metadata",
+        stage="extract",
+        input_refs=("artifact:paper-manifest",),
+        input_hash="sha256:input",
+        tool_version="tool-v1",
+        contract_version="contract-v1",
+        payload_metadata={
+            "schema_version": "schema:m069_v1",
+            "stable_id_version": "stable_id:m069_v1",
+            "metric_bundle_id": "metric_bundle:m069_v1",
+            "extractor_version": "extractor:minimax_v1",
+            "prompt_program_hash": "hash:abc123",
+            "source_artifact_refs": ["artifact:paper-manifest"],
+            "evidence_path_refs": ["evidence:path-001"],
+            "cost_estimate": 0.12,
+            "latency_ms": 1530,
+            "retry_count": 1,
+            "diagnostics": {"json_valid": True, "schema_status": "valid"},
+            "write_eligibility": False,
+            "promotion_eligibility": False,
+        },
+    )
+
+    assert job["payload_metadata"]["schema_version"] == "schema:m069_v1"
+    assert job["payload_metadata"]["metric_bundle_id"] == "metric_bundle:m069_v1"
+    assert job["payload_metadata"]["source_artifact_refs"] == ["artifact:paper-manifest"]
+    assert job["payload_metadata"]["evidence_path_refs"] == ["evidence:path-001"]
+    assert job["payload_metadata"]["cost_estimate"] == 0.12
+    assert job["payload_metadata"]["latency_ms"] == 1530
+    assert job["payload_metadata"]["diagnostics"] == {"json_valid": True, "schema_status": "valid"}
+    assert job["payload_metadata"]["write_eligibility"] is False
+    assert job["payload_metadata"]["promotion_eligibility"] is False
+
+
+def test_enqueue_rejects_unsafe_payload_metadata(tmp_path: Path) -> None:
+    queue = _queue(tmp_path)
+
+    with pytest.raises(ValueError, match="source_artifact_refs must"):
+        queue.enqueue(
+            job_id="job-raw-payload-ref",
+            stage="extract",
+            input_refs=("artifact:paper-manifest",),
+            input_hash="sha256:input",
+            tool_version="tool-v1",
+            contract_version="contract-v1",
+            payload_metadata={"source_artifact_refs": ["raw source text is not a metadata ref"]},
+        )
+
+    with pytest.raises(ValueError, match="write_eligibility must remain false"):
+        queue.enqueue(
+            job_id="job-write-eligible",
+            stage="extract",
+            input_refs=("artifact:paper-manifest",),
+            input_hash="sha256:input",
+            tool_version="tool-v1",
+            contract_version="contract-v1",
+            payload_metadata={"write_eligibility": True},
+        )
+
+    with pytest.raises(ValueError, match="diagnostics key must be a metadata code"):
+        queue.enqueue(
+            job_id="job-secret-diagnostic",
+            stage="extract",
+            input_refs=("artifact:paper-manifest",),
+            input_hash="sha256:input",
+            tool_version="tool-v1",
+            contract_version="contract-v1",
+            payload_metadata={"diagnostics": {"secret": "sk-secret-token"}},
+        )
+
+
+def test_update_payload_diagnostics_preserves_status_and_disabled_eligibility(tmp_path: Path) -> None:
+    queue = _queue(tmp_path)
+    queue.enqueue(
+        job_id="job-diagnostics-update",
+        stage="extract",
+        input_refs=("artifact:paper-manifest",),
+        input_hash="sha256:input",
+        tool_version="tool-v1",
+        contract_version="contract-v1",
+        payload_metadata={
+            "schema_version": "schema:m070_v1",
+            "metric_bundle_id": "metric_bundle:m070_v1",
+            "source_artifact_refs": ["artifact:paper-manifest"],
+        },
+    )
+    queue.unblock_ready_jobs()
+    running = queue.claim(worker_id="worker-1", lease_seconds=30)
+    assert running is not None
+
+    updated = queue.update_payload_diagnostics(
+        "job-diagnostics-update",
+        diagnostics={
+            "json_valid": True,
+            "schema_valid": True,
+            "evidence_status": "valid",
+            "low_quality_output": False,
+        },
+        cost_estimate=0.42,
+        latency_ms=2400,
+        retry_count=2,
+        evidence_path_refs=("evidence:path-001",),
+    )
+
+    assert updated["status"] == "running"
+    assert updated["lease_owner"] == "worker-1"
+    assert updated["payload_metadata"]["schema_version"] == "schema:m070_v1"
+    assert updated["payload_metadata"]["metric_bundle_id"] == "metric_bundle:m070_v1"
+    assert updated["payload_metadata"]["diagnostics"] == {
+        "json_valid": True,
+        "schema_valid": True,
+        "evidence_status": "valid",
+        "low_quality_output": False,
+    }
+    assert updated["payload_metadata"]["cost_estimate"] == 0.42
+    assert updated["payload_metadata"]["latency_ms"] == 2400
+    assert updated["payload_metadata"]["retry_count"] == 2
+    assert updated["payload_metadata"]["evidence_path_refs"] == ["evidence:path-001"]
+    assert updated["payload_metadata"]["write_eligibility"] is False
+    assert updated["payload_metadata"]["promotion_eligibility"] is False
+
+
+def test_update_payload_diagnostics_rejects_secret_values_and_raw_refs(tmp_path: Path) -> None:
+    queue = _queue(tmp_path)
+    queue.enqueue(
+        job_id="job-diagnostics-secret",
+        stage="extract",
+        input_refs=("artifact:paper-manifest",),
+        input_hash="sha256:input",
+        tool_version="tool-v1",
+        contract_version="contract-v1",
+    )
+
+    with pytest.raises(ValueError, match="diagnostics key must be a metadata code"):
+        queue.update_payload_diagnostics(
+            "job-diagnostics-secret",
+            diagnostics={"api_key": "sk-secret-token"},
+        )
+
+    with pytest.raises(ValueError, match="evidence_path_refs must"):
+        queue.update_payload_diagnostics(
+            "job-diagnostics-secret",
+            evidence_path_refs=("raw evidence path text",),
+        )
+
+    with pytest.raises(ValueError, match="latency_ms must"):
+        queue.update_payload_diagnostics("job-diagnostics-secret", latency_ms=-1)
+
+
+def test_update_payload_diagnostics_records_event_without_status_change(tmp_path: Path) -> None:
+    queue = _queue(tmp_path)
+    queue.enqueue(
+        job_id="job-diagnostics-event",
+        stage="extract",
+        input_refs=("artifact:paper-manifest",),
+        input_hash="sha256:input",
+        tool_version="tool-v1",
+        contract_version="contract-v1",
+    )
+    before = queue.inspect("job-diagnostics-event")
+    updated = queue.update_payload_diagnostics(
+        "job-diagnostics-event",
+        diagnostics={"json_valid": True},
+    )
+    after = queue.inspect("job-diagnostics-event")
+
+    assert before["job"]["status"] == "pending"
+    assert updated["status"] == "pending"
+    assert after["job"]["status"] == "pending"
+    assert after["events"][-1]["event_type"] == "payload_diagnostics_update"
+
+
 def test_rejects_secret_shaped_artifact_dependency_refs(tmp_path: Path) -> None:
     queue = _queue(tmp_path)
     queue.enqueue(
