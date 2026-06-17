@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from arxiv_archive.validation_logging import ValidationLogger
+from research_graph.workflows.validation.logging import ValidationLogger
 
 
 def _read_events(path: Path) -> list[dict]:

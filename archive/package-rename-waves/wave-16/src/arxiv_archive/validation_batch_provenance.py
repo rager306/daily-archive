@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/validation_batch_provenance.py
+
 """Commit-safe provenance and freshness helpers for validation-batch runs.
 
 This module records file hashes and command metadata only. It never serializes

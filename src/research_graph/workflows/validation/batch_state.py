@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/validation_batch_state.py
+
 """Validation batch state contract for iterative corpus validation.
 
 This module is deliberately pure and local: it models resumable validation batch

@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/validation_logging.py
+
 """Structured validation logging for real-corpus KG validation runs.
 
 This module provides a small Loguru-backed JSONL event sink for validation

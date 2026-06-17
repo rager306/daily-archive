@@ -50,17 +50,17 @@ from research_graph.quality import (  # noqa: E402
     write_maintainability_report,
 )
 from arxiv_archive.scoring import ScoredPaper, ScoringEngine  # noqa: E402
-from arxiv_archive.validation_batch_provenance import (  # noqa: E402
+from research_graph.workflows.validation.batch_provenance import (  # noqa: E402
     build_artifact_freshness_report,
     read_validation_cli_provenance_log,
     select_provenance_entry,
     write_artifact_freshness_report,
 )
-from arxiv_archive.validation_batch_state import (  # noqa: E402
+from research_graph.workflows.validation.batch_state import (  # noqa: E402
     build_contract_response,
     read_batch_state,
 )
-from arxiv_archive.validation_batch_workflow import (  # noqa: E402
+from research_graph.workflows.validation.batch_workflow import (  # noqa: E402
     initialize_validation_batch,
     preflight_validation_batch,
     run_validation_batch_scan,

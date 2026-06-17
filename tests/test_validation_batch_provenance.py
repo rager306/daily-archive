@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from arxiv_archive.validation_batch_provenance import (
+from research_graph.workflows.validation.batch_provenance import (
     append_validation_cli_provenance,
     build_artifact_freshness_report,
     build_validation_cli_provenance_entry,

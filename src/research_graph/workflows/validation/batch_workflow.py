@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/validation_batch_workflow.py
+
 """Validation batch workflow helpers for M007.
 
 These helpers implement deterministic local state/artifact preparation only. They
@@ -15,7 +17,7 @@ from typing import Any
 
 from research_graph.corpus.ingestion.loader import load_article_source
 from arxiv_archive.thirty_paper_deviation_scan import build_thirty_paper_deviation_scan
-from arxiv_archive.validation_batch_state import (
+from research_graph.workflows.validation.batch_state import (
     ScanArtifactPaths,
     SelectedPaper,
     SourceReadiness,
@@ -25,7 +27,7 @@ from arxiv_archive.validation_batch_state import (
     default_safety_flags,
     write_batch_state,
 )
-from arxiv_archive.validation_logging import ValidationLogger, sanitize_event_details
+from research_graph.workflows.validation.logging import ValidationLogger, sanitize_event_details
 from scripts.run_quality_gate import run_quality_gate
 
 VALIDATION_SMOKE_REVIEW_SCHEMA_VERSION = "m025-validation-smoke-review.v1"

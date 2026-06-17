@@ -413,3 +413,32 @@ def test_wave_15_archives_external_clients_without_runtime_shims() -> None:
     assert importlib.import_module("research_graph.graph.ladybug_client")
     assert importlib.import_module("research_graph.ops.notifications.telegram_sender")
 
+
+def test_wave_16_archives_validation_batch_workflow_without_runtime_shims() -> None:
+    moves = {
+        "validation_batch_provenance.py": "src/research_graph/workflows/validation/batch_provenance.py",
+        "validation_batch_state.py": "src/research_graph/workflows/validation/batch_state.py",
+        "validation_batch_workflow.py": "src/research_graph/workflows/validation/batch_workflow.py",
+        "validation_logging.py": "src/research_graph/workflows/validation/logging.py",
+    }
+    manifest = Path("archive/package-rename-waves/wave-16/manifest.md").read_text(encoding="utf-8")
+
+    for old_name, new_path in moves.items():
+        old_runtime = Path("src/arxiv_archive") / old_name
+        archived = Path("archive/package-rename-waves/wave-16/src/arxiv_archive") / old_name
+        canonical = Path(new_path)
+
+        assert not old_runtime.exists()
+        assert archived.exists()
+        assert canonical.exists()
+        assert f"Formerly: src/arxiv_archive/{old_name}" in archived.read_text(encoding="utf-8")
+        assert f"Formerly: src/arxiv_archive/{old_name}" in canonical.read_text(encoding="utf-8")
+        assert f"`src/arxiv_archive/{old_name}`" in manifest
+        assert f"`{new_path}`" in manifest
+
+    assert "local-only" in manifest
+    assert importlib.import_module("research_graph.workflows.validation.batch_provenance")
+    assert importlib.import_module("research_graph.workflows.validation.batch_state")
+    assert importlib.import_module("research_graph.workflows.validation.batch_workflow")
+    assert importlib.import_module("research_graph.workflows.validation.logging")
+

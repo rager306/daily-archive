@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from arxiv_archive.validation_batch_state import (
+from research_graph.workflows.validation.batch_state import (
     ScanArtifactPaths,
     SelectedPaper,
     SourceReadiness,
