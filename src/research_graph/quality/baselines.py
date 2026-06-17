@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/quality/baselines.py
+
 """Baseline helpers for non-blocking maintainability diagnostics."""
 
 from __future__ import annotations

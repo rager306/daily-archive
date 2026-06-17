@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/quality/riskratchet_adapter.py
+
 """Adapter around riskratchet's Python API for informational diagnostics."""
 
 from __future__ import annotations

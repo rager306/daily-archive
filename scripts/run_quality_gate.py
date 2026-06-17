@@ -16,7 +16,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from arxiv_archive.quality import build_maintainability_report, write_maintainability_report
+from research_graph.quality import build_maintainability_report, write_maintainability_report
 
 DEFAULT_BASE_REF = "HEAD"
 DEFAULT_OUTPUT_DIR = Path("artifacts/quality")

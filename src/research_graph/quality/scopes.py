@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/quality/scopes.py
+
 """Default source scopes for maintainability diagnostics."""
 
 from __future__ import annotations

@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from arxiv_archive.quality import build_maintainability_report, write_maintainability_report
-from arxiv_archive.quality.baselines import baseline_delta, read_baseline
-from arxiv_archive.quality.thresholds import MaintainabilityThresholds
+from research_graph.quality import build_maintainability_report, write_maintainability_report
+from research_graph.quality.baselines import baseline_delta, read_baseline
+from research_graph.quality.thresholds import MaintainabilityThresholds
 from scripts import run_quality_gate as quality_gate_runner
 
 

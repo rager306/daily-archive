@@ -267,3 +267,32 @@ def test_wave_10_archives_identity_and_staging_without_runtime_shims() -> None:
     assert importlib.import_module("research_graph.staging.graph_candidates")
     assert importlib.import_module("research_graph.staging.import_boundary")
 
+
+def test_wave_11_archives_quality_package_without_runtime_shims() -> None:
+    moves = {
+        "quality/__init__.py": "src/research_graph/quality/__init__.py",
+        "quality/baselines.py": "src/research_graph/quality/baselines.py",
+        "quality/maintainability_report.py": "src/research_graph/quality/maintainability_report.py",
+        "quality/riskratchet_adapter.py": "src/research_graph/quality/riskratchet_adapter.py",
+        "quality/scopes.py": "src/research_graph/quality/scopes.py",
+        "quality/thresholds.py": "src/research_graph/quality/thresholds.py",
+    }
+    manifest = Path("archive/package-rename-waves/wave-11/manifest.md").read_text(encoding="utf-8")
+
+    for old_name, new_path in moves.items():
+        old_runtime = Path("src/arxiv_archive") / old_name
+        archived = Path("archive/package-rename-waves/wave-11/src/arxiv_archive") / old_name
+        canonical = Path(new_path)
+
+        assert not old_runtime.exists()
+        assert archived.exists()
+        assert canonical.exists()
+        assert f"Formerly: src/arxiv_archive/{old_name}" in archived.read_text(encoding="utf-8")
+        assert f"Formerly: src/arxiv_archive/{old_name}" in canonical.read_text(encoding="utf-8")
+        assert f"`src/arxiv_archive/{old_name}`" in manifest
+        assert f"`{new_path}`" in manifest
+
+    assert "No compatibility shim" in manifest
+    assert importlib.import_module("research_graph.quality")
+    assert importlib.import_module("research_graph.quality.maintainability_report")
+

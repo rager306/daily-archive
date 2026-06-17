@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/quality/thresholds.py
+
 """Severity thresholds for local maintainability diagnostics.
 
 These thresholds are intentionally advisory. They annotate riskratchet scores for
