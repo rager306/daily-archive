@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/ladybug_client.py
+
 from __future__ import annotations
 
 import logging

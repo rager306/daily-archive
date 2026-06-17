@@ -2,11 +2,11 @@
 
 from datetime import date
 
-from arxiv_archive.arxiv_client import ArxivPaper
+from research_graph.corpus.sources.arxiv_client import ArxivPaper
 from arxiv_archive.scoring import ScoredPaper
-from arxiv_archive.semantic_scholar import SemanticScholarPaper
-from arxiv_archive.summarizer import PaperSummary
-from arxiv_archive.telegram_sender import TelegramSender
+from research_graph.corpus.sources.semantic_scholar import SemanticScholarPaper
+from research_graph.retrieval.summarizer import PaperSummary
+from research_graph.ops.notifications.telegram_sender import TelegramSender
 
 
 class TestTelegramSender:

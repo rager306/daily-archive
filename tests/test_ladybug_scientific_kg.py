@@ -14,10 +14,10 @@ from typing import Any, cast
 import ladybug
 import pytest
 
-import arxiv_archive.ladybug_client as ladybug_client
+import research_graph.graph.ladybug_client as ladybug_client
 from arxiv_archive.evidence import EvidencePath, build_evidence_path, build_semantic_chunks
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
-from arxiv_archive.ladybug_client import init_db
+from research_graph.graph.ladybug_client import init_db
 from research_graph.papers.indexing import PageIndexDocument, build_page_index
 from research_graph.evaluation.scientific_extraction import (
     Claim,

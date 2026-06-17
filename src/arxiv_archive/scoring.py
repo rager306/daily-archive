@@ -3,8 +3,8 @@
 from dataclasses import dataclass
 from datetime import date
 
-from arxiv_archive.arxiv_client import ArxivPaper
-from arxiv_archive.semantic_scholar import SemanticScholarPaper
+from research_graph.corpus.sources.arxiv_client import ArxivPaper
+from research_graph.corpus.sources.semantic_scholar import SemanticScholarPaper
 
 TOPIC_WEIGHTS = {
     "cs.SI": 1.5,

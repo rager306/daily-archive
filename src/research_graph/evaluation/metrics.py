@@ -22,7 +22,7 @@ from research_graph.retrieval.hybrid import (
     InMemoryVectorCandidateIndex,
     retrieve_hybrid,
 )
-from arxiv_archive.ladybug_client import evidence_path_id
+from research_graph.graph.ladybug_client import evidence_path_id
 from research_graph.evaluation.scientific_extraction import ExtractionPatch, validate_extraction_patch
 
 

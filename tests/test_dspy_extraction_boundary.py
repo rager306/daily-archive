@@ -17,7 +17,7 @@ from typing import Any, cast
 import pytest
 
 from research_graph.evaluation.dspy_extraction import BaselineDspyExtractionModule, DspyExtractionInput
-from arxiv_archive.ladybug_client import evidence_path_id
+from research_graph.graph.ladybug_client import evidence_path_id
 
 RAW_FIXTURE_CLAIM_TEXT = "Local markdown is enough to build a deterministic PageIndex."
 S08_FILES = (

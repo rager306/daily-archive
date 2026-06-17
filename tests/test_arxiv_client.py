@@ -1,10 +1,10 @@
 from datetime import date
 
-from arxiv_archive.arxiv_client import ArxivClient, ArxivPaper
+from research_graph.corpus.sources.arxiv_client import ArxivClient, ArxivPaper
 
 
 def test_arxiv_client_module_exists():
-    from arxiv_archive import arxiv_client
+    from research_graph.corpus.sources import arxiv_client
 
     assert arxiv_client is not None
 

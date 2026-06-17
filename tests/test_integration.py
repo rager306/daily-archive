@@ -2,8 +2,8 @@
 
 from datetime import date
 
-from arxiv_archive.arxiv_client import ArxivPaper
-from arxiv_archive.keyword_extractor import KeywordExtractor
+from research_graph.corpus.sources.arxiv_client import ArxivPaper
+from research_graph.retrieval.keyword_extractor import KeywordExtractor
 from arxiv_archive.scoring import ScoredPaper, ScoringEngine
 
 

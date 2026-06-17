@@ -5,9 +5,9 @@ from datetime import date, timedelta
 from hypothesis import Verbosity, given, settings
 from hypothesis import strategies as st
 
-from arxiv_archive.arxiv_client import ArxivPaper
+from research_graph.corpus.sources.arxiv_client import ArxivPaper
 from arxiv_archive.scoring import ScoringEngine
-from arxiv_archive.semantic_scholar import SemanticScholarPaper
+from research_graph.corpus.sources.semantic_scholar import SemanticScholarPaper
 from tests.helpers.modular_fixtures import FIXTURE_PAPER_ID
 
 

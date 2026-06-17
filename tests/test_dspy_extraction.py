@@ -12,7 +12,7 @@ from research_graph.evaluation.dspy_extraction import (
     DspyExtractionInput,
     dspy_extraction_signature_spec,
 )
-from arxiv_archive.ladybug_client import evidence_path_id
+from research_graph.graph.ladybug_client import evidence_path_id
 from research_graph.evaluation.scientific_extraction import ExtractionPatch
 from tests.test_scientific_extraction_contracts import method_evidence_path, sample_patch
 

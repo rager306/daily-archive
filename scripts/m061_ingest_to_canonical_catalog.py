@@ -235,7 +235,7 @@ def fetch_arxiv_metadata(
     """Fetch arxiv category/title using the same API and parser shape as ArxivClient._fetch_category."""
 
     # Import here so tests can exercise pure filesystem helpers without loading optional code paths.
-    from arxiv_archive.arxiv_client import ArxivClient
+    from research_graph.corpus.sources.arxiv_client import ArxivClient
 
     client = ArxivClient()
     request = urllib.request.Request(arxiv_query_url(arxiv_id), headers={"User-Agent": ARXIV_USER_AGENT})

@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/arxiv_client.py
+
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import date

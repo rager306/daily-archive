@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/semantic_scholar.py
+
 """Semantic Scholar API client for enriching arxiv papers with citation data."""
 
 import asyncio

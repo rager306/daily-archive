@@ -53,9 +53,9 @@ def test_ladybug_schema_and_query(memory_db):
 def test_upsert_daily_analysis(memory_db, monkeypatch):
     from datetime import datetime
 
-    from arxiv_archive.arxiv_client import ArxivPaper
+    from research_graph.corpus.sources.arxiv_client import ArxivPaper
     from arxiv_archive.cli import DailyAnalysis
-    from arxiv_archive.ladybug_client import upsert_daily_analysis
+    from research_graph.graph.ladybug_client import upsert_daily_analysis
     from arxiv_archive.scoring import ScoredPaper
 
     paper = ArxivPaper(

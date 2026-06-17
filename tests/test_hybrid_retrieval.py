@@ -14,7 +14,7 @@ from typing import Any, cast
 import ladybug
 import pytest
 
-import arxiv_archive.ladybug_client as ladybug_client
+import research_graph.graph.ladybug_client as ladybug_client
 from tests.test_ladybug_scientific_kg import build_fixture_payload
 
 

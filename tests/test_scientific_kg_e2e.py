@@ -6,9 +6,9 @@ from typing import Any, cast
 import ladybug
 
 from arxiv_archive.analytics import compute_graph_metrics, recommend_papers
-from arxiv_archive.arxiv_client import ArxivPaper
+from research_graph.corpus.sources.arxiv_client import ArxivPaper
 from arxiv_archive.cli import DailyAnalysis
-from arxiv_archive.ladybug_client import upsert_daily_analysis
+from research_graph.graph.ladybug_client import upsert_daily_analysis
 from arxiv_archive.scoring import ScoredPaper
 
 

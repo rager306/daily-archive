@@ -15,8 +15,8 @@ from typing import Any
 import ladybug
 import pytest
 
-import arxiv_archive.ladybug_client as ladybug_client
-from arxiv_archive.ladybug_client import evidence_path_id
+import research_graph.graph.ladybug_client as ladybug_client
+from research_graph.graph.ladybug_client import evidence_path_id
 from tests.test_ladybug_scientific_kg import build_fixture_payload
 
 

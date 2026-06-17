@@ -384,3 +384,32 @@ def test_wave_14_archives_retrieval_cluster_without_runtime_shims() -> None:
     assert importlib.import_module("research_graph.retrieval.hybrid")
     assert importlib.import_module("research_graph.retrieval.keyword_extractor")
 
+
+def test_wave_15_archives_external_clients_without_runtime_shims() -> None:
+    moves = {
+        "arxiv_client.py": "src/research_graph/corpus/sources/arxiv_client.py",
+        "semantic_scholar.py": "src/research_graph/corpus/sources/semantic_scholar.py",
+        "ladybug_client.py": "src/research_graph/graph/ladybug_client.py",
+        "telegram_sender.py": "src/research_graph/ops/notifications/telegram_sender.py",
+    }
+    manifest = Path("archive/package-rename-waves/wave-15/manifest.md").read_text(encoding="utf-8")
+
+    for old_name, new_path in moves.items():
+        old_runtime = Path("src/arxiv_archive") / old_name
+        archived = Path("archive/package-rename-waves/wave-15/src/arxiv_archive") / old_name
+        canonical = Path(new_path)
+
+        assert not old_runtime.exists()
+        assert archived.exists()
+        assert canonical.exists()
+        assert f"Formerly: src/arxiv_archive/{old_name}" in archived.read_text(encoding="utf-8")
+        assert f"Formerly: src/arxiv_archive/{old_name}" in canonical.read_text(encoding="utf-8")
+        assert f"`src/arxiv_archive/{old_name}`" in manifest
+        assert f"`{new_path}`" in manifest
+
+    assert "no permanent" not in manifest.lower() and "compatibility shim" not in manifest.lower()
+    assert importlib.import_module("research_graph.corpus.sources.arxiv_client")
+    assert importlib.import_module("research_graph.corpus.sources.semantic_scholar")
+    assert importlib.import_module("research_graph.graph.ladybug_client")
+    assert importlib.import_module("research_graph.ops.notifications.telegram_sender")
+

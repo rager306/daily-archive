@@ -6,9 +6,9 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from arxiv_archive.arxiv_client import ArxivPaper
+from research_graph.corpus.sources.arxiv_client import ArxivPaper
 from arxiv_archive.cli import DailyAnalysis
-from arxiv_archive.ladybug_client import init_db, upsert_daily_analysis
+from research_graph.graph.ladybug_client import init_db, upsert_daily_analysis
 from arxiv_archive.scoring import ScoredPaper
 from tests.helpers.modular_fixtures import FIXTURE_PAPER_ID
 
@@ -193,7 +193,7 @@ def test_init_db_creates_schema_and_is_idempotent(tmp_path) -> None:
 
 def test_init_db_continues_when_algo_extension_fails(monkeypatch, tmp_path) -> None:
     """Algo extension loading is optional; schema creation should still proceed."""
-    import arxiv_archive.ladybug_client as module
+    import research_graph.graph.ladybug_client as module
 
     class FakeDatabase:
         def __init__(self, path: str) -> None:
@@ -230,7 +230,7 @@ def test_init_db_continues_when_algo_extension_fails(monkeypatch, tmp_path) -> N
 
 def test_init_db_raises_unexpected_schema_errors(monkeypatch, tmp_path) -> None:
     """Only already-exists schema errors are swallowed."""
-    import arxiv_archive.ladybug_client as module
+    import research_graph.graph.ladybug_client as module
 
     class FakeDatabase:
         def __init__(self, path: str) -> None:

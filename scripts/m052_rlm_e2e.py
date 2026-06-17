@@ -10,12 +10,12 @@ from typing import Any
 
 import ladybug
 
-import arxiv_archive.ladybug_client as ladybug_client
+import research_graph.graph.ladybug_client as ladybug_client
 from research_graph.evaluation.metrics import calculate_evidence_path_hit_rate, calculate_retrieval_recall
 from arxiv_archive.evidence import EvidencePath, build_evidence_path, build_semantic_chunks
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
-from arxiv_archive.hybrid_retrieval import InMemoryVectorCandidateIndex
-from arxiv_archive.ladybug_client import evidence_path_id
+from research_graph.retrieval.hybrid import InMemoryVectorCandidateIndex
+from research_graph.graph.ladybug_client import evidence_path_id
 from research_graph.papers.indexing import PageIndexDocument, build_page_index
 from arxiv_archive.rlm_graph_traversal import (
     ComparisonResult,
