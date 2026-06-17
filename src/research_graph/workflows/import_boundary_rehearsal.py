@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/import_boundary_rehearsal.py
+
 """Compatibility shim for negative import-boundary rehearsal helpers.
 
 Implementation ownership moved to :mod:`research_graph.staging.import_boundary`.

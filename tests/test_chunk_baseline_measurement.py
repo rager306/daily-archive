@@ -3,13 +3,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from arxiv_archive.chunk_baseline_measurement import (
+from research_graph.repair.chunk_baseline_measurement import (
     build_baseline_package,
     measure_manifest,
     write_baseline_run,
     write_review_samples,
 )
-from arxiv_archive.chunk_import_contract import validate_import_ready_package
+from research_graph.repair.chunk_import_contract import validate_import_ready_package
 
 
 def _paper(tmp_path: Path, *, paper_id: str = "p1", full_text: str | None = None) -> dict[str, object]:

@@ -7,9 +7,9 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from research_graph.corpus.sources.arxiv_client import ArxivPaper
-from arxiv_archive.cli import DailyAnalysis
+from research_graph.cli import DailyAnalysis
 from research_graph.graph.ladybug_client import init_db, upsert_daily_analysis
-from arxiv_archive.scoring import ScoredPaper
+from research_graph.evaluation.scoring import ScoredPaper
 from tests.helpers.modular_fixtures import FIXTURE_PAPER_ID
 
 SAFE_TEXT = st.text(

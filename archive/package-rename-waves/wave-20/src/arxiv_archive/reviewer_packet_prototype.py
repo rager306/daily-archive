@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/reviewer_packet_prototype.py
+
 """Review-only reviewer packet prototype construction.
 
 This module turns an already validated S03 bounded repair prototype into S04

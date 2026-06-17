@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/cli.py
+
 """CLI for arxiv-archive."""
 
 import asyncio
@@ -49,7 +51,7 @@ from research_graph.quality import (  # noqa: E402
     maintainability_report_to_json,
     write_maintainability_report,
 )
-from arxiv_archive.scoring import ScoredPaper, ScoringEngine  # noqa: E402
+from research_graph.evaluation.scoring import ScoredPaper, ScoringEngine  # noqa: E402
 from research_graph.workflows.validation.batch_provenance import (  # noqa: E402
     build_artifact_freshness_report,
     read_validation_cli_provenance_log,

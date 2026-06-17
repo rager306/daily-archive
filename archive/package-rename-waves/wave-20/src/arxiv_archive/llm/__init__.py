@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/llm/__init__.py
+
 """Archived LLM package namespace.
 
 The provider configuration implementation moved to

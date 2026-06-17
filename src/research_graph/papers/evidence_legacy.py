@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/evidence.py
+
 """Semantic chunk and evidence-path contracts for scientific KG fixtures.
 
 This module is deterministic and local-only. It consumes S02 PageIndexDocument

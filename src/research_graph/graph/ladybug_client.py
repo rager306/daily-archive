@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 import ladybug
 
-from arxiv_archive.evidence import EvidencePath, SemanticChunk
+from research_graph.papers.evidence_legacy import EvidencePath, SemanticChunk
 from research_graph.papers.indexing import PageIndexDocument
 from research_graph.evaluation.scientific_extraction import (
     ExtractionPatch,
@@ -17,7 +17,7 @@ from research_graph.evaluation.scientific_extraction import (
 )
 
 if TYPE_CHECKING:
-    from arxiv_archive.cli import DailyAnalysis
+    from research_graph.cli import DailyAnalysis
 
 logger = logging.getLogger(__name__)
 

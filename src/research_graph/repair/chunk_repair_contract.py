@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/chunk_repair_contract.py
+
 """Review-only chunk repair contract validation.
 
 This module implements the M022/S02 executable contract for chunk and section

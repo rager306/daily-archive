@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/scoring.py
+
 """Scoring engine for ranking arxiv papers."""
 
 from dataclasses import dataclass

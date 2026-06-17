@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/analytics.py
+
 import logging
 from typing import Any, cast
 

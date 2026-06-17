@@ -188,7 +188,7 @@ def test_validator_script_runs_clean_on_default_path():
 
 
 def test_load_models_registry_returns_models_and_bindings():
-    from arxiv_archive.models_registry import load_models_registry, reset_cache
+    from research_graph.llm.models_registry import load_models_registry, reset_cache
     reset_cache()
     registry = load_models_registry()
     assert len(registry.models) >= 2
@@ -199,7 +199,7 @@ def test_load_models_registry_returns_models_and_bindings():
 
 
 def test_get_model_raises_keyerror_on_unknown():
-    from arxiv_archive.models_registry import get_model, load_models_registry, reset_cache
+    from research_graph.llm.models_registry import get_model, load_models_registry, reset_cache
     reset_cache()
     registry = load_models_registry()
     with pytest.raises(KeyError, match="nonexistent"):
@@ -207,7 +207,7 @@ def test_get_model_raises_keyerror_on_unknown():
 
 
 def test_get_model_for_binding_resolves_to_correct_model():
-    from arxiv_archive.models_registry import get_model_for_binding, load_models_registry, reset_cache
+    from research_graph.llm.models_registry import get_model_for_binding, load_models_registry, reset_cache
     reset_cache()
     registry = load_models_registry()
     resolved = get_model_for_binding(registry, "article-artifact-classify")
@@ -217,7 +217,7 @@ def test_get_model_for_binding_resolves_to_correct_model():
 
 
 def test_compute_work_id_is_deterministic():
-    from arxiv_archive.models_registry import compute_work_id, reset_cache
+    from research_graph.llm.models_registry import compute_work_id, reset_cache
     reset_cache()
     args = dict(
         model_id="minimax-m3-512k-anthropic",
@@ -232,7 +232,7 @@ def test_compute_work_id_is_deterministic():
 
 
 def test_compute_work_id_changes_with_input():
-    from arxiv_archive.models_registry import compute_work_id, reset_cache
+    from research_graph.llm.models_registry import compute_work_id, reset_cache
     reset_cache()
     base = dict(
         model_id="minimax-m3-512k-anthropic",
@@ -246,7 +246,7 @@ def test_compute_work_id_changes_with_input():
 
 
 def test_compute_work_id_changes_with_prompt():
-    from arxiv_archive.models_registry import compute_work_id, reset_cache
+    from research_graph.llm.models_registry import compute_work_id, reset_cache
     reset_cache()
     base = dict(
         model_id="minimax-m3-512k-anthropic",
@@ -260,7 +260,7 @@ def test_compute_work_id_changes_with_prompt():
 
 
 def test_compute_work_id_changes_with_run_id():
-    from arxiv_archive.models_registry import compute_work_id, reset_cache
+    from research_graph.llm.models_registry import compute_work_id, reset_cache
     reset_cache()
     base = dict(
         model_id="minimax-m3-512k-anthropic",
@@ -274,7 +274,7 @@ def test_compute_work_id_changes_with_run_id():
 
 
 def test_compute_work_id_uses_registry_defaults_when_omitted():
-    from arxiv_archive.models_registry import compute_work_id, reset_cache
+    from research_graph.llm.models_registry import compute_work_id, reset_cache
     reset_cache()
     # Without tool_version/policy_version, should pull from registry
     w = compute_work_id(
@@ -295,8 +295,8 @@ def test_compute_work_id_uses_registry_defaults_when_omitted():
 
 
 def test_build_minimax_structured_request_uses_registry_by_default():
-    from arxiv_archive.minimax_structured import build_minimax_structured_request
-    from arxiv_archive.models_registry import get_model_for_binding, load_models_registry, reset_cache
+    from research_graph.llm.minimax_structured import build_minimax_structured_request
+    from research_graph.llm.models_registry import get_model_for_binding, load_models_registry, reset_cache
     reset_cache()
     registry = load_models_registry()
     expected = get_model_for_binding(registry, "article-artifact-classify")
@@ -315,7 +315,7 @@ def test_build_minimax_structured_request_uses_registry_by_default():
 
 
 def test_build_minimax_structured_request_explicit_model_bypasses_registry():
-    from arxiv_archive.minimax_structured import build_minimax_structured_request
+    from research_graph.llm.minimax_structured import build_minimax_structured_request
     request = build_minimax_structured_request(
         prompt="test",
         tool_name="tool",

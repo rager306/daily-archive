@@ -4,7 +4,7 @@ import json
 from copy import deepcopy
 from pathlib import Path
 
-from arxiv_archive.chunk_repair_contract import (
+from research_graph.repair.chunk_repair_contract import (
     CHUNK_REPAIR_CONTRACT_VERSION,
     build_chunk_repair_contract_from_audit,
     expected_audit_from_contract,

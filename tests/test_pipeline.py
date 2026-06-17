@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from research_graph.corpus.sources.arxiv_client import ArxivPaper
-from arxiv_archive.scoring import ScoredPaper, ScoringEngine
+from research_graph.evaluation.scoring import ScoredPaper, ScoringEngine
 from tests.helpers.modular_fixtures import FIXTURE_PAPER_ID, MODULAR_RETORT, adaptix_dump
 
 
@@ -117,7 +117,7 @@ def test_scored_paper_embedding_roundtrip() -> None:
 
 def test_session_file_is_valid_json(tmp_path: Path) -> None:
     """Session file written by cli.save_session must be valid JSON parseable."""
-    from arxiv_archive.cli import save_session
+    from research_graph.cli import save_session
 
     papers = [
         ArxivPaper(
@@ -140,7 +140,7 @@ def test_session_file_is_valid_json(tmp_path: Path) -> None:
     ]
 
     # Override SESSIONS_DIR to tmp_path for test
-    import arxiv_archive.cli as cli_module
+    import research_graph.cli as cli_module
     original_sessions_dir = cli_module.SESSIONS_DIR
     cli_module.SESSIONS_DIR = tmp_path / "sessions"
 

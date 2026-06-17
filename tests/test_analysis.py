@@ -17,10 +17,10 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from research_graph.corpus.sources.arxiv_client import ArxivPaper
-from arxiv_archive.scoring import ScoredPaper
+from research_graph.evaluation.scoring import ScoredPaper
 
 if TYPE_CHECKING:
-    from arxiv_archive.cli import DailyAnalysis
+    from research_graph.cli import DailyAnalysis
 
 RUN_DATE = date(2026, 5, 14)
 
@@ -112,14 +112,14 @@ def reset_fakes() -> None:
 
 @pytest.fixture(autouse=True)
 def patch_queue_dir(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
 
     monkeypatch.setattr(cli, "QUEUE_DIR", tmp_path / "queue")
 
 
 @pytest.fixture
 def patch_analysis_components(monkeypatch: pytest.MonkeyPatch) -> None:
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
 
     monkeypatch.setattr(cli, "ArxivClient", FakeArxivClient)
     monkeypatch.setattr(cli, "KeywordExtractor", FakeKeywordExtractor)
@@ -135,7 +135,7 @@ def patch_analysis_components(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_run_analysis_returns_done_daily_analysis_sorted_and_capped(
     patch_analysis_components: None,
 ) -> None:
-    from arxiv_archive.cli import DailyAnalysis, run_analysis
+    from research_graph.cli import DailyAnalysis, run_analysis
 
     # More than 10 and intentionally reversed to prove score-desc sorting and top-10 capping.
     FakeArxivClient.papers = [make_paper(index) for index in range(12, 0, -1)]
@@ -171,7 +171,7 @@ def test_run_analysis_returns_done_daily_analysis_sorted_and_capped(
 def test_run_analysis_returns_empty_without_scoring_or_persistence(
     patch_analysis_components: None,
 ) -> None:
-    from arxiv_archive.cli import run_analysis
+    from research_graph.cli import run_analysis
 
     FakeArxivClient.papers = []
 
@@ -188,7 +188,7 @@ def test_run_analysis_returns_empty_without_scoring_or_persistence(
 
 
 def test_run_analysis_propagates_dependency_failures(monkeypatch: pytest.MonkeyPatch) -> None:
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
 
     class ExplodingClient:
         def __init__(self) -> None:
@@ -203,7 +203,7 @@ def test_run_analysis_propagates_dependency_failures(monkeypatch: pytest.MonkeyP
 def test_run_analysis_fails_on_malformed_fetched_paper(
     patch_analysis_components: None,
 ) -> None:
-    from arxiv_archive.cli import run_analysis
+    from research_graph.cli import run_analysis
 
     malformed = replace(make_paper(1), abstract=None)  # type: ignore[arg-type]
     FakeArxivClient.papers = [malformed]
@@ -216,7 +216,7 @@ def test_write_state_json_persists_cron_queue_schema(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
 
     queue_dir = tmp_path / "queue"
     monkeypatch.setattr(cli, "QUEUE_DIR", queue_dir)
@@ -236,7 +236,7 @@ def test_cli_run_outputs_done_summary_without_live_dependencies(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
 
     analysis = cli.DailyAnalysis(
         run_date=RUN_DATE,
@@ -261,7 +261,7 @@ def test_cli_run_outputs_empty_summary_without_live_dependencies(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
 
     analysis = cli.DailyAnalysis(
         run_date=RUN_DATE,
@@ -285,7 +285,7 @@ def test_cli_run_outputs_empty_summary_without_live_dependencies(
 def test_cli_run_persists_empty_queue_state_without_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
 
     analysis = cli.DailyAnalysis(
         run_date=RUN_DATE,
@@ -310,7 +310,7 @@ def test_cli_run_persists_empty_queue_state_without_error(
 def test_cli_run_persists_failed_queue_state_before_reraising(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
 
     def raise_analysis(_run_date: date) -> None:
         raise RuntimeError("fixture analysis failed")
@@ -336,7 +336,7 @@ def test_cli_malformed_date_fails_typer_validation() -> None:
             "run",
             "python",
             "-m",
-            "arxiv_archive",
+            "research_graph",
             "--date",
             "not-a-date",
         ],
@@ -356,7 +356,7 @@ def test_cli_malformed_date_fails_typer_validation() -> None:
 
 def make_s03_done_analysis() -> DailyAnalysis:
     """Build a complete S03 DailyAnalysis fixture with scored and null-enriched papers."""
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
     from research_graph.corpus.sources.semantic_scholar import SemanticScholarPaper
 
     enriched = make_scored(make_paper(1), 9.5, keywords=["agent", "graph"])
@@ -385,7 +385,7 @@ def make_s03_done_analysis() -> DailyAnalysis:
 
 def make_s03_empty_analysis() -> DailyAnalysis:
     """Build an empty S03 DailyAnalysis fixture without invoking live dependencies."""
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
 
     return cli.DailyAnalysis(
         run_date=RUN_DATE,
@@ -399,7 +399,7 @@ def make_s03_empty_analysis() -> DailyAnalysis:
 
 def make_s04_scored_analysis() -> DailyAnalysis:
     """Build an S04 fixture with overlapping categories, keywords, and breakdown keys."""
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
     from research_graph.corpus.sources.semantic_scholar import SemanticScholarPaper
 
     graph_paper = replace(
@@ -448,11 +448,11 @@ def patch_s04_artifact_dirs(
     tmp_path: Path,
 ) -> tuple[Path, Path]:
     """Patch S04 artifact roots and fail loudly until PAPERS_DIR is exposed."""
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
 
     analysis_dir = tmp_path / "analysis"
     papers_dir = tmp_path / "papers"
-    assert hasattr(cli, "PAPERS_DIR"), "S04 contract requires arxiv_archive.cli.PAPERS_DIR"
+    assert hasattr(cli, "PAPERS_DIR"), "S04 contract requires research_graph.cli.PAPERS_DIR"
     monkeypatch.setattr(cli, "ANALYSIS_DIR", analysis_dir)
     monkeypatch.setattr(cli, "PAPERS_DIR", papers_dir)
     return analysis_dir, papers_dir
@@ -462,7 +462,7 @@ def test_s03_write_session_json_persists_full_daily_analysis_contract(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
 
     sessions_dir = tmp_path / "sessions"
     monkeypatch.setattr(cli, "SESSIONS_DIR", sessions_dir)
@@ -514,7 +514,7 @@ def test_s03_write_daily_artifacts_persists_papers_scored_and_overview(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
 
     analysis_dir = tmp_path / "analysis"
     monkeypatch.setattr(cli, "ANALYSIS_DIR", analysis_dir)
@@ -547,7 +547,7 @@ def test_s04_write_daily_artifacts_persists_per_paper_raw_and_scored_json(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
 
     _analysis_dir, papers_dir = patch_s04_artifact_dirs(monkeypatch, tmp_path)
     analysis = make_s04_scored_analysis()
@@ -584,7 +584,7 @@ def test_s04_write_daily_artifacts_populates_overview_aggregates(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
 
     analysis_dir, _papers_dir = patch_s04_artifact_dirs(monkeypatch, tmp_path)
     analysis = make_s04_scored_analysis()
@@ -621,7 +621,7 @@ def test_s04_empty_day_overview_aggregates_are_empty_without_dividing_by_zero(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
 
     analysis_dir, _papers_dir = patch_s04_artifact_dirs(monkeypatch, tmp_path)
     analysis = make_s03_empty_analysis()
@@ -643,7 +643,7 @@ def test_s03_empty_day_persistence_writes_same_json_files_with_empty_arrays(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
 
     sessions_dir = tmp_path / "sessions"
     analysis_dir = tmp_path / "analysis"
@@ -679,7 +679,7 @@ def test_s03_cli_json_run_invokes_json_writers_and_keeps_status_stdout(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    import arxiv_archive.cli as cli
+    import research_graph.cli as cli
 
     analysis = make_s03_done_analysis()
     calls: list[tuple[str, object]] = []
@@ -717,9 +717,9 @@ def write_s05_sitecustomize(tmp_path: Path) -> Path:
 import os
 from datetime import UTC, date, datetime
 
-import arxiv_archive.cli as cli
+import research_graph.cli as cli
 from research_graph.corpus.sources.arxiv_client import ArxivPaper
-from arxiv_archive.scoring import ScoredPaper
+from research_graph.evaluation.scoring import ScoredPaper
 
 RUN_DATE = date(2026, 5, 14)
 
@@ -808,7 +808,7 @@ def run_s05_cli(
             "run",
             "python",
             "-m",
-            "arxiv_archive",
+            "research_graph",
             "--date",
             "2026-05-14",
             "--json",

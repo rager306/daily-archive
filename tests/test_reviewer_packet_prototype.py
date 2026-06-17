@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 
 from research_graph.repair.bounded_chunk_repair import build_bounded_chunk_repair_contract
-from arxiv_archive.chunk_repair_contract import MARKDOWN_FORBIDDEN_PATTERNS
-from arxiv_archive.reviewer_packet_prototype import (
+from research_graph.repair.chunk_repair_contract import MARKDOWN_FORBIDDEN_PATTERNS
+from research_graph.workflows.review_packet_prototype import (
     ALLOWED_NON_IMPORTING_DECISIONS,
     REVIEWER_PACKET_ASSESSMENT_VERSION,
     REVIEWER_PACKET_PROTOTYPE_VERSION,

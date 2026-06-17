@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/chunk_import_contract.py
+
 """Import-ready chunk package contract validation.
 
 This module implements the executable subset of the M005/S01 contract. It

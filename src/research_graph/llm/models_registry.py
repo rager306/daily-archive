@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/models_registry.py
+
 """Models registry: Python API for models.yaml.
 
 Per M049 (Models Registry Foundation) and M048 patterns-review 01

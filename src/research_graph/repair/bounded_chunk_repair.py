@@ -20,7 +20,7 @@ from research_graph.repair.candidate_locators import (
     default_safety_flags,
     validate_candidate_locator_artifact,
 )
-from arxiv_archive.chunk_repair_contract import (
+from research_graph.repair.chunk_repair_contract import (
     CHUNK_REPAIR_CONTRACT_VERSION,
     REQUIRED_FALSE_SAFETY_FIELDS,
     expected_audit_from_contract,

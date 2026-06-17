@@ -527,3 +527,25 @@ def test_wave_19_archives_rlm_without_runtime_shims() -> None:
     assert importlib.import_module("research_graph.workflows.rlm.graph_traversal")
     assert importlib.import_module("research_graph.workflows.rlm.workflow")
 
+
+def test_wave_20_retires_src_arxiv_archive_completely() -> None:
+    """Wave 20 completes the migration: src/arxiv_archive must be gone."""
+    assert not Path("src/arxiv_archive").exists(), "src/arxiv_archive directory must be completely removed"
+
+    manifest = Path("archive/package-rename-waves/wave-20/manifest.md").read_text(encoding="utf-8")
+    assert "cli.py" in manifest
+    assert "chunk_repair_contract.py" in manifest
+    assert "scoring.py" in manifest
+    assert "evidence.py" in manifest
+    assert "analytics.py" in manifest
+
+    # Verify canonical imports for key modules
+    assert importlib.import_module("research_graph.cli")
+    assert importlib.import_module("research_graph.evaluation.scoring")
+    assert importlib.import_module("research_graph.evaluation.analytics")
+    assert importlib.import_module("research_graph.repair.chunk_repair_contract")
+    assert importlib.import_module("research_graph.repair.chunk_import_contract")
+    assert importlib.import_module("research_graph.repair.chunk_baseline_measurement")
+    assert importlib.import_module("research_graph.llm.models_registry")
+    assert importlib.import_module("research_graph.corpus.sources.thirty_paper_deviation_scan")
+

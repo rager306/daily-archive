@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/thirty_paper_deviation_scan.py
+
 """Thirty-paper deviation scan helpers for M006.
 
 This module runs a Markdown-based structure-aware scan over a selected corpus and
@@ -12,7 +14,7 @@ import statistics
 from pathlib import Path
 from typing import Any
 
-from arxiv_archive.chunk_import_contract import validate_import_ready_package, validation_to_dict
+from research_graph.repair.chunk_import_contract import validate_import_ready_package, validation_to_dict
 from research_graph.papers.chunking import build_structure_aware_package_for_paper
 
 SAFETY_FLAGS: dict[str, bool] = {
