@@ -236,3 +236,34 @@ def test_wave_09_archives_thirty_paper_source_scan_without_runtime_shim() -> Non
     assert "`src/research_graph/corpus/sources/thirty_paper_source_scan.py`" in manifest
     assert "no compatibility shim" in manifest
     assert "must not perform live arxiv2md" in manifest
+
+
+def test_wave_10_archives_identity_and_staging_without_runtime_shims() -> None:
+    moves = {
+        "identity/__init__.py": "src/research_graph/identity/__init__.py",
+        "identity/canonicalization.py": "src/research_graph/identity/canonicalization.py",
+        "identity/dedup.py": "src/research_graph/identity/dedup.py",
+        "staging/__init__.py": "src/research_graph/staging/__init__.py",
+        "staging/graph_candidates.py": "src/research_graph/staging/graph_candidates.py",
+        "staging/import_boundary.py": "src/research_graph/staging/import_boundary.py",
+    }
+    manifest = Path("archive/package-rename-waves/wave-10/manifest.md").read_text(encoding="utf-8")
+
+    for old_name, new_path in moves.items():
+        old_runtime = Path("src/arxiv_archive") / old_name
+        archived = Path("archive/package-rename-waves/wave-10/src/arxiv_archive") / old_name
+        canonical = Path(new_path)
+
+        assert not old_runtime.exists()
+        assert archived.exists()
+        assert canonical.exists()
+        assert f"Formerly: src/arxiv_archive/{old_name}" in archived.read_text(encoding="utf-8")
+        assert f"Formerly: src/arxiv_archive/{old_name}" in canonical.read_text(encoding="utf-8")
+        assert f"`src/arxiv_archive/{old_name}`" in manifest
+        assert f"`{new_path}`" in manifest
+
+    assert importlib.import_module("research_graph.identity.canonicalization")
+    assert importlib.import_module("research_graph.identity.dedup")
+    assert importlib.import_module("research_graph.staging.graph_candidates")
+    assert importlib.import_module("research_graph.staging.import_boundary")
+

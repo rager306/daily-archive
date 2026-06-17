@@ -14,10 +14,10 @@ from hypothesis import strategies as st
 from research_graph.papers.artifacts.models import FORBIDDEN_PAYLOAD_KEYS, validate_article_artifact_manifest
 from research_graph.papers.source_assets.registry import SourceAssetManifest, validate_source_asset_manifest
 from research_graph.papers.chunking.chunker import parse_markdown_structure
-from arxiv_archive.identity.canonicalization import canonical_source_id, stable_json_hash
+from research_graph.identity.canonicalization import canonical_source_id, stable_json_hash
 from research_graph.corpus.ingestion.loader import ArticleLoadResult, ArticleLoadSource, FullTextIngestionResult, load_article_source
 from research_graph.corpus.parsing.parser import parse_article
-from arxiv_archive.staging.import_boundary import ImportCandidate, validate_import_boundary_rehearsal
+from research_graph.staging.import_boundary import ImportCandidate, validate_import_boundary_rehearsal
 from tests.helpers.modular_fixtures import (
     FIXTURE_PAPER_ID,
     adaptix_dump,

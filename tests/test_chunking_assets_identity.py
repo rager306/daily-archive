@@ -9,8 +9,8 @@ from research_graph.papers.source_assets.registry import (
     validate_source_asset_manifest,
 )
 from research_graph.papers.chunking.chunker import parse_markdown_structure
-from arxiv_archive.identity.canonicalization import canonical_source_id
-from arxiv_archive.staging.graph_candidates import (
+from research_graph.identity.canonicalization import canonical_source_id
+from research_graph.staging.graph_candidates import (
     DEFAULT_ROUTE_SPECS,
     LocatorSource,
     build_candidate_locator_artifact,

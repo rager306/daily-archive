@@ -6,7 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from arxiv_archive.staging.import_boundary import (
+from research_graph.staging.import_boundary import (
     TRUSTED_IMPORT_USE,
     build_m031_import_boundary_rehearsal,
     validate_import_boundary_rehearsal,

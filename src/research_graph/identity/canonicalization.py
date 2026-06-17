@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/identity/canonicalization.py
+
 """Canonical identifier helpers for redacted review/staging artifacts.
 
 These helpers centralize deterministic IDs and hashes so candidate locator,

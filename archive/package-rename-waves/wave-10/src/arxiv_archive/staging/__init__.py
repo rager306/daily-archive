@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/staging/__init__.py
+
 """Graph-staging candidate assembly surfaces."""
 
 from arxiv_archive.staging.graph_candidates import (

@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/identity/dedup.py
+
 """Deduplication and alias-chain helpers for review/staging candidates."""
 
 from __future__ import annotations

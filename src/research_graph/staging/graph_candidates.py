@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/staging/graph_candidates.py
+
 """Deterministic candidate locator generation for Scientific KG review packets.
 
 This module implements the M020 candidate locator protocol as local-only,
@@ -15,8 +17,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from arxiv_archive.identity.canonicalization import artifact_record_hash, canonical_locator_id, canonical_source_id, stable_span_hash
-from arxiv_archive.identity.dedup import annotate_overlapping_signal_windows
+from research_graph.identity.canonicalization import artifact_record_hash, canonical_locator_id, canonical_source_id, stable_span_hash
+from research_graph.identity.dedup import annotate_overlapping_signal_windows
 
 CANDIDATE_LOCATOR_PROTOCOL_VERSION = "candidate_locator_protocol.v1"
 

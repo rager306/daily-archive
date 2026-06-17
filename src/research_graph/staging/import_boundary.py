@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/staging/import_boundary.py
+
 """Negative isolated import boundary rehearsal contract for M005/S07.
 
 This module models a dry-run import boundary that proves current package-like
@@ -13,7 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from arxiv_archive.identity.canonicalization import (
+from research_graph.identity.canonicalization import (
     canonical_import_candidate_id,
     canonical_package_id,
 )

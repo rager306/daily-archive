@@ -19,7 +19,7 @@ from research_graph.papers.artifacts.models import build_article_artifact_manife
 from research_graph.papers.indexing.page_index import build_article_page_index_from_structure
 from research_graph.papers.source_assets.registry import AssetRecord, PreservedSourceFile, SourceSpan as AssetSourceSpan
 from research_graph.papers.chunking.chunker import StructureAwarePackage, parse_markdown_structure
-from arxiv_archive.identity.canonicalization import canonical_source_id, stable_json_hash
+from research_graph.identity.canonicalization import canonical_source_id, stable_json_hash
 from research_graph.papers.indexing.navigation import PageIndexDocument
 from research_graph.papers.indexing.parsed_page_index import build_page_index_from_parsed
 from research_graph.corpus.ingestion.loader import (
@@ -29,7 +29,7 @@ from research_graph.corpus.ingestion.loader import (
 )
 from research_graph.corpus.parsing.parser import parse_article
 from research_graph.corpus.parsing.structure import ParsedArticle
-from arxiv_archive.staging.import_boundary import ImportBoundaryRehearsal, ImportCandidate
+from research_graph.staging.import_boundary import ImportBoundaryRehearsal, ImportCandidate
 
 T = TypeVar("T")
 

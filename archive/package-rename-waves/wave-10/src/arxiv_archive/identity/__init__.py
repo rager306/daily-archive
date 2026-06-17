@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/identity/__init__.py
+
 """Canonical identity and deduplication helpers for arxiv_archive."""
 
 from arxiv_archive.identity.canonicalization import (
