@@ -356,3 +356,31 @@ def test_wave_12_archives_repair_cluster_without_runtime_shims() -> None:
     assert importlib.import_module("research_graph.repair.candidate_locators")
     assert importlib.import_module("research_graph.repair.chunking_benchmark")
 
+
+def test_wave_14_archives_retrieval_cluster_without_runtime_shims() -> None:
+    moves = {
+        "embedder.py": "src/research_graph/retrieval/embedder.py",
+        "hybrid_retrieval.py": "src/research_graph/retrieval/hybrid.py",
+        "keyword_extractor.py": "src/research_graph/retrieval/keyword_extractor.py",
+        "summarizer.py": "src/research_graph/retrieval/summarizer.py",
+    }
+    manifest = Path("archive/package-rename-waves/wave-14/manifest.md").read_text(encoding="utf-8")
+
+    for old_name, new_path in moves.items():
+        old_runtime = Path("src/arxiv_archive") / old_name
+        archived = Path("archive/package-rename-waves/wave-14/src/arxiv_archive") / old_name
+        canonical = Path(new_path)
+
+        assert not old_runtime.exists()
+        assert archived.exists()
+        assert canonical.exists()
+        assert f"Formerly: src/arxiv_archive/{old_name}" in archived.read_text(encoding="utf-8")
+        assert f"Formerly: src/arxiv_archive/{old_name}" in canonical.read_text(encoding="utf-8")
+        assert f"`src/arxiv_archive/{old_name}`" in manifest
+        assert f"`{new_path}`" in manifest
+
+    assert "MiniMaxSummarizer" in manifest
+    assert importlib.import_module("research_graph.retrieval.embedder")
+    assert importlib.import_module("research_graph.retrieval.hybrid")
+    assert importlib.import_module("research_graph.retrieval.keyword_extractor")
+

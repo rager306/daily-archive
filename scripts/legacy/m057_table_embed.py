@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # DEPRECATED: legacy M057 helper retained for historical reproduction only.
-# Use arxiv_archive.embedder.Embedder for all new fd embedding calls.
+# Use research_graph.retrieval.embedder.Embedder for all new fd embedding calls.
 """Embed M057 S02 table text through the local fd embeddings API."""
 
 from __future__ import annotations

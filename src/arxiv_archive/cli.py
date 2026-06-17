@@ -42,8 +42,8 @@ from research_graph.papers.artifacts.models import (  # noqa: E402
 )
 from research_graph.papers.artifacts.batch_validation import run_article_batch_validation_report  # noqa: E402
 from arxiv_archive.arxiv_client import ArxivClient  # noqa: E402
-from arxiv_archive.embedder import Embedder  # noqa: E402
-from arxiv_archive.keyword_extractor import KeywordExtractor  # noqa: E402
+from research_graph.retrieval.embedder import Embedder  # noqa: E402
+from research_graph.retrieval.keyword_extractor import KeywordExtractor  # noqa: E402
 from research_graph.quality import (  # noqa: E402
     build_maintainability_report,
     maintainability_report_to_json,

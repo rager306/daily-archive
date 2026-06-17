@@ -67,7 +67,7 @@ def test_vector_only_retrieval_returns_evidence_backed_score_metadata(
     fixture_vectors: list[FixtureVector],
 ) -> None:
     """Vector-only retrieval exposes stable metadata without graph scores."""
-    from arxiv_archive.hybrid_retrieval import (  # noqa: PLC0415 - future public API contract
+    from research_graph.retrieval.hybrid import (  # noqa: PLC0415 - future public API contract
         HybridRetrievalMode,
         HybridRetrievalQuery,
         InMemoryVectorCandidateIndex,
@@ -113,7 +113,7 @@ def test_graph_only_retrieval_expands_from_scientific_kg_without_vectors(
     scientific_kg_conn: ladybug.Connection,
 ) -> None:
     """Graph-only retrieval finds evidence-linked claims/entities through LadybugDB."""
-    from arxiv_archive.hybrid_retrieval import (  # noqa: PLC0415 - future public API contract
+    from research_graph.retrieval.hybrid import (  # noqa: PLC0415 - future public API contract
         HybridRetrievalMode,
         HybridRetrievalQuery,
         retrieve_hybrid,
@@ -158,7 +158,7 @@ def test_graph_only_retrieval_expands_relation_neighborhood_from_endpoint_match(
     scientific_kg_conn: ladybug.Connection,
 ) -> None:
     """Graph expansion uses SCIENTIFIC_RELATION endpoint edges without exposing text."""
-    from arxiv_archive.hybrid_retrieval import (  # noqa: PLC0415 - future public API contract
+    from research_graph.retrieval.hybrid import (  # noqa: PLC0415 - future public API contract
         HybridRetrievalMode,
         HybridRetrievalQuery,
         retrieve_hybrid,
@@ -202,7 +202,7 @@ def test_graph_retrieval_does_not_open_write_transactions_or_mutate_schema(
     scientific_kg_conn: ladybug.Connection,
 ) -> None:
     """Retrieval must be read-only: no BEGIN, CREATE, MERGE, SET, COMMIT, or ROLLBACK."""
-    from arxiv_archive.hybrid_retrieval import (  # noqa: PLC0415 - future public API contract
+    from research_graph.retrieval.hybrid import (  # noqa: PLC0415 - future public API contract
         HybridRetrievalMode,
         HybridRetrievalQuery,
         retrieve_hybrid,
@@ -242,7 +242,7 @@ def test_hybrid_retrieval_stably_fuses_vector_and_graph_candidates(
     fixture_vectors: list[FixtureVector],
 ) -> None:
     """Hybrid retrieval de-duplicates candidates and keeps per-source scores."""
-    from arxiv_archive.hybrid_retrieval import (  # noqa: PLC0415 - future public API contract
+    from research_graph.retrieval.hybrid import (  # noqa: PLC0415 - future public API contract
         HybridRetrievalMode,
         HybridRetrievalQuery,
         InMemoryVectorCandidateIndex,
@@ -289,7 +289,7 @@ def test_hybrid_retrieval_reports_empty_candidate_sets_and_missing_evidence_link
     scientific_kg_conn: ladybug.Connection,
 ) -> None:
     """Diagnostics identify empty vector/graph sides and chunks lacking EvidencePath links."""
-    from arxiv_archive.hybrid_retrieval import (  # noqa: PLC0415 - future public API contract
+    from research_graph.retrieval.hybrid import (  # noqa: PLC0415 - future public API contract
         HybridRetrievalMode,
         HybridRetrievalQuery,
         InMemoryVectorCandidateIndex,

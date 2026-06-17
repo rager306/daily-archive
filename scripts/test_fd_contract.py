@@ -30,7 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from arxiv_archive.embedder import CIRCUIT_CLOSED, CIRCUIT_OPEN, Embedder  # noqa: E402
+from research_graph.retrieval.embedder import CIRCUIT_CLOSED, CIRCUIT_OPEN, Embedder  # noqa: E402
 
 DEFAULT_TEI_URL = "http://127.0.0.1:8000"
 DEFAULT_ENDPOINT = f"{DEFAULT_TEI_URL}/v1/embeddings"

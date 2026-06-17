@@ -248,7 +248,7 @@ def test_retrieval_ablation_runner_exercises_s05_fixture_and_s06_modes() -> None
         BenchmarkRetrievalQuestion,
         run_retrieval_ablations,
     )
-    from arxiv_archive.hybrid_retrieval import (  # noqa: PLC0415 - public retrieval contract
+    from research_graph.retrieval.hybrid import (  # noqa: PLC0415 - public retrieval contract
         HybridRetrievalMode,
         InMemoryVectorCandidateIndex,
     )
@@ -320,7 +320,7 @@ def test_retrieval_ablation_runner_reports_empty_results_and_missing_ids() -> No
         BenchmarkRetrievalQuestion,
         run_retrieval_ablations,
     )
-    from arxiv_archive.hybrid_retrieval import (  # noqa: PLC0415 - public retrieval contract
+    from research_graph.retrieval.hybrid import (  # noqa: PLC0415 - public retrieval contract
         HybridRetrievalMode,
         InMemoryVectorCandidateIndex,
     )

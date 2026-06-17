@@ -10,8 +10,8 @@ from contextlib import contextmanager
 import httpx
 import pytest
 
-from arxiv_archive import embedder as embedder_module
-from arxiv_archive.embedder import (
+from research_graph.retrieval import embedder as embedder_module
+from research_graph.retrieval.embedder import (
     CIRCUIT_CLOSED,
     CIRCUIT_HALF_OPEN,
     CIRCUIT_OPEN,

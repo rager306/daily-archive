@@ -16,7 +16,7 @@ from typing import Any, cast
 
 import ladybug
 
-from arxiv_archive.hybrid_retrieval import (
+from research_graph.retrieval.hybrid import (
     HybridRetrievalMode,
     HybridRetrievalQuery,
     InMemoryVectorCandidateIndex,

@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/embedder.py
+
 """Canonical fd embedding client for daily-archive."""
 
 from __future__ import annotations

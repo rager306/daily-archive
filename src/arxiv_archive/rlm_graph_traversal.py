@@ -17,7 +17,7 @@ from research_graph.evaluation.metrics import (
     calculate_evidence_path_hit_rate,
     calculate_retrieval_recall,
 )
-from arxiv_archive.hybrid_retrieval import (
+from research_graph.retrieval.hybrid import (
     HybridRetrievalMode,
     HybridRetrievalQuery,
     InMemoryVectorCandidateIndex,

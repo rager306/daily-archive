@@ -1,7 +1,7 @@
 import httpx
 import pytest
 
-from arxiv_archive.embedder import Embedder
+from research_graph.retrieval.embedder import Embedder
 
 
 async def _async_mock_client_factory(client):

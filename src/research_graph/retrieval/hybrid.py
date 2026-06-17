@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/hybrid_retrieval.py
+
 """Fixture-level hybrid retrieval over vectors and the scientific KG.
 
 This module intentionally stays deterministic and local-only: callers provide

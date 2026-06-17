@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/summarizer.py
+
 """MiniMax-based paper summarizer for AI research papers."""
 
 import os

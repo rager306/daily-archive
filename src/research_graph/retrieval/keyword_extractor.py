@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/keyword_extractor.py
+
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol
