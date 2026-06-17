@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/graph_readiness.py
+
 """Graph-readiness contracts for route-gated scientific KG validation.
 
 This module defines the data-shape and validation boundary introduced by

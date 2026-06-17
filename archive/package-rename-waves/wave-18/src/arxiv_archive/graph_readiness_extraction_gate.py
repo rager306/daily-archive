@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/graph_readiness_extraction_gate.py
+
 """Route-gated extraction decision for S05.
 
 This module is deliberately conservative: it decides whether scientific

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from arxiv_archive.graph_readiness import (
+from research_graph.graph.readiness.core import (
     ChunkRoute,
     ChunkType,
     CoordinateSpace,

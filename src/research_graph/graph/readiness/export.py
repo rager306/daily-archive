@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/graph_readiness_export.py
+
 """Read-only graph-readiness exporter for M004/S05 validation.
 
 The exporter maps existing full-text ingestion, PageIndex, SemanticChunk, and
@@ -17,7 +19,7 @@ from typing import Any
 
 from arxiv_archive.evidence import build_semantic_chunks
 from research_graph.corpus.ingestion import FullTextIngestionResult, FullTextSource, ingest_full_text
-from arxiv_archive.graph_readiness import (
+from research_graph.graph.readiness.core import (
     ChunkRoute,
     ChunkType,
     CoordinateSpace,

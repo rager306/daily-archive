@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from arxiv_archive.graph_readiness_manifest import create_manifest, synthesize_manifest
+from research_graph.graph.readiness.manifest import create_manifest, synthesize_manifest
 
 
 def _summary() -> dict[str, object]:

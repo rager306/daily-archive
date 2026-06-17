@@ -473,3 +473,33 @@ def test_wave_17_archives_universal_kb_without_runtime_shims() -> None:
     assert importlib.import_module("research_graph.workflows.universal_kb.queue")
     assert importlib.import_module("research_graph.workflows.universal_kb.rehearsal")
 
+
+def test_wave_18_archives_graph_readiness_without_runtime_shims() -> None:
+    moves = {
+        "graph_readiness.py": "src/research_graph/graph/readiness/core.py",
+        "graph_readiness_export.py": "src/research_graph/graph/readiness/export.py",
+        "graph_readiness_extraction_gate.py": "src/research_graph/graph/readiness/extraction_gate.py",
+        "graph_readiness_manifest.py": "src/research_graph/graph/readiness/manifest.py",
+        "graph_readiness_persistence.py": "src/research_graph/graph/readiness/persistence.py",
+        "graph_readiness_retrieval_validation.py": "src/research_graph/graph/readiness/retrieval_validation.py",
+        "graph_readiness_review.py": "src/research_graph/graph/readiness/review.py",
+    }
+    manifest = Path("archive/package-rename-waves/wave-18/manifest.md").read_text(encoding="utf-8")
+
+    for old_name, new_path in moves.items():
+        old_runtime = Path("src/arxiv_archive") / old_name
+        archived = Path("archive/package-rename-waves/wave-18/src/arxiv_archive") / old_name
+        canonical = Path(new_path)
+
+        assert not old_runtime.exists()
+        assert archived.exists()
+        assert canonical.exists()
+        assert f"Formerly: src/arxiv_archive/{old_name}" in archived.read_text(encoding="utf-8")
+        assert f"Formerly: src/arxiv_archive/{old_name}" in canonical.read_text(encoding="utf-8")
+        assert f"`src/arxiv_archive/{old_name}`" in manifest
+        assert f"`{new_path}`" in manifest
+
+    assert "review" in manifest
+    assert importlib.import_module("research_graph.graph.readiness.core")
+    assert importlib.import_module("research_graph.graph.readiness.review")
+

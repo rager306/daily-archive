@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/graph_readiness_persistence.py
+
 """Trusted candidate claim selector for graph-readiness persistence validation.
 
 This module is deliberately read-only. It joins the S13 candidate-level
@@ -16,7 +18,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
-from arxiv_archive.graph_readiness import to_redacted_dict
+from research_graph.graph.readiness.core import to_redacted_dict
 
 TRUSTED_ELIGIBILITY = "eligible"
 TRUSTED_ROUTE = "claim_extraction"

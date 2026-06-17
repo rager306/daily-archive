@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from arxiv_archive.graph_readiness_retrieval_validation import (
+from research_graph.graph.readiness.retrieval_validation import (
     fixture_load_to_dict,
     load_retrieval_fixture,
     run_exclusion_checks,

@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from arxiv_archive.graph_readiness_export import build_package_from_manifest_document
-from arxiv_archive.graph_readiness_review import (
+from research_graph.graph.readiness.export import build_package_from_manifest_document
+from research_graph.graph.readiness.review import (
     generate_review_bundles,
     render_review_bundle,
     select_review_papers,

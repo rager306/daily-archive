@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/graph_readiness_manifest.py
+
 """Route and candidate eligibility manifest synthesis.
 
 This module combines automated graph-readiness diagnostics with independent
@@ -15,7 +17,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from arxiv_archive.graph_readiness import to_redacted_dict
+from research_graph.graph.readiness.core import to_redacted_dict
 
 PAPER_ROUTE = "paper"
 ROUTE_GRANULARITY = "route"

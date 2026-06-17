@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/graph_readiness_retrieval_validation.py
+
 """Retrieval validation fixture for S06 trusted candidate claims.
 
 This module validates and loads the S06 `persisted-candidate-claims.jsonl`

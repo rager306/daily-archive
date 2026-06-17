@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/graph_readiness_review.py
+
 """Bounded artifact review bundle generation for graph-readiness packages."""
 
 from __future__ import annotations

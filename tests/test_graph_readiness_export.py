@@ -3,13 +3,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from arxiv_archive.graph_readiness import (
+from research_graph.graph.readiness.core import (
     ChunkRoute,
     ChunkType,
     GraphReadinessState,
     stable_text_hash,
 )
-from arxiv_archive.graph_readiness_export import (
+from research_graph.graph.readiness.export import (
     build_package_from_manifest_document,
     export_corpus,
 )
