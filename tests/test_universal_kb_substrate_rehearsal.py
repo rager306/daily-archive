@@ -5,13 +5,13 @@ from pathlib import Path
 import pytest
 
 from arxiv_archive.minimax_structured import DEFAULT_MINIMAX_MODEL
-from arxiv_archive.universal_kb_contracts import CandidatePacket
-from arxiv_archive.universal_kb_queue import UniversalKBQueue
-from arxiv_archive.universal_kb_review_assistance import (
+from research_graph.workflows.universal_kb.contracts import CandidatePacket
+from research_graph.workflows.universal_kb.queue import UniversalKBQueue
+from research_graph.workflows.universal_kb.review_assistance import (
     build_review_assistance_packet,
     build_review_tool_invocation_record,
 )
-from arxiv_archive.universal_kb_substrate_rehearsal import (
+from research_graph.workflows.universal_kb.substrate_rehearsal import (
     NoWriteSubstrateRehearsal,
     ReadinessHandoff,
 )

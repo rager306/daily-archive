@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from arxiv_archive.universal_kb_contracts import CandidatePacket
-from arxiv_archive.universal_kb_sidecar_boundary import (
+from research_graph.workflows.universal_kb.contracts import CandidatePacket
+from research_graph.workflows.universal_kb.sidecar_boundary import (
     BoundaryDomainInvariantError,
     BoundaryMappingError,
     candidate_packet_from_sidecar_json,

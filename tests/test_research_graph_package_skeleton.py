@@ -442,3 +442,34 @@ def test_wave_16_archives_validation_batch_workflow_without_runtime_shims() -> N
     assert importlib.import_module("research_graph.workflows.validation.batch_workflow")
     assert importlib.import_module("research_graph.workflows.validation.logging")
 
+
+def test_wave_17_archives_universal_kb_without_runtime_shims() -> None:
+    moves = {
+        "universal_kb_contracts.py": "src/research_graph/workflows/universal_kb/contracts.py",
+        "universal_kb_queue.py": "src/research_graph/workflows/universal_kb/queue.py",
+        "universal_kb_rehearsal.py": "src/research_graph/workflows/universal_kb/rehearsal.py",
+        "universal_kb_review_assistance.py": "src/research_graph/workflows/universal_kb/review_assistance.py",
+        "universal_kb_sidecar_boundary.py": "src/research_graph/workflows/universal_kb/sidecar_boundary.py",
+        "universal_kb_smoke.py": "src/research_graph/workflows/universal_kb/smoke.py",
+        "universal_kb_substrate_rehearsal.py": "src/research_graph/workflows/universal_kb/substrate_rehearsal.py",
+    }
+    manifest = Path("archive/package-rename-waves/wave-17/manifest.md").read_text(encoding="utf-8")
+
+    for old_name, new_path in moves.items():
+        old_runtime = Path("src/arxiv_archive") / old_name
+        archived = Path("archive/package-rename-waves/wave-17/src/arxiv_archive") / old_name
+        canonical = Path(new_path)
+
+        assert not old_runtime.exists()
+        assert archived.exists()
+        assert canonical.exists()
+        assert f"Formerly: src/arxiv_archive/{old_name}" in archived.read_text(encoding="utf-8")
+        assert f"Formerly: src/arxiv_archive/{old_name}" in canonical.read_text(encoding="utf-8")
+        assert f"`src/arxiv_archive/{old_name}`" in manifest
+        assert f"`{new_path}`" in manifest
+
+    assert "fact-promotion" in manifest
+    assert importlib.import_module("research_graph.workflows.universal_kb.contracts")
+    assert importlib.import_module("research_graph.workflows.universal_kb.queue")
+    assert importlib.import_module("research_graph.workflows.universal_kb.rehearsal")
+

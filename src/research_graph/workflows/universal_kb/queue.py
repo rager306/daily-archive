@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/universal_kb_queue.py
+
 """Local SQLite durable queue for M035 Universal KB prototypes.
 
 This module implements a single-node, local-first queue state machine. It is
@@ -15,7 +17,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from arxiv_archive.universal_kb_contracts import FORBIDDEN_DIAGNOSTIC_KEYS, SafetyFlags
+from research_graph.workflows.universal_kb.contracts import FORBIDDEN_DIAGNOSTIC_KEYS, SafetyFlags
 
 Clock = Callable[[], str]
 

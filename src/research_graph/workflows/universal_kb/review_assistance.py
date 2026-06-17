@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/universal_kb_review_assistance.py
+
 """Diagnostic-only review assistance contracts for M035 Universal KB."""
 
 from __future__ import annotations
@@ -8,7 +10,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-from arxiv_archive.universal_kb_contracts import (
+from research_graph.workflows.universal_kb.contracts import (
     AUTHORITATIVE_REVIEW_STATES,
     FORBIDDEN_DIAGNOSTIC_KEYS,
     CandidatePacket,

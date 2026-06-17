@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/universal_kb_contracts.py
+
 """Executable Universal KB contracts for M035 no-write prototypes.
 
 These records implement the fail-closed subset of the M034 contract package.

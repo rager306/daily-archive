@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/universal_kb_rehearsal.py
+
 """End-to-end no-write rehearsal for the M035 Universal KB prototype.
 
 The rehearsal intentionally writes only local metadata artifacts. It does not
@@ -13,13 +15,13 @@ from pathlib import Path
 from typing import Any
 
 from arxiv_archive.minimax_structured import DEFAULT_MINIMAX_MODEL
-from arxiv_archive.universal_kb_queue import UniversalKBQueue
-from arxiv_archive.universal_kb_review_assistance import (
+from research_graph.workflows.universal_kb.queue import UniversalKBQueue
+from research_graph.workflows.universal_kb.review_assistance import (
     build_review_assistance_packet,
     build_review_tool_invocation_record,
 )
-from arxiv_archive.universal_kb_sidecar_boundary import candidate_packet_from_sidecar_json
-from arxiv_archive.universal_kb_substrate_rehearsal import NoWriteSubstrateRehearsal
+from research_graph.workflows.universal_kb.sidecar_boundary import candidate_packet_from_sidecar_json
+from research_graph.workflows.universal_kb.substrate_rehearsal import NoWriteSubstrateRehearsal
 
 _REHEARSAL_INPUT_HASH = "sha256:m035-metadata-only-fixture"
 _REVIEW_DIAGNOSTIC = "needs_locator"

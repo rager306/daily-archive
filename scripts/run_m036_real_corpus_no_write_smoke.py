@@ -16,13 +16,13 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from arxiv_archive.minimax_structured import DEFAULT_MINIMAX_MODEL  # noqa: E402
-from arxiv_archive.universal_kb_contracts import CandidatePacket  # noqa: E402
-from arxiv_archive.universal_kb_queue import UniversalKBQueue  # noqa: E402
-from arxiv_archive.universal_kb_review_assistance import (  # noqa: E402
+from research_graph.workflows.universal_kb.contracts import CandidatePacket  # noqa: E402
+from research_graph.workflows.universal_kb.queue import UniversalKBQueue  # noqa: E402
+from research_graph.workflows.universal_kb.review_assistance import (  # noqa: E402
     build_review_assistance_packet,
     build_review_tool_invocation_record,
 )
-from arxiv_archive.universal_kb_substrate_rehearsal import NoWriteSubstrateRehearsal  # noqa: E402
+from research_graph.workflows.universal_kb.substrate_rehearsal import NoWriteSubstrateRehearsal  # noqa: E402
 
 FALSE_SAFETY_KEYS = ("graph_write_allowed", "promotion_allowed", "production_import_attempted", "import_eligible")
 CONTINUITY_SCHEMA_VERSION = "m040-real-corpus-continuity.v1"

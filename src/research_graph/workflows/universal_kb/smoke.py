@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/universal_kb_smoke.py
+
 """Unified command surface for Universal KB no-write smoke runs."""
 
 from __future__ import annotations

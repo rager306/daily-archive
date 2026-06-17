@@ -3,7 +3,7 @@
 
 Prefer the unified command surface for new work:
 
-    uv run python -m arxiv_archive.universal_kb_smoke verify --profile full
+    uv run python -m research_graph.workflows.universal_kb.smoke verify --profile full
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ for path in (ROOT, SRC):
 
 
 def smoke_api() -> Any:
-    return importlib.import_module("arxiv_archive.universal_kb_smoke")
+    return importlib.import_module("research_graph.workflows.universal_kb.smoke")
 
 
 def emit(message: str) -> None:

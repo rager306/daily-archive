@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from arxiv_archive.universal_kb_queue import UniversalKBQueue
+from research_graph.workflows.universal_kb.queue import UniversalKBQueue
 
 
 class FixedClock:

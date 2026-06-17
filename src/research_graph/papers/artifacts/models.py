@@ -15,7 +15,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-from arxiv_archive.universal_kb_contracts import SafetyFlags
+from research_graph.workflows.universal_kb.contracts import SafetyFlags
 
 ARTICLE_ARTIFACT_SCHEMA_VERSION = "m023-article-artifacts.v1"
 ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION = "m023-article-artifact-run.v1"

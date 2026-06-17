@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/universal_kb_sidecar_boundary.py
+
 """Adaptix boundary adapter for Universal KB sidecar candidates.
 
 Adaptix is used here only as an anti-corruption mapping boundary for external

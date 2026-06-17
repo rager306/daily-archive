@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from arxiv_archive.universal_kb_contracts import CandidatePacket
-from arxiv_archive.universal_kb_review_assistance import (
+from research_graph.workflows.universal_kb.contracts import CandidatePacket
+from research_graph.workflows.universal_kb.review_assistance import (
     REVIEW_ASSISTANCE_PROMPT_VERSION,
     REVIEW_ASSISTANCE_SCHEMA_VERSION,
     ReviewAssistancePacket,

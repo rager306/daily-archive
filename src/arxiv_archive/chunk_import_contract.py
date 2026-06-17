@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from arxiv_archive.universal_kb_contracts import SafetyFlags
+from research_graph.workflows.universal_kb.contracts import SafetyFlags
 
 EXPECTED_CONTRACT_VERSION = "import-ready-chunk-contract.v1"
 EXPECTED_SCHEMA_VERSION = "m005-import-ready-chunk-package.v1"

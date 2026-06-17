@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from research_graph.evaluation.extraction_benchmark import evaluate_files, evaluate_records, load_jsonl
-from arxiv_archive.universal_kb_queue import UniversalKBQueue
+from research_graph.workflows.universal_kb.queue import UniversalKBQueue
 
 FIXTURE_DIR = Path("artifacts/m071-extraction-benchmark/fixtures")
 M072_FIXTURE_DIR = Path("artifacts/m072-reviewed-extraction-benchmark/fixtures")

@@ -9,7 +9,7 @@ from arxiv_archive.chunk_import_contract import (
     ContractValidationResult,
     validation_to_dict,
 )
-from arxiv_archive.universal_kb_contracts import (
+from research_graph.workflows.universal_kb.contracts import (
     CandidatePacket,
     DependencyRecord,
     EvidenceArtifactRecord,

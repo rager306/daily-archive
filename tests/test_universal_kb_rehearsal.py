@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from arxiv_archive.minimax_structured import DEFAULT_MINIMAX_MODEL
-from arxiv_archive.universal_kb_rehearsal import (
+from research_graph.workflows.universal_kb.rehearsal import (
     RehearsalResult,
     run_universal_kb_no_write_rehearsal,
 )

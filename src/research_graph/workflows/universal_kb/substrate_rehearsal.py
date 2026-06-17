@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/universal_kb_substrate_rehearsal.py
+
 """No-write substrate rehearsal for M035 Universal KB readiness handoff.
 
 This module intentionally does not select, initialize, or write to any GraphDB.
@@ -9,8 +11,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-from arxiv_archive.universal_kb_contracts import CandidatePacket, SafetyFlags, ToolInvocationRecord
-from arxiv_archive.universal_kb_queue import UniversalKBQueue
+from research_graph.workflows.universal_kb.contracts import CandidatePacket, SafetyFlags, ToolInvocationRecord
+from research_graph.workflows.universal_kb.queue import UniversalKBQueue
 
 _DIAGNOSTIC_STATES = frozenset({"pending", "diagnostic_only", "diagnostics_only", "needs_review"})
 
