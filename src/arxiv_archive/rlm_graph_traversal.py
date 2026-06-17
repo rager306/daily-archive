@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any, cast
 
-from arxiv_archive.evaluation import (
+from research_graph.evaluation.metrics import (
     calculate_evidence_path_hit_rate,
     calculate_retrieval_recall,
 )

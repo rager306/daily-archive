@@ -297,6 +297,36 @@ def test_wave_11_archives_quality_package_without_runtime_shims() -> None:
     assert importlib.import_module("research_graph.quality.maintainability_report")
 
 
+def test_wave_13_archives_extraction_and_evaluation_without_runtime_shims() -> None:
+    moves = {
+        "dspy_extraction.py": "src/research_graph/evaluation/dspy_extraction.py",
+        "extraction_benchmark.py": "src/research_graph/evaluation/extraction_benchmark.py",
+        "scientific_extraction.py": "src/research_graph/evaluation/scientific_extraction.py",
+        "evaluation.py": "src/research_graph/evaluation/metrics.py",
+    }
+    manifest = Path("archive/package-rename-waves/wave-13/manifest.md").read_text(encoding="utf-8")
+
+    for old_name, new_path in moves.items():
+        old_runtime = Path("src/arxiv_archive") / old_name
+        archived = Path("archive/package-rename-waves/wave-13/src/arxiv_archive") / old_name
+        canonical = Path(new_path)
+
+        assert not old_runtime.exists()
+        assert archived.exists()
+        assert canonical.exists()
+        assert f"Formerly: src/arxiv_archive/{old_name}" in archived.read_text(encoding="utf-8")
+        assert f"Formerly: src/arxiv_archive/{old_name}" in canonical.read_text(encoding="utf-8")
+        assert f"`src/arxiv_archive/{old_name}`" in manifest
+        assert f"`{new_path}`" in manifest
+
+    assert "DSPy optimizer/provider" in manifest
+    assert "scoring.py" in manifest
+    assert importlib.import_module("research_graph.evaluation.dspy_extraction")
+    assert importlib.import_module("research_graph.evaluation.extraction_benchmark")
+    assert importlib.import_module("research_graph.evaluation.scientific_extraction")
+    assert importlib.import_module("research_graph.evaluation.metrics")
+
+
 def test_wave_12_archives_repair_cluster_without_runtime_shims() -> None:
     moves = {
         "bounded_chunk_repair.py": "src/research_graph/repair/bounded_chunk_repair.py",

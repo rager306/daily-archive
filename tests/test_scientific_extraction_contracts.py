@@ -13,7 +13,7 @@ from pathlib import Path
 from arxiv_archive.evidence import EvidencePath, build_evidence_path, build_semantic_chunks
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
 from research_graph.papers.indexing import PageIndexDocument, build_page_index
-from arxiv_archive.scientific_extraction import (
+from research_graph.evaluation.scientific_extraction import (
     Claim,
     ExtractionPatch,
     ScientificEntity,

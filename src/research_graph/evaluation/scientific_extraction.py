@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/scientific_extraction.py
+
 """Typed scientific extraction draft contracts.
 
 This module is deterministic and local-only. It defines the draft objects that

@@ -8,7 +8,7 @@ import ladybug
 
 from arxiv_archive.evidence import EvidencePath, SemanticChunk
 from research_graph.papers.indexing import PageIndexDocument
-from arxiv_archive.scientific_extraction import (
+from research_graph.evaluation.scientific_extraction import (
     ExtractionPatch,
     ScientificRelation,
     validate_extraction_patch,

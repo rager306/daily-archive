@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/evaluation.py
+
 """Pure evaluation contracts for deterministic scientific KG benchmarks.
 
 This module is intentionally local-only: it validates typed extraction patches and

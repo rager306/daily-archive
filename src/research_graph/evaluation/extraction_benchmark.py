@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/extraction_benchmark.py
+
 """Deterministic extraction benchmark metrics for future DSPy/MiniMax work.
 
 The evaluator operates on metadata-only fixture files. It never calls external

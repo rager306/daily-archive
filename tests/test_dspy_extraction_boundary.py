@@ -16,12 +16,12 @@ from typing import Any, cast
 
 import pytest
 
-from arxiv_archive.dspy_extraction import BaselineDspyExtractionModule, DspyExtractionInput
+from research_graph.evaluation.dspy_extraction import BaselineDspyExtractionModule, DspyExtractionInput
 from arxiv_archive.ladybug_client import evidence_path_id
 
 RAW_FIXTURE_CLAIM_TEXT = "Local markdown is enough to build a deterministic PageIndex."
 S08_FILES = (
-    Path("src/arxiv_archive/dspy_extraction.py"),
+    Path("src/research_graph/evaluation/dspy_extraction.py"),
     Path("tests/test_dspy_extraction_boundary.py"),
 )
 FORBIDDEN_IMPORT_ROOTS = {

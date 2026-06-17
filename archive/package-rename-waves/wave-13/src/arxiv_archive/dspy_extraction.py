@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/dspy_extraction.py
+
 """Deterministic DSPy-compatible extraction boundary.
 
 This module provides a typed, DSPy-like boundary around existing baseline

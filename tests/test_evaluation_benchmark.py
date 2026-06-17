@@ -52,7 +52,7 @@ class FixtureVector:
 
 def test_extraction_benchmark_fixture_schema_validity_is_clean() -> None:
     """A known-good S04 fixture patch should be a valid benchmark input."""
-    from arxiv_archive.evaluation import (  # noqa: PLC0415 - future public API contract
+    from research_graph.evaluation.metrics import (  # noqa: PLC0415 - future public API contract
         ExtractionBenchmarkFixture,
         evaluate_schema_validity,
     )
@@ -82,7 +82,7 @@ def test_extraction_benchmark_fixture_schema_validity_is_clean() -> None:
 
 def test_groundedness_proxy_reports_expected_evidence_ids() -> None:
     """Groundedness checks count draft objects and compare derived evidence IDs."""
-    from arxiv_archive.evaluation import (  # noqa: PLC0415 - future public API contract
+    from research_graph.evaluation.metrics import (  # noqa: PLC0415 - future public API contract
         ExtractionBenchmarkFixture,
         evaluate_groundedness_proxy,
     )
@@ -116,7 +116,7 @@ def test_groundedness_proxy_reports_expected_evidence_ids() -> None:
 
 def test_groundedness_proxy_names_missing_unexpected_and_none_evidence_ids() -> None:
     """Diagnostics should identify ID mismatches without exposing claim or chunk text."""
-    from arxiv_archive.evaluation import (  # noqa: PLC0415 - future public API contract
+    from research_graph.evaluation.metrics import (  # noqa: PLC0415 - future public API contract
         ExtractionBenchmarkFixture,
         evaluate_groundedness_proxy,
     )
@@ -151,7 +151,7 @@ def test_groundedness_proxy_names_missing_unexpected_and_none_evidence_ids() -> 
 
 def test_evidence_path_hit_rate_handles_hits_misses_duplicates_and_none_ids() -> None:
     """Evidence hit rate should use unique non-null IDs and expose safe diagnostics."""
-    from arxiv_archive.evaluation import calculate_evidence_path_hit_rate  # noqa: PLC0415
+    from research_graph.evaluation.metrics import calculate_evidence_path_hit_rate  # noqa: PLC0415
 
     result = calculate_evidence_path_hit_rate(
         [
@@ -177,7 +177,7 @@ def test_evidence_path_hit_rate_handles_hits_misses_duplicates_and_none_ids() ->
 
 def test_evidence_path_hit_rate_empty_expected_sets_and_empty_results() -> None:
     """Empty expectations are vacuously satisfied only when no IDs are returned."""
-    from arxiv_archive.evaluation import calculate_evidence_path_hit_rate  # noqa: PLC0415
+    from research_graph.evaluation.metrics import calculate_evidence_path_hit_rate  # noqa: PLC0415
 
     empty_result = _as_mapping(
         calculate_evidence_path_hit_rate([], expected_evidence_path_ids=set())
@@ -199,7 +199,7 @@ def test_evidence_path_hit_rate_empty_expected_sets_and_empty_results() -> None:
 
 def test_retrieval_recall_handles_duplicates_missing_ids_none_ids_and_empty_lists() -> None:
     """Retrieval recall is based on unique result IDs and missing expected IDs."""
-    from arxiv_archive.evaluation import calculate_retrieval_recall  # noqa: PLC0415
+    from research_graph.evaluation.metrics import calculate_retrieval_recall  # noqa: PLC0415
 
     result = calculate_retrieval_recall(
         [
@@ -244,7 +244,7 @@ def test_retrieval_recall_handles_duplicates_missing_ids_none_ids_and_empty_list
 
 def test_retrieval_ablation_runner_exercises_s05_fixture_and_s06_modes() -> None:
     """Ablation benchmarks should compose S05 persistence with S06 retrieval modes."""
-    from arxiv_archive.evaluation import (  # noqa: PLC0415 - public benchmark contract
+    from research_graph.evaluation.metrics import (  # noqa: PLC0415 - public benchmark contract
         BenchmarkRetrievalQuestion,
         run_retrieval_ablations,
     )
@@ -316,7 +316,7 @@ def test_retrieval_ablation_runner_exercises_s05_fixture_and_s06_modes() -> None
 
 def test_retrieval_ablation_runner_reports_empty_results_and_missing_ids() -> None:
     """Empty vector/graph neighborhoods should score zero without false success."""
-    from arxiv_archive.evaluation import (  # noqa: PLC0415 - public benchmark contract
+    from research_graph.evaluation.metrics import (  # noqa: PLC0415 - public benchmark contract
         BenchmarkRetrievalQuestion,
         run_retrieval_ablations,
     )

@@ -11,7 +11,7 @@ from typing import Any
 import ladybug
 
 import arxiv_archive.ladybug_client as ladybug_client
-from arxiv_archive.evaluation import calculate_evidence_path_hit_rate, calculate_retrieval_recall
+from research_graph.evaluation.metrics import calculate_evidence_path_hit_rate, calculate_retrieval_recall
 from arxiv_archive.evidence import EvidencePath, build_evidence_path, build_semantic_chunks
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
 from arxiv_archive.hybrid_retrieval import InMemoryVectorCandidateIndex
@@ -24,7 +24,7 @@ from arxiv_archive.rlm_graph_traversal import (
     compare_rlm_graph_traversal,
 )
 from arxiv_archive.rlm_workflow import run_document_workflow
-from arxiv_archive.scientific_extraction import Claim, ExtractionPatch, ScientificEntity, ScientificRelation
+from research_graph.evaluation.scientific_extraction import Claim, ExtractionPatch, ScientificEntity, ScientificRelation
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ARTICLE_STRUCTURE_PATH = REPO_ROOT / "tests" / "fixtures" / "article_artifacts" / "basic_article_structure.json"
