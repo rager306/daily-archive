@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from arxiv_archive.article_assets import build_article_asset_manifest
-from arxiv_archive.article_evidence_bridge import (
+from research_graph.papers.assets import build_article_asset_manifest
+from research_graph.papers.evidence import (
     ARTICLE_EVIDENCE_BUNDLE_SCHEMA_VERSION,
     ARTICLE_EVIDENCE_DIAGNOSTICS_SCHEMA_VERSION,
     ARTICLE_EVIDENCE_RUN_SCHEMA_VERSION,
@@ -28,8 +28,8 @@ from arxiv_archive.article_evidence_bridge import (
     validate_article_evidence_bundle,
     validate_article_load_events,
 )
-from arxiv_archive.article_loader import ArticleLoadSource, load_article_source
-from arxiv_archive.article_page_index import build_article_page_index_from_structure
+from research_graph.corpus.ingestion import ArticleLoadSource, load_article_source
+from research_graph.papers.indexing.page_index import build_article_page_index_from_structure
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_loader"
 ARTICLE_STRUCTURE_FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_artifacts"
@@ -152,7 +152,7 @@ def _page_index_attached_payload(tmp_path: Path, page_index: dict[str, object]) 
 
 
 def _links_dedup_manifest_for_bridge(tmp_path: Path, *, unsafe: bool = False) -> tuple[dict[str, object], dict[str, object]]:
-    from arxiv_archive.article_links_dedup import build_article_links_dedup_manifest
+    from research_graph.papers.indexing.links_dedup import build_article_links_dedup_manifest
 
     bundle = build_article_evidence_bundle(
         _mixed_loader_results(tmp_path),
@@ -821,7 +821,7 @@ def test_links_dedup_payload_bearing_bridge_subtree_fails_bundle_validation(tmp_
 
 
 def _retrieval_table_manifest_for_bridge(tmp_path: Path) -> tuple[dict[str, object], dict[str, object]]:
-    from arxiv_archive.article_retrieval_tables import build_article_retrieval_table_manifest
+    from research_graph.papers.indexing.retrieval_tables import build_article_retrieval_table_manifest
 
     bundle = build_article_evidence_bundle(
         _mixed_loader_results(tmp_path),
@@ -1065,3 +1065,15 @@ def test_negative_validation_boundaries_are_redacted_and_path_addressable(tmp_pa
     assert expected_code in {diagnostic["code"] for diagnostic in diagnostics}
     assert all(diagnostic["json_path"].startswith("/") for diagnostic in diagnostics)
     assert "Graph-Guided Retrieval for Scientific Agents" not in json.dumps(diagnostics, sort_keys=True)
+
+def test_article_evidence_bridge_old_module_is_archived_with_canonical_breadcrumb() -> None:
+    top_level_archive_path = Path("archive/package-layout-shims/wave-01/src/arxiv_archive/article_evidence_bridge.py")
+    package_archive_path = Path("archive/package-rename-waves/wave-01/src/arxiv_archive/artifacts/evidence_bridge.py")
+    canonical_path = Path("src/research_graph/papers/evidence.py")
+
+    assert top_level_archive_path.exists()
+    assert package_archive_path.exists()
+    assert not Path("src/arxiv_archive/article_evidence_bridge.py").exists()
+    assert not Path("src/arxiv_archive/artifacts/evidence_bridge.py").exists()
+    assert "Formerly: src/arxiv_archive/artifacts/evidence_bridge.py" in canonical_path.read_text(encoding="utf-8")
+    assert ARTICLE_EVIDENCE_BUNDLE_SCHEMA_VERSION == "m024-article-evidence-bundle.v1"

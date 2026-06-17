@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import importlib
 import json
+from pathlib import Path
 from copy import deepcopy
 
 import pytest
@@ -44,19 +45,13 @@ FORBIDDEN_PAYLOAD_FRAGMENTS = tuple(f'"{key}":' for key in FORBIDDEN_PAYLOAD_KEY
 
 @pytest.fixture()
 def article_assets_contract():
-    """Load the future article_assets module without failing collection.
-
-    T01 is intentionally test-first. Until the implementation task lands, the
-    contract is reported as an expected failure instead of an import-time pytest
-    collection error. Once ``arxiv_archive.article_assets`` exists, these tests
-    execute normally.
-    """
+    """Load the canonical article assets module."""
 
     try:
-        return importlib.import_module("arxiv_archive.article_assets")
+        return importlib.import_module("research_graph.papers.assets")
     except ModuleNotFoundError as exc:
-        if exc.name == "arxiv_archive.article_assets":
-            pytest.xfail("arxiv_archive.article_assets is not implemented yet")
+        if exc.name == "research_graph.papers.assets":
+            pytest.xfail("research_graph.papers.assets is not implemented yet")
         raise
 
 
@@ -528,3 +523,15 @@ def test_unsafe_graph_import_and_readiness_flags_fail_closed(article_assets_cont
     assert manifest["import_eligible_count"] == 0
     assert manifest["promoted_to_fact_count"] == 0
     _assert_metadata_only(manifest)
+
+def test_article_assets_old_module_is_archived_with_canonical_breadcrumb(article_assets_contract) -> None:
+    top_level_archive_path = Path("archive/package-layout-shims/wave-01/src/arxiv_archive/article_assets.py")
+    package_archive_path = Path("archive/package-rename-waves/wave-01/src/arxiv_archive/artifacts/assets.py")
+    canonical_path = Path("src/research_graph/papers/assets.py")
+
+    assert top_level_archive_path.exists()
+    assert package_archive_path.exists()
+    assert not Path("src/arxiv_archive/article_assets.py").exists()
+    assert not Path("src/arxiv_archive/artifacts/assets.py").exists()
+    assert "Formerly: src/arxiv_archive/artifacts/assets.py" in canonical_path.read_text(encoding="utf-8")
+    assert article_assets_contract.ARTICLE_ASSET_MANIFEST_SCHEMA_VERSION == "m024-article-assets.v1"

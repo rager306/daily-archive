@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from arxiv_archive.md_converter import ConversionResult
-from arxiv_archive.thirty_paper_source_scan import (
+from research_graph.corpus.sources.markdown_converter import ConversionResult
+from research_graph.corpus.sources.thirty_paper_source_scan import (
     AcquisitionPaths,
     acquire_sources_for_manifest,
     missing_markdown_paper_ids,

@@ -4,8 +4,8 @@ from typing import Protocol
 
 import yake
 
-from arxiv_archive.indexing.page_index import PageIndexDocument
-from arxiv_archive.parsing.structure import ParsedArticle
+from research_graph.papers.indexing.navigation import PageIndexDocument
+from research_graph.corpus.parsing.structure import ParsedArticle
 
 
 class _ArticleTextElement(Protocol):

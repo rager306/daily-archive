@@ -10,7 +10,7 @@ GUARDED_MODULES = [
     Path("src/arxiv_archive/universal_kb_review_assistance.py"),
     Path("src/arxiv_archive/universal_kb_substrate_rehearsal.py"),
     Path("src/arxiv_archive/minimax_structured.py"),
-    Path("src/arxiv_archive/article_artifact_minimax.py"),
+    Path("src/research_graph/papers/artifacts/minimax_boundary.py"),
 ]
 
 READ_ONLY_EXEMPTIONS = {

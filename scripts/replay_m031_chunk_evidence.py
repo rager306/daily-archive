@@ -26,7 +26,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from arxiv_archive.chunk_import_contract import validate_import_ready_package, validation_to_dict
-from arxiv_archive.chunking.chunker import parse_markdown_structure
+from research_graph.papers.chunking.chunker import parse_markdown_structure
 from arxiv_archive.graph_readiness_export import (
     CONTRACT_VERSION as GRAPH_READINESS_CONTRACT_VERSION,
 )

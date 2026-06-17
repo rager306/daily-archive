@@ -11,7 +11,7 @@ from adaptix import Retort
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from arxiv_archive.article_evidence_bridge import (
+from research_graph.papers.evidence import (
     ALLOWED_LOAD_OUTCOMES,
     ALLOWED_SUBTREE_STATUSES,
     ARTICLE_EVIDENCE_BUNDLE_SCHEMA_VERSION,
@@ -237,7 +237,7 @@ def test_placeholder_subtrees_and_metrics_survive_json_roundtrip(bundle: Article
 def test_retrieval_table_attachment_preserves_required_subtrees_and_aggregate_only_contract(
     bundle: ArticleEvidenceBundle, include_manifest_provenance: bool
 ) -> None:
-    from arxiv_archive.article_retrieval_tables import build_article_retrieval_table_manifest
+    from research_graph.papers.indexing.retrieval_tables import build_article_retrieval_table_manifest
 
     fixture = json.loads((RETRIEVAL_TABLES_FIXTURES_DIR / "minimal_manifest.json").read_text(encoding="utf-8"))
     source_refs = [bundle.source_refs[0].to_redacted_dict()]

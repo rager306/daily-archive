@@ -23,7 +23,7 @@ from typing import Any
 
 import pytest
 
-from arxiv_archive.article_artifact_reducer import (
+from research_graph.papers.artifacts.reducer import (
     DEFAULT_VALIDATION_BUCKETS,
     REDUCER_SCHEMA_VERSION,
     _safety_defaults,
@@ -273,3 +273,14 @@ def test_validation_buckets_include_all_expected_statuses() -> None:
     assert "invalid" in DEFAULT_VALIDATION_BUCKETS
     assert "skipped_no_structure" in DEFAULT_VALIDATION_BUCKETS
     assert "not_evaluated" in DEFAULT_VALIDATION_BUCKETS
+
+def test_article_artifact_reducer_old_module_is_archived_with_canonical_breadcrumb() -> None:
+    top_level_archive_path = Path("archive/package-layout-shims/wave-01/src/arxiv_archive/article_artifact_reducer.py")
+    package_archive_path = Path("archive/package-rename-waves/wave-01/src/arxiv_archive/artifacts/reducer.py")
+    canonical_path = Path("src/research_graph/papers/artifacts/reducer.py")
+
+    assert top_level_archive_path.exists()
+    assert package_archive_path.exists()
+    assert not Path("src/arxiv_archive/article_artifact_reducer.py").exists()
+    assert not Path("src/arxiv_archive/artifacts/reducer.py").exists()
+    assert "Formerly: src/arxiv_archive/artifacts/reducer.py" in canonical_path.read_text(encoding="utf-8")

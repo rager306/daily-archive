@@ -254,7 +254,7 @@ def test_article_artifacts_detect_does_not_require_adjacent_expected_manifest(tm
 
 
 def _helper_tool_response(tmp_path: Path) -> Path:
-    from arxiv_archive.article_artifact_minimax import build_article_artifact_minimax_request
+    from research_graph.papers.artifacts.minimax_boundary import build_article_artifact_minimax_request
 
     structure = json.loads(INPUT_STRUCTURE.read_text(encoding="utf-8"))
     input_sha256 = build_article_artifact_minimax_request(structure).diagnostics["input_sha256"]

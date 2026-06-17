@@ -3,12 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from arxiv_archive.assets.registry import (
+from research_graph.papers.source_assets.registry import (
     attach_annotation_asset_links,
     preserve_source_assets_for_paper,
     validate_source_asset_manifest,
 )
-from arxiv_archive.chunking.chunker import parse_markdown_structure
+from research_graph.papers.chunking.chunker import parse_markdown_structure
 from arxiv_archive.identity.canonicalization import canonical_source_id
 from arxiv_archive.staging.graph_candidates import (
     DEFAULT_ROUTE_SPECS,

@@ -46,7 +46,7 @@ VALID_STRUCTURE = {
 
 
 def test_request_emits_work_request_with_deterministic_work_id():
-    from arxiv_archive.article_artifact_minimax import request_article_artifact_classification
+    from research_graph.papers.artifacts.minimax_boundary import request_article_artifact_classification
     from arxiv_archive.models_registry import reset_cache
 
     reset_cache()
@@ -60,7 +60,7 @@ def test_request_emits_work_request_with_deterministic_work_id():
 
 
 def test_work_request_preserves_safety_defaults():
-    from arxiv_archive.article_artifact_minimax import request_article_artifact_classification
+    from research_graph.papers.artifacts.minimax_boundary import request_article_artifact_classification
     from arxiv_archive.models_registry import reset_cache
 
     reset_cache()
@@ -74,7 +74,7 @@ def test_work_request_preserves_safety_defaults():
 
 
 def test_work_request_with_run_id_changes_work_id():
-    from arxiv_archive.article_artifact_minimax import request_article_artifact_classification
+    from research_graph.papers.artifacts.minimax_boundary import request_article_artifact_classification
     from arxiv_archive.models_registry import reset_cache
 
     reset_cache()
@@ -91,8 +91,8 @@ def test_process_work_request_uses_mock_transport_when_no_api_key():
     """No network: process_work_request with MockTransport produces a WorkCompleted."""
     import os
 
-    from arxiv_archive.article_artifact_minimax import request_article_artifact_classification
-    from arxiv_archive.article_artifact_worker import process_work_request, MockTransport
+    from research_graph.papers.artifacts.minimax_boundary import request_article_artifact_classification
+    from research_graph.papers.artifacts.worker import process_work_request, MockTransport
     from arxiv_archive.models_registry import reset_cache
 
     # Ensure no API key is set for the test.
@@ -114,8 +114,8 @@ def test_process_work_request_uses_mock_transport_when_no_api_key():
 
 
 def test_process_work_request_persists_artifact_to_storage_dir(tmp_path):
-    from arxiv_archive.article_artifact_minimax import request_article_artifact_classification
-    from arxiv_archive.article_artifact_worker import process_work_request, MockTransport
+    from research_graph.papers.artifacts.minimax_boundary import request_article_artifact_classification
+    from research_graph.papers.artifacts.worker import process_work_request, MockTransport
     from arxiv_archive.models_registry import reset_cache
 
     reset_cache()
@@ -135,8 +135,8 @@ def test_process_work_request_persists_artifact_to_storage_dir(tmp_path):
 
 
 def test_run_worker_pool_processes_sequentially_with_max_workers_1():
-    from arxiv_archive.article_artifact_minimax import request_article_artifact_classification
-    from arxiv_archive.article_artifact_worker import run_worker_pool, MockTransport
+    from research_graph.papers.artifacts.minimax_boundary import request_article_artifact_classification
+    from research_graph.papers.artifacts.worker import run_worker_pool, MockTransport
     from arxiv_archive.models_registry import reset_cache
 
     reset_cache()
@@ -160,8 +160,8 @@ def test_run_worker_pool_processes_sequentially_with_max_workers_1():
 
 def test_run_worker_pool_supports_max_workers_2():
     """Bounded ProcessPoolExecutor (max_workers=2) per M048 §4.2."""
-    from arxiv_archive.article_artifact_minimax import request_article_artifact_classification
-    from arxiv_archive.article_artifact_worker import run_worker_pool, MockTransport
+    from research_graph.papers.artifacts.minimax_boundary import request_article_artifact_classification
+    from research_graph.papers.artifacts.worker import run_worker_pool, MockTransport
     from arxiv_archive.models_registry import reset_cache
 
     reset_cache()
@@ -181,8 +181,8 @@ def test_run_worker_pool_supports_max_workers_2():
 
 def test_mock_transport_returns_valid_tool_use_response():
     """MockTransport's synthetic response passes basic tool_use shape checks."""
-    from arxiv_archive.article_artifact_minimax import request_article_artifact_classification
-    from arxiv_archive.article_artifact_worker import MockTransport
+    from research_graph.papers.artifacts.minimax_boundary import request_article_artifact_classification
+    from research_graph.papers.artifacts.worker import MockTransport
     from arxiv_archive.models_registry import reset_cache
 
     reset_cache()
@@ -199,7 +199,7 @@ def test_mock_transport_returns_valid_tool_use_response():
 
 
 def test_existing_article_artifact_minimax_tests_still_pass():
-    """Backward compat: existing 9 tests in test_article_artifact_minimax.py still pass."""
+    """Backward compat: existing MiniMax boundary tests still pass."""
     result = subprocess.run(
         ["uv", "run", "pytest", "tests/test_article_artifact_minimax.py", "-q"],
         cwd=ROOT,
@@ -207,4 +207,4 @@ def test_existing_article_artifact_minimax_tests_still_pass():
         text=True,
     )
     assert result.returncode == 0, f"existing tests broke: {result.stderr}"
-    assert "9 passed" in result.stdout
+    assert "10 passed" in result.stdout

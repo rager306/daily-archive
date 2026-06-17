@@ -19,9 +19,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from arxiv_archive.full_text import FullTextSource, ingest_full_text
-from arxiv_archive.indexing.page_index import build_page_index_from_parsed
-from arxiv_archive.parsing.parser import parse_article
+from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
+from research_graph.papers.indexing.parsed_page_index import build_page_index_from_parsed
+from research_graph.corpus.parsing.parser import parse_article
 
 SCHEMA_VERSION = "m025-boundary-replay-summary.v00.01"
 ARTIFACT_SCHEMA_VERSION = "m025-boundary-replay-artifact.v00.01"

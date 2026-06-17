@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from arxiv_archive.pdf_downloader import PDFDownloader, arxiv_pdf_url
+from research_graph.corpus.ingestion import PDFDownloader, arxiv_pdf_url
 
 
 def test_pdf_downloader_init() -> None:

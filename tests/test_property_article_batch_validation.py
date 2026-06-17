@@ -10,7 +10,7 @@ from typing import Any
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from arxiv_archive import article_batch_validation as batch
+from research_graph.papers.artifacts import batch_validation as batch
 from arxiv_archive.validation_batch_provenance import (
     build_artifact_freshness_report,
     fingerprint_file,

@@ -9,9 +9,9 @@ import json
 from dataclasses import InitVar, dataclass, field
 from typing import Any, Literal
 
-from arxiv_archive.article_artifact_minimax import request_article_artifact_classification
-from arxiv_archive.article_artifact_reducer import _safety_defaults, merge_article_artifact_results
-from arxiv_archive.article_artifact_worker import MockTransport, run_worker_pool
+from research_graph.papers.artifacts.minimax_boundary import request_article_artifact_classification
+from research_graph.papers.artifacts.reducer import _safety_defaults, merge_article_artifact_results
+from research_graph.papers.artifacts.worker import MockTransport, run_worker_pool
 
 REDUCER_SCHEMA_VERSION = "m052-rlm-workflow.v1"
 WorkflowStepType = Literal["section_navigate", "span_visit", "helper_invoke"]

@@ -18,8 +18,8 @@ from typing import Any
 
 from arxiv_archive.chunk_import_contract import validate_import_ready_package, validation_to_dict
 from arxiv_archive.evidence import build_evidence_path, build_semantic_chunks
-from arxiv_archive.full_text import FullTextSource, ingest_full_text
-from arxiv_archive.page_index import PageIndexNode, build_page_index
+from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
+from research_graph.papers.indexing import PageIndexNode, build_page_index
 
 PACKAGE_SCHEMA_VERSION = "m005-import-ready-chunk-package.v1"
 CONTRACT_VERSION = "import-ready-chunk-contract.v1"

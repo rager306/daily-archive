@@ -13,10 +13,10 @@ import ladybug
 import arxiv_archive.ladybug_client as ladybug_client
 from arxiv_archive.evaluation import calculate_evidence_path_hit_rate, calculate_retrieval_recall
 from arxiv_archive.evidence import EvidencePath, build_evidence_path, build_semantic_chunks
-from arxiv_archive.full_text import FullTextSource, ingest_full_text
+from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
 from arxiv_archive.hybrid_retrieval import InMemoryVectorCandidateIndex
 from arxiv_archive.ladybug_client import evidence_path_id
-from arxiv_archive.page_index import PageIndexDocument, build_page_index
+from research_graph.papers.indexing import PageIndexDocument, build_page_index
 from arxiv_archive.rlm_graph_traversal import (
     ComparisonResult,
     RLMGraphTraversalConfig,

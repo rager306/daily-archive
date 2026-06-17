@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from arxiv_archive.chunk_import_contract import validate_import_ready_package, validation_to_dict
-from arxiv_archive.structure_aware_chunking import build_structure_aware_package_for_paper
+from research_graph.papers.chunking import build_structure_aware_package_for_paper
 
 SAFETY_FLAGS: dict[str, bool] = {
     "raw_text_included": False,

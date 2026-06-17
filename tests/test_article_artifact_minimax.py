@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from arxiv_archive.article_artifact_minimax import (
+from research_graph.papers.artifacts.minimax_boundary import (
     MINIMAX_ARTIFACT_HELPER_SCHEMA_VERSION,
     MINIMAX_ARTIFACT_HELPER_TOOL_NAME,
     build_article_artifact_minimax_request,
@@ -268,3 +268,15 @@ def test_rejects_mismatched_input_hash_and_helper_limit() -> None:
 def test_rejects_invalid_candidate_limit() -> None:
     with pytest.raises(ValueError, match="positive"):
         build_article_artifact_minimax_request(_structure(), max_candidates=0)
+
+def test_article_artifact_minimax_old_module_is_archived_with_canonical_breadcrumb() -> None:
+    top_level_archive_path = Path("archive/package-layout-shims/wave-01/src/arxiv_archive/article_artifact_minimax.py")
+    package_archive_path = Path("archive/package-rename-waves/wave-01/src/arxiv_archive/artifacts/minimax_boundary.py")
+    canonical_path = Path("src/research_graph/papers/artifacts/minimax_boundary.py")
+
+    assert top_level_archive_path.exists()
+    assert package_archive_path.exists()
+    assert not Path("src/arxiv_archive/article_artifact_minimax.py").exists()
+    assert not Path("src/arxiv_archive/artifacts/minimax_boundary.py").exists()
+    assert "Formerly: src/arxiv_archive/artifacts/minimax_boundary.py" in canonical_path.read_text(encoding="utf-8")
+    assert MINIMAX_ARTIFACT_HELPER_SCHEMA_VERSION.endswith("-minimax-artifact-helper.v1")

@@ -12,7 +12,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from arxiv_archive.ingestion.loader import ArticleLoadSource, classify_article_source, load_article_source
+from research_graph.corpus.ingestion.loader import ArticleLoadSource, classify_article_source, load_article_source
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "ingestion"
 FULL_TEXT_FIXTURES_DIR = Path(__file__).parent / "fixtures" / "full_text"

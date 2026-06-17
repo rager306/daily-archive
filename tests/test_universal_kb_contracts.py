@@ -4,7 +4,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from arxiv_archive.article_artifacts import default_safety_flags as article_default_safety_flags
+from research_graph.papers.artifacts.models import default_safety_flags as article_default_safety_flags
 from arxiv_archive.chunk_import_contract import (
     ContractValidationResult,
     validation_to_dict,

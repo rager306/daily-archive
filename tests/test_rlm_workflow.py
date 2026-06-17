@@ -11,8 +11,8 @@ from typing import Any
 import pytest
 
 from arxiv_archive.evidence import EvidencePath, SemanticChunk, build_evidence_path, build_semantic_chunks
-from arxiv_archive.full_text import FullTextSource, ingest_full_text
-from arxiv_archive.page_index import PageIndexDocument, build_page_index
+from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
+from research_graph.papers.indexing import PageIndexDocument, build_page_index
 from arxiv_archive.rlm_workflow import (
     REDUCER_SCHEMA_VERSION,
     WorkflowResult,

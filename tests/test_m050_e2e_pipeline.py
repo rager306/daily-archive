@@ -30,17 +30,17 @@ from typing import Any
 
 import pytest
 
-from arxiv_archive.article_artifact_minimax import (
+from research_graph.papers.artifacts.minimax_boundary import (
     ArticleArtifactWorkRequest,
     request_article_artifact_classification,
 )
-from arxiv_archive.article_artifact_reducer import (
+from research_graph.papers.artifacts.reducer import (
     REDUCER_SCHEMA_VERSION,
     _safety_defaults,
     aggregate_article_artifact_log,
     merge_article_artifact_results,
 )
-from arxiv_archive.article_artifact_worker import (
+from research_graph.papers.artifacts.worker import (
     ArticleArtifactWorkCompleted,
     MockTransport,
     run_worker_pool,

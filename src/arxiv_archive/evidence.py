@@ -9,8 +9,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from arxiv_archive.indexing.page_index import PageIndexDocument, build_page_index_from_parsed
-from arxiv_archive.parsing.structure import ParsedArticle
+from research_graph.papers.indexing.navigation import PageIndexDocument
+from research_graph.papers.indexing.parsed_page_index import build_page_index_from_parsed
+from research_graph.corpus.parsing.structure import ParsedArticle
 
 DEFAULT_CHUNKING_STRATEGY = "section_text_v1"
 

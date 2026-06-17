@@ -13,15 +13,15 @@ from pathlib import Path
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from arxiv_archive.full_text import (
+from research_graph.corpus.ingestion import (
     FullTextIngestionResult,
     FullTextQualityReport,
     FullTextSource,
     ingest_full_text,
 )
-from arxiv_archive.indexing.page_index import build_page_index, build_page_index_from_parsed
-from arxiv_archive.parsing.parser import PARSER_VERSION, parse_article
-from arxiv_archive.parsing.structure import ParsedArticle, ParsedArticleElement
+from research_graph.papers.indexing.parsed_page_index import build_page_index, build_page_index_from_parsed
+from research_graph.corpus.parsing.parser import PARSER_VERSION, parse_article
+from research_graph.corpus.parsing.structure import ParsedArticle, ParsedArticleElement
 
 FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
 PAGE_INDEX_FIXTURES = Path(__file__).parent / "fixtures" / "page_index"

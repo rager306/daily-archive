@@ -7,10 +7,10 @@ from pathlib import Path
 
 import pytest
 
-from arxiv_archive.article_artifacts import FORBIDDEN_PAYLOAD_KEYS
-from arxiv_archive.indexing.navigation import PageIndexDocument
-from arxiv_archive.ingestion.loader import ArticleLoadResult
-from arxiv_archive.parsing.structure import ParsedArticle
+from research_graph.papers.artifacts.models import FORBIDDEN_PAYLOAD_KEYS
+from research_graph.papers.indexing.navigation import PageIndexDocument
+from research_graph.corpus.ingestion.loader import ArticleLoadResult
+from research_graph.corpus.parsing.structure import ParsedArticle
 from tests.helpers.modular_fixtures import (
     FIXTURE_PAPER_ID,
     MODULAR_FIXTURE_PATH,
@@ -129,7 +129,7 @@ def test_negative_malformed_structure_fixture_bubbles_validation_error() -> None
     malformed = sample_redacted_article_structure()
     malformed["raw_text"] = "raw prose must never be present in this fixture family"
 
-    from arxiv_archive.article_artifacts import build_article_artifact_manifest_from_structure
+    from research_graph.papers.artifacts.models import build_article_artifact_manifest_from_structure
 
     with pytest.raises(ValueError, match="forbidden raw payload keys"):
         build_article_artifact_manifest_from_structure(malformed)

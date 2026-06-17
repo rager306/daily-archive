@@ -13,7 +13,7 @@ from dataclasses import asdict, replace
 from pathlib import Path
 from typing import Any
 
-from arxiv_archive.ingestion.loader import load_article_source
+from research_graph.corpus.ingestion.loader import load_article_source
 from arxiv_archive.thirty_paper_deviation_scan import build_thirty_paper_deviation_scan
 from arxiv_archive.validation_batch_state import (
     ScanArtifactPaths,

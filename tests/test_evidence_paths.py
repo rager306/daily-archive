@@ -17,13 +17,13 @@ from arxiv_archive.evidence import (
     build_semantic_chunks_from_parsed,
     validate_evidence_path,
 )
-from arxiv_archive.full_text import FullTextSource, ingest_full_text
-from arxiv_archive.page_index import (
+from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
+from research_graph.papers.indexing import (
     PageIndexDocument,
     build_page_index,
     build_page_index_from_parsed,
 )
-from arxiv_archive.parsing.parser import parse_article
+from research_graph.corpus.parsing.parser import parse_article
 
 FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
 PAGE_INDEX_FIXTURES = Path(__file__).parent / "fixtures" / "page_index"

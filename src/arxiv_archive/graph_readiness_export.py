@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from arxiv_archive.evidence import build_semantic_chunks
-from arxiv_archive.full_text import FullTextIngestionResult, FullTextSource, ingest_full_text
+from research_graph.corpus.ingestion import FullTextIngestionResult, FullTextSource, ingest_full_text
 from arxiv_archive.graph_readiness import (
     ChunkRoute,
     ChunkType,
@@ -34,7 +34,7 @@ from arxiv_archive.graph_readiness import (
     to_redacted_dict,
     validate_normalized_package,
 )
-from arxiv_archive.page_index import PageIndexDocument, PageIndexNode, build_page_index
+from research_graph.papers.indexing import PageIndexDocument, PageIndexNode, build_page_index
 
 CONTRACT_VERSION = "graph-ready-data-contract.v1"
 SCHEMA_VERSION = "graph-readiness.schema.v1"

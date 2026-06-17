@@ -3,7 +3,7 @@
 
 import pytest
 
-from arxiv_archive.md_converter import ConversionResult, MDConverter
+from research_graph.corpus.sources.markdown_converter import ConversionResult, MDConverter
 
 
 @pytest.mark.asyncio

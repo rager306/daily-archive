@@ -14,12 +14,12 @@ from pathlib import Path
 
 import pytest
 
-from arxiv_archive.article_loader import (
+from research_graph.corpus.ingestion import (
     ArticleLoadSource,
     classify_article_source,
     load_article_source,
 )
-from arxiv_archive.full_text import (
+from research_graph.corpus.ingestion import (
     FullTextSource,
     assess_full_text_quality,
     ingest_full_text,
@@ -431,7 +431,7 @@ def test_logging_contract_for_failures_contains_metadata_not_payloads(tmp_path: 
 
 
 def test_ingestion_loader_stack_exposes_checksum_fallback_and_failure_reason(tmp_path: Path) -> None:
-    from arxiv_archive.ingestion.loader import load_article_source as ingestion_load_article_source
+    from research_graph.corpus.ingestion.loader import load_article_source as ingestion_load_article_source
 
     source_path = tmp_path / "binary.html"
     source_path.write_bytes(b"\xff\xfe\x00<html>not utf-8</html>\x80")

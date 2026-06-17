@@ -15,7 +15,7 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from arxiv_archive.article_loader import load_article_source
+from research_graph.corpus.ingestion import load_article_source
 
 
 def load_json(path: Path) -> dict[str, Any]:

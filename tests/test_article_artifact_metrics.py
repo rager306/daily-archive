@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from arxiv_archive.article_artifact_metrics import (
+from research_graph.papers.artifacts.metrics import (
     ARTICLE_ARTIFACT_BENCHMARK_REPORT_SCHEMA_VERSION,
     ARTICLE_ARTIFACT_METRICS_SCHEMA_VERSION,
     build_article_artifact_benchmark_report,
@@ -15,7 +15,7 @@ from arxiv_archive.article_artifact_metrics import (
     render_article_artifact_benchmark_markdown,
     write_article_artifact_benchmark_report,
 )
-from arxiv_archive.article_artifacts import validate_article_artifact_manifest
+from research_graph.papers.artifacts.models import validate_article_artifact_manifest
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_artifacts"
 
@@ -222,3 +222,46 @@ def test_review_burden_counts_artifacts_links_and_blocking_diagnostics() -> None
     case = next(case for case in _load("benchmark_cases.json")["cases"] if case["case_id"] == "ambiguous-and-missing-span")
 
     assert calculate_review_burden(case["manifest"]) == 3
+
+def test_missing_false_safety_flags_are_treated_as_safe_defaults_for_old_fixtures() -> None:
+    manifest = {
+        "safety_flags": {
+            "raw_text_included": False,
+            "raw_binary_included": False,
+            "base64_included": False,
+            "chunk_text_included": False,
+            "model_outputs_included": False,
+            "embeddings_included": False,
+            "vectors_included": False,
+            "optimizer_traces_included": False,
+            "production_import_attempted": False,
+            "ladybugdb_written": False,
+            "trusted_kg_import_allowed": False,
+        },
+        "production_import_attempted": False,
+        "ladybugdb_written": False,
+        "promoted_to_fact_count": 0,
+        "import_eligible_count": 0,
+        "allowed_uses": [],
+        "excluded_uses": [
+            "trusted_kg_import",
+            "production_ladybugdb_write",
+            "embedding_generation",
+            "source_of_truth_claim",
+        ],
+        "artifacts": [],
+    }
+
+    assert count_unsafe_authorizations(manifest) == 0
+
+
+def test_article_artifact_metrics_old_module_is_archived_with_canonical_breadcrumb() -> None:
+    top_level_archive_path = Path("archive/package-layout-shims/wave-01/src/arxiv_archive/article_artifact_metrics.py")
+    package_archive_path = Path("archive/package-rename-waves/wave-01/src/arxiv_archive/artifacts/metrics.py")
+    canonical_path = Path("src/research_graph/papers/artifacts/metrics.py")
+
+    assert top_level_archive_path.exists()
+    assert package_archive_path.exists()
+    assert not Path("src/arxiv_archive/article_artifact_metrics.py").exists()
+    assert not Path("src/arxiv_archive/artifacts/metrics.py").exists()
+    assert "Formerly: src/arxiv_archive/artifacts/metrics.py" in canonical_path.read_text(encoding="utf-8")

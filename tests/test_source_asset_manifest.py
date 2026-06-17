@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from arxiv_archive.source_asset_manifest import (
+from research_graph.papers.source_assets import (
     AssetRecord,
     PreservedSourceFile,
     SourceAssetManifest,

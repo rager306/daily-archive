@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from arxiv_archive.chunk_import_contract import validate_import_ready_package
-from arxiv_archive.structure_aware_chunking import (
+from research_graph.papers.chunking import (
     ChunkAnnotationSidecar,
     RouteEligibility,
     SourceSpan,

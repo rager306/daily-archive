@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from arxiv_archive.full_text import (
+from research_graph.corpus.ingestion import (
     FullTextSource,
     assess_full_text_quality,
     full_text_source_for_paper,
@@ -178,8 +178,8 @@ def test_rejects_unknown_source_type_before_parsing(tmp_path: Path) -> None:
 
 
 def test_legacy_full_text_module_delegates_to_ingestion_loader() -> None:
-    from arxiv_archive.ingestion.loader import FullTextSource as IngestionFullTextSource
-    from arxiv_archive.ingestion.loader import ingest_full_text as ingestion_ingest_full_text
+    from research_graph.corpus.ingestion.loader import FullTextSource as IngestionFullTextSource
+    from research_graph.corpus.ingestion.loader import ingest_full_text as ingestion_ingest_full_text
 
     source_path = FIXTURES_DIR / "structured_paper.md"
     legacy_result = ingest_full_text(FullTextSource("2605.12345", "markdown", source_path))

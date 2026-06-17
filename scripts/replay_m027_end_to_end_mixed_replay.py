@@ -31,9 +31,9 @@ if str(ROOT / "src") not in sys.path:
 from arxiv_archive.chunk_baseline_measurement import build_baseline_package  # noqa: E402
 from arxiv_archive.chunk_import_contract import validate_import_ready_package, validation_to_dict  # noqa: E402
 from arxiv_archive.evidence import build_evidence_paths, build_semantic_chunks  # noqa: E402
-from arxiv_archive.full_text import FullTextSource, ingest_full_text  # noqa: E402
-from arxiv_archive.indexing.page_index import build_page_index_from_parsed  # noqa: E402
-from arxiv_archive.parsing.parser import parse_article  # noqa: E402
+from research_graph.corpus.ingestion import FullTextSource, ingest_full_text  # noqa: E402
+from research_graph.papers.indexing.parsed_page_index import build_page_index_from_parsed  # noqa: E402
+from research_graph.corpus.parsing.parser import parse_article  # noqa: E402
 
 MILESTONE_ID = "M027-aakeky"
 SLICE_ID = "S05"

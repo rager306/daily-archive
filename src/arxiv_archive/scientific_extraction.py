@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from arxiv_archive.evidence import EvidencePath
-from arxiv_archive.parsing.normalization import slugify
+from research_graph.corpus.parsing.normalization import slugify
 
 SUPPORTED_RELATION_TYPES = frozenset({"supports", "contradicts", "mentions", "uses", "extends"})
 

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import ladybug
 
 from arxiv_archive.evidence import EvidencePath, SemanticChunk
-from arxiv_archive.page_index import PageIndexDocument
+from research_graph.papers.indexing import PageIndexDocument
 from arxiv_archive.scientific_extraction import (
     ExtractionPatch,
     ScientificRelation,

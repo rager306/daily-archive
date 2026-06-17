@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from arxiv_archive.full_text import FullTextSource, ingest_full_text
+from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
 from arxiv_archive.graph_readiness import (
     GraphReadinessState,
     NormalizedPaperPackage,
