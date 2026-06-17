@@ -13,7 +13,7 @@ import pytest
 from arxiv_archive.evidence import EvidencePath, SemanticChunk, build_evidence_path, build_semantic_chunks
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
 from research_graph.papers.indexing import PageIndexDocument, build_page_index
-from arxiv_archive.rlm_workflow import (
+from research_graph.workflows.rlm.workflow import (
     REDUCER_SCHEMA_VERSION,
     WorkflowResult,
     WorkflowTrajectoryStep,
@@ -23,7 +23,7 @@ from arxiv_archive.rlm_workflow import (
 _FIXTURE_STRUCTURE_PATH = Path(__file__).parent / "fixtures" / "article_artifacts" / "basic_article_structure.json"
 _FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
 _FIXTURE_STRUCTURE = json.loads(_FIXTURE_STRUCTURE_PATH.read_text(encoding="utf-8"))
-_RLM_WORKFLOW_MODULE = Path("src/arxiv_archive/rlm_workflow.py")
+_RLM_WORKFLOW_MODULE = Path("src/research_graph/workflows/rlm/workflow.py")
 _SAFETY_KEYS = {
     "graph_import_allowed",
     "graphdb_written",

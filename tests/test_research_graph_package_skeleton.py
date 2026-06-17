@@ -503,3 +503,27 @@ def test_wave_18_archives_graph_readiness_without_runtime_shims() -> None:
     assert importlib.import_module("research_graph.graph.readiness.core")
     assert importlib.import_module("research_graph.graph.readiness.review")
 
+
+def test_wave_19_archives_rlm_without_runtime_shims() -> None:
+    moves = {
+        "rlm_graph_traversal.py": "src/research_graph/workflows/rlm/graph_traversal.py",
+        "rlm_workflow.py": "src/research_graph/workflows/rlm/workflow.py",
+    }
+    manifest = Path("archive/package-rename-waves/wave-19/manifest.md").read_text(encoding="utf-8")
+
+    for old_name, new_path in moves.items():
+        old_runtime = Path("src/arxiv_archive") / old_name
+        archived = Path("archive/package-rename-waves/wave-19/src/arxiv_archive") / old_name
+        canonical = Path(new_path)
+
+        assert not old_runtime.exists()
+        assert archived.exists()
+        assert canonical.exists()
+        assert f"Formerly: src/arxiv_archive/{old_name}" in archived.read_text(encoding="utf-8")
+        assert f"Formerly: src/arxiv_archive/{old_name}" in canonical.read_text(encoding="utf-8")
+        assert f"`src/arxiv_archive/{old_name}`" in manifest
+        assert f"`{new_path}`" in manifest
+
+    assert importlib.import_module("research_graph.workflows.rlm.graph_traversal")
+    assert importlib.import_module("research_graph.workflows.rlm.workflow")
+

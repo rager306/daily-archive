@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/rlm_workflow.py
+
 """Read-only RLM document workflow harness (M052 S01)."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/rlm_graph_traversal.py
+
 """Deterministic fixture-level RLM graph traversal comparisons.
 
 The boundary in this module is deliberately local-only and read-only: callers

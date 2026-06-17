@@ -17,13 +17,13 @@ from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
 from research_graph.retrieval.hybrid import InMemoryVectorCandidateIndex
 from research_graph.graph.ladybug_client import evidence_path_id
 from research_graph.papers.indexing import PageIndexDocument, build_page_index
-from arxiv_archive.rlm_graph_traversal import (
+from research_graph.workflows.rlm.graph_traversal import (
     ComparisonResult,
     RLMGraphTraversalConfig,
     RLMGraphTraversalQuestion,
     compare_rlm_graph_traversal,
 )
-from arxiv_archive.rlm_workflow import run_document_workflow
+from research_graph.workflows.rlm.workflow import run_document_workflow
 from research_graph.evaluation.scientific_extraction import Claim, ExtractionPatch, ScientificEntity, ScientificRelation
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
