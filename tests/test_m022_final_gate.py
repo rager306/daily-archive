@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from arxiv_archive.bounded_chunk_repair import build_bounded_chunk_repair_contract
+from research_graph.repair.bounded_chunk_repair import build_bounded_chunk_repair_contract
 from arxiv_archive.reviewer_packet_prototype import (
     build_reviewer_packet_prototype,
     render_reviewer_packet_markdown,

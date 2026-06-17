@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from arxiv_archive.chunking_benchmark import (
+from research_graph.repair.chunking_benchmark import (
     ChunkingBenchmark,
     MethodMetrics,
     PaperMethodMetrics,

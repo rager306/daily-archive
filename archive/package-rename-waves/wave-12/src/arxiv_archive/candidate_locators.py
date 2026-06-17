@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/candidate_locators.py
+
 """Compatibility shim for candidate locator staging helpers.
 
 Implementation ownership moved to :mod:`research_graph.staging.graph_candidates`.

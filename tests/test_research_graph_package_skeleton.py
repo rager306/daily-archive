@@ -296,3 +296,33 @@ def test_wave_11_archives_quality_package_without_runtime_shims() -> None:
     assert importlib.import_module("research_graph.quality")
     assert importlib.import_module("research_graph.quality.maintainability_report")
 
+
+def test_wave_12_archives_repair_cluster_without_runtime_shims() -> None:
+    moves = {
+        "bounded_chunk_repair.py": "src/research_graph/repair/bounded_chunk_repair.py",
+        "candidate_locators.py": "src/research_graph/repair/candidate_locators.py",
+        "chunking_benchmark.py": "src/research_graph/repair/chunking_benchmark.py",
+    }
+    manifest = Path("archive/package-rename-waves/wave-12/manifest.md").read_text(encoding="utf-8")
+
+    for old_name, new_path in moves.items():
+        old_runtime = Path("src/arxiv_archive") / old_name
+        archived = Path("archive/package-rename-waves/wave-12/src/arxiv_archive") / old_name
+        canonical = Path(new_path)
+
+        assert not old_runtime.exists()
+        assert archived.exists()
+        assert canonical.exists()
+        assert f"Formerly: src/arxiv_archive/{old_name}" in archived.read_text(encoding="utf-8")
+        assert f"Formerly: src/arxiv_archive/{old_name}" in canonical.read_text(encoding="utf-8")
+        assert f"`src/arxiv_archive/{old_name}`" in manifest
+        assert f"`{new_path}`" in manifest
+
+    assert "chunk_repair_contract" in manifest
+    assert "chunk_import_contract" in manifest
+    assert "chunk_baseline_measurement" in manifest
+    assert "S09" in manifest or "S12" in manifest
+    assert importlib.import_module("research_graph.repair.bounded_chunk_repair")
+    assert importlib.import_module("research_graph.repair.candidate_locators")
+    assert importlib.import_module("research_graph.repair.chunking_benchmark")
+

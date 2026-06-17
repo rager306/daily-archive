@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/chunking_benchmark.py
+
 """Redacted chunking benchmark contract for M005/S06.
 
 The benchmark compares chunking method diagnostics without serializing raw paper

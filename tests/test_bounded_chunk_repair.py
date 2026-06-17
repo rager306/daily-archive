@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from arxiv_archive.bounded_chunk_repair import (
+from research_graph.repair.bounded_chunk_repair import (
     BoundedChunkRepairError,
     build_bounded_chunk_repair_contract,
     render_bounded_chunk_repair_markdown,

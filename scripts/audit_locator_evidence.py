@@ -24,7 +24,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from arxiv_archive.candidate_locators import (  # noqa: E402
+from research_graph.repair.candidate_locators import (  # noqa: E402
     CANDIDATE_LOCATOR_PROTOCOL_VERSION,
     default_safety_flags,
     find_forbidden_payload_keys,

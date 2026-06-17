@@ -19,7 +19,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from arxiv_archive.bounded_chunk_repair import (  # noqa: E402
+from research_graph.repair.bounded_chunk_repair import (  # noqa: E402
     BoundedChunkRepairError,
     build_bounded_chunk_repair_contract,
     render_bounded_chunk_repair_markdown,

@@ -1,3 +1,5 @@
+# Formerly: src/arxiv_archive/bounded_chunk_repair.py
+
 """Bounded review-only chunk repair target construction.
 
 This module converts already-redacted deterministic candidate locator batches into

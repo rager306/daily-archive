@@ -12,7 +12,7 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from arxiv_archive.candidate_locators import (
+from research_graph.repair.candidate_locators import (
     ALLOWED_CANDIDATE_TYPES,
     ALLOWED_COORDINATE_SPACES,
     ALLOWED_ROUTES,
