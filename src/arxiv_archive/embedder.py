@@ -8,6 +8,7 @@ import os
 import time
 from collections.abc import Awaitable, Callable, Sequence
 from email.utils import parsedate_to_datetime
+from pathlib import Path
 from statistics import median
 from typing import Any
 
@@ -77,6 +78,87 @@ DEFAULT_MAX_ATTEMPTS = _env_int("FD_MAX_RETRIES", 3)
 DEFAULT_CIRCUIT_FAILURE_THRESHOLD = _env_int("FD_CIRCUIT_FAILURE_THRESHOLD", 3)
 DEFAULT_CIRCUIT_OPEN_SECONDS = _env_float("FD_CIRCUIT_OPEN_SECONDS", 60.0)
 DEFAULT_GRACEFUL_DEGRADATION_ENABLED = _env_bool("FD_GRACEFUL_DEGRADATION_ENABLED", True)
+
+
+def _load_dotenv_if_present(path: str | Path = ".env") -> None:
+    """Load KEY=VALUE pairs from a local .env file without overriding process env.
+
+    This is a minimal, dependency-free loader that mirrors the pattern used in
+    ``scripts/m060g_smoke_test.py``. It runs once at module import so callers of
+    ``Embedder`` see ``FD_API_KEY`` and related fd env vars even when the
+    hosting process was started without ``source .env``.
+    """
+    try:
+        env_path = Path(path)
+    except OSError:
+        return
+    if not env_path.exists():
+        return
+    try:
+        lines = env_path.read_text().splitlines()
+    except OSError:
+        return
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+_load_dotenv_if_present()
+# Re-evaluate fd env defaults now that .env has been loaded. Module-import
+# ``DEFAULT_*`` constants must reflect the loaded ``FD_API_KEY`` and friends.
+DEFAULT_TEI_URL = _env_str("TEI_URL", _env_str("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000"))
+DEFAULT_ENDPOINT = _env_str("FD_EMBEDDINGS_ENDPOINT", f"{DEFAULT_TEI_URL.rstrip('/')}/v1/embeddings")
+DEFAULT_API_KEY = os.environ.get("FD_API_KEY")
+DEFAULT_MODEL_ID = _env_str("MODEL_ID", _env_str("FD_MODEL_NAME", "deepvk/USER-bge-m3"))
+DEFAULT_MODEL_NAME = DEFAULT_MODEL_ID
+DEFAULT_REDIS_HOST = _env_str("REDIS_HOST", "127.0.0.1")
+DEFAULT_REDIS_PORT = _env_int("REDIS_PORT", 6379)
+DEFAULT_DIMENSIONS = _env_int("FD_DIMENSIONS", 1024)
+DEFAULT_BATCH_SIZE = _env_int("FD_BATCH_SIZE", 32)
+DEFAULT_TIMEOUT_SECONDS = _env_float("FD_REQUEST_TIMEOUT_SECONDS", 120.0)
+DEFAULT_RETRY_SCHEDULE_SECONDS = tuple(_env_list("FD_RETRY_BACKOFF_SECONDS", [1.0, 5.0, 15.0, 60.0, 300.0]))
+DEFAULT_MAX_ATTEMPTS = _env_int("FD_MAX_RETRIES", 3)
+DEFAULT_CIRCUIT_FAILURE_THRESHOLD = _env_int("FD_CIRCUIT_FAILURE_THRESHOLD", 3)
+DEFAULT_CIRCUIT_OPEN_SECONDS = _env_float("FD_CIRCUIT_OPEN_SECONDS", 60.0)
+DEFAULT_GRACEFUL_DEGRADATION_ENABLED = _env_bool("FD_GRACEFUL_DEGRADATION_ENABLED", True)
+
+
+def _load_dotenv_if_present(path: str | Path = ".env") -> None:
+    """Load KEY=VALUE pairs from a local .env file without overriding process env.
+
+    This is a minimal, dependency-free loader that mirrors the pattern used in
+    ``scripts/m060g_smoke_test.py``. It runs once at module import so callers of
+    ``Embedder`` see ``FD_API_KEY`` and related fd env vars even when the
+    hosting process was started without ``source .env``.
+    """
+    try:
+        env_path = Path(path)
+    except OSError:
+        return
+    if not env_path.exists():
+        return
+    try:
+        lines = env_path.read_text().splitlines()
+    except OSError:
+        return
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+_load_dotenv_if_present()
 
 SAFETY_DEFAULTS: dict[str, bool] = {
     "graph_writes_authorized": False,
