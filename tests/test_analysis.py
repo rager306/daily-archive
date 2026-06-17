@@ -89,12 +89,25 @@ class FakeScoringEngine:
         return make_scored(paper, score=100.0 - numeric_id, keywords=keywords)
 
 
+class FakeEmbedder:
+    calls: list[list[str]] = []
+
+    async def embed_all(self, texts: list[str]) -> list[list[float]]:
+        # Deterministic local-only vectors; one zero-vector per text keeps sorted-by-score invariants intact.
+        FakeEmbedder.calls.append(list(texts))
+        return [[0.0, 0.0, 0.0] for _ in texts]
+
+    async def close(self) -> None:
+        return None
+
+
 @pytest.fixture(autouse=True)
 def reset_fakes() -> None:
     FakeArxivClient.papers = []
     FakeArxivClient.calls = []
     FakeKeywordExtractor.calls = []
     FakeScoringEngine.calls = []
+    FakeEmbedder.calls = []
 
 
 @pytest.fixture(autouse=True)
@@ -111,6 +124,7 @@ def patch_analysis_components(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(cli, "ArxivClient", FakeArxivClient)
     monkeypatch.setattr(cli, "KeywordExtractor", FakeKeywordExtractor)
     monkeypatch.setattr(cli, "ScoringEngine", FakeScoringEngine)
+    monkeypatch.setattr(cli, "Embedder", FakeEmbedder)
 
     def fail_if_persisted(*_args: object, **_kwargs: object) -> Path:
         raise AssertionError("run_analysis() must not call save_session(); persistence belongs to S03")
@@ -149,6 +163,9 @@ def test_run_analysis_returns_done_daily_analysis_sorted_and_capped(
     ]
     assert len(FakeKeywordExtractor.calls) == 12
     assert len(FakeScoringEngine.calls) == 12
+    assert len(FakeEmbedder.calls) == 1
+    assert len(FakeEmbedder.calls[0]) == 12
+    assert all(paper.embedding == [0.0, 0.0, 0.0] for paper in analysis.papers)
 
 
 def test_run_analysis_returns_empty_without_scoring_or_persistence(
