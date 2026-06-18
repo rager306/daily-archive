@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from arxiv_archive.rlm_workflow import (
+from research_graph.workflows.rlm.workflow import (
     REDUCER_SCHEMA_VERSION,
     WorkflowTrajectory,
     WorkflowTrajectoryStep,
@@ -210,7 +210,7 @@ def test_workflow_schema_version() -> None:
 
 
 def test_workflow_never_imports_urllib() -> None:
-    source = Path("src/arxiv_archive/rlm_workflow.py").read_text(encoding="utf-8")
+    source = Path("src/research_graph/workflows/rlm/workflow.py").read_text(encoding="utf-8")
 
     assert "urllib" not in source
 
