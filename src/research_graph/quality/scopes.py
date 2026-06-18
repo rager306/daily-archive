@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-DEFAULT_QUALITY_SCOPE = (Path("src/arxiv_archive"),)
+DEFAULT_QUALITY_SCOPE = (Path("src/research_graph"),)
 DEFAULT_QUALITY_EXCLUDES = (
     "**/__pycache__/**",
     "**/.venv/**",

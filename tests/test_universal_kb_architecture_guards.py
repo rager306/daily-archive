@@ -6,16 +6,16 @@ from pathlib import Path
 ADR_005 = "doc/adr/m034/ADR-005-no-direct-extractor-to-graphdb-path.md"
 
 GUARDED_MODULES = [
-    Path("src/arxiv_archive/universal_kb_sidecar_boundary.py"),
-    Path("src/arxiv_archive/universal_kb_review_assistance.py"),
-    Path("src/arxiv_archive/universal_kb_substrate_rehearsal.py"),
-    Path("src/arxiv_archive/minimax_structured.py"),
+    Path("src/research_graph/workflows/universal_kb/sidecar_boundary.py"),
+    Path("src/research_graph/workflows/universal_kb/review_assistance.py"),
+    Path("src/research_graph/workflows/universal_kb/substrate_rehearsal.py"),
+    Path("src/research_graph/llm/minimax_structured.py"),
     Path("src/research_graph/papers/artifacts/minimax_boundary.py"),
 ]
 
 READ_ONLY_EXEMPTIONS = {
-    Path("src/arxiv_archive/hybrid_retrieval.py"),
-    Path("src/arxiv_archive/graph_readiness_review.py"),
+    Path("src/research_graph/retrieval/hybrid.py"),
+    Path("src/research_graph/graph/readiness/review.py"),
 }
 
 FORBIDDEN_IMPORT_PREFIXES = (

@@ -26,7 +26,7 @@ FORBIDDEN_OUTPUT = (
 
 def _run_cli(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["uv", "run", "python", "-m", "arxiv_archive", *args],
+        ["uv", "run", "python", "-m", "research_graph", *args],
         check=False,
         capture_output=True,
         text=True,

@@ -24,7 +24,7 @@ def test_thresholds_classify_boundary_scores() -> None:
 
 
 def test_maintainability_report_is_diagnostic_only_for_real_source_file() -> None:
-    report = build_maintainability_report(paths=["src/arxiv_archive/validation_logging.py"])
+    report = build_maintainability_report(paths=["src/research_graph/workflows/validation/logging.py"])
 
     assert report["status"] == "diagnostic_complete"
     assert report["diagnostic_only"] is True
@@ -78,10 +78,10 @@ def test_cli_writes_json_report_without_blocking(tmp_path: Path) -> None:
             "run",
             "python",
             "-m",
-            "arxiv_archive",
+            "research_graph",
             "quality",
             "maintainability",
-            "src/arxiv_archive/validation_logging.py",
+            "src/research_graph/workflows/validation/logging.py",
             "--output",
             str(output_path),
             "--json",
@@ -140,7 +140,7 @@ def test_quality_gate_runner_writes_json_and_human_reports(tmp_path: Path, monke
     monkeypatch.setattr(quality_gate_runner, "build_maintainability_report", fake_report)
 
     report = quality_gate_runner.run_quality_gate(
-        paths=["src/arxiv_archive/quality/baselines.py"],
+        paths=["src/research_graph/quality/baselines.py"],
         output_dir=tmp_path,
     )
 
@@ -152,7 +152,7 @@ def test_quality_gate_runner_writes_json_and_human_reports(tmp_path: Path, monke
     assert report["blocking"] is False
     assert report["pass_fail_affected"] is False
     assert json_payload["quality_gate"]["diagnostic_only"] is True
-    assert json_payload["quality_gate"]["touched_modules"] == ["src/arxiv_archive/quality/baselines.py"]
+    assert json_payload["quality_gate"]["touched_modules"] == ["src/research_graph/quality/baselines.py"]
     assert json_payload["output_paths"] == {"json": str(json_path), "human": str(human_path)}
     assert "Diagnostic-only" in human_report
     assert "non-blocking" in human_report
@@ -165,7 +165,7 @@ def test_quality_gate_touched_module_discovery_filters_to_source_and_scripts(mon
         returncode=0,
         stdout="\n".join(
             [
-                "src/arxiv_archive/quality/baselines.py",
+                "src/research_graph/quality/baselines.py",
                 "scripts/run_quality_gate.py",
                 "tests/test_riskratchet_gate.py",
                 "README.md",
@@ -178,7 +178,7 @@ def test_quality_gate_touched_module_discovery_filters_to_source_and_scripts(mon
     touched = quality_gate_runner.gather_touched_python_modules(base_ref="HEAD~1")
 
     assert touched == (
-        Path("src/arxiv_archive/quality/baselines.py"),
+        Path("src/research_graph/quality/baselines.py"),
         Path("scripts/run_quality_gate.py"),
     )
 

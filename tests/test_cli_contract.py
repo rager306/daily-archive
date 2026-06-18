@@ -6,7 +6,7 @@ import subprocess
 def run_cli_help(*args: str) -> subprocess.CompletedProcess[str]:
     """Run the public module entrypoint exactly as agents and cron jobs do."""
     return subprocess.run(
-        ["uv", "run", "python", "-m", "arxiv_archive", *args],
+        ["uv", "run", "python", "-m", "research_graph", *args],
         check=False,
         capture_output=True,
         text=True,
@@ -45,7 +45,7 @@ def assert_help_contract(output: str) -> None:
         assert status in output
 
     assert any(term in output for term in ["example", "examples"])
-    assert "uv run python -m arxiv_archive --date" in output
+    assert "uv run python -m research_graph --date" in output
 
     assert any(term in output for term in ["non-goal", "non goal", "out of scope"])
     for non_goal in ["telegram", "graphify", "surprise me", "preference learning", "pdf", "llm"]:

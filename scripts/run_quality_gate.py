@@ -135,7 +135,7 @@ def _render_human_report(report: dict[str, Any]) -> str:
 
 
 def _is_quality_scan_candidate(path: str) -> bool:
-    return path.endswith(".py") and (path.startswith("src/arxiv_archive/") or path.startswith("scripts/"))
+    return path.endswith(".py") and (path.startswith("src/research_graph/") or path.startswith("scripts/"))
 
 
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:

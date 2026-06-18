@@ -100,7 +100,7 @@ Purpose: fetch a day's arXiv papers, analyze/score them against research interes
 and archive the selected papers for later review.
 
 Hermes / cron usage: invoke the stable public entrypoint with
-`uv run python -m arxiv_archive --date YYYY-MM-DD`. Hermes should inspect the
+`uv run python -m research_graph --date YYYY-MM-DD`. Hermes should inspect the
 same stdout/stderr and exit codes that cron sees.
 
 Artifacts documented for the M001 contract:
@@ -117,10 +117,10 @@ failed means the run stopped before producing a complete archive.
 Exit codes: 0 success/help, 1 runtime failure, 2 command-line usage or validation error.
 
 Examples:
-  uv run python -m arxiv_archive --help
-  uv run python -m arxiv_archive run --help
-  uv run python -m arxiv_archive --date YYYY-MM-DD
-  uv run python -m arxiv_archive --date YYYY-MM-DD --json
+  uv run python -m research_graph --help
+  uv run python -m research_graph run --help
+  uv run python -m research_graph --date YYYY-MM-DD
+  uv run python -m research_graph --date YYYY-MM-DD --json
 
 Out of scope / non-goals for M001: Telegram delivery, Graphify integration,
 Surprise Me ranking, preference learning, PDF conversion/download behavior, and LLM
@@ -170,7 +170,7 @@ app.add_typer(article_artifacts_app, name="article-artifacts")
 def quality_maintainability(
     paths: Annotated[
         list[Path] | None,
-        typer.Argument(help="Files or directories to scan. Defaults to src/arxiv_archive."),
+        typer.Argument(help="Files or directories to scan. Defaults to src/research_graph."),
     ] = None,
     baseline_path: Annotated[
         Path | None,
