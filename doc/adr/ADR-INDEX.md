@@ -13,7 +13,7 @@ This index lists project-level ADRs and points to historical ADR packages kept u
 
 ## Project-Level ADRs
 
-Project-level ADR count: 29
+Project-level ADR count: 30
 
 | ADR | Status | Title | Path | Notes |
 | --- | --- | --- | --- | --- |
@@ -40,6 +40,7 @@ Project-level ADR count: 29
 | ADR-027 | Accepted (binding) | Resource-Aware Queue Scheduler | `doc/adr/ADR-027-resource-aware-queue-scheduler.md` | M101: 3-lane scheduler (LLM/CPU/IO), per-provider rate limits, backoff, observability. |
 | ADR-028 | Accepted (binding) | Typed Knowledge Schema | `doc/adr/ADR-028-typed-knowledge-schema.md` | M101: 5 modules (A-E), 27 typed relations, stable IDs, domain profiles, quant-mind patterns. |
 | ADR-029 | Accepted (binding) | Extraction Pipeline Architecture | `doc/adr/ADR-029-extraction-pipeline.md` | M101: Core-then-Modes, statistical-first, DSPy, multi-provider, ~$0.07/article. |
+| ADR-030 | Accepted (binding) | FalkorDB Graph Schema and Operators | `doc/adr/ADR-030-falkordb-schema.md` | M101: 9 node labels, 27 typed edges, 2 vector indexes, 6 operators, 4-phase migration. |
 
 ## Historical ADR Packages
 
