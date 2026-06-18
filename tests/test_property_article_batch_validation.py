@@ -11,7 +11,7 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from research_graph.papers.artifacts import batch_validation as batch
-from arxiv_archive.validation_batch_provenance import (
+from research_graph.workflows.validation.batch_provenance import (
     build_artifact_freshness_report,
     fingerprint_file,
 )

@@ -8,8 +8,8 @@ from typing import Any
 
 import httpx
 
-from arxiv_archive.scoring import ScoredPaper
-from research_graph.retrieval.summarizer import PaperSummary
+from research_graph.evaluation.scoring import ScoredPaper
+from research_graph.llm.summarizer import PaperSummary
 
 NUMBER_EMOJIS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
 

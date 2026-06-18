@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from arxiv_archive.minimax_structured import DEFAULT_MINIMAX_MODEL
+from research_graph.llm.minimax_structured import DEFAULT_MINIMAX_MODEL
 from research_graph.workflows.universal_kb.queue import UniversalKBQueue
 from research_graph.workflows.universal_kb.review_assistance import (
     build_review_assistance_packet,

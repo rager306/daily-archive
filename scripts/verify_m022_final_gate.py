@@ -22,7 +22,7 @@ for import_path in (ROOT, SRC):
     if str(import_path) not in sys.path:
         sys.path.insert(0, str(import_path))
 
-from arxiv_archive.chunk_repair_contract import scan_forbidden_payload_keys  # noqa: E402
+from research_graph.repair.chunk_repair_contract import scan_forbidden_payload_keys  # noqa: E402
 from scripts.verify_reviewer_packet_prototype import (  # noqa: E402
     ReviewerPacketPrototypeVerifyError,
     _list_of_dicts,

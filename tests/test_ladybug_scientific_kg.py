@@ -15,7 +15,7 @@ import ladybug
 import pytest
 
 import research_graph.graph.ladybug_client as ladybug_client
-from arxiv_archive.evidence import EvidencePath, build_evidence_path, build_semantic_chunks
+from research_graph.papers.semantic_chunks import EvidencePath, build_evidence_path, build_semantic_chunks
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
 from research_graph.graph.ladybug_client import init_db
 from research_graph.papers.indexing import PageIndexDocument, build_page_index

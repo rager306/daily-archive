@@ -4,7 +4,7 @@ import json
 from dataclasses import replace
 from pathlib import Path
 
-from arxiv_archive.validation_batch_state import (
+from research_graph.workflows.validation.batch_state import (
     BatchRecommendation,
     ScanArtifactPaths,
     SelectedPaper,

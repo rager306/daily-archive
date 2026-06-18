@@ -28,8 +28,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from arxiv_archive.chunk_baseline_measurement import build_baseline_package  # noqa: E402
-from arxiv_archive.chunk_import_contract import validate_import_ready_package, validation_to_dict  # noqa: E402
+from research_graph.repair.chunk_baseline_measurement import build_baseline_package  # noqa: E402
+from research_graph.repair.chunk_import_contract import validate_import_ready_package, validation_to_dict  # noqa: E402
 
 MILESTONE_ID = "M027-aakeky"
 SLICE_ID = "S04"

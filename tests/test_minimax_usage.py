@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from arxiv_archive.minimax_usage import (
+from research_graph.llm.minimax_usage import (
     build_minimax_usage_requests,
     parse_minimax_usage_response,
     resolve_minimax_api_key,

@@ -3,12 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from arxiv_archive.validation_batch_state import (
+from research_graph.workflows.validation.batch_state import (
     SelectedPaper,
     SourceReadiness,
     ValidationBatchState,
 )
-from arxiv_archive.validation_batch_workflow import build_quota_fill_report, write_quota_fill_run
+from research_graph.workflows.validation.batch_workflow import build_quota_fill_report, write_quota_fill_run
 
 
 def test_build_quota_fill_report_allows_full_ready_quota() -> None:

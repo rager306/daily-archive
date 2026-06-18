@@ -25,7 +25,7 @@ from research_graph.repair.bounded_chunk_repair import (  # noqa: E402
     render_bounded_chunk_repair_markdown,
     summarize_bounded_chunk_repair_contract,
 )
-from arxiv_archive.chunk_repair_contract import (  # noqa: E402
+from research_graph.repair.chunk_repair_contract import (  # noqa: E402
     expected_audit_from_contract,
     validate_chunk_repair_contract,
     validate_chunk_repair_contract_markdown,

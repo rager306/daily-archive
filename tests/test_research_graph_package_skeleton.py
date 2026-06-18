@@ -362,7 +362,6 @@ def test_wave_14_archives_retrieval_cluster_without_runtime_shims() -> None:
         "embedder.py": "src/research_graph/retrieval/embedder.py",
         "hybrid_retrieval.py": "src/research_graph/retrieval/hybrid.py",
         "keyword_extractor.py": "src/research_graph/retrieval/keyword_extractor.py",
-        "summarizer.py": "src/research_graph/retrieval/summarizer.py",
     }
     manifest = Path("archive/package-rename-waves/wave-14/manifest.md").read_text(encoding="utf-8")
 

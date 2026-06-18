@@ -20,7 +20,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from arxiv_archive.chunk_repair_contract import (  # noqa: E402
+from research_graph.repair.chunk_repair_contract import (  # noqa: E402
     REQUIRED_FALSE_SAFETY_FIELDS,
     expected_audit_from_contract,
     scan_forbidden_payload_keys,

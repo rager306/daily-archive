@@ -21,12 +21,12 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from arxiv_archive.chunk_repair_contract import (  # noqa: E402
+from research_graph.repair.chunk_repair_contract import (  # noqa: E402
     MARKDOWN_FORBIDDEN_PATTERNS,
     scan_forbidden_payload_keys,
     validate_chunk_repair_contract_markdown,
 )
-from arxiv_archive.reviewer_packet_prototype import (  # noqa: E402
+from research_graph.workflows.review_packet_prototype import (  # noqa: E402
     REVIEWER_PACKET_ASSESSMENT_VERSION,
     REVIEWER_PACKET_PROTOTYPE_VERSION,
     ReviewerPacketError,

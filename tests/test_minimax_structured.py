@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from arxiv_archive.minimax_structured import (
+from research_graph.llm.minimax_structured import (
     build_minimax_structured_request,
     validate_minimax_tool_response,
 )

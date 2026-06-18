@@ -25,13 +25,13 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from arxiv_archive.chunk_import_contract import validate_import_ready_package, validation_to_dict
+from research_graph.repair.chunk_import_contract import validate_import_ready_package, validation_to_dict
 from research_graph.papers.chunking.chunker import parse_markdown_structure
-from arxiv_archive.graph_readiness_export import (
+from research_graph.graph.readiness.export import (
     CONTRACT_VERSION as GRAPH_READINESS_CONTRACT_VERSION,
 )
-from arxiv_archive.graph_readiness_export import SCHEMA_VERSION as GRAPH_READINESS_SCHEMA_VERSION
-from arxiv_archive.graph_readiness_review import generate_review_bundles, validate_review_artifacts
+from research_graph.graph.readiness.export import SCHEMA_VERSION as GRAPH_READINESS_SCHEMA_VERSION
+from research_graph.graph.readiness.review import generate_review_bundles, validate_review_artifacts
 
 MILESTONE_ID = "M031-vwpd8e"
 SLICE_ID = "S04"

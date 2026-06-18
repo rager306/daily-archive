@@ -3,9 +3,9 @@
 from datetime import date
 
 from research_graph.corpus.sources.arxiv_client import ArxivPaper
-from arxiv_archive.scoring import ScoredPaper
+from research_graph.evaluation.scoring import ScoredPaper
 from research_graph.corpus.sources.semantic_scholar import SemanticScholarPaper
-from research_graph.retrieval.summarizer import PaperSummary
+from research_graph.llm.summarizer import PaperSummary
 from research_graph.ops.notifications.telegram_sender import TelegramSender
 
 

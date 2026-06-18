@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from arxiv_archive.minimax_structured import DEFAULT_MINIMAX_MODEL
+from research_graph.llm.minimax_structured import DEFAULT_MINIMAX_MODEL
 from research_graph.workflows.universal_kb.contracts import CandidatePacket
 from research_graph.workflows.universal_kb.queue import UniversalKBQueue
 from research_graph.workflows.universal_kb.review_assistance import (

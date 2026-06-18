@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from dotenv import load_dotenv
 
-from arxiv_archive.summarizer import MiniMaxSummarizer, PaperSummary
+from research_graph.llm.summarizer import MiniMaxSummarizer, PaperSummary
 
 
 def load_project_env() -> None:

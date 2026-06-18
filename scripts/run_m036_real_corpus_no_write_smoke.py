@@ -15,7 +15,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from arxiv_archive.minimax_structured import DEFAULT_MINIMAX_MODEL  # noqa: E402
+from research_graph.llm.minimax_structured import DEFAULT_MINIMAX_MODEL  # noqa: E402
 from research_graph.workflows.universal_kb.contracts import CandidatePacket  # noqa: E402
 from research_graph.workflows.universal_kb.queue import UniversalKBQueue  # noqa: E402
 from research_graph.workflows.universal_kb.review_assistance import (  # noqa: E402

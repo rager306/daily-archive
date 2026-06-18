@@ -12,7 +12,7 @@ import ladybug
 
 import research_graph.graph.ladybug_client as ladybug_client
 from research_graph.evaluation.metrics import calculate_evidence_path_hit_rate, calculate_retrieval_recall
-from arxiv_archive.evidence import EvidencePath, build_evidence_path, build_semantic_chunks
+from research_graph.papers.semantic_chunks import EvidencePath, build_evidence_path, build_semantic_chunks
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
 from research_graph.retrieval.hybrid import InMemoryVectorCandidateIndex
 from research_graph.graph.ladybug_client import evidence_path_id

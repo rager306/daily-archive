@@ -1,0 +1,63 @@
+"""Compatibility shim for metadata-only article assets.
+
+The canonical import path is now ``arxiv_archive.artifacts.assets``.
+This module remains to preserve imports created before M084.
+"""
+
+from arxiv_archive.artifacts.assets import (
+    ARTICLE_ASSET_MANIFEST_SCHEMA_VERSION,
+    ARTICLE_ASSET_DIAGNOSTICS_SCHEMA_VERSION,
+    ARTICLE_ASSET_BUILDER,
+    ArticleAssetType,
+    ArticleAssetPreservationState,
+    ArticleAssetInterpretationStatus,
+    ArticleAssetDiagnosticSeverity,
+    ALLOWED_ASSET_TYPES,
+    ALLOWED_PRESERVATION_STATES,
+    ALLOWED_INTERPRETATION_STATUSES,
+    TASK_ALLOWED_ASSET_TYPES,
+    TASK_ALLOWED_PRESERVATION_STATES,
+    TASK_ALLOWED_INTERPRETATION_STATUSES,
+    ALLOWED_COORDINATE_SPACES,
+    FORBIDDEN_PAYLOAD_KEYS,
+    FORBIDDEN_SOURCE_OF_TRUTH_KEYS,
+    UNSAFE_TRUE_FLAGS,
+    UNSAFE_READINESS_STATUSES,
+    default_safety_flags,
+    ArticleAssetDiagnostic,
+    ArticleAssetRecord,
+    build_article_asset_manifest,
+    validate_article_asset_manifest,
+    summarize_article_assets,
+    attach_article_assets_summary,
+    to_json,
+)
+
+__all__ = [
+    'ARTICLE_ASSET_MANIFEST_SCHEMA_VERSION',
+    'ARTICLE_ASSET_DIAGNOSTICS_SCHEMA_VERSION',
+    'ARTICLE_ASSET_BUILDER',
+    'ArticleAssetType',
+    'ArticleAssetPreservationState',
+    'ArticleAssetInterpretationStatus',
+    'ArticleAssetDiagnosticSeverity',
+    'ALLOWED_ASSET_TYPES',
+    'ALLOWED_PRESERVATION_STATES',
+    'ALLOWED_INTERPRETATION_STATUSES',
+    'TASK_ALLOWED_ASSET_TYPES',
+    'TASK_ALLOWED_PRESERVATION_STATES',
+    'TASK_ALLOWED_INTERPRETATION_STATUSES',
+    'ALLOWED_COORDINATE_SPACES',
+    'FORBIDDEN_PAYLOAD_KEYS',
+    'FORBIDDEN_SOURCE_OF_TRUTH_KEYS',
+    'UNSAFE_TRUE_FLAGS',
+    'UNSAFE_READINESS_STATUSES',
+    'default_safety_flags',
+    'ArticleAssetDiagnostic',
+    'ArticleAssetRecord',
+    'build_article_asset_manifest',
+    'validate_article_asset_manifest',
+    'summarize_article_assets',
+    'attach_article_assets_summary',
+    'to_json',
+]

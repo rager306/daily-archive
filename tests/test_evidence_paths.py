@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from arxiv_archive.evidence import (
+from research_graph.papers.semantic_chunks import (
     EvidencePath,
     SemanticChunk,
     build_evidence_path,

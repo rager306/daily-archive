@@ -3,12 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from arxiv_archive.validation_batch_state import (
+from research_graph.workflows.validation.batch_state import (
     SelectedPaper,
     SourceReadiness,
     ValidationBatchState,
 )
-from arxiv_archive.validation_batch_workflow import (
+from research_graph.workflows.validation.batch_workflow import (
     build_bounded_top_up_report,
     write_bounded_top_up_run,
 )

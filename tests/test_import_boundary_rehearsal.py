@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from arxiv_archive.import_boundary_rehearsal import (
+from research_graph.workflows.import_boundary_rehearsal import (
     SCHEMA_VERSION,
     ImportBoundaryRehearsal,
     ImportCandidate,

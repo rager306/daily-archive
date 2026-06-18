@@ -20,7 +20,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
-from arxiv_archive.chunk_import_contract import (
+from research_graph.repair.chunk_import_contract import (
     EXPECTED_CONTRACT_VERSION,
     EXPECTED_SCHEMA_VERSION,
     RETRIEVAL_ONLY_STATE,

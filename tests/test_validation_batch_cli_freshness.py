@@ -5,7 +5,7 @@ import subprocess
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from arxiv_archive.validation_batch_provenance import (
+from research_graph.workflows.validation.batch_provenance import (
     append_validation_cli_provenance,
     build_validation_cli_provenance_entry,
 )

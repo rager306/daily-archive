@@ -43,12 +43,12 @@ from research_graph.papers.artifacts.models import (
     TRUSTED_IMPORT_USE,
     build_article_artifact_manifest_from_structure,
 )
-from arxiv_archive.minimax_structured import (
+from research_graph.llm.minimax_structured import (
     MiniMaxStructuredRequest,
     build_minimax_structured_request,
     validate_minimax_tool_response,
 )
-from arxiv_archive.models_registry import (
+from research_graph.llm.models_registry import (
     BindingSpec,
     ModelSpec,
     ModelsRegistry,

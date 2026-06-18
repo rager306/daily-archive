@@ -608,7 +608,7 @@ def build_continuity_audit(matrix: Mapping[str, Any], inputs: Mapping[str, Any],
             "stage_id": "graph_readiness_review",
             "owner": "S04 independent review handoff",
             "evidence": [DEFAULT_REVIEW_EVENTS.as_posix(), DEFAULT_REVIEW_SUMMARY.as_posix(), DEFAULT_REVIEW_BUNDLE.as_posix()],
-            "verifiers": ["arxiv_archive.graph_readiness_review validate-only", "scripts/verify_m031_process_continuity_audit.py"],
+            "verifiers": ["research_graph.graph.readiness.review validate-only", "scripts/verify_m031_process_continuity_audit.py"],
             "failure_modes": ["completed review claimed without verdict", "review placeholders accepted", "structural route label treated as semantic approval"],
         },
         {

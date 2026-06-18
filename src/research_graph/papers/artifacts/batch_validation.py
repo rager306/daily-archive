@@ -24,13 +24,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
-from arxiv_archive.validation_batch_provenance import (
+from research_graph.workflows.validation.batch_provenance import (
     append_validation_cli_provenance,
     build_artifact_freshness_report,
     build_validation_cli_provenance_entry,
     write_artifact_freshness_report,
 )
-from arxiv_archive.validation_batch_state import ValidationBatchState, read_batch_state
+from research_graph.workflows.validation.batch_state import ValidationBatchState, read_batch_state
 
 ARTICLE_BATCH_VALIDATION_SCHEMA_VERSION = "m024-article-batch-validation.v1"
 ARTICLE_BATCH_VALIDATION_BUILDER = "metadata_only_article_batch_validation_v1"

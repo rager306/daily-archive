@@ -19,8 +19,8 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from arxiv_archive.chunk_import_contract import validate_import_ready_package, validation_to_dict
-from arxiv_archive.graph_readiness_review import validate_review_artifacts
+from research_graph.repair.chunk_import_contract import validate_import_ready_package, validation_to_dict
+from research_graph.graph.readiness.review import validate_review_artifacts
 
 MILESTONE_ID = "M031-vwpd8e"
 SLICE_ID = "S04"

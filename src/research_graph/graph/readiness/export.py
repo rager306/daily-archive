@@ -17,7 +17,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from arxiv_archive.evidence import build_semantic_chunks
+from research_graph.papers.semantic_chunks import build_semantic_chunks
 from research_graph.corpus.ingestion import FullTextIngestionResult, FullTextSource, ingest_full_text
 from research_graph.graph.readiness.core import (
     ChunkRoute,

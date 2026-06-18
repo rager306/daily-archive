@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from arxiv_archive.chunk_import_contract import validate_import_ready_package
+from research_graph.repair.chunk_import_contract import validate_import_ready_package
 from research_graph.papers.chunking import (
     ChunkAnnotationSidecar,
     RouteEligibility,

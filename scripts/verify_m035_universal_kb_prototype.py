@@ -154,7 +154,7 @@ def assert_safety_flags_false(payload: dict[str, Any], *, label: str) -> None:
 
 
 def inspect_rehearsal_artifacts() -> None:
-    from arxiv_archive.minimax_structured import DEFAULT_MINIMAX_MODEL
+    from research_graph.llm.minimax_structured import DEFAULT_MINIMAX_MODEL
     from research_graph.workflows.universal_kb.rehearsal import run_universal_kb_no_write_rehearsal
 
     clean_rehearsal_artifacts()

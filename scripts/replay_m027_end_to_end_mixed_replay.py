@@ -28,9 +28,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from arxiv_archive.chunk_baseline_measurement import build_baseline_package  # noqa: E402
-from arxiv_archive.chunk_import_contract import validate_import_ready_package, validation_to_dict  # noqa: E402
-from arxiv_archive.evidence import build_evidence_paths, build_semantic_chunks  # noqa: E402
+from research_graph.repair.chunk_baseline_measurement import build_baseline_package  # noqa: E402
+from research_graph.repair.chunk_import_contract import validate_import_ready_package, validation_to_dict  # noqa: E402
+from research_graph.papers.semantic_chunks import build_evidence_paths, build_semantic_chunks  # noqa: E402
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text  # noqa: E402
 from research_graph.papers.indexing.parsed_page_index import build_page_index_from_parsed  # noqa: E402
 from research_graph.corpus.parsing.parser import parse_article  # noqa: E402

@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from replay_m031_chunk_evidence import build_review_corpus, main, sha256_file  # noqa: E402
 from verify_m031_chunk_evidence_replay import main as verify_closeout_main  # noqa: E402
 
-from arxiv_archive.graph_readiness_review import validate_review_artifacts  # noqa: E402
+from research_graph.graph.readiness.review import validate_review_artifacts  # noqa: E402
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> Path:

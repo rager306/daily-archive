@@ -48,7 +48,7 @@ from research_graph.papers.artifacts.minimax_boundary import (
     MiniMaxArtifactHelperResult,
     validate_article_artifact_minimax_response,
 )
-from arxiv_archive.models_registry import (
+from research_graph.llm.models_registry import (
     get_model,
     load_models_registry,
 )

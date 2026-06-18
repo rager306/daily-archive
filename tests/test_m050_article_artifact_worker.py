@@ -47,7 +47,7 @@ VALID_STRUCTURE = {
 
 def test_request_emits_work_request_with_deterministic_work_id():
     from research_graph.papers.artifacts.minimax_boundary import request_article_artifact_classification
-    from arxiv_archive.models_registry import reset_cache
+    from research_graph.llm.models_registry import reset_cache
 
     reset_cache()
     wr1 = request_article_artifact_classification(VALID_STRUCTURE)
@@ -61,7 +61,7 @@ def test_request_emits_work_request_with_deterministic_work_id():
 
 def test_work_request_preserves_safety_defaults():
     from research_graph.papers.artifacts.minimax_boundary import request_article_artifact_classification
-    from arxiv_archive.models_registry import reset_cache
+    from research_graph.llm.models_registry import reset_cache
 
     reset_cache()
     wr = request_article_artifact_classification(VALID_STRUCTURE)
@@ -75,7 +75,7 @@ def test_work_request_preserves_safety_defaults():
 
 def test_work_request_with_run_id_changes_work_id():
     from research_graph.papers.artifacts.minimax_boundary import request_article_artifact_classification
-    from arxiv_archive.models_registry import reset_cache
+    from research_graph.llm.models_registry import reset_cache
 
     reset_cache()
     base = dict(structure=VALID_STRUCTURE)
@@ -93,7 +93,7 @@ def test_process_work_request_uses_mock_transport_when_no_api_key():
 
     from research_graph.papers.artifacts.minimax_boundary import request_article_artifact_classification
     from research_graph.papers.artifacts.worker import process_work_request, MockTransport
-    from arxiv_archive.models_registry import reset_cache
+    from research_graph.llm.models_registry import reset_cache
 
     # Ensure no API key is set for the test.
     saved = os.environ.pop("MINIMAX_ARTIFACT_API_KEY", None)
@@ -116,7 +116,7 @@ def test_process_work_request_uses_mock_transport_when_no_api_key():
 def test_process_work_request_persists_artifact_to_storage_dir(tmp_path):
     from research_graph.papers.artifacts.minimax_boundary import request_article_artifact_classification
     from research_graph.papers.artifacts.worker import process_work_request, MockTransport
-    from arxiv_archive.models_registry import reset_cache
+    from research_graph.llm.models_registry import reset_cache
 
     reset_cache()
     wr = request_article_artifact_classification(VALID_STRUCTURE)
@@ -137,7 +137,7 @@ def test_process_work_request_persists_artifact_to_storage_dir(tmp_path):
 def test_run_worker_pool_processes_sequentially_with_max_workers_1():
     from research_graph.papers.artifacts.minimax_boundary import request_article_artifact_classification
     from research_graph.papers.artifacts.worker import run_worker_pool, MockTransport
-    from arxiv_archive.models_registry import reset_cache
+    from research_graph.llm.models_registry import reset_cache
 
     reset_cache()
     wr1 = request_article_artifact_classification(VALID_STRUCTURE, run_id="run-1")
@@ -162,7 +162,7 @@ def test_run_worker_pool_supports_max_workers_2():
     """Bounded ProcessPoolExecutor (max_workers=2) per M048 §4.2."""
     from research_graph.papers.artifacts.minimax_boundary import request_article_artifact_classification
     from research_graph.papers.artifacts.worker import run_worker_pool, MockTransport
-    from arxiv_archive.models_registry import reset_cache
+    from research_graph.llm.models_registry import reset_cache
 
     reset_cache()
     work_requests = [
@@ -183,7 +183,7 @@ def test_mock_transport_returns_valid_tool_use_response():
     """MockTransport's synthetic response passes basic tool_use shape checks."""
     from research_graph.papers.artifacts.minimax_boundary import request_article_artifact_classification
     from research_graph.papers.artifacts.worker import MockTransport
-    from arxiv_archive.models_registry import reset_cache
+    from research_graph.llm.models_registry import reset_cache
 
     reset_cache()
     wr = request_article_artifact_classification(VALID_STRUCTURE)

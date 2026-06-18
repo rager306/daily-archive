@@ -14,7 +14,7 @@ from research_graph.repair.bounded_chunk_repair import (
     render_bounded_chunk_repair_markdown,
     summarize_bounded_chunk_repair_contract,
 )
-from arxiv_archive.chunk_repair_contract import (
+from research_graph.repair.chunk_repair_contract import (
     MARKDOWN_FORBIDDEN_PATTERNS,
     expected_audit_from_contract,
     scan_forbidden_payload_keys,

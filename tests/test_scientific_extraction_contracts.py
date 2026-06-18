@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 
-from arxiv_archive.evidence import EvidencePath, build_evidence_path, build_semantic_chunks
+from research_graph.papers.semantic_chunks import EvidencePath, build_evidence_path, build_semantic_chunks
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
 from research_graph.papers.indexing import PageIndexDocument, build_page_index
 from research_graph.evaluation.scientific_extraction import (
