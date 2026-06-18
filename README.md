@@ -1,8 +1,30 @@
 # daily-archive
 
-`daily-archive` is evolving into a **local-first Universal Knowledge Base** built from durable, traceable evidence chains. Scientific papers and arXiv-style article workflows are the first domain and proving ground, not the final boundary of the system.
+`daily-archive` is a **local-first Universal Knowledge Base** with a **7-layer typed knowledge pipeline**: Source → Parser → Structure → Extraction → Graph → Review → Agents. Scientific papers are the first domain; textbooks, code repositories, and datasets are planned.
 
-The current runnable product is still the research-paper daily archive pipeline. M034 establishes the north-star architecture for moving from that first-domain pipeline toward a Universal KB without allowing parser, sidecar, adapter, or LLM output to become graph truth by accident.
+## Architecture (ADR-023)
+
+```
+Source → Parser → Structure → Extraction → Graph → Review → Agents
+  (PDF/HTML/Code)  (Marker/GROBID)  (TreeKnowledge)  (Core-then-Modes)  (FalkorDB)  (fail-closed)  (SymFSM)
+```
+
+**Key principles:**
+- **Statistical-first** (ADR-024): YAKE keywords, TF-IDF, embeddings before every LLM call
+- **Multi-provider LLM** (ADR-025): MiniMax-M3 primary, GLM-5.2 secondary, per-provider rate limits
+- **FalkorDB** (ADR-022): production GraphDB with typed relations (25 types in 5 groups)
+- **Core-then-Modes** extraction (Agents-K1): typed entities + relations, ~50% fewer LLM calls
+- **SymFSM agents** (ADR-026): FSM-controlled reasoning, LLM as interpreter not brain (deferred)
+- **Fail-closed boundaries**: no graph writes without explicit authorization
+
+## Current state
+
+- **Package**: `research_graph/` — 110 modules in 12 packages (post M099-M100 migration)
+- **Graph DB**: NetworkX intermediate (ADR-016), FalkorDB target (ADR-022), LadybugDB being retired
+- **LLM**: MiniMax-M3-512k + GLM-5.2 via `provider_config.py` (hot-pluggable)
+- **Embeddings**: BGE-M3 1024d via local fd/TEI service (ADR-019)
+- **Corpus**: 220+ PDFs in canonical arXiv catalog
+- **Tests**: 835+ passing
 
 ## Current first-domain runtime
 

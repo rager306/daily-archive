@@ -13,7 +13,7 @@ This index lists project-level ADRs and points to historical ADR packages kept u
 
 ## Project-Level ADRs
 
-Project-level ADR count: 22
+Project-level ADR count: 26
 
 | ADR | Status | Title | Path | Notes |
 | --- | --- | --- | --- | --- |
@@ -33,6 +33,10 @@ Project-level ADR count: 22
 | ADR-020 | Superseded by ADR-022 | M063 GraphDB Selection (LadybugDB primary) | `doc/adr/ADR-020-graphdb-selection.md` | Superseded by ADR-022 after M067 corrected the self-hosted license analysis. |
 | ADR-021 | Superseded by ADR-022 | M066 GraphDB Re-Selection (Neo4j primary) | `doc/adr/ADR-021-graphdb-reselection.md` | Superseded by ADR-022 after M067 selected FalkorDB for self-hosted daily-archive. |
 | ADR-022 | Accepted (binding) | M067 GraphDB Re-Selection Self-Hosted (FalkorDB primary) | `doc/adr/ADR-022-graphdb-reselection-self-hosted.md` | M067 GraphDB Re-Selection Self-Hosted (FalkorDB primary). |
+| ADR-023 | Accepted (binding) | Architecture Vision and Layered Knowledge Pipeline | `doc/adr/ADR-023-architecture-vision-and-layered-pipeline.md` | M101: 7-layer pipeline, statistical-first, multi-provider LLM, SymFSM agents, quant-mind patterns. |
+| ADR-024 | Accepted (binding) | Statistical-First Extraction Principle | `doc/adr/ADR-024-statistical-first-extraction-principle.md` | M101: YAKE/TF-IDF/embeddings before every LLM call. |
+| ADR-025 | Accepted (binding) | Multi-Provider LLM Architecture with Per-Provider Rate Limits | `doc/adr/ADR-025-multi-provider-llm-rate-limits.md` | M101: MiniMax primary, GLM secondary, per-provider rate checking, Headroom candidate. |
+| ADR-026 | Accepted (directional) | Agent Integration via SymFSM-Inspired Control Structures | `doc/adr/ADR-026-symfsm-inspired-agent-control.md` | M101: FSM-controlled reasoning, LLM as interpreter, deferred until pipeline+graph ready. |
 
 ## Historical ADR Packages
 
