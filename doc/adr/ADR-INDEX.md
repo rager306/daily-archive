@@ -13,7 +13,7 @@ This index lists project-level ADRs and points to historical ADR packages kept u
 
 ## Project-Level ADRs
 
-Project-level ADR count: 26
+Project-level ADR count: 27
 
 | ADR | Status | Title | Path | Notes |
 | --- | --- | --- | --- | --- |
@@ -37,6 +37,7 @@ Project-level ADR count: 26
 | ADR-024 | Accepted (binding) | Statistical-First Extraction Principle | `doc/adr/ADR-024-statistical-first-extraction-principle.md` | M101: YAKE/TF-IDF/embeddings before every LLM call. |
 | ADR-025 | Accepted (binding) | Multi-Provider LLM Architecture with Per-Provider Rate Limits | `doc/adr/ADR-025-multi-provider-llm-rate-limits.md` | M101: MiniMax primary, GLM secondary, per-provider rate checking, Headroom candidate. |
 | ADR-026 | Accepted (directional) | Agent Integration via SymFSM-Inspired Control Structures | `doc/adr/ADR-026-symfsm-inspired-agent-control.md` | M101: FSM-controlled reasoning, LLM as interpreter, deferred until pipeline+graph ready. |
+| ADR-027 | Accepted (binding) | Resource-Aware Queue Scheduler | `doc/adr/ADR-027-resource-aware-queue-scheduler.md` | M101: 3-lane scheduler (LLM/CPU/IO), per-provider rate limits, backoff, observability. |
 
 ## Historical ADR Packages
 
