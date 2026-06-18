@@ -13,7 +13,7 @@ This index lists project-level ADRs and points to historical ADR packages kept u
 
 ## Project-Level ADRs
 
-Project-level ADR count: 31
+Project-level ADR count: 32
 
 | ADR | Status | Title | Path | Notes |
 | --- | --- | --- | --- | --- |
@@ -42,6 +42,7 @@ Project-level ADR count: 31
 | ADR-029 | Accepted (binding) | Extraction Pipeline Architecture | `doc/adr/ADR-029-extraction-pipeline.md` | M101: Core-then-Modes, statistical-first, DSPy, multi-provider, ~$0.07/article. |
 | ADR-030 | Accepted (binding) | FalkorDB Graph Schema and Operators | `doc/adr/ADR-030-falkordb-schema.md` | M101: 9 node labels, 27 typed edges, 2 vector indexes, 6 operators, 4-phase migration. |
 | ADR-031 | Accepted (directional) | Agent Integration Plan | `doc/adr/ADR-031-agent-integration.md` | M101: 6 SymFSM roles, O1-O6 tools, safety contract, experience store, Phase 6 deferred. |
+| ADR-032 | Accepted (binding) | Universal Domain Ingestion | `doc/adr/ADR-032-universal-domain-ingestion.md` | M101: 5 domain profiles (paper/textbook/code/dataset/tech_doc), universal source registry, GNN textbook first. |
 
 ## Historical ADR Packages
 
