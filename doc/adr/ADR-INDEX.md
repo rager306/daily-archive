@@ -13,7 +13,7 @@ This index lists project-level ADRs and points to historical ADR packages kept u
 
 ## Project-Level ADRs
 
-Project-level ADR count: 27
+Project-level ADR count: 28
 
 | ADR | Status | Title | Path | Notes |
 | --- | --- | --- | --- | --- |
@@ -38,6 +38,7 @@ Project-level ADR count: 27
 | ADR-025 | Accepted (binding) | Multi-Provider LLM Architecture with Per-Provider Rate Limits | `doc/adr/ADR-025-multi-provider-llm-rate-limits.md` | M101: MiniMax primary, GLM secondary, per-provider rate checking, Headroom candidate. |
 | ADR-026 | Accepted (directional) | Agent Integration via SymFSM-Inspired Control Structures | `doc/adr/ADR-026-symfsm-inspired-agent-control.md` | M101: FSM-controlled reasoning, LLM as interpreter, deferred until pipeline+graph ready. |
 | ADR-027 | Accepted (binding) | Resource-Aware Queue Scheduler | `doc/adr/ADR-027-resource-aware-queue-scheduler.md` | M101: 3-lane scheduler (LLM/CPU/IO), per-provider rate limits, backoff, observability. |
+| ADR-028 | Accepted (binding) | Typed Knowledge Schema | `doc/adr/ADR-028-typed-knowledge-schema.md` | M101: 5 modules (A-E), 27 typed relations, stable IDs, domain profiles, quant-mind patterns. |
 
 ## Historical ADR Packages
 
