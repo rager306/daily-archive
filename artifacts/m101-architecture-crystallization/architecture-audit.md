@@ -162,11 +162,19 @@ research_graph/
 - **Evaluate**: Headroom for token compression
 - **Keep**: provider_config.py as hot-pluggable config layer
 
-### Layer 5: Agents → ActiveGraph-Inspired (DEFERRED)
+### Layer 5: Agents → SymFSM-Inspired (DEFERRED — REQUIRES FURTHER IDEA DEVELOPMENT)
 - **Prerequisite**: Pipeline + queues + graph must be operational first
-- **Design**: 6 agent roles from Agents-K1 + ActiveGraph patterns
+- **Design**: 6 agent roles from Agents-K1 + ActiveGraph patterns + SymFSM control
 - **Safety**: All agent actions through fail-closed gates
-- **ADR needed**: Agent integration plan (but execution deferred)
+- **ADR**: ADR-031 (directional only)
+- **Status**: ⚠️ SymFSM concept needs concrete formalization before implementation:
+  - FSM state specifications (formal, not conceptual)
+  - Guard condition language and evaluation engine
+  - Repair engine implementation strategy
+  - Cognitive map construction from FalkorDB subgraphs
+  - Experience store retrieval and matching algorithm
+  - Coordination protocol between 6 agent roles
+- A dedicated research milestone should precede Phase 6 implementation
 
 ### Layer 6: Sources → Universal Domain
 - **Add**: Domain profile concept (paper, textbook, code_repo, dataset, tech_doc)
@@ -206,7 +214,11 @@ Phase 5: Universal ingestion
     - Code repo ingestion
     - Cross-source linking
 
-Phase 6: Agent integration (LATEST)
+Phase 6: Agent integration (LATEST) ⚠️ REQUIRES FURTHER IDEA DEVELOPMENT
+    - SymFSM concept needs formalization (FSM specs, guard language, repair engine)
+    - Cognitive map construction from FalkorDB subgraphs
+    - Experience store retrieval and matching algorithm
+    - A dedicated research milestone must precede implementation
     - Multi-agent swarm
     - MCP tools
     - ActiveGraph patterns

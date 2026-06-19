@@ -1,6 +1,6 @@
 # ADR-031: Agent Integration Plan
 
-**Status:** Accepted (directional)  
+**Status:** Accepted (directional) — ⚠️ REQUIRES FURTHER IDEA DEVELOPMENT BEFORE IMPLEMENTATION  
 **Date:** 2026-06-18  
 **Deciders:** collaborative  
 **Milestone:** M101-f5jip0 S05  
@@ -49,3 +49,12 @@ Pipeline end-to-end → Queue activated → FalkorDB live → Operators O1-O6 �
 - **Safety**: no agent writes to graph. All output is CandidatePacket.
 - **SymFSM**: FSM controls reasoning, LLM fills templates.
 - **Experience store**: case-based memory, not fine-tuning.
+- **⚠️ REQUIRES FURTHER IDEA DEVELOPMENT**: Before Phase 6 implementation, a dedicated research milestone must formalize:
+  - FSM state specifications (formal, not conceptual)
+  - Guard condition language and evaluation engine
+  - Repair engine implementation strategy
+  - Cognitive map construction from FalkorDB subgraphs
+  - Experience store retrieval and matching algorithm
+  - Coordination protocol between 6 agent roles
+  - Integration with 3-lane scheduler (ADR-027)
+  - Output verifier against cognitive map + typed relations
