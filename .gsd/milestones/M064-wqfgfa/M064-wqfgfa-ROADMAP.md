@@ -5,7 +5,7 @@
 ## Slices
 
 - [x] **S04: S04** `risk:medium` `depends:[]`
-  > After this:
+  > After this: 2-hop BFS final synthesis: scale evidence, 5-layer diagnostic graph with judge layer, D084 decision recorded.
 
 - [x] **S01: 1-anchor pilot: 1-hop + 2-hop BFS + 8 stages + M3 judge e2e** `risk:medium` `depends:[]`
   > After this: 1 anchor (2605.18747) full pipeline: 1-hop validation, 2-hop real acquisition, 8 stages, M3 judge on figures, manifest validation, graph layer. Decision: continue to 4 more anchors or stop

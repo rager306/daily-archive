@@ -68,6 +68,8 @@
 - ✅ **M064-wqfgfa: M061 2-hop BFS with M3 Judge Integration at Scale** (`depends:[—]`)
 - ✅ **M065-u29n4f: GraphDB Selection (M063 Closeout)** (`depends:[—]`)
 - ✅ **M065-vq0do4: M062 fd production hardening** (`depends:[—]`)
+- ✅ **M066-7fbv31: M066 GraphDB Re-evaluation (Neo4j, ADR-021)** (`depends:[—]`)
+- ✅ **M067-oqsavh: M067 GraphDB Re-selection (FalkorDB, ADR-022)** (`depends:[—]`)
 - ✅ **M068-hlcxny: M068-hlcxny** (`depends:[—]`)
 - ✅ **M069-pq7ral: Agents K1 schema and metrics research** (`depends:[M068-hlcxny]`)
 - ✅ **M070-bvy1ii: Queue foundation with schema metrics payloads** (`depends:[M069-pq7ral]`)
