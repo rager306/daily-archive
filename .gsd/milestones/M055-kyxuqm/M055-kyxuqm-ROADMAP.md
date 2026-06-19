@@ -19,7 +19,7 @@
 - [x] **S05: Hybrid routing on 20 PDFs with GROBID fulltext comparison** `risk:medium` `depends:[S04]`
   > After this: 20-PDF hybrid routing packets with per-dimension winners and fulltext-vs-header delta.
 
-- [ ] **S06: Comprehensive REPORT plus ADR-008 amendment or ADR-009** `risk:low` `depends:[S05]`
+- [x] **S06: Comprehensive REPORT plus ADR-008 amendment or ADR-009** `risk:low` `depends:[S05]`
   > After this: Comprehensive REPORT.md (20-PDF benchmark) plus ADR amendment.
 
 ## Boundary Map

@@ -16,7 +16,7 @@
 - [x] **S04: Wave 4: refs 91-120** `risk:medium` `depends:[S03]`
   > After this: 30 more PDFs (cumulative 140) with per-wave analysis.
 
-- [ ] **S05: Wave 5: refs 121-150** `risk:medium` `depends:[S04]`
+- [x] **S05: Wave 5: refs 121-150** `risk:medium` `depends:[S04]`
   > After this: 30 more PDFs (cumulative 170) with per-wave analysis.
 
 - [x] **S06: Wave 6: remaining 16 refs (151-166)** `risk:medium` `depends:[S05]`
