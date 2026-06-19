@@ -2,77 +2,70 @@
 
 ## What This Is
 
-daily-archive is a local-first arXiv research ingestion and scientific knowledge-graph project. It builds deterministic paper-processing evidence chains before any production graph import is allowed: catalog records, source acquisition, loader evidence, parser/conversion diagnostics, chunks, graph-readiness reviewer packets, and fail-closed no-write import boundaries.
+daily-archive is a **local-first Universal Knowledge Base** with a **7-layer typed knowledge pipeline** (ADR-023): Source → Parser → Structure → Extraction → Graph → Review → Agents. Scientific papers are the primary domain; textbooks, code repositories, and datasets are planned through universal domain ingestion (ADR-032).
+
+The project builds deterministic evidence chains before any graph import: catalog records, source acquisition, parser diagnostics, typed entity extraction, fail-closed review gates, and FalkorDB typed graph schema.
 
 ## Core Value
 
-A future agent should be able to ingest scientific papers locally, inspect durable artifacts, compare parser/chunker quality, and only advance toward Scientific KG / LadybugDB import when evidence is traceable, reviewed, and explicitly authorized.
+A future agent should be able to ingest knowledge sources locally, extract typed entities and relations, build a navigable knowledge graph in FalkorDB, and use FSM-controlled reasoning (SymFSM) to answer complex research questions — all with traceable evidence and fail-closed safety boundaries.
 
-## Project Shape
+## Architecture (post-M101)
 
-- **Complexity:** complex
-- **Why:** The project spans local artifact persistence, source acquisition, parser/conversion quality, evidence paths, review packets, graph-readiness gates, and LadybugDB safety boundaries.
+**7-Layer Pipeline** (ADR-023):
+
+| Layer | Name | What | Key ADR |
+|---|---|---|---|
+| 0 | Source | Register and fetch any knowledge source | ADR-032 (universal) |
+| 1 | Parser | Convert raw source → ParsedArticle | ADR-008/009 |
+| 2 | Structure | TreeKnowledge + SemanticChunks + KnowledgeCards | ADR-024 |
+| 3 | Extraction | Core-then-Modes typed extraction | ADR-028/029 |
+| 4 | Graph | FalkorDB typed schema + operators O1-O6 | ADR-022/030 |
+| 5 | Review | Fail-closed safety gates | existing |
+| 6 | Agents | SymFSM-controlled (REQUIRES DEVELOPMENT) | ADR-026/031 |
+
+**Key Principles**:
+- **Statistical-first** (ADR-024): YAKE/TF-IDF/embeddings before every LLM call
+- **Multi-provider LLM** (ADR-025): MiniMax-M3 + GLM-5.2 with per-provider rate limits
+- **Resource-aware scheduler** (ADR-027): 3-lane (LLM/CPU/IO) queue coordination
+- **Typed schema** (ADR-028): 27 relation types in 5 groups (Agents-K1 adapted)
+- **FalkorDB** (ADR-022): production GraphDB, NetworkX intermediate (ADR-016)
+- **Fail-closed boundaries**: no graph writes without explicit authorization
 
 ## Current State
 
-- M031-vwpd8e is complete: **Catalog Backed Replay to Graph Readiness Refusal Boundary**.
-- M031 established a bounded selected-ref chain: catalog/intake → acquisition → loader → parser/conversion → chunk/evidence → graph-readiness handoff → no-write import refusal.
-- M031 validation round 1 is `pass` after S07 resolved round 0 needs-attention at the evaluation layer.
-- S07 documented that the stale S02 direct `FAIL` assessment is historical artifact conflict superseded by S06/S07 scoped evidence for M031 validation.
-- R024, R027, R029, and R050 remain active globally; M031 advanced them only within refusal-boundary scope and did not claim positive graph/import readiness.
+- **Package**: `research_graph/` — 110 modules in 12 packages (M099-M100 complete)
+- **Architecture**: crystallized via 32 binding ADRs (M101 complete)
+- **Graph DB**: NetworkX intermediate (ADR-016), FalkorDB target (ADR-022), LadybugDB being retired
+- **LLM**: MiniMax-M3-512k + GLM-5.2 via provider_config.py (hot-pluggable, ADR-025)
+- **Embeddings**: BGE-M3 1024d via local fd/TEI service (ADR-019)
+- **Corpus**: 220+ PDFs in canonical arXiv catalog
+- **Tests**: 835+ passing
+- **Trajectory**: 13 monitoring dimensions (8 original + 5 post-M101 architecture)
 
 ## Architecture Decision Records
 
-- Canonical ADR template: `doc/adr/ADR-TEMPLATE.md`.
-- ADR index: `doc/adr/ADR-INDEX.md`.
-- All new ADRs (ADR-017 onwards) MUST use the canonical template.
-- Current graph-library decision: ADR-016 keeps NetworkX as primary and igraph as the only supplementary read-only accelerator; rustworkx is not adopted.
+- 32 binding ADRs (ADR-001 through ADR-032)
+- Canonical ADR template: `.gsd/milestones/M034-kuei9y/decision-package/ADR-TEMPLATE.md`
+- ADR index: `doc/adr/ADR-INDEX.md`
+- Key recent ADRs: ADR-023 (architecture vision), ADR-028 (typed schema), ADR-029 (extraction pipeline), ADR-030 (FalkorDB schema), ADR-031 (agents), ADR-032 (universal ingestion)
 
-## Current Research Direction
+## Phased Roadmap
 
-The next project question is whether article parsing/conversion quality and throughput can be improved by studying external PDF-processing and paper-knowledge frameworks:
-
-- `opendataloader-pdf` from `https://github.com/opendataloader-project/opendataloader-pdf`
-- GROBID from `https://github.com/kermitt2/grobid`
-- `quant-mind` from `https://github.com/LLMQuant/quant-mind`
-
-The core research goals are:
-
-1. Compare opendataloader-pdf and GROBID with daily-archive's current parser/conversion/refusal pipeline.
-2. Test the claim: for scientific-article RAG contexts, teams often combine GROBID for deep scholarly parsing and bibliography with OpenDataLoader-style tooling for layout and tables.
-3. Assess whether that combination is feasible here and how much complexity it adds.
-4. Evaluate processed article quality using current daily-archive outputs, opendataloader-pdf outputs, and GROBID outputs under a bounded, artifact-backed protocol.
-5. Extract architecture patterns from quant-mind without adopting it wholesale: TreeKnowledge, PaperKnowledgeCard, provenance schemas, fetch/format separation, bounded batch flows, magic input resolution, and clear separation between realized code and aspirational README claims.
-
-This is research/probe work only: no production graph import, no LadybugDB writes, no positive graph-readiness claims, and no adoption of external frameworks before compatibility, quality, and safety boundaries are proven.
+| Phase | Focus | Status |
+|---|---|---|
+| Phase 1 | Architecture crystallization (M101) | ✅ Complete |
+| Phase 2 | Typed schema code + extraction prototype | ⬜ Next |
+| Phase 3 | FalkorDB migration + graph operators | ⬜ |
+| Phase 4 | Staged validation (R024: 10→20→week) | ⬜ |
+| Phase 5 | Universal ingestion (textbook, code, dataset) | ⬜ |
+| Phase 6 | Agent integration (SymFSM) | ⚠️ Requires idea development |
 
 ## Safety Boundaries
 
-- Do not treat parsed text existence as graph readiness.
-- Do not infer quality from non-empty output alone; low-quality source diagnostics remain necessary.
-- External parser probes must remain local, bounded, reproducible, and artifact-backed.
-- Positive KG import remains blocked until independent completed review and an in-scope import authorization milestone.
-- quant-mind should be treated as an architecture-pattern source and experimental reference, not as a production RAG/Knowledge Base dependency.
-
-## Capability Contract
-
-See `.gsd/REQUIREMENTS.md` for the explicit capability contract, active/validated status, and requirement coverage mapping.
-
-## Milestone Sequence
-
-- [x] M001: Cron-safe arXiv article analysis for Hermes — Stable daily CLI, JSON artifacts, queue state, and cron-safe behavior.
-- [x] M002: LadybugDB Graph-Vector Scientific KG Foundation — Embedded graph-vector storage, embeddings, graph analytics, and paper-level hybrid recommendations.
-- [x] M031-vwpd8e: Catalog Backed Replay to Graph Readiness Refusal Boundary — Bounded catalog-backed replay chain through no-write graph import refusal with validation round 1 pass.
-- [ ] M032: External Parser and Paper-Knowledge Architecture Research — Vendor and index opendataloader-pdf, GROBID, and quant-mind; compare parser/output contracts, evaluate combination complexity, and identify reusable architecture patterns.
-
-## Active Next Step
-
-Use GitNexus to study `opendataloader-pdf`, GROBID, `quant-mind`, and `daily-archive` side by side. Produce a research artifact that answers: what each project actually implements, how it compares to current daily-archive boundaries, whether GROBID + OpenDataLoader-style combination is practical, what quality evaluation should be run, and which quant-mind architecture patterns are worth adapting.
-
-## Important Artifacts
-
-- M031 validation: `.gsd/milestones/M031-vwpd8e/M031-vwpd8e-VALIDATION.md`
-- M031 summary: `.gsd/milestones/M031-vwpd8e/M031-vwpd8e-SUMMARY.md`
-- S07 assessment reconciliation: `.gsd/milestones/M031-vwpd8e/slices/S07/S07-ASSESSMENT.md`
-- Requirements contract: `.gsd/REQUIREMENTS.md`
-- Vendor source roots: `/root/vendor-source/opendataloader-pdf`, `/root/vendor-source/grobid`, `/root/vendor-source/quant-mind`
+- No graph writes without explicit authorization
+- No production imports without independent review
+- Statistical-first: deterministic pre-processing before every LLM call
+- Rate-limit-aware: per-provider quota checking before API calls
+- Agent safety: SymFSM control prevents free-form LLM actions
+- Staged validation: no scale claims before 10/20/week validation (R024)
