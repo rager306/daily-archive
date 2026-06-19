@@ -21,7 +21,13 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT_DIR = ROOT / "artifacts" / "project-trajectory"
-DIMENSIONS = ("architecture", "functionality", "module_code", "evidence", "safety", "operations", "next_gate", "reverse_adr_audit")
+DIMENSIONS = (
+    "architecture", "functionality", "module_code", "evidence", "safety",
+    "operations", "next_gate", "reverse_adr_audit",
+    # Post-M101 architecture dimensions (ADR-023)
+    "schema_readiness", "extraction_coverage", "falkordb_migration",
+    "universal_sources", "agent_readiness",
+)
 PHASES = ("preflight", "active", "closeout")
 
 # Phase-aware severity overrides per D080 and M046 Roadmap Recommendation 5.
@@ -200,33 +206,17 @@ def adjust_severity_for_phase(flags: list[dict[str, Any]], phase: str) -> list[d
 # An anchor ADR/R is a binding decision. A violation here is a binding breach.
 REVERSE_ADR_AUDIT_RULES: list[dict[str, Any]] = [
     {
-        "id": "no_ladybugdb_import_in_src",
-        "anchor": "ADR-002 (Defer Final GraphDB Selection), ADR-005 (No Direct Extractor to GraphDB)",
-        "severity": "high",
+        "id": "no_ladybugdb_import_outside_graph_package",
+        "anchor": "ADR-022 (FalkorDB binding), ADR-005 (No Direct Extractor to GraphDB)",
+        "severity": "medium",
         "scan": "src/",
         "pattern": r"^\s*import\s+ladybugdb\b",
-        "exclude_paths": ("src/arxiv_archive/ladybug_client.py",),
-        "rationale": "Third-party `ladybugdb` library must not be imported; only the substrate-port wrapper `ladybug_client.py` is allowed (substrate rehearsal per M035).",
-    },
-    {
-        "id": "no_falkordb_import_in_src",
-        "anchor": "ADR-002 (Defer Final GraphDB Selection)",
-        "severity": "high",
-        "scan": "src/",
-        "pattern": r"^\s*(?:from|import)\s+falkordb\b",
-        "rationale": "GraphDB selection is deferred. FalkorDB is a candidate, not adopted.",
-    },
-    {
-        "id": "no_helixdb_import_in_src",
-        "anchor": "ADR-002 (Defer Final GraphDB Selection)",
-        "severity": "high",
-        "scan": "src/",
-        "pattern": r"^\s*(?:from|import)\s+helixdb\b",
-        "rationale": "GraphDB selection is deferred. HelixDB is a candidate, not adopted.",
+        "exclude_paths": ("src/research_graph/graph/ladybug_client.py",),
+        "rationale": "Third-party `ladybugdb` library must only be imported in the graph substrate wrapper. FalkorDB (ADR-022) is the binding production target.",
     },
     {
         "id": "no_quantmind_runtime_import",
-        "anchor": "ADR-007 (Quant-mind Pattern Source Not Runtime Dependency)",
+        "anchor": "ADR m034/007 (Quant-mind Pattern Source Not Runtime Dependency)",
         "severity": "high",
         "scan": "src/",
         "pattern": r"^\s*(?:from|import)\s+(?:quantmind|quant_mind|llmquant)\b",
@@ -258,11 +248,30 @@ REVERSE_ADR_AUDIT_RULES: list[dict[str, Any]] = [
     },
     {
         "id": "no_ladybugdb_written_true_in_artifacts",
-        "anchor": "ADR-002, ADR-005",
+        "anchor": "ADR-022 (FalkorDB binding)",
         "severity": "high",
         "scan": "artifacts/",
         "pattern": r"\"ladybugdb_written\"\s*:\s*true",
-        "rationale": "ladybugdb_written must remain false until GraphDB selection is finalized (ADR-002 deferred).",
+        "rationale": "ladybugdb_written must remain false. FalkorDB (ADR-022) is the binding production GraphDB.",
+    },
+    # Post-M101 rules (ADR-023 through ADR-032)
+    {
+        "id": "no_arxiv_archive_import",
+        "anchor": "M099 (Full migration to research_graph)",
+        "severity": "high",
+        "scan": "src/",
+        "pattern": r"^\s*(?:from|import)\s+arxiv_archive\b",
+        "rationale": "arxiv_archive package was fully migrated to research_graph. No imports should remain.",
+    },
+    {
+        "id": "no_anthropic_sdk_outside_llm",
+        "anchor": "M100 (summarizer moved to llm), ADR-025 (multi-provider)",
+        "severity": "medium",
+        "scan": "src/",
+        "pattern": r"^\s*import\s+anthropic\b",
+        "exclude_paths": ("src/research_graph/llm/",),
+        "rationale": "anthropic SDK should only be imported in llm/ package. Other modules use provider-agnostic interfaces.",
+        "path_prefix_exclude": "src/research_graph/llm/",
     },
 ]
 
@@ -291,6 +300,7 @@ def reverse_adr_audit(root: Path) -> dict[str, Any]:
             violations.append({"rule_id": rule["id"], "anchor": rule["anchor"], "file": "<pattern>", "line": "0", "snippet": f"pattern error: {exc}"})
             continue
         exclude = set(rule.get("exclude_paths") or ())
+        prefix_exclude = rule.get("path_prefix_exclude")
         for path in scan_root.rglob("*"):
             if not path.is_file():
                 continue
@@ -301,6 +311,8 @@ def reverse_adr_audit(root: Path) -> dict[str, Any]:
             except ValueError:
                 continue
             if rel in exclude:
+                continue
+            if prefix_exclude and rel.startswith(prefix_exclude):
                 continue
             try:
                 text = path.read_text(encoding="utf-8")
@@ -351,9 +363,15 @@ def build_report(*, root: Path = ROOT, codebase_memory_snapshot: Path | None = N
     if git.get("changed_files", 0) > 0:
         drift_flags.append({"flag": "uncommitted_changes_present", "severity": "info", "evidence": f"{git['changed_files']} files"})
     for violation in audit["violations"]:
+        # Find the rule to get its severity
+        rule_severity = "high"
+        for rule in REVERSE_ADR_AUDIT_RULES:
+            if rule["id"] == violation["rule_id"]:
+                rule_severity = rule.get("severity", "high")
+                break
         drift_flags.append({
             "flag": f"reverse_adr_audit_{violation['rule_id']}",
-            "severity": "high",
+            "severity": rule_severity,
             "evidence": f"{violation['file']}:{violation['line']}",
             "snippet": violation["snippet"],
         })
@@ -405,10 +423,36 @@ def build_report(*, root: Path = ROOT, codebase_memory_snapshot: Path | None = N
             [f"rule_count={audit['rule_count']}", *audit["evidence"][:5]],
             [v["rule_id"] for v in audit["violations"]],
         ),
+        # Post-M101 architecture dimensions (ADR-023)
+        "schema_readiness": dimension(
+            "design_accepted" if paths.adr_dir.joinpath("ADR-028-typed-knowledge-schema.md").exists() else "missing",
+            ["ADR-028 typed schema", "27 relation types", "5 modules A-E"],
+            [],
+        ),
+        "extraction_coverage": dimension(
+            "not_started",
+            ["Core-then-Modes pipeline designed (ADR-029)", "No extraction runs yet"],
+            [],
+        ),
+        "falkordb_migration": dimension(
+            "not_started" if not any(p.name == "falkordb_client.py" for p in (root / "src" / "research_graph" / "graph").glob("*.py")) else "in_progress",
+            ["ADR-022 FalkorDB binding", "ADR-030 schema designed", "LadybugDB still in use"],
+            [],
+        ),
+        "universal_sources": dimension(
+            "paper_only",
+            ["220 PDFs in arXiv catalog", "5 domain profiles designed (ADR-032)", "GNN textbook pending"],
+            [],
+        ),
+        "agent_readiness": dimension(
+            "requires_development",
+            ["ADR-031 directional", "SymFSM needs formalization", "Phase 6 deferred"],
+            [],
+        ),
     }
 
     report = {
-        "schema_version": "m045.project-trajectory.v1",
+        "schema_version": "m101.project-trajectory.v2",
         "phase": phase,
         "verdict": verdict,
         "dimensions": dimensions,
@@ -505,13 +549,15 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         "Verification: `uv run python scripts/verify_article_catalog.py` must pass after any ingestion step.",
         "",
-        "## Next gate (post-M062-b4porb)",
+        "## Next gate (post-M101 architecture crystallization)",
         "",
-        "- M060b: NetworkX graph validation (intermediate layer)",
-        "- M061: 2-hop BFS with M3 judge integration (closed 2026-06-13, catalog ingestion via S04)",
-        "- M062: fd production hardening (S01 wrapper + S02 ADR-019 contract + S03 contract tests)",
-        "- M063: ADR-002 GraphDB selection (FalkorDB vs LadybugDB vs Neo4j)",
-        "- M060d (current) closeout: 1 primary (NetworkX) + 1 supplementary (igraph) per amended ADR-016.",
+        "Architecture is crystallized (32 ADRs, 6 design documents). Next phases:",
+        "",
+        "- **Phase 2**: Typed schema code + extraction prototype (5 papers, DSPy, MiniMax)",
+        "- **Phase 3**: FalkorDB migration + graph operators O1-O6",
+        "- **Phase 4**: Staged validation (R024: 10→20→week corpus)",
+        "- **Phase 5**: Universal ingestion (GNN textbook, code repos, datasets)",
+        "- **Phase 6**: Agent integration (SymFSM) — REQUIRES FURTHER IDEA DEVELOPMENT",
         "",
         "## Future gate: FD v2 verification (post-fd-v2-deploy)",
         "",

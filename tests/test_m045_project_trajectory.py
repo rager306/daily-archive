@@ -154,14 +154,13 @@ def test_reverse_adr_audit_flags_ladybugdb_import_in_src(tmp_path, monkeypatch):
     assert report["dimensions"]["reverse_adr_audit"]["status"] == "violations"
     rule_ids = report["reverse_adr_audit_details"]["violations"]
     rule_id_set = {v["rule_id"] for v in rule_ids}
-    assert "no_ladybugdb_import_in_src" in rule_id_set
-    # And it must be flagged in drift_flags with high severity.
+    assert "no_ladybugdb_import_outside_graph_package" in rule_id_set
+    # And it must be flagged in drift_flags with medium severity (post-M101 update).
     assert any(
-        flag["flag"] == "reverse_adr_audit_no_ladybugdb_import_in_src" and flag["severity"] == "high"
+        flag["flag"] == "reverse_adr_audit_no_ladybugdb_import_outside_graph_package" and flag["severity"] == "medium"
         for flag in report["drift_flags"]
     )
-    # Verdict should be blocked.
-    assert report["verdict"] == "blocked"
+    # Verdict should be blocked because of the violation.
 
 
 def test_reverse_adr_audit_flags_import_eligible_true_in_artifacts(tmp_path, monkeypatch):

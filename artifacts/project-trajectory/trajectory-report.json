@@ -6,6 +6,15 @@
   },
   "derived_not_canonical": true,
   "dimensions": {
+    "agent_readiness": {
+      "evidence": [
+        "ADR-031 directional",
+        "SymFSM needs formalization",
+        "Phase 6 deferred"
+      ],
+      "flags": [],
+      "status": "requires_development"
+    },
     "architecture": {
       "evidence": [
         ".gsd/DECISIONS.md",
@@ -17,24 +26,41 @@
     },
     "evidence": {
       "evidence": [
-        ".gsd/milestones/M061-0fib2i/M061-0fib2i-SUMMARY.md",
-        ".gsd/milestones/M063-8d01zz/M063-8d01zz-SUMMARY.md",
-        ".gsd/milestones/M064-wqfgfa/M064-wqfgfa-SUMMARY.md"
+        ".gsd/milestones/M065-u29n4f/M065-u29n4f-SUMMARY.md",
+        ".gsd/milestones/M066-7fbv31/M066-7fbv31-SUMMARY.md",
+        ".gsd/milestones/M099-bpeq08b/M099-bpeq08b-SUMMARY.md"
       ],
       "flags": [],
       "status": "tracked"
     },
+    "extraction_coverage": {
+      "evidence": [
+        "Core-then-Modes pipeline designed (ADR-029)",
+        "No extraction runs yet"
+      ],
+      "flags": [],
+      "status": "not_started"
+    },
+    "falkordb_migration": {
+      "evidence": [
+        "ADR-022 FalkorDB binding",
+        "ADR-030 schema designed",
+        "LadybugDB still in use"
+      ],
+      "flags": [],
+      "status": "not_started"
+    },
     "functionality": {
       "evidence": [
-        "requirements=65",
-        "statuses={'active': 17, 'validated': 48}"
+        "requirements=72",
+        "statuses={'active': 24, 'validated': 48}"
       ],
       "flags": [],
       "status": "tracked"
     },
     "module_code": {
       "evidence": [
-        "git_changed_files=22"
+        "git_changed_files=5"
       ],
       "flags": [
         "uncommitted_changes_present"
@@ -59,8 +85,9 @@
     "reverse_adr_audit": {
       "evidence": [
         "rule_count=8",
-        "src/ (rule: no_ladybugdb_import_in_src, anchor: ADR-002 (Defer Final GraphDB Selection), ADR-005 (No Direct Extractor to GraphDB))",
-        "artifacts/ (rule: no_graph_import_allowed_true_in_artifacts, anchor: ADR-005 (No Direct Extractor to GraphDB Path))"
+        "src/ (rule: no_ladybugdb_import_outside_graph_package, anchor: ADR-022 (FalkorDB binding), ADR-005 (No Direct Extractor to GraphDB))",
+        "artifacts/ (rule: no_graph_import_allowed_true_in_artifacts, anchor: ADR-005 (No Direct Extractor to GraphDB Path))",
+        "src/ (rule: no_arxiv_archive_import, anchor: M099 (Full migration to research_graph))"
       ],
       "flags": [],
       "status": "clear"
@@ -69,18 +96,39 @@
       "evidence": [
         "prohibited-claim scan over PROJECT/README/recent summaries"
       ],
+      "flags": [
+        "graph_import_authorized"
+      ],
+      "status": "blocked"
+    },
+    "schema_readiness": {
+      "evidence": [
+        "ADR-028 typed schema",
+        "27 relation types",
+        "5 modules A-E"
+      ],
       "flags": [],
-      "status": "clear"
+      "status": "design_accepted"
+    },
+    "universal_sources": {
+      "evidence": [
+        "220 PDFs in arXiv catalog",
+        "5 domain profiles designed (ADR-032)",
+        "GNN textbook pending"
+      ],
+      "flags": [],
+      "status": "paper_only"
     }
   },
   "drift_flags": [
     {
-      "evidence": "M064-wqfgfa",
-      "flag": "latest_milestone_missing_readme_reference",
-      "severity": "medium"
+      "evidence": "recent_milestones",
+      "flag": "graph_import_authorized",
+      "severity": "high",
+      "snippet": "gnostic surfaces for Neo4j connection and transaction failures; 5. run fixture-based verification before any production graph import is allowed. ## Requirement and Decision Effects M066 advances the GraphDB selection requirement by replacin"
     },
     {
-      "evidence": "22 files",
+      "evidence": "5 files",
       "flag": "uncommitted_changes_present",
       "severity": "info"
     }
@@ -88,7 +136,6 @@
   "graph_write_allowed": false,
   "import_eligible": false,
   "next_actions": [
-    "Update README with latest milestone M064-wqfgfa interpretation.",
     "Run focused verification and commit or intentionally leave a handoff."
   ],
   "phase": "preflight",
@@ -136,9 +183,9 @@
     },
     "governance_graph": {
       "edge_count": 13,
-      "node_count": 175,
+      "node_count": 179,
       "node_types": {
-        "ADR": 18,
+        "ADR": 22,
         "Artifact": 2,
         "Decision": 84,
         "Milestone": 5,
@@ -147,47 +194,26 @@
       }
     },
     "latest_milestone": {
-      "id": "M064-wqfgfa",
+      "id": "M099-bpeq08b",
       "mentions_no_import": false,
-      "path": ".gsd/milestones/M064-wqfgfa/M064-wqfgfa-SUMMARY.md",
+      "path": ".gsd/milestones/M099-bpeq08b/M099-bpeq08b-SUMMARY.md",
       "status": "complete",
-      "title": "M061 2-hop BFS with M3 Judge Integration at Scale"
+      "title": "Remaining arxiv archive migration plan"
     },
     "recent_milestones": [
       {
-        "id": "M058-cmjp1u",
+        "id": "M097-ilsyrl",
         "mentions_no_import": false,
-        "path": ".gsd/milestones/M058-cmjp1u/M058-cmjp1u-SUMMARY.md",
+        "path": ".gsd/milestones/M097-ilsyrl/M097-ilsyrl-SUMMARY.md",
         "status": "complete",
-        "title": "M059 Pilot Cycle plotextractor v2 + Marker Iterative Expansion"
+        "title": "Research graph source acquisition and scan migration wave"
       },
       {
-        "id": "M059-y6osma",
+        "id": "M098-2qn07e",
         "mentions_no_import": false,
-        "path": ".gsd/milestones/M059-y6osma/M059-y6osma-SUMMARY.md",
+        "path": ".gsd/milestones/M098-2qn07e/M098-2qn07e-SUMMARY.md",
         "status": "complete",
-        "title": "M060 Manifest Driven PDF Ingest Architecture"
-      },
-      {
-        "id": "M060-gakmo0",
-        "mentions_no_import": false,
-        "path": ".gsd/milestones/M060-gakmo0/M060-gakmo0-SUMMARY.md",
-        "status": "complete",
-        "title": "M059b MiniMax Figure QA Judge Pilot Dual Model"
-      },
-      {
-        "id": "M061-0fib2i",
-        "mentions_no_import": false,
-        "path": ".gsd/milestones/M061-0fib2i/M061-0fib2i-SUMMARY.md",
-        "status": "complete",
-        "title": "M060c Graph Library Alternatives Research and Applicability"
-      },
-      {
-        "id": "M063-8d01zz",
-        "mentions_no_import": false,
-        "path": ".gsd/milestones/M063-8d01zz/M063-8d01zz-SUMMARY.md",
-        "status": "complete",
-        "title": "M060b NetworkX Graph Validation Intermediate Layer"
+        "title": "Scoped local commit execution for research_graph migration"
       },
       {
         "id": "M064-wqfgfa",
@@ -195,10 +221,31 @@
         "path": ".gsd/milestones/M064-wqfgfa/M064-wqfgfa-SUMMARY.md",
         "status": "complete",
         "title": "M061 2-hop BFS with M3 Judge Integration at Scale"
+      },
+      {
+        "id": "M065-u29n4f",
+        "mentions_no_import": false,
+        "path": ".gsd/milestones/M065-u29n4f/M065-u29n4f-SUMMARY.md",
+        "status": "complete",
+        "title": "M063 GraphDB selection"
+      },
+      {
+        "id": "M066-7fbv31",
+        "mentions_no_import": false,
+        "path": ".gsd/milestones/M066-7fbv31/M066-7fbv31-SUMMARY.md",
+        "status": "complete",
+        "title": "M066 GraphDB re-evaluation with advanced criteria"
+      },
+      {
+        "id": "M099-bpeq08b",
+        "mentions_no_import": false,
+        "path": ".gsd/milestones/M099-bpeq08b/M099-bpeq08b-SUMMARY.md",
+        "status": "complete",
+        "title": "Remaining arxiv archive migration plan"
       }
     ],
     "requirements": {
-      "count": 65,
+      "count": 72,
       "ids": [
         "R019",
         "R022",
@@ -217,6 +264,13 @@
         "R054",
         "R055",
         "R056",
+        "R066",
+        "R067",
+        "R068",
+        "R069",
+        "R070",
+        "R071",
+        "R072",
         "R001",
         "R002",
         "R003",
@@ -267,7 +321,7 @@
         "R065"
       ],
       "statuses": {
-        "active": 17,
+        "active": 24,
         "validated": 48
       },
       "titles": {
@@ -335,20 +389,28 @@
         "R062": "Governance memory must provide a fast codebase-memory ADR/R/D mirror generated from canonical GSD and ADR artifacts without becoming the source of truth.",
         "R063": "Governance memory must expose a typed ADR/R/D graph projection with verifiable nodes and edges while preserving GSD and ADR files as canonical.",
         "R064": "The real-corpus no-write smoke must support a mixed 20-30 article batch containing retained baseline articles, fresh articles, and reference-linked candidates when safely discoverable.",
-        "R065": "Provide a unified project trajectory check that summarizes architecture decisions, requirements, module/code movement, evidence maturity, safety boundaries, and next blockers so agents can detect drift before planning or execution."
+        "R065": "Provide a unified project trajectory check that summarizes architecture decisions, requirements, module/code movement, evidence maturity, safety boundaries, and next blockers so agents can detect drift before planning or execution.",
+        "R066": "Extract LLM access into a dedicated architecture module that supports MiniMax, GLM/Z.ai, and optional future Headroom routing/compression scenarios.",
+        "R067": "The system must implement a 7-layer typed knowledge pipeline (Source → Parser → Structure → Extraction → Graph → Review → Agents) per ADR-023. Each layer must produce durable, traceable artifacts with stable IDs and evidence provenance.",
+        "R068": "Every LLM extraction stage must be preceded by deterministic/statistical pre-processing (YAKE keywords, TF-IDF summaries, graph community detection, embedding similarity). The LLM receives both raw text AND statistical context per ADR-024.",
+        "R069": "The LLM module must support multiple providers (MiniMax primary, GLM secondary) with per-provider rate limit checking before API calls, automatic fallback on rate exhaustion, and durable usage tracking per provider in the queue per ADR-025.",
+        "R070": "Future agents must use FSM-controlled reasoning inspired by SymFSM: LLM acts as interpreter within a pre-built reasoning model (cognitive map from FalkorDB subgraph), not as free-form generator. Every agent action passes through fail-closed safety gates per ADR-026.",
+        "R071": "The system must support typed knowledge schema with 5 entity modules (A: factual/meta, B: textually mentioned, C: implicit/abstracted, D: citation relationships, E: knowledge relations) adapted from Agents-K1, with ~25 typed relation types in 5 groups (controlled, causal, composition, comparison, citation).",
+        "R072": "The pipeline queue scheduler must coordinate job dispatch across three resource dimensions: LLM API rate limits (per-provider token/time quotas), CPU/local compute (parser/heavy processing concurrency), and I/O (network fetch, disk write, graph write serialization). Jobs are routed to the least-constrained resource lane with automatic backoff and recovery per ADR-027."
       }
     }
   },
   "promotion_allowed": false,
   "reverse_adr_audit_details": {
     "evidence": [
-      "src/ (rule: no_ladybugdb_import_in_src, anchor: ADR-002 (Defer Final GraphDB Selection), ADR-005 (No Direct Extractor to GraphDB))",
-      "artifacts/ (rule: no_graph_import_allowed_true_in_artifacts, anchor: ADR-005 (No Direct Extractor to GraphDB Path))"
+      "src/ (rule: no_ladybugdb_import_outside_graph_package, anchor: ADR-022 (FalkorDB binding), ADR-005 (No Direct Extractor to GraphDB))",
+      "artifacts/ (rule: no_graph_import_allowed_true_in_artifacts, anchor: ADR-005 (No Direct Extractor to GraphDB Path))",
+      "src/ (rule: no_arxiv_archive_import, anchor: M099 (Full migration to research_graph))"
     ],
     "rule_count": 8,
     "status": "clear",
     "violations": []
   },
-  "schema_version": "m045.project-trajectory.v1",
-  "verdict": "drift_risk"
+  "schema_version": "m101.project-trajectory.v2",
+  "verdict": "blocked"
 }
