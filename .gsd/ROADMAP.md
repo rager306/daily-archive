@@ -102,3 +102,6 @@
 - ✅ **M099-bpeq08b: M099-bpeq08b** (`depends:[—]`)
 - 🔄 **M099-bpeq8b: Remaining arxiv archive migration plan** (`depends:[—]`)
 - 🔄 **M100-nb11x1: Architecture cleanup post migration** (`depends:[—]`)
+- ✅ **M101-f5jip0: Architecture Crystallization** (`depends:[—]`)
+- ✅ **M102-p3houu: Trajectory checker update and M101 closeout** (`depends:[—]`)
+- 🔄 **M103-6tip5z: Typed schema and pipeline implementation** (`depends:[—]`)
