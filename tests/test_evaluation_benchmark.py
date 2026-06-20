@@ -29,9 +29,9 @@ def _as_mapping(value: Any) -> dict[str, Any]:
 
 def _single_fixture_contract() -> tuple[Any, list[str], list[str], list[str], set[str]]:
     _document, _chunks, evidence_paths, patch = build_fixture_payload()
-    expected_claim_ids = [patch.claims[0].id]
-    expected_entity_ids = [patch.entities[0].id]
-    expected_relation_ids = [patch.relations[0].id]
+    expected_claim_ids = [patch.claims[0].claim_id]
+    expected_entity_ids = [patch.entities[0].entity_id]
+    expected_relation_ids = [patch.relations[0].relation_id]
     expected_evidence_ids = {evidence_path_id(path) for path in evidence_paths}
     return (
         patch,
@@ -143,7 +143,7 @@ def test_groundedness_proxy_names_missing_unexpected_and_none_evidence_ids() -> 
     assert result_map["evidence_backed_claim_count"] == 0
     assert result_map["evidence_backed_entity_count"] == 1
     assert result_map["evidence_backed_relation_count"] == 1
-    assert result_map["missing_evidence_path_draft_ids"] == [patch.claims[0].id]
+    assert result_map["missing_evidence_path_draft_ids"] == [patch.claims[0].claim_id]
     assert result_map["missing_expected_evidence_path_ids"] == ["evidence:missing:expected"]
     assert result_map["unexpected_evidence_path_ids"] == []
     assert "Local markdown is enough" not in repr(result_map)

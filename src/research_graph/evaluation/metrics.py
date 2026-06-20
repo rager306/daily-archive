@@ -16,14 +16,17 @@ from typing import Any, cast
 
 import ladybug
 
+from research_graph.evaluation.scientific_extraction import (
+    ExtractionPatch,
+    validate_extraction_patch,
+)
+from research_graph.graph.ladybug_client import evidence_path_id
 from research_graph.retrieval.hybrid import (
     HybridRetrievalMode,
     HybridRetrievalQuery,
     InMemoryVectorCandidateIndex,
     retrieve_hybrid,
 )
-from research_graph.graph.ladybug_client import evidence_path_id
-from research_graph.evaluation.scientific_extraction import ExtractionPatch, validate_extraction_patch
 
 
 @dataclass(frozen=True)
@@ -320,13 +323,22 @@ def _expected_evidence_ids(
     return set()
 
 
+def _draft_id(draft: Any) -> str:
+    """Resolve the identifier of a typed draft (Claim/TypedEntity/TypedRelation)."""
+    for attr in ("claim_id", "entity_id", "relation_id", "abstract_id", "id"):
+        value = getattr(draft, attr, None)
+        if value is not None:
+            return str(value)
+    return str(draft)
+
+
 def _draft_evidence_ids(drafts: Iterable[Any]) -> tuple[list[str], list[str]]:
     evidence_ids: list[str] = []
     missing_draft_ids: list[str] = []
     for draft in drafts:
         path = draft.evidence_path
         if path is None:
-            missing_draft_ids.append(str(draft.id))
+            missing_draft_ids.append(_draft_id(draft))
             continue
         evidence_ids.append(evidence_path_id(path))
     return evidence_ids, missing_draft_ids

@@ -12,8 +12,8 @@ from research_graph.evaluation.dspy_extraction import (
     DspyExtractionInput,
     dspy_extraction_signature_spec,
 )
-from research_graph.graph.ladybug_client import evidence_path_id
 from research_graph.evaluation.scientific_extraction import ExtractionPatch
+from research_graph.graph.ladybug_client import evidence_path_id
 from tests.test_scientific_extraction_contracts import method_evidence_path, sample_patch
 
 
@@ -24,7 +24,7 @@ def test_boundary_wraps_extraction_patch_and_reports_metric_gates() -> None:
 
     output = module.forward(
         DspyExtractionInput(
-            paper_id=patch.paper_id,
+            paper_id=patch.source_id,
             expected_evidence_path_ids=expected_ids,
         )
     )
@@ -52,13 +52,13 @@ def test_boundary_rejects_optimizer_configuration_at_construction_and_invocation
     module = BaselineDspyExtractionModule(lambda boundary_input: patch)
     with pytest.raises(ValueError, match="optimizer runtime is disabled"):
         module.forward(
-            DspyExtractionInput(paper_id=patch.paper_id),
+            DspyExtractionInput(paper_id=patch.source_id),
             optimizer_config={"name": "bootstrap"},
         )
 
     with pytest.raises(ValueError, match="optimizer runtime is disabled"):
         module.forward(
-            DspyExtractionInput(paper_id=patch.paper_id, optimizer_config={"name": "bootstrap"})
+            DspyExtractionInput(paper_id=patch.source_id, optimizer_config={"name": "bootstrap"})
         )
 
 
@@ -67,7 +67,7 @@ def test_boundary_reports_invalid_patch_diagnostics_without_raw_text() -> None:
     invalid_patch = replace(patch, claims=[replace(patch.claims[0], confidence=2.0)])
     module = BaselineDspyExtractionModule(lambda boundary_input: invalid_patch)
 
-    output = module.forward(DspyExtractionInput(paper_id=patch.paper_id))
+    output = module.forward(DspyExtractionInput(paper_id=patch.source_id))
 
     assert output.patch is invalid_patch
     assert output.schema_valid is False
@@ -83,7 +83,7 @@ def test_boundary_reports_missing_expected_evidence_as_groundedness_failure() ->
 
     output = module.forward(
         DspyExtractionInput(
-            paper_id=patch.paper_id,
+            paper_id=patch.source_id,
             expected_evidence_path_ids=frozenset({"evidence:missing:expected"}),
         )
     )

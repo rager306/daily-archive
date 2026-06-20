@@ -16,7 +16,10 @@ from typing import Any, cast
 
 import pytest
 
-from research_graph.evaluation.dspy_extraction import BaselineDspyExtractionModule, DspyExtractionInput
+from research_graph.evaluation.dspy_extraction import (
+    BaselineDspyExtractionModule,
+    DspyExtractionInput,
+)
 from research_graph.graph.ladybug_client import evidence_path_id
 
 RAW_FIXTURE_CLAIM_TEXT = "Local markdown is enough to build a deterministic PageIndex."
@@ -105,7 +108,7 @@ def test_fixture_baseline_forward_returns_patch_and_metric_boundary_fields() -> 
 
     output = module.forward(
         DspyExtractionInput(
-            paper_id=patch.paper_id,
+            paper_id=patch.source_id,
             expected_evidence_path_ids=expected_evidence_ids,
             baseline_context={"fixture": "s04-s07-local"},
         )
@@ -148,7 +151,7 @@ def test_fail_closed_invalid_schema_and_wrong_expected_evidence_are_id_count_bas
 
     output = module.forward(
         DspyExtractionInput(
-            paper_id=patch.paper_id,
+            paper_id=patch.source_id,
             expected_evidence_path_ids=frozenset(
                 {*expected_evidence_ids, "evidence:missing:expected"}
             ),
@@ -187,7 +190,7 @@ def test_missing_draft_evidence_is_reported_by_draft_id_not_claim_text() -> None
 
     output = module.forward(
         DspyExtractionInput(
-            paper_id=patch.paper_id,
+            paper_id=patch.source_id,
             expected_evidence_path_ids=expected_evidence_ids,
         )
     )
@@ -195,7 +198,7 @@ def test_missing_draft_evidence_is_reported_by_draft_id_not_claim_text() -> None
     assert output.schema_valid is False
     assert output.groundedness_valid is False
     assert output.groundedness_diagnostics["missing_evidence_path_draft_ids"] == [
-        patch.claims[0].id
+        patch.claims[0].claim_id
     ]
     assert output.groundedness_diagnostics["missing_expected_evidence_path_ids"] == []
     assert output.groundedness_diagnostics["derived_evidence_path_ids"] == sorted(
@@ -230,7 +233,7 @@ def test_optimizer_requests_are_rejected_without_enabling_runtime(
     module = BaselineDspyExtractionModule(lambda boundary_input: patch)
     assert module.optimizer_enabled is False
     with pytest.raises(ValueError, match="optimizer runtime is disabled") as exc_info:
-        module.forward(DspyExtractionInput(paper_id=patch.paper_id), **call_kwargs)
+        module.forward(DspyExtractionInput(paper_id=patch.source_id), **call_kwargs)
     assert "dspy_extraction_boundary.v1" in str(exc_info.value)
     assert module.optimizer_enabled is False
 
@@ -242,7 +245,7 @@ def test_boundary_output_repr_and_diagnostics_do_not_expose_fixture_claim_text()
 
     output = module.forward(
         DspyExtractionInput(
-            paper_id=patch.paper_id,
+            paper_id=patch.source_id,
             expected_evidence_path_ids=frozenset(
                 {*expected_evidence_ids, "evidence:missing:expected"}
             ),

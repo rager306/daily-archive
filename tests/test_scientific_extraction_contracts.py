@@ -10,9 +10,7 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 
-from research_graph.papers.semantic_chunks import EvidencePath, build_evidence_path, build_semantic_chunks
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
-from research_graph.papers.indexing import PageIndexDocument, build_page_index
 from research_graph.evaluation.scientific_extraction import (
     Claim,
     ExtractionPatch,
@@ -23,9 +21,15 @@ from research_graph.evaluation.scientific_extraction import (
     validate_claim,
     validate_extraction_patch,
 )
+from research_graph.papers.indexing import PageIndexDocument, build_page_index
+from research_graph.papers.semantic_chunks import (
+    EvidencePath,
+    build_evidence_path,
+    build_semantic_chunks,
+)
 
 FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
-SCHEMA_VERSION = "scientific_extraction.v1"
+SCHEMA_VERSION = "typed.v1"
 EXTRACTOR_VERSION = "fixture-extractor.v1"
 
 
@@ -49,8 +53,8 @@ def method_evidence_path() -> EvidencePath:
 
 def sample_claim(evidence: EvidencePath | None = None, *, paper_id: str = "2605.12345") -> Claim:
     return Claim(
-        id="claim:2605.12345:method:chunk-0001:local-markdown-pageindex",
-        paper_id=paper_id,
+        claim_id="claim:2605.12345:method:chunk-0001:local-markdown-pageindex",
+        source_id=paper_id,
         text="Local markdown is enough to build a deterministic PageIndex.",
         claim_type="method",
         confidence=0.91,
@@ -64,9 +68,9 @@ def sample_claim(evidence: EvidencePath | None = None, *, paper_id: str = "2605.
 
 def sample_entity(evidence: EvidencePath | None = None) -> ScientificEntity:
     return ScientificEntity(
-        id="entity:2605.12345:pageindex",
-        paper_id="2605.12345",
-        label="PageIndex",
+        entity_id="entity:2605.12345:pageindex",
+        source_id="2605.12345",
+        canonical_name="PageIndex",
         entity_type="method",
         confidence=0.88,
         evidence_path=evidence if evidence is not None else method_evidence_path(),
@@ -82,15 +86,15 @@ def sample_relation(
     entity: ScientificEntity,
     evidence: EvidencePath | None = None,
     *,
-    relation_type: str = "supports",
+    relation_type: str = "SUPPORTS",
     target_id: str | None = None,
 ) -> ScientificRelation:
     return ScientificRelation(
-        id=f"relation:2605.12345:claim-local-markdown-pageindex:entity-pageindex:{relation_type}",
-        paper_id="2605.12345",
+        relation_id=f"relation:2605.12345:claim-local-markdown-pageindex:entity-pageindex:{relation_type}",
+        source_id="2605.12345",
         relation_type=relation_type,
-        source_id=claim.id,
-        target_id=target_id or entity.id,
+        from_entity_id=claim.claim_id,
+        to_entity_id=target_id or entity.entity_id,
         confidence=0.84,
         evidence_path=evidence if evidence is not None else method_evidence_path(),
         schema_version=SCHEMA_VERSION,
@@ -110,7 +114,7 @@ def sample_patch(
     entity = entity or sample_entity(evidence)
     relation = relation or sample_relation(claim, entity, evidence)
     return ExtractionPatch(
-        paper_id="2605.12345",
+        source_id="2605.12345",
         claims=[claim],
         entities=[entity],
         relations=[relation],
@@ -138,16 +142,16 @@ def test_claim_entity_relation_models_are_storage_ready_and_traceable() -> None:
     assert claim.evidence_path.semantic_chunk_id == "2605.12345:method:chunk-0001"
     assert entity.evidence_path is not None
     assert entity.evidence_path.node_path == ["2605.12345:root", "2605.12345:method"]
-    assert relation.source_id == claim.id
-    assert relation.target_id == entity.id
-    assert relation.relation_type == "supports"
+    assert relation.from_entity_id == claim.claim_id
+    assert relation.to_entity_id == entity.entity_id
+    assert relation.relation_type == "SUPPORTS"
     assert validate_claim(claim) == []
 
 
 def test_claim_validation_reports_missing_evidence_invalid_confidence_and_versions() -> None:
     claim = Claim(
-        id="claim:2605.12345:bad",
-        paper_id="2605.12345",
+        claim_id="claim:2605.12345:bad",
+        source_id="2605.12345",
         text="Bad claim",
         claim_type="method",
         confidence=1.4,
@@ -174,12 +178,12 @@ def test_extraction_patch_groups_claims_entities_relations_with_versions() -> No
     relation = sample_relation(claim, entity, evidence)
     patch = sample_patch(claim, entity, relation)
 
-    assert patch.paper_id == "2605.12345"
+    assert patch.source_id == "2605.12345"
     assert patch.schema_version == SCHEMA_VERSION
     assert patch.extractor_version == EXTRACTOR_VERSION
-    assert [item.id for item in patch.claims] == [claim.id]
-    assert [item.id for item in patch.entities] == [entity.id]
-    assert [item.id for item in patch.relations] == [relation.id]
+    assert [item.claim_id for item in patch.claims] == [claim.claim_id]
+    assert [item.entity_id for item in patch.entities] == [entity.entity_id]
+    assert [item.relation_id for item in patch.relations] == [relation.relation_id]
     assert validate_extraction_patch(patch) == []
 
 
@@ -193,12 +197,12 @@ def test_patch_validation_reports_invalid_relation_endpoint_and_paper_mismatch()
     diagnostics = validate_extraction_patch(patch)
 
     assert (
-        "Claim claim:2605.12345:method:chunk-0001:local-markdown-pageindex paper_id 2605.99999 "
-        "does not match patch paper_id 2605.12345"
+        "Claim claim:2605.12345:method:chunk-0001:local-markdown-pageindex source_id 2605.99999 "
+        "does not match patch source_id 2605.12345"
     ) in diagnostics
     assert (
-        "Relation relation:2605.12345:claim-local-markdown-pageindex:entity-pageindex:supports "
-        "target_id entity:2605.12345:missing does not reference a claim or entity in the patch"
+        "Relation relation:2605.12345:claim-local-markdown-pageindex:entity-pageindex:SUPPORTS "
+        "to_entity_id entity:2605.12345:missing does not reference a claim or entity in the patch"
     ) in diagnostics
 
 
@@ -207,14 +211,14 @@ def test_patch_validation_reports_unsupported_relation_type_and_duplicate_ids() 
     claim = sample_claim(evidence)
     duplicate_claim = replace(claim, text="Duplicate claim text.")
     entity = sample_entity(evidence)
-    relation = sample_relation(claim, entity, evidence, relation_type="causes")
+    relation = sample_relation(claim, entity, evidence, relation_type="INVALID_TYPE")
     patch = replace(sample_patch(claim, entity, relation), claims=[claim, duplicate_claim])
 
     diagnostics = validate_extraction_patch(patch)
 
     assert (
-        "Relation relation:2605.12345:claim-local-markdown-pageindex:entity-pageindex:causes "
-        "relation_type causes is unsupported"
+        "Relation relation:2605.12345:claim-local-markdown-pageindex:entity-pageindex:INVALID_TYPE "
+        "relation_type INVALID_TYPE is unsupported"
     ) in diagnostics
     assert "ExtractionPatch 2605.12345 has duplicate draft id claim:2605.12345:method:chunk-0001:local-markdown-pageindex" in diagnostics
 
@@ -237,6 +241,6 @@ def test_patch_validation_reports_evidence_path_warnings() -> None:
         "evidence path references missing SemanticChunk missing"
     ) in diagnostics
     assert (
-        "Relation relation:2605.12345:claim-local-markdown-pageindex:entity-pageindex:supports "
+        "Relation relation:2605.12345:claim-local-markdown-pageindex:entity-pageindex:SUPPORTS "
         "evidence_path has validation warnings: evidence path references missing SemanticChunk missing"
     ) in diagnostics

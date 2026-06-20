@@ -264,7 +264,7 @@ def _empty_groundedness_diagnostics() -> dict[str, Any]:
 
 def _boundary_diagnostics(boundary_input: DspyExtractionInput, patch: ExtractionPatch) -> list[str]:
     diagnostics: list[str] = []
-    if patch.paper_id != boundary_input.paper_id:
+    if patch.source_id != boundary_input.paper_id:
         diagnostics.append("patch_paper_id_mismatch")
     return diagnostics
 

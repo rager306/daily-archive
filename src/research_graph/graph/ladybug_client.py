@@ -8,13 +8,13 @@ from typing import TYPE_CHECKING
 
 import ladybug
 
-from research_graph.papers.semantic_chunks import EvidencePath, SemanticChunk
-from research_graph.papers.indexing import PageIndexDocument
 from research_graph.evaluation.scientific_extraction import (
     ExtractionPatch,
     ScientificRelation,
     validate_extraction_patch,
 )
+from research_graph.papers.indexing import PageIndexDocument
+from research_graph.papers.semantic_chunks import EvidencePath, SemanticChunk
 
 if TYPE_CHECKING:
     from research_graph.cli import DailyAnalysis
@@ -233,9 +233,9 @@ def _validate_scientific_kg_payload(
     patch: ExtractionPatch,
 ) -> None:
     diagnostics: list[str] = []
-    if patch.paper_id != document.paper_id:
+    if patch.source_id != document.paper_id:
         diagnostics.append(
-            f"ExtractionPatch {patch.paper_id} does not match document paper_id {document.paper_id}"
+            f"ExtractionPatch {patch.source_id} does not match document paper_id {document.paper_id}"
         )
 
     chunk_ids = {chunk.id for chunk in chunks}
@@ -272,18 +272,19 @@ def _validate_scientific_kg_payload(
                 f"EvidencePath {path_id} references missing SemanticChunk {path.semantic_chunk_id}"
             )
 
-    for kind, item in [
-        *(("Claim", claim) for claim in patch.claims),
-        *(("ScientificEntity", entity) for entity in patch.entities),
-        *(("ScientificRelation", relation) for relation in patch.relations),
+    for kind, items, id_attr in [
+        ("Claim", patch.claims, "claim_id"),
+        ("ScientificEntity", patch.entities, "entity_id"),
+        ("ScientificRelation", patch.relations, "relation_id"),
     ]:
-        if item.evidence_path is None:
-            continue
-        item_evidence_id = evidence_path_id(item.evidence_path)
-        if item_evidence_id not in persisted_evidence_ids:
-            diagnostics.append(
-                f"{kind} {item.id} evidence_path {item_evidence_id} is not included in persisted evidence_paths"
-            )
+        for item in items:
+            if item.evidence_path is None:
+                continue
+            item_evidence_id = evidence_path_id(item.evidence_path)
+            if item_evidence_id not in persisted_evidence_ids:
+                diagnostics.append(
+                    f"{kind} {getattr(item, id_attr)} evidence_path {item_evidence_id} is not included in persisted evidence_paths"
+                )
 
     diagnostics.extend(validate_extraction_patch(patch))
     if diagnostics:
@@ -411,8 +412,8 @@ def _merge_extraction_patch(conn: ladybug.Connection, patch: ExtractionPatch) ->
             "claim.confidence = $confidence, claim.schema_version = $schema_version, "
             "claim.extractor_version = $extractor_version",
             {
-                "id": claim.id,
-                "paper_id": claim.paper_id,
+                "id": claim.claim_id,
+                "paper_id": claim.source_id,
                 "text": claim.text,
                 "claim_type": claim.claim_type,
                 "confidence": claim.confidence,
@@ -421,12 +422,12 @@ def _merge_extraction_patch(conn: ladybug.Connection, patch: ExtractionPatch) ->
             },
         )
         if claim.evidence_path is None:
-            raise ValueError(f"Claim {claim.id} is missing evidence_path")
+            raise ValueError(f"Claim {claim.claim_id} is missing evidence_path")
         _merge_evidenced_by(
             conn,
             "Claim",
             "claim",
-            claim.id,
+            claim.claim_id,
             evidence_by_chunk[claim.evidence_path.semantic_chunk_id],
         )
 
@@ -440,9 +441,9 @@ def _merge_extraction_patch(conn: ladybug.Connection, patch: ExtractionPatch) ->
             "entity.confidence = $confidence, entity.schema_version = $schema_version, "
             "entity.extractor_version = $extractor_version",
             {
-                "id": entity.id,
-                "paper_id": entity.paper_id,
-                "label": entity.label,
+                "id": entity.entity_id,
+                "paper_id": entity.source_id,
+                "label": entity.canonical_name,
                 "entity_type": entity.entity_type,
                 "confidence": entity.confidence,
                 "schema_version": entity.schema_version,
@@ -450,17 +451,17 @@ def _merge_extraction_patch(conn: ladybug.Connection, patch: ExtractionPatch) ->
             },
         )
         if entity.evidence_path is None:
-            raise ValueError(f"ScientificEntity {entity.id} is missing evidence_path")
+            raise ValueError(f"ScientificEntity {entity.entity_id} is missing evidence_path")
         _merge_evidenced_by(
             conn,
             "ScientificEntity",
             "entity",
-            entity.id,
+            entity.entity_id,
             evidence_by_chunk[entity.evidence_path.semantic_chunk_id],
         )
 
-    endpoint_labels = {item.id: "Claim" for item in patch.claims}
-    endpoint_labels.update({item.id: "ScientificEntity" for item in patch.entities})
+    endpoint_labels = {claim.claim_id: "Claim" for claim in patch.claims}
+    endpoint_labels.update({entity.entity_id: "ScientificEntity" for entity in patch.entities})
     for relation in patch.relations:
         conn.execute(
             "MERGE (relation:ScientificRelation {id: $id}) "
@@ -471,40 +472,40 @@ def _merge_extraction_patch(conn: ladybug.Connection, patch: ExtractionPatch) ->
             "relation.source_id = $source_id, relation.target_id = $target_id, relation.confidence = $confidence, "
             "relation.schema_version = $schema_version, relation.extractor_version = $extractor_version",
             {
-                "id": relation.id,
-                "paper_id": relation.paper_id,
+                "id": relation.relation_id,
+                "paper_id": relation.source_id,
                 "relation_type": relation.relation_type,
-                "source_id": relation.source_id,
-                "target_id": relation.target_id,
+                "source_id": relation.from_entity_id,
+                "target_id": relation.to_entity_id,
                 "confidence": relation.confidence,
                 "schema_version": relation.schema_version,
                 "extractor_version": relation.extractor_version,
             },
         )
         if relation.evidence_path is None:
-            raise ValueError(f"ScientificRelation {relation.id} is missing evidence_path")
+            raise ValueError(f"ScientificRelation {relation.relation_id} is missing evidence_path")
         _merge_evidenced_by(
             conn,
             "ScientificRelation",
             "relation",
-            relation.id,
+            relation.relation_id,
             evidence_by_chunk[relation.evidence_path.semantic_chunk_id],
         )
         _merge_relation_endpoint(
             conn,
             rel_table="SCIENTIFIC_RELATION_SOURCE",
             endpoint_role="source",
-            endpoint_label=endpoint_labels[relation.source_id],
-            relation_id=relation.id,
-            endpoint_id=relation.source_id,
+            endpoint_label=endpoint_labels[relation.from_entity_id],
+            relation_id=relation.relation_id,
+            endpoint_id=relation.from_entity_id,
         )
         _merge_relation_endpoint(
             conn,
             rel_table="SCIENTIFIC_RELATION_TARGET",
             endpoint_role="target",
-            endpoint_label=endpoint_labels[relation.target_id],
-            relation_id=relation.id,
-            endpoint_id=relation.target_id,
+            endpoint_label=endpoint_labels[relation.to_entity_id],
+            relation_id=relation.relation_id,
+            endpoint_id=relation.to_entity_id,
         )
         _merge_scientific_relation_edge(conn, relation, endpoint_labels)
 
@@ -544,17 +545,17 @@ def _merge_scientific_relation_edge(
     relation: ScientificRelation,
     endpoint_labels: dict[str, str],
 ) -> None:
-    source_label = endpoint_labels[relation.source_id]
-    target_label = endpoint_labels[relation.target_id]
+    source_label = endpoint_labels[relation.from_entity_id]
+    target_label = endpoint_labels[relation.to_entity_id]
     conn.execute(
         f"MATCH (source:{source_label} {{id: $source_id}}), (target:{target_label} {{id: $target_id}}) "
         "MERGE (source)-[edge:SCIENTIFIC_RELATION {relation_id: $relation_id}]->(target) "
         "ON MATCH SET edge.relation_type = $relation_type, edge.confidence = $confidence "
         "ON CREATE SET edge.relation_type = $relation_type, edge.confidence = $confidence",
         {
-            "source_id": relation.source_id,
-            "target_id": relation.target_id,
-            "relation_id": relation.id,
+            "source_id": relation.from_entity_id,
+            "target_id": relation.to_entity_id,
+            "relation_id": relation.relation_id,
             "relation_type": relation.relation_type,
             "confidence": relation.confidence,
         },

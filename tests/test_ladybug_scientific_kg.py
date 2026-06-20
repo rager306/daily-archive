@@ -15,19 +15,23 @@ import ladybug
 import pytest
 
 import research_graph.graph.ladybug_client as ladybug_client
-from research_graph.papers.semantic_chunks import EvidencePath, build_evidence_path, build_semantic_chunks
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
-from research_graph.graph.ladybug_client import init_db
-from research_graph.papers.indexing import PageIndexDocument, build_page_index
 from research_graph.evaluation.scientific_extraction import (
     Claim,
     ExtractionPatch,
     ScientificEntity,
     ScientificRelation,
 )
+from research_graph.graph.ladybug_client import init_db
+from research_graph.papers.indexing import PageIndexDocument, build_page_index
+from research_graph.papers.semantic_chunks import (
+    EvidencePath,
+    build_evidence_path,
+    build_semantic_chunks,
+)
 
 FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
-SCHEMA_VERSION = "scientific_extraction.v1"
+SCHEMA_VERSION = "typed.v1"
 EXTRACTOR_VERSION = "fixture-extractor.v1"
 
 
@@ -57,8 +61,8 @@ def build_document() -> PageIndexDocument:
 
 def build_fixture_patch(evidence: EvidencePath) -> ExtractionPatch:
     claim = Claim(
-        id="claim:2605.12345:method:chunk-0001:local-markdown-pageindex",
-        paper_id="2605.12345",
+        claim_id="claim:2605.12345:method:chunk-0001:local-markdown-pageindex",
+        source_id="2605.12345",
         text="Local markdown is enough to build a deterministic PageIndex.",
         claim_type="method",
         confidence=0.91,
@@ -69,9 +73,9 @@ def build_fixture_patch(evidence: EvidencePath) -> ExtractionPatch:
         provenance={"source": "fixture"},
     )
     entity = ScientificEntity(
-        id="entity:2605.12345:pageindex",
-        paper_id="2605.12345",
-        label="PageIndex",
+        entity_id="entity:2605.12345:pageindex",
+        source_id="2605.12345",
+        canonical_name="PageIndex",
         entity_type="method",
         confidence=0.88,
         evidence_path=evidence,
@@ -81,11 +85,11 @@ def build_fixture_patch(evidence: EvidencePath) -> ExtractionPatch:
         provenance={"source": "fixture"},
     )
     relation = ScientificRelation(
-        id="relation:2605.12345:claim-local-markdown-pageindex:entity-pageindex:supports",
-        paper_id="2605.12345",
-        relation_type="supports",
-        source_id=claim.id,
-        target_id=entity.id,
+        relation_id="relation:2605.12345:claim-local-markdown-pageindex:entity-pageindex:SUPPORTS",
+        source_id="2605.12345",
+        relation_type="SUPPORTS",
+        from_entity_id=claim.claim_id,
+        to_entity_id=entity.entity_id,
         confidence=0.84,
         evidence_path=evidence,
         schema_version=SCHEMA_VERSION,
@@ -94,7 +98,7 @@ def build_fixture_patch(evidence: EvidencePath) -> ExtractionPatch:
         provenance={"source": "fixture"},
     )
     return ExtractionPatch(
-        paper_id="2605.12345",
+        source_id="2605.12345",
         claims=[claim],
         entities=[entity],
         relations=[relation],
@@ -149,7 +153,7 @@ def test_upsert_scientific_kg_persists_fixture_idempotently() -> None:
             "MATCH (claim:Claim)-[:EVIDENCED_BY]->(evidence:EvidencePath) "
             "RETURN claim.id, evidence.id"
         )
-    ) == [[patch.claims[0].id, "evidence:2605.12345:method:2605.12345:method:chunk-0001"]]
+    ) == [[patch.claims[0].claim_id, "evidence:2605.12345:method:2605.12345:method:chunk-0001"]]
 
 
 class FailingIfTransactionConn:
@@ -163,7 +167,7 @@ def test_upsert_scientific_kg_rejects_invalid_patch_before_transaction() -> None
     document, chunks, evidence_paths, patch = build_fixture_payload()
     invalid_claim = replace(patch.claims[0], confidence=1.5)
     invalid_patch = ExtractionPatch(
-        paper_id=patch.paper_id,
+        source_id=patch.source_id,
         claims=[invalid_claim],
         entities=patch.entities,
         relations=patch.relations,
