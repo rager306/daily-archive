@@ -339,9 +339,11 @@ flowchart TD
 
 ## 7. Roadmap (фазирование)
 
+> **Архитектурный overlay (D086, 2026-06-21):** Поверх фаз ниже действует гексагональная/onion архитектура (Ports/Adapters + domain/application/infrastructure границы) и кодовая дисциплина Ponytail. Ports вводятся только при ≥2 реализациях или запланированной миграции (правило в `AGENTS.md`). Это НЕ отдельная фаза — это структурный overlay, кристаллизуемый в **M104** и применяемый ко всем последующим.
+
 ```mermaid
 gantt
-    title daily-archive — фазовый roadmap
+    title daily-archive — фазовый roadmap (с hexagonal overlay)
     dateFormat YYYY-MM-DD
     axisFormat %m/%y
     section Фаза 1 (done)
@@ -350,28 +352,33 @@ gantt
     Typed schema S01 M103 :done, p2a, 2026-06-20, 1d
     Pipeline framework S02 :active, p2b, after p2a, 4d
     Extraction prototype S03 (1 paper, MiniMax) :p2c, after p2b, 5d
-    section Фаза 3
-    FalkorDB migration (4 фазы) :p3, after p2c, 14d
+    Hexagonal Foundation M104 (Ports/Adapters/onion) :p2d, after p2c, 7d
+    section Фаза 3 (через GraphDBPort)
+    FalkorDB migration = новый Adapter :p3, after p2d, 14d
     Graph operators O1-O6 :p3b, after p3, 7d
-    section Фаза 4
+    section Фаза 4 (через DispatchProtocol)
     Staged validation 10→20→week R024 :p4, after p3b, 21d
     Full 3-lane scheduler + queue activation :p4b, after p4, 7d
-    section Фаза 5
+    section Фаза 5 (через EP-1 Domain Profile)
     Universal ingestion (GNN textbook) :p5, after p4b, 14d
-    section Фаза 6
-    Agent integration SymFSM ⚠️ :crit, p6, after p5, 21d
+    schema.v2: hypergraph + temporal (Hyper-Extract идеи) :p5b, after p5, 10d
+    section Фаза 6 (через Hybrid Executors)
+    Agent integration SymFSM ⚠️ :crit, p6, after p5b, 21d
 ```
 
-| Фаза | Фокус | Milestone | Статус | Ключевой gate |
-|---|---|---|---|---|
-| 1 | Кристаллизация архитектуры | M101 ✅ | готово | 32 binding ADR |
-| 2 | Typed schema + extraction prototype | M103 🔄 | S01 ✅, S02/S03 ⬜ | F1 ≥ 0.6 на 1 статье |
-| 3 | FalkorDB миграция + операторы | (не начат) | ⬜ | dual-write equivalence |
-| 4 | Staged validation + scheduler | (не начат) | ⬜ | R024: 10→20→week |
-| 5 | Universal ingestion | (не начат) | ⬜ | GNN textbook |
-| 6 | Agents (SymFSM) ⚠️ | (не начат) | ⬜ | требует idea development |
+| Фаза | Фокус | Milestone | Статус | Ключевой gate | Hexagonal seam |
+|---|---|---|---|---|---|
+| 1 | Кристаллизация архитектуры | M101 ✅ | готово | 32 binding ADR | — |
+| 2 | Typed schema + extraction prototype | M103 🔄 | S01 ✅, S02/S03 ⬜ | F1 ≥ 0.6 на 1 статье | concrete-first (пока) |
+| 2+ | **Hexagonal Foundation** | **M104 🔄** | S01/S02/S03 ⬜ | import-guard + Fake-тесты | **Ports/Adapters кристаллизация** |
+| 3 | FalkorDB миграция + операторы | (не начат) | ⬜ | dual-write equivalence | **GraphDBPort → FalkorDBAdapter** |
+| 4 | Staged validation + scheduler | (не начат) | ⬜ | R024: 10→20→week | **DispatchProtocol → QueueDispatch** |
+| 5 | Universal ingestion + schema.v2 | (не начат) | ⬜ | GNN textbook; schema_version bump | **EP-1 Domain Profile; typed.v2** |
+| 6 | Agents (SymFSM) ⚠️ | (не начат) | ⬜ | требует idea development | **Hybrid Executors в flows** |
 
-> **M103 (текущий):** 3 slice — S01 (typed schema) ✅, S02 (pipeline framework с queue-seams) replanned, S03 (extraction prototype на 1 статье). Подробно — `.gsd/milestones/M103-6tip5z/M103-6tip5z-ROADMAP.md`.
+> **M104 (текущий архитектурный overlay):** 3 slice — S01 (LLM/Graph Ports + LadybugAdapter), S02 (Parser Port + 4 Adapter'а), S03 (onion import-guard + composition root). Подробно — `.gsd/milestones/M104-q9tft1/M104-q9tft1-ROADMAP.md`. D087: Prefect отвергнут, EP-4 DispatchProtocol seam сохранён.
+>
+> **Принцип overlay:** архитектурные решения (D086 hexagonal, D087 без-Prefect, Ponytail) не блокируют фазы — они задают КАК код пишется внутри каждой фазы. M104 кристаллизует seams для Phase 3 (graph migration как новый Adapter, не rewrite) и Phase 4 (queue через существующий seam).
 
 ---
 

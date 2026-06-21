@@ -1,0 +1,96 @@
+{
+  "fixture_version": "m103.labeled_chunks.v1",
+  "source_domain": "arxiv:cs-cl",
+  "anchor_paper": "arxiv:2605.18747",
+  "note": "Hand-labeled golden chunks for M103 S03 extraction prototype evaluation. Synthetic but representative of arXiv ML paper prose (statistical-first grounding + typed schema target). Used to score extraction precision/recall against known entities and the 27 typed relations.",
+  "schema_reference": "typed.v1 (ADR-028, research_graph.evaluation.schema)",
+  "relation_types_reference": "27 typed relations in 5 groups (research_graph.evaluation.relation_types.ALL_TYPED_RELATIONS)",
+  "chunks": [
+    {
+      "chunk_id": "m103-lc-01",
+      "text": "We introduce a novel attention mechanism called Sparse Routing Attention (SRA) that reduces the quadratic cost of standard self-attention. Unlike dense attention, SRA routes tokens through a learned sparse gating network. Our method builds on the linear attention formulation of Katharopoulos et al. and extends it to encoder-decoder architectures.",
+      "expected_entities": [
+        {"canonical_name": "Sparse Routing Attention", "entity_type": "method", "aliases": ["SRA"]},
+        {"canonical_name": "self-attention", "entity_type": "method"},
+        {"canonical_name": "sparse gating network", "entity_type": "method"},
+        {"canonical_name": "linear attention", "entity_type": "method"}
+      ],
+      "expected_relations": [
+        {"relation_type": "IMPLEMENTS", "from": "Sparse Routing Attention", "to": "self-attention"},
+        {"relation_type": "BUILDS_ON", "from": "Sparse Routing Attention", "to": "linear attention"},
+        {"relation_type": "EXTENDS", "from": "Sparse Routing Attention", "to": "linear attention"}
+      ]
+    },
+    {
+      "chunk_id": "m103-lc-02",
+      "text": "The primary motivation for this work is the scalability bottleneck of transformers on long sequences. Existing approaches such as Reformer and Linformer reduce memory but sacrifice accuracy on retrieval tasks. We hypothesize that content-based routing preserves retrieval quality while maintaining sub-quadratic scaling.",
+      "expected_entities": [
+        {"canonical_name": "scalability bottleneck", "entity_type": "problem"},
+        {"canonical_name": "transformers", "entity_type": "method"},
+        {"canonical_name": "Reformer", "entity_type": "baseline"},
+        {"canonical_name": "Linformer", "entity_type": "baseline"},
+        {"canonical_name": "content-based routing", "entity_type": "hypothesis"},
+        {"canonical_name": "retrieval tasks", "entity_type": "task"}
+      ],
+      "expected_relations": [
+        {"relation_type": "TARGETS", "from": "transformers", "to": "scalability bottleneck"},
+        {"relation_type": "SOLVES", "from": "Reformer", "to": "scalability bottleneck"},
+        {"relation_type": "SOLVES", "from": "Linformer", "to": "scalability bottleneck"},
+        {"relation_type": "HAS_LIMITATION", "from": "Reformer", "to": "retrieval tasks"}
+      ]
+    },
+    {
+      "chunk_id": "m103-lc-03",
+      "text": "We evaluate SRA on three benchmarks: LongBench for long-document QA, GLUE for general language understanding, and a custom retrieval corpus. On LongBench, SRA achieves 87.2 F1 compared to 82.1 for Linformer and 79.4 for Reformer, demonstrating that sparse routing maintains accuracy. However, our method underperforms on very short sequences where dense attention is already efficient.",
+      "expected_entities": [
+        {"canonical_name": "LongBench", "entity_type": "dataset"},
+        {"canonical_name": "GLUE", "entity_type": "dataset"},
+        {"canonical_name": "retrieval corpus", "entity_type": "dataset"},
+        {"canonical_name": "F1", "entity_type": "metric"}
+      ],
+      "expected_relations": [
+        {"relation_type": "REQUIRES", "from": "SRA evaluation", "to": "LongBench"},
+        {"relation_type": "DERIVED_FROM", "from": "GLUE", "to": "language understanding"}
+      ],
+      "expected_abstracts": [
+        {"abstract_type": "finding", "statement": "SRA achieves 87.2 F1 on LongBench, outperforming Linformer (82.1) and Reformer (79.4)."},
+        {"abstract_type": "limitation", "statement": "SRA underperforms dense attention on very short sequences."}
+      ]
+    },
+    {
+      "chunk_id": "m103-lc-04",
+      "text": "Sparse Routing Attention consists of three components: a query projection layer, a learned gating function that selects top-k keys, and a weighted value aggregation. The gating function is trained jointly with the encoder via a straight-through estimator. This design requires no modifications to the decoder, making it plug-compatible with standard transformer implementations.",
+      "expected_entities": [
+        {"canonical_name": "query projection layer", "entity_type": "method"},
+        {"canonical_name": "gating function", "entity_type": "method"},
+        {"canonical_name": "weighted value aggregation", "entity_type": "method"},
+        {"canonical_name": "straight-through estimator", "entity_type": "method"},
+        {"canonical_name": "encoder", "entity_type": "implementation"},
+        {"canonical_name": "decoder", "entity_type": "implementation"}
+      ],
+      "expected_relations": [
+        {"relation_type": "CONSISTS_OF", "from": "Sparse Routing Attention", "to": "query projection layer"},
+        {"relation_type": "CONSISTS_OF", "from": "Sparse Routing Attention", "to": "gating function"},
+        {"relation_type": "CONSISTS_OF", "from": "Sparse Routing Attention", "to": "weighted value aggregation"},
+        {"relation_type": "REQUIRES", "from": "gating function", "to": "straight-through estimator"}
+      ]
+    },
+    {
+      "chunk_id": "m103-lc-05",
+      "text": "Prior work by Vaswani et al. established self-attention as the foundation of modern transformers. Subsequent research by Tay et al. surveyed efficient attention variants. Our approach contrasts with local-window attention methods because it uses global routing rather than fixed receptive fields. We also build on the routing principles of Content-Addressable Memory networks, adapting them to sequence modeling.",
+      "expected_entities": [
+        {"canonical_name": "self-attention", "entity_type": "method"},
+        {"canonical_name": "efficient attention variants", "entity_type": "concept"},
+        {"canonical_name": "local-window attention", "entity_type": "method"},
+        {"canonical_name": "global routing", "entity_type": "method"},
+        {"canonical_name": "Content-Addressable Memory networks", "entity_type": "method"}
+      ],
+      "expected_relations": [
+        {"relation_type": "CITES", "from": "this work", "to": "Vaswani et al."},
+        {"relation_type": "CITES", "from": "this work", "to": "Tay et al."},
+        {"relation_type": "CONTRASTS", "from": "Sparse Routing Attention", "to": "local-window attention"},
+        {"relation_type": "BUILDS_ON", "from": "global routing", "to": "Content-Addressable Memory networks"}
+      ]
+    }
+  ]
+}
