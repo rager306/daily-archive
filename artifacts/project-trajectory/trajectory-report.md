@@ -1,6 +1,6 @@
 # Project Trajectory Report
 
-- Verdict: `blocked`
+- Verdict: `drift_risk`
 - Phase: `preflight`
 - Derived, not canonical: true
 - Graph writes: disabled
@@ -14,9 +14,9 @@
 |---|---|---|---|
 | architecture | tracked | none | .gsd/DECISIONS.md, doc/adr/, .codebase-memory/governance-graph.json |
 | functionality | tracked | none | requirements=72, statuses={'active': 24, 'validated': 48} |
-| module_code | tracked | uncommitted_changes_present | git_changed_files=5 |
-| evidence | tracked | none | .gsd/milestones/M065-u29n4f/M065-u29n4f-SUMMARY.md, .gsd/milestones/M066-7fbv31/M066-7fbv31-SUMMARY.md, .gsd/milestones/M099-bpeq08b/M099-bpeq08b-SUMMARY.md |
-| safety | blocked | graph_import_authorized | prohibited-claim scan over PROJECT/README/recent summaries |
+| module_code | tracked | uncommitted_changes_present | git_changed_files=10 |
+| evidence | tracked | none | .gsd/milestones/M062-b4porb/M062-b4porb-SUMMARY.md, .gsd/milestones/M099-bpeq8b/M099-bpeq8b-SUMMARY.md, .gsd/milestones/M103-6tip5z/M103-6tip5z-SUMMARY.md |
+| safety | clear | none | prohibited-claim scan over PROJECT/README/recent summaries |
 | operations | tracked | none | runtime/service state is artifact-derived; live process management remains external |
 | next_gate | clear | none | README.md, recent milestone summaries |
 | reverse_adr_audit | clear | none | rule_count=8, src/ (rule: no_ladybugdb_import_outside_graph_package, anchor: ADR-022 (FalkorDB binding), ADR-005 (No Direct Extractor to GraphDB)), artifacts/ (rule: no_graph_impor |
@@ -30,22 +30,23 @@
 
 | Severity | Flag | Evidence |
 |---|---|---|
-| high | graph_import_authorized | recent_milestones |
-| info | uncommitted_changes_present | 5 files |
+| medium | latest_milestone_missing_readme_reference | M103-6tip5z |
+| info | uncommitted_changes_present | 10 files |
 
 ## Recent milestones
 
 | Milestone | Title | Status |
 |---|---|---|
-| M097-ilsyrl | Research graph source acquisition and scan migration wave | complete |
-| M098-2qn07e | Scoped local commit execution for research_graph migration | complete |
-| M064-wqfgfa | M061 2-hop BFS with M3 Judge Integration at Scale | complete |
-| M065-u29n4f | M063 GraphDB selection | complete |
-| M066-7fbv31 | M066 GraphDB re-evaluation with advanced criteria | complete |
-| M099-bpeq08b | Remaining arxiv archive migration plan | complete |
+| M054-proc4f | M054 Parser Hybrid Benchmark on 5 M051 PDFs | complete |
+| M055-kyxuqm | M055 Hybrid Parser Deep-Dive: GROBID Fulltext + OpenDataLoader Correctness + 20 PDFs | complete |
+| M100-nb11x1 | M100 Architecture Cleanup Post Migration | complete |
+| M062-b4porb | M062 ADR Template + Library Selection (Superseded) | complete |
+| M099-bpeq8b | M099 Remaining Migration (Superseded by M099-bpeq08b) | complete |
+| M103-6tip5z | Typed schema and pipeline implementation | complete |
 
 ## Next actions
 
+- Update README with latest milestone M103-6tip5z interpretation.
 - Run focused verification and commit or intentionally leave a handoff.
 
 ## How to create an ADR

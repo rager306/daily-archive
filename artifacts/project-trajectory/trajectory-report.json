@@ -26,9 +26,9 @@
     },
     "evidence": {
       "evidence": [
-        ".gsd/milestones/M065-u29n4f/M065-u29n4f-SUMMARY.md",
-        ".gsd/milestones/M066-7fbv31/M066-7fbv31-SUMMARY.md",
-        ".gsd/milestones/M099-bpeq08b/M099-bpeq08b-SUMMARY.md"
+        ".gsd/milestones/M062-b4porb/M062-b4porb-SUMMARY.md",
+        ".gsd/milestones/M099-bpeq8b/M099-bpeq8b-SUMMARY.md",
+        ".gsd/milestones/M103-6tip5z/M103-6tip5z-SUMMARY.md"
       ],
       "flags": [],
       "status": "tracked"
@@ -60,7 +60,7 @@
     },
     "module_code": {
       "evidence": [
-        "git_changed_files=5"
+        "git_changed_files=10"
       ],
       "flags": [
         "uncommitted_changes_present"
@@ -96,10 +96,8 @@
       "evidence": [
         "prohibited-claim scan over PROJECT/README/recent summaries"
       ],
-      "flags": [
-        "graph_import_authorized"
-      ],
-      "status": "blocked"
+      "flags": [],
+      "status": "clear"
     },
     "schema_readiness": {
       "evidence": [
@@ -122,13 +120,12 @@
   },
   "drift_flags": [
     {
-      "evidence": "recent_milestones",
-      "flag": "graph_import_authorized",
-      "severity": "high",
-      "snippet": "gnostic surfaces for Neo4j connection and transaction failures; 5. run fixture-based verification before any production graph import is allowed. ## Requirement and Decision Effects M066 advances the GraphDB selection requirement by replacin"
+      "evidence": "M103-6tip5z",
+      "flag": "latest_milestone_missing_readme_reference",
+      "severity": "medium"
     },
     {
-      "evidence": "5 files",
+      "evidence": "10 files",
       "flag": "uncommitted_changes_present",
       "severity": "info"
     }
@@ -136,35 +133,15 @@
   "graph_write_allowed": false,
   "import_eligible": false,
   "next_actions": [
+    "Update README with latest milestone M103-6tip5z interpretation.",
     "Run focused verification and commit or intentionally leave a handoff."
   ],
   "phase": "preflight",
   "production_import_attempted": false,
   "progress_summary": {
     "decisions": {
-      "count": 84,
+      "count": 87,
       "latest": [
-        {
-          "choice": "Use a unified project trajectory checker as a planning and closeout preflight, composing GSD/ADR/governance/GitNexus/codebase-memory evidence instead of adding narrow one-off guardrails.",
-          "decision": "How agents should preserve overall project trajectory across sessions and milestones",
-          "id": "D080",
-          "scope": "trajectory-governance",
-          "when": "M045-4s8e44"
-        },
-        {
-          "choice": "Drafted and accepted ADR-001 in M046-3b7gp0 QW-1 follow-up. ADR-001 isolates the first-domain framing previously implicit in ADR-000, names paper-domain requirements (R024, R027, R029, R031-R033, R050, R058, R060) as first-domain validation constraints, and defines a forward decision point for second-domain selection (R024 graph-readiness threshold). Status changed from Planned to Accepted; all 8 ADRs are now binding or deferred (zero Planned).",
-          "decision": "Accept ADR-001 (Scientific Papers as First Domain)",
-          "id": "D081",
-          "scope": "adr-framework",
-          "when": "M046-3b7gp0 QW-1 (2026-06-09)"
-        },
-        {
-          "choice": "GROBID (header/citations) + OpenDataLoader (body/tables/layout)",
-          "decision": "Hybrid Parser Architecture",
-          "id": "D082",
-          "scope": "architecture",
-          "when": "M055"
-        },
         {
           "choice": "Keep hybrid routing as the default, but require a fulltext-aware GROBID fallback when OpenDataLoader body evidence is low-quality, unavailable, or below threshold.",
           "decision": "How M055deep should amend ADR-008 after 20-PDF GROBID fulltext versus OpenDataLoader routing evidence",
@@ -178,6 +155,27 @@
           "id": "D084",
           "scope": "parser-benchmark / graph-readiness",
           "when": "M056-lchpnp S07 final synthesis"
+        },
+        {
+          "choice": "Pipeline framework builds explicit SEAMS for queue/scheduler/agent integration rather than building the full scheduler now. Concrete design: (1) pipeline/types.py defines ResourceProfile (LLM/CPU/IO tags per ADR-027 §2.2) carried by PipelineStage; PipelineStage.resource_profile + stage_name are queue-compatible with the existing UniversalKBQueue.ProcessingJob contract (stage, contract_version, output_paths). (2) pipeline/orchestrator.py is SYNCHRONOUS by default (ADR-017: queue deferred) but exposes a dispatch_protocol strategy seam: SyncDispatch (default) vs QueueDispatch (adapter over the existing UniversalKBQueue: enqueue/claim/complete), so queue-backed dispatch is a thin adapter — no queue duplication. (3) Resource-aware admission via can_dispatch() checks resource lanes; Phase 2 implements ONLY the simple LLM lane check (ADR-027 §5: MiniMax token_plan before each call) — full 3-lane scheduler deferred to Phase 4. (4) pipeline/primitives.py stages declare their ResourceProfile (CoreEntityExtractor=LLM, StatisticalPreProcessor/EvidenceLinker=CPU). What is NOT built in S02: full 3-lane scheduler (Phase 4), agent FSM runtime (Phase 6, ADR-026), PostgreSQL migration (M066). This honors ADR-017 (deferral) while making future activation a strategy swap, not a rewrite.",
+          "decision": "How M103 S02 pipeline framework (pipeline/ package) accounts for queues and future scheduling/agent planning without violating ADR-017 (queue deferred) and ADR-027 (phased scheduler)",
+          "id": "D085",
+          "scope": "pipeline / queue / scheduler",
+          "when": ""
+        },
+        {
+          "choice": "Hexagonal + Onion + Ponytail (M104)",
+          "decision": "Принять гексагональную (Ports/Adapters) + луковичную (domain/application/infrastructure) архитектуру как целевую структуру research_graph/. Ports реализуются как typing.Protocol в domain/; Adapters в infrastructure/. Port добавляется ТОЛЬКО при ≥2 реализациях, запланированной миграции, или требовании к mockability (Ponytail override — не для симметрии). Ввести Ponytail как кодовую дисциплину (skill в .agents/skills/ponytail/, правила в AGENTS.md) с §6.3 инвариантами как NEVER-списком.",
+          "id": "D086",
+          "scope": "architecture",
+          "when": "Пересматривается при добавлении 3+ доменов (Phase 5), миграции на распределённую очередь, или если sync-оркестрация станет узким местом на масштабе >10k статей."
+        },
+        {
+          "choice": "Отказ от Prefect, оставить EP-4 DispatchProtocol seam",
+          "decision": "НЕ вводить Prefect как Central Flow Orchestrator. S02 уже планирует DispatchProtocol/SyncDispatch/QueueDispatch поверх UniversalKBQueue — это покрывает Phase 2 (sync) и Phase 4 (queue activation). EP-4 (DispatchProtocol) оставляет дверь открытой: если sync-режим станет узким местом на Phase 4, Prefect добавляется как PrefectDispatch Adapter без переписывания Core. Ресурс-планировщик усиливается своими силами (~150 строк поверх UniversalKBQueue), не как отдельный сервис/фреймворк.",
+          "id": "D087",
+          "scope": "architecture",
+          "when": "Пересматривается на Phase 4 (queue activation + real concurrency), если profiling покажет что sync-оркестрация тормозит при >100 параллельных статей, или если понадобится dynamic branching/Prefect UI для operational observability."
         }
       ]
     },
@@ -194,54 +192,54 @@
       }
     },
     "latest_milestone": {
-      "id": "M099-bpeq08b",
+      "id": "M103-6tip5z",
       "mentions_no_import": false,
-      "path": ".gsd/milestones/M099-bpeq08b/M099-bpeq08b-SUMMARY.md",
+      "path": ".gsd/milestones/M103-6tip5z/M103-6tip5z-SUMMARY.md",
       "status": "complete",
-      "title": "Remaining arxiv archive migration plan"
+      "title": "Typed schema and pipeline implementation"
     },
     "recent_milestones": [
       {
-        "id": "M097-ilsyrl",
+        "id": "M054-proc4f",
         "mentions_no_import": false,
-        "path": ".gsd/milestones/M097-ilsyrl/M097-ilsyrl-SUMMARY.md",
+        "path": ".gsd/milestones/M054-proc4f/M054-proc4f-SUMMARY.md",
         "status": "complete",
-        "title": "Research graph source acquisition and scan migration wave"
+        "title": "M054 Parser Hybrid Benchmark on 5 M051 PDFs"
       },
       {
-        "id": "M098-2qn07e",
+        "id": "M055-kyxuqm",
         "mentions_no_import": false,
-        "path": ".gsd/milestones/M098-2qn07e/M098-2qn07e-SUMMARY.md",
+        "path": ".gsd/milestones/M055-kyxuqm/M055-kyxuqm-SUMMARY.md",
         "status": "complete",
-        "title": "Scoped local commit execution for research_graph migration"
+        "title": "M055 Hybrid Parser Deep-Dive: GROBID Fulltext + OpenDataLoader Correctness + 20 PDFs"
       },
       {
-        "id": "M064-wqfgfa",
+        "id": "M100-nb11x1",
         "mentions_no_import": false,
-        "path": ".gsd/milestones/M064-wqfgfa/M064-wqfgfa-SUMMARY.md",
+        "path": ".gsd/milestones/M100-nb11x1/M100-nb11x1-SUMMARY.md",
         "status": "complete",
-        "title": "M061 2-hop BFS with M3 Judge Integration at Scale"
+        "title": "M100 Architecture Cleanup Post Migration"
       },
       {
-        "id": "M065-u29n4f",
+        "id": "M062-b4porb",
         "mentions_no_import": false,
-        "path": ".gsd/milestones/M065-u29n4f/M065-u29n4f-SUMMARY.md",
+        "path": ".gsd/milestones/M062-b4porb/M062-b4porb-SUMMARY.md",
         "status": "complete",
-        "title": "M063 GraphDB selection"
+        "title": "M062 ADR Template + Library Selection (Superseded)"
       },
       {
-        "id": "M066-7fbv31",
+        "id": "M099-bpeq8b",
         "mentions_no_import": false,
-        "path": ".gsd/milestones/M066-7fbv31/M066-7fbv31-SUMMARY.md",
+        "path": ".gsd/milestones/M099-bpeq8b/M099-bpeq8b-SUMMARY.md",
         "status": "complete",
-        "title": "M066 GraphDB re-evaluation with advanced criteria"
+        "title": "M099 Remaining Migration (Superseded by M099-bpeq08b)"
       },
       {
-        "id": "M099-bpeq08b",
+        "id": "M103-6tip5z",
         "mentions_no_import": false,
-        "path": ".gsd/milestones/M099-bpeq08b/M099-bpeq08b-SUMMARY.md",
+        "path": ".gsd/milestones/M103-6tip5z/M103-6tip5z-SUMMARY.md",
         "status": "complete",
-        "title": "Remaining arxiv archive migration plan"
+        "title": "Typed schema and pipeline implementation"
       }
     ],
     "requirements": {
@@ -412,5 +410,5 @@
     "violations": []
   },
   "schema_version": "m101.project-trajectory.v2",
-  "verdict": "blocked"
+  "verdict": "drift_risk"
 }
