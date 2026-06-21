@@ -6,10 +6,11 @@ This is a PROTOTYPE script (artifacts-producing, not a production module). It:
 
 * Loads .env, loads the 5 hand-labeled golden chunks (T01 fixtures) that stand
   in for arXiv:2605.18747 chunk text (paper-level parsing is Phase 3+).
-* Builds a real ``llm_client`` backed by MiniMax's Anthropic-compatible path
-  (https://api.minimax.io/anthropic/v1, X-Api-Key header — the proven path from
-  ``MiniMaxSummarizer``, ADR-025; OpenAI-compatible fallback per MEM014 if the
-  Anthropic path rejects the call).
+* Builds a real ``llm_client`` backed by MiniMax's Anthropic-compatible API
+  (base_url ``https://api.minimax.io/anthropic`` -> ``/anthropic/v1/messages``;
+  the single ``MINIMAX_API_KEY`` value sent as ``X-Api-Key``; forced tool calls
+  with ``input_schema`` for schema-validated structured output — the canonical
+  path per the ``minimax-safe-helper`` skill and ``MiniMaxSummarizer``).
 * Runs the paper pipeline (``build_paper_pipeline``) with the real client
   injected into ``CoreEntityExtractor`` and ``RelationTypeClassifier``,
   statistical-first (YAKE pre-processing before every LLM call), rate-limited
@@ -55,11 +56,10 @@ def _load_env() -> None:
 
 
 def _require_key() -> str:
-    key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("MINIMAX_API_KEY")
+    """Return the canonical MiniMax key (MINIMAX_API_KEY; ANTHROPIC_API_KEY is an alias)."""
+    key = os.environ.get("MINIMAX_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
     if not key:
-        sys.stderr.write(
-            "ERROR: no MiniMax API key found (need ANTHROPIC_API_KEY or MINIMAX_API_KEY in .env)\n"
-        )
+        sys.stderr.write("ERROR: no MiniMax API key found (need MINIMAX_API_KEY in .env)\n")
         raise SystemExit(2)
     return key
 
@@ -67,78 +67,97 @@ def _require_key() -> str:
 def make_minimax_extraction_client(api_key: str, model: str = "MiniMax-M2.7-highspeed"):
     """Build a real ``llm_client`` for the pipeline's LLM stages.
 
-    Returns a callable ``(prompt, context_snapshot) -> dict`` that calls MiniMax
-    via the OpenAI-compatible path (``https://api.minimax.io/v1/chat/completions``,
-    Bearer auth — the proven path per MEM014 / M014). The model is instructed to
-    return strict JSON matching the extraction kind; we parse it defensively.
-    Failures return an empty dict (fail-closed: the stage emits zero drafts).
+    Canonical path per the minimax-safe-helper skill: Anthropic-compatible API,
+    ``base_url=https://api.minimax.io/anthropic`` (the SDK appends
+    ``/v1/messages``), the single ``MINIMAX_API_KEY`` value sent as ``X-Api-Key``
+    via the Anthropic SDK's ``api_key`` arg, and forced tool calls with
+    ``input_schema`` for schema-validated structured output (NOT prompt-only
+    JSON — that is an anti-pattern in the skill). Local schema validation backs
+    the tool output. Failures return an empty dict (fail-closed: zero drafts).
     """
-    import httpx
+    import anthropic
 
-    endpoint = "https://api.minimax.io/v1/chat/completions"
+    client = anthropic.Anthropic(api_key=api_key, base_url="https://api.minimax.io/anthropic")
 
     def _call(prompt: str, snapshot: dict[str, Any]) -> dict[str, Any]:
         kind = snapshot.get("extraction_kind", "entities")
-        instruction = _json_instruction_for(kind)
-        body = {
-            "model": model,
-            "max_tokens": 1024,
-            "temperature": 0.2,
-            "messages": [
-                {"role": "system", "content": instruction},
-                {"role": "user", "content": prompt},
-            ],
-        }
+        tool_name, input_schema = _tool_schema_for(kind)
         try:
-            resp = httpx.post(
-                endpoint,
-                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                json=body,
-                timeout=60.0,
+            response = client.messages.create(
+                model=model,
+                max_tokens=1024,
+                temperature=0.2,  # skill: (0.0, 1.0]
+                messages=[{"role": "user", "content": prompt}],
+                tools=[
+                    {
+                        "name": tool_name,
+                        "description": f"Return extracted {kind} as JSON.",
+                        "input_schema": input_schema,
+                    }
+                ],
+                tool_choice={"type": "tool", "name": tool_name},
             )
-            resp.raise_for_status()
-            content = resp.json()["choices"][0]["message"].get("content", "")
-        except Exception as exc:  # noqa: BLE001 — fail-closed
+        except Exception as exc:  # noqa: BLE001 — fail-closed, log sanitized
             sys.stderr.write(f"[minimax client] call failed ({type(exc).__name__}): {exc}\n")
             return {}
-        return _parse_json_payload(content, kind)
+        # Skill: preserve full assistant response incl. thinking; for single-call
+        # extraction we only consume the tool_use block.
+        for block in response.content:
+            if getattr(block, "type", None) == "tool_use":
+                data = block.input
+                return data if isinstance(data, dict) else {}
+        return {}
 
     return _call
 
 
-def _json_instruction_for(kind: str) -> str:
+def _tool_schema_for(kind: str) -> tuple[str, dict[str, Any]]:
+    """Return (tool_name, input_schema) for the extraction kind (Anthropic forced tool)."""
     if kind == "relations":
         return (
-            "You are an information-extraction engine. Return ONLY a JSON object of the shape "
-            '{"relations": [{"relation_type": str, "from_name": str, "to_name": str, '
-            '"confidence": number}]}. relation_type MUST be one of the 27 typed relations: '
-            "BUILDS_ON, IMPLEMENTS, EXTENDS, SOLVES, TARGETS, CAUSES, ENABLES, INHIBITS, "
-            "CONSISTS_OF, REQUIRES, DERIVED_FROM, HAS_LIMITATION, SUBSET_OF, CITES, SUPPORTS, "
-            "CONTRASTS. Drop any pair whose type is not in that list. No prose."
+            "emit_relations",
+            {
+                "type": "object",
+                "properties": {
+                    "relations": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "relation_type": {"type": "string"},
+                                "from_name": {"type": "string"},
+                                "to_name": {"type": "string"},
+                                "confidence": {"type": "number"},
+                            },
+                            "required": ["relation_type", "from_name", "to_name", "confidence"],
+                        },
+                    }
+                },
+                "required": ["relations"],
+            },
         )
     return (
-        "You are an information-extraction engine. Return ONLY a JSON object of the shape "
-        '{"entities": [{"entity_type": str, "canonical_name": str, "confidence": number, '
-        '"evidence_hint": str}]}. entity_type should be one of: method, dataset, metric, '
-        "task, baseline, problem, hypothesis, concept, implementation. No prose."
+        "emit_entities",
+        {
+            "type": "object",
+            "properties": {
+                "entities": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "entity_type": {"type": "string"},
+                            "canonical_name": {"type": "string"},
+                            "confidence": {"type": "number"},
+                            "evidence_hint": {"type": "string"},
+                        },
+                        "required": ["entity_type", "canonical_name", "confidence"],
+                    },
+                }
+            },
+            "required": ["entities"],
+        },
     )
-
-
-def _parse_json_payload(content: str, kind: str) -> dict[str, Any]:
-    """Best-effort JSON extraction from MiniMax output (may include <think> blocks)."""
-    import re
-
-    # Strip reasoning/think blocks if present
-    cleaned = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
-    # Find the first {...} JSON object
-    match = re.search(r"\{.*\}", cleaned, flags=re.DOTALL)
-    if not match:
-        return {}
-    try:
-        data = json.loads(match.group(0))
-    except json.JSONDecodeError:
-        return {}
-    return data if isinstance(data, dict) else {}
 
 
 # ── Prompt builders (statistical-first: keywords embedded) ───────────────────
