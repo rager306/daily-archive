@@ -117,3 +117,5 @@
 - ✅ **M112-x3whs9: Activate pre-commit hooks: install + run on all files** (`depends:[—]`)
 - ✅ **M113-aoccvn: Close parked milestones: validate M030 + M029 (account for M105 architecture drift)** (`depends:[—]`)
 - ✅ **M114-g6rtjn: Close M032 placeholder: superseded by M033-732r1t (External Parser research)** (`depends:[—]`)
+- ✅ **M115-t73arv: Fix test collection errors + refresh outdated documentation** (`depends:[—]`)
+- ✅ **M116-6gs2h: Graph Readiness Validation (R024): 10-document corpus with bounded graph probe** (`depends:[—]`)
