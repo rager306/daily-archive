@@ -612,7 +612,7 @@ def validate_article_records(
                     article_ref,
                     variant,  # ty:ignore[invalid-argument-type]
                     errors,
-                    json_path=json_path,  # ty:ignore[invalid-argument-type]
+                    json_path=json_path,
                 )
             else:
                 validate_blocked_or_failed_variant(
@@ -620,7 +620,7 @@ def validate_article_records(
                     article_ref,
                     variant,  # ty:ignore[invalid-argument-type]
                     errors,
-                    json_path=json_path,  # ty:ignore[invalid-argument-type]
+                    json_path=json_path,
                 )
     return selected_article_count, selected_variant_count
 

@@ -18,7 +18,7 @@ from replay_m031_chunk_evidence import (  # noqa: E402  # ty:ignore[unresolved-i
 
 # pyrefly: ignore [missing-import]
 from verify_m031_chunk_evidence_replay import (  # ty: ignore[unresolved-import]
-    main as verify_closeout_main,  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
+    main as verify_closeout_main,  # noqa: E402  # pyrefly: ignore [missing-import]
 )
 
 from research_graph.infrastructure.graph.readiness.review import (

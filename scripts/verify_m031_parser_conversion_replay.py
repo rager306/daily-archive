@@ -622,7 +622,7 @@ def build_closeout_summary(
             1
             # pyrefly: ignore [not-iterable]
             for row in rows  # ty:ignore[not-iterable]
-            if isinstance(row, Mapping) and row.get("parser_ready") is True  # ty:ignore[not-iterable]
+            if isinstance(row, Mapping) and row.get("parser_ready") is True
         ),
         "conversion_status_counts": dict(
             sorted(

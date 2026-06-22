@@ -169,7 +169,7 @@ def run_article(article: dict[str, Any], *, output_dir: Path) -> dict[str, Any]:
     )
     assert_false_flags(
         article_flags,  # ty:ignore[invalid-argument-type]
-        label=str(article.get("article_key") or article.get("candidate_id")),  # ty:ignore[invalid-argument-type]
+        label=str(article.get("article_key") or article.get("candidate_id")),
     )
     candidate = build_candidate(article)
     diagnostics = tuple(

@@ -290,7 +290,7 @@ def validate_s03_closeout(
         1
         # pyrefly: ignore [not-iterable]
         for row in rows  # ty:ignore[not-iterable]
-        if isinstance(row, Mapping) and row.get("parser_ready") is True  # ty:ignore[not-iterable]
+        if isinstance(row, Mapping) and row.get("parser_ready") is True
     )
     if closeout.get("schema_version") != S03_CLOSEOUT_SCHEMA_VERSION:
         findings.append(

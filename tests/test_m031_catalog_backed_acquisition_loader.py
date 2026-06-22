@@ -21,7 +21,7 @@ from replay_m031_catalog_backed_acquisition import (  # pyrefly: ignore [missing
 
 # pyrefly: ignore [missing-import]
 from replay_m031_catalog_backed_acquisition import (  # ty: ignore[unresolved-import]
-    main as replay_main,  # noqa: E402  # ty:ignore[unresolved-import]
+    main as replay_main,  # noqa: E402
 )
 from replay_m031_catalog_backed_acquisition import (  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
     replay_selection,

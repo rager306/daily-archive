@@ -285,7 +285,7 @@ def verify_source_artifacts(
         _unsafe_counter_findings(
             unsafe_counters,  # ty:ignore[invalid-argument-type]
             base_path="/unsafe_counters",
-            object_type="assessment",  # ty:ignore[invalid-argument-type]
+            object_type="assessment",
         )
     )
     findings.extend(_repair_source_boundary_findings(repair_prototype))

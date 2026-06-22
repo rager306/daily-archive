@@ -183,7 +183,7 @@ def validate_import_ready_package(package: dict[str, Any]) -> ContractValidation
                 annotation=annotation,
                 # pyrefly: ignore [bad-argument-type]
                 chunk_ids=chunk_ids,  # ty:ignore[invalid-argument-type]
-                package_paper_id=paper_id,  # ty:ignore[invalid-argument-type]
+                package_paper_id=paper_id,
             )
         )
 

@@ -238,7 +238,7 @@ def build_article_asset_manifest(payload: dict[str, Any]) -> dict[str, Any]:
                 object_id,  # ty:ignore[invalid-argument-type]
                 sources_by_id,
                 nodes_by_id,
-                anchors_by_id,  # ty:ignore[invalid-argument-type]
+                anchors_by_id,
             )
         )
         record = _asset_record_from_placeholder(
