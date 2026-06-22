@@ -324,8 +324,8 @@ def build_m031_import_boundary_rehearsal(
         "rehearsal_id": rehearsal_id,
         "source_benchmark_id": str(summary.get("selection_id") or "m031-catalog-backed-replay-v1"),
         "candidate_count": len(candidates),
-        "accepted_count": sum(1 for candidate in candidates if candidate["accepted"] is True),
-        "rejected_count": sum(1 for candidate in candidates if candidate["rejected"] is True),
+        "accepted_count": sum(1 for candidate in candidates if candidate["accepted"] is True),  # pyrefly: ignore[bad-assignment]
+        "rejected_count": sum(1 for candidate in candidates if candidate["rejected"] is True),  # pyrefly: ignore[bad-assignment]
         "candidates": candidates,
         "refusal_counts": _merge_refusals(candidates),
         "recommendation": "positive_import_blocked",

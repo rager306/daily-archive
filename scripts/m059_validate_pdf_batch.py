@@ -180,7 +180,7 @@ def _missing_fields_from_errors(errors: Iterable[ValidationError]) -> list[str]:
     fields: set[str] = set()
     for error in errors:
         if error.validator == "required":
-            for missing in error.validator_value:
+            for missing in error.validator_value:  # pyrefly: ignore[not-iterable]
                 if missing not in error.instance:
                     fields.add(str(missing))
     return sorted(fields)

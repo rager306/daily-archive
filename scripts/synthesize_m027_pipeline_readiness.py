@@ -689,9 +689,9 @@ def validate_contract(
     if role == "s06_riskratchet_summary":
         risk = payload.get("riskratchet") if isinstance(payload.get("riskratchet"), dict) else {}
         if (
-            risk.get("blocking") is True
-            or risk.get("pass_fail_affected") is True
-            or risk.get("diagnostic_only") is not True
+            risk.get("blocking") is True  # pyrefly: ignore[bad-assignment]
+            or risk.get("pass_fail_affected") is True  # pyrefly: ignore[bad-assignment]
+            or risk.get("diagnostic_only") is not True  # pyrefly: ignore[bad-assignment]
         ):
             findings.append(
                 diagnostic(

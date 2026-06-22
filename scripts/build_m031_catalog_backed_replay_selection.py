@@ -476,11 +476,11 @@ def normalized_article(
         "coarse_topic_code": article_payload.get("coarse_topic_code")
         if isinstance(article_payload.get("coarse_topic_code"), str)
         else index_row.get("coarse_topic_code"),
-        "title": identity_obj.get("title")
-        if isinstance(identity_obj.get("title"), str)
+        "title": identity_obj.get("title")  # pyrefly: ignore[bad-assignment]
+        if isinstance(identity_obj.get("title"), str)  # pyrefly: ignore[bad-assignment]
         else index_row.get("title"),
-        "canonical_url": identity_obj.get("canonical_url")
-        if isinstance(identity_obj.get("canonical_url"), str)
+        "canonical_url": identity_obj.get("canonical_url")  # pyrefly: ignore[bad-assignment]
+        if isinstance(identity_obj.get("canonical_url"), str)  # pyrefly: ignore[bad-assignment]
         else index_row.get("canonical_url"),
         "primary_source_role": index_row.get("primary_source_role")
         if isinstance(index_row.get("primary_source_role"), str)

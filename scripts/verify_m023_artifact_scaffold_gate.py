@@ -179,8 +179,8 @@ def build_artifact_scaffold_gate(
             "run_id": manifest.get("run_id"),
             "artifact_count": int(manifest_summary.get("artifact_count", 0)),
             "candidate_link_count": int(manifest_summary.get("candidate_link_count", 0)),
-            "artifact_counts_by_type": dict(manifest_summary.get("artifact_counts_by_type", {})),
-            "candidate_link_type_counts": dict(
+            "artifact_counts_by_type": dict(manifest_summary.get("artifact_counts_by_type", {})),  # pyrefly: ignore[bad-assignment]
+            "candidate_link_type_counts": dict(  # pyrefly: ignore[bad-assignment]
                 manifest_summary.get("candidate_link_type_counts", {})
             ),
             "review_state_counts": review_states,

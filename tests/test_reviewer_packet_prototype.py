@@ -67,9 +67,9 @@ def test_builds_deterministic_review_packets_and_independent_assessment() -> Non
     assert first == second
     assert first["schema_version"] == REVIEWER_PACKET_PROTOTYPE_VERSION
     assert first["packet_count"] == 3
-    assert first["assessment"]["schema_version"] == REVIEWER_PACKET_ASSESSMENT_VERSION
-    assert first["assessment"]["reviewer_id"] == "independent-agent"
-    assert first["assessment"]["verdict"] == "blocked_pending_semantic_acceptance"
+    assert first["assessment"]["schema_version"] == REVIEWER_PACKET_ASSESSMENT_VERSION  # pyrefly: ignore[bad-assignment]
+    assert first["assessment"]["reviewer_id"] == "independent-agent"  # pyrefly: ignore[bad-assignment]
+    assert first["assessment"]["verdict"] == "blocked_pending_semantic_acceptance"  # pyrefly: ignore[bad-assignment]
     assert [packet["locator_id"] for packet in first["packets"]] == [
         "m021-synthetic-paper-1-claim-001",
         "m021-synthetic-paper-1-retrieval-001",
@@ -196,7 +196,7 @@ def test_s02_lineage_subset_enforcement_rejects_unknown_locator_source_and_span_
 
 def test_forbidden_payload_key_rejection_reports_path_and_code_without_value() -> None:
     payload = _s03_payload()
-    payload["repair_targets"][0]["nested"] = {"api_key": "DO_NOT_LEAK"}
+    payload["repair_targets"][0]["nested"] = {"api_key": "DO_NOT_LEAK"}  # pyrefly: ignore[bad-assignment]
 
     with pytest.raises(ReviewerPacketError) as exc_info:
         build_reviewer_packet_prototype(payload, s02_contract=_s02_contract())
@@ -226,7 +226,7 @@ def test_markdown_renderer_is_redacted_json_derived_and_has_no_code_fences_or_fo
 
 def test_markdown_renderer_rejects_mutated_packet_safety_and_importability() -> None:
     prototype = _prototype()
-    prototype["packets"][0]["importable"] = True
+    prototype["packets"][0]["importable"] = True  # pyrefly: ignore[bad-assignment]
 
     with pytest.raises(ReviewerPacketError) as exc_info:
         render_reviewer_packet_markdown(prototype)
@@ -235,7 +235,7 @@ def test_markdown_renderer_rejects_mutated_packet_safety_and_importability() -> 
     assert exc_info.value.path == "/packets/0/importable"
 
     prototype = _prototype()
-    prototype["packets"][0]["safety_boundaries"]["semantic_ready_for_kg"] = True
+    prototype["packets"][0]["safety_boundaries"]["semantic_ready_for_kg"] = True  # pyrefly: ignore[bad-assignment]
     with pytest.raises(ReviewerPacketError) as safety_exc:
         render_reviewer_packet_markdown(prototype)
     assert safety_exc.value.code == "packet_unsafe_safety_boundary"
@@ -244,14 +244,14 @@ def test_markdown_renderer_rejects_mutated_packet_safety_and_importability() -> 
 def test_assessment_blocks_import_and_next_step_readiness_until_semantic_acceptance() -> None:
     assessment = _prototype()["assessment"]
 
-    assert assessment["import_allowed"] is False
-    assert assessment["semantic_ready_for_kg"] is False
-    assert assessment["dimension_results"]["semantic_usefulness"]["blocks_import"] is True
+    assert assessment["import_allowed"] is False  # pyrefly: ignore[bad-assignment]
+    assert assessment["semantic_ready_for_kg"] is False  # pyrefly: ignore[bad-assignment]
+    assert assessment["dimension_results"]["semantic_usefulness"]["blocks_import"] is True  # pyrefly: ignore[bad-assignment]
     assert (
-        assessment["dimension_results"]["next_step_readiness"]["status"]
+        assessment["dimension_results"]["next_step_readiness"]["status"]  # pyrefly: ignore[bad-assignment]
         == "blocked_pending_semantic_acceptance"
     )
-    assert assessment["packet_findings"] == [
+    assert assessment["packet_findings"] == [  # pyrefly: ignore[bad-assignment]
         {
             "code": "pending_semantic_acceptance",
             "path": "/packets",

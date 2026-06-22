@@ -11,7 +11,11 @@ from pathlib import Path
 from typing import Any
 
 from m059_replay_ingest import replay_batch
-from m059_validate_pdf_batch import read_json, rel, validate_batch
+from m059_validate_pdf_batch import (  # pyrefly: ignore[missing-import]
+    read_json,
+    rel,
+    validate_batch,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MANIFEST = ROOT / "artifacts" / "m054-pdf-acquisition" / "manifest.json"

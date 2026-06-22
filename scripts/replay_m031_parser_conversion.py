@@ -337,7 +337,7 @@ def extract_html_text(path: Path) -> tuple[str, dict[str, Any], dict[str, int]]:
         tag.decompose()
     article = (
         soup.find("article")
-        or soup.find(attrs={"role": "main"})
+        or soup.find(attrs={"role": "main"})  # pyrefly: ignore[bad-assignment]
         or soup.find("main")
         or soup.body
         or soup
@@ -678,7 +678,7 @@ def render_report(summary: Mapping[str, Any]) -> str:
         f"- Status: `{summary.get('status')}`",
         f"- Row count: {summary.get('row_count')}",
         f"- Parser-ready converted rows: {summary.get('parser_ready_count')}",
-        f"- Counts: `{dict(counts)}`",
+        f"- Counts: `{dict(counts)}`",  # pyrefly: ignore[bad-assignment]
         "- Network fetch attempted: `False`",
         "- arxiv2md invoked: `False`",
         "- md_converter invoked: `False`",

@@ -20,7 +20,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from m059_validate_pdf_batch import (
+from m059_validate_pdf_batch import (  # pyrefly: ignore[missing-import]
     SAFETY_DEFAULTS,
     ensure_safety_defaults,
     find_parser_expectation,

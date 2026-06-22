@@ -439,14 +439,17 @@ def main() -> int:
         agg = {
             "chunks_processed": n,
             "entity_precision_mean": round(
-                sum(r["scores"]["entity_precision"] for r in results) / n, 3
+                sum(r["scores"]["entity_precision"] for r in results) / n,
+                3,  # pyrefly: ignore[bad-assignment]
             ),
-            "entity_recall_mean": round(sum(r["scores"]["entity_recall"] for r in results) / n, 3),
+            "entity_recall_mean": round(sum(r["scores"]["entity_recall"] for r in results) / n, 3),  # pyrefly: ignore[bad-assignment]
             "relation_precision_mean": round(
-                sum(r["scores"]["relation_precision"] for r in results) / n, 3
+                sum(r["scores"]["relation_precision"] for r in results) / n,
+                3,  # pyrefly: ignore[bad-assignment]
             ),
             "relation_recall_mean": round(
-                sum(r["scores"]["relation_recall"] for r in results) / n, 3
+                sum(r["scores"]["relation_recall"] for r in results) / n,
+                3,  # pyrefly: ignore[bad-assignment]
             ),
         }
     else:
@@ -460,7 +463,7 @@ def main() -> int:
         "model": "MiniMax-M2.7-highspeed (Anthropic-compatible path)",
         "aggregate": agg,
         "all_safety_flags_false": all(
-            not r.get("patch", {}).get("safety_flags", {}).get("import_eligible", False)
+            not r.get("patch", {}).get("safety_flags", {}).get("import_eligible", False)  # pyrefly: ignore[bad-assignment]
             for r in results
         ),
         "results": results,

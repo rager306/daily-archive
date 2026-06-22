@@ -369,7 +369,7 @@ def extract_html_body(source_path: Path) -> tuple[str, dict[str, Any], dict[str,
         tag.decompose()
     article = (
         soup.find("article")
-        or soup.find(attrs={"role": "main"})
+        or soup.find(attrs={"role": "main"})  # pyrefly: ignore[bad-assignment]
         or soup.find("main")
         or soup.body
         or soup

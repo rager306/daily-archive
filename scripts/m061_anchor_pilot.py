@@ -683,7 +683,7 @@ def stage_4_real_arxiv_acquisition(
         "external_network_override": SAFETY_OVERRIDE,
         "safety_defaults": SAFETY_DEFAULTS,
     }
-    return report, selected_ids, pdf_paths, eprint_paths
+    return report, selected_ids, pdf_paths, eprint_paths  # pyrefly: ignore[str]
 
 
 def _multipart_pdf_request(endpoint: str, pdf_path: Path) -> urllib.request.Request:
@@ -1146,8 +1146,8 @@ def stage_9_graph_manifest(
         "diagnostic_llm_calls_override": DIAGNOSTIC_M3_OVERRIDE,
         "layers": layers,
         "layer_count": len(layers),
-        "total_edge_count": sum(layer["edge_count"] for layer in layers),
-        "total_node_count_by_layer_sum": sum(layer["node_count"] for layer in layers),
+        "total_edge_count": sum(layer["edge_count"] for layer in layers),  # pyrefly: ignore[bad-assignment]
+        "total_node_count_by_layer_sum": sum(layer["node_count"] for layer in layers),  # pyrefly: ignore[bad-assignment]
         "validation": {
             "table_layer_errors": validate_layer_payload(
                 TABLE_SCHEMA_PATH, M057_ROOT / "table-similarity" / "edges.json"
@@ -1247,7 +1247,7 @@ def run_pilot(
     stage_timings["two_hop_bfs"] = time.perf_counter() - stage_started
 
     stage_started = time.perf_counter()
-    arxiv_acquisition, selected_ids, acquired_pdf_paths, acquired_eprint_paths = (
+    arxiv_acquisition, selected_ids, acquired_pdf_paths, acquired_eprint_paths = (  # pyrefly: ignore[str]
         stage_4_real_arxiv_acquisition(paths, new_2hop_ids, max_papers)
     )
     stage_timings["real_arxiv_acquisition"] = time.perf_counter() - stage_started

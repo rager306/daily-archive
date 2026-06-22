@@ -312,7 +312,7 @@ def redacted_package_metrics(
 ) -> dict[str, Any]:
     diagnostics = package.get("diagnostics") if isinstance(package.get("diagnostics"), dict) else {}
     return {
-        "package_state": diagnostics.get("package_state"),
+        "package_state": diagnostics.get("package_state"),  # pyrefly: ignore[bad-assignment]
         "valid_package": validation.get("valid_package"),
         "passed": validation.get("passed"),
         "import_ready": validation.get("import_ready"),
@@ -329,10 +329,10 @@ def redacted_package_metrics(
         "import_eligible_chunk_count": validation.get("import_eligible_chunk_count"),
         "refused_chunk_count": validation.get("refused_chunk_count"),
         "refusal_counts": validation.get("refusal_counts"),
-        "counts_by_state": diagnostics.get("counts_by_state", {}),
-        "counts_by_route": diagnostics.get("counts_by_route", {}),
-        "counts_by_chunk_type": diagnostics.get("counts_by_chunk_type", {}),
-        "source_span_coverage": diagnostics.get("source_span_coverage"),
+        "counts_by_state": diagnostics.get("counts_by_state", {}),  # pyrefly: ignore[bad-assignment]
+        "counts_by_route": diagnostics.get("counts_by_route", {}),  # pyrefly: ignore[bad-assignment]
+        "counts_by_chunk_type": diagnostics.get("counts_by_chunk_type", {}),  # pyrefly: ignore[bad-assignment]
+        "source_span_coverage": diagnostics.get("source_span_coverage"),  # pyrefly: ignore[bad-assignment]
         "raw_text_included": False,
         "embeddings_included": False,
         "ladybugdb_written": False,

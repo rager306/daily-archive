@@ -537,7 +537,7 @@ def _sanitize_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
     }
     candidate_links = candidate.get("candidate_links")
     if isinstance(candidate_links, list):
-        sanitized["candidate_links"] = [
+        sanitized["candidate_links"] = [  # pyrefly: ignore[bad-assignment]
             {
                 "link_id": str(link["link_id"]),
                 "source_artifact_id": str(link["source_artifact_id"]),

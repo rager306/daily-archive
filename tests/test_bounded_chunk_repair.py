@@ -88,7 +88,7 @@ def test_builds_deterministic_non_empty_targets_that_validate_against_contract()
         "m021-synthetic-paper-1-retrieval-001",
         "m021-synthetic-paper-1-method-001",
     ]
-    assert first["diagnostics"]["target_count"] == 3
+    assert first["diagnostics"]["target_count"] == 3  # pyrefly: ignore[bad-assignment]
     assert validation.import_eligible_count == 0
     assert validation.production_write_count == 0
     assert validation.semantic_ready_count == 0
@@ -178,7 +178,7 @@ def test_max_target_count_bounds_selection_but_keeps_stable_priority() -> None:
         "m021-synthetic-paper-1-claim-001",
         "m021-synthetic-paper-1-retrieval-001",
     ]
-    assert payload["diagnostics"]["target_count"] == 2
+    assert payload["diagnostics"]["target_count"] == 2  # pyrefly: ignore[bad-assignment]
 
 
 @pytest.mark.parametrize(
@@ -231,7 +231,7 @@ def test_fail_closed_for_malformed_or_unresolved_locator_inputs(
 
 def test_forbidden_nested_metadata_key_is_rejected_without_leaking_value() -> None:
     batch = _locator_batch()
-    batch["locators"][0]["metadata"] = {"api_key": "DO_NOT_LEAK"}
+    batch["locators"][0]["metadata"] = {"api_key": "DO_NOT_LEAK"}  # pyrefly: ignore[bad-assignment]
 
     with pytest.raises(BoundedChunkRepairError) as exc_info:
         build_bounded_chunk_repair_contract(_contract(), batch)

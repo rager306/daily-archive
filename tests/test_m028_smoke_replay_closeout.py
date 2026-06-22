@@ -155,9 +155,9 @@ def test_closeout_runner_and_verifier_accept_real_corpus_without_mutating_canoni
         events = _read_jsonl(events_path)
         preflight = summary["source_acquisition_preflight"]
         assert summary["status"] == "pass"
-        assert preflight["url_ref_count"] == 21
-        assert preflight["normalized_identity_count"] == 20
-        assert preflight["expansion_refs"] == ["R15", "R16", "R17", "R18", "R19", "R20", "R21"]
+        assert preflight["url_ref_count"] == 21  # pyrefly: ignore[bad-assignment]
+        assert preflight["normalized_identity_count"] == 20  # pyrefly: ignore[bad-assignment]
+        assert preflight["expansion_refs"] == ["R15", "R16", "R17", "R18", "R19", "R20", "R21"]  # pyrefly: ignore[bad-assignment]
         assert [event["stage"] for event in events] == EXPECTED_STAGES
         assert summary["stage_events"] == events
         assert summary["diagnostics"] == []
@@ -181,7 +181,7 @@ def test_verifier_rejects_stale_14_ref_scope(tmp_path: Path) -> None:
 def test_verifier_rejects_stage_output_hash_drift(tmp_path: Path) -> None:
     summary, events, report = _load_canonical_closeout()
     mutated_events = copy.deepcopy(events)
-    mutated_events[0]["output_hashes"][0]["sha256"] = hashlib.sha256(b"drift").hexdigest()
+    mutated_events[0]["output_hashes"][0]["sha256"] = hashlib.sha256(b"drift").hexdigest()  # pyrefly: ignore[bad-assignment]
     summary["stage_events"] = copy.deepcopy(mutated_events)
     _assert_verifier_rejects(
         tmp_path, summary, mutated_events, report, {"ARTIFACT_SHA256_MISMATCH"}

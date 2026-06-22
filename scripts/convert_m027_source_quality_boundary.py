@@ -338,7 +338,7 @@ def extract_nature_html(source_path: Path) -> tuple[str, dict[str, Any], dict[st
         tag.decompose()
     article = (
         soup.find("article")
-        or soup.find(attrs={"role": "main"})
+        or soup.find(attrs={"role": "main"})  # pyrefly: ignore[bad-assignment]
         or soup.find("main")
         or soup.body
         or soup

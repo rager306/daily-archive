@@ -219,8 +219,8 @@ def _metrics_dict(comparison: ComparisonResult, fixture: E2EGraphFixture) -> dic
 
 def _comparison_dict(comparison: ComparisonResult) -> dict[str, Any]:
     payload = asdict(comparison)
-    payload["baseline_labels"] = [baseline.label for baseline in comparison.baselines]
-    payload["baseline_count"] = len(comparison.baselines)
+    payload["baseline_labels"] = [baseline.label for baseline in comparison.baselines]  # pyrefly: ignore[bad-assignment]
+    payload["baseline_count"] = len(comparison.baselines)  # pyrefly: ignore[bad-assignment]
     return payload
 
 

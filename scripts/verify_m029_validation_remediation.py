@@ -945,10 +945,10 @@ def _build_verify_summary(
         "selection_id": SELECTION_ID,
         "status": "failed" if diagnostics else "passed",
         "verdict": evidence.get("verdict"),
-        "article_count": readiness.get("article_count"),
-        "ready_count": readiness.get("ready_count"),
-        "zero_chunk_count": readiness.get("zero_chunk_count"),
-        "readiness_status": readiness.get("status"),
+        "article_count": readiness.get("article_count"),  # pyrefly: ignore[bad-assignment]
+        "ready_count": readiness.get("ready_count"),  # pyrefly: ignore[bad-assignment]
+        "zero_chunk_count": readiness.get("zero_chunk_count"),  # pyrefly: ignore[bad-assignment]
+        "readiness_status": readiness.get("status"),  # pyrefly: ignore[bad-assignment]
         "present_bounded_refs": present_refs,
         "missing_bounded_refs": missing_refs,
         "m029_selection_article_count": len(m029_selection.get("articles", []))

@@ -946,7 +946,7 @@ def _validate_report(evidence: Mapping[str, Any], report: str) -> list[dict[str,
         "unsafe_flag_count",
         "decision",
     ):
-        value = counts.get(key)
+        value = counts.get(key)  # pyrefly: ignore[bad-assignment]
         if isinstance(value, (str, int)) and str(value) not in report:
             diagnostics.append(
                 _diagnostic(
@@ -1140,13 +1140,13 @@ def _build_verify_summary(
         else {}
     )
     in_scope = (
-        scope.get("in_scope_m029_remediation_requirements")
-        if isinstance(scope.get("in_scope_m029_remediation_requirements"), list)
+        scope.get("in_scope_m029_remediation_requirements")  # pyrefly: ignore[bad-assignment]
+        if isinstance(scope.get("in_scope_m029_remediation_requirements"), list)  # pyrefly: ignore[bad-assignment]
         else []
     )
     out_scope = (
-        scope.get("out_of_scope_project_requirements")
-        if isinstance(scope.get("out_of_scope_project_requirements"), list)
+        scope.get("out_of_scope_project_requirements")  # pyrefly: ignore[bad-assignment]
+        if isinstance(scope.get("out_of_scope_project_requirements"), list)  # pyrefly: ignore[bad-assignment]
         else []
     )
     return {
@@ -1157,10 +1157,10 @@ def _build_verify_summary(
         "status": "failed" if diagnostics else "passed",
         "verdict": evidence.get("verdict"),
         "blocked_verdict": str(evidence.get("verdict")) in BLOCKED_VERDICTS,
-        "article_count": readiness.get("article_count"),
-        "ready_count": readiness.get("ready_count"),
-        "zero_chunk_count": readiness.get("zero_chunk_count"),
-        "readiness_status": readiness.get("status"),
+        "article_count": readiness.get("article_count"),  # pyrefly: ignore[bad-assignment]
+        "ready_count": readiness.get("ready_count"),  # pyrefly: ignore[bad-assignment]
+        "zero_chunk_count": readiness.get("zero_chunk_count"),  # pyrefly: ignore[bad-assignment]
+        "readiness_status": readiness.get("status"),  # pyrefly: ignore[bad-assignment]
         "m030_s01_bounded_ref_count": len(m030_selection.get("refs", []))
         if isinstance(m030_selection.get("refs"), list)
         else None,
@@ -1178,7 +1178,7 @@ def _build_verify_summary(
             for row in out_scope
             if isinstance(row, Mapping) and row.get("requirement_id")
         ),
-        "validated_requirement_count": scope.get("validated_requirement_count"),
+        "validated_requirement_count": scope.get("validated_requirement_count"),  # pyrefly: ignore[bad-assignment]
         "unsafe_flag_count": sum(
             1 for item in diagnostics if str(item.get("code", "")).endswith("UNSAFE_FLAG_TRUE")
         ),

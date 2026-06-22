@@ -556,8 +556,8 @@ def build_combined_graph_manifest(anchor_summaries: list[dict[str, Any]]) -> dic
         "per_paper_manifest_sources": per_paper_sources,
         "layers": layers,
         "layer_count": len(layers),
-        "total_edge_count": sum(layer["edge_count"] for layer in layers),
-        "total_node_count_by_layer_sum": sum(layer["node_count"] for layer in layers),
+        "total_edge_count": sum(layer["edge_count"] for layer in layers),  # pyrefly: ignore[bad-assignment]
+        "total_node_count_by_layer_sum": sum(layer["node_count"] for layer in layers),  # pyrefly: ignore[bad-assignment]
         "validation": {
             "layer_count_ok": len(layers) == 5,
             "anchor_count_ok": len(anchor_summaries) == 5,

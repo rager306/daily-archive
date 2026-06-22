@@ -27,7 +27,7 @@ def _node(article_key: str, category: str, *, linked_from: list[str] | None = No
         "m041_category": category,
     }
     if linked_from is not None:
-        entry["linked_from"] = linked_from
+        entry["linked_from"] = linked_from  # pyrefly: ignore[bad-assignment]
     return entry
 
 

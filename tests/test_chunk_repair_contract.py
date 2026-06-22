@@ -80,7 +80,7 @@ def _single_target_batch_contract() -> dict[str, object]:
     contract = build_chunk_repair_contract_from_audit(
         _audit_fixture(), source_audit_path="tests/fixtures/audit.json"
     )
-    target = deepcopy(_fixture()["repair_targets"])[0]
+    target = deepcopy(_fixture()["repair_targets"])[0]  # pyrefly: ignore[bad-assignment]
     contract["repair_targets"] = [target]
     contract["diagnostics"] = {
         **contract["diagnostics"],
@@ -129,7 +129,7 @@ def test_empty_repair_targets_are_valid_for_contract_artifact() -> None:
 def test_missing_header_and_target_ids_are_rejected_without_raising() -> None:
     payload = _fixture()
     payload.pop("schema_version")
-    target = deepcopy(payload["repair_targets"])[0]
+    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore[bad-assignment]
     target.pop("target_id")
     target.pop("locator_id")
     payload["repair_targets"] = [target]
@@ -171,7 +171,7 @@ def test_batch_contract_accepts_target_paper_from_expected_audit() -> None:
 
 def test_batch_contract_rejects_unknown_target_paper_id() -> None:
     payload = _single_target_batch_contract()
-    payload["repair_targets"][0]["paper_id"] = "unknown-paper"
+    payload["repair_targets"][0]["paper_id"] = "unknown-paper"  # pyrefly: ignore[bad-assignment]
 
     result = validate_chunk_repair_contract(
         payload, expected_audit=expected_audit_from_contract(payload)
@@ -192,7 +192,7 @@ def test_missing_expected_audit_still_enforces_package_paper_id() -> None:
 
 def test_forbidden_payload_key_injection_reports_path_not_value() -> None:
     payload = _fixture()
-    payload["repair_targets"][0]["review_packet"] = {
+    payload["repair_targets"][0]["review_packet"] = {  # pyrefly: ignore[bad-assignment]
         "nested": {"chunk_text": "NEVER LEAK THIS RAW VALUE"}
     }
 
@@ -217,7 +217,7 @@ def test_forbidden_key_scanner_is_redacted_and_recursive() -> None:
 
 def test_safety_flags_cannot_request_import_fact_write_or_semantic_readiness() -> None:
     payload = _fixture()
-    target = deepcopy(payload["repair_targets"])[0]
+    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore[bad-assignment]
     target["safety_boundaries"]["import_eligible"] = True
     target["safety_boundaries"]["promoted_to_fact"] = True
     target["safety_boundaries"]["trusted_kg_import_allowed"] = True
@@ -238,7 +238,7 @@ def test_safety_flags_cannot_request_import_fact_write_or_semantic_readiness() -
 
 def test_route_state_vocabulary_and_confusion_are_rejected() -> None:
     payload = _fixture()
-    target = deepcopy(payload["repair_targets"])[0]
+    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore[bad-assignment]
     target["route"] = "claim_extraction"
     target["state"] = "ok_for_graph"
     payload["repair_targets"] = [target]
@@ -249,7 +249,7 @@ def test_route_state_vocabulary_and_confusion_are_rejected() -> None:
     assert "invalid_repair_state" in reasons
 
     payload = _fixture()
-    target = deepcopy(payload["repair_targets"])[0]
+    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore[bad-assignment]
     target["route"] = "retrieval_context"
     target["state"] = "ambiguous_span"
     payload["repair_targets"] = [target]
@@ -259,12 +259,12 @@ def test_route_state_vocabulary_and_confusion_are_rejected() -> None:
 
 def test_malformed_spans_are_rejected_by_code_and_path() -> None:
     payload = _fixture()
-    span = deepcopy(payload["repair_targets"])[0]["source_spans"][0]
+    span = deepcopy(payload["repair_targets"])[0]["source_spans"][0]  # pyrefly: ignore[bad-assignment]
     span["coordinate_space"] = "pdf_pixel_box"
     span["char_start"] = 80
     span["char_end"] = 10
     span.pop("span_hash")
-    target = deepcopy(payload["repair_targets"])[0]
+    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore[bad-assignment]
     target["source_spans"] = [span]
     payload["repair_targets"] = [target]
 
@@ -279,7 +279,7 @@ def test_malformed_spans_are_rejected_by_code_and_path() -> None:
 
 def test_accepted_review_status_requires_reviewer_fields() -> None:
     payload = _fixture()
-    target = deepcopy(payload["repair_targets"])[0]
+    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore[bad-assignment]
     target["review_status"] = "accepted"
     target["reviewer"] = {"reviewer_id": "reviewer-1"}
     payload["repair_targets"] = [target]

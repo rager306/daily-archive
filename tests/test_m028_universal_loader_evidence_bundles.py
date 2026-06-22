@@ -626,7 +626,7 @@ def test_verifier_rejects_checksum_signature_drift(tmp_path: Path) -> None:
     verifier = _load_verifier()
     bundle_rows = _read_jsonl(REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl")
     target = next(row for row in bundle_rows if row["ref_id"] == "R01")
-    pdf_artifact = target["artifact_refs"]["pdf_artifact"]
+    pdf_artifact = target["artifact_refs"]["pdf_artifact"]  # pyrefly: ignore[bad-assignment]
     assert isinstance(pdf_artifact, dict)
     pdf_artifact["sha256"] = "f" * 64
     pdf_artifact["payload_embedded"] = True
@@ -678,7 +678,7 @@ def test_verifier_rejects_missing_nullable_pdf_artifact_metadata(tmp_path: Path)
     verifier = _load_verifier()
     bundle_rows = _read_jsonl(REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl")
     target = next(row for row in bundle_rows if row["ref_id"] == "R02")
-    assert target["artifact_refs"]["pdf_artifact"]["path"] is None
+    assert target["artifact_refs"]["pdf_artifact"]["path"] is None  # pyrefly: ignore[bad-assignment]
     del target["artifact_refs"]["pdf_artifact"]
     bundles_path = tmp_path / "bundles-missing-nullable-pdf-artifact.jsonl"
     _write_jsonl(bundles_path, bundle_rows)
@@ -698,7 +698,7 @@ def test_verifier_rejects_missing_nullable_pdf_artifact_metadata(tmp_path: Path)
 def test_verifier_rejects_summary_drift(tmp_path: Path) -> None:
     verifier = _load_verifier()
     summary = _read_json(REAL_CORPUS_DIR / "universal-loader-evidence-summary.json")
-    summary["ref_ids"] = list(reversed(summary["ref_ids"]))
+    summary["ref_ids"] = list(reversed(summary["ref_ids"]))  # pyrefly: ignore[bad-assignment]
     summary["source_kind_counts"] = {
         "arxiv_abs_url": 14,
         "arxiv_pdf_url": 4,

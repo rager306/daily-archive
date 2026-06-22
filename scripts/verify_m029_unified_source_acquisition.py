@@ -473,7 +473,7 @@ def normalize_source_strategies(
             )
             status = result.get("status")
             if status in TERMINAL_STATES:
-                terminal_by_role[role][str(status)] += 1
+                terminal_by_role[role][str(status)] += 1  # pyrefly: ignore[bad-assignment]
 
         primary_counts = terminal_by_role.get(
             primary_role, {"captured": 0, "blocked": 0, "failed": 0}
@@ -665,9 +665,9 @@ def render_report(summary: Mapping[str, Any]) -> str:
         f"- Error count: {summary.get('error_count')}",
         f"- Article URLs: {summary.get('article_count')}",
         f"- Variants: {summary.get('variant_count')}",
-        f"- Captured: {counts.get('captured', 0)}",
-        f"- Blocked: {counts.get('blocked', 0)}",
-        f"- Failed: {counts.get('failed', 0)}",
+        f"- Captured: {counts.get('captured', 0)}",  # pyrefly: ignore[bad-assignment]
+        f"- Blocked: {counts.get('blocked', 0)}",  # pyrefly: ignore[bad-assignment]
+        f"- Failed: {counts.get('failed', 0)}",  # pyrefly: ignore[bad-assignment]
         f"- Network fetch attempted count: {summary.get('network_fetch_attempted_count')}",
         "- Graph/import/LadybugDB writes: false",
         "",

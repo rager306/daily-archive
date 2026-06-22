@@ -255,8 +255,8 @@ class ArticleLinksDedupManifest:
         payload["summary"] = summarize_article_links_dedup(payload)
         payload["bridge_subtree"] = default_bridge_subtree(payload["summary"]["diagnostic_counts"])
         payload["safety_flags"] = default_safety_flags()
-        payload["import_eligible_count"] = 0
-        payload["promoted_to_fact_count"] = 0
+        payload["import_eligible_count"] = 0  # pyrefly: ignore[bad-assignment]
+        payload["promoted_to_fact_count"] = 0  # pyrefly: ignore[bad-assignment]
         return payload
 
 
@@ -473,7 +473,7 @@ def to_redacted_dict(value: ArticleLinksDedupManifest | dict[str, Any]) -> dict[
     """Convert a manifest object or mapping to a redacted dictionary."""
     if hasattr(value, "to_redacted_dict"):
         return value.to_redacted_dict()  # type: ignore[no-any-return]
-    return build_article_links_dedup_manifest(dict(value))
+    return build_article_links_dedup_manifest(dict(value))  # pyrefly: ignore[bad-assignment]
 
 
 def to_json(value: ArticleLinksDedupManifest | dict[str, Any]) -> str:

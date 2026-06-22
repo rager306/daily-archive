@@ -121,8 +121,8 @@ def test_validate_m031_rehearsal_rejects_unsafe_graph_import_flags() -> None:
     unsafe["trusted_kg_import_allowed"] = True
     unsafe["graph_import_allowed"] = True
     unsafe["production_ladybugdb_write_allowed"] = True
-    unsafe["candidates"][0]["trusted_kg_import_allowed"] = True
-    unsafe["candidates"][0]["kg_readiness_claimed"] = True
+    unsafe["candidates"][0]["trusted_kg_import_allowed"] = True  # pyrefly: ignore[bad-assignment]
+    unsafe["candidates"][0]["kg_readiness_claimed"] = True  # pyrefly: ignore[bad-assignment]
 
     validation = validate_import_boundary_rehearsal(unsafe)
 
@@ -142,8 +142,8 @@ def test_build_m031_import_boundary_rehearsal_requires_completed_review_absence_
         if candidate["candidate_type"] == "graph_readiness_package"
     )
 
-    assert contract["source_m031_summary"]["independent_review_completed_count"] == 0
-    assert contract["source_m031_summary"]["pending_graph_readiness_review_count"] == 1
+    assert contract["source_m031_summary"]["independent_review_completed_count"] == 0  # pyrefly: ignore[bad-assignment]
+    assert contract["source_m031_summary"]["pending_graph_readiness_review_count"] == 1  # pyrefly: ignore[bad-assignment]
     assert parser_ready["review_state"] == "pending_independent_graph_readiness_review"
     assert parser_ready["output_contract_completed"] is False
     assert parser_ready["independent_review_completed"] is False

@@ -558,11 +558,11 @@ def render_report(summary: Mapping[str, Any]) -> str:
         f"- Slice: `{summary.get('slice_id')}`",
         f"- Selection: `{summary.get('selection_id')}`",
         f"- Status: `{summary.get('status')}`",
-        f"- Loader attempted: {counts.get('loader_attempted', 0)}",
-        f"- Loaded: {counts.get('loaded', 0)}",
-        f"- Loaded metadata only: {counts.get('loaded_metadata_only', 0)}",
-        f"- Failed: {counts.get('failed', 0)}",
-        f"- Loader blocked: {counts.get('loader_blocked', 0)}",
+        f"- Loader attempted: {counts.get('loader_attempted', 0)}",  # pyrefly: ignore[bad-assignment]
+        f"- Loaded: {counts.get('loaded', 0)}",  # pyrefly: ignore[bad-assignment]
+        f"- Loaded metadata only: {counts.get('loaded_metadata_only', 0)}",  # pyrefly: ignore[bad-assignment]
+        f"- Failed: {counts.get('failed', 0)}",  # pyrefly: ignore[bad-assignment]
+        f"- Loader blocked: {counts.get('loader_blocked', 0)}",  # pyrefly: ignore[bad-assignment]
         "- Network fetch attempted count: 0",
         "- Graph/import/LadybugDB writes: false",
         "",

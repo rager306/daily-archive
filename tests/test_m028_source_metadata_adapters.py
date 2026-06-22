@@ -452,7 +452,9 @@ def test_verifier_rejects_stale_fourteen_ref_assumptions(
     outputs = deepcopy(expanded_outputs)
     keep_ref_ids = {f"R{index:02d}" for index in range(1, 15)}
     outputs["selection"]["refs"] = [
-        ref for ref in outputs["selection"]["refs"] if ref["ref_id"] in keep_ref_ids
+        ref
+        for ref in outputs["selection"]["refs"]
+        if ref["ref_id"] in keep_ref_ids  # pyrefly: ignore[bad-assignment]
     ]
     outputs["acquisition_events"] = [
         row for row in outputs["acquisition_events"] if row["ref_id"] in keep_ref_ids
@@ -473,7 +475,9 @@ def test_verifier_rejects_stale_fourteen_ref_assumptions(
 def test_verifier_rejects_missing_new_refs(expanded_outputs: dict[str, object]) -> None:
     outputs = deepcopy(expanded_outputs)
     outputs["selection"]["refs"] = [
-        ref for ref in outputs["selection"]["refs"] if ref["ref_id"] != "R21"
+        ref
+        for ref in outputs["selection"]["refs"]
+        if ref["ref_id"] != "R21"  # pyrefly: ignore[bad-assignment]
     ]
     outputs["metadata_events"] = [
         event for event in outputs["metadata_events"] if event["ref_id"] != "R21"
@@ -491,16 +495,16 @@ def test_verifier_rejects_missing_new_refs(expanded_outputs: dict[str, object]) 
 
 def test_verifier_rejects_unsafe_readiness_flags(expanded_outputs: dict[str, object]) -> None:
     outputs = deepcopy(expanded_outputs)
-    outputs["summary"]["safety_flags"]["kg_readiness_claimed"] = True
-    outputs["summary"]["unsafe_claim_counts"]["parser_readiness_claimed"] = 1
-    outputs["metadata_events"][0]["safety_flags"]["graph_write_attempted"] = True
+    outputs["summary"]["safety_flags"]["kg_readiness_claimed"] = True  # pyrefly: ignore[bad-assignment]
+    outputs["summary"]["unsafe_claim_counts"]["parser_readiness_claimed"] = 1  # pyrefly: ignore[bad-assignment]
+    outputs["metadata_events"][0]["safety_flags"]["graph_write_attempted"] = True  # pyrefly: ignore[bad-assignment]
 
     assert "unsafe_claim_detected" in _diagnostic_codes(outputs)
 
 
 def test_verifier_rejects_source_kind_drift(expanded_outputs: dict[str, object]) -> None:
     outputs = deepcopy(expanded_outputs)
-    outputs["metadata_events"][0]["source_kind"] = "company_blog_url"
+    outputs["metadata_events"][0]["source_kind"] = "company_blog_url"  # pyrefly: ignore[bad-assignment]
 
     codes = _diagnostic_codes(outputs)
 
@@ -512,14 +516,14 @@ def test_verifier_rejects_broken_acquisition_references(
     expanded_outputs: dict[str, object],
 ) -> None:
     outputs = deepcopy(expanded_outputs)
-    outputs["metadata_events"][0]["artifact"]["path"] = "sources/missing.pdf"
+    outputs["metadata_events"][0]["artifact"]["path"] = "sources/missing.pdf"  # pyrefly: ignore[bad-assignment]
 
     assert "artifact_reference_broken" in _diagnostic_codes(outputs)
 
 
 def test_verifier_rejects_raw_payload_leakage(expanded_outputs: dict[str, object]) -> None:
     outputs = deepcopy(expanded_outputs)
-    outputs["metadata_events"][0]["raw_text"] = "<html><body>raw source payload</body></html>"
+    outputs["metadata_events"][0]["raw_text"] = "<html><body>raw source payload</body></html>"  # pyrefly: ignore[bad-assignment]
 
     assert "raw_payload_leakage" in _diagnostic_codes(outputs)
 
@@ -528,7 +532,7 @@ def test_verifier_requires_nullable_optional_gap_diagnostics(
     expanded_outputs: dict[str, object],
 ) -> None:
     outputs = deepcopy(expanded_outputs)
-    first_event = outputs["metadata_events"][0]
+    first_event = outputs["metadata_events"][0]  # pyrefly: ignore[bad-assignment]
     first_event["optional_metadata"].pop("doi")
 
     assert "required_nullable_field_missing" in _diagnostic_codes(outputs)

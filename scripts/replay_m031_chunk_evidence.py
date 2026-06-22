@@ -442,10 +442,10 @@ def build_graph_readiness_package(
         "annotation_count": len(structure_package.get("annotations", []))
         if isinstance(structure_package.get("annotations"), list)
         else 0,
-        "counts_by_state": diagnostics.get("counts_by_state", {}),
-        "counts_by_route": diagnostics.get("counts_by_route", {}),
-        "counts_by_chunk_type": diagnostics.get("counts_by_chunk_type", {}),
-        "refusal_counts": diagnostics.get("refusal_counts", {}),
+        "counts_by_state": diagnostics.get("counts_by_state", {}),  # pyrefly: ignore[bad-assignment]
+        "counts_by_route": diagnostics.get("counts_by_route", {}),  # pyrefly: ignore[bad-assignment]
+        "counts_by_chunk_type": diagnostics.get("counts_by_chunk_type", {}),  # pyrefly: ignore[bad-assignment]
+        "refusal_counts": diagnostics.get("refusal_counts", {}),  # pyrefly: ignore[bad-assignment]
         "review_blockers": [
             "independent_graph_readiness_review_required",
             "trusted_kg_import_not_allowed_by_s04",

@@ -549,7 +549,7 @@ def test_page_index_summary_attaches_valid_manifest_as_metadata_only_subtree(
     tmp_path: Path,
 ) -> None:
     payload = _page_index_attached_payload(tmp_path, _basic_page_index())
-    subtree = payload["subtrees"]["page_index"]
+    subtree = payload["subtrees"]["page_index"]  # pyrefly: ignore[bad-assignment]
 
     assert subtree["status"] == "metadata_only"
     assert subtree["review_only"] is True
@@ -585,7 +585,7 @@ def test_page_index_summary_attaches_valid_manifest_as_metadata_only_subtree(
 
 def test_page_index_summary_attaches_fallback_manifest_as_review_only(tmp_path: Path) -> None:
     payload = _page_index_attached_payload(tmp_path, _fallback_page_index())
-    subtree = payload["subtrees"]["page_index"]
+    subtree = payload["subtrees"]["page_index"]  # pyrefly: ignore[bad-assignment]
 
     assert subtree["status"] == "review_only"
     assert subtree["record_count"] == 1
@@ -603,7 +603,7 @@ def test_page_index_summary_attaches_blocked_manifest_as_blocked_review_only(
     tmp_path: Path,
 ) -> None:
     payload = _page_index_attached_payload(tmp_path, _blocked_page_index())
-    subtree = payload["subtrees"]["page_index"]
+    subtree = payload["subtrees"]["page_index"]  # pyrefly: ignore[bad-assignment]
 
     assert subtree["status"] == "blocked"
     assert subtree["record_count"] > 0
@@ -625,7 +625,7 @@ def test_page_index_summary_forces_unsafe_import_mutation_fail_closed(tmp_path: 
     page_index["bridge_subtree"]["trusted_kg_import_allowed"] = True
 
     payload = _page_index_attached_payload(tmp_path, page_index)
-    subtree = payload["subtrees"]["page_index"]
+    subtree = payload["subtrees"]["page_index"]  # pyrefly: ignore[bad-assignment]
 
     assert subtree["status"] == "blocked"
     assert subtree["import_eligible_count"] == 0

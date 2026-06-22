@@ -86,11 +86,12 @@ def install_backend(*, skip_install: bool = False, timeout_seconds: int = 600) -
     nougat_install = {"attempted": False, "ok": False, "result": None}
     if not skip_install:
         marker_install["attempted"] = True
-        marker_install["result"] = run_command(
-            ["uv", "pip", "install", "marker-pdf"], timeout_seconds=timeout_seconds
+        marker_install["result"] = run_command(  # pyrefly: ignore[bad-assignment]
+            ["uv", "pip", "install", "marker-pdf"],
+            timeout_seconds=timeout_seconds,  # pyrefly: ignore[bad-assignment]
         )
-        marker_install["ok"] = marker_install["result"]["exit_code"] == 0
-    marker_preflight = run_command(["uv", "run", "marker_single", "--help"], timeout_seconds=60)
+        marker_install["ok"] = marker_install["result"]["exit_code"] == 0  # pyrefly: ignore[unsupported-operation]
+    marker_preflight = run_command(["uv", "run", "marker_single", "--help"], timeout_seconds=60)  # pyrefly: ignore[unsupported-operation]
     if marker_preflight["exit_code"] == 0:
         return {
             "backend": "marker",
@@ -102,11 +103,12 @@ def install_backend(*, skip_install: bool = False, timeout_seconds: int = 600) -
 
     if not skip_install:
         nougat_install["attempted"] = True
-        nougat_install["result"] = run_command(
-            ["uv", "pip", "install", "nougat-ocr"], timeout_seconds=timeout_seconds
+        nougat_install["result"] = run_command(  # pyrefly: ignore[bad-assignment]
+            ["uv", "pip", "install", "nougat-ocr"],
+            timeout_seconds=timeout_seconds,  # pyrefly: ignore[bad-assignment]
         )
-        nougat_install["ok"] = nougat_install["result"]["exit_code"] == 0
-    nougat_preflight = run_command(["uv", "run", "nougat", "--help"], timeout_seconds=60)
+        nougat_install["ok"] = nougat_install["result"]["exit_code"] == 0  # pyrefly: ignore[unsupported-operation]
+    nougat_preflight = run_command(["uv", "run", "nougat", "--help"], timeout_seconds=60)  # pyrefly: ignore[unsupported-operation]
     backend = "nougat" if nougat_preflight["exit_code"] == 0 else "none"
     return {
         "backend": backend,

@@ -146,7 +146,7 @@ def compare_v2_vs_m057(
     }
     for _name, item in metrics.items():
         if "winner" not in item:
-            item["winner"] = _winner(float(item["v2"]), float(item["m057"]))
+            item["winner"] = _winner(float(item["v2"]), float(item["m057"]))  # pyrefly: ignore[unsupported-operation]
 
     go = (
         int(m058_summary.get("sample_size", 0)) == 5

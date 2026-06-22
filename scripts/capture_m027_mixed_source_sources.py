@@ -775,9 +775,9 @@ def render_report(summary: Mapping[str, Any]) -> str:
         f"- Command: `{summary.get('command')}`",
         f"- CWD: `{summary.get('cwd')}`",
         f"- Git commit: `{summary.get('git_commit')}`",
-        f"- Captured: {counts.get('captured', 0)}",
-        f"- Blocked: {counts.get('blocked', 0)}",
-        f"- Failed: {counts.get('failed', 0)}",
+        f"- Captured: {counts.get('captured', 0)}",  # pyrefly: ignore[bad-assignment]
+        f"- Blocked: {counts.get('blocked', 0)}",  # pyrefly: ignore[bad-assignment]
+        f"- Failed: {counts.get('failed', 0)}",  # pyrefly: ignore[bad-assignment]
         "- Capture phase network allowed: true",
         "- Replay phase network allowed: false",
         "- Graph import allowed: false",
@@ -794,7 +794,7 @@ def render_report(summary: Mapping[str, Any]) -> str:
         summary.get("input_hashes") if isinstance(summary.get("input_hashes"), dict) else {}
     )
     for name, path in input_paths.items():
-        lines.append(f"- `{name}`: `{path}` sha256=`{input_hash_map.get(name)}`")
+        lines.append(f"- `{name}`: `{path}` sha256=`{input_hash_map.get(name)}`")  # pyrefly: ignore[bad-assignment]
 
     lines.extend(["", "## Outputs", ""])
     output_paths = (
@@ -804,7 +804,7 @@ def render_report(summary: Mapping[str, Any]) -> str:
         summary.get("output_hashes") if isinstance(summary.get("output_hashes"), dict) else {}
     )
     for name, path in output_paths.items():
-        lines.append(f"- `{name}`: `{path}` sha256=`{output_hash_map.get(name)}`")
+        lines.append(f"- `{name}`: `{path}` sha256=`{output_hash_map.get(name)}`")  # pyrefly: ignore[bad-assignment]
 
     lines.extend(["", "## Article Counts", ""])
     article_counts = (

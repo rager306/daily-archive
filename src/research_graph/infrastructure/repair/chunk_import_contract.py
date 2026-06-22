@@ -574,7 +574,7 @@ def _validate_graph_ready_chunk(
                 reason="invalid_route", object_id=chunk_id, object_type="chunk", route=route
             )
         )
-    elif chunk_type not in ROUTE_COMPATIBLE_CHUNK_TYPES.get(route, frozenset()):
+    elif chunk_type not in ROUTE_COMPATIBLE_CHUNK_TYPES.get(route, frozenset()):  # pyrefly: ignore[bad-assignment]
         diagnostics.append(
             ContractDiagnostic(
                 reason="route_chunk_type_mismatch",

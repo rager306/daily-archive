@@ -736,10 +736,10 @@ def render_report(summary: Mapping[str, Any], diagnostics: list[dict[str, Any]])
         f"- Catalog-backed identities: {summary.get('catalog_backed_count')}",
         f"- Typed catalog blockers: {summary.get('typed_catalog_blocker_count')}",
         f"- Terminal acquisition/loader rows: {summary.get('terminal_row_count')}",
-        f"- Captured acquisition rows: {counts.get('captured_acquisition_rows', 0)}",
-        f"- Blocked acquisition rows: {counts.get('typed_or_terminal_blocker_rows', 0)}",
-        f"- Loader attempted rows: {counts.get('loader_attempted', 0)}",
-        f"- Loader blockers: {counts.get('loader_blocked', 0)}",
+        f"- Captured acquisition rows: {counts.get('captured_acquisition_rows', 0)}",  # pyrefly: ignore[bad-assignment]
+        f"- Blocked acquisition rows: {counts.get('typed_or_terminal_blocker_rows', 0)}",  # pyrefly: ignore[bad-assignment]
+        f"- Loader attempted rows: {counts.get('loader_attempted', 0)}",  # pyrefly: ignore[bad-assignment]
+        f"- Loader blockers: {counts.get('loader_blocked', 0)}",  # pyrefly: ignore[bad-assignment]
         "- Graph/import/LadybugDB flags: false",
         "",
         "## Scope Boundary",

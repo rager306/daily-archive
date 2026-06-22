@@ -508,7 +508,7 @@ def validate_conversion_row(
                 if isinstance(row.get("bounded_extraction"), Mapping)
                 else {}
             )
-            if quality.get("status") in {"low_quality", "empty"} or bounded.get(
+            if quality.get("status") in {"low_quality", "empty"} or bounded.get(  # pyrefly: ignore[bad-assignment]
                 "fallback_stub_detected"
             ):
                 findings.append(

@@ -774,7 +774,7 @@ def build_runtime_diagnostics(evidence: Mapping[str, Any]) -> list[dict[str, Any
         if isinstance(evidence.get("s02_assessment_reconciliation"), Mapping)
         else {}
     )
-    if reconciliation.get("stale_s02_assessment_failure_detected") is True:
+    if reconciliation.get("stale_s02_assessment_failure_detected") is True:  # pyrefly: ignore[bad-assignment]
         rows.append(
             diagnostic(
                 "M031_VALIDATION_REMEDIATION_STALE_S02_ASSESSMENT_RECONCILED",

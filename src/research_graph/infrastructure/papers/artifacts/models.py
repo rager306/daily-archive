@@ -605,7 +605,7 @@ def build_article_artifact_manifest_from_structure(
         if placeholder.get("span_id") and artifact_span is None:
             missing_span_count += 1
             diagnostics.append(_missing_span_diagnostic(placeholder.get("span_id"), artifact_id))
-        section = section_by_id.get(placeholder.get("section_id"), {})
+        section = section_by_id.get(placeholder.get("section_id"), {})  # pyrefly: ignore[bad-assignment]
         candidate_links = _placeholder_candidate_links(paper_id, placeholder, artifact_span, spans)
         diagnostic_codes: tuple[str, ...] = ()
         metadata: dict[str, Any] = {"fixture_role": _fixture_role_for_placeholder(artifact_type)}

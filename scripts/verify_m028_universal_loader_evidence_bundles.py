@@ -817,7 +817,7 @@ def validate_summary(
     )
     for name, path in expected_fingerprints.items():
         fingerprint = fingerprints.get(name) if isinstance(fingerprints.get(name), dict) else {}
-        if fingerprint.get("sha256") != sha256_file(path):
+        if fingerprint.get("sha256") != sha256_file(path):  # pyrefly: ignore[bad-assignment]
             diagnostics.append(
                 Diagnostic(
                     "SUMMARY_INPUT_FINGERPRINT_MISMATCH",

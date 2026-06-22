@@ -428,7 +428,7 @@ def test_rejects_payload_markers_and_absolute_paths(tmp_path: Path) -> None:
     module = _load_script()
     bundles, summary = _real_inputs()
     bundles = deepcopy(bundles)
-    bundles[0]["artifact_refs"]["source_artifact"]["path"] = "/tmp/leak.pdf"
+    bundles[0]["artifact_refs"]["source_artifact"]["path"] = "/tmp/leak.pdf"  # pyrefly: ignore[bad-assignment]
     bundles[1]["raw_text"] = "forbidden source body"
     bundles_path = tmp_path / "universal-loader-evidence-bundles.jsonl"
     summary_path = tmp_path / "universal-loader-evidence-summary.json"
@@ -473,9 +473,9 @@ def test_verifier_accepts_regenerated_real_projection_contract(tmp_path: Path) -
     digest = _read_json(digest_path)
 
     assert diagnostics == []
-    assert digest["summary"]["url_ref_count"] == 21
-    assert digest["summary"]["normalized_identity_count"] == 20
-    assert set(digest["summary"]["expanded_scope_ref_ids"]) == {
+    assert digest["summary"]["url_ref_count"] == 21  # pyrefly: ignore[bad-assignment]
+    assert digest["summary"]["normalized_identity_count"] == 20  # pyrefly: ignore[bad-assignment]
+    assert set(digest["summary"]["expanded_scope_ref_ids"]) == {  # pyrefly: ignore[bad-assignment]
         "R15",
         "R16",
         "R17",
@@ -484,7 +484,7 @@ def test_verifier_accepts_regenerated_real_projection_contract(tmp_path: Path) -
         "R20",
         "R21",
     }
-    assert digest["summary"]["duplicate_identity_groups"][0]["ref_ids"] == ["R01", "R10"]
+    assert digest["summary"]["duplicate_identity_groups"][0]["ref_ids"] == ["R01", "R10"]  # pyrefly: ignore[bad-assignment]
     assert all(value == 0 for value in digest["unsafe_counters"].values())
 
 
@@ -529,7 +529,7 @@ def test_verifier_reports_digest_missing_expanded_ref(tmp_path: Path) -> None:
     bundles_path, summary_path, digest_path, report_path = _build_real_projection(tmp_path)
     digest = _read_json(digest_path)
     digest["items"] = [item for item in digest["items"] if item["ref_id"] != "R21"]
-    digest["summary"]["ref_ids"] = [ref for ref in digest["summary"]["ref_ids"] if ref != "R21"]
+    digest["summary"]["ref_ids"] = [ref for ref in digest["summary"]["ref_ids"] if ref != "R21"]  # pyrefly: ignore[bad-assignment]
     _write_json(digest_path, digest)
 
     diagnostics = verifier.validate_contract(
@@ -629,7 +629,7 @@ def test_verifier_rejects_kg_readiness_claim(tmp_path: Path) -> None:
     verifier = _load_verifier()
     bundles_path, summary_path, digest_path, report_path = _build_real_projection(tmp_path)
     digest = _read_json(digest_path)
-    digest["items"][0]["loader_evidence"]["kg_import_eligible"] = True
+    digest["items"][0]["loader_evidence"]["kg_import_eligible"] = True  # pyrefly: ignore[bad-assignment]
     _write_json(digest_path, digest)
 
     diagnostics = verifier.validate_contract(
@@ -648,7 +648,7 @@ def test_verifier_rejects_payload_marker_and_forbidden_key(tmp_path: Path) -> No
     verifier = _load_verifier()
     bundles_path, summary_path, digest_path, report_path = _build_real_projection(tmp_path)
     digest = _read_json(digest_path)
-    digest["items"][0]["raw_text"] = "<html>payload leak</html>"
+    digest["items"][0]["raw_text"] = "<html>payload leak</html>"  # pyrefly: ignore[bad-assignment]
     _write_json(digest_path, digest)
 
     diagnostics = verifier.validate_contract(
@@ -668,7 +668,7 @@ def test_verifier_rejects_unsafe_artifact_path(tmp_path: Path) -> None:
     verifier = _load_verifier()
     bundles_path, summary_path, digest_path, report_path = _build_real_projection(tmp_path)
     digest = _read_json(digest_path)
-    digest["items"][1]["artifact_refs"]["source_artifact"]["path"] = "../escape.pdf"
+    digest["items"][1]["artifact_refs"]["source_artifact"]["path"] = "../escape.pdf"  # pyrefly: ignore[bad-assignment]
     _write_json(digest_path, digest)
 
     diagnostics = verifier.validate_contract(

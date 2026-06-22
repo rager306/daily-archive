@@ -547,7 +547,7 @@ def validate_article_evidence_bundle(
     bundle: ArticleEvidenceBundle | dict[str, Any],
 ) -> list[dict[str, Any]]:
     """Return redacted diagnostics with stable codes and JSON paths."""
-    payload = bundle.to_redacted_dict() if hasattr(bundle, "to_redacted_dict") else dict(bundle)
+    payload = bundle.to_redacted_dict() if hasattr(bundle, "to_redacted_dict") else dict(bundle)  # pyrefly: ignore[bad-assignment]
     diagnostics: list[ArticleEvidenceDiagnostic] = []
     diagnostics.extend(
         _required(
@@ -603,7 +603,7 @@ def to_redacted_dict(
     """Convert a bridge object or mapping to a redacted dictionary."""
     if hasattr(value, "to_redacted_dict"):
         return value.to_redacted_dict()  # type: ignore[no-any-return]
-    return dict(value)
+    return dict(value)  # pyrefly: ignore[bad-assignment]
 
 
 def attach_page_index_summary(
@@ -1045,9 +1045,9 @@ def attach_retrieval_table_benchmark_summary(
                 "ranking_tie_count": retrieval_subtree["ranking_tie_count"],
                 "diagnostic_count": len(diagnostics),
                 "diagnostic_counts_by_code": diagnostic_counts,
-                "manifest_path": retrieval_subtree["manifest"]["path"],
-                "manifest_sha256": retrieval_subtree["manifest"]["sha256"],
-                "manifest_schema": retrieval_subtree["manifest"]["schema_version"],
+                "manifest_path": retrieval_subtree["manifest"]["path"],  # pyrefly: ignore[bad-assignment]
+                "manifest_sha256": retrieval_subtree["manifest"]["sha256"],  # pyrefly: ignore[bad-assignment]
+                "manifest_schema": retrieval_subtree["manifest"]["schema_version"],  # pyrefly: ignore[bad-assignment]
                 "import_eligible_count": 0,
                 "promoted_to_fact_count": 0,
                 "production_import_attempted": False,

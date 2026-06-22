@@ -121,7 +121,7 @@ def _base_structure(
         sections.append(
             {
                 "section_id": f"{paper_id}:section:{slug}",
-                "parent_section_id": root_id,
+                "parent_section_id": root_id,  # pyrefly: ignore[bad-assignment]
                 "section_type": "methods" if index % 2 else "results",
                 "ordinal_path": [index],
                 "span_id": f"{paper_id}:span:section-{slug}",
@@ -134,7 +134,7 @@ def _base_structure(
                 "coordinate_space": "normalized_markdown_char",
                 "char_start": index * 100,
                 "char_end": index * 100 + 25,
-                "span_hash": f"{index % 16:x}" * 64,
+                "span_hash": f"{index % 16:x}" * 64,  # pyrefly: ignore[bad-assignment]
                 "raw_text_embedded": False,
             }
         )
@@ -160,7 +160,7 @@ def _base_structure(
                     "coordinate_space": "page_bbox",
                     "page_start": 1,
                     "page_end": 1,
-                    "bbox": [0.1, 0.2, 0.8, 0.6],
+                    "bbox": [0.1, 0.2, 0.8, 0.6],  # pyrefly: ignore[bad-assignment]
                     "span_hash": "a" * 64,
                     "raw_text_embedded": False,
                 },

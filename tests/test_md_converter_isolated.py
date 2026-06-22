@@ -93,7 +93,7 @@ async def test_arxiv2md_404(temp_cache, monkeypatch):
         def download(self, arxiv_id, pdf_url):
             raise RuntimeError("offline")
 
-    converter._pdf_downloader = FailingDownloader()
+    converter._pdf_downloader = FailingDownloader()  # pyrefly: ignore[bad-assignment]
 
     result = await converter.convert("2101.12345")
     assert result.markdown is None
@@ -122,7 +122,7 @@ async def test_arxiv2md_timeout(temp_cache, monkeypatch):
         def download(self, arxiv_id, pdf_url):
             raise RuntimeError("offline")
 
-    converter._pdf_downloader = FailingDownloader()
+    converter._pdf_downloader = FailingDownloader()  # pyrefly: ignore[bad-assignment]
 
     result = await converter.convert("2101.12345")
     assert result.markdown is None
@@ -268,7 +268,7 @@ async def test_marker_missing_pdf_reports_download_failure(temp_cache, monkeypat
         def download(self, arxiv_id, pdf_url):
             raise RuntimeError("network unavailable")
 
-    converter._pdf_downloader = FailingDownloader()
+    converter._pdf_downloader = FailingDownloader()  # pyrefly: ignore[bad-assignment]
     monkeypatch.setattr(converter, "_get_pdf_path", lambda x: None)
 
     result = await converter._try_marker("2101.12345")
@@ -287,7 +287,7 @@ async def test_marker_downloads_pdf_when_missing_and_marker_unavailable(temp_cac
             downloaded_pdf.write_bytes(b"%PDF")
             return downloaded_pdf
 
-    converter._pdf_downloader = FakeDownloader()
+    converter._pdf_downloader = FakeDownloader()  # pyrefly: ignore[bad-assignment]
     monkeypatch.setattr(converter, "_get_pdf_path", lambda x: None)
     monkeypatch.setattr("shutil.which", lambda x: None)
     monkeypatch.setattr(
@@ -379,7 +379,7 @@ async def test_arxiv2md_httperror(temp_cache, monkeypatch):
         def download(self, arxiv_id, pdf_url):
             raise RuntimeError("offline")
 
-    converter._pdf_downloader = FailingDownloader()
+    converter._pdf_downloader = FailingDownloader()  # pyrefly: ignore[bad-assignment]
 
     result = await converter.convert("2101.12345")
     assert result.markdown is None

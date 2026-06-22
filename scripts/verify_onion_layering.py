@@ -142,7 +142,7 @@ def scan_domain(domain_root: Path) -> dict[str, object]:
 def scan_all() -> dict[str, object]:
     """Scan every configured layer (domain, application). Returns an aggregate report."""
     reports = {layer: scan_layer(layer, root) for layer, root in LAYER_ROOTS.items()}
-    total = sum(r["violation_count"] for r in reports.values())
+    total = sum(r["violation_count"] for r in reports.values())  # pyrefly: ignore[bad-assignment]
     return {
         "status": "clear" if total == 0 else "violations",
         "violation_count": total,

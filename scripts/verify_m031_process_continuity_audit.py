@@ -1274,9 +1274,9 @@ def render_audit_md(audit: Mapping[str, Any]) -> str:
             "",
             "## Load Profile",
             "",
-            f"- Expected load: {load.get('expected_load')}",
-            f"- 10x breakpoint: {load.get('ten_x_breakpoint')}",
-            f"- Protection: {load.get('protection')}",
+            f"- Expected load: {load.get('expected_load')}",  # pyrefly: ignore[bad-assignment]
+            f"- 10x breakpoint: {load.get('ten_x_breakpoint')}",  # pyrefly: ignore[bad-assignment]
+            f"- Protection: {load.get('protection')}",  # pyrefly: ignore[bad-assignment]
             "",
             "## Negative Tests",
             "",

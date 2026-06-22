@@ -38,7 +38,7 @@ def test_acquisition_min_4_pdfs() -> None:
     acquired = [entry for entry in entries if entry["status"] == "acquired"]
 
     assert len(entries) == 6
-    assert log["counts"]["acquired"] >= 4
+    assert log["counts"]["acquired"] >= 4  # pyrefly: ignore[bad-assignment]
     assert len(acquired) >= 4
     for entry in acquired:
         local_path = ROOT / entry["local_path"]

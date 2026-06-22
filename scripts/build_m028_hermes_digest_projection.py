@@ -449,13 +449,13 @@ def compact_artifact_refs(bundle: dict[str, Any]) -> dict[str, dict[str, Any]]:
     for name in ("source_artifact", "metadata_artifact", "pdf_artifact"):
         artifact = artifact_refs.get(name) if isinstance(artifact_refs.get(name), dict) else {}
         compact[name] = {
-            "path": artifact.get("path") if isinstance(artifact.get("path"), str) else None,
-            "sha256": artifact.get("sha256") if isinstance(artifact.get("sha256"), str) else None,
-            "byte_count": artifact.get("byte_count")
-            if isinstance(artifact.get("byte_count"), int)
+            "path": artifact.get("path") if isinstance(artifact.get("path"), str) else None,  # pyrefly: ignore[bad-assignment]
+            "sha256": artifact.get("sha256") if isinstance(artifact.get("sha256"), str) else None,  # pyrefly: ignore[bad-assignment]
+            "byte_count": artifact.get("byte_count")  # pyrefly: ignore[bad-assignment]
+            if isinstance(artifact.get("byte_count"), int)  # pyrefly: ignore[bad-assignment]
             else None,
-            "content_type": artifact.get("content_type")
-            if isinstance(artifact.get("content_type"), str)
+            "content_type": artifact.get("content_type")  # pyrefly: ignore[bad-assignment]
+            if isinstance(artifact.get("content_type"), str)  # pyrefly: ignore[bad-assignment]
             else None,
             "payload_embedded": False,
         }

@@ -434,9 +434,9 @@ def attach_article_assets_summary(
         "manifest_sha256": manifest_sha256,
         "manifest_schema_version": ARTICLE_ASSET_MANIFEST_SCHEMA_VERSION,
         "asset_count": int(summary.get("asset_count", 0) or 0),
-        "asset_counts_by_type": dict(summary.get("asset_counts_by_type", {})),
-        "preservation_state_counts": dict(summary.get("preservation_state_counts", {})),
-        "interpretation_status_counts": dict(summary.get("interpretation_status_counts", {})),
+        "asset_counts_by_type": dict(summary.get("asset_counts_by_type", {})),  # pyrefly: ignore[no-matching-overload]
+        "preservation_state_counts": dict(summary.get("preservation_state_counts", {})),  # pyrefly: ignore[no-matching-overload]
+        "interpretation_status_counts": dict(summary.get("interpretation_status_counts", {})),  # pyrefly: ignore[no-matching-overload]
         "blocker_count": int(summary.get("blocker_count", 0) or 0),
         "import_ineligible_count": int(summary.get("import_ineligible_count", 0) or 0),
         "hash_coverage_rate": float(summary.get("hash_coverage_rate", 0.0) or 0.0),
