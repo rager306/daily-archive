@@ -463,12 +463,14 @@ def test_verifier_rejects_stale_fourteen_ref_assumptions(
     outputs["acquisition_events"] = [
         # pyrefly: ignore [not-iterable]
         row
+        # pyrefly: ignore [not-iterable]
         for row in outputs["acquisition_events"]  # ty:ignore[not-iterable]
         if row["ref_id"] in keep_ref_ids  # ty:ignore[not-iterable]
     ]
     outputs["metadata_events"] = [
         # pyrefly: ignore [not-iterable]
         event
+        # pyrefly: ignore [not-iterable]
         for event in outputs["metadata_events"]  # ty:ignore[not-iterable]
         if event["ref_id"] in keep_ref_ids  # ty:ignore[not-iterable]
     ]
@@ -497,12 +499,14 @@ def test_verifier_rejects_missing_new_refs(expanded_outputs: dict[str, object]) 
     outputs["metadata_events"] = [
         # pyrefly: ignore [not-iterable]
         event
+        # pyrefly: ignore [not-iterable]
         for event in outputs["metadata_events"]  # ty:ignore[not-iterable]
         if event["ref_id"] != "R21"  # ty:ignore[not-iterable]
     ]
     outputs["acquisition_events"] = [
         # pyrefly: ignore [not-iterable]
         row
+        # pyrefly: ignore [not-iterable]
         for row in outputs["acquisition_events"]  # ty:ignore[not-iterable]
         if row["ref_id"] != "R21"  # ty:ignore[not-iterable]
     ]

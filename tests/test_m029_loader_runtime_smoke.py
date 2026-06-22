@@ -13,6 +13,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from run_m029_unified_loader_runtime_smoke import (  # ty: ignore[unresolved-import]
     main as run_main,  # noqa: E402  # ty:ignore[unresolved-import]
 )
+
+# pyrefly: ignore [missing-import]
 from verify_m029_unified_loader_runtime_smoke import (  # ty: ignore[unresolved-import]
     main as verify_main,  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
 )

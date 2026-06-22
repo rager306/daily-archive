@@ -620,6 +620,7 @@ def build_closeout_summary(
         "parser_ready_count": sum(
             # pyrefly: ignore [not-iterable]
             1
+            # pyrefly: ignore [not-iterable]
             for row in rows  # ty:ignore[not-iterable]
             if isinstance(row, Mapping) and row.get("parser_ready") is True  # ty:ignore[not-iterable]
         ),

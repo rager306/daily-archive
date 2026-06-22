@@ -473,6 +473,7 @@ def _packet_from_target(target: dict[str, Any], *, index: int) -> dict[str, Any]
         "before_diagnostic_codes": sorted(
             # pyrefly: ignore [not-iterable]
             str(code)
+            # pyrefly: ignore [not-iterable]
             for code in before.get("codes", target.get("diagnostic_codes", []))  # ty:ignore[unresolved-attribute]
         ),
         "after_diagnostic_codes": sorted(

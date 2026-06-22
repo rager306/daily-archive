@@ -288,6 +288,7 @@ def validate_s03_closeout(
     parser_ready_count = sum(
         # pyrefly: ignore [not-iterable]
         1
+        # pyrefly: ignore [not-iterable]
         for row in rows  # ty:ignore[not-iterable]
         if isinstance(row, Mapping) and row.get("parser_ready") is True  # ty:ignore[not-iterable]
     )
@@ -1236,6 +1237,7 @@ def verify(
             validate_diagnostic_rows(
                 # pyrefly: ignore [bad-argument-type]
                 conversion_rows=conversion_rows,
+                # pyrefly: ignore [bad-argument-type]
                 diagnostics_rows=diagnostics_rows,  # ty:ignore[invalid-argument-type]
             )
         )
