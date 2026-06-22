@@ -25,6 +25,16 @@ if _env_path.exists():
             key, _, value = line.partition("=")
             os.environ.setdefault(key.strip(), value.strip())
 
+from research_graph.corpus.sources.arxiv_client import ArxivClient  # noqa: E402
+from research_graph.evaluation.scoring import ScoredPaper, ScoringEngine  # noqa: E402
+from research_graph.infrastructure.quality import (  # noqa: E402
+    build_maintainability_report,
+    maintainability_report_to_json,
+    write_maintainability_report,
+)
+from research_graph.papers.artifacts.batch_validation import (
+    run_article_batch_validation_report,  # noqa: E402
+)
 from research_graph.papers.artifacts.minimax_boundary import (  # noqa: E402
     MINIMAX_ARTIFACT_HELPER_SCHEMA_VERSION,
     build_article_artifact_minimax_request,
@@ -42,16 +52,8 @@ from research_graph.papers.artifacts.models import (  # noqa: E402
     to_json,
     validate_article_artifact_manifest,
 )
-from research_graph.papers.artifacts.batch_validation import run_article_batch_validation_report  # noqa: E402
-from research_graph.corpus.sources.arxiv_client import ArxivClient  # noqa: E402
 from research_graph.retrieval.embedder import Embedder  # noqa: E402
 from research_graph.retrieval.keyword_extractor import KeywordExtractor  # noqa: E402
-from research_graph.quality import (  # noqa: E402
-    build_maintainability_report,
-    maintainability_report_to_json,
-    write_maintainability_report,
-)
-from research_graph.evaluation.scoring import ScoredPaper, ScoringEngine  # noqa: E402
 from research_graph.workflows.validation.batch_provenance import (  # noqa: E402
     build_artifact_freshness_report,
     read_validation_cli_provenance_log,
@@ -136,7 +138,7 @@ app = typer.Typer(
 
 
 # Register subcommand modules
-from research_graph.cli.commands import article_artifacts, validation_batch, quality
+from research_graph.cli.commands import article_artifacts, quality, validation_batch
 
 article_artifacts.register(app)
 validation_batch.register(app)
@@ -182,9 +184,7 @@ def load_preferences() -> dict:
         return json.load(f)
 
 
-def save_session(
-    run_date: date, papers_fetched: int, top10: list[ScoredPaper]
-) -> Path:
+def save_session(run_date: date, papers_fetched: int, top10: list[ScoredPaper]) -> Path:
     """Save session summary to ~/.research/ops/sessions/{date}.md.
 
     Args:
@@ -381,9 +381,7 @@ def build_overview_payload(analysis: DailyAnalysis) -> dict[str, Any]:
         "top_paper_count": len(analysis.top_papers),
         "categories": _count_payloads(category_counts, "category", 20),
         "keywords": _count_payloads(keyword_counts, "keyword", 30),
-        "top_papers": [
-            _serialize_scored_paper(scored) for scored in analysis.top_papers[:10]
-        ],
+        "top_papers": [_serialize_scored_paper(scored) for scored in analysis.top_papers[:10]],
         "score_breakdown": score_breakdown,
     }
 
@@ -400,21 +398,30 @@ def write_daily_artifacts(analysis: DailyAnalysis) -> Path:
     for scored in analysis.papers:
         write_paper_artifacts(scored)
 
-    (day_dir / "papers.json").write_text(json.dumps(papers_payload, indent=2, sort_keys=True) + "\n")
-    (day_dir / "scored.json").write_text(json.dumps(scored_payload, indent=2, sort_keys=True) + "\n")
-    (day_dir / "overview.json").write_text(json.dumps(overview_payload, indent=2, sort_keys=True) + "\n")
+    (day_dir / "papers.json").write_text(
+        json.dumps(papers_payload, indent=2, sort_keys=True) + "\n"
+    )
+    (day_dir / "scored.json").write_text(
+        json.dumps(scored_payload, indent=2, sort_keys=True) + "\n"
+    )
+    (day_dir / "overview.json").write_text(
+        json.dumps(overview_payload, indent=2, sort_keys=True) + "\n"
+    )
     return day_dir
 
 
 async def _process_paper_async(paper, extractor, scorer):
     # Offload CPU-bound extraction and scoring to threadpool
     loop = asyncio.get_running_loop()
+
     def _extract_and_score():
         if not isinstance(paper.title, str) or not isinstance(paper.abstract, str):
             raise TypeError("fetched paper title and abstract must be strings")
         keywords = extractor.extract_for_paper(paper.title, paper.abstract)
         return scorer.score(paper, semschol=None, keywords=keywords)
+
     return await loop.run_in_executor(None, _extract_and_score)
+
 
 def run_analysis(run_date: date) -> DailyAnalysis:
     """Build the normalized in-memory analysis result for one run date."""
@@ -432,13 +439,14 @@ def run_analysis(run_date: date) -> DailyAnalysis:
 
     if not papers:
         from datetime import datetime
+
         return DailyAnalysis(
             run_date=run_date,
             status="empty",
             analysis_timestamp=datetime.now(UTC),
             papers_fetched=0,
             papers=[],
-            top_papers=[]
+            top_papers=[],
         )
 
     # 1. Run extraction and scoring concurrently using asyncio
@@ -470,6 +478,7 @@ def run_analysis(run_date: date) -> DailyAnalysis:
     top_papers = scored_papers[:10]
 
     from datetime import datetime
+
     return DailyAnalysis(
         run_date=run_date,
         status="done",
@@ -557,4 +566,3 @@ def run(
 def main() -> None:
     """Main CLI entry point."""
     app()
-

@@ -7,7 +7,7 @@ from typing import Annotated
 
 import typer
 
-from research_graph.quality import (
+from research_graph.infrastructure.quality import (
     build_maintainability_report,
     maintainability_report_to_json,
     write_maintainability_report,
@@ -35,7 +35,9 @@ def quality_maintainability(
         Path | None,
         typer.Option("--output", help="Optional JSON artifact path for the diagnostic report."),
     ] = None,
-    json_output: Annotated[bool, typer.Option("--json", help="Print the diagnostic report as JSON.")] = False,
+    json_output: Annotated[
+        bool, typer.Option("--json", help="Print the diagnostic report as JSON.")
+    ] = False,
 ) -> None:
     """Run the informational riskratchet maintainability diagnostic."""
     report = build_maintainability_report(paths=paths, baseline_path=baseline_path)
@@ -60,8 +62,6 @@ def quality_maintainability(
             ]
         )
     )
-
-
 
 
 def register(app: typer.Typer) -> None:

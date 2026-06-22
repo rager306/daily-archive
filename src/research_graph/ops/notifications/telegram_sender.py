@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 
 from research_graph.evaluation.scoring import ScoredPaper
-from research_graph.llm.summarizer import PaperSummary
+from research_graph.infrastructure.llm.summarizer import PaperSummary
 
 NUMBER_EMOJIS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
 
@@ -22,9 +22,7 @@ class TelegramSender:
     chat_id: str
     base_url: str = "https://api.telegram.org"
 
-    def send_digest(
-        self, papers: list[ScoredPaper], summaries: dict[str, PaperSummary]
-    ) -> None:
+    def send_digest(self, papers: list[ScoredPaper], summaries: dict[str, PaperSummary]) -> None:
         """Send a digest of papers to the Telegram chat.
 
         Args:
@@ -34,9 +32,7 @@ class TelegramSender:
         text = self._format_digest(papers, summaries)
         self._send_message(text)
 
-    def _format_digest(
-        self, papers: list[ScoredPaper], summaries: dict[str, PaperSummary]
-    ) -> str:
+    def _format_digest(self, papers: list[ScoredPaper], summaries: dict[str, PaperSummary]) -> str:
         """Format papers into a Telegram message.
 
         Args:
