@@ -320,7 +320,7 @@ def _rows_by_requirement(rows: Any, base_path: str) -> tuple[dict[str, dict[str,
         if not isinstance(rid, str) or not rid:
             errors.append(f"{row_path}.requirement_id must be a non-empty string")
             continue
-        by_id[rid] = row
+        by_id[rid] = row  # ty:ignore[invalid-assignment]
         counts[rid] = counts.get(rid, 0) + 1
     duplicates = sorted(rid for rid, count in counts.items() if count > 1)
     if duplicates:
@@ -343,7 +343,7 @@ def _class_rows_by_name(rows: Any, base_path: str) -> tuple[dict[str, dict[str, 
         if not isinstance(class_name, str) or not class_name:
             errors.append(f"{row_path}.class must be a non-empty string")
             continue
-        by_class[class_name] = row
+        by_class[class_name] = row  # ty:ignore[invalid-assignment]
         counts[class_name] = counts.get(class_name, 0) + 1
     duplicates = sorted(name for name, count in counts.items() if count > 1)
     if duplicates:

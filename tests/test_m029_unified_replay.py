@@ -9,8 +9,11 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from run_m029_unified_replay import main as run_main  # noqa: E402
-from verify_m029_unified_replay import main as verify_main  # noqa: E402
+# pyrefly: ignore [missing-import]
+from run_m029_unified_replay import main as run_main  # noqa: E402  # ty:ignore[unresolved-import]
+from verify_m029_unified_replay import (
+    main as verify_main,  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
+)
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:

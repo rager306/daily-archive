@@ -115,7 +115,7 @@ def audit_locator_evidence(
     summary = artifact.get("summary") if isinstance(artifact.get("summary"), dict) else {}
 
     first_proof_invariants = _first_proof_invariants(artifact, source_ledger, locators)
-    summary_drift = _summary_drift(summary, first_proof_invariants)
+    summary_drift = _summary_drift(summary, first_proof_invariants)  # ty:ignore[invalid-argument-type]
     unsafe_safety_flag_paths = _unsafe_safety_flag_paths(artifact)
     missing_span_locator_ids = sorted(
         str(locator.get("locator_id", "unknown"))

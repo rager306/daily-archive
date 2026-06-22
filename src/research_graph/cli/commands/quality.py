@@ -40,7 +40,8 @@ def quality_maintainability(
     ] = False,
 ) -> None:
     """Run the informational riskratchet maintainability diagnostic."""
-    report = build_maintainability_report(paths=paths, baseline_path=baseline_path)
+    # pyrefly: ignore [bad-argument-type]
+    report = build_maintainability_report(paths=paths, baseline_path=baseline_path)  # ty:ignore[invalid-argument-type]
     if output_path is not None:
         write_maintainability_report(report, output_path)
         report["output_path"] = str(output_path)

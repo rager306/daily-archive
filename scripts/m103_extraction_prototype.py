@@ -104,7 +104,8 @@ def make_minimax_extraction_client(api_key: str, model: str = "MiniMax-M2.7-high
         # extraction we only consume the tool_use block.
         for block in response.content:
             if getattr(block, "type", None) == "tool_use":
-                data = block.input
+                # pyrefly: ignore [missing-attribute]
+                data = block.input  # ty:ignore[unresolved-attribute]
                 return data if isinstance(data, dict) else {}
         return {}
 
@@ -213,7 +214,8 @@ def run_chunk(
     # (not the count threshold) is the quality gate.
     ctx0 = replace(PipelineContext(source_id=source_id), stage_outputs={"text_parts": [text]})
     ctx1 = StatisticalPreProcessor(co_occurrence_min=1).run(ctx0)
-    keywords = [k for k, _ in ctx1.statistical_context.keywords]
+    # pyrefly: ignore [missing-attribute]
+    keywords = [k for k, _ in ctx1.statistical_context.keywords]  # ty:ignore[unresolved-attribute]
 
     # Stage 2: core entities (LLM, rate-limited)
     entity_client = _wrap_with_kind(client, "entities")
@@ -412,7 +414,8 @@ def main() -> int:
                 {
                     "chunk_id": chunk["chunk_id"],
                     "dry_run": True,
-                    "keywords": [k for k, _ in ctx.statistical_context.keywords][:10],
+                    # pyrefly: ignore [missing-attribute]
+                    "keywords": [k for k, _ in ctx.statistical_context.keywords][:10],  # ty:ignore[unresolved-attribute]
                     "patch": _patch_to_dict(ctx.stage_outputs["core_entity_extractor"]),
                     "golden": {
                         "entities": chunk.get("expected_entities", []),
@@ -439,16 +442,19 @@ def main() -> int:
         agg = {
             "chunks_processed": n,
             "entity_precision_mean": round(
-                sum(r["scores"]["entity_precision"] for r in results) / n,
+                # pyrefly: ignore [bad-index]
+                sum(r["scores"]["entity_precision"] for r in results) / n,  # ty:ignore[invalid-argument-type, not-subscriptable]
                 3,  # pyrefly: ignore[bad-assignment]
             ),
-            "entity_recall_mean": round(sum(r["scores"]["entity_recall"] for r in results) / n, 3),  # pyrefly: ignore[bad-assignment]
+            "entity_recall_mean": round(sum(r["scores"]["entity_recall"] for r in results) / n, 3),  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[invalid-argument-type, not-subscriptable]
             "relation_precision_mean": round(
-                sum(r["scores"]["relation_precision"] for r in results) / n,
+                # pyrefly: ignore [bad-index]
+                sum(r["scores"]["relation_precision"] for r in results) / n,  # ty:ignore[invalid-argument-type, not-subscriptable]
                 3,  # pyrefly: ignore[bad-assignment]
             ),
             "relation_recall_mean": round(
-                sum(r["scores"]["relation_recall"] for r in results) / n,
+                # pyrefly: ignore [bad-index]
+                sum(r["scores"]["relation_recall"] for r in results) / n,  # ty:ignore[invalid-argument-type, not-subscriptable]
                 3,  # pyrefly: ignore[bad-assignment]
             ),
         }
@@ -463,7 +469,7 @@ def main() -> int:
         "model": "MiniMax-M2.7-highspeed (Anthropic-compatible path)",
         "aggregate": agg,
         "all_safety_flags_false": all(
-            not r.get("patch", {}).get("safety_flags", {}).get("import_eligible", False)  # pyrefly: ignore[bad-assignment]
+            not r.get("patch", {}).get("safety_flags", {}).get("import_eligible", False)  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
             for r in results
         ),
         "results": results,

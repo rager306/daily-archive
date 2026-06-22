@@ -90,7 +90,7 @@ def test_m031_continuity_cli_generates_matrix_and_audit_to_custom_paths(tmp_path
     audit_md = (tmp_path / "generated" / "m031-continuity-audit.md").read_text(encoding="utf-8")
 
     assert matrix["row_count"] == 7
-    assert len(matrix["rows"]) == 7  # type: ignore[arg-type]
+    assert len(matrix["rows"]) == 7  # type: ignore[arg-type]  # ty:ignore[invalid-argument-type]
     assert audit["schema_version"] == "m031-process-continuity-audit.v1"
     assert "ok_for_graph" in matrix_md
     assert "trusted_graph" in audit_md
@@ -100,7 +100,7 @@ def test_m031_continuity_cli_generates_matrix_and_audit_to_custom_paths(tmp_path
 def test_validate_only_rejects_missing_progression_row(tmp_path: Path) -> None:
     matrix_json, matrix_md, audit_json, audit_md = _copy_outputs(tmp_path)
     matrix = _read_json(matrix_json)
-    matrix["rows"] = matrix["rows"][:-1]  # type: ignore[index]
+    matrix["rows"] = matrix["rows"][:-1]  # type: ignore[index]  # ty:ignore[not-subscriptable]
     matrix["row_count"] = 6
     _write_json(matrix_json, matrix)
 
@@ -113,7 +113,7 @@ def test_validate_only_rejects_missing_progression_row(tmp_path: Path) -> None:
 def test_validate_only_rejects_missing_stage_evidence(tmp_path: Path) -> None:
     matrix_json, matrix_md, audit_json, audit_md = _copy_outputs(tmp_path)
     matrix = _read_json(matrix_json)
-    del matrix["rows"][0]["stages"]["chunking"]  # type: ignore[index]
+    del matrix["rows"][0]["stages"]["chunking"]  # type: ignore[index]  # ty:ignore[not-subscriptable]
     _write_json(matrix_json, matrix)
 
     result = _run(_validate_args(matrix_json, matrix_md, audit_json, audit_md))
@@ -126,8 +126,8 @@ def test_validate_only_rejects_missing_stage_evidence(tmp_path: Path) -> None:
 def test_validate_only_rejects_permissive_fail_closed_flags(tmp_path: Path) -> None:
     matrix_json, matrix_md, audit_json, audit_md = _copy_outputs(tmp_path)
     matrix = _read_json(matrix_json)
-    matrix["fail_closed_flags"]["graph_import_allowed"] = True  # type: ignore[index]
-    matrix["rows"][1]["fail_closed_flags"]["trusted_kg_import_allowed"] = True  # type: ignore[index]
+    matrix["fail_closed_flags"]["graph_import_allowed"] = True  # type: ignore[index]  # ty:ignore[invalid-assignment]
+    matrix["rows"][1]["fail_closed_flags"]["trusted_kg_import_allowed"] = True  # type: ignore[index]  # ty:ignore[not-subscriptable]
     _write_json(matrix_json, matrix)
 
     result = _run(_validate_args(matrix_json, matrix_md, audit_json, audit_md))
@@ -140,7 +140,7 @@ def test_validate_only_rejects_permissive_fail_closed_flags(tmp_path: Path) -> N
 def test_validate_only_rejects_raw_payload_leakage(tmp_path: Path) -> None:
     matrix_json, matrix_md, audit_json, audit_md = _copy_outputs(tmp_path)
     matrix = _read_json(matrix_json)
-    matrix["rows"][0]["raw_text"] = "Local Parser Ready Paper"  # type: ignore[index]
+    matrix["rows"][0]["raw_text"] = "Local Parser Ready Paper"  # type: ignore[index]  # ty:ignore[not-subscriptable]
     _write_json(matrix_json, matrix)
 
     result = _run(_validate_args(matrix_json, matrix_md, audit_json, audit_md))

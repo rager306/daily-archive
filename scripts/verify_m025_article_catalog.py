@@ -303,7 +303,7 @@ def validate_index(
             continue
         if article_ref in by_ref:
             errors.append(f"duplicate index article_ref: {article_ref}")
-        by_ref[article_ref] = entry
+        by_ref[article_ref] = entry  # ty:ignore[invalid-assignment]
         if not isinstance(article_path, str) or not article_path.endswith("/article.json"):
             errors.append(f"{article_ref} article_path must end with /article.json")
             continue
@@ -494,7 +494,7 @@ def _selection_article_records(
 ) -> list[tuple[str, Path, dict[str, Any] | None, str | None]]:
     records: list[tuple[str, Path, dict[str, Any] | None, str | None]] = []
     articles = selection.get("articles") if isinstance(selection.get("articles"), list) else []
-    for row in articles:
+    for row in articles:  # ty:ignore[not-iterable]
         article_ref = row.get("article_ref") if isinstance(row, dict) else None
         if not isinstance(article_ref, str):
             continue
@@ -654,14 +654,14 @@ def check_loader_events(
             if row.get("event")
             in {"source.load_completed", "source.load_failed", "source.load_metadata_only"}
         ]
-        if len(terminal_events) != len(variants):
+        if len(terminal_events) != len(variants):  # ty:ignore[invalid-argument-type]
             errors.append(f"{article_ref} terminal loader event count must match source variants")
         if (
             summary.get("lookup_surface") != "index.json"
             or summary.get("full_tree_scan_attempted") is not False
         ):
             errors.append(f"{article_ref} loader summary must declare index-only lookup")
-        for variant in variants:
+        for variant in variants:  # ty:ignore[not-iterable]
             if isinstance(variant, dict) and variant.get("loader_outcome") not in {
                 "loaded",
                 "loaded_metadata_only",
@@ -748,19 +748,19 @@ def article_entry_from_record(
     )
     primary_roles = [
         v.get("source_role")
-        for v in variants
+        for v in variants  # ty:ignore[not-iterable]
         if isinstance(v, dict) and v.get("is_primary") is True
     ]
     fallback_roles = [
         v.get("source_role")
-        for v in variants
+        for v in variants  # ty:ignore[not-iterable]
         if isinstance(v, dict)
         and v.get("is_content_bearing") is True
         and v.get("is_primary") is not True
     ]
     metadata_roles = [
         v.get("source_role")
-        for v in variants
+        for v in variants  # ty:ignore[not-iterable]
         if isinstance(v, dict) and v.get("is_metadata_only") is True
     ]
 
@@ -781,8 +781,8 @@ def article_entry_from_record(
                     article_ref=article_ref,
                 )
             )
-    title = identity.get("title")
-    canonical_url = identity.get("canonical_url")
+    title = identity.get("title")  # ty:ignore[unresolved-attribute]
+    canonical_url = identity.get("canonical_url")  # ty:ignore[unresolved-attribute]
     if not isinstance(title, str) or not title:
         diags.append(
             diagnostic(
@@ -825,7 +825,7 @@ def article_entry_from_record(
         "article_path": rel_path,
         "title": title,
     }
-    citation_key = identity.get("citation_key")
+    citation_key = identity.get("citation_key")  # ty:ignore[unresolved-attribute]
     if isinstance(citation_key, str) and citation_key:
         entry["citation_key"] = citation_key
     return entry, diags
@@ -989,6 +989,7 @@ def compare_existing_to_rebuilt(
     rebuilt_by_ref = {
         row.get("article_ref"): row for row in rebuilt.get("articles", []) if isinstance(row, dict)
     }
+    # pyrefly: ignore [bad-specialization]
     for article_ref in sorted(set(rebuilt_by_ref) - set(existing_by_ref)):
         diagnostics.append(
             diagnostic(
@@ -997,6 +998,7 @@ def compare_existing_to_rebuilt(
                 article_ref=article_ref,
             )
         )
+    # pyrefly: ignore [bad-specialization]
     for article_ref in sorted(set(existing_by_ref) - set(rebuilt_by_ref)):
         diagnostics.append(
             diagnostic(
@@ -1013,6 +1015,7 @@ def compare_existing_to_rebuilt(
         "canonical_url": "canonical_url_drift",
         "article_key": "source_topic_drift",
     }
+    # pyrefly: ignore [bad-specialization]
     for article_ref in sorted(set(existing_by_ref) & set(rebuilt_by_ref)):
         existing_row = existing_by_ref[article_ref]
         rebuilt_row = rebuilt_by_ref[article_ref]
@@ -1150,7 +1153,7 @@ def build_catalog_readiness_artifacts(
     selected_rows = selection.get("articles") if isinstance(selection.get("articles"), list) else []
     selected_refs = [
         row.get("article_ref")
-        for row in selected_rows
+        for row in selected_rows  # ty:ignore[not-iterable]
         if isinstance(row, dict) and isinstance(row.get("article_ref"), str)
     ]
     stored_rebuild_report = _load_rebuild_report(catalog_path)
@@ -1210,14 +1213,14 @@ def build_catalog_readiness_artifacts(
         primary = next(
             (
                 variant
-                for variant in variants
+                for variant in variants  # ty:ignore[not-iterable]
                 if isinstance(variant, dict) and variant.get("is_primary") is True
             ),
             None,
         )
         fallback_pdfs = [
             variant
-            for variant in variants
+            for variant in variants  # ty:ignore[not-iterable]
             if isinstance(variant, dict)
             and variant.get("source_format") == "pdf"
             and variant.get("is_content_bearing") is True
@@ -1237,7 +1240,7 @@ def build_catalog_readiness_artifacts(
                 article_blockers.append("primary_loader_not_loaded")
             else:
                 primary_lightweight += 1
-        for variant in variants:
+        for variant in variants:  # ty:ignore[not-iterable]
             if not isinstance(variant, dict):
                 continue
             total_variants += 1
@@ -1256,7 +1259,7 @@ def build_catalog_readiness_artifacts(
                     source_provider=article.get("source_code"),
                     coarse_topic_code=article.get("coarse_topic_code"),
                     article_key=article.get("article_key"),
-                    title=identity.get("title"),
+                    title=identity.get("title"),  # ty:ignore[unresolved-attribute]
                     variant_id=variant.get("variant_id"),
                     source_role=variant.get("source_role"),
                     source_format=variant.get("source_format"),
@@ -1281,7 +1284,7 @@ def build_catalog_readiness_artifacts(
             "article_key": article.get("article_key"),
             "source_code": article.get("source_code"),
             "coarse_topic_code": article.get("coarse_topic_code"),
-            "title": identity.get("title") or entry.get("title"),
+            "title": identity.get("title") or entry.get("title"),  # ty:ignore[unresolved-attribute]
             "primary_source_role": primary.get("source_role")
             if isinstance(primary, dict)
             else None,
@@ -1293,10 +1296,10 @@ def build_catalog_readiness_artifacts(
             else None,
             "captured_variant_count": sum(
                 1
-                for variant in variants
+                for variant in variants  # ty:ignore[not-iterable]
                 if isinstance(variant, dict) and variant.get("capture_status") == "captured"
             ),
-            "variant_count": len([variant for variant in variants if isinstance(variant, dict)]),
+            "variant_count": len([variant for variant in variants if isinstance(variant, dict)]),  # ty:ignore[not-iterable]
             "pdf_fallback_preserved": bool(fallback_pdfs),
             "blocked_before_s02": bool(article_blockers),
             "blocker_reasons": article_blockers,
@@ -1396,7 +1399,7 @@ def render_catalog_report(
         "| Article | Provider | Topic | Primary | Captured Variants | PDF Fallback | Blocked Before S02 |",
         "|---|---:|---:|---|---:|---:|---:|",
     ]
-    for article in articles:
+    for article in articles:  # ty:ignore[not-iterable]
         lines.append(
             "| "
             f"{article.get('article_ref')} | {article.get('source_code')} | {article.get('coarse_topic_code')} | "

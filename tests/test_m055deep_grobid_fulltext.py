@@ -12,8 +12,9 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-import benchmark_m055deep_grobid_fulltext as fulltext  # noqa: E402
-import compare_m055_header_vs_fulltext as compare_delta  # noqa: E402
+# pyrefly: ignore [missing-import]
+import benchmark_m055deep_grobid_fulltext as fulltext  # noqa: E402  # ty:ignore[unresolved-import]
+import compare_m055_header_vs_fulltext as compare_delta  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
 
 SAFETY_KEYS = {
     "graph_import_allowed",

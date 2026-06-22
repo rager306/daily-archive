@@ -18,7 +18,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from plotextractor import process_tarball
+# pyrefly: ignore [missing-import]
+from plotextractor import process_tarball  # ty:ignore[unresolved-import]
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT_ROOT = ROOT / "artifacts" / "m058-plotextractor"

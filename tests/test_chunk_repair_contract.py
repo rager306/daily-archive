@@ -15,6 +15,8 @@ from research_graph.infrastructure.repair.chunk_repair_contract import (
     validate_locator_evidence_audit_for_repair_contract,
     validation_to_dict,
 )
+
+# pyrefly: ignore [missing-import]
 from scripts.render_chunk_repair_contract import main as render_contract_main
 
 FIXTURE = Path("tests/fixtures/chunk_repair_contract.json")
@@ -80,7 +82,7 @@ def _single_target_batch_contract() -> dict[str, object]:
     contract = build_chunk_repair_contract_from_audit(
         _audit_fixture(), source_audit_path="tests/fixtures/audit.json"
     )
-    target = deepcopy(_fixture()["repair_targets"])[0]  # pyrefly: ignore[bad-assignment]
+    target = deepcopy(_fixture()["repair_targets"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     contract["repair_targets"] = [target]
     contract["diagnostics"] = {
         **contract["diagnostics"],
@@ -115,7 +117,8 @@ def test_empty_repair_targets_are_valid_for_contract_artifact() -> None:
     payload = _fixture()
     payload["repair_targets"] = []
     payload["diagnostics"] = {
-        **payload["diagnostics"],
+        # pyrefly: ignore [invalid-argument]
+        **payload["diagnostics"],  # ty:ignore[invalid-argument-type]
         "target_count": 0,
         "pending_review_count": 0,
     }
@@ -129,7 +132,7 @@ def test_empty_repair_targets_are_valid_for_contract_artifact() -> None:
 def test_missing_header_and_target_ids_are_rejected_without_raising() -> None:
     payload = _fixture()
     payload.pop("schema_version")
-    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore[bad-assignment]
+    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     target.pop("target_id")
     target.pop("locator_id")
     payload["repair_targets"] = [target]
@@ -171,7 +174,7 @@ def test_batch_contract_accepts_target_paper_from_expected_audit() -> None:
 
 def test_batch_contract_rejects_unknown_target_paper_id() -> None:
     payload = _single_target_batch_contract()
-    payload["repair_targets"][0]["paper_id"] = "unknown-paper"  # pyrefly: ignore[bad-assignment]
+    payload["repair_targets"][0]["paper_id"] = "unknown-paper"  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
 
     result = validate_chunk_repair_contract(
         payload, expected_audit=expected_audit_from_contract(payload)
@@ -192,7 +195,7 @@ def test_missing_expected_audit_still_enforces_package_paper_id() -> None:
 
 def test_forbidden_payload_key_injection_reports_path_not_value() -> None:
     payload = _fixture()
-    payload["repair_targets"][0]["review_packet"] = {  # pyrefly: ignore[bad-assignment]
+    payload["repair_targets"][0]["review_packet"] = {  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
         "nested": {"chunk_text": "NEVER LEAK THIS RAW VALUE"}
     }
 
@@ -217,7 +220,7 @@ def test_forbidden_key_scanner_is_redacted_and_recursive() -> None:
 
 def test_safety_flags_cannot_request_import_fact_write_or_semantic_readiness() -> None:
     payload = _fixture()
-    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore[bad-assignment]
+    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     target["safety_boundaries"]["import_eligible"] = True
     target["safety_boundaries"]["promoted_to_fact"] = True
     target["safety_boundaries"]["trusted_kg_import_allowed"] = True
@@ -238,7 +241,7 @@ def test_safety_flags_cannot_request_import_fact_write_or_semantic_readiness() -
 
 def test_route_state_vocabulary_and_confusion_are_rejected() -> None:
     payload = _fixture()
-    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore[bad-assignment]
+    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     target["route"] = "claim_extraction"
     target["state"] = "ok_for_graph"
     payload["repair_targets"] = [target]
@@ -249,7 +252,7 @@ def test_route_state_vocabulary_and_confusion_are_rejected() -> None:
     assert "invalid_repair_state" in reasons
 
     payload = _fixture()
-    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore[bad-assignment]
+    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     target["route"] = "retrieval_context"
     target["state"] = "ambiguous_span"
     payload["repair_targets"] = [target]
@@ -259,12 +262,12 @@ def test_route_state_vocabulary_and_confusion_are_rejected() -> None:
 
 def test_malformed_spans_are_rejected_by_code_and_path() -> None:
     payload = _fixture()
-    span = deepcopy(payload["repair_targets"])[0]["source_spans"][0]  # pyrefly: ignore[bad-assignment]
+    span = deepcopy(payload["repair_targets"])[0]["source_spans"][0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     span["coordinate_space"] = "pdf_pixel_box"
     span["char_start"] = 80
     span["char_end"] = 10
     span.pop("span_hash")
-    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore[bad-assignment]
+    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     target["source_spans"] = [span]
     payload["repair_targets"] = [target]
 
@@ -279,7 +282,7 @@ def test_malformed_spans_are_rejected_by_code_and_path() -> None:
 
 def test_accepted_review_status_requires_reviewer_fields() -> None:
     payload = _fixture()
-    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore[bad-assignment]
+    target = deepcopy(payload["repair_targets"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     target["review_status"] = "accepted"
     target["reviewer"] = {"reviewer_id": "reviewer-1"}
     payload["repair_targets"] = [target]
@@ -293,8 +296,10 @@ def test_accepted_review_status_requires_reviewer_fields() -> None:
 
 def test_diagnostics_count_drift_is_rejected() -> None:
     payload = _fixture()
-    payload["diagnostics"]["target_count"] = 99
-    payload["diagnostics"]["import_eligible_count"] = 1
+    # pyrefly: ignore [unsupported-operation]
+    payload["diagnostics"]["target_count"] = 99  # ty:ignore[invalid-assignment]
+    # pyrefly: ignore [unsupported-operation]
+    payload["diagnostics"]["import_eligible_count"] = 1  # ty:ignore[invalid-assignment]
 
     reasons = _reasons(payload)
 
@@ -325,7 +330,8 @@ def test_build_contract_from_audit_is_review_only_and_validator_clean() -> None:
 
 def test_audit_preflight_rejects_unsafe_or_drifted_audit_by_code_only() -> None:
     audit = _audit_fixture()
-    audit["safety_blockers"]["invariant_drift"] = ["/locator_count:expected=2:observed=3"]
+    # pyrefly: ignore [unsupported-operation]
+    audit["safety_blockers"]["invariant_drift"] = ["/locator_count:expected=2:observed=3"]  # ty:ignore[invalid-assignment]
     audit["source_ledger_safety"] = {"raw_text": "DO NOT LEAK"}
 
     diagnostics = validate_locator_evidence_audit_for_repair_contract(audit)
@@ -372,7 +378,8 @@ def test_renderer_cli_rejects_invalid_audit_without_partial_writes(tmp_path: Pat
     json_output = tmp_path / "chunk-repair-contract.json"
     markdown_output = tmp_path / "chunk-repair-contract.md"
     bad_audit = _audit_fixture()
-    bad_audit["first_proof_invariants"]["locator_count"] = 99
+    # pyrefly: ignore [unsupported-operation]
+    bad_audit["first_proof_invariants"]["locator_count"] = 99  # ty:ignore[invalid-assignment]
     audit_path.write_text(json.dumps(bad_audit), encoding="utf-8")
 
     exit_code = render_contract_main(

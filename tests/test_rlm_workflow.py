@@ -214,7 +214,7 @@ def test_minimal_navigation_skips_helper_phase() -> None:
 
 def test_invalid_structure_type_fails_before_helper_phase() -> None:
     with pytest.raises(TypeError, match="structure must be a dict"):
-        run_document_workflow([], {}, [], [], run_id="run-invalid-type")  # type: ignore[arg-type]
+        run_document_workflow([], {}, [], [], run_id="run-invalid-type")  # type: ignore[arg-type]  # ty:ignore[invalid-argument-type]
 
 
 def test_invalid_run_id_and_bounds_are_deterministic_diagnostics() -> None:

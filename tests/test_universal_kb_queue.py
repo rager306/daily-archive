@@ -462,7 +462,8 @@ def test_retryable_failure_respects_retry_after_before_claim(tmp_path: Path) -> 
     assert failed["status"] == "failed_retryable"
     assert queue.claim(worker_id="worker-b", lease_seconds=60) is None
     clock.set("2026-06-08T00:10:00Z")
-    assert queue.claim(worker_id="worker-b", lease_seconds=60)["job_id"] == "job-1"
+    # pyrefly: ignore [unsupported-operation]
+    assert queue.claim(worker_id="worker-b", lease_seconds=60)["job_id"] == "job-1"  # ty:ignore[not-subscriptable]
 
 
 def test_expired_lease_reclaims_to_ready_until_attempts_exhausted(tmp_path: Path) -> None:
@@ -569,14 +570,16 @@ def test_dependency_blocks_claim_until_upstream_succeeds(tmp_path: Path) -> None
 
     queue.unblock_ready_jobs()
     first_claim = queue.claim(worker_id="worker-a", lease_seconds=60)
-    assert first_claim["job_id"] == "upstream"
+    # pyrefly: ignore [unsupported-operation]
+    assert first_claim["job_id"] == "upstream"  # ty:ignore[not-subscriptable]
     assert queue.claim(worker_id="worker-b", lease_seconds=60) is None
 
     queue.complete("upstream", worker_id="worker-a", output_paths=("artifacts/upstream.json",))
     queue.unblock_ready_jobs()
     dependent = queue.claim(worker_id="worker-b", lease_seconds=60)
 
-    assert dependent["job_id"] == "dependent"
+    # pyrefly: ignore [unsupported-operation]
+    assert dependent["job_id"] == "dependent"  # ty:ignore[not-subscriptable]
     assert [event["event_type"] for event in queue.events("dependent")][-1] == "claim"
 
 

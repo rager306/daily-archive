@@ -25,6 +25,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
+# pyrefly: ignore [missing-import]
 from build_m028_hermes_digest_projection import (  # noqa: E402
     EXPANDED_SCOPE_REF_IDS,
     EXPECTED_DUPLICATE_GROUP,
@@ -276,7 +277,7 @@ def expected_summary_from_bundles(
         diagnostics = (
             bundle.get("diagnostics") if isinstance(bundle.get("diagnostics"), list) else []
         )
-        for diagnostic in diagnostics:
+        for diagnostic in diagnostics:  # ty:ignore[not-iterable]
             if isinstance(diagnostic, dict):
                 diagnostic_counts[str(diagnostic.get("code", "diagnostic"))] += 1
         group = (
@@ -438,17 +439,17 @@ def validate_source_refs(
         "loader_summary": {"path": summary_path.as_posix(), "sha256": sha256_file(summary_path)},
     }
     for label, expected_ref in expected.items():
-        actual = source_refs.get(label) if isinstance(source_refs.get(label), dict) else {}
+        actual = source_refs.get(label) if isinstance(source_refs.get(label), dict) else {}  # ty:ignore[unresolved-attribute]
         for key, expected_value in expected_ref.items():
-            if actual.get(key) != expected_value:  # pyrefly: ignore[bad-assignment]
+            if actual.get(key) != expected_value:  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
                 diagnostics.append(
                     Diagnostic(
                         "SOURCE_REF_MISMATCH",
                         f"$.digest.source_refs.{label}.{key}",
-                        f"expected {expected_value!r}, found {actual.get(key)!r}",  # pyrefly: ignore[bad-assignment]
+                        f"expected {expected_value!r}, found {actual.get(key)!r}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
                     )
                 )
-        if not safe_relative_path(actual.get("path")):  # pyrefly: ignore[bad-assignment]
+        if not safe_relative_path(actual.get("path")):  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
             diagnostics.append(
                 Diagnostic(
                     "SOURCE_REF_PATH_UNSAFE",
@@ -462,8 +463,8 @@ def validate_source_refs(
         else None
     )
     selection_actual = (
-        source_refs.get("selection_ref")
-        if isinstance(source_refs.get("selection_ref"), dict)
+        source_refs.get("selection_ref")  # ty:ignore[unresolved-attribute]
+        if isinstance(source_refs.get("selection_ref"), dict)  # ty:ignore[unresolved-attribute]
         else None
     )
     if isinstance(selection_expected, dict):
@@ -598,19 +599,19 @@ def validate_items(
         )
         for artifact_name in ("source_artifact", "metadata_artifact", "pdf_artifact"):
             actual = (
-                item_artifacts.get(artifact_name)
-                if isinstance(item_artifacts.get(artifact_name), dict)
+                item_artifacts.get(artifact_name)  # ty:ignore[unresolved-attribute]
+                if isinstance(item_artifacts.get(artifact_name), dict)  # ty:ignore[unresolved-attribute]
                 else {}
             )
             expected = (
-                bundle_artifacts.get(artifact_name)
-                if isinstance(bundle_artifacts.get(artifact_name), dict)
+                bundle_artifacts.get(artifact_name)  # ty:ignore[unresolved-attribute]
+                if isinstance(bundle_artifacts.get(artifact_name), dict)  # ty:ignore[unresolved-attribute]
                 else {}
             )
             for key in ("path", "sha256", "byte_count", "content_type"):
-                actual_value = actual.get(key)  # pyrefly: ignore[bad-assignment]
+                actual_value = actual.get(key)  # pyrefly: ignore [bad-assignment, missing-attribute]
                 expected_value = (
-                    expected.get(key) if isinstance(expected.get(key), (str, int)) else None  # pyrefly: ignore[bad-assignment]
+                    expected.get(key) if isinstance(expected.get(key), (str, int)) else None  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
                 )
                 if actual_value != expected_value:
                     diagnostics.append(
@@ -620,7 +621,7 @@ def validate_items(
                             f"artifact {key} drift for {ref_id}",
                         )
                     )
-            if actual.get("payload_embedded") is not False:  # pyrefly: ignore[bad-assignment]
+            if actual.get("payload_embedded") is not False:  # pyrefly: ignore [bad-assignment, missing-attribute]
                 diagnostics.append(
                     Diagnostic(
                         "ARTIFACT_PAYLOAD_FLAG_UNSAFE",
@@ -628,7 +629,7 @@ def validate_items(
                         "artifact payload_embedded must be false",
                     )
                 )
-            if not safe_relative_path(actual.get("path")):  # pyrefly: ignore[bad-assignment]
+            if not safe_relative_path(actual.get("path")):  # pyrefly: ignore [bad-assignment, missing-attribute]
                 diagnostics.append(
                     Diagnostic(
                         "ARTIFACT_PATH_UNSAFE",
@@ -639,7 +640,7 @@ def validate_items(
         evidence = (
             item.get("loader_evidence") if isinstance(item.get("loader_evidence"), dict) else {}
         )
-        if evidence.get("outcome") == "promoted_to_fact":
+        if evidence.get("outcome") == "promoted_to_fact":  # ty:ignore[unresolved-attribute]
             diagnostics.append(
                 Diagnostic(
                     "UNSAFE_OUTCOME_REJECTED",
@@ -661,7 +662,7 @@ def validate_unsafe_claims(
     )
     computed_counts = count_unsafe_claims(bundles, upstream_summary)
     for key in UNSAFE_COUNTER_KEYS:
-        if key not in unsafe_counts:
+        if key not in unsafe_counts:  # ty:ignore[unsupported-operator]
             diagnostics.append(
                 Diagnostic(
                     "UNSAFE_COUNTER_MISSING",
@@ -669,20 +670,20 @@ def validate_unsafe_claims(
                     "unsafe counter missing from digest",
                 )
             )
-        if unsafe_counts.get(key) != computed_counts.get(key, 0):
+        if unsafe_counts.get(key) != computed_counts.get(key, 0):  # ty:ignore[unresolved-attribute]
             diagnostics.append(
                 Diagnostic(
                     "UNSAFE_COUNTER_MISMATCH",
                     f"$.digest.unsafe_counters.{key}",
-                    f"expected {computed_counts.get(key, 0)}, found {unsafe_counts.get(key)!r}",
+                    f"expected {computed_counts.get(key, 0)}, found {unsafe_counts.get(key)!r}",  # ty:ignore[unresolved-attribute]
                 )
             )
-        if reject_unsafe_claims and unsafe_counts.get(key) != 0:
+        if reject_unsafe_claims and unsafe_counts.get(key) != 0:  # ty:ignore[unresolved-attribute]
             diagnostics.append(
                 Diagnostic(
                     "UNSAFE_CLAIM_REJECTED",
                     f"$.digest.unsafe_counters.{key}",
-                    f"unsafe counter {key}={unsafe_counts.get(key)!r}",
+                    f"unsafe counter {key}={unsafe_counts.get(key)!r}",  # ty:ignore[unresolved-attribute]
                 )
             )
     for key in UNSAFE_SAFETY_FLAG_KEYS:
@@ -697,7 +698,7 @@ def validate_unsafe_claims(
     redaction_flags = (
         digest.get("redaction_flags") if isinstance(digest.get("redaction_flags"), dict) else {}
     )
-    for key, value in redaction_flags.items():
+    for key, value in redaction_flags.items():  # ty:ignore[unresolved-attribute]
         if value is not False:
             diagnostics.append(
                 Diagnostic(
@@ -715,7 +716,7 @@ def validate_unsafe_claims(
         "graph_write_attempted",
         "production_write_attempted",
     ):
-        if generator.get(key) is not False:
+        if generator.get(key) is not False:  # ty:ignore[unresolved-attribute]
             diagnostics.append(
                 Diagnostic(
                     "GENERATOR_UNSAFE_CLAIM", f"$.digest.generator.{key}", f"{key} must be false"

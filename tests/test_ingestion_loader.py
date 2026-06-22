@@ -75,23 +75,34 @@ def _read_events(path: Path) -> list[dict[str, Any]]:
 
 
 def _assert_metadata_matches_source(record: object, source_path: Path) -> None:
-    assert record.source_path == source_path
-    assert record.sha256 == _sha256(source_path)
-    assert record.byte_size == source_path.stat().st_size
-    assert record.source_id.startswith("article-source:")
+    # pyrefly: ignore [missing-attribute]
+    assert record.source_path == source_path  # ty:ignore[unresolved-attribute]
+    # pyrefly: ignore [missing-attribute]
+    assert record.sha256 == _sha256(source_path)  # ty:ignore[unresolved-attribute]
+    # pyrefly: ignore [missing-attribute]
+    assert record.byte_size == source_path.stat().st_size  # ty:ignore[unresolved-attribute]
+    # pyrefly: ignore [missing-attribute]
+    assert record.source_id.startswith("article-source:")  # ty:ignore[unresolved-attribute]
 
 
 def _assert_event_shape(event: dict[str, Any], result: object, source_path: Path) -> None:
     assert REQUIRED_EVENT_KEYS <= event.keys()
     assert event["phase"] == "article_loader"
     assert event["source_path"] == str(source_path)
-    assert event["source_id"] == result.source_id
-    assert event["source_type"] == result.source_type
-    assert event["media_type"] == result.media_type
-    assert event["sha256"] == result.sha256
-    assert event["checksum"] == result.sha256
-    assert event["byte_size"] == result.byte_size
-    assert event["parser_name"] == result.parser_name
+    # pyrefly: ignore [missing-attribute]
+    assert event["source_id"] == result.source_id  # ty:ignore[unresolved-attribute]
+    # pyrefly: ignore [missing-attribute]
+    assert event["source_type"] == result.source_type  # ty:ignore[unresolved-attribute]
+    # pyrefly: ignore [missing-attribute]
+    assert event["media_type"] == result.media_type  # ty:ignore[unresolved-attribute]
+    # pyrefly: ignore [missing-attribute]
+    assert event["sha256"] == result.sha256  # ty:ignore[unresolved-attribute]
+    # pyrefly: ignore [missing-attribute]
+    assert event["checksum"] == result.sha256  # ty:ignore[unresolved-attribute]
+    # pyrefly: ignore [missing-attribute]
+    assert event["byte_size"] == result.byte_size  # ty:ignore[unresolved-attribute]
+    # pyrefly: ignore [missing-attribute]
+    assert event["parser_name"] == result.parser_name  # ty:ignore[unresolved-attribute]
     assert event["loader_name"] == "local_article_loader"
     assert event["duration_ms"] >= 0
     assert isinstance(event["warning_count"], int)

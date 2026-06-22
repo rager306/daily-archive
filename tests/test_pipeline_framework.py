@@ -102,6 +102,7 @@ class TestPipeline:
             def run(self, context):
                 return context.with_output(self.stage_name, "ok")
 
+        # pyrefly: ignore [bad-argument-count]
         pipe = Pipeline(stages=(_S("a"), _S("b")), source_id="s")
         ctx = pipe.run()
         assert ctx.stage_outputs == {"a": "ok", "b": "ok"}
@@ -137,6 +138,7 @@ class TestPrimitivesLanes:
             RelationTypeClassifier(),
             EvidenceLinker(),
         ):
+            # pyrefly: ignore [unsafe-overlap]
             assert isinstance(stage, PipelineStage)
 
     def test_llm_stages_require_llm(self) -> None:
@@ -166,7 +168,8 @@ class TestStatisticalPreProcessor:
         ctx = StatisticalPreProcessor(keyword_extractor=_fake_keywords, co_occurrence_min=2).run(
             _seed_ctx()
         )
-        assert len(ctx.statistical_context.co_occurrence) > 0
+        # pyrefly: ignore [missing-attribute]
+        assert len(ctx.statistical_context.co_occurrence) > 0  # ty:ignore[unresolved-attribute]
 
 
 class TestStubbedLLMStages:
@@ -335,12 +338,15 @@ class TestDispatchSeam:
 
         cpu = StatisticalPreProcessor(keyword_extractor=_fake_keywords)
         llm = CoreEntityExtractor()
+        # pyrefly: ignore [bad-argument-type]
         assert can_dispatch(cpu, PipelineContext(source_id="s")) is True
         assert (
+            # pyrefly: ignore [bad-argument-type]
             can_dispatch(llm, PipelineContext(source_id="s"), llm_lane_check=lambda p, c: False)
             is False
         )
         assert (
+            # pyrefly: ignore [bad-argument-type]
             can_dispatch(llm, PipelineContext(source_id="s"), llm_lane_check=lambda p, c: True)
             is True
         )

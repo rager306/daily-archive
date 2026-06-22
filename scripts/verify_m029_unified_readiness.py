@@ -142,10 +142,10 @@ def selection_by_article(selection: Mapping[str, Any]) -> dict[str, dict[str, An
     for index, article in enumerate(articles):
         if not isinstance(article, dict):
             raise ValueError(f"selection article at index {index} is not an object")
-        article_ref = article_key_for(article)
+        article_ref = article_key_for(article)  # ty:ignore[invalid-argument-type]
         if article_ref in by_article:
             raise ValueError(f"duplicate selection article identity: {article_ref}")
-        by_article[article_ref] = dict(article)
+        by_article[article_ref] = dict(article)  # ty:ignore[no-matching-overload]
     return by_article
 
 

@@ -61,7 +61,8 @@ def _is_version_like(s: object) -> bool:
     if not isinstance(s, str):
         # YAML may parse `2026-05-15` as a date object; coerce to ISO string.
         try:
-            s = s.isoformat()
+            # pyrefly: ignore [missing-attribute]
+            s = s.isoformat()  # ty:ignore[unresolved-attribute]
         except AttributeError:
             return False
     return bool(VERSION_LIKE.match(s))

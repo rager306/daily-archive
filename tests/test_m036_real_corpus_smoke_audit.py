@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+# pyrefly: ignore [missing-import]
 from scripts.audit_m036_real_corpus_smoke import audit_smoke, write_markdown_report
 
 FALSE_FLAGS = {
@@ -111,7 +112,8 @@ def _fixtures(tmp_path: Path) -> tuple[Path, Path]:
     _write_json(manifest_path, manifest)
     _write_json(run_dir / "summary.json", run_summary)
     for item in run_summary["articles"]:
-        article_dir = Path(item["artifact_dir"])
+        # pyrefly: ignore [bad-argument-type]
+        article_dir = Path(item["artifact_dir"])  # ty:ignore[invalid-argument-type]
         for name in [
             "candidate.json",
             "review_packet.json",

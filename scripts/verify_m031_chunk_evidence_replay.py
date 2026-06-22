@@ -286,7 +286,10 @@ def validate_s03_closeout(
         else []
     )
     parser_ready_count = sum(
-        1 for row in rows if isinstance(row, Mapping) and row.get("parser_ready") is True
+        # pyrefly: ignore [not-iterable]
+        1
+        for row in rows
+        if isinstance(row, Mapping) and row.get("parser_ready") is True  # ty:ignore[not-iterable]
     )
     if closeout.get("schema_version") != S03_CLOSEOUT_SCHEMA_VERSION:
         findings.append(
@@ -304,7 +307,8 @@ def validate_s03_closeout(
                 json_path="$.status",
             )
         )
-    if closeout.get("row_count") != len(rows):
+    # pyrefly: ignore [bad-argument-type]
+    if closeout.get("row_count") != len(rows):  # ty:ignore[invalid-argument-type]
         findings.append(
             diagnostic(
                 "stale_s03_closeout_row_count",
@@ -742,8 +746,8 @@ def validate_package_pair(
         else {}
     )
     if (
-        graph_validation.get("import_ready") is not False
-        or graph_validation.get("import_eligible_chunk_count") != 0
+        graph_validation.get("import_ready") is not False  # ty:ignore[unresolved-attribute]
+        or graph_validation.get("import_eligible_chunk_count") != 0  # ty:ignore[unresolved-attribute]
     ):
         findings.append(
             diagnostic(
@@ -770,7 +774,7 @@ def validate_package_pair(
     chunks = package.get("chunks") if isinstance(package.get("chunks"), list) else []
     elements = package.get("elements") if isinstance(package.get("elements"), list) else []
     annotations = package.get("annotations") if isinstance(package.get("annotations"), list) else []
-    chunk_count = len(chunks)
+    chunk_count = len(chunks)  # ty:ignore[invalid-argument-type]
     if (
         diagnostic_row.get("chunk_count") != chunk_count
         or graph_package.get("chunk_count") != chunk_count
@@ -784,9 +788,9 @@ def validate_package_pair(
                 path=package_path,
             )
         )
-    if diagnostic_row.get("element_count") != len(elements) or graph_package.get(
+    if diagnostic_row.get("element_count") != len(elements) or graph_package.get(  # ty:ignore[invalid-argument-type]
         "element_count"
-    ) != len(elements):
+    ) != len(elements):  # ty:ignore[invalid-argument-type]
         findings.append(
             diagnostic(
                 "package_element_count_mismatch",
@@ -796,9 +800,9 @@ def validate_package_pair(
                 path=package_path,
             )
         )
-    if diagnostic_row.get("annotation_count") != len(annotations) or graph_package.get(
+    if diagnostic_row.get("annotation_count") != len(annotations) or graph_package.get(  # ty:ignore[invalid-argument-type]
         "annotation_count"
-    ) != len(annotations):
+    ) != len(annotations):  # ty:ignore[invalid-argument-type]
         findings.append(
             diagnostic(
                 "package_annotation_count_mismatch",
@@ -808,7 +812,7 @@ def validate_package_pair(
                 path=package_path,
             )
         )
-    for index, chunk in enumerate(chunks):
+    for index, chunk in enumerate(chunks):  # ty:ignore[invalid-argument-type]
         if isinstance(chunk, Mapping) and chunk.get("source_span") and chunk.get("source_artifact"):
             evidence_path_count += 1
         else:
@@ -822,7 +826,7 @@ def validate_package_pair(
                 )
             )
         if isinstance(chunk, Mapping) and "trusted_kg_import" not in set(
-            chunk.get("excluded_uses") or []
+            chunk.get("excluded_uses") or []  # ty:ignore[invalid-argument-type]
         ):
             findings.append(
                 diagnostic(
@@ -1212,7 +1216,7 @@ def verify(
             if isinstance(conversion_summary.get("results"), list)
             else []
         )
-        conversion_rows = [row for row in rows if isinstance(row, Mapping)]
+        conversion_rows = [row for row in rows if isinstance(row, Mapping)]  # ty:ignore[not-iterable]
         findings.extend(validate_s03_closeout(closeout, conversion_summary))
         findings.extend(
             validate_summary_counts(
@@ -1220,7 +1224,8 @@ def verify(
                 conversion_summary=conversion_summary,
                 closeout=closeout,
                 chunk_summary=chunk_summary,
-                diagnostics_rows=diagnostics_rows,
+                # pyrefly: ignore [bad-argument-type]
+                diagnostics_rows=diagnostics_rows,  # ty:ignore[invalid-argument-type]
                 report=chunk_report,
             )
         )
@@ -1229,11 +1234,14 @@ def verify(
         )
         findings.extend(
             validate_diagnostic_rows(
-                conversion_rows=conversion_rows, diagnostics_rows=diagnostics_rows
+                # pyrefly: ignore [bad-argument-type]
+                conversion_rows=conversion_rows,
+                diagnostics_rows=diagnostics_rows,  # ty:ignore[invalid-argument-type]
             )
         )
         package_findings, counters = validate_packages(
-            diagnostics_rows=diagnostics_rows,
+            # pyrefly: ignore [bad-argument-type]
+            diagnostics_rows=diagnostics_rows,  # ty:ignore[invalid-argument-type]
             chunk_summary=chunk_summary,
             project_root=project_root,
         )
@@ -1267,7 +1275,8 @@ def verify(
             )
         )
     closeout_summary = build_closeout_summary(chunk_summary, findings, counters)
-    closeout_report = render_report(closeout_summary, findings)
+    # pyrefly: ignore [bad-argument-type]
+    closeout_report = render_report(closeout_summary, findings)  # ty:ignore[invalid-argument-type]
     if args.write_summary:
         write_json(args.write_summary, closeout_summary)
     if args.write_diagnostics:

@@ -79,7 +79,7 @@ def candidate_entry(article_path: Path) -> dict[str, Any] | None:
     key = str(article.get("article_key") or "").strip()
     catalog_path = str(article.get("catalog_path") or "").strip()
     identity = article.get("identity") if isinstance(article.get("identity"), dict) else {}
-    title = str(identity.get("title") or "").strip()
+    title = str(identity.get("title") or "").strip()  # ty:ignore[unresolved-attribute]
     sources = source_files(article_path)
     diagnostics: list[str] = []
     if not key or not catalog_path or not title:

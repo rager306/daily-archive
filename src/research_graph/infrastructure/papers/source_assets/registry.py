@@ -511,7 +511,8 @@ def validate_source_asset_manifest(manifest: dict[str, Any]) -> AssetValidationR
             _validate_asset_record(
                 asset,
                 package_paper_id=_string_or_none(manifest.get("paper_id")),
-                source_file_ids=source_file_ids,
+                # pyrefly: ignore [bad-argument-type]
+                source_file_ids=source_file_ids,  # ty:ignore[invalid-argument-type]
             )
         )
     diagnostics.extend(
@@ -836,9 +837,10 @@ def _span_from_record(record: dict[str, Any]) -> SourceSpan:
         char_end=int(record["char_end"]),
         page_start=int(record["page_start"]) if record.get("page_start") is not None else None,
         page_end=int(record["page_end"]) if record.get("page_end") is not None else None,
+        # pyrefly: ignore [bad-argument-type]
         bbox=tuple(float(value) for value in bbox)
         if isinstance(bbox, list) and len(bbox) == 4
-        else None,
+        else None,  # ty:ignore[invalid-argument-type]
     )
 
 

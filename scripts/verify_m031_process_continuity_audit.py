@@ -596,7 +596,7 @@ def build_progression_matrix(
             ),
             "article_catalog": _stage(
                 str(
-                    article_record.get("catalog_resolution")
+                    article_record.get("catalog_resolution")  # ty:ignore[unresolved-attribute]
                     or selection_ref.get("catalog_resolution")
                     or "typed_catalog_blocker"
                 ),
@@ -713,13 +713,13 @@ def build_progression_matrix(
                 "identity": identity,
                 "article_ref": conversion_row.get("article_ref"),
                 "source_role": source_role,
-                "variant_id": conversion_row.get("variant_id") or variant.get("variant_id"),
+                "variant_id": conversion_row.get("variant_id") or variant.get("variant_id"),  # ty:ignore[unresolved-attribute]
                 "package_id": package_id,
                 "requested_ref_id": selection_ref.get("ref_id"),
                 "safe_local_path": _safe_path(
                     acquisition_row.get("local_path")
                     or loader_row.get("local_path")
-                    or variant.get("local_path")
+                    or variant.get("local_path")  # ty:ignore[unresolved-attribute]
                 ),
                 "parser_ready": parser_ready,
                 "chunk_count": chunk_count,
@@ -1138,7 +1138,8 @@ def validate_reports(
         if stage_id not in text and stage_id.replace("_", " ") not in text.lower():
             errors.append(f"M031_CONTINUITY_REPORT_COVERAGE report: missing stage {stage_id}")
     rows = matrix.get("rows") if isinstance(matrix.get("rows"), list) else []
-    for row in rows:
+    # pyrefly: ignore [not-iterable]
+    for row in rows:  # ty:ignore[not-iterable]
         if isinstance(row, Mapping):
             package_id = str(row.get("package_id") or "")
             if package_id and package_id not in matrix_md:
@@ -1165,7 +1166,8 @@ def render_progression_matrix_md(matrix: Mapping[str, Any]) -> str:
         "| Row | Identity | Source Role | Package | Parser Ready | Chunks | Review State | Import Boundary | Refusal Reasons |",
         "|---|---|---|---|---:|---:|---|---|---|",
     ]
-    for row in rows:
+    # pyrefly: ignore [not-iterable]
+    for row in rows:  # ty:ignore[not-iterable]
         if not isinstance(row, Mapping):
             continue
         lines.append(
@@ -1274,9 +1276,9 @@ def render_audit_md(audit: Mapping[str, Any]) -> str:
             "",
             "## Load Profile",
             "",
-            f"- Expected load: {load.get('expected_load')}",  # pyrefly: ignore[bad-assignment]
-            f"- 10x breakpoint: {load.get('ten_x_breakpoint')}",  # pyrefly: ignore[bad-assignment]
-            f"- Protection: {load.get('protection')}",  # pyrefly: ignore[bad-assignment]
+            f"- Expected load: {load.get('expected_load')}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+            f"- 10x breakpoint: {load.get('ten_x_breakpoint')}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+            f"- Protection: {load.get('protection')}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
             "",
             "## Negative Tests",
             "",

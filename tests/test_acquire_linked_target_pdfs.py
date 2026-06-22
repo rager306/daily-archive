@@ -22,7 +22,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-import acquire_linked_target_pdfs  # noqa: E402
+# pyrefly: ignore [missing-import]
+import acquire_linked_target_pdfs  # noqa: E402  # ty:ignore[unresolved-import]
 
 # Minimal target-subset fixture (same schema as artifacts/m054-pdf-acquisition/target-subset.json).
 TARGET_SUBSET = {
@@ -73,14 +74,16 @@ def test_classify_exception_network_error():
 def test_classify_exception_http_4xx_is_blocked():
     import urllib.error
 
-    exc = urllib.error.HTTPError("url", 404, "Not Found", {}, None)
+    # pyrefly: ignore [bad-argument-type]
+    exc = urllib.error.HTTPError("url", 404, "Not Found", {}, None)  # ty:ignore[invalid-argument-type]
     assert acquire_linked_target_pdfs._classify_exception(exc) == "blocked"
 
 
 def test_classify_exception_http_5xx_is_network_error():
     import urllib.error
 
-    exc = urllib.error.HTTPError("url", 503, "Service Unavailable", {}, None)
+    # pyrefly: ignore [bad-argument-type]
+    exc = urllib.error.HTTPError("url", 503, "Service Unavailable", {}, None)  # ty:ignore[invalid-argument-type]
     assert acquire_linked_target_pdfs._classify_exception(exc) == "network_error"
 
 

@@ -106,7 +106,7 @@ def test_s05_closeout_fails_closed_before_writes_on_permissive_import_summary(
 
 def test_s05_closeout_rejects_missing_progression_row(tmp_path: Path) -> None:
     matrix = _read_json(MATRIX_JSON)
-    matrix["rows"] = matrix["rows"][:-1]  # type: ignore[index]
+    matrix["rows"] = matrix["rows"][:-1]  # type: ignore[index]  # ty:ignore[not-subscriptable]
     matrix["row_count"] = 6
     bad_matrix = _write_json(tmp_path / "bad-progression-matrix.json", matrix)
 

@@ -149,17 +149,19 @@ def _entry_from_catalog_record(
     variants = (
         record.get("source_variants") if isinstance(record.get("source_variants"), list) else []
     )
-    primary_variant_id = source_strategy.get("primary_source_variant_id")
+    primary_variant_id = source_strategy.get("primary_source_variant_id")  # ty:ignore[unresolved-attribute]
     primary_variant = next(
-        (variant for variant in variants if variant.get("variant_id") == primary_variant_id), None
+        (variant for variant in variants if variant.get("variant_id") == primary_variant_id),
+        None,  # ty:ignore[not-iterable]
     )
     if primary_variant is None:
         primary_variant = next(
-            (variant for variant in variants if variant.get("is_primary") is True), None
+            (variant for variant in variants if variant.get("is_primary") is True),
+            None,  # ty:ignore[not-iterable]
         )
     primary_role = _variant_role(primary_variant or {})
     if primary_role is None:
-        preferred = source_strategy.get("preferred_content_order")
+        preferred = source_strategy.get("preferred_content_order")  # ty:ignore[unresolved-attribute]
         if isinstance(preferred, list) and preferred:
             primary_role = str(preferred[0])
     if primary_role is None:
@@ -170,7 +172,7 @@ def _entry_from_catalog_record(
 
     content_fallback_roles: list[str] = []
     metadata_roles: list[str] = []
-    for variant in variants:
+    for variant in variants:  # ty:ignore[not-iterable]
         role = _variant_role(variant)
         if not role:
             continue
@@ -183,8 +185,8 @@ def _entry_from_catalog_record(
         if variant.get("is_metadata_only") is True and role not in metadata_roles:
             metadata_roles.append(role)
 
-    title = identity.get("title") or record.get("title")
-    canonical_url = identity.get("canonical_url") or identity.get("abs_url") or identity.get("url")
+    title = identity.get("title") or record.get("title")  # ty:ignore[unresolved-attribute]
+    canonical_url = identity.get("canonical_url") or identity.get("abs_url") or identity.get("url")  # ty:ignore[unresolved-attribute]
     if not title:
         diagnostics.append(
             {"level": "warning", "code": "missing_catalog_title", "article_ref": article_ref}
@@ -209,10 +211,10 @@ def _entry_from_catalog_record(
         "article_path": _article_path_from_ref(article_ref),
         "title": str(title) if title else "",
     }
-    citation_key = identity.get("citation_key") or record.get("citation_key")
+    citation_key = identity.get("citation_key") or record.get("citation_key")  # ty:ignore[unresolved-attribute]
     if citation_key:
         entry["citation_key"] = str(citation_key)
-    seed_url = identity.get("seed_url")
+    seed_url = identity.get("seed_url")  # ty:ignore[unresolved-attribute]
     if seed_url:
         entry["seed_url"] = str(seed_url)
     registration_summary = (
@@ -220,7 +222,7 @@ def _entry_from_catalog_record(
         if isinstance(record.get("registration_summary"), dict)
         else {}
     )
-    registration_id = registration_summary.get("registration_id") or record.get("registration_id")
+    registration_id = registration_summary.get("registration_id") or record.get("registration_id")  # ty:ignore[unresolved-attribute]
     if registration_id:
         entry["registration_id"] = str(registration_id)
     return entry, diagnostics
@@ -640,10 +642,10 @@ def _validate_index_contract(
         articles = []
     indexes = index.get("indexes") if isinstance(index.get("indexes"), dict) else {}
     by_canonical_url = (
-        indexes.get("by_canonical_url") if isinstance(indexes.get("by_canonical_url"), dict) else {}
+        indexes.get("by_canonical_url") if isinstance(indexes.get("by_canonical_url"), dict) else {}  # ty:ignore[unresolved-attribute]
     )
     by_article_key = (
-        indexes.get("by_article_key") if isinstance(indexes.get("by_article_key"), dict) else {}
+        indexes.get("by_article_key") if isinstance(indexes.get("by_article_key"), dict) else {}  # ty:ignore[unresolved-attribute]
     )
     index_entries = [entry for entry in index.get("articles", []) if isinstance(entry, dict)]
     index_entries_by_ref = {entry.get("article_ref"): entry for entry in index_entries}
@@ -656,7 +658,7 @@ def _validate_index_contract(
         for article in articles:
             canonical_url = article.get("canonical_url")
             article_key = article.get("article_key")
-            if canonical_url in by_canonical_url:
+            if canonical_url in by_canonical_url:  # ty:ignore[unsupported-operator]
                 selected_url_lookup_count += 1
             else:
                 missing_url_count += 1
@@ -667,7 +669,7 @@ def _validate_index_contract(
                         "canonical_url": canonical_url,
                     }
                 )
-            if article_key in by_article_key:
+            if article_key in by_article_key:  # ty:ignore[unsupported-operator]
                 selected_article_key_lookup_count += 1
             else:
                 missing_key_count += 1
@@ -738,8 +740,8 @@ def _validate_index_contract(
     duplicate_url_lookup_targets: list[str] = []
     duplicate_key_lookup_targets: list[str] = []
     if check_duplicate_lookups:
-        duplicate_url_lookup_targets = _duplicate_mapping_values(by_canonical_url)
-        duplicate_key_lookup_targets = _duplicate_mapping_values(by_article_key)
+        duplicate_url_lookup_targets = _duplicate_mapping_values(by_canonical_url)  # ty:ignore[invalid-argument-type]
+        duplicate_key_lookup_targets = _duplicate_mapping_values(by_article_key)  # ty:ignore[invalid-argument-type]
         if duplicate_url_lookup_targets:
             diagnostics.append(
                 {

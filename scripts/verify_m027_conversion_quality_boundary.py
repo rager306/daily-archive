@@ -254,7 +254,7 @@ def index_source_rows(
             )
             continue
         key = (str(row.get("article_ref")), str(row.get("variant_id")), str(row.get("source_role")))
-        indexed[key] = row
+        indexed[key] = row  # ty:ignore[invalid-assignment]
     return indexed, findings
 
 

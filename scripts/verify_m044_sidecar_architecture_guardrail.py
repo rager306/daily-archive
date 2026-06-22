@@ -58,18 +58,18 @@ def verify_context_pack(pack: dict[str, Any], *, root: Path = ROOT) -> list[str]
         errors.append("pack_id must be m044-sidecar-architecture-context-v1")
 
     source_refs = pack.get("source_refs") if isinstance(pack.get("source_refs"), dict) else {}
-    missing_source_keys = REQUIRED_SOURCE_KEYS - set(source_refs)
+    missing_source_keys = REQUIRED_SOURCE_KEYS - set(source_refs)  # ty:ignore[invalid-argument-type]
     if missing_source_keys:
         errors.append(f"missing source refs: {sorted(missing_source_keys)}")
-    for key in REQUIRED_SOURCE_KEYS.intersection(source_refs):
-        path = root / str(source_refs[key])
+    for key in REQUIRED_SOURCE_KEYS.intersection(source_refs):  # ty:ignore[invalid-argument-type]
+        path = root / str(source_refs[key])  # ty:ignore[not-subscriptable]
         if not path.exists():
-            errors.append(f"source ref missing on disk: {key}={source_refs[key]}")
+            errors.append(f"source ref missing on disk: {key}={source_refs[key]}")  # ty:ignore[not-subscriptable]
 
     decisions = (
         pack.get("mandatory_decisions") if isinstance(pack.get("mandatory_decisions"), list) else []
     )
-    decision_ids = {str(item.get("id")) for item in decisions if isinstance(item, dict)}
+    decision_ids = {str(item.get("id")) for item in decisions if isinstance(item, dict)}  # ty:ignore[not-iterable]
     missing_decisions = REQUIRED_DECISIONS - decision_ids
     if missing_decisions:
         errors.append(f"missing mandatory decisions: {sorted(missing_decisions)}")
@@ -90,7 +90,7 @@ def verify_context_pack(pack: dict[str, Any], *, root: Path = ROOT) -> list[str]
         else {}
     )
     for key, expected in REQUIRED_PACKET_FLAGS.items():
-        if flags.get(key) is not expected:
+        if flags.get(key) is not expected:  # ty:ignore[unresolved-attribute]
             errors.append(f"required_packet_flags.{key} must be {expected}")
         if key != "candidate_only" and pack.get(key) is not False:
             errors.append(f"top-level {key} must be false")
@@ -100,7 +100,7 @@ def verify_context_pack(pack: dict[str, Any], *, root: Path = ROOT) -> list[str]
         if isinstance(pack.get("required_preflight_commands"), list)
         else []
     )
-    if "uv run python scripts/verify_m044_sidecar_architecture_guardrail.py" not in commands:
+    if "uv run python scripts/verify_m044_sidecar_architecture_guardrail.py" not in commands:  # ty:ignore[unsupported-operator]
         errors.append("required preflight command missing")
 
     return errors

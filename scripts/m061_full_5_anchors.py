@@ -52,7 +52,8 @@ def load_s01_module() -> Any:
     module = importlib.util.module_from_spec(spec)
     sys.modules["m061_anchor_pilot"] = module
     spec.loader.exec_module(module)
-    module.GENERATED_BY = GENERATED_BY
+    # pyrefly: ignore [missing-attribute]
+    module.GENERATED_BY = GENERATED_BY  # ty:ignore[unresolved-attribute]
     return module
 
 
@@ -556,8 +557,8 @@ def build_combined_graph_manifest(anchor_summaries: list[dict[str, Any]]) -> dic
         "per_paper_manifest_sources": per_paper_sources,
         "layers": layers,
         "layer_count": len(layers),
-        "total_edge_count": sum(layer["edge_count"] for layer in layers),  # pyrefly: ignore[bad-assignment]
-        "total_node_count_by_layer_sum": sum(layer["node_count"] for layer in layers),  # pyrefly: ignore[bad-assignment]
+        "total_edge_count": sum(layer["edge_count"] for layer in layers),  # pyrefly: ignore [bad-assignment, no-matching-overload]
+        "total_node_count_by_layer_sum": sum(layer["node_count"] for layer in layers),  # pyrefly: ignore [bad-assignment, no-matching-overload]
         "validation": {
             "layer_count_ok": len(layers) == 5,
             "anchor_count_ok": len(anchor_summaries) == 5,

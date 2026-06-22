@@ -508,7 +508,7 @@ def validate_conversion_row(
                 if isinstance(row.get("bounded_extraction"), Mapping)
                 else {}
             )
-            if quality.get("status") in {"low_quality", "empty"} or bounded.get(  # pyrefly: ignore[bad-assignment]
+            if quality.get("status") in {"low_quality", "empty"} or bounded.get(  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
                 "fallback_stub_detected"
             ):
                 findings.append(
@@ -615,13 +615,18 @@ def build_closeout_summary(
         "selection_id": SELECTION_ID,
         "status": "passed" if not findings else "failed",
         "failure_count": len(findings),
-        "row_count": len(rows),
+        # pyrefly: ignore [bad-argument-type]
+        "row_count": len(rows),  # ty:ignore[invalid-argument-type]
         "parser_ready_count": sum(
-            1 for row in rows if isinstance(row, Mapping) and row.get("parser_ready") is True
+            # pyrefly: ignore [not-iterable]
+            1
+            for row in rows
+            if isinstance(row, Mapping) and row.get("parser_ready") is True  # ty:ignore[not-iterable]
         ),
         "conversion_status_counts": dict(
             sorted(
-                Counter(str(row.get("status")) for row in rows if isinstance(row, Mapping)).items()
+                # pyrefly: ignore [not-iterable]
+                Counter(str(row.get("status")) for row in rows if isinstance(row, Mapping)).items()  # ty:ignore[not-iterable]
             )
         ),
         "diagnostic_code_counts": dict(
@@ -711,13 +716,14 @@ def verify(
                 json_path="$.selection_id",
             )
         )
-    findings.extend(validate_schema_and_counts(conversion_summary, diagnostics_rows, report))
+    # pyrefly: ignore [bad-argument-type]
+    findings.extend(validate_schema_and_counts(conversion_summary, diagnostics_rows, report))  # ty:ignore[invalid-argument-type]
     rows = (
         conversion_summary.get("results")
         if isinstance(conversion_summary.get("results"), list)
         else []
     )
-    conversion_rows = [row for row in rows if isinstance(row, Mapping)]
+    conversion_rows = [row for row in rows if isinstance(row, Mapping)]  # ty:ignore[not-iterable]
     findings.extend(
         validate_loader_linkage(
             conversion_rows=conversion_rows,
@@ -748,11 +754,13 @@ def verify(
         validate_no_payload_leakage({}, serialized=report, where=args.conversion_report.as_posix())
     )
     closeout_summary = build_closeout_summary(conversion_summary, findings)
-    closeout_report = render_report(closeout_summary, findings)
+    # pyrefly: ignore [bad-argument-type]
+    closeout_report = render_report(closeout_summary, findings)  # ty:ignore[invalid-argument-type]
     if args.write_summary:
         write_json(args.write_summary, closeout_summary)
     if args.write_diagnostics:
-        write_jsonl(args.write_diagnostics, findings)
+        # pyrefly: ignore [bad-argument-type]
+        write_jsonl(args.write_diagnostics, findings)  # ty:ignore[invalid-argument-type]
     if args.write_report:
         atomic_write_text(args.write_report, closeout_report)
     return closeout_summary, findings

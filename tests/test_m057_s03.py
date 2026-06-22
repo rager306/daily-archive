@@ -9,9 +9,10 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import m057_figure_caption_build as figure_caption_build  # noqa: E402
-import m057_figure_embed as figure_embed  # noqa: E402
-import m057_figure_similarity as figure_similarity  # noqa: E402
+# pyrefly: ignore [missing-import]
+import m057_figure_caption_build as figure_caption_build  # noqa: E402  # ty:ignore[unresolved-import]
+import m057_figure_embed as figure_embed  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
+import m057_figure_similarity as figure_similarity  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
 
 ARTIFACT_ROOT = ROOT / "artifacts" / "m057-fd-marker" / "figure-links"
 CORPUS = ARTIFACT_ROOT / "figure-caption-corpus.json"

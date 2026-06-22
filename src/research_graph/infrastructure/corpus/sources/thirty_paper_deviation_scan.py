@@ -229,9 +229,9 @@ def _normalize_paper_record(paper: dict[str, Any]) -> dict[str, Any]:
     paper_id = str(paper["paper_id"])
     paths = paper.get("required_paths") if isinstance(paper.get("required_paths"), list) else []
     source_paths = paper.get("source_paths") if isinstance(paper.get("source_paths"), dict) else {}
-    research_workspace = source_paths.get("research_workspace")
-    full_text = source_paths.get("research_full_text_md")
-    normalized_paths = [str(path) for path in paths]
+    research_workspace = source_paths.get("research_workspace")  # ty:ignore[unresolved-attribute]
+    full_text = source_paths.get("research_full_text_md")  # ty:ignore[unresolved-attribute]
+    normalized_paths = [str(path) for path in paths]  # ty:ignore[not-iterable]
     if full_text:
         normalized_paths.append(str(full_text))
     if research_workspace:

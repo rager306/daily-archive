@@ -23,7 +23,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 try:  # Imported lazily by tests/command; dependency is available in project env.
-    import fitz  # type: ignore[import-untyped]
+    import fitz  # type: ignore[import-untyped]  # ty:ignore[unresolved-import]
 except Exception:  # pragma: no cover - exercised only when environment lacks PyMuPDF.
     fitz = None  # type: ignore[assignment]
 
@@ -357,7 +357,7 @@ def extract_article_html(
         tag.decompose()
     article = (
         soup.find("article")
-        or soup.find(attrs={"role": "main"})  # pyrefly: ignore[bad-assignment]
+        or soup.find(attrs={"role": "main"})  # pyrefly: ignore [bad-assignment, no-matching-overload]  # ty:ignore[invalid-argument-type]
         or soup.find("main")
         or soup.body
         or soup
@@ -371,6 +371,7 @@ def extract_article_html(
         "main_tag_count": len(soup.find_all("main")),
         "paragraph_count": len(paragraphs),
         "heading_count": len(headings),
+        # pyrefly: ignore [not-callable]
         "semantic_body_detected": bool(paragraphs and len(text.strip()) >= MIN_PARSER_READY_CHARS),
         "source_role": source_role,
     }

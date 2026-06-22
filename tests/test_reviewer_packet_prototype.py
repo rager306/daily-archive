@@ -19,9 +19,17 @@ from research_graph.workflows.review_packet_prototype import (
     render_reviewer_packet_markdown,
     summarize_reviewer_packet_prototype,
 )
+
+# pyrefly: ignore [missing-import]
 from scripts.render_reviewer_packet_prototype import main as render_cli_main
+
+# pyrefly: ignore [missing-import]
 from scripts.render_reviewer_packet_prototype import render_prototype_files as render_cli_files
+
+# pyrefly: ignore [missing-import]
 from scripts.verify_reviewer_packet_prototype import main as verify_cli_main
+
+# pyrefly: ignore [missing-import]
 from scripts.verify_reviewer_packet_prototype import verify_files as verify_cli_files
 
 CONTRACT_FIXTURE = Path("tests/fixtures/chunk_repair_contract.json")
@@ -44,8 +52,10 @@ def _s02_contract() -> dict[str, object]:
     }
     contract["stable_ids"] = {
         "source_ids": ["source-synthetic-paper-1-full-text"],
-        "locator_ids": [locator["locator_id"] for locator in locators],
-        "span_ids": [locator["source_spans"][0]["span_id"] for locator in locators],
+        # pyrefly: ignore [not-iterable]
+        "locator_ids": [locator["locator_id"] for locator in locators],  # ty:ignore[not-iterable]
+        # pyrefly: ignore [not-iterable]
+        "span_ids": [locator["source_spans"][0]["span_id"] for locator in locators],  # ty:ignore[not-iterable]
     }
     return contract
 
@@ -67,10 +77,11 @@ def test_builds_deterministic_review_packets_and_independent_assessment() -> Non
     assert first == second
     assert first["schema_version"] == REVIEWER_PACKET_PROTOTYPE_VERSION
     assert first["packet_count"] == 3
-    assert first["assessment"]["schema_version"] == REVIEWER_PACKET_ASSESSMENT_VERSION  # pyrefly: ignore[bad-assignment]
-    assert first["assessment"]["reviewer_id"] == "independent-agent"  # pyrefly: ignore[bad-assignment]
-    assert first["assessment"]["verdict"] == "blocked_pending_semantic_acceptance"  # pyrefly: ignore[bad-assignment]
-    assert [packet["locator_id"] for packet in first["packets"]] == [
+    assert first["assessment"]["schema_version"] == REVIEWER_PACKET_ASSESSMENT_VERSION  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+    assert first["assessment"]["reviewer_id"] == "independent-agent"  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+    assert first["assessment"]["verdict"] == "blocked_pending_semantic_acceptance"  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+    # pyrefly: ignore [not-iterable]
+    assert [packet["locator_id"] for packet in first["packets"]] == [  # ty:ignore[not-iterable]
         "m021-synthetic-paper-1-claim-001",
         "m021-synthetic-paper-1-retrieval-001",
         "m021-synthetic-paper-1-method-001",
@@ -80,7 +91,8 @@ def test_builds_deterministic_review_packets_and_independent_assessment() -> Non
 def test_packets_are_pending_non_importable_and_copy_false_safety_boundaries() -> None:
     prototype = _prototype()
 
-    for packet in prototype["packets"]:
+    # pyrefly: ignore [not-iterable]
+    for packet in prototype["packets"]:  # ty:ignore[not-iterable]
         assert packet["review_status"] == "pending_review"
         assert packet["importable"] is False
         assert packet["semantic_ready_for_kg"] is False
@@ -173,7 +185,8 @@ def test_malformed_s03_inputs_fail_closed_before_packet_output(
 def test_s02_lineage_subset_enforcement_rejects_unknown_locator_source_and_span_ids() -> None:
     payload = _s03_payload()
     s02 = _s02_contract()
-    s02["stable_ids"]["locator_ids"] = ["different-locator"]
+    # pyrefly: ignore [unsupported-operation]
+    s02["stable_ids"]["locator_ids"] = ["different-locator"]  # ty:ignore[invalid-assignment]
 
     with pytest.raises(ReviewerPacketError) as exc_info:
         build_reviewer_packet_prototype(payload, s02_contract=s02)
@@ -182,13 +195,15 @@ def test_s02_lineage_subset_enforcement_rejects_unknown_locator_source_and_span_
     assert exc_info.value.path == "/repair_targets/0/locator_id"
 
     s02 = _s02_contract()
-    s02["stable_ids"]["source_ids"] = ["different-source"]
+    # pyrefly: ignore [unsupported-operation]
+    s02["stable_ids"]["source_ids"] = ["different-source"]  # ty:ignore[invalid-assignment]
     with pytest.raises(ReviewerPacketError) as source_exc:
         build_reviewer_packet_prototype(payload, s02_contract=s02)
     assert source_exc.value.code == "source_id_not_in_s02_stable_ids"
 
     s02 = _s02_contract()
-    s02["stable_ids"]["span_ids"] = ["different-span"]
+    # pyrefly: ignore [unsupported-operation]
+    s02["stable_ids"]["span_ids"] = ["different-span"]  # ty:ignore[invalid-assignment]
     with pytest.raises(ReviewerPacketError) as span_exc:
         build_reviewer_packet_prototype(payload, s02_contract=s02)
     assert span_exc.value.code == "span_id_not_in_s02_stable_ids"
@@ -196,7 +211,7 @@ def test_s02_lineage_subset_enforcement_rejects_unknown_locator_source_and_span_
 
 def test_forbidden_payload_key_rejection_reports_path_and_code_without_value() -> None:
     payload = _s03_payload()
-    payload["repair_targets"][0]["nested"] = {"api_key": "DO_NOT_LEAK"}  # pyrefly: ignore[bad-assignment]
+    payload["repair_targets"][0]["nested"] = {"api_key": "DO_NOT_LEAK"}  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
 
     with pytest.raises(ReviewerPacketError) as exc_info:
         build_reviewer_packet_prototype(payload, s02_contract=_s02_contract())
@@ -226,7 +241,7 @@ def test_markdown_renderer_is_redacted_json_derived_and_has_no_code_fences_or_fo
 
 def test_markdown_renderer_rejects_mutated_packet_safety_and_importability() -> None:
     prototype = _prototype()
-    prototype["packets"][0]["importable"] = True  # pyrefly: ignore[bad-assignment]
+    prototype["packets"][0]["importable"] = True  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
 
     with pytest.raises(ReviewerPacketError) as exc_info:
         render_reviewer_packet_markdown(prototype)
@@ -235,7 +250,7 @@ def test_markdown_renderer_rejects_mutated_packet_safety_and_importability() -> 
     assert exc_info.value.path == "/packets/0/importable"
 
     prototype = _prototype()
-    prototype["packets"][0]["safety_boundaries"]["semantic_ready_for_kg"] = True  # pyrefly: ignore[bad-assignment]
+    prototype["packets"][0]["safety_boundaries"]["semantic_ready_for_kg"] = True  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     with pytest.raises(ReviewerPacketError) as safety_exc:
         render_reviewer_packet_markdown(prototype)
     assert safety_exc.value.code == "packet_unsafe_safety_boundary"
@@ -244,14 +259,14 @@ def test_markdown_renderer_rejects_mutated_packet_safety_and_importability() -> 
 def test_assessment_blocks_import_and_next_step_readiness_until_semantic_acceptance() -> None:
     assessment = _prototype()["assessment"]
 
-    assert assessment["import_allowed"] is False  # pyrefly: ignore[bad-assignment]
-    assert assessment["semantic_ready_for_kg"] is False  # pyrefly: ignore[bad-assignment]
-    assert assessment["dimension_results"]["semantic_usefulness"]["blocks_import"] is True  # pyrefly: ignore[bad-assignment]
+    assert assessment["import_allowed"] is False  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+    assert assessment["semantic_ready_for_kg"] is False  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+    assert assessment["dimension_results"]["semantic_usefulness"]["blocks_import"] is True  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     assert (
-        assessment["dimension_results"]["next_step_readiness"]["status"]  # pyrefly: ignore[bad-assignment]
+        assessment["dimension_results"]["next_step_readiness"]["status"]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
         == "blocked_pending_semantic_acceptance"
     )
-    assert assessment["packet_findings"] == [  # pyrefly: ignore[bad-assignment]
+    assert assessment["packet_findings"] == [  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
         {
             "code": "pending_semantic_acceptance",
             "path": "/packets",
@@ -398,6 +413,7 @@ def test_renderer_cli_writes_all_four_validated_outputs_and_verifier_accepts_the
 def test_renderer_aborts_before_writing_when_generated_markdown_is_invalid(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # pyrefly: ignore [missing-import]
     import scripts.render_reviewer_packet_prototype as renderer
 
     repair_path, s02_path = _write_cli_inputs(tmp_path)

@@ -8,7 +8,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-import render_m055deep_report as report  # noqa: E402
+# pyrefly: ignore [missing-import]
+import render_m055deep_report as report  # noqa: E402  # ty:ignore[unresolved-import]
 
 BENCHMARK_DIR = ROOT / "artifacts" / "m055deep-parser-benchmark"
 REPORT_PATH = BENCHMARK_DIR / "REPORT.md"

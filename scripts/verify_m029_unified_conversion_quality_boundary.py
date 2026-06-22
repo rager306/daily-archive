@@ -22,7 +22,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 try:  # Dependency is available in the project env; tests keep this optional.
-    import fitz  # type: ignore[import-untyped]
+    import fitz  # type: ignore[import-untyped]  # ty:ignore[unresolved-import]
 except Exception:  # pragma: no cover
     fitz = None  # type: ignore[assignment]
 
@@ -369,7 +369,7 @@ def extract_html_body(source_path: Path) -> tuple[str, dict[str, Any], dict[str,
         tag.decompose()
     article = (
         soup.find("article")
-        or soup.find(attrs={"role": "main"})  # pyrefly: ignore[bad-assignment]
+        or soup.find(attrs={"role": "main"})  # pyrefly: ignore [bad-assignment, no-matching-overload]  # ty:ignore[invalid-argument-type]
         or soup.find("main")
         or soup.body
         or soup
@@ -485,6 +485,7 @@ def convert_source_row(
         result["extraction_method"] = "beautifulsoup_html_body"
 
     if source_role not in ARXIV_METADATA_ROLES:
+        # pyrefly: ignore [unbound-name]
         if quality["status"] == "ok" and text:
             payload_path = converted_text_path(
                 converted_text_dir, str(row.get("article_ref")), str(source_role)
@@ -606,6 +607,7 @@ def build_conversion_artifacts(args: argparse.Namespace) -> None:
     }
     write_jsonl(args.conversion_diagnostics, diagnostics)
     atomic_write_text(args.conversion_report, render_report(summary))
+    # pyrefly: ignore [unsupported-operation]
     summary["provenance"]["output_hashes"] = file_hashes(
         [args.conversion_diagnostics, args.conversion_report]
     )
@@ -705,7 +707,7 @@ def index_source_rows(
             )
             continue
         key = (str(row.get("article_ref")), str(row.get("variant_id")), str(row.get("source_role")))
-        indexed[key] = row
+        indexed[key] = row  # ty:ignore[invalid-assignment]
     return indexed, findings
 
 

@@ -473,7 +473,7 @@ def normalize_source_strategies(
             )
             status = result.get("status")
             if status in TERMINAL_STATES:
-                terminal_by_role[role][str(status)] += 1  # pyrefly: ignore[bad-assignment]
+                terminal_by_role[role][str(status)] += 1  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[invalid-argument-type]
 
         primary_counts = terminal_by_role.get(
             primary_role, {"captured": 0, "blocked": 0, "failed": 0}
@@ -665,9 +665,9 @@ def render_report(summary: Mapping[str, Any]) -> str:
         f"- Error count: {summary.get('error_count')}",
         f"- Article URLs: {summary.get('article_count')}",
         f"- Variants: {summary.get('variant_count')}",
-        f"- Captured: {counts.get('captured', 0)}",  # pyrefly: ignore[bad-assignment]
-        f"- Blocked: {counts.get('blocked', 0)}",  # pyrefly: ignore[bad-assignment]
-        f"- Failed: {counts.get('failed', 0)}",  # pyrefly: ignore[bad-assignment]
+        f"- Captured: {counts.get('captured', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        f"- Blocked: {counts.get('blocked', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        f"- Failed: {counts.get('failed', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
         f"- Network fetch attempted count: {summary.get('network_fetch_attempted_count')}",
         "- Graph/import/LadybugDB writes: false",
         "",
@@ -679,7 +679,8 @@ def render_report(summary: Mapping[str, Any]) -> str:
         if isinstance(summary.get("per_role_terminal_state_counts"), dict)
         else {}
     )
-    for role, value in role_counts.items():
+    # pyrefly: ignore [missing-attribute]
+    for role, value in role_counts.items():  # ty:ignore[unresolved-attribute]
         if isinstance(value, dict):
             lines.append(
                 f"- `{role}`: captured={value.get('captured', 0)} blocked={value.get('blocked', 0)} failed={value.get('failed', 0)}"

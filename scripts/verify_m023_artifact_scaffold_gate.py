@@ -179,8 +179,8 @@ def build_artifact_scaffold_gate(
             "run_id": manifest.get("run_id"),
             "artifact_count": int(manifest_summary.get("artifact_count", 0)),
             "candidate_link_count": int(manifest_summary.get("candidate_link_count", 0)),
-            "artifact_counts_by_type": dict(manifest_summary.get("artifact_counts_by_type", {})),  # pyrefly: ignore[bad-assignment]
-            "candidate_link_type_counts": dict(  # pyrefly: ignore[bad-assignment]
+            "artifact_counts_by_type": dict(manifest_summary.get("artifact_counts_by_type", {})),  # pyrefly: ignore [bad-assignment, no-matching-overload]
+            "candidate_link_type_counts": dict(  # pyrefly: ignore [bad-assignment, no-matching-overload]
                 manifest_summary.get("candidate_link_type_counts", {})
             ),
             "review_state_counts": review_states,
@@ -245,7 +245,7 @@ def verify_artifact_scaffold_gate(gate: dict[str, Any]) -> list[dict[str, Any]]:
         else {}
     )
     for key, expected in BLOCKED_OPERATION_FLAGS.items():
-        if flags.get(key) != expected:
+        if flags.get(key) != expected:  # ty:ignore[unresolved-attribute]
             findings.append(
                 {
                     "code": "blocked_operation_flag_mismatch",
@@ -257,21 +257,21 @@ def verify_artifact_scaffold_gate(gate: dict[str, Any]) -> list[dict[str, Any]]:
         if isinstance(gate.get("minimax_helper_status"), dict)
         else {}
     )
-    if helper.get("raw_prompt_persisted") is not False:
+    if helper.get("raw_prompt_persisted") is not False:  # ty:ignore[unresolved-attribute]
         findings.append(
             {
                 "code": "helper_raw_prompt_persisted",
                 "json_path": "/minimax_helper_status/raw_prompt_persisted",
             }
         )
-    if helper.get("raw_response_persisted") is not False:
+    if helper.get("raw_response_persisted") is not False:  # ty:ignore[unresolved-attribute]
         findings.append(
             {
                 "code": "helper_raw_response_persisted",
                 "json_path": "/minimax_helper_status/raw_response_persisted",
             }
         )
-    if helper.get("minimax_source_of_truth") is not False:
+    if helper.get("minimax_source_of_truth") is not False:  # ty:ignore[unresolved-attribute]
         findings.append(
             {
                 "code": "helper_marked_source_of_truth",

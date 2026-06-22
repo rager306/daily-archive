@@ -60,13 +60,20 @@ def _read_events(path: Path) -> list[dict]:
 def _assert_common_metadata(
     record: object, source_path: Path, source_type: str, media_type: str
 ) -> None:
-    assert record.source_path == source_path
-    assert record.source_type == source_type
-    assert record.media_type == media_type
-    assert record.sha256 == _sha256(source_path)
-    assert record.byte_size == source_path.stat().st_size
-    assert record.source_id
-    assert record.source_id.startswith("article-source:")
+    # pyrefly: ignore [missing-attribute]
+    assert record.source_path == source_path  # ty:ignore[unresolved-attribute]
+    # pyrefly: ignore [missing-attribute]
+    assert record.source_type == source_type  # ty:ignore[unresolved-attribute]
+    # pyrefly: ignore [missing-attribute]
+    assert record.media_type == media_type  # ty:ignore[unresolved-attribute]
+    # pyrefly: ignore [missing-attribute]
+    assert record.sha256 == _sha256(source_path)  # ty:ignore[unresolved-attribute]
+    # pyrefly: ignore [missing-attribute]
+    assert record.byte_size == source_path.stat().st_size  # ty:ignore[unresolved-attribute]
+    # pyrefly: ignore [missing-attribute]
+    assert record.source_id  # ty:ignore[unresolved-attribute]
+    # pyrefly: ignore [missing-attribute]
+    assert record.source_id.startswith("article-source:")  # ty:ignore[unresolved-attribute]
 
 
 def _assert_safe_event_payload(events: list[dict]) -> None:
@@ -274,14 +281,17 @@ def test_low_quality_markdown_reuses_full_text_quality_contract(tmp_path: Path) 
         == expected_quality.fallback_reason
         == expected_ingestion.fallback_reason
     )
-    assert result.quality.status == expected_ingestion.quality.status == expected_quality.status
+    # pyrefly: ignore [missing-attribute]
+    assert result.quality.status == expected_ingestion.quality.status == expected_quality.status  # ty:ignore[unresolved-attribute]
     assert (
-        result.quality.heading_count
+        # pyrefly: ignore [missing-attribute]
+        result.quality.heading_count  # ty:ignore[unresolved-attribute]
         == expected_ingestion.quality.heading_count
         == expected_quality.heading_count
     )
     assert (
-        result.quality.non_heading_nonempty_line_count
+        # pyrefly: ignore [missing-attribute]
+        result.quality.non_heading_nonempty_line_count  # ty:ignore[unresolved-attribute]
         == expected_ingestion.quality.non_heading_nonempty_line_count
         == expected_quality.non_heading_nonempty_line_count
     )
@@ -343,8 +353,10 @@ def test_source_ids_are_stable_across_repeated_loads_and_log_paths(tmp_path: Pat
 
     assert first.source_id == second.source_id == classified.source_id
     assert first.sha256 == second.sha256 == classified.sha256
-    assert first.provenance["source_id"] == first.source_id
-    assert second.provenance["source_id"] == second.source_id
+    # pyrefly: ignore [unsupported-operation]
+    assert first.provenance["source_id"] == first.source_id  # ty:ignore[not-subscriptable]
+    # pyrefly: ignore [unsupported-operation]
+    assert second.provenance["source_id"] == second.source_id  # ty:ignore[not-subscriptable]
 
 
 def test_each_load_attempt_emits_exactly_one_terminal_event(tmp_path: Path) -> None:
@@ -404,8 +416,10 @@ def test_event_payloads_align_with_source_reference_provenance_fields(tmp_path: 
         assert event["outcome"] in {"started", "loaded"}
 
     for key in required_keys - {"outcome"}:
-        assert key in result.provenance
-    assert result.provenance["paper_id"] == "2605.12345"
+        # pyrefly: ignore [not-iterable]
+        assert key in result.provenance  # ty:ignore[unsupported-operator]
+    # pyrefly: ignore [unsupported-operation]
+    assert result.provenance["paper_id"] == "2605.12345"  # ty:ignore[not-subscriptable]
     assert result.outcome == "loaded"
     _assert_safe_event_payload(events)
 

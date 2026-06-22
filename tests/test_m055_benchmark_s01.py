@@ -15,9 +15,10 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-import benchmark_m055_availability_probe as availability  # noqa: E402
-import benchmark_m055_corpus_manifest as corpus  # noqa: E402
-import benchmark_m055_vendor_check as vendor_check  # noqa: E402
+# pyrefly: ignore [missing-import]
+import benchmark_m055_availability_probe as availability  # noqa: E402  # ty:ignore[unresolved-import]
+import benchmark_m055_corpus_manifest as corpus  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
+import benchmark_m055_vendor_check as vendor_check  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
 
 TARGET_SUBSET = ROOT / "artifacts" / "m054-pdf-acquisition" / "target-subset.json"
 ACQUISITION_LOG = ROOT / "artifacts" / "m054-pdf-acquisition" / "acquisition-log.json"
@@ -56,8 +57,10 @@ def _without_generated_at(payload: dict[str, object]) -> dict[str, object]:
 
 def _assert_safety_defaults(payload: dict[str, object]) -> None:
     safety = payload["safety"]
-    assert set(safety) == SAFETY_KEYS
-    assert all(value is False for value in safety.values())
+    # pyrefly: ignore [bad-argument-type]
+    assert set(safety) == SAFETY_KEYS  # ty:ignore[invalid-argument-type]
+    # pyrefly: ignore [missing-attribute]
+    assert all(value is False for value in safety.values())  # ty:ignore[unresolved-attribute]
 
 
 def test_vendor_check_grobid_present() -> None:

@@ -119,8 +119,9 @@ def validate_selection(selection: dict[str, Any]) -> list[dict[str, Any]]:
             raise AdapterInputError(f"selection_ref_required_fields:{index}")
         if ref_id in seen_ref_ids:
             raise AdapterInputError(f"selection_ref_duplicate:{ref_id}")
-        seen_ref_ids.add(ref_id)
-        validated.append(ref)
+        # pyrefly: ignore [bad-argument-type]
+        seen_ref_ids.add(ref_id)  # ty:ignore[invalid-argument-type]
+        validated.append(ref)  # ty:ignore[invalid-argument-type]
     return validated
 
 

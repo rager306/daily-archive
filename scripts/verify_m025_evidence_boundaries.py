@@ -617,8 +617,8 @@ def validate_evidence(args: argparse.Namespace) -> dict[str, Any]:
                     }
                 )
             summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
-            item_count = int(summary.get("item_count") or 0)
-            diagnostic_count = int(summary.get("diagnostic_count") or 0)
+            item_count = int(summary.get("item_count") or 0)  # ty:ignore[unresolved-attribute]
+            diagnostic_count = int(summary.get("diagnostic_count") or 0)  # ty:ignore[unresolved-attribute]
             per_article["evidence_counts"][evidence_type] = item_count
             per_article["diagnostic_counts"][evidence_type] = diagnostic_count
             per_article["artifact_paths"][evidence_type] = str(path)
@@ -628,10 +628,10 @@ def validate_evidence(args: argparse.Namespace) -> dict[str, Any]:
                     code = str(diagnostic.get("code") or "UNKNOWN_DIAGNOSTIC")
                     aggregate_diagnostics[code] = aggregate_diagnostics.get(code, 0) + 1
             items = payload.get("items") if isinstance(payload.get("items"), list) else []
-            provenance_item_count += len(items)
+            provenance_item_count += len(items)  # ty:ignore[invalid-argument-type]
             before = len(findings)
             findings.extend(_validate_provenance(payload, path=path))
-            provenance_checked_count += len(items) if len(findings) == before else 0
+            provenance_checked_count += len(items) if len(findings) == before else 0  # ty:ignore[invalid-argument-type]
             if getattr(args, "require_no_import_flags", False):
                 findings.extend(_validate_safety_flags(payload, path=path))
             if getattr(args, "require_redaction", False):

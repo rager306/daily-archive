@@ -139,11 +139,11 @@ def selection_articles(selection: Mapping[str, Any]) -> list[dict[str, Any]]:
     for index, article in enumerate(articles):
         if not isinstance(article, dict):
             raise ValueError(f"selection article at index {index} is not an object")
-        article_ref = article_key_for(article)
+        article_ref = article_key_for(article)  # ty:ignore[invalid-argument-type]
         if article_ref in seen:
             raise ValueError(f"duplicate selection article identity: {article_ref}")
         seen.add(article_ref)
-        normalized.append(dict(article))
+        normalized.append(dict(article))  # ty:ignore[no-matching-overload]
     return normalized
 
 
@@ -157,8 +157,8 @@ def conversion_rows_by_article(
     for index, row in enumerate(rows):
         if not isinstance(row, dict):
             raise ValueError(f"conversion result at index {index} is not an object")
-        article_ref = article_key_for(row)
-        grouped[article_ref].append(dict(row))
+        article_ref = article_key_for(row)  # ty:ignore[invalid-argument-type]
+        grouped[article_ref].append(dict(row))  # ty:ignore[no-matching-overload]
     return dict(grouped)
 
 
@@ -172,7 +172,7 @@ def source_rows_by_variant(source_summary: Mapping[str, Any]) -> dict[str, dict[
             raise ValueError(f"source result at index {index} is not an object")
         variant_id = row.get("variant_id")
         if isinstance(variant_id, str) and variant_id:
-            by_variant[variant_id] = dict(row)
+            by_variant[variant_id] = dict(row)  # ty:ignore[no-matching-overload]
     return by_variant
 
 

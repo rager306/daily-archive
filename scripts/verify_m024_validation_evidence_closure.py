@@ -97,7 +97,7 @@ def _rows_by_id(rows: Any, id_key: str, label: str, errors: list[str]) -> dict[s
             errors.append(f"{label}[{index}] missing string {id_key}")
             continue
         seen[row_id] = seen.get(row_id, 0) + 1
-        by_id[row_id] = row
+        by_id[row_id] = row  # ty:ignore[invalid-assignment]
     for row_id, count in sorted(seen.items()):
         if count > 1:
             errors.append(f"duplicate {label} row for {row_id}")

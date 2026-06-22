@@ -156,8 +156,8 @@ def selection_by_article(selection: Mapping[str, Any]) -> dict[str, dict[str, An
     for index, article in enumerate(articles):
         if not isinstance(article, dict):
             raise ValueError(f"selection article at index {index} is not an object")
-        article_ref = article_key_for(article)
-        by_article[article_ref] = dict(article)
+        article_ref = article_key_for(article)  # ty:ignore[invalid-argument-type]
+        by_article[article_ref] = dict(article)  # ty:ignore[no-matching-overload]
     return by_article
 
 
@@ -169,8 +169,8 @@ def conversion_by_article(conversion_summary: Mapping[str, Any]) -> dict[str, li
     for index, row in enumerate(rows):
         if not isinstance(row, dict):
             raise ValueError(f"conversion row at index {index} is not an object")
-        article_ref = article_key_for(row)
-        grouped[article_ref].append(dict(row))
+        article_ref = article_key_for(row)  # ty:ignore[invalid-argument-type]
+        grouped[article_ref].append(dict(row))  # ty:ignore[no-matching-overload]
     return dict(grouped)
 
 
@@ -642,7 +642,8 @@ def check_evidence_bundle(
         runtime_summary.get("results") if isinstance(runtime_summary.get("results"), list) else []
     )
     if check_evidence_counts:
-        if len(records) != len(runtime_rows):
+        # pyrefly: ignore [bad-argument-type]
+        if len(records) != len(runtime_rows):  # ty:ignore[invalid-argument-type]
             problems.append(
                 diagnostic(
                     "evidence_record_count_mismatch",
@@ -652,7 +653,8 @@ def check_evidence_bundle(
             )
         runtime_evidence_count = sum(
             int(row.get("runtime_evidence_count", 0))
-            for row in runtime_rows
+            # pyrefly: ignore [not-iterable]
+            for row in runtime_rows  # ty:ignore[not-iterable]
             if isinstance(row, Mapping)
         )
         if evidence_summary.get("runtime_evidence_count") != runtime_evidence_count:
@@ -752,7 +754,7 @@ def verify(args: argparse.Namespace) -> list[dict[str, Any]]:
     summary = load_json(summary_path)
     diagnostics_rows = load_jsonl(diagnostics_path)
     rows = summary.get("results") if isinstance(summary.get("results"), list) else []
-    row_mappings = [row for row in rows if isinstance(row, Mapping)]
+    row_mappings = [row for row in rows if isinstance(row, Mapping)]  # ty:ignore[not-iterable]
     problems: list[dict[str, Any]] = []
     problems.extend(check_summary_shape(summary, diagnostics_rows, summary_path))
     problems.extend(check_fail_closed(summary, row_mappings, summary_path))

@@ -41,7 +41,7 @@ def test_safety_flags_default_to_no_write_and_are_frozen() -> None:
     flags.assert_no_write()
 
     with pytest.raises(FrozenInstanceError):
-        flags.import_eligible = True  # type: ignore[misc]
+        flags.import_eligible = True  # type: ignore[misc]  # ty:ignore[invalid-assignment]
 
 
 @pytest.mark.parametrize(
@@ -159,7 +159,7 @@ def test_evidence_artifact_record_is_metadata_only() -> None:
     ],
 )
 def test_operational_records_serialize_to_json_safe_dicts(record: object) -> None:
-    dumped = record.to_dict()  # type: ignore[attr-defined]
+    dumped = record.to_dict()  # type: ignore[attr-defined]  # ty:ignore[unresolved-attribute]
     assert isinstance(dumped, dict)
     assert dumped
 

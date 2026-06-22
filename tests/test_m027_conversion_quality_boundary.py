@@ -5,18 +5,24 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import fitz
+# pyrefly: ignore [missing-import]
+import fitz  # ty:ignore[unresolved-import]
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from convert_m027_source_quality_boundary import (  # noqa: E402
+# pyrefly: ignore [missing-import]
+from convert_m027_source_quality_boundary import (  # noqa: E402  # ty:ignore[unresolved-import]
     CONVERTED_TEXT_DIR,
     FAIL_CLOSED_SAFETY_FLAGS,
     main,
     sha256_file,
 )
-from verify_m027_conversion_quality_boundary import main as verify_main  # noqa: E402
+
+# pyrefly: ignore [missing-import]
+from verify_m027_conversion_quality_boundary import (
+    main as verify_main,  # noqa: E402  # ty:ignore[unresolved-import]
+)
 
 FORBIDDEN_KEYS = {
     "text",

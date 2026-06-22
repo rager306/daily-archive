@@ -23,7 +23,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 try:  # Imported lazily by tests/command; dependency is available in project env.
-    import fitz  # type: ignore[import-untyped]
+    import fitz  # type: ignore[import-untyped]  # ty:ignore[unresolved-import]
 except Exception:  # pragma: no cover - exercised only when environment lacks PyMuPDF.
     fitz = None  # type: ignore[assignment]
 
@@ -338,7 +338,7 @@ def extract_nature_html(source_path: Path) -> tuple[str, dict[str, Any], dict[st
         tag.decompose()
     article = (
         soup.find("article")
-        or soup.find(attrs={"role": "main"})  # pyrefly: ignore[bad-assignment]
+        or soup.find(attrs={"role": "main"})  # pyrefly: ignore [bad-assignment, no-matching-overload]  # ty:ignore[invalid-argument-type]
         or soup.find("main")
         or soup.body
         or soup

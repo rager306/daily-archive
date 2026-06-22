@@ -87,9 +87,12 @@ def build_document() -> PageIndexDocument:
 
 def build_fixture_patch(evidence: EvidencePath) -> ExtractionPatch:
     """Build a minimal validated scientific KG patch for the ephemeral fixture."""
+    # pyrefly: ignore [missing-argument]
     claim = Claim(
-        id="claim:2605.12345:method:chunk-0001:local-markdown-pageindex",
-        paper_id="2605.12345",
+        # pyrefly: ignore [unexpected-keyword]
+        id="claim:2605.12345:method:chunk-0001:local-markdown-pageindex",  # ty:ignore[unknown-argument]
+        # pyrefly: ignore [unexpected-keyword]
+        paper_id="2605.12345",  # ty:ignore[unknown-argument]
         text="Local markdown is enough to build a deterministic PageIndex.",
         claim_type="method",
         confidence=0.91,
@@ -98,11 +101,15 @@ def build_fixture_patch(evidence: EvidencePath) -> ExtractionPatch:
         extractor_version=EXTRACTOR_VERSION,
         validation_warnings=[],
         provenance={"source": "m052_s02_e2e_fixture"},
-    )
+    )  # ty:ignore[missing-argument]
+    # pyrefly: ignore [missing-argument]
     entity = ScientificEntity(
-        id="entity:2605.12345:pageindex",
-        paper_id="2605.12345",
-        label="PageIndex",
+        # pyrefly: ignore [unexpected-keyword]
+        id="entity:2605.12345:pageindex",  # ty:ignore[unknown-argument]
+        # pyrefly: ignore [unexpected-keyword]
+        paper_id="2605.12345",  # ty:ignore[unknown-argument]
+        # pyrefly: ignore [unexpected-keyword]
+        label="PageIndex",  # ty:ignore[unknown-argument]
         entity_type="method",
         confidence=0.88,
         evidence_path=evidence,
@@ -110,22 +117,29 @@ def build_fixture_patch(evidence: EvidencePath) -> ExtractionPatch:
         extractor_version=EXTRACTOR_VERSION,
         validation_warnings=[],
         provenance={"source": "m052_s02_e2e_fixture"},
-    )
+    )  # ty:ignore[missing-argument]
+    # pyrefly: ignore [missing-argument]
     relation = ScientificRelation(
-        id="relation:2605.12345:claim-local-markdown-pageindex:entity-pageindex:supports",
-        paper_id="2605.12345",
+        # pyrefly: ignore [unexpected-keyword]
+        id="relation:2605.12345:claim-local-markdown-pageindex:entity-pageindex:supports",  # ty:ignore[unknown-argument]
+        # pyrefly: ignore [unexpected-keyword]
+        paper_id="2605.12345",  # ty:ignore[unknown-argument]
         relation_type="supports",
-        source_id=claim.id,
-        target_id=entity.id,
+        # pyrefly: ignore [missing-attribute]
+        source_id=claim.id,  # ty:ignore[unresolved-attribute]
+        # pyrefly: ignore [missing-attribute, unexpected-keyword]
+        target_id=entity.id,  # ty:ignore[unknown-argument, unresolved-attribute]
         confidence=0.84,
         evidence_path=evidence,
         schema_version=SCHEMA_VERSION,
         extractor_version=EXTRACTOR_VERSION,
         validation_warnings=[],
         provenance={"source": "m052_s02_e2e_fixture"},
-    )
+    )  # ty:ignore[missing-argument]
+    # pyrefly: ignore [missing-argument]
     return ExtractionPatch(
-        paper_id="2605.12345",
+        # pyrefly: ignore [unexpected-keyword]
+        paper_id="2605.12345",  # ty:ignore[unknown-argument]
         claims=[claim],
         entities=[entity],
         relations=[relation],
@@ -133,7 +147,7 @@ def build_fixture_patch(evidence: EvidencePath) -> ExtractionPatch:
         extractor_version=EXTRACTOR_VERSION,
         validation_warnings=[],
         provenance={"source": "m052_s02_e2e_fixture"},
-    )
+    )  # ty:ignore[missing-argument]
 
 
 def _evidence_for_chunk(evidence_paths: list[EvidencePath], semantic_chunk_id: str) -> EvidencePath:
@@ -194,9 +208,9 @@ def extract_helper_candidate_set(trajectory_steps: list[dict[str, Any]]) -> list
         candidates.append(
             {
                 "work_id": step.get("work_id"),
-                "binding_id": diagnostics.get("binding_id"),
-                "model_id": diagnostics.get("model_id"),
-                "section_id": diagnostics.get("section_id"),
+                "binding_id": diagnostics.get("binding_id"),  # ty:ignore[unresolved-attribute]
+                "model_id": diagnostics.get("model_id"),  # ty:ignore[unresolved-attribute]
+                "section_id": diagnostics.get("section_id"),  # ty:ignore[unresolved-attribute]
             }
         )
     return candidates

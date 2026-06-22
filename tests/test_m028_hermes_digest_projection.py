@@ -95,7 +95,8 @@ def _build_real_projection(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
 
 
 def _diagnostic_codes(diagnostics: list[object]) -> set[str]:
-    return {str(diagnostic.code) for diagnostic in diagnostics}
+    # pyrefly: ignore [missing-attribute]
+    return {str(diagnostic.code) for diagnostic in diagnostics}  # ty:ignore[unresolved-attribute]
 
 
 def _zero_unsafe_counts(module: ModuleType) -> dict[str, int]:
@@ -278,6 +279,7 @@ def _minimal_inputs(module: ModuleType) -> tuple[list[dict[str, object]], dict[s
             "selection": {"path": "fixtures/selection.json", "sha256": "2" * 64}
         },
     }
+    # pyrefly: ignore [bad-return]
     return bundles, summary
 
 
@@ -428,7 +430,7 @@ def test_rejects_payload_markers_and_absolute_paths(tmp_path: Path) -> None:
     module = _load_script()
     bundles, summary = _real_inputs()
     bundles = deepcopy(bundles)
-    bundles[0]["artifact_refs"]["source_artifact"]["path"] = "/tmp/leak.pdf"  # pyrefly: ignore[bad-assignment]
+    bundles[0]["artifact_refs"]["source_artifact"]["path"] = "/tmp/leak.pdf"  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     bundles[1]["raw_text"] = "forbidden source body"
     bundles_path = tmp_path / "universal-loader-evidence-bundles.jsonl"
     summary_path = tmp_path / "universal-loader-evidence-summary.json"
@@ -447,7 +449,8 @@ def test_rejects_nonzero_unsafe_counter(tmp_path: Path) -> None:
     module = _load_script()
     bundles, summary = _real_inputs()
     bundles = deepcopy(bundles)
-    bundles[0]["safety_flags"]["parser_attempted"] = True
+    # pyrefly: ignore [unsupported-operation]
+    bundles[0]["safety_flags"]["parser_attempted"] = True  # ty:ignore[invalid-assignment]
     bundles_path = tmp_path / "universal-loader-evidence-bundles.jsonl"
     summary_path = tmp_path / "universal-loader-evidence-summary.json"
     _write_jsonl(bundles_path, bundles)
@@ -473,9 +476,9 @@ def test_verifier_accepts_regenerated_real_projection_contract(tmp_path: Path) -
     digest = _read_json(digest_path)
 
     assert diagnostics == []
-    assert digest["summary"]["url_ref_count"] == 21  # pyrefly: ignore[bad-assignment]
-    assert digest["summary"]["normalized_identity_count"] == 20  # pyrefly: ignore[bad-assignment]
-    assert set(digest["summary"]["expanded_scope_ref_ids"]) == {  # pyrefly: ignore[bad-assignment]
+    assert digest["summary"]["url_ref_count"] == 21  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+    assert digest["summary"]["normalized_identity_count"] == 20  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+    assert set(digest["summary"]["expanded_scope_ref_ids"]) == {  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
         "R15",
         "R16",
         "R17",
@@ -484,8 +487,9 @@ def test_verifier_accepts_regenerated_real_projection_contract(tmp_path: Path) -
         "R20",
         "R21",
     }
-    assert digest["summary"]["duplicate_identity_groups"][0]["ref_ids"] == ["R01", "R10"]  # pyrefly: ignore[bad-assignment]
-    assert all(value == 0 for value in digest["unsafe_counters"].values())
+    assert digest["summary"]["duplicate_identity_groups"][0]["ref_ids"] == ["R01", "R10"]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+    # pyrefly: ignore [missing-attribute]
+    assert all(value == 0 for value in digest["unsafe_counters"].values())  # ty:ignore[unresolved-attribute]
 
 
 def test_verifier_reports_malformed_jsonl_row(tmp_path: Path) -> None:
@@ -528,8 +532,9 @@ def test_verifier_reports_digest_missing_expanded_ref(tmp_path: Path) -> None:
     verifier = _load_verifier()
     bundles_path, summary_path, digest_path, report_path = _build_real_projection(tmp_path)
     digest = _read_json(digest_path)
-    digest["items"] = [item for item in digest["items"] if item["ref_id"] != "R21"]
-    digest["summary"]["ref_ids"] = [ref for ref in digest["summary"]["ref_ids"] if ref != "R21"]  # pyrefly: ignore[bad-assignment]
+    # pyrefly: ignore [not-iterable]
+    digest["items"] = [item for item in digest["items"] if item["ref_id"] != "R21"]  # ty:ignore[not-iterable]
+    digest["summary"]["ref_ids"] = [ref for ref in digest["summary"]["ref_ids"] if ref != "R21"]  # pyrefly: ignore [bad-assignment, bad-index, unsupported-operation]  # ty:ignore[invalid-assignment]
     _write_json(digest_path, digest)
 
     diagnostics = verifier.validate_contract(
@@ -549,7 +554,8 @@ def test_verifier_rejects_summary_count_drift(tmp_path: Path) -> None:
     verifier = _load_verifier()
     bundles_path, summary_path, digest_path, report_path = _build_real_projection(tmp_path)
     digest = _read_json(digest_path)
-    digest["summary"]["url_ref_count"] = 20
+    # pyrefly: ignore [unsupported-operation]
+    digest["summary"]["url_ref_count"] = 20  # ty:ignore[invalid-assignment]
     _write_json(digest_path, digest)
 
     diagnostics = verifier.validate_contract(
@@ -569,7 +575,8 @@ def test_verifier_rejects_s04_unsafe_summary_counter(tmp_path: Path) -> None:
     verifier = _load_verifier()
     bundles_path, summary_path, digest_path, report_path = _build_real_projection(tmp_path)
     summary = _read_json(summary_path)
-    summary["unsafe_claim_counts"]["parser_attempted"] = 1
+    # pyrefly: ignore [unsupported-operation]
+    summary["unsafe_claim_counts"]["parser_attempted"] = 1  # ty:ignore[invalid-assignment]
     _write_json(summary_path, summary)
 
     diagnostics = verifier.validate_contract(
@@ -589,7 +596,8 @@ def test_verifier_rejects_nonzero_digest_unsafe_counter(tmp_path: Path) -> None:
     verifier = _load_verifier()
     bundles_path, summary_path, digest_path, report_path = _build_real_projection(tmp_path)
     digest = _read_json(digest_path)
-    digest["unsafe_counters"]["parser_attempted"] = 1
+    # pyrefly: ignore [unsupported-operation]
+    digest["unsafe_counters"]["parser_attempted"] = 1  # ty:ignore[invalid-assignment]
     _write_json(digest_path, digest)
 
     diagnostics = verifier.validate_contract(
@@ -609,7 +617,8 @@ def test_verifier_rejects_parser_readiness_claim(tmp_path: Path) -> None:
     verifier = _load_verifier()
     bundles_path, summary_path, digest_path, report_path = _build_real_projection(tmp_path)
     digest = _read_json(digest_path)
-    digest["generator"]["parser_attempted"] = True
+    # pyrefly: ignore [unsupported-operation]
+    digest["generator"]["parser_attempted"] = True  # ty:ignore[invalid-assignment]
     _write_json(digest_path, digest)
 
     diagnostics = verifier.validate_contract(
@@ -629,7 +638,7 @@ def test_verifier_rejects_kg_readiness_claim(tmp_path: Path) -> None:
     verifier = _load_verifier()
     bundles_path, summary_path, digest_path, report_path = _build_real_projection(tmp_path)
     digest = _read_json(digest_path)
-    digest["items"][0]["loader_evidence"]["kg_import_eligible"] = True  # pyrefly: ignore[bad-assignment]
+    digest["items"][0]["loader_evidence"]["kg_import_eligible"] = True  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     _write_json(digest_path, digest)
 
     diagnostics = verifier.validate_contract(
@@ -648,7 +657,7 @@ def test_verifier_rejects_payload_marker_and_forbidden_key(tmp_path: Path) -> No
     verifier = _load_verifier()
     bundles_path, summary_path, digest_path, report_path = _build_real_projection(tmp_path)
     digest = _read_json(digest_path)
-    digest["items"][0]["raw_text"] = "<html>payload leak</html>"  # pyrefly: ignore[bad-assignment]
+    digest["items"][0]["raw_text"] = "<html>payload leak</html>"  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     _write_json(digest_path, digest)
 
     diagnostics = verifier.validate_contract(
@@ -668,7 +677,7 @@ def test_verifier_rejects_unsafe_artifact_path(tmp_path: Path) -> None:
     verifier = _load_verifier()
     bundles_path, summary_path, digest_path, report_path = _build_real_projection(tmp_path)
     digest = _read_json(digest_path)
-    digest["items"][1]["artifact_refs"]["source_artifact"]["path"] = "../escape.pdf"  # pyrefly: ignore[bad-assignment]
+    digest["items"][1]["artifact_refs"]["source_artifact"]["path"] = "../escape.pdf"  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     _write_json(digest_path, digest)
 
     diagnostics = verifier.validate_contract(

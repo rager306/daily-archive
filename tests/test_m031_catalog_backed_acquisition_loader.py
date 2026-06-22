@@ -10,24 +10,44 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from build_m031_catalog_backed_replay_selection import build_selection, main  # noqa: E402
-from replay_m031_catalog_backed_acquisition import (
+# pyrefly: ignore [missing-import]
+from build_m031_catalog_backed_replay_selection import (  # noqa: E402  # ty:ignore[unresolved-import]
+    build_selection,
+    main,
+)
+from replay_m031_catalog_backed_acquisition import (  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
     build_summary as build_acquisition_summary,  # noqa: E402
 )
-from replay_m031_catalog_backed_acquisition import main as replay_main  # noqa: E402
-from replay_m031_catalog_backed_acquisition import replay_selection, sha256_file  # noqa: E402
-from replay_m031_catalog_backed_loader_evidence import (  # noqa: E402
+
+# pyrefly: ignore [missing-import]
+from replay_m031_catalog_backed_acquisition import (
+    main as replay_main,  # noqa: E402  # ty:ignore[unresolved-import]
+)
+from replay_m031_catalog_backed_acquisition import (  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
+    replay_selection,
+    sha256_file,
+)
+from replay_m031_catalog_backed_loader_evidence import (  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
     LoaderEvidenceError,
     assert_fail_closed_flags,
     replay_loader_evidence,
 )
-from replay_m031_catalog_backed_loader_evidence import (
+
+# pyrefly: ignore [missing-import]
+from replay_m031_catalog_backed_loader_evidence import (  # ty:ignore[unresolved-import]
     build_summary as build_loader_summary,
 )
-from replay_m031_catalog_backed_loader_evidence import (
+
+# pyrefly: ignore [missing-import]
+from replay_m031_catalog_backed_loader_evidence import (  # ty:ignore[unresolved-import]
     main as loader_main,
 )
-from verify_m031_catalog_backed_replay import CloseoutError, verify_contract  # noqa: E402
+
+# pyrefly: ignore [missing-import]
+from verify_m031_catalog_backed_replay import (  # noqa: E402  # ty:ignore[unresolved-import]
+    CloseoutError,
+    verify_contract,
+)
 
 SCRIPT = (
     Path(__file__).resolve().parents[1]

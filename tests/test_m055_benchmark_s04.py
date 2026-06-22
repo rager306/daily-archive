@@ -11,7 +11,8 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-import benchmark_m055_hybrid_routing as hybrid  # noqa: E402
+# pyrefly: ignore [missing-import]
+import benchmark_m055_hybrid_routing as hybrid  # noqa: E402  # ty:ignore[unresolved-import]
 
 SAFETY_KEYS = {
     "graph_import_allowed",

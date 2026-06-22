@@ -62,8 +62,10 @@ def _contract() -> dict[str, object]:
     }
     contract["stable_ids"] = {
         "source_ids": ["source-synthetic-paper-1-full-text"],
-        "locator_ids": [locator["locator_id"] for locator in locators],
-        "span_ids": [locator["source_spans"][0]["span_id"] for locator in locators],
+        # pyrefly: ignore [not-iterable]
+        "locator_ids": [locator["locator_id"] for locator in locators],  # ty:ignore[not-iterable]
+        # pyrefly: ignore [not-iterable]
+        "span_ids": [locator["source_spans"][0]["span_id"] for locator in locators],  # ty:ignore[not-iterable]
     }
     return contract
 
@@ -83,12 +85,13 @@ def test_builds_deterministic_non_empty_targets_that_validate_against_contract()
 
     assert validation.passed is True
     assert first == second
-    assert [target["locator_id"] for target in first["repair_targets"]] == [
+    # pyrefly: ignore [not-iterable]
+    assert [target["locator_id"] for target in first["repair_targets"]] == [  # ty:ignore[not-iterable]
         "m021-synthetic-paper-1-claim-001",
         "m021-synthetic-paper-1-retrieval-001",
         "m021-synthetic-paper-1-method-001",
     ]
-    assert first["diagnostics"]["target_count"] == 3  # pyrefly: ignore[bad-assignment]
+    assert first["diagnostics"]["target_count"] == 3  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     assert validation.import_eligible_count == 0
     assert validation.production_write_count == 0
     assert validation.semantic_ready_count == 0
@@ -96,9 +99,12 @@ def test_builds_deterministic_non_empty_targets_that_validate_against_contract()
 
 def test_selected_targets_cover_required_route_quality_and_repair_states() -> None:
     payload = _build()
-    states = {target["repair_state"] for target in payload["repair_targets"]}
-    route_quality = {target["route_quality_state"] for target in payload["repair_targets"]}
-    routes = {target["route"] for target in payload["repair_targets"]}
+    # pyrefly: ignore [not-iterable]
+    states = {target["repair_state"] for target in payload["repair_targets"]}  # ty:ignore[not-iterable]
+    # pyrefly: ignore [not-iterable]
+    route_quality = {target["route_quality_state"] for target in payload["repair_targets"]}  # ty:ignore[not-iterable]
+    # pyrefly: ignore [not-iterable]
+    routes = {target["route"] for target in payload["repair_targets"]}  # ty:ignore[not-iterable]
 
     assert "ambiguous_span" in states
     assert "retrieval_only" in states
@@ -106,7 +112,8 @@ def test_selected_targets_cover_required_route_quality_and_repair_states() -> No
     assert "broad_signal_many_matches" in route_quality
     assert any(
         "overlapping_signal_window" in target["before_diagnostics"]["codes"]
-        for target in payload["repair_targets"]
+        # pyrefly: ignore [not-iterable]
+        for target in payload["repair_targets"]  # ty:ignore[not-iterable]
     )
     assert "method_location" in routes
 
@@ -117,7 +124,8 @@ def test_output_metadata_is_redacted_pending_review_and_section_lineage_unresolv
 
     assert scan_forbidden_payload_keys(payload) == []
     assert not any(f'"{key}"' in rendered for key in FORBIDDEN_KEYS)
-    for target in payload["repair_targets"]:
+    # pyrefly: ignore [not-iterable]
+    for target in payload["repair_targets"]:  # ty:ignore[not-iterable]
         assert target["review_status"] == "pending_review"
         assert target["reviewer"] is None
         assert target["section_path"] == ["unresolved_section_lineage"]
@@ -174,11 +182,12 @@ def test_summary_reports_counts_and_zero_unsafe_safety_counters() -> None:
 def test_max_target_count_bounds_selection_but_keeps_stable_priority() -> None:
     payload = _build(max_target_count=2)
 
-    assert [target["locator_id"] for target in payload["repair_targets"]] == [
+    # pyrefly: ignore [not-iterable]
+    assert [target["locator_id"] for target in payload["repair_targets"]] == [  # ty:ignore[not-iterable]
         "m021-synthetic-paper-1-claim-001",
         "m021-synthetic-paper-1-retrieval-001",
     ]
-    assert payload["diagnostics"]["target_count"] == 2  # pyrefly: ignore[bad-assignment]
+    assert payload["diagnostics"]["target_count"] == 2  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
 
 
 @pytest.mark.parametrize(
@@ -231,7 +240,7 @@ def test_fail_closed_for_malformed_or_unresolved_locator_inputs(
 
 def test_forbidden_nested_metadata_key_is_rejected_without_leaking_value() -> None:
     batch = _locator_batch()
-    batch["locators"][0]["metadata"] = {"api_key": "DO_NOT_LEAK"}  # pyrefly: ignore[bad-assignment]
+    batch["locators"][0]["metadata"] = {"api_key": "DO_NOT_LEAK"}  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
 
     with pytest.raises(BoundedChunkRepairError) as exc_info:
         build_bounded_chunk_repair_contract(_contract(), batch)
@@ -243,7 +252,8 @@ def test_forbidden_nested_metadata_key_is_rejected_without_leaking_value() -> No
 
 def test_no_eligible_locators_fails_closed() -> None:
     batch = _locator_batch()
-    for locator in batch["locators"]:
+    # pyrefly: ignore [not-iterable]
+    for locator in batch["locators"]:  # ty:ignore[not-iterable]
         locator["state"] = "unsupported"
 
     with pytest.raises(BoundedChunkRepairError) as exc_info:

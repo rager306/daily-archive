@@ -10,8 +10,14 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from capture_m029_unified_sources import capture_selection, sha256_file  # noqa: E402
-from verify_m029_unified_source_acquisition import main as verify_main  # noqa: E402
+# pyrefly: ignore [missing-import]
+from capture_m029_unified_sources import (  # noqa: E402  # ty:ignore[unresolved-import]
+    capture_selection,
+    sha256_file,
+)
+from verify_m029_unified_source_acquisition import (
+    main as verify_main,  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
+)
 
 CAPTURE_SCRIPT = Path(__file__).parents[1] / "scripts" / "capture_m029_unified_sources.py"
 

@@ -4,4 +4,5 @@
 # fd v2 env vars (TEI_URL, FD_API_KEY, MODEL_ID, REDIS_HOST, REDIS_PORT)
 # are resolved by scripts/legacy/m057_table_embed.py.
 
+# pyrefly: ignore [missing-import]
 from legacy.m057_table_embed import *  # noqa: F403

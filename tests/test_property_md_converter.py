@@ -9,6 +9,8 @@ from research_graph.infrastructure.corpus.sources.markdown_converter import (
     ConversionResult,
     MDConverter,
 )
+
+# pyrefly: ignore [missing-import]
 from tests.helpers.modular_fixtures import FIXTURE_MARKDOWN, MODULAR_RETORT, adaptix_dump
 
 

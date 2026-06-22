@@ -198,7 +198,7 @@ def _rows(payload: Mapping[str, Any], key: str, *, code: str) -> list[dict[str, 
             raise CloseoutError(
                 code, f"{key}[{index}] must be an object", json_path=f"$.{key}[{index}]"
             )
-        rows.append(row)
+        rows.append(row)  # ty:ignore[invalid-argument-type]
     return rows
 
 
@@ -332,7 +332,7 @@ def assert_selection_contract(
             "all requested identities are represented by catalog rows or typed blockers",
         )
     )
-    return identities, articles, blockers
+    return identities, articles, blockers  # ty:ignore[invalid-return-type]
 
 
 def assert_flag_value(name: str, value: Any, *, json_path: str) -> None:
@@ -625,7 +625,7 @@ def per_identity_counts(
             row.get("identity") if isinstance(row.get("identity"), str) else "<missing-identity>"
         )
         status = str(row.get(status_key))
-        counts[identity][status] = counts[identity].get(status, 0) + 1
+        counts[identity][status] = counts[identity].get(status, 0) + 1  # ty:ignore[invalid-argument-type]
     return {key: dict(value) for key, value in sorted(counts.items())}
 
 
@@ -736,10 +736,10 @@ def render_report(summary: Mapping[str, Any], diagnostics: list[dict[str, Any]])
         f"- Catalog-backed identities: {summary.get('catalog_backed_count')}",
         f"- Typed catalog blockers: {summary.get('typed_catalog_blocker_count')}",
         f"- Terminal acquisition/loader rows: {summary.get('terminal_row_count')}",
-        f"- Captured acquisition rows: {counts.get('captured_acquisition_rows', 0)}",  # pyrefly: ignore[bad-assignment]
-        f"- Blocked acquisition rows: {counts.get('typed_or_terminal_blocker_rows', 0)}",  # pyrefly: ignore[bad-assignment]
-        f"- Loader attempted rows: {counts.get('loader_attempted', 0)}",  # pyrefly: ignore[bad-assignment]
-        f"- Loader blockers: {counts.get('loader_blocked', 0)}",  # pyrefly: ignore[bad-assignment]
+        f"- Captured acquisition rows: {counts.get('captured_acquisition_rows', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        f"- Blocked acquisition rows: {counts.get('typed_or_terminal_blocker_rows', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        f"- Loader attempted rows: {counts.get('loader_attempted', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        f"- Loader blockers: {counts.get('loader_blocked', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
         "- Graph/import/LadybugDB flags: false",
         "",
         "## Scope Boundary",

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+# pyrefly: ignore [missing-import]
 from scripts import m061_ingest_to_canonical_catalog as ingest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -66,7 +67,7 @@ def test_5_safety_defaults() -> None:
         "llm_calls_authorized": False,
     }
     assert ingest.SAFETY_OVERRIDE["external_network_authorized"] is True
-    assert "Retry-After" in ingest.SAFETY_OVERRIDE["reason"]
+    assert "Retry-After" in ingest.SAFETY_OVERRIDE["reason"]  # ty:ignore[unsupported-operator]
 
 
 def test_idempotent_ingestion(tmp_path: Path) -> None:

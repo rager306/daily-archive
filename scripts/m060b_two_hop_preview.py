@@ -14,6 +14,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+# pyrefly: ignore [missing-import]
 from m060b_graph_stats import (
     DEFAULT_MANIFEST,
     DEFAULT_OUTPUT_DIR,

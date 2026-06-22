@@ -543,9 +543,9 @@ def validate_candidate_classification(
                 else "arxiv_abs_pdf_candidate"
             )
             if (
-                candidate.get("is_candidate") is not True
-                or candidate.get("candidate_kind") != expected_kind
-                or not isinstance(candidate.get("url"), str)
+                candidate.get("is_candidate") is not True  # ty:ignore[unresolved-attribute]
+                or candidate.get("candidate_kind") != expected_kind  # ty:ignore[unresolved-attribute]
+                or not isinstance(candidate.get("url"), str)  # ty:ignore[unresolved-attribute]
             ):
                 diagnostics.append(
                     diagnostic(
@@ -557,10 +557,10 @@ def validate_candidate_classification(
                 )
         else:
             if (
-                candidate.get("is_candidate") is not False
-                or candidate.get("candidate_kind") != "not_applicable_non_arxiv"
-                or candidate.get("not_candidate_reason") != "not_applicable_non_arxiv_pdf_source"
-                or candidate.get("url") is not None
+                candidate.get("is_candidate") is not False  # ty:ignore[unresolved-attribute]
+                or candidate.get("candidate_kind") != "not_applicable_non_arxiv"  # ty:ignore[unresolved-attribute]
+                or candidate.get("not_candidate_reason") != "not_applicable_non_arxiv_pdf_source"  # ty:ignore[unresolved-attribute]
+                or candidate.get("url") is not None  # ty:ignore[unresolved-attribute]
             ):
                 diagnostics.append(
                     diagnostic(
@@ -638,7 +638,7 @@ def validate_pdf_statuses(
         acquisition = (
             event.get("pdf_acquisition") if isinstance(event.get("pdf_acquisition"), dict) else {}
         )
-        if acquisition.get("terminal") is not True:
+        if acquisition.get("terminal") is not True:  # ty:ignore[unresolved-attribute]
             diagnostics.append(
                 diagnostic(
                     "pdf_status_mismatch",
@@ -657,8 +657,8 @@ def validate_pdf_statuses(
             expected_status = "not_applicable"
             expected_reason = "not_applicable_non_arxiv_pdf_source"
         if (
-            acquisition.get("status") != expected_status
-            or acquisition.get("reason") != expected_reason
+            acquisition.get("status") != expected_status  # ty:ignore[unresolved-attribute]
+            or acquisition.get("reason") != expected_reason  # ty:ignore[unresolved-attribute]
         ):
             diagnostics.append(
                 diagnostic(
@@ -748,9 +748,9 @@ def validate_artifacts(
         artifact = event.get("pdf_artifact") if isinstance(event.get("pdf_artifact"), dict) else {}
         if ref_id not in EXPECTED_EXISTING_PDF_REFS:
             if (
-                artifact.get("exists") is not False
-                or artifact.get("checksum_verified") is not False
-                or artifact.get("signature_verified") is not False
+                artifact.get("exists") is not False  # ty:ignore[unresolved-attribute]
+                or artifact.get("checksum_verified") is not False  # ty:ignore[unresolved-attribute]
+                or artifact.get("signature_verified") is not False  # ty:ignore[unresolved-attribute]
             ):
                 diagnostics.append(
                     diagnostic(
@@ -762,19 +762,19 @@ def validate_artifacts(
                 )
             continue
 
-        resolved, path_error = safe_repo_path(repo_root, artifact.get("path"))
+        resolved, path_error = safe_repo_path(repo_root, artifact.get("path"))  # ty:ignore[unresolved-attribute]
         if path_error is not None or resolved is None or not resolved.exists():
             diagnostics.append(
                 diagnostic(
                     "artifact_reference_broken",
                     f"$.events[ref_id={ref_id}].pdf_artifact.path",
                     "Existing PDF artifact path must resolve to a file under the repository root.",
-                    details={"ref_id": ref_id, "path": artifact.get("path")},
+                    details={"ref_id": ref_id, "path": artifact.get("path")},  # ty:ignore[unresolved-attribute]
                 )
             )
             continue
         actual_sha256 = sha256_file(resolved)
-        if artifact.get("sha256") != actual_sha256 or artifact.get("checksum_verified") is not True:
+        if artifact.get("sha256") != actual_sha256 or artifact.get("checksum_verified") is not True:  # ty:ignore[unresolved-attribute]
             diagnostics.append(
                 diagnostic(
                     "artifact_checksum_mismatch",
@@ -782,12 +782,12 @@ def validate_artifacts(
                     "Existing PDF artifact checksum claim drifted from the referenced file.",
                     details={
                         "ref_id": ref_id,
-                        "expected": artifact.get("sha256"),
+                        "expected": artifact.get("sha256"),  # ty:ignore[unresolved-attribute]
                         "actual": actual_sha256,
                     },
                 )
             )
-        if artifact.get("byte_count") != resolved.stat().st_size:
+        if artifact.get("byte_count") != resolved.stat().st_size:  # ty:ignore[unresolved-attribute]
             diagnostics.append(
                 diagnostic(
                     "artifact_reference_broken",
@@ -795,18 +795,18 @@ def validate_artifacts(
                     "Existing PDF artifact byte_count claim drifted from the referenced file.",
                     details={
                         "ref_id": ref_id,
-                        "expected": artifact.get("byte_count"),
+                        "expected": artifact.get("byte_count"),  # ty:ignore[unresolved-attribute]
                         "actual": resolved.stat().st_size,
                     },
                 )
             )
-        if artifact.get("signature_verified") is not True or not pdf_signature_verified(resolved):
+        if artifact.get("signature_verified") is not True or not pdf_signature_verified(resolved):  # ty:ignore[unresolved-attribute]
             diagnostics.append(
                 diagnostic(
                     "malformed_existing_pdf_signature",
                     f"$.events[ref_id={ref_id}].pdf_artifact.signature_verified",
                     "Existing PDF artifact must have a verified %PDF- signature.",
-                    details={"ref_id": ref_id, "path": artifact.get("path")},
+                    details={"ref_id": ref_id, "path": artifact.get("path")},  # ty:ignore[unresolved-attribute]
                 )
             )
     return diagnostics
@@ -829,7 +829,7 @@ def validate_duplicate_identity(
     summary_group = next(
         (
             group
-            for group in summary_groups
+            for group in summary_groups  # ty:ignore[not-iterable]
             if isinstance(group, dict)
             and group.get("normalized_identity") == EXPECTED_DUPLICATE_IDENTITY
         ),
@@ -901,32 +901,32 @@ def validate_safety(
         else {}
     )
     for flag in UNSAFE_FLAG_KEYS:
-        if summary_flags.get(flag) is not False:
+        if summary_flags.get(flag) is not False:  # ty:ignore[unresolved-attribute]
             unsafe_claims.append(
-                {"path": f"$.summary.safety_flags.{flag}", "value": summary_flags.get(flag)}
+                {"path": f"$.summary.safety_flags.{flag}", "value": summary_flags.get(flag)}  # ty:ignore[unresolved-attribute]
             )
-        if unsafe_counts.get(flag) not in (0, None):
+        if unsafe_counts.get(flag) not in (0, None):  # ty:ignore[unresolved-attribute]
             unsafe_claims.append(
-                {"path": f"$.summary.unsafe_claim_counts.{flag}", "value": unsafe_counts.get(flag)}
+                {"path": f"$.summary.unsafe_claim_counts.{flag}", "value": unsafe_counts.get(flag)}  # ty:ignore[unresolved-attribute]
             )
     for event in events:
         event_flags = (
             event.get("safety_flags") if isinstance(event.get("safety_flags"), dict) else {}
         )
         for flag in UNSAFE_FLAG_KEYS:
-            if event_flags.get(flag) is not False:
+            if event_flags.get(flag) is not False:  # ty:ignore[unresolved-attribute]
                 unsafe_claims.append(
                     {
                         "path": f"$.events[ref_id={event.get('ref_id')}].safety_flags.{flag}",
-                        "value": event_flags.get(flag),
+                        "value": event_flags.get(flag),  # ty:ignore[unresolved-attribute]
                     }
                 )
         artifact = event.get("pdf_artifact") if isinstance(event.get("pdf_artifact"), dict) else {}
-        if artifact.get("bytes_embedded") is not False:
+        if artifact.get("bytes_embedded") is not False:  # ty:ignore[unresolved-attribute]
             unsafe_claims.append(
                 {
                     "path": f"$.events[ref_id={event.get('ref_id')}].pdf_artifact.bytes_embedded",
-                    "value": artifact.get("bytes_embedded"),
+                    "value": artifact.get("bytes_embedded"),  # ty:ignore[unresolved-attribute]
                 }
             )
 
@@ -981,7 +981,7 @@ def validate_summary_consistency(
         ):
             if isinstance(item, dict):
                 event_diagnostics[str(item.get("code"))] += 1
-    if dict(sorted(summary_diagnostics.items())) != sorted_counter(event_diagnostics):
+    if dict(sorted(summary_diagnostics.items())) != sorted_counter(event_diagnostics):  # ty:ignore[unresolved-attribute]
         diagnostics.append(
             diagnostic(
                 "summary_event_mismatch",

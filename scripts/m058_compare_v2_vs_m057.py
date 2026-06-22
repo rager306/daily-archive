@@ -52,7 +52,8 @@ def _edge_pairs(edge_payload: dict[str, Any], *, version: str) -> set[tuple[str,
         else:
             a = str(edge.get("source_figure_id"))
             b = str(edge.get("target_figure_id"))
-        pairs.add(tuple(sorted((a, b))))
+        # pyrefly: ignore [bad-argument-type]
+        pairs.add(tuple(sorted((a, b))))  # ty:ignore[invalid-argument-type]
     return pairs
 
 
@@ -146,7 +147,7 @@ def compare_v2_vs_m057(
     }
     for _name, item in metrics.items():
         if "winner" not in item:
-            item["winner"] = _winner(float(item["v2"]), float(item["m057"]))  # pyrefly: ignore[unsupported-operation]
+            item["winner"] = _winner(float(item["v2"]), float(item["m057"]))  # pyrefly: ignore[unsupported-operation]  # ty:ignore[invalid-assignment]
 
     go = (
         int(m058_summary.get("sample_size", 0)) == 5

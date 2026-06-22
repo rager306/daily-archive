@@ -301,6 +301,7 @@ def main(argv: list[str] | None = None) -> int:
             sys.stderr.write(f"- {error}\n")
         return 1
 
+    # pyrefly: ignore [unbound-name]
     module_count = len(inventory.get("modules", []))
     required_stage_count = len(REQUIRED_STAGES)
     sys.stdout.write(

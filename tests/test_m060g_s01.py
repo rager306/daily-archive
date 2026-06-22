@@ -14,7 +14,8 @@ VALIDATOR_PATH = ROOT / "scripts"
 if str(VALIDATOR_PATH) not in sys.path:
     sys.path.insert(0, str(VALIDATOR_PATH))
 
-import validate_models_yaml  # noqa: E402
+# pyrefly: ignore [missing-import]
+import validate_models_yaml  # noqa: E402  # ty:ignore[unresolved-import]
 
 spec = importlib.util.spec_from_file_location("m060g_smoke_test", SCRIPT_PATH)
 assert spec is not None and spec.loader is not None

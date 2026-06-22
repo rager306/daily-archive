@@ -4,6 +4,7 @@ import json
 import subprocess
 from pathlib import Path
 
+# pyrefly: ignore [missing-import]
 from scripts.verify_m023_artifact_scaffold_gate import (
     FINAL_GATE_SCHEMA_VERSION,
     build_artifact_scaffold_gate,

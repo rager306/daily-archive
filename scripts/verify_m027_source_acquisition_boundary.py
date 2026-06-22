@@ -594,7 +594,7 @@ def validate_article_records(
                 continue
             selected_variant_count += 1
             json_path = f"$.source_variants[{position}]"
-            status = variant_terminal_status(variant)
+            status = variant_terminal_status(variant)  # ty:ignore[invalid-argument-type]
             if status not in TERMINAL_STATUSES:
                 add_error(
                     errors,
@@ -608,11 +608,19 @@ def validate_article_records(
                 continue
             if status == "captured":
                 validate_captured_variant(
-                    article_path, article_ref, variant, errors, json_path=json_path
+                    article_path,
+                    article_ref,
+                    variant,
+                    errors,
+                    json_path=json_path,  # ty:ignore[invalid-argument-type]
                 )
             else:
                 validate_blocked_or_failed_variant(
-                    article_path, article_ref, variant, errors, json_path=json_path
+                    article_path,
+                    article_ref,
+                    variant,
+                    errors,
+                    json_path=json_path,  # ty:ignore[invalid-argument-type]
                 )
     return selected_article_count, selected_variant_count
 

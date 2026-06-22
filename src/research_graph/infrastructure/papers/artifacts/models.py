@@ -588,7 +588,8 @@ def build_article_artifact_manifest_from_structure(
                 artifact_type="section",
                 review_state="review_required",
                 source_spans=(section_span,) if section_span is not None else (),
-                section_lineage=_section_lineage(section, spans),
+                # pyrefly: ignore [bad-argument-type]
+                section_lineage=_section_lineage(section, spans),  # ty:ignore[invalid-argument-type]
                 candidate_links=candidate_links,
                 confidence_label="deterministic_structure",
                 detector=DETERMINISTIC_FIXTURE_DETECTOR,
@@ -605,9 +606,11 @@ def build_article_artifact_manifest_from_structure(
         if placeholder.get("span_id") and artifact_span is None:
             missing_span_count += 1
             diagnostics.append(_missing_span_diagnostic(placeholder.get("span_id"), artifact_id))
-        section = section_by_id.get(placeholder.get("section_id"), {})  # pyrefly: ignore[bad-assignment]
-        candidate_links = _placeholder_candidate_links(paper_id, placeholder, artifact_span, spans)
+        section = section_by_id.get(placeholder.get("section_id"), {})  # pyrefly: ignore [bad-assignment, no-matching-overload]
+        # pyrefly: ignore [bad-argument-type]
+        candidate_links = _placeholder_candidate_links(paper_id, placeholder, artifact_span, spans)  # ty:ignore[invalid-argument-type]
         diagnostic_codes: tuple[str, ...] = ()
+        # pyrefly: ignore [bad-argument-type]
         metadata: dict[str, Any] = {"fixture_role": _fixture_role_for_placeholder(artifact_type)}
         if artifact_type in {"figure", "table"} and isinstance(
             placeholder.get("caption_span_id"), str
@@ -620,10 +623,11 @@ def build_article_artifact_manifest_from_structure(
             ArticleArtifactRecord(
                 artifact_id=artifact_id,
                 paper_id=paper_id,
-                artifact_type=artifact_type,  # type: ignore[arg-type]
+                artifact_type=artifact_type,  # type: ignore[arg-type]  # ty:ignore[invalid-argument-type]
                 review_state="review_required",
                 source_spans=(artifact_span,) if artifact_span is not None else (),
-                section_lineage=_section_lineage(section, spans) if section else None,
+                # pyrefly: ignore [bad-argument-type]
+                section_lineage=_section_lineage(section, spans) if section else None,  # ty:ignore[invalid-argument-type]
                 candidate_links=candidate_links,
                 confidence_label="deterministic_structure",
                 detector=DETERMINISTIC_FIXTURE_DETECTOR,
@@ -652,6 +656,7 @@ def build_article_artifact_diagnostics_summary(manifest: dict[str, Any]) -> dict
         "artifact_counts_by_type": dict(summary.get("artifact_counts_by_type", {})),
         "candidate_link_type_counts": dict(summary.get("candidate_link_type_counts", {})),
         "review_state_counts": dict(summary.get("review_state_counts", {})),
+        # pyrefly: ignore [bad-argument-type]
         "missing_span_count": int(summary.get("missing_span_count", 0) or 0),
         "diagnostic_counts_by_code": _counts(diagnostic.get("code") for diagnostic in diagnostics),
     }
@@ -692,14 +697,15 @@ def _span_from_structure(span: dict[str, Any]) -> SourceSpan:
     return SourceSpan(
         span_id=str(span.get("span_id")),
         source_id=str(span.get("source_id")),
-        coordinate_space=str(span.get("coordinate_space")),  # type: ignore[arg-type]
+        coordinate_space=str(span.get("coordinate_space")),  # type: ignore[arg-type]  # ty:ignore[invalid-argument-type]
         char_start=span.get("char_start") if isinstance(span.get("char_start"), int) else None,
         char_end=span.get("char_end") if isinstance(span.get("char_end"), int) else None,
         page_start=span.get("page_start") if isinstance(span.get("page_start"), int) else None,
         page_end=span.get("page_end") if isinstance(span.get("page_end"), int) else None,
+        # pyrefly: ignore [bad-argument-type]
         bbox=tuple(float(value) for value in bbox)
         if isinstance(bbox, list) and len(bbox) == 4
-        else None,
+        else None,  # ty:ignore[invalid-argument-type]
         span_hash=_string_or_none(span.get("span_hash")),
     )
 
@@ -713,6 +719,7 @@ def _section_lineage(section: dict[str, Any], spans: dict[str, SourceSpan]) -> S
         ordinal_path=tuple(value for value in ordinal if isinstance(value, int))
         if isinstance(ordinal, list)
         else (),
+        # pyrefly: ignore [bad-argument-type]
         source_span=spans.get(_string_or_none(section.get("span_id"))),
     )
 
@@ -726,6 +733,7 @@ def _placeholder_candidate_links(
     artifact_id = str(placeholder.get("artifact_id"))
     artifact_type = str(placeholder.get("artifact_type"))
     links: list[CandidateLink] = []
+    # pyrefly: ignore [bad-argument-type]
     link_span = spans.get(_string_or_none(placeholder.get("caption_span_id"))) or artifact_span
     for target in _string_list(placeholder.get("candidate_link_targets")):
         link_type: CandidateLinkType = (
@@ -862,7 +870,10 @@ def validate_article_artifact_manifest(manifest: dict[str, Any]) -> list[dict[st
     for index, artifact in enumerate(artifacts):
         diagnostics.extend(
             _validate_artifact(
-                artifact, f"/artifacts[{index}]", manifest.get("paper_id"), known_source_ids
+                artifact,
+                f"/artifacts[{index}]",
+                manifest.get("paper_id"),
+                known_source_ids,  # ty:ignore[invalid-argument-type]
             )
         )
     for index, source in enumerate(manifest_sources):
@@ -1071,7 +1082,7 @@ def _validate_span(
         has_page_bbox = (
             span.get("coordinate_space") == "page_bbox"
             and isinstance(span.get("bbox"), list)
-            and len(span.get("bbox")) == 4
+            and len(span.get("bbox")) == 4  # ty:ignore[invalid-argument-type]
         )
         if not has_chars and not has_page_bbox:
             diagnostics.append(_diagnostic("invalid_source_span_coordinates", path, object_id))

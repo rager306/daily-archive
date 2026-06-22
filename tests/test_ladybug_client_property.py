@@ -10,6 +10,8 @@ from research_graph.cli import DailyAnalysis
 from research_graph.infrastructure.corpus.sources.arxiv_client import ArxivPaper
 from research_graph.infrastructure.evaluation.scoring import ScoredPaper
 from research_graph.infrastructure.graph.ladybug_client import init_db, upsert_daily_analysis
+
+# pyrefly: ignore [missing-import]
 from tests.helpers.modular_fixtures import FIXTURE_PAPER_ID
 
 SAFE_TEXT = st.text(

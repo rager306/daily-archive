@@ -472,8 +472,8 @@ def summarize_article_links_dedup(manifest: dict[str, Any]) -> dict[str, Any]:
 def to_redacted_dict(value: ArticleLinksDedupManifest | dict[str, Any]) -> dict[str, Any]:
     """Convert a manifest object or mapping to a redacted dictionary."""
     if hasattr(value, "to_redacted_dict"):
-        return value.to_redacted_dict()  # type: ignore[no-any-return]
-    return build_article_links_dedup_manifest(dict(value))  # pyrefly: ignore[bad-assignment]
+        return value.to_redacted_dict()  # type: ignore[no-any-return]  # ty:ignore[call-non-callable]
+    return build_article_links_dedup_manifest(dict(value))  # pyrefly: ignore [bad-assignment, no-matching-overload]
 
 
 def to_json(value: ArticleLinksDedupManifest | dict[str, Any]) -> str:
@@ -531,7 +531,7 @@ def _validate_payload(manifest: dict[str, Any]) -> list[dict[str, Any]]:
     page_index_refs = (
         manifest.get("page_index_refs") if isinstance(manifest.get("page_index_refs"), dict) else {}
     )
-    anchor_ids = set(_string_list(page_index_refs.get("anchor_ids")))
+    anchor_ids = set(_string_list(page_index_refs.get("anchor_ids")))  # ty:ignore[unresolved-attribute]
     manifest_span_ids = set(_collect_source_span_ids(manifest))
 
     for index, source in enumerate(source_refs):
@@ -703,8 +703,10 @@ def _validate_payload(manifest: dict[str, Any]) -> list[dict[str, Any]]:
                 )
             )
 
-    diagnostics.extend(_scan_forbidden_payload_keys(manifest))
-    diagnostics.extend(_scan_unsafe_true_flags(manifest))
+    # pyrefly: ignore [bad-argument-type]
+    diagnostics.extend(_scan_forbidden_payload_keys(manifest))  # ty:ignore[invalid-argument-type]
+    # pyrefly: ignore [bad-argument-type]
+    diagnostics.extend(_scan_unsafe_true_flags(manifest))  # ty:ignore[invalid-argument-type]
     return _unique_diagnostics(_redacted_diagnostic_dicts(diagnostics))
 
 

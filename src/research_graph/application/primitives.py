@@ -423,7 +423,8 @@ def _evidence_path(anchor: Any, source_id: str) -> EvidencePath | None:
         paper_id=source_id,
         page_index_node_id=str(anchor.get("page_index_node_id", "")),
         semantic_chunk_id=str(anchor.get("semantic_chunk_id", "")),
-        node_path=tuple(anchor.get("node_path", ())),
+        # pyrefly: ignore [bad-argument-type]
+        node_path=tuple(anchor.get("node_path", ())),  # ty:ignore[invalid-argument-type]
     )
 
 

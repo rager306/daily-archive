@@ -90,6 +90,7 @@ class KeywordExtractor:
 
     def extract_for_parsed_article(self, article: ParsedArticle) -> list[str]:
         """Extract keywords from normalized parser elements in document order."""
+        # pyrefly: ignore [bad-argument-type]
         return self.extract_for_text_parts(_ordered_article_text(article.elements))
 
     def extract_for_page_index(self, document: PageIndexDocument) -> list[str]:

@@ -736,7 +736,7 @@ def capture_selection_and_update_catalog(
                 if isinstance(article.get("catalog_path"), str)
                 else str(article_path)
             )
-            article_counts[article_ref] = dict(counts)
+            article_counts[article_ref] = dict(counts)  # ty:ignore[invalid-assignment]
             write_json(article_path, article)
     else:
         for article_path in article_paths:
@@ -756,7 +756,7 @@ def capture_selection_and_update_catalog(
                 if isinstance(article.get("catalog_path"), str)
                 else str(article_path)
             )
-            article_counts[article_ref] = counts
+            article_counts[article_ref] = counts  # ty:ignore[invalid-assignment]
     return all_results, article_counts, article_paths
 
 
@@ -775,9 +775,9 @@ def render_report(summary: Mapping[str, Any]) -> str:
         f"- Command: `{summary.get('command')}`",
         f"- CWD: `{summary.get('cwd')}`",
         f"- Git commit: `{summary.get('git_commit')}`",
-        f"- Captured: {counts.get('captured', 0)}",  # pyrefly: ignore[bad-assignment]
-        f"- Blocked: {counts.get('blocked', 0)}",  # pyrefly: ignore[bad-assignment]
-        f"- Failed: {counts.get('failed', 0)}",  # pyrefly: ignore[bad-assignment]
+        f"- Captured: {counts.get('captured', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        f"- Blocked: {counts.get('blocked', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        f"- Failed: {counts.get('failed', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
         "- Capture phase network allowed: true",
         "- Replay phase network allowed: false",
         "- Graph import allowed: false",
@@ -793,8 +793,9 @@ def render_report(summary: Mapping[str, Any]) -> str:
     input_hash_map = (
         summary.get("input_hashes") if isinstance(summary.get("input_hashes"), dict) else {}
     )
-    for name, path in input_paths.items():
-        lines.append(f"- `{name}`: `{path}` sha256=`{input_hash_map.get(name)}`")  # pyrefly: ignore[bad-assignment]
+    # pyrefly: ignore [missing-attribute]
+    for name, path in input_paths.items():  # ty:ignore[unresolved-attribute]
+        lines.append(f"- `{name}`: `{path}` sha256=`{input_hash_map.get(name)}`")  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
 
     lines.extend(["", "## Outputs", ""])
     output_paths = (
@@ -803,8 +804,9 @@ def render_report(summary: Mapping[str, Any]) -> str:
     output_hash_map = (
         summary.get("output_hashes") if isinstance(summary.get("output_hashes"), dict) else {}
     )
-    for name, path in output_paths.items():
-        lines.append(f"- `{name}`: `{path}` sha256=`{output_hash_map.get(name)}`")  # pyrefly: ignore[bad-assignment]
+    # pyrefly: ignore [missing-attribute]
+    for name, path in output_paths.items():  # ty:ignore[unresolved-attribute]
+        lines.append(f"- `{name}`: `{path}` sha256=`{output_hash_map.get(name)}`")  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
 
     lines.extend(["", "## Article Counts", ""])
     article_counts = (
@@ -812,7 +814,8 @@ def render_report(summary: Mapping[str, Any]) -> str:
         if isinstance(summary.get("article_capture_counts"), dict)
         else {}
     )
-    for article_ref, article_count in article_counts.items():
+    # pyrefly: ignore [missing-attribute]
+    for article_ref, article_count in article_counts.items():  # ty:ignore[unresolved-attribute]
         if isinstance(article_count, dict):
             lines.append(
                 f"- `{article_ref}`: selected={article_count.get('selected', 0)} "

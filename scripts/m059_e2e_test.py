@@ -10,6 +10,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
+# pyrefly: ignore [missing-import]
 from m059_replay_ingest import replay_batch
 from m059_validate_pdf_batch import (  # pyrefly: ignore[missing-import]
     read_json,

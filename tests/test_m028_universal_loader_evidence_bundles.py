@@ -60,7 +60,8 @@ def _read_jsonl(path: Path) -> list[dict[str, object]]:
 
 
 def _diagnostic_codes(diagnostics: list[object]) -> set[str]:
-    return {str(diagnostic.code) for diagnostic in diagnostics}
+    # pyrefly: ignore [missing-attribute]
+    return {str(diagnostic.code) for diagnostic in diagnostics}  # ty:ignore[unresolved-attribute]
 
 
 def _selection() -> dict[str, object]:
@@ -136,14 +137,14 @@ def _summary_for(selection: dict[str, object], schema_version: str) -> dict[str,
     source_kind_counts: dict[str, int] = {}
     for ref in refs:
         assert isinstance(ref, dict)
-        source_kind = str(ref["source_kind"])
+        source_kind = str(ref["source_kind"])  # ty:ignore[invalid-argument-type]
         source_kind_counts[source_kind] = source_kind_counts.get(source_kind, 0) + 1
     return {
         "schema_version": schema_version,
         "url_ref_count": len(refs),
         "ref_count": len(refs),
         "normalized_identity_count": len(
-            {str(ref["normalized_identity"]) for ref in refs if isinstance(ref, dict)}
+            {str(ref["normalized_identity"]) for ref in refs if isinstance(ref, dict)}  # ty:ignore[invalid-argument-type]
         ),
         "source_kind_counts": source_kind_counts,
         "safety_flags": {"raw_article_text_embedded": False, "source_payload_embedded": False},
@@ -161,21 +162,21 @@ def _write_inputs(root: Path) -> tuple[Path, Path, Path, Path, Path, Path, dict[
     identity_groups: dict[str, list[str]] = {}
     for ref in refs:
         assert isinstance(ref, dict)
-        identity_groups.setdefault(str(ref["normalized_identity"]), []).append(str(ref["ref_id"]))
+        identity_groups.setdefault(str(ref["normalized_identity"]), []).append(str(ref["ref_id"]))  # ty:ignore[invalid-argument-type]
     for ref in refs:
         assert isinstance(ref, dict)
-        ref_id = str(ref["ref_id"])
-        source_kind = str(ref["source_kind"])
+        ref_id = str(ref["ref_id"])  # ty:ignore[invalid-argument-type]
+        source_kind = str(ref["source_kind"])  # ty:ignore[invalid-argument-type]
         source_counts[source_kind] = source_counts.get(source_kind, 0) + 1
         family = _source_family(source_kind)
         artifact_path = f"sources/{ref_id}.dat"
         source_rows.append(
             {
                 "ref_id": ref_id,
-                "url": ref["url"],
-                "canonical_url": ref["canonical_url"],
+                "url": ref["url"],  # ty:ignore[invalid-argument-type]
+                "canonical_url": ref["canonical_url"],  # ty:ignore[invalid-argument-type]
                 "source_kind": source_kind,
-                "normalized_identity": ref["normalized_identity"],
+                "normalized_identity": ref["normalized_identity"],  # ty:ignore[invalid-argument-type]
                 "artifact_path": artifact_path,
                 "content_type": "application/pdf"
                 if source_kind == "arxiv_pdf_url"
@@ -192,11 +193,11 @@ def _write_inputs(root: Path) -> tuple[Path, Path, Path, Path, Path, Path, dict[
             {
                 "schema_version": "m028.source-metadata-event.v1",
                 "ref_id": ref_id,
-                "url": ref["url"],
-                "canonical_url": ref["canonical_url"],
+                "url": ref["url"],  # ty:ignore[invalid-argument-type]
+                "canonical_url": ref["canonical_url"],  # ty:ignore[invalid-argument-type]
                 "source_kind": source_kind,
                 "source_family": family,
-                "normalized_identity": ref["normalized_identity"],
+                "normalized_identity": ref["normalized_identity"],  # ty:ignore[invalid-argument-type]
                 "url_variant": _variant(source_kind),
                 "metadata_status": "metadata_available",
                 "optional_metadata_gaps": [],
@@ -256,11 +257,11 @@ def _write_inputs(root: Path) -> tuple[Path, Path, Path, Path, Path, Path, dict[
             {
                 "schema_version": "m028.pdf-acquisition-event.v1",
                 "ref_id": ref_id,
-                "url": ref["url"],
-                "canonical_url": ref["canonical_url"],
+                "url": ref["url"],  # ty:ignore[invalid-argument-type]
+                "canonical_url": ref["canonical_url"],  # ty:ignore[invalid-argument-type]
                 "source_kind": source_kind,
                 "source_family": family,
-                "normalized_identity": ref["normalized_identity"],
+                "normalized_identity": ref["normalized_identity"],  # ty:ignore[invalid-argument-type]
                 "url_variant": _variant(source_kind),
                 "candidate_pdf": {
                     "candidate_kind": "explicit_arxiv_pdf_url"
@@ -372,7 +373,7 @@ def test_upstream_unsafe_flag_is_stable_input_error(tmp_path: Path) -> None:
     pdf_rows = _read_jsonl(pdf)
     pdf_rows[0]["safety_flags"] = deepcopy(pdf_rows[0]["safety_flags"])
     assert isinstance(pdf_rows[0]["safety_flags"], dict)
-    pdf_rows[0]["safety_flags"]["ladybugdb_written"] = True
+    pdf_rows[0]["safety_flags"]["ladybugdb_written"] = True  # ty:ignore[invalid-assignment]
     _write_jsonl(pdf, pdf_rows)
 
     with pytest.raises(module.UniversalLoaderEvidenceInputError, match="pdf_unsafe_claim:R01"):
@@ -440,7 +441,7 @@ def test_verifier_rejects_unsafe_summary_counter(tmp_path: Path) -> None:
     verifier = _load_verifier()
     summary = _read_json(REAL_CORPUS_DIR / "universal-loader-evidence-summary.json")
     assert isinstance(summary["unsafe_claim_counts"], dict)
-    summary["unsafe_claim_counts"]["import_eligible_count"] = 1
+    summary["unsafe_claim_counts"]["import_eligible_count"] = 1  # ty:ignore[invalid-assignment]
     summary_path = tmp_path / "summary.json"
     _write_json(summary_path, summary)
 
@@ -486,7 +487,8 @@ def test_verifier_rejects_missing_expanded_scope_ref(tmp_path: Path) -> None:
 def test_verifier_rejects_raw_payload_marker(tmp_path: Path) -> None:
     verifier = _load_verifier()
     bundle_rows = _read_jsonl(REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl")
-    bundle_rows[0]["diagnostics"] = list(bundle_rows[0]["diagnostics"])
+    # pyrefly: ignore [bad-argument-type]
+    bundle_rows[0]["diagnostics"] = list(bundle_rows[0]["diagnostics"])  # ty:ignore[invalid-argument-type]
     bundle_rows[0]["diagnostics"].append(
         {"code": "fixture", "details": {"raw_text": "<html>leak</html>"}}
     )
@@ -568,7 +570,7 @@ def test_verifier_rejects_duplicate_identity_collapse(tmp_path: Path) -> None:
     for ref in refs:
         assert isinstance(ref, dict)
         if ref.get("ref_id") == "R10":
-            ref["normalized_identity"] = "arxiv:2605.20897-collapsed-away"
+            ref["normalized_identity"] = "arxiv:2605.20897-collapsed-away"  # ty:ignore[invalid-assignment]
     selection_path = tmp_path / "selection-duplicate-collapse.json"
     _write_json(selection_path, selection)
 
@@ -601,8 +603,8 @@ def test_verifier_rejects_non_arxiv_pdf_and_import_promotion(tmp_path: Path) -> 
         "terminal": True,
     }
     assert isinstance(target["loader_evidence"], dict)
-    target["loader_evidence"]["kg_import_eligible"] = True
-    target["loader_evidence"]["production_import_eligible"] = True
+    target["loader_evidence"]["kg_import_eligible"] = True  # ty:ignore[invalid-assignment]
+    target["loader_evidence"]["production_import_eligible"] = True  # ty:ignore[invalid-assignment]
     bundles_path = tmp_path / "bundles-non-arxiv-promotion.jsonl"
     _write_jsonl(bundles_path, bundle_rows)
 
@@ -626,7 +628,7 @@ def test_verifier_rejects_checksum_signature_drift(tmp_path: Path) -> None:
     verifier = _load_verifier()
     bundle_rows = _read_jsonl(REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl")
     target = next(row for row in bundle_rows if row["ref_id"] == "R01")
-    pdf_artifact = target["artifact_refs"]["pdf_artifact"]  # pyrefly: ignore[bad-assignment]
+    pdf_artifact = target["artifact_refs"]["pdf_artifact"]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     assert isinstance(pdf_artifact, dict)
     pdf_artifact["sha256"] = "f" * 64
     pdf_artifact["payload_embedded"] = True
@@ -655,7 +657,7 @@ def test_verifier_rejects_wrong_quality_mapping(tmp_path: Path) -> None:
     target = next(row for row in bundle_rows if row["ref_id"] == "R02")
     assert isinstance(target["loader_evidence"], dict)
     target["loader_evidence"]["source_quality_status"] = (
-        "source_metadata_with_verified_pdf_artifact"
+        "source_metadata_with_verified_pdf_artifact"  # ty:ignore[invalid-assignment]
     )
     bundles_path = tmp_path / "bundles-quality-drift.jsonl"
     _write_jsonl(bundles_path, bundle_rows)
@@ -678,8 +680,9 @@ def test_verifier_rejects_missing_nullable_pdf_artifact_metadata(tmp_path: Path)
     verifier = _load_verifier()
     bundle_rows = _read_jsonl(REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl")
     target = next(row for row in bundle_rows if row["ref_id"] == "R02")
-    assert target["artifact_refs"]["pdf_artifact"]["path"] is None  # pyrefly: ignore[bad-assignment]
-    del target["artifact_refs"]["pdf_artifact"]
+    assert target["artifact_refs"]["pdf_artifact"]["path"] is None  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+    # pyrefly: ignore [unsupported-operation]
+    del target["artifact_refs"]["pdf_artifact"]  # ty:ignore[not-subscriptable]
     bundles_path = tmp_path / "bundles-missing-nullable-pdf-artifact.jsonl"
     _write_jsonl(bundles_path, bundle_rows)
 
@@ -698,7 +701,7 @@ def test_verifier_rejects_missing_nullable_pdf_artifact_metadata(tmp_path: Path)
 def test_verifier_rejects_summary_drift(tmp_path: Path) -> None:
     verifier = _load_verifier()
     summary = _read_json(REAL_CORPUS_DIR / "universal-loader-evidence-summary.json")
-    summary["ref_ids"] = list(reversed(summary["ref_ids"]))  # pyrefly: ignore[bad-assignment]
+    summary["ref_ids"] = list(reversed(summary["ref_ids"]))  # pyrefly: ignore [bad-assignment, no-matching-overload]  # ty:ignore[no-matching-overload]
     summary["source_kind_counts"] = {
         "arxiv_abs_url": 14,
         "arxiv_pdf_url": 4,

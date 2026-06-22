@@ -508,8 +508,8 @@ def build_summary(
                 if isinstance(result.get("source_role"), str)
                 else "<missing-role>"
             )
-            by_url[url][status] += 1
-            by_role[role][status] += 1
+            by_url[url][status] += 1  # ty:ignore[invalid-argument-type]
+            by_role[role][status] += 1  # ty:ignore[invalid-argument-type]
     return {
         "schema_version": SCHEMA_VERSION,
         "milestone_id": MILESTONE_ID,
@@ -564,9 +564,9 @@ def render_report(summary: Mapping[str, Any]) -> str:
         f"- Slice: `{summary.get('slice_id')}`",
         f"- Selection: `{summary.get('selection_id')}`",
         f"- Status: `{summary.get('status')}`",
-        f"- Captured: {counts.get('captured', 0)}",  # pyrefly: ignore[bad-assignment]
-        f"- Blocked: {counts.get('blocked', 0)}",  # pyrefly: ignore[bad-assignment]
-        f"- Failed: {counts.get('failed', 0)}",  # pyrefly: ignore[bad-assignment]
+        f"- Captured: {counts.get('captured', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        f"- Blocked: {counts.get('blocked', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        f"- Failed: {counts.get('failed', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
         "- Capture phase network allowed: false",
         "- Network fetch attempted count: 0",
         "- Graph/import/LadybugDB writes: false",
@@ -579,7 +579,8 @@ def render_report(summary: Mapping[str, Any]) -> str:
         if isinstance(summary.get("per_role_terminal_state_counts"), dict)
         else {}
     )
-    for role, value in role_counts.items():
+    # pyrefly: ignore [missing-attribute]
+    for role, value in role_counts.items():  # ty:ignore[unresolved-attribute]
         if isinstance(value, dict):
             lines.append(
                 f"- `{role}`: captured={value.get('captured', 0)} blocked={value.get('blocked', 0)} failed={value.get('failed', 0)}"
@@ -590,7 +591,8 @@ def render_report(summary: Mapping[str, Any]) -> str:
         if isinstance(summary.get("per_url_terminal_state_counts"), dict)
         else {}
     )
-    for url, value in url_counts.items():
+    # pyrefly: ignore [missing-attribute]
+    for url, value in url_counts.items():  # ty:ignore[unresolved-attribute]
         if isinstance(value, dict):
             lines.append(
                 f"- `{url}`: captured={value.get('captured', 0)} blocked={value.get('blocked', 0)} failed={value.get('failed', 0)}"

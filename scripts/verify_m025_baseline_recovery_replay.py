@@ -135,7 +135,9 @@ def _count_chunks(path: Path) -> tuple[int, list[dict[str, Any]]]:
         raise BaselineRecoveryError(f"chunk artifact has non-list chunks/items: {path}")
     diagnostics = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), list) else []
     return len([chunk for chunk in chunks if isinstance(chunk, dict)]), [
-        d for d in diagnostics if isinstance(d, dict)
+        d
+        for d in diagnostics
+        if isinstance(d, dict)  # ty:ignore[not-iterable]
     ]
 
 
@@ -146,8 +148,8 @@ def _evidence_metrics(paths: dict[str, Path]) -> tuple[dict[str, int], dict[str,
         payload = _load_json(path)
         summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
         try:
-            counts[evidence_type] = int(summary.get("item_count") or 0)
-            diagnostics[evidence_type] = int(summary.get("diagnostic_count") or 0)
+            counts[evidence_type] = int(summary.get("item_count") or 0)  # ty:ignore[unresolved-attribute]
+            diagnostics[evidence_type] = int(summary.get("diagnostic_count") or 0)  # ty:ignore[unresolved-attribute]
         except (TypeError, ValueError) as exc:
             raise BaselineRecoveryError(
                 f"evidence summary metrics must be integers: {path}"
@@ -328,12 +330,12 @@ def _summary_from_artifacts(
             if isinstance(artifact.get("baseline_provenance"), dict)
             else {}
         )
-        provenance_kind = str(provenance.get("kind") or "unknown")
+        provenance_kind = str(provenance.get("kind") or "unknown")  # ty:ignore[unresolved-attribute]
         provenance_counts[provenance_kind] = provenance_counts.get(provenance_kind, 0) + 1
         diagnostics = (
             artifact.get("diagnostics") if isinstance(artifact.get("diagnostics"), list) else []
         )
-        for diagnostic in diagnostics:
+        for diagnostic in diagnostics:  # ty:ignore[not-iterable]
             if isinstance(diagnostic, dict):
                 code = str(diagnostic.get("code") or "UNKNOWN")
                 diagnostic_counts[code] = diagnostic_counts.get(code, 0) + 1
@@ -341,9 +343,9 @@ def _summary_from_artifacts(
             artifact.get("safety_state") if isinstance(artifact.get("safety_state"), dict) else {}
         )
         violated = {
-            key: safety_state.get(key)
+            key: safety_state.get(key)  # ty:ignore[unresolved-attribute]
             for key in FALSE_SAFETY_FLAGS
-            if safety_state.get(key) is not False
+            if safety_state.get(key) is not False  # ty:ignore[unresolved-attribute]
         }
         if violated:
             safety_violations.append({"article_ref": article_ref, "violations": violated})
@@ -353,11 +355,11 @@ def _summary_from_artifacts(
                 "article_ref": article_ref,
                 "path": artifact.get("_path"),
                 "baseline_provenance_kind": provenance_kind,
-                "chunk_count": int(metrics.get("chunk_count") or 0),
-                "evidence_counts": metrics.get("evidence_counts")
-                if isinstance(metrics.get("evidence_counts"), dict)
+                "chunk_count": int(metrics.get("chunk_count") or 0),  # ty:ignore[unresolved-attribute]
+                "evidence_counts": metrics.get("evidence_counts")  # ty:ignore[unresolved-attribute]
+                if isinstance(metrics.get("evidence_counts"), dict)  # ty:ignore[unresolved-attribute]
                 else {},
-                "diagnostic_count": len([item for item in diagnostics if isinstance(item, dict)]),
+                "diagnostic_count": len([item for item in diagnostics if isinstance(item, dict)]),  # ty:ignore[not-iterable]
                 "final_replay_compatible": bool(
                     isinstance(artifact.get("readiness"), dict)
                     and artifact["readiness"].get("final_replay_compatible") is True

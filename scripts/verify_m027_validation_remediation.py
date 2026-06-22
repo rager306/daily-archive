@@ -298,7 +298,7 @@ def _rows_by_id(rows: Any, key: str, base_path: str) -> tuple[dict[str, dict[str
         if not isinstance(row_id, str) or not row_id:
             errors.append(f"{row_path}.{key} must be a non-empty string")
             continue
-        by_id[row_id] = row
+        by_id[row_id] = row  # ty:ignore[invalid-assignment]
         counts[row_id] = counts.get(row_id, 0) + 1
     duplicates = sorted(row_id for row_id, count in counts.items() if count > 1)
     if duplicates:

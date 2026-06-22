@@ -10,7 +10,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-import build_m055deep_corpus_manifest_20 as corpus20  # noqa: E402
+# pyrefly: ignore [missing-import]
+import build_m055deep_corpus_manifest_20 as corpus20  # noqa: E402  # ty:ignore[unresolved-import]
 
 ACQUISITION_LOG = ROOT / "artifacts" / "m055deep-parser-benchmark" / "acquisition-log.json"
 CORPUS_MANIFEST = ROOT / "artifacts" / "m055deep-parser-benchmark" / "corpus-manifest-20.json"
@@ -35,10 +36,12 @@ def _manifest() -> dict[str, object]:
 def test_acquisition_min_4_pdfs() -> None:
     log = _read_json(ACQUISITION_LOG)
     entries = log["entries"]
-    acquired = [entry for entry in entries if entry["status"] == "acquired"]
+    # pyrefly: ignore [not-iterable]
+    acquired = [entry for entry in entries if entry["status"] == "acquired"]  # ty:ignore[not-iterable]
 
-    assert len(entries) == 6
-    assert log["counts"]["acquired"] >= 4  # pyrefly: ignore[bad-assignment]
+    # pyrefly: ignore [bad-argument-type]
+    assert len(entries) == 6  # ty:ignore[invalid-argument-type]
+    assert log["counts"]["acquired"] >= 4  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     assert len(acquired) >= 4
     for entry in acquired:
         local_path = ROOT / entry["local_path"]
@@ -50,11 +53,14 @@ def test_corpus_manifest_20_pdfs() -> None:
     manifest = _manifest()
     pdfs = manifest["pdfs"]
 
-    assert manifest["actual_total"] == len(pdfs)
+    # pyrefly: ignore [bad-argument-type]
+    assert manifest["actual_total"] == len(pdfs)  # ty:ignore[invalid-argument-type]
     assert manifest["actual_total"] == 20
-    assert manifest["actual_total"] >= manifest["minimum_total"]
+    # pyrefly: ignore [unsupported-operation]
+    assert manifest["actual_total"] >= manifest["minimum_total"]  # ty:ignore[unsupported-operator]
     assert manifest["actual_new_acquisitions"] == 6
-    assert manifest["actual_new_acquisitions"] >= manifest["minimum_new_acquisitions"]
+    # pyrefly: ignore [unsupported-operation]
+    assert manifest["actual_new_acquisitions"] >= manifest["minimum_new_acquisitions"]  # ty:ignore[unsupported-operator]
     assert manifest["source_milestone_counts"] == {"M027/M041": 9, "M051": 5, "M055deep": 6}
 
 
@@ -75,17 +81,21 @@ def test_corpus_manifest_idempotent(tmp_path: Path) -> None:
 def test_corpus_manifest_safety_defaults() -> None:
     manifest = _manifest()
 
-    assert set(manifest["safety_defaults"]) == SAFETY_KEYS
-    assert all(value is False for value in manifest["safety_defaults"].values())
+    # pyrefly: ignore [bad-argument-type]
+    assert set(manifest["safety_defaults"]) == SAFETY_KEYS  # ty:ignore[invalid-argument-type]
+    # pyrefly: ignore [missing-attribute]
+    assert all(value is False for value in manifest["safety_defaults"].values())  # ty:ignore[unresolved-attribute]
 
 
 def test_corpus_manifest_per_pdf_source_milestone() -> None:
     manifest = _manifest()
     pdfs = manifest["pdfs"]
-    counts = Counter(entry["source_milestone"] for entry in pdfs)
+    # pyrefly: ignore [not-iterable]
+    counts = Counter(entry["source_milestone"] for entry in pdfs)  # ty:ignore[not-iterable]
 
     assert counts == {"M051": 5, "M027/M041": 9, "M055deep": 6}
-    for entry in pdfs:
+    # pyrefly: ignore [not-iterable]
+    for entry in pdfs:  # ty:ignore[not-iterable]
         assert entry["source_milestone"] in {"M051", "M027/M041", "M055deep"}
         assert entry["arxiv_id"]
         assert (ROOT / entry["path"]).exists()
@@ -96,7 +106,8 @@ def test_corpus_manifest_per_pdf_source_milestone() -> None:
 def test_corpus_manifest_per_category_counts() -> None:
     manifest = _manifest()
     pdfs = manifest["pdfs"]
-    counts = Counter(entry["category"] for entry in pdfs)
+    # pyrefly: ignore [not-iterable]
+    counts = Counter(entry["category"] for entry in pdfs)  # ty:ignore[not-iterable]
 
     assert dict(sorted(counts.items())) == manifest["category_counts"]
     assert manifest["category_counts"] == {

@@ -104,8 +104,10 @@ def test_build_mixed_manifest_requires_reference_linked_then_uses_hermes(
     )
 
     def fake_write(record: object, *, category: str, linked_from: list[str]) -> Path:
-        written[record.arxiv_id] = category
-        return tmp_path / category / record.arxiv_id / "article.json"
+        # pyrefly: ignore [missing-attribute]
+        written[record.arxiv_id] = category  # ty:ignore[unresolved-attribute]
+        # pyrefly: ignore [missing-attribute]
+        return tmp_path / category / record.arxiv_id / "article.json"  # ty:ignore[unresolved-attribute]
 
     def fake_entry(article_path: Path, *, category: str, linked_from: list[str]) -> dict:
         arxiv_id = article_path.parent.name

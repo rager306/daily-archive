@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+# pyrefly: ignore [missing-import]
 from scripts.audit_locator_evidence import (
     LocatorEvidenceAuditError,
     audit_locator_evidence,

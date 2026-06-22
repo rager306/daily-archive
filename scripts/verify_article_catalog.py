@@ -23,6 +23,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
+# pyrefly: ignore [missing-import]
 from verify_m025_article_catalog import main
 
 ROOT = SCRIPT_DIR.parents[0]

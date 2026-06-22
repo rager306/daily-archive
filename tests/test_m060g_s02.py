@@ -230,7 +230,8 @@ def test_balanced_m058_selection_15_plots_15_schema() -> None:
 
 
 def test_m050_m060g_s01_regression() -> None:
-    from article_artifact_worker import HttpTransport
+    # pyrefly: ignore [missing-import]
+    from article_artifact_worker import HttpTransport  # ty:ignore[unresolved-import]
 
     binding_ids = m060g_figure_judge.load_bindings()
     assert m060g_figure_judge.FAST_BINDING_ID in binding_ids

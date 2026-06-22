@@ -14,6 +14,8 @@ from research_graph.infrastructure.evaluation.dspy_extraction import (
 )
 from research_graph.infrastructure.evaluation.scientific_extraction import ExtractionPatch
 from research_graph.infrastructure.graph.ladybug_client import evidence_path_id
+
+# pyrefly: ignore [missing-import]
 from tests.test_scientific_extraction_contracts import method_evidence_path, sample_patch
 
 

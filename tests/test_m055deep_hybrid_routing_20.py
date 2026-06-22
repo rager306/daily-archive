@@ -10,7 +10,8 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-import benchmark_m055deep_hybrid_routing_20 as hybrid20  # noqa: E402
+# pyrefly: ignore [missing-import]
+import benchmark_m055deep_hybrid_routing_20 as hybrid20  # noqa: E402  # ty:ignore[unresolved-import]
 
 BENCHMARK_DIR = ROOT / "artifacts" / "m055deep-parser-benchmark"
 GROBID_PER_PDF = BENCHMARK_DIR / "grobid-fulltext-20" / "per-pdf"

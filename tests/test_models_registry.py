@@ -23,7 +23,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-import validate_models_yaml  # noqa: E402
+# pyrefly: ignore [missing-import]
+import validate_models_yaml  # noqa: E402  # ty:ignore[unresolved-import]
 
 VALID_REGISTRY = {
     "schema_version": "v0.1",
@@ -67,7 +68,7 @@ def test_models_empty_list_fails():
 
 
 def test_missing_required_field_in_model_fails():
-    bad_model = {k: v for k, v in VALID_REGISTRY["models"][0].items() if k != "endpoint"}
+    bad_model = {k: v for k, v in VALID_REGISTRY["models"][0].items() if k != "endpoint"}  # ty:ignore[unresolved-attribute]
     payload = {**VALID_REGISTRY, "models": [bad_model]}
     errors = validate_models_yaml.validate_registry(payload)
     assert any("endpoint" in e and "missing" in e for e in errors)
@@ -78,7 +79,7 @@ def test_duplicate_model_id_fails():
         **VALID_REGISTRY,
         "models": [
             VALID_REGISTRY["models"][0],
-            {**VALID_REGISTRY["models"][0], "endpoint": "https://api.example.com/v2/messages"},
+            {**VALID_REGISTRY["models"][0], "endpoint": "https://api.example.com/v2/messages"},  # ty:ignore[invalid-argument-type]
         ],
     }
     errors = validate_models_yaml.validate_registry(payload)
@@ -90,7 +91,7 @@ def test_duplicate_endpoint_is_allowed_for_provider_compatible_models():
         **VALID_REGISTRY,
         "models": [
             VALID_REGISTRY["models"][0],
-            {**VALID_REGISTRY["models"][0], "id": "minimax-m3-openai", "provider": "openai"},
+            {**VALID_REGISTRY["models"][0], "id": "minimax-m3-openai", "provider": "openai"},  # ty:ignore[invalid-argument-type]
         ],
     }
     errors = validate_models_yaml.validate_registry(payload)
@@ -98,35 +99,35 @@ def test_duplicate_endpoint_is_allowed_for_provider_compatible_models():
 
 
 def test_invalid_provider_fails():
-    bad_model = {**VALID_REGISTRY["models"][0], "provider": "huggingface"}
+    bad_model = {**VALID_REGISTRY["models"][0], "provider": "huggingface"}  # ty:ignore[invalid-argument-type]
     payload = {**VALID_REGISTRY, "models": [bad_model]}
     errors = validate_models_yaml.validate_registry(payload)
     assert any("provider" in e for e in errors)
 
 
 def test_invalid_endpoint_scheme_fails():
-    bad_model = {**VALID_REGISTRY["models"][0], "endpoint": "http://insecure.example.com"}
+    bad_model = {**VALID_REGISTRY["models"][0], "endpoint": "http://insecure.example.com"}  # ty:ignore[invalid-argument-type]
     payload = {**VALID_REGISTRY, "models": [bad_model]}
     errors = validate_models_yaml.validate_registry(payload)
     assert any("endpoint" in e and "https://" in e for e in errors)
 
 
 def test_invalid_id_format_fails():
-    bad_model = {**VALID_REGISTRY["models"][0], "id": "MiniMax-Not-Snake-Case"}
+    bad_model = {**VALID_REGISTRY["models"][0], "id": "MiniMax-Not-Snake-Case"}  # ty:ignore[invalid-argument-type]
     payload = {**VALID_REGISTRY, "models": [bad_model]}
     errors = validate_models_yaml.validate_registry(payload)
     assert any("id=" in e and "snake_case" in e for e in errors)
 
 
 def test_invalid_version_format_fails():
-    bad_model = {**VALID_REGISTRY["models"][0], "tool_version": "!!!invalid!!!"}
+    bad_model = {**VALID_REGISTRY["models"][0], "tool_version": "!!!invalid!!!"}  # ty:ignore[invalid-argument-type]
     payload = {**VALID_REGISTRY, "models": [bad_model]}
     errors = validate_models_yaml.validate_registry(payload)
     assert any("tool_version" in e for e in errors)
 
 
 def test_version_accepts_semver():
-    model = {**VALID_REGISTRY["models"][0], "tool_version": "1.2.3", "policy_version": "2.0.0"}
+    model = {**VALID_REGISTRY["models"][0], "tool_version": "1.2.3", "policy_version": "2.0.0"}  # ty:ignore[invalid-argument-type]
     payload = {**VALID_REGISTRY, "models": [model]}
     errors = validate_models_yaml.validate_registry(payload)
     assert errors == []
@@ -134,7 +135,7 @@ def test_version_accepts_semver():
 
 def test_version_accepts_date():
     model = {
-        **VALID_REGISTRY["models"][0],
+        **VALID_REGISTRY["models"][0],  # ty:ignore[invalid-argument-type]
         "tool_version": "2026-05-15",
         "policy_version": "m049-v0.1",
     }
@@ -147,7 +148,7 @@ def test_version_accepts_yaml_date_object():
     import datetime
 
     model = {
-        **VALID_REGISTRY["models"][0],
+        **VALID_REGISTRY["models"][0],  # ty:ignore[invalid-argument-type]
         "tool_version": datetime.date(2026, 5, 15),
         "policy_version": "m049-v0.1",
     }
@@ -157,14 +158,14 @@ def test_version_accepts_yaml_date_object():
 
 
 def test_binding_references_unknown_model_fails():
-    bad_binding = {**VALID_REGISTRY["bindings"][0], "model_id": "nonexistent-model"}
+    bad_binding = {**VALID_REGISTRY["bindings"][0], "model_id": "nonexistent-model"}  # ty:ignore[invalid-argument-type]
     payload = {**VALID_REGISTRY, "bindings": [bad_binding]}
     errors = validate_models_yaml.validate_registry(payload)
     assert any("model_id" in e and "nonexistent-model" in e for e in errors)
 
 
 def test_binding_missing_field_fails():
-    bad_binding = {k: v for k, v in VALID_REGISTRY["bindings"][0].items() if k != "description"}
+    bad_binding = {k: v for k, v in VALID_REGISTRY["bindings"][0].items() if k != "description"}  # ty:ignore[unresolved-attribute]
     payload = {**VALID_REGISTRY, "bindings": [bad_binding]}
     errors = validate_models_yaml.validate_registry(payload)
     assert any("description" in e and "missing" in e for e in errors)
@@ -245,8 +246,8 @@ def test_compute_work_id_is_deterministic():
         input_data={"paper_id": "2507.19457", "version": 1},
         prompt_data={"task": "classify", "max_tokens": 1024},
     )
-    w1 = compute_work_id(**args)
-    w2 = compute_work_id(**args)
+    w1 = compute_work_id(**args)  # ty:ignore[invalid-argument-type]
+    w2 = compute_work_id(**args)  # ty:ignore[invalid-argument-type]
     assert w1 == w2
     assert len(w1) == 64  # sha256 hex digest length
 
@@ -261,8 +262,8 @@ def test_compute_work_id_changes_with_input():
         input_data={"paper_id": "2507.19457"},
         prompt_data={"task": "classify"},
     )
-    w1 = compute_work_id(**base)
-    w2 = compute_work_id(**{**base, "input_data": {"paper_id": "2507.99999"}})
+    w1 = compute_work_id(**base)  # ty:ignore[invalid-argument-type]
+    w2 = compute_work_id(**{**base, "input_data": {"paper_id": "2507.99999"}})  # ty:ignore[invalid-argument-type]
     assert w1 != w2
 
 
@@ -276,8 +277,8 @@ def test_compute_work_id_changes_with_prompt():
         input_data={"paper_id": "2507.19457"},
         prompt_data={"task": "classify"},
     )
-    w1 = compute_work_id(**base)
-    w2 = compute_work_id(**{**base, "prompt_data": {"task": "summarize"}})
+    w1 = compute_work_id(**base)  # ty:ignore[invalid-argument-type]
+    w2 = compute_work_id(**{**base, "prompt_data": {"task": "summarize"}})  # ty:ignore[invalid-argument-type]
     assert w1 != w2
 
 
@@ -291,8 +292,8 @@ def test_compute_work_id_changes_with_run_id():
         input_data={"paper_id": "2507.19457"},
         prompt_data={"task": "classify"},
     )
-    w1 = compute_work_id(**base, run_id="run-A")
-    w2 = compute_work_id(**base, run_id="run-B")
+    w1 = compute_work_id(**base, run_id="run-A")  # ty:ignore[invalid-argument-type]
+    w2 = compute_work_id(**base, run_id="run-B")  # ty:ignore[invalid-argument-type]
     assert w1 != w2
 
 

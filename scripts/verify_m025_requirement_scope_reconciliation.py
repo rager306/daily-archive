@@ -316,7 +316,7 @@ def validate_matrix(
             errors.append(f"$.requirements[{index}].requirement_id missing or not a string")
             continue
         seen[rid] = seen.get(rid, 0) + 1
-        rows[rid] = row
+        rows[rid] = row  # ty:ignore[invalid-assignment]
         missing_row_keys = sorted(REQUIRED_ROW_KEYS - set(row))
         if missing_row_keys:
             errors.append(f"{rid} missing required fields: {', '.join(missing_row_keys)}")

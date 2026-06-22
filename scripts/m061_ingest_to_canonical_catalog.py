@@ -412,6 +412,7 @@ def update_index_if_exists(
     scripts_dir = ROOT / "scripts"
     if str(scripts_dir) not in sys.path:
         sys.path.insert(0, str(scripts_dir))
+    # pyrefly: ignore [missing-import]
     from verify_m025_article_catalog import rebuild_index_from_articles
 
     existing = json.loads(index_path.read_text(encoding="utf-8"))

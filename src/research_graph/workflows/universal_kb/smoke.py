@@ -12,8 +12,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+# pyrefly: ignore [missing-import]
 from scripts.audit_m036_real_corpus_smoke import audit_smoke, write_json, write_markdown_report
+
+# pyrefly: ignore [missing-import]
 from scripts.run_m036_real_corpus_no_write_smoke import run_smoke
+
+# pyrefly: ignore [missing-import]
 from scripts.select_m036_real_corpus_smoke_batch import select_entries
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -151,10 +156,10 @@ def require_article_flags_false(articles: Any, *, label: str) -> None:
     for index, article in enumerate(articles):
         if not isinstance(article, dict):
             raise ValueError(f"{label}[{index}] must be an object")
-        if "safety_flags" in article and isinstance(article["safety_flags"], dict):
-            require_false_flags(article["safety_flags"], label=f"{label}[{index}].safety_flags")
+        if "safety_flags" in article and isinstance(article["safety_flags"], dict):  # ty:ignore[invalid-argument-type]
+            require_false_flags(article["safety_flags"], label=f"{label}[{index}].safety_flags")  # ty:ignore[invalid-argument-type]
         else:
-            require_false_flags(article, label=f"{label}[{index}]")
+            require_false_flags(article, label=f"{label}[{index}]")  # ty:ignore[invalid-argument-type]
 
 
 def validate_persisted_state(

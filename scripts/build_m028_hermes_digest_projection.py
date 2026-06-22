@@ -406,19 +406,19 @@ def count_unsafe_claims(bundles: list[dict[str, Any]], summary: dict[str, Any]) 
     for bundle in bundles:
         flags = bundle.get("safety_flags") if isinstance(bundle.get("safety_flags"), dict) else {}
         for key in UNSAFE_SAFETY_FLAG_KEYS:
-            if flags.get(key) is not False:
+            if flags.get(key) is not False:  # ty:ignore[unresolved-attribute]
                 counts[key] += 1
         evidence = (
             bundle.get("loader_evidence") if isinstance(bundle.get("loader_evidence"), dict) else {}
         )
         if (
-            evidence.get("kg_import_eligible") is True
-            or evidence.get("production_import_eligible") is True
+            evidence.get("kg_import_eligible") is True  # ty:ignore[unresolved-attribute]
+            or evidence.get("production_import_eligible") is True  # ty:ignore[unresolved-attribute]
         ):
             counts["import_eligible_count"] += 1
-        if evidence.get("outcome") == "promoted_to_fact":
+        if evidence.get("outcome") == "promoted_to_fact":  # ty:ignore[unresolved-attribute]
             counts["promoted_to_fact_count"] += 1
-        if evidence.get("hermes_digest_ready") is True:
+        if evidence.get("hermes_digest_ready") is True:  # ty:ignore[unresolved-attribute]
             counts["hermes_digest_count"] += 1
     summary_counts = summary.get("unsafe_claim_counts")
     if isinstance(summary_counts, dict):
@@ -447,15 +447,15 @@ def compact_artifact_refs(bundle: dict[str, Any]) -> dict[str, dict[str, Any]]:
         bundle.get("artifact_refs") if isinstance(bundle.get("artifact_refs"), dict) else {}
     )
     for name in ("source_artifact", "metadata_artifact", "pdf_artifact"):
-        artifact = artifact_refs.get(name) if isinstance(artifact_refs.get(name), dict) else {}
+        artifact = artifact_refs.get(name) if isinstance(artifact_refs.get(name), dict) else {}  # ty:ignore[unresolved-attribute]
         compact[name] = {
-            "path": artifact.get("path") if isinstance(artifact.get("path"), str) else None,  # pyrefly: ignore[bad-assignment]
-            "sha256": artifact.get("sha256") if isinstance(artifact.get("sha256"), str) else None,  # pyrefly: ignore[bad-assignment]
-            "byte_count": artifact.get("byte_count")  # pyrefly: ignore[bad-assignment]
-            if isinstance(artifact.get("byte_count"), int)  # pyrefly: ignore[bad-assignment]
+            "path": artifact.get("path") if isinstance(artifact.get("path"), str) else None,  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+            "sha256": artifact.get("sha256") if isinstance(artifact.get("sha256"), str) else None,  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+            "byte_count": artifact.get("byte_count")  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+            if isinstance(artifact.get("byte_count"), int)  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
             else None,
-            "content_type": artifact.get("content_type")  # pyrefly: ignore[bad-assignment]
-            if isinstance(artifact.get("content_type"), str)  # pyrefly: ignore[bad-assignment]
+            "content_type": artifact.get("content_type")  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+            if isinstance(artifact.get("content_type"), str)  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
             else None,
             "payload_embedded": False,
         }
@@ -468,11 +468,11 @@ def bibliographic_fields(bundle: dict[str, Any]) -> dict[str, dict[str, Any]]:
         bundle.get("source_metadata") if isinstance(bundle.get("source_metadata"), dict) else {}
     )
     optional_gaps = (
-        source_metadata.get("optional_metadata_gaps")
-        if isinstance(source_metadata.get("optional_metadata_gaps"), list)
+        source_metadata.get("optional_metadata_gaps")  # ty:ignore[unresolved-attribute]
+        if isinstance(source_metadata.get("optional_metadata_gaps"), list)  # ty:ignore[unresolved-attribute]
         else []
     )
-    for gap in optional_gaps:
+    for gap in optional_gaps:  # ty:ignore[not-iterable]
         if isinstance(gap, dict) and isinstance(gap.get("field"), str):
             gaps[str(gap["field"])] = str(gap.get("reason") or "not_in_loader_evidence_bundle")
     fields: dict[str, dict[str, Any]] = {}
@@ -491,11 +491,11 @@ def item_digest_note(bundle: dict[str, Any]) -> str:
     )
     pdf = bundle.get("pdf_diagnostic") if isinstance(bundle.get("pdf_diagnostic"), dict) else {}
     quality = (
-        evidence.get("source_quality_status")
-        if isinstance(evidence.get("source_quality_status"), str)
+        evidence.get("source_quality_status")  # ty:ignore[unresolved-attribute]
+        if isinstance(evidence.get("source_quality_status"), str)  # ty:ignore[unresolved-attribute]
         else "source_quality_unknown"
     )
-    pdf_status = pdf.get("status") if isinstance(pdf.get("status"), str) else "pdf_status_unknown"
+    pdf_status = pdf.get("status") if isinstance(pdf.get("status"), str) else "pdf_status_unknown"  # ty:ignore[unresolved-attribute]
     return f"Evidence-only Hermes digest projection: {quality}; pdf_status={pdf_status}; no parser, chunker, model, graph, or production write attempted."
 
 
@@ -503,7 +503,7 @@ def build_item(bundle: dict[str, Any]) -> dict[str, Any]:
     diagnostics = bundle.get("diagnostics") if isinstance(bundle.get("diagnostics"), list) else []
     warning_diagnostics = [
         item
-        for item in diagnostics
+        for item in diagnostics  # ty:ignore[not-iterable]
         if isinstance(item, dict) and str(item.get("severity", "info")) in {"warning", "error"}
     ]
     source_metadata = (
@@ -527,13 +527,13 @@ def build_item(bundle: dict[str, Any]) -> dict[str, Any]:
         if isinstance(bundle.get("pdf_diagnostic"), dict)
         else {},
         "quality": {
-            "source_metadata_status": source_metadata.get("metadata_status"),
+            "source_metadata_status": source_metadata.get("metadata_status"),  # ty:ignore[unresolved-attribute]
             "source_quality_status": (bundle.get("loader_evidence") or {}).get(
                 "source_quality_status"
             )
             if isinstance(bundle.get("loader_evidence"), dict)
             else None,
-            "diagnostic_count": len(diagnostics),
+            "diagnostic_count": len(diagnostics),  # ty:ignore[invalid-argument-type]
             "warning_count": len(warning_diagnostics),
         },
         "warnings": warning_diagnostics,
@@ -569,7 +569,7 @@ def summarize_projection(
         diagnostics = (
             bundle.get("diagnostics") if isinstance(bundle.get("diagnostics"), list) else []
         )
-        for diagnostic in diagnostics:
+        for diagnostic in diagnostics:  # ty:ignore[not-iterable]
             if isinstance(diagnostic, dict):
                 diagnostic_counts[str(diagnostic.get("code", "diagnostic"))] += 1
     duplicate_identity_groups = []

@@ -287,7 +287,7 @@ def validate_duplicate_identity(
     expected_summary_group = next(
         (
             group
-            for group in summary_groups
+            for group in summary_groups  # ty:ignore[not-iterable]
             if isinstance(group, dict)
             and group.get("normalized_identity") == EXPECTED_DUPLICATE_IDENTITY
         ),
@@ -423,7 +423,7 @@ def validate_acquisition_linkage(
         event_acquisition = (
             event.get("acquisition") if isinstance(event.get("acquisition"), dict) else {}
         )
-        if event_acquisition.get("status") != acquisition.get("status") or event_acquisition.get(
+        if event_acquisition.get("status") != acquisition.get("status") or event_acquisition.get(  # ty:ignore[unresolved-attribute]
             "terminal"
         ) != acquisition.get("terminal"):
             diagnostics.append(
@@ -453,7 +453,7 @@ def validate_acquisition_linkage(
             )
 
         event_artifact = event.get("artifact") if isinstance(event.get("artifact"), dict) else {}
-        artifact_path = event_artifact.get("path")
+        artifact_path = event_artifact.get("path")  # ty:ignore[unresolved-attribute]
         acquisition_path = acquisition.get("artifact_path")
         if (
             artifact_path != acquisition_path
@@ -484,8 +484,8 @@ def validate_acquisition_linkage(
                 )
             )
         if (
-            event_artifact.get("sha256") != acquisition.get("sha256")
-            or event_artifact.get("checksum_verified") is not True
+            event_artifact.get("sha256") != acquisition.get("sha256")  # ty:ignore[unresolved-attribute]
+            or event_artifact.get("checksum_verified") is not True  # ty:ignore[unresolved-attribute]
         ):
             diagnostics.append(
                 diagnostic(
@@ -512,19 +512,19 @@ def validate_optional_metadata(events: list[dict[str, Any]]) -> list[dict[str, A
             if isinstance(event.get("optional_metadata_gaps"), list)
             else []
         )
-        gap_fields = {gap.get("field") for gap in gaps if isinstance(gap, dict)}
+        gap_fields = {gap.get("field") for gap in gaps if isinstance(gap, dict)}  # ty:ignore[not-iterable]
         event_diagnostics = (
             event.get("diagnostics") if isinstance(event.get("diagnostics"), list) else []
         )
         diagnostic_gap_fields = {
             item.get("details", {}).get("field")
-            for item in event_diagnostics
+            for item in event_diagnostics  # ty:ignore[not-iterable]
             if isinstance(item, dict)
             and item.get("code") == "optional_metadata_missing"
             and isinstance(item.get("details"), dict)
         }
         for field in REQUIRED_OPTIONAL_FIELDS:
-            field_value = optional_metadata.get(field)
+            field_value = optional_metadata.get(field)  # ty:ignore[unresolved-attribute]
             if (
                 not isinstance(field_value, dict)
                 or "status" not in field_value
@@ -596,19 +596,19 @@ def validate_metadata_only(
         else {}
     )
     for flag in UNSAFE_SUMMARY_FLAGS:
-        if summary_flags.get(flag) not in (False, None):
+        if summary_flags.get(flag) not in (False, None):  # ty:ignore[unresolved-attribute]
             unsafe_claims.append(
-                {"path": f"$.summary.safety_flags.{flag}", "value": summary_flags.get(flag)}
+                {"path": f"$.summary.safety_flags.{flag}", "value": summary_flags.get(flag)}  # ty:ignore[unresolved-attribute]
             )
-        if unsafe_counts.get(flag, 0) not in (0, None):
+        if unsafe_counts.get(flag, 0) not in (0, None):  # ty:ignore[unresolved-attribute]
             unsafe_claims.append(
-                {"path": f"$.summary.unsafe_claim_counts.{flag}", "value": unsafe_counts.get(flag)}
+                {"path": f"$.summary.unsafe_claim_counts.{flag}", "value": unsafe_counts.get(flag)}  # ty:ignore[unresolved-attribute]
             )
     for event in events:
         event_flags = (
             event.get("safety_flags") if isinstance(event.get("safety_flags"), dict) else {}
         )
-        for flag, value in event_flags.items():
+        for flag, value in event_flags.items():  # ty:ignore[unresolved-attribute]
             if value is not False:
                 unsafe_claims.append(
                     {
@@ -617,11 +617,11 @@ def validate_metadata_only(
                     }
                 )
         artifact = event.get("artifact") if isinstance(event.get("artifact"), dict) else {}
-        if artifact.get("payload_embedded") is not False:
+        if artifact.get("payload_embedded") is not False:  # ty:ignore[unresolved-attribute]
             unsafe_claims.append(
                 {
                     "path": f"$.events[ref_id={event.get('ref_id')}].artifact.payload_embedded",
-                    "value": artifact.get("payload_embedded"),
+                    "value": artifact.get("payload_embedded"),  # ty:ignore[unresolved-attribute]
                 }
             )
 

@@ -25,6 +25,8 @@ for import_path in (ROOT, SRC):
 from research_graph.infrastructure.repair.chunk_repair_contract import (
     scan_forbidden_payload_keys,  # noqa: E402
 )
+
+# pyrefly: ignore [missing-import]
 from scripts.verify_reviewer_packet_prototype import (  # noqa: E402
     ReviewerPacketPrototypeVerifyError,
     _list_of_dicts,
@@ -281,7 +283,9 @@ def verify_source_artifacts(
     )
     findings.extend(
         _unsafe_counter_findings(
-            unsafe_counters, base_path="/unsafe_counters", object_type="assessment"
+            unsafe_counters,
+            base_path="/unsafe_counters",
+            object_type="assessment",  # ty:ignore[invalid-argument-type]
         )
     )
     findings.extend(_repair_source_boundary_findings(repair_prototype))
@@ -312,7 +316,7 @@ def validate_final_gate(
         "bounded_repair_prototype_json",
         "chunk_repair_contract_json",
     ):
-        if not isinstance(source_artifacts.get(key), str) or not source_artifacts.get(key):
+        if not isinstance(source_artifacts.get(key), str) or not source_artifacts.get(key):  # ty:ignore[unresolved-attribute]
             findings.append(
                 FinalGateFinding(
                     "final_gate_missing_source_artifact", f"/source_artifacts/{key}", "final_gate"
@@ -325,20 +329,20 @@ def validate_final_gate(
     )
     if (
         expected_packet_count is not None
-        and packet_summary.get("packet_count") != expected_packet_count
+        and packet_summary.get("packet_count") != expected_packet_count  # ty:ignore[unresolved-attribute]
     ):
         findings.append(
             FinalGateFinding(
                 "final_gate_packet_count_mismatch", "/packet_summary/packet_count", "final_gate"
             )
         )
-    if packet_summary.get("packet_count") != 6:
+    if packet_summary.get("packet_count") != 6:  # ty:ignore[unresolved-attribute]
         findings.append(
             FinalGateFinding(
                 "final_gate_packet_count_not_six", "/packet_summary/packet_count", "final_gate"
             )
         )
-    if packet_summary.get("review_status_counts") != {"pending_review": 6}:
+    if packet_summary.get("review_status_counts") != {"pending_review": 6}:  # ty:ignore[unresolved-attribute]
         findings.append(
             FinalGateFinding(
                 "final_gate_review_status_not_pending",
@@ -346,7 +350,7 @@ def validate_final_gate(
                 "final_gate",
             )
         )
-    if packet_summary.get("unsafe_counters_zero") is not True:
+    if packet_summary.get("unsafe_counters_zero") is not True:  # ty:ignore[unresolved-attribute]
         findings.append(
             FinalGateFinding(
                 "final_gate_unsafe_counters_not_zero",
@@ -450,7 +454,7 @@ def _repair_source_boundary_findings(repair_prototype: dict[str, Any]) -> list[F
         "semantic_ready_count",
         "accepted_count",
     ):
-        if diagnostics.get(field) != 0:
+        if diagnostics.get(field) != 0:  # ty:ignore[unresolved-attribute]
             findings.append(
                 FinalGateFinding(
                     "repair_diagnostic_unsafe_count", f"/diagnostics/{field}", "repair_prototype"
@@ -465,7 +469,7 @@ def _repair_source_boundary_findings(repair_prototype: dict[str, Any]) -> list[F
         "production_import_attempted",
         "ladybugdb_written",
     ):
-        if diagnostics.get(field) is not False:
+        if diagnostics.get(field) is not False:  # ty:ignore[unresolved-attribute]
             findings.append(
                 FinalGateFinding(
                     "repair_diagnostic_unsafe_boolean", f"/diagnostics/{field}", "repair_prototype"
@@ -491,7 +495,7 @@ def _contract_boundary_findings(contract: dict[str, Any]) -> list[FinalGateFindi
         "secrets_included",
         "trusted_kg_import_allowed",
     ):
-        if safety.get(field) is not False:
+        if safety.get(field) is not False:  # ty:ignore[unresolved-attribute]
             findings.append(
                 FinalGateFinding(
                     "s02_safety_boundary_unsafe", f"/safety_boundary/{field}", "s02_contract"

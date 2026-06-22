@@ -19,6 +19,8 @@ from pathlib import Path
 from typing import Any
 
 import networkx as nx
+
+# pyrefly: ignore [missing-import]
 from m060b_graph_stats import (
     DEFAULT_MANIFEST,
     DEFAULT_OUTPUT_DIR,
@@ -90,11 +92,15 @@ def degree_scaled_node_sizes(graph: nx.DiGraph) -> list[float]:
 
 def render_with_matplotlib(graph: nx.DiGraph, output_path: Path) -> str:
     """Render the graph with matplotlib and NetworkX spring_layout."""
-    import matplotlib
+    # pyrefly: ignore [missing-import]
+    import matplotlib  # ty:ignore[unresolved-import]
 
     matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    from matplotlib.lines import Line2D
+    # pyrefly: ignore [missing-import]
+    import matplotlib.pyplot as plt  # ty:ignore[unresolved-import]
+
+    # pyrefly: ignore [missing-import]
+    from matplotlib.lines import Line2D  # ty:ignore[unresolved-import]
 
     positions = nx.spring_layout(graph, seed=LAYOUT_SEED)
     edge_layers = [str(data.get("layer", "citation")) for _u, _v, data in graph.edges(data=True)]

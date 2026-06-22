@@ -55,6 +55,7 @@ def build_paper_pipeline(*, source_id: str = "", keyword_top_k: int = 20) -> Pip
         RelationTypeClassifier(),  # stubbed: llm_client=None
         EvidenceLinker(),
     )
+    # pyrefly: ignore [bad-argument-type]
     return Pipeline(stages=stages, source_id=source_id)
 
 
@@ -91,6 +92,7 @@ def build_wired_paper_pipeline(
         RelationTypeClassifier(llm_client=llm_client),
         EvidenceLinker(),
     )
+    # pyrefly: ignore [bad-argument-type]
     return Pipeline(stages=stages, source_id=source_id)
 
 

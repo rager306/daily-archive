@@ -93,7 +93,7 @@ async def test_arxiv2md_404(temp_cache, monkeypatch):
         def download(self, arxiv_id, pdf_url):
             raise RuntimeError("offline")
 
-    converter._pdf_downloader = FailingDownloader()  # pyrefly: ignore[bad-assignment]
+    converter._pdf_downloader = FailingDownloader()  # pyrefly: ignore[bad-assignment]  # ty:ignore[invalid-assignment]
 
     result = await converter.convert("2101.12345")
     assert result.markdown is None
@@ -122,7 +122,7 @@ async def test_arxiv2md_timeout(temp_cache, monkeypatch):
         def download(self, arxiv_id, pdf_url):
             raise RuntimeError("offline")
 
-    converter._pdf_downloader = FailingDownloader()  # pyrefly: ignore[bad-assignment]
+    converter._pdf_downloader = FailingDownloader()  # pyrefly: ignore[bad-assignment]  # ty:ignore[invalid-assignment]
 
     result = await converter.convert("2101.12345")
     assert result.markdown is None
@@ -232,7 +232,8 @@ async def test_arxiv2md_low_quality_markdown_falls_back_to_marker(
 
     result = await converter.convert("2605.14259v1")
 
-    assert "Recovered paper body" in result.markdown
+    # pyrefly: ignore [not-iterable]
+    assert "Recovered paper body" in result.markdown  # ty:ignore[unsupported-operator]
     assert result.method in {"marker", "docling"}
     assert not (temp_cache / "2605.14259v1.md").read_text().startswith("# Title: navigation")
 
@@ -268,7 +269,7 @@ async def test_marker_missing_pdf_reports_download_failure(temp_cache, monkeypat
         def download(self, arxiv_id, pdf_url):
             raise RuntimeError("network unavailable")
 
-    converter._pdf_downloader = FailingDownloader()  # pyrefly: ignore[bad-assignment]
+    converter._pdf_downloader = FailingDownloader()  # pyrefly: ignore[bad-assignment]  # ty:ignore[invalid-assignment]
     monkeypatch.setattr(converter, "_get_pdf_path", lambda x: None)
 
     result = await converter._try_marker("2101.12345")
@@ -287,7 +288,7 @@ async def test_marker_downloads_pdf_when_missing_and_marker_unavailable(temp_cac
             downloaded_pdf.write_bytes(b"%PDF")
             return downloaded_pdf
 
-    converter._pdf_downloader = FakeDownloader()  # pyrefly: ignore[bad-assignment]
+    converter._pdf_downloader = FakeDownloader()  # pyrefly: ignore[bad-assignment]  # ty:ignore[invalid-assignment]
     monkeypatch.setattr(converter, "_get_pdf_path", lambda x: None)
     monkeypatch.setattr("shutil.which", lambda x: None)
     monkeypatch.setattr(
@@ -379,7 +380,7 @@ async def test_arxiv2md_httperror(temp_cache, monkeypatch):
         def download(self, arxiv_id, pdf_url):
             raise RuntimeError("offline")
 
-    converter._pdf_downloader = FailingDownloader()  # pyrefly: ignore[bad-assignment]
+    converter._pdf_downloader = FailingDownloader()  # pyrefly: ignore[bad-assignment]  # ty:ignore[invalid-assignment]
 
     result = await converter.convert("2101.12345")
     assert result.markdown is None

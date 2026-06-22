@@ -168,6 +168,7 @@ def _valid_s07_outputs(root: Path) -> tuple[Path, Path, Path, dict[str, Any]]:
         **synthesis.FALSE_SAFETY_FLAGS,
     }
     _write_json(summary_path, summary)
+    # pyrefly: ignore [unsupported-operation]
     summary["provenance"]["output_artifacts"] = [
         {
             "role": "summary",

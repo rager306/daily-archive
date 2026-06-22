@@ -99,7 +99,7 @@ def render_assessment_markdown(assessment: dict[str, Any]) -> str:
         "| Dimension | Status | Blocks import | Finding codes |",
         "|---|---|---|---|",
     ]
-    for dimension, result in sorted(dimension_results.items()):
+    for dimension, result in sorted(dimension_results.items()):  # ty:ignore[unresolved-attribute]
         if not isinstance(result, dict):
             continue
         codes = ", ".join(str(code) for code in result.get("finding_codes", [])) or "none"

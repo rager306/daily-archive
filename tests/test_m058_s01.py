@@ -9,10 +9,11 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import m058_compare_v2_vs_m057 as compare_v2  # noqa: E402
-import m058_plotextractor_embed as embed_v2  # noqa: E402
-import m058_plotextractor_extract as extract_v2  # noqa: E402
-import m058_plotextractor_similarity as similarity_v2  # noqa: E402
+# pyrefly: ignore [missing-import]
+import m058_compare_v2_vs_m057 as compare_v2  # noqa: E402  # ty:ignore[unresolved-import]
+import m058_plotextractor_embed as embed_v2  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
+import m058_plotextractor_extract as extract_v2  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
+import m058_plotextractor_similarity as similarity_v2  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
 
 ARTIFACT_ROOT = ROOT / "artifacts" / "m058-plotextractor"
 SUMMARY = ARTIFACT_ROOT / "summary.json"
@@ -39,8 +40,10 @@ def _load_json(path: Path) -> dict:
 def _assert_five_false_safety_defaults(payload: dict) -> None:
     safety = payload.get("safety_defaults")
     assert safety == EXPECTED_SAFETY_DEFAULTS
-    assert len(safety) == 5
-    assert all(value is False for value in safety.values())
+    # pyrefly: ignore [bad-argument-type]
+    assert len(safety) == 5  # ty:ignore[invalid-argument-type]
+    # pyrefly: ignore [missing-attribute]
+    assert all(value is False for value in safety.values())  # ty:ignore[unresolved-attribute]
 
 
 def test_plotextractor_5_pdfs_extracted() -> None:

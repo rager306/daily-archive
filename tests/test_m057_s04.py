@@ -9,7 +9,8 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import m057_build_graph_manifest as graph_manifest  # noqa: E402
+# pyrefly: ignore [missing-import]
+import m057_build_graph_manifest as graph_manifest  # noqa: E402  # ty:ignore[unresolved-import]
 
 ARTIFACT_ROOT = ROOT / "artifacts" / "m057-fd-marker"
 COMBINED_EDGES = ARTIFACT_ROOT / "combined-edges.json"
@@ -38,8 +39,10 @@ def _load_json(path: Path) -> dict:
 def _assert_five_false_safety_defaults(payload: dict) -> None:
     safety = payload.get("safety_defaults")
     assert safety == EXPECTED_SAFETY_DEFAULTS
-    assert len(safety) == 5
-    assert all(value is False for value in safety.values())
+    # pyrefly: ignore [bad-argument-type]
+    assert len(safety) == 5  # ty:ignore[invalid-argument-type]
+    # pyrefly: ignore [missing-attribute]
+    assert all(value is False for value in safety.values())  # ty:ignore[unresolved-attribute]
 
 
 def test_graph_manifest_combined(tmp_path: Path) -> None:

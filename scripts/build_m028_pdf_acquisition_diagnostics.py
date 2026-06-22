@@ -133,8 +133,9 @@ def validate_selection(selection: dict[str, Any]) -> list[dict[str, Any]]:
             raise PdfDiagnosticInputError(f"selection_ref_required_fields:{index}")
         if ref_id in seen:
             raise PdfDiagnosticInputError(f"selection_ref_duplicate:{ref_id}")
-        seen.add(ref_id)
-        validated.append(ref)
+        # pyrefly: ignore [bad-argument-type]
+        seen.add(ref_id)  # ty:ignore[invalid-argument-type]
+        validated.append(ref)  # ty:ignore[invalid-argument-type]
     return validated
 
 

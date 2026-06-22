@@ -68,7 +68,7 @@ def _walk_keys(value: object) -> list[str]:
         keys = list(value.keys())
         for child in value.values():
             keys.extend(_walk_keys(child))
-        return keys
+        return keys  # ty:ignore[invalid-return-type]
     if isinstance(value, list):
         keys: list[str] = []
         for child in value:

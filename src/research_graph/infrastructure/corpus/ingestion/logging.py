@@ -122,7 +122,7 @@ def emit_load_terminal(
 def emit_payload(logger: ValidationLogger | ArticleEventLogger, payload: dict[str, Any]) -> None:
     """Send a flattened ingestion payload to either logging adapter."""
     if hasattr(logger, "emit_article_event"):
-        logger.emit_article_event(payload)  # type: ignore[attr-defined]
+        logger.emit_article_event(payload)  # type: ignore[attr-defined]  # ty:ignore[call-non-callable]
         return
     details = {
         key: payload[key]
@@ -139,6 +139,7 @@ def emit_payload(logger: ValidationLogger | ArticleEventLogger, payload: dict[st
             "selected_fallback",
         )
     }
+    # pyrefly: ignore [missing-attribute]
     logger.emit(
         payload["event"],
         phase=payload["phase"],

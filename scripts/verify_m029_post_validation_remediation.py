@@ -534,6 +534,7 @@ def _validate_bounded_refs(
         diagnostics.append(
             _diagnostic(
                 "M029_POST_VALIDATION_BOUNDED_REF_MISMATCH",
+                # pyrefly: ignore [bad-specialization]
                 f"bounded refs must match M030/S01 refs; missing={sorted(set(refs) - set(row_by_ref))}, extra={sorted(set(row_by_ref) - set(refs))}",
                 json_path="$.bounded_ref_reconciliation",
             )
@@ -946,7 +947,7 @@ def _validate_report(evidence: Mapping[str, Any], report: str) -> list[dict[str,
         "unsafe_flag_count",
         "decision",
     ):
-        value = counts.get(key)  # pyrefly: ignore[bad-assignment]
+        value = counts.get(key)  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
         if isinstance(value, (str, int)) and str(value) not in report:
             diagnostics.append(
                 _diagnostic(
@@ -1121,12 +1122,14 @@ def _build_verify_summary(
     )
     present_refs = sorted(
         str(row.get("bounded_ref_id"))
-        for row in bounded_rows
+        # pyrefly: ignore [not-iterable]
+        for row in bounded_rows  # ty:ignore[not-iterable]
         if isinstance(row, Mapping) and row.get("present_in_provisional_m029_selection") is True
     )
     missing_refs = sorted(
         str(row.get("bounded_ref_id"))
-        for row in bounded_rows
+        # pyrefly: ignore [not-iterable]
+        for row in bounded_rows  # ty:ignore[not-iterable]
         if isinstance(row, Mapping) and row.get("present_in_provisional_m029_selection") is False
     )
     readiness = (
@@ -1140,13 +1143,13 @@ def _build_verify_summary(
         else {}
     )
     in_scope = (
-        scope.get("in_scope_m029_remediation_requirements")  # pyrefly: ignore[bad-assignment]
-        if isinstance(scope.get("in_scope_m029_remediation_requirements"), list)  # pyrefly: ignore[bad-assignment]
+        scope.get("in_scope_m029_remediation_requirements")  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        if isinstance(scope.get("in_scope_m029_remediation_requirements"), list)  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
         else []
     )
     out_scope = (
-        scope.get("out_of_scope_project_requirements")  # pyrefly: ignore[bad-assignment]
-        if isinstance(scope.get("out_of_scope_project_requirements"), list)  # pyrefly: ignore[bad-assignment]
+        scope.get("out_of_scope_project_requirements")  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        if isinstance(scope.get("out_of_scope_project_requirements"), list)  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
         else []
     )
     return {
@@ -1157,10 +1160,10 @@ def _build_verify_summary(
         "status": "failed" if diagnostics else "passed",
         "verdict": evidence.get("verdict"),
         "blocked_verdict": str(evidence.get("verdict")) in BLOCKED_VERDICTS,
-        "article_count": readiness.get("article_count"),  # pyrefly: ignore[bad-assignment]
-        "ready_count": readiness.get("ready_count"),  # pyrefly: ignore[bad-assignment]
-        "zero_chunk_count": readiness.get("zero_chunk_count"),  # pyrefly: ignore[bad-assignment]
-        "readiness_status": readiness.get("status"),  # pyrefly: ignore[bad-assignment]
+        "article_count": readiness.get("article_count"),  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        "ready_count": readiness.get("ready_count"),  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        "zero_chunk_count": readiness.get("zero_chunk_count"),  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        "readiness_status": readiness.get("status"),  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
         "m030_s01_bounded_ref_count": len(m030_selection.get("refs", []))
         if isinstance(m030_selection.get("refs"), list)
         else None,
@@ -1170,15 +1173,15 @@ def _build_verify_summary(
         "missing_bounded_ref_count": len(missing_refs),
         "in_scope_requirement_ids": sorted(
             str(row.get("requirement_id"))
-            for row in in_scope
+            for row in in_scope  # ty:ignore[not-iterable]
             if isinstance(row, Mapping) and row.get("requirement_id")
         ),
         "out_of_scope_requirement_ids": sorted(
             str(row.get("requirement_id"))
-            for row in out_scope
+            for row in out_scope  # ty:ignore[not-iterable]
             if isinstance(row, Mapping) and row.get("requirement_id")
         ),
-        "validated_requirement_count": scope.get("validated_requirement_count"),  # pyrefly: ignore[bad-assignment]
+        "validated_requirement_count": scope.get("validated_requirement_count"),  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
         "unsafe_flag_count": sum(
             1 for item in diagnostics if str(item.get("code", "")).endswith("UNSAFE_FLAG_TRUE")
         ),

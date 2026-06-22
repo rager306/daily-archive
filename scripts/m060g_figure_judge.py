@@ -235,7 +235,7 @@ def render_pdf_first_page_to_png(pdf_path: Path, output_path: Path) -> Path:
     """Render the first PDF page to PNG using available project/runtime libraries."""
 
     try:
-        import fitz  # type: ignore[import-not-found]
+        import fitz  # type: ignore[import-not-found]  # ty:ignore[unresolved-import]
     except Exception:
         fitz = None  # type: ignore[assignment]
 
@@ -649,6 +649,7 @@ def aggregate(records: list[dict[str, Any]]) -> dict[str, Any]:
         means = {}
         for key in DIMENSIONS:
             values = [float(item["scores"][key]) for item in passed if item.get("scores")]
+            # pyrefly: ignore [unsupported-operation]
             means[key] = round(statistics.mean(values), 4) if values else None
         latencies = [
             float(item["latency_ms"]) for item in passed if item.get("latency_ms") is not None

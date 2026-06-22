@@ -246,8 +246,8 @@ def summarize_reviewer_packet_prototype(prototype: dict[str, Any]) -> dict[str, 
         "route_counts": dict(sorted(route_counts.items())),
         "repair_state_counts": dict(sorted(repair_counts.items())),
         "route_quality_state_counts": dict(sorted(route_quality_counts.items())),
-        "assessment_verdict": assessment.get("verdict", "missing"),
-        "unsafe_counters": deepcopy(assessment.get("unsafe_counters", {})),
+        "assessment_verdict": assessment.get("verdict", "missing"),  # ty:ignore[unresolved-attribute]
+        "unsafe_counters": deepcopy(assessment.get("unsafe_counters", {})),  # ty:ignore[unresolved-attribute]
     }
 
 
@@ -465,16 +465,19 @@ def _packet_from_target(target: dict[str, Any], *, index: int) -> dict[str, Any]
         ),
         "span_refs": [_span_ref(span) for span in _list_of_dicts(target.get("source_spans"))],
         "section_lineage": {
-            "status": str(section_lineage.get("status", "unresolved")),
-            "basis": str(section_lineage.get("basis", "stable_locator_and_span_ids_only")),
-            "section_path_proven": section_lineage.get("section_path_proven") is True,
+            "status": str(section_lineage.get("status", "unresolved")),  # ty:ignore[unresolved-attribute]
+            "basis": str(section_lineage.get("basis", "stable_locator_and_span_ids_only")),  # ty:ignore[unresolved-attribute]
+            "section_path_proven": section_lineage.get("section_path_proven") is True,  # ty:ignore[unresolved-attribute]
             "section_path_labels": [str(label) for label in target.get("section_path", [])],
         },
         "before_diagnostic_codes": sorted(
-            str(code) for code in before.get("codes", target.get("diagnostic_codes", []))
+            # pyrefly: ignore [not-iterable]
+            str(code)
+            for code in before.get("codes", target.get("diagnostic_codes", []))  # ty:ignore[unresolved-attribute]
         ),
         "after_diagnostic_codes": sorted(
-            str(code) for code in after.get("codes", ["kg_import_blocked"])
+            str(code)
+            for code in after.get("codes", ["kg_import_blocked"])  # ty:ignore[unresolved-attribute]
         ),
         "review_questions": _review_questions(target),
         "allowed_non_importing_decisions": list(ALLOWED_NON_IMPORTING_DECISIONS),
@@ -546,7 +549,7 @@ def _validate_zero_unsafe_contract_counters(payload: dict[str, Any]) -> None:
         "production_import_attempted": False,
     }
     for field, expected in expected_zero_or_false.items():
-        if diagnostics.get(field) != expected:
+        if diagnostics.get(field) != expected:  # ty:ignore[unresolved-attribute]
             raise ReviewerPacketError(
                 code="unsafe_contract_counter",
                 path=f"/diagnostics/{field}",
@@ -607,8 +610,8 @@ def _validate_prototype_safety(prototype: dict[str, Any]) -> None:
         prototype.get("assessment") if isinstance(prototype.get("assessment"), dict) else {}
     )
     counters = (
-        assessment.get("unsafe_counters")
-        if isinstance(assessment.get("unsafe_counters"), dict)
+        assessment.get("unsafe_counters")  # ty:ignore[unresolved-attribute]
+        if isinstance(assessment.get("unsafe_counters"), dict)  # ty:ignore[unresolved-attribute]
         else {}
     )
     for field in (
@@ -618,7 +621,7 @@ def _validate_prototype_safety(prototype: dict[str, Any]) -> None:
         "raw_text_embedded_count",
         "unsafe_safety_boundary_count",
     ):
-        if counters.get(field) != 0:
+        if counters.get(field) != 0:  # ty:ignore[unresolved-attribute]
             raise ReviewerPacketError(
                 code="unsafe_assessment_counter",
                 path=f"/assessment/unsafe_counters/{field}",
@@ -631,7 +634,7 @@ def _validate_prototype_safety(prototype: dict[str, Any]) -> None:
         "embeddings_included",
         "vectors_included",
     ):
-        if counters.get(field) is not False:
+        if counters.get(field) is not False:  # ty:ignore[unresolved-attribute]
             raise ReviewerPacketError(
                 code="unsafe_assessment_counter",
                 path=f"/assessment/unsafe_counters/{field}",
@@ -645,7 +648,7 @@ def _copied_false_safety_boundaries(target: dict[str, Any]) -> dict[str, bool]:
     )
     copied: dict[str, bool] = {}
     for field in REQUIRED_FALSE_SAFETY_FIELDS:
-        if safety.get(field) is not False:
+        if safety.get(field) is not False:  # ty:ignore[unresolved-attribute]
             raise ReviewerPacketError(
                 code="unsafe_target_safety_boundary",
                 path=f"/safety_boundaries/{field}",
@@ -662,7 +665,7 @@ def _copied_global_false_boundaries(repair_payload: dict[str, Any]) -> dict[str,
         if isinstance(repair_payload.get("diagnostics"), dict)
         else {}
     )
-    return {field: diagnostics.get(field) for field in UNSAFE_COUNTER_FIELDS}
+    return {field: diagnostics.get(field) for field in UNSAFE_COUNTER_FIELDS}  # ty:ignore[unresolved-attribute]
 
 
 def _unsafe_boundary_true(value: Any) -> bool:
@@ -673,13 +676,13 @@ def _unsafe_boundary_true(value: Any) -> bool:
 
 def _known_ids(contract: dict[str, Any]) -> dict[str, set[str]]:
     stable = contract.get("stable_ids") if isinstance(contract.get("stable_ids"), dict) else {}
-    source_ids = _string_set(stable.get("source_ids")) or {
+    source_ids = _string_set(stable.get("source_ids")) or {  # ty:ignore[unresolved-attribute]
         str(item["source_id"])
         for item in _list_of_dicts(contract.get("source_ledger"))
         if item.get("source_id")
     }
-    locator_ids = _string_set(stable.get("locator_ids"))
-    span_ids = _string_set(stable.get("span_ids"))
+    locator_ids = _string_set(stable.get("locator_ids"))  # ty:ignore[unresolved-attribute]
+    span_ids = _string_set(stable.get("span_ids"))  # ty:ignore[unresolved-attribute]
     for target in _list_of_dicts(contract.get("repair_targets")):
         if target.get("locator_id"):
             locator_ids.add(str(target["locator_id"]))

@@ -121,7 +121,7 @@ def _catalog_by_ref(index_payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
             raise BoundaryReplayError(f"catalog index article at index {idx} is not an object")
         article_ref = article.get("article_ref")
         if isinstance(article_ref, str) and article_ref:
-            result[article_ref] = article
+            result[article_ref] = article  # ty:ignore[invalid-assignment]
     return result
 
 
@@ -348,7 +348,7 @@ def _chunk_summary(chunking_root: Path, article_ref: str) -> dict[str, Any]:
         raise BoundaryReplayError(f"chunk artifact has non-list chunks/items: {path}")
     chunks = [chunk for chunk in raw_chunks if isinstance(chunk, dict)]
     diagnostics = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), list) else []
-    safe_diagnostics = [item for item in diagnostics if isinstance(item, dict)]
+    safe_diagnostics = [item for item in diagnostics if isinstance(item, dict)]  # ty:ignore[not-iterable]
     if not chunks and not safe_diagnostics:
         safe_diagnostics.append(
             _diagnostic(
@@ -384,10 +384,10 @@ def _evidence_summary(evidence_root: Path, article_ref: str) -> dict[str, Any]:
         payload = _load_json(path)
         paths[evidence_type] = str(path)
         summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
-        counts[evidence_type] = int(summary.get("item_count") or 0)
-        diagnostic_counts[evidence_type] = int(summary.get("diagnostic_count") or 0)
+        counts[evidence_type] = int(summary.get("item_count") or 0)  # ty:ignore[unresolved-attribute]
+        diagnostic_counts[evidence_type] = int(summary.get("diagnostic_count") or 0)  # ty:ignore[unresolved-attribute]
         flags = payload.get("safety_flags") if isinstance(payload.get("safety_flags"), dict) else {}
-        if flags.get("raw_payloads_included") is True or flags.get("metadata_only") is False:
+        if flags.get("raw_payloads_included") is True or flags.get("metadata_only") is False:  # ty:ignore[unresolved-attribute]
             diagnostics.append(
                 _diagnostic(
                     "EVIDENCE_REDACTION_FLAG_UNSAFE",
@@ -451,7 +451,7 @@ def _comparison(
     payload = _load_json(path)
     baseline_metrics = payload.get("metrics") if isinstance(payload.get("metrics"), dict) else {}
     current = _flat_metrics(metrics)
-    baseline = _flat_metrics(baseline_metrics)
+    baseline = _flat_metrics(baseline_metrics)  # ty:ignore[invalid-argument-type]
     deltas = {
         key: current.get(key, 0) - baseline.get(key, 0)
         for key in sorted(set(current) | set(baseline))
@@ -470,7 +470,7 @@ def _collect_diagnostics(*sections: dict[str, Any]) -> list[dict[str, Any]]:
     diagnostics: list[dict[str, Any]] = []
     for section in sections:
         raw = section.get("diagnostics") if isinstance(section.get("diagnostics"), list) else []
-        diagnostics.extend(item for item in raw if isinstance(item, dict))
+        diagnostics.extend(item for item in raw if isinstance(item, dict))  # ty:ignore[not-iterable]
     return diagnostics
 
 
@@ -724,7 +724,7 @@ def _summary_from_artifacts(
         diagnostics = (
             artifact.get("diagnostics") if isinstance(artifact.get("diagnostics"), list) else []
         )
-        for diagnostic in diagnostics:
+        for diagnostic in diagnostics:  # ty:ignore[not-iterable]
             if isinstance(diagnostic, dict):
                 code = str(diagnostic.get("code") or "UNKNOWN")
                 diagnostic_counts[code] = diagnostic_counts.get(code, 0) + 1
@@ -739,7 +739,7 @@ def _summary_from_artifacts(
             if isinstance(artifact.get("boundary_status"), dict)
             else {}
         )
-        for boundary, status in boundary_status.items():
+        for boundary, status in boundary_status.items():  # ty:ignore[unresolved-attribute]
             if boundary in boundary_counts:
                 status_value = str(status)
                 boundary_counts[boundary][status_value] = (
@@ -749,9 +749,9 @@ def _summary_from_artifacts(
             artifact.get("safety_state") if isinstance(artifact.get("safety_state"), dict) else {}
         )
         violated = {
-            key: safety_state.get(key)
+            key: safety_state.get(key)  # ty:ignore[unresolved-attribute]
             for key, expected in FALSE_SAFETY_FLAGS.items()
-            if safety_state.get(key) is not expected
+            if safety_state.get(key) is not expected  # ty:ignore[unresolved-attribute]
         }
         if violated:
             safety_violations.append({"article_ref": article_ref, "violations": violated})
@@ -763,14 +763,14 @@ def _summary_from_artifacts(
         unsafe_path = _contains_unsafe_payload_key(
             {key: value for key, value in artifact.items() if key != "diagnostics"}
         )
-        if redaction.get("raw_article_text_included") is not False or unsafe_path is not None:
+        if redaction.get("raw_article_text_included") is not False or unsafe_path is not None:  # ty:ignore[unresolved-attribute]
             redaction_violations.append(
                 {"article_ref": article_ref, "json_path": unsafe_path or "$.redaction_checks"}
             )
         metrics = artifact.get("metrics") if isinstance(artifact.get("metrics"), dict) else {}
-        if int(metrics.get("chunk_count") or 0) == 0 and not any(
+        if int(metrics.get("chunk_count") or 0) == 0 and not any(  # ty:ignore[unresolved-attribute]
             isinstance(item, dict) and item.get("code") == "ZERO_CHUNKS_WITHOUT_DIAGNOSTIC"
-            for item in diagnostics
+            for item in diagnostics  # ty:ignore[not-iterable]
         ):
             zero_chunk_violations.append(article_ref)
         provenance = (
@@ -778,7 +778,7 @@ def _summary_from_artifacts(
             if isinstance(artifact.get("provenance_coverage"), dict)
             else {}
         )
-        if not provenance.get("chunking_path_recorded") or not provenance.get(
+        if not provenance.get("chunking_path_recorded") or not provenance.get(  # ty:ignore[unresolved-attribute]
             "evidence_paths_recorded"
         ):
             provenance_missing.append(article_ref)
@@ -788,7 +788,7 @@ def _summary_from_artifacts(
                 "article_ref": article_ref,
                 "path": artifact.get("_path"),
                 "boundary_status": boundary_status,
-                "diagnostic_count": len([item for item in diagnostics if isinstance(item, dict)]),
+                "diagnostic_count": len([item for item in diagnostics if isinstance(item, dict)]),  # ty:ignore[not-iterable]
                 "readiness": readiness,
                 "metrics": metrics,
             }

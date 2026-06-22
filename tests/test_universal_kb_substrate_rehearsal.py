@@ -94,7 +94,8 @@ def test_handoff_rejects_any_write_or_promotion_authority(unsafe_field: str) -> 
     }
 
     with pytest.raises(ValueError, match="no-write rehearsal"):
-        ReadinessHandoff(**kwargs)
+        # pyrefly: ignore [bad-argument-type]
+        ReadinessHandoff(**kwargs)  # ty:ignore[invalid-argument-type]
 
 
 def test_rehearsal_rejects_authoritative_candidate_state(tmp_path: Path) -> None:

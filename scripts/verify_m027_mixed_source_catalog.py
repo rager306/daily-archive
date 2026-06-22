@@ -18,6 +18,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+# pyrefly: ignore [missing-import]
 from verify_m025_article_catalog import (
     diagnostic,
     parse_args,

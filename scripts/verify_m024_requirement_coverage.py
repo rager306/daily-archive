@@ -106,7 +106,7 @@ def validate_matrix(matrix: dict[str, Any]) -> list[str]:
             errors.append(f"requirements[{index}] missing string requirement_id")
             continue
         seen[requirement_id] = seen.get(requirement_id, 0) + 1
-        rows[requirement_id] = row
+        rows[requirement_id] = row  # ty:ignore[invalid-assignment]
         for key in (
             "current_status",
             "m024_applicability",

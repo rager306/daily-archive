@@ -23,6 +23,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
+# pyrefly: ignore [missing-import]
 from build_m028_universal_loader_evidence_bundles import (  # noqa: E402
     EVENT_SCHEMA_VERSION,
     EXPECTED_IDENTITY_COUNT,
@@ -275,7 +276,7 @@ def validate_selection(
                     )
                 )
             seen.add(ref_id)
-        validated.append(ref)
+        validated.append(ref)  # ty:ignore[invalid-argument-type]
 
     ref_ids = [str(ref.get("ref_id")) for ref in validated if isinstance(ref.get("ref_id"), str)]
     if ref_ids != EXPECTED_REF_IDS:
@@ -447,7 +448,7 @@ def validate_artifact_checks(
         else {}
     )
     for key in ("path", "sha256", "byte_count", "content_type"):
-        expected = metadata_artifact.get(key)
+        expected = metadata_artifact.get(key)  # ty:ignore[unresolved-attribute]
         if bundle_metadata.get(key) != expected:
             diagnostics.append(
                 Diagnostic(
@@ -456,7 +457,7 @@ def validate_artifact_checks(
                     f"metadata artifact {key} drift",
                 )
             )
-    if metadata_artifact.get("checksum_verified") is True and not isinstance(
+    if metadata_artifact.get("checksum_verified") is True and not isinstance(  # ty:ignore[unresolved-attribute]
         bundle_metadata.get("sha256"), str
     ):
         diagnostics.append(
@@ -476,7 +477,7 @@ def validate_artifact_checks(
         else {}
     )
     for key in ("path", "sha256", "byte_count", "content_type"):
-        expected = pdf_artifact.get(key)
+        expected = pdf_artifact.get(key)  # ty:ignore[unresolved-attribute]
         if bundle_pdf.get(key) != expected:
             diagnostics.append(
                 Diagnostic(
@@ -485,7 +486,7 @@ def validate_artifact_checks(
                     f"PDF artifact {key} drift",
                 )
             )
-    if pdf_artifact.get("checksum_verified") is True and not isinstance(
+    if pdf_artifact.get("checksum_verified") is True and not isinstance(  # ty:ignore[unresolved-attribute]
         bundle_pdf.get("sha256"), str
     ):
         diagnostics.append(
@@ -496,7 +497,7 @@ def validate_artifact_checks(
             )
         )
     if (
-        pdf_artifact.get("signature_verified") is True
+        pdf_artifact.get("signature_verified") is True  # ty:ignore[unresolved-attribute]
         and bundle_pdf.get("payload_embedded") is not False
     ):
         diagnostics.append(
@@ -596,7 +597,7 @@ def validate_bundle_contract(
         source_metadata = (
             bundle.get("source_metadata") if isinstance(bundle.get("source_metadata"), dict) else {}
         )
-        if source_metadata.get("metadata_status") != metadata_status(metadata_event):
+        if source_metadata.get("metadata_status") != metadata_status(metadata_event):  # ty:ignore[unresolved-attribute]
             diagnostics.append(
                 Diagnostic(
                     "SOURCE_METADATA_STATUS_MISMATCH",
@@ -604,7 +605,7 @@ def validate_bundle_contract(
                     "metadata status mapping drift",
                 )
             )
-        if source_metadata.get("optional_metadata_gaps") != (
+        if source_metadata.get("optional_metadata_gaps") != (  # ty:ignore[unresolved-attribute]
             metadata_event.get("optional_metadata_gaps")
             if isinstance(metadata_event.get("optional_metadata_gaps"), list)
             else []
@@ -622,9 +623,9 @@ def validate_bundle_contract(
         )
         expected_status, expected_reason, expected_terminal = terminal_pdf_status(pdf_event)
         if (
-            pdf_diagnostic.get("status"),
-            pdf_diagnostic.get("reason"),
-            pdf_diagnostic.get("terminal"),
+            pdf_diagnostic.get("status"),  # ty:ignore[unresolved-attribute]
+            pdf_diagnostic.get("reason"),  # ty:ignore[unresolved-attribute]
+            pdf_diagnostic.get("terminal"),  # ty:ignore[unresolved-attribute]
         ) != (expected_status, expected_reason, expected_terminal):
             diagnostics.append(
                 Diagnostic(
@@ -638,7 +639,7 @@ def validate_bundle_contract(
             if isinstance(pdf_event.get("candidate_pdf"), dict)
             else None
         )
-        if pdf_diagnostic.get("candidate_kind") != expected_candidate:
+        if pdf_diagnostic.get("candidate_kind") != expected_candidate:  # ty:ignore[unresolved-attribute]
             diagnostics.append(
                 Diagnostic(
                     "PDF_CANDIDATE_KIND_MISMATCH",
@@ -650,7 +651,7 @@ def validate_bundle_contract(
         loader_evidence = (
             bundle.get("loader_evidence") if isinstance(bundle.get("loader_evidence"), dict) else {}
         )
-        if loader_evidence.get("source_quality_status") != source_quality_status(
+        if loader_evidence.get("source_quality_status") != source_quality_status(  # ty:ignore[unresolved-attribute]
             metadata_event, pdf_event
         ):
             diagnostics.append(
@@ -667,7 +668,7 @@ def validate_bundle_contract(
             "production_import_eligible",
         )
         for key in expected_false_evidence:
-            if loader_evidence.get(key) is not False:
+            if loader_evidence.get(key) is not False:  # ty:ignore[unresolved-attribute]
                 diagnostics.append(
                     Diagnostic(
                         "LOADER_EVIDENCE_UNSAFE_POSITIVE",
@@ -675,7 +676,7 @@ def validate_bundle_contract(
                         f"{key} must be false",
                     )
                 )
-        if loader_evidence.get("outcome") != "safe_for_downstream_metadata_projection_only":
+        if loader_evidence.get("outcome") != "safe_for_downstream_metadata_projection_only":  # ty:ignore[unresolved-attribute]
             diagnostics.append(
                 Diagnostic(
                     "LOADER_EVIDENCE_OUTCOME_UNSAFE",
@@ -816,8 +817,8 @@ def validate_summary(
         else {}
     )
     for name, path in expected_fingerprints.items():
-        fingerprint = fingerprints.get(name) if isinstance(fingerprints.get(name), dict) else {}
-        if fingerprint.get("sha256") != sha256_file(path):  # pyrefly: ignore[bad-assignment]
+        fingerprint = fingerprints.get(name) if isinstance(fingerprints.get(name), dict) else {}  # ty:ignore[unresolved-attribute]
+        if fingerprint.get("sha256") != sha256_file(path):  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
             diagnostics.append(
                 Diagnostic(
                     "SUMMARY_INPUT_FINGERPRINT_MISMATCH",
@@ -840,7 +841,7 @@ def validate_unsafe_counters(
         else {}
     )
     for key in UNSAFE_COUNTER_KEYS:
-        if key not in summary_counts:
+        if key not in summary_counts:  # ty:ignore[unsupported-operator]
             diagnostics.append(
                 Diagnostic(
                     "UNSAFE_COUNTER_MISSING",
@@ -856,12 +857,12 @@ def validate_unsafe_counters(
                     f"computed unsafe counter {key}={computed.get(key, 0)}",
                 )
             )
-        if reject_unsafe_claims and summary_counts.get(key) != 0:
+        if reject_unsafe_claims and summary_counts.get(key) != 0:  # ty:ignore[unresolved-attribute]
             diagnostics.append(
                 Diagnostic(
                     "UNSAFE_CLAIM_REJECTED",
                     f"$.summary.unsafe_claim_counts.{key}",
-                    f"summary unsafe counter {key}={summary_counts.get(key)}",
+                    f"summary unsafe counter {key}={summary_counts.get(key)}",  # ty:ignore[unresolved-attribute]
                 )
             )
 

@@ -194,7 +194,7 @@ class TestArticleSchemaV0001:
             article = _load_json(_article_path(article_ref))
             variants = _variants_by_role(article)
 
-            assert expected["must_have_roles"] <= set(variants), article_ref
+            assert expected["must_have_roles"] <= set(variants), article_ref  # ty:ignore[unsupported-operator]
             primary_id = article["source_strategy"]["primary_source_variant_id"]
             primary_variant = next(
                 variant

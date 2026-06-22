@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+# pyrefly: ignore [missing-import]
 from scripts.run_m036_real_corpus_no_write_smoke import run_smoke
 
 

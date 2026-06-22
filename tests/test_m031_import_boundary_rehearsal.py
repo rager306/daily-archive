@@ -66,7 +66,8 @@ def test_build_m031_import_boundary_rehearsal_treats_positive_structural_labels_
 
     parser_ready = next(
         candidate
-        for candidate in contract["candidates"]
+        # pyrefly: ignore [not-iterable]
+        for candidate in contract["candidates"]  # ty:ignore[not-iterable]
         if candidate["package_id"] == "arxiv_cs-cl_2507.19457_arxiv_pdf"
     )
 
@@ -98,21 +99,33 @@ def test_build_m031_import_boundary_rehearsal_is_metadata_only_and_has_consisten
     rendered = repr(contract)
 
     assert all(fragment not in rendered for fragment in forbidden_payload_fragments)
-    assert contract["candidate_count"] == len(contract["candidates"])
+    # pyrefly: ignore [bad-argument-type]
+    assert contract["candidate_count"] == len(contract["candidates"])  # ty:ignore[invalid-argument-type]
     assert contract["accepted_count"] == sum(
-        1 for c in contract["candidates"] if c["accepted"] is True
+        1
+        for c in contract["candidates"]
+        if c["accepted"] is True  # pyrefly: ignore [not-iterable]  # ty:ignore[not-iterable]
     )
     assert contract["rejected_count"] == sum(
-        1 for c in contract["candidates"] if c["rejected"] is True
+        1
+        for c in contract["candidates"]
+        if c["rejected"] is True  # pyrefly: ignore [not-iterable]  # ty:ignore[not-iterable]
     )
-    assert all(candidate["raw_text_included"] is False for candidate in contract["candidates"])
-    assert all(candidate["chunk_text_included"] is False for candidate in contract["candidates"])
-    assert all(candidate["embeddings_included"] is False for candidate in contract["candidates"])
-    assert all(candidate["vectors_included"] is False for candidate in contract["candidates"])
+    # pyrefly: ignore [not-iterable]
+    assert all(candidate["raw_text_included"] is False for candidate in contract["candidates"])  # ty:ignore[not-iterable]
+    # pyrefly: ignore [not-iterable]
+    assert all(candidate["chunk_text_included"] is False for candidate in contract["candidates"])  # ty:ignore[not-iterable]
+    # pyrefly: ignore [not-iterable]
+    assert all(candidate["embeddings_included"] is False for candidate in contract["candidates"])  # ty:ignore[not-iterable]
+    # pyrefly: ignore [not-iterable]
+    assert all(candidate["vectors_included"] is False for candidate in contract["candidates"])  # ty:ignore[not-iterable]
     assert all(
-        candidate["production_import_attempted"] is False for candidate in contract["candidates"]
+        # pyrefly: ignore [not-iterable]
+        candidate["production_import_attempted"] is False
+        for candidate in contract["candidates"]  # ty:ignore[not-iterable]
     )
-    assert all(candidate["ladybugdb_written"] is False for candidate in contract["candidates"])
+    # pyrefly: ignore [not-iterable]
+    assert all(candidate["ladybugdb_written"] is False for candidate in contract["candidates"])  # ty:ignore[not-iterable]
 
 
 def test_validate_m031_rehearsal_rejects_unsafe_graph_import_flags() -> None:
@@ -121,8 +134,8 @@ def test_validate_m031_rehearsal_rejects_unsafe_graph_import_flags() -> None:
     unsafe["trusted_kg_import_allowed"] = True
     unsafe["graph_import_allowed"] = True
     unsafe["production_ladybugdb_write_allowed"] = True
-    unsafe["candidates"][0]["trusted_kg_import_allowed"] = True  # pyrefly: ignore[bad-assignment]
-    unsafe["candidates"][0]["kg_readiness_claimed"] = True  # pyrefly: ignore[bad-assignment]
+    unsafe["candidates"][0]["trusted_kg_import_allowed"] = True  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+    unsafe["candidates"][0]["kg_readiness_claimed"] = True  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
 
     validation = validate_import_boundary_rehearsal(unsafe)
 
@@ -138,12 +151,13 @@ def test_build_m031_import_boundary_rehearsal_requires_completed_review_absence_
 
     parser_ready = next(
         candidate
-        for candidate in contract["candidates"]
+        # pyrefly: ignore [not-iterable]
+        for candidate in contract["candidates"]  # ty:ignore[not-iterable]
         if candidate["candidate_type"] == "graph_readiness_package"
     )
 
-    assert contract["source_m031_summary"]["independent_review_completed_count"] == 0  # pyrefly: ignore[bad-assignment]
-    assert contract["source_m031_summary"]["pending_graph_readiness_review_count"] == 1  # pyrefly: ignore[bad-assignment]
+    assert contract["source_m031_summary"]["independent_review_completed_count"] == 0  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+    assert contract["source_m031_summary"]["pending_graph_readiness_review_count"] == 1  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     assert parser_ready["review_state"] == "pending_independent_graph_readiness_review"
     assert parser_ready["output_contract_completed"] is False
     assert parser_ready["independent_review_completed"] is False

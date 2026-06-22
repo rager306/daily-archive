@@ -547,7 +547,7 @@ def validate_article_evidence_bundle(
     bundle: ArticleEvidenceBundle | dict[str, Any],
 ) -> list[dict[str, Any]]:
     """Return redacted diagnostics with stable codes and JSON paths."""
-    payload = bundle.to_redacted_dict() if hasattr(bundle, "to_redacted_dict") else dict(bundle)  # pyrefly: ignore[bad-assignment]
+    payload = bundle.to_redacted_dict() if hasattr(bundle, "to_redacted_dict") else dict(bundle)  # pyrefly: ignore [bad-assignment, no-matching-overload]  # ty:ignore[call-non-callable]
     diagnostics: list[ArticleEvidenceDiagnostic] = []
     diagnostics.extend(
         _required(
@@ -602,8 +602,8 @@ def to_redacted_dict(
 ) -> dict[str, Any]:
     """Convert a bridge object or mapping to a redacted dictionary."""
     if hasattr(value, "to_redacted_dict"):
-        return value.to_redacted_dict()  # type: ignore[no-any-return]
-    return dict(value)  # pyrefly: ignore[bad-assignment]
+        return value.to_redacted_dict()  # type: ignore[no-any-return]  # ty:ignore[call-non-callable]
+    return dict(value)  # pyrefly: ignore [bad-assignment, no-matching-overload]
 
 
 def attach_page_index_summary(
@@ -638,7 +638,7 @@ def attach_page_index_summary(
     else:
         status = "metadata_only"
 
-    subtrees = dict(payload.get("subtrees") if isinstance(payload.get("subtrees"), dict) else {})
+    subtrees = dict(payload.get("subtrees") if isinstance(payload.get("subtrees"), dict) else {})  # ty:ignore[no-matching-overload]
     subtrees["page_index"] = {
         "status": status,
         "review_only": True,
@@ -727,20 +727,20 @@ def attach_assets_summary(
         status = "metadata_only"
 
     record_count = _int_from_mapping(summary, "asset_count") if summary else len(assets)
-    subtrees = dict(payload.get("subtrees") if isinstance(payload.get("subtrees"), dict) else {})
+    subtrees = dict(payload.get("subtrees") if isinstance(payload.get("subtrees"), dict) else {})  # ty:ignore[no-matching-overload]
     subtrees["assets"] = {
         "status": status,
         "review_only": True,
         "record_count": record_count,
         "asset_count": record_count,
-        "asset_counts_by_type": dict(summary.get("asset_counts_by_type", {}))
-        if isinstance(summary.get("asset_counts_by_type"), dict)
+        "asset_counts_by_type": dict(summary.get("asset_counts_by_type", {}))  # ty:ignore[unresolved-attribute]
+        if isinstance(summary.get("asset_counts_by_type"), dict)  # ty:ignore[unresolved-attribute]
         else _counts(asset.get("asset_type") for asset in assets),
-        "preservation_state_counts": dict(summary.get("preservation_state_counts", {}))
-        if isinstance(summary.get("preservation_state_counts"), dict)
+        "preservation_state_counts": dict(summary.get("preservation_state_counts", {}))  # ty:ignore[unresolved-attribute]
+        if isinstance(summary.get("preservation_state_counts"), dict)  # ty:ignore[unresolved-attribute]
         else _counts(asset.get("preservation_state") for asset in assets),
-        "interpretation_status_counts": dict(summary.get("interpretation_status_counts", {}))
-        if isinstance(summary.get("interpretation_status_counts"), dict)
+        "interpretation_status_counts": dict(summary.get("interpretation_status_counts", {}))  # ty:ignore[unresolved-attribute]
+        if isinstance(summary.get("interpretation_status_counts"), dict)  # ty:ignore[unresolved-attribute]
         else _counts(asset.get("interpretation_status") for asset in assets),
         "source_ref_count": _int_from_mapping(summary, "source_ref_count")
         if summary
@@ -806,23 +806,23 @@ def attach_links_dedup_summary(
     manifest = _links_dedup_redacted_manifest(links_dedup_manifest)
     summary = manifest.get("summary") if isinstance(manifest.get("summary"), dict) else {}
     family_counts = (
-        summary.get("link_family_counts")
-        if isinstance(summary.get("link_family_counts"), dict)
+        summary.get("link_family_counts")  # ty:ignore[unresolved-attribute]
+        if isinstance(summary.get("link_family_counts"), dict)  # ty:ignore[unresolved-attribute]
         else {}
     )
     metadata_signal_counts = (
-        summary.get("metadata_signal_counts")
-        if isinstance(summary.get("metadata_signal_counts"), dict)
+        summary.get("metadata_signal_counts")  # ty:ignore[unresolved-attribute]
+        if isinstance(summary.get("metadata_signal_counts"), dict)  # ty:ignore[unresolved-attribute]
         else {}
     )
     dedup_decision_counts = (
-        summary.get("dedup_decision_counts")
-        if isinstance(summary.get("dedup_decision_counts"), dict)
+        summary.get("dedup_decision_counts")  # ty:ignore[unresolved-attribute]
+        if isinstance(summary.get("dedup_decision_counts"), dict)  # ty:ignore[unresolved-attribute]
         else {}
     )
     diagnostic_counts = (
-        dict(summary.get("diagnostic_counts", {}))
-        if isinstance(summary.get("diagnostic_counts"), dict)
+        dict(summary.get("diagnostic_counts", {}))  # ty:ignore[unresolved-attribute]
+        if isinstance(summary.get("diagnostic_counts"), dict)  # ty:ignore[unresolved-attribute]
         else {}
     )
     manifest_diagnostics = _list_of_dicts(manifest.get("diagnostics"))
@@ -848,17 +848,17 @@ def attach_links_dedup_summary(
     )
     status: BundleSubtreeStatus = "blocked" if blocker_count else "review_only"
     page_index_coverage = (
-        summary.get("page_index_anchor_coverage")
-        if isinstance(summary.get("page_index_anchor_coverage"), dict)
+        summary.get("page_index_anchor_coverage")  # ty:ignore[unresolved-attribute]
+        if isinstance(summary.get("page_index_anchor_coverage"), dict)  # ty:ignore[unresolved-attribute]
         else {}
     )
     source_span_coverage = (
-        summary.get("source_span_coverage")
-        if isinstance(summary.get("source_span_coverage"), dict)
+        summary.get("source_span_coverage")  # ty:ignore[unresolved-attribute]
+        if isinstance(summary.get("source_span_coverage"), dict)  # ty:ignore[unresolved-attribute]
         else {}
     )
 
-    subtrees = dict(payload.get("subtrees") if isinstance(payload.get("subtrees"), dict) else {})
+    subtrees = dict(payload.get("subtrees") if isinstance(payload.get("subtrees"), dict) else {})  # ty:ignore[no-matching-overload]
     subtrees["links_dedup"] = {
         "status": status,
         "review_only": True,
@@ -867,11 +867,11 @@ def attach_links_dedup_summary(
         "structural_link_count": _int_from_mapping(family_counts, "structural"),
         "metadata_signal_count": _int_from_mapping(family_counts, "metadata_signal"),
         "dedup_candidate_count": _int_from_mapping(family_counts, "dedup_candidate"),
-        "link_family_counts": dict(family_counts),
-        "page_index_anchor_coverage": dict(page_index_coverage),
-        "source_span_coverage": dict(source_span_coverage),
-        "metadata_signal_counts": dict(metadata_signal_counts),
-        "dedup_decision_counts": dict(dedup_decision_counts),
+        "link_family_counts": dict(family_counts),  # ty:ignore[no-matching-overload]
+        "page_index_anchor_coverage": dict(page_index_coverage),  # ty:ignore[no-matching-overload]
+        "source_span_coverage": dict(source_span_coverage),  # ty:ignore[no-matching-overload]
+        "metadata_signal_counts": dict(metadata_signal_counts),  # ty:ignore[no-matching-overload]
+        "dedup_decision_counts": dict(dedup_decision_counts),  # ty:ignore[no-matching-overload]
         "diagnostic_count": len(diagnostics),
         "diagnostic_counts_by_code": dict(sorted(diagnostic_counts.items())),
         "blocker_count": blocker_count,
@@ -947,8 +947,8 @@ def attach_retrieval_table_benchmark_summary(
         1 for diagnostic in diagnostics if diagnostic.get("blocks_import") is not False
     )
     summary_diagnostic_counts = (
-        summary.get("diagnostic_counts")
-        if isinstance(summary.get("diagnostic_counts"), dict)
+        summary.get("diagnostic_counts")  # ty:ignore[unresolved-attribute]
+        if isinstance(summary.get("diagnostic_counts"), dict)  # ty:ignore[unresolved-attribute]
         else {}
     )
 
@@ -957,7 +957,7 @@ def attach_retrieval_table_benchmark_summary(
     record_count = retrieval_unit_count + table_candidate_count
     status: BundleSubtreeStatus = "blocked" if blocker_count else "review_only"
 
-    subtrees = dict(payload.get("subtrees") if isinstance(payload.get("subtrees"), dict) else {})
+    subtrees = dict(payload.get("subtrees") if isinstance(payload.get("subtrees"), dict) else {})  # ty:ignore[no-matching-overload]
     retrieval_subtree = {
         "status": status,
         "review_only": True,
@@ -979,7 +979,7 @@ def attach_retrieval_table_benchmark_summary(
         "summary_diagnostic_counts": dict(
             sorted(
                 (str(key), int(value))
-                for key, value in summary_diagnostic_counts.items()
+                for key, value in summary_diagnostic_counts.items()  # ty:ignore[unresolved-attribute]
                 if isinstance(value, int)
             )
         ),
@@ -1030,7 +1030,7 @@ def attach_retrieval_table_benchmark_summary(
     }
     subtrees["retrieval"] = retrieval_subtree
 
-    metrics = dict(subtrees.get("metrics") if isinstance(subtrees.get("metrics"), dict) else {})
+    metrics = dict(subtrees.get("metrics") if isinstance(subtrees.get("metrics"), dict) else {})  # ty:ignore[no-matching-overload]
     metrics.update(
         {
             "status": "blocked" if blocker_count else "review_only",
@@ -1045,9 +1045,9 @@ def attach_retrieval_table_benchmark_summary(
                 "ranking_tie_count": retrieval_subtree["ranking_tie_count"],
                 "diagnostic_count": len(diagnostics),
                 "diagnostic_counts_by_code": diagnostic_counts,
-                "manifest_path": retrieval_subtree["manifest"]["path"],  # pyrefly: ignore[bad-assignment]
-                "manifest_sha256": retrieval_subtree["manifest"]["sha256"],  # pyrefly: ignore[bad-assignment]
-                "manifest_schema": retrieval_subtree["manifest"]["schema_version"],  # pyrefly: ignore[bad-assignment]
+                "manifest_path": retrieval_subtree["manifest"]["path"],  # pyrefly: ignore [bad-assignment, bad-index]
+                "manifest_sha256": retrieval_subtree["manifest"]["sha256"],  # pyrefly: ignore [bad-assignment, bad-index]
+                "manifest_schema": retrieval_subtree["manifest"]["schema_version"],  # pyrefly: ignore [bad-assignment, bad-index]
                 "import_eligible_count": 0,
                 "promoted_to_fact_count": 0,
                 "production_import_attempted": False,
@@ -1308,9 +1308,9 @@ def _asset_page_index_provenance(
         else {}
     )
     return {
-        "manifest_path": _string_or_none(manifest.get("manifest_path")),
-        "manifest_sha256": _string_or_none(manifest.get("manifest_sha256")),
-        "manifest_schema_version": _string_or_none(manifest.get("schema_version")),
+        "manifest_path": _string_or_none(manifest.get("manifest_path")),  # ty:ignore[unresolved-attribute]
+        "manifest_sha256": _string_or_none(manifest.get("manifest_sha256")),  # ty:ignore[unresolved-attribute]
+        "manifest_schema_version": _string_or_none(manifest.get("schema_version")),  # ty:ignore[unresolved-attribute]
         "node_ref_count": len(
             {asset.get("page_index_node_id") for asset in assets if asset.get("page_index_node_id")}
         ),
@@ -1465,7 +1465,7 @@ def _links_dedup_bridge_diagnostics(
         "raw_payloads_included",
         "model_outputs_included",
     ):
-        if safety_flags.get(field_name) is True:
+        if safety_flags.get(field_name) is True:  # ty:ignore[unresolved-attribute]
             diagnostics.append(
                 _diagnostic(
                     f"links_dedup_safety_flag_true:{field_name}",
@@ -1511,11 +1511,11 @@ def _links_dedup_page_index_provenance(manifest: dict[str, Any]) -> dict[str, An
         manifest.get("page_index_refs") if isinstance(manifest.get("page_index_refs"), dict) else {}
     )
     return {
-        "manifest_path": _string_or_none(refs.get("manifest_path")),
-        "manifest_sha256": _string_or_none(refs.get("manifest_sha256")),
-        "manifest_schema_version": _string_or_none(refs.get("schema_version")),
-        "node_ref_count": len(_string_list(refs.get("node_ids"))),
-        "anchor_ref_count": len(_string_list(refs.get("anchor_ids"))),
+        "manifest_path": _string_or_none(refs.get("manifest_path")),  # ty:ignore[unresolved-attribute]
+        "manifest_sha256": _string_or_none(refs.get("manifest_sha256")),  # ty:ignore[unresolved-attribute]
+        "manifest_schema_version": _string_or_none(refs.get("schema_version")),  # ty:ignore[unresolved-attribute]
+        "node_ref_count": len(_string_list(refs.get("node_ids"))),  # ty:ignore[unresolved-attribute]
+        "anchor_ref_count": len(_string_list(refs.get("anchor_ids"))),  # ty:ignore[unresolved-attribute]
     }
 
 
@@ -1973,11 +1973,11 @@ def _validate_links_dedup_subtree(
                 _diagnostic(f"links_dedup_{field_name}_true", f"/subtrees/links_dedup/{field_name}")
             )
     manifest = subtree.get("manifest") if isinstance(subtree.get("manifest"), dict) else {}
-    if manifest.get("path") is not None and not str(manifest.get("path", "")).strip():
+    if manifest.get("path") is not None and not str(manifest.get("path", "")).strip():  # ty:ignore[unresolved-attribute]
         diagnostics.append(
             _diagnostic("links_dedup_empty_manifest_path", "/subtrees/links_dedup/manifest/path")
         )
-    if manifest.get("sha256") is not None and not _valid_sha256(manifest.get("sha256")):
+    if manifest.get("sha256") is not None and not _valid_sha256(manifest.get("sha256")):  # ty:ignore[unresolved-attribute]
         diagnostics.append(
             _diagnostic(
                 "links_dedup_invalid_manifest_sha256", "/subtrees/links_dedup/manifest/sha256"
@@ -1989,7 +1989,7 @@ def _validate_links_dedup_subtree(
         else {}
     )
     bundle_ids = {str(source.get("source_id")) for source in source_refs if source.get("source_id")}
-    for source_id in _string_list(provenance.get("manifest_source_ids")):
+    for source_id in _string_list(provenance.get("manifest_source_ids")):  # ty:ignore[unresolved-attribute]
         if bundle_ids and source_id not in bundle_ids:
             diagnostics.append(
                 _diagnostic(

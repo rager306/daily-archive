@@ -153,11 +153,11 @@ def validate_selection(selection: dict[str, Any]) -> list[dict[str, Any]]:
         )
         if not all(isinstance(value, str) and value for value in required):
             raise UniversalLoaderEvidenceInputError(f"selection_ref_required_fields:{index}")
-        ref_id = str(ref["ref_id"])
+        ref_id = str(ref["ref_id"])  # ty:ignore[invalid-argument-type]
         if ref_id in seen:
             raise UniversalLoaderEvidenceInputError(f"selection_ref_duplicate:{ref_id}")
         seen.add(ref_id)
-        validated.append(ref)
+        validated.append(ref)  # ty:ignore[invalid-argument-type]
     return validated
 
 
@@ -404,20 +404,20 @@ def build_bundle(
     )
     metadata_artifact = safe_artifact_ref(
         repo_root,
-        metadata_artifact_payload.get("path"),
-        metadata_artifact_payload.get("sha256"),
-        metadata_artifact_payload.get("byte_count"),
-        metadata_artifact_payload.get("content_type"),
+        metadata_artifact_payload.get("path"),  # ty:ignore[unresolved-attribute]
+        metadata_artifact_payload.get("sha256"),  # ty:ignore[unresolved-attribute]
+        metadata_artifact_payload.get("byte_count"),  # ty:ignore[unresolved-attribute]
+        metadata_artifact_payload.get("content_type"),  # ty:ignore[unresolved-attribute]
     )
     pdf_artifact_payload = (
         pdf_event.get("pdf_artifact") if isinstance(pdf_event.get("pdf_artifact"), dict) else {}
     )
     pdf_artifact = safe_artifact_ref(
         repo_root,
-        pdf_artifact_payload.get("path"),
-        pdf_artifact_payload.get("sha256"),
-        pdf_artifact_payload.get("byte_count"),
-        pdf_artifact_payload.get("content_type"),
+        pdf_artifact_payload.get("path"),  # ty:ignore[unresolved-attribute]
+        pdf_artifact_payload.get("sha256"),  # ty:ignore[unresolved-attribute]
+        pdf_artifact_payload.get("byte_count"),  # ty:ignore[unresolved-attribute]
+        pdf_artifact_payload.get("content_type"),  # ty:ignore[unresolved-attribute]
     )
 
     diagnostics: list[dict[str, Any]] = []
@@ -519,19 +519,19 @@ def count_unsafe_claims(bundles: list[dict[str, Any]]) -> dict[str, int]:
     for bundle in bundles:
         flags = bundle.get("safety_flags") if isinstance(bundle.get("safety_flags"), dict) else {}
         for key in SAFETY_FLAGS:
-            if flags.get(key) is not False:
+            if flags.get(key) is not False:  # ty:ignore[unresolved-attribute]
                 counts[key] += 1
         evidence = (
             bundle.get("loader_evidence") if isinstance(bundle.get("loader_evidence"), dict) else {}
         )
         if (
-            evidence.get("kg_import_eligible") is True
-            or evidence.get("production_import_eligible") is True
+            evidence.get("kg_import_eligible") is True  # ty:ignore[unresolved-attribute]
+            or evidence.get("production_import_eligible") is True  # ty:ignore[unresolved-attribute]
         ):
             counts["import_eligible_count"] += 1
-        if evidence.get("outcome") == "promoted_to_fact":
+        if evidence.get("outcome") == "promoted_to_fact":  # ty:ignore[unresolved-attribute]
             counts["promoted_to_fact_count"] += 1
-        if evidence.get("hermes_digest_ready") is True:
+        if evidence.get("hermes_digest_ready") is True:  # ty:ignore[unresolved-attribute]
             counts["hermes_digest_count"] += 1
     return counts
 

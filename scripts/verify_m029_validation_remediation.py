@@ -439,6 +439,7 @@ def _validate_bounded_refs(
     m029_identities = _selection_identity_set(m029_selection, rows_key="articles")
     if set(row_by_ref) != set(refs):
         missing = sorted(set(refs) - set(row_by_ref))
+        # pyrefly: ignore [bad-specialization]
         extra = sorted(set(row_by_ref) - set(refs))
         diagnostics.append(
             _diagnostic(
@@ -920,12 +921,14 @@ def _build_verify_summary(
     )
     present_refs = sorted(
         str(row.get("bounded_ref_id"))
-        for row in bounded_rows
+        # pyrefly: ignore [not-iterable]
+        for row in bounded_rows  # ty:ignore[not-iterable]
         if isinstance(row, Mapping) and row.get("present_in_provisional_m029_selection") is True
     )
     missing_refs = sorted(
         str(row.get("bounded_ref_id"))
-        for row in bounded_rows
+        # pyrefly: ignore [not-iterable]
+        for row in bounded_rows  # ty:ignore[not-iterable]
         if isinstance(row, Mapping) and row.get("present_in_provisional_m029_selection") is False
     )
     readiness = (
@@ -945,10 +948,10 @@ def _build_verify_summary(
         "selection_id": SELECTION_ID,
         "status": "failed" if diagnostics else "passed",
         "verdict": evidence.get("verdict"),
-        "article_count": readiness.get("article_count"),  # pyrefly: ignore[bad-assignment]
-        "ready_count": readiness.get("ready_count"),  # pyrefly: ignore[bad-assignment]
-        "zero_chunk_count": readiness.get("zero_chunk_count"),  # pyrefly: ignore[bad-assignment]
-        "readiness_status": readiness.get("status"),  # pyrefly: ignore[bad-assignment]
+        "article_count": readiness.get("article_count"),  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        "ready_count": readiness.get("ready_count"),  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        "zero_chunk_count": readiness.get("zero_chunk_count"),  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        "readiness_status": readiness.get("status"),  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
         "present_bounded_refs": present_refs,
         "missing_bounded_refs": missing_refs,
         "m029_selection_article_count": len(m029_selection.get("articles", []))
@@ -959,7 +962,8 @@ def _build_verify_summary(
         else None,
         "requirement_ids": sorted(
             str(row.get("requirement_id"))
-            for row in requirements
+            # pyrefly: ignore [not-iterable]
+            for row in requirements  # ty:ignore[not-iterable]
             if isinstance(row, Mapping) and row.get("requirement_id")
         ),
         "unsafe_flag_count": sum(

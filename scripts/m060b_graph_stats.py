@@ -101,10 +101,11 @@ def _sorted_degree_items(items: Any, limit: int = 10) -> list[dict[str, int | st
 
 
 def _sorted_counter_items(counter: Counter[Any], limit: int = 10) -> list[dict[str, int]]:
+    # pyrefly: ignore [bad-return]
     return [
         {"id": str(key), "count": int(count)}
         for key, count in sorted(counter.items(), key=lambda item: (-item[1], str(item[0])))[:limit]
-    ]
+    ]  # ty:ignore[invalid-return-type]
 
 
 def compute_layer_stats(edges: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -170,7 +171,8 @@ def compute_citation_top_targets(
         for edge in edges
         if edge.get("evidence_layer") == "citation" and edge.get("target_paper_id")
     )
-    return _sorted_counter_items(citation_targets, limit=limit)
+    # pyrefly: ignore [bad-return]
+    return _sorted_counter_items(citation_targets, limit=limit)  # ty:ignore[invalid-return-type]
 
 
 def compute_stats(manifest_path: Path) -> dict[str, Any]:

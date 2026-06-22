@@ -95,6 +95,7 @@ def build_audit(
     actual_ids = {e.get("article_key") for e in entries}
 
     missing = sorted(expected_ids - actual_ids)
+    # pyrefly: ignore [bad-specialization]
     unexpected = sorted(actual_ids - expected_ids)
 
     total_bytes = sum(e.get("bytes", 0) for e in entries)

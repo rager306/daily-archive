@@ -121,17 +121,17 @@ def summarize_bounded_chunk_repair_contract(payload: dict[str, Any]) -> dict[str
         "repair_state_counts": dict(sorted(repair_states.items())),
         "route_quality_state_counts": dict(sorted(route_quality_states.items())),
         "unsafe_safety_counters": {
-            "import_eligible_count": diagnostics.get("import_eligible_count"),
-            "promoted_to_fact_count": diagnostics.get("promoted_to_fact_count"),
-            "production_write_count": diagnostics.get("production_write_count"),
-            "semantic_ready_count": diagnostics.get("semantic_ready_count"),
-            "raw_text_included": diagnostics.get("raw_text_included"),
-            "chunk_text_included": diagnostics.get("chunk_text_included"),
-            "embeddings_included": diagnostics.get("embeddings_included"),
-            "vectors_included": diagnostics.get("vectors_included"),
-            "secrets_included": diagnostics.get("secrets_included"),
-            "ladybugdb_written": diagnostics.get("ladybugdb_written"),
-            "production_import_attempted": diagnostics.get("production_import_attempted"),
+            "import_eligible_count": diagnostics.get("import_eligible_count"),  # ty:ignore[unresolved-attribute]
+            "promoted_to_fact_count": diagnostics.get("promoted_to_fact_count"),  # ty:ignore[unresolved-attribute]
+            "production_write_count": diagnostics.get("production_write_count"),  # ty:ignore[unresolved-attribute]
+            "semantic_ready_count": diagnostics.get("semantic_ready_count"),  # ty:ignore[unresolved-attribute]
+            "raw_text_included": diagnostics.get("raw_text_included"),  # ty:ignore[unresolved-attribute]
+            "chunk_text_included": diagnostics.get("chunk_text_included"),  # ty:ignore[unresolved-attribute]
+            "embeddings_included": diagnostics.get("embeddings_included"),  # ty:ignore[unresolved-attribute]
+            "vectors_included": diagnostics.get("vectors_included"),  # ty:ignore[unresolved-attribute]
+            "secrets_included": diagnostics.get("secrets_included"),  # ty:ignore[unresolved-attribute]
+            "ladybugdb_written": diagnostics.get("ladybugdb_written"),  # ty:ignore[unresolved-attribute]
+            "production_import_attempted": diagnostics.get("production_import_attempted"),  # ty:ignore[unresolved-attribute]
         },
     }
 
@@ -170,11 +170,11 @@ def render_bounded_chunk_repair_markdown(payload: dict[str, Any]) -> str:
         "",
         f"- Contract schema: {payload['schema_version']}",
         f"- Selected target count: {summary['target_count']}",
-        f"- Source count: {stable_counts.get('source_count', 0)}",
-        f"- Locator count: {stable_counts.get('locator_count', 0)}",
-        f"- Span count: {stable_counts.get('span_count', 0)}",
-        f"- Source audit schema: {source_audit.get('schema_version', 'not-recorded')}",
-        f"- Source audit path: {source_audit.get('audit_path', 'not-recorded')}",
+        f"- Source count: {stable_counts.get('source_count', 0)}",  # ty:ignore[unresolved-attribute]
+        f"- Locator count: {stable_counts.get('locator_count', 0)}",  # ty:ignore[unresolved-attribute]
+        f"- Span count: {stable_counts.get('span_count', 0)}",  # ty:ignore[unresolved-attribute]
+        f"- Source audit schema: {source_audit.get('schema_version', 'not-recorded')}",  # ty:ignore[unresolved-attribute]
+        f"- Source audit path: {source_audit.get('audit_path', 'not-recorded')}",  # ty:ignore[unresolved-attribute]
         "- Source audit redacted: true",
         "",
         "## Repair State Counts",
@@ -192,17 +192,17 @@ def render_bounded_chunk_repair_markdown(payload: dict[str, Any]) -> str:
             "",
             "## Safety Boundary Counts",
             "",
-            f"- Import eligibility count: {diagnostics.get('import_eligible_count')}",
-            f"- Fact promotion count: {diagnostics.get('promoted_to_fact_count')}",
-            f"- Production write count: {diagnostics.get('production_write_count')}",
-            f"- Semantic readiness count: {diagnostics.get('semantic_ready_count')}",
-            f"- Source payload included: {str(diagnostics.get('raw_text_included')).lower()}",
-            f"- Chunk payload included: {str(diagnostics.get('chunk_text_included')).lower()}",
-            f"- Model embedding payloads included: {str(diagnostics.get('embeddings_included')).lower()}",
-            f"- Model vector payloads included: {str(diagnostics.get('vectors_included')).lower()}",
-            f"- Secret values included: {str(diagnostics.get('secrets_included')).lower()}",
-            f"- LadybugDB write attempted: {str(diagnostics.get('ladybugdb_written')).lower()}",
-            f"- Production import attempted: {str(diagnostics.get('production_import_attempted')).lower()}",
+            f"- Import eligibility count: {diagnostics.get('import_eligible_count')}",  # ty:ignore[unresolved-attribute]
+            f"- Fact promotion count: {diagnostics.get('promoted_to_fact_count')}",  # ty:ignore[unresolved-attribute]
+            f"- Production write count: {diagnostics.get('production_write_count')}",  # ty:ignore[unresolved-attribute]
+            f"- Semantic readiness count: {diagnostics.get('semantic_ready_count')}",  # ty:ignore[unresolved-attribute]
+            f"- Source payload included: {str(diagnostics.get('raw_text_included')).lower()}",  # ty:ignore[unresolved-attribute]
+            f"- Chunk payload included: {str(diagnostics.get('chunk_text_included')).lower()}",  # ty:ignore[unresolved-attribute]
+            f"- Model embedding payloads included: {str(diagnostics.get('embeddings_included')).lower()}",  # ty:ignore[unresolved-attribute]
+            f"- Model vector payloads included: {str(diagnostics.get('vectors_included')).lower()}",  # ty:ignore[unresolved-attribute]
+            f"- Secret values included: {str(diagnostics.get('secrets_included')).lower()}",  # ty:ignore[unresolved-attribute]
+            f"- LadybugDB write attempted: {str(diagnostics.get('ladybugdb_written')).lower()}",  # ty:ignore[unresolved-attribute]
+            f"- Production import attempted: {str(diagnostics.get('production_import_attempted')).lower()}",  # ty:ignore[unresolved-attribute]
             "",
             "## Target Classifications",
             "",
@@ -219,8 +219,8 @@ def render_bounded_chunk_repair_markdown(payload: dict[str, Any]) -> str:
             if isinstance(target.get("after_diagnostics"), dict)
             else {}
         )
-        before_codes = ", ".join(str(code) for code in before.get("codes", [])) or "none"
-        after_codes = ", ".join(str(code) for code in after.get("codes", [])) or "none"
+        before_codes = ", ".join(str(code) for code in before.get("codes", [])) or "none"  # ty:ignore[unresolved-attribute]
+        after_codes = ", ".join(str(code) for code in after.get("codes", [])) or "none"  # ty:ignore[unresolved-attribute]
         span_ids = ", ".join(
             str(span.get("span_id")) for span in _list_of_dicts(target.get("source_spans"))
         )
@@ -240,7 +240,7 @@ def render_bounded_chunk_repair_markdown(payload: dict[str, Any]) -> str:
                 f"- Repair kind: {target.get('repair_kind')}",
                 f"- Before diagnostic codes: {before_codes}",
                 f"- After diagnostic codes: {after_codes}",
-                f"- After safe to import: {str(after.get('safe_to_import')).lower()}",
+                f"- After safe to import: {str(after.get('safe_to_import')).lower()}",  # ty:ignore[unresolved-attribute]
                 f"- Section lineage status: {target.get('section_lineage', {}).get('status', 'unresolved') if isinstance(target.get('section_lineage'), dict) else 'unresolved'}",
                 "- Classification: explicit needs-review or non-repairable until a human reviewer accepts evidence outside this prototype",
                 "",
@@ -313,7 +313,7 @@ def _validate_locator_safety(locator_batch: dict[str, Any]) -> None:
             )
     summary = locator_batch.get("summary") if isinstance(locator_batch.get("summary"), dict) else {}
     for field in ("import_eligible_count", "promoted_to_fact_count"):
-        if summary.get(field) != 0:
+        if summary.get(field) != 0:  # ty:ignore[unresolved-attribute]
             raise BoundedChunkRepairError(
                 code="unsafe_summary_counter", path=f"/summary/{field}", object_type="locator_batch"
             )
@@ -321,9 +321,9 @@ def _validate_locator_safety(locator_batch: dict[str, Any]) -> None:
 
 def _known_contract_ids(contract: dict[str, Any]) -> dict[str, set[str]]:
     stable_ids = contract.get("stable_ids") if isinstance(contract.get("stable_ids"), dict) else {}
-    source_ids = _string_set(stable_ids.get("source_ids")) or _source_ids_from_contract(contract)
-    locator_ids = _string_set(stable_ids.get("locator_ids")) or _locator_ids_from_contract(contract)
-    span_ids = _string_set(stable_ids.get("span_ids")) or _span_ids_from_contract(contract)
+    source_ids = _string_set(stable_ids.get("source_ids")) or _source_ids_from_contract(contract)  # ty:ignore[unresolved-attribute]
+    locator_ids = _string_set(stable_ids.get("locator_ids")) or _locator_ids_from_contract(contract)  # ty:ignore[unresolved-attribute]
+    span_ids = _string_set(stable_ids.get("span_ids")) or _span_ids_from_contract(contract)  # ty:ignore[unresolved-attribute]
     paper_ids = set(expected_audit_from_contract(contract).get("paper_ids") or [])
     if not paper_ids:
         paper_ids = _string_set([contract.get("paper_id")])

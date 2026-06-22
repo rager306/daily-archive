@@ -164,8 +164,10 @@ def validate_import_ready_package(package: dict[str, Any]) -> ContractValidation
         chunk_diagnostics = _validate_chunk(
             chunk=chunk,
             package_paper_id=paper_id,
-            element_ids=element_ids,
-            evidence_path_ids=evidence_path_ids,
+            # pyrefly: ignore [bad-argument-type]
+            element_ids=element_ids,  # ty:ignore[invalid-argument-type]
+            # pyrefly: ignore [bad-argument-type]
+            evidence_path_ids=evidence_path_ids,  # ty:ignore[invalid-argument-type]
             evidence_paths_by_id=evidence_paths_by_id,
         )
         diagnostics.extend(chunk_diagnostics)
@@ -177,7 +179,10 @@ def validate_import_ready_package(package: dict[str, Any]) -> ContractValidation
     for annotation in annotations:
         diagnostics.extend(
             _validate_annotation(
-                annotation=annotation, chunk_ids=chunk_ids, package_paper_id=paper_id
+                # pyrefly: ignore [bad-argument-type]
+                annotation=annotation,
+                chunk_ids=chunk_ids,
+                package_paper_id=paper_id,  # ty:ignore[invalid-argument-type]
             )
         )
 
@@ -185,8 +190,10 @@ def validate_import_ready_package(package: dict[str, Any]) -> ContractValidation
         diagnostics.extend(
             _validate_evidence_path(
                 evidence_path=evidence_path,
-                chunk_ids=chunk_ids,
-                element_ids=element_ids,
+                # pyrefly: ignore [bad-argument-type]
+                chunk_ids=chunk_ids,  # ty:ignore[invalid-argument-type]
+                # pyrefly: ignore [bad-argument-type]
+                element_ids=element_ids,  # ty:ignore[invalid-argument-type]
                 package_paper_id=paper_id,
             )
         )
@@ -574,7 +581,7 @@ def _validate_graph_ready_chunk(
                 reason="invalid_route", object_id=chunk_id, object_type="chunk", route=route
             )
         )
-    elif chunk_type not in ROUTE_COMPATIBLE_CHUNK_TYPES.get(route, frozenset()):  # pyrefly: ignore[bad-assignment]
+    elif chunk_type not in ROUTE_COMPATIBLE_CHUNK_TYPES.get(route, frozenset()):  # pyrefly: ignore [bad-assignment, no-matching-overload]
         diagnostics.append(
             ContractDiagnostic(
                 reason="route_chunk_type_mismatch",

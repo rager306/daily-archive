@@ -8,6 +8,8 @@ from hypothesis import strategies as st
 from research_graph.infrastructure.corpus.sources.arxiv_client import ArxivPaper
 from research_graph.infrastructure.corpus.sources.semantic_scholar import SemanticScholarPaper
 from research_graph.infrastructure.evaluation.scoring import ScoringEngine
+
+# pyrefly: ignore [missing-import]
 from tests.helpers.modular_fixtures import FIXTURE_PAPER_ID
 
 

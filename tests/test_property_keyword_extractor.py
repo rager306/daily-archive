@@ -4,6 +4,8 @@ from hypothesis import Verbosity, given, settings
 from hypothesis import strategies as st
 
 from research_graph.infrastructure.retrieval.keyword_extractor import KeywordExtractor
+
+# pyrefly: ignore [missing-import]
 from tests.helpers.modular_fixtures import FIXTURE_MARKDOWN
 
 

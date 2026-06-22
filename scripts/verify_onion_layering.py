@@ -142,7 +142,7 @@ def scan_domain(domain_root: Path) -> dict[str, object]:
 def scan_all() -> dict[str, object]:
     """Scan every configured layer (domain, application). Returns an aggregate report."""
     reports = {layer: scan_layer(layer, root) for layer, root in LAYER_ROOTS.items()}
-    total = sum(r["violation_count"] for r in reports.values())  # pyrefly: ignore[bad-assignment]
+    total = sum(r["violation_count"] for r in reports.values())  # pyrefly: ignore [bad-assignment, no-matching-overload]
     return {
         "status": "clear" if total == 0 else "violations",
         "violation_count": total,
@@ -181,13 +181,15 @@ def main() -> int:
         total = report["violation_count"]
         if total == 0:
             sys.stdout.write(
+                # pyrefly: ignore [missing-attribute]
                 f"onion layering guard ok: all layers clean "
-                f"({', '.join(f'{name}={len(r["scanned_files"])} files' for name, r in report['layers'].items())}, "
+                f"({', '.join(f'{name}={len(r["scanned_files"])} files' for name, r in report['layers'].items())}, "  # ty:ignore[unresolved-attribute]
                 f"0 forbidden imports)\n"
             )
         else:
             sys.stderr.write(f"onion layering guard FAILED: {total} violation(s)\n")
-            for layer, layer_report in report["layers"].items():
+            # pyrefly: ignore [missing-attribute]
+            for layer, layer_report in report["layers"].items():  # ty:ignore[unresolved-attribute]
                 for v in layer_report["violations"]:
                     sys.stderr.write(
                         f"  - [{layer}] {v['file']}: imports {v['module']} ({v['detail']})\n"
@@ -197,14 +199,16 @@ def main() -> int:
         layer = report.get("layer", "domain")
         if status == "clear":
             sys.stdout.write(
+                # pyrefly: ignore [bad-argument-type]
                 f"onion layering guard ok: {layer} clean "
-                f"({len(report['scanned_files'])} files scanned, 0 forbidden imports)\n"
+                f"({len(report['scanned_files'])} files scanned, 0 forbidden imports)\n"  # ty:ignore[invalid-argument-type]
             )
         else:
             sys.stderr.write(
                 f"onion layering guard FAILED: {report['violation_count']} violation(s)\n"
             )
-            for v in report["violations"]:
+            # pyrefly: ignore [not-iterable]
+            for v in report["violations"]:  # ty:ignore[not-iterable]
                 sys.stderr.write(f"  - {v['file']}: imports {v['module']} ({v['detail']})\n")
     return 0 if report["status"] == "clear" else 1
 

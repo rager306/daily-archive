@@ -11,8 +11,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-import audit_m053_grobid_pilot as audit  # noqa: E402
-import update_m043_target_subset_post_m053 as update_m043  # noqa: E402
+# pyrefly: ignore [missing-import]
+import audit_m053_grobid_pilot as audit  # noqa: E402  # ty:ignore[unresolved-import]
+import update_m043_target_subset_post_m053 as update_m043  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
 
 SAFETY_KEYS = {
     "graph_import_allowed",

@@ -308,7 +308,7 @@ def _walk_keys(value: object) -> list[str]:
         keys = list(value.keys())
         for child in value.values():
             keys.extend(_walk_keys(child))
-        return keys
+        return keys  # ty:ignore[invalid-return-type]
     if isinstance(value, list):
         keys: list[str] = []
         for child in value:
@@ -549,7 +549,7 @@ def test_page_index_summary_attaches_valid_manifest_as_metadata_only_subtree(
     tmp_path: Path,
 ) -> None:
     payload = _page_index_attached_payload(tmp_path, _basic_page_index())
-    subtree = payload["subtrees"]["page_index"]  # pyrefly: ignore[bad-assignment]
+    subtree = payload["subtrees"]["page_index"]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
 
     assert subtree["status"] == "metadata_only"
     assert subtree["review_only"] is True
@@ -585,7 +585,7 @@ def test_page_index_summary_attaches_valid_manifest_as_metadata_only_subtree(
 
 def test_page_index_summary_attaches_fallback_manifest_as_review_only(tmp_path: Path) -> None:
     payload = _page_index_attached_payload(tmp_path, _fallback_page_index())
-    subtree = payload["subtrees"]["page_index"]  # pyrefly: ignore[bad-assignment]
+    subtree = payload["subtrees"]["page_index"]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
 
     assert subtree["status"] == "review_only"
     assert subtree["record_count"] == 1
@@ -603,7 +603,7 @@ def test_page_index_summary_attaches_blocked_manifest_as_blocked_review_only(
     tmp_path: Path,
 ) -> None:
     payload = _page_index_attached_payload(tmp_path, _blocked_page_index())
-    subtree = payload["subtrees"]["page_index"]  # pyrefly: ignore[bad-assignment]
+    subtree = payload["subtrees"]["page_index"]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
 
     assert subtree["status"] == "blocked"
     assert subtree["record_count"] > 0
@@ -622,10 +622,11 @@ def test_page_index_summary_forces_unsafe_import_mutation_fail_closed(tmp_path: 
     page_index = _basic_page_index()
     page_index["import_eligible_count"] = 9
     page_index["production_import_attempted"] = True
-    page_index["bridge_subtree"]["trusted_kg_import_allowed"] = True
+    # pyrefly: ignore [unsupported-operation]
+    page_index["bridge_subtree"]["trusted_kg_import_allowed"] = True  # ty:ignore[invalid-assignment]
 
     payload = _page_index_attached_payload(tmp_path, page_index)
-    subtree = payload["subtrees"]["page_index"]  # pyrefly: ignore[bad-assignment]
+    subtree = payload["subtrees"]["page_index"]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
 
     assert subtree["status"] == "blocked"
     assert subtree["import_eligible_count"] == 0
@@ -953,8 +954,10 @@ def test_retrieval_table_benchmark_summary_attaches_review_only_aggregate_counts
     payload = attach_retrieval_table_benchmark_summary(
         bundle,
         manifest,
-        manifest_path=manifest["manifest_path"],
-        manifest_sha256=manifest["manifest_sha256"],
+        # pyrefly: ignore [bad-argument-type]
+        manifest_path=manifest["manifest_path"],  # ty:ignore[invalid-argument-type]
+        # pyrefly: ignore [bad-argument-type]
+        manifest_sha256=manifest["manifest_sha256"],  # ty:ignore[invalid-argument-type]
     )
     subtree = payload["subtrees"]["retrieval"]
     metrics = payload["subtrees"]["metrics"]["retrieval_table_benchmark"]
@@ -1075,8 +1078,10 @@ def test_retrieval_table_payload_bearing_bridge_subtree_fails_bundle_validation(
     payload = attach_retrieval_table_benchmark_summary(
         bundle,
         manifest,
-        manifest_path=manifest["manifest_path"],
-        manifest_sha256=manifest["manifest_sha256"],
+        # pyrefly: ignore [bad-argument-type]
+        manifest_path=manifest["manifest_path"],  # ty:ignore[invalid-argument-type]
+        # pyrefly: ignore [bad-argument-type]
+        manifest_sha256=manifest["manifest_sha256"],  # ty:ignore[invalid-argument-type]
     )
     payload["subtrees"]["retrieval"]["raw_text"] = "raw retrieval text must not enter bridge"
     payload["subtrees"]["retrieval"]["import_eligible_count"] = 1

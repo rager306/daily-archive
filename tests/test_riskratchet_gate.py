@@ -14,6 +14,8 @@ from research_graph.infrastructure.quality import (
 )
 from research_graph.infrastructure.quality.baselines import baseline_delta, read_baseline
 from research_graph.infrastructure.quality.thresholds import MaintainabilityThresholds
+
+# pyrefly: ignore [missing-import]
 from scripts import run_quality_gate as quality_gate_runner
 
 

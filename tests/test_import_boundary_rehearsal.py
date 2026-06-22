@@ -25,7 +25,7 @@ def _candidate(**overrides: object) -> ImportCandidate:
         "refusal_reasons": ("not_reviewed_for_trusted_import",),
         "remediation_hints": ("review_candidate_and_evidence_span",),
     }
-    values.update(overrides)  # pyrefly: ignore[bad-assignment]
+    values.update(overrides)  # pyrefly: ignore [bad-assignment, no-matching-overload]
     return ImportCandidate(**values)
 
 
@@ -48,7 +48,7 @@ def test_import_boundary_rehearsal_serializes_negative_candidate() -> None:
     assert contract["rejected_count"] == 1
     assert contract["refusal_counts"] == {"not_reviewed_for_trusted_import": 1}
     assert contract["recommendation"] == "positive_import_blocked"
-    candidate = contract["candidates"][0]  # pyrefly: ignore[bad-assignment]
+    candidate = contract["candidates"][0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     assert candidate["accepted"] is False
     assert candidate["rejected"] is True
     assert candidate["import_eligible"] is False
@@ -80,7 +80,7 @@ def test_validate_import_boundary_rehearsal_rejects_count_mismatch() -> None:
 
 def test_validate_import_boundary_rehearsal_rejects_positive_import_for_refused_candidate() -> None:
     contract = _rehearsal()
-    candidate = contract["candidates"][0]  # pyrefly: ignore[bad-assignment]
+    candidate = contract["candidates"][0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     candidate["accepted"] = True
     candidate["rejected"] = False
     candidate["import_eligible"] = False
@@ -100,7 +100,7 @@ def test_validate_import_boundary_rehearsal_rejects_unsafe_write_flags() -> None
     contract = _rehearsal()
     contract["production_import_attempted"] = True
     contract["ladybugdb_written"] = True
-    contract["candidates"][0]["embeddings_included"] = True  # pyrefly: ignore[bad-assignment]
+    contract["candidates"][0]["embeddings_included"] = True  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
 
     validation = validate_import_boundary_rehearsal(contract)
 
@@ -114,7 +114,7 @@ def test_validate_import_boundary_rehearsal_rejects_nested_forbidden_fields_with
     None
 ):
     contract = _rehearsal()
-    contract["candidates"][0]["diagnostic"] = {  # pyrefly: ignore[bad-assignment]
+    contract["candidates"][0]["diagnostic"] = {  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
         "raw_text": "do not expose me",
         "embedding": [0.1, 0.2],
         "vector": [0.3],

@@ -9,9 +9,10 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import m057_compare_marker_opendataloader as compare  # noqa: E402
-import m057_fd_validate as fd_validate  # noqa: E402
-import m057_marker_extract as marker_extract  # noqa: E402
+# pyrefly: ignore [missing-import]
+import m057_compare_marker_opendataloader as compare  # noqa: E402  # ty:ignore[unresolved-import]
+import m057_fd_validate as fd_validate  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
+import m057_marker_extract as marker_extract  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
 
 FD_REPORT = ROOT / "artifacts" / "m057-fd-marker" / "fd-validation.json"
 MARKER_SUMMARY = ROOT / "artifacts" / "m057-fd-marker" / "marker-extraction" / "summary.json"

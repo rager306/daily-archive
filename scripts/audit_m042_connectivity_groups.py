@@ -143,7 +143,7 @@ def audit_connectivity(
     safety_flags = (
         manifest.get("safety_flags") if isinstance(manifest.get("safety_flags"), dict) else {}
     )
-    if any(safety_flags.get(key) is not False for key in FALSE_SAFETY_KEYS):
+    if any(safety_flags.get(key) is not False for key in FALSE_SAFETY_KEYS):  # ty:ignore[unresolved-attribute]
         raise ValueError("M041 manifest safety flags must remain false")
 
     nodes = build_nodes(articles, repair_report)

@@ -9,9 +9,10 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import m057_table_embed as table_embed  # noqa: E402
-import m057_table_similarity as table_similarity  # noqa: E402
-import m057_table_text_build as table_text_build  # noqa: E402
+# pyrefly: ignore [missing-import]
+import m057_table_embed as table_embed  # noqa: E402  # ty:ignore[unresolved-import]
+import m057_table_similarity as table_similarity  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
+import m057_table_text_build as table_text_build  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
 
 ARTIFACT_ROOT = ROOT / "artifacts" / "m057-fd-marker" / "table-similarity"
 CORPUS = ARTIFACT_ROOT / "table-text-corpus.json"

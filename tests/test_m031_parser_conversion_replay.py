@@ -11,9 +11,17 @@ fitz = pytest.importorskip("fitz")
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from replay_m031_parser_conversion import main, sha256_file  # noqa: E402
-from verify_m031_parser_conversion_replay import main as verify_main  # noqa: E402
-from verify_m031_parser_conversion_replay import verify  # noqa: E402
+# pyrefly: ignore [missing-import]
+from replay_m031_parser_conversion import (  # noqa: E402  # ty:ignore[unresolved-import]
+    main,
+    sha256_file,
+)
+from verify_m031_parser_conversion_replay import (
+    main as verify_main,  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
+)
+from verify_m031_parser_conversion_replay import (
+    verify,  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
+)
 
 
 def _write(path: Path, value: str | bytes) -> Path:
@@ -423,7 +431,8 @@ def test_parser_conversion_replay_metadata_and_reports_do_not_embed_raw_payloads
 def test_parser_conversion_replay_absent_pymupdf_is_diagnostic_not_success(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import replay_m031_parser_conversion as replay
+    # pyrefly: ignore [missing-import]
+    import replay_m031_parser_conversion as replay  # ty:ignore[unresolved-import]
 
     selection, loader_summary, source_root, output_dir = _write_inputs(tmp_path)
     monkeypatch.setattr(replay, "fitz", None)

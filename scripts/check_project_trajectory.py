@@ -239,6 +239,7 @@ def adjust_severity_for_phase(flags: list[dict[str, Any]], phase: str) -> list[d
         return list(flags)
     adjusted: list[dict[str, Any]] = []
     for flag in flags:
+        # pyrefly: ignore [bad-argument-type]
         new_severity = overrides.get(flag.get("flag"))
         if new_severity is None:
             adjusted.append(flag)

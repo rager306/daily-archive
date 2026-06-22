@@ -215,12 +215,12 @@ def build_article_asset_manifest(payload: dict[str, Any]) -> dict[str, Any]:
     }
     nodes_by_id = {
         str(node.get("node_id")): node
-        for node in _list_of_dicts(page_index.get("nodes"))
+        for node in _list_of_dicts(page_index.get("nodes"))  # ty:ignore[unresolved-attribute]
         if _non_empty_string(node.get("node_id"))
     }
     anchors_by_id = {
         str(anchor.get("anchor_id")): anchor
-        for anchor in _list_of_dicts(page_index.get("anchors"))
+        for anchor in _list_of_dicts(page_index.get("anchors"))  # ty:ignore[unresolved-attribute]
         if _non_empty_string(anchor.get("anchor_id"))
     }
 
@@ -231,7 +231,13 @@ def build_article_asset_manifest(payload: dict[str, Any]) -> dict[str, Any]:
         path = f"/asset_placeholders/{index}"
         diagnostics.extend(
             _validate_placeholder(
-                placeholder, path, object_id, sources_by_id, nodes_by_id, anchors_by_id
+                # pyrefly: ignore [bad-argument-type]
+                placeholder,
+                path,
+                object_id,
+                sources_by_id,
+                nodes_by_id,
+                anchors_by_id,  # ty:ignore[invalid-argument-type]
             )
         )
         record = _asset_record_from_placeholder(
@@ -245,7 +251,7 @@ def build_article_asset_manifest(payload: dict[str, Any]) -> dict[str, Any]:
             seen_asset_ids.add(record["asset_id"])
         records.append(record)
 
-    diagnostics.extend(_validate_page_index_boundary(page_index))
+    diagnostics.extend(_validate_page_index_boundary(page_index))  # ty:ignore[invalid-argument-type]
     diagnostic_dicts = _dedupe_diagnostics(diagnostics)
     summary = summarize_article_assets(records, source_refs, diagnostic_dicts)
     status = "blocked" if summary["blocker_count"] else "review_only_not_import_eligible"
@@ -258,9 +264,9 @@ def build_article_asset_manifest(payload: dict[str, Any]) -> dict[str, Any]:
         "manifest_id": f"{paper_id}:article-assets:manifest:v1",
         "source_refs": [_redacted_source_ref(source) for source in source_refs],
         "page_index_manifest": {
-            "schema_version": _string_or_none(page_index.get("schema_version")),
-            "manifest_path": _string_or_none(page_index.get("manifest_path")),
-            "manifest_sha256": _string_or_none(page_index.get("manifest_sha256")),
+            "schema_version": _string_or_none(page_index.get("schema_version")),  # ty:ignore[unresolved-attribute]
+            "manifest_path": _string_or_none(page_index.get("manifest_path")),  # ty:ignore[unresolved-attribute]
+            "manifest_sha256": _string_or_none(page_index.get("manifest_sha256")),  # ty:ignore[unresolved-attribute]
         },
         "assets": records,
         "summary": summary,
@@ -427,23 +433,23 @@ def attach_article_assets_summary(
     payload = dict(evidence_bundle)
     summary = manifest.get("summary") if isinstance(manifest.get("summary"), dict) else {}
     subtree = manifest.get("subtree") if isinstance(manifest.get("subtree"), dict) else {}
-    subtrees = dict(payload.get("subtrees") if isinstance(payload.get("subtrees"), dict) else {})
+    subtrees = dict(payload.get("subtrees") if isinstance(payload.get("subtrees"), dict) else {})  # ty:ignore[no-matching-overload]
     subtrees["assets"] = {
-        "status": subtree.get("status", "blocked"),
+        "status": subtree.get("status", "blocked"),  # ty:ignore[unresolved-attribute]
         "manifest_path": manifest_path,
         "manifest_sha256": manifest_sha256,
         "manifest_schema_version": ARTICLE_ASSET_MANIFEST_SCHEMA_VERSION,
-        "asset_count": int(summary.get("asset_count", 0) or 0),
-        "asset_counts_by_type": dict(summary.get("asset_counts_by_type", {})),  # pyrefly: ignore[no-matching-overload]
-        "preservation_state_counts": dict(summary.get("preservation_state_counts", {})),  # pyrefly: ignore[no-matching-overload]
-        "interpretation_status_counts": dict(summary.get("interpretation_status_counts", {})),  # pyrefly: ignore[no-matching-overload]
-        "blocker_count": int(summary.get("blocker_count", 0) or 0),
-        "import_ineligible_count": int(summary.get("import_ineligible_count", 0) or 0),
-        "hash_coverage_rate": float(summary.get("hash_coverage_rate", 0.0) or 0.0),
+        "asset_count": int(summary.get("asset_count", 0) or 0),  # ty:ignore[unresolved-attribute]
+        "asset_counts_by_type": dict(summary.get("asset_counts_by_type", {})),  # pyrefly: ignore[no-matching-overload]  # ty:ignore[unresolved-attribute]
+        "preservation_state_counts": dict(summary.get("preservation_state_counts", {})),  # pyrefly: ignore[no-matching-overload]  # ty:ignore[unresolved-attribute]
+        "interpretation_status_counts": dict(summary.get("interpretation_status_counts", {})),  # pyrefly: ignore[no-matching-overload]  # ty:ignore[unresolved-attribute]
+        "blocker_count": int(summary.get("blocker_count", 0) or 0),  # ty:ignore[unresolved-attribute]
+        "import_ineligible_count": int(summary.get("import_ineligible_count", 0) or 0),  # ty:ignore[unresolved-attribute]
+        "hash_coverage_rate": float(summary.get("hash_coverage_rate", 0.0) or 0.0),  # ty:ignore[unresolved-attribute]
         "page_index_anchor_coverage_rate": float(
-            summary.get("page_index_anchor_coverage_rate", 0.0) or 0.0
+            summary.get("page_index_anchor_coverage_rate", 0.0) or 0.0  # ty:ignore[unresolved-attribute]
         ),
-        "source_span_coverage_rate": float(summary.get("source_span_coverage_rate", 0.0) or 0.0),
+        "source_span_coverage_rate": float(summary.get("source_span_coverage_rate", 0.0) or 0.0),  # ty:ignore[unresolved-attribute]
         "trusted_kg_import_allowed": False,
         "ladybugdb_written": False,
         "production_import_attempted": False,
@@ -451,7 +457,7 @@ def attach_article_assets_summary(
     payload["subtrees"] = subtrees
     bundle_summary = dict(
         payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
-    )
+    )  # ty:ignore[no-matching-overload]
     bundle_summary["asset_count"] = subtrees["assets"]["asset_count"]
     bundle_summary["asset_blocker_count"] = subtrees["assets"]["blocker_count"]
     bundle_summary["asset_import_ineligible_count"] = subtrees["assets"]["import_ineligible_count"]

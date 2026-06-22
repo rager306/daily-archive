@@ -10,7 +10,8 @@ import pytest
 sys.path.insert(0, str(Path("scripts").resolve()))
 sys.path.insert(0, str(Path("src").resolve()))
 
-from augment_m073_evidence_paths import augment  # noqa: E402
+# pyrefly: ignore [missing-import]
+from augment_m073_evidence_paths import augment  # noqa: E402  # ty:ignore[unresolved-import]
 
 from research_graph.application.extraction_benchmark import evaluate_files  # noqa: E402
 
@@ -53,7 +54,7 @@ def _walk_keys(value: Any) -> set[str]:
         keys = set(value)
         for child in value.values():
             keys |= _walk_keys(child)
-        return keys
+        return keys  # ty:ignore[invalid-return-type]
     if isinstance(value, list):
         keys: set[str] = set()
         for child in value:

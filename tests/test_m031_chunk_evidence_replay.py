@@ -9,8 +9,15 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from replay_m031_chunk_evidence import build_review_corpus, main, sha256_file  # noqa: E402
-from verify_m031_chunk_evidence_replay import main as verify_closeout_main  # noqa: E402
+# pyrefly: ignore [missing-import]
+from replay_m031_chunk_evidence import (  # noqa: E402  # ty:ignore[unresolved-import]
+    build_review_corpus,
+    main,
+    sha256_file,
+)
+from verify_m031_chunk_evidence_replay import (
+    main as verify_closeout_main,  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
+)
 
 from research_graph.infrastructure.graph.readiness.review import (
     validate_review_artifacts,  # noqa: E402

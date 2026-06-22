@@ -93,7 +93,7 @@ class FdEmbeddingClient:
                     f"fd returned invalid embedding dimension: expected {dimensions}, got "
                     f"{len(embedding) if isinstance(embedding, list) else 'non-list'}"
                 )
-            vectors.append([float(value) for value in embedding])
+            vectors.append([float(value) for value in embedding])  # ty:ignore[invalid-argument-type]
         if len(vectors) != len(texts):
             raise FdEmbeddingError(f"fd returned {len(vectors)} embeddings for {len(texts)} inputs")
         return vectors

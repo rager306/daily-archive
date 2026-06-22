@@ -8,9 +8,10 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
-import m059_e2e_test as e2e  # noqa: E402
-import m059_replay_ingest as replay  # noqa: E402
-import m059_validate_pdf_batch as validate_batch  # noqa: E402
+# pyrefly: ignore [missing-import]
+import m059_e2e_test as e2e  # noqa: E402  # ty:ignore[unresolved-import]
+import m059_replay_ingest as replay  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
+import m059_validate_pdf_batch as validate_batch  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
 
 MANIFEST = ROOT / "artifacts/m054-pdf-acquisition/manifest.json"
 DECISION = ROOT / "artifacts/m059-architecture/decision.md"

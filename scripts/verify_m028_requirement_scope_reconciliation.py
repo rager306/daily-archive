@@ -512,7 +512,7 @@ def validate_matrix(
             errors.extend(
                 _validate_evidence_path(
                     owner_path=f"$.source_input_paths[{index}]",
-                    path_value=path_value,
+                    path_value=path_value,  # ty:ignore[invalid-argument-type]
                     repo_root=repo_root,
                     require_planning_evidence=require_planning_evidence,
                 )
@@ -574,7 +574,7 @@ def validate_matrix(
             )
             continue
         seen[rid] = seen.get(rid, 0) + 1
-        rows[rid] = row
+        rows[rid] = row  # ty:ignore[invalid-assignment]
         row_paths[rid] = row_path
         missing_row_keys = sorted(REQUIRED_ROW_KEYS - set(row))
         if missing_row_keys:

@@ -50,7 +50,7 @@ def repo_path(path: str | Path) -> Path:
     return candidate if candidate.is_absolute() else ROOT / candidate
 
 
-def load_validator(schema_path: str) -> Draft7Validator:
+def load_validator(schema_path: str) -> Draft7Validator:  # ty:ignore[invalid-type-form]
     """Load and check a draft-07 JSON Schema."""
     schema = read_json(Path(schema_path))
     Draft7Validator.check_schema(schema)

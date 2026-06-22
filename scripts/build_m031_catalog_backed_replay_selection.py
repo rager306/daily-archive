@@ -210,7 +210,7 @@ def assert_fail_closed_flags(
             for index, item in enumerate(value):
                 if isinstance(item, Mapping):
                     assert_fail_closed_flags(
-                        item,
+                        item,  # ty:ignore[invalid-argument-type]
                         context=f"{context}.{key}[{index}]",
                         identity=identity,
                         article_ref=article_ref,
@@ -476,11 +476,11 @@ def normalized_article(
         "coarse_topic_code": article_payload.get("coarse_topic_code")
         if isinstance(article_payload.get("coarse_topic_code"), str)
         else index_row.get("coarse_topic_code"),
-        "title": identity_obj.get("title")  # pyrefly: ignore[bad-assignment]
-        if isinstance(identity_obj.get("title"), str)  # pyrefly: ignore[bad-assignment]
+        "title": identity_obj.get("title")  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        if isinstance(identity_obj.get("title"), str)  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
         else index_row.get("title"),
-        "canonical_url": identity_obj.get("canonical_url")  # pyrefly: ignore[bad-assignment]
-        if isinstance(identity_obj.get("canonical_url"), str)  # pyrefly: ignore[bad-assignment]
+        "canonical_url": identity_obj.get("canonical_url")  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        if isinstance(identity_obj.get("canonical_url"), str)  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
         else index_row.get("canonical_url"),
         "primary_source_role": index_row.get("primary_source_role")
         if isinstance(index_row.get("primary_source_role"), str)

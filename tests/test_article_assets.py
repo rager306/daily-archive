@@ -259,15 +259,15 @@ def _assert_metadata_only(payload: dict[str, object] | list[dict[str, object]]) 
 def _diagnostic_codes(manifest: dict[str, object]) -> set[str]:
     diagnostics = manifest.get("diagnostics", [])
     assert isinstance(diagnostics, list)
-    return {str(diagnostic["code"]) for diagnostic in diagnostics}
+    return {str(diagnostic["code"]) for diagnostic in diagnostics}  # ty:ignore[not-subscriptable]
 
 
 def _diagnostic_by_code(manifest: dict[str, object], code: str) -> dict[str, object]:
     diagnostics = manifest.get("diagnostics", [])
     assert isinstance(diagnostics, list)
     for diagnostic in diagnostics:
-        if diagnostic.get("code") == code:
-            return diagnostic
+        if diagnostic.get("code") == code:  # ty:ignore[unresolved-attribute]
+            return diagnostic  # ty:ignore[invalid-return-type]
     raise AssertionError(f"missing diagnostic code: {code}")
 
 
@@ -504,7 +504,7 @@ def test_forbidden_payload_keys_are_diagnosed_without_echoing_values(
     article_assets_contract, forbidden_key: str
 ) -> None:
     payload = _manifest_input()
-    payload["asset_placeholders"][0][forbidden_key] = FORBIDDEN_SENTINEL  # pyrefly: ignore[bad-assignment]
+    payload["asset_placeholders"][0][forbidden_key] = FORBIDDEN_SENTINEL  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
 
     manifest = article_assets_contract.build_article_asset_manifest(payload)
 
@@ -523,9 +523,9 @@ def test_unsafe_graph_import_and_readiness_flags_fail_closed(article_assets_cont
     payload["trusted_kg_import_allowed"] = True
     payload["production_import_attempted"] = True
     payload["ladybugdb_written"] = True
-    payload["asset_placeholders"][0]["import_eligible"] = True  # pyrefly: ignore[bad-assignment]
-    payload["asset_placeholders"][1]["promoted_to_fact"] = True  # pyrefly: ignore[bad-assignment]
-    payload["asset_placeholders"][2]["readiness_status"] = "ready_for_import"  # pyrefly: ignore[bad-assignment]
+    payload["asset_placeholders"][0]["import_eligible"] = True  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+    payload["asset_placeholders"][1]["promoted_to_fact"] = True  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+    payload["asset_placeholders"][2]["readiness_status"] = "ready_for_import"  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
 
     manifest = article_assets_contract.build_article_asset_manifest(payload)
 

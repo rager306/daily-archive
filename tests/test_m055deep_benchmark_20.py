@@ -66,8 +66,10 @@ def normalized_status_counts(summary: dict[str, Any]) -> Counter[str]:
 
 def assert_safety_defaults_false(packet: dict[str, Any]) -> None:
     safety_defaults = packet.get("safety_defaults")
-    assert set(safety_defaults) == SAFETY_KEYS
-    assert all(value is False for value in safety_defaults.values())
+    # pyrefly: ignore [bad-argument-type]
+    assert set(safety_defaults) == SAFETY_KEYS  # ty:ignore[invalid-argument-type]
+    # pyrefly: ignore [missing-attribute]
+    assert all(value is False for value in safety_defaults.values())  # ty:ignore[unresolved-attribute]
 
 
 def test_grobid_fulltext_20_pdfs() -> None:

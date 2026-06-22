@@ -329,7 +329,7 @@ def run_smoke(
             "cost_estimate_note": "Skipped because live calls are disabled.",
         }
     )
-    image_result.update(  # pyrefly: ignore[bad-assignment]
+    image_result.update(  # pyrefly: ignore [bad-assignment, no-matching-overload]
         {
             "test_id": image_test_id,
             "binding_id": image_binding_id,

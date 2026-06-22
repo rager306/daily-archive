@@ -67,7 +67,8 @@ def _catalog(root: Path) -> None:
     )
     for entry in entries:
         _write_json(
-            root / "article_catalog" / entry["article_ref"] / "article.json",
+            # pyrefly: ignore [unsupported-operation]
+            root / "article_catalog" / entry["article_ref"] / "article.json",  # ty:ignore[unsupported-operator]
             {
                 "schema_version": "article.v00.01",
                 "article_key": entry["article_key"],

@@ -910,9 +910,10 @@ def _span_from_structure(span: dict[str, Any]) -> ArticlePageIndexSourceSpan:
         char_end=span.get("char_end") if isinstance(span.get("char_end"), int) else None,
         page_start=span.get("page_start") if isinstance(span.get("page_start"), int) else None,
         page_end=span.get("page_end") if isinstance(span.get("page_end"), int) else None,
+        # pyrefly: ignore [bad-argument-type]
         bbox=tuple(float(value) for value in bbox)
         if isinstance(bbox, list) and len(bbox) == 4
-        else None,
+        else None,  # ty:ignore[invalid-argument-type]
         span_hash=_string_or_none(span.get("span_hash")),
     )
 

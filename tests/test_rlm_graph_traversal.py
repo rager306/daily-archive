@@ -23,7 +23,11 @@ import pytest
 import research_graph.infrastructure.graph.ladybug_client as ladybug_client
 from research_graph.domain.semantic_chunks import EvidencePath
 from research_graph.infrastructure.graph.ladybug_client import evidence_path_id
+
+# pyrefly: ignore [missing-import]
 from tests.test_ladybug_scientific_kg import build_fixture_patch
+
+# pyrefly: ignore [missing-import]
 from tests.test_rlm_workflow import build_valid_inputs
 
 RLM_GRAPH_TRAVERSAL_MODULE = Path("src/research_graph/workflows/rlm/graph_traversal.py")

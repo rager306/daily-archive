@@ -133,7 +133,7 @@ def verify_files(
         "repair_state_counts": summary.get("repair_state_counts", {}),
         "route_quality_state_counts": summary.get("route_quality_state_counts", {}),
         "assessment_verdict": assessment.get("verdict", "missing"),
-        "unsafe_counters_zero": _unsafe_counters_zero(counters),
+        "unsafe_counters_zero": _unsafe_counters_zero(counters),  # ty:ignore[invalid-argument-type]
         "findings": [finding.__dict__ for finding in findings],
     }
 
@@ -234,7 +234,7 @@ def _verify_packet_payload(
             if isinstance(packet.get("safety_boundaries"), dict)
             else {}
         )
-        if any(value is not False for value in safety.values()) or not safety:
+        if any(value is not False for value in safety.values()) or not safety:  # ty:ignore[unresolved-attribute]
             findings.append(
                 ReviewerPacketVerificationFinding(
                     code="packet_unsafe_safety_boundary",
@@ -293,7 +293,7 @@ def _verify_assessment_payload(
         if isinstance(assessment.get("unsafe_counters"), dict)
         else {}
     )
-    if counters.get("packet_count") != packet_count:
+    if counters.get("packet_count") != packet_count:  # ty:ignore[unresolved-attribute]
         findings.append(
             ReviewerPacketVerificationFinding(
                 code="assessment_packet_count_mismatch",
@@ -301,8 +301,8 @@ def _verify_assessment_payload(
                 object_type="assessment",
             )
         )
-    if not _unsafe_counters_zero(counters):
-        for field, value in counters.items():
+    if not _unsafe_counters_zero(counters):  # ty:ignore[invalid-argument-type]
+        for field, value in counters.items():  # ty:ignore[unresolved-attribute]
             if (
                 field
                 in {
@@ -464,14 +464,14 @@ def _lineage_subset_findings(
 
 def _known_s02_ids(contract: dict[str, Any]) -> dict[str, set[str]]:
     stable = contract.get("stable_ids") if isinstance(contract.get("stable_ids"), dict) else {}
-    paper_ids = _string_set(stable.get("paper_ids")) | _string_set(
+    paper_ids = _string_set(stable.get("paper_ids")) | _string_set(  # ty:ignore[unresolved-attribute]
         expected_audit_from_contract(contract).get("paper_ids")
     )
     if contract.get("paper_id"):
         paper_ids.add(str(contract["paper_id"]))
-    source_ids = _string_set(stable.get("source_ids"))
-    locator_ids = _string_set(stable.get("locator_ids"))
-    span_ids = _string_set(stable.get("span_ids"))
+    source_ids = _string_set(stable.get("source_ids"))  # ty:ignore[unresolved-attribute]
+    locator_ids = _string_set(stable.get("locator_ids"))  # ty:ignore[unresolved-attribute]
+    span_ids = _string_set(stable.get("span_ids"))  # ty:ignore[unresolved-attribute]
     for target in _list_of_dicts(contract.get("repair_targets")):
         if target.get("paper_id"):
             paper_ids.add(str(target["paper_id"]))

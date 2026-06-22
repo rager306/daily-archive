@@ -1201,7 +1201,7 @@ def verify(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict[str, Any
                     variant_id=variant_id,
                 )
             )
-        artifact_path_value = row.get("replay_artifact_path") or artifact_paths.get(article_ref)
+        artifact_path_value = row.get("replay_artifact_path") or artifact_paths.get(article_ref)  # ty:ignore[unresolved-attribute]
         artifact, artifact_findings = load_replay_artifact(
             artifact_path_value, root=root, article_ref=article_ref
         )

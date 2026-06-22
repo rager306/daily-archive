@@ -141,7 +141,7 @@ def selection_by_article(selection: Mapping[str, Any]) -> dict[str, dict[str, An
     for index, article in enumerate(articles):
         if not isinstance(article, dict):
             raise ValueError(f"selection article at index {index} is not an object")
-        by_article[article_key_for(article)] = dict(article)
+        by_article[article_key_for(article)] = dict(article)  # ty:ignore[invalid-argument-type, no-matching-overload]
     return by_article
 
 
@@ -517,7 +517,7 @@ def verify(args: argparse.Namespace) -> list[dict[str, Any]]:
     diagnostics_rows = load_jsonl(diagnostics_path)
     runtime_summary = load_json(runtime_summary_path)
     rows = summary.get("results") if isinstance(summary.get("results"), list) else []
-    row_mappings = [row for row in rows if isinstance(row, Mapping)]
+    row_mappings = [row for row in rows if isinstance(row, Mapping)]  # ty:ignore[not-iterable]
     problems: list[dict[str, Any]] = []
     problems.extend(check_summary_shape(summary, diagnostics_rows, summary_path))
     problems.extend(check_fail_closed(summary, row_mappings, summary_path))

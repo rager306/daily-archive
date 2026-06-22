@@ -30,6 +30,8 @@ from research_graph.workflows.validation.batch_state import (
     write_batch_state,
 )
 from research_graph.workflows.validation.logging import ValidationLogger, sanitize_event_details
+
+# pyrefly: ignore [missing-import]
 from scripts.run_quality_gate import run_quality_gate
 
 VALIDATION_SMOKE_REVIEW_SCHEMA_VERSION = "m025-validation-smoke-review.v1"

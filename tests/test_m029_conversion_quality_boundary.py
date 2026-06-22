@@ -5,13 +5,19 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import fitz
+# pyrefly: ignore [missing-import]
+import fitz  # ty:ignore[unresolved-import]
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from verify_m029_unified_conversion_quality_boundary import main as verify_main  # noqa: E402
-from verify_m029_unified_conversion_quality_boundary import sha256_file  # noqa: E402
+# pyrefly: ignore [missing-import]
+from verify_m029_unified_conversion_quality_boundary import (
+    main as verify_main,  # noqa: E402  # ty:ignore[unresolved-import]
+)
+from verify_m029_unified_conversion_quality_boundary import (
+    sha256_file,  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
+)
 
 
 def _write(path: Path, value: str | bytes) -> Path:

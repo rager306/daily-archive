@@ -8,8 +8,14 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from probe_m033_opendataloader_adaptix_adapter import load_odl_document, run_probe
-from verify_m033_opendataloader_adaptix_adapter import verify
+# pyrefly: ignore [missing-import]
+from probe_m033_opendataloader_adaptix_adapter import (  # ty:ignore[unresolved-import]
+    load_odl_document,
+    run_probe,
+)
+
+# pyrefly: ignore [missing-import]
+from verify_m033_opendataloader_adaptix_adapter import verify  # ty:ignore[unresolved-import]
 
 
 def _write_json(path: Path, payload: dict) -> None:

@@ -116,7 +116,9 @@ def _count_chunks(path: Path) -> tuple[int, list[dict[str, Any]]]:
         raise FinalReplayError(f"chunk artifact has non-list chunks/items: {path}")
     diagnostics = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), list) else []
     return len([chunk for chunk in chunks if isinstance(chunk, dict)]), [
-        d for d in diagnostics if isinstance(d, dict)
+        d
+        for d in diagnostics
+        if isinstance(d, dict)  # ty:ignore[not-iterable]
     ]
 
 
@@ -126,8 +128,8 @@ def _evidence_metrics(paths: dict[str, Path]) -> tuple[dict[str, int], dict[str,
     for evidence_type, path in paths.items():
         payload = _load_json(path)
         summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
-        counts[evidence_type] = int(summary.get("item_count") or 0)
-        diagnostics[evidence_type] = int(summary.get("diagnostic_count") or 0)
+        counts[evidence_type] = int(summary.get("item_count") or 0)  # ty:ignore[unresolved-attribute]
+        diagnostics[evidence_type] = int(summary.get("diagnostic_count") or 0)  # ty:ignore[unresolved-attribute]
     return counts, diagnostics
 
 
@@ -169,10 +171,10 @@ def _baseline_comparison(baseline: Path, slug: str, metrics: dict[str, Any]) -> 
         },
     }
     baseline_flat = {
-        "chunk_count": int(baseline_metrics.get("chunk_count") or 0),
+        "chunk_count": int(baseline_metrics.get("chunk_count") or 0),  # ty:ignore[unresolved-attribute]
         **{
             f"evidence_{key}_count": int(value)
-            for key, value in dict(baseline_metrics.get("evidence_counts") or {}).items()
+            for key, value in dict(baseline_metrics.get("evidence_counts") or {}).items()  # ty:ignore[unresolved-attribute]
         },
     }
     deltas = {
@@ -373,14 +375,14 @@ def _summary_from_artifacts(
             if isinstance(artifact.get("baseline_comparison"), dict)
             else {}
         )
-        category = str(comparison.get("category") or "unknown")
+        category = str(comparison.get("category") or "unknown")  # ty:ignore[unresolved-attribute]
         behavior = _classification_for(category)
         comparison_counts[category] = comparison_counts.get(category, 0) + 1
         behavior_counts[behavior] = behavior_counts.get(behavior, 0) + 1
         diagnostics = (
             artifact.get("diagnostics") if isinstance(artifact.get("diagnostics"), list) else []
         )
-        for diagnostic in diagnostics:
+        for diagnostic in diagnostics:  # ty:ignore[not-iterable]
             if isinstance(diagnostic, dict):
                 code = str(diagnostic.get("code") or "UNKNOWN")
                 diagnostic_counts[code] = diagnostic_counts.get(code, 0) + 1
@@ -388,9 +390,9 @@ def _summary_from_artifacts(
             artifact.get("safety_state") if isinstance(artifact.get("safety_state"), dict) else {}
         )
         violated = {
-            key: safety_state.get(key)
+            key: safety_state.get(key)  # ty:ignore[unresolved-attribute]
             for key in FALSE_SAFETY_FLAGS
-            if safety_state.get(key) is not False
+            if safety_state.get(key) is not False  # ty:ignore[unresolved-attribute]
         }
         if violated:
             safety_violations.append({"article_ref": article_ref, "violations": violated})
@@ -404,7 +406,7 @@ def _summary_from_artifacts(
                     isinstance(artifact.get("readiness"), dict)
                     and artifact["readiness"].get("larger_validation_ready") is True
                 ),
-                "diagnostic_count": len([item for item in diagnostics if isinstance(item, dict)]),
+                "diagnostic_count": len([item for item in diagnostics if isinstance(item, dict)]),  # ty:ignore[not-iterable]
                 "metrics": artifact.get("metrics")
                 if isinstance(artifact.get("metrics"), dict)
                 else {},

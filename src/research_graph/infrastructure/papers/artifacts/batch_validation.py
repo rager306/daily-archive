@@ -617,21 +617,21 @@ def derive_recommendation(summary: dict[str, Any]) -> Recommendation:
         if isinstance(summary.get("diagnostic_counts"), dict)
         else {}
     )
-    unsafe_count = int(diagnostic_counts.get("unsafe_authorization_count", 0) or 0) + int(
-        diagnostic_counts.get("unsafe_readiness_count", 0) or 0
+    unsafe_count = int(diagnostic_counts.get("unsafe_authorization_count", 0) or 0) + int(  # ty:ignore[unresolved-attribute]
+        diagnostic_counts.get("unsafe_readiness_count", 0) or 0  # ty:ignore[unresolved-attribute]
     )
     if unsafe_count:
         return "stop_graph_import_unsafe_evidence"
-    if int(diagnostic_counts.get("missing_source_path_count", 0) or 0) or int(
-        diagnostic_counts.get("missing_source_hash_count", 0) or 0
+    if int(diagnostic_counts.get("missing_source_path_count", 0) or 0) or int(  # ty:ignore[unresolved-attribute]
+        diagnostic_counts.get("missing_source_hash_count", 0) or 0  # ty:ignore[unresolved-attribute]
     ):
         return "collect_missing_local_sources"
     if int(summary.get("document_count", 0) or 0) != EXPECTED_DOCUMENT_COUNT or int(
         summary.get("blocked_document_count", 0) or 0
     ):
         return "repeat_10_document_batch_after_repairs"
-    if int(diagnostic_counts.get("stale_artifact_count", 0) or 0) or int(
-        diagnostic_counts.get("forbidden_payload_detection_count", 0) or 0
+    if int(diagnostic_counts.get("stale_artifact_count", 0) or 0) or int(  # ty:ignore[unresolved-attribute]
+        diagnostic_counts.get("forbidden_payload_detection_count", 0) or 0  # ty:ignore[unresolved-attribute]
     ):
         return "repeat_10_document_batch_after_repairs"
     return "proceed_to_20_document_scale_review_only"

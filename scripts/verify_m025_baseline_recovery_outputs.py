@@ -59,7 +59,7 @@ def _validate_false_safety_flags(payload: dict[str, Any], label: str) -> list[st
     safety_state = (
         payload.get("safety_state") if isinstance(payload.get("safety_state"), dict) else {}
     )
-    violations = [key for key in FALSE_SAFETY_FLAGS if safety_state.get(key) is not False]
+    violations = [key for key in FALSE_SAFETY_FLAGS if safety_state.get(key) is not False]  # ty:ignore[unresolved-attribute]
     if violations:
         return [f"{label} has unsafe safety flag(s): {', '.join(sorted(violations))}"]
     return []
@@ -83,8 +83,8 @@ def validate_baseline_artifacts(
         label = str(path)
         metrics = artifact.get("metrics") if isinstance(artifact.get("metrics"), dict) else {}
         evidence_counts = (
-            metrics.get("evidence_counts")
-            if isinstance(metrics.get("evidence_counts"), dict)
+            metrics.get("evidence_counts")  # ty:ignore[unresolved-attribute]
+            if isinstance(metrics.get("evidence_counts"), dict)  # ty:ignore[unresolved-attribute]
             else {}
         )
         provenance = (
@@ -93,15 +93,15 @@ def validate_baseline_artifacts(
             else {}
         )
         network = artifact.get("network") if isinstance(artifact.get("network"), dict) else {}
-        if "chunk_count" not in metrics:
+        if "chunk_count" not in metrics:  # ty:ignore[unsupported-operator]
             errors.append(f"{label} is missing metrics.chunk_count")
-        if set(evidence_counts) != REQUIRED_EVIDENCE_TYPES:
+        if set(evidence_counts) != REQUIRED_EVIDENCE_TYPES:  # ty:ignore[invalid-argument-type]
             errors.append(
                 f"{label} is missing metrics.evidence_counts for {sorted(REQUIRED_EVIDENCE_TYPES)}"
             )
-        if provenance.get("kind") != "regenerated_local_baseline":
+        if provenance.get("kind") != "regenerated_local_baseline":  # ty:ignore[unresolved-attribute]
             errors.append(f"{label} does not disclose regenerated_local_baseline provenance")
-        if require_no_network and network.get("network_fetch_attempted") is not False:
+        if require_no_network and network.get("network_fetch_attempted") is not False:  # ty:ignore[unresolved-attribute]
             errors.append(f"{label} attempted or failed to disprove network fetches")
         if require_no_import_flags:
             errors.extend(_validate_false_safety_flags(artifact, label))
@@ -109,9 +109,9 @@ def validate_baseline_artifacts(
             {
                 "path": label,
                 "article_ref": artifact.get("article_ref"),
-                "chunk_count": metrics.get("chunk_count"),
+                "chunk_count": metrics.get("chunk_count"),  # ty:ignore[unresolved-attribute]
                 "evidence_counts": evidence_counts,
-                "baseline_provenance_kind": provenance.get("kind"),
+                "baseline_provenance_kind": provenance.get("kind"),  # ty:ignore[unresolved-attribute]
             }
         )
     if errors:
@@ -146,14 +146,14 @@ def validate_final_outputs(
             if isinstance(summary.get("baseline_comparison_counts"), dict)
             else {}
         )
-        if reject_baseline_missing and int(counts.get("baseline_missing") or 0) > 0:
+        if reject_baseline_missing and int(counts.get("baseline_missing") or 0) > 0:  # ty:ignore[unresolved-attribute]
             errors.append("final replay summary still contains baseline_missing comparisons")
         no_network = (
             summary.get("no_network_proof")
             if isinstance(summary.get("no_network_proof"), dict)
             else {}
         )
-        if require_no_network and no_network.get("network_fetch_attempted") is not False:
+        if require_no_network and no_network.get("network_fetch_attempted") is not False:  # ty:ignore[unresolved-attribute]
             errors.append("final replay summary does not prove network_fetch_attempted=false")
         no_write = (
             summary.get("no_write_safety")
@@ -161,18 +161,18 @@ def validate_final_outputs(
             else {}
         )
         safety_violations = (
-            no_write.get("safety_violations")
-            if isinstance(no_write.get("safety_violations"), list)
+            no_write.get("safety_violations")  # ty:ignore[unresolved-attribute]
+            if isinstance(no_write.get("safety_violations"), list)  # ty:ignore[unresolved-attribute]
             else []
         )
         if require_no_import_flags and safety_violations:
             errors.append("final replay summary contains graph/import/write safety violations")
         readiness = summary.get("readiness") if isinstance(summary.get("readiness"), dict) else {}
-        if require_ready and readiness.get("larger_preprocessing_validation_ready") is not True:
+        if require_ready and readiness.get("larger_preprocessing_validation_ready") is not True:  # ty:ignore[unresolved-attribute]
             errors.append(
                 "final replay summary does not mark larger_preprocessing_validation_ready=true"
             )
-        if readiness.get("graph_readiness_claim") is not False:
+        if readiness.get("graph_readiness_claim") is not False:  # ty:ignore[unresolved-attribute]
             errors.append("final replay summary must keep graph_readiness_claim=false")
     artifact_count = 0
     if final is not None:
@@ -188,10 +188,10 @@ def validate_final_outputs(
                 if isinstance(artifact.get("baseline_comparison"), dict)
                 else {}
             )
-            if reject_baseline_missing and comparison.get("category") == "baseline_missing":
+            if reject_baseline_missing and comparison.get("category") == "baseline_missing":  # ty:ignore[unresolved-attribute]
                 errors.append(f"{path} still has baseline_comparison.category=baseline_missing")
             network = artifact.get("network") if isinstance(artifact.get("network"), dict) else {}
-            if require_no_network and network.get("network_fetch_attempted") is not False:
+            if require_no_network and network.get("network_fetch_attempted") is not False:  # ty:ignore[unresolved-attribute]
                 errors.append(f"{path} attempted or failed to disprove network fetches")
             if require_no_import_flags:
                 errors.extend(_validate_false_safety_flags(artifact, str(path)))
@@ -285,7 +285,7 @@ def main(argv: list[str] | None = None) -> int:
                 if isinstance(recovery_summary.get("readiness"), dict)
                 else {}
             )
-            if readiness.get("baseline_recovery_completed") is not True:
+            if readiness.get("baseline_recovery_completed") is not True:  # ty:ignore[unresolved-attribute]
                 raise BaselineOutputValidationError(
                     "baseline summary does not mark baseline_recovery_completed=true"
                 )
@@ -294,7 +294,7 @@ def main(argv: list[str] | None = None) -> int:
                 if isinstance(recovery_summary.get("no_network_proof"), dict)
                 else {}
             )
-            if args.require_no_network and no_network.get("network_fetch_attempted") is not False:
+            if args.require_no_network and no_network.get("network_fetch_attempted") is not False:  # ty:ignore[unresolved-attribute]
                 raise BaselineOutputValidationError(
                     "baseline summary does not prove network_fetch_attempted=false"
                 )
@@ -304,8 +304,8 @@ def main(argv: list[str] | None = None) -> int:
                 else {}
             )
             safety_violations = (
-                no_write.get("safety_violations")
-                if isinstance(no_write.get("safety_violations"), list)
+                no_write.get("safety_violations")  # ty:ignore[unresolved-attribute]
+                if isinstance(no_write.get("safety_violations"), list)  # ty:ignore[unresolved-attribute]
                 else []
             )
             if args.require_no_import_flags and safety_violations:
@@ -386,7 +386,7 @@ def main(argv: list[str] | None = None) -> int:
             blockers = (
                 decision.get("blockers") if isinstance(decision.get("blockers"), list) else []
             )
-            if args.reject_baseline_missing and "baseline_missing" in blockers:
+            if args.reject_baseline_missing and "baseline_missing" in blockers:  # ty:ignore[unsupported-operator]
                 raise BaselineOutputValidationError(
                     "readiness decision still contains baseline_missing blocker"
                 )
@@ -395,28 +395,28 @@ def main(argv: list[str] | None = None) -> int:
             )
             if (
                 args.expect_article_count is not None
-                and evidence.get("article_count") != args.expect_article_count
+                and evidence.get("article_count") != args.expect_article_count  # ty:ignore[unresolved-attribute]
             ):
                 raise BaselineOutputValidationError(
-                    f"readiness decision article_count={evidence.get('article_count')} does not match expected {args.expect_article_count}"
+                    f"readiness decision article_count={evidence.get('article_count')} does not match expected {args.expect_article_count}"  # ty:ignore[unresolved-attribute]
                 )
             no_network = (
-                evidence.get("no_network_proof")
-                if isinstance(evidence.get("no_network_proof"), dict)
+                evidence.get("no_network_proof")  # ty:ignore[unresolved-attribute]
+                if isinstance(evidence.get("no_network_proof"), dict)  # ty:ignore[unresolved-attribute]
                 else {}
             )
-            if args.require_no_network and no_network.get("network_fetch_attempted") is not False:
+            if args.require_no_network and no_network.get("network_fetch_attempted") is not False:  # ty:ignore[unresolved-attribute]
                 raise BaselineOutputValidationError(
                     "readiness decision does not prove network_fetch_attempted=false"
                 )
             no_write = (
-                evidence.get("no_write_safety")
-                if isinstance(evidence.get("no_write_safety"), dict)
+                evidence.get("no_write_safety")  # ty:ignore[unresolved-attribute]
+                if isinstance(evidence.get("no_write_safety"), dict)  # ty:ignore[unresolved-attribute]
                 else {}
             )
             safety_violations = (
-                no_write.get("safety_violations")
-                if isinstance(no_write.get("safety_violations"), list)
+                no_write.get("safety_violations")  # ty:ignore[unresolved-attribute]
+                if isinstance(no_write.get("safety_violations"), list)  # ty:ignore[unresolved-attribute]
                 else []
             )
             if args.require_no_import_flags and safety_violations:

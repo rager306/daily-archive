@@ -19,6 +19,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
+# pyrefly: ignore [missing-import]
 from emit_m056_candidate_edges import (  # noqa: E402
     ANCHOR_ARXIV_ID,
     DEFAULT_BFS_DIR,
@@ -122,7 +123,8 @@ def _distribution_from_rows(rows: dict[str, dict[str, Any]]) -> tuple[Counter[st
         categories[str(row.get("category") or "unknown")] += 1
         pages = row.get("pages_estimate")
         try:
-            page_count = int(pages)
+            # pyrefly: ignore [bad-argument-type]
+            page_count = int(pages)  # ty:ignore[invalid-argument-type]
         except (TypeError, ValueError):
             lengths["unknown"] += 1
             continue

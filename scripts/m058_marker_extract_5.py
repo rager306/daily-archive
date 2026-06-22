@@ -16,11 +16,20 @@ from importlib import metadata
 from pathlib import Path
 from typing import Any
 
-from marker.config.parser import ConfigParser
-from marker.converters.pdf import PdfConverter
-from marker.models import create_model_dict
-from marker.output import text_from_rendered
-from pypdf import PdfReader, PdfWriter
+# pyrefly: ignore [missing-import]
+from marker.config.parser import ConfigParser  # ty:ignore[unresolved-import]
+
+# pyrefly: ignore [missing-import]
+from marker.converters.pdf import PdfConverter  # ty:ignore[unresolved-import]
+
+# pyrefly: ignore [missing-import]
+from marker.models import create_model_dict  # ty:ignore[unresolved-import]
+
+# pyrefly: ignore [missing-import]
+from marker.output import text_from_rendered  # ty:ignore[unresolved-import]
+
+# pyrefly: ignore [missing-import]
+from pypdf import PdfReader, PdfWriter  # ty:ignore[unresolved-import]
 
 CORPUS_ROOT = Path("data/article_catalog/article_catalog/arxiv")
 OUTPUT_ROOT = Path("artifacts/m058-marker/pilot-5")

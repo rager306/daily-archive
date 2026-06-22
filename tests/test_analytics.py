@@ -119,6 +119,7 @@ def test_compute_graph_metrics_empty_graph_is_safe():
     compute_graph_metrics(conn)
 
     res = conn.execute("MATCH (p:Paper) RETURN p.id")
+    # pyrefly: ignore [missing-attribute]
     assert not res.has_next()
 
 

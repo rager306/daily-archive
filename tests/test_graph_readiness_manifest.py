@@ -82,11 +82,11 @@ def _entry(manifest: dict[str, object], paper_id: str, route: str) -> dict[str, 
     for item in entries:
         assert isinstance(item, dict)
         if (
-            item["paper_id"] == paper_id
-            and item["route"] == route
+            item["paper_id"] == paper_id  # ty:ignore[invalid-argument-type]
+            and item["route"] == route  # ty:ignore[invalid-argument-type]
             and item.get("granularity") == "route"
         ):
-            return item
+            return item  # ty:ignore[invalid-return-type]
     raise AssertionError(f"missing route entry {paper_id} {route}")
 
 
@@ -98,12 +98,12 @@ def _candidate_entry(
     for item in entries:
         assert isinstance(item, dict)
         if (
-            item["paper_id"] == paper_id
-            and item["route"] == route
+            item["paper_id"] == paper_id  # ty:ignore[invalid-argument-type]
+            and item["route"] == route  # ty:ignore[invalid-argument-type]
             and item.get("granularity") == "candidate"
             and item.get("candidate_id") == candidate_id
         ):
-            return item
+            return item  # ty:ignore[invalid-return-type]
     raise AssertionError(f"missing candidate entry {paper_id} {route} {candidate_id}")
 
 
@@ -114,32 +114,40 @@ def test_manifest_applies_repair_findings_to_matching_routes() -> None:
         "global_findings": result.global_findings,
     }
 
-    p1_claim = _entry(manifest, "p1", "claim_extraction")
-    p2_claim = _entry(manifest, "p2", "claim_extraction")
+    # pyrefly: ignore [bad-argument-type]
+    p1_claim = _entry(manifest, "p1", "claim_extraction")  # ty:ignore[invalid-argument-type]
+    # pyrefly: ignore [bad-argument-type]
+    p2_claim = _entry(manifest, "p2", "claim_extraction")  # ty:ignore[invalid-argument-type]
 
     assert p1_claim["final_eligibility"] == "repair_required"
     assert p2_claim["final_eligibility"] == "repair_required"
-    assert "oversized_claim_chunks" in p1_claim["finding_codes"]
+    # pyrefly: ignore [not-iterable]
+    assert "oversized_claim_chunks" in p1_claim["finding_codes"]  # ty:ignore[unsupported-operator]
 
 
 def test_manifest_flags_warn_findings_without_blocking_route() -> None:
     result = synthesize_manifest(_summary(), _events())
     manifest = {"entries": [entry.__dict__ for entry in result.entries]}
 
-    table = _entry(manifest, "p1", "table_extraction")
-    citation = _entry(manifest, "p2", "citation_graph")
+    # pyrefly: ignore [bad-argument-type]
+    table = _entry(manifest, "p1", "table_extraction")  # ty:ignore[invalid-argument-type]
+    # pyrefly: ignore [bad-argument-type]
+    citation = _entry(manifest, "p2", "citation_graph")  # ty:ignore[invalid-argument-type]
 
     assert table["final_eligibility"] == "route_excluded"
-    assert "table_extraction" in table["excluded_routes"]
+    # pyrefly: ignore [not-iterable]
+    assert "table_extraction" in table["excluded_routes"]  # ty:ignore[unsupported-operator]
     assert citation["final_eligibility"] == "route_excluded"
-    assert "coarse_reference_chunks" in citation["finding_codes"]
+    # pyrefly: ignore [not-iterable]
+    assert "coarse_reference_chunks" in citation["finding_codes"]  # ty:ignore[unsupported-operator]
 
 
 def test_manifest_marks_unreviewed_papers_review_required() -> None:
     result = synthesize_manifest(_summary(), _events())
     manifest = {"entries": [entry.__dict__ for entry in result.entries]}
 
-    p3 = _entry(manifest, "p3", "paper")
+    # pyrefly: ignore [bad-argument-type]
+    p3 = _entry(manifest, "p3", "paper")  # ty:ignore[invalid-argument-type]
 
     assert p3["independent_review_verdict"] == "NOT_REVIEWED"
     assert p3["final_eligibility"] == "review_required"
@@ -165,11 +173,14 @@ def test_manifest_adds_explicit_entries_for_finding_only_excluded_routes() -> No
     result = synthesize_manifest(_summary(), _events())
     manifest = {"entries": [entry.__dict__ for entry in result.entries]}
 
-    p1_citation = _entry(manifest, "p1", "citation_graph")
+    # pyrefly: ignore [bad-argument-type]
+    p1_citation = _entry(manifest, "p1", "citation_graph")  # ty:ignore[invalid-argument-type]
 
     assert p1_citation["final_eligibility"] == "route_excluded"
-    assert "citation_graph" in p1_citation["excluded_routes"]
-    assert "coarse_reference_chunks" in p1_citation["finding_codes"]
+    # pyrefly: ignore [not-iterable]
+    assert "citation_graph" in p1_citation["excluded_routes"]  # ty:ignore[unsupported-operator]
+    # pyrefly: ignore [not-iterable]
+    assert "coarse_reference_chunks" in p1_citation["finding_codes"]  # ty:ignore[unsupported-operator]
 
 
 def test_manifest_promotes_only_explicit_reviewed_eligible_findings() -> None:
@@ -224,10 +235,14 @@ def test_manifest_promotes_only_explicit_reviewed_eligible_findings() -> None:
     )
     manifest = {"entries": [entry.__dict__ for entry in result.entries]}
 
-    assert _entry(manifest, "p1", "metadata_graph")["final_eligibility"] == "eligible"
-    assert _entry(manifest, "p1", "method_extraction")["final_eligibility"] == "eligible"
-    assert _entry(manifest, "p1", "claim_extraction")["final_eligibility"] == "eligible_with_caveat"
-    table = _entry(manifest, "p1", "table_extraction")
+    # pyrefly: ignore [bad-argument-type]
+    assert _entry(manifest, "p1", "metadata_graph")["final_eligibility"] == "eligible"  # ty:ignore[invalid-argument-type]
+    # pyrefly: ignore [bad-argument-type]
+    assert _entry(manifest, "p1", "method_extraction")["final_eligibility"] == "eligible"  # ty:ignore[invalid-argument-type]
+    # pyrefly: ignore [bad-argument-type]
+    assert _entry(manifest, "p1", "claim_extraction")["final_eligibility"] == "eligible_with_caveat"  # ty:ignore[invalid-argument-type]
+    # pyrefly: ignore [bad-argument-type]
+    table = _entry(manifest, "p1", "table_extraction")  # ty:ignore[invalid-argument-type]
     assert table["final_eligibility"] == "route_excluded"
     assert table["independent_review_verdict"] == "REPAIR"
     assert table["required_repairs"] == ["Table lineage was not reviewed."]
@@ -270,9 +285,12 @@ def test_candidate_findings_do_not_promote_or_repair_entire_route() -> None:
     )
     manifest = {"entries": [entry.__dict__ for entry in result.entries]}
 
-    route = _entry(manifest, "p1", "claim_extraction")
-    good = _candidate_entry(manifest, "p1", "claim_extraction", "c-good")
-    bad = _candidate_entry(manifest, "p1", "claim_extraction", "c-bad")
+    # pyrefly: ignore [bad-argument-type]
+    route = _entry(manifest, "p1", "claim_extraction")  # ty:ignore[invalid-argument-type]
+    # pyrefly: ignore [bad-argument-type]
+    good = _candidate_entry(manifest, "p1", "claim_extraction", "c-good")  # ty:ignore[invalid-argument-type]
+    # pyrefly: ignore [bad-argument-type]
+    bad = _candidate_entry(manifest, "p1", "claim_extraction", "c-bad")  # ty:ignore[invalid-argument-type]
 
     assert route["granularity"] == "route"
     assert route["final_eligibility"] == "eligible_with_caveat"

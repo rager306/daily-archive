@@ -96,6 +96,7 @@ def synthetic_graph(edge_count: int, *, density: float, seed: int) -> nx.DiGraph
     graph = nx.relabel_nodes(graph, {node: f"synthetic-{node}" for node in graph.nodes})
     for index, (source, target) in enumerate(graph.edges):
         graph[source][target]["weight"] = 1.0 + (index % 100) / 100.0
+    # pyrefly: ignore [bad-return]
     return graph
 
 

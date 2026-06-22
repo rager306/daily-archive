@@ -19,7 +19,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-import probe_m053_grobid_pilot as probe  # noqa: E402
+# pyrefly: ignore [missing-import]
+import probe_m053_grobid_pilot as probe  # noqa: E402  # ty:ignore[unresolved-import]
 
 
 class FakeResponse:
@@ -64,7 +65,7 @@ def strip_generated_at(value: object) -> object:
 def test_service_available_uses_isalive_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
     seen: dict[str, object] = {}
 
-    def fake_urlopen(request: urllib.request.Request, timeout: int) -> FakeResponse:
+    def fake_urlopen(request: urllib.request.Request, timeout: int) -> FakeResponse:  # ty:ignore[possibly-missing-submodule]
         seen["url"] = request.full_url
         seen["timeout"] = timeout
         return FakeResponse(status=200)
@@ -90,12 +91,14 @@ def test_post_grobid_header_sends_multipart_to_header_endpoint(
     pdf_path = make_pdf(tmp_path)
     seen: dict[str, object] = {}
 
-    def fake_urlopen(request: urllib.request.Request, timeout: int) -> FakeResponse:
+    def fake_urlopen(request: urllib.request.Request, timeout: int) -> FakeResponse:  # ty:ignore[possibly-missing-submodule]
         seen["url"] = request.full_url
         seen["timeout"] = timeout
         seen["content_type"] = request.headers["Content-type"]
         data = request.data or b""
+        # pyrefly: ignore [not-iterable]
         seen["has_pdf"] = b"%PDF-1.4 fake" in data
+        # pyrefly: ignore [not-iterable]
         seen["has_flags"] = b"consolidateHeader" in data and b"consolidateCitations" in data
         return FakeResponse(tei_payload(), status=200)
 
@@ -219,7 +222,8 @@ def test_blocked_http_error_stops_without_retry(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     target = make_target(tmp_path, "blocked")
-    error = urllib.error.HTTPError("http://grobid.test", 400, "bad", hdrs=None, fp=None)
+    # pyrefly: ignore [bad-argument-type]
+    error = urllib.error.HTTPError("http://grobid.test", 400, "bad", hdrs=None, fp=None)  # ty:ignore[invalid-argument-type]
     mocked = mock.Mock(side_effect=error)
     monkeypatch.setattr(probe, "post_grobid_header", mocked)
 

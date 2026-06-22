@@ -92,7 +92,7 @@ def read_json(path: str | Path) -> Any:
         raise ValueError(f"Invalid JSON in {rel(actual)}: {exc}") from exc
 
 
-def load_validator(schema_path: str | Path) -> Draft7Validator:
+def load_validator(schema_path: str | Path) -> Draft7Validator:  # ty:ignore[invalid-type-form]
     """Load and validate a Draft 7 JSON Schema."""
     schema = read_json(schema_path)
     Draft7Validator.check_schema(schema)

@@ -655,6 +655,7 @@ def validate_evidence(evidence: Mapping[str, Any]) -> list[dict[str, Any]]:
     else:
         by_id = {row.get("requirement_id"): row for row in req_rows if isinstance(row, Mapping)}
         missing_req = sorted(set(REQUIRED_REQUIREMENT_IDS) - set(by_id))
+        # pyrefly: ignore [bad-specialization]
         extra_req = sorted(set(by_id) - set(REQUIRED_REQUIREMENT_IDS))
         if missing_req or extra_req:
             diagnostics.append(
@@ -706,6 +707,7 @@ def validate_evidence(evidence: Mapping[str, Any]) -> list[dict[str, Any]]:
     else:
         classes = {row.get("class") for row in class_rows if isinstance(row, Mapping)}
         missing_classes = sorted(set(CANONICAL_CLASSES) - classes)
+        # pyrefly: ignore [bad-specialization]
         extra_classes = sorted(classes - set(CANONICAL_CLASSES))
         if missing_classes or extra_classes:
             diagnostics.append(
@@ -774,7 +776,7 @@ def build_runtime_diagnostics(evidence: Mapping[str, Any]) -> list[dict[str, Any
         if isinstance(evidence.get("s02_assessment_reconciliation"), Mapping)
         else {}
     )
-    if reconciliation.get("stale_s02_assessment_failure_detected") is True:  # pyrefly: ignore[bad-assignment]
+    if reconciliation.get("stale_s02_assessment_failure_detected") is True:  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
         rows.append(
             diagnostic(
                 "M031_VALIDATION_REMEDIATION_STALE_S02_ASSESSMENT_RECONCILED",

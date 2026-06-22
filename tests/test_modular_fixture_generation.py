@@ -11,6 +11,8 @@ from research_graph.domain.navigation import PageIndexDocument
 from research_graph.infrastructure.corpus.ingestion.loader import ArticleLoadResult
 from research_graph.infrastructure.corpus.parsing.structure import ParsedArticle
 from research_graph.infrastructure.papers.artifacts.models import FORBIDDEN_PAYLOAD_KEYS
+
+# pyrefly: ignore [missing-import]
 from tests.helpers.modular_fixtures import (
     FIXTURE_PAPER_ID,
     MODULAR_FIXTURE_PATH,

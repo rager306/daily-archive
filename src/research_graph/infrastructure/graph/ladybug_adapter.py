@@ -44,7 +44,8 @@ class LadybugAdapter:
         if conn is None and db_path is None:
             raise ValueError("LadybugAdapter requires conn= or db_path=")
         # Allow a test fake connection to be injected (FailingConn pattern).
-        self._conn: Any = conn if conn is not None else ladybug_client.init_db(db_path)
+        # pyrefly: ignore [bad-argument-type]
+        self._conn: Any = conn if conn is not None else ladybug_client.init_db(db_path)  # ty:ignore[invalid-argument-type]
         if init_schema_on_construct and conn is None:
             # init_db already initializes the schema for a fresh connection; only
             # re-init when an external connection was passed without schema.

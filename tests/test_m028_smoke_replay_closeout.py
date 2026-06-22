@@ -155,9 +155,9 @@ def test_closeout_runner_and_verifier_accept_real_corpus_without_mutating_canoni
         events = _read_jsonl(events_path)
         preflight = summary["source_acquisition_preflight"]
         assert summary["status"] == "pass"
-        assert preflight["url_ref_count"] == 21  # pyrefly: ignore[bad-assignment]
-        assert preflight["normalized_identity_count"] == 20  # pyrefly: ignore[bad-assignment]
-        assert preflight["expansion_refs"] == ["R15", "R16", "R17", "R18", "R19", "R20", "R21"]  # pyrefly: ignore[bad-assignment]
+        assert preflight["url_ref_count"] == 21  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+        assert preflight["normalized_identity_count"] == 20  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+        assert preflight["expansion_refs"] == ["R15", "R16", "R17", "R18", "R19", "R20", "R21"]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
         assert [event["stage"] for event in events] == EXPECTED_STAGES
         assert summary["stage_events"] == events
         assert summary["diagnostics"] == []
@@ -172,7 +172,7 @@ def test_verifier_rejects_stale_14_ref_scope(tmp_path: Path) -> None:
     summary, events, report = _load_canonical_closeout()
     preflight = summary["source_acquisition_preflight"]
     assert isinstance(preflight, dict)
-    preflight["url_ref_count"] = 14
+    preflight["url_ref_count"] = 14  # ty:ignore[invalid-assignment]
     _assert_verifier_rejects(
         tmp_path, summary, events, report, {"STALE_14_REF_SCOPE", "URL_REF_COUNT_MISMATCH"}
     )
@@ -181,7 +181,7 @@ def test_verifier_rejects_stale_14_ref_scope(tmp_path: Path) -> None:
 def test_verifier_rejects_stage_output_hash_drift(tmp_path: Path) -> None:
     summary, events, report = _load_canonical_closeout()
     mutated_events = copy.deepcopy(events)
-    mutated_events[0]["output_hashes"][0]["sha256"] = hashlib.sha256(b"drift").hexdigest()  # pyrefly: ignore[bad-assignment]
+    mutated_events[0]["output_hashes"][0]["sha256"] = hashlib.sha256(b"drift").hexdigest()  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     summary["stage_events"] = copy.deepcopy(mutated_events)
     _assert_verifier_rejects(
         tmp_path, summary, mutated_events, report, {"ARTIFACT_SHA256_MISMATCH"}
@@ -207,8 +207,10 @@ def test_verifier_rejects_missing_stage_event(tmp_path: Path) -> None:
 
 def test_verifier_rejects_nonzero_unsafe_counter_and_flag(tmp_path: Path) -> None:
     summary, events, report = _load_canonical_closeout()
-    summary["safety_flags"]["ladybugdb_written"] = True
-    summary["unsafe_counters"]["import_eligible_count"] = 1
+    # pyrefly: ignore [unsupported-operation]
+    summary["safety_flags"]["ladybugdb_written"] = True  # ty:ignore[invalid-assignment]
+    # pyrefly: ignore [unsupported-operation]
+    summary["unsafe_counters"]["import_eligible_count"] = 1  # ty:ignore[invalid-assignment]
     _assert_verifier_rejects(
         tmp_path, summary, events, report, {"UNSAFE_FLAG_TRUE", "UNSAFE_COUNTER_NONZERO"}
     )
@@ -230,9 +232,9 @@ def test_verifier_rejects_absolute_or_escaping_artifact_path(tmp_path: Path) -> 
     summary, events, report = _load_canonical_closeout()
     preflight = summary["source_acquisition_preflight"]
     assert isinstance(preflight, dict)
-    selection_record = preflight["selection"]
+    selection_record = preflight["selection"]  # ty:ignore[invalid-argument-type]
     assert isinstance(selection_record, dict)
-    selection_record["path"] = "../selection.json"
+    selection_record["path"] = "../selection.json"  # ty:ignore[invalid-assignment]
     _assert_verifier_rejects(tmp_path, summary, events, report, {"ARTIFACT_PATH_UNSAFE"})
 
 

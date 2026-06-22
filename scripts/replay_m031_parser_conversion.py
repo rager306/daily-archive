@@ -26,7 +26,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 try:  # Tests monkeypatch this to prove absent PyMuPDF fails closed.
-    import fitz  # type: ignore[import-untyped]
+    import fitz  # type: ignore[import-untyped]  # ty:ignore[unresolved-import]
 except Exception:  # pragma: no cover - environment dependent
     fitz = None  # type: ignore[assignment]
 
@@ -337,7 +337,7 @@ def extract_html_text(path: Path) -> tuple[str, dict[str, Any], dict[str, int]]:
         tag.decompose()
     article = (
         soup.find("article")
-        or soup.find(attrs={"role": "main"})  # pyrefly: ignore[bad-assignment]
+        or soup.find(attrs={"role": "main"})  # pyrefly: ignore [bad-assignment, no-matching-overload]  # ty:ignore[invalid-argument-type]
         or soup.find("main")
         or soup.body
         or soup
@@ -678,7 +678,7 @@ def render_report(summary: Mapping[str, Any]) -> str:
         f"- Status: `{summary.get('status')}`",
         f"- Row count: {summary.get('row_count')}",
         f"- Parser-ready converted rows: {summary.get('parser_ready_count')}",
-        f"- Counts: `{dict(counts)}`",  # pyrefly: ignore[bad-assignment]
+        f"- Counts: `{dict(counts)}`",  # pyrefly: ignore [bad-assignment, no-matching-overload]  # ty:ignore[no-matching-overload]
         "- Network fetch attempted: `False`",
         "- arxiv2md invoked: `False`",
         "- md_converter invoked: `False`",

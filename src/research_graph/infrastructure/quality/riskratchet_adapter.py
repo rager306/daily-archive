@@ -59,7 +59,8 @@ def run_riskratchet_scan(
             exclude=exclude,
             allow=allow,
             use_git=False,
-            missing_coverage_policy="ignore",
+            # pyrefly: ignore [bad-argument-type]
+            missing_coverage_policy="ignore",  # ty:ignore[invalid-argument-type]
         )
     except Exception as exc:  # pragma: no cover - exact third-party failures vary
         return RiskratchetDiagnostic(

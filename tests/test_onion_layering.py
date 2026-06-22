@@ -98,14 +98,16 @@ def _load_wired() -> object:
 class TestCompositionRoot:
     def test_none_provider_falls_back_to_stub(self) -> None:
         build_wired = _load_wired()
-        pipeline = build_wired(source_id="s")
+        # pyrefly: ignore [not-callable]
+        pipeline = build_wired(source_id="s")  # ty:ignore[call-non-callable]
         core = [s for s in pipeline.stages if s.stage_name == "core_entity_extractor"][0]
         assert core.llm_client is None
 
     def test_wires_port_into_llm_stages(self) -> None:
         build_wired = _load_wired()
         fake = _FakeLLMProvider()
-        pipeline = build_wired(llm_provider=fake, source_id="arxiv:2605.18747")
+        # pyrefly: ignore [not-callable]
+        pipeline = build_wired(llm_provider=fake, source_id="arxiv:2605.18747")  # ty:ignore[call-non-callable]
         core = [s for s in pipeline.stages if s.stage_name == "core_entity_extractor"][0]
         rel = [s for s in pipeline.stages if s.stage_name == "relation_type_classifier"][0]
         assert core.llm_client is not None
@@ -116,7 +118,8 @@ class TestCompositionRoot:
 
         build_wired = _load_wired()
         fake = _FakeLLMProvider()
-        pipeline = build_wired(llm_provider=fake, source_id="arxiv:2605.18747")
+        # pyrefly: ignore [not-callable]
+        pipeline = build_wired(llm_provider=fake, source_id="arxiv:2605.18747")  # ty:ignore[call-non-callable]
         ctx = replace(
             PipelineContext(source_id="arxiv:2605.18747"),
             stage_outputs={

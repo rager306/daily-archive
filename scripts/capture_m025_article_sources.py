@@ -53,8 +53,8 @@ def fetch_url(url: str) -> bytes:
 
 def fallback_payload(article: dict[str, Any], variant: dict[str, Any], reason: str) -> bytes:
     identity = article.get("identity") if isinstance(article.get("identity"), dict) else {}
-    title = identity.get("title", article.get("article_key", "unknown article"))
-    canonical_url = identity.get("canonical_url", variant.get("url", ""))
+    title = identity.get("title", article.get("article_key", "unknown article"))  # ty:ignore[unresolved-attribute]
+    canonical_url = identity.get("canonical_url", variant.get("url", ""))  # ty:ignore[unresolved-attribute]
     role = variant.get("source_role", "unknown")
     fmt = variant.get("source_format", "text")
     if fmt == "pdf":

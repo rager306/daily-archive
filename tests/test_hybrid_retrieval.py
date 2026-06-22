@@ -15,6 +15,8 @@ import ladybug
 import pytest
 
 import research_graph.infrastructure.graph.ladybug_client as ladybug_client
+
+# pyrefly: ignore [missing-import]
 from tests.test_ladybug_scientific_kg import build_fixture_payload
 
 
@@ -49,6 +51,7 @@ def _result_rows(response: Any) -> list[dict[str, Any]]:
     """Normalize future dataclass or mapping responses for shape assertions."""
     raw_results = getattr(response, "results", response["results"])
     rows: list[dict[str, Any]] = []
+    # pyrefly: ignore [not-iterable]
     for result in raw_results:
         if isinstance(result, dict):
             rows.append(result)

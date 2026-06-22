@@ -8,7 +8,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-import render_m055_report as report  # noqa: E402
+# pyrefly: ignore [missing-import]
+import render_m055_report as report  # noqa: E402  # ty:ignore[unresolved-import]
 
 BENCHMARK_DIR = ROOT / "artifacts" / "m055-parser-benchmark"
 ADR_008 = ROOT / "doc" / "adr" / "ADR-008-hybrid-parser-architecture.md"

@@ -168,7 +168,8 @@ def run_article(article: dict[str, Any], *, output_dir: Path) -> dict[str, Any]:
         article.get("safety_flags") if isinstance(article.get("safety_flags"), dict) else {}
     )
     assert_false_flags(
-        article_flags, label=str(article.get("article_key") or article.get("candidate_id"))
+        article_flags,
+        label=str(article.get("article_key") or article.get("candidate_id")),  # ty:ignore[invalid-argument-type]
     )
     candidate = build_candidate(article)
     diagnostics = tuple(
@@ -248,7 +249,7 @@ def run_article(article: dict[str, Any], *, output_dir: Path) -> dict[str, Any]:
 def run_smoke(manifest_path: Path, *, output_dir: Path, clean: bool = False) -> dict[str, Any]:
     manifest = load_json(manifest_path)
     flags = manifest.get("safety_flags") if isinstance(manifest.get("safety_flags"), dict) else {}
-    assert_false_flags(flags, label="manifest")
+    assert_false_flags(flags, label="manifest")  # ty:ignore[invalid-argument-type]
     articles = manifest.get("articles")
     if not isinstance(articles, list) or not articles:
         raise ValueError("manifest must contain articles")

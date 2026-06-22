@@ -9,7 +9,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from capture_m027_mixed_source_sources import (  # noqa: E402
+# pyrefly: ignore [missing-import]
+from capture_m027_mixed_source_sources import (  # noqa: E402  # ty:ignore[unresolved-import]
     FAIL_CLOSED_SAFETY_FLAGS,
     FetchResponse,
     capture_selection,
@@ -19,7 +20,11 @@ from capture_m027_mixed_source_sources import (  # noqa: E402
     selected_article_paths,
     sha256_bytes,
 )
-from verify_m027_source_acquisition_boundary import main as verify_replay_main  # noqa: E402
+
+# pyrefly: ignore [missing-import]
+from verify_m027_source_acquisition_boundary import (
+    main as verify_replay_main,  # noqa: E402  # ty:ignore[unresolved-import]
+)
 
 FORBIDDEN_KEYS = {
     "text",

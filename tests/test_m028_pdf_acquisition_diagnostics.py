@@ -152,15 +152,15 @@ def _acquisition_rows(
     assert isinstance(refs, list)
     for ref in refs:
         assert isinstance(ref, dict)
-        ref_id = str(ref["ref_id"])
+        ref_id = str(ref["ref_id"])  # ty:ignore[invalid-argument-type]
         path = paths[ref_id]
         rows.append(
             {
                 "ref_id": ref_id,
-                "url": ref["url"],
-                "canonical_url": ref["canonical_url"],
-                "source_kind": ref["source_kind"],
-                "normalized_identity": ref["normalized_identity"],
+                "url": ref["url"],  # ty:ignore[invalid-argument-type]
+                "canonical_url": ref["canonical_url"],  # ty:ignore[invalid-argument-type]
+                "source_kind": ref["source_kind"],  # ty:ignore[invalid-argument-type]
+                "normalized_identity": ref["normalized_identity"],  # ty:ignore[invalid-argument-type]
                 "artifact_path": str(path.relative_to(root)),
                 "content_type": "application/pdf"
                 if path.suffix == ".pdf"
@@ -188,12 +188,12 @@ def _metadata_rows(
     assert isinstance(refs, list)
     for ref in refs:
         assert isinstance(ref, dict)
-        ref_id = str(ref["ref_id"])
-        source_kind = str(ref["source_kind"])
+        ref_id = str(ref["ref_id"])  # ty:ignore[invalid-argument-type]
+        source_kind = str(ref["source_kind"])  # ty:ignore[invalid-argument-type]
         pdf_url: str | None = None
         pdf_source: str | None = None
         if source_kind == "arxiv_abs_url":
-            pdf_url = f"https://arxiv.org/pdf/{ref['arxiv_unversioned_id']}"
+            pdf_url = f"https://arxiv.org/pdf/{ref['arxiv_unversioned_id']}"  # ty:ignore[invalid-argument-type]
             pdf_source = "citation_pdf_url"
         elif source_kind == "nature_article_url":
             pdf_url = "https://www.nature.com/articles/example.pdf"
@@ -202,13 +202,13 @@ def _metadata_rows(
             {
                 "schema_version": "m028.source-metadata-event.v1",
                 "ref_id": ref_id,
-                "url": ref["url"],
+                "url": ref["url"],  # ty:ignore[invalid-argument-type]
                 "source_kind": source_kind,
                 "source_family": "arxiv"
                 if source_kind.startswith("arxiv_")
                 else ("nature" if source_kind == "nature_article_url" else "company_blog"),
-                "normalized_identity": ref["normalized_identity"],
-                "canonical_url": ref["canonical_url"],
+                "normalized_identity": ref["normalized_identity"],  # ty:ignore[invalid-argument-type]
+                "canonical_url": ref["canonical_url"],  # ty:ignore[invalid-argument-type]
                 "url_variant": "pdf_url"
                 if source_kind == "arxiv_pdf_url"
                 else ("abs_url" if source_kind == "arxiv_abs_url" else source_kind),
@@ -256,11 +256,11 @@ def _metadata_summary(selection: dict[str, object]) -> dict[str, object]:
     refs = selection["refs"]
     assert isinstance(refs, list)
     source_kind_counts: dict[str, int] = {}
-    identities = {str(ref["normalized_identity"]) for ref in refs if isinstance(ref, dict)}
+    identities = {str(ref["normalized_identity"]) for ref in refs if isinstance(ref, dict)}  # ty:ignore[invalid-argument-type]
     for ref in refs:
         assert isinstance(ref, dict)
-        source_kind_counts[str(ref["source_kind"])] = (
-            source_kind_counts.get(str(ref["source_kind"]), 0) + 1
+        source_kind_counts[str(ref["source_kind"])] = (  # ty:ignore[invalid-argument-type]
+            source_kind_counts.get(str(ref["source_kind"]), 0) + 1  # ty:ignore[invalid-argument-type]
         )
     return {
         "schema_version": "m028.source-metadata-summary.v1",
@@ -641,9 +641,12 @@ def test_pdf_acquisition_verifier_rejects_malformed_existing_pdf_signature(tmp_p
     fake_pdf.write_bytes(b"not-a-pdf but checksum matches\n")
     r01 = next(event for event in events if event["ref_id"] == "R01")
     artifact = r01["pdf_artifact"]
-    artifact["path"] = str(fake_pdf.relative_to(tmp_path))
-    artifact["sha256"] = _sha256(fake_pdf)
-    artifact["byte_count"] = fake_pdf.stat().st_size
+    # pyrefly: ignore [unsupported-operation]
+    artifact["path"] = str(fake_pdf.relative_to(tmp_path))  # ty:ignore[invalid-assignment]
+    # pyrefly: ignore [unsupported-operation]
+    artifact["sha256"] = _sha256(fake_pdf)  # ty:ignore[invalid-assignment]
+    # pyrefly: ignore [unsupported-operation]
+    artifact["byte_count"] = fake_pdf.stat().st_size  # ty:ignore[invalid-assignment]
     _write_json(selection_path, selection)
     _write_jsonl(events_path, events)
     _write_json(summary_path, summary)

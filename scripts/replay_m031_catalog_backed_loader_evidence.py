@@ -500,9 +500,9 @@ def build_summary(
             row.get("source_role") if isinstance(row.get("source_role"), str) else "<missing-role>"
         )
         status = str(row.get("status"))
-        if status in per_identity[identity]:
-            per_identity[identity][status] += 1
-            per_role[role][status] += 1
+        if status in per_identity[identity]:  # ty:ignore[invalid-argument-type]
+            per_identity[identity][status] += 1  # ty:ignore[invalid-argument-type]
+            per_role[role][status] += 1  # ty:ignore[invalid-argument-type]
     return {
         "schema_version": SCHEMA_VERSION,
         "milestone_id": MILESTONE_ID,
@@ -558,11 +558,11 @@ def render_report(summary: Mapping[str, Any]) -> str:
         f"- Slice: `{summary.get('slice_id')}`",
         f"- Selection: `{summary.get('selection_id')}`",
         f"- Status: `{summary.get('status')}`",
-        f"- Loader attempted: {counts.get('loader_attempted', 0)}",  # pyrefly: ignore[bad-assignment]
-        f"- Loaded: {counts.get('loaded', 0)}",  # pyrefly: ignore[bad-assignment]
-        f"- Loaded metadata only: {counts.get('loaded_metadata_only', 0)}",  # pyrefly: ignore[bad-assignment]
-        f"- Failed: {counts.get('failed', 0)}",  # pyrefly: ignore[bad-assignment]
-        f"- Loader blocked: {counts.get('loader_blocked', 0)}",  # pyrefly: ignore[bad-assignment]
+        f"- Loader attempted: {counts.get('loader_attempted', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        f"- Loaded: {counts.get('loaded', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        f"- Loaded metadata only: {counts.get('loaded_metadata_only', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        f"- Failed: {counts.get('failed', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
+        f"- Loader blocked: {counts.get('loader_blocked', 0)}",  # pyrefly: ignore [bad-assignment, missing-attribute]  # ty:ignore[unresolved-attribute]
         "- Network fetch attempted count: 0",
         "- Graph/import/LadybugDB writes: false",
         "",
@@ -591,7 +591,8 @@ def render_report(summary: Mapping[str, Any]) -> str:
         if isinstance(summary.get("per_role_loader_state_counts"), Mapping)
         else {}
     )
-    for role, value in role_counts.items():
+    # pyrefly: ignore [missing-attribute]
+    for role, value in role_counts.items():  # ty:ignore[unresolved-attribute]
         if isinstance(value, Mapping):
             lines.append(
                 f"- `{role}`: loaded={value.get('loaded', 0)} loaded_metadata_only={value.get('loaded_metadata_only', 0)} "

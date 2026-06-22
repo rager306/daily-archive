@@ -9,8 +9,9 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import m058_marker_compare_5 as compare_5  # noqa: E402
-import m058_marker_extract_5 as extract_5  # noqa: E402
+# pyrefly: ignore [missing-import]
+import m058_marker_compare_5 as compare_5  # noqa: E402  # ty:ignore[unresolved-import]
+import m058_marker_extract_5 as extract_5  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
 
 ARTIFACT_ROOT = ROOT / "artifacts" / "m058-marker" / "pilot-5"
 SUMMARY = ARTIFACT_ROOT / "summary.json"
@@ -36,7 +37,8 @@ def _load_json(path: Path) -> dict:
 def _assert_five_false_safety_defaults(payload: dict) -> None:
     safety = payload.get("safety_defaults")
     assert safety == EXPECTED_SAFETY_DEFAULTS
-    assert all(value is False for value in safety.values())
+    # pyrefly: ignore [missing-attribute]
+    assert all(value is False for value in safety.values())  # ty:ignore[unresolved-attribute]
 
 
 def test_marker_5_pdfs_extracted() -> None:

@@ -133,11 +133,11 @@ def selected_articles(selection: Mapping[str, Any]) -> list[dict[str, Any]]:
     for index, article in enumerate(articles):
         if not isinstance(article, dict):
             raise ValueError(f"selection article at index {index} is not an object")
-        article_ref = article_key_for(article)
+        article_ref = article_key_for(article)  # ty:ignore[invalid-argument-type]
         if article_ref in seen:
             raise ValueError(f"duplicate selection article identity: {article_ref}")
         seen.add(article_ref)
-        normalized.append(dict(article))
+        normalized.append(dict(article))  # ty:ignore[no-matching-overload]
     return normalized
 
 

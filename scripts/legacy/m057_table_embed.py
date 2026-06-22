@@ -89,7 +89,7 @@ class FdEmbeddingClient:
         ordered_rows = sorted(rows, key=lambda item: int(item.get("index", 0)))
         embeddings: list[list[float]] = []
         for row in ordered_rows:
-            embedding = row.get("embedding")
+            embedding = row.get("embedding")  # ty:ignore[unresolved-attribute]
             if not isinstance(embedding, list) or len(embedding) != dimensions:
                 raise FdEmbeddingError(
                     "fd response contained an embedding with the wrong dimension"

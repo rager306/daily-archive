@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+# pyrefly: ignore [missing-import]
 from select_m036_real_corpus_smoke_batch import ROOT, candidate_entry
 
 BASE_DIR = ROOT / "artifacts" / "m041-mixed-connectivity-smoke"
@@ -116,8 +117,8 @@ def known_arxiv_ids() -> set[str]:
     for article_path in ARTICLE_ROOT.rglob("article.json"):
         article = load_json(article_path)
         identity = article.get("identity") if isinstance(article.get("identity"), dict) else {}
-        if identity.get("arxiv_id"):
-            known.add(normalize_arxiv_id(str(identity["arxiv_id"])))
+        if identity.get("arxiv_id"):  # ty:ignore[unresolved-attribute]
+            known.add(normalize_arxiv_id(str(identity["arxiv_id"])))  # ty:ignore[not-subscriptable]
         key = str(article.get("article_key") or "")
         if key:
             known.add(normalize_arxiv_id(key))

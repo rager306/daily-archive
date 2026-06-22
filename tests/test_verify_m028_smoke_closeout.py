@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 
+# pyrefly: ignore [missing-import]
 import scripts.verify_m028_smoke_closeout as verifier
 
 ROOT = Path(__file__).resolve().parents[1]

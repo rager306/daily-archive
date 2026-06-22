@@ -169,7 +169,7 @@ async def _convert_bounded(
     instead of invoking PDF fallback.
     """
     if fast_only and hasattr(converter, "_try_arxiv2md"):
-        return await converter._try_arxiv2md(paper_id)  # type: ignore[attr-defined]
+        return await converter._try_arxiv2md(paper_id)  # type: ignore[attr-defined]  # ty:ignore[call-non-callable]
     return await converter.convert(paper_id)
 
 

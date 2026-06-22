@@ -657,10 +657,11 @@ def expected_audit_from_contract(contract: dict[str, Any]) -> dict[str, Any]:
     """Return validator expected-audit sets from a rendered contract."""
     stable_ids = contract.get("stable_ids") if isinstance(contract.get("stable_ids"), dict) else {}
     return {
-        "source_ids": stable_ids.get("source_ids", []),
-        "locator_ids": stable_ids.get("locator_ids", []),
+        "source_ids": stable_ids.get("source_ids", []),  # ty:ignore[unresolved-attribute]
+        "locator_ids": stable_ids.get("locator_ids", []),  # ty:ignore[unresolved-attribute]
         "paper_ids": [
-            _paper_id_from_source_id(source_id) for source_id in stable_ids.get("source_ids", [])
+            _paper_id_from_source_id(source_id)
+            for source_id in stable_ids.get("source_ids", [])  # ty:ignore[unresolved-attribute]
         ],
     }
 
@@ -1008,7 +1009,7 @@ def _validate_spans(
         if (
             not isinstance(span.get("char_start"), int)
             or not isinstance(span.get("char_end"), int)
-            or span.get("char_end", 0) <= span.get("char_start", 0)
+            or span.get("char_end", 0) <= span.get("char_start", 0)  # ty:ignore[unsupported-operator]
         ):
             diagnostics.append(
                 ChunkRepairDiagnostic(
@@ -1314,11 +1315,12 @@ def _expected_sets(expected_audit: dict[str, Any] | None) -> dict[str, Any]:
 def _source_ids(value: Any) -> set[str]:
     if not isinstance(value, list):
         return set()
+    # pyrefly: ignore [bad-return]
     return {
         _string_or_none(item.get("source_id"))
         for item in value
         if isinstance(item, dict) and _string_or_none(item.get("source_id"))
-    }  # type: ignore[misc]
+    }  # type: ignore[misc]  # ty:ignore[invalid-return-type]
 
 
 def _list_of_dicts(value: Any) -> list[dict[str, Any]]:

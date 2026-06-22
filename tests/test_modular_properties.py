@@ -35,6 +35,8 @@ from research_graph.infrastructure.staging.import_boundary import (
     ImportCandidate,
     validate_import_boundary_rehearsal,
 )
+
+# pyrefly: ignore [missing-import]
 from tests.helpers.modular_fixtures import (
     FIXTURE_PAPER_ID,
     adaptix_dump,

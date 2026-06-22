@@ -127,7 +127,7 @@ def verify_bounded_repair_prototype(
         "production_write_count",
         "semantic_ready_count",
     ):
-        if diagnostics.get(field) != 0:
+        if diagnostics.get(field) != 0:  # ty:ignore[unresolved-attribute]
             findings.append(
                 PrototypeVerificationFinding(
                     code="unsafe_diagnostic_counter",
@@ -144,7 +144,7 @@ def verify_bounded_repair_prototype(
         "ladybugdb_written",
         "production_import_attempted",
     ):
-        if diagnostics.get(field) is not False:
+        if diagnostics.get(field) is not False:  # ty:ignore[unresolved-attribute]
             findings.append(
                 PrototypeVerificationFinding(
                     code="unsafe_diagnostic_flag",
@@ -208,10 +208,10 @@ def verify_files(
     return {
         "passed": not findings,
         "target_count": len(targets),
-        "repair_state_counts": diagnostics.get("repair_state_counts", {}),
-        "route_quality_state_counts": diagnostics.get("route_quality_state_counts", {}),
+        "repair_state_counts": diagnostics.get("repair_state_counts", {}),  # ty:ignore[unresolved-attribute]
+        "route_quality_state_counts": diagnostics.get("route_quality_state_counts", {}),  # ty:ignore[unresolved-attribute]
         "unsafe_counters_zero": not any(
-            diagnostics.get(field) not in (0, False)
+            diagnostics.get(field) not in (0, False)  # ty:ignore[unresolved-attribute]
             for field in (
                 "import_eligible_count",
                 "promoted_to_fact_count",
@@ -236,9 +236,9 @@ def _lineage_subset_findings(
     stable_ids = (
         s02_contract.get("stable_ids") if isinstance(s02_contract.get("stable_ids"), dict) else {}
     )
-    known_locators = _string_set(stable_ids.get("locator_ids"))
-    known_sources = _string_set(stable_ids.get("source_ids"))
-    known_spans = _string_set(stable_ids.get("span_ids"))
+    known_locators = _string_set(stable_ids.get("locator_ids"))  # ty:ignore[unresolved-attribute]
+    known_sources = _string_set(stable_ids.get("source_ids"))  # ty:ignore[unresolved-attribute]
+    known_spans = _string_set(stable_ids.get("span_ids"))  # ty:ignore[unresolved-attribute]
     findings: list[PrototypeVerificationFinding] = []
     for index, target in enumerate(_list_of_dicts(prototype.get("repair_targets"))):
         target_id = str(target.get("target_id", ""))

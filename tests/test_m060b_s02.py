@@ -10,9 +10,10 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import m060b_graph_stats as graph_stats  # noqa: E402
-import m060b_graph_visualize as graph_visualize  # noqa: E402
-import m060b_two_hop_preview as two_hop_preview  # noqa: E402
+# pyrefly: ignore [missing-import]
+import m060b_graph_stats as graph_stats  # noqa: E402  # ty:ignore[unresolved-import]
+import m060b_graph_visualize as graph_visualize  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
+import m060b_two_hop_preview as two_hop_preview  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
 
 MANIFEST = ROOT / "artifacts" / "m058-pilot" / "combined-edges.json"
 STATS_JSON = ROOT / "artifacts" / "m060b-graph" / "stats.json"

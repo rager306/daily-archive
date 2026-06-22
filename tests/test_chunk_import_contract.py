@@ -147,7 +147,7 @@ def test_valid_import_ready_package_passes() -> None:
 
 def test_missing_chunk_id_is_rejected() -> None:
     package = _valid_package()
-    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore[bad-assignment]
+    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     chunk.pop("chunk_id")
     package["chunks"] = [chunk]
 
@@ -156,7 +156,7 @@ def test_missing_chunk_id_is_rejected() -> None:
 
 def test_graph_ready_chunk_missing_source_span_is_rejected() -> None:
     package = _valid_package()
-    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore[bad-assignment]
+    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     chunk["source_span"] = None
     package["chunks"] = [chunk]
 
@@ -165,7 +165,7 @@ def test_graph_ready_chunk_missing_source_span_is_rejected() -> None:
 
 def test_unresolved_parent_element_is_rejected() -> None:
     package = _valid_package()
-    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore[bad-assignment]
+    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     chunk["parent_element_ids"] = ["missing-element"]
     package["chunks"] = [chunk]
 
@@ -174,7 +174,7 @@ def test_unresolved_parent_element_is_rejected() -> None:
 
 def test_missing_or_unresolved_evidence_path_is_rejected() -> None:
     missing = _valid_package()
-    chunk = deepcopy(missing["chunks"])[0]  # pyrefly: ignore[bad-assignment]
+    chunk = deepcopy(missing["chunks"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     chunk["evidence_path_id"] = None
     missing["chunks"] = [chunk]
 
@@ -186,7 +186,7 @@ def test_missing_or_unresolved_evidence_path_is_rejected() -> None:
 
 def test_retrieval_only_chunk_cannot_request_trusted_import() -> None:
     package = _valid_package()
-    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore[bad-assignment]
+    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     chunk["state"] = "ok_for_retrieval_only"
     chunk["route"] = "retrieval_only"
     package["chunks"] = [chunk]
@@ -200,7 +200,7 @@ def test_retrieval_only_chunk_cannot_request_trusted_import() -> None:
 
 def test_raw_text_embeddings_and_vectors_are_rejected() -> None:
     package = _valid_package()
-    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore[bad-assignment]
+    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     chunk["chunk_text"] = "raw text must not be in machine artifacts"
     chunk["embeddings"] = [0.1]
     chunk["vector"] = [0.2]
@@ -215,7 +215,7 @@ def test_raw_text_embeddings_and_vectors_are_rejected() -> None:
 
 def test_annotation_promoted_to_fact_is_rejected() -> None:
     package = _valid_package()
-    annotation = deepcopy(package["annotations"])[0]  # pyrefly: ignore[bad-assignment]
+    annotation = deepcopy(package["annotations"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     annotation["promoted_to_fact"] = True
     package["annotations"] = [annotation]
 
@@ -224,7 +224,7 @@ def test_annotation_promoted_to_fact_is_rejected() -> None:
 
 def test_reference_chunk_polluting_claim_route_is_rejected() -> None:
     package = _valid_package()
-    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore[bad-assignment]
+    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     chunk["chunk_type"] = "reference_entry"
     package["chunks"] = [chunk]
 
@@ -233,7 +233,7 @@ def test_reference_chunk_polluting_claim_route_is_rejected() -> None:
 
 def test_retrieval_only_package_can_be_valid_but_not_import_ready() -> None:
     package = _valid_package()
-    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore[bad-assignment]
+    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     chunk["state"] = "ok_for_retrieval_only"
     chunk["route"] = "retrieval_only"
     chunk["allowed_uses"] = ["retrieval_diagnostics"]
@@ -241,8 +241,10 @@ def test_retrieval_only_package_can_be_valid_but_not_import_ready() -> None:
     chunk["evidence_path_id"] = None
     package["chunks"] = [chunk]
     diagnostics = deepcopy(package["diagnostics"])
-    diagnostics["import_eligible_chunk_count"] = 0
-    diagnostics["refused_chunk_count"] = 1
+    # pyrefly: ignore [unsupported-operation]
+    diagnostics["import_eligible_chunk_count"] = 0  # ty:ignore[invalid-assignment]
+    # pyrefly: ignore [unsupported-operation]
+    diagnostics["refused_chunk_count"] = 1  # ty:ignore[invalid-assignment]
     package["diagnostics"] = diagnostics
 
     result = validate_import_ready_package(package)
@@ -267,18 +269,19 @@ def test_nested_required_fields_are_validated() -> None:
     package = _valid_package()
     package["paper"] = {"paper_id": "wrong", "source_artifacts": ["normalized_markdown:p1"]}
     conversion = deepcopy(package["conversion"])
-    conversion.pop("converter")
+    # pyrefly: ignore [missing-attribute]
+    conversion.pop("converter")  # ty:ignore[unresolved-attribute]
     package["conversion"] = conversion
-    element = deepcopy(package["elements"])[0]  # pyrefly: ignore[bad-assignment]
+    element = deepcopy(package["elements"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     element.pop("element_type")
     package["elements"] = [element]
-    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore[bad-assignment]
+    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     chunk.pop("order_index")
     package["chunks"] = [chunk]
-    annotation = deepcopy(package["annotations"])[0]  # pyrefly: ignore[bad-assignment]
+    annotation = deepcopy(package["annotations"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     annotation.pop("method")
     package["annotations"] = [annotation]
-    evidence_path = deepcopy(package["evidence_paths"])[0]  # pyrefly: ignore[bad-assignment]
+    evidence_path = deepcopy(package["evidence_paths"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     evidence_path.pop("provenance_chain")
     package["evidence_paths"] = [evidence_path]
 
@@ -295,14 +298,20 @@ def test_nested_required_fields_are_validated() -> None:
 def test_conversion_and_diagnostics_redaction_flags_are_validated() -> None:
     package = _valid_package()
     conversion = deepcopy(package["conversion"])
-    conversion["raw_text_included"] = True
-    conversion["embeddings_included"] = True
+    # pyrefly: ignore [unsupported-operation]
+    conversion["raw_text_included"] = True  # ty:ignore[invalid-assignment]
+    # pyrefly: ignore [unsupported-operation]
+    conversion["embeddings_included"] = True  # ty:ignore[invalid-assignment]
     package["conversion"] = conversion
     diagnostics = deepcopy(package["diagnostics"])
-    diagnostics["raw_text_included"] = True
-    diagnostics["embeddings_included"] = True
-    diagnostics["ladybugdb_written"] = True
-    diagnostics["production_import_attempted"] = True
+    # pyrefly: ignore [unsupported-operation]
+    diagnostics["raw_text_included"] = True  # ty:ignore[invalid-assignment]
+    # pyrefly: ignore [unsupported-operation]
+    diagnostics["embeddings_included"] = True  # ty:ignore[invalid-assignment]
+    # pyrefly: ignore [unsupported-operation]
+    diagnostics["ladybugdb_written"] = True  # ty:ignore[invalid-assignment]
+    # pyrefly: ignore [unsupported-operation]
+    diagnostics["production_import_attempted"] = True  # ty:ignore[invalid-assignment]
     package["diagnostics"] = diagnostics
 
     reasons = _single_reason(package)
@@ -316,8 +325,10 @@ def test_conversion_and_diagnostics_redaction_flags_are_validated() -> None:
 def test_diagnostics_counts_must_match_computed_counts() -> None:
     package = _valid_package()
     diagnostics = deepcopy(package["diagnostics"])
-    diagnostics["import_eligible_chunk_count"] = 999
-    diagnostics["refused_chunk_count"] = 999
+    # pyrefly: ignore [unsupported-operation]
+    diagnostics["import_eligible_chunk_count"] = 999  # ty:ignore[invalid-assignment]
+    # pyrefly: ignore [unsupported-operation]
+    diagnostics["refused_chunk_count"] = 999  # ty:ignore[invalid-assignment]
     package["diagnostics"] = diagnostics
 
     reasons = _single_reason(package)
@@ -328,7 +339,7 @@ def test_diagnostics_counts_must_match_computed_counts() -> None:
 
 def test_unresolved_annotation_chunk_has_precise_reason() -> None:
     package = _valid_package()
-    annotation = deepcopy(package["annotations"])[0]  # pyrefly: ignore[bad-assignment]
+    annotation = deepcopy(package["annotations"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     annotation["chunk_id"] = "missing-chunk"
     package["annotations"] = [annotation]
 
@@ -337,7 +348,7 @@ def test_unresolved_annotation_chunk_has_precise_reason() -> None:
 
 def test_graph_ready_retrieval_only_route_is_not_import_eligible() -> None:
     package = _valid_package()
-    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore[bad-assignment]
+    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     chunk["route"] = "retrieval_only"
     chunk["allowed_uses"] = ["trusted_kg_import", "retrieval_diagnostics"]
     package["chunks"] = [chunk]
@@ -350,7 +361,7 @@ def test_graph_ready_retrieval_only_route_is_not_import_eligible() -> None:
 
 def test_invalid_route_is_rejected_and_not_counted_import_eligible() -> None:
     package = _valid_package()
-    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore[bad-assignment]
+    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     chunk["route"] = "not_a_route"
     package["chunks"] = [chunk]
 
@@ -362,7 +373,7 @@ def test_invalid_route_is_rejected_and_not_counted_import_eligible() -> None:
 
 def test_incompatible_route_and_chunk_type_is_rejected() -> None:
     package = _valid_package()
-    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore[bad-assignment]
+    chunk = deepcopy(package["chunks"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     chunk["route"] = "table_extraction"
     chunk["chunk_type"] = "claim_candidate"
     package["chunks"] = [chunk]
@@ -375,7 +386,7 @@ def test_incompatible_route_and_chunk_type_is_rejected() -> None:
 
 def test_evidence_path_span_must_contain_chunk_span() -> None:
     package = _valid_package()
-    evidence_path = deepcopy(package["evidence_paths"])[0]  # pyrefly: ignore[bad-assignment]
+    evidence_path = deepcopy(package["evidence_paths"])[0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     evidence_path["source_span"] = {
         "coordinate_space": "canonical_normalized_markdown",
         "char_start": 1000,

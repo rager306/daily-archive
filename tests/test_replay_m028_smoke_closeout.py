@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+# pyrefly: ignore [missing-import]
 from scripts.replay_m028_smoke_closeout import (
     CloseoutError,
     read_jsonl,

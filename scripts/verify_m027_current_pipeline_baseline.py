@@ -768,7 +768,7 @@ def verify(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict[str, Any
                 row, conversion_rows.get((article_ref, variant_id)), root=args.root
             )
         )
-        artifact_path_value = row.get("baseline_artifact_path") or artifact_paths.get(article_ref)
+        artifact_path_value = row.get("baseline_artifact_path") or artifact_paths.get(article_ref)  # ty:ignore[unresolved-attribute]
         artifact, artifact_findings = load_artifact(
             artifact_path_value, root=args.root, article_ref=article_ref
         )

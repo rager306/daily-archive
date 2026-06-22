@@ -166,7 +166,8 @@ def _acquisition_rows(paths: dict[str, Path], root: Path) -> list[dict[str, obje
                 "production_persistence_attempted": False,
             }
         )
-    return rows
+    # pyrefly: ignore [bad-return]
+    return rows  # ty:ignore[invalid-return-type]
 
 
 def _expanded_refs() -> list[dict[str, object]]:
@@ -298,9 +299,10 @@ def _expanded_acquisition_rows(
 def expanded_outputs(tmp_path: Path) -> dict[str, object]:
     builder = _load_build_script()
     selection = _expanded_selection()
-    refs = list(selection["refs"])
-    paths = _expanded_artifacts(tmp_path, refs)
-    acquisition_events = _expanded_acquisition_rows(refs, paths, tmp_path)
+    # pyrefly: ignore [bad-argument-type]
+    refs = list(selection["refs"])  # ty:ignore[invalid-argument-type]
+    paths = _expanded_artifacts(tmp_path, refs)  # ty:ignore[invalid-argument-type]
+    acquisition_events = _expanded_acquisition_rows(refs, paths, tmp_path)  # ty:ignore[invalid-argument-type]
     selection_path = tmp_path / "selection.json"
     acquisition_path = tmp_path / "source-acquisition-events.jsonl"
     out_dir = tmp_path / "out"
@@ -451,20 +453,31 @@ def test_verifier_rejects_stale_fourteen_ref_assumptions(
 ) -> None:
     outputs = deepcopy(expanded_outputs)
     keep_ref_ids = {f"R{index:02d}" for index in range(1, 15)}
-    outputs["selection"]["refs"] = [
+    # pyrefly: ignore [unsupported-operation]
+    outputs["selection"]["refs"] = [  # ty:ignore[invalid-assignment]
         ref
+        # pyrefly: ignore [bad-index]
         for ref in outputs["selection"]["refs"]
         if ref["ref_id"] in keep_ref_ids  # pyrefly: ignore[bad-assignment]
     ]
     outputs["acquisition_events"] = [
-        row for row in outputs["acquisition_events"] if row["ref_id"] in keep_ref_ids
+        # pyrefly: ignore [not-iterable]
+        row
+        for row in outputs["acquisition_events"]
+        if row["ref_id"] in keep_ref_ids  # ty:ignore[not-iterable]
     ]
     outputs["metadata_events"] = [
-        event for event in outputs["metadata_events"] if event["ref_id"] in keep_ref_ids
+        # pyrefly: ignore [not-iterable]
+        event
+        for event in outputs["metadata_events"]
+        if event["ref_id"] in keep_ref_ids  # ty:ignore[not-iterable]
     ]
-    outputs["summary"]["url_ref_count"] = 14
-    outputs["summary"]["ref_count"] = 14
-    outputs["summary"]["ref_ids"] = [event["ref_id"] for event in outputs["metadata_events"]]
+    # pyrefly: ignore [unsupported-operation]
+    outputs["summary"]["url_ref_count"] = 14  # ty:ignore[invalid-assignment]
+    # pyrefly: ignore [unsupported-operation]
+    outputs["summary"]["ref_count"] = 14  # ty:ignore[invalid-assignment]
+    # pyrefly: ignore [unsupported-operation]
+    outputs["summary"]["ref_ids"] = [event["ref_id"] for event in outputs["metadata_events"]]  # ty:ignore[invalid-assignment]
 
     codes = _diagnostic_codes(outputs)
 
@@ -474,18 +487,27 @@ def test_verifier_rejects_stale_fourteen_ref_assumptions(
 
 def test_verifier_rejects_missing_new_refs(expanded_outputs: dict[str, object]) -> None:
     outputs = deepcopy(expanded_outputs)
-    outputs["selection"]["refs"] = [
+    # pyrefly: ignore [unsupported-operation]
+    outputs["selection"]["refs"] = [  # ty:ignore[invalid-assignment]
         ref
+        # pyrefly: ignore [bad-index]
         for ref in outputs["selection"]["refs"]
         if ref["ref_id"] != "R21"  # pyrefly: ignore[bad-assignment]
     ]
     outputs["metadata_events"] = [
-        event for event in outputs["metadata_events"] if event["ref_id"] != "R21"
+        # pyrefly: ignore [not-iterable]
+        event
+        for event in outputs["metadata_events"]
+        if event["ref_id"] != "R21"  # ty:ignore[not-iterable]
     ]
     outputs["acquisition_events"] = [
-        row for row in outputs["acquisition_events"] if row["ref_id"] != "R21"
+        # pyrefly: ignore [not-iterable]
+        row
+        for row in outputs["acquisition_events"]
+        if row["ref_id"] != "R21"  # ty:ignore[not-iterable]
     ]
-    outputs["summary"]["ref_ids"] = [event["ref_id"] for event in outputs["metadata_events"]]
+    # pyrefly: ignore [unsupported-operation]
+    outputs["summary"]["ref_ids"] = [event["ref_id"] for event in outputs["metadata_events"]]  # ty:ignore[invalid-assignment]
 
     codes = _diagnostic_codes(outputs)
 
@@ -495,16 +517,16 @@ def test_verifier_rejects_missing_new_refs(expanded_outputs: dict[str, object]) 
 
 def test_verifier_rejects_unsafe_readiness_flags(expanded_outputs: dict[str, object]) -> None:
     outputs = deepcopy(expanded_outputs)
-    outputs["summary"]["safety_flags"]["kg_readiness_claimed"] = True  # pyrefly: ignore[bad-assignment]
-    outputs["summary"]["unsafe_claim_counts"]["parser_readiness_claimed"] = 1  # pyrefly: ignore[bad-assignment]
-    outputs["metadata_events"][0]["safety_flags"]["graph_write_attempted"] = True  # pyrefly: ignore[bad-assignment]
+    outputs["summary"]["safety_flags"]["kg_readiness_claimed"] = True  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+    outputs["summary"]["unsafe_claim_counts"]["parser_readiness_claimed"] = 1  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+    outputs["metadata_events"][0]["safety_flags"]["graph_write_attempted"] = True  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
 
     assert "unsafe_claim_detected" in _diagnostic_codes(outputs)
 
 
 def test_verifier_rejects_source_kind_drift(expanded_outputs: dict[str, object]) -> None:
     outputs = deepcopy(expanded_outputs)
-    outputs["metadata_events"][0]["source_kind"] = "company_blog_url"  # pyrefly: ignore[bad-assignment]
+    outputs["metadata_events"][0]["source_kind"] = "company_blog_url"  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
 
     codes = _diagnostic_codes(outputs)
 
@@ -516,14 +538,14 @@ def test_verifier_rejects_broken_acquisition_references(
     expanded_outputs: dict[str, object],
 ) -> None:
     outputs = deepcopy(expanded_outputs)
-    outputs["metadata_events"][0]["artifact"]["path"] = "sources/missing.pdf"  # pyrefly: ignore[bad-assignment]
+    outputs["metadata_events"][0]["artifact"]["path"] = "sources/missing.pdf"  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
 
     assert "artifact_reference_broken" in _diagnostic_codes(outputs)
 
 
 def test_verifier_rejects_raw_payload_leakage(expanded_outputs: dict[str, object]) -> None:
     outputs = deepcopy(expanded_outputs)
-    outputs["metadata_events"][0]["raw_text"] = "<html><body>raw source payload</body></html>"  # pyrefly: ignore[bad-assignment]
+    outputs["metadata_events"][0]["raw_text"] = "<html><body>raw source payload</body></html>"  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
 
     assert "raw_payload_leakage" in _diagnostic_codes(outputs)
 
@@ -532,7 +554,7 @@ def test_verifier_requires_nullable_optional_gap_diagnostics(
     expanded_outputs: dict[str, object],
 ) -> None:
     outputs = deepcopy(expanded_outputs)
-    first_event = outputs["metadata_events"][0]  # pyrefly: ignore[bad-assignment]
+    first_event = outputs["metadata_events"][0]  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     first_event["optional_metadata"].pop("doi")
 
     assert "required_nullable_field_missing" in _diagnostic_codes(outputs)

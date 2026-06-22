@@ -13,12 +13,16 @@ from research_graph.workflows.review_packet_prototype import (
     build_reviewer_packet_prototype,
     render_reviewer_packet_markdown,
 )
+
+# pyrefly: ignore [missing-import]
 from scripts.verify_m022_final_gate import (
     FINAL_GATE_SCHEMA_VERSION,
     build_final_gate,
     validate_final_gate,
     verify_files,
 )
+
+# pyrefly: ignore [missing-import]
 from scripts.verify_m022_final_gate import (
     main as final_gate_cli_main,
 )
@@ -62,8 +66,10 @@ def _s02_contract() -> dict[str, object]:
     }
     contract["stable_ids"] = {
         "source_ids": ["source-synthetic-paper-1-full-text"],
-        "locator_ids": [locator["locator_id"] for locator in locators],
-        "span_ids": [locator["source_spans"][0]["span_id"] for locator in locators],
+        # pyrefly: ignore [not-iterable]
+        "locator_ids": [locator["locator_id"] for locator in locators],  # ty:ignore[not-iterable]
+        # pyrefly: ignore [not-iterable]
+        "span_ids": [locator["source_spans"][0]["span_id"] for locator in locators],  # ty:ignore[not-iterable]
     }
     contract["safety_boundary"] = {
         "import_eligible": False,
@@ -421,6 +427,7 @@ def test_markdown_code_fence_and_forbidden_marker_are_rejected(tmp_path: Path) -
     summary = _verify(paths)
 
     assert summary["passed"] is False
-    codes = {finding["code"] for finding in summary["findings"]}
+    # pyrefly: ignore [not-iterable]
+    codes = {finding["code"] for finding in summary["findings"]}  # ty:ignore[not-iterable]
     assert "markdown_code_fence" in codes
     assert "markdown_forbidden_marker" in codes
