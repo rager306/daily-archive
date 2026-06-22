@@ -6,8 +6,8 @@ from typing import Protocol
 
 import yake
 
-from research_graph.domain.navigation import PageIndexDocument
 from research_graph.corpus.parsing.structure import ParsedArticle
+from research_graph.domain.navigation import PageIndexDocument
 
 
 class _ArticleTextElement(Protocol):

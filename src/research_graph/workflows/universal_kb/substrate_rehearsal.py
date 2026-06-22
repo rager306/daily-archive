@@ -11,7 +11,11 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-from research_graph.workflows.universal_kb.contracts import CandidatePacket, SafetyFlags, ToolInvocationRecord
+from research_graph.workflows.universal_kb.contracts import (
+    CandidatePacket,
+    SafetyFlags,
+    ToolInvocationRecord,
+)
 from research_graph.workflows.universal_kb.queue import UniversalKBQueue
 
 _DIAGNOSTIC_STATES = frozenset({"pending", "diagnostic_only", "diagnostics_only", "needs_review"})
@@ -68,8 +72,15 @@ class ReadinessHandoff:
         object.__setattr__(self, "evidence_refs", _tuple(self.evidence_refs))
         if self.readiness_state not in _DIAGNOSTIC_STATES:
             raise ValueError("no-write rehearsal readiness must remain diagnostic-only")
-        if not self.dry_run_only or self.graph_write_allowed or self.promotion_allowed or self.production_import_attempted:
-            raise ValueError("no-write rehearsal cannot grant write, import, or promotion authority")
+        if (
+            not self.dry_run_only
+            or self.graph_write_allowed
+            or self.promotion_allowed
+            or self.production_import_attempted
+        ):
+            raise ValueError(
+                "no-write rehearsal cannot grant write, import, or promotion authority"
+            )
         self.safety_flags.assert_no_write()
 
     def to_dict(self) -> dict[str, Any]:

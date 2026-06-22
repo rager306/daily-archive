@@ -13,6 +13,8 @@ from research_graph.staging.graph_candidates import (
 )
 from research_graph.staging.import_boundary import (
     SCHEMA_VERSION as IMPORT_BOUNDARY_SCHEMA_VERSION,
+)
+from research_graph.staging.import_boundary import (
     ImportBoundaryRehearsal,
     ImportCandidate,
     build_import_boundary_rehearsal_from_benchmark,

@@ -14,13 +14,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from research_graph.llm.minimax_structured import DEFAULT_MINIMAX_MODEL
+from research_graph.infrastructure.llm.minimax_structured import DEFAULT_MINIMAX_MODEL
 from research_graph.workflows.universal_kb.queue import UniversalKBQueue
 from research_graph.workflows.universal_kb.review_assistance import (
     build_review_assistance_packet,
     build_review_tool_invocation_record,
 )
-from research_graph.workflows.universal_kb.sidecar_boundary import candidate_packet_from_sidecar_json
+from research_graph.workflows.universal_kb.sidecar_boundary import (
+    candidate_packet_from_sidecar_json,
+)
 from research_graph.workflows.universal_kb.substrate_rehearsal import NoWriteSubstrateRehearsal
 
 _REHEARSAL_INPUT_HASH = "sha256:m035-metadata-only-fixture"

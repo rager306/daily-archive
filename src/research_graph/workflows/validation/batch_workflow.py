@@ -16,7 +16,9 @@ from pathlib import Path
 from typing import Any
 
 from research_graph.corpus.ingestion.loader import load_article_source
-from research_graph.corpus.sources.thirty_paper_deviation_scan import build_thirty_paper_deviation_scan
+from research_graph.corpus.sources.thirty_paper_deviation_scan import (
+    build_thirty_paper_deviation_scan,
+)
 from research_graph.workflows.validation.batch_state import (
     ScanArtifactPaths,
     SelectedPaper,
@@ -57,7 +59,9 @@ def batch_artifact_dir(root_dir: str | Path, batch_id: str) -> Path:
     return Path(root_dir) / batch_id
 
 
-def selected_papers_from_manifest(manifest: dict[str, Any], *, limit: int | None = None) -> tuple[SelectedPaper, ...]:
+def selected_papers_from_manifest(
+    manifest: dict[str, Any], *, limit: int | None = None
+) -> tuple[SelectedPaper, ...]:
     papers: list[SelectedPaper] = []
     for raw_paper in manifest.get("papers", []):
         if not isinstance(raw_paper, dict):
@@ -68,7 +72,9 @@ def selected_papers_from_manifest(manifest: dict[str, Any], *, limit: int | None
             for key, value in (raw_paper.get("source_paths") or {}).items()
             if value is not None
         }
-        role = SELECTION_ROLE_ALIASES.get(str(raw_paper.get("selection_role", "")), "manual_review_target")
+        role = SELECTION_ROLE_ALIASES.get(
+            str(raw_paper.get("selection_role", "")), "manual_review_target"
+        )
         papers.append(
             SelectedPaper(
                 paper_id=paper_id,
@@ -79,7 +85,13 @@ def selected_papers_from_manifest(manifest: dict[str, Any], *, limit: int | None
                 notes=tuple(str(value) for value in raw_paper.get("notes", ())),
             )
         )
-    papers.sort(key=lambda paper: (paper.rank is None, paper.rank if paper.rank is not None else 999_999, paper.paper_id))
+    papers.sort(
+        key=lambda paper: (
+            paper.rank is None,
+            paper.rank if paper.rank is not None else 999_999,
+            paper.paper_id,
+        )
+    )
     if limit is not None:
         papers = papers[:limit]
     return tuple(papers)
@@ -114,7 +126,9 @@ def initialize_validation_batch(
         "selected_papers": [asdict(paper) for paper in selected_papers],
         **default_safety_flags(),
     }
-    selection_manifest_path.write_text(json.dumps(selection_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    selection_manifest_path.write_text(
+        json.dumps(selection_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     return {
         "state": state,
         "artifact_dir": artifact_dir,
@@ -144,17 +158,27 @@ def source_readiness_for_paper(
         str(cache_root_path / f"{paper.paper_id}.pdf"),
         str(fallback_root_path / paper.paper_id / "paper.pdf"),
     )
-    markdown_path = _first_existing_path(*markdown_candidates) or _first_candidate_path(*markdown_candidates)
+    markdown_path = _first_existing_path(*markdown_candidates) or _first_candidate_path(
+        *markdown_candidates
+    )
     pdf_path = _first_existing_path(*pdf_candidates) or _first_candidate_path(*pdf_candidates)
 
-    markdown_result = load_article_source(markdown_path, source_type="markdown", paper_id=paper.paper_id, logger=logger)
-    pdf_result = load_article_source(pdf_path, source_type="pdf", paper_id=paper.paper_id, logger=logger)
+    markdown_result = load_article_source(
+        markdown_path, source_type="markdown", paper_id=paper.paper_id, logger=logger
+    )
+    pdf_result = load_article_source(
+        pdf_path, source_type="pdf", paper_id=paper.paper_id, logger=logger
+    )
 
     markdown_present = markdown_result.sha256 is not None
-    markdown_quality_accepted = markdown_result.outcome == "loaded" and markdown_result.failure_reason is None
+    markdown_quality_accepted = (
+        markdown_result.outcome == "loaded" and markdown_result.failure_reason is None
+    )
     pdf_present = pdf_result.sha256 is not None and pdf_result.outcome == "loaded_metadata_only"
     risk_tags = set(paper.risk_tags)
-    conversion_failed = "conversion_failed" in risk_tags or ("missing_markdown" in risk_tags and not markdown_present)
+    conversion_failed = "conversion_failed" in risk_tags or (
+        "missing_markdown" in risk_tags and not markdown_present
+    )
     conversion_repaired = "docling_repair" in risk_tags or "conversion_repaired" in risk_tags
     unavailable_source = not markdown_present and not pdf_present
     return SourceReadiness(
@@ -174,8 +198,14 @@ def source_readiness_for_paper(
 
 
 def preflight_validation_batch(state: ValidationBatchState) -> ValidationBatchState:
-    readiness = {paper.paper_id: source_readiness_for_paper(paper) for paper in state.selected_papers}
-    next_phase = "source_ready" if readiness and all(item.ready_for_markdown_scan for item in readiness.values()) else "source_blocked"
+    readiness = {
+        paper.paper_id: source_readiness_for_paper(paper) for paper in state.selected_papers
+    }
+    next_phase = (
+        "source_ready"
+        if readiness and all(item.ready_for_markdown_scan for item in readiness.values())
+        else "source_blocked"
+    )
     updated = replace(
         state,
         phase=next_phase,
@@ -184,7 +214,9 @@ def preflight_validation_batch(state: ValidationBatchState) -> ValidationBatchSt
     return replace(updated, diagnostics=tuple(build_batch_diagnostics(updated)))
 
 
-def write_source_preflight_run(state: ValidationBatchState, output_dir: str | Path) -> dict[str, Path]:
+def write_source_preflight_run(
+    state: ValidationBatchState, output_dir: str | Path
+) -> dict[str, Path]:
     """Write state, summary, and JSONL diagnostics for a preflighted batch."""
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
@@ -196,7 +228,11 @@ def write_source_preflight_run(state: ValidationBatchState, output_dir: str | Pa
     with diagnostics_path.open("w", encoding="utf-8") as handle:
         for diagnostic in state.diagnostics:
             handle.write(json.dumps(diagnostic, sort_keys=True, separators=(",", ":")) + "\n")
-    return {"state_path": state_path, "summary_path": summary_path, "diagnostics_path": diagnostics_path}
+    return {
+        "state_path": state_path,
+        "summary_path": summary_path,
+        "diagnostics_path": diagnostics_path,
+    }
 
 
 def build_source_preflight_summary(state: ValidationBatchState) -> dict[str, Any]:
@@ -208,11 +244,17 @@ def build_source_preflight_summary(state: ValidationBatchState) -> dict[str, Any
         "phase": state.phase,
         "paper_count": len(state.selected_papers),
         "markdown_present_count": sum(1 for item in readiness_values if item.markdown_present),
-        "markdown_quality_accepted_count": sum(1 for item in readiness_values if item.markdown_quality_accepted),
-        "ready_for_markdown_scan_count": sum(1 for item in readiness_values if item.ready_for_markdown_scan),
+        "markdown_quality_accepted_count": sum(
+            1 for item in readiness_values if item.markdown_quality_accepted
+        ),
+        "ready_for_markdown_scan_count": sum(
+            1 for item in readiness_values if item.ready_for_markdown_scan
+        ),
         "pdf_present_count": sum(1 for item in readiness_values if item.pdf_present),
         "pdf_missing_count": sum(1 for item in readiness_values if item.pdf_missing),
-        "conversion_repaired_count": sum(1 for item in readiness_values if item.conversion_repaired),
+        "conversion_repaired_count": sum(
+            1 for item in readiness_values if item.conversion_repaired
+        ),
         "conversion_failed_count": sum(1 for item in readiness_values if item.conversion_failed),
         "unavailable_source_count": sum(1 for item in readiness_values if item.unavailable_source),
         "diagnostic_count": len(diagnostics),
@@ -250,7 +292,9 @@ def run_validation_batch_scan(
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     lineage = _scan_lineage(state, milestone_id=milestone_id)
-    manifest_path = write_validation_scan_manifest(state, output / "validation-scan-manifest.json", lineage=lineage)
+    manifest_path = write_validation_scan_manifest(
+        state, output / "validation-scan-manifest.json", lineage=lineage
+    )
     source_summary_path = write_validation_scan_source_readiness(
         state, output / "validation-scan-source-readiness.json", lineage=lineage
     )
@@ -270,8 +314,12 @@ def run_validation_batch_scan(
         lineage=lineage,
     )
     outlier_report = build_outlier_report(scan, lineage=lineage)
-    delta_path.write_text(json.dumps(delta_report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    outlier_path.write_text(json.dumps(outlier_report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    delta_path.write_text(
+        json.dumps(delta_report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    outlier_path.write_text(
+        json.dumps(outlier_report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     scan_diagnostics = tuple(scan_import_gate_diagnostics(scan))
     artifact_paths = ScanArtifactPaths(
         aggregate_summary_json=str(summary_path),
@@ -398,8 +446,12 @@ def write_validation_scan_manifest(
         "schema_version": "m007-validation-scan-manifest.v1",
         "batch_id": state.batch_id,
         "paper_count": len(papers),
-        "m005_overlap_count": sum(1 for paper in papers if paper.get("selection_role") == "m005_baseline_overlap"),
-        "expansion_count": sum(1 for paper in papers if paper.get("selection_role") == "deterministic_expansion"),
+        "m005_overlap_count": sum(
+            1 for paper in papers if paper.get("selection_role") == "m005_baseline_overlap"
+        ),
+        "expansion_count": sum(
+            1 for paper in papers if paper.get("selection_role") == "deterministic_expansion"
+        ),
         "papers": papers,
         **_lineage_payload(lineage),
         **default_safety_flags(),
@@ -417,8 +469,12 @@ def write_validation_scan_source_readiness(
         "schema_version": "m007-validation-scan-source-readiness.v1",
         "batch_id": state.batch_id,
         "paper_count": len(state.selected_papers),
-        "ready_for_markdown_scan_count": sum(1 for item in readiness_values if item.ready_for_markdown_scan),
-        "still_missing_markdown_count": sum(1 for item in readiness_values if not item.ready_for_markdown_scan),
+        "ready_for_markdown_scan_count": sum(
+            1 for item in readiness_values if item.ready_for_markdown_scan
+        ),
+        "still_missing_markdown_count": sum(
+            1 for item in readiness_values if not item.ready_for_markdown_scan
+        ),
         "available_pdf_count": sum(1 for item in readiness_values if item.pdf_present),
         **_lineage_payload(lineage),
         **default_safety_flags(),
@@ -462,14 +518,22 @@ def build_delta_report(
         "current_import_eligible_chunk_count": aggregate.get("import_eligible_chunk_count", 0),
         "structure_aware_baseline": _baseline_delta(aggregate, structure_baseline),
         "mixed_benchmark_context": _mixed_benchmark_context(aggregate, mixed_benchmark),
-        "route_share_delta": _share_delta(aggregate.get("counts_by_route", {}), (structure_baseline or {}).get("counts_by_route", {})),
-        "refusal_share_delta": _share_delta(aggregate.get("refusal_counts", {}), (structure_baseline or {}).get("refusal_counts", {})),
+        "route_share_delta": _share_delta(
+            aggregate.get("counts_by_route", {}),
+            (structure_baseline or {}).get("counts_by_route", {}),
+        ),
+        "refusal_share_delta": _share_delta(
+            aggregate.get("refusal_counts", {}),
+            (structure_baseline or {}).get("refusal_counts", {}),
+        ),
         **_lineage_payload(lineage),
         **default_safety_flags(),
     }
 
 
-def build_outlier_report(scan: dict[str, Any], *, lineage: dict[str, str | None] | None = None) -> dict[str, Any]:
+def build_outlier_report(
+    scan: dict[str, Any], *, lineage: dict[str, str | None] | None = None
+) -> dict[str, Any]:
     records = scan.get("records", [])
     outliers = scan.get("outliers", [])
     density_by_paper = {
@@ -498,7 +562,9 @@ def build_outlier_report(scan: dict[str, Any], *, lineage: dict[str, str | None]
     }
 
 
-def _scan_lineage(state: ValidationBatchState, *, milestone_id: str | None = None) -> dict[str, str | None]:
+def _scan_lineage(
+    state: ValidationBatchState, *, milestone_id: str | None = None
+) -> dict[str, str | None]:
     return {"milestone_id": milestone_id, "batch_id": state.batch_id}
 
 
@@ -530,11 +596,16 @@ def build_quota_fill_report(
 ) -> dict[str, Any]:
     """Build a redacted quota-fill report for a validation batch."""
     selected_ids = {paper.paper_id for paper in state.selected_papers}
-    records = [_quota_fill_record(paper, state.source_readiness_by_paper.get(paper.paper_id)) for paper in state.selected_papers]
+    records = [
+        _quota_fill_record(paper, state.source_readiness_by_paper.get(paper.paper_id))
+        for paper in state.selected_papers
+    ]
     accepted = [record for record in records if record["outcome"] == "accepted_ready"]
     rejected = [record for record in records if record["outcome"] != "accepted_ready"]
     shortage_count = max(target_count - len(accepted), 0)
-    replacement_candidates = _replacement_candidates(candidate_inventory, selected_ids, limit=shortage_count)
+    replacement_candidates = _replacement_candidates(
+        candidate_inventory, selected_ids, limit=shortage_count
+    )
     return {
         "schema_version": "m008-quota-fill-summary.v1",
         "batch_id": state.batch_id,
@@ -558,7 +629,11 @@ def write_quota_fill_run(report: dict[str, Any], output_dir: str | Path) -> dict
     output.mkdir(parents=True, exist_ok=True)
     summary_path = output / "quota-fill-summary.json"
     diagnostics_path = output / "quota-fill-diagnostics.jsonl"
-    summary = {key: value for key, value in report.items() if key not in {"records", "replacement_candidates"}}
+    summary = {
+        key: value
+        for key, value in report.items()
+        if key not in {"records", "replacement_candidates"}
+    }
     summary["replacement_candidates"] = report.get("replacement_candidates", [])
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     with diagnostics_path.open("w", encoding="utf-8") as handle:
@@ -594,7 +669,9 @@ def build_bounded_top_up_report(
     This is a planning/reporting helper only: it does not fetch or convert
     sources. Candidate readiness is inferred from redacted inventory metadata.
     """
-    quota = build_quota_fill_report(state, target_count=target_count, candidate_inventory=candidate_inventory)
+    quota = build_quota_fill_report(
+        state, target_count=target_count, candidate_inventory=candidate_inventory
+    )
     accepted_ready_count = int(quota["accepted_ready_count"])
     shortage_count = int(quota["shortage_count"])
     selected_ids = {paper.paper_id for paper in state.selected_papers}
@@ -638,7 +715,9 @@ def build_bounded_top_up_report(
     }
 
 
-def write_bounded_top_up_run(report: dict[str, Any], output_dir: str | Path, *, prefix: str = "top-up") -> dict[str, Path]:
+def write_bounded_top_up_run(
+    report: dict[str, Any], output_dir: str | Path, *, prefix: str = "top-up"
+) -> dict[str, Path]:
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     summary_path = output / f"{prefix}-summary.json"
@@ -665,10 +744,17 @@ def write_bounded_top_up_run(report: dict[str, Any], output_dir: str | Path, *, 
 
 
 def _top_up_candidate_record(candidate: dict[str, Any]) -> dict[str, Any]:
-    availability = candidate.get("availability", {}) if isinstance(candidate.get("availability", {}), dict) else {}
+    availability = (
+        candidate.get("availability", {})
+        if isinstance(candidate.get("availability", {}), dict)
+        else {}
+    )
     ready = bool(
         availability.get("ready_for_markdown_scan")
-        or (availability.get("markdown_present") and availability.get("markdown_quality_accepted", True))
+        or (
+            availability.get("markdown_present")
+            and availability.get("markdown_quality_accepted", True)
+        )
     )
     outcome = "accepted_replacement_ready" if ready else "rejected_replacement_not_source_ready"
     return {
@@ -706,7 +792,9 @@ def _quota_fill_record(paper: SelectedPaper, readiness: SourceReadiness | None) 
     }
 
 
-def _replacement_candidates(candidate_inventory: dict[str, Any] | None, selected_ids: set[str], *, limit: int) -> list[dict[str, Any]]:
+def _replacement_candidates(
+    candidate_inventory: dict[str, Any] | None, selected_ids: set[str], *, limit: int
+) -> list[dict[str, Any]]:
     if not candidate_inventory or limit <= 0:
         return []
     replacements: list[dict[str, Any]] = []
@@ -729,11 +817,22 @@ def _replacement_candidates(candidate_inventory: dict[str, Any] | None, selected
 
 
 def _paper_manifest_record(paper: SelectedPaper) -> dict[str, Any]:
-    selection_role = "m005_baseline_overlap" if paper.selection_role == "baseline_overlap" else paper.selection_role
+    selection_role = (
+        "m005_baseline_overlap"
+        if paper.selection_role == "baseline_overlap"
+        else paper.selection_role
+    )
     source_paths = dict(paper.source_paths)
-    source_paths.setdefault("research_workspace", str(Path("/root/.research/papers") / paper.paper_id))
-    source_paths.setdefault("research_full_text_md", str(Path("/root/.research/papers") / paper.paper_id / "full_text.md"))
-    source_paths.setdefault("cache_markdown", str(Path("/root/.arxiv_cache") / f"{paper.paper_id}.md"))
+    source_paths.setdefault(
+        "research_workspace", str(Path("/root/.research/papers") / paper.paper_id)
+    )
+    source_paths.setdefault(
+        "research_full_text_md",
+        str(Path("/root/.research/papers") / paper.paper_id / "full_text.md"),
+    )
+    source_paths.setdefault(
+        "cache_markdown", str(Path("/root/.arxiv_cache") / f"{paper.paper_id}.md")
+    )
     source_paths.setdefault("cache_pdf", str(Path("/root/.arxiv_cache") / f"{paper.paper_id}.pdf"))
     return {
         "paper_id": paper.paper_id,
@@ -767,16 +866,24 @@ def _baseline_delta(current: dict[str, Any], baseline: dict[str, Any] | None) ->
         "baseline_chunk_count": baseline_chunk_count,
         "current_chunk_count": current_chunk_count,
         "chunk_count_delta": current_chunk_count - baseline_chunk_count,
-        "baseline_import_eligible_chunk_count": int(baseline.get("import_eligible_chunk_count", 0) or 0),
-        "current_import_eligible_chunk_count": int(current.get("import_eligible_chunk_count", 0) or 0),
+        "baseline_import_eligible_chunk_count": int(
+            baseline.get("import_eligible_chunk_count", 0) or 0
+        ),
+        "current_import_eligible_chunk_count": int(
+            current.get("import_eligible_chunk_count", 0) or 0
+        ),
     }
 
 
-def _mixed_benchmark_context(current: dict[str, Any], benchmark: dict[str, Any] | None) -> dict[str, Any]:
+def _mixed_benchmark_context(
+    current: dict[str, Any], benchmark: dict[str, Any] | None
+) -> dict[str, Any]:
     if not benchmark:
         return {"available": False}
     benchmark_aggregate = benchmark.get("aggregate", benchmark)
-    benchmark_chunk_count = int(benchmark_aggregate.get("total_chunk_count", benchmark_aggregate.get("chunk_count", 0)) or 0)
+    benchmark_chunk_count = int(
+        benchmark_aggregate.get("total_chunk_count", benchmark_aggregate.get("chunk_count", 0)) or 0
+    )
     current_chunk_count = int(current.get("chunk_count", 0) or 0)
     return {
         "available": True,
@@ -791,18 +898,26 @@ def _mixed_benchmark_context(current: dict[str, Any], benchmark: dict[str, Any] 
             )
             or 0
         ),
-        "current_import_eligible_chunk_count": int(current.get("import_eligible_chunk_count", 0) or 0),
+        "current_import_eligible_chunk_count": int(
+            current.get("import_eligible_chunk_count", 0) or 0
+        ),
     }
 
 
-def _share_delta(current_counts: dict[str, Any], baseline_counts: dict[str, Any]) -> dict[str, dict[str, float]]:
+def _share_delta(
+    current_counts: dict[str, Any], baseline_counts: dict[str, Any]
+) -> dict[str, dict[str, float]]:
     current_total = sum(int(value) for value in current_counts.values())
     baseline_total = sum(int(value) for value in baseline_counts.values())
     keys = sorted(set(current_counts) | set(baseline_counts))
     return {
         str(key): {
-            "baseline_share": round((int(baseline_counts.get(key, 0)) / baseline_total), 4) if baseline_total else 0.0,
-            "current_share": round((int(current_counts.get(key, 0)) / current_total), 4) if current_total else 0.0,
+            "baseline_share": round((int(baseline_counts.get(key, 0)) / baseline_total), 4)
+            if baseline_total
+            else 0.0,
+            "current_share": round((int(current_counts.get(key, 0)) / current_total), 4)
+            if current_total
+            else 0.0,
             "delta": round(
                 ((int(current_counts.get(key, 0)) / current_total) if current_total else 0.0)
                 - ((int(baseline_counts.get(key, 0)) / baseline_total) if baseline_total else 0.0),

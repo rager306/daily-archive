@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from research_graph.identity.canonicalization import (
+from research_graph.infrastructure.identity.canonicalization import (
     canonical_import_candidate_id,
     canonical_package_id,
 )
@@ -26,7 +26,9 @@ TRUSTED_IMPORT_USE = "trusted_kg_import"
 FORBIDDEN_RAW_FIELDS = frozenset({"text", "raw_text", "chunk_text", "paper_text", "claim_text"})
 FORBIDDEN_EMBEDDING_FIELDS = frozenset({"embedding", "embeddings"})
 FORBIDDEN_VECTOR_FIELDS = frozenset({"vector", "vectors"})
-FORBIDDEN_SECRET_FIELDS = frozenset({"secret", "secrets", "token", "tokens", "api_key", "credentials"})
+FORBIDDEN_SECRET_FIELDS = frozenset(
+    {"secret", "secrets", "token", "tokens", "api_key", "credentials"}
+)
 FORBIDDEN_OPTIMIZER_FIELDS = frozenset({"optimizer_trace", "optimizer_traces"})
 
 
@@ -112,7 +114,11 @@ class ImportCandidate:
             "refusal_reasons": list(self.refusal_reasons),
             "remediation_hints": list(self.remediation_hints),
             "allowed_uses": ["import_boundary_diagnostics"],
-            "excluded_uses": [TRUSTED_IMPORT_USE, "production_ladybugdb_write", "embedding_generation"],
+            "excluded_uses": [
+                TRUSTED_IMPORT_USE,
+                "production_ladybugdb_write",
+                "embedding_generation",
+            ],
             **_safety_flags(),
         }
 
@@ -168,12 +174,16 @@ def build_import_boundary_rehearsal_from_benchmark(
         method_id = str(method_record.get("method_id") or "unknown_method")
         state = _single_key_or_none(method_record.get("counts_by_state"))
         route = _single_key_or_none(method_record.get("counts_by_route"))
-        candidate_type = _single_key_or_none(method_record.get("counts_by_chunk_type")) or "benchmark_candidate"
+        candidate_type = (
+            _single_key_or_none(method_record.get("counts_by_chunk_type")) or "benchmark_candidate"
+        )
         for reason, count in sorted(_int_counts(method_record.get("refusal_counts")).items()):
             for index in range(count):
                 candidates.append(
                     ImportCandidate(
-                        candidate_id=canonical_import_candidate_id(method_id=method_id, refusal_reason=reason, index=index + 1),
+                        candidate_id=canonical_import_candidate_id(
+                            method_id=method_id, refusal_reason=reason, index=index + 1
+                        ),
                         method_id=method_id,
                         package_id=canonical_package_id(method_id=method_id),
                         candidate_type=candidate_type,
@@ -199,7 +209,9 @@ def build_import_boundary_rehearsal_from_benchmark(
         "method_count": summary.get("method_count"),
         "total_chunk_count": summary.get("aggregate", {}).get("total_chunk_count"),
         "total_refused_chunk_count": summary.get("aggregate", {}).get("total_refused_chunk_count"),
-        "total_import_eligible_chunk_count": summary.get("aggregate", {}).get("total_import_eligible_chunk_count"),
+        "total_import_eligible_chunk_count": summary.get("aggregate", {}).get(
+            "total_import_eligible_chunk_count"
+        ),
         "recommendation_status": summary.get("recommendation_status"),
     }
     return rehearsal
@@ -227,7 +239,10 @@ def build_m031_import_boundary_rehearsal(
     closeout_summary = _read_json_object(Path(closeout_summary_path))
     review_events = _read_jsonl_objects(Path(independent_review_events_path))
     graph_packages = [_read_json_object(Path(path)) for path in graph_readiness_package_paths]
-    graph_packages_by_key = {str(package.get("package_key") or package.get("paper_id")): package for package in graph_packages}
+    graph_packages_by_key = {
+        str(package.get("package_key") or package.get("paper_id")): package
+        for package in graph_packages
+    }
     completed_review_package_ids = _completed_review_package_ids(review_events)
 
     candidates: list[ImportCandidate] = []
@@ -236,19 +251,32 @@ def build_m031_import_boundary_rehearsal(
         if row.get("parser_ready") is True and row.get("status") == "chunked":
             graph_package = graph_packages_by_key.get(package_id, {})
             output_completed = bool(graph_package.get("output_contract_completed"))
-            review_completed = package_id in completed_review_package_ids or bool(row.get("independent_review_completed"))
+            review_completed = package_id in completed_review_package_ids or bool(
+                row.get("independent_review_completed")
+            )
             refused_for_review = not (output_completed and review_completed)
-            reason = "completed_independent_graph_readiness_review_required" if refused_for_review else "positive_import_blocked"
+            reason = (
+                "completed_independent_graph_readiness_review_required"
+                if refused_for_review
+                else "positive_import_blocked"
+            )
             candidate = ImportCandidate(
-                candidate_id=canonical_import_candidate_id(method_id="m031_graph_readiness", refusal_reason=reason, index=row_index),
+                candidate_id=canonical_import_candidate_id(
+                    method_id="m031_graph_readiness", refusal_reason=reason, index=row_index
+                ),
                 method_id="m031_graph_readiness",
                 package_id=package_id,
                 candidate_type="graph_readiness_package",
-                route=_single_key_or_none(graph_package.get("counts_by_route")) or _string_or_none(row.get("source_role")),
-                state=_single_key_or_none(graph_package.get("counts_by_state")) or _string_or_none(row.get("terminal_state")),
+                route=_single_key_or_none(graph_package.get("counts_by_route"))
+                or _string_or_none(row.get("source_role")),
+                state=_single_key_or_none(graph_package.get("counts_by_state"))
+                or _string_or_none(row.get("terminal_state")),
                 import_eligible=False,
                 refusal_reasons=(reason,),
-                remediation_hints=("independent_graph_readiness_review_required", "complete_output_contract_before_import"),
+                remediation_hints=(
+                    "independent_graph_readiness_review_required",
+                    "complete_output_contract_before_import",
+                ),
             ).to_contract()
             candidate.update(
                 {
@@ -256,13 +284,21 @@ def build_m031_import_boundary_rehearsal(
                     "output_contract_completed": output_completed,
                     "independent_review_completed": review_completed,
                     "source_json_path": row.get("json_path"),
-                    "chunk_count": int(row.get("chunk_count") or graph_package.get("chunk_count") or 0),
+                    "chunk_count": int(
+                        row.get("chunk_count") or graph_package.get("chunk_count") or 0
+                    ),
                 }
             )
         else:
-            reason = str(row.get("diagnostic_code") or row.get("refusal_code") or "non_parser_ready_zero_chunk_refusal")
+            reason = str(
+                row.get("diagnostic_code")
+                or row.get("refusal_code")
+                or "non_parser_ready_zero_chunk_refusal"
+            )
             candidate = ImportCandidate(
-                candidate_id=canonical_import_candidate_id(method_id="m031_zero_chunk_refusal", refusal_reason=reason, index=row_index),
+                candidate_id=canonical_import_candidate_id(
+                    method_id="m031_zero_chunk_refusal", refusal_reason=reason, index=row_index
+                ),
                 method_id="m031_zero_chunk_refusal",
                 package_id=package_id,
                 candidate_type="zero_chunk_refusal",
@@ -297,15 +333,22 @@ def build_m031_import_boundary_rehearsal(
             "complete_independent_graph_readiness_review",
             "keep_trusted_kg_import_disabled_until_review_completion",
         ],
-        "caveats": ["m031_refusal_only_import_boundary_rehearsal", "metadata_only_no_write_rehearsal"],
+        "caveats": [
+            "m031_refusal_only_import_boundary_rehearsal",
+            "metadata_only_no_write_rehearsal",
+        ],
         "source_m031_summary": {
             "row_count": summary.get("row_count"),
             "parser_ready_row_count": summary.get("parser_ready_row_count"),
             "zero_chunk_refusal_count": summary.get("zero_chunk_refusal_count"),
             "package_count": summary.get("package_count"),
             "graph_readiness_package_count": summary.get("graph_readiness_package_count"),
-            "pending_graph_readiness_review_count": closeout_summary.get("pending_graph_readiness_review_count"),
-            "independent_review_completed_count": closeout_summary.get("independent_review_completed_count"),
+            "pending_graph_readiness_review_count": closeout_summary.get(
+                "pending_graph_readiness_review_count"
+            ),
+            "independent_review_completed_count": closeout_summary.get(
+                "independent_review_completed_count"
+            ),
             "trusted_kg_import_allowed": closeout_summary.get("trusted_kg_import_allowed"),
             "graph_import_allowed": closeout_summary.get("graph_import_allowed"),
             "production_import_attempted": closeout_summary.get("production_import_attempted"),
@@ -338,7 +381,9 @@ def write_import_boundary_rehearsal_run(
     summary_record = {key: value for key, value in rehearsal.items() if key != "candidates"}
     summary_file = destination / "import-boundary-summary.json"
     diagnostics_file = destination / "import-boundary-diagnostics.jsonl"
-    summary_file.write_text(json.dumps(summary_record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    summary_file.write_text(
+        json.dumps(summary_record, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     with diagnostics_file.open("w", encoding="utf-8") as handle:
         for candidate in rehearsal["candidates"]:
             handle.write(json.dumps(candidate, sort_keys=True, separators=(",", ":")) + "\n")
@@ -366,24 +411,50 @@ def validate_import_boundary_rehearsal(rehearsal: dict[str, Any]) -> RehearsalVa
             object_type="rehearsal",
         )
     )
-    diagnostics.extend(_validate_redaction(rehearsal, object_id=rehearsal_id, object_type="rehearsal"))
-    diagnostics.extend(_validate_safety_flags(rehearsal, object_id=rehearsal_id, object_type="rehearsal"))
+    diagnostics.extend(
+        _validate_redaction(rehearsal, object_id=rehearsal_id, object_type="rehearsal")
+    )
+    diagnostics.extend(
+        _validate_safety_flags(rehearsal, object_id=rehearsal_id, object_type="rehearsal")
+    )
     if rehearsal.get("schema_version") != SCHEMA_VERSION:
-        diagnostics.append(RehearsalDiagnostic(reason="schema_version_mismatch", object_id=rehearsal_id, object_type="rehearsal"))
+        diagnostics.append(
+            RehearsalDiagnostic(
+                reason="schema_version_mismatch", object_id=rehearsal_id, object_type="rehearsal"
+            )
+        )
     candidates = _list_of_dicts(rehearsal.get("candidates"))
     if rehearsal.get("candidate_count") != len(candidates):
-        diagnostics.append(RehearsalDiagnostic(reason="candidate_count_mismatch", object_id=rehearsal_id, object_type="rehearsal"))
+        diagnostics.append(
+            RehearsalDiagnostic(
+                reason="candidate_count_mismatch", object_id=rehearsal_id, object_type="rehearsal"
+            )
+        )
     accepted_count = sum(1 for candidate in candidates if candidate.get("accepted") is True)
     rejected_count = sum(1 for candidate in candidates if candidate.get("rejected") is True)
     if rehearsal.get("accepted_count") != accepted_count:
-        diagnostics.append(RehearsalDiagnostic(reason="accepted_count_mismatch", object_id=rehearsal_id, object_type="rehearsal"))
+        diagnostics.append(
+            RehearsalDiagnostic(
+                reason="accepted_count_mismatch", object_id=rehearsal_id, object_type="rehearsal"
+            )
+        )
     if rehearsal.get("rejected_count") != rejected_count:
-        diagnostics.append(RehearsalDiagnostic(reason="rejected_count_mismatch", object_id=rehearsal_id, object_type="rehearsal"))
+        diagnostics.append(
+            RehearsalDiagnostic(
+                reason="rejected_count_mismatch", object_id=rehearsal_id, object_type="rehearsal"
+            )
+        )
     if rehearsal.get("refusal_counts") != _merge_refusals(candidates):
-        diagnostics.append(RehearsalDiagnostic(reason="refusal_counts_mismatch", object_id=rehearsal_id, object_type="rehearsal"))
+        diagnostics.append(
+            RehearsalDiagnostic(
+                reason="refusal_counts_mismatch", object_id=rehearsal_id, object_type="rehearsal"
+            )
+        )
     for candidate in candidates:
         diagnostics.extend(_validate_candidate(candidate))
-    return RehearsalValidationResult(valid_rehearsal=not diagnostics, diagnostics=tuple(diagnostics))
+    return RehearsalValidationResult(
+        valid_rehearsal=not diagnostics, diagnostics=tuple(diagnostics)
+    )
 
 
 def _validate_candidate(candidate: dict[str, Any]) -> list[RehearsalDiagnostic]:
@@ -405,42 +476,84 @@ def _validate_candidate(candidate: dict[str, Any]) -> list[RehearsalDiagnostic]:
         object_id=candidate_id,
         object_type="candidate",
     )
-    diagnostics.extend(_validate_safety_flags(candidate, object_id=candidate_id, object_type="candidate"))
+    diagnostics.extend(
+        _validate_safety_flags(candidate, object_id=candidate_id, object_type="candidate")
+    )
     accepted = candidate.get("accepted") is True
     rejected = candidate.get("rejected") is True
     import_eligible = candidate.get("import_eligible") is True
     refusal_reasons = _string_list(candidate.get("refusal_reasons"))
     if accepted and rejected:
         diagnostics.append(
-            RehearsalDiagnostic(reason="candidate_both_accepted_and_rejected", object_id=candidate_id, object_type="candidate")
+            RehearsalDiagnostic(
+                reason="candidate_both_accepted_and_rejected",
+                object_id=candidate_id,
+                object_type="candidate",
+            )
         )
     if accepted and (not import_eligible or refusal_reasons):
         diagnostics.append(
-            RehearsalDiagnostic(reason="accepted_candidate_not_import_eligible", object_id=candidate_id, object_type="candidate")
+            RehearsalDiagnostic(
+                reason="accepted_candidate_not_import_eligible",
+                object_id=candidate_id,
+                object_type="candidate",
+            )
         )
     if rejected and import_eligible and not refusal_reasons:
         diagnostics.append(
-            RehearsalDiagnostic(reason="rejected_candidate_missing_refusal", object_id=candidate_id, object_type="candidate")
+            RehearsalDiagnostic(
+                reason="rejected_candidate_missing_refusal",
+                object_id=candidate_id,
+                object_type="candidate",
+            )
         )
     if rejected and not refusal_reasons:
-        diagnostics.append(RehearsalDiagnostic(reason="rejected_candidate_missing_refusal", object_id=candidate_id, object_type="candidate"))
+        diagnostics.append(
+            RehearsalDiagnostic(
+                reason="rejected_candidate_missing_refusal",
+                object_id=candidate_id,
+                object_type="candidate",
+            )
+        )
     if TRUSTED_IMPORT_USE in _string_list(candidate.get("allowed_uses")):
-        diagnostics.append(RehearsalDiagnostic(reason="candidate_allows_trusted_import", object_id=candidate_id, object_type="candidate"))
+        diagnostics.append(
+            RehearsalDiagnostic(
+                reason="candidate_allows_trusted_import",
+                object_id=candidate_id,
+                object_type="candidate",
+            )
+        )
     if TRUSTED_IMPORT_USE not in _string_list(candidate.get("excluded_uses")):
-        diagnostics.append(RehearsalDiagnostic(reason="candidate_missing_import_exclusion", object_id=candidate_id, object_type="candidate"))
+        diagnostics.append(
+            RehearsalDiagnostic(
+                reason="candidate_missing_import_exclusion",
+                object_id=candidate_id,
+                object_type="candidate",
+            )
+        )
     return diagnostics
 
 
-def _validate_safety_flags(payload: dict[str, Any], *, object_id: str | None, object_type: str) -> list[RehearsalDiagnostic]:
+def _validate_safety_flags(
+    payload: dict[str, Any], *, object_id: str | None, object_type: str
+) -> list[RehearsalDiagnostic]:
     diagnostics: list[RehearsalDiagnostic] = []
     for field_name, expected in _safety_flags().items():
         if field_name in payload and payload.get(field_name) is not expected:
-            diagnostics.append(RehearsalDiagnostic(reason=f"unsafe_{field_name}", object_id=object_id, object_type=object_type))
+            diagnostics.append(
+                RehearsalDiagnostic(
+                    reason=f"unsafe_{field_name}", object_id=object_id, object_type=object_type
+                )
+            )
     return diagnostics
 
 
-def _validate_redaction(payload: Any, *, object_id: str | None, object_type: str) -> list[RehearsalDiagnostic]:
-    return _validate_nested_redaction(payload, object_id=object_id, object_type=object_type, path=())
+def _validate_redaction(
+    payload: Any, *, object_id: str | None, object_type: str
+) -> list[RehearsalDiagnostic]:
+    return _validate_nested_redaction(
+        payload, object_id=object_id, object_type=object_type, path=()
+    )
 
 
 def _validate_nested_redaction(
@@ -463,15 +576,31 @@ def _validate_nested_redaction(
             diagnostics.append(
                 RehearsalDiagnostic(
                     reason=_leakage_reason(field_name),
-                    object_id=_redaction_path(object_id=object_id, object_type=object_type, path=(*path, str(field_name))),
+                    object_id=_redaction_path(
+                        object_id=object_id, object_type=object_type, path=(*path, str(field_name))
+                    ),
                     object_type=object_type,
                 )
             )
         for key, nested_value in value.items():
-            diagnostics.extend(_validate_nested_redaction(nested_value, object_id=object_id, object_type=object_type, path=(*path, str(key))))
+            diagnostics.extend(
+                _validate_nested_redaction(
+                    nested_value,
+                    object_id=object_id,
+                    object_type=object_type,
+                    path=(*path, str(key)),
+                )
+            )
     elif isinstance(value, list):
         for index, nested_value in enumerate(value):
-            diagnostics.extend(_validate_nested_redaction(nested_value, object_id=object_id, object_type=object_type, path=(*path, str(index))))
+            diagnostics.extend(
+                _validate_nested_redaction(
+                    nested_value,
+                    object_id=object_id,
+                    object_type=object_type,
+                    path=(*path, str(index)),
+                )
+            )
     return diagnostics
 
 
@@ -505,7 +634,11 @@ def _required_fields(
     diagnostics: list[RehearsalDiagnostic] = []
     for field_name in fields:
         if field_name not in payload or payload.get(field_name) is None:
-            diagnostics.append(RehearsalDiagnostic(reason=f"missing_{field_name}", object_id=object_id, object_type=object_type))
+            diagnostics.append(
+                RehearsalDiagnostic(
+                    reason=f"missing_{field_name}", object_id=object_id, object_type=object_type
+                )
+            )
     return diagnostics
 
 
@@ -557,7 +690,10 @@ def _missing_source_caveats(value: Any) -> list[str]:
 def _completed_review_package_ids(events: list[dict[str, Any]]) -> set[str]:
     package_ids: set[str] = set()
     for event in events:
-        if event.get("independent_review_completed") is not True or event.get("output_contract_completed") is not True:
+        if (
+            event.get("independent_review_completed") is not True
+            or event.get("output_contract_completed") is not True
+        ):
             continue
         package_id = _string_or_none(event.get("paper_id"))
         if package_id:

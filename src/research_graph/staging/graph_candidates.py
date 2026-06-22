@@ -17,8 +17,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from research_graph.identity.canonicalization import artifact_record_hash, canonical_locator_id, canonical_source_id, stable_span_hash
-from research_graph.identity.dedup import annotate_overlapping_signal_windows
+from research_graph.infrastructure.identity.canonicalization import (
+    artifact_record_hash,
+    canonical_locator_id,
+    canonical_source_id,
+    stable_span_hash,
+)
+from research_graph.infrastructure.identity.dedup import annotate_overlapping_signal_windows
 
 CANDIDATE_LOCATOR_PROTOCOL_VERSION = "candidate_locator_protocol.v1"
 
@@ -328,7 +333,11 @@ def validate_candidate_locator_artifact(artifact: dict[str, Any]) -> list[str]:
     else:
         for key, expected in default_safety_flags().items():
             if safety_flags.get(key) is not expected:
-                diagnostics.append(f"safety_flag_true:{key}" if safety_flags.get(key) is True else f"safety_flag_invalid:{key}")
+                diagnostics.append(
+                    f"safety_flag_true:{key}"
+                    if safety_flags.get(key) is True
+                    else f"safety_flag_invalid:{key}"
+                )
 
     source_ledger = artifact.get("source_ledger")
     if not isinstance(source_ledger, list) or not source_ledger:
@@ -505,7 +514,9 @@ def _build_span(
         "char_end": char_end,
         "line_start": _line_for(line_starts, char_start),
         "line_end": _line_for(line_starts, char_end),
-        "span_hash": _span_hash(result.source.source_id, result.source_hash, char_start, char_end, spec.route_name),
+        "span_hash": _span_hash(
+            result.source.source_id, result.source_hash, char_start, char_end, spec.route_name
+        ),
         "raw_text_embedded": False,
         "ambiguity_diagnostics": diagnostics,
         "match_count_class": "many" if len(matches) > broad_match_threshold else "one_to_several",
@@ -514,19 +525,26 @@ def _build_span(
 
 
 def _artifact_record_span(
-    locator_id: str, result: SourceReadResult, spec: LocatorRouteSpec, diagnostics: list[str]) -> dict[str, Any]:
+    locator_id: str, result: SourceReadResult, spec: LocatorRouteSpec, diagnostics: list[str]
+) -> dict[str, Any]:
     return {
         "span_id": f"{locator_id}-artifact-record",
         "source_id": result.source.source_id,
         "coordinate_space": "artifact_record",
-        "span_hash": artifact_record_hash(source_path=result.source_path, route_name=spec.route_name),
+        "span_hash": artifact_record_hash(
+            source_path=result.source_path, route_name=spec.route_name
+        ),
         "raw_text_embedded": False,
         "ambiguity_diagnostics": list(diagnostics),
     }
 
 
 def _classify_locator(spec: LocatorRouteSpec, diagnostics: list[str]) -> tuple[str, str, str, str]:
-    if "source_missing" in diagnostics or "source_hash_mismatch" in diagnostics or "signal_missing" in diagnostics:
+    if (
+        "source_missing" in diagnostics
+        or "source_hash_mismatch" in diagnostics
+        or "signal_missing" in diagnostics
+    ):
         return "missing_span", "insufficient", "high", "span_missing"
     if "broad_signal_many_matches" in diagnostics:
         return "ambiguous_span", "nearby_context", "high", "span_ambiguous"
@@ -542,12 +560,22 @@ def _summary(source_ledger: list[dict[str, Any]], locators: list[dict[str, Any]]
         "locator_count": len(locators),
         "source_count": len(source_ledger),
         "located_count": sum(1 for locator in locators if locator["state"] != "missing_span"),
-        "review_required_count": sum(1 for locator in locators if locator["state"] == "review_required"),
+        "review_required_count": sum(
+            1 for locator in locators if locator["state"] == "review_required"
+        ),
         "missing_span_count": sum(1 for locator in locators if locator["state"] == "missing_span"),
-        "ambiguous_span_count": sum(1 for locator in locators if locator["state"] == "ambiguous_span"),
-        "conflicting_evidence_count": sum(1 for locator in locators if locator["state"] == "conflicting_evidence"),
-        "retrieval_only_count": sum(1 for locator in locators if locator["state"] == "retrieval_only"),
-        "repair_required_count": sum(1 for locator in locators if locator["state"] == "repair_required"),
+        "ambiguous_span_count": sum(
+            1 for locator in locators if locator["state"] == "ambiguous_span"
+        ),
+        "conflicting_evidence_count": sum(
+            1 for locator in locators if locator["state"] == "conflicting_evidence"
+        ),
+        "retrieval_only_count": sum(
+            1 for locator in locators if locator["state"] == "retrieval_only"
+        ),
+        "repair_required_count": sum(
+            1 for locator in locators if locator["state"] == "repair_required"
+        ),
         "import_eligible_count": sum(1 for locator in locators if locator["import_eligible"]),
         "promoted_to_fact_count": sum(1 for locator in locators if locator["promoted_to_fact"]),
     }
@@ -642,13 +670,19 @@ def _validate_span(locator_id: str, span: dict[str, Any]) -> list[str]:
     if coordinate_space != "artifact_record":
         char_start = span.get("char_start")
         char_end = span.get("char_end")
-        if not isinstance(char_start, int) or not isinstance(char_end, int) or char_end <= char_start or char_start < 0:
+        if (
+            not isinstance(char_start, int)
+            or not isinstance(char_end, int)
+            or char_end <= char_start
+            or char_start < 0
+        ):
             diagnostics.append(f"invalid_span_coordinates:{locator_id}")
     return diagnostics
 
 
-
-def _route_specs_by_m011_name(route_specs: list[LocatorRouteSpec] | tuple[LocatorRouteSpec, ...]) -> dict[str, LocatorRouteSpec]:
+def _route_specs_by_m011_name(
+    route_specs: list[LocatorRouteSpec] | tuple[LocatorRouteSpec, ...],
+) -> dict[str, LocatorRouteSpec]:
     by_route_name = {spec.route_name: spec for spec in route_specs}
     mapping: dict[str, LocatorRouteSpec] = {}
     if "claim" in by_route_name:
@@ -660,8 +694,10 @@ def _route_specs_by_m011_name(route_specs: list[LocatorRouteSpec] | tuple[Locato
     return mapping
 
 
-def _route_specs_for_target(target: dict[str, Any], route_specs_by_m011_name: dict[str, LocatorRouteSpec]) -> tuple[LocatorRouteSpec, ...]:
-    route_counts = ((target.get("review_metadata") or {}).get("counts_by_route") or {})
+def _route_specs_for_target(
+    target: dict[str, Any], route_specs_by_m011_name: dict[str, LocatorRouteSpec]
+) -> tuple[LocatorRouteSpec, ...]:
+    route_counts = (target.get("review_metadata") or {}).get("counts_by_route") or {}
     selected: list[LocatorRouteSpec] = []
     for m011_route_name, spec in route_specs_by_m011_name.items():
         if route_counts.get(m011_route_name, 0) > 0:
@@ -693,7 +729,9 @@ def _line_for(line_starts: list[int], offset: int) -> int:
     return current
 
 
-def _span_hash(source_id: str, source_hash: str, char_start: int, char_end: int, route_name: str) -> str:
+def _span_hash(
+    source_id: str, source_hash: str, char_start: int, char_end: int, route_name: str
+) -> str:
     packet = {
         "source_id": source_id,
         "source_hash": source_hash,
