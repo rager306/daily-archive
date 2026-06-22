@@ -106,4 +106,5 @@
 - ✅ **M101-f5jip0: Architecture Crystallization** (`depends:[—]`)
 - ✅ **M102-p3houu: Trajectory checker update and M101 closeout** (`depends:[—]`)
 - ✅ **M103-6tip5z: Typed schema and pipeline implementation** (`depends:[—]`)
-- 🔄 **M104-q9tft1: Hexagonal Foundation** (`depends:[—]`)
+- ✅ **M104-q9tft1: Hexagonal Foundation** (`depends:[—]`)
+- 🔄 **M105-269bqo: Onion Completion: wave-based physical infrastructure move** (`depends:[—]`)

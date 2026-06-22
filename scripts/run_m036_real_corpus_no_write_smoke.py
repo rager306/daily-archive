@@ -15,16 +15,23 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from research_graph.llm.minimax_structured import DEFAULT_MINIMAX_MODEL  # noqa: E402
+from research_graph.infrastructure.llm.minimax_structured import DEFAULT_MINIMAX_MODEL  # noqa: E402
 from research_graph.workflows.universal_kb.contracts import CandidatePacket  # noqa: E402
 from research_graph.workflows.universal_kb.queue import UniversalKBQueue  # noqa: E402
 from research_graph.workflows.universal_kb.review_assistance import (  # noqa: E402
     build_review_assistance_packet,
     build_review_tool_invocation_record,
 )
-from research_graph.workflows.universal_kb.substrate_rehearsal import NoWriteSubstrateRehearsal  # noqa: E402
+from research_graph.workflows.universal_kb.substrate_rehearsal import (
+    NoWriteSubstrateRehearsal,  # noqa: E402
+)
 
-FALSE_SAFETY_KEYS = ("graph_write_allowed", "promotion_allowed", "production_import_attempted", "import_eligible")
+FALSE_SAFETY_KEYS = (
+    "graph_write_allowed",
+    "promotion_allowed",
+    "production_import_attempted",
+    "import_eligible",
+)
 CONTINUITY_SCHEMA_VERSION = "m040-real-corpus-continuity.v1"
 LEGACY_SAFETY_DIAGNOSTIC = "safety_flags_missing_or_not_false"
 LEGACY_LOADER_DIAGNOSTIC = "missing_loader_evidence"
@@ -107,7 +114,9 @@ def normalized_diagnostics(article: dict[str, Any], *, has_loader_refs: bool) ->
         for value in article.get("diagnostics", ())
         if str(value).strip() and str(value) not in legacy_diagnostics
     ]
-    diagnostics.append("loader_evidence_present" if has_loader_refs else "loader_evidence_absent_explicit")
+    diagnostics.append(
+        "loader_evidence_present" if has_loader_refs else "loader_evidence_absent_explicit"
+    )
     diagnostics.append("article_safety_flags_explicit_false")
     return diagnostics
 
@@ -155,10 +164,16 @@ def build_continuity_metadata(
 
 
 def run_article(article: dict[str, Any], *, output_dir: Path) -> dict[str, Any]:
-    article_flags = article.get("safety_flags") if isinstance(article.get("safety_flags"), dict) else {}
-    assert_false_flags(article_flags, label=str(article.get("article_key") or article.get("candidate_id")))
+    article_flags = (
+        article.get("safety_flags") if isinstance(article.get("safety_flags"), dict) else {}
+    )
+    assert_false_flags(
+        article_flags, label=str(article.get("article_key") or article.get("candidate_id"))
+    )
     candidate = build_candidate(article)
-    diagnostics = tuple(str(value) for value in article.get("diagnostics", ()) if str(value).strip())
+    diagnostics = tuple(
+        str(value) for value in article.get("diagnostics", ()) if str(value).strip()
+    )
     if not diagnostics:
         diagnostics = ("real_article_metadata_smoke",)
     review_packet = build_review_assistance_packet(
@@ -207,7 +222,9 @@ def run_article(article: dict[str, Any], *, output_dir: Path) -> dict[str, Any]:
     write_json(article_dir / "queue_inspect.json", queue_inspect)
     handoff_payload = handoff.to_dict()
     write_json(article_dir / "readiness_handoff.json", handoff_payload)
-    continuity = build_continuity_metadata(article, candidate=candidate, handoff_payload=handoff_payload)
+    continuity = build_continuity_metadata(
+        article, candidate=candidate, handoff_payload=handoff_payload
+    )
     write_json(article_dir / "continuity.json", continuity)
 
     return {
@@ -245,7 +262,9 @@ def run_smoke(manifest_path: Path, *, output_dir: Path, clean: bool = False) -> 
         "schema_version": "m036-real-corpus-no-write-smoke-summary.v1",
         "manifest_ref": f"artifact:{manifest_path.as_posix()}",
         "article_count": len(article_summaries),
-        "completed_handoff_count": sum(1 for item in article_summaries if item["queue_status"] == "ready"),
+        "completed_handoff_count": sum(
+            1 for item in article_summaries if item["queue_status"] == "ready"
+        ),
         "model": DEFAULT_MINIMAX_MODEL,
         "articles": article_summaries,
         "diagnostics": manifest.get("diagnostics", []),
@@ -270,7 +289,9 @@ def main() -> int:
     emit(f"article_count={summary['article_count']}")
     emit(f"completed_handoff_count={summary['completed_handoff_count']}")
     emit(f"output={args.output_dir}")
-    emit("graph_write_allowed=false promotion_allowed=false production_import_attempted=false import_eligible=false")
+    emit(
+        "graph_write_allowed=false promotion_allowed=false production_import_attempted=false import_eligible=false"
+    )
     return 0
 
 

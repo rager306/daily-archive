@@ -20,8 +20,8 @@ from pathlib import Path
 from typing import Any
 
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
-from research_graph.papers.indexing.parsed_page_index import build_page_index_from_parsed
 from research_graph.corpus.parsing.parser import parse_article
+from research_graph.papers.indexing.parsed_page_index import build_page_index_from_parsed
 
 SCHEMA_VERSION = "m025-boundary-replay-summary.v00.01"
 ARTIFACT_SCHEMA_VERSION = "m025-boundary-replay-artifact.v00.01"
@@ -103,7 +103,9 @@ def _event(event_type: str, **fields: Any) -> dict[str, Any]:
     return {"schema_version": EVENT_SCHEMA_VERSION, "event_type": event_type, **fields}
 
 
-def _diagnostic(code: str, json_path: str, message: str, *, severity: str = "error") -> dict[str, Any]:
+def _diagnostic(
+    code: str, json_path: str, message: str, *, severity: str = "error"
+) -> dict[str, Any]:
     return {"code": code, "severity": severity, "json_path": json_path, "message": message}
 
 
@@ -177,7 +179,9 @@ def _resolve_local_source(
             return LocalSourceResolution(candidate, source_type, [])
     message = "No local source path was found in catalog/index metadata."
     if candidates:
-        message = "No candidate local source file exists: " + ", ".join(str(path) for path in candidates)
+        message = "No candidate local source file exists: " + ", ".join(
+            str(path) for path in candidates
+        )
     return LocalSourceResolution(
         None,
         "markdown",
@@ -240,7 +244,9 @@ def _loader_summary(article: ArticleSelection, resolution: LocalSourceResolution
     }
 
 
-def _parser_and_page_index_summaries(loader: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+def _parser_and_page_index_summaries(
+    loader: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
     ingestion = loader.get("_ingestion")
     if ingestion is None:
         blocked = _diagnostic(
@@ -251,7 +257,12 @@ def _parser_and_page_index_summaries(loader: dict[str, Any]) -> tuple[dict[str, 
         )
         return (
             {"status": "blocked", "element_count": 0, "diagnostics": [blocked]},
-            {"status": "blocked", "node_count": 0, "navigation_anchor_count": 0, "diagnostics": [blocked]},
+            {
+                "status": "blocked",
+                "node_count": 0,
+                "navigation_anchor_count": 0,
+                "diagnostics": [blocked],
+            },
         )
     try:
         parsed = parse_article(ingestion)
@@ -266,9 +277,13 @@ def _parser_and_page_index_summaries(loader: dict[str, Any]) -> tuple[dict[str, 
                 "parse_fallback": parsed.provenance.get("parse_fallback"),
                 "fallback_reason": parsed.provenance.get("fallback_reason"),
             },
-            "element_ids_sha256": _sha256_text("\n".join(element.id for element in parsed.elements)),
+            "element_ids_sha256": _sha256_text(
+                "\n".join(element.id for element in parsed.elements)
+            ),
             "diagnostics": [
-                _diagnostic("PARSER_WARNING", "$.parser.validation_warnings", warning, severity="warning")
+                _diagnostic(
+                    "PARSER_WARNING", "$.parser.validation_warnings", warning, severity="warning"
+                )
                 for warning in parsed.validation_warnings
             ],
         }
@@ -286,16 +301,25 @@ def _parser_and_page_index_summaries(loader: dict[str, Any]) -> tuple[dict[str, 
                 "navigation_anchor_count": page_index.provenance.get("navigation_anchor_count"),
             },
             "diagnostics": [
-                _diagnostic("PAGE_INDEX_NAVIGATION_WARNING", "$.page_index", warning, severity="blocker")
+                _diagnostic(
+                    "PAGE_INDEX_NAVIGATION_WARNING", "$.page_index", warning, severity="blocker"
+                )
                 for warning in navigation_warnings
             ],
         }
         return parser_summary, page_summary
     except Exception as exc:  # noqa: BLE001 - converted to typed per-article blocker diagnostic.
-        diagnostic = _diagnostic("PARSER_PAGE_INDEX_FAILED", "$.parser", repr(exc), severity="blocker")
+        diagnostic = _diagnostic(
+            "PARSER_PAGE_INDEX_FAILED", "$.parser", repr(exc), severity="blocker"
+        )
         return (
             {"status": "blocked", "element_count": 0, "diagnostics": [diagnostic]},
-            {"status": "blocked", "node_count": 0, "navigation_anchor_count": 0, "diagnostics": [diagnostic]},
+            {
+                "status": "blocked",
+                "node_count": 0,
+                "navigation_anchor_count": 0,
+                "diagnostics": [diagnostic],
+            },
         )
 
 
@@ -338,7 +362,9 @@ def _chunk_summary(chunking_root: Path, article_ref: str) -> dict[str, Any]:
         "chunk_count": len(chunks),
         "diagnostic_count": len(safe_diagnostics),
         "diagnostic_codes": [str(item.get("code") or "UNKNOWN") for item in safe_diagnostics],
-        "chunk_ids_sha256": _sha256_text("\n".join(str(chunk.get("chunk_id") or chunk.get("id") or "") for chunk in chunks)),
+        "chunk_ids_sha256": _sha256_text(
+            "\n".join(str(chunk.get("chunk_id") or chunk.get("id") or "") for chunk in chunks)
+        ),
         "diagnostics": safe_diagnostics,
     }
 
@@ -382,7 +408,11 @@ def _candidate_comparison_paths(root: Path, slug: str) -> list[Path]:
 
 
 def _flat_metrics(artifact_metrics: dict[str, Any]) -> dict[str, int]:
-    evidence_counts = artifact_metrics.get("evidence_counts") or artifact_metrics.get("evidence_item_counts") or {}
+    evidence_counts = (
+        artifact_metrics.get("evidence_counts")
+        or artifact_metrics.get("evidence_item_counts")
+        or {}
+    )
     if not isinstance(evidence_counts, dict):
         evidence_counts = {}
     return {
@@ -393,22 +423,42 @@ def _flat_metrics(artifact_metrics: dict[str, Any]) -> dict[str, int]:
     }
 
 
-def _comparison(root: Path | None, slug: str, metrics: dict[str, Any], label: str) -> dict[str, Any]:
+def _comparison(
+    root: Path | None, slug: str, metrics: dict[str, Any], label: str
+) -> dict[str, Any]:
     if root is None:
         return {"label": label, "category": "not_applicable", "path": None, "metric_deltas": {}}
     if not root.exists():
-        return {"label": label, "category": "baseline_missing", "path": str(root), "metric_deltas": {}}
-    path = next((candidate for candidate in _candidate_comparison_paths(root, slug) if candidate.exists()), None)
+        return {
+            "label": label,
+            "category": "baseline_missing",
+            "path": str(root),
+            "metric_deltas": {},
+        }
+    path = next(
+        (candidate for candidate in _candidate_comparison_paths(root, slug) if candidate.exists()),
+        None,
+    )
     if path is None:
-        return {"label": label, "category": "baseline_missing", "path": str(root), "metric_deltas": {}}
+        return {
+            "label": label,
+            "category": "baseline_missing",
+            "path": str(root),
+            "metric_deltas": {},
+        }
     payload = _load_json(path)
     baseline_metrics = payload.get("metrics") if isinstance(payload.get("metrics"), dict) else {}
     current = _flat_metrics(metrics)
     baseline = _flat_metrics(baseline_metrics)
-    deltas = {key: current.get(key, 0) - baseline.get(key, 0) for key in sorted(set(current) | set(baseline))}
+    deltas = {
+        key: current.get(key, 0) - baseline.get(key, 0)
+        for key in sorted(set(current) | set(baseline))
+    }
     return {
         "label": label,
-        "category": "exact_match" if all(delta == 0 for delta in deltas.values()) else "metric_delta",
+        "category": "exact_match"
+        if all(delta == 0 for delta in deltas.values())
+        else "metric_delta",
         "path": str(path),
         "metric_deltas": deltas,
     }
@@ -426,7 +476,9 @@ def _sanitize_artifact(payload: dict[str, Any]) -> dict[str, Any]:
     clean = dict(payload)
     for section in ("loader", "parser", "page_index"):
         if isinstance(clean.get(section), dict):
-            clean[section] = {key: value for key, value in clean[section].items() if key != "_ingestion"}
+            clean[section] = {
+                key: value for key, value in clean[section].items() if key != "_ingestion"
+            }
     return clean
 
 
@@ -489,7 +541,11 @@ def _artifact_for_article(
                     severity="blocker",
                 )
             )
-    blocker_codes = [str(item.get("code") or "UNKNOWN") for item in diagnostics if item.get("severity") in {"error", "blocker"}]
+    blocker_codes = [
+        str(item.get("code") or "UNKNOWN")
+        for item in diagnostics
+        if item.get("severity") in {"error", "blocker"}
+    ]
     artifact = {
         "schema_version": ARTIFACT_SCHEMA_VERSION,
         "article_ref": article.article_ref,
@@ -499,7 +555,9 @@ def _artifact_for_article(
             "article_key": catalog_entry.get("article_key"),
             "article_path": catalog_entry.get("article_path"),
             "primary_source_role": catalog_entry.get("primary_source_role"),
-            "title_sha256": _sha256_text(str(catalog_entry.get("title") or "")) if catalog_entry.get("title") else None,
+            "title_sha256": _sha256_text(str(catalog_entry.get("title") or ""))
+            if catalog_entry.get("title")
+            else None,
         },
         "local_inputs": {
             "catalog": str(args.catalog),
@@ -546,7 +604,9 @@ def _artifact_for_article(
 
 def run_replay(args: argparse.Namespace) -> list[dict[str, Any]]:
     if not getattr(args, "no_network", False):
-        raise BoundaryReplayError("boundary replay requires --no-network so missing local artifacts fail closed")
+        raise BoundaryReplayError(
+            "boundary replay requires --no-network so missing local artifacts fail closed"
+        )
     for label in ("catalog", "index", "selection", "boundary", "chunking", "evidence"):
         value = getattr(args, label, None)
         if value is not None:
@@ -575,12 +635,18 @@ def run_replay(args: argparse.Namespace) -> list[dict[str, Any]]:
     for article in selected:
         catalog_entry = catalog_refs.get(article.article_ref)
         if catalog_entry is None:
-            raise BoundaryReplayError(f"selection article {article.article_ref} is absent from catalog index")
+            raise BoundaryReplayError(
+                f"selection article {article.article_ref} is absent from catalog index"
+            )
         slug = _article_slug(article.article_ref)
-        artifact = _artifact_for_article(args=args, article=article, catalog_entry=catalog_entry, roots=roots)
+        artifact = _artifact_for_article(
+            args=args, article=article, catalog_entry=catalog_entry, roots=roots
+        )
         unsafe_path = _contains_unsafe_payload_key(artifact)
         if unsafe_path is not None:
-            raise BoundaryReplayError(f"boundary artifact would include unsafe payload field at {unsafe_path}")
+            raise BoundaryReplayError(
+                f"boundary artifact would include unsafe payload field at {unsafe_path}"
+            )
         output_path = args.boundary / slug / "boundary.json"
         _write_json(output_path, artifact)
         events.append(
@@ -626,14 +692,20 @@ def _read_boundary_artifacts(boundary: Path) -> list[dict[str, Any]]:
 
 def _events_from_path(path: Path) -> list[dict[str, Any]]:
     try:
-        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        return [
+            json.loads(line)
+            for line in path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
     except FileNotFoundError as exc:
         raise BoundaryReplayError(f"required local event log is missing: {path}") from exc
     except json.JSONDecodeError as exc:
         raise BoundaryReplayError(f"event log is not valid JSONL: {path}: {exc}") from exc
 
 
-def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any]]) -> dict[str, Any]:
+def _summary_from_artifacts(
+    args: argparse.Namespace, events: list[dict[str, Any]]
+) -> dict[str, Any]:
     artifacts = _read_boundary_artifacts(args.boundary)
     diagnostic_counts: dict[str, int] = {}
     comparison_counts: dict[str, int] = {}
@@ -647,7 +719,9 @@ def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any
 
     for artifact in artifacts:
         article_ref = str(artifact.get("article_ref"))
-        diagnostics = artifact.get("diagnostics") if isinstance(artifact.get("diagnostics"), list) else []
+        diagnostics = (
+            artifact.get("diagnostics") if isinstance(artifact.get("diagnostics"), list) else []
+        )
         for diagnostic in diagnostics:
             if isinstance(diagnostic, dict):
                 code = str(diagnostic.get("code") or "UNKNOWN")
@@ -658,26 +732,53 @@ def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any
             if isinstance(comparison, dict):
                 category = str(comparison.get("category") or "unknown")
                 comparison_counts[category] = comparison_counts.get(category, 0) + 1
-        boundary_status = artifact.get("boundary_status") if isinstance(artifact.get("boundary_status"), dict) else {}
+        boundary_status = (
+            artifact.get("boundary_status")
+            if isinstance(artifact.get("boundary_status"), dict)
+            else {}
+        )
         for boundary, status in boundary_status.items():
             if boundary in boundary_counts:
                 status_value = str(status)
-                boundary_counts[boundary][status_value] = boundary_counts[boundary].get(status_value, 0) + 1
-        safety_state = artifact.get("safety_state") if isinstance(artifact.get("safety_state"), dict) else {}
-        violated = {key: safety_state.get(key) for key, expected in FALSE_SAFETY_FLAGS.items() if safety_state.get(key) is not expected}
+                boundary_counts[boundary][status_value] = (
+                    boundary_counts[boundary].get(status_value, 0) + 1
+                )
+        safety_state = (
+            artifact.get("safety_state") if isinstance(artifact.get("safety_state"), dict) else {}
+        )
+        violated = {
+            key: safety_state.get(key)
+            for key, expected in FALSE_SAFETY_FLAGS.items()
+            if safety_state.get(key) is not expected
+        }
         if violated:
             safety_violations.append({"article_ref": article_ref, "violations": violated})
-        redaction = artifact.get("redaction_checks") if isinstance(artifact.get("redaction_checks"), dict) else {}
-        unsafe_path = _contains_unsafe_payload_key({key: value for key, value in artifact.items() if key != "diagnostics"})
+        redaction = (
+            artifact.get("redaction_checks")
+            if isinstance(artifact.get("redaction_checks"), dict)
+            else {}
+        )
+        unsafe_path = _contains_unsafe_payload_key(
+            {key: value for key, value in artifact.items() if key != "diagnostics"}
+        )
         if redaction.get("raw_article_text_included") is not False or unsafe_path is not None:
-            redaction_violations.append({"article_ref": article_ref, "json_path": unsafe_path or "$.redaction_checks"})
+            redaction_violations.append(
+                {"article_ref": article_ref, "json_path": unsafe_path or "$.redaction_checks"}
+            )
         metrics = artifact.get("metrics") if isinstance(artifact.get("metrics"), dict) else {}
         if int(metrics.get("chunk_count") or 0) == 0 and not any(
-            isinstance(item, dict) and item.get("code") == "ZERO_CHUNKS_WITHOUT_DIAGNOSTIC" for item in diagnostics
+            isinstance(item, dict) and item.get("code") == "ZERO_CHUNKS_WITHOUT_DIAGNOSTIC"
+            for item in diagnostics
         ):
             zero_chunk_violations.append(article_ref)
-        provenance = artifact.get("provenance_coverage") if isinstance(artifact.get("provenance_coverage"), dict) else {}
-        if not provenance.get("chunking_path_recorded") or not provenance.get("evidence_paths_recorded"):
+        provenance = (
+            artifact.get("provenance_coverage")
+            if isinstance(artifact.get("provenance_coverage"), dict)
+            else {}
+        )
+        if not provenance.get("chunking_path_recorded") or not provenance.get(
+            "evidence_paths_recorded"
+        ):
             provenance_missing.append(article_ref)
         readiness = artifact.get("readiness") if isinstance(artifact.get("readiness"), dict) else {}
         article_results.append(
@@ -693,8 +794,12 @@ def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any
 
     no_network_proof = {
         "required": True,
-        "network_fetch_attempted": any(event.get("network_fetch_attempted") is True for event in events),
-        "all_events_no_network": all(event.get("no_network") is True for event in events if "no_network" in event),
+        "network_fetch_attempted": any(
+            event.get("network_fetch_attempted") is True for event in events
+        ),
+        "all_events_no_network": all(
+            event.get("no_network") is True for event in events if "no_network" in event
+        ),
     }
     blockers: list[str] = []
     if findings:
@@ -709,7 +814,9 @@ def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any
         blockers.append("missing_provenance")
     if no_network_proof["network_fetch_attempted"]:
         blockers.append("network_fetch_attempted")
-    if any(count for category, count in comparison_counts.items() if category == "baseline_missing"):
+    if any(
+        count for category, count in comparison_counts.items() if category == "baseline_missing"
+    ):
         blockers.append("comparison_artifact_missing")
     validation_passed = not blockers
     return {
@@ -723,7 +830,10 @@ def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any
         "diagnostic_counts": diagnostic_counts,
         "findings": findings,
         "article_results": article_results,
-        "redaction_checks": {"passed": not redaction_violations, "violations": redaction_violations},
+        "redaction_checks": {
+            "passed": not redaction_violations,
+            "violations": redaction_violations,
+        },
         "provenance_coverage": {"missing": provenance_missing},
         "zero_chunk_checks": {"violations": zero_chunk_violations},
         "no_network_proof": no_network_proof,
@@ -745,7 +855,10 @@ def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any
 
 
 def _write_report(path: Path, summary: dict[str, Any]) -> None:
-    rows = ["| Article | Loader | Parser | PageIndex | Chunks | Ready | Diagnostics |", "|---|---|---|---|---:|---|---:|"]
+    rows = [
+        "| Article | Loader | Parser | PageIndex | Chunks | Ready | Diagnostics |",
+        "|---|---|---|---|---:|---|---:|",
+    ]
     for result in summary["article_results"]:
         status = result["boundary_status"]
         rows.append(
@@ -764,45 +877,45 @@ def _write_report(path: Path, summary: dict[str, Any]) -> None:
 
 ## Decision
 
-- Boundary replay completed: **{str(summary['readiness']['boundary_replay_completed']).lower()}**
-- Larger preprocessing validation ready: **{str(summary['readiness']['larger_preprocessing_validation_ready']).lower()}**
-- Decision: **{summary['readiness']['decision']}**
-- Blockers: {', '.join(blockers)}
+- Boundary replay completed: **{str(summary["readiness"]["boundary_replay_completed"]).lower()}**
+- Larger preprocessing validation ready: **{str(summary["readiness"]["larger_preprocessing_validation_ready"]).lower()}**
+- Decision: **{summary["readiness"]["decision"]}**
+- Blockers: {", ".join(blockers)}
 - Graph readiness claim: **false**
 
 This report only evaluates metadata-safe boundary completion over the fixed M025 smoke corpus. It does not claim graph readiness or import eligibility.
 
 ## Boundary Results
 
-- Boundary path: `{summary['boundary_path']}`
-- Boundary counts: `{json.dumps(summary['boundary_counts'], sort_keys=True)}`
-- Comparison counts: `{json.dumps(summary['comparison_counts'], sort_keys=True)}`
+- Boundary path: `{summary["boundary_path"]}`
+- Boundary counts: `{json.dumps(summary["boundary_counts"], sort_keys=True)}`
+- Comparison counts: `{json.dumps(summary["comparison_counts"], sort_keys=True)}`
 
 {chr(10).join(rows)}
 
 ## Diagnostics
 
-`{json.dumps(summary['diagnostic_counts'], sort_keys=True)}`
+`{json.dumps(summary["diagnostic_counts"], sort_keys=True)}`
 
 ## Readiness Blockers
 
-{chr(10).join(f'- {blocker}' for blocker in blockers)}
+{chr(10).join(f"- {blocker}" for blocker in blockers)}
 
 ## Redaction Checks
 
-`{json.dumps(summary['redaction_checks'], sort_keys=True)}`
+`{json.dumps(summary["redaction_checks"], sort_keys=True)}`
 
 ## Provenance Coverage
 
-`{json.dumps(summary['provenance_coverage'], sort_keys=True)}`
+`{json.dumps(summary["provenance_coverage"], sort_keys=True)}`
 
 ## No-Network Proof
 
-`{json.dumps(summary['no_network_proof'], sort_keys=True)}`
+`{json.dumps(summary["no_network_proof"], sort_keys=True)}`
 
 ## No-Import / No-Write Safety State
 
-`{json.dumps(summary['no_write_safety'], sort_keys=True)}`
+`{json.dumps(summary["no_write_safety"], sort_keys=True)}`
 
 ## Failure Modes
 
@@ -831,7 +944,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--catalog", required=True, type=Path)
     parser.add_argument("--index", required=True, type=Path)
     parser.add_argument("--selection", required=True, type=Path)
-    parser.add_argument("--boundary", dest="boundary", type=Path, help="Directory for per-article boundary replay artifacts.")
+    parser.add_argument(
+        "--boundary",
+        dest="boundary",
+        type=Path,
+        help="Directory for per-article boundary replay artifacts.",
+    )
     parser.add_argument(
         "--boundary-replay",
         dest="boundary",
@@ -840,10 +958,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--baseline", type=Path)
     parser.add_argument("--final-replay", type=Path)
-    parser.add_argument("--chunking", type=Path, help="Directory containing per-article chunking artifacts.")
-    parser.add_argument("--evidence", type=Path, help="Directory containing per-article evidence artifacts.")
+    parser.add_argument(
+        "--chunking", type=Path, help="Directory containing per-article chunking artifacts."
+    )
+    parser.add_argument(
+        "--evidence", type=Path, help="Directory containing per-article evidence artifacts."
+    )
     parser.add_argument("--write-events", type=Path)
-    parser.add_argument("--events", type=Path, help="Read an existing boundary event log instead of rewriting it.")
+    parser.add_argument(
+        "--events", type=Path, help="Read an existing boundary event log instead of rewriting it."
+    )
     parser.add_argument("--no-network", action="store_true")
     parser.add_argument("--require-no-network", action="store_true")
     parser.add_argument("--require-no-import-flags", action="store_true")
@@ -871,32 +995,50 @@ def main(argv: list[str] | None = None) -> int:
             if args.write_events is not None:
                 args.write_events.parent.mkdir(parents=True, exist_ok=True)
                 args.write_events.write_text(
-                    "".join(json.dumps(event, sort_keys=True) + "\n" for event in events), encoding="utf-8"
+                    "".join(json.dumps(event, sort_keys=True) + "\n" for event in events),
+                    encoding="utf-8",
                 )
         summary = None
         if args.write_summary is not None or args.write_report is not None or args.validate_only:
             summary = _summary_from_artifacts(args, events)
             if args.require_no_network and summary["no_network_proof"]["network_fetch_attempted"]:
-                raise BoundaryReplayError("network fetch was attempted despite --require-no-network")
+                raise BoundaryReplayError(
+                    "network fetch was attempted despite --require-no-network"
+                )
             if args.require_no_import_flags and summary["no_write_safety"]["safety_violations"]:
-                raise BoundaryReplayError("boundary artifacts contain graph/import/write safety flag violations")
+                raise BoundaryReplayError(
+                    "boundary artifacts contain graph/import/write safety flag violations"
+                )
             if args.require_redaction and not summary["redaction_checks"]["passed"]:
-                raise BoundaryReplayError("boundary artifacts failed metadata-only redaction checks")
-            if args.expect_article_count is not None and summary["article_count"] != args.expect_article_count:
+                raise BoundaryReplayError(
+                    "boundary artifacts failed metadata-only redaction checks"
+                )
+            if (
+                args.expect_article_count is not None
+                and summary["article_count"] != args.expect_article_count
+            ):
                 raise BoundaryReplayError(
                     f"expected {args.expect_article_count} boundary articles, found {summary['article_count']}"
                 )
-            if args.reject_zero_chunk_without_diagnostic and summary["zero_chunk_checks"]["violations"]:
-                raise BoundaryReplayError("one or more zero-chunk articles lacked an explicit diagnostic")
+            if (
+                args.reject_zero_chunk_without_diagnostic
+                and summary["zero_chunk_checks"]["violations"]
+            ):
+                raise BoundaryReplayError(
+                    "one or more zero-chunk articles lacked an explicit diagnostic"
+                )
             if summary["readiness"]["blockers"]:
                 raise BoundaryReplayError(
-                    "boundary replay readiness is blocked: " + ", ".join(summary["readiness"]["blockers"])
+                    "boundary replay readiness is blocked: "
+                    + ", ".join(summary["readiness"]["blockers"])
                 )
         if args.write_summary is not None and summary is not None:
             _write_json(args.write_summary, summary)
         if args.write_report is not None and summary is not None:
             _write_report(args.write_report, summary)
-        completed = sum(1 for event in events if event.get("event_type") == "boundary_replay.article_completed")
+        completed = sum(
+            1 for event in events if event.get("event_type") == "boundary_replay.article_completed"
+        )
         sys.stdout.write(
             f"wrote boundary replay completion for {completed} articles to {args.boundary}; "
             f"summary={args.write_summary}; report={args.write_report}\n"

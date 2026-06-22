@@ -16,7 +16,10 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from research_graph.quality import build_maintainability_report, write_maintainability_report
+from research_graph.infrastructure.quality import (
+    build_maintainability_report,
+    write_maintainability_report,
+)
 
 DEFAULT_BASE_REF = "HEAD"
 DEFAULT_OUTPUT_DIR = Path("artifacts/quality")
@@ -29,7 +32,9 @@ JSON_REPORT_NAME = "maintainability-diagnostic.json"
 HUMAN_REPORT_NAME = "maintainability-diagnostic.md"
 
 
-def gather_touched_python_modules(*, base_ref: str = DEFAULT_BASE_REF, fallback: Sequence[Path] = DEFAULT_DIAGNOSTIC_SCOPE) -> tuple[Path, ...]:
+def gather_touched_python_modules(
+    *, base_ref: str = DEFAULT_BASE_REF, fallback: Sequence[Path] = DEFAULT_DIAGNOSTIC_SCOPE
+) -> tuple[Path, ...]:
     """Return touched source/script Python files, falling back to the quality scope.
 
     Git discovery is best-effort because this is a local diagnostic helper. If git
@@ -67,7 +72,11 @@ def run_quality_gate(
     base_ref: str = DEFAULT_BASE_REF,
 ) -> dict[str, Any]:
     """Run the diagnostic-only maintainability scan and write JSON/Markdown artifacts."""
-    scan_paths = tuple(Path(path) for path in paths) if paths else gather_touched_python_modules(base_ref=base_ref)
+    scan_paths = (
+        tuple(Path(path) for path in paths)
+        if paths
+        else gather_touched_python_modules(base_ref=base_ref)
+    )
     report = build_maintainability_report(paths=scan_paths, baseline_path=baseline_path)
     report["quality_gate"] = {
         "name": "local-maintainability-diagnostic",
@@ -102,10 +111,20 @@ def write_human_report(report: dict[str, Any], output_path: str | Path) -> Path:
 
 def _render_human_report(report: dict[str, Any]) -> str:
     summary = report.get("summary", {}) if isinstance(report.get("summary"), dict) else {}
-    delta = report.get("baseline_delta", {}) if isinstance(report.get("baseline_delta"), dict) else {}
-    severity = summary.get("by_severity", {}) if isinstance(summary.get("by_severity"), dict) else {}
-    quality_gate = report.get("quality_gate", {}) if isinstance(report.get("quality_gate"), dict) else {}
-    modules = quality_gate.get("touched_modules", []) if isinstance(quality_gate.get("touched_modules"), list) else []
+    delta = (
+        report.get("baseline_delta", {}) if isinstance(report.get("baseline_delta"), dict) else {}
+    )
+    severity = (
+        summary.get("by_severity", {}) if isinstance(summary.get("by_severity"), dict) else {}
+    )
+    quality_gate = (
+        report.get("quality_gate", {}) if isinstance(report.get("quality_gate"), dict) else {}
+    )
+    modules = (
+        quality_gate.get("touched_modules", [])
+        if isinstance(quality_gate.get("touched_modules"), list)
+        else []
+    )
 
     lines = [
         "# Local Maintainability Diagnostic",
@@ -135,15 +154,38 @@ def _render_human_report(report: dict[str, Any]) -> str:
 
 
 def _is_quality_scan_candidate(path: str) -> bool:
-    return path.endswith(".py") and (path.startswith("src/research_graph/") or path.startswith("scripts/"))
+    return path.endswith(".py") and (
+        path.startswith("src/research_graph/") or path.startswith("scripts/")
+    )
 
 
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the local diagnostic-only maintainability quality gate.")
-    parser.add_argument("paths", nargs="*", type=Path, help="Explicit Python files/directories to scan. Defaults to touched modules.")
-    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR, help="Directory for diagnostic artifacts.")
-    parser.add_argument("--baseline", type=Path, default=None, help="Optional JSON baseline for non-blocking deltas.")
-    parser.add_argument("--base-ref", default=DEFAULT_BASE_REF, help="Git ref used for touched-module discovery when paths are omitted.")
+    parser = argparse.ArgumentParser(
+        description="Run the local diagnostic-only maintainability quality gate."
+    )
+    parser.add_argument(
+        "paths",
+        nargs="*",
+        type=Path,
+        help="Explicit Python files/directories to scan. Defaults to touched modules.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=DEFAULT_OUTPUT_DIR,
+        help="Directory for diagnostic artifacts.",
+    )
+    parser.add_argument(
+        "--baseline",
+        type=Path,
+        default=None,
+        help="Optional JSON baseline for non-blocking deltas.",
+    )
+    parser.add_argument(
+        "--base-ref",
+        default=DEFAULT_BASE_REF,
+        help="Git ref used for touched-module discovery when paths are omitted.",
+    )
     parser.add_argument("--json", action="store_true", help="Print the report envelope as JSON.")
     return parser.parse_args(argv)
 

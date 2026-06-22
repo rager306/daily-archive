@@ -25,13 +25,16 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from research_graph.repair.chunk_import_contract import validate_import_ready_package, validation_to_dict
-from research_graph.papers.chunking.chunker import parse_markdown_structure
 from research_graph.graph.readiness.export import (
     CONTRACT_VERSION as GRAPH_READINESS_CONTRACT_VERSION,
 )
 from research_graph.graph.readiness.export import SCHEMA_VERSION as GRAPH_READINESS_SCHEMA_VERSION
 from research_graph.graph.readiness.review import generate_review_bundles, validate_review_artifacts
+from research_graph.papers.chunking.chunker import parse_markdown_structure
+from research_graph.repair.chunk_import_contract import (
+    validate_import_ready_package,
+    validation_to_dict,
+)
 
 MILESTONE_ID = "M031-vwpd8e"
 SLICE_ID = "S04"
@@ -129,11 +132,17 @@ def load_json_object(path: Path) -> dict[str, Any]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        raise ChunkEvidenceReplayError("malformed_json", f"malformed JSON at {path}: {exc}", json_path=str(path)) from exc
+        raise ChunkEvidenceReplayError(
+            "malformed_json", f"malformed JSON at {path}: {exc}", json_path=str(path)
+        ) from exc
     except OSError as exc:
-        raise ChunkEvidenceReplayError("json_read_failed", f"failed to read {path}: {exc}", json_path=str(path)) from exc
+        raise ChunkEvidenceReplayError(
+            "json_read_failed", f"failed to read {path}: {exc}", json_path=str(path)
+        ) from exc
     if not isinstance(payload, dict):
-        raise ChunkEvidenceReplayError("malformed_json_object", f"expected JSON object at {path}", json_path=str(path))
+        raise ChunkEvidenceReplayError(
+            "malformed_json_object", f"expected JSON object at {path}", json_path=str(path)
+        )
     return payload
 
 
@@ -163,67 +172,152 @@ def safe_relative_display(project_root: Path, path: Path) -> str:
 
 def resolve_converted_text_path(project_root: Path, value: Any) -> Path:
     if not isinstance(value, str) or not value.strip():
-        raise ChunkEvidenceReplayError("missing_converted_text_path", "parser-ready row has no converted_text_path", json_path="$.converted_text_path")
+        raise ChunkEvidenceReplayError(
+            "missing_converted_text_path",
+            "parser-ready row has no converted_text_path",
+            json_path="$.converted_text_path",
+        )
     if "://" in value:
-        raise ChunkEvidenceReplayError("converted_text_path_url", "converted_text_path must be project-local", json_path="$.converted_text_path")
+        raise ChunkEvidenceReplayError(
+            "converted_text_path_url",
+            "converted_text_path must be project-local",
+            json_path="$.converted_text_path",
+        )
     raw = PurePosixPath(value.replace("\\", "/"))
     if ".." in raw.parts:
-        raise ChunkEvidenceReplayError("unsafe_converted_text_path", "converted_text_path contains '..'", json_path="$.converted_text_path")
+        raise ChunkEvidenceReplayError(
+            "unsafe_converted_text_path",
+            "converted_text_path contains '..'",
+            json_path="$.converted_text_path",
+        )
     candidate = Path(value)
     if not candidate.is_absolute():
         candidate = project_root / candidate
     resolved = candidate.resolve()
     if not resolved.is_relative_to(project_root.resolve()):
-        raise ChunkEvidenceReplayError("converted_text_path_outside_project", "converted_text_path escapes project root", json_path="$.converted_text_path")
+        raise ChunkEvidenceReplayError(
+            "converted_text_path_outside_project",
+            "converted_text_path escapes project root",
+            json_path="$.converted_text_path",
+        )
     if not resolved.exists():
-        raise ChunkEvidenceReplayError("missing_converted_text_artifact", "converted text artifact is missing", json_path="$.converted_text_path")
+        raise ChunkEvidenceReplayError(
+            "missing_converted_text_artifact",
+            "converted text artifact is missing",
+            json_path="$.converted_text_path",
+        )
     if not resolved.is_file():
-        raise ChunkEvidenceReplayError("converted_text_not_file", "converted_text_path is not a file", json_path="$.converted_text_path")
+        raise ChunkEvidenceReplayError(
+            "converted_text_not_file",
+            "converted_text_path is not a file",
+            json_path="$.converted_text_path",
+        )
     return resolved
 
 
-def validate_s03_closeout(closeout: Mapping[str, Any], conversion_summary: Mapping[str, Any]) -> None:
+def validate_s03_closeout(
+    closeout: Mapping[str, Any], conversion_summary: Mapping[str, Any]
+) -> None:
     if closeout.get("schema_version") != "m031-parser-conversion-closeout-verifier.v1":
-        raise ChunkEvidenceReplayError("unexpected_closeout_schema", "S03 closeout schema is not recognized", json_path="$.schema_version")
+        raise ChunkEvidenceReplayError(
+            "unexpected_closeout_schema",
+            "S03 closeout schema is not recognized",
+            json_path="$.schema_version",
+        )
     if closeout.get("milestone_id") != MILESTONE_ID or closeout.get("selection_id") != SELECTION_ID:
-        raise ChunkEvidenceReplayError("unexpected_closeout_identity", "S03 closeout does not match M031 corpus", json_path="$.selection_id")
+        raise ChunkEvidenceReplayError(
+            "unexpected_closeout_identity",
+            "S03 closeout does not match M031 corpus",
+            json_path="$.selection_id",
+        )
     if closeout.get("status") != "passed" or closeout.get("failure_count") != 0:
-        raise ChunkEvidenceReplayError("s03_closeout_not_passed", "S03 closeout must pass before chunk evidence replay", json_path="$.status")
+        raise ChunkEvidenceReplayError(
+            "s03_closeout_not_passed",
+            "S03 closeout must pass before chunk evidence replay",
+            json_path="$.status",
+        )
     rows = conversion_summary.get("results")
     if conversion_summary.get("schema_version") != "m031-parser-conversion-replay.v1":
-        raise ChunkEvidenceReplayError("unexpected_conversion_schema", "conversion summary schema is not recognized", json_path="$.schema_version")
+        raise ChunkEvidenceReplayError(
+            "unexpected_conversion_schema",
+            "conversion summary schema is not recognized",
+            json_path="$.schema_version",
+        )
     if not isinstance(rows, list):
-        raise ChunkEvidenceReplayError("malformed_conversion_results", "conversion summary results must be a list", json_path="$.results")
+        raise ChunkEvidenceReplayError(
+            "malformed_conversion_results",
+            "conversion summary results must be a list",
+            json_path="$.results",
+        )
     if closeout.get("row_count") != len(rows):
-        raise ChunkEvidenceReplayError("stale_s03_closeout_row_count", "S03 closeout row_count no longer matches conversion rows", json_path="$.row_count")
-    parser_ready_count = sum(1 for row in rows if isinstance(row, Mapping) and row.get("parser_ready") is True)
-    if closeout.get("parser_ready_count") != parser_ready_count or conversion_summary.get("parser_ready_count") != parser_ready_count:
-        raise ChunkEvidenceReplayError("stale_s03_closeout_parser_ready_count", "S03 parser-ready count is stale", json_path="$.parser_ready_count")
+        raise ChunkEvidenceReplayError(
+            "stale_s03_closeout_row_count",
+            "S03 closeout row_count no longer matches conversion rows",
+            json_path="$.row_count",
+        )
+    parser_ready_count = sum(
+        1 for row in rows if isinstance(row, Mapping) and row.get("parser_ready") is True
+    )
+    if (
+        closeout.get("parser_ready_count") != parser_ready_count
+        or conversion_summary.get("parser_ready_count") != parser_ready_count
+    ):
+        raise ChunkEvidenceReplayError(
+            "stale_s03_closeout_parser_ready_count",
+            "S03 parser-ready count is stale",
+            json_path="$.parser_ready_count",
+        )
     for flag, expected in FAIL_CLOSED_FLAGS.items():
         if flag in closeout and closeout.get(flag) is not expected:
-            raise ChunkEvidenceReplayError("unsafe_closeout_flag", f"S03 closeout flag {flag} is not fail-closed", json_path=f"$.{flag}")
+            raise ChunkEvidenceReplayError(
+                "unsafe_closeout_flag",
+                f"S03 closeout flag {flag} is not fail-closed",
+                json_path=f"$.{flag}",
+            )
         flags = closeout.get("fail_closed_safety_flags")
         if isinstance(flags, Mapping) and flag in flags and flags.get(flag) is not expected:
-            raise ChunkEvidenceReplayError("unsafe_closeout_flag", f"S03 closeout safety flag {flag} is not fail-closed", json_path=f"$.fail_closed_safety_flags.{flag}")
+            raise ChunkEvidenceReplayError(
+                "unsafe_closeout_flag",
+                f"S03 closeout safety flag {flag} is not fail-closed",
+                json_path=f"$.fail_closed_safety_flags.{flag}",
+            )
 
 
 def validate_parser_ready_row(row: Mapping[str, Any], *, index: int, project_root: Path) -> Path:
     if row.get("status") != "converted" or row.get("parser_ready") is not True:
-        raise ChunkEvidenceReplayError("parser_ready_status_mismatch", "parser-ready row must have converted status", json_path=f"$.results[{index}]")
+        raise ChunkEvidenceReplayError(
+            "parser_ready_status_mismatch",
+            "parser-ready row must have converted status",
+            json_path=f"$.results[{index}]",
+        )
     source_role = str(row.get("source_role") or "")
     if source_role in {"arxiv_html", "arxiv_abs_page", "arxiv_abs_url"}:
-        raise ChunkEvidenceReplayError("non_pdf_parser_ready_refused", "only parser-ready PDF conversions may be chunked in S04", json_path=f"$.results[{index}].source_role")
+        raise ChunkEvidenceReplayError(
+            "non_pdf_parser_ready_refused",
+            "only parser-ready PDF conversions may be chunked in S04",
+            json_path=f"$.results[{index}].source_role",
+        )
     converted_path = resolve_converted_text_path(project_root, row.get("converted_text_path"))
     actual_hash = sha256_file(converted_path)
     if row.get("converted_text_sha256") != actual_hash:
-        raise ChunkEvidenceReplayError("converted_text_sha256_mismatch", "converted text hash no longer matches S03 summary", json_path=f"$.results[{index}].converted_text_sha256")
+        raise ChunkEvidenceReplayError(
+            "converted_text_sha256_mismatch",
+            "converted text hash no longer matches S03 summary",
+            json_path=f"$.results[{index}].converted_text_sha256",
+        )
     actual_size = converted_path.stat().st_size
     if row.get("converted_text_byte_size") != actual_size:
-        raise ChunkEvidenceReplayError("converted_text_byte_size_mismatch", "converted text size no longer matches S03 summary", json_path=f"$.results[{index}].converted_text_byte_size")
+        raise ChunkEvidenceReplayError(
+            "converted_text_byte_size_mismatch",
+            "converted text size no longer matches S03 summary",
+            json_path=f"$.results[{index}].converted_text_byte_size",
+        )
     return converted_path
 
 
-def base_row(row: Mapping[str, Any], *, index: int, status: str, code: str, message: str | None) -> dict[str, Any]:
+def base_row(
+    row: Mapping[str, Any], *, index: int, status: str, code: str, message: str | None
+) -> dict[str, Any]:
     return {
         "schema_version": DIAGNOSTIC_SCHEMA_VERSION,
         "milestone_id": MILESTONE_ID,
@@ -256,7 +350,9 @@ def base_row(row: Mapping[str, Any], *, index: int, status: str, code: str, mess
         "refusal_code": None if status == "chunked" else code,
         "refusal_reason": message,
         "safe_converted_text_path": None,
-        "review_status": "not_applicable_zero_chunk_refusal" if status != "chunked" else "pending_review",
+        "review_status": "not_applicable_zero_chunk_refusal"
+        if status != "chunked"
+        else "pending_review",
         "independent_review_completed": False,
         "automated_state_is_structural_only": True,
         **FAIL_CLOSED_FLAGS,
@@ -296,7 +392,9 @@ def redacted_markdown_for_structure(markdown: str) -> str:
             redacted_lines.append("| redacted | structural |")
         else:
             paragraph_index += 1
-            redacted_lines.append(f"Redacted structural paragraph {paragraph_index:04d} for source span replay.")
+            redacted_lines.append(
+                f"Redacted structural paragraph {paragraph_index:04d} for source span replay."
+            )
     return "\n".join(redacted_lines)
 
 
@@ -308,7 +406,11 @@ def build_graph_readiness_package(
     package_path: Path,
     project_root: Path,
 ) -> dict[str, Any]:
-    diagnostics = structure_package.get("diagnostics") if isinstance(structure_package.get("diagnostics"), Mapping) else {}
+    diagnostics = (
+        structure_package.get("diagnostics")
+        if isinstance(structure_package.get("diagnostics"), Mapping)
+        else {}
+    )
     return {
         "schema_version": GRAPH_PACKAGE_SCHEMA_VERSION,
         "milestone_id": MILESTONE_ID,
@@ -326,9 +428,15 @@ def build_graph_readiness_package(
         "package_key": package_key(row),
         "structure_aware_package_path": safe_relative_display(project_root, package_path),
         "validation": validation,
-        "chunk_count": len(structure_package.get("chunks", [])) if isinstance(structure_package.get("chunks"), list) else 0,
-        "element_count": len(structure_package.get("elements", [])) if isinstance(structure_package.get("elements"), list) else 0,
-        "annotation_count": len(structure_package.get("annotations", [])) if isinstance(structure_package.get("annotations"), list) else 0,
+        "chunk_count": len(structure_package.get("chunks", []))
+        if isinstance(structure_package.get("chunks"), list)
+        else 0,
+        "element_count": len(structure_package.get("elements", []))
+        if isinstance(structure_package.get("elements"), list)
+        else 0,
+        "annotation_count": len(structure_package.get("annotations", []))
+        if isinstance(structure_package.get("annotations"), list)
+        else 0,
         "counts_by_state": diagnostics.get("counts_by_state", {}),
         "counts_by_route": diagnostics.get("counts_by_route", {}),
         "counts_by_chunk_type": diagnostics.get("counts_by_chunk_type", {}),
@@ -373,7 +481,13 @@ def chunk_parser_ready_row(
         project_root=project_root,
     )
     graph_package_path = package_dir / "graph-readiness-package.json"
-    diagnostic = base_row(row, index=index, status="chunked", code="parser_ready_chunk_package_created", message="parser-ready converted text replayed into redacted structure-aware package")
+    diagnostic = base_row(
+        row,
+        index=index,
+        status="chunked",
+        code="parser_ready_chunk_package_created",
+        message="parser-ready converted text replayed into redacted structure-aware package",
+    )
     diagnostic.update(
         {
             "chunk_count": len(package["chunks"]),
@@ -414,23 +528,41 @@ def assert_redacted(value: Any, *, path: Path) -> None:
     lowered = serialized.lower()
     for key in FORBIDDEN_PAYLOAD_KEYS:
         if f'"{key}"' in lowered:
-            raise ChunkEvidenceReplayError("metadata_payload_key_leakage", f"metadata contains forbidden payload key {key!r}: {path}")
+            raise ChunkEvidenceReplayError(
+                "metadata_payload_key_leakage",
+                f"metadata contains forbidden payload key {key!r}: {path}",
+            )
     for snippet in FORBIDDEN_SNIPPETS:
         if snippet.lower() in lowered:
-            raise ChunkEvidenceReplayError("metadata_payload_snippet_leakage", f"metadata contains forbidden raw payload snippet {snippet!r}: {path}")
+            raise ChunkEvidenceReplayError(
+                "metadata_payload_snippet_leakage",
+                f"metadata contains forbidden raw payload snippet {snippet!r}: {path}",
+            )
 
 
-def assert_fail_closed(summary: Mapping[str, Any], diagnostics: Iterable[Mapping[str, Any]], graph_packages: Iterable[Mapping[str, Any]]) -> None:
+def assert_fail_closed(
+    summary: Mapping[str, Any],
+    diagnostics: Iterable[Mapping[str, Any]],
+    graph_packages: Iterable[Mapping[str, Any]],
+) -> None:
     all_records: list[Mapping[str, Any]] = [summary, *diagnostics, *graph_packages]
     for record in all_records:
         for flag, expected in FAIL_CLOSED_FLAGS.items():
             if flag in record and record.get(flag) is not expected:
-                raise ChunkEvidenceReplayError("unsafe_safety_flag", f"safety flag {flag}={record.get(flag)!r}", json_path=f"$.{flag}")
+                raise ChunkEvidenceReplayError(
+                    "unsafe_safety_flag",
+                    f"safety flag {flag}={record.get(flag)!r}",
+                    json_path=f"$.{flag}",
+                )
         flags = record.get("fail_closed_safety_flags")
         if isinstance(flags, Mapping):
             for flag, expected in FAIL_CLOSED_FLAGS.items():
                 if flags.get(flag) is not expected:
-                    raise ChunkEvidenceReplayError("unsafe_safety_flag", f"safety flag {flag}={flags.get(flag)!r}", json_path=f"$.fail_closed_safety_flags.{flag}")
+                    raise ChunkEvidenceReplayError(
+                        "unsafe_safety_flag",
+                        f"safety flag {flag}={flags.get(flag)!r}",
+                        json_path=f"$.fail_closed_safety_flags.{flag}",
+                    )
 
 
 def build_summary(
@@ -443,7 +575,9 @@ def build_summary(
     duration_ms: int,
 ) -> dict[str, Any]:
     counts = Counter(str(row.get("status")) for row in diagnostics)
-    by_identity: dict[str, dict[str, int]] = defaultdict(lambda: {"chunked": 0, "zero_chunk_refused": 0})
+    by_identity: dict[str, dict[str, int]] = defaultdict(
+        lambda: {"chunked": 0, "zero_chunk_refused": 0}
+    )
     for row in diagnostics:
         identity = str(row.get("identity") or "<missing-identity>")
         status = str(row.get("status"))
@@ -452,7 +586,9 @@ def build_summary(
     chunked = [row for row in diagnostics if row.get("status") == "chunked"]
     refused = [row for row in diagnostics if row.get("status") == "zero_chunk_refused"]
     pending_review_count = sum(1 for row in chunked if row.get("review_status") == "pending_review")
-    blocked_review_count = sum(1 for row in chunked if str(row.get("review_status", "")).startswith("review_blocked"))
+    blocked_review_count = sum(
+        1 for row in chunked if str(row.get("review_status", "")).startswith("review_blocked")
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "milestone_id": MILESTONE_ID,
@@ -472,13 +608,23 @@ def build_summary(
         "graph_readiness_package_count": len(chunked),
         "pending_graph_readiness_review_count": pending_review_count,
         "graph_readiness_review_blocker_count": blocked_review_count,
-        "independent_review_completed_count": sum(1 for row in diagnostics if row.get("independent_review_completed") is True),
+        "independent_review_completed_count": sum(
+            1 for row in diagnostics if row.get("independent_review_completed") is True
+        ),
         "automated_state_is_structural_only": True,
-        "import_contract_valid_package_count": sum(1 for row in chunked if row.get("import_contract_valid_package") is True),
-        "import_eligible_chunk_count": sum(int(row.get("import_eligible_chunk_count") or 0) for row in diagnostics),
+        "import_contract_valid_package_count": sum(
+            1 for row in chunked if row.get("import_contract_valid_package") is True
+        ),
+        "import_eligible_chunk_count": sum(
+            int(row.get("import_eligible_chunk_count") or 0) for row in diagnostics
+        ),
         "refused_chunk_count": sum(int(row.get("refused_chunk_count") or 0) for row in diagnostics),
-        "per_identity_chunk_state_counts": {key: dict(value) for key, value in sorted(by_identity.items())},
-        "diagnostic_code_counts": dict(sorted(Counter(str(row.get("diagnostic_code")) for row in diagnostics).items())),
+        "per_identity_chunk_state_counts": {
+            key: dict(value) for key, value in sorted(by_identity.items())
+        },
+        "diagnostic_code_counts": dict(
+            sorted(Counter(str(row.get("diagnostic_code")) for row in diagnostics).items())
+        ),
         "input_paths": {
             "selection": selection_path.as_posix(),
             "conversion_summary": conversion_summary_path.as_posix(),
@@ -492,8 +638,14 @@ def build_summary(
             "packages_dir": (output_dir / PACKAGES_DIR_NAME).as_posix(),
             "review_corpus": (output_dir / REVIEW_CORPUS_NAME).as_posix(),
             "independent_review_events": (output_dir / INDEPENDENT_REVIEW_EVENTS_NAME).as_posix(),
-            "graph_readiness_review_dir": (output_dir.parent / GRAPH_READINESS_REVIEW_DIR_NAME).as_posix(),
-            "independent_review_summary": (output_dir.parent / GRAPH_READINESS_REVIEW_DIR_NAME / INDEPENDENT_REVIEW_SUMMARY_NAME).as_posix(),
+            "graph_readiness_review_dir": (
+                output_dir.parent / GRAPH_READINESS_REVIEW_DIR_NAME
+            ).as_posix(),
+            "independent_review_summary": (
+                output_dir.parent
+                / GRAPH_READINESS_REVIEW_DIR_NAME
+                / INDEPENDENT_REVIEW_SUMMARY_NAME
+            ).as_posix(),
         },
         "package_paths": [row["package_path"] for row in chunked],
         "graph_readiness_package_paths": [row["graph_readiness_package_path"] for row in chunked],
@@ -567,12 +719,21 @@ def replay_chunk_evidence(
     output_dir: Path,
     project_root: Path,
     run_id: str,
-) -> tuple[dict[str, Any], list[dict[str, Any]], list[tuple[Path, dict[str, Any]]], list[tuple[Path, dict[str, Any]]]]:
+) -> tuple[
+    dict[str, Any],
+    list[dict[str, Any]],
+    list[tuple[Path, dict[str, Any]]],
+    list[tuple[Path, dict[str, Any]]],
+]:
     selection = load_json_object(selection_path)
     conversion_summary = load_json_object(conversion_summary_path)
     closeout = load_json_object(closeout_summary_path)
     if selection.get("selection_id") != SELECTION_ID:
-        raise ChunkEvidenceReplayError("unexpected_selection_id", "selection is not the M031 replay corpus", json_path="$.selection_id")
+        raise ChunkEvidenceReplayError(
+            "unexpected_selection_id",
+            "selection is not the M031 replay corpus",
+            json_path="$.selection_id",
+        )
     validate_s03_closeout(closeout, conversion_summary)
     rows = conversion_summary["results"]
     diagnostics: list[dict[str, Any]] = []
@@ -580,11 +741,19 @@ def replay_chunk_evidence(
     graph_packages: list[tuple[Path, dict[str, Any]]] = []
     for index, row in enumerate(rows):
         if not isinstance(row, Mapping):
-            raise ChunkEvidenceReplayError("malformed_conversion_result", "conversion result rows must be objects", json_path=f"$.results[{index}]")
+            raise ChunkEvidenceReplayError(
+                "malformed_conversion_result",
+                "conversion result rows must be objects",
+                json_path=f"$.results[{index}]",
+            )
         if row.get("parser_ready") is True:
-            diagnostic, structure_package, graph_package = chunk_parser_ready_row(row, index=index, project_root=project_root, output_dir=output_dir, run_id=run_id)
+            diagnostic, structure_package, graph_package = chunk_parser_ready_row(
+                row, index=index, project_root=project_root, output_dir=output_dir, run_id=run_id
+            )
             package_dir = output_dir / PACKAGES_DIR_NAME / package_key(row)
-            structure_packages.append((package_dir / "structure-aware-package.json", structure_package))
+            structure_packages.append(
+                (package_dir / "structure-aware-package.json", structure_package)
+            )
             graph_packages.append((package_dir / "graph-readiness-package.json", graph_package))
             diagnostics.append(diagnostic)
         else:
@@ -594,17 +763,31 @@ def replay_chunk_evidence(
 
 def _sanitize_review_events(events_path: Path) -> None:
     sanitized: list[dict[str, Any]] = []
-    for line_number, line in enumerate(events_path.read_text(encoding="utf-8").splitlines(), start=1):
+    for line_number, line in enumerate(
+        events_path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
         if not line.strip():
             continue
         try:
             event = json.loads(line)
         except json.JSONDecodeError as exc:
-            raise ChunkEvidenceReplayError("malformed_independent_review_event", f"malformed independent-review event at line {line_number}: {exc}", json_path=f"{events_path}:{line_number}") from exc
+            raise ChunkEvidenceReplayError(
+                "malformed_independent_review_event",
+                f"malformed independent-review event at line {line_number}: {exc}",
+                json_path=f"{events_path}:{line_number}",
+            ) from exc
         if not isinstance(event, dict):
-            raise ChunkEvidenceReplayError("malformed_independent_review_event", f"independent-review event must be an object at line {line_number}", json_path=f"{events_path}:{line_number}")
+            raise ChunkEvidenceReplayError(
+                "malformed_independent_review_event",
+                f"independent-review event must be an object at line {line_number}",
+                json_path=f"{events_path}:{line_number}",
+            )
         if event.get("event") == "independent_review.verdict":
-            raise ChunkEvidenceReplayError("completed_review_event_fabricated", "S04 must not fabricate completed independent-review verdict events", json_path=f"{events_path}:{line_number}")
+            raise ChunkEvidenceReplayError(
+                "completed_review_event_fabricated",
+                "S04 must not fabricate completed independent-review verdict events",
+                json_path=f"{events_path}:{line_number}",
+            )
         event["raw_text_included"] = False
         event["raw_text_scope"] = "not_in_json_events_review_markdown_only"
         event["output_contract_completed"] = False
@@ -618,7 +801,9 @@ def _sanitize_review_events(events_path: Path) -> None:
     write_jsonl(events_path, sanitized)
 
 
-def _review_blocker_event(row: Mapping[str, Any], *, run_id: str, graph_package_path: Path, project_root: Path) -> dict[str, Any]:
+def _review_blocker_event(
+    row: Mapping[str, Any], *, run_id: str, graph_package_path: Path, project_root: Path
+) -> dict[str, Any]:
     return {
         "event": "independent_review.blocker",
         "run_id": run_id,
@@ -654,24 +839,53 @@ def build_review_corpus(
         converted_value = row.get("safe_converted_text_path")
         if not graph_package_value or not converted_value:
             row["review_status"] = "review_blocked_missing_package_evidence"
-            blocker_events.append(_review_blocker_event(row, run_id=run_id, graph_package_path=output_dir / "<missing>", project_root=project_root))
+            blocker_events.append(
+                _review_blocker_event(
+                    row,
+                    run_id=run_id,
+                    graph_package_path=output_dir / "<missing>",
+                    project_root=project_root,
+                )
+            )
             continue
         graph_package_path = project_root / str(graph_package_value)
         if not graph_package_path.exists():
             row["review_status"] = "review_blocked_missing_graph_readiness_package"
             row.pop("review_corpus_paper_id", None)
             row.pop("review_artifact_path", None)
-            blocker_events.append(_review_blocker_event(row, run_id=run_id, graph_package_path=graph_package_path, project_root=project_root))
+            blocker_events.append(
+                _review_blocker_event(
+                    row,
+                    run_id=run_id,
+                    graph_package_path=graph_package_path,
+                    project_root=project_root,
+                )
+            )
             continue
         graph_package = load_json_object(graph_package_path)
-        if graph_package.get("review_state") != "pending_independent_graph_readiness_review" or graph_package.get("output_contract_completed") is not False:
-            raise ChunkEvidenceReplayError("unsafe_graph_readiness_package_review_state", "graph-readiness package is not a pending-review handoff", json_path=f"{graph_package_path}:$.review_state")
+        if (
+            graph_package.get("review_state") != "pending_independent_graph_readiness_review"
+            or graph_package.get("output_contract_completed") is not False
+        ):
+            raise ChunkEvidenceReplayError(
+                "unsafe_graph_readiness_package_review_state",
+                "graph-readiness package is not a pending-review handoff",
+                json_path=f"{graph_package_path}:$.review_state",
+            )
         for flag, expected in FAIL_CLOSED_FLAGS.items():
             if graph_package.get(flag) is not expected:
-                raise ChunkEvidenceReplayError("unsafe_graph_readiness_package_flag", f"graph-readiness package flag {flag} is not fail-closed", json_path=f"{graph_package_path}:$.{flag}")
+                raise ChunkEvidenceReplayError(
+                    "unsafe_graph_readiness_package_flag",
+                    f"graph-readiness package flag {flag} is not fail-closed",
+                    json_path=f"{graph_package_path}:$.{flag}",
+                )
         converted_path = project_root / str(converted_value)
         if not converted_path.exists():
-            raise ChunkEvidenceReplayError("missing_review_source_artifact", "review source converted text is missing", json_path=str(converted_path))
+            raise ChunkEvidenceReplayError(
+                "missing_review_source_artifact",
+                "review source converted text is missing",
+                json_path=str(converted_path),
+            )
         paper_id = str(row.get("package_key"))
         row["review_status"] = "pending_review"
         row["independent_review_completed"] = False
@@ -685,7 +899,9 @@ def build_review_corpus(
                 "paper_dir": str(converted_path.parent),
                 "expected_full_text_path": str(converted_path),
                 "source_slice_id": SOURCE_SLICE_ID,
-                "graph_readiness_package_path": safe_relative_display(project_root, graph_package_path),
+                "graph_readiness_package_path": safe_relative_display(
+                    project_root, graph_package_path
+                ),
                 "review_status": "pending_review",
                 "independent_review_completed": False,
                 "automated_state_is_structural_only": True,
@@ -725,7 +941,9 @@ def generate_review_handoff(
     project_root: Path,
     run_id: str,
 ) -> None:
-    corpus, blocker_events = build_review_corpus(diagnostics=diagnostics, output_dir=output_dir, project_root=project_root, run_id=run_id)
+    corpus, blocker_events = build_review_corpus(
+        diagnostics=diagnostics, output_dir=output_dir, project_root=project_root, run_id=run_id
+    )
     review_corpus_path = output_dir / REVIEW_CORPUS_NAME
     events_path = output_dir / INDEPENDENT_REVIEW_EVENTS_NAME
     write_json(review_corpus_path, corpus)
@@ -738,25 +956,49 @@ def generate_review_handoff(
             required_paper_ids=tuple(str(doc["paper_id"]) for doc in corpus["documents"]),
         )
         _sanitize_review_events(result.events_path)
-        validation = validate_review_artifacts(review_dir=review_dir, events_path=events_path, require_completed_review=False)
+        validation = validate_review_artifacts(
+            review_dir=review_dir, events_path=events_path, require_completed_review=False
+        )
         if not validation.ok:
-            raise ChunkEvidenceReplayError("generated_review_validation_failed", "; ".join(validation.diagnostics), json_path=str(review_dir))
-        summary["graph_readiness_review_paths"] = [safe_relative_display(project_root, path) for path in result.review_paths]
-        summary["independent_review_summary_path"] = safe_relative_display(project_root, result.summary_path)
+            raise ChunkEvidenceReplayError(
+                "generated_review_validation_failed",
+                "; ".join(validation.diagnostics),
+                json_path=str(review_dir),
+            )
+        summary["graph_readiness_review_paths"] = [
+            safe_relative_display(project_root, path) for path in result.review_paths
+        ]
+        summary["independent_review_summary_path"] = safe_relative_display(
+            project_root, result.summary_path
+        )
         for row in diagnostics:
             if row.get("status") == "chunked" and row.get("review_status") == "pending_review":
-                row["review_artifact_path"] = safe_relative_display(project_root, review_dir / f"{row.get('package_key')}-review.md")
+                row["review_artifact_path"] = safe_relative_display(
+                    project_root, review_dir / f"{row.get('package_key')}-review.md"
+                )
     else:
         write_jsonl(events_path, blocker_events)
         summary["graph_readiness_review_paths"] = []
         summary["independent_review_summary_path"] = None
     if blocker_events:
-        existing_events = [json.loads(line) for line in events_path.read_text(encoding="utf-8").splitlines() if line.strip()] if events_path.exists() else []
+        existing_events = (
+            [
+                json.loads(line)
+                for line in events_path.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+            if events_path.exists()
+            else []
+        )
         write_jsonl(events_path, [*existing_events, *blocker_events])
     summary["review_corpus_path"] = safe_relative_display(project_root, review_corpus_path)
     summary["independent_review_events_path"] = safe_relative_display(project_root, events_path)
-    summary["pending_graph_readiness_review_count"] = sum(1 for row in diagnostics if row.get("review_status") == "pending_review")
-    summary["graph_readiness_review_blocker_count"] = sum(1 for row in diagnostics if str(row.get("review_status", "")).startswith("review_blocked"))
+    summary["pending_graph_readiness_review_count"] = sum(
+        1 for row in diagnostics if row.get("review_status") == "pending_review"
+    )
+    summary["graph_readiness_review_blocker_count"] = sum(
+        1 for row in diagnostics if str(row.get("review_status", "")).startswith("review_blocked")
+    )
     summary["independent_review_completed_count"] = 0
     summary["automated_state_is_structural_only"] = True
 
@@ -809,9 +1051,14 @@ def run_replay(
     assert_fail_closed(summary, diagnostics, graph_payloads)
     assert_redacted(summary, path=output_dir / SUMMARY_NAME)
     assert_redacted(diagnostics, path=output_dir / DIAGNOSTICS_NAME)
-    assert_redacted(load_json_object(output_dir / REVIEW_CORPUS_NAME), path=output_dir / REVIEW_CORPUS_NAME)
+    assert_redacted(
+        load_json_object(output_dir / REVIEW_CORPUS_NAME), path=output_dir / REVIEW_CORPUS_NAME
+    )
     if (output_dir / INDEPENDENT_REVIEW_EVENTS_NAME).exists():
-        assert_redacted((output_dir / INDEPENDENT_REVIEW_EVENTS_NAME).read_text(encoding="utf-8"), path=output_dir / INDEPENDENT_REVIEW_EVENTS_NAME)
+        assert_redacted(
+            (output_dir / INDEPENDENT_REVIEW_EVENTS_NAME).read_text(encoding="utf-8"),
+            path=output_dir / INDEPENDENT_REVIEW_EVENTS_NAME,
+        )
     report = render_report(summary)
     assert_redacted(report, path=output_dir / REPORT_NAME)
     write_json(output_dir / SUMMARY_NAME, summary)
@@ -835,11 +1082,19 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     try:
         project_root = args.project_root.resolve()
-        cli_paths = [args.selection, args.conversion_summary, args.closeout_summary, args.output_dir]
+        cli_paths = [
+            args.selection,
+            args.conversion_summary,
+            args.closeout_summary,
+            args.output_dir,
+        ]
         if args.review_dir is not None:
             cli_paths.append(args.review_dir)
         for cli_path in cli_paths:
-            if not cli_path.is_absolute() and ".." in PurePosixPath(str(cli_path).replace("\\", "/")).parts:
+            if (
+                not cli_path.is_absolute()
+                and ".." in PurePosixPath(str(cli_path).replace("\\", "/")).parts
+            ):
                 raise ChunkEvidenceReplayError("unsafe_cli_path", f"unsafe CLI path: {cli_path}")
         summary = run_replay(
             selection_path=args.selection,
@@ -849,10 +1104,33 @@ def main(argv: list[str] | None = None) -> int:
             project_root=project_root,
             review_dir=args.review_dir.resolve() if args.review_dir is not None else None,
         )
-        sys.stdout.write(json.dumps({"status": summary["status"], "counts": summary["counts"], "summary": (args.output_dir / SUMMARY_NAME).as_posix(), "review_corpus": summary.get("review_corpus_path"), "review_events": summary.get("independent_review_events_path")}, sort_keys=True) + "\n")
+        sys.stdout.write(
+            json.dumps(
+                {
+                    "status": summary["status"],
+                    "counts": summary["counts"],
+                    "summary": (args.output_dir / SUMMARY_NAME).as_posix(),
+                    "review_corpus": summary.get("review_corpus_path"),
+                    "review_events": summary.get("independent_review_events_path"),
+                },
+                sort_keys=True,
+            )
+            + "\n"
+        )
         return 0
     except ChunkEvidenceReplayError as exc:
-        sys.stderr.write(json.dumps({"status": "failed", "code": exc.code, "message": str(exc), "json_path": exc.json_path}, sort_keys=True) + "\n")
+        sys.stderr.write(
+            json.dumps(
+                {
+                    "status": "failed",
+                    "code": exc.code,
+                    "message": str(exc),
+                    "json_path": exc.json_path,
+                },
+                sort_keys=True,
+            )
+            + "\n"
+        )
         return 2
 
 

@@ -148,13 +148,19 @@ def assert_safety_flags_false(payload: dict[str, Any], *, label: str) -> None:
     flags = payload.get("safety_flags")
     if not isinstance(flags, dict):
         raise AssertionError(f"{label}.safety_flags must be an object")
-    for key in ("graph_import_allowed", "graphdb_written", "ladybugdb_written", "production_import_attempted", "import_eligible"):
+    for key in (
+        "graph_import_allowed",
+        "graphdb_written",
+        "ladybugdb_written",
+        "production_import_attempted",
+        "import_eligible",
+    ):
         if flags.get(key) is not False:
             raise AssertionError(f"{label}.safety_flags.{key} must be false")
 
 
 def inspect_rehearsal_artifacts() -> None:
-    from research_graph.llm.minimax_structured import DEFAULT_MINIMAX_MODEL
+    from research_graph.infrastructure.llm.minimax_structured import DEFAULT_MINIMAX_MODEL
     from research_graph.workflows.universal_kb.rehearsal import run_universal_kb_no_write_rehearsal
 
     clean_rehearsal_artifacts()
