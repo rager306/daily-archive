@@ -1,3 +1,4 @@
+# ⚠️ HISTORICAL — pre-M105 (2026-06-04). This document predates the M105 onion completion. Updated information: see `doc/onion-layers.md`, `doc/adr/ADR-034`, `doc/MIGRATION.md`, and `.gsd/milestones/M105-269bqo/M105-269bqo-SUMMARY.md`.
 # M030 Module Function Readiness Report
 
 Rendered for M030 S03 T02 from the M030 pipeline module inventory and bounded URL selection. This is a readiness report only: it does **not** replay acquisition, parse articles, create chunks, promote graph readiness, write LadybugDB, or claim production ingestion.

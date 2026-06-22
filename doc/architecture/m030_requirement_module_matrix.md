@@ -1,3 +1,4 @@
+# ⚠️ HISTORICAL — pre-M105 (2026-06-04). This document predates the M105 onion completion. Updated information: see `doc/onion-layers.md`, `doc/adr/ADR-034`, `doc/MIGRATION.md`, and `.gsd/milestones/M105-269bqo/M105-269bqo-SUMMARY.md`.
 # M030 Requirement Module Matrix
 
 Rendered for M030 S04 T02 from the M030 module-function readiness report. This is a human-readable planning and validation artifact only; it does **not** replay acquisition, parse/chunk articles, write LadybugDB, or claim production ingestion.

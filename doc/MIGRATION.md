@@ -1,8 +1,8 @@
 # Migration Notes
 
-## M062 fd embedding wrapper
+## M062 fd embedding wrapper (updated M105)
 
-`arxiv_archive.embedder.Embedder` is now the canonical fd embedding client for daily-archive.
+`research_graph.infrastructure.retrieval.embedder.Embedder` is the canonical fd embedding client for daily-archive (M105 S05: moved from `arxiv_archive.embedder` → `research_graph.infrastructure.retrieval.embedder`).
 
 ### What changed
 
@@ -15,7 +15,7 @@
 ### New usage
 
 ```python
-from arxiv_archive.embedder import Embedder
+from research_graph.infrastructure.retrieval.embedder import Embedder
 
 embedder = Embedder()
 embeddings = await embedder.embed_batch(["example text"])
@@ -24,3 +24,16 @@ await embedder.close()
 ```
 
 For synchronous one-off scripts, use `embed_batch_sync()` or `embed_all_sync()`.
+
+## M105 migration summary (2026-06-22)
+
+All 10 infrastructure packages moved into `research_graph/infrastructure/` over 4 waves:
+
+- **W1**: llm, identity, quality (leaves)
+- **W2**: ops, staging (depend on W1)
+- **W3**: corpus, papers, repair (cycle, coordinated)
+- **W4**: graph, retrieval (depend on cycle), graph merged with ladybug_adapter
+
+`evaluation/` dissolved into onion layers (see `.gsd/milestones/M105-269bqo/M105-269bqo-SUMMARY.md`).
+
+Update imports: `from arxiv_archive.X import Y` → `from research_graph.infrastructure.X import Y`.

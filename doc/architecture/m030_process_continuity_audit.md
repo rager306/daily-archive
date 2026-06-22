@@ -1,3 +1,4 @@
+# ⚠️ HISTORICAL — pre-M105 (2026-06-04). This document predates the M105 onion completion. Updated information: see `doc/onion-layers.md`, `doc/adr/ADR-034`, `doc/MIGRATION.md`, and `.gsd/milestones/M105-269bqo/M105-269bqo-SUMMARY.md`.
 # M030 Process Continuity Audit
 
 Human-readable process break and gap report for M030 S05 T02. This report renders the continuity audit from existing M030 architecture/readiness artifacts; it does **not** register refs, acquire sources, parse or chunk articles, write LadybugDB, or claim production ingestion.

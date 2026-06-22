@@ -1,3 +1,4 @@
+# ⚠️ HISTORICAL — pre-M105 (2026-06-04). This document predates the M105 onion completion. Updated information: see `doc/onion-layers.md`, `doc/adr/ADR-034`, `doc/MIGRATION.md`, and `.gsd/milestones/M105-269bqo/M105-269bqo-SUMMARY.md`.
 # M030 Recommended Next Implementation Roadmap
 
 This brief turns the M030 architecture and continuity reports into a concrete next milestone proposal. It is a planning handoff only: it does **not** register articles, fetch sources, parse or chunk articles, write LadybugDB, or claim production ingestion.

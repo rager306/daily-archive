@@ -1,3 +1,4 @@
+# ⚠️ HISTORICAL — pre-M105 (2026-06-04). This document predates the M105 onion completion. Updated information: see `doc/onion-layers.md`, `doc/adr/ADR-034`, `doc/MIGRATION.md`, and `.gsd/milestones/M105-269bqo/M105-269bqo-SUMMARY.md`.
 # M030 Pipeline Module Inventory
 
 Readable report rendered for M030 S02 T02 from the machine-readable inventory. This report records module ownership and evidence only; it does **not** claim source acquisition, parser readiness, chunk readiness, graph readiness, LadybugDB writes, or production import for the M030 requested refs.
