@@ -118,7 +118,7 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user principle during M012 planning
 - Primary owning slice: project
 - Validation: Future milestones that introduce infrastructure must include research/probe artifacts, failure-mode analysis, artifact/redaction boundaries, and an explicit go/no-go decision before process activation.
-- Notes: M025 S11 scope reconciliation: followed as a local-first safety constraint in M025 through metadata-only, no-network, no-import, no-write, and redacted replay; remains a project-wide active constraint for future infrastructure work.
+- Notes: M025 S11 scope reconciliation: advanced by five-article local preprocessing replay and readiness-for-larger-preprocessing evidence only; M025 does not introduce new infrastructure (only reuses existing M105 onion-organized packages), so research/probe artifacts and go/no-go decisions remain applicable for future R040-active infrastructure (DSPy/RLM/production-LadybugDB), which is explicitly out of M025 scope. M025 also does not enable new infrastructure in the main Scientific KG process; it remains preprocessing-only with no-network/no-import/no-write safety flags.
 
 ### R050 — Provide a deterministic CLI for detecting article structure artifacts and candidate KG scaffold links from preserved paper sources without performing KG import.
 - Class: core-capability
@@ -179,63 +179,6 @@ This file is the explicit capability and coverage contract for the project.
 - Source: M033 follow-up discussion
 - Primary owning slice: future pipeline orchestration milestone
 - Validation: All future sidecar pipeline artifacts keep graph_import_allowed=false, ladybugdb_written=false, production_import_attempted=false, and import_eligible=false until a separately authorized graph-readiness/import milestone changes those flags with evidence.
-
-### R066 — Extract LLM access into a dedicated architecture module that supports MiniMax, GLM/Z.ai, and optional future Headroom routing/compression scenarios.
-- Class: integration
-- Status: active
-- Description: Extract LLM access into a dedicated architecture module that supports MiniMax, GLM/Z.ai, and optional future Headroom routing/compression scenarios.
-- Why it matters: Current model integration is growing provider-specific behavior; a provider abstraction is needed before adding GLM and compression/no-compression LLM call strategies without duplicating unsafe API handling.
-- Source: user
-- Validation: A future milestone should provide a reviewed interface/contract for LLM provider calls, MiniMax migration into the module, GLM/Z.ai provider support with documented multimodal capability checks, optional Headroom evaluation, and tested call scenarios with and without compression.
-- Notes: M079 moved the provider config implementation to the canonical package path `src/arxiv_archive/llm/provider_config.py` / `arxiv_archive.llm.provider_config` and left `src/arxiv_archive/llm_provider_config.py` as a compatibility shim. Future MiniMax, GLM/Z.ai, compression, and provider adapter work should land under `arxiv_archive.llm` rather than adding more top-level modules.
-
-### R067 — The system must implement a 7-layer typed knowledge pipeline (Source → Parser → Structure → Extraction → Graph → Review → Agents) per ADR-023. Each layer must produce durable, traceable artifacts with stable IDs and evidence provenance.
-- Class: core-capability
-- Status: active
-- Description: The system must implement a 7-layer typed knowledge pipeline (Source → Parser → Structure → Extraction → Graph → Review → Agents) per ADR-023. Each layer must produce durable, traceable artifacts with stable IDs and evidence provenance.
-- Why it matters: The pipeline architecture ensures deterministic, reviewable knowledge construction before any graph import is authorized. Each layer's output is a candidate artifact, not graph truth.
-- Source: ADR-023, M101 architecture crystallization
-- Validation: Pipeline design accepted. Implementation pending Phase 2+ milestones.
-
-### R068 — Every LLM extraction stage must be preceded by deterministic/statistical pre-processing (YAKE keywords, TF-IDF summaries, graph community detection, embedding similarity). The LLM receives both raw text AND statistical context per ADR-024.
-- Class: quality-attribute
-- Status: active
-- Description: Every LLM extraction stage must be preceded by deterministic/statistical pre-processing (YAKE keywords, TF-IDF summaries, graph community detection, embedding similarity). The LLM receives both raw text AND statistical context per ADR-024.
-- Why it matters: Statistical-first reduces LLM cost, improves grounding, and provides deterministic fallback when LLM is unavailable or rate-limited.
-- Source: ADR-024, M101 architecture crystallization
-- Validation: Design accepted. Implementation pending Phase 2+ extraction milestone.
-
-### R069 — The LLM module must support multiple providers (MiniMax primary, GLM secondary) with per-provider rate limit checking before API calls, automatic fallback on rate exhaustion, and durable usage tracking per provider in the queue per ADR-025.
-- Class: operability
-- Status: active
-- Description: The LLM module must support multiple providers (MiniMax primary, GLM secondary) with per-provider rate limit checking before API calls, automatic fallback on rate exhaustion, and durable usage tracking per provider in the queue per ADR-025.
-- Why it matters: Rate limit exhaustion causes silent failures and retry storms. Per-provider checking with fallback ensures reliable extraction pipeline operation.
-- Source: ADR-025, M101 architecture crystallization
-- Validation: Design accepted. Implementation pending Phase 2+ extraction milestone.
-
-### R070 — Future agents must use FSM-controlled reasoning inspired by SymFSM: LLM acts as interpreter within a pre-built reasoning model (cognitive map from FalkorDB subgraph), not as free-form generator. Every agent action passes through fail-closed safety gates per ADR-026.
-- Class: differentiator
-- Status: active
-- Description: Future agents must use FSM-controlled reasoning inspired by SymFSM: LLM acts as interpreter within a pre-built reasoning model (cognitive map from FalkorDB subgraph), not as free-form generator. Every agent action passes through fail-closed safety gates per ADR-026.
-- Why it matters: Free-form LLM generation risks hallucination, safety bypass, and untraceable reasoning. FSM control ensures structured, observable, and repairable agent behavior.
-- Source: ADR-026, M101 architecture crystallization
-- Validation: Directional design accepted. Implementation deferred until pipeline + queue + graph are operational.
-
-### R071 — The system must support typed knowledge schema with 5 entity modules (A: factual/meta, B: textually mentioned, C: implicit/abstracted, D: citation relationships, E: knowledge relations) adapted from Agents-K1, with ~25 typed relation types in 5 groups (controlled, causal, composition, comparison, citation).
-- Class: core-capability
-- Status: active
-- Description: The system must support typed knowledge schema with 5 entity modules (A: factual/meta, B: textually mentioned, C: implicit/abstracted, D: citation relationships, E: knowledge relations) adapted from Agents-K1, with ~25 typed relation types in 5 groups (controlled, causal, composition, comparison, citation).
-- Why it matters: Flat entity/relation schemas lose conditional dependencies, causal chains, and citation context. Typed schema enables knowledge network traversal and multi-hop reasoning.
-- Source: ADR-023, M069 schema-diff, M101 S02
-- Validation: Design pending S02. Implementation pending Phase 2+.
-
-### R072 — The pipeline queue scheduler must coordinate job dispatch across three resource dimensions: LLM API rate limits (per-provider token/time quotas), CPU/local compute (parser/heavy processing concurrency), and I/O (network fetch, disk write, graph write serialization). Jobs are routed to the least-constrained resource lane with automatic backoff and recovery per ADR-027.
-- Class: operability
-- Status: active
-- Description: The pipeline queue scheduler must coordinate job dispatch across three resource dimensions: LLM API rate limits (per-provider token/time quotas), CPU/local compute (parser/heavy processing concurrency), and I/O (network fetch, disk write, graph write serialization). Jobs are routed to the least-constrained resource lane with automatic backoff and recovery per ADR-027.
-- Why it matters: Single-dimension rate limiting causes resource starvation: LLM calls may queue while CPU is idle, or CPU parsers may saturate the system while LLM quota expires unused. Three-lane coordination maximizes throughput within safety limits.
-- Source: ADR-027, M101 architecture crystallization
-- Validation: Design accepted. Phased implementation: simple LLM lane (Phase 2), full 3-lane (Phase 4).
 
 ## Validated
 
@@ -791,17 +734,10 @@ This file is the explicit capability and coverage contract for the project.
 | R063 | operability | validated | M039-7o4yf1 | M038-hdx112 | M039 generated `.codebase-memory/governance-graph.json` from canonical GSD/ADR artifacts with typed nodes and edges. Verifier evidence: sync/check passed for markdown and graph artifacts, 10 graph tests passed, ruff passed, JSON parsed, required D075/D076/R062/R063/ADR-005/M038/M039 nodes and D076/D075/R063/ADR-005 edges were asserted, codebase-memory MCP readback/search found graph projection markers after fast index refresh, and `ingest_traces` confirmed runtime edge creation is not implemented so native custom graph claims are avoided. |
 | R064 | core-capability | validated | M041-8k3kv4 | M040-4flhk6 | M041 generated and ran a mixed 20-article no-write smoke: 10 retained baseline articles, 5 articles linked from already loaded local sources, and 5 Hermes review-section articles. Evidence: M041 manifest category counts, M041 run summary with 20 completed handoffs, M041 audit with 20 continuity artifacts and empty blockers, all graph/import/promotion flags false, and README/report documenting arXiv deferred metadata caveat. |
 | R065 | operability | validated | none | none | M045 implemented `scripts/check_project_trajectory.py`, tests, codebase-memory MCP snapshot support, real JSON/Markdown trajectory reports, README preflight documentation, and D080. The report covers architecture, functionality, module_code, evidence, safety, operations, and next_gate dimensions; flags drift risks; verifies no-write boundaries; and treats codebase-memory as non-canonical recall/navigation evidence. |
-| R066 | integration | active | none | none | A future milestone should provide a reviewed interface/contract for LLM provider calls, MiniMax migration into the module, GLM/Z.ai provider support with documented multimodal capability checks, optional Headroom evaluation, and tested call scenarios with and without compression. |
-| R067 | core-capability | active | none | none | Pipeline design accepted. Implementation pending Phase 2+ milestones. |
-| R068 | quality-attribute | active | none | none | Design accepted. Implementation pending Phase 2+ extraction milestone. |
-| R069 | operability | active | none | none | Design accepted. Implementation pending Phase 2+ extraction milestone. |
-| R070 | differentiator | active | none | none | Directional design accepted. Implementation deferred until pipeline + queue + graph are operational. |
-| R071 | core-capability | active | none | none | Design pending S02. Implementation pending Phase 2+. |
-| R072 | operability | active | none | none | Design accepted. Phased implementation: simple LLM lane (Phase 2), full 3-lane (Phase 4). |
 
 ## Coverage Summary
 
-- Active requirements: 24
+- Active requirements: 17
 - Mapped to slices: 6
 - Validated: 48 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R036, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049, R053, R057, R058, R059, R060, R061, R062, R063, R064, R065)
-- Unmapped active requirements: 13
+- Unmapped active requirements: 6

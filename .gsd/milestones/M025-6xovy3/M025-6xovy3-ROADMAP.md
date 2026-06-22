@@ -1,4 +1,4 @@
-# M025-6xovy3: Article Pipeline Modular Refactor
+# M025-6xovy3: M025-6xovy3: Article Pipeline Modular Refactor
 
 **Vision:** Refactor the article preprocessing pipeline only after freezing a 5 selected real-article smoke corpus and capturing current behavior. Every loader, parser, PageIndex, chunking, assets, identity, and evidence-boundary change must be grounded by replay on the same corpus, so M025 proves practical preprocessing readiness before larger validation or graph readiness claims.
 
@@ -48,6 +48,8 @@
 
 - [x] **S11: Requirements Scope Reconciliation** `risk:medium` `depends:[S10]`
   > After this: Produce a milestone requirements coverage matrix distinguishing M025 preprocessing requirements from out-of-scope KG/RLM/scale requirements, update requirement notes where appropriate, and rerun final end-to-end replay so validation can close with coherent requirement coverage.
+
+## Boundary Map
 
 ## Boundary Map
 
