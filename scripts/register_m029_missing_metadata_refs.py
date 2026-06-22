@@ -16,9 +16,10 @@ import os
 import re
 import sys
 import tempfile
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 SELECTION_ID = "m029-pipeline-architecture-audit-v1"
 ARTICLE_SCHEMA_VERSION = "article.v00.01"

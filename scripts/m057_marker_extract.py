@@ -43,8 +43,7 @@ def run_command(command: list[str], *, timeout_seconds: int) -> dict[str, Any]:
             command,
             cwd=ROOT,
             text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             timeout=timeout_seconds,
             check=False,
         )

@@ -6,8 +6,9 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from m059_replay_ingest import replay_batch
 from m059_validate_pdf_batch import read_json, rel, validate_batch

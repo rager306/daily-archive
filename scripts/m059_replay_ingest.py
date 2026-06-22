@@ -15,9 +15,10 @@ import hashlib
 import json
 import shutil
 import sys
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from m059_validate_pdf_batch import (
     SAFETY_DEFAULTS,

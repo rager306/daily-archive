@@ -73,7 +73,7 @@ WAVE_1_ARXIV_IDS = [
 
 
 def _utc_now() -> str:
-    return dt.datetime.now(tz=dt.timezone.utc).isoformat()
+    return dt.datetime.now(tz=dt.UTC).isoformat()
 
 
 def _safety_defaults() -> dict[str, bool]:

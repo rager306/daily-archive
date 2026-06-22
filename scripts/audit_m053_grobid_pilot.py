@@ -38,7 +38,7 @@ SAFETY_DEFAULTS: dict[str, bool] = {
 
 
 def utc_now() -> str:
-    return dt.datetime.now(tz=dt.timezone.utc).isoformat()
+    return dt.datetime.now(tz=dt.UTC).isoformat()
 
 
 def _read_json(path: Path) -> dict[str, Any]:

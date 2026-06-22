@@ -104,8 +104,7 @@ def test_code_memory_synced() -> None:
         [sys.executable, str(SYNC_SCRIPT), "--check"],
         cwd=ROOT,
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         check=False,
     )
     assert check.returncode == 0, check.stdout + check.stderr
@@ -138,8 +137,7 @@ def test_m050_m066_s01_s02_regression() -> None:
         ],
         cwd=ROOT,
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         check=False,
         timeout=180,
     )

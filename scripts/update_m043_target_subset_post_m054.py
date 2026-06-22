@@ -68,7 +68,7 @@ def update_m043_target_subset(
         "article_count": target_subset.get("article_count"),
         "article_keys": list(target_subset.get("article_keys", [])),
         "articles": [],
-        "last_updated_at": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+        "last_updated_at": datetime.datetime.now(tz=datetime.UTC).isoformat(),
         "update_source": str(log_path.relative_to(REPO_ROOT)),
         "update_schema_version": SCHEMA_VERSION,
         "safety_defaults": dict(SAFETY_DEFAULTS),

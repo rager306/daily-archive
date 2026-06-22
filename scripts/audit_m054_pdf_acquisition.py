@@ -111,7 +111,7 @@ def build_audit(
     parts.append("# M054 PDF Acquisition Audit")
     parts.append("")
     parts.append(f"**Schema version:** `{SCHEMA_VERSION}`")
-    parts.append(f"**Generated at:** {datetime.datetime.now(tz=datetime.timezone.utc).isoformat()}")
+    parts.append(f"**Generated at:** {datetime.datetime.now(tz=datetime.UTC).isoformat()}")
     parts.append("")
     parts.append("## Inputs")
     parts.append("")

@@ -43,7 +43,7 @@ def _sha256_prefix(value: Any, *, length: int = 16) -> str:
 
 
 def _deterministic_timestamp(step_index: int, *, offset_ms: int = 0) -> str:
-    instant = datetime.datetime(2000, 1, 1, tzinfo=datetime.timezone.utc)
+    instant = datetime.datetime(2000, 1, 1, tzinfo=datetime.UTC)
     instant += datetime.timedelta(seconds=step_index, milliseconds=offset_ms)
     return instant.isoformat()
 

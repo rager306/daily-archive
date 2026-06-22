@@ -15,9 +15,10 @@ import re
 import sys
 import tempfile
 from collections import Counter, defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 SELECTION_ID = "m029-unified-corpus-v1"

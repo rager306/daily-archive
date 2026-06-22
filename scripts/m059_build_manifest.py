@@ -11,8 +11,9 @@ import argparse
 import datetime as dt
 import hashlib
 import json
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_VERSION = "daily-archive.pdf-batch-manifest.v1"

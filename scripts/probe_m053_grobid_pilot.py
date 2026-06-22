@@ -56,7 +56,7 @@ class PdfTarget:
 
 
 def utc_now() -> str:
-    return dt.datetime.now(tz=dt.timezone.utc).isoformat()
+    return dt.datetime.now(tz=dt.UTC).isoformat()
 
 
 def safety_defaults() -> dict[str, bool]:

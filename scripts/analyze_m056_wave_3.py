@@ -28,7 +28,7 @@ SUPPORTED_CATEGORIES = ("cs-ai", "cs-cl", "cs-cv", "cs-lg", "mixed-source")
 
 
 def _utc_now() -> str:
-    return dt.datetime.now(tz=dt.timezone.utc).isoformat()
+    return dt.datetime.now(tz=dt.UTC).isoformat()
 
 
 def _safety_defaults() -> dict[str, bool]:

@@ -16,10 +16,9 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import TypeAlias
 
-LLMProvider: TypeAlias = str
-CompressionMode: TypeAlias = str
+type LLMProvider = str
+type CompressionMode = str
 
 PROVIDER_GLM_ZAI = "glm_zai"
 PROVIDER_MINIMAX = "minimax"

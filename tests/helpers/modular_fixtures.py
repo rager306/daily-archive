@@ -74,7 +74,7 @@ def adaptix_dump(value: object) -> Any:
     return _jsonable(MODULAR_RETORT.dump(value))
 
 
-def adaptix_load(payload: Any, target_type: type[T]) -> T:
+def adaptix_load[T](payload: Any, target_type: type[T]) -> T:
     """Load a fixture object through the shared Adaptix retort."""
     loaded = MODULAR_RETORT.load(payload, target_type)
     if isinstance(loaded, PageIndexDocument):

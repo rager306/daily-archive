@@ -89,7 +89,7 @@ def _download_with_retry(
     last_exc: BaseException | None = None
 
     for attempt in range(1, max_retries + 1):
-        attempt_started = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+        attempt_started = datetime.datetime.now(tz=datetime.UTC).isoformat()
         try:
             request = urllib.request.Request(
                 url,
@@ -174,7 +174,7 @@ def _process_record(
         "article_key": article_key,
         "category": record.get("category"),
         "url": url,
-        "started_at": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+        "started_at": datetime.datetime.now(tz=datetime.UTC).isoformat(),
     }
 
     if dry_run:
@@ -203,7 +203,7 @@ def _process_record(
     )
     log_entry.update(result)
     log_entry["local_path"] = str(expected_local)
-    log_entry["completed_at"] = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+    log_entry["completed_at"] = datetime.datetime.now(tz=datetime.UTC).isoformat()
     return log_entry
 
 
@@ -224,7 +224,7 @@ def acquire_all(
     records = target_subset.get("records", [])
     storage_root = Path("data")
 
-    started_at = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+    started_at = datetime.datetime.now(tz=datetime.UTC).isoformat()
     log_entries: list[dict[str, Any]] = []
 
     if max_workers <= 1:
@@ -255,7 +255,7 @@ def acquire_all(
             for future in futures:
                 log_entries.append(future.result())
 
-    completed_at = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+    completed_at = datetime.datetime.now(tz=datetime.UTC).isoformat()
 
     # Aggregate stats.
     counts: dict[str, int] = dict.fromkeys(VALID_STATUSES, 0)

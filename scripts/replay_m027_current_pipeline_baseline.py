@@ -508,8 +508,7 @@ def replay_baseline(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
             [sys.executable, str(ROOT / "scripts" / "convert_m027_source_quality_boundary.py")],
             cwd=ROOT,
             check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
         )
         conversion_summary = load_json(conversion_summary_path)
