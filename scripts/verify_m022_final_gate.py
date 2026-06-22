@@ -283,7 +283,7 @@ def verify_source_artifacts(
     )
     findings.extend(
         _unsafe_counter_findings(
-            unsafe_counters,
+            unsafe_counters,  # ty:ignore[invalid-argument-type]
             base_path="/unsafe_counters",
             object_type="assessment",  # ty:ignore[invalid-argument-type]
         )

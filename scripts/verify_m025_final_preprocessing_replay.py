@@ -117,7 +117,7 @@ def _count_chunks(path: Path) -> tuple[int, list[dict[str, Any]]]:
     diagnostics = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), list) else []
     return len([chunk for chunk in chunks if isinstance(chunk, dict)]), [
         d
-        for d in diagnostics
+        for d in diagnostics  # ty:ignore[not-iterable]
         if isinstance(d, dict)  # ty:ignore[not-iterable]
     ]
 

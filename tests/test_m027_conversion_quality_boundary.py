@@ -20,7 +20,7 @@ from convert_m027_source_quality_boundary import (  # noqa: E402  # ty:ignore[un
 )
 
 # pyrefly: ignore [missing-import]
-from verify_m027_conversion_quality_boundary import (
+from verify_m027_conversion_quality_boundary import (  # ty: ignore[unresolved-import]
     main as verify_main,  # noqa: E402  # ty:ignore[unresolved-import]
 )
 

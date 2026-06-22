@@ -103,12 +103,12 @@ def test_build_m031_import_boundary_rehearsal_is_metadata_only_and_has_consisten
     assert contract["candidate_count"] == len(contract["candidates"])  # ty:ignore[invalid-argument-type]
     assert contract["accepted_count"] == sum(
         1
-        for c in contract["candidates"]
+        for c in contract["candidates"]  # ty:ignore[not-iterable]
         if c["accepted"] is True  # pyrefly: ignore [not-iterable]  # ty:ignore[not-iterable]
     )
     assert contract["rejected_count"] == sum(
         1
-        for c in contract["candidates"]
+        for c in contract["candidates"]  # ty:ignore[not-iterable]
         if c["rejected"] is True  # pyrefly: ignore [not-iterable]  # ty:ignore[not-iterable]
     )
     # pyrefly: ignore [not-iterable]

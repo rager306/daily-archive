@@ -22,7 +22,7 @@ from capture_m027_mixed_source_sources import (  # noqa: E402  # ty:ignore[unres
 )
 
 # pyrefly: ignore [missing-import]
-from verify_m027_source_acquisition_boundary import (
+from verify_m027_source_acquisition_boundary import (  # ty: ignore[unresolved-import]
     main as verify_replay_main,  # noqa: E402  # ty:ignore[unresolved-import]
 )
 

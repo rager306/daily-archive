@@ -10,10 +10,10 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 # pyrefly: ignore [missing-import]
-from synthesize_m029_unified_readiness import (
+from synthesize_m029_unified_readiness import (  # ty: ignore[unresolved-import]
     main as synthesize_main,  # noqa: E402  # ty:ignore[unresolved-import]
 )
-from verify_m029_unified_readiness import (
+from verify_m029_unified_readiness import (  # ty: ignore[unresolved-import]
     main as verify_main,  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
 )
 

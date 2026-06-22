@@ -15,7 +15,7 @@ from capture_m029_unified_sources import (  # noqa: E402  # ty:ignore[unresolved
     capture_selection,
     sha256_file,
 )
-from verify_m029_unified_source_acquisition import (
+from verify_m029_unified_source_acquisition import (  # ty: ignore[unresolved-import]
     main as verify_main,  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
 )
 

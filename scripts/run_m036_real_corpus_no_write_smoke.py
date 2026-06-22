@@ -168,7 +168,7 @@ def run_article(article: dict[str, Any], *, output_dir: Path) -> dict[str, Any]:
         article.get("safety_flags") if isinstance(article.get("safety_flags"), dict) else {}
     )
     assert_false_flags(
-        article_flags,
+        article_flags,  # ty:ignore[invalid-argument-type]
         label=str(article.get("article_key") or article.get("candidate_id")),  # ty:ignore[invalid-argument-type]
     )
     candidate = build_candidate(article)

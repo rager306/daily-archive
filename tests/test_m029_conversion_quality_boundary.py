@@ -12,10 +12,10 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 # pyrefly: ignore [missing-import]
-from verify_m029_unified_conversion_quality_boundary import (
+from verify_m029_unified_conversion_quality_boundary import (  # ty: ignore[unresolved-import]
     main as verify_main,  # noqa: E402  # ty:ignore[unresolved-import]
 )
-from verify_m029_unified_conversion_quality_boundary import (
+from verify_m029_unified_conversion_quality_boundary import (  # ty: ignore[unresolved-import]
     sha256_file,  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
 )
 

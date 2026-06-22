@@ -151,12 +151,12 @@ def _entry_from_catalog_record(
     )
     primary_variant_id = source_strategy.get("primary_source_variant_id")  # ty:ignore[unresolved-attribute]
     primary_variant = next(
-        (variant for variant in variants if variant.get("variant_id") == primary_variant_id),
+        (variant for variant in variants if variant.get("variant_id") == primary_variant_id),  # ty:ignore[not-iterable]
         None,  # ty:ignore[not-iterable]
     )
     if primary_variant is None:
         primary_variant = next(
-            (variant for variant in variants if variant.get("is_primary") is True),
+            (variant for variant in variants if variant.get("is_primary") is True),  # ty:ignore[not-iterable]
             None,  # ty:ignore[not-iterable]
         )
     primary_role = _variant_role(primary_variant or {})

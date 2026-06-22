@@ -234,7 +234,7 @@ def build_article_asset_manifest(payload: dict[str, Any]) -> dict[str, Any]:
                 # pyrefly: ignore [bad-argument-type]
                 placeholder,
                 path,
-                object_id,
+                object_id,  # ty:ignore[invalid-argument-type]
                 sources_by_id,
                 nodes_by_id,
                 anchors_by_id,  # ty:ignore[invalid-argument-type]

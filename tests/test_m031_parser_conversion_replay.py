@@ -16,10 +16,10 @@ from replay_m031_parser_conversion import (  # noqa: E402  # ty:ignore[unresolve
     main,
     sha256_file,
 )
-from verify_m031_parser_conversion_replay import (
+from verify_m031_parser_conversion_replay import (  # ty: ignore[unresolved-import]
     main as verify_main,  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
 )
-from verify_m031_parser_conversion_replay import (
+from verify_m031_parser_conversion_replay import (  # ty: ignore[unresolved-import]
     verify,  # noqa: E402  # pyrefly: ignore [missing-import]  # ty:ignore[unresolved-import]
 )
 
