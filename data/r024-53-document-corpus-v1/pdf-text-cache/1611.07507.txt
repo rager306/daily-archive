@@ -1,0 +1,901 @@
+VARIATIONAL INTRINSIC CONTROL
+Karol Gregor, Danilo Rezende and Daan Wierstra
+DeepMind
+{karolg,danilor,wierstra}@google.com
+ABSTRACT
+In this paper we introduce a new unsupervised reinforcement learning method for
+discovering the set of intrinsic options available to an agent. This set is learned by
+maximizing the number of different states an agent can reliably reach, as measured
+by the mutual information between the set of options and option termination states.
+To this end, we instantiate two policy gradient based algorithms, one that creates
+an explicit embedding space of options and one that represents options implicitly.
+The algorithms also provide an explicit measure of empowerment in a given state
+that can be used by an empowerment maximizing agent. The algorithm scales well
+with function approximation and we demonstrate the applicability of the algorithm
+on a range of tasks.
+1
+INTRODUCTION
+In this paper we aim to provide an answer to the question what intrinsic options are available to
+an agent in a given state – that is, options that meaningfully affect the world. We deﬁne options
+as policies with a termination condition, and we are primarily concerned with their consequences
+– what states in the environment they reach upon termination. The set of all options available to
+an agent is independent of an agent’s intentions – it is the set of all things that are possible for an
+agent to achieve. The purpose of this work is to provide an algorithm that aims to discover as many
+intrinsic options as it can, using an information theoretic learning criterion and training procedure.
+This differs from the traditional approach to option learning where the goal is to ﬁnd a small number
+of options that are useful for a particular task (Sutton et al., 1999; McGovern & Barto, 2001; Stolle
+& Precup, 2002; Silver & Ciosek, 2012; Kulkarni et al., 2016; Mankowitz et al., 2014; Vezhnevets
+et al., 2016; Bacon & Precup, 2015). Limiting oneself to working with relatively small option spaces
+makes both credit assignment and planning over long time intervals easier. However, we argue that
+operating on the larger space of intrinsic options, as alluded to above, is in fact useful even though
+the space is vastly larger. First, the number of options is still much smaller than the number of
+all action sequences, since options are distinguished in terms of their ﬁnal states, and many action
+sequences can reach the same state. Second, we aim to learn good representational embeddings of
+these options, where similar options are close in representational space and where we can rely on
+the power of generalization. In such embedded spaces a planner needs only choose a neighborhood
+of this space containing options that have sufﬁciently similar consequences.
+The idea of goal and state embeddings, along with a universal value function for reaching these
+goals, was introduced in Schaul et al. (2015). This work allowed an agent to efﬁciently represent
+control over many goals and to generalize to new goals. However, the goals were assumed to be
+given. This paper extends that work and provides a mechanism for learning goals (options) while
+preserving their embedded nature.
+There are at least two scenarios where our algorithm can be useful. One is the classical reinforce-
+ment learning case that aims to maximize an externally provided reward, as we explained above. In
+this case, rather than learning options to uniformly represent control, the agent can combine extrin-
+sic reward with an intrinsic control maximization objective, biasing learning towards high reward
+options.
+The second scenario is that in which the long-term goal of the agent is to get to a state with a maximal
+set of available intrinsic options – the objective of empowerment (Salge et al., 2014). This set of
+options consists of those that the agent knows how to use. Note that this is not the theoretical set of
+1
+arXiv:1611.07507v1  [cs.LG]  22 Nov 2016
+
+all options: it is of no use to the agent that it is possible to do something if it is unable to learn how
+to do it. Thus, to maximize empowerment, the agent needs to simultaneously learn how to control
+the environment as well – it needs to discover the options available to it. The agent should in fact
+not aim for states where it has the most control according to its current abilities, but for states where
+it expects it will achieve the most control after learning. Being able to learn available options is thus
+fundamental to becoming empowered.
+Let us compare this to the commonly used intrinsic motivation objective of maximizing the amount
+of model-learning progress, measured as the difference in compression of its experience before and
+after learning (Schmidhuber, 1991; 2010; Bellemare et al., 2016; Houthooft et al., 2016). The em-
+powerment objective differs from this in a fundamental manner: the primary goal is not to understand
+or predict the observations but to control the environment. This is an important point – agents can
+often control an environment perfectly well without much understanding, as exempliﬁed by canoni-
+cal model-free reinforcement learning algorithms (Sutton & Barto, 1998), where agents only model
+action-conditioned expected returns. Focusing on such understanding might signiﬁcantly distract
+and impair the agent, as such reducing the control it achieves.
+Our algorithm can be viewed as learning to represent the intrinsic control space of an agent. De-
+veloping this space should be seen as acquiring universal knowledge useful for accomplishing a
+multitude of different tasks, such as maximizing extrinsic or intrinsic reward (see Oudeyer et al.
+(2008) for an overview and useful references). This is analogous to unsupervised learning in data
+processing, where the goal is to ﬁnd representations of data that are useful for other tasks. The
+crucial difference here, however, is that rather than simply ﬁnding representations, we learn explicit
+policies that an agent can choose to follow. Additionally, the algorithm explicitly estimates the
+amount of control it has in different states – intuitively, the total number of reliably reachable states
+– and can as such be used for an empowerment maximizing agent.
+A most common criterion for unsupervised learning is data likelihood. For a given data set, various
+algorithms can be compared based on this measure. No such commonly established measure exists
+for the comparison of unsupervised learning performance in agents. One of the primary difﬁculties
+is that in unsupervised learning the data is known, but in control, an agent exists in an environment
+and needs to act in it in order to discover what states and dynamics it contains. Nevertheless, we
+should be able to compare agents in terms of the amount of intrinsic control and empowerment
+they achieve in different states. Just like there are multiple methods and objectives for unsupervised
+learning (Goodfellow et al., 2016), we can devise multiple methods and objectives for unsupervised
+control. Data likelihood and empowerment are both information measures: likelihood measures the
+amount of information needed to describe data and empowerment measures the mutual information
+between action choices and ﬁnal states. Therefore we suggest that what maximum likelihood is
+to unsupervised learning, mutual information between options and ﬁnal states is to unsupervised
+control.
+This information measure has been introduced in the empowerment literature before (Salge et al.,
+2014; Klyubin et al., 2005) along with methods for measuring it (such as Blahut (1972); Arimoto
+(1972)). Recently, Mohamed & Rezende (2015) proposed an algorithm that can utilize function
+approximation and deep learning techniques to operate in high-dimensional environments. How-
+ever, this algorithm considers the mutual information between sequences of actions and ﬁnal states.
+This corresponds to maximizing the empowerment over open loop options, where the agent a pri-
+ori decides on a sequence of actions in advance, and then follows these regardless of (potentially
+stochastic) environment dynamics. Obviously this often limits performance severely as the agent
+cannot properly react to the environment, and it tends to lead to a signiﬁcant underestimation of
+empowerment. In this paper we provide a new perspective on this measure, and instantiate two
+novel algorithms that use closed loop options where actions are conditioned on state. We show, on
+a number of tasks, that we can use these to both signiﬁcantly increase intrinsic control and improve
+the estimation of empowerment.
+The paper is structured as follows. First we formally introduce the notion of intrinsic control and its
+derivation from the mutual information principle. After that, we describe our algorithm for intrinsic
+control with explicit options and argue for its viability in the experimental section. Last, we touch
+on intrinsic control with implicit options, and demonstrate that it scales up even better. We conclude
+with a short discussion on the merits of the approach and possible extensions.
+2
+
+2
+INTRINSIC CONTROL AND THE MUTUAL INFORMATION PRINCIPLE
+In this section we explain how we represent intrinsic options and the corresponding objective we
+optimize.
+We deﬁne an option as an element Ωof a space and an associated policy π(a|s, Ω) that chooses an
+action a in a state s when following Ω. The policy π has a special termination action that terminates
+the option and yields a ﬁnal state sf. Now let us consider the following example spaces for Ω. 1)
+Ωtakes a ﬁnite number of values Ω∈{1, . . . , n}. This is the simplest case in which for each i a
+separate policy πi is followed. 2) Ωis a binary vector of length n. This captures a combinatorial
+number 2n of possibilities. 3) Ω∈Rd is a d-dimensional real vector. Here the space of options is
+inﬁnite. It is expected that policies for nearby Ωs will be similar in practice.
+We need to express the knowledge about which regions of option space to consider. Imagine we
+start in a state s0 and follow an option Ω. As environments and policies are typically stochastic,
+we might terminate at different ﬁnal states at different times. The policy thus deﬁnes a probability
+distribution pJ(sf|s0, Ω). Now consider two different options. If they lead to very similar states,
+they should inherently, intrinsically, not be seen as different from one another. So how do we express
+our knowledge regarding the effective intrinsic option set in a given state?
+To help answer this question, consider an example of a discrete option case with three options
+Ω1, Ω2, Ω3. Assume that Ω1 always leads to a state s1 while both Ω2 and Ω3 always lead to a state
+s2. Then we would like to say that we really have two intrinsic options: Ω1 and (Ω2, Ω3). If we
+were to sample these options in order to maximize behavior diversity we would half of the time
+choose Ω1 and half of the time any one of Ω2, Ω3. The relative choice frequencies of Ω2 and Ω3 do
+not matter in this example. We express these choices by a probability distribution pC(Ω|s0) which
+we call the controllability distribution.
+Intuitively, to maximize intrinsic control we should choose Ωs that maximize the diversity of ﬁnal
+states while, for given Ω, controlling as precisely as possible what the ensuing ﬁnal states are. The
+former can be expressed mathematically as entropy H(sf) = −P
+sf p(sf|s0) log p(sf|s0) where
+p(sf|s0) = P
+ΩpJ(sf|s0, Ω)pC(Ω|s0). The latter, for a given Ω, can be expressed as the negative
+log probability −log pJ(sf|s0, Ω) (the number of bits needed to specify the ﬁnal state given Ω)
+which then needs to be averaged over Ωand sf. Subtracting these two quantities yields the objective
+we wish to optimize – the mutual information I(Ω, sf|s0) between options and ﬁnal states under
+probability distribution p(Ω, sf|s0) = pJ(sf|s0, Ω)pC(Ω|s0):
+I(Ω, sf|s0)=−
+X
+sf
+p(sf|s0) log p(sf|s0) +
+X
+Ω,sf
+pJ(sf|s0, Ω)pC(Ω|s0) log pJ(sf|s0, Ω),
+(1)
+= −
+X
+Ω
+pC(Ω|s0) log pC(Ω|s0) +
+X
+Ω,sf
+pJ(sf|s0, Ω)pC(Ω|s0) log p(Ω|s0, sf). (2)
+The mutual information is symmetric and the second line contains its reverse expression. This
+expression has a very intuitive interpretation associated with it: we should be able to tell options
+apart if we can infer them from ﬁnal states. That is, if for two options Ω1 and Ω2, upon reaching
+state sf1, we can infer it was option Ω1 that was executed rather than Ω2, and when reaching a state
+sf2 we can infer it was option Ω2 rather than Ω1, then Ω1 and Ω2 can be said to be intrinsically
+different options. We would like to maximize the set of options – achieve a large entropy of p(Ω|s0)
+(the ﬁrst term of (2)). At the same time we wish to make sure these options achieve intrinsically
+different goals – that is, that they can be inferred from their ﬁnal states. This entails maximizing
+log p(Ω|s0, sf), the average of which is the second term of (2).
+The advantage of this formulation is the absence of the term p(sf|s0) in the formulation, which is
+difﬁcult to obtain as we would have to integrate over Ω. In rewriting the derivation, however, the
+term p(Ω|s0, sf) was introduced, which we arrived at from pJ(sf|s0, Ω)pC(Ω|s0) using Bayes’ rule.
+The quantity pJ(sf|s0, Ω) is inherent to the environment, but obtaining Bayes’ reverse p(Ω|s0, sf)
+is difﬁcult. However, it has an interpretation as a prediction of Ωfrom ﬁnal state sf. It would be
+fortuitous if we could train a separate function approximator to infer this quantity. Fortunately this
+is exactly what the variational bound (Mohamed & Rezende, 2015) provides (see Appendix 1 for
+derivation):
+3
+
+IV B(Ω, sf|s0) = −
+X
+Ω
+pC(Ω|s0) log pC(Ω|s0) +
+X
+Ω,sf
+pJ(sf|s0, Ω)pC(Ω|s0) log q(Ω|s0, sf)
+(3)
+where q is an option inference function which can be an arbitrary distribution, and we have I ≥IV B.
+In this paper we train both the parameters of pC(Ω|s0), q(Ω|s0, sf) and the parameters of policy
+π(a|s, Ω) (which determines pJ(sf|s0, Ω)) to maximize IV B.
+3
+INTRINSIC CONTROL WITH EXPLICIT OPTIONS
+In this section we provide a simple algorithm to maximize the variational bound introduced above.
+Throughout we assume we have distributions, policies, and other possible functions parameterized
+using recent function approximation techniques such as neural networks, and state representations
+are formed from observations using recurrent neural networks. However, we only calculate the
+mutual information between options and ﬁnal observations instead of ﬁnal states, and leave the
+latter for future work. Algorithm 1 provides an outline of the basic training loop.
+Algorithm 1 Intrinsic Control with Explicit Options
+Assume an agent in a state s0
+for episode = 1, M do
+Sample Ω∼pC(Ω|s0)
+Follow policy π(a|Ω, s) till termination state sf
+Regress q(Ω|s0, sf) towards Ω
+Calculate intrinsic reward rI = log q(Ω|s0, sf) −log pC(Ω|s0)
+Use a reinforcement learning algorithm update for π(a|Ω, s) to maximize rI.
+Reinforce option prior pC(Ω|s0) based on rI.
+Set s0 = sf
+end for
+Note: Empowerment at s is estimated by the reinforce baseline of pC, which tracks rI.
+This algorithm is derived from (3) in Appendix 2. Note again that π appears in (3) by determining the
+distribution of terminal states pJ(sf|s0, Ω). Here we give an intuitive explanation of the algorithm.
+In a state s0 an agent tries an option Ωfrom its available options pC(Ω|s0). Its goal is to choose
+actions that lead to a state sf from which this Ωcan be inferred as well as possible using option
+inference function q(Ω|s0, sf). If it can infer this option well, then it means that other options don’t
+lead to this state very often, and therefore this option is intrinsically different from others. This goal
+is expressed as the intrinsic reward rI (discussed in the next paragraph). The agent can use any
+reinforcement learning algorithm (Sutton & Barto, 1998), such as policy gradients (Williams, 1992)
+or Q-learning (Watkins, 1989; Werbos, 1977), to train a policy to maximize this reward. In the ﬁnal
+state, it updates its option inference function q towards the actual Ωchosen (by taking the gradient
+of log q(Ω|s0, sf)). It also reinforces the prior pC based on this reward – if the reward were high, it
+should choose this option more often. Note that we can also keep prior pC ﬁxed, for example to the
+uniform Gaussian distribution. Then, different values of Ωwill result in different behavior through
+learning.
+The intrinsic reward rI equals, on average, the logarithm of the number of different options an agent
+has in a given state – that is, the empowerment in that state. This follows from the deﬁnition of
+mutual information (3) – it is the expression we get when we take a sample of Ωand sf. However,
+we also provide an intuitive explanation. The log pC(Ω|s0) is essentially the negative logarithm of
+the number of different Ωs we can choose (for the continuous case, imagine ﬁnely discretizing).
+However, not all Ωs do different things. The region where q(Ω|s0, sf) is large deﬁnes a region of
+similar options. The empowerment essentially equals the number of such regions in the total region
+given by pC. Taking the logarithm of the ratio of the total number of options ∼1/pC to the number
+of options within a region ∼1/q gives us log q/pC = log q −log pC = rI.
+We train pC using policy gradients (Williams, 1992). During training we estimate a baseline to
+lower the variance of weight updates (see Appendix 2). This baseline tracks the expected return in
+4
+
+a given state – intrinsic reward in this case, which equals the empowerment. As such, the algorithm
+actually yields an explicit empowerment estimate.
+3.1
+EXPERIMENTS
+3.1.1
+GRID WORLD
+We demonstrate the behavior of the algorithm on a simple example of a two-dimensional grid world.
+The agent lives on a grid and has ﬁve actions – it can move up, down, right, left and stay put. The
+environment is noisy in the following manner: after an agent takes a step, with probability 0.2 the
+agent is pushed in a random direction. We follow Algorithm 1. We choose Ωto be a discrete space of
+N = 30 options. We ﬁx the option prior pC to be uniform (over 30 values). The goal is therefore to
+learn a policy π(a|s, Ω) that would make the 30 options end at as different states as possible. This is
+measured by the function q(Ω|sf) which, from the state sf reached, tries to infer which option Ωwas
+followed. At the end of an episode we get an intrinsic reward rI = −log p + log q = log N + log q
+(log N because pC = 1/N is ﬁxed). If a particular option is inferred correctly and with conﬁdence,
+then log q will be close to zero and negative, and the reward will be large (≈log N). If it is wrong,
+however, then log q will be very negative and the reward small. As we are choosing options at
+random (from the uniform pC), in order to get a large reward on average, different options need
+to reach substantially different states in order for the q to be able to infer the chosen option. In a
+grid world we can plot at which locations a given option is inferred by q, which are the locations to
+which the option navigates. This is shown in the Figure 1 top, with each rectangle corresponding to
+a different option, and the intensity denoting the probability of predicting a given option. Thus, we
+see that indeed, different options learn to navigate to different, localized places in the environment.
+In this example, we use Q-learning to learn the policy. In general we can express the Q function for
+a set of N different options by running the corresponding input states through a neural network and
+outputting N × nactions values, one for each option and action. This way, we can update Q of all
+the options at the same time efﬁciently, on a triplet of experience st, at, st+1. In this experiment we
+use a linear function approximator, and terminate options with ﬁxed probability 1 −γ = 0.05. We
+could also use a universal value function approximation (Schaul et al., 2015). For continuous option
+spaces we can still calculate the Q by passing an input through a neural network, but then update
+the result on several, randomly sampled options Ωat the same time. Such an option space is then an
+option embedding in itself.
+Figure 1: Learning to navigate through a grid world. Left: Standard grid world with valid
+actions indicated by green arrows (left, right, up, down) and by a green disc (do nothing). Right:
+Each square corresponds to a different option, and shows the probability of predicting this option
+at different locations in the environment. The negative logarithm of these values is proportional to
+the intrinsic reward that a given option is trying to maximize, and therefore the locations with large
+intensity show the locations where a given option terminates.
+3.1.2
+’DANGEROUS’ GRID WORLD
+The second environment is also a grid world, but with special properties. It consists of two parts:
+a narrow corridor connected to an open square (see ﬁgure 2, top-left), blue denoting the walls.
+However the square is not just a simple grid world, but is somewhat dangerous. There are two types
+of cells arranged as a checkerboard lattice (as on a chess board). On one sub-lattice, only the left
+and right actions actually move the agent to the adjacent states and on the other sub-lattice only the
+up and down actions do. If the agent picks an action that is not one of these, it falls into a state
+5
+
+Figure 2: Learning to navigate through a grid world with trap states. Left: Dangerous grid
+world where cells on different checkerboard sub-lattices have different sets of valid actions (green
+arrows). Taking the wrong actions (red arrows and red disc) teleports the agent to the top-left corner
+indicated by a cross, from which there is only a small probability of escaping at each time step. The
+blue region represents a barrier, forming a narrow corridor on the top left. Furthermore, when a
+valid action is taken, with some probability the agent actually does not move. Therefore if the agent
+commits to a sequence of actions, it will quickly lose track as to which sub-lattice it is on, and fall
+into the low empowerment top left corner state. On the other hand, if it observes the environment
+it can always take actions to safely navigate the square. Bottom: Classical empowerment, which
+considers the effect of (open loop) action sequences, has very small empowerment inside the square
+because each sequence does not respond to changes due to environment noise and the agent instead
+prefers to sit in the ‘safe’ top left corridor. This is demonstrated in the bottom ﬁgure, which shows
+the exact empowerment at different locations for action sequence lengths 1, . . . , 6. We see that not
+only does the square area have low empowerment, but that the amount of empowerment goes down
+with increasing sequence length. With closed loop policies, on the other hand, the agent has learned
+to navigate to different locations of the square, as shown in the top right ﬁgure.
+where it is stuck for a long time. Furthermore, the move to an adjacent state only happens with
+some probability. Because of this, if the agent doesn’t observe the environment, it quickly loses the
+information about which sub lattice it is on, and thus inevitably falls to the low empowerment state.
+To show this we computed the exact empowerment values at each location for an open-loop policy
+using the Blahut-Arimoto algorithm for horizons 1 to 6, the result is shown in ﬁgure 2(bottom).
+On the other hand, if the agent observes the environment, it knows which sub-lattice it is on and
+can always choose an action that doesn’t let it fall. Thus it can safely navigate the square. In our
+experiments, the agent indeed accomplishes this, and it learns options inside the square (see ﬁgure
+2, top-right).
+3.2
+THE IMPORTANCE OF CLOSED LOOP POLICIES
+Classical empowerment (Salge et al., 2014; Mohamed & Rezende, 2015) maximizes mutual infor-
+mation between sequences of actions A = a1, . . . , aT and ﬁnal states. That is, it maximizes the
+same objective function (3), but where Ω= A. This corresponds to maximizing empowerment over
+the space of open loop options. That is, options where an agent ﬁrst commits to a sequence of ac-
+tions and then blindly follows this sequence regardless of what the environment does. In contrast, in
+a closed-loop option every action is conditioned on the current state. We show that using open-loop
+options can lead to severe underestimation of empowerment in stochastic environments, resulting in
+agents that aim to reach low-empowerment states.
+We demonstrate this effect in the ’dangerous grid world’ environment, section 3.1.2. When using
+open loop options of length T, an agent at the center of the environment would have exponentially
+growing probability of being reset as a function of the option length T, resulting in an estimation
+of empowerment that quickly decreases with the option length, having its highest value inside the
+corridor at the top-left corner as shown in Figure 1 (bottom). A consequence of this is that such an
+agent would prefer being inside the corridor at the top-left corner, away from the center of the grid
+world.
+6
+
+In great contrast to the open loop case, when using closed loop options the empowerment will grow
+quadratically with the option length, resulting in agents that prefer staying at the center of the grid
+world.
+While this example might seem contrived, it is actually quite ubiquitous in the real world. For
+example, we can navigate around a city, whether walking or driving, quite safely. If we instead
+committed to a sequence of actions ahead, we would almost certainly be run over by a car, or if
+driving, crash into another car. The importance of the closed loop nature of policies is indeed well
+understood. What we have demonstrated here is that one should not use open loop policies even to
+measure empowerment.
+3.3
+ADVANTAGES AND DISADVANTAGES
+The advantages of Algorithm 1 are: 1) It is relatively simple, 2) it uses closed loop policies, 3) it can
+use general function approximation, 4) it is naturally formulated with combinatorial options spaces,
+both discrete and continuous and 5) it is model-free.
+The primary problem we found with this algorithm is that it is difﬁcult to make it work in practice
+with function approximation. We suggest there might be two reasons for this. First, the intrinsic
+reward is noisy and changing as the agent learns. This makes it difﬁcult for the policy to learn. The
+algorithm worked as speciﬁed in those simple environments above when we used linear function
+approximation and a small, ﬁnite number of options. However, it failed when neural networks were
+substituted. We still succeeded by ﬁxing the intrinsic reward for a period of time while learning
+the policy and vice versa. However, replacing the small option space by a continuous one made
+training even more difﬁcult and only some runs succeeded. These problems are related to those in
+deep reinforcement learning (Mnih et al., 2015), where in order to make Q learning work well with
+function approximation, one needs to store a large number of experiences in memory and replay
+them. It is possible that more work in this direction would ﬁnd good practices for training this
+algorithm with general function and distribution approximations.
+The second problem is exploration. If the agent encounters a new state, it should like to go there,
+because it might correspond to some new option it hasn’t considered before and therefore increase
+its control. However, when it gets there, the option inference function q has not learned it yet. It
+is likely inferring the incorrect option, therefore giving a low reward and therefore discouraging
+the agent from going there. While the overall objective is maximized when the agent has the most
+control, the algorithm has difﬁculty maximizing this objective because two functions – the intrinsic
+reward and the policy – have to match up. It does a good job of expressing what the options are in a
+region it is familiar with, but it seems to fail to push into new state regions. Hence, we introduce a
+new algorithm formulation in section 4 to address these issues.
+4
+INTRINSIC CONTROL WITH IMPLICIT OPTIONS
+To address the learning difﬁculties of Algorithm 1 we use the action space itself as the option space.
+This gives the inference function q grounded targets which makes it easier to train. Having a sensible
+q makes the policy easier to train. The elements of the algorithm are as follows. The controllability
+prior pC and policy π in Algorithm 1 simply become a policy, which we denote by πp(at|sp
+t ). The
+sp
+t is an internal state that is calculated from (sp
+t−1, xt, at−1). In our implementation it is the state
+of a recurrent network. The q function in Algorithm 1 should infer the action choices made by πp
+knowing the ﬁnal observation xf and thus becomes q = πq(at|sq
+t) where sq is its internal state
+calculated from (sq
+t−1, xt, at−1, xf). The logarithm of the number of action choices at t that are
+effectively different from each other – that can be distinguished based on the observation of the ﬁnal
+state xf – is given by rI,t = log πq(at|sq
+t) −log πp(at|sp
+t ). We now introduce an algorithm that
+will maximize the expected cumulative number of distinct actions by maximizing the intrinsic return
+RI = P
+t rI,t in algorithm 2.
+In this setting, maximization of control is substantially simpliﬁed.
+Consider an experience
+x0, a0, . . . , xf generated by some policy. The learning of πq is a supervised learning problem of
+inferring the action choices that led to xf. Even the random action policy terminates at different
+states, and thus πq is able to train on such experiences, mimicking decisions that happen to lead
+to xf. The πp can be thought of as choosing among those πq that lead to diverse states, which in
+7
+
+turn makes πq learn from experiences generated by those policies. The ability of πq to train on any
+experience motivated us to add an exploratory update in Algorithm 2.
+Algorithm 2 Intrinsic Control with Implicit Options
+Full update
+Follow policy πp(at|sp
+t ), sp
+t = f p(sp
+t−1, xt, at−1) resulting in experience x0, a0, . . . , xf.
+For each t, regress policy πq(at|sq
+t), sq
+t = f q(sq
+t−1, xt, at−1, xf) towards action at
+Calculate intrinsic reward rI = P
+t log πq(at|sq
+t) −log πp(at|sp
+t )
+Reinforce the policy πp with rI.
+Exploratory update
+Follow policy πp(at|sp
+t ), sp
+t = f p(sp
+t−1, xt, at−1) with exploration (ϵ or other) resulting in expe-
+rience x′
+0, a′
+0, . . . , x′
+f.
+For each t, regress policy πq(a′
+t|sq
+t), sq
+t = f q(sq
+t−1, x′
+t, a′
+t−1, x′
+f) towards action a′
+t
+Note: Empowerment is estimated by the reinforce baseline of πp.
+In the experiments that follow, we use the following functions for policies (see Appendix 3 for
+the equations). Every input xt is passed through a fully connected, one layer neural network with
+a standard rectiﬁer non-linearity, resulting in an embedding u(xt). This is passed to an LSTM
+recurrent net (Hochreiter & Schmidhuber, 1997) which outputs the policy probabilities πp over
+actions. For πq, we concatenate the embedding u(xt) and u(xf) and pass through another one layer
+neural net to obtain a state v(xt, xf). This, together with hidden state of the LSTM net, is passed to
+another LSTM network, which outputs the probabilities πq over actions.
+Two facts are worth highlighting here. First, Algorithm 2 applies to general, partially observable
+environments since the policies πp and πq build their own internal states. However, more generally,
+we should use ﬁnal states sf of the environment instead of observations xf as the set of states an
+agent can reach. We leave this aspect to future work. Second, the policy πp can be thought of as
+an implicit option. However, the embedding u(xf) of the ﬁnal observation (or state more generally)
+can be thought of as an explicit option and the policy πq as the policy implementing this option.
+4.1
+EXPERIMENTS
+We test this algorithm on several environments. The ﬁrst one is a grid world of size 25 × 25 with
+four rooms (see Figure 3 left (no action noise)). A random action policy of length T leads to ﬁnal
+states whose distance from the initial state is distributed approximately according to a Gaussian
+distribution of width ∼
+√
+T within a room. For T on the order of the environment size, such an
+agent rarely crosses to a different room, because of the narrow doors between the rooms. Figure
+3 shows trajectories learned by Algorithm 2. We see that indeed they are extended, spanning large
+parts of the environment. Furthermore many trajectories cross to different rooms passing straight
+through the narrow doors without difﬁculty. This is interesting, because while the policy πq is
+conditioned on the ﬁnal state, the policy πp that is actually followed was not given any notion of
+the ﬁnal state explicitly. It implicitly learns to navigate through the doors to different parts of the
+environment.
+To maximize intrinsic control, the distribution of ﬁnal points that πp reaches should be uniform
+among the points that are reachable from a given state. This is because we can tell every point from
+any other point equally well. Figure 3 (center) shows the distribution of the end points reached by the
+algorithm for trajectories of length 25, starting at different points in the environment. For example,
+the top left square shows the end point distribution for starting at the top left corner. We see that the
+distribution is indeed roughly uniform among the reachable points. The average empowerment after
+learning reaches 6.0 nats which corresponds to exp(6.0) ≈403 different reachable states.
+In the second experiment we use a three dimensional simulated environment (Figure 3, right). At a
+given time the agent sees a particular view of its environment which is a 40 × 40 color image. The
+ﬁgure shows example trajectories that the agent follows (moving downwards in the ﬁgure) using
+policy πp. We see that the trajectories seem intuitively much more ‘consistent’ than those a random
+action policy would produce. The average empowerment achieved for trajectories of length 12 was
+5.4 nats which corresponds to reaching exp(5.4) = 221 different states.
+8
+
+Figure 3: Intrinsic Control with Implicit Options. Left and Center: The environment is a four
+room 25 × 25 grid world. Left: Blue denotes the beginning of a trajectory and green the end.
+The algorithm learns trajectories that extend through the environment and accurately pass through
+the doors between rooms. Center: Green shows the distribution of end points for trajectories of
+length 25. A trajectory in a given square starts at a location (3x + 1, 3y + 1) where (x, y) denotes
+the coordinates of the room in the picture. We see that the end points cover the reachable set of
+points nearly uniformly. Right: Each column shows a trajectory in a three dimensional simulated
+environment. The agent only observes images. Again, we obtain very non-random trajectories that
+rotate or move by a large amount. The average amount of intrinsic control achieved is 5.4 nats,
+corresponding to exp(5.4) = 221 different states.
+The third environment is again a grid world, but it contains blocks that the agent can push. The
+blocks cannot pass through each other or through the boundary, and the agent cannot push two
+blocks at the same time. In this case, the visual space is small, but there are combinatorially many
+possibilities. Figure 4 shows a typical trajectory. We see that the agent pushes the ﬁrst block down,
+then it goes around the second block and pushes it up, then goes to the third one and pushes it down,
+and then arrives at its ﬁnal position. The average empowerment is 7.1 nats which corresponds to
+being able to reach exp(7.1) ≈1200 different states.
+Figure 4: Pushing blocks. Left: The agent (green) lives in a 6 × 6 grid world and can push blocks
+(blue) around. The image shows a typical trajectory (read left to right). We see that the agent pushes
+blocks to various locations: it pushes the ﬁrst block down, then it goes around the second one and
+pushes it up, the goes to the third one pushing it down, and then moves itself up to a ﬁnal position.
+Right: The empowerment as a function of training time in 6 × 6 world, with trajectories of length
+15 actions, with 0, 1, 2, 3 blocks. At the beginning of training, the agent ﬁrst just learns it can go to
+different locations, but then it ‘realizes’ that it can control the blocks. An average empowerment for
+three blocks reached 7.1 nats which corresponds to being able to reach exp(7.1) ≈1200 states.
+9
+
+4.2
+ELEMENTS BEYOND AN AGENT’S CONTROL
+One prevalent feature of the real world is that there are many elements beyond our control such
+as falling leaves or trafﬁc. One of the important features of these algorithms is that intrinsic op-
+tions represent things that an agent can actually control and as such does not have to model all the
+complexities of the real world – these algorithms are model-free. To demonstrate this property we
+introduce environments with elements beyond an agent’s control.
+The ﬁrst environment is the same four room grid world used above, but with two distractors moving
+around at random, that live on different input feature planes. These distractors do not affect the
+agent, but the agent does observe them. The agent needs to learn to ignore them. We ﬁnd that the
+agent reaches the same amount of empowerment with and without the distractors (see Figure 6 in
+Appendix 4).
+The second environment consists of pairs of MNIST digits forming a 28×(2∗28) image. There are
+ﬁve actions that affect classes of the digits. The ﬁrst action doesn’t change the classes, the next two
+increase/decrease the class of the ﬁrst digit and the next two increase/decrease the class of the second
+digit (wrapping around). When a class is chosen, a random digit from that class is selected. Thus the
+environment is visually complex, but has a small control space. Example trajectories followed by the
+agent are shown in Figure 5, left. The empowerment obtained by the agent with policies of length
+10 actions is 4.6, which corresponds to exp(4.6) = 99.5 states. As there are 100 controllable states
+in the environment (but 600002 total states), we see that agent achieves nearly maximum possible
+intrinsic control.
+Figure 5: Left: The environment consists of all possible pairs of MNIST digits. The agent can
+control the classes of the digits, being able to increase or decrease the class of the ﬁrst or the second
+digit but the speciﬁc instance of a digit is sampled at random. Each two digit column of the ﬁgure
+shows a trajectory. A sample trajectory with the respective actions is shown on the left inset. The
+agent learns to navigate this space, achieving nearly maximum possible control of 100 different
+states. Note that the agent does not see the digit class, it has to learn to tell different classes apart (to
+classify) through control. Right: Extrinsic reward as a function training time for pure reinforce (red)
+and after a different amounts of unsupervised interaction with the environment. The environment is
+15 × 15 four room grid world, and the reward is placed at location (3, 3).
+4.3
+OPEN VS CLOSED LOOP OPTIONS
+Next we compare agents utilizing open and closed loop options. We use the grid world environment
+but add noise as follows. After an agent takes a step, the environment pushes the agent in a random
+direction. While the closed loop policy can correct for the environment noise, for example by
+following a strategy of always going towards the goal, an open loop policy agent has less and less
+information on where it is in the environment as time goes by and it cannot navigate reliably towards
+the actual target location. We implement the open loop agent using the Algorithm 2 but we only feed
+the starting and the end states to the recurrent network. Table 1 shows the comparison. We see that
+the closed loop agent indeed performs much better.
+10
+
+Table 1: Open vs closed loop options. Agents follow open or close loop options in a grid world with
+noise (see text for details). We show the empowerment as the exponential of the average number of
+nats, which approximately denotes how many different states can the agent reach.
+Environment
+Size
+Option length
+Open loop
+Closed loop
+Open grid
+6
+6
+2.7
+5.8
+Open grid
+6
+12
+2.8
+6.7
+Open grid
+10
+10
+3.7
+12.6
+Open grid
+10
+20
+4.1
+15.1
+Four room
+9
+9
+2.4
+8.4
+Four room
+15
+15
+3.3
+19.0
+Four room
+25
+25
+4.7
+45.9
+4.4
+MAXIMIZING EXTRINSIC REWARD
+Finally, while the primary focus of the paper is unsupervised control, we provide a proof-of-principle
+experiment that shows that learned policies can help in learning extrinsic reward. We consider the
+following situation. An agent is placed in an environment without being told what the objective
+is. The agent has an opportunity to explore and learn how to control the environment. After some
+amount of time, the agent is told the objective as an extrinsic reward rE, and has a limited amount
+of time to collect as much reward as possible. There could be a number of ways to use the learned
+policies πp and πq to maximize the extrinsic reward. In our case we simply combine the intrinsic and
+extrinsic rewards, and reinforce the policy πp in Algorithm 2 with r = rI + αrE where α is a large
+constant (30 in our experiment). We use the 15×15 four room grid world and, after different periods
+of time, we place a reward at location 3 × 3. Figure 5 (right) shows the reward collected per episode
+after different amounts of unsupervised pre-training or using pure reinforce without the maximum
+control objective (red curve). We see that, indeed, the agent learns to collect reward signiﬁcantly
+faster after having an opportunity to interact with the environment.
+5
+CONCLUSION
+In this paper we introduce a formalism of intrinsic control maximization for unsupervised option
+learning. We presented two algorithms in this framework and analyzed them in a diverse range of
+experiments. We demonstrated the importance of closed loop policies for estimating empowerment.
+Additionally, we also demonstrated the usefulness of unsupervised learning and intrinsic control for
+extrinsic reward maximization.
+ACKNOWLEDGMENTS
+We thank Shakir Mohamed, Frederic Besse, David Siver, Ivo Danihelka, Remi Munos, Ali Eslami,
+Tom Schaul, Nicolas Heess and Daniel Polani for useful discussions and comments.
+REFERENCES
+Suguru Arimoto. An algorithm for computing the capacity of arbitrary discrete memoryless chan-
+nels. IEEE Transactions on Information Theory, 18(1):14–20, 1972.
+Pierre-Luc Bacon and Doina Precup. The option-critic architecture. In NIPS Deep Reinforcement
+Learning Workshop, 2015.
+Marc G Bellemare, Sriram Srinivasan, Georg Ostrovski, Tom Schaul, David Saxton, and
+Remi Munos.
+Unifying count-based exploration and intrinsic motivation.
+arXiv preprint
+arXiv:1606.01868, 2016.
+Richard Blahut. Computation of channel capacity and rate-distortion functions. IEEE transactions
+on Information Theory, 18(4):460–473, 1972.
+11
+
+Ian Goodfellow, Yoshua Bengio, and Aaron Courville. Deep learning. Book in preparation for MIT
+Press, 2016. URL http://www.deeplearningbook.org.
+Sepp Hochreiter and J¨urgen Schmidhuber. Long short-term memory. Neural computation, 9(8):
+1735–1780, 1997.
+Rein Houthooft, Xi Chen, Yan Duan, John Schulman, Filip De Turck, and Pieter Abbeel. Variational
+information maximizing exploration. arXiv preprint arXiv:1605.09674, 2016.
+Alexander S Klyubin, Daniel Polani, and Chrystopher L Nehaniv. Empowerment: A universal agent-
+centric measure of control. In 2005 IEEE Congress on Evolutionary Computation, volume 1, pp.
+128–135. IEEE, 2005.
+Tejas D Kulkarni, Karthik R Narasimhan, Ardavan Saeedi, and Joshua B Tenenbaum. Hierarchical
+deep reinforcement learning: Integrating temporal abstraction and intrinsic motivation. arXiv
+preprint arXiv:1604.06057, 2016.
+Daniel J Mankowitz, Timothy A Mann, and Shie Mannor. Time-regularized interrupting options. In
+Proceedings of the 31st International Conference on Machine Learning, 2014.
+Amy McGovern and Andrew G Barto. Automatic discovery of subgoals in reinforcement learning
+using diverse density. 2001.
+Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Andrei A Rusu, Joel Veness, Marc G Belle-
+mare, Alex Graves, Martin Riedmiller, Andreas K Fidjeland, Georg Ostrovski, et al. Human-level
+control through deep reinforcement learning. Nature, 518(7540):529–533, 2015.
+Shakir Mohamed and Danilo Jimenez Rezende. Variational information maximisation for intrinsi-
+cally motivated reinforcement learning. In Advances in Neural Information Processing Systems,
+pp. 2125–2133, 2015.
+Pierre-Yves Oudeyer, Frederic Kaplan, et al. How can we deﬁne intrinsic motivation. In Proc. 8th
+Int. Conf. Epigenetic Robot.: Modeling Cogn. Develop. Robot. Syst, 2008.
+Christoph Salge, Cornelius Glackin, and Daniel Polani. Empowerment–an introduction. In Guided
+Self-Organization: Inception, pp. 67–114. Springer, 2014.
+Tom Schaul, Daniel Horgan, Karol Gregor, and David Silver. Universal value function approxima-
+tors. In Proceedings of the 32nd International Conference on Machine Learning (ICML-15), pp.
+1312–1320, 2015.
+J¨urgen Schmidhuber. Curious model-building control systems. In Neural Networks, 1991. 1991
+IEEE International Joint Conference on, pp. 1458–1463. IEEE, 1991.
+J¨urgen Schmidhuber. Formal theory of creativity, fun, and intrinsic motivation (1990–2010). IEEE
+Transactions on Autonomous Mental Development, 2(3):230–247, 2010.
+David Silver and Kamil Ciosek.
+Compositional planning using optimal option models.
+arXiv
+preprint arXiv:1206.6473, 2012.
+Martin Stolle and Doina Precup.
+Learning options in reinforcement learning.
+In International
+Symposium on Abstraction, Reformulation, and Approximation, pp. 212–223. Springer, 2002.
+Richard S Sutton and Andrew G Barto. Reinforcement learning: An introduction, volume 1. MIT
+press Cambridge, 1998.
+Richard S Sutton, Doina Precup, and Satinder Singh. Between mdps and semi-mdps: A framework
+for temporal abstraction in reinforcement learning. Artiﬁcial intelligence, 112(1):181–211, 1999.
+Alexander Vezhnevets, Volodymyr Mnih, John Agapiou, Simon Osindero, Alex Graves, Oriol
+Vinyals, and Koray Kavukcuoglu. Strategic attentive writer for learning macro-actions. arXiv
+preprint arXiv:1606.04695, 2016.
+Christopher John Cornish Hellaby Watkins. Learning from delayed rewards. PhD thesis, University
+of Cambridge England, 1989.
+12
+
+Paul J Werbos. Advanced forecasting methods for global crisis warning and models of intelligence.
+General Systems Yearbook, 22(12):25–38, 1977.
+Ronald J Williams. Simple statistical gradient-following algorithms for connectionist reinforcement
+learning. Machine learning, 8(3-4):229–256, 1992.
+APPENDIX 1: DERIVATION OF THE VARIATIONAL BOUND ON MUTUAL
+INFORMATION
+Here we derive the variational bound (3). We drop the indices from variables and drop s0:
+I(Ω, s)
+=
+−
+X
+Ω
+p(Ω) log p(Ω) +
+X
+Ω,s
+p(Ω, s) log p(Ω|s)
+(4)
+=
+−
+X
+Ω
+p(Ω) log p(Ω) +
+X
+Ω,s
+p(Ω, s) log q(Ω|s) +
+X
+s
+p(s|Ω)KL(p|q)
+(5)
+≥
+−
+X
+Ω
+p(Ω) log p(Ω) +
+X
+Ω,s
+p(Ω, s) log q(Ω|s) = IV B(Ω, s).
+(6)
+APPENDIX 2: DERIVATION OF ALGORITHM 1
+Here we show the variational bound (3) again, with parameters θ of pC and parameters φ of q made
+explicit:
+IV B(Ω, sf|s0) = −
+X
+Ω
+pC
+θ (Ω|s0) log pC
+θ (Ω|s0) +
+X
+Ω,sf
+pJ(sf|s0, Ω)pC
+θ (Ω|s0) log qφ(Ω|s0, sf)
+(7)
+Taking the gradient with respect to φ is straightforward. We obtain a sample Ω∼pC
+θ (Ω|s0) and a
+sample of sf by following the policy till termination. Then we can directly take the gradient of log q
+which is the gradient of the standard likelihood maximization.
+Taking the gradient with respect to θ results in the following:
+∇θIV B
+=
+−
+X
+Ω
+pC
+θ (Ω|s0)
+
+−1 −log pC
+θ (Ω|s0) +
+X
+sf
+pJ(sf|s0, Ω) log qφ(Ω|s0, sf)
+
+∇θ log pC
+θ (Ω|s0)
+=
+−
+X
+Ω,sf
+pJ(sf|s0, Ω)pC
+θ (Ω|s0)
+ −1 −log pC
+θ (Ω|s0) + log qφ(Ω|s0, sf)
+
+∇θ log pC
+θ (Ω|s0).
+(8)
+Now, we can add any number b(s0) inside the central bracket because the resulting sum is zero:
+X
+Ω,sf
+pJ(sf|s0, Ω)pC
+θ (Ω|s0)b(s0)∇θ log pC
+θ (Ω|s0)
+(9)
+=
+b(s0)
+X
+Ω,sf
+pJ(sf|s0, Ω)∇θpC
+θ (Ω|s0)
+(10)
+=
+b(s0)∇θ
+X
+Ω
+pC
+θ (Ω|s0)
+(11)
+=
+b(s0)∇θ1 = 0.
+(12)
+Thus we obtain
+13
+
+∇θIV B
+=
+−
+X
+Ω,sf
+pJ(sf|s0, Ω)pC
+θ (Ω|s0) (rI −b(s0)) ∇θ log pC
+θ (Ω|s0)
+(13)
+rI
+=
+log qφ(Ω|s0, sf) −log pC
+θ (Ω|s0).
+(14)
+This is the standard policy gradient update (along with its typical derivation): we sample Ω∼
+pC
+θ (Ω|s0), then pretend as we were training generative model pC on observed Ωby maximum like-
+lihood (taking the gradient of log pC), but we multiply (reinforce) the resulting gradient by the
+corrected reward (return) rI −b. The baseline b aims to predict rI and is trained by regressing the
+values of b towards observed rI. Thus if in a given episode we obtain a larger then expected reward,
+the likelihood of generating the same Ωis increased, and vice versa. In this particular case, because
+rI is a sampled empowerment at the state s0, b(s0) tends towards the expected empowerment at that
+state.
+Finally we would like to update the policy. Keeping θ and φ ﬁxed we would like to know how to
+change the policy to increase the IV B. In a given sampled experience the value of IV B becomes rI.
+We can use any reinforcement learning algorithm to maximize this reward.
+APPENDIX 3: FUNCTIONAL FORMS FOR INTRINSIC CONTROL WITH IMPLICIT
+OPTIONS
+We show the functional forms used in the Algorithm 2 for the policies πp and πq. Let x0, a0, . . . , xf
+be a sequence of observations and actions. We assume we have computed embedding u(xf) of the
+ﬁnal observation xf. The computations at time step t are the following:
+ut
+=
+RWxt,
+(15)
+hp
+t , cp
+t
+=
+LSTM([hp
+t−1, ut, at−1], cp
+t−1),
+(16)
+πp
+t
+=
+softmax(Whp
+t ),
+(17)
+vt
+=
+RW[ut, uf],
+(18)
+hq
+t, cq
+t
+=
+LSTM([hq
+t−1, hp
+t , vt, at−1], cq
+t−1),
+(19)
+πq
+t
+=
+softmax(Whq
+t),
+(20)
+where W is a linear operation (including biases that are suppressed from equations for clarity), R
+is the rectiﬁer nonlinearity, LSTM equations are below, [a, b, . . .] denotes concatenation of vectors
+a, b, . . . and h and c are states of LSTM. The LSTM equations are
+h, c
+=
+LSTM(y, c) :
+(21)
+bi, bf, bo, bu
+=
+split(Wy),
+(22)
+gi
+=
+σ(bi),
+(23)
+gf
+=
+σ(bf),
+(24)
+go
+=
+σ(bo),
+(25)
+u
+=
+tanh(bu),
+(26)
+c
+=
+gfc + giu,
+(27)
+h
+=
+tanh(c).
+(28)
+14
+
+Figure 6: Empowerment in grid world with distractors vs grid world without them for different sizes
+and sequence lengths. Distractors move around the environment, the agents sees them but does not
+interact with them. The curve shows that the agent learns to completely ignore them and focus on
+the controllable part of the environment.
+APPENDIX 4: THE EFFECT OF DISTRACTORS ON INTRINSIC CONTROL
+Figure 6 displays a graph showing that the agent learns to ignore distractors that do not affect its
+intrinsic control. The environment is a grid world with two points that move on a different feature
+plane and do not affect the agent, except as a visual distractor. We tested several environment sizes
+and option lengths.
+15
