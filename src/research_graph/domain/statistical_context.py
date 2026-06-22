@@ -3,7 +3,7 @@
 Canonical home for the deterministic statistical context that precedes every
 LLM extraction call (statistical-first invariant, §6.3 #1). The
 :class:`StatisticalContext` carries YAKE keywords and co-occurrence pairs
-produced by the CPU-lane :class:`~research_graph.pipeline.primitives
+produced by the CPU-lane :class:`~research_graph.application.primitives
 .StatisticalPreProcessor` and consumed by LLM-lane stages as prompt grounding.
 
 This is the ADR-033 §2.6 ``evaluation/statistical_context.py`` module. The
@@ -25,8 +25,8 @@ class StatisticalContext:
     for now the LLM receives keyword/co-occurrence grounding only.
 
     Consumed by the LLM-lane extraction stages
-    (:class:`~research_graph.pipeline.primitives.CoreEntityExtractor`,
-    :class:`~research_graph.pipeline.primitives.RelationTypeClassifier`) which
+    (:class:`~research_graph.application.primitives.CoreEntityExtractor`,
+    :class:`~research_graph.application.primitives.RelationTypeClassifier`) which
     never call the LLM without this context (statistical-first).
     """
 

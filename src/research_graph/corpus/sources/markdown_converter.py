@@ -11,13 +11,11 @@ from __future__ import annotations
 import asyncio
 import re
 import shutil
-from dataclasses import dataclass
 from pathlib import Path
 
 import httpx
 
-from research_graph.corpus.ingestion import assess_full_text_quality
-from research_graph.corpus.ingestion import PDFDownloader, arxiv_pdf_url
+from research_graph.corpus.ingestion import PDFDownloader, arxiv_pdf_url, assess_full_text_quality
 
 ARXIV2MD_URL = "https://arxiv2md.org/api/markdown"
 HTML_CUTOFF_YEAR = 2020
@@ -25,13 +23,10 @@ CACHE_DIR = Path.home() / ".arxiv_cache"
 MARKER_TIMEOUT_SECONDS = 600  # 10 minutes
 
 
-@dataclass
-class ConversionResult:
-    """Result of a markdown conversion attempt."""
-
-    markdown: str | None
-    method: str  # "arxiv2md", "marker", or "error"
-    error: str | None
+# Canonical ConversionResult lives in the domain (D088, FullTextProviderPort
+# return type). Re-exported here so existing call sites/tests that import
+# ``from research_graph.corpus.sources.markdown_converter import ConversionResult`` keep working.
+from research_graph.domain.ports import ConversionResult  # noqa: E402
 
 
 class MDConverter:

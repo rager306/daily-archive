@@ -16,7 +16,7 @@ The five signatures map to ADR-029 Core-then-Modes + Upgrade modes:
 5. :class:`CitationSignature` — Upgrade: citation/support/contrast (ADR-029 §2.2).
 
 Every output field carries ``schema_version`` alignment via the typed schema
-(:mod:`research_graph.evaluation.schema`) and stays fail-closed
+(:mod:`research_graph.domain.schema`) and stays fail-closed
 (``import_eligible = False``).
 """
 
@@ -46,7 +46,7 @@ class CoreEntitySignature(_SignatureBase):
     """Core: extract typed entities from a chunk given statistical context.
 
     LLM call #1 of Core-then-Modes (ADR-029). Input: chunk text + YAKE keywords.
-    Output: a list of :class:`~research_graph.evaluation.schema.TypedEntity`
+    Output: a list of :class:`~research_graph.domain.schema.TypedEntity`
     drafts (entity_type constrained to the closed vocabulary, fail-closed).
     """
 
@@ -74,7 +74,7 @@ class RelationTypeSignature(_SignatureBase):
     """Upgrade: classify binary relations into the 27 typed relations (ADR-028).
 
     Only relation types in
-    :data:`~research_graph.evaluation.relation_types.ALL_TYPED_RELATIONS` are
+    :data:`~research_graph.domain.relation_types.ALL_TYPED_RELATIONS` are
     accepted; unknown proposals are dropped (fail-closed, never coerced).
     """
 

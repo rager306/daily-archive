@@ -9,42 +9,15 @@ references that later claim/entity/relation and LadybugDB layers can validate.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-
-from research_graph.papers.indexing.navigation import PageIndexDocument
+from research_graph.domain.semantic_chunks import EvidencePath, SemanticChunk
+from research_graph.domain.navigation import PageIndexDocument
 from research_graph.papers.indexing.parsed_page_index import build_page_index_from_parsed
 from research_graph.corpus.parsing.structure import ParsedArticle
 
 DEFAULT_CHUNKING_STRATEGY = "section_text_v1"
 
-
-@dataclass(frozen=True)
-class SemanticChunk:
-    """A deterministic text chunk attached to one PageIndexNode."""
-
-    id: str
-    paper_id: str
-    page_index_node_id: str
-    page_index_path: list[str]
-    order: int
-    text: str
-    char_start: int
-    char_end: int
-    chunking_strategy: str
-    validation_warnings: list[str] = field(default_factory=list)
-    provenance: dict[str, str] = field(default_factory=dict)
-
-
-@dataclass(frozen=True)
-class EvidencePath:
-    """Trace from paper to PageIndexNode to SemanticChunk."""
-
-    paper_id: str
-    page_index_node_id: str
-    semantic_chunk_id: str
-    node_path: list[str]
-    validation_warnings: list[str] = field(default_factory=list)
-    provenance: dict[str, str] = field(default_factory=dict)
+# Canonical model home is research_graph.domain.semantic_chunks (D086).
+# EvidencePath / SemanticChunk are re-exported below for back-compat.
 
 
 def build_semantic_chunks_from_parsed(

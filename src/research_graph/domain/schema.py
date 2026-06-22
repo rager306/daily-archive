@@ -28,8 +28,8 @@ from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Final
 
-from research_graph.evaluation.relation_types import ALL_TYPED_RELATIONS
-from research_graph.papers.semantic_chunks import EvidencePath
+from research_graph.domain.relation_types import ALL_TYPED_RELATIONS
+from research_graph.domain.semantic_chunks import EvidencePath
 
 #: Schema version stamp carried by every evolved typed draft. ADR-033 §2.2
 #: renamed the lineage from ``scientific-extraction.v1`` to ``typed.v1``.
@@ -151,7 +151,7 @@ class TypedRelation:
     * ``target_id`` -> ``to_entity_id``
 
     ``relation_type`` is constrained to one of the 27 typed relations
-    (:data:`research_graph.evaluation.relation_types.ALL_TYPED_RELATIONS`).
+    (:data:`research_graph.domain.relation_types.ALL_TYPED_RELATIONS`).
     """
 
     relation_id: str

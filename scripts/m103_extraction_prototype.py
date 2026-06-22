@@ -197,13 +197,13 @@ def run_chunk(
     """Run the paper pipeline on one chunk with the real LLM client."""
     from dataclasses import replace
 
-    from research_graph.pipeline.primitives import (
+    from research_graph.application.primitives import (
         BinaryRelationDetector,
         CoreEntityExtractor,
         RelationTypeClassifier,
         StatisticalPreProcessor,
     )
-    from research_graph.pipeline.types import PipelineContext
+    from research_graph.application.types import PipelineContext
 
     text = chunk["text"]
     source_id = f"arxiv:2605.18747:{chunk['chunk_id']}"
@@ -264,7 +264,7 @@ def _wrap_with_kind(client, kind: str):
 
 
 def _patch_to_dict(patch) -> dict[str, Any]:
-    from research_graph.evaluation.schema import ExtractionPatch
+    from research_graph.domain.schema import ExtractionPatch
 
     if not isinstance(patch, ExtractionPatch):
         return {"entities": [], "relations": [], "safety_flags": {"import_eligible": False}}
@@ -394,12 +394,12 @@ def main() -> int:
             # CPU-only: stub the LLM (no network)
             from dataclasses import replace
 
-            from research_graph.pipeline.primitives import (
+            from research_graph.application.primitives import (
                 BinaryRelationDetector,
                 CoreEntityExtractor,
                 StatisticalPreProcessor,
             )
-            from research_graph.pipeline.types import PipelineContext
+            from research_graph.application.types import PipelineContext
 
             ctx = replace(
                 PipelineContext(source_id=f"arxiv:2605.18747:{chunk['chunk_id']}"),

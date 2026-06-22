@@ -11,7 +11,7 @@ ADR-028 + ADR-033 §2.2 — schema evolution, not duplication
 
 The flat ``ScientificEntity`` / ``ScientificRelation`` / ``ExtractionPatch``
 drafts previously defined inline here now **evolve** into their typed forms
-defined canonically in :mod:`research_graph.evaluation.schema`. This module:
+defined canonically in :mod:`research_graph.domain.schema`. This module:
 
 * re-exports the typed types under backward-compatible names
   (``ScientificEntity = TypedEntity``, ``ScientificRelation = TypedRelation``);
@@ -19,7 +19,7 @@ defined canonically in :mod:`research_graph.evaluation.schema`. This module:
   ``relation_id``) and the validation surface (``validate_*``) so existing
   callers import unchanged;
 * widens ``SUPPORTED_RELATION_TYPES`` to the 27 typed relations
-  (:data:`research_graph.evaluation.relation_types.ALL_TYPED_RELATIONS`).
+  (:data:`research_graph.domain.relation_types.ALL_TYPED_RELATIONS`).
 
 The types ARE the new typed types — there is no adapter / converter layer.
 ``schema_version`` advances to ``typed.v1``.
@@ -28,8 +28,8 @@ The types ARE the new typed types — there is no adapter / converter layer.
 from __future__ import annotations
 
 from research_graph.corpus.parsing.normalization import slugify
-from research_graph.evaluation.relation_types import ALL_TYPED_RELATIONS, is_typed_relation
-from research_graph.evaluation.schema import (
+from research_graph.domain.relation_types import ALL_TYPED_RELATIONS, is_typed_relation
+from research_graph.domain.schema import (
     SCHEMA_VERSION,
     AbstractEntity,
     Claim,

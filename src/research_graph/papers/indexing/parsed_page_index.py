@@ -10,7 +10,7 @@ Formerly: src/arxiv_archive/indexing/page_index.py"""
 from __future__ import annotations
 
 from research_graph.corpus.ingestion import FullTextIngestionResult
-from research_graph.papers.indexing.navigation import (
+from research_graph.domain.navigation import (
     PageIndexDocument,
     PageIndexNode,
     build_navigation_anchors,

@@ -1,6 +1,6 @@
 """Level 4 orchestration with dispatch strategy seam (ADR-033 Step 6, D085).
 
-The orchestrator runs a :class:`~research_graph.pipeline.types.Pipeline`
+The orchestrator runs a :class:`~research_graph.application.types.Pipeline`
 **synchronously by default** (ADR-017: full queue activation deferred to Phase
 4) but exposes a ``dispatch_protocol`` strategy seam so queue-backed dispatch
 becomes a strategy swap, not a pipeline rewrite.
@@ -26,7 +26,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
-from research_graph.pipeline.types import (
+from research_graph.application.types import (
     PIPELINE_CONTRACT_VERSION,
     Pipeline,
     PipelineContext,

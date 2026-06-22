@@ -8,20 +8,19 @@ graph writes (fail-closed throughout).
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import replace
 
 import pytest
 
-from research_graph.evaluation.relation_types import ALL_TYPED_RELATIONS
-from research_graph.evaluation.schema import DEFAULT_SAFETY_FLAGS, ExtractionPatch
-from research_graph.pipeline import (
+from research_graph.application import (
     Pipeline,
     PipelineContext,
     PipelineStage,
     ResourceProfile,
     StageManifest,
 )
-from research_graph.pipeline.orchestrator import (
+from research_graph.application.orchestrator import (
     AdmissionError,
     DispatchProtocol,
     PipelineOrchestrator,
@@ -29,7 +28,7 @@ from research_graph.pipeline.orchestrator import (
     SyncDispatch,
     can_dispatch,
 )
-from research_graph.pipeline.primitives import (
+from research_graph.application.primitives import (
     BinaryRelationDetector,
     CoreEntityExtractor,
     EvidenceLinker,
@@ -37,8 +36,10 @@ from research_graph.pipeline.primitives import (
     StatisticalContext,
     StatisticalPreProcessor,
 )
-from research_graph.pipeline.profiles import build_paper_pipeline
-from research_graph.pipeline.profiles.paper import PAPER_STAGE_ORDER
+from research_graph.application.profiles import build_paper_pipeline
+from research_graph.application.profiles.paper import PAPER_STAGE_ORDER
+from research_graph.domain.relation_types import ALL_TYPED_RELATIONS
+from research_graph.domain.schema import DEFAULT_SAFETY_FLAGS, ExtractionPatch
 
 _TEXT_PARTS = [
     "transformers enable attention mechanisms for reasoning",
@@ -49,6 +50,14 @@ _TEXT_PARTS = [
 
 def _seed_ctx(source_id: str = "arxiv:2605.18747") -> PipelineContext:
     return replace(PipelineContext(source_id=source_id), stage_outputs={"text_parts": _TEXT_PARTS})
+
+
+def _fake_keywords(text_parts: Sequence[str], top_k: int) -> list[str]:
+    """Deterministic test keyword extractor (stands in for the infra YAKE one)."""
+    from collections import Counter
+
+    words = [w for part in text_parts for w in part.lower().split() if len(w) > 2]
+    return [w for w, _ in Counter(words).most_common(top_k)]
 
 
 # ── Level 1: types.py ────────────────────────────────────────────────────────
@@ -122,7 +131,7 @@ class TestPipeline:
 class TestPrimitivesLanes:
     def test_all_five_stages_satisfy_protocol(self) -> None:
         for stage in (
-            StatisticalPreProcessor(),
+            StatisticalPreProcessor(keyword_extractor=_fake_keywords),
             CoreEntityExtractor(),
             BinaryRelationDetector(),
             RelationTypeClassifier(),
@@ -141,19 +150,30 @@ class TestPrimitivesLanes:
 
 
 class TestStatisticalPreProcessor:
-    def test_yake_keywords_deterministic(self) -> None:
+    def test_stub_without_extractor_emits_empty(self) -> None:
         ctx = StatisticalPreProcessor().run(_seed_ctx())
+        assert isinstance(ctx.statistical_context, StatisticalContext)
+        # No injected extractor -> stub emits empty keywords (application layer
+        # never imports the infrastructure KeywordExtractor).
+        assert len(ctx.statistical_context.keywords) == 0
+
+    def test_yake_keywords_deterministic(self) -> None:
+        ctx = StatisticalPreProcessor(keyword_extractor=_fake_keywords).run(_seed_ctx())
         assert isinstance(ctx.statistical_context, StatisticalContext)
         assert len(ctx.statistical_context.keywords) > 0
 
     def test_co_occurrence(self) -> None:
-        ctx = StatisticalPreProcessor(co_occurrence_min=2).run(_seed_ctx())
+        ctx = StatisticalPreProcessor(keyword_extractor=_fake_keywords, co_occurrence_min=2).run(
+            _seed_ctx()
+        )
         assert len(ctx.statistical_context.co_occurrence) > 0
 
 
 class TestStubbedLLMStages:
     def test_core_extractor_stubbed_emits_empty_fail_closed(self) -> None:
-        ctx = CoreEntityExtractor().run(StatisticalPreProcessor().run(_seed_ctx()))
+        ctx = CoreEntityExtractor().run(
+            StatisticalPreProcessor(keyword_extractor=_fake_keywords).run(_seed_ctx())
+        )
         patch = ctx.stage_outputs["core_entity_extractor"]
         assert isinstance(patch, ExtractionPatch)
         assert patch.entities == []
@@ -161,7 +181,9 @@ class TestStubbedLLMStages:
 
     def test_classifier_stubbed_never_invents_types(self) -> None:
         ctx = BinaryRelationDetector().run(
-            StatisticalPreProcessor(co_occurrence_min=2).run(_seed_ctx())
+            StatisticalPreProcessor(keyword_extractor=_fake_keywords, co_occurrence_min=2).run(
+                _seed_ctx()
+            )
         )
         ctx = RelationTypeClassifier().run(ctx)
         patch = ctx.stage_outputs["relation_type_classifier"]
@@ -238,7 +260,7 @@ class TestEvidenceLinker:
 
 
 def _make_entity(eid: str, source_id: str):
-    from research_graph.evaluation.schema import TypedEntity
+    from research_graph.domain.schema import TypedEntity
 
     return TypedEntity(
         entity_id=eid,
@@ -306,9 +328,12 @@ class TestDispatchSeam:
         assert isinstance(QueueDispatch(queue=_FakeQueue()), DispatchProtocol)
 
     def test_can_dispatch_injectable_llm_check(self) -> None:
-        from research_graph.pipeline.primitives import CoreEntityExtractor, StatisticalPreProcessor
+        from research_graph.application.primitives import (
+            CoreEntityExtractor,
+            StatisticalPreProcessor,
+        )
 
-        cpu = StatisticalPreProcessor()
+        cpu = StatisticalPreProcessor(keyword_extractor=_fake_keywords)
         llm = CoreEntityExtractor()
         assert can_dispatch(cpu, PipelineContext(source_id="s")) is True
         assert (

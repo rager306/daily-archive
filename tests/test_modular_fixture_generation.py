@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from research_graph.papers.artifacts.models import FORBIDDEN_PAYLOAD_KEYS
-from research_graph.papers.indexing.navigation import PageIndexDocument
+from research_graph.domain.navigation import PageIndexDocument
 from research_graph.corpus.ingestion.loader import ArticleLoadResult
 from research_graph.corpus.parsing.structure import ParsedArticle
 from tests.helpers.modular_fixtures import (

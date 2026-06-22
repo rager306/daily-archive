@@ -1,7 +1,7 @@
 """Level 2 reusable pipeline stages (ADR-033 Step 4 + ADR-024 statistical-first).
 
 Each stage is a frozen dataclass that structurally satisfies the
-:class:`research_graph.pipeline.types.PipelineStage` protocol and declares its
+:class:`research_graph.application.types.PipelineStage` protocol and declares its
 :class:`ResourceProfile` lane (LLM vs CPU) per ADR-027 §2.2 and D085.
 
 Statistical-first (ADR-024): every LLM-calling stage is preceded by a
@@ -28,26 +28,32 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from research_graph.evaluation.schema import (
+from research_graph.application.types import (
+    PipelineContext,
+    ResourceProfile,
+)
+from research_graph.domain.schema import (
     DEFAULT_SAFETY_FLAGS,
     ExtractionPatch,
     TypedEntity,
     TypedRelation,
     is_known_relation_type,
 )
-from research_graph.evaluation.statistical_context import StatisticalContext
-from research_graph.papers.semantic_chunks import EvidencePath
-from research_graph.pipeline.types import (
-    PipelineContext,
-    ResourceProfile,
-)
-from research_graph.retrieval.keyword_extractor import KeywordExtractor
+from research_graph.domain.semantic_chunks import EvidencePath
+from research_graph.domain.statistical_context import StatisticalContext
 
 #: LLM JSON boundary callable shape: ``(prompt, context_snapshot) -> raw_json``.
 #: Returns parsed JSON (dict). The concrete client (MiniMax/GLM via
 #: ``provider_config.py``, ADR-025) is injected by the orchestrator/profile in
 #: M103 S03; here it is ``None`` so LLM stages are stubbed.
 LLMClient = Callable[[str, dict[str, Any]], dict[str, Any]]
+
+#: Keyword-extraction callable injected into :class:`StatisticalPreProcessor`.
+#: Takes ``(text_parts, top_k)`` and returns keyword strings (YAKE-style). The
+#: concrete :class:`~research_graph.retrieval.keyword_extractor.KeywordExtractor`
+#: is infrastructure; the application stage depends only on this callable, so
+#: the application layer never imports infrastructure (D086 onion).
+KeywordExtractorFn = Callable[[Sequence[str], int], list[str]]
 
 #: CPU-lane profile for deterministic statistical stages (YAKE, co-occurrence).
 _CPU_LIGHT = ResourceProfile(cpu_required=True, cpu_intensity="light")
@@ -79,7 +85,7 @@ class LLMRelationOutput:
     """Adaptix boundary model for one LLM-extracted typed relation.
 
     ``relation_type`` is validated against the 27 typed relations
-    (:data:`~research_graph.evaluation.relation_types.ALL_TYPED_RELATIONS`)
+    (:data:`~research_graph.domain.relation_types.ALL_TYPED_RELATIONS`)
     before promotion to :class:`TypedRelation`; invalid types are dropped, not
     coerced (fail-closed).
     """
@@ -104,7 +110,7 @@ def _build_retort() -> Any:
 
 
 # ── Statistical context (ADR-024) is defined canonically in ───────────────
-# ``research_graph.evaluation.statistical_context`` (ADR-033 §2.6) and imported
+# ``research_graph.domain.statistical_context`` (ADR-033 §2.6) and imported
 # above. Re-exported via ``__all__`` so pipeline callers can import it from the
 # pipeline namespace too (schema evolution, not duplication — §6.3 #6).
 
@@ -118,22 +124,27 @@ class StatisticalPreProcessor:
     Reads ``text_parts`` from the context (set by the caller/profile) and
     writes a :class:`StatisticalContext` into ``context.statistical_context``
     so downstream LLM stages receive deterministic statistical grounding.
+
+    The keyword extractor is INJECTED (``keyword_extractor``): the application
+    stage never imports the concrete YAKE :class:`KeywordExtractor`
+    (infrastructure, D086 onion). The composition root wires a real extractor;
+    with ``None`` the stage emits an empty keyword context (stub).
     """
 
     stage_name: str = "statistical_pre_processor"
     resource_profile: ResourceProfile = _CPU_LIGHT
     keyword_top_k: int = 20
     co_occurrence_min: int = 2
+    keyword_extractor: KeywordExtractorFn | None = None
 
     def run(self, context: PipelineContext) -> PipelineContext:
         text_parts: Sequence[str] = context.stage_outputs.get("text_parts", ())
-        if not text_parts:
+        if not text_parts or self.keyword_extractor is None:
             ctx = context.with_output(self.stage_name, StatisticalContext())
             from dataclasses import replace
 
             return replace(ctx, statistical_context=ctx.stage_outputs[self.stage_name])
-        extractor = KeywordExtractor()
-        keywords = extractor.extract_for_text_parts(list(text_parts))[: self.keyword_top_k]
+        keywords = self.keyword_extractor(list(text_parts), self.keyword_top_k)
         scored = [(kw, 1.0 / (i + 1)) for i, kw in enumerate(keywords)]
         co_occur = _co_occurrence(keywords, list(text_parts), self.co_occurrence_min)
         stat = StatisticalContext(keywords=tuple(scored), co_occurrence=tuple(co_occur))
@@ -299,7 +310,7 @@ class RelationTypeClassifier:
     relation without the LLM). With a client, the LLM proposes
     :class:`LLMRelationOutput`; only proposals whose ``relation_type`` is one
     of the 27 typed relations survive (validated via
-    :func:`~research_graph.evaluation.schema.is_known_relation_type`).
+    :func:`~research_graph.domain.schema.is_known_relation_type`).
     """
 
     stage_name: str = "relation_type_classifier"

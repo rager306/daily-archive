@@ -22,11 +22,12 @@ types and the typed schema models. No LLM SDK, no graph driver, no parser.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
-from research_graph.evaluation.schema import ExtractionPatch
-from research_graph.papers.indexing.navigation import PageIndexDocument
-from research_graph.papers.semantic_chunks import EvidencePath, SemanticChunk
+from research_graph.domain.navigation import PageIndexDocument
+from research_graph.domain.schema import ExtractionPatch
+from research_graph.domain.semantic_chunks import EvidencePath, SemanticChunk
 
 #: Extraction kinds the LLM boundary distinguishes (matches the prototype's
 #: ``extraction_kind`` snapshot hint and the forced-tool schemas). The Port is
@@ -34,6 +35,21 @@ from research_graph.papers.semantic_chunks import EvidencePath, SemanticChunk
 #: contract without a shared enum import.
 EXTRACTION_KIND_ENTITIES = "entities"
 EXTRACTION_KIND_RELATIONS = "relations"
+
+
+@dataclass
+class ConversionResult:
+    """Result of a full-text conversion attempt (D088 canonical home).
+
+    Lives in the domain so the :class:`FullTextProviderPort` can return it
+    without the Core importing an infrastructure module. ``markdown_converter``
+    imports this type from here (schema evolution, not duplication — §6.3 #6).
+    Mutable by design: adapters populate fields progressively during fallback.
+    """
+
+    markdown: str | None
+    method: str  # "arxiv2md" | "marker" | "docling" | "error"
+    error: str | None
 
 
 @runtime_checkable
@@ -92,20 +108,24 @@ class GraphDBPort(Protocol):
 
 
 @runtime_checkable
-class PDFParserPort(Protocol):
-    """Hybrid PDF/markdown parser boundary (ADR-008/009).
+class FullTextProviderPort(Protocol):
+    """Full-text provider boundary — arXiv id → markdown (D088 pivot).
 
-    Adapters implement one parser backend (Marker / GROBID / arxiv2md /
-    OpenDataLoader); a routing adapter selects among them by source quality.
-    Parsing output is deterministic candidate evidence — parse warnings stay
-    warnings, never silent successes.
+    The real multi-backend seam lives in
+    :class:`research_graph.corpus.sources.markdown_converter.MDConverter`,
+    which routes among arxiv2md / marker / docling with fallback. This Port
+    captures that contract so adapters (and fakes for the 4 MDConverter tests)
+    are interchangeable. ``parse_article`` / ``build_page_index`` are NOT behind
+    a Port — they are a single deterministic implementation (Ponytail Port
+    rule: no Port for one implementation without a planned migration).
     """
 
-    def parse(self, source: Any) -> Any:
-        """Parse ``source`` (fulltext ingestion result / markdown / PDF path) into a parsed article.
+    def convert_sync(self, arxiv_id: str) -> ConversionResult:
+        """Return the conversion result for ``arxiv_id`` (sync wrapper).
 
-        Concrete return type is the domain's parsed-article structure; typed
-        loosely here so the Port does not import the parser package.
+        Adapters pick a backend and may fall back (arxiv2md → marker → docling).
+        Fail-closed: a failed conversion returns a ``ConversionResult`` with
+        ``error`` set, never raises to the caller.
         """
         ...
 
@@ -113,7 +133,7 @@ class PDFParserPort(Protocol):
 __all__ = [
     "EXTRACTION_KIND_ENTITIES",
     "EXTRACTION_KIND_RELATIONS",
+    "FullTextProviderPort",
     "GraphDBPort",
     "LLMClientPort",
-    "PDFParserPort",
 ]

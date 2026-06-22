@@ -1,6 +1,6 @@
 """Paper indexing, link deduplication, and retrieval-table contracts."""
 
-from research_graph.papers.indexing.navigation import (
+from research_graph.domain.navigation import (
     NavigationAnchor,
     PageIndexDocument,
     PageIndexNode,

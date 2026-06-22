@@ -20,7 +20,7 @@ from research_graph.papers.indexing.page_index import build_article_page_index_f
 from research_graph.papers.source_assets.registry import AssetRecord, PreservedSourceFile, SourceSpan as AssetSourceSpan
 from research_graph.papers.chunking.chunker import StructureAwarePackage, parse_markdown_structure
 from research_graph.identity.canonicalization import canonical_source_id, stable_json_hash
-from research_graph.papers.indexing.navigation import PageIndexDocument
+from research_graph.domain.navigation import PageIndexDocument
 from research_graph.papers.indexing.parsed_page_index import build_page_index_from_parsed
 from research_graph.corpus.ingestion.loader import (
     ArticleLoadResult,

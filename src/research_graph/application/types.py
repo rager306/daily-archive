@@ -128,7 +128,7 @@ class PipelineStage(Protocol):
     graph writes; their outputs are candidate evidence, not truth (§6.3 #4).
 
     Concrete stages are frozen dataclasses implementing this protocol
-    structurally (no inheritance required) — see :mod:`research_graph.pipeline
+    structurally (no inheritance required) — see :mod:`research_graph.application
     .primitives` (ADR-033 Step 4, M103 S02 T02).
     """
 

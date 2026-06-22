@@ -6,7 +6,7 @@ from typing import Protocol
 
 import yake
 
-from research_graph.papers.indexing.navigation import PageIndexDocument
+from research_graph.domain.navigation import PageIndexDocument
 from research_graph.corpus.parsing.structure import ParsedArticle
 
 
