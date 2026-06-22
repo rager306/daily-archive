@@ -22,11 +22,22 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT_DIR = ROOT / "artifacts" / "project-trajectory"
 DIMENSIONS = (
-    "architecture", "functionality", "module_code", "evidence", "safety",
-    "operations", "next_gate", "reverse_adr_audit",
+    "architecture",
+    "functionality",
+    "module_code",
+    "evidence",
+    "safety",
+    "operations",
+    "next_gate",
+    "reverse_adr_audit",
     # Post-M101 architecture dimensions (ADR-023)
-    "schema_readiness", "extraction_coverage", "falkordb_migration",
-    "universal_sources", "agent_readiness",
+    "schema_readiness",
+    "extraction_coverage",
+    "falkordb_migration",
+    "universal_sources",
+    "agent_readiness",
+    # Post-M104 hexagonal overlay (ADR-034)
+    "hexagonal_discipline",
 )
 PHASES = ("preflight", "active", "closeout")
 
@@ -40,10 +51,18 @@ PHASE_SEVERITY_OVERRIDES: dict[str, dict[str, str]] = {
     "closeout": {"uncommitted_changes_present": "info"},
 }
 PROHIBITED_PATTERNS = {
-    "graph_import_authorized": re.compile(r"(?i)(graph import|GraphDB import|LadybugDB import).{0,80}(authorized|allowed|enabled)"),
-    "fact_promotion_allowed": re.compile(r"(?i)(fact promotion|promoted facts).{0,80}(authorized|allowed|enabled)"),
-    "production_import_authorized": re.compile(r"(?i)(production import).{0,80}(authorized|allowed|enabled)"),
-    "raw_payload_promoted": re.compile(r"(?i)(raw TEI|raw text|full text|embedding|vector).{0,80}(persisted|promoted|imported)"),
+    "graph_import_authorized": re.compile(
+        r"(?i)(graph import|GraphDB import|LadybugDB import).{0,80}(authorized|allowed|enabled)"
+    ),
+    "fact_promotion_allowed": re.compile(
+        r"(?i)(fact promotion|promoted facts).{0,80}(authorized|allowed|enabled)"
+    ),
+    "production_import_authorized": re.compile(
+        r"(?i)(production import).{0,80}(authorized|allowed|enabled)"
+    ),
+    "raw_payload_promoted": re.compile(
+        r"(?i)(raw TEI|raw text|full text|embedding|vector).{0,80}(persisted|promoted|imported)"
+    ),
 }
 NO_IMPORT_COUNTER_TERMS = (
     "no graph import",
@@ -99,7 +118,9 @@ def load_json(path: Path) -> dict[str, Any]:
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
 
 
 def write_text(path: Path, text: str) -> None:
@@ -110,7 +131,12 @@ def write_text(path: Path, text: str) -> None:
 def parse_requirements(text: str) -> dict[str, Any]:
     ids = re.findall(r"^### (R\d{3}) — (.+)$", text, flags=re.MULTILINE)
     statuses = Counter(re.findall(r"^- Status: ([^\n]+)$", text, flags=re.MULTILINE))
-    return {"count": len(ids), "ids": [rid for rid, _ in ids], "statuses": dict(statuses), "titles": dict(ids)}
+    return {
+        "count": len(ids),
+        "ids": [rid for rid, _ in ids],
+        "statuses": dict(statuses),
+        "titles": dict(ids),
+    }
 
 
 def parse_decisions(text: str) -> dict[str, Any]:
@@ -120,12 +146,23 @@ def parse_decisions(text: str) -> dict[str, Any]:
             continue
         parts = [part.strip() for part in line.strip("|").split("|")]
         if len(parts) >= 5:
-            rows.append({"id": parts[0], "when": parts[1], "scope": parts[2], "decision": parts[3], "choice": parts[4]})
+            rows.append(
+                {
+                    "id": parts[0],
+                    "when": parts[1],
+                    "scope": parts[2],
+                    "decision": parts[3],
+                    "choice": parts[4],
+                }
+            )
     return {"count": len(rows), "latest": rows[-5:], "ids": [row["id"] for row in rows]}
 
 
 def recent_milestones(milestones_dir: Path, limit: int = 6) -> list[dict[str, Any]]:
-    summaries = sorted(milestones_dir.glob("M*/M*-SUMMARY.md"), key=lambda p: p.stat().st_mtime if p.exists() else 0)
+    summaries = sorted(
+        milestones_dir.glob("M*/M*-SUMMARY.md"),
+        key=lambda p: p.stat().st_mtime if p.exists() else 0,
+    )
     items = []
     for path in summaries[-limit:]:
         text = read_text(path)
@@ -135,10 +172,13 @@ def recent_milestones(milestones_dir: Path, limit: int = 6) -> list[dict[str, An
         items.append(
             {
                 "id": milestone_id,
-                "path": str(path.relative_to(ROOT)) if ROOT in path.resolve().parents else str(path),
+                "path": str(path.relative_to(ROOT))
+                if ROOT in path.resolve().parents
+                else str(path),
                 "title": title_match.group(1).strip() if title_match else milestone_id,
                 "status": status_match.group(1).strip() if status_match else "summary-present",
-                "mentions_no_import": "no graph import" in text.lower() or "no-write" in text.lower(),
+                "mentions_no_import": "no graph import" in text.lower()
+                or "no-write" in text.lower(),
             }
         )
     return items
@@ -146,7 +186,9 @@ def recent_milestones(milestones_dir: Path, limit: int = 6) -> list[dict[str, An
 
 def git_status(root: Path) -> dict[str, Any]:
     try:
-        result = subprocess.run(["git", "status", "--short"], cwd=root, text=True, capture_output=True, timeout=10)
+        result = subprocess.run(
+            ["git", "status", "--short"], cwd=root, text=True, capture_output=True, timeout=10
+        )
         lines = [line for line in result.stdout.splitlines() if line]
         return {"exit_code": result.returncode, "changed_files": len(lines), "entries": lines[:100]}
     except Exception as exc:  # noqa: BLE001 - diagnostic only
@@ -169,10 +211,16 @@ def find_prohibited_claims(texts: dict[str, str]) -> list[dict[str, str]]:
                 matched_phrase = text[match.start() : match.end()].lower()
                 local_negation = re.search(r"(?:^|\b)(no|not)\s*$", local_prefix) is not None
                 raw_payload_negation = flag == "raw_payload_promoted" and "no raw" in local_prefix
-                if any(term in matched_phrase for term in NO_IMPORT_COUNTER_TERMS) or local_negation or raw_payload_negation:
+                if (
+                    any(term in matched_phrase for term in NO_IMPORT_COUNTER_TERMS)
+                    or local_negation
+                    or raw_payload_negation
+                ):
                     continue
                 window = text[max(0, match.start() - 120) : match.end() + 120]
-                flags.append({"flag": flag, "source": source, "snippet": " ".join(window.split())[:240]})
+                flags.append(
+                    {"flag": flag, "source": source, "snippet": " ".join(window.split())[:240]}
+                )
     return flags
 
 
@@ -273,11 +321,29 @@ REVERSE_ADR_AUDIT_RULES: list[dict[str, Any]] = [
         "rationale": "anthropic SDK should only be imported in llm/ package. Other modules use provider-agnostic interfaces.",
         "path_prefix_exclude": "src/research_graph/llm/",
     },
+    # Post-M104 onion layering rules (ADR-034, D086). These scan ONLY the
+    # named layer directory so the forbidden-import regex is layer-scoped.
+    {
+        "id": "no_infra_import_in_domain",
+        "anchor": "ADR-034 (Hexagonal/Onion overlay), D086",
+        "severity": "medium",
+        "scan": "src/research_graph/domain",
+        "pattern": r"^\s*(?:from|import)\s+research_graph\.(?:infrastructure|graph|corpus|llm|retrieval|identity|quality|repair|staging|ops|workflows|cli|application)\b",
+        "rationale": "The domain Core (ADR-034) must not import application or infrastructure packages. Use Ports instead. Enforced primarily by scripts/verify_onion_layering.py.",
+    },
+    {
+        "id": "no_concrete_infra_import_in_application",
+        "anchor": "ADR-034 (Hexagonal/Onion overlay), D086",
+        "severity": "medium",
+        "scan": "src/research_graph/application",
+        "pattern": r"^\s*(?:from|import)\s+research_graph\.(?:infrastructure|graph|corpus|llm|retrieval|identity|quality|repair|staging|ops|workflows|cli)\b",
+        "rationale": "The application layer (ADR-034) must not import infrastructure packages directly. Infrastructure reaches the application only via injected Ports/callables through the composition root.",
+    },
 ]
 
 
 def reverse_adr_audit(root: Path) -> dict[str, Any]:
-    """Run the 8-rule reverse ADR audit on the codebase.
+    """Run the 10-rule reverse ADR audit on the codebase.
 
     Returns a dict with keys:
       - status: "clear" | "violations"
@@ -293,11 +359,21 @@ def reverse_adr_audit(root: Path) -> dict[str, Any]:
             evidence.append(f"{rule['id']}: scan root {rule['scan']} not found")
             continue
         if not evidence or not evidence[-1].startswith(rule["scan"]):
-            evidence.append(f"{rule['scan'].rstrip('/')}/ (rule: {rule['id']}, anchor: {rule['anchor']})")
+            evidence.append(
+                f"{rule['scan'].rstrip('/')}/ (rule: {rule['id']}, anchor: {rule['anchor']})"
+            )
         try:
             pattern = re.compile(rule["pattern"], flags=re.MULTILINE)
         except re.error as exc:
-            violations.append({"rule_id": rule["id"], "anchor": rule["anchor"], "file": "<pattern>", "line": "0", "snippet": f"pattern error: {exc}"})
+            violations.append(
+                {
+                    "rule_id": rule["id"],
+                    "anchor": rule["anchor"],
+                    "file": "<pattern>",
+                    "line": "0",
+                    "snippet": f"pattern error: {exc}",
+                }
+            )
             continue
         exclude = set(rule.get("exclude_paths") or ())
         prefix_exclude = rule.get("path_prefix_exclude")
@@ -320,20 +396,50 @@ def reverse_adr_audit(root: Path) -> dict[str, Any]:
                 continue
             for match in pattern.finditer(text):
                 line_no = text[: match.start()].count("\n") + 1
-                snippet = text.splitlines()[line_no - 1].strip() if line_no - 1 < len(text.splitlines()) else ""
-                violations.append({
-                    "rule_id": rule["id"],
-                    "anchor": rule["anchor"],
-                    "file": rel,
-                    "line": str(line_no),
-                    "snippet": snippet[:200],
-                })
+                snippet = (
+                    text.splitlines()[line_no - 1].strip()
+                    if line_no - 1 < len(text.splitlines())
+                    else ""
+                )
+                violations.append(
+                    {
+                        "rule_id": rule["id"],
+                        "anchor": rule["anchor"],
+                        "file": rel,
+                        "line": str(line_no),
+                        "snippet": snippet[:200],
+                    }
+                )
 
     status = "clear" if not violations else "violations"
-    return {"status": status, "violations": violations, "evidence": evidence, "rule_count": len(REVERSE_ADR_AUDIT_RULES)}
+    return {
+        "status": status,
+        "violations": violations,
+        "evidence": evidence,
+        "rule_count": len(REVERSE_ADR_AUDIT_RULES),
+    }
 
 
-def build_report(*, root: Path = ROOT, codebase_memory_snapshot: Path | None = None, phase: str = "preflight") -> dict[str, Any]:
+def _hexagonal_discipline_status(root: Path) -> str:
+    """Derive the hexagonal/onion overlay maturity from the codebase (ADR-034)."""
+    ports = (root / "src" / "research_graph" / "domain" / "ports.py").exists()
+    ladybug_adapter = (
+        root / "src" / "research_graph" / "infrastructure" / "graph" / "ladybug_adapter.py"
+    ).exists()
+    md_adapter = (
+        root / "src" / "research_graph" / "infrastructure" / "sources" / "md_converter_adapter.py"
+    ).exists()
+    guard = (root / "scripts" / "verify_onion_layering.py").exists()
+    if ports and ladybug_adapter and md_adapter and guard:
+        return "crystallized"
+    if ports:
+        return "in_progress"
+    return "not_started"
+
+
+def build_report(
+    *, root: Path = ROOT, codebase_memory_snapshot: Path | None = None, phase: str = "preflight"
+) -> dict[str, Any]:
     if phase not in PHASES:
         raise ValueError(f"unknown phase: {phase!r}; expected one of {PHASES}")
     paths = Paths.from_root(root)
@@ -352,16 +458,55 @@ def build_report(*, root: Path = ROOT, codebase_memory_snapshot: Path | None = N
 
     drift_flags: list[dict[str, Any]] = []
     if not governance.get("node_count"):
-        drift_flags.append({"flag": "governance_mirror_missing", "severity": "high", "evidence": str(paths.governance_graph)})
+        drift_flags.append(
+            {
+                "flag": "governance_mirror_missing",
+                "severity": "high",
+                "evidence": str(paths.governance_graph),
+            }
+        )
     latest_short_id = latest.get("id", "").split("-", 1)[0] if latest else ""
     if latest and latest["id"] not in readme and latest_short_id not in readme:
-        drift_flags.append({"flag": "latest_milestone_missing_readme_reference", "severity": "medium", "evidence": latest["id"]})
-    prohibited = find_prohibited_claims({"README.md": readme, "recent_milestones": "\n".join(read_text(Path(item["path"])) for item in milestones if Path(item["path"]).exists())})
-    drift_flags.extend({"flag": item["flag"], "severity": "high", "evidence": item["source"], "snippet": item["snippet"]} for item in prohibited)
-    if "Next safe milestone" not in readme and "Next gate" not in readme and "next gate" not in readme.lower():
-        drift_flags.append({"flag": "missing_next_gate", "severity": "medium", "evidence": "README.md"})
+        drift_flags.append(
+            {
+                "flag": "latest_milestone_missing_readme_reference",
+                "severity": "medium",
+                "evidence": latest["id"],
+            }
+        )
+    prohibited = find_prohibited_claims(
+        {
+            "README.md": readme,
+            "recent_milestones": "\n".join(
+                read_text(Path(item["path"])) for item in milestones if Path(item["path"]).exists()
+            ),
+        }
+    )
+    drift_flags.extend(
+        {
+            "flag": item["flag"],
+            "severity": "high",
+            "evidence": item["source"],
+            "snippet": item["snippet"],
+        }
+        for item in prohibited
+    )
+    if (
+        "Next safe milestone" not in readme
+        and "Next gate" not in readme
+        and "next gate" not in readme.lower()
+    ):
+        drift_flags.append(
+            {"flag": "missing_next_gate", "severity": "medium", "evidence": "README.md"}
+        )
     if git.get("changed_files", 0) > 0:
-        drift_flags.append({"flag": "uncommitted_changes_present", "severity": "info", "evidence": f"{git['changed_files']} files"})
+        drift_flags.append(
+            {
+                "flag": "uncommitted_changes_present",
+                "severity": "info",
+                "evidence": f"{git['changed_files']} files",
+            }
+        )
     for violation in audit["violations"]:
         # Find the rule to get its severity
         rule_severity = "high"
@@ -369,18 +514,28 @@ def build_report(*, root: Path = ROOT, codebase_memory_snapshot: Path | None = N
             if rule["id"] == violation["rule_id"]:
                 rule_severity = rule.get("severity", "high")
                 break
-        drift_flags.append({
-            "flag": f"reverse_adr_audit_{violation['rule_id']}",
-            "severity": rule_severity,
-            "evidence": f"{violation['file']}:{violation['line']}",
-            "snippet": violation["snippet"],
-        })
+        drift_flags.append(
+            {
+                "flag": f"reverse_adr_audit_{violation['rule_id']}",
+                "severity": rule_severity,
+                "evidence": f"{violation['file']}:{violation['line']}",
+                "snippet": violation["snippet"],
+            }
+        )
 
     # Apply phase-aware severity overrides (D080, M046 Recommendation 5).
     drift_flags = adjust_severity_for_phase(drift_flags, phase)
 
     safety_flags = [flag["flag"] for flag in drift_flags if flag["severity"] == "high"]
-    verdict = "blocked" if safety_flags else ("drift_risk" if any(flag["severity"] == "medium" for flag in drift_flags) else "on_track")
+    verdict = (
+        "blocked"
+        if safety_flags
+        else (
+            "drift_risk"
+            if any(flag["severity"] == "medium" for flag in drift_flags)
+            else "on_track"
+        )
+    )
 
     dimensions = {
         "architecture": dimension(
@@ -414,7 +569,9 @@ def build_report(*, root: Path = ROOT, codebase_memory_snapshot: Path | None = N
             [],
         ),
         "next_gate": dimension(
-            "clear" if not any(flag["flag"] == "missing_next_gate" for flag in drift_flags) else "needs_attention",
+            "clear"
+            if not any(flag["flag"] == "missing_next_gate" for flag in drift_flags)
+            else "needs_attention",
             ["README.md", "recent milestone summaries"],
             [flag["flag"] for flag in drift_flags if flag["flag"] == "missing_next_gate"],
         ),
@@ -425,7 +582,9 @@ def build_report(*, root: Path = ROOT, codebase_memory_snapshot: Path | None = N
         ),
         # Post-M101 architecture dimensions (ADR-023)
         "schema_readiness": dimension(
-            "design_accepted" if paths.adr_dir.joinpath("ADR-028-typed-knowledge-schema.md").exists() else "missing",
+            "design_accepted"
+            if paths.adr_dir.joinpath("ADR-028-typed-knowledge-schema.md").exists()
+            else "missing",
             ["ADR-028 typed schema", "27 relation types", "5 modules A-E"],
             [],
         ),
@@ -435,18 +594,38 @@ def build_report(*, root: Path = ROOT, codebase_memory_snapshot: Path | None = N
             [],
         ),
         "falkordb_migration": dimension(
-            "not_started" if not any(p.name == "falkordb_client.py" for p in (root / "src" / "research_graph" / "graph").glob("*.py")) else "in_progress",
+            "not_started"
+            if not any(
+                p.name == "falkordb_client.py"
+                for p in (root / "src" / "research_graph" / "graph").glob("*.py")
+            )
+            else "in_progress",
             ["ADR-022 FalkorDB binding", "ADR-030 schema designed", "LadybugDB still in use"],
             [],
         ),
         "universal_sources": dimension(
             "paper_only",
-            ["220 PDFs in arXiv catalog", "5 domain profiles designed (ADR-032)", "GNN textbook pending"],
+            [
+                "220 PDFs in arXiv catalog",
+                "5 domain profiles designed (ADR-032)",
+                "GNN textbook pending",
+            ],
             [],
         ),
         "agent_readiness": dimension(
             "requires_development",
             ["ADR-031 directional", "SymFSM needs formalization", "Phase 6 deferred"],
+            [],
+        ),
+        # Post-M104 hexagonal/onion overlay (ADR-034, D086).
+        "hexagonal_discipline": dimension(
+            _hexagonal_discipline_status(root),
+            [
+                "ADR-034 hexagonal/onion overlay",
+                "3 Ports: LLMClientPort, GraphDBPort, FullTextProviderPort",
+                "Ponytail Port rule enforced",
+                "verify_onion_layering.py multi-layer guard",
+            ],
             [],
         ),
     }
@@ -492,7 +671,9 @@ def derive_next_actions(drift_flags: list[dict[str, Any]], latest: dict[str, Any
     if "uncommitted_changes_present" in names:
         actions.append("Run focused verification and commit or intentionally leave a handoff.")
     if not actions:
-        actions.append("Proceed with next planned gate; keep using trajectory check before planning and closeout.")
+        actions.append(
+            "Proceed with next planned gate; keep using trajectory check before planning and closeout."
+        )
     return actions
 
 
@@ -514,73 +695,79 @@ def render_markdown(report: dict[str, Any]) -> str:
         "|---|---|---|---|",
     ]
     for name, data in report["dimensions"].items():
-        lines.append(f"| {name} | {data['status']} | {', '.join(data['flags']) or 'none'} | {', '.join(data['evidence'])[:180]} |")
+        lines.append(
+            f"| {name} | {data['status']} | {', '.join(data['flags']) or 'none'} | {', '.join(data['evidence'])[:180]} |"
+        )
     lines.extend(["", "## Drift flags", "", "| Severity | Flag | Evidence |", "|---|---|---|"])
     for flag in report["drift_flags"]:
         lines.append(f"| {flag['severity']} | {flag['flag']} | {flag.get('evidence', '')} |")
     if not report["drift_flags"]:
         lines.append("| info | none | No drift flags detected |")
-    lines.extend(["", "## Recent milestones", "", "| Milestone | Title | Status |", "|---|---|---|"])
+    lines.extend(
+        ["", "## Recent milestones", "", "| Milestone | Title | Status |", "|---|---|---|"]
+    )
     for item in report["progress_summary"]["recent_milestones"]:
         lines.append(f"| {item['id']} | {item['title']} | {item['status']} |")
     lines.extend(["", "## Next actions", ""])
     for action in report["next_actions"]:
         lines.append(f"- {action}")
 
-    lines.extend([
-        "",
-        "## How to create an ADR",
-        "",
-        "1. Use the canonical template: `doc/adr/ADR-TEMPLATE.md` (14 sections, Mermaid-assisted, LLM Reading Notes required).",
-        "2. Number sequentially after the highest existing ADR number (e.g., next is `ADR-017`).",
-        "3. Filename pattern: `doc/adr/ADR-NNN-short-title.md` (use hyphens, no slashes).",
-        "4. Update `doc/adr/ADR-INDEX.md` table with the new entry.",
-        "5. After commit, run `uv run python scripts/sync_codebase_memory_governance.py` to mirror.",
-        "6. For amendments to existing ADRs, add an \"Amendment Log\" section with date + milestone + rationale.",
-        "",
-        "## Catalog ingestion rule (post-M061-S04, 2026-06-13)",
-        "",
-        "All future milestones/tasks that download arxiv articles MUST end with already-downloaded articles being ingested to the canonical catalog at `data/article_catalog/article_catalog/arxiv/<category>/<id>/source/<id>.pdf`.",
-        "",
-        "Reference pattern: `scripts/m061_ingest_to_canonical_catalog.py` (M061 S04, 2026-06-13).",
-        "Idempotent (SHA256 check), online arxiv API category detection with 1 req/3s rate limit + retry+backoff, explicit network override with audit.",
-        "",
-        "Rationale: M061 S01-S03 placed 151 PDFs in `artifacts/m061-2hop/anchor-*/acquisition/pdfs/` (isolated from catalog). S04 closed the gap (catalog 186 -> 218 PDFs). Without this rule, future download tasks risk losing articles when `artifacts/` is cleaned up.",
-        "",
-        "Verification: `uv run python scripts/verify_article_catalog.py` must pass after any ingestion step.",
-        "",
-        "## Next gate (post-M101 architecture crystallization)",
-        "",
-        "Architecture is crystallized (32 ADRs, 6 design documents). Next phases:",
-        "",
-        "- **Phase 2**: Typed schema code + extraction prototype (5 papers, DSPy, MiniMax)",
-        "- **Phase 3**: FalkorDB migration + graph operators O1-O6",
-        "- **Phase 4**: Staged validation (R024: 10→20→week corpus)",
-        "- **Phase 5**: Universal ingestion (GNN textbook, code repos, datasets)",
-        "- **Phase 6**: Agent integration (SymFSM) — REQUIRES FURTHER IDEA DEVELOPMENT",
-        "",
-        "## Future gate: FD v2 verification (post-fd-v2-deploy)",
-        "",
-        "When fd upstream repo deploys v2 per spec in `/root/fd-v2.md` (32KB, 873 lines, 45 test cases, 30+ requirements):",
-        "",
-        "1. **M062-S03v2**: re-run contract tests against new fd",
-        "   - All 45 test cases from `/root/fd-v2.md` section 5 must pass",
-        "   - Validate P0 requirements: R-P0-1..R-P0-19 (functional + observability + headers + error format)",
-        "   - Validate P1 requirements: R-P1-1..R-P1-9 (health + features)",
-        "   - Output: `artifacts/m062-fd-contract/fd-v2-validation-report.md`",
-        "2. **M062-S04v2**: integration test — daily-archive wrapper vs new fd end-to-end",
-        "   - Re-run 150 M061 papers through new fd",
-        "   - Measure throughput, latency p50/p95/p99, error rate",
-        "   - Validate graceful degradation, circuit breaker, retry+backoff",
-        "3. **M062-S05v2**: ADR-019 update + M062 closeout",
-        "   - ADR-019 amended with fd v2 validation evidence",
-        "   - M062 closeout artifacts (SUMMARY + VALIDATION)",
-        "   - 1 commit per slice",
-        "",
-        "Trigger: fd upstream issue/PR merge OR manual run via `/gsd plan-milestone M062v2 fd-v2-verification`.",
-        "Reference: `/root/fd-v2.md` (authoritative spec).",
-        "Owner: future executor after fd v2 deploy signal.",
-    ])
+    lines.extend(
+        [
+            "",
+            "## How to create an ADR",
+            "",
+            "1. Use the canonical template: `doc/adr/ADR-TEMPLATE.md` (14 sections, Mermaid-assisted, LLM Reading Notes required).",
+            "2. Number sequentially after the highest existing ADR number (e.g., next is `ADR-017`).",
+            "3. Filename pattern: `doc/adr/ADR-NNN-short-title.md` (use hyphens, no slashes).",
+            "4. Update `doc/adr/ADR-INDEX.md` table with the new entry.",
+            "5. After commit, run `uv run python scripts/sync_codebase_memory_governance.py` to mirror.",
+            '6. For amendments to existing ADRs, add an "Amendment Log" section with date + milestone + rationale.',
+            "",
+            "## Catalog ingestion rule (post-M061-S04, 2026-06-13)",
+            "",
+            "All future milestones/tasks that download arxiv articles MUST end with already-downloaded articles being ingested to the canonical catalog at `data/article_catalog/article_catalog/arxiv/<category>/<id>/source/<id>.pdf`.",
+            "",
+            "Reference pattern: `scripts/m061_ingest_to_canonical_catalog.py` (M061 S04, 2026-06-13).",
+            "Idempotent (SHA256 check), online arxiv API category detection with 1 req/3s rate limit + retry+backoff, explicit network override with audit.",
+            "",
+            "Rationale: M061 S01-S03 placed 151 PDFs in `artifacts/m061-2hop/anchor-*/acquisition/pdfs/` (isolated from catalog). S04 closed the gap (catalog 186 -> 218 PDFs). Without this rule, future download tasks risk losing articles when `artifacts/` is cleaned up.",
+            "",
+            "Verification: `uv run python scripts/verify_article_catalog.py` must pass after any ingestion step.",
+            "",
+            "## Next gate (post-M101 architecture crystallization)",
+            "",
+            "Architecture is crystallized (32 ADRs, 6 design documents). Next phases:",
+            "",
+            "- **Phase 2**: Typed schema code + extraction prototype (5 papers, DSPy, MiniMax)",
+            "- **Phase 3**: FalkorDB migration + graph operators O1-O6",
+            "- **Phase 4**: Staged validation (R024: 10→20→week corpus)",
+            "- **Phase 5**: Universal ingestion (GNN textbook, code repos, datasets)",
+            "- **Phase 6**: Agent integration (SymFSM) — REQUIRES FURTHER IDEA DEVELOPMENT",
+            "",
+            "## Future gate: FD v2 verification (post-fd-v2-deploy)",
+            "",
+            "When fd upstream repo deploys v2 per spec in `/root/fd-v2.md` (32KB, 873 lines, 45 test cases, 30+ requirements):",
+            "",
+            "1. **M062-S03v2**: re-run contract tests against new fd",
+            "   - All 45 test cases from `/root/fd-v2.md` section 5 must pass",
+            "   - Validate P0 requirements: R-P0-1..R-P0-19 (functional + observability + headers + error format)",
+            "   - Validate P1 requirements: R-P1-1..R-P1-9 (health + features)",
+            "   - Output: `artifacts/m062-fd-contract/fd-v2-validation-report.md`",
+            "2. **M062-S04v2**: integration test — daily-archive wrapper vs new fd end-to-end",
+            "   - Re-run 150 M061 papers through new fd",
+            "   - Measure throughput, latency p50/p95/p99, error rate",
+            "   - Validate graceful degradation, circuit breaker, retry+backoff",
+            "3. **M062-S05v2**: ADR-019 update + M062 closeout",
+            "   - ADR-019 amended with fd v2 validation evidence",
+            "   - M062 closeout artifacts (SUMMARY + VALIDATION)",
+            "   - 1 commit per slice",
+            "",
+            "Trigger: fd upstream issue/PR merge OR manual run via `/gsd plan-milestone M062v2 fd-v2-verification`.",
+            "Reference: `/root/fd-v2.md` (authoritative spec).",
+            "Owner: future executor after fd v2 deploy signal.",
+        ]
+    )
     lines.append("")
 
     return "\n".join(lines)
@@ -596,14 +783,18 @@ def main() -> int:
         choices=PHASES,
         default="preflight",
         help="Severity tuning phase. preflight (default) = current behavior; "
-             "active = uncommitted_changes_present promoted to medium; "
-             "closeout = uncommitted_changes_present demoted to info.",
+        "active = uncommitted_changes_present promoted to medium; "
+        "closeout = uncommitted_changes_present demoted to info.",
     )
     args = parser.parse_args()
-    report = build_report(root=args.root, codebase_memory_snapshot=args.codebase_memory_snapshot, phase=args.phase)
+    report = build_report(
+        root=args.root, codebase_memory_snapshot=args.codebase_memory_snapshot, phase=args.phase
+    )
     write_json(args.output_dir / "trajectory-report.json", report)
     write_text(args.output_dir / "trajectory-report.md", render_markdown(report))
-    sys.stdout.write(f"trajectory report: verdict={report['verdict']} phase={report['phase']} flags={len(report['drift_flags'])}\n")
+    sys.stdout.write(
+        f"trajectory report: verdict={report['verdict']} phase={report['phase']} flags={len(report['drift_flags'])}\n"
+    )
     return 0 if report["verdict"] != "blocked" else 2
 
 

@@ -13,7 +13,7 @@ This index lists project-level ADRs and points to historical ADR packages kept u
 
 ## Project-Level ADRs
 
-Project-level ADR count: 33
+Project-level ADR count: 34
 
 | ADR | Status | Title | Path | Notes |
 | --- | --- | --- | --- | --- |
@@ -44,6 +44,7 @@ Project-level ADR count: 33
 | ADR-031 | Accepted (directional) ⚠️ | Agent Integration Plan | `doc/adr/ADR-031-agent-integration.md` | M101: 6 SymFSM roles, O1-O6 tools, safety contract, experience store. REQUIRES further idea development before Phase 6. |
 | ADR-032 | Accepted (binding) | Universal Domain Ingestion | `doc/adr/ADR-032-universal-domain-ingestion.md` | M101: 5 domain profiles (paper/textbook/code/dataset/tech_doc), universal source registry, GNN textbook first. |
 | ADR-033 | Accepted (binding) | Modular Pipeline Architecture with Typed Schema Evolution | `doc/adr/ADR-033-modular-pipeline-architecture.md` | M101: 4 abstraction levels, schema evolution (not duplication), Adaptix at LLM boundary, stdlib dataclasses, 10-step implementation timeline. |
+| ADR-034 | Accepted (binding) | Hexagonal and Onion Architecture Overlay | `doc/adr/ADR-034-hexagonal-onion-overlay.md` | M104: Ports/Adapters + onion layering (domain/application/infrastructure), Ponytail Port rule, D087 (Prefect rejected), D088 (FullTextProviderPort). Multi-layer AST guard + ruff TID. |
 
 ## Historical ADR Packages
 

@@ -14,24 +14,25 @@
 |---|---|---|---|
 | architecture | tracked | none | .gsd/DECISIONS.md, doc/adr/, .codebase-memory/governance-graph.json |
 | functionality | tracked | none | requirements=72, statuses={'active': 24, 'validated': 48} |
-| module_code | tracked | uncommitted_changes_present | git_changed_files=10 |
+| module_code | tracked | uncommitted_changes_present | git_changed_files=134 |
 | evidence | tracked | none | .gsd/milestones/M062-b4porb/M062-b4porb-SUMMARY.md, .gsd/milestones/M099-bpeq8b/M099-bpeq8b-SUMMARY.md, .gsd/milestones/M103-6tip5z/M103-6tip5z-SUMMARY.md |
 | safety | clear | none | prohibited-claim scan over PROJECT/README/recent summaries |
 | operations | tracked | none | runtime/service state is artifact-derived; live process management remains external |
 | next_gate | clear | none | README.md, recent milestone summaries |
-| reverse_adr_audit | clear | none | rule_count=8, src/ (rule: no_ladybugdb_import_outside_graph_package, anchor: ADR-022 (FalkorDB binding), ADR-005 (No Direct Extractor to GraphDB)), artifacts/ (rule: no_graph_impor |
+| reverse_adr_audit | clear | none | rule_count=10, src/ (rule: no_ladybugdb_import_outside_graph_package, anchor: ADR-022 (FalkorDB binding), ADR-005 (No Direct Extractor to GraphDB)), artifacts/ (rule: no_graph_impo |
 | schema_readiness | design_accepted | none | ADR-028 typed schema, 27 relation types, 5 modules A-E |
 | extraction_coverage | not_started | none | Core-then-Modes pipeline designed (ADR-029), No extraction runs yet |
 | falkordb_migration | not_started | none | ADR-022 FalkorDB binding, ADR-030 schema designed, LadybugDB still in use |
 | universal_sources | paper_only | none | 220 PDFs in arXiv catalog, 5 domain profiles designed (ADR-032), GNN textbook pending |
 | agent_readiness | requires_development | none | ADR-031 directional, SymFSM needs formalization, Phase 6 deferred |
+| hexagonal_discipline | crystallized | none | ADR-034 hexagonal/onion overlay, 3 Ports: LLMClientPort, GraphDBPort, FullTextProviderPort, Ponytail Port rule enforced, verify_onion_layering.py multi-layer guard |
 
 ## Drift flags
 
 | Severity | Flag | Evidence |
 |---|---|---|
 | medium | latest_milestone_missing_readme_reference | M103-6tip5z |
-| info | uncommitted_changes_present | 10 files |
+| info | uncommitted_changes_present | 134 files |
 
 ## Recent milestones
 

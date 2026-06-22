@@ -264,6 +264,94 @@
       "type": "ADR"
     },
     {
+      "canonical_source": "doc/adr/ADR-023-architecture-vision-and-layered-pipeline.md",
+      "id": "ADR-023",
+      "mirror_only": true,
+      "status": "Accepted",
+      "title": "Architecture Vision and Layered Knowledge Pipeline",
+      "type": "ADR"
+    },
+    {
+      "canonical_source": "doc/adr/ADR-024-statistical-first-extraction-principle.md",
+      "id": "ADR-024",
+      "mirror_only": true,
+      "status": "Accepted",
+      "title": "Statistical-First Extraction Principle",
+      "type": "ADR"
+    },
+    {
+      "canonical_source": "doc/adr/ADR-025-multi-provider-llm-rate-limits.md",
+      "id": "ADR-025",
+      "mirror_only": true,
+      "status": "Accepted",
+      "title": "Multi-Provider LLM Architecture with Per-Provider Rate Limits",
+      "type": "ADR"
+    },
+    {
+      "canonical_source": "doc/adr/ADR-026-symfsm-inspired-agent-control.md",
+      "id": "ADR-026",
+      "mirror_only": true,
+      "status": "Accepted (design direction)",
+      "title": "Agent Integration via SymFSM-Inspired Control Structures",
+      "type": "ADR"
+    },
+    {
+      "canonical_source": "doc/adr/ADR-027-resource-aware-queue-scheduler.md",
+      "id": "ADR-027",
+      "mirror_only": true,
+      "status": "Accepted",
+      "title": "Resource-Aware Queue Scheduler",
+      "type": "ADR"
+    },
+    {
+      "canonical_source": "doc/adr/ADR-028-typed-knowledge-schema.md",
+      "id": "ADR-028",
+      "mirror_only": true,
+      "status": "Accepted (binding)",
+      "title": "Typed Knowledge Schema",
+      "type": "ADR"
+    },
+    {
+      "canonical_source": "doc/adr/ADR-029-extraction-pipeline.md",
+      "id": "ADR-029",
+      "mirror_only": true,
+      "status": "Accepted (binding)",
+      "title": "Extraction Pipeline Architecture",
+      "type": "ADR"
+    },
+    {
+      "canonical_source": "doc/adr/ADR-030-falkordb-schema.md",
+      "id": "ADR-030",
+      "mirror_only": true,
+      "status": "Accepted (binding)",
+      "title": "FalkorDB Graph Schema and Operators",
+      "type": "ADR"
+    },
+    {
+      "canonical_source": "doc/adr/ADR-031-agent-integration.md",
+      "id": "ADR-031",
+      "mirror_only": true,
+      "status": "Accepted (directional) — ⚠️ REQUIRES FURTHER IDEA DEVELOPMENT BEFORE IMPLEMENTATION",
+      "title": "Agent Integration Plan",
+      "type": "ADR"
+    },
+    {
+      "canonical_source": "doc/adr/ADR-032-universal-domain-ingestion.md",
+      "id": "ADR-032",
+      "mirror_only": true,
+      "status": "Accepted (binding)",
+      "title": "Universal Domain Ingestion",
+      "type": "ADR"
+    },
+    {
+      "canonical_source": "doc/adr/ADR-033-modular-pipeline-architecture.md",
+      "id": "ADR-033",
+      "mirror_only": true,
+      "status": "Accepted (binding)",
+      "title": "Modular Pipeline Architecture with Typed Schema Evolution",
+      "type": "ADR"
+    },
+    {
       "canonical_source": ".codebase-memory/adr.md",
       "id": "ARTIFACT-CODEBASE-MEMORY-ADR-MIRROR",
       "mirror_only": true,
@@ -952,6 +1040,38 @@
       "type": "Decision"
     },
     {
+      "canonical_source": ".gsd/DECISIONS.md",
+      "id": "D085",
+      "mirror_only": true,
+      "status": "recorded",
+      "title": "How M103 S02 pipeline framework (pipeline/ package) accounts for queues and future scheduling/agent planning without violating ADR-017 (queue deferred) and ADR-027 (phased scheduler)",
+      "type": "Decision"
+    },
+    {
+      "canonical_source": ".gsd/DECISIONS.md",
+      "id": "D086",
+      "mirror_only": true,
+      "status": "recorded",
+      "title": "Принять гексагональную (Ports/Adapters) + луковичную (domain/application/infrastructure) архитектуру как целевую структуру research_graph/. Ports реализуются как typing.Protocol в domain/; Adapters в infrastructure/. Port добавляется ТОЛЬКО при ≥2 реализациях, запланированной миграции, или требовании к mockability (Ponytail override — не для симметрии). Ввести Ponytail как кодовую дисциплину (skill в .agents/skills/ponytail/, правила в AGENTS.md) с §6.3 инвариантами как NEVER-списком.",
+      "type": "Decision"
+    },
+    {
+      "canonical_source": ".gsd/DECISIONS.md",
+      "id": "D087",
+      "mirror_only": true,
+      "status": "recorded",
+      "title": "НЕ вводить Prefect как Central Flow Orchestrator. S02 уже планирует DispatchProtocol/SyncDispatch/QueueDispatch поверх UniversalKBQueue — это покрывает Phase 2 (sync) и Phase 4 (queue activation). EP-4 (DispatchProtocol) оставляет дверь открытой: если sync-режим станет узким местом на Phase 4, Prefect добавляется как PrefectDispatch Adapter без переписывания Core. Ресурс-планировщик усиливается своими силами (~150 строк поверх UniversalKBQueue), не как отдельный сервис/фреймворк.",
+      "type": "Decision"
+    },
+    {
+      "canonical_source": ".gsd/DECISIONS.md",
+      "id": "D088",
+      "mirror_only": true,
+      "status": "recorded",
+      "title": "Перепланировать M104 S02: вместо преждевременного PDFParserPort (S01) ввести FullTextProviderPort для MDConverter. Разведка показала: parse_article — одна детерминированная реализация (markdown headings), 4 'движка' (Marker/GROBID/arxiv2md/OpenDataLoader) — external offline producers (manifest-driven ADR-013), не runtime. Реальный runtime seam с ≥2 backends и fallback routing — MDConverter (corpus/sources/markdown_converter.py): convert(arxiv_id)->ConversionResult с backends arxiv2md/marker/docling + _needs_marker_fallback fallback логикой. Удалить PDFParserPort из domain/ports.py (одна реализация parse_article — Ponytail Port rule не оправдан: нет ≥2 runtime реализаций и нет миграции). FullTextProviderPort = convert/convert_sync signatures, MDConverter удовлетворяет структурно. parse_article и build_page_index НЕ трогать (deterministic, одна реализация — Port не нужен).",
+      "type": "Decision"
+    },
+    {
       "canonical_source": ".gsd/milestones",
       "id": "M035",
       "mirror_only": true,
@@ -1509,6 +1629,62 @@
       "mirror_only": true,
       "status": "validated",
       "title": "Provide a unified project trajectory check that summarizes architecture decisions, requirements, module/code movement, evidence maturity, safety boundaries, and next blockers so agents can detect drift before planning or execution.",
+      "type": "Requirement"
+    },
+    {
+      "canonical_source": ".gsd/REQUIREMENTS.md",
+      "id": "R066",
+      "mirror_only": true,
+      "status": "active",
+      "title": "Extract LLM access into a dedicated architecture module that supports MiniMax, GLM/Z.ai, and optional future Headroom routing/compression scenarios.",
+      "type": "Requirement"
+    },
+    {
+      "canonical_source": ".gsd/REQUIREMENTS.md",
+      "id": "R067",
+      "mirror_only": true,
+      "status": "active",
+      "title": "The system must implement a 7-layer typed knowledge pipeline (Source → Parser → Structure → Extraction → Graph → Review → Agents) per ADR-023. Each layer must produce durable, traceable artifacts with stable IDs and evidence provenance.",
+      "type": "Requirement"
+    },
+    {
+      "canonical_source": ".gsd/REQUIREMENTS.md",
+      "id": "R068",
+      "mirror_only": true,
+      "status": "active",
+      "title": "Every LLM extraction stage must be preceded by deterministic/statistical pre-processing (YAKE keywords, TF-IDF summaries, graph community detection, embedding similarity). The LLM receives both raw text AND statistical context per ADR-024.",
+      "type": "Requirement"
+    },
+    {
+      "canonical_source": ".gsd/REQUIREMENTS.md",
+      "id": "R069",
+      "mirror_only": true,
+      "status": "active",
+      "title": "The LLM module must support multiple providers (MiniMax primary, GLM secondary) with per-provider rate limit checking before API calls, automatic fallback on rate exhaustion, and durable usage tracking per provider in the queue per ADR-025.",
+      "type": "Requirement"
+    },
+    {
+      "canonical_source": ".gsd/REQUIREMENTS.md",
+      "id": "R070",
+      "mirror_only": true,
+      "status": "active",
+      "title": "Future agents must use FSM-controlled reasoning inspired by SymFSM: LLM acts as interpreter within a pre-built reasoning model (cognitive map from FalkorDB subgraph), not as free-form generator. Every agent action passes through fail-closed safety gates per ADR-026.",
+      "type": "Requirement"
+    },
+    {
+      "canonical_source": ".gsd/REQUIREMENTS.md",
+      "id": "R071",
+      "mirror_only": true,
+      "status": "active",
+      "title": "The system must support typed knowledge schema with 5 entity modules (A: factual/meta, B: textually mentioned, C: implicit/abstracted, D: citation relationships, E: knowledge relations) adapted from Agents-K1, with ~25 typed relation types in 5 groups (controlled, causal, composition, comparison, citation).",
+      "type": "Requirement"
+    },
+    {
+      "canonical_source": ".gsd/REQUIREMENTS.md",
+      "id": "R072",
+      "mirror_only": true,
+      "status": "active",
+      "title": "The pipeline queue scheduler must coordinate job dispatch across three resource dimensions: LLM API rate limits (per-provider token/time quotas), CPU/local compute (parser/heavy processing concurrency), and I/O (network fetch, disk write, graph write serialization). Jobs are routed to the least-constrained resource lane with automatic backoff and recovery per ADR-027.",
       "type": "Requirement"
     },
     {

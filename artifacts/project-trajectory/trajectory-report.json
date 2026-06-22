@@ -58,9 +58,19 @@
       "flags": [],
       "status": "tracked"
     },
+    "hexagonal_discipline": {
+      "evidence": [
+        "ADR-034 hexagonal/onion overlay",
+        "3 Ports: LLMClientPort, GraphDBPort, FullTextProviderPort",
+        "Ponytail Port rule enforced",
+        "verify_onion_layering.py multi-layer guard"
+      ],
+      "flags": [],
+      "status": "crystallized"
+    },
     "module_code": {
       "evidence": [
-        "git_changed_files=10"
+        "git_changed_files=134"
       ],
       "flags": [
         "uncommitted_changes_present"
@@ -84,10 +94,12 @@
     },
     "reverse_adr_audit": {
       "evidence": [
-        "rule_count=8",
+        "rule_count=10",
         "src/ (rule: no_ladybugdb_import_outside_graph_package, anchor: ADR-022 (FalkorDB binding), ADR-005 (No Direct Extractor to GraphDB))",
         "artifacts/ (rule: no_graph_import_allowed_true_in_artifacts, anchor: ADR-005 (No Direct Extractor to GraphDB Path))",
-        "src/ (rule: no_arxiv_archive_import, anchor: M099 (Full migration to research_graph))"
+        "src/ (rule: no_arxiv_archive_import, anchor: M099 (Full migration to research_graph))",
+        "src/research_graph/domain/ (rule: no_infra_import_in_domain, anchor: ADR-034 (Hexagonal/Onion overlay), D086)",
+        "src/research_graph/application/ (rule: no_concrete_infra_import_in_application, anchor: ADR-034 (Hexagonal/Onion overlay), D086)"
       ],
       "flags": [],
       "status": "clear"
@@ -125,7 +137,7 @@
       "severity": "medium"
     },
     {
-      "evidence": "10 files",
+      "evidence": "134 files",
       "flag": "uncommitted_changes_present",
       "severity": "info"
     }
@@ -140,15 +152,8 @@
   "production_import_attempted": false,
   "progress_summary": {
     "decisions": {
-      "count": 87,
+      "count": 88,
       "latest": [
-        {
-          "choice": "Keep hybrid routing as the default, but require a fulltext-aware GROBID fallback when OpenDataLoader body evidence is low-quality, unavailable, or below threshold.",
-          "decision": "How M055deep should amend ADR-008 after 20-PDF GROBID fulltext versus OpenDataLoader routing evidence",
-          "id": "D083",
-          "scope": "parser-benchmark / hybrid-parser-architecture / fulltext-routing",
-          "when": "M055-kyxuqm S06 ADR-009 amendment"
-        },
         {
           "choice": "1-hop saturation observed; 2-hop BFS recommended for M058 graph-readiness",
           "decision": "BFS scale evidence for M056 1-hop expansion from 2605.18747",
@@ -176,18 +181,25 @@
           "id": "D087",
           "scope": "architecture",
           "when": "Пересматривается на Phase 4 (queue activation + real concurrency), если profiling покажет что sync-оркестрация тормозит при >100 параллельных статей, или если понадобится dynamic branching/Prefect UI для operational observability."
+        },
+        {
+          "choice": "FullTextProviderPort за MDConverter вместо PDFParserPort (M104 S02 pivot)",
+          "decision": "Перепланировать M104 S02: вместо преждевременного PDFParserPort (S01) ввести FullTextProviderPort для MDConverter. Разведка показала: parse_article — одна детерминированная реализация (markdown headings), 4 'движка' (Marker/GROBID/arxiv2md/OpenDataLoader) — external offline producers (manifest-driven ADR-013), не runtime. Реальный runtime seam с ≥2 backends и fallback routing — MDConverter (corpus/sources/markdown_converter.py): convert(arxiv_id)->ConversionResult с backends arxiv2md/marker/docling + _needs_marker_fallback fallback логикой. Удалить PDFParserPort из domain/ports.py (одна реализация parse_article — Ponytail Port rule не оправдан: нет ≥2 runtime реализаций и нет миграции). FullTextProviderPort = convert/convert_sync signatures, MDConverter удовлетворяет структурно. parse_article и build_page_index НЕ трогать (deterministic, одна реализация — Port не нужен).",
+          "id": "D088",
+          "scope": "architecture",
+          "when": "Пересматривается если появится 2-я runtime реализация parse_article (например, structured PDF parser vs markdown parser), или если MDConverter backends изменятся."
         }
       ]
     },
     "governance_graph": {
       "edge_count": 13,
-      "node_count": 179,
+      "node_count": 201,
       "node_types": {
-        "ADR": 22,
+        "ADR": 33,
         "Artifact": 2,
-        "Decision": 84,
+        "Decision": 88,
         "Milestone": 5,
-        "Requirement": 65,
+        "Requirement": 72,
         "SafetyBoundary": 1
       }
     },
@@ -403,9 +415,11 @@
     "evidence": [
       "src/ (rule: no_ladybugdb_import_outside_graph_package, anchor: ADR-022 (FalkorDB binding), ADR-005 (No Direct Extractor to GraphDB))",
       "artifacts/ (rule: no_graph_import_allowed_true_in_artifacts, anchor: ADR-005 (No Direct Extractor to GraphDB Path))",
-      "src/ (rule: no_arxiv_archive_import, anchor: M099 (Full migration to research_graph))"
+      "src/ (rule: no_arxiv_archive_import, anchor: M099 (Full migration to research_graph))",
+      "src/research_graph/domain/ (rule: no_infra_import_in_domain, anchor: ADR-034 (Hexagonal/Onion overlay), D086)",
+      "src/research_graph/application/ (rule: no_concrete_infra_import_in_application, anchor: ADR-034 (Hexagonal/Onion overlay), D086)"
     ],
-    "rule_count": 8,
+    "rule_count": 10,
     "status": "clear",
     "violations": []
   },

@@ -1,6 +1,6 @@
 # M061 S01 Decision: 1-anchor pilot (2605.18747)
 
-Generated: 2026-06-13T09:48:57+00:00
+Generated: 2026-06-21T19:46:37+00:00
 
 ## Decision
 
@@ -12,14 +12,14 @@ Generated: 2026-06-13T09:48:57+00:00
 |---|---:|---:|---|
 | New 2-hop papers | >= 100 | 2491 | pass |
 | M3 judge success rate | >= 80% | 100.0% | pass |
-| Real-paper throughput | >= 1 paper/min | 7.26 | pass |
+| Real-paper throughput | >= 1 paper/min | 6.39 | pass |
 
 ## Real acquisition and rate-limit metrics
 
-- Real arXiv acquisition time: 189.06s.
+- Real arXiv acquisition time: 189.93s.
 - Requests made: 64 total ({'api': 4, 'pdf': 30, 'eprint': 30}).
 - HTTP 429 rate: 0.0% (0 responses).
-- Average pacing delay: 2.86s with minimum interval 3.0s.
+- Average pacing delay: 2.64s with minimum interval 3.0s.
 - M3 judge time: 0.00s (diagnostic evidence reuse).
 
 ## Safety posture
