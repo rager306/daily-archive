@@ -110,7 +110,9 @@ def test_validate_import_boundary_rehearsal_rejects_unsafe_write_flags() -> None
     assert validation.refusal_counts["unsafe_embeddings_included"] == 1
 
 
-def test_validate_import_boundary_rehearsal_rejects_nested_forbidden_fields_without_values() -> None:
+def test_validate_import_boundary_rehearsal_rejects_nested_forbidden_fields_without_values() -> (
+    None
+):
     contract = _rehearsal()
     contract["candidates"][0]["diagnostic"] = {
         "raw_text": "do not expose me",
@@ -128,14 +130,20 @@ def test_validate_import_boundary_rehearsal_rejects_nested_forbidden_fields_with
     assert validation.refusal_counts["vector_leakage"] == 1
     assert validation.refusal_counts["secret_leakage"] == 1
     assert validation.refusal_counts["optimizer_trace_leakage"] == 1
-    assert all("do not expose me" not in (diagnostic.object_id or "") for diagnostic in validation.diagnostics)
-
+    assert all(
+        "do not expose me" not in (diagnostic.object_id or "")
+        for diagnostic in validation.diagnostics
+    )
 
 
 def test_build_import_boundary_rehearsal_from_current_benchmark_artifacts() -> None:
     contract = build_import_boundary_rehearsal_from_benchmark(
-        summary_path=Path(".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-summary.json"),
-        diagnostics_path=Path(".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-diagnostics.jsonl"),
+        summary_path=Path(
+            ".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-summary.json"
+        ),
+        diagnostics_path=Path(
+            ".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-diagnostics.jsonl"
+        ),
     )
 
     validation = validate_import_boundary_rehearsal(contract)
@@ -160,29 +168,43 @@ def test_build_import_boundary_rehearsal_from_current_benchmark_artifacts() -> N
         "table_route_requires_review",
     }
     assert all(candidate["accepted"] is False for candidate in contract["candidates"])
-    assert all(candidate["production_import_attempted"] is False for candidate in contract["candidates"])
-    assert all("trusted_kg_import" in candidate["excluded_uses"] for candidate in contract["candidates"])
+    assert all(
+        candidate["production_import_attempted"] is False for candidate in contract["candidates"]
+    )
+    assert all(
+        "trusted_kg_import" in candidate["excluded_uses"] for candidate in contract["candidates"]
+    )
 
 
 def test_build_import_boundary_rehearsal_preserves_missing_source_caveats() -> None:
     contract = build_import_boundary_rehearsal_from_benchmark(
-        summary_path=Path(".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-summary.json"),
-        diagnostics_path=Path(".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-diagnostics.jsonl"),
+        summary_path=Path(
+            ".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-summary.json"
+        ),
+        diagnostics_path=Path(
+            ".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-diagnostics.jsonl"
+        ),
     )
 
     assert "missing_original_pdf:16" in contract["caveats"]
 
 
-
 def test_write_import_boundary_rehearsal_run_writes_summary_and_diagnostics(tmp_path: Path) -> None:
     paths = write_import_boundary_rehearsal_run(
-        summary_path=Path(".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-summary.json"),
-        diagnostics_path=Path(".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-diagnostics.jsonl"),
+        summary_path=Path(
+            ".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-summary.json"
+        ),
+        diagnostics_path=Path(
+            ".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-diagnostics.jsonl"
+        ),
         output_dir=tmp_path,
     )
 
     summary = json.loads(paths["summary_path"].read_text(encoding="utf-8"))
-    diagnostics = [json.loads(line) for line in paths["diagnostics_path"].read_text(encoding="utf-8").splitlines()]
+    diagnostics = [
+        json.loads(line)
+        for line in paths["diagnostics_path"].read_text(encoding="utf-8").splitlines()
+    ]
 
     assert paths["summary_path"].name == "import-boundary-summary.json"
     assert paths["diagnostics_path"].name == "import-boundary-diagnostics.jsonl"
@@ -205,5 +227,3 @@ def test_validate_import_boundary_rehearsal_requires_rejected_candidate_refusal_
 
     assert validation.valid_rehearsal is False
     assert validation.refusal_counts["rejected_candidate_missing_refusal"] == 1
-
-

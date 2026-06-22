@@ -79,12 +79,22 @@ def test_wave_5_analysis_tracks_cumulative_saturation() -> None:
 
     assert analysis["schema_version"] == "m056-bfs-wave-5-analysis.v1"
     assert connectivity["wave_1_edge_count"] == previous["connectivity"]["wave_1_edge_count"]
-    assert connectivity["wave_2_new_edge_count"] == previous["connectivity"]["wave_2_new_edge_count"]
-    assert connectivity["wave_3_new_edge_count"] == previous["connectivity"]["wave_3_new_edge_count"]
-    assert connectivity["wave_4_new_edge_count"] == previous["connectivity"]["wave_4_new_edge_count"]
-    assert connectivity["cumulative_edge_count"] >= previous["connectivity"]["cumulative_edge_count"]
+    assert (
+        connectivity["wave_2_new_edge_count"] == previous["connectivity"]["wave_2_new_edge_count"]
+    )
+    assert (
+        connectivity["wave_3_new_edge_count"] == previous["connectivity"]["wave_3_new_edge_count"]
+    )
+    assert (
+        connectivity["wave_4_new_edge_count"] == previous["connectivity"]["wave_4_new_edge_count"]
+    )
+    assert (
+        connectivity["cumulative_edge_count"] >= previous["connectivity"]["cumulative_edge_count"]
+    )
     assert connectivity["cumulative_edge_count"] == len(connectivity["cumulative_edges"])
-    assert connectivity["edge_saturation_by_wave"]["wave_5"] == connectivity["wave_5_new_edge_count"]
+    assert (
+        connectivity["edge_saturation_by_wave"]["wave_5"] == connectivity["wave_5_new_edge_count"]
+    )
     assert connectivity["saturation_status"] in {"saturated", "expanded"}
     assert_all_false(analysis["safety_defaults"])
 

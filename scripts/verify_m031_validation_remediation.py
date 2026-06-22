@@ -102,7 +102,16 @@ UNSAFE_FIELD_NAME_FRAGMENTS = {
     "password",
     "token_value",
 }
-FORBIDDEN_SNIPPETS = ("<html", "<!doctype html", "%pdf-", "base64,", "-----begin", "api_key=", "password=", "secret=")
+FORBIDDEN_SNIPPETS = (
+    "<html",
+    "<!doctype html",
+    "%pdf-",
+    "base64,",
+    "-----begin",
+    "api_key=",
+    "password=",
+    "secret=",
+)
 FORBIDDEN_POSITIVE_PHRASES = {
     "m031 is ready for graph import",
     "m031 validates graph readiness",
@@ -146,7 +155,9 @@ def _json_path(parent: str, key: str | int) -> str:
     return f"{parent}[{key}]" if isinstance(key, int) else f"{parent}.{key}"
 
 
-def _walk(value: Any, path: str = "$", ancestors: tuple[str, ...] = ()) -> Iterable[tuple[str, Any, tuple[str, ...]]]:
+def _walk(
+    value: Any, path: str = "$", ancestors: tuple[str, ...] = ()
+) -> Iterable[tuple[str, Any, tuple[str, ...]]]:
     yield path, value, ancestors
     if isinstance(value, dict):
         for key, child in value.items():
@@ -156,7 +167,14 @@ def _walk(value: Any, path: str = "$", ancestors: tuple[str, ...] = ()) -> Itera
             yield from _walk(child, _json_path(path, index), ancestors)
 
 
-def diagnostic(code: str, message: str, *, severity: str = "error", json_path: str = "$", path: str | Path | None = None) -> dict[str, Any]:
+def diagnostic(
+    code: str,
+    message: str,
+    *,
+    severity: str = "error",
+    json_path: str = "$",
+    path: str | Path | None = None,
+) -> dict[str, Any]:
     return {
         "schema_version": DIAGNOSTIC_SCHEMA_VERSION,
         "milestone_id": MILESTONE_ID,
@@ -177,13 +195,19 @@ def diagnostic(code: str, message: str, *, severity: str = "error", json_path: s
     }
 
 
-def _repo_relative_path(path_value: str | Path, *, repo_root: Path, label: str, require_exists: bool = True) -> Path:
+def _repo_relative_path(
+    path_value: str | Path, *, repo_root: Path, label: str, require_exists: bool = True
+) -> Path:
     path_text = Path(path_value).as_posix() if isinstance(path_value, Path) else str(path_value)
     if not path_text or path_text.strip() != path_text or "://" in path_text:
-        raise M031ValidationRemediationError(f"{label} must be a non-empty repo-relative path: {path_text!r}")
+        raise M031ValidationRemediationError(
+            f"{label} must be a non-empty repo-relative path: {path_text!r}"
+        )
     path = Path(path_text)
     if path.is_absolute() or any(part == ".." for part in path.parts):
-        raise M031ValidationRemediationError(f"{label} must remain under the repo root: {path_text}")
+        raise M031ValidationRemediationError(
+            f"{label} must remain under the repo root: {path_text}"
+        )
     root = repo_root.resolve()
     resolved = (root / path).resolve()
     try:
@@ -201,7 +225,9 @@ def _safe_output_path(path_value: str | Path, *, repo_root: Path, label: str) ->
     try:
         path.resolve().relative_to(output_root)
     except ValueError as exc:
-        raise M031ValidationRemediationError(f"{label} must be under {OUTPUT_DIR.as_posix()}: {path_value}") from exc
+        raise M031ValidationRemediationError(
+            f"{label} must be under {OUTPUT_DIR.as_posix()}: {path_value}"
+        ) from exc
     return path
 
 
@@ -215,9 +241,13 @@ def load_json(path_value: str | Path, *, repo_root: Path, label: str) -> dict[st
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        raise M031ValidationRemediationError(f"invalid JSON in {label} at {Path(path_value).as_posix()}: {exc}") from exc
+        raise M031ValidationRemediationError(
+            f"invalid JSON in {label} at {Path(path_value).as_posix()}: {exc}"
+        ) from exc
     if not isinstance(value, dict):
-        raise M031ValidationRemediationError(f"{label} root must be a JSON object: {Path(path_value).as_posix()}")
+        raise M031ValidationRemediationError(
+            f"{label} root must be a JSON object: {Path(path_value).as_posix()}"
+        )
     return value
 
 
@@ -230,9 +260,13 @@ def load_jsonl(path_value: str | Path, *, repo_root: Path, label: str) -> list[d
         try:
             value = json.loads(line)
         except json.JSONDecodeError as exc:
-            raise M031ValidationRemediationError(f"invalid JSONL in {label} at {Path(path_value).as_posix()}:{line_number}: {exc}") from exc
+            raise M031ValidationRemediationError(
+                f"invalid JSONL in {label} at {Path(path_value).as_posix()}:{line_number}: {exc}"
+            ) from exc
         if not isinstance(value, dict):
-            raise M031ValidationRemediationError(f"{label} row must be an object at {Path(path_value).as_posix()}:{line_number}")
+            raise M031ValidationRemediationError(
+                f"{label} row must be an object at {Path(path_value).as_posix()}:{line_number}"
+            )
         value.setdefault("_line_number", line_number)
         rows.append(value)
     return rows
@@ -249,12 +283,20 @@ def _contains_65_pass_signal(*texts: str) -> bool:
 
 def _assessment_is_stale_failure(assessment_text: str) -> bool:
     verdict = (_bool_from_frontmatter(assessment_text, "verdict") or "").upper()
-    return verdict == "FAIL" or "required regression pytest suite check did not produce" in assessment_text.lower()
+    return (
+        verdict == "FAIL"
+        or "required regression pytest suite check did not produce" in assessment_text.lower()
+    )
 
 
 def _full_repo_collection_debt(assessment_text: str) -> bool:
     lowered = assessment_text.lower()
-    return "full" in lowered and "pytest" in lowered and "failed during collection" in lowered and "unrelated" in lowered
+    return (
+        "full" in lowered
+        and "pytest" in lowered
+        and "failed during collection" in lowered
+        and "unrelated" in lowered
+    )
 
 
 def _requirement_rows() -> list[dict[str, Any]]:
@@ -281,7 +323,11 @@ def _class_rows() -> list[dict[str, Any]]:
         {
             "class": class_name,
             "status": "covered_for_validation_rerun",
-            "evidence_paths": [DEFAULT_S02_SUMMARY.as_posix(), DEFAULT_S05_CLOSEOUT.as_posix(), DEFAULT_AUDIT.as_posix()],
+            "evidence_paths": [
+                DEFAULT_S02_SUMMARY.as_posix(),
+                DEFAULT_S05_CLOSEOUT.as_posix(),
+                DEFAULT_AUDIT.as_posix(),
+            ],
             "safe_claim": f"{class_name} rerun evidence is metadata-only and scoped to M031 validation remediation.",
         }
         for class_name in CANONICAL_CLASSES
@@ -310,12 +356,25 @@ def build_evidence(
 ) -> dict[str, Any]:
     """Build a metadata-only remediation dossier from local artifacts."""
 
-    source_maps: list[Mapping[str, Any]] = [replay_closeout, s05_closeout, progression_matrix, continuity_audit, *review_events]
+    source_maps: list[Mapping[str, Any]] = [
+        replay_closeout,
+        s05_closeout,
+        progression_matrix,
+        continuity_audit,
+        *review_events,
+    ]
     stale = _assessment_is_stale_failure(s02_assessment)
     fresh_65 = _contains_65_pass_signal(s02_summary, s02_uat)
     full_repo_debt = _full_repo_collection_debt(s02_assessment)
-    completed_review_count = sum(1 for row in review_events if row.get("independent_review_completed") is True or row.get("output_contract_completed") is True)
-    verdict_event_count = sum(1 for row in review_events if str(row.get("event", "")).endswith("verdict"))
+    completed_review_count = sum(
+        1
+        for row in review_events
+        if row.get("independent_review_completed") is True
+        or row.get("output_contract_completed") is True
+    )
+    verdict_event_count = sum(
+        1 for row in review_events if str(row.get("event", "")).endswith("verdict")
+    )
     flags = {key: _flag_from_sources(key, source_maps) for key in REQUIRED_FALSE_FLAGS}
     flags.update(
         {
@@ -353,11 +412,16 @@ def build_evidence(
             "fresh_65_pass_evidence_present": fresh_65,
             "fresh_65_pass_evidence_sources": [
                 path
-                for path, text in ((DEFAULT_S02_SUMMARY.as_posix(), s02_summary), (DEFAULT_S02_UAT.as_posix(), s02_uat))
+                for path, text in (
+                    (DEFAULT_S02_SUMMARY.as_posix(), s02_summary),
+                    (DEFAULT_S02_UAT.as_posix(), s02_uat),
+                )
                 if _contains_65_pass_signal(text)
             ],
             "s02_replay_closeout_status": replay_closeout.get("status"),
-            "s02_replay_failed_count": replay_closeout.get("counts", {}).get("failed") if isinstance(replay_closeout.get("counts"), Mapping) else None,
+            "s02_replay_failed_count": replay_closeout.get("counts", {}).get("failed")
+            if isinstance(replay_closeout.get("counts"), Mapping)
+            else None,
             "full_repo_pytest_collection_debt": {
                 "detected": full_repo_debt,
                 "classified_outside_s02_uat": full_repo_debt,
@@ -420,14 +484,44 @@ def validate_diagnostics_rows(rows: Sequence[Mapping[str, Any]]) -> list[dict[st
         row_path = f"diagnostics[{index}]"
         missing = sorted(required_keys - set(row))
         if missing:
-            diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_MALFORMED_DIAGNOSTIC", "diagnostic row missing keys: " + ", ".join(missing), json_path=row_path))
+            diagnostics.append(
+                diagnostic(
+                    "M031_VALIDATION_REMEDIATION_MALFORMED_DIAGNOSTIC",
+                    "diagnostic row missing keys: " + ", ".join(missing),
+                    json_path=row_path,
+                )
+            )
         if row.get("schema_version") != DIAGNOSTIC_SCHEMA_VERSION:
-            diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_MALFORMED_DIAGNOSTIC", "diagnostic row schema_version mismatch", json_path=f"{row_path}.schema_version"))
+            diagnostics.append(
+                diagnostic(
+                    "M031_VALIDATION_REMEDIATION_MALFORMED_DIAGNOSTIC",
+                    "diagnostic row schema_version mismatch",
+                    json_path=f"{row_path}.schema_version",
+                )
+            )
         if row.get("severity") not in {"info", "warning", "error"}:
-            diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_MALFORMED_DIAGNOSTIC", "diagnostic severity must be info, warning, or error", json_path=f"{row_path}.severity"))
-        for flag in ("network_fetch_attempted", "production_import_attempted", "ladybugdb_written", "graph_write_attempted", "model_call_attempted"):
+            diagnostics.append(
+                diagnostic(
+                    "M031_VALIDATION_REMEDIATION_MALFORMED_DIAGNOSTIC",
+                    "diagnostic severity must be info, warning, or error",
+                    json_path=f"{row_path}.severity",
+                )
+            )
+        for flag in (
+            "network_fetch_attempted",
+            "production_import_attempted",
+            "ladybugdb_written",
+            "graph_write_attempted",
+            "model_call_attempted",
+        ):
             if row.get(flag) is not False:
-                diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_MALFORMED_DIAGNOSTIC", f"diagnostic unsafe flag must be false: {flag}", json_path=f"{row_path}.{flag}"))
+                diagnostics.append(
+                    diagnostic(
+                        "M031_VALIDATION_REMEDIATION_MALFORMED_DIAGNOSTIC",
+                        f"diagnostic unsafe flag must be false: {flag}",
+                        json_path=f"{row_path}.{flag}",
+                    )
+                )
     return diagnostics
 
 
@@ -440,17 +534,45 @@ def _validate_metadata_safety(value: Any, *, where: str) -> list[dict[str, Any]]
     for path, item, ancestors in _walk(value):
         field = _field_name(path, ancestors)
         if isinstance(item, bool) and item is True and field in UNSAFE_TRUE_BOOLEAN_KEYS:
-            diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_UNSAFE_FLAG_TRUE", f"unsafe boolean field must be false: {field}", json_path=path, path=where))
+            diagnostics.append(
+                diagnostic(
+                    "M031_VALIDATION_REMEDIATION_UNSAFE_FLAG_TRUE",
+                    f"unsafe boolean field must be false: {field}",
+                    json_path=path,
+                    path=where,
+                )
+            )
         if any(fragment in field for fragment in UNSAFE_FIELD_NAME_FRAGMENTS) and item is not False:
-            diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_RAW_PAYLOAD_LEAKAGE", f"raw/binary/vector/secret-like field is not allowed: {field}", json_path=path, path=where))
+            diagnostics.append(
+                diagnostic(
+                    "M031_VALIDATION_REMEDIATION_RAW_PAYLOAD_LEAKAGE",
+                    f"raw/binary/vector/secret-like field is not allowed: {field}",
+                    json_path=path,
+                    path=where,
+                )
+            )
         if isinstance(item, str):
             lowered = item.lower()
             for snippet in FORBIDDEN_SNIPPETS:
                 if snippet in lowered:
-                    diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_RAW_PAYLOAD_LEAKAGE", f"string contains forbidden payload/key marker: {snippet}", json_path=path, path=where))
+                    diagnostics.append(
+                        diagnostic(
+                            "M031_VALIDATION_REMEDIATION_RAW_PAYLOAD_LEAKAGE",
+                            f"string contains forbidden payload/key marker: {snippet}",
+                            json_path=path,
+                            path=where,
+                        )
+                    )
             for phrase in FORBIDDEN_POSITIVE_PHRASES:
                 if phrase in lowered:
-                    diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_FORBIDDEN_POSITIVE_CLAIM", f"forbidden positive claim: {phrase}", json_path=path, path=where))
+                    diagnostics.append(
+                        diagnostic(
+                            "M031_VALIDATION_REMEDIATION_FORBIDDEN_POSITIVE_CLAIM",
+                            f"forbidden positive claim: {phrase}",
+                            json_path=path,
+                            path=where,
+                        )
+                    )
     return diagnostics
 
 
@@ -458,7 +580,12 @@ def validate_evidence(evidence: Mapping[str, Any]) -> list[dict[str, Any]]:
     diagnostics: list[dict[str, Any]] = []
     missing = sorted(REQUIRED_TOP_LEVEL_KEYS - set(evidence))
     if missing:
-        diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_MISSING_TOP_LEVEL_KEY", "missing top-level keys: " + ", ".join(missing)))
+        diagnostics.append(
+            diagnostic(
+                "M031_VALIDATION_REMEDIATION_MISSING_TOP_LEVEL_KEY",
+                "missing top-level keys: " + ", ".join(missing),
+            )
+        )
     for key, expected in {
         "schema_version": SCHEMA_VERSION,
         "milestone_id": MILESTONE_ID,
@@ -468,64 +595,173 @@ def validate_evidence(evidence: Mapping[str, Any]) -> list[dict[str, Any]]:
         "metadata_only": True,
     }.items():
         if evidence.get(key) != expected:
-            diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_IDENTITY_MISMATCH", f"{key} must be {expected!r}", json_path=f"$.{key}"))
+            diagnostics.append(
+                diagnostic(
+                    "M031_VALIDATION_REMEDIATION_IDENTITY_MISMATCH",
+                    f"{key} must be {expected!r}",
+                    json_path=f"$.{key}",
+                )
+            )
 
     reconciliation = evidence.get("s02_assessment_reconciliation")
     if not isinstance(reconciliation, Mapping):
-        diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_MISSING_S02_RECONCILIATION", "s02_assessment_reconciliation must be an object", json_path="$.s02_assessment_reconciliation"))
+        diagnostics.append(
+            diagnostic(
+                "M031_VALIDATION_REMEDIATION_MISSING_S02_RECONCILIATION",
+                "s02_assessment_reconciliation must be an object",
+                json_path="$.s02_assessment_reconciliation",
+            )
+        )
     else:
         if reconciliation.get("stale_s02_assessment_failure_detected") is not True:
-            diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_STALE_S02_ASSESSMENT_NOT_DETECTED", "stale S02 assessment failure must be detected", json_path="$.s02_assessment_reconciliation.stale_s02_assessment_failure_detected"))
+            diagnostics.append(
+                diagnostic(
+                    "M031_VALIDATION_REMEDIATION_STALE_S02_ASSESSMENT_NOT_DETECTED",
+                    "stale S02 assessment failure must be detected",
+                    json_path="$.s02_assessment_reconciliation.stale_s02_assessment_failure_detected",
+                )
+            )
         if reconciliation.get("fresh_65_pass_evidence_present") is not True:
-            diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_MISSING_S02_65_PASS_EVIDENCE", "fresh S02 65-pass evidence is required", json_path="$.s02_assessment_reconciliation.fresh_65_pass_evidence_present"))
+            diagnostics.append(
+                diagnostic(
+                    "M031_VALIDATION_REMEDIATION_MISSING_S02_65_PASS_EVIDENCE",
+                    "fresh S02 65-pass evidence is required",
+                    json_path="$.s02_assessment_reconciliation.fresh_65_pass_evidence_present",
+                )
+            )
         debt = reconciliation.get("full_repo_pytest_collection_debt")
-        if not isinstance(debt, Mapping) or debt.get("classified_outside_s02_uat") is not True or debt.get("blocking_s02_replay_closeout") is not False:
-            diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_COLLECTION_DEBT_SCOPE", "full-repo pytest collection debt must be classified outside S02 UAT and nonblocking", json_path="$.s02_assessment_reconciliation.full_repo_pytest_collection_debt"))
+        if (
+            not isinstance(debt, Mapping)
+            or debt.get("classified_outside_s02_uat") is not True
+            or debt.get("blocking_s02_replay_closeout") is not False
+        ):
+            diagnostics.append(
+                diagnostic(
+                    "M031_VALIDATION_REMEDIATION_COLLECTION_DEBT_SCOPE",
+                    "full-repo pytest collection debt must be classified outside S02 UAT and nonblocking",
+                    json_path="$.s02_assessment_reconciliation.full_repo_pytest_collection_debt",
+                )
+            )
 
     req_rows = evidence.get("requirement_coverage")
     if not isinstance(req_rows, list):
-        diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_MISSING_REQUIREMENT_ROW", "requirement_coverage must be a list", json_path="$.requirement_coverage"))
+        diagnostics.append(
+            diagnostic(
+                "M031_VALIDATION_REMEDIATION_MISSING_REQUIREMENT_ROW",
+                "requirement_coverage must be a list",
+                json_path="$.requirement_coverage",
+            )
+        )
     else:
         by_id = {row.get("requirement_id"): row for row in req_rows if isinstance(row, Mapping)}
         missing_req = sorted(set(REQUIRED_REQUIREMENT_IDS) - set(by_id))
         extra_req = sorted(set(by_id) - set(REQUIRED_REQUIREMENT_IDS))
         if missing_req or extra_req:
-            diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_MISSING_REQUIREMENT_ROW", f"requirement rows must exactly cover {', '.join(REQUIRED_REQUIREMENT_IDS)}; missing={missing_req}, extra={extra_req}", json_path="$.requirement_coverage"))
+            diagnostics.append(
+                diagnostic(
+                    "M031_VALIDATION_REMEDIATION_MISSING_REQUIREMENT_ROW",
+                    f"requirement rows must exactly cover {', '.join(REQUIRED_REQUIREMENT_IDS)}; missing={missing_req}, extra={extra_req}",
+                    json_path="$.requirement_coverage",
+                )
+            )
         for index, row in enumerate(req_rows):
             if not isinstance(row, Mapping):
-                diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_MISSING_REQUIREMENT_ROW", "requirement row must be an object", json_path=f"$.requirement_coverage[{index}]"))
+                diagnostics.append(
+                    diagnostic(
+                        "M031_VALIDATION_REMEDIATION_MISSING_REQUIREMENT_ROW",
+                        "requirement row must be an object",
+                        json_path=f"$.requirement_coverage[{index}]",
+                    )
+                )
                 continue
-            if row.get("validated") is not False or row.get("validation_claim_allowed") is not False:
-                diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_REQUIREMENT_OVERCLAIM", "requirement row must not claim validation or status mutation", json_path=f"$.requirement_coverage[{index}]"))
+            if (
+                row.get("validated") is not False
+                or row.get("validation_claim_allowed") is not False
+            ):
+                diagnostics.append(
+                    diagnostic(
+                        "M031_VALIDATION_REMEDIATION_REQUIREMENT_OVERCLAIM",
+                        "requirement row must not claim validation or status mutation",
+                        json_path=f"$.requirement_coverage[{index}]",
+                    )
+                )
             if row.get("coverage_status") != "m031_scoped_rechecked":
-                diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_REQUIREMENT_OVERCLAIM", "coverage_status must be m031_scoped_rechecked", json_path=f"$.requirement_coverage[{index}].coverage_status"))
+                diagnostics.append(
+                    diagnostic(
+                        "M031_VALIDATION_REMEDIATION_REQUIREMENT_OVERCLAIM",
+                        "coverage_status must be m031_scoped_rechecked",
+                        json_path=f"$.requirement_coverage[{index}].coverage_status",
+                    )
+                )
 
     class_rows = evidence.get("canonical_verification_classes")
     if not isinstance(class_rows, list):
-        diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_MISSING_CLASS_ROW", "canonical_verification_classes must be a list", json_path="$.canonical_verification_classes"))
+        diagnostics.append(
+            diagnostic(
+                "M031_VALIDATION_REMEDIATION_MISSING_CLASS_ROW",
+                "canonical_verification_classes must be a list",
+                json_path="$.canonical_verification_classes",
+            )
+        )
     else:
         classes = {row.get("class") for row in class_rows if isinstance(row, Mapping)}
         missing_classes = sorted(set(CANONICAL_CLASSES) - classes)
         extra_classes = sorted(classes - set(CANONICAL_CLASSES))
         if missing_classes or extra_classes:
-            diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_MISSING_CLASS_ROW", f"canonical class rows must exactly cover {', '.join(CANONICAL_CLASSES)}; missing={missing_classes}, extra={extra_classes}", json_path="$.canonical_verification_classes"))
+            diagnostics.append(
+                diagnostic(
+                    "M031_VALIDATION_REMEDIATION_MISSING_CLASS_ROW",
+                    f"canonical class rows must exactly cover {', '.join(CANONICAL_CLASSES)}; missing={missing_classes}, extra={extra_classes}",
+                    json_path="$.canonical_verification_classes",
+                )
+            )
 
     flags = evidence.get("safety_flags")
     if not isinstance(flags, Mapping):
-        diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_UNSAFE_FLAG_TRUE", "safety_flags must be an object", json_path="$.safety_flags"))
+        diagnostics.append(
+            diagnostic(
+                "M031_VALIDATION_REMEDIATION_UNSAFE_FLAG_TRUE",
+                "safety_flags must be an object",
+                json_path="$.safety_flags",
+            )
+        )
     else:
         for key in sorted(REQUIRED_FALSE_FLAGS):
             if flags.get(key) is not False:
-                diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_UNSAFE_FLAG_TRUE", f"safety flag must be false: {key}", json_path=f"$.safety_flags.{key}"))
+                diagnostics.append(
+                    diagnostic(
+                        "M031_VALIDATION_REMEDIATION_UNSAFE_FLAG_TRUE",
+                        f"safety flag must be false: {key}",
+                        json_path=f"$.safety_flags.{key}",
+                    )
+                )
 
     boundary = evidence.get("graph_import_boundary")
     if isinstance(boundary, Mapping):
         if boundary.get("completed_review_refusal_in_force") is not True:
-            diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_PERMISSIVE_GRAPH_IMPORT_CLAIM", "completed-review refusal must remain in force", json_path="$.graph_import_boundary.completed_review_refusal_in_force"))
+            diagnostics.append(
+                diagnostic(
+                    "M031_VALIDATION_REMEDIATION_PERMISSIVE_GRAPH_IMPORT_CLAIM",
+                    "completed-review refusal must remain in force",
+                    json_path="$.graph_import_boundary.completed_review_refusal_in_force",
+                )
+            )
         if boundary.get("accepted_count") != 0 or boundary.get("import_eligible_count") != 0:
-            diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_PERMISSIVE_GRAPH_IMPORT_CLAIM", "accepted/import-eligible counts must remain zero", json_path="$.graph_import_boundary"))
+            diagnostics.append(
+                diagnostic(
+                    "M031_VALIDATION_REMEDIATION_PERMISSIVE_GRAPH_IMPORT_CLAIM",
+                    "accepted/import-eligible counts must remain zero",
+                    json_path="$.graph_import_boundary",
+                )
+            )
     else:
-        diagnostics.append(diagnostic("M031_VALIDATION_REMEDIATION_PERMISSIVE_GRAPH_IMPORT_CLAIM", "graph_import_boundary must be an object", json_path="$.graph_import_boundary"))
+        diagnostics.append(
+            diagnostic(
+                "M031_VALIDATION_REMEDIATION_PERMISSIVE_GRAPH_IMPORT_CLAIM",
+                "graph_import_boundary must be an object",
+                json_path="$.graph_import_boundary",
+            )
+        )
 
     diagnostics.extend(_validate_metadata_safety(evidence, where="evidence"))
     return diagnostics
@@ -533,7 +769,11 @@ def validate_evidence(evidence: Mapping[str, Any]) -> list[dict[str, Any]]:
 
 def build_runtime_diagnostics(evidence: Mapping[str, Any]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    reconciliation = evidence.get("s02_assessment_reconciliation") if isinstance(evidence.get("s02_assessment_reconciliation"), Mapping) else {}
+    reconciliation = (
+        evidence.get("s02_assessment_reconciliation")
+        if isinstance(evidence.get("s02_assessment_reconciliation"), Mapping)
+        else {}
+    )
     if reconciliation.get("stale_s02_assessment_failure_detected") is True:
         rows.append(
             diagnostic(
@@ -557,8 +797,16 @@ def build_runtime_diagnostics(evidence: Mapping[str, Any]) -> list[dict[str, Any
 
 
 def render_report(evidence: Mapping[str, Any], diagnostics: Sequence[Mapping[str, Any]]) -> str:
-    req_rows = evidence.get("requirement_coverage", []) if isinstance(evidence.get("requirement_coverage"), list) else []
-    class_rows = evidence.get("canonical_verification_classes", []) if isinstance(evidence.get("canonical_verification_classes"), list) else []
+    req_rows = (
+        evidence.get("requirement_coverage", [])
+        if isinstance(evidence.get("requirement_coverage"), list)
+        else []
+    )
+    class_rows = (
+        evidence.get("canonical_verification_classes", [])
+        if isinstance(evidence.get("canonical_verification_classes"), list)
+        else []
+    )
     req_lines = "\n".join(
         f"| {row.get('requirement_id')} | {row.get('coverage_status')} | {row.get('validated')} | {row.get('validation_claim_allowed')} |"
         for row in req_rows
@@ -570,20 +818,81 @@ def render_report(evidence: Mapping[str, Any], diagnostics: Sequence[Mapping[str
         if isinstance(row, Mapping)
     )
     codes = Counter(str(row.get("code")) for row in diagnostics)
-    code_lines = "\n".join(f"- `{code}`: {count}" for code, count in sorted(codes.items())) or "- None"
-    reconciliation = evidence.get("s02_assessment_reconciliation", {}) if isinstance(evidence.get("s02_assessment_reconciliation"), Mapping) else {}
-    source_artifacts = evidence.get("source_artifacts", {}) if isinstance(evidence.get("source_artifacts"), Mapping) else {}
-    boundary = evidence.get("graph_import_boundary", {}) if isinstance(evidence.get("graph_import_boundary"), Mapping) else {}
-    rerun_inputs = evidence.get("rerun_ready_validation_inputs", {}) if isinstance(evidence.get("rerun_ready_validation_inputs"), Mapping) else {}
-    gates = evidence.get("quality_gates", {}) if isinstance(evidence.get("quality_gates"), Mapping) else {}
-    source_lines = "\n".join(f"- `{key}`: `{value}`" for key, value in sorted(source_artifacts.items())) or "- None"
-    fresh_sources = ", ".join(f"`{path}`" for path in reconciliation.get("fresh_65_pass_evidence_sources", []) if isinstance(path, str)) or "None"
-    requirement_claims = "\n".join(f"- {row.get('safe_claim')}" for row in req_rows if isinstance(row, Mapping) and row.get("safe_claim")) or "- None"
-    class_claims = "\n".join(f"- {row.get('safe_claim')}" for row in class_rows if isinstance(row, Mapping) and row.get("safe_claim")) or "- None"
-    command_lines = "\n".join(f"- `{command}`" for command in rerun_inputs.get("commands", []) if isinstance(command, str)) or "- `uv run python scripts/verify_m031_validation_remediation.py --validate-only`"
-    failure_modes = "\n".join(f"- {item}" for item in gates.get("failure_modes_q5", []) if isinstance(item, str))
-    negative_tests = "\n".join(f"- {item}" for item in gates.get("negative_tests_q7", []) if isinstance(item, str))
-    load_profile = gates.get("load_profile_q6", {}) if isinstance(gates.get("load_profile_q6"), Mapping) else {}
+    code_lines = (
+        "\n".join(f"- `{code}`: {count}" for code, count in sorted(codes.items())) or "- None"
+    )
+    reconciliation = (
+        evidence.get("s02_assessment_reconciliation", {})
+        if isinstance(evidence.get("s02_assessment_reconciliation"), Mapping)
+        else {}
+    )
+    source_artifacts = (
+        evidence.get("source_artifacts", {})
+        if isinstance(evidence.get("source_artifacts"), Mapping)
+        else {}
+    )
+    boundary = (
+        evidence.get("graph_import_boundary", {})
+        if isinstance(evidence.get("graph_import_boundary"), Mapping)
+        else {}
+    )
+    rerun_inputs = (
+        evidence.get("rerun_ready_validation_inputs", {})
+        if isinstance(evidence.get("rerun_ready_validation_inputs"), Mapping)
+        else {}
+    )
+    gates = (
+        evidence.get("quality_gates", {})
+        if isinstance(evidence.get("quality_gates"), Mapping)
+        else {}
+    )
+    source_lines = (
+        "\n".join(f"- `{key}`: `{value}`" for key, value in sorted(source_artifacts.items()))
+        or "- None"
+    )
+    fresh_sources = (
+        ", ".join(
+            f"`{path}`"
+            for path in reconciliation.get("fresh_65_pass_evidence_sources", [])
+            if isinstance(path, str)
+        )
+        or "None"
+    )
+    requirement_claims = (
+        "\n".join(
+            f"- {row.get('safe_claim')}"
+            for row in req_rows
+            if isinstance(row, Mapping) and row.get("safe_claim")
+        )
+        or "- None"
+    )
+    class_claims = (
+        "\n".join(
+            f"- {row.get('safe_claim')}"
+            for row in class_rows
+            if isinstance(row, Mapping) and row.get("safe_claim")
+        )
+        or "- None"
+    )
+    command_lines = (
+        "\n".join(
+            f"- `{command}`"
+            for command in rerun_inputs.get("commands", [])
+            if isinstance(command, str)
+        )
+        or "- `uv run python scripts/verify_m031_validation_remediation.py --validate-only`"
+    )
+    failure_modes = "\n".join(
+        f"- {item}" for item in gates.get("failure_modes_q5", []) if isinstance(item, str)
+    )
+    negative_tests = "\n".join(
+        f"- {item}" for item in gates.get("negative_tests_q7", []) if isinstance(item, str)
+    )
+    load_profile = (
+        gates.get("load_profile_q6", {})
+        if isinstance(gates.get("load_profile_q6"), Mapping)
+        else {}
+    )
     return f"""# M031 Validation Remediation Dossier
 
 Schema: `{SCHEMA_VERSION}`
@@ -601,10 +910,10 @@ Use this dossier as the M031 validation-rerun input for S06. Read the evidence J
 
 ## S02 Assessment Reconciliation
 
-- Stale S02 assessment failure detected: `{reconciliation.get('stale_s02_assessment_failure_detected')}`
-- Fresh `65 passed` evidence present: `{reconciliation.get('fresh_65_pass_evidence_present')}`
+- Stale S02 assessment failure detected: `{reconciliation.get("stale_s02_assessment_failure_detected")}`
+- Fresh `65 passed` evidence present: `{reconciliation.get("fresh_65_pass_evidence_present")}`
 - Fresh `65 passed` evidence sources: {fresh_sources}
-- Full-repo pytest collection debt classified outside S02 UAT: `{(reconciliation.get('full_repo_pytest_collection_debt') or {}).get('classified_outside_s02_uat') if isinstance(reconciliation.get('full_repo_pytest_collection_debt'), Mapping) else None}`
+- Full-repo pytest collection debt classified outside S02 UAT: `{(reconciliation.get("full_repo_pytest_collection_debt") or {}).get("classified_outside_s02_uat") if isinstance(reconciliation.get("full_repo_pytest_collection_debt"), Mapping) else None}`
 
 ## Requirement Coverage
 
@@ -627,7 +936,7 @@ Use this dossier as the M031 validation-rerun input for S06. Read the evidence J
 {class_claims}
 
 ### Graph/import boundary claim
-- {boundary.get('safe_claim')}
+- {boundary.get("safe_claim")}
 
 ## Forbidden Claims
 
@@ -655,9 +964,9 @@ S06 does not enable production graph import or LadybugDB writes. Graph/import/La
 {failure_modes}
 
 ## Load Profile
-- Expected load: {load_profile.get('expected_load')}
-- 10x breakpoint: {load_profile.get('ten_x_breakpoint')}
-- Protection: {load_profile.get('protection')}
+- Expected load: {load_profile.get("expected_load")}
+- 10x breakpoint: {load_profile.get("ten_x_breakpoint")}
+- Protection: {load_profile.get("protection")}
 
 ## Negative Tests
 {negative_tests}
@@ -668,7 +977,12 @@ S06 does not enable production graph import or LadybugDB writes. Graph/import/La
 """
 
 
-def build_verify_summary(args: argparse.Namespace, evidence: Mapping[str, Any], diagnostics: Sequence[Mapping[str, Any]], validation_errors: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+def build_verify_summary(
+    args: argparse.Namespace,
+    evidence: Mapping[str, Any],
+    diagnostics: Sequence[Mapping[str, Any]],
+    validation_errors: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
     return {
         "schema_version": VERIFY_SCHEMA_VERSION,
         "milestone_id": MILESTONE_ID,
@@ -677,13 +991,35 @@ def build_verify_summary(args: argparse.Namespace, evidence: Mapping[str, Any], 
         "selection_id": SELECTION_ID,
         "status": "failed" if validation_errors else "passed",
         "metadata_only": True,
-        "stale_s02_assessment_failure_detected": (evidence.get("s02_assessment_reconciliation") or {}).get("stale_s02_assessment_failure_detected") if isinstance(evidence.get("s02_assessment_reconciliation"), Mapping) else None,
-        "fresh_65_pass_evidence_present": (evidence.get("s02_assessment_reconciliation") or {}).get("fresh_65_pass_evidence_present") if isinstance(evidence.get("s02_assessment_reconciliation"), Mapping) else None,
-        "requirement_ids": [row.get("requirement_id") for row in evidence.get("requirement_coverage", []) if isinstance(row, Mapping)] if isinstance(evidence.get("requirement_coverage"), list) else [],
-        "verification_classes": [row.get("class") for row in evidence.get("canonical_verification_classes", []) if isinstance(row, Mapping)] if isinstance(evidence.get("canonical_verification_classes"), list) else [],
+        "stale_s02_assessment_failure_detected": (
+            evidence.get("s02_assessment_reconciliation") or {}
+        ).get("stale_s02_assessment_failure_detected")
+        if isinstance(evidence.get("s02_assessment_reconciliation"), Mapping)
+        else None,
+        "fresh_65_pass_evidence_present": (evidence.get("s02_assessment_reconciliation") or {}).get(
+            "fresh_65_pass_evidence_present"
+        )
+        if isinstance(evidence.get("s02_assessment_reconciliation"), Mapping)
+        else None,
+        "requirement_ids": [
+            row.get("requirement_id")
+            for row in evidence.get("requirement_coverage", [])
+            if isinstance(row, Mapping)
+        ]
+        if isinstance(evidence.get("requirement_coverage"), list)
+        else [],
+        "verification_classes": [
+            row.get("class")
+            for row in evidence.get("canonical_verification_classes", [])
+            if isinstance(row, Mapping)
+        ]
+        if isinstance(evidence.get("canonical_verification_classes"), list)
+        else [],
         "diagnostic_count": len(diagnostics),
         "validation_error_count": len(validation_errors),
-        "diagnostic_codes": sorted(Counter(str(row.get("code")) for row in [*diagnostics, *validation_errors])),
+        "diagnostic_codes": sorted(
+            Counter(str(row.get("code")) for row in [*diagnostics, *validation_errors])
+        ),
         "source_artifact_paths": {
             "s02_assessment": Path(args.s02_assessment).as_posix(),
             "s02_summary": Path(args.s02_summary).as_posix(),
@@ -709,7 +1045,9 @@ def _write_json(path: Path, payload: Mapping[str, Any]) -> None:
 
 def _write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in rows), encoding="utf-8")
+    path.write_text(
+        "".join(json.dumps(row, sort_keys=True) + "\n" for row in rows), encoding="utf-8"
+    )
 
 
 def _write_text(path: Path, text: str) -> None:
@@ -724,8 +1062,12 @@ def run(args: argparse.Namespace) -> int:
     s02_uat = load_text(args.s02_uat, repo_root=repo_root, label="S02 UAT")
     replay_closeout = load_json(args.replay_closeout, repo_root=repo_root, label="replay closeout")
     s05_closeout = load_json(args.s05_closeout, repo_root=repo_root, label="S05 closeout")
-    progression_matrix = load_json(args.progression_matrix, repo_root=repo_root, label="progression matrix")
-    continuity_audit = load_json(args.continuity_audit, repo_root=repo_root, label="continuity audit")
+    progression_matrix = load_json(
+        args.progression_matrix, repo_root=repo_root, label="progression matrix"
+    )
+    continuity_audit = load_json(
+        args.continuity_audit, repo_root=repo_root, label="continuity audit"
+    )
     review_events = load_jsonl(args.review_events, repo_root=repo_root, label="review events")
 
     evidence = build_evidence(
@@ -757,12 +1099,18 @@ def run(args: argparse.Namespace) -> int:
         (args.write_evidence, "write evidence", lambda path: _write_json(path, evidence)),
         (args.write_diagnostics, "write diagnostics", lambda path: _write_jsonl(path, diagnostics)),
         (args.write_report, "write report", lambda path: _write_text(path, report)),
-        (args.write_verify_summary, "write verify summary", lambda path: _write_json(path, verify_summary)),
+        (
+            args.write_verify_summary,
+            "write verify summary",
+            lambda path: _write_json(path, verify_summary),
+        ),
     ]
     safe_outputs: list[tuple[Path, Any]] = []
     for path_value, label, writer in output_specs:
         if path_value is not None:
-            safe_outputs.append((_safe_output_path(path_value, repo_root=repo_root, label=label), writer))
+            safe_outputs.append(
+                (_safe_output_path(path_value, repo_root=repo_root, label=label), writer)
+            )
     for path, writer in safe_outputs:
         writer(path)
 
@@ -784,7 +1132,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--write-diagnostics", type=Path)
     parser.add_argument("--write-report", type=Path)
     parser.add_argument("--write-verify-summary", type=Path)
-    parser.add_argument("--validate-only", action="store_true", help="Validate only; writes still occur only for explicitly requested --write-* paths.")
+    parser.add_argument(
+        "--validate-only",
+        action="store_true",
+        help="Validate only; writes still occur only for explicitly requested --write-* paths.",
+    )
     parser.set_defaults(
         write_evidence=None,
         write_diagnostics=None,

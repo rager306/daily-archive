@@ -162,7 +162,9 @@ def test_missing_source_spans_fail_via_validator_path_code() -> None:
     artifact = _fixture()
     artifact["locators"][0]["source_spans"] = []
 
-    with pytest.raises(LocatorEvidenceAuditError, match="missing_source_spans:m021-paper-1-claim-001"):
+    with pytest.raises(
+        LocatorEvidenceAuditError, match="missing_source_spans:m021-paper-1-claim-001"
+    ):
         audit_locator_evidence(artifact, strict=False)
 
 

@@ -93,7 +93,9 @@ def _catalog(root: Path) -> None:
             "schema_version": "article-catalog-index.v00.01",
             "articles": entries,
             "indexes": {
-                "by_canonical_url": {entry["canonical_url"]: entry["article_ref"] for entry in entries},
+                "by_canonical_url": {
+                    entry["canonical_url"]: entry["article_ref"] for entry in entries
+                },
                 "by_article_key": {entry["article_key"]: entry["article_ref"] for entry in entries},
             },
         },
@@ -112,11 +114,18 @@ def _fixture_inputs(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
         _selection(
             "m025",
             [
-                {"article_ref": "arxiv/cs-ai/2512.24601", "source_code": "arxiv", "seed_url": "https://arxiv.org/abs/2512.24601"},
+                {
+                    "article_ref": "arxiv/cs-ai/2512.24601",
+                    "source_code": "arxiv",
+                    "seed_url": "https://arxiv.org/abs/2512.24601",
+                },
                 {"source_code": "arxiv", "seed_url": "https://arxiv.org/html/2605.28617v1"},
                 {"source_code": "arxiv", "seed_url": "https://arxiv.org/html/2605.26525v1"},
                 {"source_code": "arxiv", "seed_url": "https://arxiv.org/abs/2507.19457"},
-                {"source_code": "company_blog", "seed_url": "https://pageindex.ai/blog/pageindex-intro"},
+                {
+                    "source_code": "company_blog",
+                    "seed_url": "https://pageindex.ai/blog/pageindex-intro",
+                },
             ],
         ),
     )
@@ -132,7 +141,10 @@ def _fixture_inputs(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
                     "canonical_url": "https://arxiv.org/abs/2605.20897",
                 },
                 {"source_code": "arxiv", "seed_url": "https://arxiv.org/abs/2605.21401"},
-                {"source_code": "nature", "seed_url": "https://www.nature.com/articles/s44387-025-00019-5"},
+                {
+                    "source_code": "nature",
+                    "seed_url": "https://www.nature.com/articles/s44387-025-00019-5",
+                },
                 {"source_code": "arxiv", "seed_url": "https://arxiv.org/abs/2605.25522"},
                 {"source_code": "arxiv", "seed_url": "https://arxiv.org/abs/2603.04448"},
                 {"source_code": "arxiv", "seed_url": "https://arxiv.org/abs/2604.18478"},
@@ -158,7 +170,9 @@ def _fixture_inputs(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
     return m025, m027, m028, catalog_root, output_dir
 
 
-def test_register_m029_writes_18_article_selection_with_duplicate_provenance(tmp_path: Path) -> None:
+def test_register_m029_writes_18_article_selection_with_duplicate_provenance(
+    tmp_path: Path,
+) -> None:
     m025, m027, m028, catalog_root, output_dir = _fixture_inputs(tmp_path)
 
     result = subprocess.run(
@@ -325,8 +339,15 @@ def test_verify_m029_rebuilds_index_with_selection_only_lookup_entries(tmp_path:
     assert report["selection_stub_entries_added"] == 16
     assert report["entries_emitted"] == 18
     assert report["idempotent"] is True
-    assert index["indexes"]["by_canonical_url"]["https://arxiv.org/abs/2605.23904"] == "arxiv/mixed-source/2605.23904"
-    placeholder = next(entry for entry in index["articles"] if entry["article_ref"] == "arxiv/mixed-source/2605.23904")
+    assert (
+        index["indexes"]["by_canonical_url"]["https://arxiv.org/abs/2605.23904"]
+        == "arxiv/mixed-source/2605.23904"
+    )
+    placeholder = next(
+        entry
+        for entry in index["articles"]
+        if entry["article_ref"] == "arxiv/mixed-source/2605.23904"
+    )
     assert placeholder["catalog_record_present"] is False
     assert placeholder["title_status"] == "unresolved_catalog_placeholder"
     assert not diagnostics_path.read_text(encoding="utf-8")

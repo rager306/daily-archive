@@ -1,6 +1,5 @@
 """Tests for md_converter module — arxiv2md REST + quality fallback."""
 
-
 import pytest
 
 from research_graph.infrastructure.corpus.sources.markdown_converter import (

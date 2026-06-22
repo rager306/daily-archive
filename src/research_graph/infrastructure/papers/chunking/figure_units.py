@@ -10,8 +10,12 @@ from __future__ import annotations
 
 import re
 
-FIGURE_RE = re.compile(r"^\s*(?:!\[[^\]]*\]\([^)]*\)|(?:fig(?:ure)?\.?\s*\d*[:.]).*)", re.IGNORECASE)
-EQUATION_RE = re.compile(r"^\s*(?:\$\$|\\\[|\\begin\{(?:equation|align|gather|multline)\}|[A-Za-z0-9_{}^\\]+\s*=\s*.+)")
+FIGURE_RE = re.compile(
+    r"^\s*(?:!\[[^\]]*\]\([^)]*\)|(?:fig(?:ure)?\.?\s*\d*[:.]).*)", re.IGNORECASE
+)
+EQUATION_RE = re.compile(
+    r"^\s*(?:\$\$|\\\[|\\begin\{(?:equation|align|gather|multline)\}|[A-Za-z0-9_{}^\\]+\s*=\s*.+)"
+)
 
 
 def is_figure_block(text: str) -> bool:

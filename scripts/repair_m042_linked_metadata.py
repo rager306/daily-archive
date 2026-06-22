@@ -60,7 +60,9 @@ def load_json(path: Path) -> dict[str, Any]:
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
 
 
 def write_text(path: Path, text: str) -> None:
@@ -88,7 +90,9 @@ def is_reference_linked(entry: dict[str, Any]) -> bool:
 
 
 def linked_from_count(entry: dict[str, Any], article: dict[str, Any]) -> int:
-    linked_from = entry.get("linked_from") or article.get("connectivity_smoke", {}).get("linked_from") or []
+    linked_from = (
+        entry.get("linked_from") or article.get("connectivity_smoke", {}).get("linked_from") or []
+    )
     if isinstance(linked_from, list):
         return len(linked_from)
     return 1 if linked_from else 0
@@ -96,7 +100,11 @@ def linked_from_count(entry: dict[str, Any], article: dict[str, Any]) -> int:
 
 def identity_is_fetched(article: dict[str, Any]) -> bool:
     identity = article.get("identity") if isinstance(article.get("identity"), dict) else {}
-    return bool(identity.get("title") and identity.get("canonical_url") and identity.get("metadata_status") == "fetched")
+    return bool(
+        identity.get("title")
+        and identity.get("canonical_url")
+        and identity.get("metadata_status") == "fetched"
+    )
 
 
 def fetch_url(url: str) -> bytes:
@@ -170,7 +178,11 @@ def apply_metadata(article: dict[str, Any], metadata: ArxivMetadata) -> dict[str
         }
     )
     updated["identity"] = identity
-    connectivity = dict(updated.get("connectivity_smoke") if isinstance(updated.get("connectivity_smoke"), dict) else {})
+    connectivity = dict(
+        updated.get("connectivity_smoke")
+        if isinstance(updated.get("connectivity_smoke"), dict)
+        else {}
+    )
     connectivity["metadata_status"] = "fetched"
     connectivity["metadata_only"] = True
     updated["connectivity_smoke"] = connectivity
@@ -194,7 +206,9 @@ def repair_linked_metadata(
     for entry in articles:
         key = str(entry.get("m041_category"))
         category_counts[key] = category_counts.get(key, 0) + 1
-    safety_flags = manifest.get("safety_flags") if isinstance(manifest.get("safety_flags"), dict) else {}
+    safety_flags = (
+        manifest.get("safety_flags") if isinstance(manifest.get("safety_flags"), dict) else {}
+    )
     if any(safety_flags.get(key) is not False for key in FALSE_SAFETY_KEYS):
         raise ValueError("M041 manifest safety flags must remain false")
 
@@ -205,7 +219,9 @@ def repair_linked_metadata(
             continue
         article_path = article_path_from_ref(str(entry.get("article_ref", "")))
         article = load_json(article_path)
-        arxiv_id = str(entry.get("article_key") or article.get("identity", {}).get("arxiv_id") or "")
+        arxiv_id = str(
+            entry.get("article_key") or article.get("identity", {}).get("arxiv_id") or ""
+        )
         if not arxiv_id:
             raise ValueError(f"missing arxiv id for {article_path}")
         linked_count = linked_from_count(entry, article)
@@ -296,8 +312,16 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
-    parser.add_argument("--no-network", action="store_true", help="Do not call arXiv; persist deferred diagnostics instead")
-    parser.add_argument("--no-write-records", action="store_true", help="Write reports only, even when metadata could be repaired")
+    parser.add_argument(
+        "--no-network",
+        action="store_true",
+        help="Do not call arXiv; persist deferred diagnostics instead",
+    )
+    parser.add_argument(
+        "--no-write-records",
+        action="store_true",
+        help="Write reports only, even when metadata could be repaired",
+    )
     args = parser.parse_args()
     report = repair_linked_metadata(
         manifest_path=args.manifest,

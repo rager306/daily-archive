@@ -47,15 +47,21 @@ def _read_json(path: Path) -> dict[str, object]:
 
 
 def _read_jsonl(path: Path) -> list[dict[str, object]]:
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return [
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
 
 
-def _write_closeout(tmp_path: Path, summary: dict[str, object], events: list[dict[str, object]], report: str) -> tuple[Path, Path, Path]:
+def _write_closeout(
+    tmp_path: Path, summary: dict[str, object], events: list[dict[str, object]], report: str
+) -> tuple[Path, Path, Path]:
     summary_path = tmp_path / "smoke-replay-closeout-summary.json"
     events_path = tmp_path / "smoke-replay-closeout-events.jsonl"
     report_path = tmp_path / "smoke-replay-closeout-report.md"
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    events_path.write_text("\n".join(json.dumps(event, sort_keys=True) for event in events) + "\n", encoding="utf-8")
+    events_path.write_text(
+        "\n".join(json.dumps(event, sort_keys=True) for event in events) + "\n", encoding="utf-8"
+    )
     report_path.write_text(report, encoding="utf-8")
     return summary_path, events_path, report_path
 
@@ -68,13 +74,19 @@ def _load_canonical_closeout() -> tuple[dict[str, object], list[dict[str, object
     )
 
 
-def _run_verifier(summary_path: Path, events_path: Path, report_path: Path) -> subprocess.CompletedProcess[str]:
+def _run_verifier(
+    summary_path: Path, events_path: Path, report_path: Path
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [
             sys.executable,
             "scripts/verify_m028_smoke_closeout.py",
             "--summary",
-            str(summary_path.relative_to(ROOT) if summary_path.is_relative_to(ROOT) else summary_path),
+            str(
+                summary_path.relative_to(ROOT)
+                if summary_path.is_relative_to(ROOT)
+                else summary_path
+            ),
             "--events",
             str(events_path.relative_to(ROOT) if events_path.is_relative_to(ROOT) else events_path),
             "--report",
@@ -88,7 +100,13 @@ def _run_verifier(summary_path: Path, events_path: Path, report_path: Path) -> s
     )
 
 
-def _assert_verifier_rejects(tmp_path: Path, summary: dict[str, object], events: list[dict[str, object]], report: str, expected_codes: set[str]) -> None:
+def _assert_verifier_rejects(
+    tmp_path: Path,
+    summary: dict[str, object],
+    events: list[dict[str, object]],
+    report: str,
+    expected_codes: set[str],
+) -> None:
     summary_path, events_path, report_path = _write_closeout(tmp_path, summary, events, report)
     completed = _run_verifier(summary_path, events_path, report_path)
     assert completed.returncode != 0, completed.stdout
@@ -97,7 +115,9 @@ def _assert_verifier_rejects(tmp_path: Path, summary: dict[str, object], events:
     assert "m028_smoke_closeout_verdict=fail" in completed.stderr
 
 
-def test_closeout_runner_and_verifier_accept_real_corpus_without_mutating_canonical_artifacts(tmp_path: Path) -> None:
+def test_closeout_runner_and_verifier_accept_real_corpus_without_mutating_canonical_artifacts(
+    tmp_path: Path,
+) -> None:
     before_hashes = _canonical_hashes()
     out_rel = f"{CORPUS_REL}/pytest-smoke-replay-closeout-{tmp_path.name}"
     out_dir = ROOT / out_rel
@@ -153,7 +173,9 @@ def test_verifier_rejects_stale_14_ref_scope(tmp_path: Path) -> None:
     preflight = summary["source_acquisition_preflight"]
     assert isinstance(preflight, dict)
     preflight["url_ref_count"] = 14
-    _assert_verifier_rejects(tmp_path, summary, events, report, {"STALE_14_REF_SCOPE", "URL_REF_COUNT_MISMATCH"})
+    _assert_verifier_rejects(
+        tmp_path, summary, events, report, {"STALE_14_REF_SCOPE", "URL_REF_COUNT_MISMATCH"}
+    )
 
 
 def test_verifier_rejects_stage_output_hash_drift(tmp_path: Path) -> None:
@@ -161,21 +183,35 @@ def test_verifier_rejects_stage_output_hash_drift(tmp_path: Path) -> None:
     mutated_events = copy.deepcopy(events)
     mutated_events[0]["output_hashes"][0]["sha256"] = hashlib.sha256(b"drift").hexdigest()
     summary["stage_events"] = copy.deepcopy(mutated_events)
-    _assert_verifier_rejects(tmp_path, summary, mutated_events, report, {"ARTIFACT_SHA256_MISMATCH"})
+    _assert_verifier_rejects(
+        tmp_path, summary, mutated_events, report, {"ARTIFACT_SHA256_MISMATCH"}
+    )
 
 
 def test_verifier_rejects_missing_stage_event(tmp_path: Path) -> None:
     summary, events, report = _load_canonical_closeout()
-    mutated_events = [event for event in events if event["stage"] != "S04_verify_universal_loader_evidence_bundles"]
+    mutated_events = [
+        event
+        for event in events
+        if event["stage"] != "S04_verify_universal_loader_evidence_bundles"
+    ]
     summary["stage_events"] = copy.deepcopy(mutated_events)
-    _assert_verifier_rejects(tmp_path, summary, mutated_events, report, {"STAGE_ORDER_MISMATCH", "EVENT_STAGE_ORDER_MISMATCH"})
+    _assert_verifier_rejects(
+        tmp_path,
+        summary,
+        mutated_events,
+        report,
+        {"STAGE_ORDER_MISMATCH", "EVENT_STAGE_ORDER_MISMATCH"},
+    )
 
 
 def test_verifier_rejects_nonzero_unsafe_counter_and_flag(tmp_path: Path) -> None:
     summary, events, report = _load_canonical_closeout()
     summary["safety_flags"]["ladybugdb_written"] = True
     summary["unsafe_counters"]["import_eligible_count"] = 1
-    _assert_verifier_rejects(tmp_path, summary, events, report, {"UNSAFE_FLAG_TRUE", "UNSAFE_COUNTER_NONZERO"})
+    _assert_verifier_rejects(
+        tmp_path, summary, events, report, {"UNSAFE_FLAG_TRUE", "UNSAFE_COUNTER_NONZERO"}
+    )
 
 
 def test_verifier_rejects_raw_payload_marker(tmp_path: Path) -> None:
@@ -203,4 +239,6 @@ def test_verifier_rejects_absolute_or_escaping_artifact_path(tmp_path: Path) -> 
 def test_verifier_rejects_parser_kg_graph_readiness_leakage(tmp_path: Path) -> None:
     summary, events, report = _load_canonical_closeout()
     leaking_report = report + "\nkg_ready=true\nparser_ready=true\ngraph_ready=true\n"
-    _assert_verifier_rejects(tmp_path, summary, events, leaking_report, {"RAW_PAYLOAD_MARKER", "UNSAFE_CLAIM_WORDING"})
+    _assert_verifier_rejects(
+        tmp_path, summary, events, leaking_report, {"RAW_PAYLOAD_MARKER", "UNSAFE_CLAIM_WORDING"}
+    )

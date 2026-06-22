@@ -34,7 +34,14 @@ def test_builds_import_disabled_locator_artifact_without_raw_text(tmp_path: Path
     artifact = build_candidate_locator_artifact(
         run_id="test-run",
         paper_id="paper-1",
-        sources=[LocatorSource(source_id="source-1", paper_id="paper-1", source_path=source_path, expected_sha256=digest)],
+        sources=[
+            LocatorSource(
+                source_id="source-1",
+                paper_id="paper-1",
+                source_path=source_path,
+                expected_sha256=digest,
+            )
+        ],
         route_specs=DEFAULT_ROUTE_SPECS,
     )
 
@@ -69,7 +76,14 @@ def test_source_hash_mismatch_blocks_source_and_marks_missing_span(tmp_path: Pat
     artifact = build_candidate_locator_artifact(
         run_id="hash-mismatch",
         paper_id="paper-1",
-        sources=[LocatorSource(source_id="source-1", paper_id="paper-1", source_path=source_path, expected_sha256="0" * 64)],
+        sources=[
+            LocatorSource(
+                source_id="source-1",
+                paper_id="paper-1",
+                source_path=source_path,
+                expected_sha256="0" * 64,
+            )
+        ],
         route_specs=DEFAULT_ROUTE_SPECS[:1],
     )
 
@@ -88,7 +102,14 @@ def test_broad_repeated_signal_is_ambiguous(tmp_path: Path) -> None:
     artifact = build_candidate_locator_artifact(
         run_id="ambiguous",
         paper_id="paper-1",
-        sources=[LocatorSource(source_id="source-1", paper_id="paper-1", source_path=source_path, expected_sha256=digest)],
+        sources=[
+            LocatorSource(
+                source_id="source-1",
+                paper_id="paper-1",
+                source_path=source_path,
+                expected_sha256=digest,
+            )
+        ],
         route_specs=DEFAULT_ROUTE_SPECS[:1],
         broad_match_threshold=3,
     )
@@ -106,7 +127,14 @@ def test_missing_signal_records_missing_span(tmp_path: Path) -> None:
     artifact = build_candidate_locator_artifact(
         run_id="missing-signal",
         paper_id="paper-1",
-        sources=[LocatorSource(source_id="source-1", paper_id="paper-1", source_path=source_path, expected_sha256=digest)],
+        sources=[
+            LocatorSource(
+                source_id="source-1",
+                paper_id="paper-1",
+                source_path=source_path,
+                expected_sha256=digest,
+            )
+        ],
         route_specs=DEFAULT_ROUTE_SPECS[:1],
     )
 
@@ -122,7 +150,14 @@ def test_validate_rejects_forbidden_payload_key_and_unsafe_flags(tmp_path: Path)
     artifact = build_candidate_locator_artifact(
         run_id="unsafe",
         paper_id="paper-1",
-        sources=[LocatorSource(source_id="source-1", paper_id="paper-1", source_path=source_path, expected_sha256=digest)],
+        sources=[
+            LocatorSource(
+                source_id="source-1",
+                paper_id="paper-1",
+                source_path=source_path,
+                expected_sha256=digest,
+            )
+        ],
         route_specs=DEFAULT_ROUTE_SPECS[:1],
     )
     artifact["locators"][0]["import_eligible"] = True
@@ -141,10 +176,19 @@ def test_validate_rejects_invalid_coordinates(tmp_path: Path) -> None:
     artifact = build_candidate_locator_artifact(
         run_id="bad-coordinates",
         paper_id="paper-1",
-        sources=[LocatorSource(source_id="source-1", paper_id="paper-1", source_path=source_path, expected_sha256=digest)],
+        sources=[
+            LocatorSource(
+                source_id="source-1",
+                paper_id="paper-1",
+                source_path=source_path,
+                expected_sha256=digest,
+            )
+        ],
         route_specs=(DEFAULT_ROUTE_SPECS[1],),
     )
-    artifact["locators"][0]["source_spans"][0]["char_end"] = artifact["locators"][0]["source_spans"][0]["char_start"]
+    artifact["locators"][0]["source_spans"][0]["char_end"] = artifact["locators"][0][
+        "source_spans"
+    ][0]["char_start"]
 
     diagnostics = validate_candidate_locator_artifact(artifact)
 
@@ -156,7 +200,14 @@ def test_writer_persists_safe_json_without_forbidden_payload_keys(tmp_path: Path
     artifact = build_candidate_locator_artifact(
         run_id="writer",
         paper_id="paper-1",
-        sources=[LocatorSource(source_id="source-1", paper_id="paper-1", source_path=source_path, expected_sha256=digest)],
+        sources=[
+            LocatorSource(
+                source_id="source-1",
+                paper_id="paper-1",
+                source_path=source_path,
+                expected_sha256=digest,
+            )
+        ],
         route_specs=DEFAULT_ROUTE_SPECS[:1],
     )
 
@@ -170,7 +221,9 @@ def test_writer_persists_safe_json_without_forbidden_payload_keys(tmp_path: Path
 
 def test_writer_refuses_invalid_artifact(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="candidate locator artifact failed validation"):
-        write_candidate_locator_artifact({"schema_version": "bad", "text": "unsafe"}, tmp_path / "bad.json")
+        write_candidate_locator_artifact(
+            {"schema_version": "bad", "text": "unsafe"}, tmp_path / "bad.json"
+        )
 
 
 def test_builds_batch_from_m011_style_targets(tmp_path: Path) -> None:
@@ -250,26 +303,52 @@ def test_span_hash_is_stable_across_source_paths(tmp_path: Path) -> None:
     first = build_candidate_locator_artifact(
         run_id="stable-one",
         paper_id="paper-1",
-        sources=[LocatorSource(source_id="stable-source", paper_id="paper-1", source_path=first_path, expected_sha256=digest)],
+        sources=[
+            LocatorSource(
+                source_id="stable-source",
+                paper_id="paper-1",
+                source_path=first_path,
+                expected_sha256=digest,
+            )
+        ],
         route_specs=(DEFAULT_ROUTE_SPECS[1],),
     )
     second = build_candidate_locator_artifact(
         run_id="stable-two",
         paper_id="paper-1",
-        sources=[LocatorSource(source_id="stable-source", paper_id="paper-1", source_path=second_path, expected_sha256=digest)],
+        sources=[
+            LocatorSource(
+                source_id="stable-source",
+                paper_id="paper-1",
+                source_path=second_path,
+                expected_sha256=digest,
+            )
+        ],
         route_specs=(DEFAULT_ROUTE_SPECS[1],),
     )
 
-    assert first["locators"][0]["source_spans"][0]["span_hash"] == second["locators"][0]["source_spans"][0]["span_hash"]
+    assert (
+        first["locators"][0]["source_spans"][0]["span_hash"]
+        == second["locators"][0]["source_spans"][0]["span_hash"]
+    )
 
 
 def test_overlapping_signal_windows_are_diagnosed(tmp_path: Path) -> None:
-    source_path, digest = _write_source(tmp_path, "Abstract\nA method result appears in one compact sentence.\n")
+    source_path, digest = _write_source(
+        tmp_path, "Abstract\nA method result appears in one compact sentence.\n"
+    )
 
     artifact = build_candidate_locator_artifact(
         run_id="overlap",
         paper_id="paper-1",
-        sources=[LocatorSource(source_id="source-1", paper_id="paper-1", source_path=source_path, expected_sha256=digest)],
+        sources=[
+            LocatorSource(
+                source_id="source-1",
+                paper_id="paper-1",
+                source_path=source_path,
+                expected_sha256=digest,
+            )
+        ],
         route_specs=DEFAULT_ROUTE_SPECS[:2],
     )
 

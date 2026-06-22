@@ -59,7 +59,9 @@ def test_build_m031_import_boundary_rehearsal_rejects_parser_ready_and_zero_chun
     }
 
 
-def test_build_m031_import_boundary_rehearsal_treats_positive_structural_labels_as_refused() -> None:
+def test_build_m031_import_boundary_rehearsal_treats_positive_structural_labels_as_refused() -> (
+    None
+):
     contract = _m031_contract()
 
     parser_ready = next(
@@ -75,7 +77,9 @@ def test_build_m031_import_boundary_rehearsal_treats_positive_structural_labels_
     assert parser_ready["import_eligible"] is False
     assert parser_ready["trusted_kg_import_allowed"] is False
     assert parser_ready["kg_readiness_claimed"] is False
-    assert parser_ready["refusal_reasons"] == ["completed_independent_graph_readiness_review_required"]
+    assert parser_ready["refusal_reasons"] == [
+        "completed_independent_graph_readiness_review_required"
+    ]
     assert "independent_graph_readiness_review_required" in parser_ready["remediation_hints"]
     assert TRUSTED_IMPORT_USE not in parser_ready["allowed_uses"]
     assert TRUSTED_IMPORT_USE in parser_ready["excluded_uses"]
@@ -84,18 +88,30 @@ def test_build_m031_import_boundary_rehearsal_treats_positive_structural_labels_
 def test_build_m031_import_boundary_rehearsal_is_metadata_only_and_has_consistent_counts() -> None:
     contract = _m031_contract()
 
-    forbidden_payload_fragments = ("do not expose me", "token-value", "normalized_markdown", "char_start", "char_end")
+    forbidden_payload_fragments = (
+        "do not expose me",
+        "token-value",
+        "normalized_markdown",
+        "char_start",
+        "char_end",
+    )
     rendered = repr(contract)
 
     assert all(fragment not in rendered for fragment in forbidden_payload_fragments)
     assert contract["candidate_count"] == len(contract["candidates"])
-    assert contract["accepted_count"] == sum(1 for c in contract["candidates"] if c["accepted"] is True)
-    assert contract["rejected_count"] == sum(1 for c in contract["candidates"] if c["rejected"] is True)
+    assert contract["accepted_count"] == sum(
+        1 for c in contract["candidates"] if c["accepted"] is True
+    )
+    assert contract["rejected_count"] == sum(
+        1 for c in contract["candidates"] if c["rejected"] is True
+    )
     assert all(candidate["raw_text_included"] is False for candidate in contract["candidates"])
     assert all(candidate["chunk_text_included"] is False for candidate in contract["candidates"])
     assert all(candidate["embeddings_included"] is False for candidate in contract["candidates"])
     assert all(candidate["vectors_included"] is False for candidate in contract["candidates"])
-    assert all(candidate["production_import_attempted"] is False for candidate in contract["candidates"])
+    assert all(
+        candidate["production_import_attempted"] is False for candidate in contract["candidates"]
+    )
     assert all(candidate["ladybugdb_written"] is False for candidate in contract["candidates"])
 
 
@@ -131,14 +147,23 @@ def test_build_m031_import_boundary_rehearsal_requires_completed_review_absence_
     assert parser_ready["review_state"] == "pending_independent_graph_readiness_review"
     assert parser_ready["output_contract_completed"] is False
     assert parser_ready["independent_review_completed"] is False
-    assert "completed_independent_graph_readiness_review_required" in parser_ready["refusal_reasons"]
+    assert (
+        "completed_independent_graph_readiness_review_required" in parser_ready["refusal_reasons"]
+    )
 
 
-def test_replay_m031_import_boundary_cli_writes_redacted_rehearsal_artifacts(tmp_path: Path) -> None:
+def test_replay_m031_import_boundary_cli_writes_redacted_rehearsal_artifacts(
+    tmp_path: Path,
+) -> None:
     output_dir = tmp_path / "import-boundary-rehearsal"
 
     result = subprocess.run(
-        [sys.executable, "scripts/replay_m031_import_boundary_rehearsal.py", "--output-dir", str(output_dir)],
+        [
+            sys.executable,
+            "scripts/replay_m031_import_boundary_rehearsal.py",
+            "--output-dir",
+            str(output_dir),
+        ],
         check=False,
         capture_output=True,
         text=True,
@@ -148,7 +173,9 @@ def test_replay_m031_import_boundary_cli_writes_redacted_rehearsal_artifacts(tmp
     summary = json.loads((output_dir / "import-boundary-summary.json").read_text(encoding="utf-8"))
     diagnostics = [
         json.loads(line)
-        for line in (output_dir / "import-boundary-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()
+        for line in (output_dir / "import-boundary-diagnostics.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
     ]
     report = (output_dir / "import-boundary-report.md").read_text(encoding="utf-8")
 
@@ -164,7 +191,9 @@ def test_replay_m031_import_boundary_cli_writes_redacted_rehearsal_artifacts(tmp
     assert summary["production_import_attempted"] is False
     assert summary["ladybugdb_written"] is False
     assert len(diagnostics) == 7
-    assert all(record["diagnostic_code"] == "M031_IMPORT_BOUNDARY_REFUSED" for record in diagnostics)
+    assert all(
+        record["diagnostic_code"] == "M031_IMPORT_BOUNDARY_REFUSED" for record in diagnostics
+    )
     assert all(record["blocks_import"] is True for record in diagnostics)
     assert all(record["accepted"] is False for record in diagnostics)
     assert all(record["import_eligible"] is False for record in diagnostics)
@@ -174,7 +203,9 @@ def test_replay_m031_import_boundary_cli_writes_redacted_rehearsal_artifacts(tmp
     assert "normalized_markdown" not in repr(summary) + repr(diagnostics) + report
 
 
-def test_replay_m031_import_boundary_cli_fails_closed_before_writes_when_closeout_is_not_passed(tmp_path: Path) -> None:
+def test_replay_m031_import_boundary_cli_fails_closed_before_writes_when_closeout_is_not_passed(
+    tmp_path: Path,
+) -> None:
     closeout = json.loads(CLOSEOUT_PATH.read_text(encoding="utf-8"))
     closeout["status"] = "failed"
     bad_closeout_path = tmp_path / "bad-closeout-summary.json"
@@ -202,7 +233,9 @@ def test_replay_m031_import_boundary_cli_fails_closed_before_writes_when_closeou
     assert not (output_dir / "import-boundary-report.md").exists()
 
 
-def test_replay_m031_import_boundary_cli_fails_closed_when_review_events_are_absent(tmp_path: Path) -> None:
+def test_replay_m031_import_boundary_cli_fails_closed_when_review_events_are_absent(
+    tmp_path: Path,
+) -> None:
     empty_events_path = tmp_path / "independent-review-events.jsonl"
     empty_events_path.write_text("", encoding="utf-8")
     output_dir = tmp_path / "import-boundary-rehearsal"

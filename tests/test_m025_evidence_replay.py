@@ -61,7 +61,14 @@ def _args(tmp_path: Path) -> Namespace:
             ],
         },
     )
-    return Namespace(catalog=catalog, index=index, selection=selection, chunks=chunks, evidence=evidence, write_events=write_events)
+    return Namespace(
+        catalog=catalog,
+        index=index,
+        selection=selection,
+        chunks=chunks,
+        evidence=evidence,
+        write_events=write_events,
+    )
 
 
 def test_replay_fails_clearly_when_s06_chunking_directory_is_absent(tmp_path: Path) -> None:
@@ -71,17 +78,33 @@ def test_replay_fails_clearly_when_s06_chunking_directory_is_absent(tmp_path: Pa
         replay(args)
 
 
-def test_replay_writes_separated_metadata_only_artifacts_from_chunk_manifest(tmp_path: Path) -> None:
+def test_replay_writes_separated_metadata_only_artifacts_from_chunk_manifest(
+    tmp_path: Path,
+) -> None:
     args = _args(tmp_path)
     chunk_manifest = args.chunks / "arxiv-cs-ai-2512.24601" / "chunks.json"
     _write_json(
         chunk_manifest,
         {
             "chunks": [
-                {"chunk_id": "arxiv/cs-ai/2512.24601:chunk:0001", "chunk_type": "figure_caption_context"},
-                {"chunk_id": "arxiv/cs-ai/2512.24601:chunk:0002", "chunk_type": "table_context", "route": "table_extraction"},
-                {"chunk_id": "arxiv/cs-ai/2512.24601:chunk:0003", "chunk_type": "citation_context", "route": "citation_graph"},
-                {"chunk_id": "arxiv/cs-ai/2512.24601:chunk:0004", "chunk_type": "retrieval_context"},
+                {
+                    "chunk_id": "arxiv/cs-ai/2512.24601:chunk:0001",
+                    "chunk_type": "figure_caption_context",
+                },
+                {
+                    "chunk_id": "arxiv/cs-ai/2512.24601:chunk:0002",
+                    "chunk_type": "table_context",
+                    "route": "table_extraction",
+                },
+                {
+                    "chunk_id": "arxiv/cs-ai/2512.24601:chunk:0003",
+                    "chunk_type": "citation_context",
+                    "route": "citation_graph",
+                },
+                {
+                    "chunk_id": "arxiv/cs-ai/2512.24601:chunk:0004",
+                    "chunk_type": "retrieval_context",
+                },
             ]
         },
     )
@@ -98,10 +121,19 @@ def test_replay_writes_separated_metadata_only_artifacts_from_chunk_manifest(tmp
     assert tables["summary"]["item_count"] == 1
     assert links["summary"]["item_count"] == 1
     assert identity["summary"]["item_count"] == 1
-    assert all(payload["safety_flags"]["metadata_only"] is True for payload in (assets, tables, links, identity))
-    assert all(payload["import_eligible_count"] == 0 for payload in (assets, tables, links, identity))
-    assert all(payload["promoted_to_fact_count"] == 0 for payload in (assets, tables, links, identity))
-    serialized = json.dumps({"assets": assets, "tables": tables, "links": links, "identity": identity})
+    assert all(
+        payload["safety_flags"]["metadata_only"] is True
+        for payload in (assets, tables, links, identity)
+    )
+    assert all(
+        payload["import_eligible_count"] == 0 for payload in (assets, tables, links, identity)
+    )
+    assert all(
+        payload["promoted_to_fact_count"] == 0 for payload in (assets, tables, links, identity)
+    )
+    serialized = json.dumps(
+        {"assets": assets, "tables": tables, "links": links, "identity": identity}
+    )
     assert "chunk_text" not in serialized
     assert "base64" not in serialized
     assert any(event["event_type"] == "evidence.artifact_written" for event in events)
@@ -114,7 +146,9 @@ def test_empty_separated_evidence_is_diagnostic_not_silent(tmp_path: Path) -> No
 
     replay(args)
 
-    assets = json.loads((args.evidence / "arxiv-cs-ai-2512.24601" / "assets.json").read_text(encoding="utf-8"))
+    assets = json.loads(
+        (args.evidence / "arxiv-cs-ai-2512.24601" / "assets.json").read_text(encoding="utf-8")
+    )
     assert assets["items"] == []
     assert assets["summary"]["diagnostic_count"] == 1
     assert assets["diagnostics"][0]["code"] == "EVIDENCE_TYPE_NOT_OBSERVED"
@@ -126,16 +160,29 @@ def _write_fixture_chunks(args: Namespace) -> None:
         chunk_manifest,
         {
             "chunks": [
-                {"chunk_id": "arxiv/cs-ai/2512.24601:chunk:0001", "chunk_type": "figure_caption_context"},
-                {"chunk_id": "arxiv/cs-ai/2512.24601:chunk:0002", "chunk_type": "table_context", "route": "table_extraction"},
-                {"chunk_id": "arxiv/cs-ai/2512.24601:chunk:0003", "chunk_type": "citation_context", "route": "citation_graph"},
+                {
+                    "chunk_id": "arxiv/cs-ai/2512.24601:chunk:0001",
+                    "chunk_type": "figure_caption_context",
+                },
+                {
+                    "chunk_id": "arxiv/cs-ai/2512.24601:chunk:0002",
+                    "chunk_type": "table_context",
+                    "route": "table_extraction",
+                },
+                {
+                    "chunk_id": "arxiv/cs-ai/2512.24601:chunk:0003",
+                    "chunk_type": "citation_context",
+                    "route": "citation_graph",
+                },
             ]
         },
     )
 
 
 def _write_events(path: Path, events: list[dict[str, Any]]) -> None:
-    path.write_text("".join(json.dumps(event, sort_keys=True) + "\n" for event in events), encoding="utf-8")
+    path.write_text(
+        "".join(json.dumps(event, sort_keys=True) + "\n" for event in events), encoding="utf-8"
+    )
 
 
 def _validation_args(args: Namespace) -> Namespace:
@@ -169,7 +216,9 @@ def test_validate_evidence_writes_summary_and_report(tmp_path: Path) -> None:
     assert summary["redaction_checks"]["passed"] is True
     assert summary["safety_state"]["production_import_attempted"] is False
     assert "## Per-Article Counts" in validation_args.write_report.read_text(encoding="utf-8")
-    assert "## No-Import / No-Write Safety State" in validation_args.write_report.read_text(encoding="utf-8")
+    assert "## No-Import / No-Write Safety State" in validation_args.write_report.read_text(
+        encoding="utf-8"
+    )
 
 
 def test_validate_evidence_fails_on_import_flag_violation(tmp_path: Path) -> None:

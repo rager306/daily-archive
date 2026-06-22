@@ -63,13 +63,17 @@ def require_text(path: Path, failures: list[dict[str, Any]]) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
-def require_false_flags(owner: str, flags: dict[str, Any] | None, failures: list[dict[str, Any]]) -> None:
+def require_false_flags(
+    owner: str, flags: dict[str, Any] | None, failures: list[dict[str, Any]]
+) -> None:
     if not isinstance(flags, dict):
         failures.append({"code": "missing_safety_flags", "owner": owner})
         return
     for key in FALSE_FLAG_KEYS:
         if flags.get(key) is not False:
-            failures.append({"code": "unsafe_flag", "owner": owner, "flag": key, "value": flags.get(key)})
+            failures.append(
+                {"code": "unsafe_flag", "owner": owner, "flag": key, "value": flags.get(key)}
+            )
 
 
 def validate_scope(root: Path, failures: list[dict[str, Any]]) -> None:
@@ -77,17 +81,35 @@ def validate_scope(root: Path, failures: list[dict[str, Any]]) -> None:
     text = require_text(root / "future-probe-scope.md", failures)
     if scope:
         require_false_flags("future_probe_scope", scope.get("safety_flags"), failures)
-        if scope.get("derived_from_recommendation") != "recommended-bounded-combined-sidecar-architecture":
-            failures.append({"code": "unexpected_scope_source", "value": scope.get("derived_from_recommendation")})
+        if (
+            scope.get("derived_from_recommendation")
+            != "recommended-bounded-combined-sidecar-architecture"
+        ):
+            failures.append(
+                {
+                    "code": "unexpected_scope_source",
+                    "value": scope.get("derived_from_recommendation"),
+                }
+            )
         if scope.get("not_executed_in_M033") is not True:
             failures.append({"code": "future_scope_executed_in_m033"})
         if len(scope.get("corpus_classes", [])) < 6:
             failures.append({"code": "too_few_corpus_classes"})
         excluded = set(scope.get("excluded_production_actions", []))
-        for needle in ("production parser integration", "graph import", "LadybugDB write", "positive import eligibility claim"):
+        for needle in (
+            "production parser integration",
+            "graph import",
+            "LadybugDB write",
+            "positive import eligibility claim",
+        ):
             if needle not in excluded:
                 failures.append({"code": "missing_excluded_action", "needle": needle})
-    for needle in ("no-network", "model/backend cache", "graph_import_allowed=false", "production parser integration"):
+    for needle in (
+        "no-network",
+        "model/backend cache",
+        "graph_import_allowed=false",
+        "production parser integration",
+    ):
         if needle not in text:
             failures.append({"code": "missing_scope_text", "needle": needle})
 
@@ -107,7 +129,13 @@ def validate_metrics(root: Path, failures: list[dict[str, Any]]) -> None:
                 failures.append({"code": "missing_global_rule", "needle": needle})
         if "--require-completed-review" not in metrics.get("review_post_check_command", ""):
             failures.append({"code": "missing_review_postcheck_command"})
-    for needle in ("GROBID", "OpenDataLoader", "Adaptix", "low_quality_source", "graph-readiness review post-check"):
+    for needle in (
+        "GROBID",
+        "OpenDataLoader",
+        "Adaptix",
+        "low_quality_source",
+        "graph-readiness review post-check",
+    ):
         if needle not in text:
             failures.append({"code": "missing_metrics_text", "needle": needle})
 
@@ -131,13 +159,29 @@ def validate_contracts(root: Path, failures: list[dict[str, Any]]) -> None:
         expected_zero = ("accepted_count", "import_eligible_count", "ladybugdb_write_attempts")
         for key in expected_zero:
             if rehearsal.get(key) != 0:
-                failures.append({"code": "nonzero_no_write_rehearsal", "field": key, "value": rehearsal.get(key)})
+                failures.append(
+                    {
+                        "code": "nonzero_no_write_rehearsal",
+                        "field": key,
+                        "value": rehearsal.get(key),
+                    }
+                )
         if rehearsal.get("graph_import_allowed") is not False:
             failures.append({"code": "rehearsal_allows_graph_import"})
-    for needle in ("No secrets", "No raw article bodies", "low_quality_source", "graph_readiness_postcheck_failed"):
+    for needle in (
+        "No secrets",
+        "No raw article bodies",
+        "low_quality_source",
+        "graph_readiness_postcheck_failed",
+    ):
         if needle not in text:
             failures.append({"code": "missing_contracts_text", "needle": needle})
-    for needle in ("adoption_decision_allowed_by_M033: `false`", "graph import", "LadybugDB writes", "import_eligible=false"):
+    for needle in (
+        "adoption_decision_allowed_by_M033: `false`",
+        "graph import",
+        "LadybugDB writes",
+        "import_eligible=false",
+    ):
         if needle not in rollback_text:
             failures.append({"code": "missing_rollback_text", "needle": needle})
 

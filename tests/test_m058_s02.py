@@ -130,7 +130,9 @@ def test_m050_m058_s01_regression() -> None:
     ]
     for path in representative_paths:
         assert path.exists(), path
-    m057_summary = _load_json(ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "summary.json")
+    m057_summary = _load_json(
+        ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "summary.json"
+    )
     assert m057_summary["edges_total"] == 15
     assert m057_summary["inter_doc_edges"] == 15
     assert m057_summary["total_figures"] == 937

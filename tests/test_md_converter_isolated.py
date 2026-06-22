@@ -12,7 +12,8 @@ from research_graph.infrastructure.corpus.sources.markdown_converter import (
 @pytest.fixture
 def temp_cache(tmp_path, monkeypatch):
     monkeypatch.setattr(
-        "research_graph.infrastructure.corpus.sources.markdown_converter.CACHE_DIR", tmp_path / ".arxiv_cache"
+        "research_graph.infrastructure.corpus.sources.markdown_converter.CACHE_DIR",
+        tmp_path / ".arxiv_cache",
     )
     return tmp_path / ".arxiv_cache"
 

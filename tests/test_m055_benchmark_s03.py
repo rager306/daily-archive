@@ -101,7 +101,9 @@ def test_probe_opendataloader_pdf_success_on_subprocess_fallback(
     pdf_path = tmp_path / "paper.pdf"
     pdf_path.write_bytes(b"%PDF-1.4\n")
     monkeypatch.setattr(
-        opendl_only, "_run_via_import_api", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("boom"))
+        opendl_only,
+        "_run_via_import_api",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("boom")),
     )
 
     def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
@@ -250,7 +252,9 @@ def test_5_safety_defaults_all_false(tmp_path: Path, monkeypatch: pytest.MonkeyP
     )
 
     summary = opendl_only.probe_opendataloader_only(manifest, tmp_path / "out")
-    packet = json.loads(next((tmp_path / "out" / "per-pdf").glob("*.json")).read_text(encoding="utf-8"))
+    packet = json.loads(
+        next((tmp_path / "out" / "per-pdf").glob("*.json")).read_text(encoding="utf-8")
+    )
 
     assert set(summary["safety_defaults"]) == SAFETY_KEYS
     assert set(packet["safety_defaults"]) == SAFETY_KEYS

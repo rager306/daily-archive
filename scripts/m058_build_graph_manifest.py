@@ -50,7 +50,9 @@ def load_edges(path: Path) -> list[dict[str, Any]]:
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
 
 def _as_int_or_none(value: Any) -> int | None:
@@ -63,7 +65,9 @@ def _as_float_or_none(value: Any) -> float | None:
     return None
 
 
-def _stable_evidence_id(layer: str, ordinal: int, source_paper_id: str, target_paper_id: str) -> str:
+def _stable_evidence_id(
+    layer: str, ordinal: int, source_paper_id: str, target_paper_id: str
+) -> str:
     return f"m058:{layer}:{ordinal:05d}:{source_paper_id}->{target_paper_id}"
 
 
@@ -99,8 +103,12 @@ def normalize_edge(edge: dict[str, Any], *, layer: str, ordinal: int) -> dict[st
         target_artifact_idx = _as_int_or_none(edge.get("target_figure_idx"))
         similarity_score = _as_float_or_none(edge.get("similarity"))
         relation_type = edge.get("relation_type", "similarity")
-        source_artifact_id = str(edge.get("source_figure_id", f"{source_paper_id}::{source_artifact_idx}"))
-        target_artifact_id = str(edge.get("target_figure_id", f"{target_paper_id}::{target_artifact_idx}"))
+        source_artifact_id = str(
+            edge.get("source_figure_id", f"{source_paper_id}::{source_artifact_idx}")
+        )
+        target_artifact_id = str(
+            edge.get("target_figure_id", f"{target_paper_id}::{target_artifact_idx}")
+        )
     elif layer == "figure_similarity_v2":
         source_paper_id = str(edge["paper_a"])
         target_paper_id = str(edge["paper_b"])
@@ -110,8 +118,12 @@ def normalize_edge(edge: dict[str, Any], *, layer: str, ordinal: int) -> dict[st
         target_artifact_idx = _as_int_or_none(edge.get("figure_b_idx"))
         similarity_score = _as_float_or_none(edge.get("similarity"))
         relation_type = edge.get("relation_type", "similarity")
-        source_artifact_id = str(edge.get("figure_a_id", f"{source_paper_id}::{source_artifact_idx}"))
-        target_artifact_id = str(edge.get("figure_b_id", f"{target_paper_id}::{target_artifact_idx}"))
+        source_artifact_id = str(
+            edge.get("figure_a_id", f"{source_paper_id}::{source_artifact_idx}")
+        )
+        target_artifact_id = str(
+            edge.get("figure_b_id", f"{target_paper_id}::{target_artifact_idx}")
+        )
     else:
         raise ValueError(f"Unknown evidence layer: {layer}")
 
@@ -132,7 +144,9 @@ def normalize_edge(edge: dict[str, Any], *, layer: str, ordinal: int) -> dict[st
 
 
 def summarize_layer(layer: str, edges: list[dict[str, Any]]) -> dict[str, Any]:
-    similarity_scores = [edge["similarity_score"] for edge in edges if edge["similarity_score"] is not None]
+    similarity_scores = [
+        edge["similarity_score"] for edge in edges if edge["similarity_score"] is not None
+    ]
     return {
         "count": len(edges),
         "distinct_source_papers": len({edge["source_paper_id"] for edge in edges}),
@@ -162,7 +176,10 @@ def build_graph_manifest(
     normalized_by_layer: dict[str, list[dict[str, Any]]] = {}
     normalized_edges: list[dict[str, Any]] = []
     for layer in LAYER_ORDER:
-        layer_edges = [normalize_edge(edge, layer=layer, ordinal=ordinal) for ordinal, edge in enumerate(raw_sources[layer], start=1)]
+        layer_edges = [
+            normalize_edge(edge, layer=layer, ordinal=ordinal)
+            for ordinal, edge in enumerate(raw_sources[layer], start=1)
+        ]
         normalized_by_layer[layer] = layer_edges
         normalized_edges.extend(layer_edges)
 
@@ -174,10 +191,26 @@ def build_graph_manifest(
         "safety_defaults": SAFETY_DEFAULTS,
         "schema_version": "m058.combined-graph.per-layer-summary.v1",
         "source_files": {
-            "citation": str(citation_edges_path.relative_to(ROOT) if citation_edges_path.is_relative_to(ROOT) else citation_edges_path),
-            "figure_similarity_v1": str(figure_v1_edges_path.relative_to(ROOT) if figure_v1_edges_path.is_relative_to(ROOT) else figure_v1_edges_path),
-            "figure_similarity_v2": str(figure_v2_edges_path.relative_to(ROOT) if figure_v2_edges_path.is_relative_to(ROOT) else figure_v2_edges_path),
-            "table_similarity": str(table_edges_path.relative_to(ROOT) if table_edges_path.is_relative_to(ROOT) else table_edges_path),
+            "citation": str(
+                citation_edges_path.relative_to(ROOT)
+                if citation_edges_path.is_relative_to(ROOT)
+                else citation_edges_path
+            ),
+            "figure_similarity_v1": str(
+                figure_v1_edges_path.relative_to(ROOT)
+                if figure_v1_edges_path.is_relative_to(ROOT)
+                else figure_v1_edges_path
+            ),
+            "figure_similarity_v2": str(
+                figure_v2_edges_path.relative_to(ROOT)
+                if figure_v2_edges_path.is_relative_to(ROOT)
+                else figure_v2_edges_path
+            ),
+            "table_similarity": str(
+                table_edges_path.relative_to(ROOT)
+                if table_edges_path.is_relative_to(ROOT)
+                else table_edges_path
+            ),
         },
         "total_edges": len(normalized_edges),
     }

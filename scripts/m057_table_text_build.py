@@ -18,7 +18,9 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT = ROOT / "artifacts" / "m057-fd-marker" / "table-similarity" / "table-text-corpus.json"
+DEFAULT_OUTPUT = (
+    ROOT / "artifacts" / "m057-fd-marker" / "table-similarity" / "table-text-corpus.json"
+)
 
 SAFETY_DEFAULTS: dict[str, bool] = {
     "graph_writes_authorized": False,
@@ -181,7 +183,9 @@ def _json_table_blocks(packet: dict[str, Any]) -> list[TableBlock]:
     return blocks
 
 
-def _resolve_markdown_path(source_root: Path, packet: dict[str, Any], packet_path: Path) -> Path | None:
+def _resolve_markdown_path(
+    source_root: Path, packet: dict[str, Any], packet_path: Path
+) -> Path | None:
     markdown_path = packet.get("markdown_path")
     candidates: list[Path] = []
     if markdown_path:
@@ -226,12 +230,16 @@ def iter_table_records(sources: Iterable[tuple[str, Path]]) -> Iterable[dict[str
             continue
         for packet_path in sorted(per_pdf.glob("*.json")):
             packet = load_json(packet_path)
-            arxiv_id = clean_text(packet.get("arxiv_id") or packet.get("article_key") or packet_path.stem)
+            arxiv_id = clean_text(
+                packet.get("arxiv_id") or packet.get("article_key") or packet_path.stem
+            )
             if not arxiv_id:
                 continue
             markdown_path = _resolve_markdown_path(source_root, packet, packet_path)
             if markdown_path is not None:
-                blocks = extract_markdown_tables(markdown_path.read_text(encoding="utf-8", errors="replace"))
+                blocks = extract_markdown_tables(
+                    markdown_path.read_text(encoding="utf-8", errors="replace")
+                )
             else:
                 blocks = _json_table_blocks(packet)
             for index, block in enumerate(blocks, start=1):
@@ -249,7 +257,9 @@ def iter_table_records(sources: Iterable[tuple[str, Path]]) -> Iterable[dict[str
                     "line_number": block.line_number,
                     "text_repr": semantic_text(arxiv_id, block),
                     "source_milestone": source_name,
-                    "source_pdf": clean_text(packet.get("pdf_path") or packet.get("source_pdf") or ""),
+                    "source_pdf": clean_text(
+                        packet.get("pdf_path") or packet.get("source_pdf") or ""
+                    ),
                 }
 
 
@@ -263,7 +273,10 @@ def build_corpus(
     payload = {
         "schema_version": "m057.table-text-corpus.v1",
         "safety_defaults": SAFETY_DEFAULTS,
-        "source_roots": [str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path) for _, path in selected_sources],
+        "source_roots": [
+            str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)
+            for _, path in selected_sources
+        ],
         "table_count": len(tables),
         "tables": tables,
     }
@@ -278,7 +291,9 @@ def main() -> None:
     args = parser.parse_args()
     payload = build_corpus(output_path=args.output)
     sys.stdout.write(
-        json.dumps({"output": str(args.output), "table_count": payload["table_count"]}, sort_keys=True)
+        json.dumps(
+            {"output": str(args.output), "table_count": payload["table_count"]}, sort_keys=True
+        )
         + "\n"
     )
 

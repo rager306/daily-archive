@@ -50,7 +50,10 @@ def tei_payload(
     padding: int = 1400,
 ) -> str:
     ref_xml = "".join("<ref>r</ref>" for _ in range(refs))
-    bibl_xml = "".join(f"<biblStruct><analytic><title>ref {i}</title></analytic></biblStruct>" for i in range(bibls))
+    bibl_xml = "".join(
+        f"<biblStruct><analytic><title>ref {i}</title></analytic></biblStruct>"
+        for i in range(bibls)
+    )
     formula_xml = "".join("<formula>x=y</formula>" for _ in range(formulas))
     figure_xml = "".join("<figure><head>f</head></figure>" for _ in range(figures))
     section_xml = "".join(
@@ -100,8 +103,12 @@ def packet(arxiv_id: str, **values: object) -> dict[str, object]:
 def test_probe_grobid_fulltext_success_on_200_ok(tmp_path: Path) -> None:
     pdf_path, _ = write_pdf(tmp_path)
     tei = tei_payload()
-    with mock.patch.object(fulltext.urllib.request, "urlopen", return_value=FakeResponse(tei.encode("utf-8"), 200)):
-        result = fulltext._probe_grobid_fulltext(pdf_path, "http://127.0.0.1:8070/api/processFulltextDocument")
+    with mock.patch.object(
+        fulltext.urllib.request, "urlopen", return_value=FakeResponse(tei.encode("utf-8"), 200)
+    ):
+        result = fulltext._probe_grobid_fulltext(
+            pdf_path, "http://127.0.0.1:8070/api/processFulltextDocument"
+        )
 
     assert result["http_status"] == 200
     assert result["tei_text"] == tei
@@ -111,8 +118,12 @@ def test_probe_grobid_fulltext_success_on_200_ok(tmp_path: Path) -> None:
 
 def test_probe_grobid_fulltext_fail_closed_when_grobid_down(tmp_path: Path) -> None:
     pdf_path, _ = write_pdf(tmp_path)
-    with mock.patch.object(fulltext.urllib.request, "urlopen", side_effect=urllib.error.URLError("down")):
-        result = fulltext._probe_grobid_fulltext(pdf_path, "http://127.0.0.1:8070/api/processFulltextDocument")
+    with mock.patch.object(
+        fulltext.urllib.request, "urlopen", side_effect=urllib.error.URLError("down")
+    ):
+        result = fulltext._probe_grobid_fulltext(
+            pdf_path, "http://127.0.0.1:8070/api/processFulltextDocument"
+        )
 
     assert result["tei_text"] == ""
     assert result["http_status"] is None
@@ -131,7 +142,7 @@ def test_extract_fulltext_metrics_body_elements_are_positive() -> None:
 
 
 def test_extract_fulltext_metrics_counts_untyped_grobid_body_divs_as_sections() -> None:
-    tei = tei_payload(sections=1).replace('type="section"', '')
+    tei = tei_payload(sections=1).replace('type="section"', "")
 
     metrics = fulltext._extract_fulltext_metrics(tei)
 
@@ -178,7 +189,15 @@ def test_probe_grobid_fulltext_writes_aggregate_counts(tmp_path: Path, monkeypat
     pdf_path, sha = write_pdf(tmp_path)
     manifest_path = write_manifest(
         tmp_path,
-        [{"arxiv_id": "1234.5678", "article_key": "1234.5678", "category": "cs-cl", "path": str(pdf_path), "sha256": sha}],
+        [
+            {
+                "arxiv_id": "1234.5678",
+                "article_key": "1234.5678",
+                "category": "cs-cl",
+                "path": str(pdf_path),
+                "sha256": sha,
+            }
+        ],
     )
     monkeypatch.setattr(fulltext, "_utc_now", lambda: "2026-06-10T00:00:00+00:00")
     monkeypatch.setattr(
@@ -193,7 +212,9 @@ def test_probe_grobid_fulltext_writes_aggregate_counts(tmp_path: Path, monkeypat
         },
     )
 
-    summary = fulltext.probe_grobid_fulltext(manifest_path, tmp_path / "out", grobid_url="http://127.0.0.1:8070")
+    summary = fulltext.probe_grobid_fulltext(
+        manifest_path, tmp_path / "out", grobid_url="http://127.0.0.1:8070"
+    )
 
     assert summary["total_pdfs"] == 1
     assert summary["success_count"] == 1
@@ -205,11 +226,27 @@ def test_probe_grobid_fulltext_writes_aggregate_counts(tmp_path: Path, monkeypat
 
 def test_safety_defaults_are_all_false_in_summary_and_packet(tmp_path: Path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
     pdf_path, sha = write_pdf(tmp_path)
-    manifest_path = write_manifest(tmp_path, [{"arxiv_id": "1", "path": str(pdf_path), "sha256": sha}])
-    monkeypatch.setattr(fulltext, "_probe_grobid_fulltext", lambda *args, **kwargs: {"tei_text": tei_payload(), "http_status": 200, "bytes": 1, "duration_ms": 1, "error": None})
+    manifest_path = write_manifest(
+        tmp_path, [{"arxiv_id": "1", "path": str(pdf_path), "sha256": sha}]
+    )
+    monkeypatch.setattr(
+        fulltext,
+        "_probe_grobid_fulltext",
+        lambda *args, **kwargs: {
+            "tei_text": tei_payload(),
+            "http_status": 200,
+            "bytes": 1,
+            "duration_ms": 1,
+            "error": None,
+        },
+    )
 
-    summary = fulltext.probe_grobid_fulltext(manifest_path, tmp_path / "out", grobid_url="http://127.0.0.1:8070")
-    packet_payload = json.loads((tmp_path / "out" / "per-pdf" / "1.json").read_text(encoding="utf-8"))
+    summary = fulltext.probe_grobid_fulltext(
+        manifest_path, tmp_path / "out", grobid_url="http://127.0.0.1:8070"
+    )
+    packet_payload = json.loads(
+        (tmp_path / "out" / "per-pdf" / "1.json").read_text(encoding="utf-8")
+    )
 
     assert set(summary["safety_defaults"]) == SAFETY_KEYS
     assert all(value is False for value in summary["safety_defaults"].values())
@@ -219,11 +256,27 @@ def test_safety_defaults_are_all_false_in_summary_and_packet(tmp_path: Path, mon
 
 def test_m022_repair_candidate_is_set_on_low_quality_source(tmp_path: Path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
     pdf_path, sha = write_pdf(tmp_path)
-    manifest_path = write_manifest(tmp_path, [{"arxiv_id": "low", "path": str(pdf_path), "sha256": sha}])
-    monkeypatch.setattr(fulltext, "_probe_grobid_fulltext", lambda *args, **kwargs: {"tei_text": tei_payload(refs=0), "http_status": 200, "bytes": 1, "duration_ms": 1, "error": None})
+    manifest_path = write_manifest(
+        tmp_path, [{"arxiv_id": "low", "path": str(pdf_path), "sha256": sha}]
+    )
+    monkeypatch.setattr(
+        fulltext,
+        "_probe_grobid_fulltext",
+        lambda *args, **kwargs: {
+            "tei_text": tei_payload(refs=0),
+            "http_status": 200,
+            "bytes": 1,
+            "duration_ms": 1,
+            "error": None,
+        },
+    )
 
-    fulltext.probe_grobid_fulltext(manifest_path, tmp_path / "out", grobid_url="http://127.0.0.1:8070")
-    packet_payload = json.loads((tmp_path / "out" / "per-pdf" / "low.json").read_text(encoding="utf-8"))
+    fulltext.probe_grobid_fulltext(
+        manifest_path, tmp_path / "out", grobid_url="http://127.0.0.1:8070"
+    )
+    packet_payload = json.loads(
+        (tmp_path / "out" / "per-pdf" / "low.json").read_text(encoding="utf-8")
+    )
 
     assert packet_payload["status"] == "low_quality_source"
     assert packet_payload["low_quality_source"] is True
@@ -235,14 +288,27 @@ def test_compare_header_vs_fulltext_emits_per_pdf_deltas(tmp_path: Path, monkeyp
     fulltext_dir = tmp_path / "fulltext"
     header_dir.mkdir()
     fulltext_dir.mkdir()
-    (header_dir / "a.json").write_text(json.dumps(packet("a", body_element_count=0, ref_count=1, bibl_count=1)), encoding="utf-8")
+    (header_dir / "a.json").write_text(
+        json.dumps(packet("a", body_element_count=0, ref_count=1, bibl_count=1)), encoding="utf-8"
+    )
     (fulltext_dir / "a.json").write_text(
-        json.dumps(packet("a", body_element_count=10, ref_count=5, bibl_count=4, equation_count=2, figure_count=3)),
+        json.dumps(
+            packet(
+                "a",
+                body_element_count=10,
+                ref_count=5,
+                bibl_count=4,
+                equation_count=2,
+                figure_count=3,
+            )
+        ),
         encoding="utf-8",
     )
     monkeypatch.setattr(compare_delta, "_utc_now", lambda: "2026-06-10T00:00:00+00:00")
 
-    payload = compare_delta.compare_header_vs_fulltext(header_dir, fulltext_dir, tmp_path / "delta.json")
+    payload = compare_delta.compare_header_vs_fulltext(
+        header_dir, fulltext_dir, tmp_path / "delta.json"
+    )
 
     assert payload["per_pdf"] == [
         {
@@ -272,12 +338,28 @@ def test_compare_header_vs_fulltext_emits_per_pdf_deltas(tmp_path: Path, monkeyp
 
 def test_idempotent_summary_when_inputs_are_unchanged(tmp_path: Path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
     pdf_path, sha = write_pdf(tmp_path)
-    manifest_path = write_manifest(tmp_path, [{"arxiv_id": "stable", "path": str(pdf_path), "sha256": sha}])
+    manifest_path = write_manifest(
+        tmp_path, [{"arxiv_id": "stable", "path": str(pdf_path), "sha256": sha}]
+    )
     monkeypatch.setattr(fulltext, "_utc_now", lambda: "2026-06-10T00:00:00+00:00")
-    monkeypatch.setattr(fulltext, "_probe_grobid_fulltext", lambda *args, **kwargs: {"tei_text": tei_payload(), "http_status": 200, "bytes": 1, "duration_ms": 1, "error": None})
+    monkeypatch.setattr(
+        fulltext,
+        "_probe_grobid_fulltext",
+        lambda *args, **kwargs: {
+            "tei_text": tei_payload(),
+            "http_status": 200,
+            "bytes": 1,
+            "duration_ms": 1,
+            "error": None,
+        },
+    )
 
-    first = fulltext.probe_grobid_fulltext(manifest_path, tmp_path / "out", grobid_url="http://127.0.0.1:8070")
-    second = fulltext.probe_grobid_fulltext(manifest_path, tmp_path / "out", grobid_url="http://127.0.0.1:8070")
+    first = fulltext.probe_grobid_fulltext(
+        manifest_path, tmp_path / "out", grobid_url="http://127.0.0.1:8070"
+    )
+    second = fulltext.probe_grobid_fulltext(
+        manifest_path, tmp_path / "out", grobid_url="http://127.0.0.1:8070"
+    )
 
     assert second == first
     assert json.loads((tmp_path / "out" / "summary.json").read_text(encoding="utf-8")) == first

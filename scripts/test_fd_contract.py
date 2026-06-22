@@ -108,7 +108,11 @@ class HttpCase:
 
 def get_base_url() -> str:
     """Return the fd base URL from the v2 TEI_URL env, with legacy fallback."""
-    return os.environ.get("TEI_URL") or os.environ.get("FD_EMBEDDINGS_ENDPOINT_BASE") or DEFAULT_TEI_URL
+    return (
+        os.environ.get("TEI_URL")
+        or os.environ.get("FD_EMBEDDINGS_ENDPOINT_BASE")
+        or DEFAULT_TEI_URL
+    )
 
 
 def get_endpoint() -> str:
@@ -252,7 +256,9 @@ def _code_is(expected_code: str) -> Callable[[httpx.Response, float], tuple[bool
     return validate
 
 
-def _status_and_code(expected_status: int, expected_code: str) -> Callable[[httpx.Response, float], tuple[bool, str]]:
+def _status_and_code(
+    expected_status: int, expected_code: str
+) -> Callable[[httpx.Response, float], tuple[bool, str]]:
     def validate(response: httpx.Response, _latency: float) -> tuple[bool, str]:
         code = _error_code(response)
         ok = response.status_code == expected_status and code == expected_code
@@ -261,10 +267,16 @@ def _status_and_code(expected_status: int, expected_code: str) -> Callable[[http
     return validate
 
 
-def _embedding_count_and_dim(count: int, dim: int) -> Callable[[httpx.Response, float], tuple[bool, str]]:
+def _embedding_count_and_dim(
+    count: int, dim: int
+) -> Callable[[httpx.Response, float], tuple[bool, str]]:
     def validate(response: httpx.Response, _latency: float) -> tuple[bool, str]:
         lengths = _embedding_lengths(response)
-        ok = response.status_code == 200 and len(lengths) == count and all(length == dim for length in lengths)
+        ok = (
+            response.status_code == 200
+            and len(lengths) == count
+            and all(length == dim for length in lengths)
+        )
         return ok, f"embedding_count={len(lengths)}, dimensions={lengths[:5]}"
 
     return validate
@@ -273,7 +285,11 @@ def _embedding_count_and_dim(count: int, dim: int) -> Callable[[httpx.Response, 
 def _base64_embedding(response: httpx.Response, _latency: float) -> tuple[bool, str]:
     data = _json(response)
     items = data.get("data") if isinstance(data, dict) else None
-    embedding = items[0].get("embedding") if isinstance(items, list) and items and isinstance(items[0], dict) else None
+    embedding = (
+        items[0].get("embedding")
+        if isinstance(items, list) and items and isinstance(items[0], dict)
+        else None
+    )
     ok = response.status_code == 200 and isinstance(embedding, str)
     return ok, f"embedding_type={type(embedding).__name__}"
 
@@ -343,7 +359,9 @@ def _run_http_case(client: httpx.Client, case: HttpCase) -> TestResult:
             case.description,
             case.expected,
             "SKIP",
-            Evidence(note="FD_API_KEY is not configured; protected fd v2 request is not authorized for verification"),
+            Evidence(
+                note="FD_API_KEY is not configured; protected fd v2 request is not authorized for verification"
+            ),
             case.requirements,
         )
 
@@ -371,13 +389,17 @@ def _run_http_case(client: httpx.Client, case: HttpCase) -> TestResult:
             case.requirements,
         )
 
-    expected_status_ok = case.expected_status is None or response.status_code == case.expected_status
+    expected_status_ok = (
+        case.expected_status is None or response.status_code == case.expected_status
+    )
     validator_ok = True
     validator_note = ""
     if case.validator is not None:
         validator_ok, validator_note = case.validator(response, latency_ms)
     status = "PASS" if expected_status_ok and validator_ok else "FAIL"
-    expected_note = f"expected_status={case.expected_status}" if case.expected_status is not None else ""
+    expected_note = (
+        f"expected_status={case.expected_status}" if case.expected_status is not None else ""
+    )
     note = ", ".join(part for part in [expected_note, validator_note] if part)
     return TestResult(
         case.test_id,
@@ -398,49 +420,482 @@ def _run_http_case(client: httpx.Client, case: HttpCase) -> TestResult:
 
 def build_http_cases() -> list[HttpCase]:
     return [
-        HttpCase("T-H-1", "happy", "single 1024-d embedding", "POST", "$endpoint", "200, dimensions=1024 in response", 200, {"input": ["hello"]}, validator=_embedding_count_and_dim(1, 1024)),
-        HttpCase("T-H-2", "happy", "single 512-d embedding", "POST", "$endpoint", "200, dimensions=512", 200, {"input": ["hello"], "dimensions": 512}, validator=_embedding_count_and_dim(1, 512)),
-        HttpCase("T-H-3", "happy", "three embeddings", "POST", "$endpoint", "200, 3 embeddings", 200, {"input": ["a", "b", "c"]}, validator=_embedding_count_and_dim(3, 1024)),
-        HttpCase("T-H-4", "happy", "max batch of 32 embeddings", "POST", "$endpoint", "200, 32 embeddings", 200, {"input": ["a"] * 32}, validator=_embedding_count_and_dim(32, 1024), requirements=("R-P0-2",)),
-        HttpCase("T-H-5", "happy", "base64 encoding_format", "POST", "$endpoint", "200, base64 string", 200, {"input": ["a"], "encoding_format": "base64"}, validator=_base64_embedding, requirements=("R-P1-5",)),
-        HttpCase("T-H-6", "happy", "priority option", "POST", "$endpoint", "200", 200, {"input": ["a"], "priority": "high"}, requirements=("R-P1-7",)),
-        HttpCase("T-H-7", "happy", "health deep check", "GET", "/health", "200, body contains model_loaded: true", 200, validator=lambda r, _l: (_body_contains_model_loaded_true(r), f"model_loaded_true={_body_contains_model_loaded_true(r)}"), requirements=("R-P1-1",)),
+        HttpCase(
+            "T-H-1",
+            "happy",
+            "single 1024-d embedding",
+            "POST",
+            "$endpoint",
+            "200, dimensions=1024 in response",
+            200,
+            {"input": ["hello"]},
+            validator=_embedding_count_and_dim(1, 1024),
+        ),
+        HttpCase(
+            "T-H-2",
+            "happy",
+            "single 512-d embedding",
+            "POST",
+            "$endpoint",
+            "200, dimensions=512",
+            200,
+            {"input": ["hello"], "dimensions": 512},
+            validator=_embedding_count_and_dim(1, 512),
+        ),
+        HttpCase(
+            "T-H-3",
+            "happy",
+            "three embeddings",
+            "POST",
+            "$endpoint",
+            "200, 3 embeddings",
+            200,
+            {"input": ["a", "b", "c"]},
+            validator=_embedding_count_and_dim(3, 1024),
+        ),
+        HttpCase(
+            "T-H-4",
+            "happy",
+            "max batch of 32 embeddings",
+            "POST",
+            "$endpoint",
+            "200, 32 embeddings",
+            200,
+            {"input": ["a"] * 32},
+            validator=_embedding_count_and_dim(32, 1024),
+            requirements=("R-P0-2",),
+        ),
+        HttpCase(
+            "T-H-5",
+            "happy",
+            "base64 encoding_format",
+            "POST",
+            "$endpoint",
+            "200, base64 string",
+            200,
+            {"input": ["a"], "encoding_format": "base64"},
+            validator=_base64_embedding,
+            requirements=("R-P1-5",),
+        ),
+        HttpCase(
+            "T-H-6",
+            "happy",
+            "priority option",
+            "POST",
+            "$endpoint",
+            "200",
+            200,
+            {"input": ["a"], "priority": "high"},
+            requirements=("R-P1-7",),
+        ),
+        HttpCase(
+            "T-H-7",
+            "happy",
+            "health deep check",
+            "GET",
+            "/health",
+            "200, body contains model_loaded: true",
+            200,
+            validator=lambda r, _l: (
+                _body_contains_model_loaded_true(r),
+                f"model_loaded_true={_body_contains_model_loaded_true(r)}",
+            ),
+            requirements=("R-P1-1",),
+        ),
         HttpCase("T-H-8", "happy", "liveness endpoint", "GET", "/live", "200", 200),
-        HttpCase("T-H-9", "happy", "readiness endpoint", "GET", "/ready", "200 after warmup", 200, requirements=("R-P0-4",)),
-        HttpCase("T-H-10", "happy", "version endpoint", "GET", "/version", "200, version field", 200, validator=lambda r, _l: (_has_version_field(r), f"has_version={_has_version_field(r)}"), requirements=("R-P0-7",)),
-        HttpCase("T-E-1", "error", "missing input", "POST", "$endpoint", "400, code=input_required", 400, {}, validator=_code_is("input_required"), requirements=("R-P0-18", "R-P0-19")),
-        HttpCase("T-E-2", "error", "empty input", "POST", "$endpoint", "400, code=input_required", 400, {"input": []}, validator=_code_is("input_required"), requirements=("R-P0-18", "R-P0-19")),
-        HttpCase("T-E-3", "error", "invalid dimensions", "POST", "$endpoint", "400, code=dimensions_invalid", 400, {"input": ["a"], "dimensions": 99999}, validator=_code_is("dimensions_invalid"), requirements=("R-P0-18", "R-P0-19")),
-        HttpCase("T-E-4", "error", "invalid non-string input", "POST", "$endpoint", "400, code=invalid_request_error, no legacy unmarshal", 400, {"input": [123]}, validator=_not_legacy_unmarshal, requirements=("R-P0-18", "R-P0-19")),
-        HttpCase("T-E-5", "error", "malformed JSON", "POST", "$endpoint", "400, code=invalid_json", 400, raw_body=b"{malformed", headers={"Content-Type": "application/json"}, validator=_code_is("invalid_json"), requirements=("R-P0-18", "R-P0-19")),
-        HttpCase("T-E-6", "error", "batch too large", "POST", "$endpoint", "413, code=batch_too_large", 413, {"input": ["a"] * 100}, validator=_code_is("batch_too_large"), requirements=("R-P0-2", "R-P0-18", "R-P0-19")),
-        HttpCase("T-E-7", "error", "input too long", "POST", "$endpoint", "413, code=input_too_long", 413, {"input": ["x" * 10000]}, validator=_code_is("input_too_long"), requirements=("R-P0-1", "R-P0-18", "R-P0-19")),
-        HttpCase("T-E-8", "error", "GET embeddings method not allowed", "GET", "/v1/embeddings", "405, not 404", 405, requirements=("R-P0-19",)),
-        HttpCase("T-E-9", "error", "auth rejects invalid bearer token", "POST", "$endpoint", "401, code=unauthorized or is not authorized", 401, {"input": ["a"]}, headers=get_auth_headers("test-fd-api-key-12345"), validator=_code_is("unauthorized"), requirements=("R-P1-8",), use_auth=False),
-        HttpCase("T-E-10", "error", "unknown route", "GET", "/v9999", "404, code=not_found", 404, validator=_code_is("not_found"), requirements=("R-P0-18", "R-P0-19")),
-        HttpCase("T-E-11", "error", "during graceful shutdown", "POST", "$endpoint", "503, code=shutting_down, Retry-After: 30", skip_reason="shutdown mutation is disabled by default for this read-only daily-archive contract harness", requirements=("R-P0-5", "R-P0-16", "R-P0-19")),
-        HttpCase("T-E-12", "error", "model not loaded", "POST", "$endpoint", "503, code=model_not_loaded, Retry-After: 5", skip_reason="model-unloaded fixture is disabled by default; actual fd is expected to be warm or externally managed", requirements=("R-P0-3", "R-P0-16", "R-P0-19")),
-        HttpCase("T-E-13", "error", "rate limit hit", "POST", "$endpoint", "429, code=rate_limit_exceeded, Retry-After: 60", skip_reason="rate-limit hammering is disabled by default to avoid mutating local fd state", requirements=("R-P0-16", "R-P0-19", "R-P2-5")),
-        HttpCase("T-E-14", "error", "oversized 50MB body", "POST", "$endpoint", "413, code=payload_too_large", skip_reason="50MB payload test is disabled by default to avoid excessive local resource usage", requirements=("R-P0-19",)),
-        HttpCase("T-E-15", "error", "forced internal error", "POST", "$endpoint", "500, code=internal_error, X-Request-Id in body", skip_reason="forced internal-error injection is disabled by default; fd exposes no safe fixture endpoint", requirements=("R-P0-11", "R-P0-18", "R-P0-19")),
-        HttpCase("T-HDR-1", "headers", "server version header", "GET", "/health", "Server: fd/2.0.0", validator=_header_equals("Server", "fd/2.0.0"), requirements=("R-P0-12",)),
-        HttpCase("T-HDR-2", "headers", "request id echo", "POST", "$endpoint", "response echoes X-Request-Id: my-id", 200, {"input": ["a"]}, headers={"X-Request-Id": "my-id"}, validator=_header_equals("X-Request-Id", "my-id"), requirements=("R-P0-11",)),
-        HttpCase("T-HDR-3", "headers", "generated request id", "POST", "$endpoint", "response has X-Request-Id", 200, {"input": ["a"]}, validator=_header_present("X-Request-Id"), requirements=("R-P0-11",)),
-        HttpCase("T-HDR-4", "headers", "model id header", "POST", "$endpoint", "X-Model-Id matches MODEL_ID", 200, {"input": ["a"]}, validator=_header_equals("X-Model-Id", get_model_id()), requirements=("R-P0-13",)),
-        HttpCase("T-HDR-5", "headers", "dimensions header", "POST", "$endpoint", "X-Dimensions: 1024", 200, {"input": ["a"]}, validator=_header_equals("X-Dimensions", "1024"), requirements=("R-P0-14",)),
-        HttpCase("T-HDR-6", "headers", "cache hit header on repeat", "POST", "$endpoint", "X-Cache: HIT", 200, {"input": ["cache-hot"]}, validator=_header_equals("X-Cache", "HIT"), requirements=("R-P0-15", "R-P1-4")),
-        HttpCase("T-HDR-7", "headers", "cache miss header on first request", "POST", "$endpoint", "X-Cache: MISS", 200, {"input": [f"cache-miss-{int(time.time())}"]}, validator=_header_equals("X-Cache", "MISS"), requirements=("R-P0-15", "R-P1-4")),
-        HttpCase("T-HDR-8", "headers", "Retry-After on temporary failure", "POST", "$endpoint", "429/503 response has Retry-After", skip_reason="temporary-failure fixture is disabled by default; no safe fd trigger exists", requirements=("R-P0-16",)),
-        HttpCase("T-HDR-9", "headers", "keep-alive connection", "GET", "/health", "Connection: keep-alive", validator=_header_equals("Connection", "keep-alive"), requirements=("R-P0-17",)),
-        HttpCase("T-HDR-10", "headers", "cache hit ETag", "POST", "$endpoint", "ETag: <hash>", 200, {"input": ["cache-hot"]}, validator=_header_present("ETag"), requirements=("R-P2-2",)),
-        HttpCase("T-P-1", "performance", "1 input cache-hot p95 target", "POST", "$endpoint", "p95 < 50ms and X-Cache: HIT", 200, {"input": ["perf-one"]}, validator=_latency_under(50), requirements=("R-P0-6", "R-P1-4")),
-        HttpCase("T-P-2", "performance", "10 inputs cache-hot p95 target", "POST", "$endpoint", "p95 < 200ms and X-Cache: HIT", 200, {"input": ["perf-ten"] * 10}, validator=_latency_under(200), requirements=("R-P0-6", "R-P1-4")),
-        HttpCase("T-P-3", "performance", "32 inputs cache-hot p95 target", "POST", "$endpoint", "p95 < 1000ms and X-Cache: HIT", 200, {"input": ["perf-thirty-two"] * 32}, validator=_latency_under(1000), requirements=("R-P0-6", "R-P1-4")),
-        HttpCase("T-EX-1", "endpoints", "version endpoint exists", "GET", "/version", "200, not 404", 200, requirements=("R-P0-7",)),
-        HttpCase("T-EX-2", "endpoints", "info endpoint exists", "GET", "/info", "200, not 404", 200, requirements=("R-P0-8",)),
-        HttpCase("T-EX-3", "endpoints", "metrics endpoint exists", "GET", "/metrics", "200, Content-Type: text/plain", 200, validator=_content_type_contains("text/plain"), requirements=("R-P0-9",)),
-        HttpCase("T-EX-4", "endpoints", "OpenAPI schema exists", "GET", "/openapi.json", "200, not 404", 200, requirements=("R-P2-1",)),
-        HttpCase("T-EX-5", "endpoints", "Swagger UI exists", "GET", "/docs", "200, not 404", 200, requirements=("R-P2-1",)),
+        HttpCase(
+            "T-H-9",
+            "happy",
+            "readiness endpoint",
+            "GET",
+            "/ready",
+            "200 after warmup",
+            200,
+            requirements=("R-P0-4",),
+        ),
+        HttpCase(
+            "T-H-10",
+            "happy",
+            "version endpoint",
+            "GET",
+            "/version",
+            "200, version field",
+            200,
+            validator=lambda r, _l: (_has_version_field(r), f"has_version={_has_version_field(r)}"),
+            requirements=("R-P0-7",),
+        ),
+        HttpCase(
+            "T-E-1",
+            "error",
+            "missing input",
+            "POST",
+            "$endpoint",
+            "400, code=input_required",
+            400,
+            {},
+            validator=_code_is("input_required"),
+            requirements=("R-P0-18", "R-P0-19"),
+        ),
+        HttpCase(
+            "T-E-2",
+            "error",
+            "empty input",
+            "POST",
+            "$endpoint",
+            "400, code=input_required",
+            400,
+            {"input": []},
+            validator=_code_is("input_required"),
+            requirements=("R-P0-18", "R-P0-19"),
+        ),
+        HttpCase(
+            "T-E-3",
+            "error",
+            "invalid dimensions",
+            "POST",
+            "$endpoint",
+            "400, code=dimensions_invalid",
+            400,
+            {"input": ["a"], "dimensions": 99999},
+            validator=_code_is("dimensions_invalid"),
+            requirements=("R-P0-18", "R-P0-19"),
+        ),
+        HttpCase(
+            "T-E-4",
+            "error",
+            "invalid non-string input",
+            "POST",
+            "$endpoint",
+            "400, code=invalid_request_error, no legacy unmarshal",
+            400,
+            {"input": [123]},
+            validator=_not_legacy_unmarshal,
+            requirements=("R-P0-18", "R-P0-19"),
+        ),
+        HttpCase(
+            "T-E-5",
+            "error",
+            "malformed JSON",
+            "POST",
+            "$endpoint",
+            "400, code=invalid_json",
+            400,
+            raw_body=b"{malformed",
+            headers={"Content-Type": "application/json"},
+            validator=_code_is("invalid_json"),
+            requirements=("R-P0-18", "R-P0-19"),
+        ),
+        HttpCase(
+            "T-E-6",
+            "error",
+            "batch too large",
+            "POST",
+            "$endpoint",
+            "413, code=batch_too_large",
+            413,
+            {"input": ["a"] * 100},
+            validator=_code_is("batch_too_large"),
+            requirements=("R-P0-2", "R-P0-18", "R-P0-19"),
+        ),
+        HttpCase(
+            "T-E-7",
+            "error",
+            "input too long",
+            "POST",
+            "$endpoint",
+            "413, code=input_too_long",
+            413,
+            {"input": ["x" * 10000]},
+            validator=_code_is("input_too_long"),
+            requirements=("R-P0-1", "R-P0-18", "R-P0-19"),
+        ),
+        HttpCase(
+            "T-E-8",
+            "error",
+            "GET embeddings method not allowed",
+            "GET",
+            "/v1/embeddings",
+            "405, not 404",
+            405,
+            requirements=("R-P0-19",),
+        ),
+        HttpCase(
+            "T-E-9",
+            "error",
+            "auth rejects invalid bearer token",
+            "POST",
+            "$endpoint",
+            "401, code=unauthorized or is not authorized",
+            401,
+            {"input": ["a"]},
+            headers=get_auth_headers("test-fd-api-key-12345"),
+            validator=_code_is("unauthorized"),
+            requirements=("R-P1-8",),
+            use_auth=False,
+        ),
+        HttpCase(
+            "T-E-10",
+            "error",
+            "unknown route",
+            "GET",
+            "/v9999",
+            "404, code=not_found",
+            404,
+            validator=_code_is("not_found"),
+            requirements=("R-P0-18", "R-P0-19"),
+        ),
+        HttpCase(
+            "T-E-11",
+            "error",
+            "during graceful shutdown",
+            "POST",
+            "$endpoint",
+            "503, code=shutting_down, Retry-After: 30",
+            skip_reason="shutdown mutation is disabled by default for this read-only daily-archive contract harness",
+            requirements=("R-P0-5", "R-P0-16", "R-P0-19"),
+        ),
+        HttpCase(
+            "T-E-12",
+            "error",
+            "model not loaded",
+            "POST",
+            "$endpoint",
+            "503, code=model_not_loaded, Retry-After: 5",
+            skip_reason="model-unloaded fixture is disabled by default; actual fd is expected to be warm or externally managed",
+            requirements=("R-P0-3", "R-P0-16", "R-P0-19"),
+        ),
+        HttpCase(
+            "T-E-13",
+            "error",
+            "rate limit hit",
+            "POST",
+            "$endpoint",
+            "429, code=rate_limit_exceeded, Retry-After: 60",
+            skip_reason="rate-limit hammering is disabled by default to avoid mutating local fd state",
+            requirements=("R-P0-16", "R-P0-19", "R-P2-5"),
+        ),
+        HttpCase(
+            "T-E-14",
+            "error",
+            "oversized 50MB body",
+            "POST",
+            "$endpoint",
+            "413, code=payload_too_large",
+            skip_reason="50MB payload test is disabled by default to avoid excessive local resource usage",
+            requirements=("R-P0-19",),
+        ),
+        HttpCase(
+            "T-E-15",
+            "error",
+            "forced internal error",
+            "POST",
+            "$endpoint",
+            "500, code=internal_error, X-Request-Id in body",
+            skip_reason="forced internal-error injection is disabled by default; fd exposes no safe fixture endpoint",
+            requirements=("R-P0-11", "R-P0-18", "R-P0-19"),
+        ),
+        HttpCase(
+            "T-HDR-1",
+            "headers",
+            "server version header",
+            "GET",
+            "/health",
+            "Server: fd/2.0.0",
+            validator=_header_equals("Server", "fd/2.0.0"),
+            requirements=("R-P0-12",),
+        ),
+        HttpCase(
+            "T-HDR-2",
+            "headers",
+            "request id echo",
+            "POST",
+            "$endpoint",
+            "response echoes X-Request-Id: my-id",
+            200,
+            {"input": ["a"]},
+            headers={"X-Request-Id": "my-id"},
+            validator=_header_equals("X-Request-Id", "my-id"),
+            requirements=("R-P0-11",),
+        ),
+        HttpCase(
+            "T-HDR-3",
+            "headers",
+            "generated request id",
+            "POST",
+            "$endpoint",
+            "response has X-Request-Id",
+            200,
+            {"input": ["a"]},
+            validator=_header_present("X-Request-Id"),
+            requirements=("R-P0-11",),
+        ),
+        HttpCase(
+            "T-HDR-4",
+            "headers",
+            "model id header",
+            "POST",
+            "$endpoint",
+            "X-Model-Id matches MODEL_ID",
+            200,
+            {"input": ["a"]},
+            validator=_header_equals("X-Model-Id", get_model_id()),
+            requirements=("R-P0-13",),
+        ),
+        HttpCase(
+            "T-HDR-5",
+            "headers",
+            "dimensions header",
+            "POST",
+            "$endpoint",
+            "X-Dimensions: 1024",
+            200,
+            {"input": ["a"]},
+            validator=_header_equals("X-Dimensions", "1024"),
+            requirements=("R-P0-14",),
+        ),
+        HttpCase(
+            "T-HDR-6",
+            "headers",
+            "cache hit header on repeat",
+            "POST",
+            "$endpoint",
+            "X-Cache: HIT",
+            200,
+            {"input": ["cache-hot"]},
+            validator=_header_equals("X-Cache", "HIT"),
+            requirements=("R-P0-15", "R-P1-4"),
+        ),
+        HttpCase(
+            "T-HDR-7",
+            "headers",
+            "cache miss header on first request",
+            "POST",
+            "$endpoint",
+            "X-Cache: MISS",
+            200,
+            {"input": [f"cache-miss-{int(time.time())}"]},
+            validator=_header_equals("X-Cache", "MISS"),
+            requirements=("R-P0-15", "R-P1-4"),
+        ),
+        HttpCase(
+            "T-HDR-8",
+            "headers",
+            "Retry-After on temporary failure",
+            "POST",
+            "$endpoint",
+            "429/503 response has Retry-After",
+            skip_reason="temporary-failure fixture is disabled by default; no safe fd trigger exists",
+            requirements=("R-P0-16",),
+        ),
+        HttpCase(
+            "T-HDR-9",
+            "headers",
+            "keep-alive connection",
+            "GET",
+            "/health",
+            "Connection: keep-alive",
+            validator=_header_equals("Connection", "keep-alive"),
+            requirements=("R-P0-17",),
+        ),
+        HttpCase(
+            "T-HDR-10",
+            "headers",
+            "cache hit ETag",
+            "POST",
+            "$endpoint",
+            "ETag: <hash>",
+            200,
+            {"input": ["cache-hot"]},
+            validator=_header_present("ETag"),
+            requirements=("R-P2-2",),
+        ),
+        HttpCase(
+            "T-P-1",
+            "performance",
+            "1 input cache-hot p95 target",
+            "POST",
+            "$endpoint",
+            "p95 < 50ms and X-Cache: HIT",
+            200,
+            {"input": ["perf-one"]},
+            validator=_latency_under(50),
+            requirements=("R-P0-6", "R-P1-4"),
+        ),
+        HttpCase(
+            "T-P-2",
+            "performance",
+            "10 inputs cache-hot p95 target",
+            "POST",
+            "$endpoint",
+            "p95 < 200ms and X-Cache: HIT",
+            200,
+            {"input": ["perf-ten"] * 10},
+            validator=_latency_under(200),
+            requirements=("R-P0-6", "R-P1-4"),
+        ),
+        HttpCase(
+            "T-P-3",
+            "performance",
+            "32 inputs cache-hot p95 target",
+            "POST",
+            "$endpoint",
+            "p95 < 1000ms and X-Cache: HIT",
+            200,
+            {"input": ["perf-thirty-two"] * 32},
+            validator=_latency_under(1000),
+            requirements=("R-P0-6", "R-P1-4"),
+        ),
+        HttpCase(
+            "T-EX-1",
+            "endpoints",
+            "version endpoint exists",
+            "GET",
+            "/version",
+            "200, not 404",
+            200,
+            requirements=("R-P0-7",),
+        ),
+        HttpCase(
+            "T-EX-2",
+            "endpoints",
+            "info endpoint exists",
+            "GET",
+            "/info",
+            "200, not 404",
+            200,
+            requirements=("R-P0-8",),
+        ),
+        HttpCase(
+            "T-EX-3",
+            "endpoints",
+            "metrics endpoint exists",
+            "GET",
+            "/metrics",
+            "200, Content-Type: text/plain",
+            200,
+            validator=_content_type_contains("text/plain"),
+            requirements=("R-P0-9",),
+        ),
+        HttpCase(
+            "T-EX-4",
+            "endpoints",
+            "OpenAPI schema exists",
+            "GET",
+            "/openapi.json",
+            "200, not 404",
+            200,
+            requirements=("R-P2-1",),
+        ),
+        HttpCase(
+            "T-EX-5",
+            "endpoints",
+            "Swagger UI exists",
+            "GET",
+            "/docs",
+            "200, not 404",
+            200,
+            requirements=("R-P2-1",),
+        ),
     ]
 
 
@@ -448,8 +903,24 @@ def _run_performance_sequence(client: httpx.Client) -> list[TestResult]:
     if not os.environ.get("FD_API_KEY"):
         note = "FD_API_KEY is not configured; protected fd v2 request is not authorized for verification"
         return [
-            TestResult("T-P-4", "performance", "100 sequential cache-hot requests", "p95 < 50ms, all X-Cache=HIT", "SKIP", Evidence(note=note), ("R-P0-6",)),
-            TestResult("T-P-5", "performance", "concurrency 32 cache-hot requests", "p95 < 50ms, all X-Cache=HIT", "SKIP", Evidence(note=note), ("R-P0-6",)),
+            TestResult(
+                "T-P-4",
+                "performance",
+                "100 sequential cache-hot requests",
+                "p95 < 50ms, all X-Cache=HIT",
+                "SKIP",
+                Evidence(note=note),
+                ("R-P0-6",),
+            ),
+            TestResult(
+                "T-P-5",
+                "performance",
+                "concurrency 32 cache-hot requests",
+                "p95 < 50ms, all X-Cache=HIT",
+                "SKIP",
+                Evidence(note=note),
+                ("R-P0-6",),
+            ),
         ]
 
     results: list[TestResult] = []
@@ -461,7 +932,11 @@ def _run_performance_sequence(client: httpx.Client) -> list[TestResult]:
             response = client.post(endpoint, json=payload, headers=get_auth_headers())
             return response, (time.perf_counter() - started) * 1000, ""
         except Exception as exc:
-            return None, (time.perf_counter() - started) * 1000, f"request_error={type(exc).__name__}: {exc}"
+            return (
+                None,
+                (time.perf_counter() - started) * 1000,
+                f"request_error={type(exc).__name__}: {exc}",
+            )
 
     # T-P-4: contract says 100 sequential cache-hot requests. Abort early on first error
     # to keep fd-down runs quick while still recording the first failure evidence.
@@ -479,7 +954,11 @@ def _run_performance_sequence(client: httpx.Client) -> list[TestResult]:
         if response.status_code != 200:
             errors.append(f"{index + 1}/100 status={response.status_code}")
             break
-    p95 = statistics.quantiles(latencies, n=20)[18] if len(latencies) >= 20 else max(latencies or [0.0])
+    p95 = (
+        statistics.quantiles(latencies, n=20)[18]
+        if len(latencies) >= 20
+        else max(latencies or [0.0])
+    )
     sequential_ok = not errors and cache_values.get("HIT", 0) == 100
     results.append(
         TestResult(
@@ -505,10 +984,21 @@ def _run_performance_sequence(client: httpx.Client) -> list[TestResult]:
         futures = [executor.submit(post, {"input": [f"perf-concurrent-{i}"] * 8}) for i in range(4)]
         concurrent_results = [future.result() for future in futures]
     total_ms = (time.perf_counter() - started) * 1000
-    statuses = [response.status_code if response is not None else None for response, _lat, _err in concurrent_results]
-    caches = [response.headers.get("X-Cache") if response is not None else None for response, _lat, _err in concurrent_results]
+    statuses = [
+        response.status_code if response is not None else None
+        for response, _lat, _err in concurrent_results
+    ]
+    caches = [
+        response.headers.get("X-Cache") if response is not None else None
+        for response, _lat, _err in concurrent_results
+    ]
     errors = [error for _response, _lat, error in concurrent_results if error]
-    concurrent_ok = not errors and statuses == [200, 200, 200, 200] and total_ms < 2000 and all(cache == "HIT" for cache in caches)
+    concurrent_ok = (
+        not errors
+        and statuses == [200, 200, 200, 200]
+        and total_ms < 2000
+        and all(cache == "HIT" for cache in caches)
+    )
     results.append(
         TestResult(
             "T-P-5",
@@ -539,7 +1029,9 @@ class SequenceTransport(httpx.AsyncBaseTransport):
         if status == 200:
             body = {
                 "object": "list",
-                "data": [{"object": "embedding", "index": 0, "embedding": [0.25] * self.dimensions}],
+                "data": [
+                    {"object": "embedding", "index": 0, "embedding": [0.25] * self.dimensions}
+                ],
                 "model": "deepvk/USER-bge-m3",
             }
         else:
@@ -568,14 +1060,20 @@ async def _wrapper_three_failures_then_zero() -> TestResult:
             except httpx.HTTPStatusError as exc:
                 observed_errors.append(str(exc.response.status_code))
         fourth = await embedder.embed_batch(["a"])
-        ok = fourth == [[0.0] * 4] and embedder.circuit_state == CIRCUIT_OPEN and len(observed_errors) == 2
+        ok = (
+            fourth == [[0.0] * 4]
+            and embedder.circuit_state == CIRCUIT_OPEN
+            and len(observed_errors) == 2
+        )
         return TestResult(
             "T-W-1",
             "wrapper",
             "force 3 failures, fourth call returns zero embedding",
             "circuit open and zero embedding",
             "PASS" if ok else "FAIL",
-            Evidence(note=f"state={embedder.circuit_state}, first_errors={observed_errors}, fourth={fourth}, calls={transport.calls}"),
+            Evidence(
+                note=f"state={embedder.circuit_state}, first_errors={observed_errors}, fourth={fourth}, calls={transport.calls}"
+            ),
         )
     finally:
         await client.aclose()
@@ -617,7 +1115,9 @@ async def _wrapper_circuit_recovers_after_cooldown() -> TestResult:
             "circuit opens then recovers after 60s cooldown",
             "half-open probe succeeds and circuit closes",
             "PASS" if ok else "FAIL",
-            Evidence(note=f"opened={opened}, final_state={embedder.circuit_state}, recovered={recovered}"),
+            Evidence(
+                note=f"opened={opened}, final_state={embedder.circuit_state}, recovered={recovered}"
+            ),
         )
     finally:
         await client.aclose()
@@ -671,10 +1171,20 @@ def run_env_override_tests() -> list[TestResult]:
                 "FD_API_KEY supplies bearer auth header",
                 "Authorization bearer header is set from FD_API_KEY without logging the key",
                 "PASS" if observed else "FAIL",
-                Evidence(note="authorization_header_present=True" if observed else "authorization_header_present=False"),
+                Evidence(
+                    note="authorization_header_present=True"
+                    if observed
+                    else "authorization_header_present=False"
+                ),
             )
         )
-    with temporary_env({"TEI_URL": "http://fd-test.internal:18000", "FD_EMBEDDINGS_ENDPOINT": None, "FD_EMBEDDINGS_ENDPOINT_BASE": None}):
+    with temporary_env(
+        {
+            "TEI_URL": "http://fd-test.internal:18000",
+            "FD_EMBEDDINGS_ENDPOINT": None,
+            "FD_EMBEDDINGS_ENDPOINT_BASE": None,
+        }
+    ):
         observed_base = get_base_url()
         observed_endpoint = get_endpoint()
         expected_base = "http://fd-test.internal:18000"
@@ -687,7 +1197,9 @@ def run_env_override_tests() -> list[TestResult]:
                 "TEI_URL overrides fd base URL and derived endpoint",
                 "TEI_URL base derives /v1/embeddings endpoint",
                 "PASS" if ok else "FAIL",
-                Evidence(note=f"base_host=fd-test.internal, endpoint_suffix=/v1/embeddings, ok={ok}"),
+                Evidence(
+                    note=f"base_host=fd-test.internal, endpoint_suffix=/v1/embeddings, ok={ok}"
+                ),
             )
         )
     with temporary_env({"MODEL_ID": "test/model-v2", "FD_MODEL_NAME": None}):
@@ -722,7 +1234,9 @@ def run_env_override_tests() -> list[TestResult]:
 def build_tests() -> list[str]:
     """Return the canonical 52 test IDs for unit-test validation."""
     ids = [case.test_id for case in build_http_cases()]
-    ids.extend(["T-P-4", "T-P-5", "T-W-1", "T-W-2", "T-W-3", "T-ENV-1", "T-ENV-2", "T-ENV-3", "T-ENV-4"])
+    ids.extend(
+        ["T-P-4", "T-P-5", "T-W-1", "T-W-2", "T-W-3", "T-ENV-1", "T-ENV-2", "T-ENV-3", "T-ENV-4"]
+    )
     return ids
 
 
@@ -813,7 +1327,8 @@ def requirement_statuses(results: list[TestResult]) -> dict[str, dict[str, Any]]
         else:
             status = "UNKNOWN"
         evidence = "; ".join(
-            f"{result.test_id}:{result.status}:{result.evidence.compact()}" for result in req_results[:3]
+            f"{result.test_id}:{result.status}:{result.evidence.compact()}"
+            for result in req_results[:3]
         )
         if not evidence:
             evidence = EXTRA_REQUIREMENT_EVIDENCE.get(req_id, "no mapped evidence")
@@ -900,7 +1415,9 @@ def write_reports(results: list[TestResult], artifact_dir: Path = ARTIFACT_DIR) 
             for result in results
         ],
     }
-    (artifact_dir / RESULTS_JSON).write_text(json.dumps(results_payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    (artifact_dir / RESULTS_JSON).write_text(
+        json.dumps(results_payload, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
 
     lines = [
         "# M062 fd Contract Report v2",
@@ -922,13 +1439,15 @@ def write_reports(results: list[TestResult], artifact_dir: Path = ARTIFACT_DIR) 
         lines.append(
             f"| {category} | {data['total']} | {data['passed']} | {data['failed']} | {data['skipped']} | {pass_rate:.1f}% |"
         )
-    lines.extend([
-        "",
-        "## Per-test detail",
-        "",
-        "| Test ID | Category | Description | Expected | Observed | Status | Evidence |",
-        "|---|---|---|---|---|---|---|",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Per-test detail",
+            "",
+            "| Test ID | Category | Description | Expected | Observed | Status | Evidence |",
+            "|---|---|---|---|---|---|---|",
+        ]
+    )
     for result in results:
         lines.append(
             "| "
@@ -948,38 +1467,49 @@ def write_reports(results: list[TestResult], artifact_dir: Path = ARTIFACT_DIR) 
 
     _current_by_id = {result.test_id: result for result in results}
     improved = [
-        result for result in results
+        result
+        for result in results
         if result.status == "PASS" and prior_statuses.get(result.test_id) not in (None, "PASS")
     ]
     regressions = [
-        result for result in results
+        result
+        for result in results
         if result.status != "PASS" and prior_statuses.get(result.test_id) == "PASS"
     ]
     unchanged_pass = [
-        result for result in results
+        result
+        for result in results
         if result.status == "PASS" and prior_statuses.get(result.test_id) == "PASS"
     ]
-    lines.extend([
-        "",
-        "## v1 -> v2 comparison",
-        "",
-        f"Prior v1 statuses loaded: {'yes' if prior_statuses else 'no'}.",
-        f"Now passing after v1 failure or skip: {len(improved)}.",
-        f"Still passing from v1: {len(unchanged_pass)}.",
-        f"Regressed from v1 PASS: {len(regressions)}.",
-        "",
-        "### Tests now passing",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## v1 -> v2 comparison",
+            "",
+            f"Prior v1 statuses loaded: {'yes' if prior_statuses else 'no'}.",
+            f"Now passing after v1 failure or skip: {len(improved)}.",
+            f"Still passing from v1: {len(unchanged_pass)}.",
+            f"Regressed from v1 PASS: {len(regressions)}.",
+            "",
+            "### Tests now passing",
+            "",
+        ]
+    )
     if improved:
         for result in improved:
-            lines.append(f"- **{result.test_id}** — v1={prior_statuses.get(result.test_id)}, v2=PASS; {_md_escape(result.description)}")
+            lines.append(
+                f"- **{result.test_id}** — v1={prior_statuses.get(result.test_id)}, v2=PASS; {_md_escape(result.description)}"
+            )
     else:
-        lines.append("- No v1 failed or skipped test passed in this v2 run; if fd v2 is not deployed this remains UNKNOWN rather than a contract regression.")
+        lines.append(
+            "- No v1 failed or skipped test passed in this v2 run; if fd v2 is not deployed this remains UNKNOWN rather than a contract regression."
+        )
     lines.extend(["", "### Regressions from v1 PASS", ""])
     if regressions:
         for result in regressions:
-            lines.append(f"- **{result.test_id}** — v1=PASS, v2={result.status}; {_md_escape(result.evidence.compact())}")
+            lines.append(
+                f"- **{result.test_id}** — v1=PASS, v2={result.status}; {_md_escape(result.evidence.compact())}"
+            )
     else:
         lines.append("- None observed.")
 
@@ -989,13 +1519,16 @@ def write_reports(results: list[TestResult], artifact_dir: Path = ARTIFACT_DIR) 
         lines.append(f"### {priority}")
         lines.append("")
         gaps = [
-            (req_id, item) for req_id, item in reqs.items()
+            (req_id, item)
+            for req_id, item in reqs.items()
             if item["priority"] == priority and item["status"] != "MET"
         ]
         if not gaps:
             lines.append("- None; all mapped requirements are MET.")
         for req_id, item in gaps:
-            lines.append(f"- **{req_id} {item['status']}** — {item['description']}: {_md_escape(item['evidence'])}")
+            lines.append(
+                f"- **{req_id} {item['status']}** — {item['description']}: {_md_escape(item['evidence'])}"
+            )
         lines.append("")
     (artifact_dir / REPORT_MD).write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
 
@@ -1017,14 +1550,18 @@ def write_reports(results: list[TestResult], artifact_dir: Path = ARTIFACT_DIR) 
     ]
     for priority in ("P0", "P1", "P2"):
         data = summary["requirement_summary"][priority]
-        gap_lines.append(f"| {priority} | {data['met']} | {data['partial']} | {data['unknown']} | {data['total']} |")
-    gap_lines.extend([
-        "",
-        "## Per-requirement detail",
-        "",
-        "| Requirement | Priority | Description | Status | Tests | Evidence |",
-        "|---|---|---|---|---|---|",
-    ])
+        gap_lines.append(
+            f"| {priority} | {data['met']} | {data['partial']} | {data['unknown']} | {data['total']} |"
+        )
+    gap_lines.extend(
+        [
+            "",
+            "## Per-requirement detail",
+            "",
+            "| Requirement | Priority | Description | Status | Tests | Evidence |",
+            "|---|---|---|---|---|---|",
+        ]
+    )
     for req_id, item in reqs.items():
         gap_lines.append(
             f"| {req_id} | {item['priority']} | {_md_escape(item['description'])} | {item['status']} | {', '.join(item['tests']) or 'n/a'} | {_md_escape(item['evidence'])} |"
@@ -1042,14 +1579,24 @@ def print_results(results: list[TestResult]) -> None:
             expected_status = ""
             if result.evidence.status_code is not None:
                 expected_status = f"status={result.evidence.status_code}"
-            print(f"[FAIL] {result.test_id} ({expected_status}; expected={result.expected}; {result.evidence.compact()})")
+            print(
+                f"[FAIL] {result.test_id} ({expected_status}; expected={result.expected}; {result.evidence.compact()})"
+            )
     summary = summarize(results)
-    print(f"Summary: total={summary['total']}, passed={summary['passed']}, failed={summary['failed']}, skipped={summary['skipped']}")
+    print(
+        f"Summary: total={summary['total']}, passed={summary['passed']}, failed={summary['failed']}, skipped={summary['skipped']}"
+    )
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run fd v2 contract tests and write M062 S03 reports.")
-    parser.add_argument("--no-write-report", action="store_true", help="Run tests without writing markdown/json artifacts.")
+    parser = argparse.ArgumentParser(
+        description="Run fd v2 contract tests and write M062 S03 reports."
+    )
+    parser.add_argument(
+        "--no-write-report",
+        action="store_true",
+        help="Run tests without writing markdown/json artifacts.",
+    )
     args = parser.parse_args()
     results = run_contract_tests()
     print_results(results)

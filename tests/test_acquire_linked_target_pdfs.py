@@ -99,9 +99,7 @@ def test_download_with_retry_succeeds_on_first_attempt(tmp_path):
     fake_response.__enter__.return_value.headers = {"Content-Type": "application/pdf"}
 
     with mock.patch("urllib.request.urlopen", return_value=fake_response):
-        result = acquire_linked_target_pdfs._download_with_retry(
-            "https://arxiv.org/pdf/test", dest
-        )
+        result = acquire_linked_target_pdfs._download_with_retry("https://arxiv.org/pdf/test", dest)
 
     assert result["status"] == "acquired"
     assert result["http_status"] == 200
@@ -141,9 +139,7 @@ def test_download_with_retry_persists_atomically(tmp_path):
     fake_response.__enter__.return_value.headers = {}
 
     with mock.patch("urllib.request.urlopen", return_value=fake_response):
-        acquire_linked_target_pdfs._download_with_retry(
-            "https://arxiv.org/pdf/test", dest
-        )
+        acquire_linked_target_pdfs._download_with_retry("https://arxiv.org/pdf/test", dest)
 
     assert dest.exists()
     # No lingering .tmp files.
@@ -177,9 +173,7 @@ def test_process_record_records_network_error_on_persistent_failure(tmp_path):
         "expected_arxiv_url": "https://arxiv.org/pdf/1804.02767",
         "expected_local_pdf_path": str(tmp_path / "1804.02767.pdf"),
     }
-    with mock.patch(
-        "urllib.request.urlopen", side_effect=urllib.error.URLError("refused")
-    ):
+    with mock.patch("urllib.request.urlopen", side_effect=urllib.error.URLError("refused")):
         log_entry = acquire_linked_target_pdfs._process_record(
             record, storage_root=tmp_path, max_retries=1, timeout=1, dry_run=False
         )

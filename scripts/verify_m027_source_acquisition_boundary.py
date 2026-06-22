@@ -119,7 +119,9 @@ def write_json(path: Path, payload: Mapping[str, Any]) -> None:
 
 def write_jsonl(path: Path, rows: Iterable[Mapping[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in rows), encoding="utf-8")
+    path.write_text(
+        "".join(json.dumps(row, sort_keys=True) + "\n" for row in rows), encoding="utf-8"
+    )
 
 
 def rel(path: Path, root: Path = ROOT) -> str:
@@ -165,7 +167,11 @@ def safe_catalog_path(catalog_root: Path, rel_path: str) -> Path:
     if "://" in rel_path:
         raise ValueError("url_not_allowed_as_local_path")
     normalized = PurePosixPath(rel_path.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part == "" for part in normalized.parts):
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part == "" for part in normalized.parts)
+    ):
         raise ValueError("unsafe_catalog_relative_path")
     root_resolved = catalog_root.resolve()
     resolved = (root_resolved / normalized.as_posix()).resolve()
@@ -180,7 +186,11 @@ def safe_local_artifact_path(article_dir: Path, local_path: Any) -> Path:
     if "://" in local_path:
         raise ValueError("url_not_allowed_as_local_path")
     normalized = PurePosixPath(local_path.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part == "" for part in normalized.parts):
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part == "" for part in normalized.parts)
+    ):
         raise ValueError("unsafe_local_path")
     article_root = article_dir.resolve()
     resolved = (article_root / normalized.as_posix()).resolve()
@@ -239,7 +249,9 @@ def walk_json(value: Any, path: str = "$") -> Iterable[tuple[str, Any]]:
             yield from walk_json(item, f"{path}[{index}]")
 
 
-def validate_no_payload_keys(value: Any, errors: list[dict[str, Any]], *, artifact_path: Path, root_path: str = "$") -> None:
+def validate_no_payload_keys(
+    value: Any, errors: list[dict[str, Any]], *, artifact_path: Path, root_path: str = "$"
+) -> None:
     for json_path, item in walk_json(value, root_path):
         if isinstance(item, dict):
             for key in item:
@@ -265,7 +277,12 @@ def validate_text_redaction(path: Path, errors: list[dict[str, Any]]) -> None:
     try:
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
-        add_error(errors, "missing_metadata_artifact", f"failed to read metadata artifact: {exc}", path=path)
+        add_error(
+            errors,
+            "missing_metadata_artifact",
+            f"failed to read metadata artifact: {exc}",
+            path=path,
+        )
         return
     lowered = text.lower()
     for snippet in FORBIDDEN_SNIPPETS:
@@ -278,14 +295,31 @@ def validate_text_redaction(path: Path, errors: list[dict[str, Any]]) -> None:
             )
 
 
-def selected_article_paths(catalog_root: Path, index: Mapping[str, Any], selection: Mapping[str, Any], errors: list[dict[str, Any]]) -> list[tuple[str, Path]]:
+def selected_article_paths(
+    catalog_root: Path,
+    index: Mapping[str, Any],
+    selection: Mapping[str, Any],
+    errors: list[dict[str, Any]],
+) -> list[tuple[str, Path]]:
     index_rows = index.get("articles")
     selection_rows = selection.get("articles")
     if not isinstance(index_rows, list):
-        add_error(errors, "malformed_index", "index articles must be a list", path=INDEX_PATH, json_path="$.articles")
+        add_error(
+            errors,
+            "malformed_index",
+            "index articles must be a list",
+            path=INDEX_PATH,
+            json_path="$.articles",
+        )
         return []
     if not isinstance(selection_rows, list):
-        add_error(errors, "malformed_selection", "selection articles must be a list", path=SELECTION_PATH, json_path="$.articles")
+        add_error(
+            errors,
+            "malformed_selection",
+            "selection articles must be a list",
+            path=SELECTION_PATH,
+            json_path="$.articles",
+        )
         return []
 
     by_ref: dict[str, Mapping[str, Any]] = {}
@@ -298,23 +332,48 @@ def selected_article_paths(catalog_root: Path, index: Mapping[str, Any], selecti
     for position, selected in enumerate(selection_rows):
         article_ref = selected.get("article_ref") if isinstance(selected, dict) else None
         if not isinstance(article_ref, str):
-            add_error(errors, "malformed_selection_article", "selection article_ref is missing", json_path=f"$.articles[{position}]")
+            add_error(
+                errors,
+                "malformed_selection_article",
+                "selection article_ref is missing",
+                json_path=f"$.articles[{position}]",
+            )
             continue
         row = by_ref.get(article_ref)
         if row is None:
-            add_error(errors, "selection_article_missing_from_index", f"selected article not present in index: {article_ref}", article_ref=article_ref)
+            add_error(
+                errors,
+                "selection_article_missing_from_index",
+                f"selected article not present in index: {article_ref}",
+                article_ref=article_ref,
+            )
             continue
         article_path = row.get("article_path")
         if not isinstance(article_path, str):
-            add_error(errors, "missing_article_path", f"index row missing article_path: {article_ref}", article_ref=article_ref)
+            add_error(
+                errors,
+                "missing_article_path",
+                f"index row missing article_path: {article_ref}",
+                article_ref=article_ref,
+            )
             continue
         try:
             resolved = safe_catalog_path(catalog_root, article_path)
         except ValueError as exc:
-            add_error(errors, str(exc), f"unsafe article path for {article_ref}: {article_path}", article_ref=article_ref)
+            add_error(
+                errors,
+                str(exc),
+                f"unsafe article path for {article_ref}: {article_path}",
+                article_ref=article_ref,
+            )
             continue
         if resolved in seen:
-            add_error(errors, "duplicate_article_path", f"duplicate selected article path: {article_path}", article_ref=article_ref)
+            add_error(
+                errors,
+                "duplicate_article_path",
+                f"duplicate selected article path: {article_path}",
+                article_ref=article_ref,
+            )
             continue
         seen.add(resolved)
         paths.append((article_ref, resolved))
@@ -338,38 +397,114 @@ def validate_captured_variant(
     json_path: str,
 ) -> None:
     variant_id = variant.get("variant_id") if isinstance(variant.get("variant_id"), str) else None
-    source_role = variant.get("source_role") if isinstance(variant.get("source_role"), str) else None
+    source_role = (
+        variant.get("source_role") if isinstance(variant.get("source_role"), str) else None
+    )
     try:
-        local_artifact = safe_local_artifact_path(article_path.parent, variant.get("path") or variant.get("local_path"))
+        local_artifact = safe_local_artifact_path(
+            article_path.parent, variant.get("path") or variant.get("local_path")
+        )
     except ValueError as exc:
-        add_error(errors, str(exc), f"captured variant has unsafe local_path: {exc}", path=article_path, json_path=json_path, article_ref=article_ref, variant_id=variant_id, source_role=source_role)
+        add_error(
+            errors,
+            str(exc),
+            f"captured variant has unsafe local_path: {exc}",
+            path=article_path,
+            json_path=json_path,
+            article_ref=article_ref,
+            variant_id=variant_id,
+            source_role=source_role,
+        )
         return
 
     if not local_artifact.exists():
-        add_error(errors, "missing_captured_file", f"captured local artifact does not exist: {rel(local_artifact)}", path=local_artifact, json_path=json_path, article_ref=article_ref, variant_id=variant_id, source_role=source_role)
+        add_error(
+            errors,
+            "missing_captured_file",
+            f"captured local artifact does not exist: {rel(local_artifact)}",
+            path=local_artifact,
+            json_path=json_path,
+            article_ref=article_ref,
+            variant_id=variant_id,
+            source_role=source_role,
+        )
         return
     if not local_artifact.is_file():
-        add_error(errors, "captured_path_not_file", f"captured local artifact is not a file: {rel(local_artifact)}", path=local_artifact, json_path=json_path, article_ref=article_ref, variant_id=variant_id, source_role=source_role)
+        add_error(
+            errors,
+            "captured_path_not_file",
+            f"captured local artifact is not a file: {rel(local_artifact)}",
+            path=local_artifact,
+            json_path=json_path,
+            article_ref=article_ref,
+            variant_id=variant_id,
+            source_role=source_role,
+        )
         return
 
     try:
         actual_size = local_artifact.stat().st_size
         actual_hash = sha256_file(local_artifact)
     except OSError as exc:
-        add_error(errors, "captured_file_unreadable", f"captured local artifact cannot be read: {exc}", path=local_artifact, json_path=json_path, article_ref=article_ref, variant_id=variant_id, source_role=source_role)
+        add_error(
+            errors,
+            "captured_file_unreadable",
+            f"captured local artifact cannot be read: {exc}",
+            path=local_artifact,
+            json_path=json_path,
+            article_ref=article_ref,
+            variant_id=variant_id,
+            source_role=source_role,
+        )
         return
 
     if variant.get("byte_size") != actual_size:
-        add_error(errors, "byte_size_mismatch", f"recorded byte_size {variant.get('byte_size')} does not match actual {actual_size}", path=local_artifact, json_path=json_path, article_ref=article_ref, variant_id=variant_id, source_role=source_role)
+        add_error(
+            errors,
+            "byte_size_mismatch",
+            f"recorded byte_size {variant.get('byte_size')} does not match actual {actual_size}",
+            path=local_artifact,
+            json_path=json_path,
+            article_ref=article_ref,
+            variant_id=variant_id,
+            source_role=source_role,
+        )
     if variant.get("sha256") != actual_hash:
-        add_error(errors, "sha256_mismatch", "recorded sha256 does not match captured bytes", path=local_artifact, json_path=json_path, article_ref=article_ref, variant_id=variant_id, source_role=source_role)
+        add_error(
+            errors,
+            "sha256_mismatch",
+            "recorded sha256 does not match captured bytes",
+            path=local_artifact,
+            json_path=json_path,
+            article_ref=article_ref,
+            variant_id=variant_id,
+            source_role=source_role,
+        )
 
     with local_artifact.open("rb") as handle:
         prefix = handle.read(5)
     if source_role in PDF_ROLES and prefix != b"%PDF-":
-        add_error(errors, "bad_pdf_signature", "captured PDF artifact does not start with %PDF-", path=local_artifact, json_path=json_path, article_ref=article_ref, variant_id=variant_id, source_role=source_role)
+        add_error(
+            errors,
+            "bad_pdf_signature",
+            "captured PDF artifact does not start with %PDF-",
+            path=local_artifact,
+            json_path=json_path,
+            article_ref=article_ref,
+            variant_id=variant_id,
+            source_role=source_role,
+        )
     if source_role in HTML_ROLES and actual_size == 0:
-        add_error(errors, "empty_html_artifact", "captured HTML artifact is empty", path=local_artifact, json_path=json_path, article_ref=article_ref, variant_id=variant_id, source_role=source_role)
+        add_error(
+            errors,
+            "empty_html_artifact",
+            "captured HTML artifact is empty",
+            path=local_artifact,
+            json_path=json_path,
+            article_ref=article_ref,
+            variant_id=variant_id,
+            source_role=source_role,
+        )
 
 
 def validate_blocked_or_failed_variant(
@@ -381,30 +516,78 @@ def validate_blocked_or_failed_variant(
     json_path: str,
 ) -> None:
     variant_id = variant.get("variant_id") if isinstance(variant.get("variant_id"), str) else None
-    source_role = variant.get("source_role") if isinstance(variant.get("source_role"), str) else None
-    if not isinstance(variant.get("diagnostic_code"), str) or not str(variant.get("diagnostic_code")).strip():
-        add_error(errors, "missing_diagnostic_code", "blocked or failed variant lacks diagnostic_code", path=article_path, json_path=f"{json_path}.diagnostic_code", article_ref=article_ref, variant_id=variant_id, source_role=source_role)
-    if not isinstance(variant.get("failure_reason"), str) or not str(variant.get("failure_reason")).strip():
-        add_error(errors, "missing_failure_reason", "blocked or failed variant lacks failure_reason", path=article_path, json_path=f"{json_path}.failure_reason", article_ref=article_ref, variant_id=variant_id, source_role=source_role)
+    source_role = (
+        variant.get("source_role") if isinstance(variant.get("source_role"), str) else None
+    )
+    if (
+        not isinstance(variant.get("diagnostic_code"), str)
+        or not str(variant.get("diagnostic_code")).strip()
+    ):
+        add_error(
+            errors,
+            "missing_diagnostic_code",
+            "blocked or failed variant lacks diagnostic_code",
+            path=article_path,
+            json_path=f"{json_path}.diagnostic_code",
+            article_ref=article_ref,
+            variant_id=variant_id,
+            source_role=source_role,
+        )
+    if (
+        not isinstance(variant.get("failure_reason"), str)
+        or not str(variant.get("failure_reason")).strip()
+    ):
+        add_error(
+            errors,
+            "missing_failure_reason",
+            "blocked or failed variant lacks failure_reason",
+            path=article_path,
+            json_path=f"{json_path}.failure_reason",
+            article_ref=article_ref,
+            variant_id=variant_id,
+            source_role=source_role,
+        )
 
 
-def validate_article_records(article_paths: list[tuple[str, Path]], errors: list[dict[str, Any]]) -> tuple[int, int]:
+def validate_article_records(
+    article_paths: list[tuple[str, Path]], errors: list[dict[str, Any]]
+) -> tuple[int, int]:
     selected_article_count = len(article_paths)
     selected_variant_count = 0
     for article_ref, article_path in article_paths:
         try:
             article = load_json(article_path)
         except (OSError, json.JSONDecodeError, ValueError) as exc:
-            add_error(errors, "malformed_article_json", f"failed to load selected article JSON: {exc}", path=article_path, article_ref=article_ref)
+            add_error(
+                errors,
+                "malformed_article_json",
+                f"failed to load selected article JSON: {exc}",
+                path=article_path,
+                article_ref=article_ref,
+            )
             continue
         validate_no_payload_keys(article, errors, artifact_path=article_path)
         variants = article.get("source_variants")
         if not isinstance(variants, list):
-            add_error(errors, "malformed_source_variants", "article source_variants must be a list", path=article_path, article_ref=article_ref, json_path="$.source_variants")
+            add_error(
+                errors,
+                "malformed_source_variants",
+                "article source_variants must be a list",
+                path=article_path,
+                article_ref=article_ref,
+                json_path="$.source_variants",
+            )
             continue
         for position, variant in enumerate(variants):
             if not isinstance(variant, dict):
-                add_error(errors, "malformed_source_variant", "source variant must be an object", path=article_path, article_ref=article_ref, json_path=f"$.source_variants[{position}]")
+                add_error(
+                    errors,
+                    "malformed_source_variant",
+                    "source variant must be an object",
+                    path=article_path,
+                    article_ref=article_ref,
+                    json_path=f"$.source_variants[{position}]",
+                )
                 continue
             source_role = variant.get("source_role")
             if source_role not in SELECTED_SOURCE_ROLES:
@@ -413,39 +596,105 @@ def validate_article_records(article_paths: list[tuple[str, Path]], errors: list
             json_path = f"$.source_variants[{position}]"
             status = variant_terminal_status(variant)
             if status not in TERMINAL_STATUSES:
-                add_error(errors, "non_terminal_variant_status", f"selected variant is not captured, blocked, or failed: {status}", path=article_path, article_ref=article_ref, source_role=str(source_role), json_path=json_path)
+                add_error(
+                    errors,
+                    "non_terminal_variant_status",
+                    f"selected variant is not captured, blocked, or failed: {status}",
+                    path=article_path,
+                    article_ref=article_ref,
+                    source_role=str(source_role),
+                    json_path=json_path,
+                )
                 continue
             if status == "captured":
-                validate_captured_variant(article_path, article_ref, variant, errors, json_path=json_path)
+                validate_captured_variant(
+                    article_path, article_ref, variant, errors, json_path=json_path
+                )
             else:
-                validate_blocked_or_failed_variant(article_path, article_ref, variant, errors, json_path=json_path)
+                validate_blocked_or_failed_variant(
+                    article_path, article_ref, variant, errors, json_path=json_path
+                )
     return selected_article_count, selected_variant_count
 
 
-def validate_summary(summary: Mapping[str, Any], errors: list[dict[str, Any]], *, selected_article_count: int, selected_variant_count: int) -> None:
+def validate_summary(
+    summary: Mapping[str, Any],
+    errors: list[dict[str, Any]],
+    *,
+    selected_article_count: int,
+    selected_variant_count: int,
+) -> None:
     validate_no_payload_keys(summary, errors, artifact_path=SUMMARY_PATH)
     if summary.get("article_count") != selected_article_count:
-        add_error(errors, "article_count_mismatch", f"summary article_count {summary.get('article_count')} does not match selected {selected_article_count}", path=SUMMARY_PATH, json_path="$.article_count")
+        add_error(
+            errors,
+            "article_count_mismatch",
+            f"summary article_count {summary.get('article_count')} does not match selected {selected_article_count}",
+            path=SUMMARY_PATH,
+            json_path="$.article_count",
+        )
     if summary.get("variant_count") != selected_variant_count:
-        add_error(errors, "variant_count_mismatch", f"summary variant_count {summary.get('variant_count')} does not match selected {selected_variant_count}", path=SUMMARY_PATH, json_path="$.variant_count")
+        add_error(
+            errors,
+            "variant_count_mismatch",
+            f"summary variant_count {summary.get('variant_count')} does not match selected {selected_variant_count}",
+            path=SUMMARY_PATH,
+            json_path="$.variant_count",
+        )
     if summary.get("network_fetch_attempted") is True:
-        add_error(errors, "replay_network_attempted", "summary indicates network_fetch_attempted=true during replay", path=SUMMARY_PATH, json_path="$.network_fetch_attempted")
+        add_error(
+            errors,
+            "replay_network_attempted",
+            "summary indicates network_fetch_attempted=true during replay",
+            path=SUMMARY_PATH,
+            json_path="$.network_fetch_attempted",
+        )
 
 
 def validate_diagnostics(rows: list[dict[str, Any]], errors: list[dict[str, Any]]) -> None:
     if not rows:
-        add_error(errors, "missing_diagnostic_rows", "source-acquisition-diagnostics.jsonl contains no variant diagnostics", path=DIAGNOSTICS_PATH)
+        add_error(
+            errors,
+            "missing_diagnostic_rows",
+            "source-acquisition-diagnostics.jsonl contains no variant diagnostics",
+            path=DIAGNOSTICS_PATH,
+        )
     for position, row in enumerate(rows):
-        validate_no_payload_keys(row, errors, artifact_path=DIAGNOSTICS_PATH, root_path=f"$[{position}]")
+        validate_no_payload_keys(
+            row, errors, artifact_path=DIAGNOSTICS_PATH, root_path=f"$[{position}]"
+        )
         status = row.get("status")
         if status in {"blocked", "failed"}:
-            if not isinstance(row.get("diagnostic_code"), str) or not str(row.get("diagnostic_code")).strip():
-                add_error(errors, "missing_diagnostic_code", "blocked or failed diagnostic row lacks diagnostic_code", path=DIAGNOSTICS_PATH, json_path=f"$[{position}].diagnostic_code")
-            if not isinstance(row.get("failure_reason"), str) or not str(row.get("failure_reason")).strip():
-                add_error(errors, "missing_failure_reason", "blocked or failed diagnostic row lacks failure_reason", path=DIAGNOSTICS_PATH, json_path=f"$[{position}].failure_reason")
+            if (
+                not isinstance(row.get("diagnostic_code"), str)
+                or not str(row.get("diagnostic_code")).strip()
+            ):
+                add_error(
+                    errors,
+                    "missing_diagnostic_code",
+                    "blocked or failed diagnostic row lacks diagnostic_code",
+                    path=DIAGNOSTICS_PATH,
+                    json_path=f"$[{position}].diagnostic_code",
+                )
+            if (
+                not isinstance(row.get("failure_reason"), str)
+                or not str(row.get("failure_reason")).strip()
+            ):
+                add_error(
+                    errors,
+                    "missing_failure_reason",
+                    "blocked or failed diagnostic row lacks failure_reason",
+                    path=DIAGNOSTICS_PATH,
+                    json_path=f"$[{position}].failure_reason",
+                )
 
 
-def input_paths(catalog_path: Path, index_path: Path, selection_path: Path, article_paths: list[tuple[str, Path]]) -> list[Path]:
+def input_paths(
+    catalog_path: Path,
+    index_path: Path,
+    selection_path: Path,
+    article_paths: list[tuple[str, Path]],
+) -> list[Path]:
     return [catalog_path, index_path, selection_path, *[path for _ref, path in article_paths]]
 
 
@@ -459,7 +708,13 @@ def file_hashes(paths: Iterable[Path]) -> dict[str, str | None]:
     return hashes
 
 
-def build_provenance(args: argparse.Namespace, article_paths: list[tuple[str, Path]], *, exit_code: int, duration_ms: int) -> dict[str, Any]:
+def build_provenance(
+    args: argparse.Namespace,
+    article_paths: list[tuple[str, Path]],
+    *,
+    exit_code: int,
+    duration_ms: int,
+) -> dict[str, Any]:
     _outputs = [args.summary, args.diagnostics, args.report]
     hashable_outputs = [args.diagnostics, args.report]
     return {
@@ -471,7 +726,9 @@ def build_provenance(args: argparse.Namespace, article_paths: list[tuple[str, Pa
         "milestone_id": MILESTONE_ID,
         "slice_id": SLICE_ID,
         "selection_id": SELECTION_ID,
-        "input_hashes": file_hashes(input_paths(args.catalog, args.index, args.selection, article_paths)),
+        "input_hashes": file_hashes(
+            input_paths(args.catalog, args.index, args.selection, article_paths)
+        ),
         "output_hashes": file_hashes(hashable_outputs),
         "output_hash_note": "source-acquisition-summary.json is intentionally excluded to avoid self-referential stale hashes",
         "exit_code": exit_code,
@@ -486,7 +743,13 @@ def build_provenance(args: argparse.Namespace, article_paths: list[tuple[str, Pa
     }
 
 
-def render_report_section(provenance: Mapping[str, Any], errors: list[dict[str, Any]], *, selected_article_count: int, selected_variant_count: int) -> str:
+def render_report_section(
+    provenance: Mapping[str, Any],
+    errors: list[dict[str, Any]],
+    *,
+    selected_article_count: int,
+    selected_variant_count: int,
+) -> str:
     lines = [
         "",
         "## Local-Only Replay Verification",
@@ -536,7 +799,9 @@ def refresh_artifacts(
     }
     write_json(args.summary, summary)
     verification_row = diagnostic(
-        "local_only_replay_verification_passed" if not errors else "local_only_replay_verification_failed",
+        "local_only_replay_verification_passed"
+        if not errors
+        else "local_only_replay_verification_failed",
         "M027 local-only source acquisition replay verification completed",
         severity="info" if not errors else "error",
         path=args.summary,
@@ -549,11 +814,21 @@ def refresh_artifacts(
         not in {"local_only_replay_verification_passed", "local_only_replay_verification_failed"}
     ]
     write_jsonl(args.diagnostics, [*retained_diagnostic_rows, verification_row, *errors])
-    existing_report = args.report.read_text(encoding="utf-8") if args.report.exists() else "# M027 Source Acquisition Report\n"
+    existing_report = (
+        args.report.read_text(encoding="utf-8")
+        if args.report.exists()
+        else "# M027 Source Acquisition Report\n"
+    )
     marker = "\n## Local-Only Replay Verification\n"
     base_report = existing_report.split(marker, 1)[0].rstrip() + "\n"
     args.report.write_text(
-        base_report + render_report_section(provenance, errors, selected_article_count=selected_article_count, selected_variant_count=selected_variant_count),
+        base_report
+        + render_report_section(
+            provenance,
+            errors,
+            selected_article_count=selected_article_count,
+            selected_variant_count=selected_variant_count,
+        ),
         encoding="utf-8",
     )
     provenance["output_hashes"] = file_hashes([args.diagnostics, args.report])
@@ -583,7 +858,9 @@ def main(argv: list[str] | None = None) -> int:
         index = load_json(args.index)
         selection = load_json(args.selection)
     except (OSError, json.JSONDecodeError, ValueError) as exc:
-        sys.stderr.write(f"M027 source acquisition replay verification failed before artifact refresh: {exc}\n")
+        sys.stderr.write(
+            f"M027 source acquisition replay verification failed before artifact refresh: {exc}\n"
+        )
         return 1
 
     validate_no_payload_keys(catalog, errors, artifact_path=args.catalog)
@@ -592,21 +869,42 @@ def main(argv: list[str] | None = None) -> int:
 
     article_paths = selected_article_paths(args.catalog_root, index, selection, errors)
     if len(selection.get("articles", [])) != 6:
-        add_error(errors, "selected_article_count_mismatch", f"expected exactly six selected articles, found {len(selection.get('articles', []))}", path=args.selection, json_path="$.articles")
+        add_error(
+            errors,
+            "selected_article_count_mismatch",
+            f"expected exactly six selected articles, found {len(selection.get('articles', []))}",
+            path=args.selection,
+            json_path="$.articles",
+        )
     selected_article_count, selected_variant_count = validate_article_records(article_paths, errors)
 
     try:
         summary = load_json(args.summary)
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         summary = {}
-        add_error(errors, "malformed_summary_artifact", f"failed to load summary artifact: {exc}", path=args.summary)
+        add_error(
+            errors,
+            "malformed_summary_artifact",
+            f"failed to load summary artifact: {exc}",
+            path=args.summary,
+        )
     try:
         diagnostic_rows = load_jsonl(args.diagnostics)
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         diagnostic_rows = []
-        add_error(errors, "malformed_diagnostics_artifact", f"failed to load diagnostics artifact: {exc}", path=args.diagnostics)
+        add_error(
+            errors,
+            "malformed_diagnostics_artifact",
+            f"failed to load diagnostics artifact: {exc}",
+            path=args.diagnostics,
+        )
 
-    validate_summary(summary, errors, selected_article_count=selected_article_count, selected_variant_count=selected_variant_count)
+    validate_summary(
+        summary,
+        errors,
+        selected_article_count=selected_article_count,
+        selected_variant_count=selected_variant_count,
+    )
     validate_diagnostics(diagnostic_rows, errors)
     for artifact_path in (args.summary, args.diagnostics, args.report):
         validate_text_redaction(artifact_path, errors)

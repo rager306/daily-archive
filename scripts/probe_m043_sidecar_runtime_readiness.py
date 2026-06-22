@@ -35,7 +35,9 @@ def load_json(path: Path) -> dict[str, Any]:
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
 
 
 def write_text(path: Path, text: str) -> None:
@@ -104,8 +106,13 @@ def build_runtime_readiness(
         "role": "layout_ocr_table_coordinate_candidate",
         "prior_artifacts_present": prior_present("opendataloader_pdf"),
         "live_run_required_for_target_specific_output": True,
-        "local_hints": {"docling_importable": docling_importable, "opendataloader_importable": opendataloader_importable},
-        "blockers": [] if (docling_importable or opendataloader_importable) else ["opendataloader_or_docling_not_importable"],
+        "local_hints": {
+            "docling_importable": docling_importable,
+            "opendataloader_importable": opendataloader_importable,
+        },
+        "blockers": []
+        if (docling_importable or opendataloader_importable)
+        else ["opendataloader_or_docling_not_importable"],
     }
 
     adaptix_importable = find_spec("adaptix") is not None
@@ -124,7 +131,9 @@ def build_runtime_readiness(
         "prior_artifacts_present": prior_present("quant_mind_patterns"),
         "live_run_required": False,
         "runtime_dependency_adoption_authorized": False,
-        "blockers": [] if prior_present("quant_mind_patterns") else ["quant_mind_pattern_artifacts_missing"],
+        "blockers": []
+        if prior_present("quant_mind_patterns")
+        else ["quant_mind_pattern_artifacts_missing"],
     }
 
     checks["combined_architecture"] = {
@@ -132,7 +141,9 @@ def build_runtime_readiness(
         "role": "bounded_combined_sidecar_architecture",
         "prior_artifacts_present": prior_present("combined_architecture"),
         "live_run_required": False,
-        "blockers": [] if prior_present("combined_architecture") else ["combined_architecture_artifacts_missing"],
+        "blockers": []
+        if prior_present("combined_architecture")
+        else ["combined_architecture_artifacts_missing"],
     }
 
     return {
@@ -163,7 +174,9 @@ def render_markdown(readiness: dict[str, Any]) -> str:
     ]
     for name, check in readiness["checks"].items():
         blockers = ", ".join(check.get("blockers", [])) or "none"
-        lines.append(f"| {name} | {check['status']} | {str(check.get('prior_artifacts_present', False)).lower()} | {blockers} |")
+        lines.append(
+            f"| {name} | {check['status']} | {str(check.get('prior_artifacts_present', False)).lower()} | {blockers} |"
+        )
     lines.append("")
     return "\n".join(lines)
 
@@ -174,7 +187,9 @@ def main() -> int:
     parser.add_argument("--reuse-matrix", type=Path, default=DEFAULT_REUSE)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     args = parser.parse_args()
-    readiness = build_runtime_readiness(target_subset=load_json(args.target_subset), reuse_matrix=load_json(args.reuse_matrix))
+    readiness = build_runtime_readiness(
+        target_subset=load_json(args.target_subset), reuse_matrix=load_json(args.reuse_matrix)
+    )
     write_json(args.output_dir / "runtime-readiness.json", readiness)
     write_text(args.output_dir / "runtime-readiness.md", render_markdown(readiness))
     sys.stdout.write(

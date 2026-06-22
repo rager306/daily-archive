@@ -118,7 +118,10 @@ def test_run_smoke_writes_explicit_absent_loader_metadata(tmp_path: Path) -> Non
         "artifact:test/source/article.html",
     ]
     data["articles"][0]["loader_ref_count"] = 0
-    data["articles"][0]["diagnostics"] = ["safety_flags_missing_or_not_false", "missing_loader_evidence"]
+    data["articles"][0]["diagnostics"] = [
+        "safety_flags_missing_or_not_false",
+        "missing_loader_evidence",
+    ]
     manifest.write_text(json.dumps(data), encoding="utf-8")
 
     summary = run_smoke(manifest, output_dir=tmp_path / "run", clean=True)

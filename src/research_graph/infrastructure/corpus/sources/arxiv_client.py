@@ -53,7 +53,9 @@ class ArxivClient:
 
         client = httpx.Client(timeout=60.0)
         try:
-            response = client.get(ARXIV_API_URL, params={"search_query": query, "start": 0, "max_results": 100})
+            response = client.get(
+                ARXIV_API_URL, params={"search_query": query, "start": 0, "max_results": 100}
+            )
             response.raise_for_status()
             feed = feedparser.parse(response.text)
             for entry in feed.entries:

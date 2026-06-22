@@ -30,7 +30,9 @@ def _manifest(tmp_path: Path, *, article_key: str = "2401.00001") -> Path:
                     "article_key": article_key,
                     "article_ref": f"artifact:data/article_catalog/article_catalog/arxiv/cs-ai/{article_key}/article.json",
                     "catalog_path": f"arxiv/cs-ai/{article_key}",
-                    "linked_from": ["data/article_catalog/article_catalog/arxiv/cs-ai/source/source/article.html"],
+                    "linked_from": [
+                        "data/article_catalog/article_catalog/arxiv/cs-ai/source/source/article.html"
+                    ],
                     "m041_category": "reference_linked",
                 }
             ],
@@ -46,7 +48,16 @@ def _manifest(tmp_path: Path, *, article_key: str = "2401.00001") -> Path:
 
 
 def _article(tmp_path: Path, article_key: str, *, fetched: bool) -> Path:
-    article_path = tmp_path / "data" / "article_catalog" / "article_catalog" / "arxiv" / "cs-ai" / article_key / "article.json"
+    article_path = (
+        tmp_path
+        / "data"
+        / "article_catalog"
+        / "article_catalog"
+        / "arxiv"
+        / "cs-ai"
+        / article_key
+        / "article.json"
+    )
     identity = {"arxiv_id": article_key}
     if fetched:
         identity.update(
@@ -65,7 +76,9 @@ def _article(tmp_path: Path, article_key: str, *, fetched: bool) -> Path:
             "article_key": article_key,
             "connectivity_smoke": {
                 "category": "reference_linked",
-                "linked_from": ["data/article_catalog/article_catalog/arxiv/cs-ai/source/source/article.html"],
+                "linked_from": [
+                    "data/article_catalog/article_catalog/arxiv/cs-ai/source/source/article.html"
+                ],
                 "metadata_only": True,
                 "metadata_status": "fetched" if fetched else "deferred",
             },

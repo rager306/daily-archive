@@ -26,7 +26,10 @@ def _write_json(path: Path, payload: dict) -> None:
 
 
 def _project(tmp_path: Path, *, readme: str | None = None, project_extra: str = "") -> Path:
-    _write(tmp_path / ".gsd" / "PROJECT.md", "# Project\n\nNo graph import is authorized.\n" + project_extra)
+    _write(
+        tmp_path / ".gsd" / "PROJECT.md",
+        "# Project\n\nNo graph import is authorized.\n" + project_extra,
+    )
     _write(
         tmp_path / ".gsd" / "REQUIREMENTS.md",
         "# Requirements\n\n### R001 — Unified trajectory check\n- Status: active\n",
@@ -45,9 +48,14 @@ def _project(tmp_path: Path, *, readme: str | None = None, project_extra: str = 
     _write(tmp_path / ".codebase-memory" / "adr.md", "# mirror\n")
     _write(
         tmp_path / ".gsd" / "milestones" / "M001" / "M001-SUMMARY.md",
-        "---\ntitle: \"First milestone\"\nstatus: complete\n---\nNo graph import is authorized.\n",
+        '---\ntitle: "First milestone"\nstatus: complete\n---\nNo graph import is authorized.\n',
     )
-    _write(tmp_path / "README.md", readme if readme is not None else "# README\n\nM001 complete. Next gate: continue safely.\n")
+    _write(
+        tmp_path / "README.md",
+        readme
+        if readme is not None
+        else "# README\n\nM001 complete. Next gate: continue safely.\n",
+    )
     return tmp_path
 
 
@@ -75,7 +83,10 @@ def test_build_report_flags_missing_latest_readme_reference(tmp_path, monkeypatc
 
     report = traj.build_report(root=root)
 
-    assert any(flag["flag"] == "latest_milestone_missing_readme_reference" for flag in report["drift_flags"])
+    assert any(
+        flag["flag"] == "latest_milestone_missing_readme_reference"
+        for flag in report["drift_flags"]
+    )
     assert report["verdict"] == "drift_risk"
 
 
@@ -157,7 +168,8 @@ def test_reverse_adr_audit_flags_ladybugdb_import_in_src(tmp_path, monkeypatch):
     assert "no_ladybugdb_import_outside_graph_package" in rule_id_set
     # And it must be flagged in drift_flags with medium severity (post-M101 update).
     assert any(
-        flag["flag"] == "reverse_adr_audit_no_ladybugdb_import_outside_graph_package" and flag["severity"] == "medium"
+        flag["flag"] == "reverse_adr_audit_no_ladybugdb_import_outside_graph_package"
+        and flag["severity"] == "medium"
         for flag in report["drift_flags"]
     )
     # Verdict should be blocked because of the violation.
@@ -183,7 +195,9 @@ def test_reverse_adr_audit_flags_import_eligible_true_in_artifacts(tmp_path, mon
 def test_phase_default_is_preflight_and_backward_compatible(tmp_path, monkeypatch):
     root = _project(tmp_path)
     # Inject fake git status to simulate uncommitted changes.
-    monkeypatch.setattr(traj, "git_status", lambda root: {"exit_code": 0, "changed_files": 5, "entries": []})
+    monkeypatch.setattr(
+        traj, "git_status", lambda root: {"exit_code": 0, "changed_files": 5, "entries": []}
+    )
     monkeypatch.setattr(traj, "ROOT", root)
 
     report = traj.build_report(root=root)
@@ -195,7 +209,9 @@ def test_phase_default_is_preflight_and_backward_compatible(tmp_path, monkeypatc
 
 def test_phase_active_promotes_uncommitted_to_medium(tmp_path, monkeypatch):
     root = _project(tmp_path)
-    monkeypatch.setattr(traj, "git_status", lambda root: {"exit_code": 0, "changed_files": 5, "entries": []})
+    monkeypatch.setattr(
+        traj, "git_status", lambda root: {"exit_code": 0, "changed_files": 5, "entries": []}
+    )
     monkeypatch.setattr(traj, "ROOT", root)
 
     report = traj.build_report(root=root, phase="active")
@@ -210,7 +226,9 @@ def test_phase_active_promotes_uncommitted_to_medium(tmp_path, monkeypatch):
 
 def test_phase_closeout_demotes_uncommitted_to_info(tmp_path, monkeypatch):
     root = _project(tmp_path)
-    monkeypatch.setattr(traj, "git_status", lambda root: {"exit_code": 0, "changed_files": 5, "entries": []})
+    monkeypatch.setattr(
+        traj, "git_status", lambda root: {"exit_code": 0, "changed_files": 5, "entries": []}
+    )
     monkeypatch.setattr(traj, "ROOT", root)
 
     report = traj.build_report(root=root, phase="closeout")
@@ -226,6 +244,7 @@ def test_phase_unknown_raises_value_error(tmp_path, monkeypatch):
     monkeypatch.setattr(traj, "ROOT", root)
 
     import pytest
+
     with pytest.raises(ValueError, match="unknown phase"):
         traj.build_report(root=root, phase="nonexistent")
 

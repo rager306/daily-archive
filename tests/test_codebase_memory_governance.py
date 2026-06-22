@@ -122,8 +122,7 @@ def test_validate_graph_rejects_missing_required_edge() -> None:
     graph["edges"] = [
         edge
         for edge in graph["edges"]
-        if (edge["source"], edge["relationship"], edge["target"])
-        != ("D076", "extends", "D075")
+        if (edge["source"], edge["relationship"], edge["target"]) != ("D076", "extends", "D075")
     ]
 
     with pytest.raises(ValueError, match="missing required edges"):

@@ -61,13 +61,17 @@ def require_text(path: Path, failures: list[dict[str, Any]]) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
-def require_false_flags(owner: str, flags: dict[str, Any] | None, failures: list[dict[str, Any]]) -> None:
+def require_false_flags(
+    owner: str, flags: dict[str, Any] | None, failures: list[dict[str, Any]]
+) -> None:
     if not isinstance(flags, dict):
         failures.append({"code": "missing_safety_flags", "owner": owner})
         return
     for key in FALSE_FLAG_KEYS:
         if flags.get(key) is not False:
-            failures.append({"code": "unsafe_flag", "owner": owner, "flag": key, "value": flags.get(key)})
+            failures.append(
+                {"code": "unsafe_flag", "owner": owner, "flag": key, "value": flags.get(key)}
+            )
 
 
 def validate_matrix(root: Path, failures: list[dict[str, Any]]) -> None:
@@ -84,8 +88,17 @@ def validate_matrix(root: Path, failures: list[dict[str, Any]]) -> None:
         if slices != {"S01", "S02", "S03", "S04", "S07"}:
             failures.append({"code": "unexpected_matrix_slices", "value": sorted(slices)})
         for entry in entries:
-            require_false_flags(f"matrix_entry_{entry.get('slice')}", entry.get("safety_flags"), failures)
-    for needle in ("GROBID", "OpenDataLoader", "Adaptix", "quant-mind", "daily-archive", "candidate_only"):
+            require_false_flags(
+                f"matrix_entry_{entry.get('slice')}", entry.get("safety_flags"), failures
+            )
+    for needle in (
+        "GROBID",
+        "OpenDataLoader",
+        "Adaptix",
+        "quant-mind",
+        "daily-archive",
+        "candidate_only",
+    ):
         if needle not in text:
             failures.append({"code": "missing_matrix_text", "needle": needle})
 
@@ -96,14 +109,21 @@ def validate_recommendation(root: Path, failures: list[dict[str, Any]]) -> None:
     if recommendation:
         require_false_flags("recommendation", recommendation.get("safety_flags"), failures)
         if recommendation.get("verdict") != "recommended-bounded-combined-sidecar-architecture":
-            failures.append({"code": "unexpected_recommendation_verdict", "value": recommendation.get("verdict")})
+            failures.append(
+                {
+                    "code": "unexpected_recommendation_verdict",
+                    "value": recommendation.get("verdict"),
+                }
+            )
         for key in ("candidate_only",):
             if recommendation.get(key) is not True:
                 failures.append({"code": "expected_true", "owner": "recommendation", "field": key})
         for key in ("production_adoption_authorized", "runtime_dependency_adoption_authorized"):
             if recommendation.get(key) is not False:
                 failures.append({"code": "expected_false", "owner": "recommendation", "field": key})
-        components = {item.get("component") for item in recommendation.get("component_responsibilities", [])}
+        components = {
+            item.get("component") for item in recommendation.get("component_responsibilities", [])
+        }
         missing = EXPECTED_COMPONENTS - components
         if missing:
             failures.append({"code": "missing_components", "missing": sorted(missing)})
@@ -133,7 +153,11 @@ def validate_gates(root: Path, failures: list[dict[str, Any]]) -> None:
         for needle in ("graph-readiness review post-check", "no-write import rehearsal"):
             if needle not in gate_text:
                 failures.append({"code": "missing_validation_gate", "needle": needle})
-    for needle in ("graph_readiness_and_no_write_import_boundary", "S06 must turn these risks", "production integration"):
+    for needle in (
+        "graph_readiness_and_no_write_import_boundary",
+        "S06 must turn these risks",
+        "production integration",
+    ):
         if needle not in text:
             failures.append({"code": "missing_gates_text", "needle": needle})
 

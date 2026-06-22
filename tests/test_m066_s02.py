@@ -68,7 +68,10 @@ def test_adr_index_updated() -> None:
     assert "Project-level ADR count: 21" in text
     assert "| ADR-020 | Superseded by ADR-021 |" in text
     assert "`doc/adr/ADR-020-graphdb-selection.md`" in text
-    assert "| ADR-021 | Accepted (binding) | M066 GraphDB Re-Selection (Neo4j primary) | `doc/adr/ADR-021-graphdb-reselection.md` |" in text
+    assert (
+        "| ADR-021 | Accepted (binding) | M066 GraphDB Re-Selection (Neo4j primary) | `doc/adr/ADR-021-graphdb-reselection.md` |"
+        in text
+    )
 
 
 def test_codebase_memory_synced() -> None:
@@ -104,4 +107,7 @@ def test_m050_m066_s01_regression() -> None:
     assert by_name["HelixDB"]["total_score"] == 54
     assert by_name["LadybugDB"]["concurrent_write_metrics"]["lost_writes"] == 199
     assert "Production graph import is not authorized." in matrix
-    assert "Network access, production import, graph writes, vendor-source mutation, and real DB connections are disabled." in matrix
+    assert (
+        "Network access, production import, graph writes, vendor-source mutation, and real DB connections are disabled."
+        in matrix
+    )

@@ -275,8 +275,13 @@ def test_builds_minimal_asset_manifest_with_stable_ids_and_summary(article_asset
     manifest = article_assets_contract.build_article_asset_manifest(_manifest_input())
 
     assert article_assets_contract.validate_article_asset_manifest(manifest) == []
-    assert manifest["schema_version"] == article_assets_contract.ARTICLE_ASSET_MANIFEST_SCHEMA_VERSION
-    assert manifest["diagnostics_schema_version"] == article_assets_contract.ARTICLE_ASSET_DIAGNOSTICS_SCHEMA_VERSION
+    assert (
+        manifest["schema_version"] == article_assets_contract.ARTICLE_ASSET_MANIFEST_SCHEMA_VERSION
+    )
+    assert (
+        manifest["diagnostics_schema_version"]
+        == article_assets_contract.ARTICLE_ASSET_DIAGNOSTICS_SCHEMA_VERSION
+    )
     assert manifest["paper_id"] == PAPER_ID
     assert manifest["run_id"] == "m024-s04-assets-contract-test"
     assert manifest["manifest_id"] == f"{PAPER_ID}:article-assets:manifest:v1"
@@ -328,10 +333,14 @@ def test_builds_minimal_asset_manifest_with_stable_ids_and_summary(article_asset
     _assert_metadata_only(manifest)
 
 
-def test_asset_records_preserve_page_source_bbox_and_status_vocabularies(article_assets_contract) -> None:
+def test_asset_records_preserve_page_source_bbox_and_status_vocabularies(
+    article_assets_contract,
+) -> None:
     manifest = article_assets_contract.build_article_asset_manifest(_manifest_input())
 
-    assert article_assets_contract.ALLOWED_ASSET_TYPES == frozenset({"figure", "diagram", "chart", "table", "equation_image"})
+    assert article_assets_contract.ALLOWED_ASSET_TYPES == frozenset(
+        {"figure", "diagram", "chart", "table", "equation_image"}
+    )
     assert article_assets_contract.ALLOWED_PRESERVATION_STATES == frozenset(
         {"placeholder_only", "source_linked", "binary_preserved", "unresolved"}
     )
@@ -372,7 +381,9 @@ def test_asset_records_preserve_page_source_bbox_and_status_vocabularies(article
     _assert_metadata_only(manifest["assets"])
 
 
-def test_attach_asset_summary_updates_article_evidence_bundle_subtree(article_assets_contract) -> None:
+def test_attach_asset_summary_updates_article_evidence_bundle_subtree(
+    article_assets_contract,
+) -> None:
     evidence_bundle = {
         "schema_version": "m024-article-evidence-bundle.v1",
         "paper_id": PAPER_ID,
@@ -424,7 +435,9 @@ def test_attach_asset_summary_updates_article_evidence_bundle_subtree(article_as
             "figure:1",
         ),
         (
-            lambda payload: payload["asset_placeholders"][1].__setitem__("page_index_anchor_id", "missing-anchor"),
+            lambda payload: payload["asset_placeholders"][1].__setitem__(
+                "page_index_anchor_id", "missing-anchor"
+            ),
             "missing_page_index_ref",
             "/asset_placeholders/1/page_index_anchor_id",
             "table:1",
@@ -436,19 +449,25 @@ def test_attach_asset_summary_updates_article_evidence_bundle_subtree(article_as
             SOURCE_ID,
         ),
         (
-            lambda payload: payload["asset_placeholders"][2].__setitem__("interpretation_status", "interpreted_as_latex"),
+            lambda payload: payload["asset_placeholders"][2].__setitem__(
+                "interpretation_status", "interpreted_as_latex"
+            ),
             "invalid_interpretation_status",
             "/asset_placeholders/2/interpretation_status",
             "equation:1",
         ),
         (
-            lambda payload: payload["asset_placeholders"].append(deepcopy(payload["asset_placeholders"][0])),
+            lambda payload: payload["asset_placeholders"].append(
+                deepcopy(payload["asset_placeholders"][0])
+            ),
             "duplicate_asset_id",
             "/asset_placeholders/3/source_asset_ref",
             "figure:1",
         ),
         (
-            lambda payload: payload["asset_placeholders"][0].__setitem__("trusted_kg_import_allowed", True),
+            lambda payload: payload["asset_placeholders"][0].__setitem__(
+                "trusted_kg_import_allowed", True
+            ),
             "unsafe_trusted_import_flag",
             "/asset_placeholders/0/trusted_kg_import_allowed",
             "figure:1",
@@ -481,7 +500,9 @@ def test_invalid_manifest_inputs_return_redacted_diagnostics_not_exceptions(
 
 
 @pytest.mark.parametrize("forbidden_key", FORBIDDEN_PAYLOAD_KEYS)
-def test_forbidden_payload_keys_are_diagnosed_without_echoing_values(article_assets_contract, forbidden_key: str) -> None:
+def test_forbidden_payload_keys_are_diagnosed_without_echoing_values(
+    article_assets_contract, forbidden_key: str
+) -> None:
     payload = _manifest_input()
     payload["asset_placeholders"][0][forbidden_key] = FORBIDDEN_SENTINEL
 
@@ -524,14 +545,23 @@ def test_unsafe_graph_import_and_readiness_flags_fail_closed(article_assets_cont
     assert manifest["promoted_to_fact_count"] == 0
     _assert_metadata_only(manifest)
 
-def test_article_assets_old_module_is_archived_with_canonical_breadcrumb(article_assets_contract) -> None:
-    top_level_archive_path = Path("archive/package-layout-shims/wave-01/src/arxiv_archive/article_assets.py")
-    package_archive_path = Path("archive/package-rename-waves/wave-01/src/arxiv_archive/artifacts/assets.py")
+
+def test_article_assets_old_module_is_archived_with_canonical_breadcrumb(
+    article_assets_contract,
+) -> None:
+    top_level_archive_path = Path(
+        "archive/package-layout-shims/wave-01/src/arxiv_archive/article_assets.py"
+    )
+    package_archive_path = Path(
+        "archive/package-rename-waves/wave-01/src/arxiv_archive/artifacts/assets.py"
+    )
     canonical_path = Path("src/research_graph/papers/assets.py")
 
     assert top_level_archive_path.exists()
     assert package_archive_path.exists()
     assert not Path("src/arxiv_archive/article_assets.py").exists()
     assert not Path("src/arxiv_archive/artifacts/assets.py").exists()
-    assert "Formerly: src/arxiv_archive/artifacts/assets.py" in canonical_path.read_text(encoding="utf-8")
+    assert "Formerly: src/arxiv_archive/artifacts/assets.py" in canonical_path.read_text(
+        encoding="utf-8"
+    )
     assert article_assets_contract.ARTICLE_ASSET_MANIFEST_SCHEMA_VERSION == "m024-article-assets.v1"

@@ -90,7 +90,9 @@ def is_deterministic_parser(parser_name: str) -> bool:
     return not any(marker in lowered for marker in NON_DETERMINISTIC_MARKERS)
 
 
-def replay_target_path(source_path: Path, parser_name: str, output_suffix: str, output_dir: Path | None) -> Path:
+def replay_target_path(
+    source_path: Path, parser_name: str, output_suffix: str, output_dir: Path | None
+) -> Path:
     """Build the target path for a replay artifact."""
     filename = f"{source_path.stem}.{output_suffix}{source_path.suffix}"
     if output_dir is None:
@@ -109,15 +111,48 @@ def replay_pdf(
     arxiv_id = str(pdf["arxiv_id"])
     expectation = find_parser_expectation(pdf, parser_name)
     if expectation is None:
-        return ReplayResult(arxiv_id, parser_name, "failed", True, None, None, None, None, None, f"parser {parser_name!r} is not declared for {arxiv_id}")
+        return ReplayResult(
+            arxiv_id,
+            parser_name,
+            "failed",
+            True,
+            None,
+            None,
+            None,
+            None,
+            None,
+            f"parser {parser_name!r} is not declared for {arxiv_id}",
+        )
 
     source_paths = resolve_output_paths(pdf, expectation)
     if not source_paths:
-        return ReplayResult(arxiv_id, parser_name, "failed", True, None, None, None, None, None, "parser output path could not be resolved")
+        return ReplayResult(
+            arxiv_id,
+            parser_name,
+            "failed",
+            True,
+            None,
+            None,
+            None,
+            None,
+            None,
+            "parser output path could not be resolved",
+        )
 
     source_path = source_paths[0]
     if not source_path.exists():
-        return ReplayResult(arxiv_id, parser_name, "failed", True, rel(source_path), None, None, None, None, "source parser output is missing")
+        return ReplayResult(
+            arxiv_id,
+            parser_name,
+            "failed",
+            True,
+            rel(source_path),
+            None,
+            None,
+            None,
+            None,
+            "source parser output is missing",
+        )
 
     deterministic = is_deterministic_parser(parser_name)
     source_sha = sha256_file(source_path)
@@ -257,10 +292,21 @@ def print_report(report: ReplayReport, *, json_output: bool = False) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", required=True, help="Repository-relative manifest JSON path.")
-    parser.add_argument("--parser", required=True, help="Parser name declared in expected_parsers[].")
-    parser.add_argument("--output-suffix", default="replay", help="Suffix for replay artifacts, default: replay.")
-    parser.add_argument("--output-dir", help="Optional repository-relative directory for replay artifacts.")
-    parser.add_argument("--arxiv-id", action="append", dest="arxiv_ids", help="Limit replay to one arXiv ID; may be repeated.")
+    parser.add_argument(
+        "--parser", required=True, help="Parser name declared in expected_parsers[]."
+    )
+    parser.add_argument(
+        "--output-suffix", default="replay", help="Suffix for replay artifacts, default: replay."
+    )
+    parser.add_argument(
+        "--output-dir", help="Optional repository-relative directory for replay artifacts."
+    )
+    parser.add_argument(
+        "--arxiv-id",
+        action="append",
+        dest="arxiv_ids",
+        help="Limit replay to one arXiv ID; may be repeated.",
+    )
     parser.add_argument("--json", action="store_true", help="Emit the full replay report as JSON.")
     return parser
 

@@ -154,19 +154,37 @@ def repo_relative(path: Path, root: Path) -> str:
 
 def safe_repo_relative(path_value: Any, root: Path) -> tuple[Path | None, Diagnostic | None]:
     if not isinstance(path_value, str) or not path_value.strip():
-        return None, Diagnostic("ARTIFACT_PATH_MISSING", "$.artifact_path", "artifact path must be a non-empty repo-relative string")
+        return None, Diagnostic(
+            "ARTIFACT_PATH_MISSING",
+            "$.artifact_path",
+            "artifact path must be a non-empty repo-relative string",
+        )
     if "://" in path_value:
-        return None, Diagnostic("ARTIFACT_PATH_IS_URL", "$.artifact_path", "artifact path must not be a URL")
+        return None, Diagnostic(
+            "ARTIFACT_PATH_IS_URL", "$.artifact_path", "artifact path must not be a URL"
+        )
     normalized = PurePosixPath(path_value.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part == "" for part in normalized.parts):
-        return None, Diagnostic("ARTIFACT_PATH_UNSAFE", "$.artifact_path", "artifact path must stay repo-relative")
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part == "" for part in normalized.parts)
+    ):
+        return None, Diagnostic(
+            "ARTIFACT_PATH_UNSAFE", "$.artifact_path", "artifact path must stay repo-relative"
+        )
     candidate = (root / normalized.as_posix()).resolve()
     try:
         candidate.relative_to(root.resolve())
     except ValueError:
-        return None, Diagnostic("ARTIFACT_PATH_ESCAPES_REPO", "$.artifact_path", "artifact path escapes repository root")
+        return None, Diagnostic(
+            "ARTIFACT_PATH_ESCAPES_REPO", "$.artifact_path", "artifact path escapes repository root"
+        )
     if not candidate.exists():
-        return None, Diagnostic("ARTIFACT_PATH_MISSING_ON_DISK", "$.artifact_path", f"artifact path does not exist: {normalized.as_posix()}")
+        return None, Diagnostic(
+            "ARTIFACT_PATH_MISSING_ON_DISK",
+            "$.artifact_path",
+            f"artifact path does not exist: {normalized.as_posix()}",
+        )
     return candidate, None
 
 
@@ -191,11 +209,33 @@ def read_json(path: Path) -> dict[str, Any]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
-        raise CloseoutError([Diagnostic("INPUT_MISSING", f"$.inputs.{path.name}", f"missing input: {path.as_posix()}")]) from exc
+        raise CloseoutError(
+            [
+                Diagnostic(
+                    "INPUT_MISSING", f"$.inputs.{path.name}", f"missing input: {path.as_posix()}"
+                )
+            ]
+        ) from exc
     except json.JSONDecodeError as exc:
-        raise CloseoutError([Diagnostic("JSON_MALFORMED", f"$.inputs.{path.name}", f"malformed JSON at {exc.lineno}:{exc.colno}")]) from exc
+        raise CloseoutError(
+            [
+                Diagnostic(
+                    "JSON_MALFORMED",
+                    f"$.inputs.{path.name}",
+                    f"malformed JSON at {exc.lineno}:{exc.colno}",
+                )
+            ]
+        ) from exc
     if not isinstance(payload, dict):
-        raise CloseoutError([Diagnostic("JSON_OBJECT_REQUIRED", f"$.inputs.{path.name}", "top-level JSON must be an object")])
+        raise CloseoutError(
+            [
+                Diagnostic(
+                    "JSON_OBJECT_REQUIRED",
+                    f"$.inputs.{path.name}",
+                    "top-level JSON must be an object",
+                )
+            ]
+        )
     return payload
 
 
@@ -203,7 +243,13 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
     except FileNotFoundError as exc:
-        raise CloseoutError([Diagnostic("INPUT_MISSING", f"$.inputs.{path.name}", f"missing input: {path.as_posix()}")]) from exc
+        raise CloseoutError(
+            [
+                Diagnostic(
+                    "INPUT_MISSING", f"$.inputs.{path.name}", f"missing input: {path.as_posix()}"
+                )
+            ]
+        ) from exc
     rows: list[dict[str, Any]] = []
     diagnostics: list[Diagnostic] = []
     for line_number, line in enumerate(lines, start=1):
@@ -212,10 +258,22 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
         try:
             row = json.loads(line)
         except json.JSONDecodeError as exc:
-            diagnostics.append(Diagnostic("JSONL_MALFORMED", f"$.inputs.{path.name}[{line_number}]", f"malformed JSONL at column {exc.colno}"))
+            diagnostics.append(
+                Diagnostic(
+                    "JSONL_MALFORMED",
+                    f"$.inputs.{path.name}[{line_number}]",
+                    f"malformed JSONL at column {exc.colno}",
+                )
+            )
             continue
         if not isinstance(row, dict):
-            diagnostics.append(Diagnostic("JSONL_OBJECT_REQUIRED", f"$.inputs.{path.name}[{line_number}]", "JSONL row must be an object"))
+            diagnostics.append(
+                Diagnostic(
+                    "JSONL_OBJECT_REQUIRED",
+                    f"$.inputs.{path.name}[{line_number}]",
+                    "JSONL row must be an object",
+                )
+            )
             continue
         rows.append(row)
     if diagnostics:
@@ -241,7 +299,9 @@ def unsafe_status(payload: Any) -> tuple[dict[str, bool], dict[str, int], list[D
         if key in flags:
             if value is not False:
                 flags[key] = True
-                diagnostics.append(Diagnostic("UNSAFE_FLAG_TRUE", f"$.{key}", f"unsafe flag must be false: {key}"))
+                diagnostics.append(
+                    Diagnostic("UNSAFE_FLAG_TRUE", f"$.{key}", f"unsafe flag must be false: {key}")
+                )
         if key in counters:
             if isinstance(value, bool):
                 counter_value = int(value)
@@ -251,7 +311,13 @@ def unsafe_status(payload: Any) -> tuple[dict[str, bool], dict[str, int], list[D
                 continue
             if counter_value != 0:
                 counters[key] = counter_value
-                diagnostics.append(Diagnostic("UNSAFE_COUNTER_NONZERO", f"$.{key}", f"unsafe counter must be zero: {key}={counter_value}"))
+                diagnostics.append(
+                    Diagnostic(
+                        "UNSAFE_COUNTER_NONZERO",
+                        f"$.{key}",
+                        f"unsafe counter must be zero: {key}={counter_value}",
+                    )
+                )
     return flags, counters, diagnostics
 
 
@@ -291,7 +357,9 @@ def git_commit_from_files(root: Path) -> str | None:
         return None
 
 
-def validate_source_acquisition(corpus_dir: Path, root: Path) -> tuple[dict[str, Any], list[Diagnostic]]:
+def validate_source_acquisition(
+    corpus_dir: Path, root: Path
+) -> tuple[dict[str, Any], list[Diagnostic]]:
     diagnostics: list[Diagnostic] = []
     selection_path = corpus_dir / "selection.json"
     events_path = corpus_dir / "source-acquisition-events.jsonl"
@@ -301,58 +369,145 @@ def validate_source_acquisition(corpus_dir: Path, root: Path) -> tuple[dict[str,
     selection = read_json(selection_path)
     events = read_jsonl(events_path)
     summary = read_json(summary_path)
-    report_text = report_path.read_text(encoding="utf-8", errors="replace") if report_path.exists() else ""
+    report_text = (
+        report_path.read_text(encoding="utf-8", errors="replace") if report_path.exists() else ""
+    )
 
     refs = selection.get("refs")
     if not isinstance(refs, list):
-        diagnostics.append(Diagnostic("SELECTION_REFS_LIST_REQUIRED", "$.selection.refs", "selection refs must be a list"))
+        diagnostics.append(
+            Diagnostic(
+                "SELECTION_REFS_LIST_REQUIRED", "$.selection.refs", "selection refs must be a list"
+            )
+        )
         refs = []
-    ref_ids = [str(ref.get("ref_id")) for ref in refs if isinstance(ref, dict) and ref.get("ref_id")]
-    normalized = [str(ref.get("normalized_identity")) for ref in refs if isinstance(ref, dict) and ref.get("normalized_identity")]
+    ref_ids = [
+        str(ref.get("ref_id")) for ref in refs if isinstance(ref, dict) and ref.get("ref_id")
+    ]
+    normalized = [
+        str(ref.get("normalized_identity"))
+        for ref in refs
+        if isinstance(ref, dict) and ref.get("normalized_identity")
+    ]
     expansion_refs = [ref_id for ref_id in ref_ids if ref_id in EXPECTED_EXPANSION_REFS]
 
     if len(refs) != EXPECTED_URL_REFS:
-        diagnostics.append(Diagnostic("URL_REF_COUNT_MISMATCH", "$.selection.refs", f"expected {EXPECTED_URL_REFS} URL refs, found {len(refs)}"))
+        diagnostics.append(
+            Diagnostic(
+                "URL_REF_COUNT_MISMATCH",
+                "$.selection.refs",
+                f"expected {EXPECTED_URL_REFS} URL refs, found {len(refs)}",
+            )
+        )
     if len(set(normalized)) != EXPECTED_NORMALIZED_IDENTITIES:
-        diagnostics.append(Diagnostic("NORMALIZED_IDENTITY_COUNT_MISMATCH", "$.selection.refs", f"expected {EXPECTED_NORMALIZED_IDENTITIES} normalized identities, found {len(set(normalized))}"))
+        diagnostics.append(
+            Diagnostic(
+                "NORMALIZED_IDENTITY_COUNT_MISMATCH",
+                "$.selection.refs",
+                f"expected {EXPECTED_NORMALIZED_IDENTITIES} normalized identities, found {len(set(normalized))}",
+            )
+        )
     if sorted(expansion_refs) != EXPECTED_EXPANSION_REFS:
-        diagnostics.append(Diagnostic("EXPANSION_REFS_MISMATCH", "$.selection.refs", "expected R15-R21 expansion refs"))
+        diagnostics.append(
+            Diagnostic(
+                "EXPANSION_REFS_MISMATCH", "$.selection.refs", "expected R15-R21 expansion refs"
+            )
+        )
     if normalized.count(EXPECTED_DUPLICATE_IDENTITY) != 2:
-        diagnostics.append(Diagnostic("DUPLICATE_IDENTITY_MISMATCH", "$.selection.refs", f"expected duplicate {EXPECTED_DUPLICATE_IDENTITY}"))
+        diagnostics.append(
+            Diagnostic(
+                "DUPLICATE_IDENTITY_MISMATCH",
+                "$.selection.refs",
+                f"expected duplicate {EXPECTED_DUPLICATE_IDENTITY}",
+            )
+        )
 
     terminal_events = [event for event in events if event.get("terminal") is True]
     if len(terminal_events) != EXPECTED_TERMINAL_EVENTS:
-        diagnostics.append(Diagnostic("TERMINAL_EVENT_COUNT_MISMATCH", "$.source_acquisition_events", f"expected {EXPECTED_TERMINAL_EVENTS} terminal events, found {len(terminal_events)}"))
+        diagnostics.append(
+            Diagnostic(
+                "TERMINAL_EVENT_COUNT_MISMATCH",
+                "$.source_acquisition_events",
+                f"expected {EXPECTED_TERMINAL_EVENTS} terminal events, found {len(terminal_events)}",
+            )
+        )
     if len(events) != EXPECTED_URL_REFS:
-        diagnostics.append(Diagnostic("ACQUISITION_EVENT_COUNT_MISMATCH", "$.source_acquisition_events", f"expected {EXPECTED_URL_REFS} acquisition events, found {len(events)}"))
+        diagnostics.append(
+            Diagnostic(
+                "ACQUISITION_EVENT_COUNT_MISMATCH",
+                "$.source_acquisition_events",
+                f"expected {EXPECTED_URL_REFS} acquisition events, found {len(events)}",
+            )
+        )
 
     for index, event in enumerate(events):
         if event.get("status") != "captured":
-            diagnostics.append(Diagnostic("ACQUISITION_NOT_CAPTURED", f"$.source_acquisition_events[{index}].status", "source acquisition event must be captured"))
+            diagnostics.append(
+                Diagnostic(
+                    "ACQUISITION_NOT_CAPTURED",
+                    f"$.source_acquisition_events[{index}].status",
+                    "source acquisition event must be captured",
+                )
+            )
         artifact_path, artifact_diag = safe_repo_relative(event.get("artifact_path"), root)
         if artifact_diag is not None:
-            diagnostics.append(Diagnostic(artifact_diag.code, f"$.source_acquisition_events[{index}].artifact_path", artifact_diag.message))
+            diagnostics.append(
+                Diagnostic(
+                    artifact_diag.code,
+                    f"$.source_acquisition_events[{index}].artifact_path",
+                    artifact_diag.message,
+                )
+            )
             continue
         assert artifact_path is not None
         expected_bytes = event.get("byte_count")
         expected_sha = event.get("sha256")
         if expected_bytes != artifact_path.stat().st_size:
-            diagnostics.append(Diagnostic("ARTIFACT_BYTE_COUNT_MISMATCH", f"$.source_acquisition_events[{index}].byte_count", "artifact byte count does not match disk"))
+            diagnostics.append(
+                Diagnostic(
+                    "ARTIFACT_BYTE_COUNT_MISMATCH",
+                    f"$.source_acquisition_events[{index}].byte_count",
+                    "artifact byte count does not match disk",
+                )
+            )
         if expected_sha != sha256_file(artifact_path):
-            diagnostics.append(Diagnostic("ARTIFACT_SHA256_MISMATCH", f"$.source_acquisition_events[{index}].sha256", "artifact SHA-256 does not match disk"))
+            diagnostics.append(
+                Diagnostic(
+                    "ARTIFACT_SHA256_MISMATCH",
+                    f"$.source_acquisition_events[{index}].sha256",
+                    "artifact SHA-256 does not match disk",
+                )
+            )
         _, _, unsafe_diags = unsafe_status(event)
-        diagnostics.extend(Diagnostic(d.code, f"$.source_acquisition_events[{index}]{d.json_path[1:]}", d.message) for d in unsafe_diags)
+        diagnostics.extend(
+            Diagnostic(d.code, f"$.source_acquisition_events[{index}]{d.json_path[1:]}", d.message)
+            for d in unsafe_diags
+        )
 
     for label, payload in (("selection", selection), ("source_acquisition_summary", summary)):
         _, _, unsafe_diags = unsafe_status(payload)
-        diagnostics.extend(Diagnostic(d.code, f"$.{label}{d.json_path[1:]}", d.message) for d in unsafe_diags)
+        diagnostics.extend(
+            Diagnostic(d.code, f"$.{label}{d.json_path[1:]}", d.message) for d in unsafe_diags
+        )
 
     lower_report = report_text.lower()
     for marker in FORBIDDEN_REPORT_MARKERS:
         if marker in lower_report:
-            diagnostics.append(Diagnostic("REPORT_FORBIDDEN_MARKER", "$.acquisition_report", f"metadata-only report contains forbidden marker: {marker}"))
+            diagnostics.append(
+                Diagnostic(
+                    "REPORT_FORBIDDEN_MARKER",
+                    "$.acquisition_report",
+                    f"metadata-only report contains forbidden marker: {marker}",
+                )
+            )
     if not report_path.exists():
-        diagnostics.append(Diagnostic("ACQUISITION_REPORT_MISSING", "$.acquisition_report", "acquisition report is required"))
+        diagnostics.append(
+            Diagnostic(
+                "ACQUISITION_REPORT_MISSING",
+                "$.acquisition_report",
+                "acquisition report is required",
+            )
+        )
 
     preflight = {
         "status": "pass" if not diagnostics else "fail",
@@ -373,7 +528,21 @@ def validate_source_acquisition(corpus_dir: Path, root: Path) -> tuple[dict[str,
     return preflight, diagnostics
 
 
-def stage_event(stage: str, status: str, root: Path, git_commit: str | None, argv: Sequence[str], input_paths: Sequence[Path], output_paths: Sequence[Path], started_monotonic: float, started_at: str, exit_code: int, stdout: str = "", stderr: str = "", diagnostics: Sequence[Diagnostic] = ()) -> dict[str, Any]:
+def stage_event(
+    stage: str,
+    status: str,
+    root: Path,
+    git_commit: str | None,
+    argv: Sequence[str],
+    input_paths: Sequence[Path],
+    output_paths: Sequence[Path],
+    started_monotonic: float,
+    started_at: str,
+    exit_code: int,
+    stdout: str = "",
+    stderr: str = "",
+    diagnostics: Sequence[Diagnostic] = (),
+) -> dict[str, Any]:
     return {
         "schema_version": "m028.smoke-closeout-stage-event.v1",
         "milestone_id": MILESTONE_ID,
@@ -420,59 +589,165 @@ def build_stages(corpus_dir: Path, replay_dir: Path, root: Path) -> list[Stage]:
 
     def arg_path(path: Path) -> str:
         return repo_relative(path, root)
+
     return [
         Stage(
             "S02_build_source_metadata_adapters",
-            [PYTHON_CMD, "scripts/build_m028_source_metadata_adapters.py", "--selection", arg_path(selection), "--acquisition-events", arg_path(source_acquisition_events), "--out-dir", arg_path(replay_dir)],
+            [
+                PYTHON_CMD,
+                "scripts/build_m028_source_metadata_adapters.py",
+                "--selection",
+                arg_path(selection),
+                "--acquisition-events",
+                arg_path(source_acquisition_events),
+                "--out-dir",
+                arg_path(replay_dir),
+            ],
             [selection, source_acquisition_events],
             [source_metadata_events, source_metadata_summary],
         ),
         Stage(
             "S02_verify_source_metadata_adapters",
-            [PYTHON_CMD, "scripts/verify_m028_source_metadata_adapters.py", "--selection", arg_path(selection), "--acquisition-events", arg_path(source_acquisition_events), "--metadata-events", arg_path(source_metadata_events), "--summary", arg_path(source_metadata_summary), "--reject-unsafe-claims"],
+            [
+                PYTHON_CMD,
+                "scripts/verify_m028_source_metadata_adapters.py",
+                "--selection",
+                arg_path(selection),
+                "--acquisition-events",
+                arg_path(source_acquisition_events),
+                "--metadata-events",
+                arg_path(source_metadata_events),
+                "--summary",
+                arg_path(source_metadata_summary),
+                "--reject-unsafe-claims",
+            ],
             [selection, source_acquisition_events, source_metadata_events, source_metadata_summary],
             [source_metadata_events, source_metadata_summary],
         ),
         Stage(
             "S03_build_pdf_acquisition_diagnostics",
-            [PYTHON_CMD, "scripts/build_m028_pdf_acquisition_diagnostics.py", "--selection", arg_path(selection), "--acquisition-events", arg_path(source_acquisition_events), "--metadata-events", arg_path(source_metadata_events), "--metadata-summary", arg_path(source_metadata_summary), "--out-dir", arg_path(replay_dir)],
+            [
+                PYTHON_CMD,
+                "scripts/build_m028_pdf_acquisition_diagnostics.py",
+                "--selection",
+                arg_path(selection),
+                "--acquisition-events",
+                arg_path(source_acquisition_events),
+                "--metadata-events",
+                arg_path(source_metadata_events),
+                "--metadata-summary",
+                arg_path(source_metadata_summary),
+                "--out-dir",
+                arg_path(replay_dir),
+            ],
             [selection, source_acquisition_events, source_metadata_events, source_metadata_summary],
             [pdf_events, pdf_summary, replay_dir / "pdf-acquisition-report.md"],
         ),
         Stage(
             "S03_verify_pdf_acquisition_diagnostics",
-            [PYTHON_CMD, "scripts/verify_m028_pdf_acquisition_diagnostics.py", "--selection", arg_path(selection), "--events", arg_path(pdf_events), "--summary", arg_path(pdf_summary), "--reject-unsafe-claims"],
+            [
+                PYTHON_CMD,
+                "scripts/verify_m028_pdf_acquisition_diagnostics.py",
+                "--selection",
+                arg_path(selection),
+                "--events",
+                arg_path(pdf_events),
+                "--summary",
+                arg_path(pdf_summary),
+                "--reject-unsafe-claims",
+            ],
             [selection, pdf_events, pdf_summary],
             [pdf_events, pdf_summary],
         ),
         Stage(
             "S04_build_universal_loader_evidence_bundles",
-            [PYTHON_CMD, "scripts/build_m028_universal_loader_evidence_bundles.py", "--selection", arg_path(selection), "--source-acquisition-events", arg_path(source_acquisition_events), "--metadata-events", arg_path(source_metadata_events), "--metadata-summary", arg_path(source_metadata_summary), "--pdf-events", arg_path(pdf_events), "--pdf-summary", arg_path(pdf_summary), "--out-dir", arg_path(replay_dir)],
-            [selection, source_acquisition_events, source_metadata_events, source_metadata_summary, pdf_events, pdf_summary],
+            [
+                PYTHON_CMD,
+                "scripts/build_m028_universal_loader_evidence_bundles.py",
+                "--selection",
+                arg_path(selection),
+                "--source-acquisition-events",
+                arg_path(source_acquisition_events),
+                "--metadata-events",
+                arg_path(source_metadata_events),
+                "--metadata-summary",
+                arg_path(source_metadata_summary),
+                "--pdf-events",
+                arg_path(pdf_events),
+                "--pdf-summary",
+                arg_path(pdf_summary),
+                "--out-dir",
+                arg_path(replay_dir),
+            ],
+            [
+                selection,
+                source_acquisition_events,
+                source_metadata_events,
+                source_metadata_summary,
+                pdf_events,
+                pdf_summary,
+            ],
             [bundles, bundle_summary, replay_dir / "universal-loader-evidence-report.md"],
         ),
         Stage(
             "S04_verify_universal_loader_evidence_bundles",
-            [PYTHON_CMD, "scripts/verify_m028_universal_loader_evidence_bundles.py", "--selection", arg_path(selection), "--metadata-events", arg_path(source_metadata_events), "--pdf-events", arg_path(pdf_events), "--bundles", arg_path(bundles), "--summary", arg_path(bundle_summary), "--reject-unsafe-claims"],
+            [
+                PYTHON_CMD,
+                "scripts/verify_m028_universal_loader_evidence_bundles.py",
+                "--selection",
+                arg_path(selection),
+                "--metadata-events",
+                arg_path(source_metadata_events),
+                "--pdf-events",
+                arg_path(pdf_events),
+                "--bundles",
+                arg_path(bundles),
+                "--summary",
+                arg_path(bundle_summary),
+                "--reject-unsafe-claims",
+            ],
             [selection, source_metadata_events, pdf_events, bundles, bundle_summary],
             [bundles, bundle_summary],
         ),
         Stage(
             "S05_build_hermes_digest_projection",
-            [PYTHON_CMD, "scripts/build_m028_hermes_digest_projection.py", "--bundles", arg_path(bundles), "--summary", arg_path(bundle_summary), "--out-dir", arg_path(replay_dir)],
+            [
+                PYTHON_CMD,
+                "scripts/build_m028_hermes_digest_projection.py",
+                "--bundles",
+                arg_path(bundles),
+                "--summary",
+                arg_path(bundle_summary),
+                "--out-dir",
+                arg_path(replay_dir),
+            ],
             [bundles, bundle_summary],
             [digest, replay_dir / "hermes-digest-projection-report.md"],
         ),
         Stage(
             "S05_verify_hermes_digest_projection",
-            [PYTHON_CMD, "scripts/verify_m028_hermes_digest_projection.py", "--bundles", arg_path(bundles), "--summary", arg_path(bundle_summary), "--digest", arg_path(digest), "--report", arg_path(replay_dir / "hermes-digest-projection-report.md"), "--reject-unsafe-claims"],
+            [
+                PYTHON_CMD,
+                "scripts/verify_m028_hermes_digest_projection.py",
+                "--bundles",
+                arg_path(bundles),
+                "--summary",
+                arg_path(bundle_summary),
+                "--digest",
+                arg_path(digest),
+                "--report",
+                arg_path(replay_dir / "hermes-digest-projection-report.md"),
+                "--reject-unsafe-claims",
+            ],
             [bundles, bundle_summary, digest, replay_dir / "hermes-digest-projection-report.md"],
             [digest, replay_dir / "hermes-digest-projection-report.md"],
         ),
     ]
 
 
-def run_stage(stage: Stage, root: Path, git_commit: str | None, timeout_seconds: int) -> dict[str, Any]:
+def run_stage(
+    stage: Stage, root: Path, git_commit: str | None, timeout_seconds: int
+) -> dict[str, Any]:
     started = time.monotonic()
     started_at = utc_now_iso()
     try:
@@ -485,8 +760,32 @@ def run_stage(stage: Stage, root: Path, git_commit: str | None, timeout_seconds:
             check=False,
         )
         status = "pass" if completed.returncode == 0 else "fail"
-        diagnostics = [] if completed.returncode == 0 else [Diagnostic("STAGE_EXIT_NONZERO", f"$.stages.{stage.name}.exit_code", f"stage exited {completed.returncode}")]
-        return stage_event(stage.name, status, root, git_commit, stage.argv, stage.input_paths, stage.output_paths, started, started_at, completed.returncode, completed.stdout, completed.stderr, diagnostics)
+        diagnostics = (
+            []
+            if completed.returncode == 0
+            else [
+                Diagnostic(
+                    "STAGE_EXIT_NONZERO",
+                    f"$.stages.{stage.name}.exit_code",
+                    f"stage exited {completed.returncode}",
+                )
+            ]
+        )
+        return stage_event(
+            stage.name,
+            status,
+            root,
+            git_commit,
+            stage.argv,
+            stage.input_paths,
+            stage.output_paths,
+            started,
+            started_at,
+            completed.returncode,
+            completed.stdout,
+            completed.stderr,
+            diagnostics,
+        )
     except subprocess.TimeoutExpired as exc:
         return stage_event(
             stage.name,
@@ -501,7 +800,13 @@ def run_stage(stage: Stage, root: Path, git_commit: str | None, timeout_seconds:
             124,
             exc.stdout if isinstance(exc.stdout, str) else "",
             exc.stderr if isinstance(exc.stderr, str) else "",
-            [Diagnostic("STAGE_TIMEOUT", f"$.stages.{stage.name}", f"stage exceeded {timeout_seconds}s timeout")],
+            [
+                Diagnostic(
+                    "STAGE_TIMEOUT",
+                    f"$.stages.{stage.name}",
+                    f"stage exceeded {timeout_seconds}s timeout",
+                )
+            ],
         )
 
 
@@ -511,15 +816,18 @@ def render_report(summary: dict[str, Any]) -> str:
         for event in summary["stage_events"]
     )
     diagnostics = summary.get("diagnostics", [])
-    diagnostic_lines = "\n".join(f"- `{d['code']}` at `{d['json_path']}`: {d['message']}" for d in diagnostics) or "- None."
+    diagnostic_lines = (
+        "\n".join(f"- `{d['code']}` at `{d['json_path']}`: {d['message']}" for d in diagnostics)
+        or "- None."
+    )
     return f"""# M028 Smoke Replay Closeout
 
 - Milestone: `{MILESTONE_ID}`
 - Slice: `{SLICE_ID}`
-- Status: `{summary['status']}`
-- Corpus: `{summary['corpus_dir']}`
-- Replay artifacts: `{summary['replay_artifacts_dir']}`
-- Git commit: `{summary.get('git_commit') or 'unavailable'}`
+- Status: `{summary["status"]}`
+- Corpus: `{summary["corpus_dir"]}`
+- Replay artifacts: `{summary["replay_artifacts_dir"]}`
+- Git commit: `{summary.get("git_commit") or "unavailable"}`
 
 ## Metadata-only Boundary
 
@@ -527,11 +835,11 @@ This closeout replays only local metadata/provenance stages S02-S05. It does not
 
 ## Source Acquisition Preflight
 
-- URL refs: {summary['source_acquisition_preflight']['url_ref_count']}
-- Normalized identities: {summary['source_acquisition_preflight']['normalized_identity_count']}
-- Terminal captured events: {summary['source_acquisition_preflight']['terminal_event_count']}
-- Expansion refs: {', '.join(summary['source_acquisition_preflight']['expansion_refs'])}
-- Duplicate identity: `{summary['source_acquisition_preflight']['duplicate_identity']}` ({summary['source_acquisition_preflight']['duplicate_identity_ref_count']} refs)
+- URL refs: {summary["source_acquisition_preflight"]["url_ref_count"]}
+- Normalized identities: {summary["source_acquisition_preflight"]["normalized_identity_count"]}
+- Terminal captured events: {summary["source_acquisition_preflight"]["terminal_event_count"]}
+- Expansion refs: {", ".join(summary["source_acquisition_preflight"]["expansion_refs"])}
+- Duplicate identity: `{summary["source_acquisition_preflight"]["duplicate_identity"]}` ({summary["source_acquisition_preflight"]["duplicate_identity_ref_count"]} refs)
 
 ## Stage Replay
 
@@ -571,19 +879,38 @@ def write_outputs(out_dir: Path, summary: dict[str, Any]) -> None:
     events_path = out_dir / EVENTS_FILENAME
     summary_path = out_dir / SUMMARY_FILENAME
     report_path = out_dir / REPORT_FILENAME
-    events_path.write_text("\n".join(json.dumps(event, sort_keys=True) for event in summary["stage_events"]) + "\n", encoding="utf-8")
+    events_path.write_text(
+        "\n".join(json.dumps(event, sort_keys=True) for event in summary["stage_events"]) + "\n",
+        encoding="utf-8",
+    )
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     report_path.write_text(render_report(summary), encoding="utf-8")
 
 
-def run_closeout(corpus_dir: Path, out_dir: Path, *, timeout_seconds: int = 120, clean: bool = True) -> dict[str, Any]:
+def run_closeout(
+    corpus_dir: Path, out_dir: Path, *, timeout_seconds: int = 120, clean: bool = True
+) -> dict[str, Any]:
     root = repo_root()
     corpus_dir = corpus_dir if corpus_dir.is_absolute() else root / corpus_dir
     out_dir = out_dir if out_dir.is_absolute() else root / out_dir
     if not corpus_dir.resolve().is_relative_to(root.resolve()):
-        raise CloseoutError([Diagnostic("CORPUS_DIR_OUTSIDE_REPO", "$.corpus_dir", "corpus dir must be inside repository")])
+        raise CloseoutError(
+            [
+                Diagnostic(
+                    "CORPUS_DIR_OUTSIDE_REPO",
+                    "$.corpus_dir",
+                    "corpus dir must be inside repository",
+                )
+            ]
+        )
     if not out_dir.resolve().is_relative_to(root.resolve()):
-        raise CloseoutError([Diagnostic("OUT_DIR_OUTSIDE_REPO", "$.out_dir", "output dir must be inside repository")])
+        raise CloseoutError(
+            [
+                Diagnostic(
+                    "OUT_DIR_OUTSIDE_REPO", "$.out_dir", "output dir must be inside repository"
+                )
+            ]
+        )
 
     replay_dir = out_dir / REPLAY_ARTIFACTS_DIRNAME
     if clean and replay_dir.exists():
@@ -604,7 +931,13 @@ def run_closeout(corpus_dir: Path, out_dir: Path, *, timeout_seconds: int = 120,
             if event["status"] != "pass":
                 break
 
-    status = "pass" if not all_diagnostics and stage_events and all(event["status"] == "pass" for event in stage_events) else "fail"
+    status = (
+        "pass"
+        if not all_diagnostics
+        and stage_events
+        and all(event["status"] == "pass" for event in stage_events)
+        else "fail"
+    )
     summary = {
         "schema_version": "m028.smoke-closeout-summary.v1",
         "milestone_id": MILESTONE_ID,
@@ -667,14 +1000,23 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--corpus-dir", type=Path, default=DEFAULT_CORPUS_DIR)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_CORPUS_DIR / DEFAULT_OUT_DIRNAME)
     parser.add_argument("--timeout-seconds", type=int, default=120)
-    parser.add_argument("--no-clean", action="store_true", help="do not remove previous isolated replay artifacts before running")
+    parser.add_argument(
+        "--no-clean",
+        action="store_true",
+        help="do not remove previous isolated replay artifacts before running",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     try:
-        summary = run_closeout(args.corpus_dir, args.out_dir, timeout_seconds=args.timeout_seconds, clean=not args.no_clean)
+        summary = run_closeout(
+            args.corpus_dir,
+            args.out_dir,
+            timeout_seconds=args.timeout_seconds,
+            clean=not args.no_clean,
+        )
     except CloseoutError as exc:
         root = repo_root()
         out_dir = args.out_dir if args.out_dir.is_absolute() else root / args.out_dir
@@ -689,10 +1031,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             "corpus_dir": args.corpus_dir.as_posix(),
             "out_dir": args.out_dir.as_posix(),
             "replay_artifacts_dir": (args.out_dir / REPLAY_ARTIFACTS_DIRNAME).as_posix(),
-            "source_acquisition_preflight": {"status": "fail", "diagnostics": [diagnostic.as_dict() for diagnostic in exc.diagnostics]},
+            "source_acquisition_preflight": {
+                "status": "fail",
+                "diagnostics": [diagnostic.as_dict() for diagnostic in exc.diagnostics],
+            },
             "stage_events": [],
             "diagnostics": [diagnostic.as_dict() for diagnostic in exc.diagnostics],
-            "safety_flags": {"graph_write_attempted": False, "production_write_attempted": False, "ladybugdb_written": False, "model_call_attempted": False, "crawler_attempted": False},
+            "safety_flags": {
+                "graph_write_attempted": False,
+                "production_write_attempted": False,
+                "ladybugdb_written": False,
+                "model_call_attempted": False,
+                "crawler_attempted": False,
+            },
             "unsafe_counters": {"import_eligible_count": 0, "promoted_to_fact_count": 0},
         }
         write_outputs(out_dir, summary)

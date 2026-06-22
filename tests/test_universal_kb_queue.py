@@ -187,7 +187,9 @@ def test_enqueue_rejects_unsafe_payload_metadata(tmp_path: Path) -> None:
         )
 
 
-def test_update_payload_diagnostics_preserves_status_and_disabled_eligibility(tmp_path: Path) -> None:
+def test_update_payload_diagnostics_preserves_status_and_disabled_eligibility(
+    tmp_path: Path,
+) -> None:
     queue = _queue(tmp_path)
     queue.enqueue(
         job_id="job-diagnostics-update",
@@ -300,7 +302,9 @@ def test_rejects_secret_shaped_artifact_dependency_refs(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValueError, match="depends_on_artifact_ref must be redacted"):
-        queue.add_dependency(job_id="job-dep-secret", depends_on_artifact_ref="artifact:sk-live-abc1234567890")
+        queue.add_dependency(
+            job_id="job-dep-secret", depends_on_artifact_ref="artifact:sk-live-abc1234567890"
+        )
 
 
 def test_artifact_dependencies_without_hash_do_not_unblock_job(tmp_path: Path) -> None:
@@ -423,7 +427,9 @@ def test_complete_persists_safe_outputs_and_clears_lease(tmp_path: Path) -> None
     queue.unblock_ready_jobs()
     queue.claim(worker_id="worker-a", lease_seconds=60)
 
-    completed = queue.complete("job-1", worker_id="worker-a", output_paths=("artifacts/job-1.json",))
+    completed = queue.complete(
+        "job-1", worker_id="worker-a", output_paths=("artifacts/job-1.json",)
+    )
 
     assert completed["status"] == "succeeded"
     assert completed["output_paths"] == ["artifacts/job-1.json"]

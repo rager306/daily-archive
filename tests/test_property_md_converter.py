@@ -18,6 +18,7 @@ def dict_to_conversion_result(data: dict[str, Any]) -> ConversionResult:
 
 # --- Property: Adaptix roundtripping ---
 
+
 @settings(max_examples=100)
 @given(
     markdown=st.one_of(st.none(), st.just(FIXTURE_MARKDOWN), st.text()),
@@ -36,7 +37,9 @@ def test_conversion_result_adaptix_roundtrip(
     assert restored.method == original.method
     assert restored.error == original.error
 
+
 # --- Property: normalize_id ---
+
 
 @settings(max_examples=100)
 @given(
@@ -58,7 +61,9 @@ def test_normalize_id_strips_prefix_and_whitespace(
 
     assert normalized == base_id.strip()
 
+
 # --- Property: needs_marker_fallback ---
+
 
 @settings(max_examples=200)
 @given(
@@ -86,10 +91,9 @@ def test_needs_marker_fallback_correctly_identifies_years(
     else:
         assert needs_fallback is False
 
+
 @settings(max_examples=100)
-@given(
-    invalid_id=st.text().filter(lambda x: not __import__('re').match(r"^\d{2,4}\d{2}\.\d+$", x))
-)
+@given(invalid_id=st.text().filter(lambda x: not __import__("re").match(r"^\d{2,4}\d{2}\.\d+$", x)))
 def test_needs_marker_fallback_invalid_id_returns_false(invalid_id: str) -> None:
     """_needs_marker_fallback must return False for unparseable IDs."""
     converter = MDConverter()

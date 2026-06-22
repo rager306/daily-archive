@@ -16,12 +16,16 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_BASE_URL = os.environ.get("TEI_URL", os.environ.get("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000"))
+DEFAULT_BASE_URL = os.environ.get(
+    "TEI_URL", os.environ.get("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000")
+)
 DEFAULT_API_KEY = os.environ.get("FD_API_KEY")
 DEFAULT_MODEL_ID = os.environ.get("MODEL_ID", os.environ.get("FD_MODEL_NAME", "deepvk/USER-bge-m3"))
 DEFAULT_REDIS_HOST = os.environ.get("REDIS_HOST", "127.0.0.1")
 DEFAULT_REDIS_PORT = os.environ.get("REDIS_PORT", "6379")
-DEFAULT_CORPUS = ROOT / "artifacts" / "m057-fd-marker" / "table-similarity" / "table-text-corpus.json"
+DEFAULT_CORPUS = (
+    ROOT / "artifacts" / "m057-fd-marker" / "table-similarity" / "table-text-corpus.json"
+)
 DEFAULT_OUTPUT = ROOT / "artifacts" / "m057-fd-marker" / "table-similarity" / "embeddings.json"
 DEFAULT_BATCH_SIZE = 32
 DEFAULT_DIMENSIONS = 1024
@@ -52,7 +56,9 @@ class FdEmbeddingClient:
         self.api_key = api_key
         self.model_id = model_id
 
-    def embed_batch(self, texts: list[str], *, dimensions: int = DEFAULT_DIMENSIONS) -> list[list[float]]:
+    def embed_batch(
+        self, texts: list[str], *, dimensions: int = DEFAULT_DIMENSIONS
+    ) -> list[list[float]]:
         payload = {"input": texts, "model": self.model_id, "dimensions": dimensions}
         headers = {"Content-Type": "application/json", "X-Model-Id": self.model_id}
         if self.api_key:
@@ -85,7 +91,9 @@ class FdEmbeddingClient:
         for row in ordered_rows:
             embedding = row.get("embedding")
             if not isinstance(embedding, list) or len(embedding) != dimensions:
-                raise FdEmbeddingError("fd response contained an embedding with the wrong dimension")
+                raise FdEmbeddingError(
+                    "fd response contained an embedding with the wrong dimension"
+                )
             embeddings.append([float(value) for value in embedding])
         if len(embeddings) != len(texts):
             raise FdEmbeddingError("fd response length did not match request length")

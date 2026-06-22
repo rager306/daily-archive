@@ -21,11 +21,15 @@ spec.loader.exec_module(verifier)
 
 def _load_real() -> tuple[dict[str, Any], dict[str, Any]]:
     matrix = json.loads((ROOT / "doc/validation/m024_requirement_coverage_matrix.json").read_text())
-    closure = json.loads((ROOT / "doc/validation/m024_validation_evidence_closure.json").read_text())
+    closure = json.loads(
+        (ROOT / "doc/validation/m024_validation_evidence_closure.json").read_text()
+    )
     return matrix, closure
 
 
-def _write_inputs(tmp_path: Path, matrix: dict[str, Any], closure: dict[str, Any]) -> tuple[Path, Path]:
+def _write_inputs(
+    tmp_path: Path, matrix: dict[str, Any], closure: dict[str, Any]
+) -> tuple[Path, Path]:
     matrix_path = tmp_path / "matrix.json"
     closure_path = tmp_path / "closure.json"
     closure.setdefault("source_matrix", {})["json_path"] = str(matrix_path)
@@ -34,7 +38,9 @@ def _write_inputs(tmp_path: Path, matrix: dict[str, Any], closure: dict[str, Any
     return matrix_path, closure_path
 
 
-def _run(tmp_path: Path, matrix: dict[str, Any], closure: dict[str, Any]) -> subprocess.CompletedProcess[str]:
+def _run(
+    tmp_path: Path, matrix: dict[str, Any], closure: dict[str, Any]
+) -> subprocess.CompletedProcess[str]:
     matrix_path, closure_path = _write_inputs(tmp_path, matrix, closure)
     return subprocess.run(
         [sys.executable, str(SCRIPT), str(matrix_path), str(closure_path)],
@@ -72,7 +78,9 @@ def test_cli_accepts_valid_temp_fixture(tmp_path: Path) -> None:
 def test_rejects_missing_riskratchet_closure(tmp_path: Path) -> None:
     matrix, closure = _load_real()
     closure["closure_decisions"] = [
-        row for row in closure["closure_decisions"] if row["gap_id"] != "S09-GAP-riskratchet-direct-evidence"
+        row
+        for row in closure["closure_decisions"]
+        if row["gap_id"] != "S09-GAP-riskratchet-direct-evidence"
     ]
 
     result = _run(tmp_path, matrix, closure)
@@ -105,7 +113,9 @@ def test_rejects_riskratchet_blocking_or_required_for_local_progress(
 
 
 @pytest.mark.parametrize("requirement_id", ["R024", "R027", "R029"])
-def test_rejects_partial_requirements_changed_to_validated(tmp_path: Path, requirement_id: str) -> None:
+def test_rejects_partial_requirements_changed_to_validated(
+    tmp_path: Path, requirement_id: str
+) -> None:
     matrix, closure = _load_real()
     matrix_rows = _rows_by_id(matrix["requirements"], "requirement_id")
     closure_rows = _rows_by_id(closure["requirement_treatments"], "requirement_id")
@@ -135,13 +145,17 @@ def test_rejects_r030_without_s04_coverage_citation(tmp_path: Path) -> None:
 def test_rejects_r036_manual_status_parity_claim(tmp_path: Path) -> None:
     matrix, closure = _load_real()
     r036 = _rows_by_id(closure["requirement_treatments"], "requirement_id")["R036"]
-    r036["allowed_claims"] = ["R036 canonical status parity is complete without DB-backed requirement tooling."]
+    r036["allowed_claims"] = [
+        "R036 canonical status parity is complete without DB-backed requirement tooling."
+    ]
 
     result = _run(tmp_path, matrix, closure)
 
     assert result.returncode == 1
     assert "unsafe positive validation claim" in result.stderr
-    assert "canonical status parity is complete without db-backed requirement tooling" in result.stderr
+    assert (
+        "canonical status parity is complete without db-backed requirement tooling" in result.stderr
+    )
 
 
 def test_rejects_malformed_json(tmp_path: Path) -> None:
@@ -163,7 +177,9 @@ def test_rejects_malformed_json(tmp_path: Path) -> None:
 def test_rejects_missing_matrix_handoff_gap(tmp_path: Path) -> None:
     matrix, closure = _load_real()
     matrix["s09_handoff_gaps"] = [
-        row for row in matrix["s09_handoff_gaps"] if row["gap_id"] != "S09-GAP-riskratchet-direct-evidence"
+        row
+        for row in matrix["s09_handoff_gaps"]
+        if row["gap_id"] != "S09-GAP-riskratchet-direct-evidence"
     ]
 
     result = _run(tmp_path, matrix, closure)
@@ -179,7 +195,9 @@ def test_rejects_missing_matrix_handoff_gap(tmp_path: Path) -> None:
         "M024 validates positive graph readiness.",
     ],
 )
-def test_rejects_unsafe_approval_phrases_in_positive_claims(tmp_path: Path, unsafe_claim: str) -> None:
+def test_rejects_unsafe_approval_phrases_in_positive_claims(
+    tmp_path: Path, unsafe_claim: str
+) -> None:
     matrix, closure = _load_real()
     mutated = copy.deepcopy(closure)
     mutated["global_allowed_claims"].append(unsafe_claim)

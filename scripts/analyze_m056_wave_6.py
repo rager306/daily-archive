@@ -28,7 +28,9 @@ DEFAULT_WAVE_5_DIR = Path("artifacts/m056-bfs-graph/wave-5")
 DEFAULT_WAVE_6_DIR = Path("artifacts/m056-bfs-graph/wave-6")
 DEFAULT_EXISTING_CORPUS = Path("artifacts/m055deep-parser-benchmark/corpus-manifest-20.json")
 DEFAULT_ANCHOR_ARXIV_ID = "2605.18747"
-DEFAULT_ANCHOR_PDF = Path("data/article_catalog/article_catalog/arxiv/cs-cl/2605.18747/source/2605.18747.pdf")
+DEFAULT_ANCHOR_PDF = Path(
+    "data/article_catalog/article_catalog/arxiv/cs-cl/2605.18747/source/2605.18747.pdf"
+)
 DEFAULT_WAVE_ORDER = Path("/tmp/wave-order.json")
 ARXIV_ID_RE = re.compile(r"\b\d{4}\.\d{4,5}(?:v\d+)?\b")
 PDF_PAGE_RE = re.compile(rb"/Type\s*/Page\b")
@@ -133,7 +135,9 @@ def _extract_authors_from_tei(path: Path | None) -> list[str]:
     return authors
 
 
-def _edge_records(packets: list[dict[str, Any]], target_arxiv_ids: set[str]) -> list[dict[str, str]]:
+def _edge_records(
+    packets: list[dict[str, Any]], target_arxiv_ids: set[str]
+) -> list[dict[str, str]]:
     edges: set[tuple[str, str]] = set()
     for packet in packets:
         source = packet.get("arxiv_id")
@@ -142,7 +146,9 @@ def _edge_records(packets: list[dict[str, Any]], target_arxiv_ids: set[str]) -> 
         for target in _extract_arxiv_refs_from_tei(_tei_path(packet)):
             if target in target_arxiv_ids and target != source:
                 edges.add((source, target))
-    return [{"source_arxiv_id": source, "target_arxiv_id": target} for source, target in sorted(edges)]
+    return [
+        {"source_arxiv_id": source, "target_arxiv_id": target} for source, target in sorted(edges)
+    ]
 
 
 def _edge_key(edge: dict[str, str]) -> tuple[str, str]:
@@ -257,7 +263,9 @@ def analyze_wave_6(
     anchor_entry = _anchor_pdf_entry(anchor_arxiv_id, anchor_pdf)
     one_hop_pdfs = _dedupe_pdfs(list(wave_pdfs_by_wave.values()))
     one_hop_with_anchor = _dedupe_pdfs([one_hop_pdfs, [anchor_entry] if anchor_entry else []])
-    evidence_corpus_pdfs = _dedupe_pdfs([existing_pdfs, one_hop_pdfs, [anchor_entry] if anchor_entry else []])
+    evidence_corpus_pdfs = _dedupe_pdfs(
+        [existing_pdfs, one_hop_pdfs, [anchor_entry] if anchor_entry else []]
+    )
 
     cumulative_corpus_path = wave_6_dir / "cumulative-corpus.json"
     cumulative_corpus_payload = {
@@ -281,7 +289,9 @@ def analyze_wave_6(
     for packet in wave_6_grobid_packets:
         arxiv_id = packet.get("arxiv_id")
         authors = _extract_authors_from_tei(_tei_path(packet))
-        if isinstance(arxiv_id, str) and any(anchor_first_author.lower() in author.lower() for author in authors):
+        if isinstance(arxiv_id, str) and any(
+            anchor_first_author.lower() in author.lower() for author in authors
+        ):
             matching_self_citations.append(arxiv_id)
 
     parser_quality = {
@@ -311,14 +321,21 @@ def analyze_wave_6(
             "so the 1-hop corpus is operationally complete but not graph-ready."
         ),
     }
-    category_distribution = dict(sorted(Counter(pdf.get("category", "unknown") for pdf in wave_pdfs_by_wave["wave_6"]).items()))
+    category_distribution = dict(
+        sorted(
+            Counter(pdf.get("category", "unknown") for pdf in wave_pdfs_by_wave["wave_6"]).items()
+        )
+    )
     length_distribution = dict(
         sorted(
             Counter(
-                "0-pages" if int(pdf.get("pages_estimate") or 0) <= 0 else
-                "1-10" if int(pdf.get("pages_estimate") or 0) <= 10 else
-                "11-25" if int(pdf.get("pages_estimate") or 0) <= 25 else
-                "26+"
+                "0-pages"
+                if int(pdf.get("pages_estimate") or 0) <= 0
+                else "1-10"
+                if int(pdf.get("pages_estimate") or 0) <= 10
+                else "11-25"
+                if int(pdf.get("pages_estimate") or 0) <= 25
+                else "26+"
                 for pdf in wave_pdfs_by_wave["wave_6"]
             ).items()
         )
@@ -404,7 +421,7 @@ def render_markdown(analysis: dict[str, Any]) -> str:
     recommendation = final_1hop["recommendation"]
     return f"""# M056 Wave 6 Final 1-hop Analysis
 
-Generated: `{analysis['generated_at']}`
+Generated: `{analysis["generated_at"]}`
 
 ## Safety
 
@@ -417,71 +434,71 @@ Generated: `{analysis['generated_at']}`
 
 ## Acquisition
 
-- Requested refs: {len(acquisition['requested_arxiv_ids'])}
-- Success: {acquisition['success_count']}
-- Blocked: {acquisition['blocked_count']}
-- Network errors: {acquisition['network_error_count']}
-- Status counts: {_render_counts(acquisition['status_counts'])}
+- Requested refs: {len(acquisition["requested_arxiv_ids"])}
+- Success: {acquisition["success_count"]}
+- Blocked: {acquisition["blocked_count"]}
+- Network errors: {acquisition["network_error_count"]}
+- Status counts: {_render_counts(acquisition["status_counts"])}
 
 ## Parser quality
 
-- GROBID packets: {parser_quality['grobid_packet_count']}
-- GROBID success: {parser_quality['grobid_success_count']}
-- GROBID quality counts: {_render_counts(parser_quality['grobid_quality_counts'])}
-- OpenDataLoader packets: {parser_quality['opendataloader_packet_count']}
-- OpenDataLoader success: {parser_quality['opendataloader_success_count']}
-- OpenDataLoader quality counts: {_render_counts(parser_quality['opendataloader_quality_counts'])}
-- Packet safety defaults all false: {parser_quality['packet_safety_defaults_all_false']}
+- GROBID packets: {parser_quality["grobid_packet_count"]}
+- GROBID success: {parser_quality["grobid_success_count"]}
+- GROBID quality counts: {_render_counts(parser_quality["grobid_quality_counts"])}
+- OpenDataLoader packets: {parser_quality["opendataloader_packet_count"]}
+- OpenDataLoader success: {parser_quality["opendataloader_success_count"]}
+- OpenDataLoader quality counts: {_render_counts(parser_quality["opendataloader_quality_counts"])}
+- Packet safety defaults all false: {parser_quality["packet_safety_defaults_all_false"]}
 
 ## Connectivity gain
 
-- Target set: {connectivity['existing_corpus_target_count']} existing corpus PDFs + anchor `{connectivity['anchor_arxiv_id']}`
-- Wave 1 directed edges to target set: {connectivity['wave_1_edge_count']}
-- Wave 2 new directed edges to target set: {connectivity['wave_2_new_edge_count']}
-- Wave 3 new directed edges to target set: {connectivity['wave_3_new_edge_count']}
-- Wave 4 new directed edges to target set: {connectivity['wave_4_new_edge_count']}
-- Wave 5 new directed edges to target set: {connectivity['wave_5_new_edge_count']}
-- Wave 6 new directed edges to target set: {connectivity['wave_6_new_edge_count']}
-- Delta vs Wave 5: {connectivity['connectivity_gain_delta_vs_wave_5']}
-- Cumulative directed edges: {connectivity['cumulative_edge_count']}
-- Final saturation status: {connectivity['saturation_status']}
+- Target set: {connectivity["existing_corpus_target_count"]} existing corpus PDFs + anchor `{connectivity["anchor_arxiv_id"]}`
+- Wave 1 directed edges to target set: {connectivity["wave_1_edge_count"]}
+- Wave 2 new directed edges to target set: {connectivity["wave_2_new_edge_count"]}
+- Wave 3 new directed edges to target set: {connectivity["wave_3_new_edge_count"]}
+- Wave 4 new directed edges to target set: {connectivity["wave_4_new_edge_count"]}
+- Wave 5 new directed edges to target set: {connectivity["wave_5_new_edge_count"]}
+- Wave 6 new directed edges to target set: {connectivity["wave_6_new_edge_count"]}
+- Delta vs Wave 5: {connectivity["connectivity_gain_delta_vs_wave_5"]}
+- Cumulative directed edges: {connectivity["cumulative_edge_count"]}
+- Final saturation status: {connectivity["saturation_status"]}
 
 ### Wave 6 new edges
 
-{_render_edges(connectivity['wave_6_new_edges'])}
+{_render_edges(connectivity["wave_6_new_edges"])}
 
 ### Edge saturation by wave
 
-- {_render_counts(connectivity['edge_saturation_by_wave'])}
+- {_render_counts(connectivity["edge_saturation_by_wave"])}
 
 ## Final 1-hop corpus accounting
 
-- Wave-order entries: {final_1hop['wave_order_entry_count']}
-- Wave-order unique IDs: {final_1hop['wave_order_unique_count']}
-- Anchor present in wave-order: {final_1hop['anchor_present_in_wave_order']}
-- Acquired wave entries: {final_1hop['acquired_wave_entry_count']}
-- Acquired unique wave PDFs: {final_1hop['acquired_wave_unique_pdf_count']}
-- Total unique PDFs with anchor: {final_1hop['total_unique_pdfs_with_anchor']}
-- Evidence corpus unique PDFs including prior target corpus: {final_1hop['evidence_corpus_unique_pdf_count']}
-- Cumulative corpus path: `{final_1hop['cumulative_corpus_path']}`
+- Wave-order entries: {final_1hop["wave_order_entry_count"]}
+- Wave-order unique IDs: {final_1hop["wave_order_unique_count"]}
+- Anchor present in wave-order: {final_1hop["anchor_present_in_wave_order"]}
+- Acquired wave entries: {final_1hop["acquired_wave_entry_count"]}
+- Acquired unique wave PDFs: {final_1hop["acquired_wave_unique_pdf_count"]}
+- Total unique PDFs with anchor: {final_1hop["total_unique_pdfs_with_anchor"]}
+- Evidence corpus unique PDFs including prior target corpus: {final_1hop["evidence_corpus_unique_pdf_count"]}
+- Cumulative corpus path: `{final_1hop["cumulative_corpus_path"]}`
 
 ## Final recommendation
 
-- Decision: {recommendation['decision']}
-- Rationale: {recommendation['rationale']}
+- Decision: {recommendation["decision"]}
+- Rationale: {recommendation["rationale"]}
 
 ## Self-citation cluster
 
-- Anchor first author: {self_cluster['anchor_first_author']}
-- Matching Wave 6 PDFs: {matching_count} / {self_cluster['wave_6_pdf_count']} ({matching_percent:.1f}%)
+- Anchor first author: {self_cluster["anchor_first_author"]}
+- Matching Wave 6 PDFs: {matching_count} / {self_cluster["wave_6_pdf_count"]} ({matching_percent:.1f}%)
 
 ## Category distribution
 
-- {_render_counts(analysis['category_distribution'])}
+- {_render_counts(analysis["category_distribution"])}
 
 ## Length distribution
 
-- {_render_counts(analysis['length_distribution'])}
+- {_render_counts(analysis["length_distribution"])}
 """
 
 
@@ -516,12 +533,19 @@ def main(argv: list[str] | None = None) -> int:
     )
     _atomic_write_json(args.wave_6_dir / "analysis.json", analysis)
     _atomic_write_text(args.wave_6_dir / "analysis.md", render_markdown(analysis))
-    print(json.dumps({
-        "wave_6_new_edges": analysis["connectivity"]["wave_6_new_edge_count"],
-        "cumulative_edges": analysis["connectivity"]["cumulative_edge_count"],
-        "total_unique_pdfs_with_anchor": analysis["final_1hop"]["total_unique_pdfs_with_anchor"],
-        "recommendation": analysis["final_1hop"]["recommendation"]["decision"],
-    }, sort_keys=True))
+    print(
+        json.dumps(
+            {
+                "wave_6_new_edges": analysis["connectivity"]["wave_6_new_edge_count"],
+                "cumulative_edges": analysis["connectivity"]["cumulative_edge_count"],
+                "total_unique_pdfs_with_anchor": analysis["final_1hop"][
+                    "total_unique_pdfs_with_anchor"
+                ],
+                "recommendation": analysis["final_1hop"]["recommendation"]["decision"],
+            },
+            sort_keys=True,
+        )
+    )
     return 0
 
 

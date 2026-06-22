@@ -58,7 +58,9 @@ def test_adaptix_maps_space_named_fields_to_typed_model() -> None:
 def test_probe_writes_candidate_only_summary_and_false_safety_flags(tmp_path: Path) -> None:
     probe_root = tmp_path / "probe"
     adapter_dir = tmp_path / "adapter"
-    _write_json(probe_root / "per-paper" / "paper-a" / "hybrid" / "original.json", _sample_odl_json())
+    _write_json(
+        probe_root / "per-paper" / "paper-a" / "hybrid" / "original.json", _sample_odl_json()
+    )
 
     assert run_probe(probe_root, adapter_dir) == 0
     summary = json.loads((adapter_dir / "adaptix-adapter-summary.json").read_text(encoding="utf-8"))
@@ -84,7 +86,9 @@ def test_probe_fails_closed_on_malformed_document(tmp_path: Path) -> None:
     summary = json.loads((adapter_dir / "adaptix-adapter-summary.json").read_text(encoding="utf-8"))
     diagnostics = [
         json.loads(line)
-        for line in (adapter_dir / "adaptix-adapter-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()
+        for line in (adapter_dir / "adaptix-adapter-diagnostics.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
     ]
 
     assert summary["status"] == "needs-attention"
@@ -97,7 +101,9 @@ def test_probe_fails_closed_on_malformed_document(tmp_path: Path) -> None:
 def test_verifier_accepts_valid_probe_artifacts(tmp_path: Path) -> None:
     probe_root = tmp_path / "probe"
     adapter_dir = tmp_path / "adapter"
-    _write_json(probe_root / "per-paper" / "paper-c" / "hybrid" / "original.json", _sample_odl_json())
+    _write_json(
+        probe_root / "per-paper" / "paper-c" / "hybrid" / "original.json", _sample_odl_json()
+    )
     assert run_probe(probe_root, adapter_dir) == 0
 
     assert verify(probe_root, adapter_dir) == 0
@@ -111,7 +117,9 @@ def test_verifier_accepts_valid_probe_artifacts(tmp_path: Path) -> None:
 def test_verifier_rejects_permissive_import_flag(tmp_path: Path) -> None:
     probe_root = tmp_path / "probe"
     adapter_dir = tmp_path / "adapter"
-    _write_json(probe_root / "per-paper" / "paper-d" / "hybrid" / "original.json", _sample_odl_json())
+    _write_json(
+        probe_root / "per-paper" / "paper-d" / "hybrid" / "original.json", _sample_odl_json()
+    )
     assert run_probe(probe_root, adapter_dir) == 0
     summary_path = adapter_dir / "adaptix-adapter-summary.json"
     summary = json.loads(summary_path.read_text(encoding="utf-8"))

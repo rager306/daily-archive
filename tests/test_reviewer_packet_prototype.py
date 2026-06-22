@@ -51,7 +51,9 @@ def _s02_contract() -> dict[str, object]:
 
 
 def _s03_payload(max_target_count: int = 6) -> dict[str, object]:
-    return build_bounded_chunk_repair_contract(_s02_contract(), _locator_batch(), max_target_count=max_target_count)
+    return build_bounded_chunk_repair_contract(
+        _s02_contract(), _locator_batch(), max_target_count=max_target_count
+    )
 
 
 def _prototype() -> dict[str, object]:
@@ -131,21 +133,33 @@ def test_summary_reports_counts_verdict_and_zero_unsafe_counters() -> None:
 @pytest.mark.parametrize(
     ("mutator", "code", "path"),
     [
-        (lambda payload: payload.__setitem__("schema_version", "wrong"), "contract_validation_failed:schema_version_mismatch", "/schema_version"),
-        (lambda payload: payload.__setitem__("repair_targets", []), "empty_repair_targets", "/repair_targets"),
+        (
+            lambda payload: payload.__setitem__("schema_version", "wrong"),
+            "contract_validation_failed:schema_version_mismatch",
+            "/schema_version",
+        ),
+        (
+            lambda payload: payload.__setitem__("repair_targets", []),
+            "empty_repair_targets",
+            "/repair_targets",
+        ),
         (
             lambda payload: payload["repair_targets"][0].__setitem__("review_status", "accepted"),
             "contract_validation_failed:missing_reviewer",
             "/repair_targets/0/reviewer",
         ),
         (
-            lambda payload: payload["repair_targets"][0]["safety_boundaries"].__setitem__("import_eligible", True),
+            lambda payload: payload["repair_targets"][0]["safety_boundaries"].__setitem__(
+                "import_eligible", True
+            ),
             "contract_validation_failed:import_eligible_true",
             "/repair_targets/0/safety_boundaries/import_eligible",
         ),
     ],
 )
-def test_malformed_s03_inputs_fail_closed_before_packet_output(mutator, code: str, path: str) -> None:
+def test_malformed_s03_inputs_fail_closed_before_packet_output(
+    mutator, code: str, path: str
+) -> None:
     payload = _s03_payload()
     mutator(payload)
 
@@ -193,7 +207,9 @@ def test_forbidden_payload_key_rejection_reports_path_and_code_without_value() -
     assert "DO_NOT_LEAK" not in rendered_error
 
 
-def test_markdown_renderer_is_redacted_json_derived_and_has_no_code_fences_or_forbidden_marker_keys() -> None:
+def test_markdown_renderer_is_redacted_json_derived_and_has_no_code_fences_or_forbidden_marker_keys() -> (
+    None
+):
     markdown = render_reviewer_packet_markdown(_prototype())
 
     assert "# S04 Reviewer Packet Prototype" in markdown
@@ -231,7 +247,10 @@ def test_assessment_blocks_import_and_next_step_readiness_until_semantic_accepta
     assert assessment["import_allowed"] is False
     assert assessment["semantic_ready_for_kg"] is False
     assert assessment["dimension_results"]["semantic_usefulness"]["blocks_import"] is True
-    assert assessment["dimension_results"]["next_step_readiness"]["status"] == "blocked_pending_semantic_acceptance"
+    assert (
+        assessment["dimension_results"]["next_step_readiness"]["status"]
+        == "blocked_pending_semantic_acceptance"
+    )
     assert assessment["packet_findings"] == [
         {
             "code": "pending_semantic_acceptance",
@@ -268,7 +287,9 @@ def _cli_output_paths(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
     )
 
 
-def test_verifier_accepts_source_id_derived_paper_ids_when_contract_paper_id_is_batch(tmp_path: Path) -> None:
+def test_verifier_accepts_source_id_derived_paper_ids_when_contract_paper_id_is_batch(
+    tmp_path: Path,
+) -> None:
     repair_path, s02_path = _write_cli_inputs(tmp_path)
     s02_contract = json.loads(s02_path.read_text(encoding="utf-8"))
     s02_contract["paper_id"] = "synthetic-audit-batch"
@@ -276,15 +297,21 @@ def test_verifier_accepts_source_id_derived_paper_ids_when_contract_paper_id_is_
     outputs = _cli_output_paths(tmp_path)
 
     render_cli_files(repair_path, s02_path, *outputs)
-    summary = verify_cli_files(outputs[0], outputs[1], outputs[2], outputs[3], repair_path, s02_path)
+    summary = verify_cli_files(
+        outputs[0], outputs[1], outputs[2], outputs[3], repair_path, s02_path
+    )
 
     assert summary["passed"] is True
     assert not summary["findings"]
 
 
-def test_renderer_cli_writes_all_four_validated_outputs_and_verifier_accepts_them(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_renderer_cli_writes_all_four_validated_outputs_and_verifier_accepts_them(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     repair_path, s02_path = _write_cli_inputs(tmp_path)
-    json_output, markdown_output, assessment_json_output, assessment_markdown_output = _cli_output_paths(tmp_path)
+    json_output, markdown_output, assessment_json_output, assessment_markdown_output = (
+        _cli_output_paths(tmp_path)
+    )
 
     render_code = render_cli_main(
         [
@@ -309,7 +336,15 @@ def test_renderer_cli_writes_all_four_validated_outputs_and_verifier_accepts_the
     assert "packets=3" in render_out.out
     assert "assessment_verdict=blocked_pending_semantic_acceptance" in render_out.out
     assert "unsafe_counters_zero=True" in render_out.out
-    assert all(path.exists() for path in (json_output, markdown_output, assessment_json_output, assessment_markdown_output))
+    assert all(
+        path.exists()
+        for path in (
+            json_output,
+            markdown_output,
+            assessment_json_output,
+            assessment_markdown_output,
+        )
+    )
     assert "```" not in markdown_output.read_text(encoding="utf-8")
     assert "```" not in assessment_markdown_output.read_text(encoding="utf-8")
 
@@ -360,12 +395,16 @@ def test_renderer_cli_writes_all_four_validated_outputs_and_verifier_accepts_the
     assert "packets=3" in alias_verify_out.out
 
 
-def test_renderer_aborts_before_writing_when_generated_markdown_is_invalid(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_renderer_aborts_before_writing_when_generated_markdown_is_invalid(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     import scripts.render_reviewer_packet_prototype as renderer
 
     repair_path, s02_path = _write_cli_inputs(tmp_path)
     outputs = _cli_output_paths(tmp_path)
-    monkeypatch.setattr(renderer, "render_reviewer_packet_markdown", lambda _prototype: "```raw marker```\n")
+    monkeypatch.setattr(
+        renderer, "render_reviewer_packet_markdown", lambda _prototype: "```raw marker```\n"
+    )
 
     with pytest.raises(ValueError) as exc_info:
         render_cli_files(repair_path, s02_path, *outputs)
@@ -374,9 +413,13 @@ def test_renderer_aborts_before_writing_when_generated_markdown_is_invalid(tmp_p
     assert not any(path.exists() for path in outputs)
 
 
-def test_renderer_missing_and_malformed_inputs_return_exit_2_with_redacted_diagnostics(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_renderer_missing_and_malformed_inputs_return_exit_2_with_redacted_diagnostics(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     repair_path, s02_path = _write_cli_inputs(tmp_path)
-    json_output, markdown_output, assessment_json_output, assessment_markdown_output = _cli_output_paths(tmp_path)
+    json_output, markdown_output, assessment_json_output, assessment_markdown_output = (
+        _cli_output_paths(tmp_path)
+    )
 
     missing_code = render_cli_main(
         [
@@ -423,7 +466,9 @@ def test_renderer_missing_and_malformed_inputs_return_exit_2_with_redacted_diagn
     assert "broken" not in malformed_out.err
 
 
-def test_verifier_rejects_unsafe_assessment_without_printing_payload_values(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_verifier_rejects_unsafe_assessment_without_printing_payload_values(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     repair_path, s02_path = _write_cli_inputs(tmp_path)
     outputs = _cli_output_paths(tmp_path)
     render_cli_files(repair_path, s02_path, *outputs)
@@ -458,19 +503,36 @@ def test_verifier_rejects_unsafe_assessment_without_printing_payload_values(tmp_
     assert "NEVER LEAK" not in out.err
 
 
-def test_verifier_rejects_packet_review_status_markdown_fence_and_unknown_stable_id(tmp_path: Path) -> None:
+def test_verifier_rejects_packet_review_status_markdown_fence_and_unknown_stable_id(
+    tmp_path: Path,
+) -> None:
     repair_path, s02_path = _write_cli_inputs(tmp_path)
     outputs = _cli_output_paths(tmp_path)
     render_cli_files(repair_path, s02_path, *outputs)
-    packet_json_output, packet_markdown_output, assessment_json_output, assessment_markdown_output = outputs
+    (
+        packet_json_output,
+        packet_markdown_output,
+        assessment_json_output,
+        assessment_markdown_output,
+    ) = outputs
 
     packet_payload = json.loads(packet_json_output.read_text(encoding="utf-8"))
     packet_payload["packets"][0]["review_status"] = "accepted"
     packet_payload["packets"][0]["locator_id"] = "unknown-stable-id"
     packet_json_output.write_text(json.dumps(packet_payload), encoding="utf-8")
-    packet_markdown_output.write_text(packet_markdown_output.read_text(encoding="utf-8") + "\n```leak fence```\n", encoding="utf-8")
+    packet_markdown_output.write_text(
+        packet_markdown_output.read_text(encoding="utf-8") + "\n```leak fence```\n",
+        encoding="utf-8",
+    )
 
-    summary = verify_cli_files(packet_json_output, packet_markdown_output, assessment_json_output, assessment_markdown_output, repair_path, s02_path)
+    summary = verify_cli_files(
+        packet_json_output,
+        packet_markdown_output,
+        assessment_json_output,
+        assessment_markdown_output,
+        repair_path,
+        s02_path,
+    )
 
     assert summary["passed"] is False
     codes = {finding["code"] for finding in summary["findings"]}

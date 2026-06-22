@@ -94,7 +94,11 @@ def safe_relative_path(value: Any, *, label: str) -> PurePosixPath:
     if "://" in value:
         raise ValueError(f"url_not_allowed_as_{label}")
     normalized = PurePosixPath(value.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part == "" for part in normalized.parts):
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part == "" for part in normalized.parts)
+    ):
         raise ValueError(f"unsafe_{label}")
     return normalized
 
@@ -163,7 +167,9 @@ def load_evidence_records(evidence_dir: Path) -> list[dict[str, Any]]:
     return records
 
 
-def index_by_identity(rows: Sequence[Mapping[str, Any]]) -> tuple[dict[str, Mapping[str, Any]], dict[str, Mapping[str, Any]]]:
+def index_by_identity(
+    rows: Sequence[Mapping[str, Any]],
+) -> tuple[dict[str, Mapping[str, Any]], dict[str, Mapping[str, Any]]]:
     by_article_ref: dict[str, Mapping[str, Any]] = {}
     by_identity_key: dict[str, Mapping[str, Any]] = {}
     for row in rows:
@@ -200,7 +206,9 @@ def build_replay_rows(
     runtime_rows = runtime_summary.get("results")
     if not isinstance(runtime_rows, list):
         raise ValueError("runtime summary results must be a list")
-    runtime_by_ref, runtime_by_identity = index_by_identity([row for row in runtime_rows if isinstance(row, Mapping)])
+    runtime_by_ref, runtime_by_identity = index_by_identity(
+        [row for row in runtime_rows if isinstance(row, Mapping)]
+    )
     evidence_by_ref, evidence_by_identity = index_by_identity(evidence_records)
     rows: list[dict[str, Any]] = []
     for article in articles:
@@ -215,9 +223,16 @@ def build_replay_rows(
         unsafe = sorted(set(row_unsafe_flags(runtime_row) + row_unsafe_flags(evidence)))
         if unsafe:
             raise ValueError(f"unsafe flags in replay inputs for {article_ref}: {','.join(unsafe)}")
-        runtime_evidence_count = int(evidence.get("runtime_evidence_count", runtime_row.get("runtime_evidence_count", 0)) or 0)
-        runtime_chunk_count = int(evidence.get("runtime_chunk_count", runtime_row.get("runtime_chunk_count", 0)) or 0)
-        zero_chunk = bool(evidence.get("zero_chunk") is True or runtime_row.get("zero_chunk") is True)
+        runtime_evidence_count = int(
+            evidence.get("runtime_evidence_count", runtime_row.get("runtime_evidence_count", 0))
+            or 0
+        )
+        runtime_chunk_count = int(
+            evidence.get("runtime_chunk_count", runtime_row.get("runtime_chunk_count", 0)) or 0
+        )
+        zero_chunk = bool(
+            evidence.get("zero_chunk") is True or runtime_row.get("zero_chunk") is True
+        )
         status = "replay_zero_chunk_verified" if zero_chunk else "replay_loaded_verified"
         diagnostic_code = "replay_zero_chunk_verified" if zero_chunk else "replay_loaded_verified"
         replay_path = replay_record_path(output_dir, article)
@@ -238,14 +253,18 @@ def build_replay_rows(
             "code": diagnostic_code,
             "failure_reason": evidence.get("failure_reason") or runtime_row.get("failure_reason"),
             "runtime_status": runtime_row.get("status"),
-            "runtime_diagnostic_code": runtime_row.get("diagnostic_code") or runtime_row.get("code"),
+            "runtime_diagnostic_code": runtime_row.get("diagnostic_code")
+            or runtime_row.get("code"),
             "runtime_evidence_count": runtime_evidence_count,
             "runtime_chunk_count": runtime_chunk_count,
             "zero_chunk": zero_chunk,
-            "parser_ready_from_conversion": evidence.get("parser_ready_from_conversion") is True or runtime_row.get("parser_ready_from_conversion") is True,
+            "parser_ready_from_conversion": evidence.get("parser_ready_from_conversion") is True
+            or runtime_row.get("parser_ready_from_conversion") is True,
             "evidence_path": evidence.get("evidence_path"),
-            "runtime_event_log_path": evidence.get("runtime_event_log_path") or runtime_row.get("runtime_event_log_path"),
-            "converted_text_path": evidence.get("converted_text_path") or runtime_row.get("converted_text_path"),
+            "runtime_event_log_path": evidence.get("runtime_event_log_path")
+            or runtime_row.get("runtime_event_log_path"),
+            "converted_text_path": evidence.get("converted_text_path")
+            or runtime_row.get("converted_text_path"),
             "replay_record_path": rel(replay_path),
             "network_fetch_attempted": False,
             "production_import_attempted": False,
@@ -280,7 +299,9 @@ def build_summary(
         "status": "passed" if rows else "failed",
         "created_at": utc_now(),
         "article_count": len(rows),
-        "selection_article_count": len(selection.get("articles", [])) if isinstance(selection.get("articles"), list) else None,
+        "selection_article_count": len(selection.get("articles", []))
+        if isinstance(selection.get("articles"), list)
+        else None,
         "runtime_smoke_article_count": runtime_summary.get("article_count"),
         "runtime_smoke_loaded_count": runtime_summary.get("runtime_loaded_count"),
         "runtime_smoke_zero_chunk_count": runtime_summary.get("zero_chunk_count"),
@@ -385,8 +406,15 @@ def run(args: argparse.Namespace) -> int:
     evidence_records = load_evidence_records(evidence_dir)
     if not evidence_dir.resolve().is_relative_to(corpus_dir.resolve()):
         raise ValueError("evidence_dir_outside_corpus")
-    rows = build_replay_rows(selection=selection, runtime_summary=runtime_summary, evidence_records=evidence_records, output_dir=output_dir)
-    summary = build_summary(selection=selection, runtime_summary=runtime_summary, output_dir=output_dir, rows=rows)
+    rows = build_replay_rows(
+        selection=selection,
+        runtime_summary=runtime_summary,
+        evidence_records=evidence_records,
+        output_dir=output_dir,
+    )
+    summary = build_summary(
+        selection=selection, runtime_summary=runtime_summary, output_dir=output_dir, rows=rows
+    )
     summary_path, diagnostics_path, report_path = replay_output_paths(output_dir)
     write_replay_records(output_dir, rows)
     write_json(summary_path, summary)

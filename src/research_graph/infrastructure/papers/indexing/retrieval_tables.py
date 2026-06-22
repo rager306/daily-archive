@@ -242,7 +242,9 @@ def _iter_readiness_paths(value: Any, path: str = "$") -> list[str]:
     if isinstance(value, dict):
         for key, child in value.items():
             child_path = _json_child_path(path, str(key))
-            if str(key) in {"status", "benchmark_status", "review_state"} and isinstance(child, str):
+            if str(key) in {"status", "benchmark_status", "review_state"} and isinstance(
+                child, str
+            ):
                 if child in UNSAFE_READINESS_STATUSES:
                     findings.append(child_path)
             findings.extend(_iter_readiness_paths(child, child_path))
@@ -360,7 +362,11 @@ def _manifest_provenance_count(page_index_refs: Any, asset_refs: Any, links_dedu
     count = 0
     for refs in (page_index_refs, asset_refs, links_dedup_refs):
         mapping = _as_mapping(refs)
-        if mapping.get("manifest_path") or mapping.get("manifest_sha256") or mapping.get("schema_version"):
+        if (
+            mapping.get("manifest_path")
+            or mapping.get("manifest_sha256")
+            or mapping.get("schema_version")
+        ):
             count += 1
     return count
 
@@ -369,8 +375,14 @@ def summarize_article_retrieval_tables(manifest: dict[str, Any]) -> dict[str, An
     """Return aggregate benchmark counters with import/readiness values clamped to zero."""
 
     manifest = _as_mapping(manifest)
-    retrieval_units = [unit for unit in _as_list(manifest.get("retrieval_units")) if isinstance(unit, dict)]
-    table_candidates = [candidate for candidate in _as_list(manifest.get("table_candidates")) if isinstance(candidate, dict)]
+    retrieval_units = [
+        unit for unit in _as_list(manifest.get("retrieval_units")) if isinstance(unit, dict)
+    ]
+    table_candidates = [
+        candidate
+        for candidate in _as_list(manifest.get("table_candidates"))
+        if isinstance(candidate, dict)
+    ]
     all_records = retrieval_units + table_candidates
     diagnostics = validate_article_retrieval_table_manifest(manifest)
     diagnostic_counts = dict.fromkeys(DIAGNOSTIC_COUNTER_KEYS, 0)
@@ -401,16 +413,22 @@ def summarize_article_retrieval_tables(manifest: dict[str, Any]) -> dict[str, An
         "included_review_only_count": sum(
             1 for record in all_records if record.get("benchmark_status") == "included_review_only"
         ),
-        "blocked_count": sum(1 for record in all_records if record.get("benchmark_status") == "blocked_review_only"),
+        "blocked_count": sum(
+            1 for record in all_records if record.get("benchmark_status") == "blocked_review_only"
+        ),
         "repair_required_count": sum(
-            1 for record in all_records if record.get("benchmark_status") == "repair_required_review_only"
+            1
+            for record in all_records
+            if record.get("benchmark_status") == "repair_required_review_only"
         ),
         "source_ref_count": len(_source_ref_ids(manifest.get("source_refs"))),
         "page_index_node_ref_count": len(_ref_ids(page_index_refs, "node_ids")),
         "page_index_anchor_ref_count": len(_ref_ids(page_index_refs, "anchor_ids")),
         "asset_ref_count": len(_ref_ids(asset_refs, "asset_ids")),
         "link_provenance_ref_count": len({value for value in link_ids if isinstance(value, str)}),
-        "manifest_provenance_count": _manifest_provenance_count(page_index_refs, asset_refs, links_dedup_refs),
+        "manifest_provenance_count": _manifest_provenance_count(
+            page_index_refs, asset_refs, links_dedup_refs
+        ),
         "ranking_tie_count": _ranking_tie_count(retrieval_units),
         "diagnostic_counts": diagnostic_counts,
         "import_eligible_count": 0,
@@ -476,11 +494,16 @@ def build_article_retrieval_table_manifest(
         "promoted_to_fact_count": 0,
     }
     manifest["summary"] = summarize_article_retrieval_tables(manifest)
-    manifest["diagnostics"] = [diagnostic.to_redacted_dict() for diagnostic in validate_article_retrieval_table_manifest(manifest)]
+    manifest["diagnostics"] = [
+        diagnostic.to_redacted_dict()
+        for diagnostic in validate_article_retrieval_table_manifest(manifest)
+    ]
     return to_redacted_dict(manifest)
 
 
-def validate_article_retrieval_table_manifest(manifest: dict[str, Any]) -> list[ArticleRetrievalTableDiagnostic]:
+def validate_article_retrieval_table_manifest(
+    manifest: dict[str, Any],
+) -> list[ArticleRetrievalTableDiagnostic]:
     """Validate a metadata-only manifest and return stable redacted diagnostics."""
 
     manifest = _as_mapping(manifest)
@@ -489,7 +512,9 @@ def validate_article_retrieval_table_manifest(manifest: dict[str, Any]) -> list[
     if manifest.get("schema_version") != ARTICLE_RETRIEVAL_TABLES_SCHEMA_VERSION:
         diagnostics.append(_diagnostic("bad_vocabulary", "$.schema_version"))
     manifest_sha = manifest.get("manifest_sha256")
-    if manifest_sha is not None and (not isinstance(manifest_sha, str) or not _SHA256_RE.match(manifest_sha)):
+    if manifest_sha is not None and (
+        not isinstance(manifest_sha, str) or not _SHA256_RE.match(manifest_sha)
+    ):
         diagnostics.append(_diagnostic("bad_vocabulary", "$.manifest_sha256"))
 
     source_ids = _source_ref_ids(manifest.get("source_refs"))
@@ -499,7 +524,9 @@ def validate_article_retrieval_table_manifest(manifest: dict[str, Any]) -> list[
             continue
         source_id = source.get("source_id")
         if not isinstance(source_id, str) or not _SAFE_ID_RE.match(source_id):
-            diagnostics.append(_diagnostic("malformed_source_ref", f"$.source_refs[{index}].source_id"))
+            diagnostics.append(
+                _diagnostic("malformed_source_ref", f"$.source_refs[{index}].source_id")
+            )
 
     page_index_refs = _as_mapping(manifest.get("page_index_refs"))
     page_index_node_ids = _ref_ids(page_index_refs, "node_ids")
@@ -507,7 +534,10 @@ def validate_article_retrieval_table_manifest(manifest: dict[str, Any]) -> list[
     asset_ids = _ref_ids(_as_mapping(manifest.get("asset_refs")), "asset_ids")
 
     seen_ids: set[str] = set()
-    for collection_name, id_key in (("retrieval_units", "unit_id"), ("table_candidates", "candidate_id")):
+    for collection_name, id_key in (
+        ("retrieval_units", "unit_id"),
+        ("table_candidates", "candidate_id"),
+    ):
         for index, record in enumerate(_as_list(manifest.get(collection_name))):
             if not isinstance(record, dict):
                 diagnostics.append(_diagnostic("bad_vocabulary", f"$.{collection_name}[{index}]"))
@@ -515,28 +545,46 @@ def validate_article_retrieval_table_manifest(manifest: dict[str, Any]) -> list[
             record_id = record.get(id_key)
             if isinstance(record_id, str):
                 if record_id in seen_ids:
-                    diagnostics.append(_diagnostic("duplicate_id", f"$.{collection_name}[{index}].{id_key}", object_id=record_id))
+                    diagnostics.append(
+                        _diagnostic(
+                            "duplicate_id",
+                            f"$.{collection_name}[{index}].{id_key}",
+                            object_id=record_id,
+                        )
+                    )
                 seen_ids.add(record_id)
             else:
-                diagnostics.append(_diagnostic("bad_vocabulary", f"$.{collection_name}[{index}].{id_key}"))
+                diagnostics.append(
+                    _diagnostic("bad_vocabulary", f"$.{collection_name}[{index}].{id_key}")
+                )
 
             status = record.get("benchmark_status")
             if status not in ALLOWED_BENCHMARK_STATUSES:
-                diagnostics.append(_diagnostic("bad_vocabulary", f"$.{collection_name}[{index}].benchmark_status"))
+                diagnostics.append(
+                    _diagnostic("bad_vocabulary", f"$.{collection_name}[{index}].benchmark_status")
+                )
 
             section_type = record.get("section_type")
             if section_type is not None and section_type not in ALLOWED_SECTION_TYPES:
-                diagnostics.append(_diagnostic("bad_vocabulary", f"$.{collection_name}[{index}].section_type"))
+                diagnostics.append(
+                    _diagnostic("bad_vocabulary", f"$.{collection_name}[{index}].section_type")
+                )
 
             node_id = record.get("page_index_node_id")
             if isinstance(node_id, str) and node_id not in page_index_node_ids:
                 diagnostics.append(
-                    _diagnostic("missing_page_index_provenance", f"$.{collection_name}[{index}].page_index_node_id")
+                    _diagnostic(
+                        "missing_page_index_provenance",
+                        f"$.{collection_name}[{index}].page_index_node_id",
+                    )
                 )
             anchor_id = record.get("page_index_anchor_id")
             if isinstance(anchor_id, str) and anchor_id not in page_index_anchor_ids:
                 diagnostics.append(
-                    _diagnostic("missing_page_index_provenance", f"$.{collection_name}[{index}].page_index_anchor_id")
+                    _diagnostic(
+                        "missing_page_index_provenance",
+                        f"$.{collection_name}[{index}].page_index_anchor_id",
+                    )
                 )
             for ref_index, source_ref_id in enumerate(_as_list(record.get("source_ref_ids"))):
                 if not isinstance(source_ref_id, str) or source_ref_id not in source_ids:
@@ -550,19 +598,28 @@ def validate_article_retrieval_table_manifest(manifest: dict[str, Any]) -> list[
             if collection_name == "table_candidates":
                 asset_id = record.get("asset_id")
                 if isinstance(asset_id, str) and asset_id not in asset_ids:
-                    diagnostics.append(_diagnostic("missing_asset_provenance", f"$.table_candidates[{index}].asset_id"))
+                    diagnostics.append(
+                        _diagnostic(
+                            "missing_asset_provenance", f"$.table_candidates[{index}].asset_id"
+                        )
+                    )
                 transformation_plan = _as_mapping(record.get("transformation_plan"))
                 for flag_name in ("raw_table_cells_included", "caption_included"):
                     if transformation_plan.get(flag_name) is True:
                         diagnostics.append(
-                            _diagnostic("forbidden_payload_key", f"$.table_candidates[{index}].transformation_plan.{flag_name}")
+                            _diagnostic(
+                                "forbidden_payload_key",
+                                f"$.table_candidates[{index}].transformation_plan.{flag_name}",
+                            )
                         )
 
     for _key, path, _value in _iter_payload_paths(manifest):
         diagnostics.append(_diagnostic("forbidden_payload_key", path))
 
     for key, path in _iter_unsafe_true_paths(manifest):
-        code = "unsafe_authorization" if key in UNSAFE_AUTHORIZATION_FLAGS else "forbidden_payload_key"
+        code = (
+            "unsafe_authorization" if key in UNSAFE_AUTHORIZATION_FLAGS else "forbidden_payload_key"
+        )
         diagnostics.append(_diagnostic(code, path))
 
     for path in _iter_readiness_paths(manifest):
@@ -588,11 +645,17 @@ def to_redacted_dict(manifest: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(redacted, dict):
         return {}
     if "safety_flags" in redacted:
-        redacted["safety_flags"] = {**default_safety_flags(), **_as_mapping(redacted.get("safety_flags"))}
+        redacted["safety_flags"] = {
+            **default_safety_flags(),
+            **_as_mapping(redacted.get("safety_flags")),
+        }
         for key, value in default_safety_flags().items():
             redacted["safety_flags"][key] = value
     if "bridge_subtree" in redacted:
-        redacted["bridge_subtree"] = {**default_bridge_subtree(), **_as_mapping(redacted.get("bridge_subtree"))}
+        redacted["bridge_subtree"] = {
+            **default_bridge_subtree(),
+            **_as_mapping(redacted.get("bridge_subtree")),
+        }
         for key, value in default_bridge_subtree().items():
             redacted["bridge_subtree"][key] = value
     if "summary" in redacted:

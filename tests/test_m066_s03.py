@@ -113,7 +113,9 @@ def test_code_memory_synced() -> None:
     mirror = read(CODEBASE_MEMORY_ADR)
     graph = json.loads(read(CODEBASE_MEMORY_GRAPH))
     adr_ids = {match for match in re.findall(r"\| (ADR-\d{3}) \|", mirror)}
-    graph_adr_ids = {node["id"] for node in graph["nodes"] if str(node.get("id", "")).startswith("ADR-")}
+    graph_adr_ids = {
+        node["id"] for node in graph["nodes"] if str(node.get("id", "")).startswith("ADR-")
+    }
 
     assert len(adr_ids) >= 17
     assert "ADR-020" in adr_ids

@@ -110,7 +110,9 @@ def ensure_safety_defaults(value: Any, *, context: str) -> None:
             details.append(f"missing={','.join(missing)}")
         if unsafe:
             details.append(f"not_false={','.join(unsafe)}")
-        raise ValueError(f"{context} safety_defaults must include five explicit false values ({'; '.join(details)})")
+        raise ValueError(
+            f"{context} safety_defaults must include five explicit false values ({'; '.join(details)})"
+        )
 
 
 def validate_manifest_contract(manifest: dict[str, Any]) -> None:
@@ -193,11 +195,21 @@ def validate_pdf(pdf: dict[str, Any], parser_name: str) -> PdfValidationResult:
     arxiv_id = str(pdf["arxiv_id"])
     expectation = find_parser_expectation(pdf, parser_name)
     if expectation is None:
-        return PdfValidationResult(arxiv_id, parser_name, [], False, 1, [], f"parser {parser_name!r} is not declared for {arxiv_id}")
+        return PdfValidationResult(
+            arxiv_id,
+            parser_name,
+            [],
+            False,
+            1,
+            [],
+            f"parser {parser_name!r} is not declared for {arxiv_id}",
+        )
 
     output_paths = resolve_output_paths(pdf, expectation)
     if not output_paths:
-        return PdfValidationResult(arxiv_id, parser_name, [], False, 1, [], "parser output path could not be resolved")
+        return PdfValidationResult(
+            arxiv_id, parser_name, [], False, 1, [], "parser output path could not be resolved"
+        )
 
     missing_paths = [path for path in output_paths if not path.exists()]
     if missing_paths:
@@ -213,7 +225,15 @@ def validate_pdf(pdf: dict[str, Any], parser_name: str) -> PdfValidationResult:
 
     schema_path = str(expectation.get("expected_output_schema", ""))
     if not schema_path:
-        return PdfValidationResult(arxiv_id, parser_name, [rel(path) for path in output_paths], False, 1, ["expected_output_schema"], "parser expectation has no expected_output_schema")
+        return PdfValidationResult(
+            arxiv_id,
+            parser_name,
+            [rel(path) for path in output_paths],
+            False,
+            1,
+            ["expected_output_schema"],
+            "parser expectation has no expected_output_schema",
+        )
 
     validator = load_validator(schema_path)
     error_count = 0
@@ -228,10 +248,24 @@ def validate_pdf(pdf: dict[str, Any], parser_name: str) -> PdfValidationResult:
             first_error = first_error or errors[0]
 
     if error_count:
-        message = f"{error_count} schema error(s); {_format_schema_error(first_error)}" if first_error else f"{error_count} schema error(s)"
-        return PdfValidationResult(arxiv_id, parser_name, [rel(path) for path in output_paths], False, error_count, sorted(missing_fields), message)
+        message = (
+            f"{error_count} schema error(s); {_format_schema_error(first_error)}"
+            if first_error
+            else f"{error_count} schema error(s)"
+        )
+        return PdfValidationResult(
+            arxiv_id,
+            parser_name,
+            [rel(path) for path in output_paths],
+            False,
+            error_count,
+            sorted(missing_fields),
+            message,
+        )
 
-    return PdfValidationResult(arxiv_id, parser_name, [rel(path) for path in output_paths], True, 0, [], "ok")
+    return PdfValidationResult(
+        arxiv_id, parser_name, [rel(path) for path in output_paths], True, 0, [], "ok"
+    )
 
 
 def validate_batch(manifest_path: str | Path, parser_name: str) -> BatchValidationReport:
@@ -246,7 +280,11 @@ def validate_batch(manifest_path: str | Path, parser_name: str) -> BatchValidati
     results = [validate_pdf(pdf, parser_name) for pdf in manifest.get("pdfs", [])]
     passed = sum(1 for result in results if result.passed)
     failed = len(results) - passed
-    missing_outputs = sum(1 for result in results if "parser output is missing" in result.message or not result.output_paths)
+    missing_outputs = sum(
+        1
+        for result in results
+        if "parser output is missing" in result.message or not result.output_paths
+    )
     missing_fields: dict[str, int] = {}
     for result in results:
         for field in result.missing_fields:
@@ -294,8 +332,12 @@ def print_report(report: BatchValidationReport, *, json_output: bool = False) ->
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", required=True, help="Repository-relative manifest JSON path.")
-    parser.add_argument("--parser", required=True, help="Parser name declared in expected_parsers[].")
-    parser.add_argument("--json", action="store_true", help="Emit the full validation report as JSON.")
+    parser.add_argument(
+        "--parser", required=True, help="Parser name declared in expected_parsers[]."
+    )
+    parser.add_argument(
+        "--json", action="store_true", help="Emit the full validation report as JSON."
+    )
     return parser
 
 

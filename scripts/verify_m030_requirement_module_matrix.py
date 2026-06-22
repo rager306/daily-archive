@@ -143,7 +143,11 @@ def _as_nonempty_str_list(value: Any) -> list[str]:
 
 def _row_name(row: dict[str, Any], index: int) -> str:
     requirement_id = row.get("requirement_id")
-    return requirement_id if isinstance(requirement_id, str) and requirement_id else f"requirements[{index}]"
+    return (
+        requirement_id
+        if isinstance(requirement_id, str) and requirement_id
+        else f"requirements[{index}]"
+    )
 
 
 def _path_from_reference(reference: str) -> Path:
@@ -219,23 +223,31 @@ def validate_matrix(matrix: dict[str, Any], *, base_dir: Path = Path(".")) -> li
     module_stages: set[str] = set()
     for index, module in enumerate(module_refs):
         if not isinstance(module, dict):
-            errors.append(f"M030_REQUIREMENT_MATRIX_MODULE_REF_SHAPE: module_catalog_refs[{index}] must be an object")
+            errors.append(
+                f"M030_REQUIREMENT_MATRIX_MODULE_REF_SHAPE: module_catalog_refs[{index}] must be an object"
+            )
             continue
         module_id = module.get("module_id")
         stage = module.get("stage")
         claim_state = module.get("claim_state")
         if not isinstance(module_id, str) or not module_id.strip():
-            errors.append(f"M030_REQUIREMENT_MATRIX_MODULE_REF_ID: module_catalog_refs[{index}] missing module_id")
+            errors.append(
+                f"M030_REQUIREMENT_MATRIX_MODULE_REF_ID: module_catalog_refs[{index}] missing module_id"
+            )
         else:
             if module_id in module_ids:
                 errors.append(f"M030_REQUIREMENT_MATRIX_MODULE_REF_ID: duplicate {module_id}")
             module_ids.add(module_id)
         if not isinstance(stage, str) or not stage.strip():
-            errors.append(f"M030_REQUIREMENT_MATRIX_MODULE_REF_STAGE: {module_id or index} missing stage")
+            errors.append(
+                f"M030_REQUIREMENT_MATRIX_MODULE_REF_STAGE: {module_id or index} missing stage"
+            )
         else:
             module_stages.add(stage)
         if not isinstance(claim_state, str) or not claim_state.strip():
-            errors.append(f"M030_REQUIREMENT_MATRIX_MODULE_REF_CLAIM: {module_id or index} missing claim_state")
+            errors.append(
+                f"M030_REQUIREMENT_MATRIX_MODULE_REF_CLAIM: {module_id or index} missing claim_state"
+            )
     missing_stages = sorted(REQUIRED_MODULE_STAGES - module_stages)
     if missing_stages:
         errors.append(f"M030_REQUIREMENT_MATRIX_MODULE_REF_STAGE: missing stages {missing_stages}")
@@ -248,12 +260,16 @@ def validate_matrix(matrix: dict[str, Any], *, base_dir: Path = Path(".")) -> li
     seen_requirements: set[str] = set()
     for index, row in enumerate(requirements):
         if not isinstance(row, dict):
-            errors.append(f"M030_REQUIREMENT_MATRIX_ROW_SHAPE: requirements[{index}] must be an object")
+            errors.append(
+                f"M030_REQUIREMENT_MATRIX_ROW_SHAPE: requirements[{index}] must be an object"
+            )
             continue
         row_name = _row_name(row, index)
         requirement_id = row.get("requirement_id")
         if not isinstance(requirement_id, str) or not re.fullmatch(r"R\d{3}", requirement_id):
-            errors.append(f"M030_REQUIREMENT_MATRIX_ROW_ID: {row_name} missing valid requirement_id")
+            errors.append(
+                f"M030_REQUIREMENT_MATRIX_ROW_ID: {row_name} missing valid requirement_id"
+            )
         else:
             if requirement_id in seen_requirements:
                 errors.append(f"M030_REQUIREMENT_MATRIX_ROW_ID: duplicate {requirement_id}")
@@ -263,15 +279,21 @@ def validate_matrix(matrix: dict[str, Any], *, base_dir: Path = Path(".")) -> li
             errors.append(f"M030_REQUIREMENT_MATRIX_STATUS: {row_name} must be active or validated")
         coverage_status = row.get("coverage_status")
         if coverage_status not in ALLOWED_COVERAGE_STATUSES:
-            errors.append(f"M030_REQUIREMENT_MATRIX_COVERAGE: {row_name} invalid coverage_status {coverage_status!r}")
+            errors.append(
+                f"M030_REQUIREMENT_MATRIX_COVERAGE: {row_name} invalid coverage_status {coverage_status!r}"
+            )
         for field in ("classification", "requirement_summary", "next_action"):
             value = row.get(field)
             if not isinstance(value, str) or not value.strip():
-                errors.append(f"M030_REQUIREMENT_MATRIX_FIELD: {row_name} missing non-empty {field}")
+                errors.append(
+                    f"M030_REQUIREMENT_MATRIX_FIELD: {row_name} missing non-empty {field}"
+                )
 
         mappings = row.get("mapped_modules_functions")
         if not isinstance(mappings, list) or not mappings:
-            errors.append(f"M030_REQUIREMENT_MATRIX_MODULE_LINK: {row_name} missing mapped_modules_functions")
+            errors.append(
+                f"M030_REQUIREMENT_MATRIX_MODULE_LINK: {row_name} missing mapped_modules_functions"
+            )
             mappings = []
         for mapping_index, mapping in enumerate(mappings):
             if not isinstance(mapping, dict):
@@ -281,15 +303,26 @@ def validate_matrix(matrix: dict[str, Any], *, base_dir: Path = Path(".")) -> li
                 continue
             module_id = mapping.get("module_id")
             if not isinstance(module_id, str) or not module_id.strip():
-                errors.append(f"M030_REQUIREMENT_MATRIX_MODULE_LINK: {row_name} mapping {mapping_index} missing module_id")
+                errors.append(
+                    f"M030_REQUIREMENT_MATRIX_MODULE_LINK: {row_name} mapping {mapping_index} missing module_id"
+                )
             if not isinstance(mapping.get("stage"), str) or not mapping["stage"].strip():
-                errors.append(f"M030_REQUIREMENT_MATRIX_MODULE_LINK: {row_name} mapping {module_id} missing stage")
-            if not isinstance(mapping.get("claim_state"), str) or not mapping["claim_state"].strip():
-                errors.append(f"M030_REQUIREMENT_MATRIX_MODULE_LINK: {row_name} mapping {module_id} missing claim_state")
+                errors.append(
+                    f"M030_REQUIREMENT_MATRIX_MODULE_LINK: {row_name} mapping {module_id} missing stage"
+                )
+            if (
+                not isinstance(mapping.get("claim_state"), str)
+                or not mapping["claim_state"].strip()
+            ):
+                errors.append(
+                    f"M030_REQUIREMENT_MATRIX_MODULE_LINK: {row_name} mapping {module_id} missing claim_state"
+                )
             files = _as_nonempty_str_list(mapping.get("files"))
             functions_classes = _as_nonempty_str_list(mapping.get("functions_classes"))
             if not files:
-                errors.append(f"M030_REQUIREMENT_MATRIX_MODULE_FILES: {row_name} mapping {module_id} missing files")
+                errors.append(
+                    f"M030_REQUIREMENT_MATRIX_MODULE_FILES: {row_name} mapping {module_id} missing files"
+                )
             if not functions_classes:
                 errors.append(
                     f"M030_REQUIREMENT_MATRIX_MODULE_FUNCTIONS: {row_name} mapping {module_id} missing functions/classes"
@@ -304,15 +337,27 @@ def validate_matrix(matrix: dict[str, Any], *, base_dir: Path = Path(".")) -> li
             errors.append(f"M030_REQUIREMENT_MATRIX_EVIDENCE: {row_name} missing evidence_paths")
         for evidence_path in evidence_paths:
             if not (base_dir / evidence_path).exists():
-                errors.append(f"M030_REQUIREMENT_MATRIX_EVIDENCE_PATH: {row_name} missing {evidence_path}")
+                errors.append(
+                    f"M030_REQUIREMENT_MATRIX_EVIDENCE_PATH: {row_name} missing {evidence_path}"
+                )
 
         unsafe_claims = _as_nonempty_str_list(row.get("unsafe_claims_to_preserve"))
         if coverage_status in FUTURE_SCOPE_STATUSES and not unsafe_claims:
-            errors.append(f"M030_REQUIREMENT_MATRIX_UNSAFE_CLAIMS: {row_name} future-scope row must preserve unsafe claims")
+            errors.append(
+                f"M030_REQUIREMENT_MATRIX_UNSAFE_CLAIMS: {row_name} future-scope row must preserve unsafe claims"
+            )
         if coverage_status in FUTURE_SCOPE_STATUSES and _has_unsafe_positive_claim(row):
-            errors.append(f"M030_REQUIREMENT_MATRIX_UNSAFE_POSITIVE: {row_name} contains unsafe positive claim")
-        if coverage_status == "unsafe_to_claim" and "unsafe" not in _row_text(row) and "fail-closed" not in _row_text(row):
-            errors.append(f"M030_REQUIREMENT_MATRIX_UNSAFE_BOUNDARY: {row_name} lacks unsafe/fail-closed language")
+            errors.append(
+                f"M030_REQUIREMENT_MATRIX_UNSAFE_POSITIVE: {row_name} contains unsafe positive claim"
+            )
+        if (
+            coverage_status == "unsafe_to_claim"
+            and "unsafe" not in _row_text(row)
+            and "fail-closed" not in _row_text(row)
+        ):
+            errors.append(
+                f"M030_REQUIREMENT_MATRIX_UNSAFE_BOUNDARY: {row_name} lacks unsafe/fail-closed language"
+            )
 
     if seen_requirements != EXPECTED_REQUIREMENTS:
         errors.append(
@@ -331,7 +376,9 @@ def validate_matrix(matrix: dict[str, Any], *, base_dir: Path = Path(".")) -> li
             continue
         missing_from_matrix = sorted((scope_ids & EXPECTED_REQUIREMENTS) - seen_requirements)
         if missing_from_matrix:
-            errors.append(f"M030_REQUIREMENT_MATRIX_SCOPE_ROWS: missing {missing_from_matrix} from {scope_path}")
+            errors.append(
+                f"M030_REQUIREMENT_MATRIX_SCOPE_ROWS: missing {missing_from_matrix} from {scope_path}"
+            )
     return errors
 
 
@@ -351,9 +398,13 @@ def validate_report(report_path: Path, matrix: dict[str, Any]) -> list[str]:
         if isinstance(requirement_id, str) and f"`{requirement_id}`" not in text:
             errors.append(f"M030_REQUIREMENT_MATRIX_REPORT_ROW: report missing {requirement_id}")
         if isinstance(coverage_status, str) and f"`{coverage_status}`" not in text:
-            errors.append(f"M030_REQUIREMENT_MATRIX_REPORT_COVERAGE: report missing {coverage_status}")
+            errors.append(
+                f"M030_REQUIREMENT_MATRIX_REPORT_COVERAGE: report missing {coverage_status}"
+            )
         if isinstance(classification, str) and f"`{classification}`" not in text:
-            errors.append(f"M030_REQUIREMENT_MATRIX_REPORT_CLASSIFICATION: report missing {classification}")
+            errors.append(
+                f"M030_REQUIREMENT_MATRIX_REPORT_CLASSIFICATION: report missing {classification}"
+            )
         for mapping in row.get("mapped_modules_functions", []):
             if not isinstance(mapping, dict):
                 continue
@@ -362,14 +413,20 @@ def validate_report(report_path: Path, matrix: dict[str, Any]) -> list[str]:
                 errors.append(f"M030_REQUIREMENT_MATRIX_REPORT_MODULE: report missing {module_id}")
         for evidence_path in _as_nonempty_str_list(row.get("evidence_paths")):
             if f"`{evidence_path}`" not in text:
-                errors.append(f"M030_REQUIREMENT_MATRIX_REPORT_EVIDENCE: report missing {evidence_path}")
+                errors.append(
+                    f"M030_REQUIREMENT_MATRIX_REPORT_EVIDENCE: report missing {evidence_path}"
+                )
     return errors
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--matrix", type=Path, required=True, help="Path to requirement coverage JSON matrix")
-    parser.add_argument("--report", type=Path, required=True, help="Path to requirement coverage Markdown report")
+    parser.add_argument(
+        "--matrix", type=Path, required=True, help="Path to requirement coverage JSON matrix"
+    )
+    parser.add_argument(
+        "--report", type=Path, required=True, help="Path to requirement coverage Markdown report"
+    )
     parser.add_argument(
         "--validate-only",
         action="store_true",
@@ -382,7 +439,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     try:
         matrix = _load_json(args.matrix)
-        base_dir = args.matrix.parent.parent.parent if args.matrix.parent.name == "architecture" else Path(".")
+        base_dir = (
+            args.matrix.parent.parent.parent
+            if args.matrix.parent.name == "architecture"
+            else Path(".")
+        )
         errors = validate_matrix(matrix, base_dir=base_dir)
         errors.extend(validate_report(args.report, matrix))
     except ValueError as exc:

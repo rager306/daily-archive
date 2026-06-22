@@ -105,7 +105,9 @@ def read_json(path: Path) -> dict[str, Any]:
     except FileNotFoundError as exc:
         raise UniversalLoaderEvidenceInputError(f"input_missing:{path}") from exc
     except json.JSONDecodeError as exc:
-        raise UniversalLoaderEvidenceInputError(f"json_malformed:{path}:{exc.lineno}:{exc.colno}") from exc
+        raise UniversalLoaderEvidenceInputError(
+            f"json_malformed:{path}:{exc.lineno}:{exc.colno}"
+        ) from exc
     if not isinstance(payload, dict):
         raise UniversalLoaderEvidenceInputError(f"json_object_required:{path}")
     return payload
@@ -124,7 +126,9 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
         try:
             row = json.loads(line)
         except json.JSONDecodeError as exc:
-            raise UniversalLoaderEvidenceInputError(f"jsonl_malformed:{path}:{line_number}:{exc.colno}") from exc
+            raise UniversalLoaderEvidenceInputError(
+                f"jsonl_malformed:{path}:{line_number}:{exc.colno}"
+            ) from exc
         if not isinstance(row, dict):
             raise UniversalLoaderEvidenceInputError(f"jsonl_object_required:{path}:{line_number}")
         rows.append(row)
@@ -140,7 +144,13 @@ def validate_selection(selection: dict[str, Any]) -> list[dict[str, Any]]:
     for index, ref in enumerate(refs):
         if not isinstance(ref, dict):
             raise UniversalLoaderEvidenceInputError(f"selection_ref_object_required:{index}")
-        required = (ref.get("ref_id"), ref.get("url"), ref.get("canonical_url"), ref.get("source_kind"), ref.get("normalized_identity"))
+        required = (
+            ref.get("ref_id"),
+            ref.get("url"),
+            ref.get("canonical_url"),
+            ref.get("source_kind"),
+            ref.get("normalized_identity"),
+        )
         if not all(isinstance(value, str) and value for value in required):
             raise UniversalLoaderEvidenceInputError(f"selection_ref_required_fields:{index}")
         ref_id = str(ref["ref_id"])
@@ -198,7 +208,9 @@ def build_identity_groups(refs: list[dict[str, Any]]) -> dict[str, dict[str, Any
             "ref_ids": ref_ids,
             "url_ref_count": len(ref_ids),
             "has_url_variants": len(ref_ids) > 1,
-            "url_variants": [classify_variant(str(ref["url"]), str(ref["source_kind"])) for ref in group_refs],
+            "url_variants": [
+                classify_variant(str(ref["url"]), str(ref["source_kind"])) for ref in group_refs
+            ],
         }
     return groups
 
@@ -211,7 +223,11 @@ def safe_repo_path(repo_root: Path, path_value: Any) -> tuple[str | None, str | 
     if "://" in path_value:
         return None, "artifact_path_is_url"
     normalized = PurePosixPath(path_value.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part == "" for part in normalized.parts):
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part == "" for part in normalized.parts)
+    ):
         return None, "artifact_path_unsafe"
     repo_root_resolved = repo_root.resolve()
     resolved = (repo_root_resolved / normalized.as_posix()).resolve()
@@ -220,7 +236,9 @@ def safe_repo_path(repo_root: Path, path_value: Any) -> tuple[str | None, str | 
     return normalized.as_posix(), None
 
 
-def diagnostic(code: str, ref_id: str, severity: str, json_path: str, details: dict[str, Any] | None = None) -> dict[str, Any]:
+def diagnostic(
+    code: str, ref_id: str, severity: str, json_path: str, details: dict[str, Any] | None = None
+) -> dict[str, Any]:
     return {
         "code": code,
         "severity": severity,
@@ -245,29 +263,45 @@ def ensure_scope(
 ) -> None:
     ref_ids = {str(ref["ref_id"]) for ref in refs}
     if len(refs) != expected_ref_count:
-        raise UniversalLoaderEvidenceInputError(f"selection_ref_count_mismatch:expected={expected_ref_count}:actual={len(refs)}")
+        raise UniversalLoaderEvidenceInputError(
+            f"selection_ref_count_mismatch:expected={expected_ref_count}:actual={len(refs)}"
+        )
     identity_count = len({str(ref["normalized_identity"]) for ref in refs})
     if identity_count != expected_identity_count:
-        raise UniversalLoaderEvidenceInputError(f"selection_identity_count_mismatch:expected={expected_identity_count}:actual={identity_count}")
+        raise UniversalLoaderEvidenceInputError(
+            f"selection_identity_count_mismatch:expected={expected_identity_count}:actual={identity_count}"
+        )
     source_kind_counts = dict(sorted(Counter(str(ref["source_kind"]) for ref in refs).items()))
     if source_kind_counts != dict(sorted(expected_source_kind_counts.items())):
         raise UniversalLoaderEvidenceInputError("selection_source_kind_counts_mismatch")
-    for label, by_ref in (("source_acquisition", acquisition_by_ref), ("metadata", metadata_by_ref), ("pdf", pdf_by_ref)):
+    for label, by_ref in (
+        ("source_acquisition", acquisition_by_ref),
+        ("metadata", metadata_by_ref),
+        ("pdf", pdf_by_ref),
+    ):
         if set(by_ref) != ref_ids:
             missing = sorted(ref_ids - set(by_ref))
             extra = sorted(set(by_ref) - ref_ids)
-            raise UniversalLoaderEvidenceInputError(f"{label}_ref_set_mismatch:missing={missing}:extra={extra}")
+            raise UniversalLoaderEvidenceInputError(
+                f"{label}_ref_set_mismatch:missing={missing}:extra={extra}"
+            )
     for label, summary in (("metadata_summary", metadata_summary), ("pdf_summary", pdf_summary)):
         if summary.get("url_ref_count", summary.get("ref_count")) != expected_ref_count:
             raise UniversalLoaderEvidenceInputError(f"{label}_ref_count_mismatch")
         if summary.get("normalized_identity_count") != expected_identity_count:
             raise UniversalLoaderEvidenceInputError(f"{label}_identity_count_mismatch")
-        if dict(sorted((summary.get("source_kind_counts") or {}).items())) != dict(sorted(expected_source_kind_counts.items())):
+        if dict(sorted((summary.get("source_kind_counts") or {}).items())) != dict(
+            sorted(expected_source_kind_counts.items())
+        ):
             raise UniversalLoaderEvidenceInputError(f"{label}_source_kind_counts_mismatch")
 
     for ref in refs:
         ref_id = str(ref["ref_id"])
-        for label, row in (("source_acquisition", acquisition_by_ref[ref_id]), ("metadata", metadata_by_ref[ref_id]), ("pdf", pdf_by_ref[ref_id])):
+        for label, row in (
+            ("source_acquisition", acquisition_by_ref[ref_id]),
+            ("metadata", metadata_by_ref[ref_id]),
+            ("pdf", pdf_by_ref[ref_id]),
+        ):
             if row.get("source_kind") != ref["source_kind"]:
                 raise UniversalLoaderEvidenceInputError(f"{label}_source_kind_mismatch:{ref_id}")
             if row.get("normalized_identity") != ref["normalized_identity"]:
@@ -285,7 +319,13 @@ def assert_fail_closed_flags(row: dict[str, Any], *, label: str, ref_id: str) ->
         raise UniversalLoaderEvidenceInputError(f"{label}_unsafe_claim:{ref_id}:{unsafe}")
 
 
-def safe_artifact_ref(repo_root: Path, path_value: Any, sha256_value: Any, byte_count_value: Any, content_type_value: Any) -> dict[str, Any]:
+def safe_artifact_ref(
+    repo_root: Path,
+    path_value: Any,
+    sha256_value: Any,
+    byte_count_value: Any,
+    content_type_value: Any,
+) -> dict[str, Any]:
     safe_path, path_error = safe_repo_path(repo_root, path_value)
     return {
         "path": safe_path,
@@ -311,7 +351,11 @@ def metadata_status(metadata_event: dict[str, Any]) -> str:
 
 
 def source_quality_status(metadata_event: dict[str, Any], pdf_event: dict[str, Any]) -> str:
-    pdf_status = ((pdf_event.get("pdf_acquisition") or {}).get("status") if isinstance(pdf_event.get("pdf_acquisition"), dict) else None)
+    pdf_status = (
+        (pdf_event.get("pdf_acquisition") or {}).get("status")
+        if isinstance(pdf_event.get("pdf_acquisition"), dict)
+        else None
+    )
     if pdf_status == "acquired_existing_pdf":
         return "source_metadata_with_verified_pdf_artifact"
     if pdf_status == "not_acquired":
@@ -330,7 +374,9 @@ def terminal_pdf_status(pdf_event: dict[str, Any]) -> tuple[str | None, str | No
     return (
         pdf_acquisition.get("status") if isinstance(pdf_acquisition.get("status"), str) else None,
         pdf_acquisition.get("reason") if isinstance(pdf_acquisition.get("reason"), str) else None,
-        pdf_acquisition.get("terminal") if isinstance(pdf_acquisition.get("terminal"), bool) else None,
+        pdf_acquisition.get("terminal")
+        if isinstance(pdf_acquisition.get("terminal"), bool)
+        else None,
     )
 
 
@@ -353,7 +399,9 @@ def build_bundle(
         source_acquisition.get("byte_count"),
         source_acquisition.get("content_type"),
     )
-    metadata_artifact_payload = metadata_event.get("artifact") if isinstance(metadata_event.get("artifact"), dict) else {}
+    metadata_artifact_payload = (
+        metadata_event.get("artifact") if isinstance(metadata_event.get("artifact"), dict) else {}
+    )
     metadata_artifact = safe_artifact_ref(
         repo_root,
         metadata_artifact_payload.get("path"),
@@ -361,7 +409,9 @@ def build_bundle(
         metadata_artifact_payload.get("byte_count"),
         metadata_artifact_payload.get("content_type"),
     )
-    pdf_artifact_payload = pdf_event.get("pdf_artifact") if isinstance(pdf_event.get("pdf_artifact"), dict) else {}
+    pdf_artifact_payload = (
+        pdf_event.get("pdf_artifact") if isinstance(pdf_event.get("pdf_artifact"), dict) else {}
+    )
     pdf_artifact = safe_artifact_ref(
         repo_root,
         pdf_artifact_payload.get("path"),
@@ -371,9 +421,20 @@ def build_bundle(
     )
 
     diagnostics: list[dict[str, Any]] = []
-    for artifact_name, artifact in (("source_artifact", source_artifact), ("metadata_artifact", metadata_artifact), ("pdf_artifact", pdf_artifact)):
+    for artifact_name, artifact in (
+        ("source_artifact", source_artifact),
+        ("metadata_artifact", metadata_artifact),
+        ("pdf_artifact", pdf_artifact),
+    ):
         if artifact["path_error"] is not None:
-            diagnostics.append(diagnostic(str(artifact["path_error"]), ref_id, "error", f"artifact_refs.{artifact_name}.path"))
+            diagnostics.append(
+                diagnostic(
+                    str(artifact["path_error"]),
+                    ref_id,
+                    "error",
+                    f"artifact_refs.{artifact_name}.path",
+                )
+            )
     for upstream_label, upstream_event in (("metadata", metadata_event), ("pdf", pdf_event)):
         upstream_diagnostics = upstream_event.get("diagnostics")
         if isinstance(upstream_diagnostics, list):
@@ -385,7 +446,10 @@ def build_bundle(
                             ref_id,
                             str(item.get("severity") or "info"),
                             f"upstream.{upstream_label}.diagnostics[{index}]",
-                            {"upstream_json_path": item.get("json_path"), "upstream_details": item.get("details") or {}},
+                            {
+                                "upstream_json_path": item.get("json_path"),
+                                "upstream_details": item.get("details") or {},
+                            },
                         )
                     )
 
@@ -403,20 +467,32 @@ def build_bundle(
         "normalized_identity": ref["normalized_identity"],
         "identity_group": identity_groups[str(ref["normalized_identity"])],
         "selection": {
-            "loader_owns_selection": bool(ref.get("loader_owns_selection")) if isinstance(ref.get("loader_owns_selection"), bool) else False,
-            "selection_policy": ref.get("selection_policy") if isinstance(ref.get("selection_policy"), str) else None,
+            "loader_owns_selection": bool(ref.get("loader_owns_selection"))
+            if isinstance(ref.get("loader_owns_selection"), bool)
+            else False,
+            "selection_policy": ref.get("selection_policy")
+            if isinstance(ref.get("selection_policy"), str)
+            else None,
         },
         "source_metadata": {
             "metadata_status": metadata_status(metadata_event),
-            "optional_metadata_gaps": metadata_event.get("optional_metadata_gaps") if isinstance(metadata_event.get("optional_metadata_gaps"), list) else [],
-            "diagnostic_count": len(metadata_event.get("diagnostics") or []) if isinstance(metadata_event.get("diagnostics"), list) else 0,
+            "optional_metadata_gaps": metadata_event.get("optional_metadata_gaps")
+            if isinstance(metadata_event.get("optional_metadata_gaps"), list)
+            else [],
+            "diagnostic_count": len(metadata_event.get("diagnostics") or [])
+            if isinstance(metadata_event.get("diagnostics"), list)
+            else 0,
         },
         "pdf_diagnostic": {
             "status": pdf_status,
             "reason": pdf_reason,
             "terminal": pdf_terminal,
-            "candidate_kind": (pdf_event.get("candidate_pdf") or {}).get("candidate_kind") if isinstance(pdf_event.get("candidate_pdf"), dict) else None,
-            "diagnostic_count": len(pdf_event.get("diagnostics") or []) if isinstance(pdf_event.get("diagnostics"), list) else 0,
+            "candidate_kind": (pdf_event.get("candidate_pdf") or {}).get("candidate_kind")
+            if isinstance(pdf_event.get("candidate_pdf"), dict)
+            else None,
+            "diagnostic_count": len(pdf_event.get("diagnostics") or [])
+            if isinstance(pdf_event.get("diagnostics"), list)
+            else 0,
         },
         "artifact_refs": {
             "source_artifact": source_artifact,
@@ -445,8 +521,13 @@ def count_unsafe_claims(bundles: list[dict[str, Any]]) -> dict[str, int]:
         for key in SAFETY_FLAGS:
             if flags.get(key) is not False:
                 counts[key] += 1
-        evidence = bundle.get("loader_evidence") if isinstance(bundle.get("loader_evidence"), dict) else {}
-        if evidence.get("kg_import_eligible") is True or evidence.get("production_import_eligible") is True:
+        evidence = (
+            bundle.get("loader_evidence") if isinstance(bundle.get("loader_evidence"), dict) else {}
+        )
+        if (
+            evidence.get("kg_import_eligible") is True
+            or evidence.get("production_import_eligible") is True
+        ):
             counts["import_eligible_count"] += 1
         if evidence.get("outcome") == "promoted_to_fact":
             counts["promoted_to_fact_count"] += 1
@@ -471,8 +552,12 @@ def string_values(payload: Any) -> list[str]:
     return []
 
 
-def assert_no_payload_markers(bundles: list[dict[str, Any]], summary_without_report: dict[str, Any]) -> None:
-    serialized_values = "\n".join(string_values(bundles) + string_values(summary_without_report)).lower()
+def assert_no_payload_markers(
+    bundles: list[dict[str, Any]], summary_without_report: dict[str, Any]
+) -> None:
+    serialized_values = "\n".join(
+        string_values(bundles) + string_values(summary_without_report)
+    ).lower()
     for marker in FORBIDDEN_PAYLOAD_MARKERS:
         if marker in serialized_values:
             raise UniversalLoaderEvidenceInputError(f"raw_payload_leakage:{marker}")
@@ -485,14 +570,19 @@ def summarize(
 ) -> dict[str, Any]:
     source_kind_counts = Counter(str(bundle["source_kind"]) for bundle in bundles)
     source_family_counts = Counter(str(bundle["source_family"]) for bundle in bundles)
-    quality_counts = Counter(str(bundle["loader_evidence"]["source_quality_status"]) for bundle in bundles)
+    quality_counts = Counter(
+        str(bundle["loader_evidence"]["source_quality_status"]) for bundle in bundles
+    )
     pdf_status_counts = Counter(str(bundle["pdf_diagnostic"]["status"]) for bundle in bundles)
     diagnostic_counts: Counter[str] = Counter()
     for bundle in bundles:
         for item in bundle["diagnostics"]:
             diagnostic_counts[str(item["code"])] += 1
     duplicate_groups = [group for group in identity_groups.values() if group["url_ref_count"] > 1]
-    input_fingerprints = {name: {"path": path.as_posix(), "sha256": sha256_file(path)} for name, path in sorted(input_paths.items())}
+    input_fingerprints = {
+        name: {"path": path.as_posix(), "sha256": sha256_file(path)}
+        for name, path in sorted(input_paths.items())
+    }
     return {
         "schema_version": SUMMARY_SCHEMA_VERSION,
         "generated_at": "deterministic_from_input_sha256",
@@ -508,7 +598,13 @@ def summarize(
         "source_quality_status_counts": dict(sorted(quality_counts.items())),
         "pdf_status_counts": dict(sorted(pdf_status_counts.items())),
         "diagnostic_counts": dict(sorted(diagnostic_counts.items())),
-        "bundle_status_counts": dict(sorted(Counter(str(bundle["loader_evidence"]["bundle_status"]) for bundle in bundles).items())),
+        "bundle_status_counts": dict(
+            sorted(
+                Counter(
+                    str(bundle["loader_evidence"]["bundle_status"]) for bundle in bundles
+                ).items()
+            )
+        ),
         "safety_flags": dict(SAFETY_FLAGS),
         "unsafe_claim_counts": count_unsafe_claims(bundles),
         "input_fingerprints": input_fingerprints,
@@ -617,7 +713,9 @@ def build_universal_loader_evidence_outputs(
     expected_source_kind_counts = expected_source_kind_counts or EXPECTED_SOURCE_KIND_COUNTS
     selection = read_json(selection_path)
     refs = validate_selection(selection)
-    source_acquisition_by_ref = rows_by_ref(read_jsonl(source_acquisition_events_path), label="source_acquisition")
+    source_acquisition_by_ref = rows_by_ref(
+        read_jsonl(source_acquisition_events_path), label="source_acquisition"
+    )
     metadata_by_ref = rows_by_ref(read_jsonl(metadata_events_path), label="metadata")
     pdf_by_ref = rows_by_ref(read_jsonl(pdf_events_path), label="pdf")
     metadata_summary = read_json(metadata_summary_path)
@@ -657,8 +755,12 @@ def build_universal_loader_evidence_outputs(
     assert_no_payload_markers(bundles, summary)
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / BUNDLES_FILENAME).write_text("\n".join(json.dumps(bundle, sort_keys=True) for bundle in bundles) + "\n", encoding="utf-8")
-    (out_dir / SUMMARY_FILENAME).write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    (out_dir / BUNDLES_FILENAME).write_text(
+        "\n".join(json.dumps(bundle, sort_keys=True) for bundle in bundles) + "\n", encoding="utf-8"
+    )
+    (out_dir / SUMMARY_FILENAME).write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     (out_dir / REPORT_FILENAME).write_text(render_report(summary), encoding="utf-8")
     return bundles, summary
 

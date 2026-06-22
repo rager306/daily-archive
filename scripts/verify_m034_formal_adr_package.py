@@ -42,7 +42,10 @@ SAFETY_MARKERS = [
     "import_eligible=false",
 ]
 ADR_SPECIFIC_MARKERS = {
-    "ADR-000": ["local-first universal knowledge base", "scientific articles as the primary first domain"],
+    "ADR-000": [
+        "local-first universal knowledge base",
+        "scientific articles as the primary first domain",
+    ],
     "ADR-002": ["LadybugDB", "FalkorDB", "HelixDB", "KnowledgeSubstratePort"],
     "ADR-003": ["durable lazy", "retry", "stale"],
     "ADR-004": ["candidate evidence", "GROBID", "OpenDataLoader", "Adaptix"],
@@ -71,7 +74,11 @@ def main() -> int:
     audit_path = package_dir / "r-d-consistency-audit.json"
     if audit_path.exists():
         audit = json.loads(audit_path.read_text(encoding="utf-8"))
-        require(audit.get("classification_counts", {}).get("needs-clarification", 0) == 15, "unexpected S01 needs-clarification count", failures)
+        require(
+            audit.get("classification_counts", {}).get("needs-clarification", 0) == 15,
+            "unexpected S01 needs-clarification count",
+            failures,
+        )
     else:
         failures.append(f"missing S01 audit: {audit_path}")
 
@@ -81,7 +88,11 @@ def main() -> int:
             failures.append(f"missing {adr_id}: {path}")
             continue
         text = path.read_text(encoding="utf-8")
-        require(text.startswith(f"# {adr_id}:"), f"{adr_id} title does not start with expected heading", failures)
+        require(
+            text.startswith(f"# {adr_id}:"),
+            f"{adr_id} title does not start with expected heading",
+            failures,
+        )
         for section in REQUIRED_SECTIONS:
             require(section in text, f"{adr_id} missing section {section}", failures)
         for marker in SAFETY_MARKERS:
@@ -89,7 +100,11 @@ def main() -> int:
         for marker in ADR_SPECIFIC_MARKERS.get(adr_id, []):
             require(marker in text, f"{adr_id} missing specific marker {marker}", failures)
         mermaid_count = text.count("```mermaid")
-        require(1 <= mermaid_count <= 5, f"{adr_id} Mermaid count out of bounds: {mermaid_count}", failures)
+        require(
+            1 <= mermaid_count <= 5,
+            f"{adr_id} Mermaid count out of bounds: {mermaid_count}",
+            failures,
+        )
         require("LLM Reading Notes" in text, f"{adr_id} missing LLM Reading Notes", failures)
         require(adr_id in index, f"ADR index missing {adr_id}", failures)
 
@@ -106,7 +121,11 @@ def main() -> int:
         matching_rows = [line for line in index.splitlines() if line.startswith(f"| {adr_id} |")]
         require(bool(matching_rows), f"ADR index missing row for {adr_id}", failures)
         if matching_rows:
-            require(f"| {status} |" in matching_rows[0], f"ADR index row for {adr_id} missing status {status}", failures)
+            require(
+                f"| {status} |" in matching_rows[0],
+                f"ADR index row for {adr_id} missing status {status}",
+                failures,
+            )
 
     if failures:
         sys.stderr.write("M034 formal ADR package verification failed:\n")
@@ -116,7 +135,9 @@ def main() -> int:
 
     sys.stdout.write("M034 formal ADR package verification passed\n")
     sys.stdout.write(f"adr_count={len(ADR_FILES)}\n")
-    sys.stdout.write("statuses=ADR-000 Accepted, ADR-002 Deferred, ADR-003/004/005/006/007 Accepted\n")
+    sys.stdout.write(
+        "statuses=ADR-000 Accepted, ADR-002 Deferred, ADR-003/004/005/006/007 Accepted\n"
+    )
     return 0
 
 

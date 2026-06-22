@@ -69,13 +69,17 @@ def _contract() -> dict[str, object]:
 
 
 def _build(max_target_count: int = 6) -> dict[str, object]:
-    return build_bounded_chunk_repair_contract(_contract(), _locator_batch(), max_target_count=max_target_count)
+    return build_bounded_chunk_repair_contract(
+        _contract(), _locator_batch(), max_target_count=max_target_count
+    )
 
 
 def test_builds_deterministic_non_empty_targets_that_validate_against_contract() -> None:
     first = _build()
     second = _build()
-    validation = validate_chunk_repair_contract(first, expected_audit=expected_audit_from_contract(first))
+    validation = validate_chunk_repair_contract(
+        first, expected_audit=expected_audit_from_contract(first)
+    )
 
     assert validation.passed is True
     assert first == second
@@ -100,7 +104,10 @@ def test_selected_targets_cover_required_route_quality_and_repair_states() -> No
     assert "retrieval_only" in states
     assert "review_required" in states
     assert "broad_signal_many_matches" in route_quality
-    assert any("overlapping_signal_window" in target["before_diagnostics"]["codes"] for target in payload["repair_targets"])
+    assert any(
+        "overlapping_signal_window" in target["before_diagnostics"]["codes"]
+        for target in payload["repair_targets"]
+    )
     assert "method_location" in routes
 
 
@@ -177,19 +184,27 @@ def test_max_target_count_bounds_selection_but_keeps_stable_priority() -> None:
 @pytest.mark.parametrize(
     ("mutator", "code", "path"),
     [
-        (lambda batch: batch.__setitem__("schema_version", "wrong"), "locator_schema_mismatch", "/schema_version"),
+        (
+            lambda batch: batch.__setitem__("schema_version", "wrong"),
+            "locator_schema_mismatch",
+            "/schema_version",
+        ),
         (
             lambda batch: batch["locators"][0].__setitem__("locator_id", "unknown-locator"),
             "unresolved_locator_id",
             "/locators/0/locator_id",
         ),
         (
-            lambda batch: batch["locators"][0]["source_spans"][0].__setitem__("source_id", "unknown-source"),
+            lambda batch: batch["locators"][0]["source_spans"][0].__setitem__(
+                "source_id", "unknown-source"
+            ),
             "unresolved_source_id",
             "/locators/0/source_spans/0/source_id",
         ),
         (
-            lambda batch: batch["locators"][0]["source_spans"][0].__setitem__("span_id", "unknown-span"),
+            lambda batch: batch["locators"][0]["source_spans"][0].__setitem__(
+                "span_id", "unknown-span"
+            ),
             "unresolved_span_id",
             "/locators/0/source_spans/0/span_id",
         ),
@@ -200,7 +215,9 @@ def test_max_target_count_bounds_selection_but_keeps_stable_priority() -> None:
         ),
     ],
 )
-def test_fail_closed_for_malformed_or_unresolved_locator_inputs(mutator, code: str, path: str) -> None:
+def test_fail_closed_for_malformed_or_unresolved_locator_inputs(
+    mutator, code: str, path: str
+) -> None:
     batch = _locator_batch()
     mutator(batch)
 
@@ -259,7 +276,9 @@ def test_markdown_renderer_reports_counts_classifications_and_redacted_safety() 
     assert all(pattern not in markdown for pattern in MARKDOWN_FORBIDDEN_PATTERNS)
 
 
-def test_render_cli_writes_only_after_json_and_markdown_validation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_render_cli_writes_only_after_json_and_markdown_validation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     renderer = _load_script(RENDER_SCRIPT, "render_bounded_repair_prototype_for_test")
     contract_path = tmp_path / "contract.json"
     contract_path.write_text(json.dumps(_contract()), encoding="utf-8")
@@ -280,7 +299,9 @@ def test_render_cli_writes_only_after_json_and_markdown_validation(tmp_path: Pat
 
     bad_json_output = tmp_path / "bad.json"
     bad_markdown_output = tmp_path / "bad.md"
-    monkeypatch.setattr(renderer, "render_bounded_chunk_repair_markdown", lambda payload: "```unsafe```")
+    monkeypatch.setattr(
+        renderer, "render_bounded_chunk_repair_markdown", lambda payload: "```unsafe```"
+    )
 
     with pytest.raises(renderer.BoundedRepairPrototypeRenderError):
         renderer.render_prototype_files(
@@ -295,7 +316,9 @@ def test_render_cli_writes_only_after_json_and_markdown_validation(tmp_path: Pat
     assert not bad_markdown_output.exists()
 
 
-def test_verify_cli_accepts_generated_artifacts_and_rejects_unsafe_or_unresolved_targets(tmp_path: Path) -> None:
+def test_verify_cli_accepts_generated_artifacts_and_rejects_unsafe_or_unresolved_targets(
+    tmp_path: Path,
+) -> None:
     renderer = _load_script(RENDER_SCRIPT, "render_bounded_repair_prototype_for_verify_test")
     verifier = _load_script(VERIFY_SCRIPT, "verify_bounded_repair_prototype_for_test")
     contract_path = tmp_path / "contract.json"
@@ -323,7 +346,9 @@ def test_verify_cli_accepts_generated_artifacts_and_rejects_unsafe_or_unresolved
     unsafe_payload_path = tmp_path / "unsafe.json"
     unsafe_payload_path.write_text(json.dumps(unsafe_payload), encoding="utf-8")
     unsafe_markdown_path = tmp_path / "unsafe.md"
-    unsafe_markdown_path.write_text(markdown_output.read_text(encoding="utf-8") + "\n```\n", encoding="utf-8")
+    unsafe_markdown_path.write_text(
+        markdown_output.read_text(encoding="utf-8") + "\n```\n", encoding="utf-8"
+    )
 
     unsafe_summary = verifier.verify_files(unsafe_payload_path, unsafe_markdown_path, contract_path)
     codes = {finding["code"] for finding in unsafe_summary["findings"]}

@@ -408,9 +408,13 @@ def run_concurrent_write_test(profile: CandidateProfile) -> dict[str, Any]:
 
     lost_writes = TOTAL_ATTEMPTED_WRITES - counter.value
     success_rate = counter.value / TOTAL_ATTEMPTED_WRITES
-    lock_wait_p95 = statistics.quantiles(wait_times_ms, n=20)[18] if len(wait_times_ms) >= 20 else 0.0
+    lock_wait_p95 = (
+        statistics.quantiles(wait_times_ms, n=20)[18] if len(wait_times_ms) >= 20 else 0.0
+    )
     lock_wait_avg = statistics.fmean(wait_times_ms) if wait_times_ms else 0.0
-    contention_events = sum(1 for value in wait_times_ms if value > 0.001) + profile.fake_retry_writes
+    contention_events = (
+        sum(1 for value in wait_times_ms if value > 0.001) + profile.fake_retry_writes
+    )
 
     return {
         "writer_count": WRITER_COUNT,
@@ -549,7 +553,14 @@ def render_candidate_report(candidate: dict[str, Any]) -> str:
 
 
 def criterion_note(candidate: dict[str, Any], key: str) -> str:
-    if key in {"concurrent_write_semantics", "GRAFBLAS_graph_algorithms", "UDF_support", "ACID_transactions", "multi_process_safety", "documentation_for_advanced_features"}:
+    if key in {
+        "concurrent_write_semantics",
+        "GRAFBLAS_graph_algorithms",
+        "UDF_support",
+        "ACID_transactions",
+        "multi_process_safety",
+        "documentation_for_advanced_features",
+    }:
         advanced_key = {
             "concurrent_write_semantics": "concurrent_writes",
             "GRAFBLAS_graph_algorithms": "GRAFBLAS",
@@ -585,14 +596,33 @@ def render_scoring_matrix(payload: dict[str, Any]) -> str:
         row = [f"{index}. {CRITERION_TITLES[key]}"]
         row.extend(str(by_slug[slug]["criteria"][key]) for slug in columns)
         lines.append("| " + " | ".join(row) + " |")
-    lines.append("| **Total score** | " + " | ".join(f"**{by_slug[slug]['total_score']}/90**" for slug in columns) + " |")
-    lines.append("| **Advanced score** | " + " | ".join(f"**{by_slug[slug]['advanced_score']}/30**" for slug in columns) + " |")
-    lines.append("| **M066 rank** | " + " | ".join(f"**#{by_slug[slug]['rank']}**" if by_slug[slug]["rank"] <= 3 else f"#{by_slug[slug]['rank']}" for slug in columns) + " |")
+    lines.append(
+        "| **Total score** | "
+        + " | ".join(f"**{by_slug[slug]['total_score']}/90**" for slug in columns)
+        + " |"
+    )
+    lines.append(
+        "| **Advanced score** | "
+        + " | ".join(f"**{by_slug[slug]['advanced_score']}/30**" for slug in columns)
+        + " |"
+    )
+    lines.append(
+        "| **M066 rank** | "
+        + " | ".join(
+            f"**#{by_slug[slug]['rank']}**"
+            if by_slug[slug]["rank"] <= 3
+            else f"#{by_slug[slug]['rank']}"
+            for slug in columns
+        )
+        + " |"
+    )
 
     top_3 = candidates[:3]
     lines.extend(["", "## Top-3 candidates", ""])
     for candidate in top_3:
-        lines.append(f"### #{candidate['rank']} {candidate['name']} — {candidate['total_score']}/90")
+        lines.append(
+            f"### #{candidate['rank']} {candidate['name']} — {candidate['total_score']}/90"
+        )
         lines.append(candidate["summary"])
         lines.append("")
 
@@ -635,13 +665,17 @@ def render_scoring_matrix(payload: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def write_markdown_artifacts(payload: dict[str, Any], artifact_dir: Path = DEFAULT_ARTIFACT_DIR) -> None:
+def write_markdown_artifacts(
+    payload: dict[str, Any], artifact_dir: Path = DEFAULT_ARTIFACT_DIR
+) -> None:
     candidate_dir = artifact_dir / "candidates"
     candidate_dir.mkdir(parents=True, exist_ok=True)
     for candidate in payload["candidates"]:
         report_path = candidate_dir / f"{candidate['slug']}-report.md"
         report_path.write_text(render_candidate_report(candidate), encoding="utf-8")
-    (artifact_dir / "scoring-matrix.md").write_text(render_scoring_matrix(payload), encoding="utf-8")
+    (artifact_dir / "scoring-matrix.md").write_text(
+        render_scoring_matrix(payload), encoding="utf-8"
+    )
 
 
 def write_payload(payload: dict[str, Any], output: Path) -> None:
@@ -652,14 +686,21 @@ def write_payload(payload: dict[str, Any], output: Path) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--write-reports", action="store_true", help="Write candidate reports and scoring matrix.")
+    parser.add_argument(
+        "--write-reports", action="store_true", help="Write candidate reports and scoring matrix."
+    )
     args = parser.parse_args(argv)
 
     payload = benchmark_payload()
     write_payload(payload, args.output)
     if args.write_reports:
         write_markdown_artifacts(payload, args.output.parent)
-    print(json.dumps({"winner": payload["winner"], "top_3": payload["top_3"], "output": str(args.output)}, sort_keys=True))
+    print(
+        json.dumps(
+            {"winner": payload["winner"], "top_3": payload["top_3"], "output": str(args.output)},
+            sort_keys=True,
+        )
+    )
     return 0
 
 

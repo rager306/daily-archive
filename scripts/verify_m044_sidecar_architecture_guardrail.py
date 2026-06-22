@@ -10,9 +10,18 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CONTEXT_PACK = ROOT / "artifacts" / "m044-grobid-architecture-guardrail" / "architecture-context-pack.json"
+DEFAULT_CONTEXT_PACK = (
+    ROOT / "artifacts" / "m044-grobid-architecture-guardrail" / "architecture-context-pack.json"
+)
 REQUIRED_DECISIONS = {"M033", "ADR-003", "ADR-004", "ADR-005", "ADR-007", "D078"}
-REQUIRED_SYSTEMS = {"current_baseline", "grobid", "opendataloader_pdf", "adaptix", "quant_mind_patterns", "combined_architecture"}
+REQUIRED_SYSTEMS = {
+    "current_baseline",
+    "grobid",
+    "opendataloader_pdf",
+    "adaptix",
+    "quant_mind_patterns",
+    "combined_architecture",
+}
 REQUIRED_PROHIBITED_CLAIMS = {
     "graph_import_authorized",
     "production_import_authorized",
@@ -28,7 +37,15 @@ REQUIRED_PACKET_FLAGS = {
     "production_import_attempted": False,
     "import_eligible": False,
 }
-REQUIRED_SOURCE_KEYS = {"m033_summary", "adr_003", "adr_004", "adr_005", "adr_007", "decisions", "m043_fit"}
+REQUIRED_SOURCE_KEYS = {
+    "m033_summary",
+    "adr_003",
+    "adr_004",
+    "adr_005",
+    "adr_007",
+    "decisions",
+    "m043_fit",
+}
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -49,7 +66,9 @@ def verify_context_pack(pack: dict[str, Any], *, root: Path = ROOT) -> list[str]
         if not path.exists():
             errors.append(f"source ref missing on disk: {key}={source_refs[key]}")
 
-    decisions = pack.get("mandatory_decisions") if isinstance(pack.get("mandatory_decisions"), list) else []
+    decisions = (
+        pack.get("mandatory_decisions") if isinstance(pack.get("mandatory_decisions"), list) else []
+    )
     decision_ids = {str(item.get("id")) for item in decisions if isinstance(item, dict)}
     missing_decisions = REQUIRED_DECISIONS - decision_ids
     if missing_decisions:
@@ -65,14 +84,22 @@ def verify_context_pack(pack: dict[str, Any], *, root: Path = ROOT) -> list[str]
     if missing_claims:
         errors.append(f"missing prohibited claims: {sorted(missing_claims)}")
 
-    flags = pack.get("required_packet_flags") if isinstance(pack.get("required_packet_flags"), dict) else {}
+    flags = (
+        pack.get("required_packet_flags")
+        if isinstance(pack.get("required_packet_flags"), dict)
+        else {}
+    )
     for key, expected in REQUIRED_PACKET_FLAGS.items():
         if flags.get(key) is not expected:
             errors.append(f"required_packet_flags.{key} must be {expected}")
         if key != "candidate_only" and pack.get(key) is not False:
             errors.append(f"top-level {key} must be false")
 
-    commands = pack.get("required_preflight_commands") if isinstance(pack.get("required_preflight_commands"), list) else []
+    commands = (
+        pack.get("required_preflight_commands")
+        if isinstance(pack.get("required_preflight_commands"), list)
+        else []
+    )
     if "uv run python scripts/verify_m044_sidecar_architecture_guardrail.py" not in commands:
         errors.append("required preflight command missing")
 

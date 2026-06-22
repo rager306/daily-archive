@@ -138,7 +138,14 @@ def test_cumulative_corpus_165_unique() -> None:
     assert by_id[DUPLICATE_ID]["acquisition_note"] == "duplicate pre-existing corpus PDF"
 
     for pdf in pdfs:
-        assert {"arxiv_id", "path", "size_bytes", "sha256", "source_milestone", "pages_estimate"} <= set(pdf)
+        assert {
+            "arxiv_id",
+            "path",
+            "size_bytes",
+            "sha256",
+            "source_milestone",
+            "pages_estimate",
+        } <= set(pdf)
         path = ROOT / pdf["path"]
         assert path.exists(), pdf["arxiv_id"]
         assert path.stat().st_size == pdf["size_bytes"]

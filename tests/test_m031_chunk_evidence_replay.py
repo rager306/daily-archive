@@ -62,16 +62,21 @@ def _row(
 ) -> dict[str, Any]:
     return {
         "identity": identity,
-        "article_ref": "arxiv/cs-cl/2507.19457" if identity == "arxiv:2507.19457" else identity.replace(":", "/"),
+        "article_ref": "arxiv/cs-cl/2507.19457"
+        if identity == "arxiv:2507.19457"
+        else identity.replace(":", "/"),
         "article_key": identity.rsplit(":", 1)[-1],
         "variant_id": f"{identity}:source:{role}",
         "source_role": role,
         "status": status,
         "terminal_state": status,
-        "diagnostic_code": diagnostic_code or ("parser_ready_converted_text" if parser_ready else f"{status}_refused"),
+        "diagnostic_code": diagnostic_code
+        or ("parser_ready_converted_text" if parser_ready else f"{status}_refused"),
         "refusal_code": None if parser_ready else diagnostic_code or f"{status}_refused",
         "failure_reason": None if parser_ready else "fixture refusal",
-        "converted_text_path": converted_path.as_posix() if isinstance(converted_path, Path) else converted_path,
+        "converted_text_path": converted_path.as_posix()
+        if isinstance(converted_path, Path)
+        else converted_path,
         "converted_text_sha256": converted_sha256,
         "converted_text_byte_size": converted_size,
         "parser_ready": parser_ready,
@@ -92,10 +97,22 @@ def _row(
 def _fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path, dict[str, Any], dict[str, Any]]:
     project = tmp_path / "project"
     corpus = project / "data" / "article_corpora" / "m031-catalog-backed-replay-v1"
-    converted = _write_text(corpus / "conversion-quality" / "converted-text" / "arxiv_cs-cl_2507.19457" / "arxiv_pdf.txt", _converted_markdown())
+    converted = _write_text(
+        corpus
+        / "conversion-quality"
+        / "converted-text"
+        / "arxiv_cs-cl_2507.19457"
+        / "arxiv_pdf.txt",
+        _converted_markdown(),
+    )
     converted_hash = sha256_file(converted)
     rows = [
-        _row(identity="arxiv:2507.19457", role="arxiv_html", status="low_quality", diagnostic_code="converted_text_low_quality"),
+        _row(
+            identity="arxiv:2507.19457",
+            role="arxiv_html",
+            status="low_quality",
+            diagnostic_code="converted_text_low_quality",
+        ),
         _row(
             identity="arxiv:2507.19457",
             role="arxiv_pdf",
@@ -105,11 +122,36 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path, dict[str, An
             converted_sha256=converted_hash,
             converted_size=converted.stat().st_size,
         ),
-        _row(identity="arxiv:2507.19457", role="arxiv_abs_page", status="metadata_only", diagnostic_code="metadata_only_refused"),
-        _row(identity="stanford:cs224n:gradient-notes", role="external_pdf", status="blocked", diagnostic_code="catalog_pdf_missing"),
-        _row(identity="arxiv:2605.29548", role="arxiv_abs_page", status="metadata_only", diagnostic_code="metadata_only_refused"),
-        _row(identity="arxiv:2605.29548", role="arxiv_pdf", status="blocked", diagnostic_code="missing_source_artifact"),
-        _row(identity="arxiv:2605.26099", role="arxiv_abs_url", status="blocked", diagnostic_code="catalog_placeholder_pruned_no_article_record"),
+        _row(
+            identity="arxiv:2507.19457",
+            role="arxiv_abs_page",
+            status="metadata_only",
+            diagnostic_code="metadata_only_refused",
+        ),
+        _row(
+            identity="stanford:cs224n:gradient-notes",
+            role="external_pdf",
+            status="blocked",
+            diagnostic_code="catalog_pdf_missing",
+        ),
+        _row(
+            identity="arxiv:2605.29548",
+            role="arxiv_abs_page",
+            status="metadata_only",
+            diagnostic_code="metadata_only_refused",
+        ),
+        _row(
+            identity="arxiv:2605.29548",
+            role="arxiv_pdf",
+            status="blocked",
+            diagnostic_code="missing_source_artifact",
+        ),
+        _row(
+            identity="arxiv:2605.26099",
+            role="arxiv_abs_url",
+            status="blocked",
+            diagnostic_code="catalog_placeholder_pruned_no_article_record",
+        ),
     ]
     selection = _write_json(
         corpus / "selection.json",
@@ -134,7 +176,9 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path, dict[str, An
         "production_import_attempted": False,
         "ladybugdb_written": False,
     }
-    conversion_summary_path = _write_json(corpus / "conversion-quality" / "conversion-quality-summary.json", conversion_summary)
+    conversion_summary_path = _write_json(
+        corpus / "conversion-quality" / "conversion-quality-summary.json", conversion_summary
+    )
     closeout = {
         "schema_version": "m031-parser-conversion-closeout-verifier.v1",
         "milestone_id": "M031-vwpd8e",
@@ -159,10 +203,20 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path, dict[str, An
     }
     closeout_path = _write_json(corpus / "parser-conversion-closeout-summary.json", closeout)
     output = corpus / "chunk-evidence"
-    return project, selection, conversion_summary_path, closeout_path, output, conversion_summary, closeout
+    return (
+        project,
+        selection,
+        conversion_summary_path,
+        closeout_path,
+        output,
+        conversion_summary,
+        closeout,
+    )
 
 
-def _run(project: Path, selection: Path, conversion_summary: Path, closeout: Path, output: Path) -> int:
+def _run(
+    project: Path, selection: Path, conversion_summary: Path, closeout: Path, output: Path
+) -> int:
     return main(
         [
             "--selection",
@@ -179,7 +233,9 @@ def _run(project: Path, selection: Path, conversion_summary: Path, closeout: Pat
     )
 
 
-def _run_verify(project: Path, selection: Path, conversion_summary: Path, closeout: Path, output: Path) -> int:
+def _run_verify(
+    project: Path, selection: Path, conversion_summary: Path, closeout: Path, output: Path
+) -> int:
     corpus = output.parent
     return verify_closeout_main(
         [
@@ -217,23 +273,63 @@ def _closeout_findings(output: Path) -> list[dict[str, Any]]:
     diagnostics_path = output.parent / "chunk-evidence-closeout-diagnostics.jsonl"
     if not diagnostics_path.exists():
         return []
-    return [json.loads(line) for line in diagnostics_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return [
+        json.loads(line)
+        for line in diagnostics_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
 
 
-def test_chunk_evidence_replay_writes_one_package_and_six_zero_chunk_refusals(tmp_path: Path) -> None:
-    project, selection, conversion_summary, closeout, output, _summary_payload, _closeout_payload = _fixture(tmp_path)
+def test_chunk_evidence_replay_writes_one_package_and_six_zero_chunk_refusals(
+    tmp_path: Path,
+) -> None:
+    (
+        project,
+        selection,
+        conversion_summary,
+        closeout,
+        output,
+        _summary_payload,
+        _closeout_payload,
+    ) = _fixture(tmp_path)
 
     assert _run(project, selection, conversion_summary, closeout, output) == 0
 
     summary = json.loads((output / "chunk-evidence-summary.json").read_text(encoding="utf-8"))
-    diagnostics = [json.loads(line) for line in (output / "chunk-evidence-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()]
+    diagnostics = [
+        json.loads(line)
+        for line in (output / "chunk-evidence-diagnostics.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
     report = (output / "chunk-evidence-report.md").read_text(encoding="utf-8")
-    structure_package = json.loads((output / "packages" / "arxiv_cs-cl_2507.19457_arxiv_pdf" / "structure-aware-package.json").read_text(encoding="utf-8"))
-    graph_package = json.loads((output / "packages" / "arxiv_cs-cl_2507.19457_arxiv_pdf" / "graph-readiness-package.json").read_text(encoding="utf-8"))
+    structure_package = json.loads(
+        (
+            output
+            / "packages"
+            / "arxiv_cs-cl_2507.19457_arxiv_pdf"
+            / "structure-aware-package.json"
+        ).read_text(encoding="utf-8")
+    )
+    graph_package = json.loads(
+        (
+            output
+            / "packages"
+            / "arxiv_cs-cl_2507.19457_arxiv_pdf"
+            / "graph-readiness-package.json"
+        ).read_text(encoding="utf-8")
+    )
     review_corpus = json.loads((output / "review-corpus.json").read_text(encoding="utf-8"))
-    review_events = [json.loads(line) for line in (output / "independent-review-events.jsonl").read_text(encoding="utf-8").splitlines()]
+    review_events = [
+        json.loads(line)
+        for line in (output / "independent-review-events.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
     review_dir = output.parent / "graph-readiness-review"
-    review_markdown = (review_dir / "arxiv_cs-cl_2507.19457_arxiv_pdf-review.md").read_text(encoding="utf-8")
+    review_markdown = (review_dir / "arxiv_cs-cl_2507.19457_arxiv_pdf-review.md").read_text(
+        encoding="utf-8"
+    )
     review_summary = (review_dir / "independent-review-summary.md").read_text(encoding="utf-8")
 
     assert summary["row_count"] == 7
@@ -251,7 +347,9 @@ def test_chunk_evidence_replay_writes_one_package_and_six_zero_chunk_refusals(tm
     assert summary["trusted_kg_import_allowed"] is False
     assert summary["production_import_attempted"] is False
     assert summary["ladybugdb_written"] is False
-    assert all(row["chunk_count"] == 0 for row in diagnostics if row["status"] == "zero_chunk_refused")
+    assert all(
+        row["chunk_count"] == 0 for row in diagnostics if row["status"] == "zero_chunk_refused"
+    )
     assert [row for row in diagnostics if row["status"] == "chunked"][0]["chunk_count"] > 0
     assert structure_package["paper_id"] == "arxiv_cs-cl_2507.19457_arxiv_pdf"
     assert structure_package["diagnostics"]["counts_by_state"]
@@ -276,8 +374,14 @@ def test_chunk_evidence_replay_writes_one_package_and_six_zero_chunk_refusals(tm
     assert "Reviewer Output Contract" in review_markdown
     assert "bounded replay evidence" in review_markdown
     assert "Independent reviewer verdicts are still required" in review_summary
-    assert validate_review_artifacts(review_dir=review_dir, events_path=output / "independent-review-events.jsonl").ok
-    assert not validate_review_artifacts(review_dir=review_dir, events_path=output / "independent-review-events.jsonl", require_completed_review=True).ok
+    assert validate_review_artifacts(
+        review_dir=review_dir, events_path=output / "independent-review-events.jsonl"
+    ).ok
+    assert not validate_review_artifacts(
+        review_dir=review_dir,
+        events_path=output / "independent-review-events.jsonl",
+        require_completed_review=True,
+    ).ok
     assert "Local Parser Ready Paper" not in json.dumps(summary)
     assert "Local Parser Ready Paper" not in json.dumps(diagnostics)
     assert "Local Parser Ready Paper" not in json.dumps(structure_package)
@@ -299,8 +403,18 @@ def test_chunk_evidence_replay_writes_one_package_and_six_zero_chunk_refusals(tm
         ("payload_marker", "metadata_payload_snippet_leakage"),
     ],
 )
-def test_chunk_evidence_replay_negative_fail_closed_cases(tmp_path: Path, capsys: pytest.CaptureFixture[str], mutate: str, expected_code: str) -> None:
-    project, selection, conversion_summary_path, closeout_path, output, conversion_summary, closeout = _fixture(tmp_path)
+def test_chunk_evidence_replay_negative_fail_closed_cases(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], mutate: str, expected_code: str
+) -> None:
+    (
+        project,
+        selection,
+        conversion_summary_path,
+        closeout_path,
+        output,
+        conversion_summary,
+        closeout,
+    ) = _fixture(tmp_path)
     rows = conversion_summary["results"]
     parser_row = rows[1]
     if mutate == "hash":
@@ -335,16 +449,28 @@ def test_chunk_evidence_replay_negative_fail_closed_cases(tmp_path: Path, capsys
     assert _run(project, selection, conversion_summary_path, closeout_path, output) == 2
     captured = capsys.readouterr()
     assert expected_code in captured.err
-    assert not (output / "packages" / "arxiv_cs-cl_2507.19457_arxiv_pdf" / "structure-aware-package.json").exists()
+    assert not (
+        output / "packages" / "arxiv_cs-cl_2507.19457_arxiv_pdf" / "structure-aware-package.json"
+    ).exists()
 
 
 def test_review_handoff_validation_fails_when_review_markdown_is_deleted(tmp_path: Path) -> None:
-    project, selection, conversion_summary, closeout, output, _summary_payload, _closeout_payload = _fixture(tmp_path)
+    (
+        project,
+        selection,
+        conversion_summary,
+        closeout,
+        output,
+        _summary_payload,
+        _closeout_payload,
+    ) = _fixture(tmp_path)
     assert _run(project, selection, conversion_summary, closeout, output) == 0
     review_dir = output.parent / "graph-readiness-review"
     (review_dir / "arxiv_cs-cl_2507.19457_arxiv_pdf-review.md").unlink()
 
-    validation = validate_review_artifacts(review_dir=review_dir, events_path=output / "independent-review-events.jsonl")
+    validation = validate_review_artifacts(
+        review_dir=review_dir, events_path=output / "independent-review-events.jsonl"
+    )
 
     assert not validation.ok
     assert any("No review bundle files" in diagnostic for diagnostic in validation.diagnostics)
@@ -353,51 +479,105 @@ def test_review_handoff_validation_fails_when_review_markdown_is_deleted(tmp_pat
     assert summary["graph_import_allowed"] is False
 
 
-def test_review_handoff_rejects_stale_placeholder_and_fabricated_completed_verdict(tmp_path: Path) -> None:
-    project, selection, conversion_summary, closeout, output, _summary_payload, _closeout_payload = _fixture(tmp_path)
+def test_review_handoff_rejects_stale_placeholder_and_fabricated_completed_verdict(
+    tmp_path: Path,
+) -> None:
+    (
+        project,
+        selection,
+        conversion_summary,
+        closeout,
+        output,
+        _summary_payload,
+        _closeout_payload,
+    ) = _fixture(tmp_path)
     assert _run(project, selection, conversion_summary, closeout, output) == 0
     review_dir = output.parent / "graph-readiness-review"
     review_path = review_dir / "arxiv_cs-cl_2507.19457_arxiv_pdf-review.md"
     review_path.write_text("Reviewer Verdict Placeholder", encoding="utf-8")
 
-    validation = validate_review_artifacts(review_dir=review_dir, events_path=output / "independent-review-events.jsonl")
+    validation = validate_review_artifacts(
+        review_dir=review_dir, events_path=output / "independent-review-events.jsonl"
+    )
 
     assert not validation.ok
     assert any("stale placeholder" in diagnostic for diagnostic in validation.diagnostics)
 
     with (output / "independent-review-events.jsonl").open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps({"event": "independent_review.verdict", "verdict": "PASS", "output_contract_completed": False}) + "\n")
-    validation = validate_review_artifacts(review_dir=review_dir, events_path=output / "independent-review-events.jsonl", require_completed_review=True)
+        handle.write(
+            json.dumps(
+                {
+                    "event": "independent_review.verdict",
+                    "verdict": "PASS",
+                    "output_contract_completed": False,
+                }
+            )
+            + "\n"
+        )
+    validation = validate_review_artifacts(
+        review_dir=review_dir,
+        events_path=output / "independent-review-events.jsonl",
+        require_completed_review=True,
+    )
     assert not validation.ok
-    assert any("output_contract_completed=true" in diagnostic for diagnostic in validation.diagnostics)
+    assert any(
+        "output_contract_completed=true" in diagnostic for diagnostic in validation.diagnostics
+    )
     summary = json.loads((output / "chunk-evidence-summary.json").read_text(encoding="utf-8"))
     assert summary["independent_review_completed_count"] == 0
     assert summary["trusted_kg_import_allowed"] is False
 
 
-def test_review_corpus_refuses_non_parser_ready_rows_and_blocks_missing_graph_package(tmp_path: Path) -> None:
-    project, selection, conversion_summary, closeout, output, _summary_payload, _closeout_payload = _fixture(tmp_path)
+def test_review_corpus_refuses_non_parser_ready_rows_and_blocks_missing_graph_package(
+    tmp_path: Path,
+) -> None:
+    (
+        project,
+        selection,
+        conversion_summary,
+        closeout,
+        output,
+        _summary_payload,
+        _closeout_payload,
+    ) = _fixture(tmp_path)
     assert _run(project, selection, conversion_summary, closeout, output) == 0
     summary = json.loads((output / "chunk-evidence-summary.json").read_text(encoding="utf-8"))
     diagnostics = summary["results"]
     chunked = [row for row in diagnostics if row["status"] == "chunked"][0]
     (project / chunked["graph_readiness_package_path"]).unlink()
 
-    corpus, blocker_events = build_review_corpus(diagnostics=diagnostics, output_dir=output, project_root=project, run_id="test-run")
+    corpus, blocker_events = build_review_corpus(
+        diagnostics=diagnostics, output_dir=output, project_root=project, run_id="test-run"
+    )
 
     assert corpus["document_count"] == 0
     assert len(blocker_events) == 1
     assert blocker_events[0]["event"] == "independent_review.blocker"
     assert blocker_events[0]["diagnostic_code"] == "missing_graph_readiness_package"
     assert chunked["review_status"] == "review_blocked_missing_graph_readiness_package"
-    assert all(row["status"] != "chunked" or row.get("review_corpus_paper_id") is None for row in diagnostics)
-    assert all(row["chunk_count"] == 0 for row in diagnostics if row["status"] == "zero_chunk_refused")
+    assert all(
+        row["status"] != "chunked" or row.get("review_corpus_paper_id") is None
+        for row in diagnostics
+    )
+    assert all(
+        row["chunk_count"] == 0 for row in diagnostics if row["status"] == "zero_chunk_refused"
+    )
     assert corpus["import_eligible_count"] == 0
     assert corpus["trusted_kg_import_allowed"] is False
 
 
-def test_chunk_evidence_replay_rejects_permissive_closeout_flags(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    project, selection, conversion_summary_path, closeout_path, output, _conversion_summary, closeout = _fixture(tmp_path)
+def test_chunk_evidence_replay_rejects_permissive_closeout_flags(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    (
+        project,
+        selection,
+        conversion_summary_path,
+        closeout_path,
+        output,
+        _conversion_summary,
+        closeout,
+    ) = _fixture(tmp_path)
     closeout["fail_closed_safety_flags"]["graph_import_allowed"] = True
     _write_json(closeout_path, closeout)
 
@@ -409,13 +589,25 @@ def test_chunk_evidence_replay_rejects_permissive_closeout_flags(tmp_path: Path,
 
 
 def test_chunk_evidence_closeout_verifier_writes_passed_summary(tmp_path: Path) -> None:
-    project, selection, conversion_summary, closeout, output, _summary_payload, _closeout_payload = _fixture(tmp_path)
+    (
+        project,
+        selection,
+        conversion_summary,
+        closeout,
+        output,
+        _summary_payload,
+        _closeout_payload,
+    ) = _fixture(tmp_path)
     assert _run(project, selection, conversion_summary, closeout, output) == 0
 
     assert _run_verify(project, selection, conversion_summary, closeout, output) == 0
 
-    closeout_summary = json.loads((output.parent / "chunk-evidence-closeout-summary.json").read_text(encoding="utf-8"))
-    closeout_report = (output.parent / "chunk-evidence-closeout-report.md").read_text(encoding="utf-8")
+    closeout_summary = json.loads(
+        (output.parent / "chunk-evidence-closeout-summary.json").read_text(encoding="utf-8")
+    )
+    closeout_report = (output.parent / "chunk-evidence-closeout-report.md").read_text(
+        encoding="utf-8"
+    )
     assert closeout_summary["status"] == "passed"
     assert closeout_summary["failure_count"] == 0
     assert closeout_summary["row_count"] == 7
@@ -447,11 +639,19 @@ def test_chunk_evidence_closeout_verifier_writes_passed_summary(tmp_path: Path) 
         ("graph_ladybugdb_flag", "unsafe_safety_flag_true"),
     ],
 )
-def test_chunk_evidence_closeout_verifier_negative_failures(tmp_path: Path, mutate: str, expected_code: str) -> None:
-    project, selection, conversion_summary, closeout, output, _summary_payload, closeout_payload = _fixture(tmp_path)
+def test_chunk_evidence_closeout_verifier_negative_failures(
+    tmp_path: Path, mutate: str, expected_code: str
+) -> None:
+    project, selection, conversion_summary, closeout, output, _summary_payload, closeout_payload = (
+        _fixture(tmp_path)
+    )
     assert _run(project, selection, conversion_summary, closeout, output) == 0
-    package_path = output / "packages" / "arxiv_cs-cl_2507.19457_arxiv_pdf" / "structure-aware-package.json"
-    graph_path = output / "packages" / "arxiv_cs-cl_2507.19457_arxiv_pdf" / "graph-readiness-package.json"
+    package_path = (
+        output / "packages" / "arxiv_cs-cl_2507.19457_arxiv_pdf" / "structure-aware-package.json"
+    )
+    graph_path = (
+        output / "packages" / "arxiv_cs-cl_2507.19457_arxiv_pdf" / "graph-readiness-package.json"
+    )
     summary_path = output / "chunk-evidence-summary.json"
     events_path = output / "independent-review-events.jsonl"
 
@@ -471,7 +671,12 @@ def test_chunk_evidence_closeout_verifier_negative_failures(tmp_path: Path, muta
         events_path.write_text("{not-json\n", encoding="utf-8")
     elif mutate == "fabricated_review_event":
         with events_path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps({"event": "independent_review.verdict", "output_contract_completed": True}) + "\n")
+            handle.write(
+                json.dumps(
+                    {"event": "independent_review.verdict", "output_contract_completed": True}
+                )
+                + "\n"
+            )
     elif mutate == "payload_leak":
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
         summary["raw_text"] = "Local Parser Ready Paper"
@@ -486,7 +691,9 @@ def test_chunk_evidence_closeout_verifier_negative_failures(tmp_path: Path, muta
         _write_json(graph_path, graph_package)
 
     assert _run_verify(project, selection, conversion_summary, closeout, output) == 1
-    closeout_summary = json.loads((output.parent / "chunk-evidence-closeout-summary.json").read_text(encoding="utf-8"))
+    closeout_summary = json.loads(
+        (output.parent / "chunk-evidence-closeout-summary.json").read_text(encoding="utf-8")
+    )
     findings = _closeout_findings(output)
     assert closeout_summary["status"] == "failed"
     assert closeout_summary["failure_count"] >= 1

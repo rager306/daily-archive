@@ -82,7 +82,9 @@ def test_article_report_writes_report_diagnostics_provenance_and_freshness(tmp_p
     report = _load_json(Path(response["report_path"]))
     diagnostics = Path(response["diagnostics_path"]).read_text(encoding="utf-8")
     freshness = _load_json(Path(response["freshness_report_path"]))
-    provenance_lines = Path(response["provenance_log_path"]).read_text(encoding="utf-8").splitlines()
+    provenance_lines = (
+        Path(response["provenance_log_path"]).read_text(encoding="utf-8").splitlines()
+    )
 
     assert report["schema_version"] == "m024-article-batch-validation.v1"
     assert report["runner"]["command"] == "validation-batch article-report"
@@ -94,7 +96,13 @@ def test_article_report_writes_report_diagnostics_provenance_and_freshness(tmp_p
     assert provenance["command"] == "validation-batch article-report"
     assert provenance["real_source_acquisition_performed"] is False
     assert provenance["real_scan_performed"] is False
-    _assert_redacted(result.stdout + json.dumps(report) + diagnostics + json.dumps(freshness) + json.dumps(provenance))
+    _assert_redacted(
+        result.stdout
+        + json.dumps(report)
+        + diagnostics
+        + json.dumps(freshness)
+        + json.dumps(provenance)
+    )
 
 
 def test_article_report_adapts_validation_batch_state_metadata_only(tmp_path: Path) -> None:
@@ -116,7 +124,9 @@ def test_article_report_adapts_validation_batch_state_metadata_only(tmp_path: Pa
         input_manifests=("manifest.json",),
         artifact_paths=ScanArtifactPaths(),
         source_readiness_by_paper={
-            f"2605.{index:05d}v1": SourceReadiness(markdown_present=True, markdown_quality_accepted=True, ready_for_markdown_scan=True)
+            f"2605.{index:05d}v1": SourceReadiness(
+                markdown_present=True, markdown_quality_accepted=True, ready_for_markdown_scan=True
+            )
             for index in range(10)
         },
     )
@@ -140,7 +150,9 @@ def test_article_report_adapts_validation_batch_state_metadata_only(tmp_path: Pa
     assert {row["source_sha256"] for row in report["document_status_rows"]} == {"a" * 64}
 
 
-def test_article_report_missing_manifest_fails_with_redacted_blocked_artifacts(tmp_path: Path) -> None:
+def test_article_report_missing_manifest_fails_with_redacted_blocked_artifacts(
+    tmp_path: Path,
+) -> None:
     missing = tmp_path / "missing.json"
     result = _run_cli(
         "validation-batch",
@@ -165,7 +177,9 @@ def test_article_report_missing_manifest_fails_with_redacted_blocked_artifacts(t
 
 def test_article_report_malformed_json_fails_without_raw_payload_echo(tmp_path: Path) -> None:
     malformed = tmp_path / "malformed.json"
-    malformed.write_text('{"documents": ["FORBIDDEN_RAW_ARTICLE_TEXT_DO_NOT_ECHO", ', encoding="utf-8")
+    malformed.write_text(
+        '{"documents": ["FORBIDDEN_RAW_ARTICLE_TEXT_DO_NOT_ECHO", ', encoding="utf-8"
+    )
 
     result = _run_cli(
         "validation-batch",
@@ -203,7 +217,9 @@ def test_article_report_unsafe_manifest_is_redacted_and_fail_closed(tmp_path: Pa
     assert response["recommendation"] == "stop_graph_import_unsafe_evidence"
     assert report["safety_counters"]["graph_import_attempted_count"] == 0
     assert report["safety_flags"]["trusted_kg_import_allowed"] is False
-    assert "forbidden_payload_key:raw_text" in {diagnostic["code"] for diagnostic in report["diagnostics"]}
+    assert "forbidden_payload_key:raw_text" in {
+        diagnostic["code"] for diagnostic in report["diagnostics"]
+    }
     _assert_redacted(result.stdout + result.stderr + json.dumps(report) + diagnostics_text)
 
 

@@ -29,11 +29,25 @@ from replay_m031_catalog_backed_loader_evidence import (
 )
 from verify_m031_catalog_backed_replay import CloseoutError, verify_contract  # noqa: E402
 
-SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "build_m031_catalog_backed_replay_selection.py"
-REPLAY_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "replay_m031_catalog_backed_acquisition.py"
-LOADER_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "replay_m031_catalog_backed_loader_evidence.py"
-CLOSEOUT_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "verify_m031_catalog_backed_replay.py"
-REAL_SOURCE_SELECTION = Path("data/article_corpora/m029-pipeline-architecture-audit-v1/selection.json")
+SCRIPT = (
+    Path(__file__).resolve().parents[1]
+    / "scripts"
+    / "build_m031_catalog_backed_replay_selection.py"
+)
+REPLAY_SCRIPT = (
+    Path(__file__).resolve().parents[1] / "scripts" / "replay_m031_catalog_backed_acquisition.py"
+)
+LOADER_SCRIPT = (
+    Path(__file__).resolve().parents[1]
+    / "scripts"
+    / "replay_m031_catalog_backed_loader_evidence.py"
+)
+CLOSEOUT_SCRIPT = (
+    Path(__file__).resolve().parents[1] / "scripts" / "verify_m031_catalog_backed_replay.py"
+)
+REAL_SOURCE_SELECTION = Path(
+    "data/article_corpora/m029-pipeline-architecture-audit-v1/selection.json"
+)
 REAL_CATALOG = Path("data/article_catalog/catalog.json")
 REAL_INDEX = Path("data/article_catalog/index.json")
 
@@ -56,7 +70,9 @@ def _fixture_tree(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
     catalog_root = tmp_path / "article_catalog"
     catalog_path = catalog_root / "catalog.json"
     index_path = catalog_root / "index.json"
-    article_path = catalog_root / "article_catalog" / "arxiv" / "mixed-source" / "2605.29548" / "article.json"
+    article_path = (
+        catalog_root / "article_catalog" / "arxiv" / "mixed-source" / "2605.29548" / "article.json"
+    )
     selection_path = tmp_path / "selection.json"
     _write_json(
         catalog_path,
@@ -220,7 +236,10 @@ def test_build_m031_real_selection_contract_writes_expected_counts(tmp_path: Pat
         "arxiv:2605.29548",
     }
     assert payload["catalog_blockers"][0]["identity"] == "arxiv:2605.26099"
-    assert payload["catalog_blockers"][0]["blocker_code"] == "catalog_placeholder_pruned_no_article_record"
+    assert (
+        payload["catalog_blockers"][0]["blocker_code"]
+        == "catalog_placeholder_pruned_no_article_record"
+    )
     for article in payload["articles"]:
         assert article["article_ref"]
         assert article["article_path"].endswith("article.json")
@@ -238,7 +257,21 @@ def test_build_m031_real_selection_contract_writes_expected_counts(tmp_path: Pat
 def test_build_m031_preserves_null_source_paths_as_metadata_blocker_inputs(tmp_path: Path) -> None:
     selection, catalog, index, output = _fixture_tree(tmp_path)
 
-    assert main(["--source-selection", str(selection), "--catalog", str(catalog), "--index", str(index), "--output", str(output)]) == 0
+    assert (
+        main(
+            [
+                "--source-selection",
+                str(selection),
+                "--catalog",
+                str(catalog),
+                "--index",
+                str(index),
+                "--output",
+                str(output),
+            ]
+        )
+        == 0
+    )
 
     payload = json.loads(output.read_text(encoding="utf-8"))
     variants = payload["articles"][0]["source_variants"]
@@ -253,7 +286,21 @@ def test_build_m031_rejects_empty_refs(tmp_path: Path) -> None:
     payload["refs"] = []
     _write_json(selection, payload)
 
-    assert main(["--source-selection", str(selection), "--catalog", str(catalog), "--index", str(index), "--output", str(tmp_path / "out.json")]) == 2
+    assert (
+        main(
+            [
+                "--source-selection",
+                str(selection),
+                "--catalog",
+                str(catalog),
+                "--index",
+                str(index),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
+        == 2
+    )
 
 
 def test_build_m031_rejects_duplicate_normalized_identities(tmp_path: Path) -> None:
@@ -262,7 +309,21 @@ def test_build_m031_rejects_duplicate_normalized_identities(tmp_path: Path) -> N
     payload["refs"].append(dict(payload["refs"][0], ref_id="duplicate"))
     _write_json(selection, payload)
 
-    assert main(["--source-selection", str(selection), "--catalog", str(catalog), "--index", str(index), "--output", str(tmp_path / "out.json")]) == 2
+    assert (
+        main(
+            [
+                "--source-selection",
+                str(selection),
+                "--catalog",
+                str(catalog),
+                "--index",
+                str(index),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
+        == 2
+    )
 
 
 def test_build_m031_rejects_missing_index_rows_for_cataloged_refs(tmp_path: Path) -> None:
@@ -271,7 +332,21 @@ def test_build_m031_rejects_missing_index_rows_for_cataloged_refs(tmp_path: Path
     index_payload["articles"] = []
     _write_json(index, index_payload)
 
-    assert main(["--source-selection", str(selection), "--catalog", str(catalog), "--index", str(index), "--output", str(tmp_path / "out.json")]) == 2
+    assert (
+        main(
+            [
+                "--source-selection",
+                str(selection),
+                "--catalog",
+                str(catalog),
+                "--index",
+                str(index),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
+        == 2
+    )
 
 
 def test_build_m031_rejects_path_traversal_in_index_article_path(tmp_path: Path) -> None:
@@ -280,7 +355,21 @@ def test_build_m031_rejects_path_traversal_in_index_article_path(tmp_path: Path)
     index_payload["articles"][0]["article_path"] = "../escape/article.json"
     _write_json(index, index_payload)
 
-    assert main(["--source-selection", str(selection), "--catalog", str(catalog), "--index", str(index), "--output", str(tmp_path / "out.json")]) == 2
+    assert (
+        main(
+            [
+                "--source-selection",
+                str(selection),
+                "--catalog",
+                str(catalog),
+                "--index",
+                str(index),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
+        == 2
+    )
 
 
 def test_build_m031_rejects_url_as_index_article_path(tmp_path: Path) -> None:
@@ -289,7 +378,21 @@ def test_build_m031_rejects_url_as_index_article_path(tmp_path: Path) -> None:
     index_payload["articles"][0]["article_path"] = "https://example.test/article.json"
     _write_json(index, index_payload)
 
-    assert main(["--source-selection", str(selection), "--catalog", str(catalog), "--index", str(index), "--output", str(tmp_path / "out.json")]) == 2
+    assert (
+        main(
+            [
+                "--source-selection",
+                str(selection),
+                "--catalog",
+                str(catalog),
+                "--index",
+                str(index),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
+        == 2
+    )
 
 
 def test_build_m031_rejects_true_unsafe_safety_flags(tmp_path: Path) -> None:
@@ -298,17 +401,53 @@ def test_build_m031_rejects_true_unsafe_safety_flags(tmp_path: Path) -> None:
     payload["refs"][0]["unsafe_claims"]["graph_ready_claimed"] = True
     _write_json(selection, payload)
 
-    assert main(["--source-selection", str(selection), "--catalog", str(catalog), "--index", str(index), "--output", str(tmp_path / "out.json")]) == 2
+    assert (
+        main(
+            [
+                "--source-selection",
+                str(selection),
+                "--catalog",
+                str(catalog),
+                "--index",
+                str(index),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
+        == 2
+    )
 
 
 def test_build_m031_rejects_unsafe_source_variant_paths(tmp_path: Path) -> None:
     selection, catalog, index, _ = _fixture_tree(tmp_path)
-    article_path = tmp_path / "article_catalog" / "article_catalog" / "arxiv" / "mixed-source" / "2605.29548" / "article.json"
+    article_path = (
+        tmp_path
+        / "article_catalog"
+        / "article_catalog"
+        / "arxiv"
+        / "mixed-source"
+        / "2605.29548"
+        / "article.json"
+    )
     article_payload = json.loads(article_path.read_text(encoding="utf-8"))
     article_payload["source_variants"][0]["path"] = "../escape.html"
     _write_json(article_path, article_payload)
 
-    assert main(["--source-selection", str(selection), "--catalog", str(catalog), "--index", str(index), "--output", str(tmp_path / "out.json")]) == 2
+    assert (
+        main(
+            [
+                "--source-selection",
+                str(selection),
+                "--catalog",
+                str(catalog),
+                "--index",
+                str(index),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
+        == 2
+    )
 
 
 def test_build_m031_exposes_typed_blocker_diagnostics(tmp_path: Path) -> None:
@@ -316,7 +455,9 @@ def test_build_m031_exposes_typed_blocker_diagnostics(tmp_path: Path) -> None:
 
     payload = build_selection(selection, catalog, index)
 
-    blocker_diagnostics = [row for row in payload["diagnostics"] if row["identity"] == "arxiv:2605.26099"]
+    blocker_diagnostics = [
+        row for row in payload["diagnostics"] if row["identity"] == "arxiv:2605.26099"
+    ]
     assert blocker_diagnostics == [
         {
             "code": "catalog_placeholder_pruned_no_article_record",
@@ -332,7 +473,9 @@ def test_build_m031_exposes_typed_blocker_diagnostics(tmp_path: Path) -> None:
 
 def _replay_fixture_tree(tmp_path: Path) -> tuple[Path, Path, Path]:
     catalog_root = tmp_path / "article_catalog"
-    article_path = catalog_root / "article_catalog" / "arxiv" / "cs-cl" / "2507.19457" / "article.json"
+    article_path = (
+        catalog_root / "article_catalog" / "arxiv" / "cs-cl" / "2507.19457" / "article.json"
+    )
     source_dir = article_path.parent / "source"
     source_dir.mkdir(parents=True, exist_ok=True)
     (source_dir / "article.html").write_bytes(b"fixture article html bytes")
@@ -355,14 +498,26 @@ def _replay_fixture_tree(tmp_path: Path) -> tuple[Path, Path, Path]:
                 "source_variant_count": 6,
             },
             "requested_refs": [
-                {"ref_id": "m029-ref-001", "identity": "arxiv:2507.19457", "url": "https://arxiv.org/abs/2507.19457"},
+                {
+                    "ref_id": "m029-ref-001",
+                    "identity": "arxiv:2507.19457",
+                    "url": "https://arxiv.org/abs/2507.19457",
+                },
                 {
                     "ref_id": "m029-ref-002",
                     "identity": "stanford:cs224n:gradient-notes",
                     "url": "https://web.stanford.edu/class/cs224n/readings/gradient-notes.pdf",
                 },
-                {"ref_id": "m029-ref-003", "identity": "arxiv:2605.29548", "url": "https://arxiv.org/abs/2605.29548"},
-                {"ref_id": "m029-ref-004", "identity": "arxiv:2605.26099", "url": "https://arxiv.org/abs/2605.26099"},
+                {
+                    "ref_id": "m029-ref-003",
+                    "identity": "arxiv:2605.29548",
+                    "url": "https://arxiv.org/abs/2605.29548",
+                },
+                {
+                    "ref_id": "m029-ref-004",
+                    "identity": "arxiv:2605.26099",
+                    "url": "https://arxiv.org/abs/2605.26099",
+                },
             ],
             "safety_flags": {
                 "metadata_only_selection": True,
@@ -485,7 +640,9 @@ def _replay_fixture_tree(tmp_path: Path) -> tuple[Path, Path, Path]:
     return selection_path, catalog_root, tmp_path / "source"
 
 
-def test_replay_m031_real_acquisition_captures_local_artifacts_and_blocks_metadata_rows(tmp_path: Path) -> None:
+def test_replay_m031_real_acquisition_captures_local_artifacts_and_blocks_metadata_rows(
+    tmp_path: Path,
+) -> None:
     output_dir = tmp_path / "source"
     summary_path = tmp_path / "source-acquisition-summary.json"
     diagnostics_path = tmp_path / "source-acquisition-diagnostics.jsonl"
@@ -531,10 +688,16 @@ def test_replay_m031_real_acquisition_captures_local_artifacts_and_blocks_metada
         assert artifact.exists()
         assert row["sha256"] == sha256_file(artifact)
         assert row["byte_size"] == artifact.stat().st_size
-    blocked_codes = [row["diagnostic_code"] for row in summary["results"] if row["status"] == "blocked"]
+    blocked_codes = [
+        row["diagnostic_code"] for row in summary["results"] if row["status"] == "blocked"
+    ]
     assert blocked_codes.count("missing_local_source_path") == 3
     assert "catalog_placeholder_pruned_no_article_record" in blocked_codes
-    serialized = summary_path.read_text(encoding="utf-8") + diagnostics_path.read_text(encoding="utf-8") + report_path.read_text(encoding="utf-8")
+    serialized = (
+        summary_path.read_text(encoding="utf-8")
+        + diagnostics_path.read_text(encoding="utf-8")
+        + report_path.read_text(encoding="utf-8")
+    )
     assert "<html" not in serialized.lower()
     assert "</html" not in serialized.lower()
     assert "base64," not in serialized.lower()
@@ -543,7 +706,9 @@ def test_replay_m031_real_acquisition_captures_local_artifacts_and_blocks_metada
 def test_replay_m031_fixture_handles_null_external_pdf_and_typed_blocker(tmp_path: Path) -> None:
     selection, catalog_root, output_dir = _replay_fixture_tree(tmp_path)
 
-    results = replay_selection(selection_path=selection, catalog_root=catalog_root, output_dir=output_dir)
+    results = replay_selection(
+        selection_path=selection, catalog_root=catalog_root, output_dir=output_dir
+    )
 
     assert [row["status"] for row in results].count("captured") == 3
     assert [row["status"] for row in results].count("blocked") == 4
@@ -561,7 +726,9 @@ def test_replay_m031_blocks_unsafe_catalog_source_path(tmp_path: Path) -> None:
     payload["articles"][0]["source_variants"][0]["local_path"] = "../escape.html"
     _write_json(selection, payload)
 
-    results = replay_selection(selection_path=selection, catalog_root=catalog_root, output_dir=output_dir)
+    results = replay_selection(
+        selection_path=selection, catalog_root=catalog_root, output_dir=output_dir
+    )
 
     unsafe = next(row for row in results if row["variant_id"] == "html")
     assert unsafe["status"] == "blocked"
@@ -571,9 +738,19 @@ def test_replay_m031_blocks_unsafe_catalog_source_path(tmp_path: Path) -> None:
 
 def test_replay_m031_blocks_absent_local_source_artifact(tmp_path: Path) -> None:
     selection, catalog_root, output_dir = _replay_fixture_tree(tmp_path)
-    (catalog_root / "article_catalog" / "arxiv" / "cs-cl" / "2507.19457" / "source" / "article.html").unlink()
+    (
+        catalog_root
+        / "article_catalog"
+        / "arxiv"
+        / "cs-cl"
+        / "2507.19457"
+        / "source"
+        / "article.html"
+    ).unlink()
 
-    results = replay_selection(selection_path=selection, catalog_root=catalog_root, output_dir=output_dir)
+    results = replay_selection(
+        selection_path=selection, catalog_root=catalog_root, output_dir=output_dir
+    )
 
     missing = next(row for row in results if row["variant_id"] == "html")
     assert missing["status"] == "blocked"
@@ -583,9 +760,19 @@ def test_replay_m031_blocks_absent_local_source_artifact(tmp_path: Path) -> None
 
 def test_replay_m031_fails_empty_local_source_artifact(tmp_path: Path) -> None:
     selection, catalog_root, output_dir = _replay_fixture_tree(tmp_path)
-    (catalog_root / "article_catalog" / "arxiv" / "cs-cl" / "2507.19457" / "source" / "article.html").write_bytes(b"")
+    (
+        catalog_root
+        / "article_catalog"
+        / "arxiv"
+        / "cs-cl"
+        / "2507.19457"
+        / "source"
+        / "article.html"
+    ).write_bytes(b"")
 
-    results = replay_selection(selection_path=selection, catalog_root=catalog_root, output_dir=output_dir)
+    results = replay_selection(
+        selection_path=selection, catalog_root=catalog_root, output_dir=output_dir
+    )
 
     empty = next(row for row in results if row["variant_id"] == "html")
     assert empty["status"] == "failed"
@@ -598,22 +785,25 @@ def test_replay_m031_cli_writes_redacted_summary_diagnostics_and_report(tmp_path
     diagnostics_path = tmp_path / "diagnostics.jsonl"
     report_path = tmp_path / "report.md"
 
-    assert replay_main(
-        [
-            "--selection",
-            str(selection),
-            "--catalog-root",
-            str(catalog_root),
-            "--output-dir",
-            str(output_dir),
-            "--write-summary",
-            str(summary_path),
-            "--write-diagnostics",
-            str(diagnostics_path),
-            "--write-report",
-            str(report_path),
-        ]
-    ) == 0
+    assert (
+        replay_main(
+            [
+                "--selection",
+                str(selection),
+                "--catalog-root",
+                str(catalog_root),
+                "--output-dir",
+                str(output_dir),
+                "--write-summary",
+                str(summary_path),
+                "--write-diagnostics",
+                str(diagnostics_path),
+                "--write-report",
+                str(report_path),
+            ]
+        )
+        == 0
+    )
 
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
     assert summary["counts"] == {"captured": 3, "blocked": 4, "failed": 0}
@@ -623,7 +813,11 @@ def test_replay_m031_cli_writes_redacted_summary_diagnostics_and_report(tmp_path
     assert "## Failure Modes" in report
     assert "## Load Profile" in report
     assert "## Negative Tests" in report
-    serialized = summary_path.read_text(encoding="utf-8") + diagnostics_path.read_text(encoding="utf-8") + report
+    serialized = (
+        summary_path.read_text(encoding="utf-8")
+        + diagnostics_path.read_text(encoding="utf-8")
+        + report
+    )
     assert "<html" not in serialized.lower()
     assert "</html" not in serialized.lower()
     assert "base64," not in serialized.lower()
@@ -631,7 +825,9 @@ def test_replay_m031_cli_writes_redacted_summary_diagnostics_and_report(tmp_path
 
 def _fixture_acquisition_summary(tmp_path: Path) -> tuple[Path, Path, Path]:
     selection, catalog_root, output_dir = _replay_fixture_tree(tmp_path)
-    results = replay_selection(selection_path=selection, catalog_root=catalog_root, output_dir=output_dir)
+    results = replay_selection(
+        selection_path=selection, catalog_root=catalog_root, output_dir=output_dir
+    )
     summary_path = tmp_path / "source-acquisition-summary.json"
     _write_json(
         summary_path,
@@ -705,14 +901,28 @@ def test_replay_m031_real_loader_evidence_only_loads_captured_artifacts(tmp_path
     event_path = evidence_dir / "arxiv" / "cs-cl" / "2507.19457" / "events.jsonl"
     assert event_path.exists()
     events = [json.loads(line) for line in event_path.read_text(encoding="utf-8").splitlines()]
-    assert len([event for event in events if event["event"] in {"source.load_completed", "source.load_failed"}]) == 3
+    assert (
+        len(
+            [
+                event
+                for event in events
+                if event["event"] in {"source.load_completed", "source.load_failed"}
+            ]
+        )
+        == 3
+    )
     assert all(not Path(event["source_path"]).is_absolute() for event in events)
     assert {event["source_path"] for event in events} == {
         "arxiv/cs-cl/2507.19457/source/article.html",
         "arxiv/cs-cl/2507.19457/source/original.pdf",
         "arxiv/cs-cl/2507.19457/source/abs.html",
     }
-    serialized = summary_path.read_text(encoding="utf-8") + diagnostics_path.read_text(encoding="utf-8") + report_path.read_text(encoding="utf-8") + event_path.read_text(encoding="utf-8")
+    serialized = (
+        summary_path.read_text(encoding="utf-8")
+        + diagnostics_path.read_text(encoding="utf-8")
+        + report_path.read_text(encoding="utf-8")
+        + event_path.read_text(encoding="utf-8")
+    )
     assert "GEPA: Reflective Prompt" not in serialized
     assert "base64," not in serialized.lower()
     assert '"text":' not in serialized
@@ -723,7 +933,9 @@ def test_replay_m031_real_loader_evidence_only_loads_captured_artifacts(tmp_path
     assert "## Negative Tests" in report
 
 
-def test_replay_m031_fixture_loader_blocks_non_captured_rows_and_redacts_text(tmp_path: Path) -> None:
+def test_replay_m031_fixture_loader_blocks_non_captured_rows_and_redacts_text(
+    tmp_path: Path,
+) -> None:
     selection, acquisition_summary, source_dir = _fixture_acquisition_summary(tmp_path)
 
     rows = replay_loader_evidence(
@@ -735,10 +947,14 @@ def test_replay_m031_fixture_loader_blocks_non_captured_rows_and_redacts_text(tm
 
     assert [row["loader_attempted"] for row in rows].count(True) == 3
     assert [row["status"] for row in rows].count("blocked") == 4
-    assert all(row["loader_attempted"] is False for row in rows if row["acquisition_status"] != "captured")
+    assert all(
+        row["loader_attempted"] is False for row in rows if row["acquisition_status"] != "captured"
+    )
     assert "fixture article html bytes" not in json.dumps(rows)
     assert all("text" not in row for row in rows)
-    pdf_row = next(row for row in rows if row["source_role"] == "arxiv_pdf" and row["loader_attempted"])
+    pdf_row = next(
+        row for row in rows if row["source_role"] == "arxiv_pdf" and row["loader_attempted"]
+    )
     assert pdf_row["status"] == "loaded_metadata_only"
     assert pdf_row["text_present"] is False
 
@@ -762,7 +978,9 @@ def test_replay_m031_loader_blocks_missing_captured_file(tmp_path: Path) -> None
 
 def test_replay_m031_loader_blocks_hash_mismatch_before_loading(tmp_path: Path) -> None:
     selection, acquisition_summary, source_dir = _fixture_acquisition_summary(tmp_path)
-    (source_dir / "arxiv" / "cs-cl" / "2507.19457" / "source" / "article.html").write_bytes(b"changed bytes")
+    (source_dir / "arxiv" / "cs-cl" / "2507.19457" / "source" / "article.html").write_bytes(
+        b"changed bytes"
+    )
 
     rows = replay_loader_evidence(
         selection_path=selection,
@@ -855,24 +1073,27 @@ def test_replay_m031_loader_cli_writes_summary_diagnostics_report(tmp_path: Path
     diagnostics_path = tmp_path / "diagnostics.jsonl"
     report_path = tmp_path / "report.md"
 
-    assert loader_main(
-        [
-            "--selection",
-            str(selection),
-            "--acquisition-summary",
-            str(acquisition_summary),
-            "--source-dir",
-            str(source_dir),
-            "--output-dir",
-            str(tmp_path / "loader-evidence"),
-            "--write-summary",
-            str(summary_path),
-            "--write-diagnostics",
-            str(diagnostics_path),
-            "--write-report",
-            str(report_path),
-        ]
-    ) == 0
+    assert (
+        loader_main(
+            [
+                "--selection",
+                str(selection),
+                "--acquisition-summary",
+                str(acquisition_summary),
+                "--source-dir",
+                str(source_dir),
+                "--output-dir",
+                str(tmp_path / "loader-evidence"),
+                "--write-summary",
+                str(summary_path),
+                "--write-diagnostics",
+                str(diagnostics_path),
+                "--write-report",
+                str(report_path),
+            ]
+        )
+        == 0
+    )
 
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
     assert summary["counts"]["loader_attempted"] == 3
@@ -883,7 +1104,9 @@ def test_replay_m031_loader_cli_writes_summary_diagnostics_report(tmp_path: Path
 
 def _fixture_closeout_bundle(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
     selection, catalog_root, source_dir = _replay_fixture_tree(tmp_path)
-    acquisition_rows = replay_selection(selection_path=selection, catalog_root=catalog_root, output_dir=source_dir)
+    acquisition_rows = replay_selection(
+        selection_path=selection, catalog_root=catalog_root, output_dir=source_dir
+    )
     acquisition_summary = build_acquisition_summary(
         acquisition_rows,
         selection_path=selection,
@@ -913,7 +1136,9 @@ def _fixture_closeout_bundle(tmp_path: Path) -> tuple[Path, Path, Path, Path, Pa
     return selection, acquisition_summary_path, loader_summary_path, source_dir, loader_dir
 
 
-def test_verify_m031_closeout_cli_writes_passed_summary_diagnostics_and_report(tmp_path: Path) -> None:
+def test_verify_m031_closeout_cli_writes_passed_summary_diagnostics_and_report(
+    tmp_path: Path,
+) -> None:
     summary_path = tmp_path / "replay-closeout-summary.json"
     diagnostics_path = tmp_path / "replay-closeout-diagnostics.jsonl"
     report_path = tmp_path / "replay-closeout-report.md"
@@ -959,16 +1184,24 @@ def test_verify_m031_closeout_cli_writes_passed_summary_diagnostics_and_report(t
     assert "## Failure Modes" in report
     assert "## Load Profile" in report
     assert "## Negative Tests" in report
-    serialized = summary_path.read_text(encoding="utf-8") + diagnostics_path.read_text(encoding="utf-8") + report
+    serialized = (
+        summary_path.read_text(encoding="utf-8")
+        + diagnostics_path.read_text(encoding="utf-8")
+        + report
+    )
     assert "<html" not in serialized.lower()
     assert "base64," not in serialized.lower()
     assert "GEPA: Reflective Prompt" not in serialized
 
 
 def test_verify_m031_closeout_rejects_omitted_blocked_row(tmp_path: Path) -> None:
-    selection, acquisition_summary, loader_summary, source_dir, loader_dir = _fixture_closeout_bundle(tmp_path)
+    selection, acquisition_summary, loader_summary, source_dir, loader_dir = (
+        _fixture_closeout_bundle(tmp_path)
+    )
     payload = json.loads(loader_summary.read_text(encoding="utf-8"))
-    payload["results"] = [row for row in payload["results"] if row["identity"] != "arxiv:2605.26099"]
+    payload["results"] = [
+        row for row in payload["results"] if row["identity"] != "arxiv:2605.26099"
+    ]
     payload["counts"] = {
         "loader_attempted": 3,
         "loaded": 2,
@@ -988,8 +1221,12 @@ def test_verify_m031_closeout_rejects_omitted_blocked_row(tmp_path: Path) -> Non
         )
 
 
-def test_verify_m031_closeout_rejects_selected_variant_without_acquisition_state(tmp_path: Path) -> None:
-    selection, acquisition_summary, loader_summary, source_dir, loader_dir = _fixture_closeout_bundle(tmp_path)
+def test_verify_m031_closeout_rejects_selected_variant_without_acquisition_state(
+    tmp_path: Path,
+) -> None:
+    selection, acquisition_summary, loader_summary, source_dir, loader_dir = (
+        _fixture_closeout_bundle(tmp_path)
+    )
     payload = json.loads(acquisition_summary.read_text(encoding="utf-8"))
     payload["results"] = [row for row in payload["results"] if row["variant_id"] != "abs"]
     payload["counts"] = {"captured": 2, "blocked": 4, "failed": 0}
@@ -1006,9 +1243,13 @@ def test_verify_m031_closeout_rejects_selected_variant_without_acquisition_state
 
 
 def test_verify_m031_closeout_rejects_loader_blocker_missing(tmp_path: Path) -> None:
-    selection, acquisition_summary, loader_summary, source_dir, loader_dir = _fixture_closeout_bundle(tmp_path)
+    selection, acquisition_summary, loader_summary, source_dir, loader_dir = (
+        _fixture_closeout_bundle(tmp_path)
+    )
     payload = json.loads(loader_summary.read_text(encoding="utf-8"))
-    blocker = next(row for row in payload["results"] if row["identity"] == "stanford:cs224n:gradient-notes")
+    blocker = next(
+        row for row in payload["results"] if row["identity"] == "stanford:cs224n:gradient-notes"
+    )
     blocker["status"] = "loaded"
     blocker["loader_attempted"] = False
     blocker["counts"] = payload.get("counts")
@@ -1032,14 +1273,18 @@ def test_verify_m031_closeout_rejects_loader_blocker_missing(tmp_path: Path) -> 
 
 
 def test_verify_m031_closeout_rejects_loader_acquisition_mismatch(tmp_path: Path) -> None:
-    selection, acquisition_summary, loader_summary, source_dir, loader_dir = _fixture_closeout_bundle(tmp_path)
+    selection, acquisition_summary, loader_summary, source_dir, loader_dir = (
+        _fixture_closeout_bundle(tmp_path)
+    )
     payload = json.loads(loader_summary.read_text(encoding="utf-8"))
     attempted = next(row for row in payload["results"] if row["variant_id"] == "html")
     attempted["loader_attempted"] = False
     payload["counts"]["loader_attempted"] = 2
     _write_json(loader_summary, payload)
 
-    with pytest.raises(CloseoutError, match="loader attempts do not match captured acquisition rows"):
+    with pytest.raises(
+        CloseoutError, match="loader attempts do not match captured acquisition rows"
+    ):
         verify_contract(
             selection_path=selection,
             acquisition_summary_path=acquisition_summary,
@@ -1050,9 +1295,13 @@ def test_verify_m031_closeout_rejects_loader_acquisition_mismatch(tmp_path: Path
 
 
 def test_verify_m031_closeout_rejects_loader_event_text_leakage(tmp_path: Path) -> None:
-    selection, acquisition_summary, loader_summary, source_dir, loader_dir = _fixture_closeout_bundle(tmp_path)
+    selection, acquisition_summary, loader_summary, source_dir, loader_dir = (
+        _fixture_closeout_bundle(tmp_path)
+    )
     event_path = loader_dir / "arxiv" / "cs-cl" / "2507.19457" / "events.jsonl"
-    event_path.write_text('{"event":"source.load_completed","text":"fixture article html bytes"}\n', encoding="utf-8")
+    event_path.write_text(
+        '{"event":"source.load_completed","text":"fixture article html bytes"}\n', encoding="utf-8"
+    )
 
     with pytest.raises(CloseoutError, match="metadata artifact is not redacted"):
         verify_contract(
@@ -1072,8 +1321,12 @@ def test_verify_m031_closeout_rejects_loader_event_text_leakage(tmp_path: Path) 
         ("ladybugdb_written", True),
     ],
 )
-def test_verify_m031_closeout_rejects_unsafe_true_flags(tmp_path: Path, flag: str, value: bool) -> None:
-    selection, acquisition_summary, loader_summary, source_dir, loader_dir = _fixture_closeout_bundle(tmp_path)
+def test_verify_m031_closeout_rejects_unsafe_true_flags(
+    tmp_path: Path, flag: str, value: bool
+) -> None:
+    selection, acquisition_summary, loader_summary, source_dir, loader_dir = (
+        _fixture_closeout_bundle(tmp_path)
+    )
     payload = json.loads(loader_summary.read_text(encoding="utf-8"))
     payload[flag] = value
     _write_json(loader_summary, payload)
@@ -1089,8 +1342,12 @@ def test_verify_m031_closeout_rejects_unsafe_true_flags(tmp_path: Path, flag: st
 
 
 def test_verify_m031_closeout_rejects_stale_hash(tmp_path: Path) -> None:
-    selection, acquisition_summary, loader_summary, source_dir, loader_dir = _fixture_closeout_bundle(tmp_path)
-    (source_dir / "arxiv" / "cs-cl" / "2507.19457" / "source" / "article.html").write_bytes(b"changed bytes")
+    selection, acquisition_summary, loader_summary, source_dir, loader_dir = (
+        _fixture_closeout_bundle(tmp_path)
+    )
+    (source_dir / "arxiv" / "cs-cl" / "2507.19457" / "source" / "article.html").write_bytes(
+        b"changed bytes"
+    )
 
     with pytest.raises(CloseoutError, match="captured hash mismatch"):
         verify_contract(
@@ -1103,7 +1360,9 @@ def test_verify_m031_closeout_rejects_stale_hash(tmp_path: Path) -> None:
 
 
 def test_verify_m031_closeout_rejects_path_escape(tmp_path: Path) -> None:
-    selection, acquisition_summary, loader_summary, source_dir, loader_dir = _fixture_closeout_bundle(tmp_path)
+    selection, acquisition_summary, loader_summary, source_dir, loader_dir = (
+        _fixture_closeout_bundle(tmp_path)
+    )
     payload = json.loads(loader_summary.read_text(encoding="utf-8"))
     payload["results"][0]["event_path"] = "../escape/events.jsonl"
     _write_json(loader_summary, payload)

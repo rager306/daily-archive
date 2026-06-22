@@ -75,7 +75,9 @@ def _load_fixture(path: Path) -> dict[str, Any]:
 
 def _walk_keys(value: Any) -> list[str]:
     if isinstance(value, dict):
-        return [str(key) for key in value] + [nested for child in value.values() for nested in _walk_keys(child)]
+        return [str(key) for key in value] + [
+            nested for child in value.values() for nested in _walk_keys(child)
+        ]
     if isinstance(value, list):
         return [nested for child in value for nested in _walk_keys(child)]
     return []
@@ -142,7 +144,11 @@ def test_items_reference_article_source_element_and_chunk_identity_without_paylo
         known_chunk_ids = {chunk_ref["chunk_id"] for chunk_ref in payload["chunk_refs"]}
 
         for item in payload["items"]:
-            assert any(str(value).startswith(article_ref) for value in item.values() if isinstance(value, str))
+            assert any(
+                str(value).startswith(article_ref)
+                for value in item.values()
+                if isinstance(value, str)
+            )
             assert "source_span_id" in item or "source_span_ids" in item
             assert "element_id" in item or "source_element_id" in item
             for chunk_id in item.get("chunk_ids", []):

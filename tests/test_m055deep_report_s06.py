@@ -45,8 +45,14 @@ def test_report_contains_per_pdf_tables() -> None:
     text = ensure_report()
     assert "## Per-PDF Routing Table" in text
     assert "| # | arXiv ID | Bucket | Pages |" in text
-    table_section = text.split("## Per-PDF Routing Table", 1)[1].split("## Per-Dimension Winner Analysis", 1)[0]
-    table_lines = [line for line in table_section.splitlines() if line.startswith("| ") and "grobid_fulltext" in line]
+    table_section = text.split("## Per-PDF Routing Table", 1)[1].split(
+        "## Per-Dimension Winner Analysis", 1
+    )[0]
+    table_lines = [
+        line
+        for line in table_section.splitlines()
+        if line.startswith("| ") and "grobid_fulltext" in line
+    ]
     assert len(table_lines) == 20
     assert "2605.28617v1" in text
     assert "grobid_fulltext_only" in text

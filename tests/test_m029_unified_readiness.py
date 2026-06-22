@@ -78,7 +78,10 @@ def _fixture_args(tmp_path: Path) -> tuple[list[str], list[str], Path]:
         "ladybugdb_written": False,
         "trusted_kg_import_allowed": False,
         "graph_import_allowed": False,
-        "fail_closed_safety_flags": {"graph_import_allowed": False, "network_fetch_attempted": False},
+        "fail_closed_safety_flags": {
+            "graph_import_allowed": False,
+            "network_fetch_attempted": False,
+        },
     }
     zero_runtime = {
         **zero_article,
@@ -95,7 +98,10 @@ def _fixture_args(tmp_path: Path) -> tuple[list[str], list[str], Path]:
         "ladybugdb_written": False,
         "trusted_kg_import_allowed": False,
         "graph_import_allowed": False,
-        "fail_closed_safety_flags": {"graph_import_allowed": False, "network_fetch_attempted": False},
+        "fail_closed_safety_flags": {
+            "graph_import_allowed": False,
+            "network_fetch_attempted": False,
+        },
     }
     _write_json(
         runtime_summary,
@@ -115,7 +121,10 @@ def _fixture_args(tmp_path: Path) -> tuple[list[str], list[str], Path]:
             "ladybugdb_written": False,
             "trusted_kg_import_allowed": False,
             "graph_import_allowed": False,
-            "fail_closed_safety_flags": {"graph_import_allowed": False, "network_fetch_attempted": False},
+            "fail_closed_safety_flags": {
+                "graph_import_allowed": False,
+                "network_fetch_attempted": False,
+            },
         },
     )
     loaded_replay = {
@@ -150,7 +159,10 @@ def _fixture_args(tmp_path: Path) -> tuple[list[str], list[str], Path]:
             "ladybugdb_written": False,
             "trusted_kg_import_allowed": False,
             "graph_import_allowed": False,
-            "fail_closed_safety_flags": {"graph_import_allowed": False, "network_fetch_attempted": False},
+            "fail_closed_safety_flags": {
+                "graph_import_allowed": False,
+                "network_fetch_attempted": False,
+            },
         },
     )
     run_args = [
@@ -182,7 +194,9 @@ def _fixture_args(tmp_path: Path) -> tuple[list[str], list[str], Path]:
     return run_args, verify_args, corpus
 
 
-def test_unified_readiness_writes_summary_decision_report(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_unified_readiness_writes_summary_decision_report(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.chdir(tmp_path)
     run_args, verify_args, corpus = _fixture_args(tmp_path)
 
@@ -203,7 +217,9 @@ def test_unified_readiness_writes_summary_decision_report(tmp_path: Path, monkey
     assert "Graph import" in report
 
 
-def test_unified_readiness_fails_closed_on_unsafe_replay_flag(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_unified_readiness_fails_closed_on_unsafe_replay_flag(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     monkeypatch.chdir(tmp_path)
     run_args, _verify_args, corpus = _fixture_args(tmp_path)
     replay_path = corpus / "replay-summary.json"
@@ -217,7 +233,9 @@ def test_unified_readiness_fails_closed_on_unsafe_replay_flag(tmp_path: Path, mo
     assert "graph_import_allowed" in stderr
 
 
-def test_unified_readiness_verifier_detects_count_drift(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_unified_readiness_verifier_detects_count_drift(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     monkeypatch.chdir(tmp_path)
     run_args, verify_args, corpus = _fixture_args(tmp_path)
     assert synthesize_main(run_args) == 0
@@ -230,7 +248,9 @@ def test_unified_readiness_verifier_detects_count_drift(tmp_path: Path, monkeypa
     assert "ready_count_mismatch" in capsys.readouterr().err
 
 
-def test_unified_readiness_verifier_writes_t02_summary(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_unified_readiness_verifier_writes_t02_summary(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.chdir(tmp_path)
     run_args, verify_args, corpus = _fixture_args(tmp_path)
     verify_summary_path = corpus / "readiness-verify-summary.json"

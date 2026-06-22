@@ -51,7 +51,9 @@ FORBIDDEN_SNIPPETS = (
 )
 SAFE_STATUSES = st.sampled_from(sorted(ALLOWED_BENCHMARK_STATUSES))
 SCORES = st.sampled_from([0.0, 0.25, 0.5, 0.75, 1.0])
-SECTION_TYPES = st.sampled_from(["abstract", "introduction", "methods", "results", "discussion", "conclusion"])
+SECTION_TYPES = st.sampled_from(
+    ["abstract", "introduction", "methods", "results", "discussion", "conclusion"]
+)
 
 
 def _load_minimal_manifest() -> dict[str, Any]:
@@ -123,7 +125,9 @@ def _base_table_candidate(index: int, *, score: float, status: str) -> dict[str,
     }
 
 
-def _build_manifest(retrieval_units: list[dict[str, Any]], table_candidates: list[dict[str, Any]]) -> dict[str, Any]:
+def _build_manifest(
+    retrieval_units: list[dict[str, Any]], table_candidates: list[dict[str, Any]]
+) -> dict[str, Any]:
     fixture = _load_minimal_manifest()
     return build_article_retrieval_table_manifest(
         paper_id=fixture["paper_id"],
@@ -139,11 +143,18 @@ def _build_manifest(retrieval_units: list[dict[str, Any]], table_candidates: lis
 
 
 @st.composite
-def retrieval_records(draw: st.DrawFn, *, min_size: int = 1, max_size: int = 5) -> list[dict[str, Any]]:
+def retrieval_records(
+    draw: st.DrawFn, *, min_size: int = 1, max_size: int = 5
+) -> list[dict[str, Any]]:
     scores = draw(st.lists(SCORES, min_size=min_size, max_size=max_size))
     statuses = draw(st.lists(SAFE_STATUSES, min_size=len(scores), max_size=len(scores)))
     sections = draw(st.lists(SECTION_TYPES, min_size=len(scores), max_size=len(scores)))
-    records = [_base_unit(index, score=score, status=status, section_type=section) for index, (score, status, section) in enumerate(zip(scores, statuses, sections, strict=True))]
+    records = [
+        _base_unit(index, score=score, status=status, section_type=section)
+        for index, (score, status, section) in enumerate(
+            zip(scores, statuses, sections, strict=True)
+        )
+    ]
     return draw(st.permutations(records).map(list))
 
 
@@ -152,7 +163,10 @@ def table_records(draw: st.DrawFn, *, max_size: int = 3) -> list[dict[str, Any]]
     count = draw(st.integers(min_value=0, max_value=max_size))
     scores = draw(st.lists(SCORES, min_size=count, max_size=count))
     statuses = draw(st.lists(SAFE_STATUSES, min_size=count, max_size=count))
-    records = [_base_table_candidate(index, score=score, status=status) for index, (score, status) in enumerate(zip(scores, statuses, strict=True))]
+    records = [
+        _base_table_candidate(index, score=score, status=status)
+        for index, (score, status) in enumerate(zip(scores, statuses, strict=True))
+    ]
     return draw(st.permutations(records).map(list))
 
 
@@ -169,12 +183,18 @@ def test_generated_manifests_serialize_deterministically_and_rank_by_score_then_
     assert json.loads(json_once) == to_redacted_dict(manifest)
     assert validate_article_retrieval_table_manifest(manifest) == []
     assert [unit["unit_id"] for unit in manifest["retrieval_units"]] == [
-        unit["unit_id"] for unit in sorted(units, key=lambda unit: (-float(unit["benchmark_score"]), unit["unit_id"]))
+        unit["unit_id"]
+        for unit in sorted(
+            units, key=lambda unit: (-float(unit["benchmark_score"]), unit["unit_id"])
+        )
     ]
     assert [unit["rank"] for unit in manifest["retrieval_units"]] == list(range(1, len(units) + 1))
     assert [candidate["candidate_id"] for candidate in manifest["table_candidates"]] == [
         candidate["candidate_id"]
-        for candidate in sorted(tables, key=lambda candidate: (-float(candidate["benchmark_score"]), candidate["candidate_id"]))
+        for candidate in sorted(
+            tables,
+            key=lambda candidate: (-float(candidate["benchmark_score"]), candidate["candidate_id"]),
+        )
     ]
     assert manifest["summary"]["retrieval_unit_count"] == len(units)
     assert manifest["summary"]["table_candidate_count"] == len(tables)
@@ -189,7 +209,9 @@ def test_generated_manifests_serialize_deterministically_and_rank_by_score_then_
 
 @settings(max_examples=40, deadline=None)
 @given(status=SAFE_STATUSES)
-def test_safe_status_vocabulary_preserves_review_only_counts_and_zero_import_counters(status: str) -> None:
+def test_safe_status_vocabulary_preserves_review_only_counts_and_zero_import_counters(
+    status: str,
+) -> None:
     manifest = _build_manifest(
         [_base_unit(0, score=0.5, status=status, section_type="methods")],
         [_base_table_candidate(0, score=0.5, status=status)],
@@ -202,7 +224,13 @@ def test_safe_status_vocabulary_preserves_review_only_counts_and_zero_import_cou
     assert summary["included_review_only_count"] == (2 if status == "included_review_only" else 0)
     assert summary["blocked_count"] == (2 if status == "blocked_review_only" else 0)
     assert summary["repair_required_count"] == (2 if status == "repair_required_review_only" else 0)
-    for key in ("import_eligible_count", "promoted_to_fact_count", "ladybugdb_written_count", "production_import_attempted_count", "graph_readiness_count"):
+    for key in (
+        "import_eligible_count",
+        "promoted_to_fact_count",
+        "ladybugdb_written_count",
+        "production_import_attempted_count",
+        "graph_readiness_count",
+    ):
         assert summary[key] == 0
 
 
@@ -223,7 +251,10 @@ def test_forbidden_payload_keys_are_diagnostic_paths_and_redacted_from_output(
         raw[forbidden_key] = "FORBIDDEN_TABLE_TEXT_DO_NOT_ECHO"
         expected_path = f"$.{forbidden_key}"
 
-    diagnostics = [diagnostic.to_redacted_dict() for diagnostic in validate_article_retrieval_table_manifest(raw)]
+    diagnostics = [
+        diagnostic.to_redacted_dict()
+        for diagnostic in validate_article_retrieval_table_manifest(raw)
+    ]
     redacted = to_redacted_dict(raw)
 
     assert "forbidden_payload_key" in {diagnostic["code"] for diagnostic in diagnostics}
@@ -234,7 +265,17 @@ def test_forbidden_payload_keys_are_diagnostic_paths_and_redacted_from_output(
 
 
 @settings(max_examples=40, deadline=None)
-@given(flag=st.sampled_from(["trusted_kg_import_allowed", "ladybugdb_written", "production_import_attempted", "import_eligible", "promoted_to_fact"]))
+@given(
+    flag=st.sampled_from(
+        [
+            "trusted_kg_import_allowed",
+            "ladybugdb_written",
+            "production_import_attempted",
+            "import_eligible",
+            "promoted_to_fact",
+        ]
+    )
+)
 def test_unsafe_true_flags_are_rejected_but_redaction_clamps_to_fixed_zero_import_contract(
     flag: str,
 ) -> None:
@@ -250,7 +291,10 @@ def test_unsafe_true_flags_are_rejected_but_redaction_clamps_to_fixed_zero_impor
         raw["bridge_subtree"][flag] = True
         expected_path = f"$.bridge_subtree.{flag}"
 
-    diagnostics = [diagnostic.to_redacted_dict() for diagnostic in validate_article_retrieval_table_manifest(raw)]
+    diagnostics = [
+        diagnostic.to_redacted_dict()
+        for diagnostic in validate_article_retrieval_table_manifest(raw)
+    ]
     redacted = to_redacted_dict(raw)
 
     assert "unsafe_authorization" in {diagnostic["code"] for diagnostic in diagnostics}
@@ -277,7 +321,10 @@ def test_table_candidate_transformation_plan_remains_metadata_only_or_reports_st
         [_base_unit(0, score=0.5, status="included_review_only", section_type="results")],
         [candidate],
     )
-    diagnostics = [diagnostic.to_redacted_dict() for diagnostic in validate_article_retrieval_table_manifest(manifest)]
+    diagnostics = [
+        diagnostic.to_redacted_dict()
+        for diagnostic in validate_article_retrieval_table_manifest(manifest)
+    ]
     paths = {diagnostic["json_path"] for diagnostic in diagnostics}
 
     if raw_table_cells:

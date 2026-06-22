@@ -186,9 +186,14 @@ def test_audit_emits_per_pdf_table(tmp_path: Path) -> None:
 
     markdown = audit.write_audit(summary_path, per_pdf_dir, output)
 
-    assert "| arxiv_id | status | tei_size_bytes | ref_count | body_element_count | m022_repair_candidate | attempts | error |" in markdown
+    assert (
+        "| arxiv_id | status | tei_size_bytes | ref_count | body_element_count | m022_repair_candidate | attempts | error |"
+        in markdown
+    )
     assert "| `1804.02767` | success | 4096 | 12 | 42 | false | 2 | — |" in markdown
-    assert "| `2108.12409` | low_quality_source | 128 | 0 | 0 | true | 1 | tei_too_small |" in markdown
+    assert (
+        "| `2108.12409` | low_quality_source | 128 | 0 | 0 | true | 1 | tei_too_small |" in markdown
+    )
     assert output.read_text(encoding="utf-8") == markdown
 
 

@@ -135,7 +135,9 @@ def _dimension(
     }
 
 
-def _compare_metadata(grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]) -> dict[str, Any]:
+def _compare_metadata(
+    grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]
+) -> dict[str, Any]:
     grobid_metrics = {
         "title_present": bool(grobid_packet.get("header_title_present")),
         "author_count": _as_int(grobid_packet.get("header_author_count")),
@@ -163,10 +165,14 @@ def _compare_metadata(grobid_packet: dict[str, Any], opendataloader_packet: dict
     else:
         winner = "none"
         reason = "Neither parser exposed usable metadata fields."
-    return _dimension(winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics)
+    return _dimension(
+        winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics
+    )
 
 
-def _compare_citations(grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]) -> dict[str, Any]:
+def _compare_citations(
+    grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]
+) -> dict[str, Any]:
     grobid_metrics = {
         "ref_count": _as_int(grobid_packet.get("ref_count")),
         "bibl_count": _as_int(grobid_packet.get("bibl_count")),
@@ -185,10 +191,14 @@ def _compare_citations(grobid_packet: dict[str, Any], opendataloader_packet: dic
     else:
         winner = "none"
         reason = "Neither parser exposed native citation extraction for this packet."
-    return _dimension(winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics)
+    return _dimension(
+        winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics
+    )
 
 
-def _compare_body_content(grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]) -> dict[str, Any]:
+def _compare_body_content(
+    grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]
+) -> dict[str, Any]:
     grobid_metrics = {
         "body_element_count": _as_int(grobid_packet.get("body_element_count")),
         "equation_count": _as_int(grobid_packet.get("equation_count")),
@@ -225,10 +235,14 @@ def _compare_body_content(grobid_packet: dict[str, Any], opendataloader_packet: 
     else:
         winner = "none"
         reason = "Neither parser exposed usable body content for this PDF."
-    return _dimension(winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics)
+    return _dimension(
+        winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics
+    )
 
 
-def _compare_layout(grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]) -> dict[str, Any]:
+def _compare_layout(
+    grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]
+) -> dict[str, Any]:
     grobid_metrics = {
         "native_fulltext_structure": True,
         "equation_count": _as_int(grobid_packet.get("equation_count")),
@@ -242,7 +256,11 @@ def _compare_layout(grobid_packet: dict[str, Any], opendataloader_packet: dict[s
         "image_count": _as_int(opendataloader_packet.get("image_count")),
         "section_count": _as_int(opendataloader_packet.get("section_count")),
     }
-    grobid_score = grobid_metrics["equation_count"] + grobid_metrics["figure_count"] + grobid_metrics["section_count"]
+    grobid_score = (
+        grobid_metrics["equation_count"]
+        + grobid_metrics["figure_count"]
+        + grobid_metrics["section_count"]
+    )
     opendl_native_score = opendl_metrics["bounding_box_count"]
     if grobid_score > 0:
         winner = "grobid"
@@ -253,12 +271,18 @@ def _compare_layout(grobid_packet: dict[str, Any], opendataloader_packet: dict[s
     else:
         winner = "none"
         reason = "Neither parser exposed layout evidence for this PDF."
-    return _dimension(winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics)
+    return _dimension(
+        winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics
+    )
 
 
-def _compare_processing_time(grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]) -> dict[str, Any]:
+def _compare_processing_time(
+    grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]
+) -> dict[str, Any]:
     grobid_ms = _as_int(grobid_packet.get("duration_ms"))
-    opendl_ms = _as_int(opendataloader_packet.get("duration_ms") or opendataloader_packet.get("processing_time_ms"))
+    opendl_ms = _as_int(
+        opendataloader_packet.get("duration_ms") or opendataloader_packet.get("processing_time_ms")
+    )
     grobid_metrics = {"duration_ms": grobid_ms}
     opendl_metrics = {"duration_ms": opendl_ms}
     if grobid_ms <= 0 and opendl_ms <= 0:
@@ -281,10 +305,14 @@ def _compare_processing_time(grobid_packet: dict[str, Any], opendataloader_packe
         else:
             winner = "opendataloader"
             reason = "OpenDataLoader completed faster for this PDF."
-    return _dimension(winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics)
+    return _dimension(
+        winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics
+    )
 
 
-def _compare_quality(grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]) -> dict[str, Any]:
+def _compare_quality(
+    grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]
+) -> dict[str, Any]:
     grobid_metrics = {
         "status": grobid_packet.get("status"),
         "low_quality_source": bool(grobid_packet.get("low_quality_source")),
@@ -296,28 +324,46 @@ def _compare_quality(grobid_packet: dict[str, Any], opendataloader_packet: dict[
         "low_quality_source": bool(opendataloader_packet.get("low_quality_source")),
         "error": opendataloader_packet.get("error"),
     }
-    grobid_good = grobid_metrics["status"] == "success" and not grobid_metrics["low_quality_source"] and not grobid_metrics["parse_error"]
-    opendl_good = opendl_metrics["status"] == "success" and not opendl_metrics["low_quality_source"] and not opendl_metrics["error"]
+    grobid_good = (
+        grobid_metrics["status"] == "success"
+        and not grobid_metrics["low_quality_source"]
+        and not grobid_metrics["parse_error"]
+    )
+    opendl_good = (
+        opendl_metrics["status"] == "success"
+        and not opendl_metrics["low_quality_source"]
+        and not opendl_metrics["error"]
+    )
     if grobid_good:
         winner = "grobid"
         if opendl_good:
             reason = "Both parsers succeeded, but GROBID fulltext additionally preserved TEI parse and manifest-integrity quality evidence."
         else:
-            reason = "GROBID fulltext succeeded while OpenDataLoader was unavailable or low-quality."
+            reason = (
+                "GROBID fulltext succeeded while OpenDataLoader was unavailable or low-quality."
+            )
     elif opendl_good:
         winner = "opendataloader"
         reason = "OpenDataLoader succeeded while GROBID fulltext had quality issues."
     else:
         winner = "none"
         reason = "Both parser packets had quality issues or unavailable status."
-    return _dimension(winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics)
+    return _dimension(
+        winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics
+    )
 
 
-def _compare_dimensions(grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]) -> dict[str, Any]:
+def _compare_dimensions(
+    grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]
+) -> dict[str, Any]:
     """Compare six routing dimensions and add the corpus length bucket."""
     arxiv_id = str(grobid_packet.get("arxiv_id") or opendataloader_packet.get("arxiv_id") or "")
     page_estimates = _load_page_estimates()
-    page_count = _as_int(grobid_packet.get("pages_estimate") or opendataloader_packet.get("pages_estimate") or page_estimates.get(arxiv_id))
+    page_count = _as_int(
+        grobid_packet.get("pages_estimate")
+        or opendataloader_packet.get("pages_estimate")
+        or page_estimates.get(arxiv_id)
+    )
     return {
         "length_bucket": _length_bucket(page_count),
         "pages_estimate": page_count,
@@ -333,7 +379,9 @@ def _compare_dimensions(grobid_packet: dict[str, Any], opendataloader_packet: di
 def _propose_route(comparison: dict[str, Any]) -> dict[str, Any]:
     """Propose hybrid or single-parser routing from measured winners."""
     use_grobid_for = [dim for dim in ROUTING_DIMENSIONS if comparison[dim]["winner"] == "grobid"]
-    use_opendataloader_for = [dim for dim in ROUTING_DIMENSIONS if comparison[dim]["winner"] == "opendataloader"]
+    use_opendataloader_for = [
+        dim for dim in ROUTING_DIMENSIONS if comparison[dim]["winner"] == "opendataloader"
+    ]
     ties = [dim for dim in ROUTING_DIMENSIONS if comparison[dim]["winner"] == "tie"]
     diagnostic_winners = {dim: comparison[dim]["winner"] for dim in ("processing_time", "quality")}
 
@@ -346,12 +394,16 @@ def _propose_route(comparison: dict[str, Any]) -> dict[str, Any]:
         route_type = "single-parser"
         recommended_route = "grobid_fulltext_only"
         confidence = "medium"
-        rationale = "All routing dimensions with decisive winners favor GROBID fulltext for this PDF."
+        rationale = (
+            "All routing dimensions with decisive winners favor GROBID fulltext for this PDF."
+        )
     elif use_opendataloader_for:
         route_type = "single-parser"
         recommended_route = "opendataloader_only"
         confidence = "medium"
-        rationale = "All routing dimensions with decisive winners favor OpenDataLoader for this PDF."
+        rationale = (
+            "All routing dimensions with decisive winners favor OpenDataLoader for this PDF."
+        )
     else:
         route_type = "single-parser"
         recommended_route = "manual_review"
@@ -411,7 +463,7 @@ def _identify_residual_gaps(comparison: dict[str, Any]) -> list[dict[str, Any]]:
             {
                 "gap": "latency_variance",
                 "severity": "low",
-                "reason": "Fulltext extraction is not always the fastest parser; production routing should record parser latency by PDF."
+                "reason": "Fulltext extraction is not always the fastest parser; production routing should record parser latency by PDF.",
             }
         )
 
@@ -429,7 +481,9 @@ def _summarize_fulltext_vs_header_delta(
     overlap_ids = sorted(set(header_recommendations) & set(per_pdf))
     shifted_dimensions: dict[str, dict[str, str]] = {}
     for arxiv_id in overlap_ids:
-        header_packet_path = Path("artifacts/m055-parser-benchmark/hybrid-routing/per-pdf") / f"{arxiv_id}.json"
+        header_packet_path = (
+            Path("artifacts/m055-parser-benchmark/hybrid-routing/per-pdf") / f"{arxiv_id}.json"
+        )
         if not header_packet_path.exists():
             continue
         header_packet = _load_json(header_packet_path)
@@ -444,16 +498,26 @@ def _summarize_fulltext_vs_header_delta(
         if shifts:
             shifted_dimensions[arxiv_id] = shifts
 
-    header_hybrid_percent = header_summary.get("aggregate_routing_recommendation", {}).get("hybrid_percent")
-    fulltext_overlap_hybrid_count = sum(1 for arxiv_id in overlap_ids if per_pdf[arxiv_id]["recommended_route"]["route_type"] == "hybrid")
-    fulltext_overlap_hybrid_percent = round((fulltext_overlap_hybrid_count / len(overlap_ids)) * 100, 2) if overlap_ids else 0.0
+    header_hybrid_percent = header_summary.get("aggregate_routing_recommendation", {}).get(
+        "hybrid_percent"
+    )
+    fulltext_overlap_hybrid_count = sum(
+        1
+        for arxiv_id in overlap_ids
+        if per_pdf[arxiv_id]["recommended_route"]["route_type"] == "hybrid"
+    )
+    fulltext_overlap_hybrid_percent = (
+        round((fulltext_overlap_hybrid_count / len(overlap_ids)) * 100, 2) if overlap_ids else 0.0
+    )
     return {
         "status": "compared",
         "header_summary_path": str(header_summary_path),
         "overlap_pdf_count": len(overlap_ids),
         "header_only_hybrid_percent": header_hybrid_percent,
         "fulltext_overlap_hybrid_percent": fulltext_overlap_hybrid_percent,
-        "hybrid_percent_delta_points": None if header_hybrid_percent is None else round(fulltext_overlap_hybrid_percent - float(header_hybrid_percent), 2),
+        "hybrid_percent_delta_points": None
+        if header_hybrid_percent is None
+        else round(fulltext_overlap_hybrid_percent - float(header_hybrid_percent), 2),
         "dimension_winner_shifts": shifted_dimensions,
         "interpretation": "Fulltext keeps the 5-PDF hybrid route stable while shifting layout and quality evidence toward GROBID fulltext.",
     }
@@ -468,8 +532,12 @@ def _summarize_length_buckets(per_pdf_packets: list[dict[str, Any]]) -> dict[str
         packets = grouped.get(bucket, [])
         if not packets:
             continue
-        route_counts = Counter(packet["recommended_route"]["recommended_route"] for packet in packets)
-        hybrid_count = sum(1 for packet in packets if packet["recommended_route"]["route_type"] == "hybrid")
+        route_counts = Counter(
+            packet["recommended_route"]["recommended_route"] for packet in packets
+        )
+        hybrid_count = sum(
+            1 for packet in packets if packet["recommended_route"]["route_type"] == "hybrid"
+        )
         bucket_summary[bucket] = {
             "pdf_count": len(packets),
             "hybrid_pdf_count": hybrid_count,
@@ -514,7 +582,9 @@ def compare_hybrid_routing_20(
             "schema_version": SCHEMA_VERSION,
             "generated_at": _utc_now(),
             "arxiv_id": arxiv_id,
-            "article_key": grobid_packet.get("article_key") or opendl_packet.get("article_key") or arxiv_id,
+            "article_key": grobid_packet.get("article_key")
+            or opendl_packet.get("article_key")
+            or arxiv_id,
             "category": grobid_packet.get("category") or opendl_packet.get("category"),
             "length_bucket": comparison["length_bucket"],
             "pages_estimate": comparison["pages_estimate"],
@@ -551,7 +621,9 @@ def compare_hybrid_routing_20(
         _atomic_write_json(per_pdf_dir / f"{arxiv_id}.json", packet)
 
     total_pdfs = len(per_pdf_packets)
-    hybrid_count = sum(1 for packet in per_pdf_packets if packet["recommended_route"]["route_type"] == "hybrid")
+    hybrid_count = sum(
+        1 for packet in per_pdf_packets if packet["recommended_route"]["route_type"] == "hybrid"
+    )
     top_dimension_winners = {
         dimension: winners.most_common(1)[0][0] if winners else "none"
         for dimension, winners in dimension_winners.items()
@@ -565,7 +637,9 @@ def compare_hybrid_routing_20(
         "total_pdfs": total_pdfs,
         "packets": [str(per_pdf_dir / f"{packet['arxiv_id']}.json") for packet in per_pdf_packets],
         "aggregate_routing_recommendation": {
-            "recommended_route": "hybrid_with_fulltext_grobid_fallback" if hybrid_count != total_pdfs else "grobid_fulltext + opendataloader_body",
+            "recommended_route": "hybrid_with_fulltext_grobid_fallback"
+            if hybrid_count != total_pdfs
+            else "grobid_fulltext + opendataloader_body",
             "rationale": "Use GROBID fulltext for metadata, citations, native TEI layout, quality, and fallback body extraction; use OpenDataLoader body when its markdown packet is successful and not low-quality.",
             "hybrid_pdf_count": hybrid_count,
             "hybrid_percent": round((hybrid_count / total_pdfs) * 100, 2) if total_pdfs else 0.0,

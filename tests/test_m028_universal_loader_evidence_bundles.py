@@ -18,7 +18,9 @@ REAL_CORPUS_DIR = REPO_ROOT / "data" / "article_corpora" / "m028-universal-loade
 
 
 def _load_script() -> ModuleType:
-    spec = importlib.util.spec_from_file_location("build_m028_universal_loader_evidence_bundles", BUILD_SCRIPT_PATH)
+    spec = importlib.util.spec_from_file_location(
+        "build_m028_universal_loader_evidence_bundles", BUILD_SCRIPT_PATH
+    )
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -42,7 +44,9 @@ def _write_json(path: Path, payload: dict[str, object]) -> None:
 
 
 def _write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
-    path.write_text("\n".join(json.dumps(row, sort_keys=True) for row in rows) + "\n", encoding="utf-8")
+    path.write_text(
+        "\n".join(json.dumps(row, sort_keys=True) for row in rows) + "\n", encoding="utf-8"
+    )
 
 
 def _read_json(path: Path) -> dict[str, object]:
@@ -50,7 +54,9 @@ def _read_json(path: Path) -> dict[str, object]:
 
 
 def _read_jsonl(path: Path) -> list[dict[str, object]]:
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return [
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
 
 
 def _diagnostic_codes(diagnostics: list[object]) -> set[str]:
@@ -136,7 +142,9 @@ def _summary_for(selection: dict[str, object], schema_version: str) -> dict[str,
         "schema_version": schema_version,
         "url_ref_count": len(refs),
         "ref_count": len(refs),
-        "normalized_identity_count": len({str(ref["normalized_identity"]) for ref in refs if isinstance(ref, dict)}),
+        "normalized_identity_count": len(
+            {str(ref["normalized_identity"]) for ref in refs if isinstance(ref, dict)}
+        ),
         "source_kind_counts": source_kind_counts,
         "safety_flags": {"raw_article_text_embedded": False, "source_payload_embedded": False},
     }
@@ -169,7 +177,9 @@ def _write_inputs(root: Path) -> tuple[Path, Path, Path, Path, Path, Path, dict[
                 "source_kind": source_kind,
                 "normalized_identity": ref["normalized_identity"],
                 "artifact_path": artifact_path,
-                "content_type": "application/pdf" if source_kind == "arxiv_pdf_url" else "text/html; charset=utf-8",
+                "content_type": "application/pdf"
+                if source_kind == "arxiv_pdf_url"
+                else "text/html; charset=utf-8",
                 "byte_count": 42,
                 "sha256": "0" * 64,
                 "status": "captured",
@@ -192,13 +202,19 @@ def _write_inputs(root: Path) -> tuple[Path, Path, Path, Path, Path, Path, dict[
                 "optional_metadata_gaps": [],
                 "artifact": {
                     "path": artifact_path,
-                    "content_type": "application/pdf" if source_kind == "arxiv_pdf_url" else "text/html; charset=utf-8",
+                    "content_type": "application/pdf"
+                    if source_kind == "arxiv_pdf_url"
+                    else "text/html; charset=utf-8",
                     "byte_count": 42,
                     "sha256": "0" * 64,
                     "checksum_verified": True,
                     "payload_embedded": False,
                 },
-                "safety_flags": {"source_payload_embedded": False, "binary_payload_embedded": False, "model_output_embedded": False},
+                "safety_flags": {
+                    "source_payload_embedded": False,
+                    "binary_payload_embedded": False,
+                    "model_output_embedded": False,
+                },
                 "diagnostics": [],
             }
         )
@@ -217,11 +233,25 @@ def _write_inputs(root: Path) -> tuple[Path, Path, Path, Path, Path, Path, dict[
         elif source_kind == "arxiv_abs_url":
             pdf_status = "not_acquired"
             reason = "arxiv_abs_no_local_pdf_artifact"
-            pdf_artifact = {"path": None, "content_type": None, "byte_count": None, "sha256": None, "checksum_verified": False, "signature_verified": False}
+            pdf_artifact = {
+                "path": None,
+                "content_type": None,
+                "byte_count": None,
+                "sha256": None,
+                "checksum_verified": False,
+                "signature_verified": False,
+            }
         else:
             pdf_status = "not_applicable"
             reason = "not_applicable_non_arxiv_pdf_source"
-            pdf_artifact = {"path": None, "content_type": None, "byte_count": None, "sha256": None, "checksum_verified": False, "signature_verified": False}
+            pdf_artifact = {
+                "path": None,
+                "content_type": None,
+                "byte_count": None,
+                "sha256": None,
+                "checksum_verified": False,
+                "signature_verified": False,
+            }
         pdf_rows.append(
             {
                 "schema_version": "m028.pdf-acquisition-event.v1",
@@ -232,10 +262,18 @@ def _write_inputs(root: Path) -> tuple[Path, Path, Path, Path, Path, Path, dict[
                 "source_family": family,
                 "normalized_identity": ref["normalized_identity"],
                 "url_variant": _variant(source_kind),
-                "candidate_pdf": {"candidate_kind": "explicit_arxiv_pdf_url" if source_kind == "arxiv_pdf_url" else "not_fixture"},
+                "candidate_pdf": {
+                    "candidate_kind": "explicit_arxiv_pdf_url"
+                    if source_kind == "arxiv_pdf_url"
+                    else "not_fixture"
+                },
                 "pdf_acquisition": {"status": pdf_status, "terminal": True, "reason": reason},
                 "pdf_artifact": pdf_artifact,
-                "safety_flags": {"raw_pdf_bytes_embedded": False, "chunk_content_embedded": False, "ladybugdb_written": False},
+                "safety_flags": {
+                    "raw_pdf_bytes_embedded": False,
+                    "chunk_content_embedded": False,
+                    "ladybugdb_written": False,
+                },
                 "diagnostics": [],
             }
         )
@@ -251,12 +289,22 @@ def _write_inputs(root: Path) -> tuple[Path, Path, Path, Path, Path, Path, dict[
     _write_json(metadata_summary_path, _summary_for(selection, "m028.source-metadata-summary.v1"))
     _write_jsonl(pdf_path, pdf_rows)
     _write_json(pdf_summary_path, _summary_for(selection, "m028.pdf-acquisition-summary.v1"))
-    return selection_path, source_path, metadata_path, metadata_summary_path, pdf_path, pdf_summary_path, source_counts
+    return (
+        selection_path,
+        source_path,
+        metadata_path,
+        metadata_summary_path,
+        pdf_path,
+        pdf_summary_path,
+        source_counts,
+    )
 
 
 def test_fixture_build_preserves_duplicate_identity_and_fail_closed_flags(tmp_path: Path) -> None:
     module = _load_script()
-    selection, source, metadata, metadata_summary, pdf, pdf_summary, source_counts = _write_inputs(tmp_path)
+    selection, source, metadata, metadata_summary, pdf, pdf_summary, source_counts = _write_inputs(
+        tmp_path
+    )
     bundles, summary = module.build_universal_loader_evidence_outputs(
         selection,
         source,
@@ -287,12 +335,16 @@ def test_fixture_build_preserves_duplicate_identity_and_fail_closed_flags(tmp_pa
     assert all(value == 0 for value in summary["unsafe_claim_counts"].values())
     assert all(bundle["loader_evidence"]["kg_import_eligible"] is False for bundle in bundles)
     assert (tmp_path / "universal-loader-evidence-bundles.jsonl").exists()
-    assert "## Failure Modes" in (tmp_path / "universal-loader-evidence-report.md").read_text(encoding="utf-8")
+    assert "## Failure Modes" in (tmp_path / "universal-loader-evidence-report.md").read_text(
+        encoding="utf-8"
+    )
 
 
 def test_missing_pdf_event_is_stable_input_error(tmp_path: Path) -> None:
     module = _load_script()
-    selection, source, metadata, metadata_summary, pdf, pdf_summary, source_counts = _write_inputs(tmp_path)
+    selection, source, metadata, metadata_summary, pdf, pdf_summary, source_counts = _write_inputs(
+        tmp_path
+    )
     pdf_rows = _read_jsonl(pdf)
     _write_jsonl(pdf, pdf_rows[:-1])
 
@@ -314,7 +366,9 @@ def test_missing_pdf_event_is_stable_input_error(tmp_path: Path) -> None:
 
 def test_upstream_unsafe_flag_is_stable_input_error(tmp_path: Path) -> None:
     module = _load_script()
-    selection, source, metadata, metadata_summary, pdf, pdf_summary, source_counts = _write_inputs(tmp_path)
+    selection, source, metadata, metadata_summary, pdf, pdf_summary, source_counts = _write_inputs(
+        tmp_path
+    )
     pdf_rows = _read_jsonl(pdf)
     pdf_rows[0]["safety_flags"] = deepcopy(pdf_rows[0]["safety_flags"])
     assert isinstance(pdf_rows[0]["safety_flags"], dict)
@@ -361,7 +415,10 @@ def test_real_corpus_build_contract(tmp_path: Path) -> None:
         "nature_article_url": 1,
     }
     assert all(value == 0 for value in summary["unsafe_claim_counts"].values())
-    assert _read_json(tmp_path / "universal-loader-evidence-summary.json")["schema_version"] == "m028.universal-loader-evidence-summary.v1"
+    assert (
+        _read_json(tmp_path / "universal-loader-evidence-summary.json")["schema_version"]
+        == "m028.universal-loader-evidence-summary.v1"
+    )
 
 
 def test_real_corpus_verifier_contract_passes() -> None:
@@ -396,7 +453,10 @@ def test_verifier_rejects_unsafe_summary_counter(tmp_path: Path) -> None:
         reject_unsafe_claims=True,
     )
 
-    assert {diagnostic.code for diagnostic in diagnostics} >= {"SUMMARY_UNSAFE_COUNTS_MISMATCH", "UNSAFE_CLAIM_REJECTED"}
+    assert {diagnostic.code for diagnostic in diagnostics} >= {
+        "SUMMARY_UNSAFE_COUNTS_MISMATCH",
+        "UNSAFE_CLAIM_REJECTED",
+    }
 
 
 def test_verifier_rejects_missing_expanded_scope_ref(tmp_path: Path) -> None:
@@ -417,14 +477,19 @@ def test_verifier_rejects_missing_expanded_scope_ref(tmp_path: Path) -> None:
         reject_unsafe_claims=True,
     )
 
-    assert {diagnostic.code for diagnostic in diagnostics} >= {"SCOPE_REF_COUNT_MISMATCH", "EXPANDED_SCOPE_REFS_MISSING"}
+    assert {diagnostic.code for diagnostic in diagnostics} >= {
+        "SCOPE_REF_COUNT_MISMATCH",
+        "EXPANDED_SCOPE_REFS_MISSING",
+    }
 
 
 def test_verifier_rejects_raw_payload_marker(tmp_path: Path) -> None:
     verifier = _load_verifier()
     bundle_rows = _read_jsonl(REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl")
     bundle_rows[0]["diagnostics"] = list(bundle_rows[0]["diagnostics"])
-    bundle_rows[0]["diagnostics"].append({"code": "fixture", "details": {"raw_text": "<html>leak</html>"}})
+    bundle_rows[0]["diagnostics"].append(
+        {"code": "fixture", "details": {"raw_text": "<html>leak</html>"}}
+    )
     bundles_path = tmp_path / "bundles.jsonl"
     _write_jsonl(bundles_path, bundle_rows)
 
@@ -437,7 +502,9 @@ def test_verifier_rejects_raw_payload_marker(tmp_path: Path) -> None:
         reject_unsafe_claims=True,
     )
 
-    assert {"FORBIDDEN_KEY_PRESENT", "FORBIDDEN_MARKER_PRESENT"}.issubset(_diagnostic_codes(diagnostics))
+    assert {"FORBIDDEN_KEY_PRESENT", "FORBIDDEN_MARKER_PRESENT"}.issubset(
+        _diagnostic_codes(diagnostics)
+    )
 
 
 def test_real_corpus_regeneration_outputs_verify(tmp_path: Path) -> None:
@@ -486,7 +553,11 @@ def test_verifier_rejects_stale_14_ref_scope_and_missing_expanded_refs(tmp_path:
         reject_unsafe_claims=True,
     )
 
-    assert {"SCOPE_REF_COUNT_MISMATCH", "EXPANDED_SCOPE_REFS_MISSING", "BUNDLE_REF_SET_MISMATCH"}.issubset(_diagnostic_codes(diagnostics))
+    assert {
+        "SCOPE_REF_COUNT_MISMATCH",
+        "EXPANDED_SCOPE_REFS_MISSING",
+        "BUNDLE_REF_SET_MISMATCH",
+    }.issubset(_diagnostic_codes(diagnostics))
 
 
 def test_verifier_rejects_duplicate_identity_collapse(tmp_path: Path) -> None:
@@ -510,7 +581,11 @@ def test_verifier_rejects_duplicate_identity_collapse(tmp_path: Path) -> None:
         reject_unsafe_claims=True,
     )
 
-    assert {"SCOPE_IDENTITY_COUNT_MISMATCH", "DUPLICATE_IDENTITY_DRIFT", "BUNDLE_IDENTITY_GROUP_MISMATCH"}.issubset(_diagnostic_codes(diagnostics))
+    assert {
+        "SCOPE_IDENTITY_COUNT_MISMATCH",
+        "DUPLICATE_IDENTITY_DRIFT",
+        "BUNDLE_IDENTITY_GROUP_MISMATCH",
+    }.issubset(_diagnostic_codes(diagnostics))
 
 
 def test_verifier_rejects_non_arxiv_pdf_and_import_promotion(tmp_path: Path) -> None:
@@ -540,7 +615,11 @@ def test_verifier_rejects_non_arxiv_pdf_and_import_promotion(tmp_path: Path) -> 
         reject_unsafe_claims=True,
     )
 
-    assert {"PDF_DIAGNOSTIC_STATUS_MISMATCH", "LOADER_EVIDENCE_UNSAFE_POSITIVE", "UNSAFE_CLAIM_IN_BUNDLE"}.issubset(_diagnostic_codes(diagnostics))
+    assert {
+        "PDF_DIAGNOSTIC_STATUS_MISMATCH",
+        "LOADER_EVIDENCE_UNSAFE_POSITIVE",
+        "UNSAFE_CLAIM_IN_BUNDLE",
+    }.issubset(_diagnostic_codes(diagnostics))
 
 
 def test_verifier_rejects_checksum_signature_drift(tmp_path: Path) -> None:
@@ -563,7 +642,11 @@ def test_verifier_rejects_checksum_signature_drift(tmp_path: Path) -> None:
         reject_unsafe_claims=True,
     )
 
-    assert {"PDF_ARTIFACT_LINKAGE_MISMATCH", "ARTIFACT_PAYLOAD_FLAG_UNSAFE", "PDF_SIGNATURE_PAYLOAD_UNSAFE"}.issubset(_diagnostic_codes(diagnostics))
+    assert {
+        "PDF_ARTIFACT_LINKAGE_MISMATCH",
+        "ARTIFACT_PAYLOAD_FLAG_UNSAFE",
+        "PDF_SIGNATURE_PAYLOAD_UNSAFE",
+    }.issubset(_diagnostic_codes(diagnostics))
 
 
 def test_verifier_rejects_wrong_quality_mapping(tmp_path: Path) -> None:
@@ -571,7 +654,9 @@ def test_verifier_rejects_wrong_quality_mapping(tmp_path: Path) -> None:
     bundle_rows = _read_jsonl(REAL_CORPUS_DIR / "universal-loader-evidence-bundles.jsonl")
     target = next(row for row in bundle_rows if row["ref_id"] == "R02")
     assert isinstance(target["loader_evidence"], dict)
-    target["loader_evidence"]["source_quality_status"] = "source_metadata_with_verified_pdf_artifact"
+    target["loader_evidence"]["source_quality_status"] = (
+        "source_metadata_with_verified_pdf_artifact"
+    )
     bundles_path = tmp_path / "bundles-quality-drift.jsonl"
     _write_jsonl(bundles_path, bundle_rows)
 
@@ -584,7 +669,9 @@ def test_verifier_rejects_wrong_quality_mapping(tmp_path: Path) -> None:
         reject_unsafe_claims=True,
     )
 
-    assert {"SOURCE_QUALITY_STATUS_MISMATCH", "SUMMARY_QUALITY_COUNTS_MISMATCH"}.issubset(_diagnostic_codes(diagnostics))
+    assert {"SOURCE_QUALITY_STATUS_MISMATCH", "SUMMARY_QUALITY_COUNTS_MISMATCH"}.issubset(
+        _diagnostic_codes(diagnostics)
+    )
 
 
 def test_verifier_rejects_missing_nullable_pdf_artifact_metadata(tmp_path: Path) -> None:
@@ -612,7 +699,12 @@ def test_verifier_rejects_summary_drift(tmp_path: Path) -> None:
     verifier = _load_verifier()
     summary = _read_json(REAL_CORPUS_DIR / "universal-loader-evidence-summary.json")
     summary["ref_ids"] = list(reversed(summary["ref_ids"]))
-    summary["source_kind_counts"] = {"arxiv_abs_url": 14, "arxiv_pdf_url": 4, "company_blog_url": 2, "nature_article_url": 1}
+    summary["source_kind_counts"] = {
+        "arxiv_abs_url": 14,
+        "arxiv_pdf_url": 4,
+        "company_blog_url": 2,
+        "nature_article_url": 1,
+    }
     summary_path = tmp_path / "summary-drift.json"
     _write_json(summary_path, summary)
 
@@ -625,4 +717,6 @@ def test_verifier_rejects_summary_drift(tmp_path: Path) -> None:
         reject_unsafe_claims=True,
     )
 
-    assert {"SUMMARY_REF_IDS_MISMATCH", "SUMMARY_SOURCE_KIND_COUNTS_MISMATCH"}.issubset(_diagnostic_codes(diagnostics))
+    assert {"SUMMARY_REF_IDS_MISMATCH", "SUMMARY_SOURCE_KIND_COUNTS_MISMATCH"}.issubset(
+        _diagnostic_codes(diagnostics)
+    )

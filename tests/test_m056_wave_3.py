@@ -70,7 +70,12 @@ def test_30_opendataloader_packets() -> None:
     assert sum(summary["aggregate_counts"].values()) == 30
     for path in paths:
         packet = load_json(path)
-        assert packet["status"] in {"success", "low_quality_source", "opendataloader_unavailable", "blocked"}
+        assert packet["status"] in {
+            "success",
+            "low_quality_source",
+            "opendataloader_unavailable",
+            "blocked",
+        }
         assert_all_false(packet["safety_defaults"])
 
 
@@ -84,7 +89,10 @@ def test_cumulative_edges() -> None:
     assert wave_counts["wave_3"] >= 0
     assert connectivity["cumulative_edge_count"] == expected_count
     assert connectivity["cumulative_edge_count"] >= 5
-    assert len({edge_key(edge) for edge in connectivity["cumulative_edges"]}) == connectivity["cumulative_edge_count"]
+    assert (
+        len({edge_key(edge) for edge in connectivity["cumulative_edges"]})
+        == connectivity["cumulative_edge_count"]
+    )
 
 
 def test_cumulative_corpus_count() -> None:

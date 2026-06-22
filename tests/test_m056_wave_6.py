@@ -81,12 +81,22 @@ def test_wave_6_analysis_tracks_final_saturation() -> None:
     connectivity = analysis["connectivity"]
 
     assert connectivity["wave_1_edge_count"] == previous["connectivity"]["wave_1_edge_count"]
-    assert connectivity["wave_2_new_edge_count"] == previous["connectivity"]["wave_2_new_edge_count"]
-    assert connectivity["wave_3_new_edge_count"] == previous["connectivity"]["wave_3_new_edge_count"]
-    assert connectivity["wave_4_new_edge_count"] == previous["connectivity"]["wave_4_new_edge_count"]
-    assert connectivity["wave_5_new_edge_count"] == previous["connectivity"]["wave_5_new_edge_count"]
+    assert (
+        connectivity["wave_2_new_edge_count"] == previous["connectivity"]["wave_2_new_edge_count"]
+    )
+    assert (
+        connectivity["wave_3_new_edge_count"] == previous["connectivity"]["wave_3_new_edge_count"]
+    )
+    assert (
+        connectivity["wave_4_new_edge_count"] == previous["connectivity"]["wave_4_new_edge_count"]
+    )
+    assert (
+        connectivity["wave_5_new_edge_count"] == previous["connectivity"]["wave_5_new_edge_count"]
+    )
     assert connectivity["wave_6_new_edge_count"] == 0
-    assert connectivity["cumulative_edge_count"] == previous["connectivity"]["cumulative_edge_count"]
+    assert (
+        connectivity["cumulative_edge_count"] == previous["connectivity"]["cumulative_edge_count"]
+    )
     assert connectivity["edge_saturation_by_wave"]["wave_6"] == 0
     assert connectivity["saturation_status"] == "final-saturated"
 
@@ -99,8 +109,14 @@ def test_wave_6_final_corpus_accounting_and_recommendation() -> None:
     assert final_1hop["wave_order_entry_count"] == 166
     assert final_1hop["anchor_present_in_wave_order"] is True
     assert final_1hop["acquired_wave_entry_count"] == 166
-    assert final_1hop["total_unique_pdfs_with_anchor"] == cumulative["one_hop_unique_with_anchor_count"]
-    assert final_1hop["evidence_corpus_unique_pdf_count"] == cumulative["evidence_corpus_unique_pdf_count"]
+    assert (
+        final_1hop["total_unique_pdfs_with_anchor"]
+        == cumulative["one_hop_unique_with_anchor_count"]
+    )
+    assert (
+        final_1hop["evidence_corpus_unique_pdf_count"]
+        == cumulative["evidence_corpus_unique_pdf_count"]
+    )
     assert "2-hop needed for graph-readiness" in final_1hop["recommendation"]["decision"]
     assert "benchmark-only" in final_1hop["recommendation"]["decision"]
     assert_all_false(analysis["safety_defaults"])

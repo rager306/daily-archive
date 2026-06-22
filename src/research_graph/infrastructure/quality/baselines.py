@@ -45,16 +45,24 @@ def baseline_delta(summary: dict[str, Any], baseline: dict[str, Any] | None) -> 
             "function_count_delta": None,
             "severity_count_delta": {},
         }
-    current_by_severity = summary.get("by_severity", {}) if isinstance(summary.get("by_severity"), dict) else {}
-    baseline_by_severity = baseline.get("by_severity", {}) if isinstance(baseline.get("by_severity"), dict) else {}
+    current_by_severity = (
+        summary.get("by_severity", {}) if isinstance(summary.get("by_severity"), dict) else {}
+    )
+    baseline_by_severity = (
+        baseline.get("by_severity", {}) if isinstance(baseline.get("by_severity"), dict) else {}
+    )
     severity_keys = sorted(set(current_by_severity) | set(baseline_by_severity))
     return {
         "baseline_present": True,
         "max_score_delta": _float_delta(summary.get("max_score"), baseline.get("max_score")),
-        "average_score_delta": _float_delta(summary.get("average_score"), baseline.get("average_score")),
-        "function_count_delta": int(summary.get("total_functions", 0) or 0) - int(baseline.get("total_functions", 0) or 0),
+        "average_score_delta": _float_delta(
+            summary.get("average_score"), baseline.get("average_score")
+        ),
+        "function_count_delta": int(summary.get("total_functions", 0) or 0)
+        - int(baseline.get("total_functions", 0) or 0),
         "severity_count_delta": {
-            key: int(current_by_severity.get(key, 0) or 0) - int(baseline_by_severity.get(key, 0) or 0)
+            key: int(current_by_severity.get(key, 0) or 0)
+            - int(baseline_by_severity.get(key, 0) or 0)
             for key in severity_keys
         },
     }

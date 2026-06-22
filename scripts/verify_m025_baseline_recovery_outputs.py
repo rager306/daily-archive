@@ -36,7 +36,9 @@ def _looks_like_url(value: str) -> bool:
 
 def _reject_url_path(path: Path, label: str) -> None:
     if _looks_like_url(str(path)):
-        raise BaselineOutputValidationError(f"{label} must be a local filesystem path, not a URL: {path}")
+        raise BaselineOutputValidationError(
+            f"{label} must be a local filesystem path, not a URL: {path}"
+        )
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -45,14 +47,18 @@ def _load_json(path: Path) -> dict[str, Any]:
     except FileNotFoundError as exc:
         raise BaselineOutputValidationError(f"required local input is missing: {path}") from exc
     except json.JSONDecodeError as exc:
-        raise BaselineOutputValidationError(f"required local input is not valid JSON: {path}: {exc}") from exc
+        raise BaselineOutputValidationError(
+            f"required local input is not valid JSON: {path}: {exc}"
+        ) from exc
     if not isinstance(payload, dict):
         raise BaselineOutputValidationError(f"required local input must be a JSON object: {path}")
     return payload
 
 
 def _validate_false_safety_flags(payload: dict[str, Any], label: str) -> list[str]:
-    safety_state = payload.get("safety_state") if isinstance(payload.get("safety_state"), dict) else {}
+    safety_state = (
+        payload.get("safety_state") if isinstance(payload.get("safety_state"), dict) else {}
+    )
     violations = [key for key in FALSE_SAFETY_FLAGS if safety_state.get(key) is not False]
     if violations:
         return [f"{label} has unsafe safety flag(s): {', '.join(sorted(violations))}"]
@@ -66,7 +72,9 @@ def _baseline_artifact_paths(baseline: Path) -> list[Path]:
     return paths
 
 
-def validate_baseline_artifacts(baseline: Path, *, require_no_network: bool, require_no_import_flags: bool) -> list[dict[str, Any]]:
+def validate_baseline_artifacts(
+    baseline: Path, *, require_no_network: bool, require_no_import_flags: bool
+) -> list[dict[str, Any]]:
     _reject_url_path(baseline, "baseline")
     results: list[dict[str, Any]] = []
     errors: list[str] = []
@@ -74,13 +82,23 @@ def validate_baseline_artifacts(baseline: Path, *, require_no_network: bool, req
         artifact = _load_json(path)
         label = str(path)
         metrics = artifact.get("metrics") if isinstance(artifact.get("metrics"), dict) else {}
-        evidence_counts = metrics.get("evidence_counts") if isinstance(metrics.get("evidence_counts"), dict) else {}
-        provenance = artifact.get("baseline_provenance") if isinstance(artifact.get("baseline_provenance"), dict) else {}
+        evidence_counts = (
+            metrics.get("evidence_counts")
+            if isinstance(metrics.get("evidence_counts"), dict)
+            else {}
+        )
+        provenance = (
+            artifact.get("baseline_provenance")
+            if isinstance(artifact.get("baseline_provenance"), dict)
+            else {}
+        )
         network = artifact.get("network") if isinstance(artifact.get("network"), dict) else {}
         if "chunk_count" not in metrics:
             errors.append(f"{label} is missing metrics.chunk_count")
         if set(evidence_counts) != REQUIRED_EVIDENCE_TYPES:
-            errors.append(f"{label} is missing metrics.evidence_counts for {sorted(REQUIRED_EVIDENCE_TYPES)}")
+            errors.append(
+                f"{label} is missing metrics.evidence_counts for {sorted(REQUIRED_EVIDENCE_TYPES)}"
+            )
         if provenance.get("kind") != "regenerated_local_baseline":
             errors.append(f"{label} does not disclose regenerated_local_baseline provenance")
         if require_no_network and network.get("network_fetch_attempted") is not False:
@@ -116,23 +134,44 @@ def validate_final_outputs(
     if final_summary is not None:
         _reject_url_path(final_summary, "final-summary")
         summary = _load_json(final_summary)
-        if expect_article_count is not None and summary.get("article_count") != expect_article_count:
+        if (
+            expect_article_count is not None
+            and summary.get("article_count") != expect_article_count
+        ):
             errors.append(
                 f"final replay summary article_count={summary.get('article_count')} does not match expected {expect_article_count}"
             )
-        counts = summary.get("baseline_comparison_counts") if isinstance(summary.get("baseline_comparison_counts"), dict) else {}
+        counts = (
+            summary.get("baseline_comparison_counts")
+            if isinstance(summary.get("baseline_comparison_counts"), dict)
+            else {}
+        )
         if reject_baseline_missing and int(counts.get("baseline_missing") or 0) > 0:
             errors.append("final replay summary still contains baseline_missing comparisons")
-        no_network = summary.get("no_network_proof") if isinstance(summary.get("no_network_proof"), dict) else {}
+        no_network = (
+            summary.get("no_network_proof")
+            if isinstance(summary.get("no_network_proof"), dict)
+            else {}
+        )
         if require_no_network and no_network.get("network_fetch_attempted") is not False:
             errors.append("final replay summary does not prove network_fetch_attempted=false")
-        no_write = summary.get("no_write_safety") if isinstance(summary.get("no_write_safety"), dict) else {}
-        safety_violations = no_write.get("safety_violations") if isinstance(no_write.get("safety_violations"), list) else []
+        no_write = (
+            summary.get("no_write_safety")
+            if isinstance(summary.get("no_write_safety"), dict)
+            else {}
+        )
+        safety_violations = (
+            no_write.get("safety_violations")
+            if isinstance(no_write.get("safety_violations"), list)
+            else []
+        )
         if require_no_import_flags and safety_violations:
             errors.append("final replay summary contains graph/import/write safety violations")
         readiness = summary.get("readiness") if isinstance(summary.get("readiness"), dict) else {}
         if require_ready and readiness.get("larger_preprocessing_validation_ready") is not True:
-            errors.append("final replay summary does not mark larger_preprocessing_validation_ready=true")
+            errors.append(
+                "final replay summary does not mark larger_preprocessing_validation_ready=true"
+            )
         if readiness.get("graph_readiness_claim") is not False:
             errors.append("final replay summary must keep graph_readiness_claim=false")
     artifact_count = 0
@@ -144,7 +183,11 @@ def validate_final_outputs(
         for path in paths:
             artifact_count += 1
             artifact = _load_json(path)
-            comparison = artifact.get("baseline_comparison") if isinstance(artifact.get("baseline_comparison"), dict) else {}
+            comparison = (
+                artifact.get("baseline_comparison")
+                if isinstance(artifact.get("baseline_comparison"), dict)
+                else {}
+            )
             if reject_baseline_missing and comparison.get("category") == "baseline_missing":
                 errors.append(f"{path} still has baseline_comparison.category=baseline_missing")
             network = artifact.get("network") if isinstance(artifact.get("network"), dict) else {}
@@ -171,7 +214,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--final-summary", type=Path)
     parser.add_argument("--require-no-network", action="store_true")
     parser.add_argument("--require-no-import-flags", action="store_true")
-    parser.add_argument("--reject-baseline-missing", "--expect-no-baseline-missing", dest="reject_baseline_missing", action="store_true")
+    parser.add_argument(
+        "--reject-baseline-missing",
+        "--expect-no-baseline-missing",
+        dest="reject_baseline_missing",
+        action="store_true",
+    )
     parser.add_argument("--readiness-decision", type=Path)
     parser.add_argument("--require-ready", action="store_true")
     parser.add_argument("--write-summary", type=Path)
@@ -193,8 +241,15 @@ def main(argv: list[str] | None = None) -> int:
             if args.baseline is not None
             else []
         )
-        if args.baseline is None and args.final is None and args.final_summary is None and args.readiness_decision is None:
-            raise BaselineOutputValidationError("at least one of --baseline, --final, --final-summary, or --readiness-decision is required")
+        if (
+            args.baseline is None
+            and args.final is None
+            and args.final_summary is None
+            and args.readiness_decision is None
+        ):
+            raise BaselineOutputValidationError(
+                "at least one of --baseline, --final, --final-summary, or --readiness-decision is required"
+            )
         final_results = validate_final_outputs(
             final=args.final,
             final_summary=args.final_summary,
@@ -206,34 +261,69 @@ def main(argv: list[str] | None = None) -> int:
         )
         recovery_summary: dict[str, Any] = {}
         recovery_event_count = 0
-        if args.expect_article_count is not None and args.baseline is not None and len(baseline_results) != args.expect_article_count:
+        if (
+            args.expect_article_count is not None
+            and args.baseline is not None
+            and len(baseline_results) != args.expect_article_count
+        ):
             raise BaselineOutputValidationError(
                 f"expected {args.expect_article_count} baseline artifacts, found {len(baseline_results)}"
             )
         if args.baseline_summary is not None:
             _reject_url_path(args.baseline_summary, "baseline-summary")
             recovery_summary = _load_json(args.baseline_summary)
-            if args.expect_article_count is not None and recovery_summary.get("article_count") != args.expect_article_count:
+            if (
+                args.expect_article_count is not None
+                and recovery_summary.get("article_count") != args.expect_article_count
+            ):
                 raise BaselineOutputValidationError(
                     f"baseline summary article_count={recovery_summary.get('article_count')} does not match "
                     f"expected {args.expect_article_count}"
                 )
-            readiness = recovery_summary.get("readiness") if isinstance(recovery_summary.get("readiness"), dict) else {}
+            readiness = (
+                recovery_summary.get("readiness")
+                if isinstance(recovery_summary.get("readiness"), dict)
+                else {}
+            )
             if readiness.get("baseline_recovery_completed") is not True:
-                raise BaselineOutputValidationError("baseline summary does not mark baseline_recovery_completed=true")
-            no_network = recovery_summary.get("no_network_proof") if isinstance(recovery_summary.get("no_network_proof"), dict) else {}
+                raise BaselineOutputValidationError(
+                    "baseline summary does not mark baseline_recovery_completed=true"
+                )
+            no_network = (
+                recovery_summary.get("no_network_proof")
+                if isinstance(recovery_summary.get("no_network_proof"), dict)
+                else {}
+            )
             if args.require_no_network and no_network.get("network_fetch_attempted") is not False:
-                raise BaselineOutputValidationError("baseline summary does not prove network_fetch_attempted=false")
-            no_write = recovery_summary.get("no_write_safety") if isinstance(recovery_summary.get("no_write_safety"), dict) else {}
-            safety_violations = no_write.get("safety_violations") if isinstance(no_write.get("safety_violations"), list) else []
+                raise BaselineOutputValidationError(
+                    "baseline summary does not prove network_fetch_attempted=false"
+                )
+            no_write = (
+                recovery_summary.get("no_write_safety")
+                if isinstance(recovery_summary.get("no_write_safety"), dict)
+                else {}
+            )
+            safety_violations = (
+                no_write.get("safety_violations")
+                if isinstance(no_write.get("safety_violations"), list)
+                else []
+            )
             if args.require_no_import_flags and safety_violations:
-                raise BaselineOutputValidationError("baseline summary contains graph/import/write safety violations")
+                raise BaselineOutputValidationError(
+                    "baseline summary contains graph/import/write safety violations"
+                )
         if args.baseline_events is not None:
             _reject_url_path(args.baseline_events, "baseline-events")
             try:
-                event_lines = [line for line in args.baseline_events.read_text(encoding="utf-8").splitlines() if line.strip()]
+                event_lines = [
+                    line
+                    for line in args.baseline_events.read_text(encoding="utf-8").splitlines()
+                    if line.strip()
+                ]
             except FileNotFoundError as exc:
-                raise BaselineOutputValidationError(f"required local input is missing: {args.baseline_events}") from exc
+                raise BaselineOutputValidationError(
+                    f"required local input is missing: {args.baseline_events}"
+                ) from exc
             events: list[dict[str, Any]] = []
             for line_number, line in enumerate(event_lines, start=1):
                 try:
@@ -248,55 +338,103 @@ def main(argv: list[str] | None = None) -> int:
                     )
                 events.append(event)
             recovery_event_count = len(events)
-            completed_count = sum(1 for event in events if event.get("event_type") == "baseline_recovery.article_completed")
-            if args.expect_article_count is not None and completed_count != args.expect_article_count:
+            completed_count = sum(
+                1
+                for event in events
+                if event.get("event_type") == "baseline_recovery.article_completed"
+            )
+            if (
+                args.expect_article_count is not None
+                and completed_count != args.expect_article_count
+            ):
                 raise BaselineOutputValidationError(
                     f"baseline events completed article count={completed_count} does not match expected {args.expect_article_count}"
                 )
-            if args.require_no_network and any(event.get("network_fetch_attempted") is not False for event in events):
-                raise BaselineOutputValidationError("baseline events do not prove network_fetch_attempted=false")
+            if args.require_no_network and any(
+                event.get("network_fetch_attempted") is not False for event in events
+            ):
+                raise BaselineOutputValidationError(
+                    "baseline events do not prove network_fetch_attempted=false"
+                )
             if args.require_no_import_flags:
                 unsafe_events = [
                     event
                     for event in events
-                    if event.get("production_import_attempted") is not False or event.get("ladybugdb_written") is not False
+                    if event.get("production_import_attempted") is not False
+                    or event.get("ladybugdb_written") is not False
                 ]
                 if unsafe_events:
-                    raise BaselineOutputValidationError("baseline events contain graph/import/write safety violations")
+                    raise BaselineOutputValidationError(
+                        "baseline events contain graph/import/write safety violations"
+                    )
         if args.readiness_decision is not None:
             _reject_url_path(args.readiness_decision, "readiness-decision")
             decision = _load_json(args.readiness_decision)
-            if args.require_ready and decision.get("larger_preprocessing_validation_ready") is not True:
+            if (
+                args.require_ready
+                and decision.get("larger_preprocessing_validation_ready") is not True
+            ):
                 raise BaselineOutputValidationError(
                     "readiness decision does not mark larger_preprocessing_validation_ready=true"
                 )
             if args.require_ready and decision.get("decision") != "ready":
                 raise BaselineOutputValidationError("readiness decision is not ready")
             if decision.get("graph_readiness_claim") is not False:
-                raise BaselineOutputValidationError("readiness decision must keep graph_readiness_claim=false")
-            blockers = decision.get("blockers") if isinstance(decision.get("blockers"), list) else []
+                raise BaselineOutputValidationError(
+                    "readiness decision must keep graph_readiness_claim=false"
+                )
+            blockers = (
+                decision.get("blockers") if isinstance(decision.get("blockers"), list) else []
+            )
             if args.reject_baseline_missing and "baseline_missing" in blockers:
-                raise BaselineOutputValidationError("readiness decision still contains baseline_missing blocker")
-            evidence = decision.get("evidence") if isinstance(decision.get("evidence"), dict) else {}
-            if args.expect_article_count is not None and evidence.get("article_count") != args.expect_article_count:
+                raise BaselineOutputValidationError(
+                    "readiness decision still contains baseline_missing blocker"
+                )
+            evidence = (
+                decision.get("evidence") if isinstance(decision.get("evidence"), dict) else {}
+            )
+            if (
+                args.expect_article_count is not None
+                and evidence.get("article_count") != args.expect_article_count
+            ):
                 raise BaselineOutputValidationError(
                     f"readiness decision article_count={evidence.get('article_count')} does not match expected {args.expect_article_count}"
                 )
-            no_network = evidence.get("no_network_proof") if isinstance(evidence.get("no_network_proof"), dict) else {}
+            no_network = (
+                evidence.get("no_network_proof")
+                if isinstance(evidence.get("no_network_proof"), dict)
+                else {}
+            )
             if args.require_no_network and no_network.get("network_fetch_attempted") is not False:
-                raise BaselineOutputValidationError("readiness decision does not prove network_fetch_attempted=false")
-            no_write = evidence.get("no_write_safety") if isinstance(evidence.get("no_write_safety"), dict) else {}
-            safety_violations = no_write.get("safety_violations") if isinstance(no_write.get("safety_violations"), list) else []
+                raise BaselineOutputValidationError(
+                    "readiness decision does not prove network_fetch_attempted=false"
+                )
+            no_write = (
+                evidence.get("no_write_safety")
+                if isinstance(evidence.get("no_write_safety"), dict)
+                else {}
+            )
+            safety_violations = (
+                no_write.get("safety_violations")
+                if isinstance(no_write.get("safety_violations"), list)
+                else []
+            )
             if args.require_no_import_flags and safety_violations:
-                raise BaselineOutputValidationError("readiness decision contains graph/import/write safety violations")
+                raise BaselineOutputValidationError(
+                    "readiness decision contains graph/import/write safety violations"
+                )
 
         summary = {
             "schema_version": "m025-baseline-recovery-output-validation.v00.01",
             "baseline_artifact_count": len(baseline_results),
             "baseline_results": baseline_results,
-            "baseline_summary_path": str(args.baseline_summary) if args.baseline_summary is not None else None,
+            "baseline_summary_path": str(args.baseline_summary)
+            if args.baseline_summary is not None
+            else None,
             "baseline_summary_article_count": recovery_summary.get("article_count"),
-            "baseline_events_path": str(args.baseline_events) if args.baseline_events is not None else None,
+            "baseline_events_path": str(args.baseline_events)
+            if args.baseline_events is not None
+            else None,
             "baseline_event_count": recovery_event_count,
             "expected_article_count": args.expect_article_count,
             "final_results": final_results,
@@ -306,7 +444,9 @@ def main(argv: list[str] | None = None) -> int:
         }
         if args.write_summary is not None:
             args.write_summary.parent.mkdir(parents=True, exist_ok=True)
-            args.write_summary.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            args.write_summary.write_text(
+                json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+            )
         sys.stdout.write(
             f"validated {len(baseline_results)} baseline artifacts; "
             f"final_artifacts={final_results['final_artifact_count']}\n"

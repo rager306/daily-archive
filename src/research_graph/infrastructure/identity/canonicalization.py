@@ -26,7 +26,9 @@ def canonical_source_id(paper_id: str, role: str = "full-text") -> str:
     return f"source-{canonical_paper_id(paper_id)}-{role}"
 
 
-def canonical_locator_id(*, paper_id: str, route_name: str, namespace: str = "m021", index: int = 1) -> str:
+def canonical_locator_id(
+    *, paper_id: str, route_name: str, namespace: str = "m021", index: int = 1
+) -> str:
     """Return a deterministic candidate locator ID."""
     return f"{namespace}-{canonical_paper_id(paper_id)}-{route_name}-{index:03d}"
 
@@ -43,10 +45,14 @@ def canonical_package_id(*, method_id: str) -> str:
 
 def stable_json_hash(payload: dict[str, Any]) -> str:
     """Hash a JSON payload using stable key ordering and compact separators."""
-    return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
 
 
-def stable_span_hash(*, source_id: str, source_hash: str, char_start: int, char_end: int, route_name: str) -> str:
+def stable_span_hash(
+    *, source_id: str, source_hash: str, char_start: int, char_end: int, route_name: str
+) -> str:
     """Return a stable hash for a normalized Markdown character span."""
     return stable_json_hash(
         {

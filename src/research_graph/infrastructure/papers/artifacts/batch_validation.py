@@ -168,7 +168,9 @@ class ArticleBatchValidationDiagnostic:
     json_path: str
     severity: DiagnosticSeverity = "repair_required"
     document_id: str | None = None
-    message: str = "Article batch validation diagnostic; inspect code and JSON path, not source content."
+    message: str = (
+        "Article batch validation diagnostic; inspect code and JSON path, not source content."
+    )
     blocks_import: bool = True
 
     def to_redacted_dict(self) -> dict[str, Any]:
@@ -259,43 +261,67 @@ def build_article_batch_validation_report(manifest: dict[str, Any] | Any) -> dic
             document_rows.append(_blocked_placeholder(index, ["malformed_document"]))
             continue
 
-        document_id = _safe_string(item.get("document_id")) or _safe_string(item.get("paper_id")) or f"unknown-document-{index}"
+        document_id = (
+            _safe_string(item.get("document_id"))
+            or _safe_string(item.get("paper_id"))
+            or f"unknown-document-{index}"
+        )
         source_id = _safe_string(item.get("source_id")) or f"{document_id}:source:unknown"
         document_codes: list[str] = []
 
         if not _safe_id(document_id):
-            diagnostics.append(_diagnostic("malformed_document_id", f"{path}.document_id", document_id=document_id))
+            diagnostics.append(
+                _diagnostic("malformed_document_id", f"{path}.document_id", document_id=document_id)
+            )
             document_codes.append("malformed_document_id")
         if document_id in seen_document_ids:
-            diagnostics.append(_diagnostic("duplicate_document_id", f"{path}.document_id", document_id=document_id))
+            diagnostics.append(
+                _diagnostic("duplicate_document_id", f"{path}.document_id", document_id=document_id)
+            )
             document_codes.append("duplicate_document_id")
         seen_document_ids[document_id] = seen_document_ids.get(document_id, 0) + 1
 
         if not _safe_id(source_id):
-            diagnostics.append(_diagnostic("malformed_source_id", f"{path}.source_id", document_id=document_id))
+            diagnostics.append(
+                _diagnostic("malformed_source_id", f"{path}.source_id", document_id=document_id)
+            )
             document_codes.append("malformed_source_id")
         if source_id in seen_source_ids:
-            diagnostics.append(_diagnostic("duplicate_source_id", f"{path}.source_id", document_id=document_id))
+            diagnostics.append(
+                _diagnostic("duplicate_source_id", f"{path}.source_id", document_id=document_id)
+            )
             document_codes.append("duplicate_source_id")
         seen_source_ids[source_id] = seen_source_ids.get(source_id, 0) + 1
 
         source_path = _safe_string(item.get("source_path"))
         source_sha256 = _safe_string(item.get("source_sha256") or item.get("sha256"))
         if not source_path:
-            diagnostics.append(_diagnostic("missing_source_path", f"{path}.source_path", document_id=document_id))
+            diagnostics.append(
+                _diagnostic("missing_source_path", f"{path}.source_path", document_id=document_id)
+            )
             document_codes.append("missing_source_path")
         if not source_sha256:
-            diagnostics.append(_diagnostic("missing_source_hash", f"{path}.source_sha256", document_id=document_id))
+            diagnostics.append(
+                _diagnostic("missing_source_hash", f"{path}.source_sha256", document_id=document_id)
+            )
             document_codes.append("missing_source_hash")
         elif not _SHA256_RE.match(source_sha256):
-            diagnostics.append(_diagnostic("malformed_source_hash", f"{path}.source_sha256", document_id=document_id))
+            diagnostics.append(
+                _diagnostic(
+                    "malformed_source_hash", f"{path}.source_sha256", document_id=document_id
+                )
+            )
             document_codes.append("malformed_source_hash")
 
-        subtree_result = _summarize_subtrees(item.get("subtrees"), path=f"{path}.subtrees", document_id=document_id)
+        subtree_result = _summarize_subtrees(
+            item.get("subtrees"), path=f"{path}.subtrees", document_id=document_id
+        )
         diagnostics.extend(subtree_result["diagnostics"])
         document_codes.extend(subtree_result["blocking_codes"])
 
-        freshness = _summarize_freshness(item.get("freshness"), path=f"{path}.freshness", document_id=document_id)
+        freshness = _summarize_freshness(
+            item.get("freshness"), path=f"{path}.freshness", document_id=document_id
+        )
         diagnostics.extend(freshness["diagnostics"])
         document_codes.extend(freshness["blocking_codes"])
 
@@ -306,7 +332,9 @@ def build_article_batch_validation_report(manifest: dict[str, Any] | Any) -> dic
                 "paper_id": _safe_string(item.get("paper_id")) or document_id,
                 "source_id": source_id,
                 "source_path": source_path or None,
-                "source_sha256": source_sha256 if source_sha256 and _SHA256_RE.match(source_sha256) else None,
+                "source_sha256": source_sha256
+                if source_sha256 and _SHA256_RE.match(source_sha256)
+                else None,
                 "status": status,
                 "diagnostic_codes": sorted(set(document_codes)),
                 "subtree_statuses": subtree_result["statuses"],
@@ -370,13 +398,19 @@ def run_article_batch_validation_report(
     report_path = output / "article-batch-validation-report.json"
     diagnostics_path = output / "article-batch-validation-diagnostics.jsonl"
     freshness_path = output / "article-batch-validation-freshness.json"
-    provenance_path = Path(provenance_log_path) if provenance_log_path is not None else output / "validation-cli-provenance.jsonl"
+    provenance_path = (
+        Path(provenance_log_path)
+        if provenance_log_path is not None
+        else output / "validation-cli-provenance.jsonl"
+    )
     started_at = datetime.now(UTC)
     status = "article_report_written"
     exit_code = 0
 
     try:
-        manifest = _load_runner_manifest(manifest_path=manifest_path, state_path=state_path, limit=limit)
+        manifest = _load_runner_manifest(
+            manifest_path=manifest_path, state_path=state_path, limit=limit
+        )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         manifest = _blocked_runner_manifest(input_path, reason=type(exc).__name__)
         status = "blocked_report_written"
@@ -399,7 +433,9 @@ def run_article_batch_validation_report(
         "production_import_attempted": False,
         "ladybugdb_written": False,
     }
-    _write_report_and_diagnostics(report, report_path=report_path, diagnostics_path=diagnostics_path)
+    _write_report_and_diagnostics(
+        report, report_path=report_path, diagnostics_path=diagnostics_path
+    )
 
     completed_at = datetime.now(UTC)
     provenance_entry = build_validation_cli_provenance_entry(
@@ -428,8 +464,12 @@ def run_article_batch_validation_report(
         "batch_id": report.get("batch_id"),
         "run_id": report.get("run_id"),
         "recommendation": report.get("recommendation"),
-        "ready_document_count": report.get("aggregate_diagnostics", {}).get("ready_document_count", 0),
-        "blocked_document_count": report.get("aggregate_diagnostics", {}).get("blocked_document_count", 0),
+        "ready_document_count": report.get("aggregate_diagnostics", {}).get(
+            "ready_document_count", 0
+        ),
+        "blocked_document_count": report.get("aggregate_diagnostics", {}).get(
+            "blocked_document_count", 0
+        ),
         "diagnostic_count": report.get("aggregate_diagnostics", {}).get("diagnostic_count", 0),
         "freshness_verdict": freshness.get("verdict"),
         "report_path": str(report_path),
@@ -463,14 +503,20 @@ def _load_runner_manifest(
     return _manifest_from_batch_state(state, state_path=Path(state_path or ""), limit=limit)
 
 
-def _manifest_from_batch_state(state: ValidationBatchState, *, state_path: Path, limit: int) -> dict[str, Any]:
+def _manifest_from_batch_state(
+    state: ValidationBatchState, *, state_path: Path, limit: int
+) -> dict[str, Any]:
     documents: list[dict[str, Any]] = []
     selected = list(state.selected_papers)[: min(limit, EXPECTED_DOCUMENT_COUNT)]
     for paper in selected:
         source_path = _preferred_source_path(paper.source_paths)
         source_sha256 = _source_sha256_from_metadata(paper.source_paths)
         readiness = state.source_readiness_by_paper.get(paper.paper_id)
-        freshness_status = "fresh" if readiness is not None and readiness.ready_for_markdown_scan else "not_provided"
+        freshness_status = (
+            "fresh"
+            if readiness is not None and readiness.ready_for_markdown_scan
+            else "not_provided"
+        )
         stale_count = 0 if freshness_status == "fresh" else 1 if readiness is not None else 0
         documents.append(
             {
@@ -479,7 +525,9 @@ def _manifest_from_batch_state(state: ValidationBatchState, *, state_path: Path,
                 "source_id": f"{paper.paper_id}:validation-batch-state",
                 "source_path": source_path,
                 "source_sha256": source_sha256,
-                "subtrees": {name: {"status": "metadata_only", "record_count": 0} for name in SUBTREE_NAMES},
+                "subtrees": {
+                    name: {"status": "metadata_only", "record_count": 0} for name in SUBTREE_NAMES
+                },
                 "freshness": {"status": freshness_status, "stale_artifact_count": stale_count},
                 "selection_role": paper.selection_role,
                 "rank": paper.rank,
@@ -495,7 +543,13 @@ def _manifest_from_batch_state(state: ValidationBatchState, *, state_path: Path,
 
 
 def _preferred_source_path(source_paths: dict[str, str]) -> str | None:
-    for key in ("research_full_text_md", "cache_markdown", "research_pdf", "cache_pdf", "source_path"):
+    for key in (
+        "research_full_text_md",
+        "cache_markdown",
+        "research_pdf",
+        "cache_pdf",
+        "source_path",
+    ):
         value = source_paths.get(key)
         if value:
             return str(value)
@@ -522,7 +576,9 @@ def _blocked_runner_manifest(input_path: Path, *, reason: str) -> dict[str, Any]
     }
 
 
-def _write_report_and_diagnostics(report: dict[str, Any], *, report_path: Path, diagnostics_path: Path) -> None:
+def _write_report_and_diagnostics(
+    report: dict[str, Any], *, report_path: Path, diagnostics_path: Path
+) -> None:
     report_path.write_text(to_json(report), encoding="utf-8")
     with diagnostics_path.open("w", encoding="utf-8") as handle:
         for diagnostic in report.get("diagnostics", []):
@@ -540,19 +596,27 @@ def validate_article_batch_validation_report(report: dict[str, Any] | Any) -> li
         diagnostics.append(_diagnostic("bad_schema_version", "$.schema_version", severity="error"))
     diagnostics.extend(_validate_forbidden_and_unsafe(root))
     if root.get("safety_counters") != default_safety_counters():
-        diagnostics.append(_diagnostic("nonzero_safety_counters", "$.safety_counters", severity="error"))
+        diagnostics.append(
+            _diagnostic("nonzero_safety_counters", "$.safety_counters", severity="error")
+        )
     if root.get("safety_flags") != default_safety_flags():
         diagnostics.append(_diagnostic("unsafe_safety_flags", "$.safety_flags", severity="error"))
     rows = root.get("document_status_rows")
     if not isinstance(rows, list):
-        diagnostics.append(_diagnostic("missing_document_status_rows", "$.document_status_rows", severity="error"))
+        diagnostics.append(
+            _diagnostic("missing_document_status_rows", "$.document_status_rows", severity="error")
+        )
     return _dedupe_diagnostics(diagnostics)
 
 
 def derive_recommendation(summary: dict[str, Any]) -> Recommendation:
     """Return the stable S07 next-step recommendation vocabulary."""
 
-    diagnostic_counts = summary.get("diagnostic_counts") if isinstance(summary.get("diagnostic_counts"), dict) else {}
+    diagnostic_counts = (
+        summary.get("diagnostic_counts")
+        if isinstance(summary.get("diagnostic_counts"), dict)
+        else {}
+    )
     unsafe_count = int(diagnostic_counts.get("unsafe_authorization_count", 0) or 0) + int(
         diagnostic_counts.get("unsafe_readiness_count", 0) or 0
     )
@@ -562,7 +626,9 @@ def derive_recommendation(summary: dict[str, Any]) -> Recommendation:
         diagnostic_counts.get("missing_source_hash_count", 0) or 0
     ):
         return "collect_missing_local_sources"
-    if int(summary.get("document_count", 0) or 0) != EXPECTED_DOCUMENT_COUNT or int(summary.get("blocked_document_count", 0) or 0):
+    if int(summary.get("document_count", 0) or 0) != EXPECTED_DOCUMENT_COUNT or int(
+        summary.get("blocked_document_count", 0) or 0
+    ):
         return "repeat_10_document_batch_after_repairs"
     if int(diagnostic_counts.get("stale_artifact_count", 0) or 0) or int(
         diagnostic_counts.get("forbidden_payload_detection_count", 0) or 0
@@ -660,7 +726,12 @@ def _iter_readiness_paths(value: Any, path: str = "$") -> list[str]:
     if isinstance(value, dict):
         for key, child in value.items():
             child_path = _json_child_path(path, str(key))
-            if str(key) in {"status", "benchmark_status", "review_state", "recommendation"} and isinstance(child, str):
+            if str(key) in {
+                "status",
+                "benchmark_status",
+                "review_state",
+                "recommendation",
+            } and isinstance(child, str):
                 if child in UNSAFE_READINESS_STATUSES:
                     findings.append(child_path)
             findings.extend(_iter_readiness_paths(child, child_path))
@@ -675,10 +746,14 @@ def _validate_forbidden_and_unsafe(value: Any) -> list[ArticleBatchValidationDia
     for key, path in _iter_payload_paths(value):
         diagnostics.append(_diagnostic(f"forbidden_payload_key:{key}", path, severity="error"))
     for path in _iter_sensitive_value_paths(value):
-        diagnostics.append(_diagnostic("forbidden_payload_value:sensitive_token", path, severity="error"))
+        diagnostics.append(
+            _diagnostic("forbidden_payload_value:sensitive_token", path, severity="error")
+        )
     for key, path in _iter_unsafe_true_paths(value):
         if key in UNSAFE_AUTHORIZATION_FLAGS:
-            diagnostics.append(_diagnostic(f"unsafe_authorization_flag:{key}", path, severity="error"))
+            diagnostics.append(
+                _diagnostic(f"unsafe_authorization_flag:{key}", path, severity="error")
+            )
         else:
             diagnostics.append(_diagnostic(f"unsafe_payload_flag:{key}", path, severity="error"))
     for path in _iter_readiness_paths(value):
@@ -692,7 +767,9 @@ def _summarize_subtrees(value: Any, *, path: str, document_id: str) -> dict[str,
     coverage: dict[str, int] = {}
     blocking_codes: list[str] = []
     if not isinstance(value, dict):
-        diagnostics.append(_diagnostic("malformed_subtrees", path, severity="error", document_id=document_id))
+        diagnostics.append(
+            _diagnostic("malformed_subtrees", path, severity="error", document_id=document_id)
+        )
         blocking_codes.append("malformed_subtrees")
         value = {}
 
@@ -700,39 +777,66 @@ def _summarize_subtrees(value: Any, *, path: str, document_id: str) -> dict[str,
         subtree = value.get(name) if isinstance(value, dict) else None
         subtree_path = f"{path}.{name}"
         if not isinstance(subtree, dict):
-            diagnostics.append(_diagnostic("missing_subtree_summary", subtree_path, document_id=document_id))
+            diagnostics.append(
+                _diagnostic("missing_subtree_summary", subtree_path, document_id=document_id)
+            )
             statuses[name] = "absent"
             coverage[name] = 0
             blocking_codes.append(f"{name}:absent")
             continue
         status = _safe_string(subtree.get("status")) or "absent"
         if status not in ALLOWED_SUBTREE_STATUSES:
-            diagnostics.append(_diagnostic("malformed_subtree_status", f"{subtree_path}.status", document_id=document_id))
+            diagnostics.append(
+                _diagnostic(
+                    "malformed_subtree_status", f"{subtree_path}.status", document_id=document_id
+                )
+            )
             blocking_codes.append(f"{name}:malformed_status")
             status = "blocked"
         if status in BLOCKING_SUBTREE_STATUSES:
-            diagnostics.append(_diagnostic("blocked_subtree", f"{subtree_path}.status", document_id=document_id))
+            diagnostics.append(
+                _diagnostic("blocked_subtree", f"{subtree_path}.status", document_id=document_id)
+            )
             blocking_codes.append(f"{name}:{status}")
         statuses[name] = status
         coverage[name] = _non_negative_int(subtree.get("record_count"))
-    return {"diagnostics": diagnostics, "statuses": statuses, "coverage": coverage, "blocking_codes": blocking_codes}
+    return {
+        "diagnostics": diagnostics,
+        "statuses": statuses,
+        "coverage": coverage,
+        "blocking_codes": blocking_codes,
+    }
 
 
 def _summarize_freshness(value: Any, *, path: str, document_id: str) -> dict[str, Any]:
     diagnostics: list[ArticleBatchValidationDiagnostic] = []
     blocking_codes: list[str] = []
     if value is None:
-        return {"diagnostics": diagnostics, "blocking_codes": blocking_codes, "summary": {"status": "not_provided", "stale_artifact_count": 0}}
+        return {
+            "diagnostics": diagnostics,
+            "blocking_codes": blocking_codes,
+            "summary": {"status": "not_provided", "stale_artifact_count": 0},
+        }
     if not isinstance(value, dict):
-        diagnostics.append(_diagnostic("malformed_freshness_summary", path, document_id=document_id))
+        diagnostics.append(
+            _diagnostic("malformed_freshness_summary", path, document_id=document_id)
+        )
         blocking_codes.append("malformed_freshness_summary")
-        return {"diagnostics": diagnostics, "blocking_codes": blocking_codes, "summary": {"status": "malformed", "stale_artifact_count": 1}}
+        return {
+            "diagnostics": diagnostics,
+            "blocking_codes": blocking_codes,
+            "summary": {"status": "malformed", "stale_artifact_count": 1},
+        }
     status = _safe_string(value.get("status")) or "not_provided"
     stale_count = _non_negative_int(value.get("stale_artifact_count"))
     if status in {"stale", "blocked"} or stale_count:
         diagnostics.append(_diagnostic("stale_artifact", path, document_id=document_id))
         blocking_codes.append("stale_artifact")
-    return {"diagnostics": diagnostics, "blocking_codes": blocking_codes, "summary": {"status": status, "stale_artifact_count": stale_count}}
+    return {
+        "diagnostics": diagnostics,
+        "blocking_codes": blocking_codes,
+        "summary": {"status": status, "stale_artifact_count": stale_count},
+    }
 
 
 def _non_negative_int(value: Any) -> int:
@@ -764,7 +868,9 @@ def _blocked_placeholder(index: int, codes: list[str]) -> dict[str, Any]:
     }
 
 
-def _summarize_batch(rows: list[dict[str, Any]], diagnostics: list[dict[str, Any]]) -> dict[str, Any]:
+def _summarize_batch(
+    rows: list[dict[str, Any]], diagnostics: list[dict[str, Any]]
+) -> dict[str, Any]:
     counts = dict.fromkeys(DIAGNOSTIC_COUNTER_KEYS, 0)
     for diagnostic in diagnostics:
         code = str(diagnostic.get("code", ""))
@@ -780,7 +886,12 @@ def _summarize_batch(rows: list[dict[str, Any]], diagnostics: list[dict[str, Any
             counts["missing_source_path_count"] += 1
         elif code in {"missing_source_hash", "malformed_source_hash"}:
             counts["missing_source_hash_count"] += 1
-        elif code in {"malformed_manifest", "malformed_documents", "malformed_document", "malformed_document_id"}:
+        elif code in {
+            "malformed_manifest",
+            "malformed_documents",
+            "malformed_document",
+            "malformed_document_id",
+        }:
             counts["malformed_document_count"] += 1
         elif code in {"malformed_subtrees", "missing_subtree_summary", "malformed_subtree_status"}:
             counts["malformed_subtree_count"] += 1
@@ -788,7 +899,9 @@ def _summarize_batch(rows: list[dict[str, Any]], diagnostics: list[dict[str, Any
             counts["blocked_subtree_count"] += 1
         elif code in {"stale_artifact", "malformed_freshness_summary"}:
             counts["stale_artifact_count"] += 1
-        elif code.startswith("forbidden_payload_key:") or code.startswith("forbidden_payload_value:"):
+        elif code.startswith("forbidden_payload_key:") or code.startswith(
+            "forbidden_payload_value:"
+        ):
             counts["forbidden_payload_detection_count"] += 1
         elif code.startswith("unsafe_authorization_flag:"):
             counts["unsafe_authorization_count"] += 1
@@ -813,9 +926,14 @@ def _summarize_batch(rows: list[dict[str, Any]], diagnostics: list[dict[str, Any
 def _coverage_distributions(rows: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
     distributions: dict[str, dict[str, int]] = {}
     for name in SUBTREE_NAMES:
-        status_counts = Counter(str(row.get("subtree_statuses", {}).get(name, "absent")) for row in rows)
+        status_counts = Counter(
+            str(row.get("subtree_statuses", {}).get(name, "absent")) for row in rows
+        )
         present_count = sum(1 for row in rows if int(row.get("coverage", {}).get(name, 0) or 0) > 0)
-        distributions[name] = {"documents_with_records": present_count, **dict(sorted(status_counts.items()))}
+        distributions[name] = {
+            "documents_with_records": present_count,
+            **dict(sorted(status_counts.items())),
+        }
     return distributions
 
 
@@ -835,7 +953,9 @@ def _recommendation_rationale(recommendation: str, summary: dict[str, Any]) -> s
     return f"Batch has {summary.get('blocked_document_count', 0)} blocked document(s) or stale/incomplete coverage; rerun after repairs."
 
 
-def _dedupe_diagnostics(diagnostics: list[ArticleBatchValidationDiagnostic]) -> list[dict[str, Any]]:
+def _dedupe_diagnostics(
+    diagnostics: list[ArticleBatchValidationDiagnostic],
+) -> list[dict[str, Any]]:
     seen: set[tuple[str, str, str | None]] = set()
     output: list[dict[str, Any]] = []
     for diagnostic in diagnostics:
@@ -845,7 +965,14 @@ def _dedupe_diagnostics(diagnostics: list[ArticleBatchValidationDiagnostic]) -> 
             continue
         seen.add(key)
         output.append(item)
-    return sorted(output, key=lambda item: (str(item["json_path"]), str(item["code"]), str(item.get("document_id") or "")))
+    return sorted(
+        output,
+        key=lambda item: (
+            str(item["json_path"]),
+            str(item["code"]),
+            str(item.get("document_id") or ""),
+        ),
+    )
 
 
 def _redact(value: Any) -> Any:
@@ -856,12 +983,16 @@ def _redact(value: Any) -> Any:
                 continue
             child = value[key]
             if key in UNSAFE_FALSE_FLAGS:
-                redacted[key] = False if isinstance(child, bool) else 0 if isinstance(child, int) else child
+                redacted[key] = (
+                    False if isinstance(child, bool) else 0 if isinstance(child, int) else child
+                )
             else:
                 redacted[key] = _redact(child)
         return redacted
     if isinstance(value, list):
         return [_redact(child) for child in value]
     if isinstance(value, str):
-        return "<redacted-sensitive-value>" if _SECRET_LIKE_VALUE_RE.search(value) else deepcopy(value)
+        return (
+            "<redacted-sensitive-value>" if _SECRET_LIKE_VALUE_RE.search(value) else deepcopy(value)
+        )
     return deepcopy(value)

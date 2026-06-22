@@ -89,7 +89,11 @@ def calculate_article_artifact_metrics(
         (_candidate_link_key(link) for link in _candidate_links(gold_artifacts)),
     )
     span_counts = _set_counts(
-        (_span_coverage_key(artifact) for artifact in predicted_artifacts if _has_source_span(artifact)),
+        (
+            _span_coverage_key(artifact)
+            for artifact in predicted_artifacts
+            if _has_source_span(artifact)
+        ),
         (_span_coverage_key(artifact) for artifact in gold_artifacts if _has_source_span(artifact)),
     )
     lineage_counts = _set_counts(
@@ -149,9 +153,13 @@ def calculate_benchmark_metrics(
         "macro": _macro_average(case_metrics),
         "totals": {
             "raw_leakage_count": sum(metric["raw_leakage_count"] for metric in case_metrics),
-            "unsafe_authorization_count": sum(metric["unsafe_authorization_count"] for metric in case_metrics),
+            "unsafe_authorization_count": sum(
+                metric["unsafe_authorization_count"] for metric in case_metrics
+            ),
             "review_burden": sum(metric["review_burden"] for metric in case_metrics),
-            "predicted_artifact_count": sum(metric["predicted_artifact_count"] for metric in case_metrics),
+            "predicted_artifact_count": sum(
+                metric["predicted_artifact_count"] for metric in case_metrics
+            ),
             "gold_artifact_count": sum(metric["gold_artifact_count"] for metric in case_metrics),
         },
     }
@@ -352,7 +360,9 @@ def calculate_review_burden(manifest: Mapping[str, Any]) -> int:
     return burden
 
 
-def _helper_delta(deterministic: Mapping[str, Any] | None, minimax: Mapping[str, Any] | None) -> dict[str, float | int]:
+def _helper_delta(
+    deterministic: Mapping[str, Any] | None, minimax: Mapping[str, Any] | None
+) -> dict[str, float | int]:
     if deterministic is None or minimax is None:
         return {}
     macro_keys = (
@@ -368,36 +378,49 @@ def _helper_delta(deterministic: Mapping[str, Any] | None, minimax: Mapping[str,
     delta: dict[str, float | int] = {}
     for key in macro_keys:
         delta[f"macro_{key}"] = round(
-            float(minimax.get("macro", {}).get(key, 0.0)) - float(deterministic.get("macro", {}).get(key, 0.0)),
+            float(minimax.get("macro", {}).get(key, 0.0))
+            - float(deterministic.get("macro", {}).get(key, 0.0)),
             6,
         )
-    for key in ("raw_leakage_count", "unsafe_authorization_count", "review_burden", "predicted_artifact_count"):
+    for key in (
+        "raw_leakage_count",
+        "unsafe_authorization_count",
+        "review_burden",
+        "predicted_artifact_count",
+    ):
         delta[f"total_{key}"] = int(minimax.get("totals", {}).get(key, 0)) - int(
             deterministic.get("totals", {}).get(key, 0)
         )
     return delta
 
 
-def _dspy_readiness_precheck(runs: Mapping[str, Mapping[str, Any]], thresholds: Mapping[str, float | int]) -> dict[str, Any]:
+def _dspy_readiness_precheck(
+    runs: Mapping[str, Mapping[str, Any]], thresholds: Mapping[str, float | int]
+) -> dict[str, Any]:
     selected_run = "minimax_mock" if "minimax_mock" in runs else "deterministic"
     metrics = runs[selected_run]
     macro = metrics.get("macro", {})
     totals = metrics.get("totals", {})
-    all_raw_leaks = sum(int(run.get("totals", {}).get("raw_leakage_count", 0)) for run in runs.values())
+    all_raw_leaks = sum(
+        int(run.get("totals", {}).get("raw_leakage_count", 0)) for run in runs.values()
+    )
     all_unsafe_authorizations = sum(
         int(run.get("totals", {}).get("unsafe_authorization_count", 0)) for run in runs.values()
     )
     checks = {
         "case_count": int(metrics.get("case_count", 0)) >= int(thresholds["min_case_count"]),
-        "artifact_precision": float(macro.get("artifact_precision", 0.0)) >= float(thresholds["artifact_precision"]),
-        "artifact_recall": float(macro.get("artifact_recall", 0.0)) >= float(thresholds["artifact_recall"]),
+        "artifact_precision": float(macro.get("artifact_precision", 0.0))
+        >= float(thresholds["artifact_precision"]),
+        "artifact_recall": float(macro.get("artifact_recall", 0.0))
+        >= float(thresholds["artifact_recall"]),
         "source_span_coverage": float(macro.get("source_span_coverage", 0.0))
         >= float(thresholds["source_span_coverage"]),
         "candidate_link_correctness": float(macro.get("candidate_link_correctness", 0.0))
         >= float(thresholds["candidate_link_correctness"]),
         "section_lineage_correctness": float(macro.get("section_lineage_correctness", 0.0))
         >= float(thresholds["section_lineage_correctness"]),
-        "raw_leakage_count": int(totals.get("raw_leakage_count", 0)) <= int(thresholds["max_raw_leakage_count"]),
+        "raw_leakage_count": int(totals.get("raw_leakage_count", 0))
+        <= int(thresholds["max_raw_leakage_count"]),
         "unsafe_authorization_count": int(totals.get("unsafe_authorization_count", 0))
         <= int(thresholds["max_unsafe_authorization_count"]),
         "all_runs_raw_leakage_count": all_raw_leaks <= int(thresholds["max_raw_leakage_count"]),
@@ -419,7 +442,9 @@ def _no_import_safety_counters(runs: Mapping[str, Mapping[str, Any]]) -> dict[st
     return {
         name: {
             "raw_leakage_count": int(metrics.get("totals", {}).get("raw_leakage_count", 0)),
-            "unsafe_authorization_count": int(metrics.get("totals", {}).get("unsafe_authorization_count", 0)),
+            "unsafe_authorization_count": int(
+                metrics.get("totals", {}).get("unsafe_authorization_count", 0)
+            ),
         }
         for name, metrics in runs.items()
     }
@@ -452,10 +477,15 @@ def _macro_average(case_metrics: Sequence[Mapping[str, Any]]) -> dict[str, float
     )
     if not case_metrics:
         return dict.fromkeys(keys, 0.0)
-    return {key: round(sum(float(metric[key]) for metric in case_metrics) / len(case_metrics), 6) for key in keys}
+    return {
+        key: round(sum(float(metric[key]) for metric in case_metrics) / len(case_metrics), 6)
+        for key in keys
+    }
 
 
-def _set_counts(predicted: Iterable[tuple[Any, ...]], gold: Iterable[tuple[Any, ...]]) -> ArtifactMetricCounts:
+def _set_counts(
+    predicted: Iterable[tuple[Any, ...]], gold: Iterable[tuple[Any, ...]]
+) -> ArtifactMetricCounts:
     predicted_set = set(predicted)
     gold_set = set(gold)
     return ArtifactMetricCounts(
@@ -541,13 +571,17 @@ def _unsafe_uses(value: Mapping[str, Any]) -> int:
     return count
 
 
-def _cases_from_fixture(fixture: Mapping[str, Any] | Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+def _cases_from_fixture(
+    fixture: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
     if isinstance(fixture, Mapping):
         return _dicts(fixture.get("cases"))
     return [dict(item) for item in fixture if isinstance(item, Mapping)]
 
 
-def _gold_by_case_id(fixture: Mapping[str, Any] | Sequence[Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
+def _gold_by_case_id(
+    fixture: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+) -> dict[str, dict[str, Any]]:
     if isinstance(fixture, Mapping):
         records = _dicts(fixture.get("gold"))
     else:

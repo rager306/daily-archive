@@ -25,7 +25,9 @@ def _manifest(tmp_path: Path) -> Path:
     paper_dir = tmp_path / "paper"
     paper_dir.mkdir()
     full_text = paper_dir / "full_text.md"
-    full_text.write_text("# Abstract\n\nRedacted fixture content for size only.\n", encoding="utf-8")
+    full_text.write_text(
+        "# Abstract\n\nRedacted fixture content for size only.\n", encoding="utf-8"
+    )
     manifest = {
         "papers": [
             {
@@ -108,14 +110,15 @@ def test_source_readiness_for_paper_uses_deterministic_fallback_paths(tmp_path: 
     (cache_root / "2605.00020v1.pdf").write_bytes(b"%PDF-1.4")
     paper = SelectedPaper(paper_id="2605.00020v1", selection_role="deterministic_expansion")
 
-    readiness = source_readiness_for_paper(paper, fallback_root=fallback_root, cache_root=cache_root)
+    readiness = source_readiness_for_paper(
+        paper, fallback_root=fallback_root, cache_root=cache_root
+    )
 
     assert readiness.markdown_present is True
     assert readiness.markdown_quality_accepted is True
     assert readiness.pdf_present is True
     assert readiness.pdf_missing is False
     assert readiness.ready_for_markdown_scan is True
-
 
 
 def test_source_readiness_for_paper_carries_loader_provenance(tmp_path: Path) -> None:
@@ -151,7 +154,10 @@ def test_source_readiness_for_paper_records_missing_source_failure(tmp_path: Pat
     paper = SelectedPaper(
         paper_id="2605.00031v1",
         selection_role="deterministic_expansion",
-        source_paths={"research_full_text_md": str(missing_markdown), "cache_pdf": str(missing_pdf)},
+        source_paths={
+            "research_full_text_md": str(missing_markdown),
+            "cache_pdf": str(missing_pdf),
+        },
     )
 
     readiness = source_readiness_for_paper(paper)
@@ -161,6 +167,7 @@ def test_source_readiness_for_paper_records_missing_source_failure(tmp_path: Pat
     assert readiness.loader_provenance_by_role["markdown"]["failure_reason"] == "source_missing"
     assert readiness.loader_provenance_by_role["markdown"]["selected_fallback"] == "source_missing"
     assert readiness.loader_provenance_by_role["pdf"]["failure_reason"] == "source_missing"
+
 
 def test_preflight_validation_batch_adds_contradiction_diagnostics(tmp_path: Path) -> None:
     full_text = tmp_path / "full_text.md"
@@ -191,7 +198,9 @@ def test_write_source_preflight_run_writes_redacted_summary_and_diagnostics(tmp_
     state = ValidationBatchState(
         batch_id="b003",
         phase="source_ready",
-        selected_papers=(SelectedPaper(paper_id="2605.00004v1", selection_role="baseline_overlap"),),
+        selected_papers=(
+            SelectedPaper(paper_id="2605.00004v1", selection_role="baseline_overlap"),
+        ),
         source_readiness_by_paper={
             "2605.00004v1": SourceReadiness(
                 markdown_present=True,
@@ -218,8 +227,18 @@ def test_build_source_preflight_summary_counts_blockers() -> None:
         batch_id="b004",
         phase="source_blocked",
         diagnostics=(
-            {"severity": "blocker", "code": "ready_without_markdown", "message": "x", "recommended_action": "y"},
-            {"severity": "warning", "code": "conflicting_pdf_state", "message": "x", "recommended_action": "y"},
+            {
+                "severity": "blocker",
+                "code": "ready_without_markdown",
+                "message": "x",
+                "recommended_action": "y",
+            },
+            {
+                "severity": "warning",
+                "code": "conflicting_pdf_state",
+                "message": "x",
+                "recommended_action": "y",
+            },
         ),
     )
 
@@ -279,9 +298,10 @@ def test_validation_batch_smoke_writes_functional_and_quality_review(tmp_path: P
     assert review["maintainability_diagnostic"]["summary"]["total_functions"] > 0
     assert review["maintainability_diagnostic"]["baseline_delta"]["baseline_present"] is False
     assert quality_json["quality_gate"]["blocking"] is False
-    assert quality_json["quality_gate"]["touched_modules"] == ["src/arxiv_archive/validation_batch_workflow.py"]
+    assert quality_json["quality_gate"]["touched_modules"] == [
+        "src/arxiv_archive/validation_batch_workflow.py"
+    ]
     assert "Severity bands" in human_quality
-
 
     state = ValidationBatchState(
         batch_id="b005",

@@ -282,7 +282,9 @@ class ToolInvocationRecord:
         if not self.helper_evidence_only or self.minimax_source_of_truth:
             raise ValueError("tool invocation records are helper evidence only")
         if self.raw_prompt_persisted or self.credential_value_logged:
-            raise ValueError("tool invocation records must not persist prompts or credential values")
+            raise ValueError(
+                "tool invocation records must not persist prompts or credential values"
+            )
 
     def to_sanitized_dict(self) -> dict[str, Any]:
         data = _as_json_safe_dict(self)

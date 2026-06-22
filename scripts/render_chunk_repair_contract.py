@@ -61,11 +61,15 @@ def load_source_audit(path: str | Path) -> dict[str, Any]:
     return payload
 
 
-def render_contract_files(audit_path: Path, json_output: Path, markdown_output: Path) -> dict[str, Any]:
+def render_contract_files(
+    audit_path: Path, json_output: Path, markdown_output: Path
+) -> dict[str, Any]:
     """Build, validate, and write the contract outputs only after all checks pass."""
     audit = load_source_audit(audit_path)
     contract = build_chunk_repair_contract_from_audit(audit, source_audit_path=str(audit_path))
-    validation = validate_chunk_repair_contract(contract, expected_audit=expected_audit_from_contract(contract))
+    validation = validate_chunk_repair_contract(
+        contract, expected_audit=expected_audit_from_contract(contract)
+    )
     if not validation.passed:
         codes = ", ".join(sorted(validation.refusal_counts))
         raise ChunkRepairContractRenderError(f"rendered contract failed validator: {codes}")
@@ -94,9 +98,18 @@ def render_contract_files(audit_path: Path, json_output: Path, markdown_output: 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--audit", type=Path, required=True, help="Redacted S01 locator evidence audit JSON")
-    parser.add_argument("--json-output", type=Path, required=True, help="Destination for chunk-repair-contract.json")
-    parser.add_argument("--markdown-output", type=Path, required=True, help="Destination for chunk-repair-contract.md")
+    parser.add_argument(
+        "--audit", type=Path, required=True, help="Redacted S01 locator evidence audit JSON"
+    )
+    parser.add_argument(
+        "--json-output", type=Path, required=True, help="Destination for chunk-repair-contract.json"
+    )
+    parser.add_argument(
+        "--markdown-output",
+        type=Path,
+        required=True,
+        help="Destination for chunk-repair-contract.md",
+    )
     args = parser.parse_args(argv)
 
     try:

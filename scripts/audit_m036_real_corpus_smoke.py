@@ -10,7 +10,12 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-FALSE_SAFETY_KEYS = ("graph_write_allowed", "promotion_allowed", "production_import_attempted", "import_eligible")
+FALSE_SAFETY_KEYS = (
+    "graph_write_allowed",
+    "promotion_allowed",
+    "production_import_attempted",
+    "import_eligible",
+)
 CONTINUITY_SCHEMA_VERSION = "m040-real-corpus-continuity.v1"
 PER_ARTICLE_ARTIFACTS = (
     "candidate.json",
@@ -67,9 +72,14 @@ def validate_continuity(article: dict[str, Any], continuity: dict[str, Any]) -> 
         raise ValueError(f"article {candidate_id} continuity metadata_only must be true")
     safety_flags = continuity.get("safety_flags")
     if not isinstance(safety_flags, dict) or not false_flags(safety_flags):
-        raise ValueError(f"article {candidate_id} continuity contains true write/import/promotion flag")
+        raise ValueError(
+            f"article {candidate_id} continuity contains true write/import/promotion flag"
+        )
     import_eligibility = continuity.get("import_eligibility")
-    if not isinstance(import_eligibility, dict) or import_eligibility.get("import_eligible") is not False:
+    if (
+        not isinstance(import_eligibility, dict)
+        or import_eligibility.get("import_eligible") is not False
+    ):
         raise ValueError(f"article {candidate_id} continuity claims import eligibility")
     loader_evidence = continuity.get("loader_evidence")
     if not isinstance(loader_evidence, dict):
@@ -137,25 +147,35 @@ def audit_smoke(manifest_path: Path, run_dir: Path) -> dict[str, Any]:
         raise ValueError("manifest and run summary must contain article lists")
 
     article_artifact_status = [inspect_article_artifacts(article) for article in run_articles]
-    continuity_records = [item["continuity"] for item in article_artifact_status if item.get("continuity")]
+    continuity_records = [
+        item["continuity"] for item in article_artifact_status if item.get("continuity")
+    ]
     diagnostics = Counter(
         diagnostic
         for continuity in continuity_records
         for diagnostic in continuity.get("diagnostics", [])
     )
     missing_artifacts = sum(len(item["missing_artifacts"]) for item in article_artifact_status)
-    unsafe_payload_files = sum(len(item["unsafe_payload_files"]) for item in article_artifact_status)
+    unsafe_payload_files = sum(
+        len(item["unsafe_payload_files"]) for item in article_artifact_status
+    )
     missing_continuity_artifacts = sum(
         1 for item in article_artifact_status if "continuity.json" in item["missing_artifacts"]
     )
     articles_with_source_refs = sum(
-        1 for continuity in continuity_records if continuity["source_evidence"]["status"] == "present"
+        1
+        for continuity in continuity_records
+        if continuity["source_evidence"]["status"] == "present"
     )
     articles_with_loader_refs = sum(
-        1 for continuity in continuity_records if continuity["loader_evidence"]["status"] == "present"
+        1
+        for continuity in continuity_records
+        if continuity["loader_evidence"]["status"] == "present"
     )
     articles_with_explicit_loader_absence = sum(
-        1 for continuity in continuity_records if continuity["loader_evidence"]["status"] == "absent_explicit"
+        1
+        for continuity in continuity_records
+        if continuity["loader_evidence"]["status"] == "absent_explicit"
     )
     ready_count = sum(1 for article in run_articles if article.get("queue_status") == "ready")
 
@@ -164,10 +184,14 @@ def audit_smoke(manifest_path: Path, run_dir: Path) -> dict[str, Any]:
         raise ValueError("run summary contains true write/import/promotion flag")
     for article in run_articles:
         if not false_flags(article):
-            raise ValueError(f"article {article.get('candidate_id')} contains true write/import/promotion flag")
+            raise ValueError(
+                f"article {article.get('candidate_id')} contains true write/import/promotion flag"
+            )
         article_flags = article.get("safety_flags")
         if not isinstance(article_flags, dict) or not false_flags(article_flags):
-            raise ValueError(f"article {article.get('candidate_id')} summary safety_flags are not false")
+            raise ValueError(
+                f"article {article.get('candidate_id')} summary safety_flags are not false"
+            )
 
     audit = {
         "schema_version": "m036-real-corpus-smoke-audit.v1",
@@ -257,7 +281,9 @@ def main() -> int:
     emit(f"article_count={audit['article_count']}")
     emit(f"completed_handoff_count={audit['completed_handoff_count']}")
     emit(f"blockers_for_import={','.join(audit['blockers_for_import']) or 'none'}")
-    emit("graph_write_allowed=false promotion_allowed=false production_import_attempted=false import_eligible=false")
+    emit(
+        "graph_write_allowed=false promotion_allowed=false production_import_attempted=false import_eligible=false"
+    )
     return 0
 
 

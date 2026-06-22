@@ -35,7 +35,9 @@ class BoundaryDomainInvariantError(ValueError):
     """Raised when mapped DTOs violate Universal KB domain invariants."""
 
     def __init__(self, diagnostics: list[BoundaryDiagnostic]) -> None:
-        super().__init__(diagnostics[0].message if diagnostics else "candidate domain invariant failed")
+        super().__init__(
+            diagnostics[0].message if diagnostics else "candidate domain invariant failed"
+        )
         self.diagnostics = diagnostics
 
 

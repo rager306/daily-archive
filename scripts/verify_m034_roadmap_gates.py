@@ -27,7 +27,12 @@ SAFETY = [
     "production_import_attempted=false",
     "import_eligible=false",
 ]
-FILES = ["ROADMAP-GATES.md", "NEXT-MILESTONE-HANDOFF.md", "CONFLICT-RESOLUTION-PLAN.md", "OPEN-QUESTIONS.md"]
+FILES = [
+    "ROADMAP-GATES.md",
+    "NEXT-MILESTONE-HANDOFF.md",
+    "CONFLICT-RESOLUTION-PLAN.md",
+    "OPEN-QUESTIONS.md",
+]
 
 
 def main() -> int:
@@ -74,7 +79,12 @@ def main() -> int:
         failures.append(f"missing correction routes file: {routes_path}")
 
     open_questions = texts["OPEN-QUESTIONS.md"]
-    for marker in ["Which GraphDB", "Should durable state", "When may LLM/agent helpers enter", "Open questions are not accepted decisions"]:
+    for marker in [
+        "Which GraphDB",
+        "Should durable state",
+        "When may LLM/agent helpers enter",
+        "Open questions are not accepted decisions",
+    ]:
         if marker not in open_questions:
             failures.append(f"OPEN-QUESTIONS.md missing {marker}")
 

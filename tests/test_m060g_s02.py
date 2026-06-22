@@ -22,12 +22,16 @@ sys.modules["m060g_figure_judge"] = m060g_figure_judge
 spec.loader.exec_module(m060g_figure_judge)
 
 
-def _fake_model_result(binding_id: str, model_id: str, latency_ms: float, scores: dict[str, Any]) -> dict[str, Any]:
+def _fake_model_result(
+    binding_id: str, model_id: str, latency_ms: float, scores: dict[str, Any]
+) -> dict[str, Any]:
     return {
         "binding_id": binding_id,
         "model_id": model_id,
         "model_used": model_id,
-        "modality": "multimodal" if binding_id == m060g_figure_judge.QUALITY_BINDING_ID else "text-only",
+        "modality": "multimodal"
+        if binding_id == m060g_figure_judge.QUALITY_BINDING_ID
+        else "text-only",
         "status": "passed",
         "status_code": 200,
         "latency_ms": latency_ms,
@@ -115,7 +119,13 @@ def test_per_figure_output_schema(tmp_path: Path) -> None:
     path.write_text(json.dumps(record))
 
     loaded = json.loads(path.read_text())
-    assert set(loaded) == {"figure", "safety_defaults", "diagnostic_llm_calls_override", "models", "comparison"}
+    assert set(loaded) == {
+        "figure",
+        "safety_defaults",
+        "diagnostic_llm_calls_override",
+        "models",
+        "comparison",
+    }
     assert set(loaded["models"]) == {
         m060g_figure_judge.FAST_BINDING_ID,
         m060g_figure_judge.QUALITY_BINDING_ID,
@@ -152,7 +162,9 @@ def test_resolve_messages_endpoint_from_anthropic_base_url() -> None:
         == "https://api.minimax.io/anthropic/v1/messages"
     )
     assert (
-        m060g_figure_judge.resolve_messages_endpoint(binding, "https://api.minimax.io/anthropic/v1/messages")
+        m060g_figure_judge.resolve_messages_endpoint(
+            binding, "https://api.minimax.io/anthropic/v1/messages"
+        )
         == "https://api.minimax.io/anthropic/v1/messages"
     )
 
@@ -177,8 +189,18 @@ def test_4_dimensions_in_each_figure() -> None:
     "bad_payload",
     [
         {"caption_accuracy": 1, "figure_completeness": 1, "missing_elements": []},
-        {"caption_accuracy": 1.2, "figure_completeness": 1, "structural_fidelity": 1, "missing_elements": []},
-        {"caption_accuracy": 1, "figure_completeness": 1, "structural_fidelity": 1, "missing_elements": "none"},
+        {
+            "caption_accuracy": 1.2,
+            "figure_completeness": 1,
+            "structural_fidelity": 1,
+            "missing_elements": [],
+        },
+        {
+            "caption_accuracy": 1,
+            "figure_completeness": 1,
+            "structural_fidelity": 1,
+            "missing_elements": "none",
+        },
     ],
 )
 def test_score_payload_rejects_invalid_dimensions(bad_payload: dict[str, Any]) -> None:
@@ -213,5 +235,8 @@ def test_m050_m060g_s01_regression() -> None:
     binding_ids = m060g_figure_judge.load_bindings()
     assert m060g_figure_judge.FAST_BINDING_ID in binding_ids
     assert m060g_figure_judge.QUALITY_BINDING_ID in binding_ids
-    assert HttpTransport(timeout_seconds=1, auth_env_var="ANTHROPIC_API_KEY").auth_env_var == "ANTHROPIC_API_KEY"
+    assert (
+        HttpTransport(timeout_seconds=1, auth_env_var="ANTHROPIC_API_KEY").auth_env_var
+        == "ANTHROPIC_API_KEY"
+    )
     assert m060g_figure_judge.SAFETY_DEFAULTS["graph_writes_authorized"] is False

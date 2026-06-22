@@ -59,8 +59,17 @@ def main() -> int:
         if not (pkg / name).exists():
             failures.append(f"missing package file: {name}")
 
-    summary = (pkg / "DECISION-PACKAGE-SUMMARY.md").read_text(encoding="utf-8") if (pkg / "DECISION-PACKAGE-SUMMARY.md").exists() else ""
-    for marker in ["local-first universal knowledge base", "scientific articles", "ADR-002", "Durable Evidence Pipeline Prototype Planning"]:
+    summary = (
+        (pkg / "DECISION-PACKAGE-SUMMARY.md").read_text(encoding="utf-8")
+        if (pkg / "DECISION-PACKAGE-SUMMARY.md").exists()
+        else ""
+    )
+    for marker in [
+        "local-first universal knowledge base",
+        "scientific articles",
+        "ADR-002",
+        "Durable Evidence Pipeline Prototype Planning",
+    ]:
         if marker not in summary:
             failures.append(f"summary missing marker: {marker}")
     for marker in SAFETY_MARKERS:
@@ -68,8 +77,22 @@ def main() -> int:
             failures.append(f"summary missing safety marker: {marker}")
 
     verifier_cmds = [
-        [sys.executable, "scripts/verify_m034_rd_consistency_audit.py", "--package-dir", str(pkg), "--requirements", str(args.requirements), "--decisions", str(args.decisions)],
-        [sys.executable, "scripts/verify_m034_adr_template_and_north_star.py", "--package-dir", str(pkg)],
+        [
+            sys.executable,
+            "scripts/verify_m034_rd_consistency_audit.py",
+            "--package-dir",
+            str(pkg),
+            "--requirements",
+            str(args.requirements),
+            "--decisions",
+            str(args.decisions),
+        ],
+        [
+            sys.executable,
+            "scripts/verify_m034_adr_template_and_north_star.py",
+            "--package-dir",
+            str(pkg),
+        ],
         [sys.executable, "scripts/verify_m034_formal_adr_package.py", "--package-dir", str(pkg)],
         [sys.executable, "scripts/verify_m034_prd_requirements.py", "--package-dir", str(pkg)],
         [sys.executable, "scripts/verify_m034_contracts_invariants.py", "--package-dir", str(pkg)],

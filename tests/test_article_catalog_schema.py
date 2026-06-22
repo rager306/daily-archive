@@ -84,7 +84,9 @@ def test_article_catalog_schema_v0001_registers_reusable_multi_source_store() ->
     }
     assert catalog["storage_policy"]["raw_sources_captured_once"] is True
     assert catalog["storage_policy"]["pipeline_tests_must_not_fetch_network"] is True
-    assert catalog["source_strategy_defaults"]["pdf_policy"] == "capture_immediately_use_as_fallback"
+    assert (
+        catalog["source_strategy_defaults"]["pdf_policy"] == "capture_immediately_use_as_fallback"
+    )
     assert catalog["source_strategy_defaults"]["fallback_policy"] == (
         "use_pdf_when_html_or_markdown_missing_low_quality_or_inconsistent"
     )
@@ -125,9 +127,10 @@ def test_article_catalog_index_v0001_supports_cli_lookup_without_tree_scan() -> 
         "company_blog/cs-ir/pageindex_zhang2025pageindex"
     )
     assert index["indexes"]["by_title"]["Recursive Language Models"] == "arxiv/cs-ai/2512.24601"
-    assert index["indexes"]["by_title"][
-        "PageIndex: Next-Generation Vectorless, Reasoning-based RAG"
-    ] == "company_blog/cs-ir/pageindex_zhang2025pageindex"
+    assert (
+        index["indexes"]["by_title"]["PageIndex: Next-Generation Vectorless, Reasoning-based RAG"]
+        == "company_blog/cs-ir/pageindex_zhang2025pageindex"
+    )
     assert index["indexes"]["by_source_code"]["arxiv"] == [
         "arxiv/cs-ai/2512.24601",
         "arxiv/cs-ai/2605.28617v1",
@@ -165,7 +168,9 @@ def test_m025_selection_references_catalog_entries_not_live_urls_as_primary_inpu
         assert _article_path(article_ref).exists(), article_ref
 
     pageindex = next(
-        article for article in selection["articles"] if article["article_ref"].startswith("company_blog/")
+        article
+        for article in selection["articles"]
+        if article["article_ref"].startswith("company_blog/")
     )
     assert pageindex["source_code"] == "company_blog"
     assert pageindex["selection_role"] == "non_arxiv_html_and_bibtex_control"
@@ -192,7 +197,9 @@ class TestArticleSchemaV0001:
             assert expected["must_have_roles"] <= set(variants), article_ref
             primary_id = article["source_strategy"]["primary_source_variant_id"]
             primary_variant = next(
-                variant for variant in article["source_variants"] if variant["variant_id"] == primary_id
+                variant
+                for variant in article["source_variants"]
+                if variant["variant_id"] == primary_id
             )
             assert primary_variant["source_role"] == expected["primary_role"]
             assert primary_variant["is_primary"] is True
@@ -247,10 +254,10 @@ class TestArticleSchemaV0001:
             assert html["requires_conversion"] is False
             assert html["capture_policy"] == "capture_during_acquisition_phase"
 
-    def test_company_blog_article_has_html_primary_bibtex_metadata_and_no_pdf_requirement(self) -> None:
-        article = _load_json(
-            _article_path("company_blog/cs-ir/pageindex_zhang2025pageindex")
-        )
+    def test_company_blog_article_has_html_primary_bibtex_metadata_and_no_pdf_requirement(
+        self,
+    ) -> None:
+        article = _load_json(_article_path("company_blog/cs-ir/pageindex_zhang2025pageindex"))
         variants = _variants_by_role(article)
         strategy = article["source_strategy"]
 
@@ -279,12 +286,12 @@ class TestArticleSchemaV0001:
         )
 
         forbidden_snippets = [
-            "trusted_kg_import_allowed\": true",
-            "production_ladybugdb_write_allowed\": true",
-            "raw_text_embedded\": true",
-            "raw_binary_embedded\": true",
-            "production_import_attempted\": true",
-            "ladybugdb_written\": true",
+            'trusted_kg_import_allowed": true',
+            'production_ladybugdb_write_allowed": true',
+            'raw_text_embedded": true',
+            'raw_binary_embedded": true',
+            'production_import_attempted": true',
+            'ladybugdb_written": true',
         ]
         for snippet in forbidden_snippets:
             assert snippet not in serialized

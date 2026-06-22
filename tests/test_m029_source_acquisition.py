@@ -23,7 +23,9 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 
 def _fixture_tree(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
     catalog_root = tmp_path / "article_catalog"
-    article_path = catalog_root / "article_catalog" / "arxiv" / "mixed-source" / "2605.20897" / "article.json"
+    article_path = (
+        catalog_root / "article_catalog" / "arxiv" / "mixed-source" / "2605.20897" / "article.json"
+    )
     source_path = article_path.parent / "source" / "abs.html"
     source_path.parent.mkdir(parents=True, exist_ok=True)
     source_path.write_bytes(b"fixture arxiv abstract bytes")
@@ -104,7 +106,9 @@ def _fixture_tree(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
     return catalog_path, index_path, selection_path, tmp_path / "corpus" / "source"
 
 
-def test_capture_m029_copies_local_sources_and_blocks_unresolved_placeholders(tmp_path: Path) -> None:
+def test_capture_m029_copies_local_sources_and_blocks_unresolved_placeholders(
+    tmp_path: Path,
+) -> None:
     catalog_path, index_path, selection_path, output_dir = _fixture_tree(tmp_path)
 
     results = capture_selection(
@@ -285,24 +289,40 @@ def test_verify_check_strategies_rejects_selection_catalog_primary_mismatch(tmp_
     )
 
     assert result == 1
-    diagnostics = (output_dir.parent / "source-strategy-diagnostics.jsonl").read_text(encoding="utf-8")
+    diagnostics = (output_dir.parent / "source-strategy-diagnostics.jsonl").read_text(
+        encoding="utf-8"
+    )
     assert "strategy_primary_mismatch" in diagnostics
 
 
 def test_capture_blocks_unsafe_catalog_source_path(tmp_path: Path) -> None:
     catalog_path, index_path, selection_path, output_dir = _fixture_tree(tmp_path)
-    article_path = catalog_path.parent / "article_catalog" / "arxiv" / "mixed-source" / "2605.20897" / "article.json"
+    article_path = (
+        catalog_path.parent
+        / "article_catalog"
+        / "arxiv"
+        / "mixed-source"
+        / "2605.20897"
+        / "article.json"
+    )
     article = json.loads(article_path.read_text(encoding="utf-8"))
     article["source_variants"][0]["local_path"] = "../outside.html"
     article["source_variants"][0]["path"] = "../outside.html"
     _write_json(article_path, article)
 
-    results = capture_selection(catalog_root=catalog_path.parent, index_path=index_path, selection_path=selection_path, output_dir=output_dir)
+    results = capture_selection(
+        catalog_root=catalog_path.parent,
+        index_path=index_path,
+        selection_path=selection_path,
+        output_dir=output_dir,
+    )
 
     first = results[0]
     assert first["status"] == "blocked"
     assert first["diagnostic_code"] == "unsafe_catalog_source_path"
-    assert not (output_dir / "arxiv" / "mixed-source" / "2605.20897" / "source" / "abs.html").exists()
+    assert not (
+        output_dir / "arxiv" / "mixed-source" / "2605.20897" / "source" / "abs.html"
+    ).exists()
 
 
 def test_verifier_detects_hash_mismatch(tmp_path: Path) -> None:
@@ -347,7 +367,9 @@ def test_verifier_detects_hash_mismatch(tmp_path: Path) -> None:
     )
 
     assert result == 1
-    diagnostics = (output_dir.parent / "source-acquisition-diagnostics.jsonl").read_text(encoding="utf-8")
+    diagnostics = (output_dir.parent / "source-acquisition-diagnostics.jsonl").read_text(
+        encoding="utf-8"
+    )
     assert "sha256_mismatch" in diagnostics
 
 

@@ -336,7 +336,9 @@ def _validate_evidence_path(
     if not path_value or path_value.strip() != path_value:
         return [f"{requirement_id} evidence path is blank or padded: {path_value!r}"]
     if "://" in path_value:
-        errors.append(f"{requirement_id} evidence path must be a repo-relative path, not a URL: {path_value}")
+        errors.append(
+            f"{requirement_id} evidence path must be a repo-relative path, not a URL: {path_value}"
+        )
     path = Path(path_value)
     if path.is_absolute():
         errors.append(f"{requirement_id} evidence path must be relative: {path_value}")
@@ -365,19 +367,31 @@ def _positive_text_for_matrix(matrix: dict[str, Any]) -> dict[str, str]:
     if isinstance(scope, dict):
         positive["$.scope_boundary.summary"] = "\n".join(_strings_from(scope.get("summary")))
         positive["$.scope_boundary.in_scope"] = "\n".join(_strings_from(scope.get("in_scope")))
-        positive["$.scope_boundary.safe_next_step"] = "\n".join(_strings_from(scope.get("safe_next_step")))
+        positive["$.scope_boundary.safe_next_step"] = "\n".join(
+            _strings_from(scope.get("safe_next_step"))
+        )
     positive["$.quality_gates.observability_impact"] = "\n".join(
-        _strings_from(matrix.get("quality_gates", {}).get("observability_impact") if isinstance(matrix.get("quality_gates"), dict) else None)
+        _strings_from(
+            matrix.get("quality_gates", {}).get("observability_impact")
+            if isinstance(matrix.get("quality_gates"), dict)
+            else None
+        )
     )
     requirements = matrix.get("requirements")
     if isinstance(requirements, list):
         for index, row in enumerate(requirements):
             if not isinstance(row, dict):
                 continue
-            rid = row.get("requirement_id") if isinstance(row.get("requirement_id"), str) else f"index {index}"
+            rid = (
+                row.get("requirement_id")
+                if isinstance(row.get("requirement_id"), str)
+                else f"index {index}"
+            )
             for key in POSITIVE_TEXT_KEYS:
                 if key in row:
-                    positive[f"$.requirements[{index}]({rid}).{key}"] = "\n".join(_strings_from(row.get(key)))
+                    positive[f"$.requirements[{index}]({rid}).{key}"] = "\n".join(
+                        _strings_from(row.get(key))
+                    )
     return positive
 
 
@@ -424,7 +438,9 @@ def validate_matrix(
     errors.extend(_validate_safety_flags(matrix))
 
     declared_required = matrix.get("required_requirement_ids")
-    if not isinstance(declared_required, list) or not all(isinstance(item, str) for item in declared_required):
+    if not isinstance(declared_required, list) or not all(
+        isinstance(item, str) for item in declared_required
+    ):
         errors.append("$.required_requirement_ids must be a list of strings")
     elif set(declared_required) != required:
         missing_declared = sorted(required - set(declared_required))
@@ -432,7 +448,9 @@ def validate_matrix(
         if missing_declared:
             errors.append(f"$.required_requirement_ids missing ids: {', '.join(missing_declared)}")
         if extra_declared:
-            errors.append(f"$.required_requirement_ids has unexpected ids: {', '.join(extra_declared)}")
+            errors.append(
+                f"$.required_requirement_ids has unexpected ids: {', '.join(extra_declared)}"
+            )
 
     requirements = matrix.get("requirements")
     if not isinstance(requirements, list):
@@ -489,9 +507,18 @@ def validate_matrix(
                         require_planning_evidence=require_planning_evidence,
                     )
                 )
-        for key in ("allowed_claims", "forbidden_claims", "remaining_work", "observed_m026_evidence"):
+        for key in (
+            "allowed_claims",
+            "forbidden_claims",
+            "remaining_work",
+            "observed_m026_evidence",
+        ):
             value = row.get(key)
-            if not isinstance(value, list) or not value or not all(isinstance(item, str) and item for item in value):
+            if (
+                not isinstance(value, list)
+                or not value
+                or not all(isinstance(item, str) and item for item in value)
+            ):
                 errors.append(f"{rid} {key} must be a non-empty list of strings")
         if not isinstance(row.get("rationale"), str) or not row.get("rationale"):
             errors.append(f"{rid} rationale must be a non-empty string")
@@ -500,15 +527,25 @@ def validate_matrix(
         row = rows.get(rid)
         if row is None:
             continue
-        positive = "\n".join(_strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})).lower()
-        if row.get("current_status") == "validated" or "fully validates" in positive or "validated_by_m026" in positive:
-            errors.append(f"{rid} must remain active/out-of-scope and must not be marked validated by M026")
+        positive = "\n".join(
+            _strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})
+        ).lower()
+        if (
+            row.get("current_status") == "validated"
+            or "fully validates" in positive
+            or "validated_by_m026" in positive
+        ):
+            errors.append(
+                f"{rid} must remain active/out-of-scope and must not be marked validated by M026"
+            )
 
     for rid in EXISTING_CONTEXT_REQUIREMENT_IDS:
         row = rows.get(rid)
         if row is None:
             continue
-        positive = "\n".join(_strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})).lower()
+        positive = "\n".join(
+            _strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})
+        ).lower()
         if row.get("current_status") != "validated":
             errors.append(f"{rid} current_status must remain validated existing context")
         if "newly validates" in positive:
@@ -516,21 +553,37 @@ def validate_matrix(
 
     row = rows.get("R036")
     if row is not None:
-        positive = "\n".join(_strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})).lower()
+        positive = "\n".join(
+            _strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})
+        ).lower()
         if row.get("current_status") == "validated" or "fully validates" in positive:
-            errors.append("R036 must remain active/adjacent evidence unless full CLI provenance is separately proven")
+            errors.append(
+                "R036 must remain active/adjacent evidence unless full CLI provenance is separately proven"
+            )
 
     row = rows.get("R040")
     if row is not None:
-        positive = "\n".join(_strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})).lower()
-        if row.get("current_status") == "validated" or "globally validates" in positive or "all future infrastructure" in positive:
-            errors.append("R040 must be milestone-local followed-constraint evidence, not global validation")
+        positive = "\n".join(
+            _strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})
+        ).lower()
+        if (
+            row.get("current_status") == "validated"
+            or "globally validates" in positive
+            or "all future infrastructure" in positive
+        ):
+            errors.append(
+                "R040 must be milestone-local followed-constraint evidence, not global validation"
+            )
 
     row = rows.get("R050")
     if row is not None:
-        positive = "\n".join(_strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})).lower()
+        positive = "\n".join(
+            _strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})
+        ).lower()
         if row.get("current_status") == "validated" or "m026 implements r050" in positive:
-            errors.append("R050 must remain a future consumer, not implemented or validated by M026")
+            errors.append(
+                "R050 must remain a future consumer, not implemented or validated by M026"
+            )
 
     if reject_unsafe_claims:
         for path, text in _positive_text_for_matrix(matrix).items():
@@ -541,7 +594,11 @@ def validate_matrix(
 
     for path, value in _walk(matrix):
         key_without_index = _field_name_from_path(path)
-        if isinstance(value, bool) and value is True and key_without_index in UNSAFE_TRUE_BOOLEAN_KEYS:
+        if (
+            isinstance(value, bool)
+            and value is True
+            and key_without_index in UNSAFE_TRUE_BOOLEAN_KEYS
+        ):
             errors.append(f"{path} unsafe boolean field must not be true")
         if any(fragment in key_without_index for fragment in UNSAFE_FIELD_NAME_FRAGMENTS):
             if not path.startswith("$.safety_flags."):
@@ -562,7 +619,9 @@ def validate_matrix(
     return errors
 
 
-def validate_coverage_markdown(coverage_markdown: str, *, required_requirements: set[str] | None = None) -> list[str]:
+def validate_coverage_markdown(
+    coverage_markdown: str, *, required_requirements: set[str] | None = None
+) -> list[str]:
     """Return validation diagnostics for the S05 coverage handoff markdown."""
 
     required = required_requirements or REQUIRED_REQUIREMENT_IDS
@@ -630,10 +689,16 @@ def _load_json(path: Path) -> dict[str, Any]:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--matrix", required=True, type=Path, help="Path to m026_requirement_scope_matrix.json")
-    parser.add_argument("--rendered", required=True, type=Path, help="Path to rendered matrix markdown")
+    parser.add_argument(
+        "--matrix", required=True, type=Path, help="Path to m026_requirement_scope_matrix.json"
+    )
+    parser.add_argument(
+        "--rendered", required=True, type=Path, help="Path to rendered matrix markdown"
+    )
     parser.add_argument("--repo-root", type=Path, default=Path.cwd())
-    parser.add_argument("--require-requirements", nargs="+", default=sorted(REQUIRED_REQUIREMENT_IDS))
+    parser.add_argument(
+        "--require-requirements", nargs="+", default=sorted(REQUIRED_REQUIREMENT_IDS)
+    )
     parser.add_argument(
         "--require-active-scope",
         action="store_true",
@@ -661,8 +726,14 @@ def main(argv: list[str] | None = None) -> int:
         try:
             rendered = args.rendered.read_text(encoding="utf-8")
         except FileNotFoundError as exc:
-            raise MatrixValidationError(f"rendered markdown file not found: {args.rendered}") from exc
-        required = set(args.require_requirements) if args.require_active_scope else set(args.require_requirements)
+            raise MatrixValidationError(
+                f"rendered markdown file not found: {args.rendered}"
+            ) from exc
+        required = (
+            set(args.require_requirements)
+            if args.require_active_scope
+            else set(args.require_requirements)
+        )
         errors = validate_matrix(
             matrix,
             rendered,
@@ -675,7 +746,9 @@ def main(argv: list[str] | None = None) -> int:
             try:
                 coverage = args.coverage.read_text(encoding="utf-8")
             except FileNotFoundError as exc:
-                raise MatrixValidationError(f"coverage markdown file not found: {args.coverage}") from exc
+                raise MatrixValidationError(
+                    f"coverage markdown file not found: {args.coverage}"
+                ) from exc
             errors.extend(validate_coverage_markdown(coverage, required_requirements=required))
     except MatrixValidationError as exc:
         sys.stderr.write(f"ERROR: {exc}\n")

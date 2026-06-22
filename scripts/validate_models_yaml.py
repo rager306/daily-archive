@@ -94,20 +94,28 @@ def validate_registry(payload: dict[str, Any]) -> list[str]:
             errors.append(f"{prefix}: missing fields: {sorted(missing_fields)}")
             continue
         if not ID_PATTERN.match(model["id"]):
-            errors.append(f"{prefix}.id='{model['id']}': must be snake_case, start with lowercase letter")
+            errors.append(
+                f"{prefix}.id='{model['id']}': must be snake_case, start with lowercase letter"
+            )
         if model["id"] in seen_ids:
             errors.append(f"{prefix}.id='{model['id']}': duplicate id")
         seen_ids.add(model["id"])
         if model["provider"] not in ALLOWED_PROVIDERS:
-            errors.append(f"{prefix}.provider='{model['provider']}': must be one of {sorted(ALLOWED_PROVIDERS)}")
+            errors.append(
+                f"{prefix}.provider='{model['provider']}': must be one of {sorted(ALLOWED_PROVIDERS)}"
+            )
         if not ENDPOINT_PATTERN.match(model["endpoint"]):
             errors.append(f"{prefix}.endpoint='{model['endpoint']}': must start with https://")
         if not isinstance(model["model_name"], str) or not model["model_name"].strip():
             errors.append(f"{prefix}.model_name: must be non-empty string")
         if not _is_version_like(model["tool_version"]):
-            errors.append(f"{prefix}.tool_version='{model['tool_version']}': must be version-like (semver X.Y.Z, date YYYY-MM-DD, or tagged m049-v0.1)")
+            errors.append(
+                f"{prefix}.tool_version='{model['tool_version']}': must be version-like (semver X.Y.Z, date YYYY-MM-DD, or tagged m049-v0.1)"
+            )
         if not _is_version_like(model["policy_version"]):
-            errors.append(f"{prefix}.policy_version='{model['policy_version']}': must be version-like")
+            errors.append(
+                f"{prefix}.policy_version='{model['policy_version']}': must be version-like"
+            )
 
     # Per-binding validation.
     valid_model_ids = {m.get("id") for m in payload.get("models", []) if isinstance(m, dict)}

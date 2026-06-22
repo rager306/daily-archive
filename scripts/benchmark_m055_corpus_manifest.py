@@ -101,7 +101,9 @@ def _build_corpus_from_target_subset(target_subset_path: Path) -> list[dict[str,
     return entries
 
 
-def build_corpus_manifest(target_subset_path: Path, output_path: Path = DEFAULT_OUTPUT) -> dict[str, Any]:
+def build_corpus_manifest(
+    target_subset_path: Path, output_path: Path = DEFAULT_OUTPUT
+) -> dict[str, Any]:
     entries = _build_corpus_from_target_subset(target_subset_path)
     payload = {
         "schema_version": SCHEMA_VERSION,

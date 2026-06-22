@@ -50,7 +50,9 @@ def test_build_mixed_manifest_requires_reference_linked_then_uses_hermes(
 ) -> None:
     written: dict[str, str] = {}
     monkeypatch.setattr(selector, "load_baseline_entries", _baseline)
-    monkeypatch.setattr(selector, "known_arxiv_ids", lambda: {f"baseline-{index}" for index in range(10)})
+    monkeypatch.setattr(
+        selector, "known_arxiv_ids", lambda: {f"baseline-{index}" for index in range(10)}
+    )
     monkeypatch.setattr(
         selector,
         "discover_reference_ids",
@@ -92,7 +94,9 @@ def test_build_mixed_manifest_requires_reference_linked_then_uses_hermes(
             "fallback_reason": None,
         },
     )
-    monkeypatch.setattr(selector, "fetch_arxiv_records", lambda ids: [_record(arxiv_id) for arxiv_id in ids])
+    monkeypatch.setattr(
+        selector, "fetch_arxiv_records", lambda ids: [_record(arxiv_id) for arxiv_id in ids]
+    )
     monkeypatch.setattr(
         selector,
         "fetch_fresh_arxiv_ids",
@@ -128,7 +132,9 @@ def test_build_mixed_manifest_requires_reference_linked_then_uses_hermes(
     assert manifest["reference_discovery"]["used_reference_linked_count"] == 5
     assert manifest["hermes_review_selection"]["used_count"] == 5
     assert discovery["category_counts"] == manifest["category_counts"]
-    assert all(entry["safety_flags"] == selector.SMOKE_SAFETY_FLAGS for entry in manifest["articles"])
+    assert all(
+        entry["safety_flags"] == selector.SMOKE_SAFETY_FLAGS for entry in manifest["articles"]
+    )
     assert written["2401.00001"] == "reference_linked"
     assert written["2501.00001"] == "hermes_review_section"
 
@@ -138,7 +144,9 @@ def test_build_mixed_manifest_rejects_unsafe_target_count() -> None:
         selector.build_mixed_manifest(target_count=31, no_network=True)
 
 
-def test_build_mixed_manifest_no_network_documents_insufficient_articles(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_build_mixed_manifest_no_network_documents_insufficient_articles(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(selector, "load_baseline_entries", _baseline)
     monkeypatch.setattr(selector, "known_arxiv_ids", lambda: set())
     monkeypatch.setattr(

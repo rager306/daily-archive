@@ -40,7 +40,9 @@ def test_acquisition_min_25() -> None:
     assert log["success_count"] == 30
     assert log["blocked_count"] == 0
     assert log["network_error_count"] == 0
-    assert log["success_count"] == len([entry for entry in log["entries"] if entry["status"] == "acquired"])
+    assert log["success_count"] == len(
+        [entry for entry in log["entries"] if entry["status"] == "acquired"]
+    )
 
 
 def test_30_grobid_packets() -> None:
@@ -73,7 +75,10 @@ def test_edge_saturation_tracking() -> None:
     assert connectivity["cumulative_edge_count"] >= 3
     assert connectivity["cumulative_edge_count"] == len(connectivity["cumulative_edges"])
     assert connectivity["saturation_status"] in {"saturated", "growing"}
-    assert connectivity["connectivity_gain_delta_vs_wave_1"] == connectivity["wave_2_new_edge_count"] - connectivity["wave_1_edge_count"]
+    assert (
+        connectivity["connectivity_gain_delta_vs_wave_1"]
+        == connectivity["wave_2_new_edge_count"] - connectivity["wave_1_edge_count"]
+    )
 
 
 def test_cumulative_corpus_80() -> None:

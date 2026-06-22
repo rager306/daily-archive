@@ -19,7 +19,9 @@ SCHEMA_VERSION = "m005-chunking-benchmark.v1"
 FORBIDDEN_RAW_FIELDS = frozenset({"text", "raw_text", "chunk_text", "paper_text", "claim_text"})
 FORBIDDEN_EMBEDDING_FIELDS = frozenset({"embedding", "embeddings"})
 FORBIDDEN_VECTOR_FIELDS = frozenset({"vector", "vectors"})
-FORBIDDEN_SECRET_FIELDS = frozenset({"secret", "secrets", "token", "tokens", "api_key", "credentials"})
+FORBIDDEN_SECRET_FIELDS = frozenset(
+    {"secret", "secrets", "token", "tokens", "api_key", "credentials"}
+)
 FORBIDDEN_OPTIMIZER_FIELDS = frozenset({"optimizer_trace", "optimizer_traces"})
 
 
@@ -176,11 +178,7 @@ def write_chunking_benchmark_run(benchmark: ChunkingBenchmark, output_dir: Path)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     contract = benchmark.to_contract()
-    summary = {
-        key: value
-        for key, value in contract.items()
-        if key not in {"methods", "per_paper"}
-    }
+    summary = {key: value for key, value in contract.items() if key not in {"methods", "per_paper"}}
     (output_dir / "chunking-benchmark-summary.json").write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
@@ -279,7 +277,9 @@ def method_from_simple_section_window(source_asset_summary: dict[str, Any]) -> M
     }
     figure_equation_count = asset_counts.get("figure", 0) + asset_counts.get("equation", 0)
     if figure_equation_count:
-        counts_by_route["retrieval_only"] = counts_by_route.get("retrieval_only", 0) + figure_equation_count
+        counts_by_route["retrieval_only"] = (
+            counts_by_route.get("retrieval_only", 0) + figure_equation_count
+        )
     return MethodMetrics(
         method_id="simple_section_window_estimate",
         paper_count=_int(source_asset_summary.get("paper_count")),
@@ -293,7 +293,10 @@ def method_from_simple_section_window(source_asset_summary: dict[str, Any]) -> M
             "reference_entry": asset_counts.get("reference", 0),
             "metadata": asset_counts.get("metadata", 0),
         },
-        counts_by_state={"repair_required": asset_count, "ok_for_retrieval_only": source_file_count},
+        counts_by_state={
+            "repair_required": asset_count,
+            "ok_for_retrieval_only": source_file_count,
+        },
         refusal_counts={"estimated_candidate_requires_review": chunk_count},
         source_span_coverage=1.0 if chunk_count else 0.0,
         parent_reference_resolution_rate=0.0,
@@ -333,24 +336,38 @@ def build_benchmark_from_artifacts(
             method_from_simple_section_window(source_asset_summary),
         ),
         recommendation_status="review_required",
-        caveats=("dry_run_only", "real_library_candidates_not_executed", "production_import_blocked"),
+        caveats=(
+            "dry_run_only",
+            "real_library_candidates_not_executed",
+            "production_import_blocked",
+        ),
     )
 
 
 def aggregate_method_metrics(method_records: list[dict[str, Any]]) -> dict[str, Any]:
     """Aggregate method metrics for a run-level summary."""
     chunk_count = sum(_int(record.get("chunk_count")) for record in method_records)
-    import_eligible = sum(_int(record.get("import_eligible_chunk_count")) for record in method_records)
+    import_eligible = sum(
+        _int(record.get("import_eligible_chunk_count")) for record in method_records
+    )
     refused = sum(_int(record.get("refused_chunk_count")) for record in method_records)
     return {
         "total_chunk_count": chunk_count,
         "total_import_eligible_chunk_count": import_eligible,
         "total_refused_chunk_count": refused,
-        "counts_by_route": _merge_counts(record.get("counts_by_route") for record in method_records),
-        "counts_by_chunk_type": _merge_counts(record.get("counts_by_chunk_type") for record in method_records),
-        "counts_by_state": _merge_counts(record.get("counts_by_state") for record in method_records),
+        "counts_by_route": _merge_counts(
+            record.get("counts_by_route") for record in method_records
+        ),
+        "counts_by_chunk_type": _merge_counts(
+            record.get("counts_by_chunk_type") for record in method_records
+        ),
+        "counts_by_state": _merge_counts(
+            record.get("counts_by_state") for record in method_records
+        ),
         "refusal_counts": _merge_counts(record.get("refusal_counts") for record in method_records),
-        "missing_source_counts": _merge_counts(record.get("missing_source_counts") for record in method_records),
+        "missing_source_counts": _merge_counts(
+            record.get("missing_source_counts") for record in method_records
+        ),
         "method_ids": sorted(str(record.get("method_id")) for record in method_records),
     }
 
@@ -358,28 +375,53 @@ def aggregate_method_metrics(method_records: list[dict[str, Any]]) -> dict[str, 
 def validate_chunking_benchmark(benchmark: dict[str, Any]) -> BenchmarkValidationResult:
     """Validate benchmark artifact structure and redaction boundaries."""
     diagnostics: list[BenchmarkDiagnostic] = []
-    diagnostics.extend(_required_fields(benchmark, fields=("schema_version", "input_corpus", "methods", "aggregate"), object_id=None, object_type="benchmark"))
-    diagnostics.extend(_validate_redaction(benchmark, object_id="benchmark", object_type="benchmark"))
+    diagnostics.extend(
+        _required_fields(
+            benchmark,
+            fields=("schema_version", "input_corpus", "methods", "aggregate"),
+            object_id=None,
+            object_type="benchmark",
+        )
+    )
+    diagnostics.extend(
+        _validate_redaction(benchmark, object_id="benchmark", object_type="benchmark")
+    )
     if benchmark.get("schema_version") != SCHEMA_VERSION:
-        diagnostics.append(BenchmarkDiagnostic(reason="schema_version_mismatch", object_type="benchmark"))
+        diagnostics.append(
+            BenchmarkDiagnostic(reason="schema_version_mismatch", object_type="benchmark")
+        )
     methods = _list_of_dicts(benchmark.get("methods"))
     if benchmark.get("method_count") != len(methods):
-        diagnostics.append(BenchmarkDiagnostic(reason="method_count_mismatch", object_type="benchmark"))
+        diagnostics.append(
+            BenchmarkDiagnostic(reason="method_count_mismatch", object_type="benchmark")
+        )
     for method in methods:
         diagnostics.extend(_validate_method(method))
     for paper in _list_of_dicts(benchmark.get("per_paper")):
         diagnostics.extend(_validate_paper_method(paper))
     for field_name, expected in _safety_flags().items():
         if benchmark.get(field_name) is not expected:
-            diagnostics.append(BenchmarkDiagnostic(reason=f"unsafe_{field_name}", object_id="benchmark", object_type="benchmark"))
-    return BenchmarkValidationResult(valid_benchmark=not diagnostics, diagnostics=tuple(diagnostics))
+            diagnostics.append(
+                BenchmarkDiagnostic(
+                    reason=f"unsafe_{field_name}", object_id="benchmark", object_type="benchmark"
+                )
+            )
+    return BenchmarkValidationResult(
+        valid_benchmark=not diagnostics, diagnostics=tuple(diagnostics)
+    )
 
 
 def _validate_method(method: dict[str, Any]) -> list[BenchmarkDiagnostic]:
     method_id = _string_or_none(method.get("method_id"))
     diagnostics = _required_fields(
         method,
-        fields=("method_id", "paper_count", "chunk_count", "import_eligible_chunk_count", "refused_chunk_count"),
+        fields=(
+            "method_id",
+            "paper_count",
+            "chunk_count",
+            "import_eligible_chunk_count",
+            "refused_chunk_count",
+        ),
         object_id=method_id,
         object_type="method",
     )
@@ -393,43 +435,80 @@ def _validate_paper_method(paper: dict[str, Any]) -> list[BenchmarkDiagnostic]:
     object_id = f"{paper.get('paper_id')}:{paper.get('method_id')}"
     diagnostics = _required_fields(
         paper,
-        fields=("paper_id", "method_id", "chunk_count", "import_eligible_chunk_count", "refused_chunk_count"),
+        fields=(
+            "paper_id",
+            "method_id",
+            "chunk_count",
+            "import_eligible_chunk_count",
+            "refused_chunk_count",
+        ),
         object_id=object_id,
         object_type="paper_method",
     )
-    diagnostics.extend(_validate_metric_ranges(paper, object_id=object_id, object_type="paper_method"))
-    diagnostics.extend(_validate_safety_flags(paper, object_id=object_id, object_type="paper_method"))
+    diagnostics.extend(
+        _validate_metric_ranges(paper, object_id=object_id, object_type="paper_method")
+    )
+    diagnostics.extend(
+        _validate_safety_flags(paper, object_id=object_id, object_type="paper_method")
+    )
     diagnostics.extend(_validate_redaction(paper, object_id=object_id, object_type="paper_method"))
     return diagnostics
 
 
-def _validate_safety_flags(payload: dict[str, Any], *, object_id: str | None, object_type: str) -> list[BenchmarkDiagnostic]:
+def _validate_safety_flags(
+    payload: dict[str, Any], *, object_id: str | None, object_type: str
+) -> list[BenchmarkDiagnostic]:
     diagnostics: list[BenchmarkDiagnostic] = []
     for field_name, expected in _safety_flags().items():
         if field_name in payload and payload.get(field_name) is not expected:
-            diagnostics.append(BenchmarkDiagnostic(reason=f"unsafe_{field_name}", object_id=object_id, object_type=object_type))
+            diagnostics.append(
+                BenchmarkDiagnostic(
+                    reason=f"unsafe_{field_name}", object_id=object_id, object_type=object_type
+                )
+            )
     return diagnostics
 
 
-def _validate_metric_ranges(payload: dict[str, Any], *, object_id: str | None, object_type: str) -> list[BenchmarkDiagnostic]:
+def _validate_metric_ranges(
+    payload: dict[str, Any], *, object_id: str | None, object_type: str
+) -> list[BenchmarkDiagnostic]:
     diagnostics: list[BenchmarkDiagnostic] = []
-    for field_name in ("source_span_coverage", "parent_reference_resolution_rate", "annotation_coverage_rate", "asset_linkage_coverage_rate"):
+    for field_name in (
+        "source_span_coverage",
+        "parent_reference_resolution_rate",
+        "annotation_coverage_rate",
+        "asset_linkage_coverage_rate",
+    ):
         if field_name not in payload:
             continue
         value = payload.get(field_name)
         if not isinstance(value, int | float) or value < 0 or value > 1:
-            diagnostics.append(BenchmarkDiagnostic(reason=f"invalid_{field_name}", object_id=object_id, object_type=object_type))
+            diagnostics.append(
+                BenchmarkDiagnostic(
+                    reason=f"invalid_{field_name}", object_id=object_id, object_type=object_type
+                )
+            )
     for field_name in ("chunk_count", "import_eligible_chunk_count", "refused_chunk_count"):
         if field_name in payload and _int(payload.get(field_name)) < 0:
-            diagnostics.append(BenchmarkDiagnostic(reason=f"invalid_{field_name}", object_id=object_id, object_type=object_type))
+            diagnostics.append(
+                BenchmarkDiagnostic(
+                    reason=f"invalid_{field_name}", object_id=object_id, object_type=object_type
+                )
+            )
     return diagnostics
 
 
-def _validate_redaction(payload: Any, *, object_id: str | None, object_type: str) -> list[BenchmarkDiagnostic]:
-    return _validate_nested_redaction(payload, object_id=object_id, object_type=object_type, path=())
+def _validate_redaction(
+    payload: Any, *, object_id: str | None, object_type: str
+) -> list[BenchmarkDiagnostic]:
+    return _validate_nested_redaction(
+        payload, object_id=object_id, object_type=object_type, path=()
+    )
 
 
-def _validate_nested_redaction(value: Any, *, object_id: str | None, object_type: str, path: tuple[str, ...]) -> list[BenchmarkDiagnostic]:
+def _validate_nested_redaction(
+    value: Any, *, object_id: str | None, object_type: str, path: tuple[str, ...]
+) -> list[BenchmarkDiagnostic]:
     diagnostics: list[BenchmarkDiagnostic] = []
     if isinstance(value, dict):
         forbidden = (
@@ -453,23 +532,45 @@ def _validate_nested_redaction(value: Any, *, object_id: str | None, object_type
             diagnostics.append(
                 BenchmarkDiagnostic(
                     reason=reason,
-                    object_id=_redaction_path(object_id=object_id, object_type=object_type, path=(*path, str(field_name))),
+                    object_id=_redaction_path(
+                        object_id=object_id, object_type=object_type, path=(*path, str(field_name))
+                    ),
                     object_type=object_type,
                 )
             )
         for key, nested_value in value.items():
-            diagnostics.extend(_validate_nested_redaction(nested_value, object_id=object_id, object_type=object_type, path=(*path, str(key))))
+            diagnostics.extend(
+                _validate_nested_redaction(
+                    nested_value,
+                    object_id=object_id,
+                    object_type=object_type,
+                    path=(*path, str(key)),
+                )
+            )
     elif isinstance(value, list):
         for index, nested_value in enumerate(value):
-            diagnostics.extend(_validate_nested_redaction(nested_value, object_id=object_id, object_type=object_type, path=(*path, str(index))))
+            diagnostics.extend(
+                _validate_nested_redaction(
+                    nested_value,
+                    object_id=object_id,
+                    object_type=object_type,
+                    path=(*path, str(index)),
+                )
+            )
     return diagnostics
 
 
-def _required_fields(payload: dict[str, Any], *, fields: tuple[str, ...], object_id: str | None, object_type: str) -> list[BenchmarkDiagnostic]:
+def _required_fields(
+    payload: dict[str, Any], *, fields: tuple[str, ...], object_id: str | None, object_type: str
+) -> list[BenchmarkDiagnostic]:
     diagnostics: list[BenchmarkDiagnostic] = []
     for field_name in fields:
         if field_name not in payload or payload.get(field_name) is None:
-            diagnostics.append(BenchmarkDiagnostic(reason=f"missing_{field_name}", object_id=object_id, object_type=object_type))
+            diagnostics.append(
+                BenchmarkDiagnostic(
+                    reason=f"missing_{field_name}", object_id=object_id, object_type=object_type
+                )
+            )
     return diagnostics
 
 

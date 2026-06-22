@@ -47,8 +47,14 @@ def _audit_fixture() -> dict[str, object]:
         },
         "stable_ids": {
             "source_ids": ["source-synthetic-paper-1-full-text"],
-            "locator_ids": ["m021-synthetic-paper-1-claim-001", "m021-synthetic-paper-1-retrieval-001"],
-            "span_ids": ["m021-synthetic-paper-1-claim-001-span-001", "m021-synthetic-paper-1-retrieval-001-span-001"],
+            "locator_ids": [
+                "m021-synthetic-paper-1-claim-001",
+                "m021-synthetic-paper-1-retrieval-001",
+            ],
+            "span_ids": [
+                "m021-synthetic-paper-1-claim-001-span-001",
+                "m021-synthetic-paper-1-retrieval-001-span-001",
+            ],
         },
         "distributions": {},
         "diagnostic_code_classes": {},
@@ -71,7 +77,9 @@ def _reasons(payload: dict[str, object]) -> set[str]:
 
 
 def _single_target_batch_contract() -> dict[str, object]:
-    contract = build_chunk_repair_contract_from_audit(_audit_fixture(), source_audit_path="tests/fixtures/audit.json")
+    contract = build_chunk_repair_contract_from_audit(
+        _audit_fixture(), source_audit_path="tests/fixtures/audit.json"
+    )
     target = deepcopy(_fixture()["repair_targets"])[0]
     contract["repair_targets"] = [target]
     contract["diagnostics"] = {
@@ -152,7 +160,9 @@ def test_expected_audit_rejects_unresolved_stable_references() -> None:
 def test_batch_contract_accepts_target_paper_from_expected_audit() -> None:
     payload = _single_target_batch_contract()
 
-    result = validate_chunk_repair_contract(payload, expected_audit=expected_audit_from_contract(payload))
+    result = validate_chunk_repair_contract(
+        payload, expected_audit=expected_audit_from_contract(payload)
+    )
 
     assert result.passed is True
     assert "paper_id_mismatch" not in result.refusal_counts
@@ -163,7 +173,9 @@ def test_batch_contract_rejects_unknown_target_paper_id() -> None:
     payload = _single_target_batch_contract()
     payload["repair_targets"][0]["paper_id"] = "unknown-paper"
 
-    result = validate_chunk_repair_contract(payload, expected_audit=expected_audit_from_contract(payload))
+    result = validate_chunk_repair_contract(
+        payload, expected_audit=expected_audit_from_contract(payload)
+    )
 
     assert result.passed is False
     assert "unresolved_paper_id" in result.refusal_counts
@@ -180,7 +192,9 @@ def test_missing_expected_audit_still_enforces_package_paper_id() -> None:
 
 def test_forbidden_payload_key_injection_reports_path_not_value() -> None:
     payload = _fixture()
-    payload["repair_targets"][0]["review_packet"] = {"nested": {"chunk_text": "NEVER LEAK THIS RAW VALUE"}}
+    payload["repair_targets"][0]["review_packet"] = {
+        "nested": {"chunk_text": "NEVER LEAK THIS RAW VALUE"}
+    }
 
     result = validate_chunk_repair_contract(payload)
     serialized = validation_to_dict(result)
@@ -289,8 +303,12 @@ def test_diagnostics_count_drift_is_rejected() -> None:
 
 
 def test_build_contract_from_audit_is_review_only_and_validator_clean() -> None:
-    contract = build_chunk_repair_contract_from_audit(_audit_fixture(), source_audit_path="tests/fixtures/audit.json")
-    result = validate_chunk_repair_contract(contract, expected_audit=expected_audit_from_contract(contract))
+    contract = build_chunk_repair_contract_from_audit(
+        _audit_fixture(), source_audit_path="tests/fixtures/audit.json"
+    )
+    result = validate_chunk_repair_contract(
+        contract, expected_audit=expected_audit_from_contract(contract)
+    )
     markdown = render_chunk_repair_contract_markdown(contract)
 
     assert contract["schema_version"] == CHUNK_REPAIR_CONTRACT_VERSION
@@ -338,7 +356,12 @@ def test_renderer_cli_writes_temp_artifacts_that_validate(tmp_path: Path) -> Non
     contract = json.loads(json_output.read_text(encoding="utf-8"))
     markdown = markdown_output.read_text(encoding="utf-8")
     assert exit_code == 0
-    assert validate_chunk_repair_contract(contract, expected_audit=expected_audit_from_contract(contract)).passed is True
+    assert (
+        validate_chunk_repair_contract(
+            contract, expected_audit=expected_audit_from_contract(contract)
+        ).passed
+        is True
+    )
     assert validate_chunk_repair_contract_markdown(markdown) == []
     assert contract["diagnostics"]["production_import_attempted"] is False
     assert "No repair target is created" in markdown

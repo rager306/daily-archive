@@ -30,7 +30,9 @@ def _write_minimal_corpus(base: Path, *, artifact_path: str, unsafe_event: bool 
     refs = []
     for index in range(1, 22):
         ref_id = f"R{index:02d}"
-        normalized_identity = "arxiv:2605.20897" if ref_id in {"R01", "R10"} else f"arxiv:2605.{20000 + index}"
+        normalized_identity = (
+            "arxiv:2605.20897" if ref_id in {"R01", "R10"} else f"arxiv:2605.{20000 + index}"
+        )
         refs.append(
             {
                 "ref_id": ref_id,
@@ -40,7 +42,10 @@ def _write_minimal_corpus(base: Path, *, artifact_path: str, unsafe_event: bool 
                 "normalized_identity": normalized_identity,
             }
         )
-    (base / "selection.json").write_text(json.dumps({"refs": refs, "safety_flags": {"graph_write_attempted": False}}), encoding="utf-8")
+    (base / "selection.json").write_text(
+        json.dumps({"refs": refs, "safety_flags": {"graph_write_attempted": False}}),
+        encoding="utf-8",
+    )
 
     events = []
     for ref in refs:
@@ -57,9 +62,15 @@ def _write_minimal_corpus(base: Path, *, artifact_path: str, unsafe_event: bool 
                 "production_persistence_attempted": False,
             }
         )
-    (base / "source-acquisition-events.jsonl").write_text("\n".join(json.dumps(event) for event in events) + "\n", encoding="utf-8")
-    (base / "source-acquisition-summary.json").write_text(json.dumps({"safety_flags": {"graph_write_attempted": False}}), encoding="utf-8")
-    (base / "acquisition-report.md").write_text("# Metadata-only acquisition report\n", encoding="utf-8")
+    (base / "source-acquisition-events.jsonl").write_text(
+        "\n".join(json.dumps(event) for event in events) + "\n", encoding="utf-8"
+    )
+    (base / "source-acquisition-summary.json").write_text(
+        json.dumps({"safety_flags": {"graph_write_attempted": False}}), encoding="utf-8"
+    )
+    (base / "acquisition-report.md").write_text(
+        "# Metadata-only acquisition report\n", encoding="utf-8"
+    )
 
 
 def test_read_jsonl_rejects_malformed_row(tmp_path):
@@ -75,7 +86,10 @@ def test_read_jsonl_rejects_malformed_row(tmp_path):
 def test_validate_source_acquisition_rejects_missing_artifact(tmp_path):
     root = tmp_path
     corpus = root / "data" / "article_corpora" / "m028-universal-loader-runtime-smoke-v1"
-    _write_minimal_corpus(corpus, artifact_path="data/article_corpora/m028-universal-loader-runtime-smoke-v1/sources/missing.txt")
+    _write_minimal_corpus(
+        corpus,
+        artifact_path="data/article_corpora/m028-universal-loader-runtime-smoke-v1/sources/missing.txt",
+    )
 
     preflight, diagnostics = validate_source_acquisition(corpus, root)
 

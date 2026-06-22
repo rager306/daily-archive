@@ -28,7 +28,12 @@ def _source(tmp_path: Path) -> dict:
     pdf.write_bytes(b"%PDF-1.4 fake")
     return {
         "records": [
-            {"article_key": "with-pdf", "pdf_files": [str(pdf.relative_to(probe.ROOT))] if probe.ROOT in pdf.resolve().parents else [str(pdf)]},
+            {
+                "article_key": "with-pdf",
+                "pdf_files": [str(pdf.relative_to(probe.ROOT))]
+                if probe.ROOT in pdf.resolve().parents
+                else [str(pdf)],
+            },
             {"article_key": "missing-pdf", "pdf_files": []},
         ]
     }
@@ -100,7 +105,9 @@ def test_build_live_grobid_packets_blocks_when_service_not_live(monkeypatch, tmp
         target=_target(),
         source_readiness=_source_under_root(),
         runtime_update=_runtime("blocked"),
-        submitter=lambda _pdf, _url, _timeout: (_ for _ in ()).throw(AssertionError("must not submit")),
+        submitter=lambda _pdf, _url, _timeout: (_ for _ in ()).throw(
+            AssertionError("must not submit")
+        ),
         run_guardrail_first=False,
     )
 

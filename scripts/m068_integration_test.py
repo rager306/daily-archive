@@ -118,7 +118,9 @@ def _percentile(values: list[float], percentile: float) -> float | None:
 
 
 def _latency_summary(results: list[PaperResult]) -> dict[str, float | None]:
-    latencies = [result.latency_ms for result in results if result.ok and result.latency_ms is not None]
+    latencies = [
+        result.latency_ms for result in results if result.ok and result.latency_ms is not None
+    ]
     return {
         "p50_ms": _percentile(latencies, 0.50),
         "p95_ms": _percentile(latencies, 0.95),
@@ -239,7 +241,9 @@ async def run_integration(args: argparse.Namespace) -> dict[str, Any]:
     }
 
     if not api_key:
-        base["skip_reason"] = "FD_API_KEY is not configured; protected fd v2 request is not authorized for verification"
+        base["skip_reason"] = (
+            "FD_API_KEY is not configured; protected fd v2 request is not authorized for verification"
+        )
         return base
 
     limits = httpx.Limits(max_connections=max(args.concurrency, 1) + 2)
@@ -285,7 +289,10 @@ def _fmt_number(value: float | None, digits: int = 2) -> str:
 
 def build_report(results: dict[str, Any], contract_report: Path) -> str:
     contract_text = contract_report.read_text(encoding="utf-8") if contract_report.exists() else ""
-    summary_line = next((line for line in contract_text.splitlines() if line.startswith("total=")), "total=52, passed=8, failed=0, skipped=44")
+    summary_line = next(
+        (line for line in contract_text.splitlines() if line.startswith("total=")),
+        "total=52, passed=8, failed=0, skipped=44",
+    )
     status = results["status"]
     processed = results["processed_papers"]
     selected = results["selected_papers"]
@@ -307,7 +314,7 @@ def build_report(results: dict[str, Any], contract_report: Path) -> str:
 
 ## 0. Резюме
 
-Статус S03: **{status}**. Выбрано документов M061: **{selected}**; обработано через fd v2: **{processed}**. Пропускная способность: **{throughput} документов/мин**. Задержки: p50 **{_fmt_number(latency['p50_ms'])} мс**, p95 **{_fmt_number(latency['p95_ms'])} мс**, p99 **{_fmt_number(latency['p99_ms'])} мс**. Доля ошибок: **{error_rate_text}**. Причина SKIP, если применимо: {skip_reason}.
+Статус S03: **{status}**. Выбрано документов M061: **{selected}**; обработано через fd v2: **{processed}**. Пропускная способность: **{throughput} документов/мин**. Задержки: p50 **{_fmt_number(latency["p50_ms"])} мс**, p95 **{_fmt_number(latency["p95_ms"])} мс**, p99 **{_fmt_number(latency["p99_ms"])} мс**. Доля ошибок: **{error_rate_text}**. Причина SKIP, если применимо: {skip_reason}.
 
 ## 1. Контекст
 
@@ -323,7 +330,7 @@ S02 зафиксировал контрактный baseline: **{summary_line}**
 
 ## 4. S03 integration test
 
-Скрипт `scripts/m068_integration_test.py` выбрал 5 anchors × 30 документов из `artifacts/m061-2hop/anchor-*/acquisition/selected-2hop-papers.json`. Результаты записаны в `artifacts/m068-fd-v2-integration-test/results.json`. Текущий статус: **{status}**; обработано **{processed}** из **{selected}**; successful **{results['successful_papers']}**; failed **{results['failed_papers']}**; throughput **{throughput} документов/мин**; latency p50/p95/p99 **{_fmt_number(latency['p50_ms'])}/{_fmt_number(latency['p95_ms'])}/{_fmt_number(latency['p99_ms'])} мс**.
+Скрипт `scripts/m068_integration_test.py` выбрал 5 anchors × 30 документов из `artifacts/m061-2hop/anchor-*/acquisition/selected-2hop-papers.json`. Результаты записаны в `artifacts/m068-fd-v2-integration-test/results.json`. Текущий статус: **{status}**; обработано **{processed}** из **{selected}**; successful **{results["successful_papers"]}**; failed **{results["failed_papers"]}**; throughput **{throughput} документов/мин**; latency p50/p95/p99 **{_fmt_number(latency["p50_ms"])}/{_fmt_number(latency["p95_ms"])}/{_fmt_number(latency["p99_ms"])} мс**.
 
 ## 5. v1 -> v2 comparison
 
@@ -358,7 +365,9 @@ def main() -> int:
     results = asyncio.run(run_integration(args))
     results_path = output_dir / "results.json"
     report_path = output_dir / "REPORT.md"
-    results_path.write_text(json.dumps(results, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    results_path.write_text(
+        json.dumps(results, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     report_path.write_text(
         build_report(results, ROOT / "artifacts" / "m062-fd-contract" / "fd-contract-report-v2.md"),
         encoding="utf-8",

@@ -88,7 +88,9 @@ def _write_corpus(tmp_path: Path, docs: list[dict[str, object]]) -> Path:
     return corpus_path
 
 
-def test_select_review_papers_includes_required_baseline_and_complex_candidates(tmp_path: Path) -> None:
+def test_select_review_papers_includes_required_baseline_and_complex_candidates(
+    tmp_path: Path,
+) -> None:
     docs = []
     for paper_id in ["2605.14259v1", "2605.14517v1", "2605.14995v1"]:
         paper_dir = _paper_dir(tmp_path, paper_id, FIXTURE_TEXT)
@@ -153,6 +155,7 @@ def test_render_review_bundle_prioritizes_atomic_claim_candidates(tmp_path: Path
     assert "we propose a graph-ready validation gate" in rendered
     assert "candidate_id: <candidate chunk_id when reviewing a specific candidate" in rendered
 
+
 def test_generate_review_bundles_writes_summary_reviews_and_events(tmp_path: Path) -> None:
     docs = []
     for paper_id in ["2605.14259v1", "2605.14517v1", "2605.14995v1"]:
@@ -197,7 +200,9 @@ def test_generated_summary_states_review_is_required_before_eligibility(tmp_path
     assert "do not accept unreplaced placeholders" in summary
 
 
-def test_validate_review_artifacts_allows_generated_contracts_before_completion(tmp_path: Path) -> None:
+def test_validate_review_artifacts_allows_generated_contracts_before_completion(
+    tmp_path: Path,
+) -> None:
     paper_dir = _paper_dir(tmp_path, "2605.14259v1", FIXTURE_TEXT)
     corpus_path = _write_corpus(tmp_path, [_manifest_doc(paper_dir, "2605.14259v1")])
     result = generate_review_bundles(
@@ -207,13 +212,17 @@ def test_validate_review_artifacts_allows_generated_contracts_before_completion(
         run_id="test-run",
     )
 
-    validation = validate_review_artifacts(review_dir=result.summary_path.parent, events_path=result.events_path)
+    validation = validate_review_artifacts(
+        review_dir=result.summary_path.parent, events_path=result.events_path
+    )
 
     assert validation.ok
     assert validation.diagnostics == []
 
 
-def test_validate_review_artifacts_requires_completed_verdict_when_requested(tmp_path: Path) -> None:
+def test_validate_review_artifacts_requires_completed_verdict_when_requested(
+    tmp_path: Path,
+) -> None:
     paper_dir = _paper_dir(tmp_path, "2605.14259v1", FIXTURE_TEXT)
     corpus_path = _write_corpus(tmp_path, [_manifest_doc(paper_dir, "2605.14259v1")])
     result = generate_review_bundles(
@@ -230,10 +239,14 @@ def test_validate_review_artifacts_requires_completed_verdict_when_requested(tmp
     )
 
     assert not validation.ok
-    assert any("No independent_review.verdict" in diagnostic for diagnostic in validation.diagnostics)
+    assert any(
+        "No independent_review.verdict" in diagnostic for diagnostic in validation.diagnostics
+    )
 
 
-def test_validate_review_artifacts_accepts_completed_contract_and_rejects_old_placeholder(tmp_path: Path) -> None:
+def test_validate_review_artifacts_accepts_completed_contract_and_rejects_old_placeholder(
+    tmp_path: Path,
+) -> None:
     review_dir = tmp_path / "review"
     review_dir.mkdir()
     events_path = tmp_path / "events.jsonl"

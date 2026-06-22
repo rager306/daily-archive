@@ -112,7 +112,10 @@ def test_write_thirty_paper_deviation_run_splits_summary_and_diagnostics(tmp_pat
     paths = write_thirty_paper_deviation_run(scan, tmp_path / "out")
 
     summary = json.loads(paths["summary_path"].read_text(encoding="utf-8"))
-    diagnostics = [json.loads(line) for line in paths["diagnostics_path"].read_text(encoding="utf-8").splitlines()]
+    diagnostics = [
+        json.loads(line)
+        for line in paths["diagnostics_path"].read_text(encoding="utf-8").splitlines()
+    ]
     assert paths["summary_path"].name == "thirty-paper-deviation-summary.json"
     assert paths["diagnostics_path"].name == "thirty-paper-deviation-diagnostics.jsonl"
     assert "records" not in summary

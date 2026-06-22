@@ -57,11 +57,15 @@ def _packet_path(summary_packet: dict[str, Any], per_pdf_dir: Path) -> Path:
     return per_pdf_dir / f"{paper_id}.json"
 
 
-def load_packets_by_paper_id(summary: dict[str, Any], per_pdf_dir: Path) -> dict[str, dict[str, Any]]:
+def load_packets_by_paper_id(
+    summary: dict[str, Any], per_pdf_dir: Path
+) -> dict[str, dict[str, Any]]:
     packets: dict[str, dict[str, Any]] = {}
     for summary_packet in summary.get("packets", []):
         packet = _read_json(_packet_path(summary_packet, per_pdf_dir))
-        paper_id = str(packet.get("paper_id") or packet.get("arxiv_id") or summary_packet.get("paper_id"))
+        paper_id = str(
+            packet.get("paper_id") or packet.get("arxiv_id") or summary_packet.get("paper_id")
+        )
         packets[paper_id] = packet
     return packets
 
@@ -119,24 +123,34 @@ def update_m043_target_subset(
         article_copy = dict(article)
         article_key = str(article.get("article_key"))
         packet = packets_by_paper_id.get(article_key)
-        article_copy["grobid_outcome_post_m053"] = _outcome_from_packet(packet) if packet else _not_in_scope_outcome()
+        article_copy["grobid_outcome_post_m053"] = (
+            _outcome_from_packet(packet) if packet else _not_in_scope_outcome()
+        )
         updated["articles"].append(article_copy)
 
     return updated
 
 
-def write_updated_target(summary_path: Path, per_pdf_dir: Path, target_path: Path, output_path: Path) -> dict[str, Any]:
+def write_updated_target(
+    summary_path: Path, per_pdf_dir: Path, target_path: Path, output_path: Path
+) -> dict[str, Any]:
     summary = _read_json(summary_path)
     packets_by_paper_id = load_packets_by_paper_id(summary, per_pdf_dir)
     target_subset = _read_json(target_path)
-    updated = update_m043_target_subset(target_subset, packets_by_paper_id, summary_path=summary_path)
+    updated = update_m043_target_subset(
+        target_subset, packets_by_paper_id, summary_path=summary_path
+    )
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(updated, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
+    output_path.write_text(
+        json.dumps(updated, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     return updated
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Update M043 target subset with M053 GROBID outcomes")
+    parser = argparse.ArgumentParser(
+        description="Update M043 target subset with M053 GROBID outcomes"
+    )
     parser.add_argument("--summary", type=Path, default=DEFAULT_SUMMARY_PATH)
     parser.add_argument("--per-pdf-dir", type=Path, default=None)
     parser.add_argument("--target", type=Path, default=DEFAULT_TARGET_PATH)

@@ -124,11 +124,21 @@ def test_m050_m058_regression_artifacts_still_present() -> None:
     for path in regression_paths:
         assert path.exists(), path
 
-    assert len(load_json(ROOT / "artifacts/m054-pdf-acquisition/target-subset.json")["records"]) == 5
-    assert len(load_json(ROOT / "artifacts/m055-parser-benchmark/corpus-manifest.json")["pdfs"]) == 5
-    assert len(load_json(ROOT / "artifacts/m055deep-parser-benchmark/corpus-manifest-20.json")["pdfs"]) == 20
+    assert (
+        len(load_json(ROOT / "artifacts/m054-pdf-acquisition/target-subset.json")["records"]) == 5
+    )
+    assert (
+        len(load_json(ROOT / "artifacts/m055-parser-benchmark/corpus-manifest.json")["pdfs"]) == 5
+    )
+    assert (
+        len(load_json(ROOT / "artifacts/m055deep-parser-benchmark/corpus-manifest-20.json")["pdfs"])
+        == 20
+    )
     assert len(load_json(ROOT / "artifacts/m056-bfs-graph/cumulative-corpus.json")["pdfs"]) == 166
-    assert load_json(ROOT / "artifacts/m057-fd-marker/table-similarity/summary.json")["edges_total"] == 4934
+    assert (
+        load_json(ROOT / "artifacts/m057-fd-marker/table-similarity/summary.json")["edges_total"]
+        == 4934
+    )
     assert len(load_json(ROOT / "artifacts/m058-plotextractor/summary.json")["per_pdf"]) == 5
 
 

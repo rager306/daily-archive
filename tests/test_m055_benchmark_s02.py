@@ -41,7 +41,9 @@ class FakeResponse:
 
 def tei_payload(*, refs: int = 1, bibls: int = 1, bodies: int = 1, padding: int = 1200) -> str:
     ref_xml = "".join("<ref>r</ref>" for _ in range(refs))
-    bibl_xml = "".join("<biblStruct><analytic><title>T</title></analytic></biblStruct>" for _ in range(bibls))
+    bibl_xml = "".join(
+        "<biblStruct><analytic><title>T</title></analytic></biblStruct>" for _ in range(bibls)
+    )
     body_xml = "".join(f"<p>body {index}</p>" for index in range(bodies))
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <TEI xmlns="http://www.tei-c.org/ns/1.0">
@@ -152,13 +154,21 @@ def test_low_quality_source_criteria_combinations() -> None:
     assert grobid_only._low_quality_source_criteria(zero_body) is True
 
 
-def test_probe_grobid_only_aggregate_counts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_probe_grobid_only_aggregate_counts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     manifest = make_manifest(tmp_path, entries=2)
     payloads = [tei_payload(padding=1400), tei_payload(refs=0, padding=1400)]
 
     def fake_probe(pdf_path: Path, endpoint: str, timeout: int) -> dict[str, object]:
         tei = payloads.pop(0)
-        return {"tei_text": tei, "http_status": 200, "bytes": len(tei), "duration_ms": 7, "error": None}
+        return {
+            "tei_text": tei,
+            "http_status": 200,
+            "bytes": len(tei),
+            "duration_ms": 7,
+            "error": None,
+        }
 
     monkeypatch.setattr(grobid_only, "_probe_grobid_pdf", fake_probe)
 
@@ -195,8 +205,12 @@ def test_5_safety_defaults_all_false(tmp_path: Path, monkeypatch: pytest.MonkeyP
         },
     )
 
-    summary = grobid_only.probe_grobid_only(manifest, tmp_path / "out", grobid_url="http://grobid.test")
-    packet = json.loads(next((tmp_path / "out" / "per-pdf").glob("*.json")).read_text(encoding="utf-8"))
+    summary = grobid_only.probe_grobid_only(
+        manifest, tmp_path / "out", grobid_url="http://grobid.test"
+    )
+    packet = json.loads(
+        next((tmp_path / "out" / "per-pdf").glob("*.json")).read_text(encoding="utf-8")
+    )
 
     assert set(summary["safety_defaults"]) == SAFETY_KEYS
     assert set(packet["safety_defaults"]) == SAFETY_KEYS
@@ -219,14 +233,18 @@ def test_m022_repair_candidate_flag(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     )
 
     grobid_only.probe_grobid_only(manifest, tmp_path / "out", grobid_url="http://grobid.test")
-    packet = json.loads(next((tmp_path / "out" / "per-pdf").glob("*.json")).read_text(encoding="utf-8"))
+    packet = json.loads(
+        next((tmp_path / "out" / "per-pdf").glob("*.json")).read_text(encoding="utf-8")
+    )
 
     assert packet["status"] == "low_quality_source"
     assert packet["low_quality_source"] is True
     assert packet["m022_repair_candidate"] is True
 
 
-def test_cli_dry_run_no_urllib_call(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_dry_run_no_urllib_call(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     manifest = make_manifest(tmp_path)
     urlopen = mock.Mock(side_effect=AssertionError("urlopen should not be called"))
     monkeypatch.setattr(grobid_only.urllib.request, "urlopen", urlopen)
@@ -247,7 +265,9 @@ def test_cli_dry_run_no_urllib_call(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     assert urlopen.call_count == 0
     captured = capsys.readouterr()
     assert "dry_run_skipped_grobid_call" not in captured.out
-    packet = json.loads(next((tmp_path / "out" / "per-pdf").glob("*.json")).read_text(encoding="utf-8"))
+    packet = json.loads(
+        next((tmp_path / "out" / "per-pdf").glob("*.json")).read_text(encoding="utf-8")
+    )
     assert packet["status"] == "grobid_unavailable"
 
 
@@ -266,8 +286,12 @@ def test_idempotent_summary(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
         },
     )
 
-    first = grobid_only.probe_grobid_only(manifest, tmp_path / "out", grobid_url="http://grobid.test")
-    second = grobid_only.probe_grobid_only(manifest, tmp_path / "out", grobid_url="http://grobid.test")
+    first = grobid_only.probe_grobid_only(
+        manifest, tmp_path / "out", grobid_url="http://grobid.test"
+    )
+    second = grobid_only.probe_grobid_only(
+        manifest, tmp_path / "out", grobid_url="http://grobid.test"
+    )
 
     assert first["aggregate_counts"] == second["aggregate_counts"]
     assert first["per_pdf_statuses"] == second["per_pdf_statuses"]

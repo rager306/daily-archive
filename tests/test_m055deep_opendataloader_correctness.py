@@ -51,7 +51,9 @@ def write_manifest(tmp_path: Path, arxiv_ids: list[str]) -> Path:
     return manifest_path
 
 
-def write_opendataloader_packet(tmp_path: Path, arxiv_id: str, markdown: str, *, image_count: int = 0) -> Path:
+def write_opendataloader_packet(
+    tmp_path: Path, arxiv_id: str, markdown: str, *, image_count: int = 0
+) -> Path:
     opendl_dir = tmp_path / "opendataloader-only"
     markdown_dir = opendl_dir / "markdown"
     per_pdf_dir = opendl_dir / "per-pdf"
@@ -148,7 +150,9 @@ def test_probe_opendataloader_correctness_aggregates_metrics(tmp_path: Path) -> 
     (image_dir / "chart.png").write_bytes(png_payload(640, 480, payload_bytes=7000))
     write_opendataloader_packet(tmp_path, "2401.00002", "| X |\n| --- |\n| y |\n", image_count=0)
 
-    summary = correctness.probe_opendataloader_correctness(manifest_path, opendl_dir, tmp_path / "out")
+    summary = correctness.probe_opendataloader_correctness(
+        manifest_path, opendl_dir, tmp_path / "out"
+    )
 
     assert summary["success_count"] == 2
     assert summary["error_count"] == 0
@@ -165,8 +169,12 @@ def test_probe_outputs_five_safety_defaults_false(tmp_path: Path) -> None:
     manifest_path = write_manifest(tmp_path, ["2401.00003"])
     opendl_dir = write_opendataloader_packet(tmp_path, "2401.00003", "| A |\n| --- |\n| 1 |\n")
 
-    summary = correctness.probe_opendataloader_correctness(manifest_path, opendl_dir, tmp_path / "out")
-    packet = json.loads((tmp_path / "out" / "per-pdf" / "2401.00003.json").read_text(encoding="utf-8"))
+    summary = correctness.probe_opendataloader_correctness(
+        manifest_path, opendl_dir, tmp_path / "out"
+    )
+    packet = json.loads(
+        (tmp_path / "out" / "per-pdf" / "2401.00003.json").read_text(encoding="utf-8")
+    )
 
     assert set(summary["safety_defaults"]) == SAFETY_KEYS
     assert set(packet["safety_defaults"]) == SAFETY_KEYS
@@ -193,8 +201,12 @@ def test_probe_fail_closed_emits_typed_diagnostic(tmp_path: Path) -> None:
     (opendl_dir / "per-pdf").mkdir(parents=True)
     (opendl_dir / "per-pdf" / "2401.00005.json").write_text("{bad json", encoding="utf-8")
 
-    summary = correctness.probe_opendataloader_correctness(manifest_path, opendl_dir, tmp_path / "out")
-    packet = json.loads((tmp_path / "out" / "per-pdf" / "2401.00005.json").read_text(encoding="utf-8"))
+    summary = correctness.probe_opendataloader_correctness(
+        manifest_path, opendl_dir, tmp_path / "out"
+    )
+    packet = json.loads(
+        (tmp_path / "out" / "per-pdf" / "2401.00005.json").read_text(encoding="utf-8")
+    )
 
     assert summary["success_count"] == 0
     assert summary["error_count"] == 1

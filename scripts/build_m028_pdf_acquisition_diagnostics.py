@@ -103,7 +103,9 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
         try:
             row = json.loads(line)
         except json.JSONDecodeError as exc:
-            raise PdfDiagnosticInputError(f"jsonl_malformed:{path}:{line_number}:{exc.colno}") from exc
+            raise PdfDiagnosticInputError(
+                f"jsonl_malformed:{path}:{line_number}:{exc.colno}"
+            ) from exc
         if not isinstance(row, dict):
             raise PdfDiagnosticInputError(f"jsonl_object_required:{path}:{line_number}")
         rows.append(row)
@@ -124,7 +126,10 @@ def validate_selection(selection: dict[str, Any]) -> list[dict[str, Any]]:
         canonical_url = ref.get("canonical_url")
         source_kind = ref.get("source_kind")
         normalized_identity = ref.get("normalized_identity")
-        if not all(isinstance(value, str) and value for value in (ref_id, url, canonical_url, source_kind, normalized_identity)):
+        if not all(
+            isinstance(value, str) and value
+            for value in (ref_id, url, canonical_url, source_kind, normalized_identity)
+        ):
             raise PdfDiagnosticInputError(f"selection_ref_required_fields:{index}")
         if ref_id in seen:
             raise PdfDiagnosticInputError(f"selection_ref_duplicate:{ref_id}")
@@ -181,12 +186,14 @@ def unversioned_arxiv_id(arxiv_id: str | None) -> str | None:
 
 
 def arxiv_id_for_ref(ref: dict[str, Any]) -> str | None:
-    return unversioned_arxiv_id(str(ref.get("arxiv_unversioned_id") or ref.get("arxiv_id") or "")) or unversioned_arxiv_id(
-        arxiv_id_from_url(str(ref.get("url") or ""))
-    )
+    return unversioned_arxiv_id(
+        str(ref.get("arxiv_unversioned_id") or ref.get("arxiv_id") or "")
+    ) or unversioned_arxiv_id(arxiv_id_from_url(str(ref.get("url") or "")))
 
 
-def arxiv_pdf_url_for_ref(ref: dict[str, Any], metadata_event: dict[str, Any] | None) -> tuple[str | None, str | None, bool]:
+def arxiv_pdf_url_for_ref(
+    ref: dict[str, Any], metadata_event: dict[str, Any] | None
+) -> tuple[str | None, str | None, bool]:
     source_kind = str(ref["source_kind"])
     if source_kind == "arxiv_pdf_url":
         return str(ref["url"]), "selection.url", False
@@ -197,9 +204,15 @@ def arxiv_pdf_url_for_ref(ref: dict[str, Any], metadata_event: dict[str, Any] | 
         optional_metadata = metadata_event.get("optional_metadata")
         if isinstance(optional_metadata, dict):
             pdf_url = optional_metadata.get("pdf_url")
-            if isinstance(pdf_url, dict) and pdf_url.get("status") == "present" and isinstance(pdf_url.get("value"), str):
+            if (
+                isinstance(pdf_url, dict)
+                and pdf_url.get("status") == "present"
+                and isinstance(pdf_url.get("value"), str)
+            ):
                 metadata_pdf_url = str(pdf_url["value"])
-                metadata_source = str(pdf_url.get("source") or "source_metadata.optional_metadata.pdf_url")
+                metadata_source = str(
+                    pdf_url.get("source") or "source_metadata.optional_metadata.pdf_url"
+                )
     if metadata_pdf_url:
         return metadata_pdf_url, metadata_source, True
 
@@ -222,12 +235,16 @@ def build_identity_groups(refs: list[dict[str, Any]]) -> dict[str, dict[str, Any
             "ref_ids": ref_ids,
             "url_ref_count": len(ref_ids),
             "has_url_variants": len(ref_ids) > 1,
-            "url_variants": [classify_variant(str(ref["url"]), str(ref["source_kind"])) for ref in group_refs],
+            "url_variants": [
+                classify_variant(str(ref["url"]), str(ref["source_kind"])) for ref in group_refs
+            ],
         }
     return groups
 
 
-def diagnostic(code: str, ref_id: str, severity: str, json_path: str, details: dict[str, Any] | None = None) -> dict[str, Any]:
+def diagnostic(
+    code: str, ref_id: str, severity: str, json_path: str, details: dict[str, Any] | None = None
+) -> dict[str, Any]:
     return {
         "code": code,
         "severity": severity,
@@ -257,7 +274,11 @@ def safe_repo_path(repo_root: Path, path_value: Any) -> tuple[Path | None, str |
     if "://" in path_value:
         return None, "artifact_path_is_url"
     normalized = PurePosixPath(path_value.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part == "" for part in normalized.parts):
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part == "" for part in normalized.parts)
+    ):
         return None, "artifact_path_unsafe"
     repo_root_resolved = repo_root.resolve()
     resolved = (repo_root_resolved / normalized.as_posix()).resolve()
@@ -279,17 +300,25 @@ def validate_scope(
     ref_ids = [str(ref["ref_id"]) for ref in refs]
     ref_set = set(ref_ids)
     if len(refs) != expected_ref_count:
-        raise PdfDiagnosticInputError(f"selection_ref_count_mismatch:expected={expected_ref_count}:actual={len(refs)}")
+        raise PdfDiagnosticInputError(
+            f"selection_ref_count_mismatch:expected={expected_ref_count}:actual={len(refs)}"
+        )
     identity_count = len({str(ref["normalized_identity"]) for ref in refs})
     if identity_count != expected_identity_count:
-        raise PdfDiagnosticInputError(f"selection_identity_count_mismatch:expected={expected_identity_count}:actual={identity_count}")
+        raise PdfDiagnosticInputError(
+            f"selection_identity_count_mismatch:expected={expected_identity_count}:actual={identity_count}"
+        )
     source_kind_counts = Counter(str(ref["source_kind"]) for ref in refs)
-    if dict(sorted(source_kind_counts.items())) != dict(sorted(expected_source_kind_counts.items())):
+    if dict(sorted(source_kind_counts.items())) != dict(
+        sorted(expected_source_kind_counts.items())
+    ):
         raise PdfDiagnosticInputError("selection_source_kind_counts_mismatch")
     if set(acquisition_by_ref) != ref_set:
         missing = sorted(ref_set - set(acquisition_by_ref))
         extra = sorted(set(acquisition_by_ref) - ref_set)
-        raise PdfDiagnosticInputError(f"acquisition_ref_set_mismatch:missing={missing}:extra={extra}")
+        raise PdfDiagnosticInputError(
+            f"acquisition_ref_set_mismatch:missing={missing}:extra={extra}"
+        )
     if set(metadata_by_ref) != ref_set:
         missing = sorted(ref_set - set(metadata_by_ref))
         extra = sorted(set(metadata_by_ref) - ref_set)
@@ -297,10 +326,14 @@ def validate_scope(
 
     summary_ref_count = metadata_summary.get("url_ref_count", metadata_summary.get("ref_count"))
     if summary_ref_count != expected_ref_count:
-        raise PdfDiagnosticInputError(f"metadata_summary_ref_count_mismatch:expected={expected_ref_count}:actual={summary_ref_count}")
+        raise PdfDiagnosticInputError(
+            f"metadata_summary_ref_count_mismatch:expected={expected_ref_count}:actual={summary_ref_count}"
+        )
     if metadata_summary.get("normalized_identity_count") != expected_identity_count:
         raise PdfDiagnosticInputError("metadata_summary_identity_count_mismatch")
-    if dict(sorted((metadata_summary.get("source_kind_counts") or {}).items())) != dict(sorted(expected_source_kind_counts.items())):
+    if dict(sorted((metadata_summary.get("source_kind_counts") or {}).items())) != dict(
+        sorted(expected_source_kind_counts.items())
+    ):
         raise PdfDiagnosticInputError("metadata_summary_source_kind_counts_mismatch")
 
     for ref in refs:
@@ -321,16 +354,26 @@ def validate_scope(
             raise PdfDiagnosticInputError(f"metadata_identity_mismatch:{ref_id}")
 
 
-def inspect_existing_pdf_artifact(ref: dict[str, Any], acquisition: dict[str, Any], repo_root: Path) -> tuple[dict[str, Any], list[dict[str, Any]], str | None]:
+def inspect_existing_pdf_artifact(
+    ref: dict[str, Any], acquisition: dict[str, Any], repo_root: Path
+) -> tuple[dict[str, Any], list[dict[str, Any]], str | None]:
     ref_id = str(ref["ref_id"])
     diagnostics: list[dict[str, Any]] = []
     artifact_path, path_error = safe_repo_path(repo_root, acquisition.get("artifact_path"))
-    path_value = acquisition.get("artifact_path") if isinstance(acquisition.get("artifact_path"), str) else None
+    path_value = (
+        acquisition.get("artifact_path")
+        if isinstance(acquisition.get("artifact_path"), str)
+        else None
+    )
     artifact = {
         "path": path_value,
         "exists": False,
-        "content_type": acquisition.get("content_type") if isinstance(acquisition.get("content_type"), str) else None,
-        "byte_count": acquisition.get("byte_count") if isinstance(acquisition.get("byte_count"), int) else None,
+        "content_type": acquisition.get("content_type")
+        if isinstance(acquisition.get("content_type"), str)
+        else None,
+        "byte_count": acquisition.get("byte_count")
+        if isinstance(acquisition.get("byte_count"), int)
+        else None,
         "sha256": acquisition.get("sha256") if isinstance(acquisition.get("sha256"), str) else None,
         "checksum_verified": False,
         "signature_verified": False,
@@ -341,7 +384,9 @@ def inspect_existing_pdf_artifact(ref: dict[str, Any], acquisition: dict[str, An
         return artifact, diagnostics, path_error
     assert artifact_path is not None
     if not artifact_path.exists():
-        diagnostics.append(diagnostic("artifact_file_missing", ref_id, "error", "pdf_artifact.path"))
+        diagnostics.append(
+            diagnostic("artifact_file_missing", ref_id, "error", "pdf_artifact.path")
+        )
         return artifact, diagnostics, "artifact_file_missing"
 
     artifact["exists"] = True
@@ -361,19 +406,32 @@ def inspect_existing_pdf_artifact(ref: dict[str, Any], acquisition: dict[str, An
 
     expected_sha256 = acquisition.get("sha256")
     actual_sha256 = sha256_file(artifact_path)
-    artifact["checksum_verified"] = isinstance(expected_sha256, str) and expected_sha256 == actual_sha256
+    artifact["checksum_verified"] = (
+        isinstance(expected_sha256, str) and expected_sha256 == actual_sha256
+    )
     if not artifact["checksum_verified"]:
-        diagnostics.append(diagnostic("artifact_checksum_mismatch", ref_id, "error", "pdf_artifact.sha256"))
+        diagnostics.append(
+            diagnostic("artifact_checksum_mismatch", ref_id, "error", "pdf_artifact.sha256")
+        )
         return artifact, diagnostics, "artifact_checksum_mismatch"
 
     content_type = str(acquisition.get("content_type") or "").lower()
     if "pdf" not in content_type and artifact_path.suffix.lower() != ".pdf":
-        diagnostics.append(diagnostic("existing_artifact_not_pdf", ref_id, "error", "pdf_artifact.content_type"))
+        diagnostics.append(
+            diagnostic("existing_artifact_not_pdf", ref_id, "error", "pdf_artifact.content_type")
+        )
         return artifact, diagnostics, "existing_artifact_not_pdf"
 
     artifact["signature_verified"] = pdf_signature_verified(artifact_path)
     if not artifact["signature_verified"]:
-        diagnostics.append(diagnostic("malformed_existing_pdf_signature", ref_id, "error", "pdf_artifact.signature_verified"))
+        diagnostics.append(
+            diagnostic(
+                "malformed_existing_pdf_signature",
+                ref_id,
+                "error",
+                "pdf_artifact.signature_verified",
+            )
+        )
         return artifact, diagnostics, "malformed_existing_pdf_signature"
     return artifact, diagnostics, None
 
@@ -393,13 +451,25 @@ def build_event(
     candidate_url_source: str | None = None
     metadata_pdf_url_present = False
     if family == "arxiv":
-        candidate_url, candidate_url_source, metadata_pdf_url_present = arxiv_pdf_url_for_ref(ref, metadata_event)
-        candidate_kind = "explicit_arxiv_pdf_url" if source_kind == "arxiv_pdf_url" else "arxiv_abs_pdf_candidate"
+        candidate_url, candidate_url_source, metadata_pdf_url_present = arxiv_pdf_url_for_ref(
+            ref, metadata_event
+        )
+        candidate_kind = (
+            "explicit_arxiv_pdf_url"
+            if source_kind == "arxiv_pdf_url"
+            else "arxiv_abs_pdf_candidate"
+        )
         candidate_reason = None
     else:
-        optional_metadata = metadata_event.get("optional_metadata") if isinstance(metadata_event, dict) else None
+        optional_metadata = (
+            metadata_event.get("optional_metadata") if isinstance(metadata_event, dict) else None
+        )
         pdf_url = optional_metadata.get("pdf_url") if isinstance(optional_metadata, dict) else None
-        metadata_pdf_url_present = bool(isinstance(pdf_url, dict) and pdf_url.get("status") == "present" and pdf_url.get("value"))
+        metadata_pdf_url_present = bool(
+            isinstance(pdf_url, dict)
+            and pdf_url.get("status") == "present"
+            and pdf_url.get("value")
+        )
         candidate_kind = "not_applicable_non_arxiv"
         candidate_reason = "not_applicable_non_arxiv_pdf_source"
 
@@ -423,14 +493,26 @@ def build_event(
     }
 
     if family != "arxiv":
-        diagnostics.append(diagnostic("not_applicable_non_arxiv_pdf_source", ref_id, "info", "candidate_pdf"))
-        pdf_acquisition = {"status": "not_applicable", "terminal": True, "reason": "not_applicable_non_arxiv_pdf_source"}
+        diagnostics.append(
+            diagnostic("not_applicable_non_arxiv_pdf_source", ref_id, "info", "candidate_pdf")
+        )
+        pdf_acquisition = {
+            "status": "not_applicable",
+            "terminal": True,
+            "reason": "not_applicable_non_arxiv_pdf_source",
+        }
         pdf_artifact = empty_artifact
     elif source_kind == "arxiv_pdf_url":
-        pdf_artifact, artifact_diagnostics, failure_reason = inspect_existing_pdf_artifact(ref, acquisition, repo_root)
+        pdf_artifact, artifact_diagnostics, failure_reason = inspect_existing_pdf_artifact(
+            ref, acquisition, repo_root
+        )
         diagnostics.extend(artifact_diagnostics)
         if failure_reason is None:
-            pdf_acquisition = {"status": "acquired_existing_pdf", "terminal": True, "reason": "existing_pdf_checksum_signature_verified"}
+            pdf_acquisition = {
+                "status": "acquired_existing_pdf",
+                "terminal": True,
+                "reason": "existing_pdf_checksum_signature_verified",
+            }
         else:
             pdf_acquisition = {"status": "not_acquired", "terminal": True, "reason": failure_reason}
     else:
@@ -443,7 +525,11 @@ def build_event(
                 {"candidate_url_source": candidate_url_source},
             )
         )
-        pdf_acquisition = {"status": "not_acquired", "terminal": True, "reason": "arxiv_abs_no_local_pdf_artifact"}
+        pdf_acquisition = {
+            "status": "not_acquired",
+            "terminal": True,
+            "reason": "arxiv_abs_no_local_pdf_artifact",
+        }
         pdf_artifact = empty_artifact
 
     return {
@@ -471,15 +557,29 @@ def build_event(
     }
 
 
-def summarize(events: list[dict[str, Any]], identity_groups: dict[str, dict[str, Any]]) -> dict[str, Any]:
+def summarize(
+    events: list[dict[str, Any]], identity_groups: dict[str, dict[str, Any]]
+) -> dict[str, Any]:
     source_kind_counts = Counter(str(event["source_kind"]) for event in events)
     source_family_counts = Counter(str(event["source_family"]) for event in events)
-    candidate_kind_counts = Counter(str(event["candidate_pdf"]["candidate_kind"]) for event in events)
+    candidate_kind_counts = Counter(
+        str(event["candidate_pdf"]["candidate_kind"]) for event in events
+    )
     pdf_status_counts = Counter(str(event["pdf_acquisition"]["status"]) for event in events)
-    reason_counts = Counter(str(event["pdf_acquisition"]["reason"]) for event in events if event["pdf_acquisition"]["status"] != "acquired_existing_pdf")
+    reason_counts = Counter(
+        str(event["pdf_acquisition"]["reason"])
+        for event in events
+        if event["pdf_acquisition"]["status"] != "acquired_existing_pdf"
+    )
     diagnostic_counts: Counter[str] = Counter()
-    checksum_counts = Counter("verified" if event["pdf_artifact"]["checksum_verified"] else "not_verified" for event in events)
-    signature_counts = Counter("verified" if event["pdf_artifact"]["signature_verified"] else "not_verified" for event in events)
+    checksum_counts = Counter(
+        "verified" if event["pdf_artifact"]["checksum_verified"] else "not_verified"
+        for event in events
+    )
+    signature_counts = Counter(
+        "verified" if event["pdf_artifact"]["signature_verified"] else "not_verified"
+        for event in events
+    )
     for event in events:
         for item in event["diagnostics"]:
             diagnostic_counts[str(item["code"])] += 1
@@ -503,7 +603,9 @@ def summarize(events: list[dict[str, Any]], identity_groups: dict[str, dict[str,
         "diagnostic_counts": dict(sorted(diagnostic_counts.items())),
         "checksum_status_counts": dict(sorted(checksum_counts.items())),
         "signature_status_counts": dict(sorted(signature_counts.items())),
-        "existing_pdf_artifact_count": sum(1 for event in events if event["pdf_artifact"]["exists"]),
+        "existing_pdf_artifact_count": sum(
+            1 for event in events if event["pdf_artifact"]["exists"]
+        ),
         "candidate_ref_count": sum(1 for event in events if event["candidate_pdf"]["is_candidate"]),
         "safety_flags": dict(SAFETY_FLAGS),
         "unsafe_claim_counts": dict.fromkeys(UNSAFE_COUNTER_KEYS, 0),
@@ -566,23 +668,27 @@ def render_report(summary: dict[str, Any]) -> str:
     ]
     for item in summary["failure_modes"]:
         lines.append(f"- {item['dependency']}: {item['failure_path']}")
-    lines.extend([
-        "",
-        "## Load Profile",
-        f"- Expected refs: {summary['load_profile']['expected_url_refs']}; 10x refs: {summary['load_profile']['ten_x_url_refs']}",
-        f"- First saturating resource: {summary['load_profile']['first_saturating_resource']}",
-        f"- Protection: {summary['load_profile']['protection']}",
-        "",
-        "## Negative Tests",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Load Profile",
+            f"- Expected refs: {summary['load_profile']['expected_url_refs']}; 10x refs: {summary['load_profile']['ten_x_url_refs']}",
+            f"- First saturating resource: {summary['load_profile']['first_saturating_resource']}",
+            f"- Protection: {summary['load_profile']['protection']}",
+            "",
+            "## Negative Tests",
+        ]
+    )
     for item in summary["negative_tests"]:
         lines.append(f"- `{item}`")
-    lines.extend([
-        "",
-        "## Observability Impact",
-        "- Emits per-ref PDF candidate classification, terminal typed acquisition reason, checksum/signature status, duplicate identity membership, diagnostics, and fail-closed aggregate counters.",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Observability Impact",
+            "- Emits per-ref PDF candidate classification, terminal typed acquisition reason, checksum/signature status, duplicate identity membership, diagnostics, and fail-closed aggregate counters.",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -602,7 +708,9 @@ def build_pdf_acquisition_outputs(
     expected_source_kind_counts = expected_source_kind_counts or EXPECTED_SOURCE_KIND_COUNTS
     selection = read_json(selection_path)
     refs = validate_selection(selection)
-    acquisition_by_ref = validate_event_rows(read_jsonl(acquisition_events_path), label="acquisition")
+    acquisition_by_ref = validate_event_rows(
+        read_jsonl(acquisition_events_path), label="acquisition"
+    )
     metadata_by_ref = validate_event_rows(read_jsonl(metadata_events_path), label="metadata")
     metadata_summary = read_json(metadata_summary_path)
     validate_scope(
@@ -616,14 +724,24 @@ def build_pdf_acquisition_outputs(
     )
     identity_groups = build_identity_groups(refs)
     events = [
-        build_event(ref, acquisition_by_ref[str(ref["ref_id"])], metadata_by_ref[str(ref["ref_id"])], identity_groups, repo_root)
+        build_event(
+            ref,
+            acquisition_by_ref[str(ref["ref_id"])],
+            metadata_by_ref[str(ref["ref_id"])],
+            identity_groups,
+            repo_root,
+        )
         for ref in refs
     ]
     summary = summarize(events, identity_groups)
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / EVENTS_FILENAME).write_text("\n".join(json.dumps(event, sort_keys=True) for event in events) + "\n", encoding="utf-8")
-    (out_dir / SUMMARY_FILENAME).write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    (out_dir / EVENTS_FILENAME).write_text(
+        "\n".join(json.dumps(event, sort_keys=True) for event in events) + "\n", encoding="utf-8"
+    )
+    (out_dir / SUMMARY_FILENAME).write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     (out_dir / REPORT_FILENAME).write_text(render_report(summary), encoding="utf-8")
     return events, summary
 

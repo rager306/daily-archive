@@ -49,7 +49,9 @@ def edge_key(edge: dict[str, Any]) -> tuple[str, str, str, str]:
     )
 
 
-def compute_two_hop_preview(edges: list[dict[str, Any]], anchor: str = DEFAULT_ANCHOR) -> dict[str, Any]:
+def compute_two_hop_preview(
+    edges: list[dict[str, Any]], anchor: str = DEFAULT_ANCHOR
+) -> dict[str, Any]:
     """Compute directed 1-hop and 2-hop preview counts from manifest edges."""
     assert_safety_defaults()
     graph = build_graph(edges)
@@ -78,9 +80,7 @@ def compute_two_hop_preview(edges: list[dict[str, Any]], anchor: str = DEFAULT_A
 
     layer_counts = Counter(edge_layer(edge) for edge in traversed_edges.values())
     second_layer_counts = Counter(
-        edge_layer(edge)
-        for node in first_hop_nodes
-        for edge in outgoing_by_source.get(node, [])
+        edge_layer(edge) for node in first_hop_nodes for edge in outgoing_by_source.get(node, [])
     )
 
     return {
@@ -110,7 +110,9 @@ def write_preview(preview: dict[str, Any], output_path: Path) -> None:
     output_path.write_text(json.dumps(preview, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def run_preview(manifest_path: Path, output_path: Path, anchor: str = DEFAULT_ANCHOR) -> dict[str, Any]:
+def run_preview(
+    manifest_path: Path, output_path: Path, anchor: str = DEFAULT_ANCHOR
+) -> dict[str, Any]:
     """Load the manifest, compute the preview, and write JSON."""
     edges = load_edges(manifest_path)
     preview = compute_two_hop_preview(edges, anchor=anchor)

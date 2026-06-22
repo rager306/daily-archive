@@ -126,7 +126,9 @@ async def acquire_sources_for_manifest(
                     "attempted": attempted,
                     "before": before,
                     "after": after,
-                    "outcome": _outcome(attempted=attempted, before=before, after=after, error=conversion_error),
+                    "outcome": _outcome(
+                        attempted=attempted, before=before, after=after, error=conversion_error
+                    ),
                     "conversion_method": conversion_method,
                     "conversion_error": conversion_error,
                     "quality": quality,
@@ -156,7 +158,9 @@ def acquire_sources_for_manifest_sync(**kwargs: Any) -> dict[str, Path]:
     return asyncio.run(acquire_sources_for_manifest(**kwargs))
 
 
-async def _convert_bounded(converter: MarkdownConverter, paper_id: str, *, fast_only: bool) -> ConversionResult:
+async def _convert_bounded(
+    converter: MarkdownConverter, paper_id: str, *, fast_only: bool
+) -> ConversionResult:
     """Run a bounded conversion attempt.
 
     `MDConverter.convert()` may fall through to PDF/Docling conversion, which can
@@ -169,7 +173,9 @@ async def _convert_bounded(converter: MarkdownConverter, paper_id: str, *, fast_
     return await converter.convert(paper_id)
 
 
-def _summary_from_records(*, manifest: dict[str, Any], records: list[dict[str, Any]]) -> dict[str, Any]:
+def _summary_from_records(
+    *, manifest: dict[str, Any], records: list[dict[str, Any]]
+) -> dict[str, Any]:
     attempted = [record for record in records if record["attempted"]]
     originally_missing = [
         record
@@ -177,7 +183,9 @@ def _summary_from_records(*, manifest: dict[str, Any], records: list[dict[str, A
         if _manifest_marked_missing_markdown(manifest=manifest, paper_id=str(record["paper_id"]))
     ]
     preexisting_ready = [
-        record for record in originally_missing if record["before"]["available_markdown"] and not record["attempted"]
+        record
+        for record in originally_missing
+        if record["before"]["available_markdown"] and not record["attempted"]
     ]
     succeeded = [record for record in attempted if record["outcome"] == "acquired_markdown"]
     still_missing = [record for record in records if not record["after"]["available_markdown"]]
@@ -199,7 +207,9 @@ def _summary_from_records(*, manifest: dict[str, Any], records: list[dict[str, A
         "originally_missing_markdown_count": len(originally_missing),
         "preexisting_markdown_ready_from_original_missing_count": len(preexisting_ready),
         "acquired_markdown_count": len(succeeded),
-        "ready_for_markdown_scan_count": sum(1 for record in records if record["after"]["available_markdown"]),
+        "ready_for_markdown_scan_count": sum(
+            1 for record in records if record["after"]["available_markdown"]
+        ),
         "still_missing_markdown_count": len(still_missing),
         "available_pdf_count": sum(1 for record in records if record["after"]["available_pdf"]),
         "method_counts": dict(sorted(method_counts.items())),
@@ -260,7 +270,9 @@ def _quality_metadata(quality_report: Any) -> dict[str, Any]:
     }
 
 
-def _outcome(*, attempted: bool, before: dict[str, Any], after: dict[str, Any], error: str | None) -> str:
+def _outcome(
+    *, attempted: bool, before: dict[str, Any], after: dict[str, Any], error: str | None
+) -> str:
     if before["available_markdown"]:
         return "already_markdown_ready"
     if not attempted:

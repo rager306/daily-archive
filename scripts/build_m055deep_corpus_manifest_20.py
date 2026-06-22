@@ -99,7 +99,9 @@ def _entry_for_pdf(
         "sha256": _sha256(path),
         "category": category,
         "source_milestone": source_milestone,
-        "pages_estimate": pages_estimate if pages_estimate is not None else _estimate_pdf_pages(path),
+        "pages_estimate": pages_estimate
+        if pages_estimate is not None
+        else _estimate_pdf_pages(path),
     }
 
 
@@ -107,7 +109,11 @@ def _load_m051_entries(m051_manifest_path: Path) -> list[dict[str, Any]]:
     manifest = _read_json(m051_manifest_path)
     entries: list[dict[str, Any]] = []
     for item in sorted(manifest.get("pdfs", []), key=lambda row: row.get("target_index", 0)):
-        arxiv_id = item.get("arxiv_id") or item.get("article_key") or _arxiv_id_from_path(Path(item["path"]))
+        arxiv_id = (
+            item.get("arxiv_id")
+            or item.get("article_key")
+            or _arxiv_id_from_path(Path(item["path"]))
+        )
         entries.append(
             _entry_for_pdf(
                 arxiv_id=arxiv_id,
@@ -212,7 +218,9 @@ def write_manifest(payload: dict[str, Any], output_path: Path) -> dict[str, Any]
     if output_path.exists():
         existing = json.loads(output_path.read_text(encoding="utf-8"))
         if _without_generated_at(existing) == _without_generated_at(stable_payload):
-            stable_payload["generated_at"] = existing.get("generated_at", stable_payload["generated_at"])
+            stable_payload["generated_at"] = existing.get(
+                "generated_at", stable_payload["generated_at"]
+            )
     output_path.write_text(
         json.dumps(stable_payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
         encoding="utf-8",

@@ -93,9 +93,7 @@ def test_guarded_modules_do_not_import_graph_write_libraries() -> None:
     for path in GUARDED_MODULES:
         imported = _imports(path)
         offenders = [
-            module
-            for module in imported
-            if module.lower().startswith(FORBIDDEN_IMPORT_PREFIXES)
+            module for module in imported if module.lower().startswith(FORBIDDEN_IMPORT_PREFIXES)
         ]
         assert not offenders, f"{path} violates ADR-005 with forbidden imports: {offenders}"
 

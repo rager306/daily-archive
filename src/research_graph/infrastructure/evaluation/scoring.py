@@ -70,9 +70,7 @@ class ScoringEngine:
             "graph_bridge": graph_bridge,
         }
 
-        total = sum(
-            breakdown[k] * (self.weights or {})[k] for k in (self.weights or {})
-        )
+        total = sum(breakdown[k] * (self.weights or {})[k] for k in (self.weights or {}))
 
         return ScoredPaper(
             paper=paper,

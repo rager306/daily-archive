@@ -116,8 +116,12 @@ def compute_layer_stats(edges: list[dict[str, Any]]) -> dict[str, dict[str, Any]
     stats: dict[str, dict[str, Any]] = {}
     for layer in LAYER_ORDER:
         layer_edges = by_layer.get(layer, [])
-        source_papers = {str(edge.get("source_paper_id")) for edge in layer_edges if edge.get("source_paper_id")}
-        target_papers = {str(edge.get("target_paper_id")) for edge in layer_edges if edge.get("target_paper_id")}
+        source_papers = {
+            str(edge.get("source_paper_id")) for edge in layer_edges if edge.get("source_paper_id")
+        }
+        target_papers = {
+            str(edge.get("target_paper_id")) for edge in layer_edges if edge.get("target_paper_id")
+        }
         similarities = [
             float(edge["similarity_score"])
             for edge in layer_edges
@@ -157,7 +161,9 @@ def compute_multi_edges(edges: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def compute_citation_top_targets(edges: list[dict[str, Any]], limit: int = 10) -> list[dict[str, int | str]]:
+def compute_citation_top_targets(
+    edges: list[dict[str, Any]], limit: int = 10
+) -> list[dict[str, int | str]]:
     """Return the top cited target papers from citation-layer edges."""
     citation_targets = Counter(
         str(edge.get("target_paper_id"))
@@ -200,14 +206,20 @@ def compute_stats(manifest_path: Path) -> dict[str, Any]:
         },
         "connected_components": {
             "weakly_connected_count": len(weak_components),
-            "largest_weakly_connected_size": max((len(component) for component in weak_components), default=0),
+            "largest_weakly_connected_size": max(
+                (len(component) for component in weak_components), default=0
+            ),
             "strongly_connected_count": len(strong_components),
-            "largest_strongly_connected_size": max((len(component) for component in strong_components), default=0),
+            "largest_strongly_connected_size": max(
+                (len(component) for component in strong_components), default=0
+            ),
         },
         "orphans": {"count": len(orphan_nodes), "nodes": orphan_nodes[:50]},
         "self_loops": {
             "count": len(self_loops),
-            "edges": [{"source": str(source), "target": str(target)} for source, target in self_loops[:50]],
+            "edges": [
+                {"source": str(source), "target": str(target)} for source, target in self_loops[:50]
+            ],
         },
         "multi_edges": compute_multi_edges(edges),
     }
@@ -310,8 +322,12 @@ def render_markdown(stats: dict[str, Any]) -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST, help="Graph manifest JSON path")
-    parser.add_argument("--output", type=Path, default=None, help="Output directory or stats JSON path")
+    parser.add_argument(
+        "--manifest", type=Path, default=DEFAULT_MANIFEST, help="Graph manifest JSON path"
+    )
+    parser.add_argument(
+        "--output", type=Path, default=None, help="Output directory or stats JSON path"
+    )
     return parser.parse_args()
 
 

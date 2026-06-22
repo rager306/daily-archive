@@ -123,7 +123,9 @@ def validate_selection(selection: dict[str, Any]) -> list[str]:
     else:
         for key, expected in EXPECTED_COUNTS.items():
             if counts.get(key) != expected:
-                errors.append(f"M030_INTAKE_COUNTS: {key} expected {expected}, got {counts.get(key)!r}")
+                errors.append(
+                    f"M030_INTAKE_COUNTS: {key} expected {expected}, got {counts.get(key)!r}"
+                )
 
     refs = selection.get("refs")
     if not isinstance(refs, list):
@@ -146,13 +148,19 @@ def validate_selection(selection: dict[str, Any]) -> list[str]:
         expected = EXPECTED_URLS[url]
         seen_urls.add(url)
         if identity != expected["identity"]:
-            errors.append(f"M030_INTAKE_IDENTITY: {url} expected {expected['identity']}, got {identity!r}")
+            errors.append(
+                f"M030_INTAKE_IDENTITY: {url} expected {expected['identity']}, got {identity!r}"
+            )
         if isinstance(identity, str):
             seen_identities.add(identity)
         if ref.get("catalog_status") != expected["catalog_status"]:
-            errors.append(f"M030_INTAKE_CATALOG_STATUS: {url} expected {expected['catalog_status']}")
+            errors.append(
+                f"M030_INTAKE_CATALOG_STATUS: {url} expected {expected['catalog_status']}"
+            )
         if ref.get("prior_selection_status") != expected["prior_selection_status"]:
-            errors.append(f"M030_INTAKE_PRIOR_SELECTION_STATUS: {url} expected {expected['prior_selection_status']}")
+            errors.append(
+                f"M030_INTAKE_PRIOR_SELECTION_STATUS: {url} expected {expected['prior_selection_status']}"
+            )
         if ref.get("reachability_status") != "available_http_200":
             errors.append(f"M030_INTAKE_REACHABILITY: {url} must preserve available_http_200")
         if expected["catalog_status"] == "typed_catalog_blocker":
@@ -160,7 +168,9 @@ def validate_selection(selection: dict[str, Any]) -> list[str]:
             if not isinstance(blocker, dict):
                 errors.append(f"M030_INTAKE_TYPED_BLOCKER: {url} typed_blocker must be an object")
             elif blocker.get("code") != "catalog_placeholder_pruned_no_article_record":
-                errors.append(f"M030_INTAKE_TYPED_BLOCKER: {url} must preserve placeholder-pruned blocker code")
+                errors.append(
+                    f"M030_INTAKE_TYPED_BLOCKER: {url} must preserve placeholder-pruned blocker code"
+                )
         claims = ref.get("unsafe_claims")
         if not isinstance(claims, dict):
             errors.append(f"M030_INTAKE_UNSAFE_CLAIMS: {url} unsafe_claims must be an object")
@@ -177,10 +187,13 @@ def validate_selection(selection: dict[str, Any]) -> list[str]:
     represented = sum(
         1
         for ref in refs
-        if isinstance(ref, dict) and ref.get("catalog_status") in {"already_cataloged", "typed_catalog_blocker"}
+        if isinstance(ref, dict)
+        and ref.get("catalog_status") in {"already_cataloged", "typed_catalog_blocker"}
     )
     if represented != EXPECTED_COUNTS["cataloged_or_typed_blocked"]:
-        errors.append("M030_INTAKE_CLOSEOUT: all 4 refs must be cataloged or explicitly typed blockers")
+        errors.append(
+            "M030_INTAKE_CLOSEOUT: all 4 refs must be cataloged or explicitly typed blockers"
+        )
 
     flags = selection.get("safety_flags")
     if not isinstance(flags, dict):
@@ -223,7 +236,10 @@ def validate_report(report_path: Path, selection: dict[str, Any]) -> list[str]:
             errors.append(f"M030_INTAKE_REPORT_PHRASE: report missing {phrase!r}")
     # Keep this dependency explicit so future edits cannot silently point the
     # report at a different selection while leaving counts unchanged.
-    if str(selection.get("selection_id")) not in text and "M029 Pipeline Architecture Audit Intake" not in text:
+    if (
+        str(selection.get("selection_id")) not in text
+        and "M029 Pipeline Architecture Audit Intake" not in text
+    ):
         errors.append("M030_INTAKE_REPORT_LINKAGE: report does not identify the intake selection")
     return errors
 
@@ -237,11 +253,17 @@ def validate_catalog_status(selection: dict[str, Any], catalog_index: dict[str, 
         identity = ref.get("normalized_identity")
         status = ref.get("catalog_status")
         if status == "already_cataloged" and identity not in catalog_ids:
-            errors.append(f"M030_INTAKE_CATALOG_LINK: {identity} marked cataloged but absent from catalog index")
+            errors.append(
+                f"M030_INTAKE_CATALOG_LINK: {identity} marked cataloged but absent from catalog index"
+            )
         if status == "missing_from_article_catalog" and identity in catalog_ids:
-            errors.append(f"M030_INTAKE_CATALOG_LINK: {identity} marked missing but present in catalog index")
+            errors.append(
+                f"M030_INTAKE_CATALOG_LINK: {identity} marked missing but present in catalog index"
+            )
         if status == "typed_catalog_blocker" and identity in catalog_ids:
-            errors.append(f"M030_INTAKE_CATALOG_LINK: {identity} marked typed blocker but present in catalog index")
+            errors.append(
+                f"M030_INTAKE_CATALOG_LINK: {identity} marked typed blocker but present in catalog index"
+            )
     return errors
 
 
@@ -254,9 +276,13 @@ def validate_m028_status(selection: dict[str, Any], m028_selection: dict[str, An
         identity = ref.get("normalized_identity")
         status = ref.get("prior_selection_status")
         if status == "already_in_m028_selection" and identity not in m028_ids:
-            errors.append(f"M030_INTAKE_M028_LINK: {identity} marked in M028 but absent from M028 selection")
+            errors.append(
+                f"M030_INTAKE_M028_LINK: {identity} marked in M028 but absent from M028 selection"
+            )
         if status == "not_in_m028_selection" and identity in m028_ids:
-            errors.append(f"M030_INTAKE_M028_LINK: {identity} marked absent from M028 but present in M028 selection")
+            errors.append(
+                f"M030_INTAKE_M028_LINK: {identity} marked absent from M028 but present in M028 selection"
+            )
     return errors
 
 
@@ -266,7 +292,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--report", type=Path)
     parser.add_argument("--catalog-index", type=Path)
     parser.add_argument("--m028-selection", type=Path)
-    parser.add_argument("--validate-only", action="store_true", help="Validate existing local artifacts without fetching or writing.")
+    parser.add_argument(
+        "--validate-only",
+        action="store_true",
+        help="Validate existing local artifacts without fetching or writing.",
+    )
     args = parser.parse_args(argv)
     if not args.validate_only:
         parser.error("only --validate-only is supported; this verifier must not fetch or write")

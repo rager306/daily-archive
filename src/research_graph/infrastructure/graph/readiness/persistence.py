@@ -136,7 +136,9 @@ def select_trusted_candidate_claims(
                 claim_draft_id=str(draft.get("entry_id") or ":".join(key)),
                 provenance={
                     "manifest_schema_version": str(manifest.get("schema_version", "unknown")),
-                    "extraction_summary_schema_version": str(extraction_summary.get("schema_version", "unknown")),
+                    "extraction_summary_schema_version": str(
+                        extraction_summary.get("schema_version", "unknown")
+                    ),
                     "selection_rule": "s06_trusted_candidate_claim_v1",
                 },
             )
@@ -182,12 +184,21 @@ def persist_validation_subset(
 
     persisted_claims = [replace(claim, persisted=True) for claim in selection.trusted_claims]
     claims_path.write_text(
-        "".join(json.dumps(to_redacted_dict(_persisted_claim_payload(claim)), sort_keys=True) + "\n" for claim in persisted_claims),
+        "".join(
+            json.dumps(to_redacted_dict(_persisted_claim_payload(claim)), sort_keys=True) + "\n"
+            for claim in persisted_claims
+        ),
         encoding="utf-8",
     )
-    summary = _persistence_summary(selection=selection, persisted_claims=persisted_claims, claims_path=claims_path)
-    summary_path.write_text(json.dumps(to_redacted_dict(summary), indent=2, sort_keys=True), encoding="utf-8")
-    return PersistenceArtifactResult(selection=selection, claims_path=claims_path, summary_path=summary_path, summary=summary)
+    summary = _persistence_summary(
+        selection=selection, persisted_claims=persisted_claims, claims_path=claims_path
+    )
+    summary_path.write_text(
+        json.dumps(to_redacted_dict(summary), indent=2, sort_keys=True), encoding="utf-8"
+    )
+    return PersistenceArtifactResult(
+        selection=selection, claims_path=claims_path, summary_path=summary_path, summary=summary
+    )
 
 
 def selection_to_dict(result: SelectionResult) -> dict[str, Any]:
@@ -217,7 +228,9 @@ def write_refusal_evidence(*, selection: SelectionResult, output_path: Path) -> 
         "raw_text_included": False,
         "embeddings_included": False,
     }
-    output_path.write_text(json.dumps(to_redacted_dict(payload), indent=2, sort_keys=True), encoding="utf-8")
+    output_path.write_text(
+        json.dumps(to_redacted_dict(payload), indent=2, sort_keys=True), encoding="utf-8"
+    )
     return payload
 
 
@@ -268,7 +281,9 @@ def _persisted_claim_payload(claim: TrustedCandidateClaim) -> dict[str, Any]:
     }
 
 
-def _source_artifact_for_claim(*, entry: dict[str, Any], draft: dict[str, Any], paper_id: str) -> str:
+def _source_artifact_for_claim(
+    *, entry: dict[str, Any], draft: dict[str, Any], paper_id: str
+) -> str:
     """Return a redacted deterministic source artifact identifier without reading raw text."""
     explicit = _string_or_none(entry.get("source_artifact") or draft.get("source_artifact"))
     if explicit is not None:
@@ -339,7 +354,9 @@ def _string_or_none(value: Any) -> str | None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Select trusted candidate claim drafts for S06 persistence validation.")
+    parser = argparse.ArgumentParser(
+        description="Select trusted candidate claim drafts for S06 persistence validation."
+    )
     parser.add_argument("--manifest", required=True, type=Path)
     parser.add_argument("--extraction-summary", required=True, type=Path)
     parser.add_argument("--output", required=False, type=Path)
@@ -359,7 +376,11 @@ def main(argv: list[str] | None = None) -> int:
     result = load_and_select(args.manifest, args.extraction_summary)
     if args.refusals_output is not None:
         refusal_payload = write_refusal_evidence(selection=result, output_path=args.refusals_output)
-        sys.stdout.write(json.dumps(to_redacted_dict(refusal_payload["refusal_counts"]), indent=2, sort_keys=True))
+        sys.stdout.write(
+            json.dumps(
+                to_redacted_dict(refusal_payload["refusal_counts"]), indent=2, sort_keys=True
+            )
+        )
         sys.stdout.write("\n")
         return 0
 

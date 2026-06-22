@@ -151,7 +151,9 @@ def test_propose_route_returns_hybrid_when_dimensions_split() -> None:
 def test_identify_residual_gaps_when_parsers_do_not_close_body_or_layout() -> None:
     comparison = hybrid._compare_dimensions(
         grobid_packet(title=False, authors=0, abstract=False, refs=0, bibls=0, body_elements=0),
-        opendataloader_packet(markdown_size=0, tables=0, images=0, sections=0, pages=0, boxes=0, low_quality=True),
+        opendataloader_packet(
+            markdown_size=0, tables=0, images=0, sections=0, pages=0, boxes=0, low_quality=True
+        ),
     )
 
     gaps = hybrid._identify_residual_gaps(comparison)
@@ -188,7 +190,9 @@ def test_5_safety_defaults_all_false(tmp_path: Path) -> None:
     grobid_dir, opendl_dir = write_packet_pair(tmp_path, "1804.02767")
 
     summary = hybrid.compare_hybrid_routing(grobid_dir, opendl_dir, tmp_path / "hybrid")
-    packet = json.loads((tmp_path / "hybrid" / "per-pdf" / "1804.02767.json").read_text(encoding="utf-8"))
+    packet = json.loads(
+        (tmp_path / "hybrid" / "per-pdf" / "1804.02767.json").read_text(encoding="utf-8")
+    )
 
     assert set(summary["safety_defaults"]) == SAFETY_KEYS
     assert all(value is False for value in summary["safety_defaults"].values())

@@ -46,7 +46,9 @@ def test_graph_manifest_combined(tmp_path: Path) -> None:
     combined_path = tmp_path / "combined-edges.json"
     summary_path = tmp_path / "per-layer-summary.json"
 
-    manifest, summary = graph_manifest.run(combined_edges_path=combined_path, layer_summary_path=summary_path)
+    manifest, summary = graph_manifest.run(
+        combined_edges_path=combined_path, layer_summary_path=summary_path
+    )
 
     assert combined_path.exists()
     assert summary_path.exists()
@@ -134,7 +136,13 @@ def test_adr_011_binding() -> None:
 
 
 def test_5_safety_defaults() -> None:
-    for payload_path in [FD_REPORT, TABLE_SUMMARY, FIGURE_SUMMARY, COMBINED_EDGES, PER_LAYER_SUMMARY]:
+    for payload_path in [
+        FD_REPORT,
+        TABLE_SUMMARY,
+        FIGURE_SUMMARY,
+        COMBINED_EDGES,
+        PER_LAYER_SUMMARY,
+    ]:
         _assert_five_false_safety_defaults(_load_json(payload_path))
 
     for text_path in [REPORT, ADR_011, DEFERRED]:

@@ -17,7 +17,9 @@ REAL_CORPUS_DIR = REPO_ROOT / "data" / "article_corpora" / "m028-universal-loade
 
 
 def _load_script() -> ModuleType:
-    spec = importlib.util.spec_from_file_location("build_m028_pdf_acquisition_diagnostics", BUILD_SCRIPT_PATH)
+    spec = importlib.util.spec_from_file_location(
+        "build_m028_pdf_acquisition_diagnostics", BUILD_SCRIPT_PATH
+    )
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -26,7 +28,9 @@ def _load_script() -> ModuleType:
 
 
 def _load_verifier() -> ModuleType:
-    spec = importlib.util.spec_from_file_location("verify_m028_pdf_acquisition_diagnostics", VERIFY_SCRIPT_PATH)
+    spec = importlib.util.spec_from_file_location(
+        "verify_m028_pdf_acquisition_diagnostics", VERIFY_SCRIPT_PATH
+    )
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -39,7 +43,9 @@ def _write_json(path: Path, payload: dict[str, object]) -> None:
 
 
 def _write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
-    path.write_text("\n".join(json.dumps(row, sort_keys=True) for row in rows) + "\n", encoding="utf-8")
+    path.write_text(
+        "\n".join(json.dumps(row, sort_keys=True) for row in rows) + "\n", encoding="utf-8"
+    )
 
 
 def _read_json(path: Path) -> dict[str, object]:
@@ -47,7 +53,9 @@ def _read_json(path: Path) -> dict[str, object]:
 
 
 def _read_jsonl(path: Path) -> list[dict[str, object]]:
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return [
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
 
 
 def _sha256(path: Path) -> str:
@@ -117,15 +125,28 @@ def _fixture_files(root: Path, *, malformed_pdf: bool = False) -> dict[str, Path
         "R07": sources / "R07.html",
         "R10": sources / "R10.html",
     }
-    paths["R01"].write_bytes((b"not a pdf\n" if malformed_pdf else b"%PDF-1.4\n") + b"local fixture bytes only\n")
-    paths["R02"].write_text("<meta name='citation_pdf_url' content='https://arxiv.org/pdf/2605.21401'>", encoding="utf-8")
-    paths["R03"].write_text("<meta name='citation_pdf_url' content='https://www.nature.com/articles/example.pdf'>", encoding="utf-8")
+    paths["R01"].write_bytes(
+        (b"not a pdf\n" if malformed_pdf else b"%PDF-1.4\n") + b"local fixture bytes only\n"
+    )
+    paths["R02"].write_text(
+        "<meta name='citation_pdf_url' content='https://arxiv.org/pdf/2605.21401'>",
+        encoding="utf-8",
+    )
+    paths["R03"].write_text(
+        "<meta name='citation_pdf_url' content='https://www.nature.com/articles/example.pdf'>",
+        encoding="utf-8",
+    )
     paths["R07"].write_text("<html><body>blog body must not leak</body></html>", encoding="utf-8")
-    paths["R10"].write_text("<meta name='citation_pdf_url' content='https://arxiv.org/pdf/2605.20897'>", encoding="utf-8")
+    paths["R10"].write_text(
+        "<meta name='citation_pdf_url' content='https://arxiv.org/pdf/2605.20897'>",
+        encoding="utf-8",
+    )
     return paths
 
 
-def _acquisition_rows(selection: dict[str, object], paths: dict[str, Path], root: Path) -> list[dict[str, object]]:
+def _acquisition_rows(
+    selection: dict[str, object], paths: dict[str, Path], root: Path
+) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     refs = selection["refs"]
     assert isinstance(refs, list)
@@ -141,7 +162,9 @@ def _acquisition_rows(selection: dict[str, object], paths: dict[str, Path], root
                 "source_kind": ref["source_kind"],
                 "normalized_identity": ref["normalized_identity"],
                 "artifact_path": str(path.relative_to(root)),
-                "content_type": "application/pdf" if path.suffix == ".pdf" else "text/html; charset=utf-8",
+                "content_type": "application/pdf"
+                if path.suffix == ".pdf"
+                else "text/html; charset=utf-8",
                 "byte_count": path.stat().st_size,
                 "sha256": _sha256(path),
                 "http_status": 200,
@@ -156,7 +179,9 @@ def _acquisition_rows(selection: dict[str, object], paths: dict[str, Path], root
     return rows
 
 
-def _metadata_rows(selection: dict[str, object], acquisition_rows: list[dict[str, object]]) -> list[dict[str, object]]:
+def _metadata_rows(
+    selection: dict[str, object], acquisition_rows: list[dict[str, object]]
+) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     acquisition_by_ref = {str(row["ref_id"]): row for row in acquisition_rows}
     refs = selection["refs"]
@@ -179,11 +204,21 @@ def _metadata_rows(selection: dict[str, object], acquisition_rows: list[dict[str
                 "ref_id": ref_id,
                 "url": ref["url"],
                 "source_kind": source_kind,
-                "source_family": "arxiv" if source_kind.startswith("arxiv_") else ("nature" if source_kind == "nature_article_url" else "company_blog"),
+                "source_family": "arxiv"
+                if source_kind.startswith("arxiv_")
+                else ("nature" if source_kind == "nature_article_url" else "company_blog"),
                 "normalized_identity": ref["normalized_identity"],
                 "canonical_url": ref["canonical_url"],
-                "url_variant": "pdf_url" if source_kind == "arxiv_pdf_url" else ("abs_url" if source_kind == "arxiv_abs_url" else source_kind),
-                "acquisition": {"status": "captured", "terminal": True, "captured": True, "failure_code": None, "http_status": 200},
+                "url_variant": "pdf_url"
+                if source_kind == "arxiv_pdf_url"
+                else ("abs_url" if source_kind == "arxiv_abs_url" else source_kind),
+                "acquisition": {
+                    "status": "captured",
+                    "terminal": True,
+                    "captured": True,
+                    "failure_code": None,
+                    "http_status": 200,
+                },
                 "artifact": {
                     "path": acquisition_by_ref[ref_id]["artifact_path"],
                     "exists": True,
@@ -198,10 +233,19 @@ def _metadata_rows(selection: dict[str, object], acquisition_rows: list[dict[str
                         "status": "present" if pdf_url else "missing",
                         "value": pdf_url,
                         "source": pdf_source,
-                        "missing_reason": None if pdf_url else ("not_applicable" if not source_kind.startswith("arxiv_") else "not_found"),
+                        "missing_reason": None
+                        if pdf_url
+                        else (
+                            "not_applicable"
+                            if not source_kind.startswith("arxiv_")
+                            else "not_found"
+                        ),
                     }
                 },
-                "safety_flags": {"source_payload_embedded": False, "binary_payload_embedded": False},
+                "safety_flags": {
+                    "source_payload_embedded": False,
+                    "binary_payload_embedded": False,
+                },
                 "diagnostics": [],
             }
         )
@@ -215,7 +259,9 @@ def _metadata_summary(selection: dict[str, object]) -> dict[str, object]:
     identities = {str(ref["normalized_identity"]) for ref in refs if isinstance(ref, dict)}
     for ref in refs:
         assert isinstance(ref, dict)
-        source_kind_counts[str(ref["source_kind"])] = source_kind_counts.get(str(ref["source_kind"]), 0) + 1
+        source_kind_counts[str(ref["source_kind"])] = (
+            source_kind_counts.get(str(ref["source_kind"]), 0) + 1
+        )
     return {
         "schema_version": "m028.source-metadata-summary.v1",
         "url_ref_count": len(refs),
@@ -226,7 +272,18 @@ def _metadata_summary(selection: dict[str, object]) -> dict[str, object]:
     }
 
 
-def _write_inputs(root: Path, *, malformed_pdf: bool = False) -> tuple[Path, Path, Path, Path, dict[str, object], list[dict[str, object]], list[dict[str, object]], dict[str, object]]:
+def _write_inputs(
+    root: Path, *, malformed_pdf: bool = False
+) -> tuple[
+    Path,
+    Path,
+    Path,
+    Path,
+    dict[str, object],
+    list[dict[str, object]],
+    list[dict[str, object]],
+    dict[str, object],
+]:
     selection = _fixture_selection()
     paths = _fixture_files(root, malformed_pdf=malformed_pdf)
     acquisition = _acquisition_rows(selection, paths, root)
@@ -240,7 +297,16 @@ def _write_inputs(root: Path, *, malformed_pdf: bool = False) -> tuple[Path, Pat
     _write_jsonl(acquisition_path, acquisition)
     _write_jsonl(metadata_path, metadata)
     _write_json(summary_path, summary)
-    return selection_path, acquisition_path, metadata_path, summary_path, selection, acquisition, metadata, summary
+    return (
+        selection_path,
+        acquisition_path,
+        metadata_path,
+        summary_path,
+        selection,
+        acquisition,
+        metadata,
+        summary,
+    )
 
 
 def test_builds_metadata_only_pdf_diagnostics_for_fixture_refs(tmp_path: Path) -> None:
@@ -256,7 +322,12 @@ def test_builds_metadata_only_pdf_diagnostics_for_fixture_refs(tmp_path: Path) -
         repo_root=tmp_path,
         expected_ref_count=5,
         expected_identity_count=4,
-        expected_source_kind_counts={"arxiv_abs_url": 2, "arxiv_pdf_url": 1, "company_blog_url": 1, "nature_article_url": 1},
+        expected_source_kind_counts={
+            "arxiv_abs_url": 2,
+            "arxiv_pdf_url": 1,
+            "company_blog_url": 1,
+            "nature_article_url": 1,
+        },
     )
 
     by_ref = {event["ref_id"]: event for event in events}
@@ -283,14 +354,26 @@ def test_builds_metadata_only_pdf_diagnostics_for_fixture_refs(tmp_path: Path) -
     assert by_ref["R03"]["pdf_acquisition"]["reason"] == "not_applicable_non_arxiv_pdf_source"
     assert by_ref["R07"]["pdf_acquisition"]["reason"] == "not_applicable_non_arxiv_pdf_source"
     assert all(flag is False for flag in summary["safety_flags"].values())
-    serialized = (tmp_path / "out" / "pdf-acquisition-summary.json").read_text() + (tmp_path / "out" / "pdf-acquisition-events.jsonl").read_text()
-    for forbidden in ["%PDF-", "<html", "</html>", "blog body must not leak", "raw_text", "body", "payload"]:
+    serialized = (tmp_path / "out" / "pdf-acquisition-summary.json").read_text() + (
+        tmp_path / "out" / "pdf-acquisition-events.jsonl"
+    ).read_text()
+    for forbidden in [
+        "%PDF-",
+        "<html",
+        "</html>",
+        "blog body must not leak",
+        "raw_text",
+        "body",
+        "payload",
+    ]:
         assert forbidden.lower() not in serialized.lower()
 
 
 def test_malformed_existing_pdf_signature_becomes_typed_diagnostic(tmp_path: Path) -> None:
     script = _load_script()
-    selection_path, acquisition_path, metadata_path, summary_path, *_ = _write_inputs(tmp_path, malformed_pdf=True)
+    selection_path, acquisition_path, metadata_path, summary_path, *_ = _write_inputs(
+        tmp_path, malformed_pdf=True
+    )
 
     events, summary = script.build_pdf_acquisition_outputs(
         selection_path,
@@ -301,11 +384,20 @@ def test_malformed_existing_pdf_signature_becomes_typed_diagnostic(tmp_path: Pat
         repo_root=tmp_path,
         expected_ref_count=5,
         expected_identity_count=4,
-        expected_source_kind_counts={"arxiv_abs_url": 2, "arxiv_pdf_url": 1, "company_blog_url": 1, "nature_article_url": 1},
+        expected_source_kind_counts={
+            "arxiv_abs_url": 2,
+            "arxiv_pdf_url": 1,
+            "company_blog_url": 1,
+            "nature_article_url": 1,
+        },
     )
 
     r01 = next(event for event in events if event["ref_id"] == "R01")
-    assert r01["pdf_acquisition"] == {"status": "not_acquired", "terminal": True, "reason": "malformed_existing_pdf_signature"}
+    assert r01["pdf_acquisition"] == {
+        "status": "not_acquired",
+        "terminal": True,
+        "reason": "malformed_existing_pdf_signature",
+    }
     assert r01["pdf_artifact"]["signature_verified"] is False
     assert any(item["code"] == "malformed_existing_pdf_signature" for item in r01["diagnostics"])
     assert summary["diagnostic_counts"]["malformed_existing_pdf_signature"] == 1
@@ -313,7 +405,9 @@ def test_malformed_existing_pdf_signature_becomes_typed_diagnostic(tmp_path: Pat
 
 def test_missing_acquisition_linkage_is_stable_input_error(tmp_path: Path) -> None:
     script = _load_script()
-    selection_path, acquisition_path, metadata_path, summary_path, selection, acquisition, *_ = _write_inputs(tmp_path)
+    selection_path, acquisition_path, metadata_path, summary_path, selection, acquisition, *_ = (
+        _write_inputs(tmp_path)
+    )
     _write_jsonl(acquisition_path, [row for row in acquisition if row["ref_id"] != "R10"])
 
     with pytest.raises(script.PdfDiagnosticInputError, match="acquisition_ref_set_mismatch"):
@@ -326,13 +420,20 @@ def test_missing_acquisition_linkage_is_stable_input_error(tmp_path: Path) -> No
             repo_root=tmp_path,
             expected_ref_count=5,
             expected_identity_count=4,
-            expected_source_kind_counts={"arxiv_abs_url": 2, "arxiv_pdf_url": 1, "company_blog_url": 1, "nature_article_url": 1},
+            expected_source_kind_counts={
+                "arxiv_abs_url": 2,
+                "arxiv_pdf_url": 1,
+                "company_blog_url": 1,
+                "nature_article_url": 1,
+            },
         )
 
 
 def test_checksum_mismatch_records_typed_non_acquired_reason(tmp_path: Path) -> None:
     script = _load_script()
-    selection_path, acquisition_path, metadata_path, summary_path, selection, acquisition, *_ = _write_inputs(tmp_path)
+    selection_path, acquisition_path, metadata_path, summary_path, selection, acquisition, *_ = (
+        _write_inputs(tmp_path)
+    )
     drifted = deepcopy(acquisition)
     drifted[0]["sha256"] = "0" * 64
     _write_jsonl(acquisition_path, drifted)
@@ -346,7 +447,12 @@ def test_checksum_mismatch_records_typed_non_acquired_reason(tmp_path: Path) -> 
         repo_root=tmp_path,
         expected_ref_count=5,
         expected_identity_count=4,
-        expected_source_kind_counts={"arxiv_abs_url": 2, "arxiv_pdf_url": 1, "company_blog_url": 1, "nature_article_url": 1},
+        expected_source_kind_counts={
+            "arxiv_abs_url": 2,
+            "arxiv_pdf_url": 1,
+            "company_blog_url": 1,
+            "nature_article_url": 1,
+        },
     )
 
     r01 = next(event for event in events if event["ref_id"] == "R01")
@@ -370,8 +476,17 @@ def test_real_corpus_regeneration_contract(tmp_path: Path) -> None:
     by_ref = {event["ref_id"]: event for event in events}
     assert summary["url_ref_count"] == 21
     assert summary["normalized_identity_count"] == 20
-    assert summary["source_kind_counts"] == {"arxiv_abs_url": 15, "arxiv_pdf_url": 4, "company_blog_url": 1, "nature_article_url": 1}
-    assert summary["pdf_status_counts"] == {"acquired_existing_pdf": 4, "not_applicable": 2, "not_acquired": 15}
+    assert summary["source_kind_counts"] == {
+        "arxiv_abs_url": 15,
+        "arxiv_pdf_url": 4,
+        "company_blog_url": 1,
+        "nature_article_url": 1,
+    }
+    assert summary["pdf_status_counts"] == {
+        "acquired_existing_pdf": 4,
+        "not_applicable": 2,
+        "not_acquired": 15,
+    }
     assert summary["non_acquired_reason_counts"] == {
         "arxiv_abs_no_local_pdf_artifact": 15,
         "not_applicable_non_arxiv_pdf_source": 2,
@@ -381,17 +496,24 @@ def test_real_corpus_regeneration_contract(tmp_path: Path) -> None:
     assert by_ref["R03"]["candidate_pdf"]["metadata_pdf_url_present"] is True
     assert by_ref["R03"]["pdf_acquisition"]["reason"] == "not_applicable_non_arxiv_pdf_source"
     assert by_ref["R07"]["candidate_pdf"]["is_candidate"] is False
-    assert all(by_ref[ref_id]["pdf_artifact"]["signature_verified"] is True for ref_id in ["R01", "R08", "R12", "R13"])
+    assert all(
+        by_ref[ref_id]["pdf_artifact"]["signature_verified"] is True
+        for ref_id in ["R01", "R08", "R12", "R13"]
+    )
     report = (tmp_path / "pdf-acquisition-report.md").read_text(encoding="utf-8")
     assert "## Failure Modes" in report
     assert "## Load Profile" in report
     assert "## Negative Tests" in report
-    serialized = (tmp_path / "pdf-acquisition-events.jsonl").read_text(encoding="utf-8") + (tmp_path / "pdf-acquisition-summary.json").read_text(encoding="utf-8")
+    serialized = (tmp_path / "pdf-acquisition-events.jsonl").read_text(encoding="utf-8") + (
+        tmp_path / "pdf-acquisition-summary.json"
+    ).read_text(encoding="utf-8")
     for forbidden in ["%PDF-", "<html", "</html>", "raw_text", "chunk_text", "trusted_fact"]:
         assert forbidden.lower() not in serialized.lower()
 
 
-def _real_verifier_inputs(tmp_path: Path) -> tuple[Path, Path, Path, dict[str, object], list[dict[str, object]], dict[str, object]]:
+def _real_verifier_inputs(
+    tmp_path: Path,
+) -> tuple[Path, Path, Path, dict[str, object], list[dict[str, object]], dict[str, object]]:
     selection = _read_json(REAL_CORPUS_DIR / "selection.json")
     events = _read_jsonl(REAL_CORPUS_DIR / "pdf-acquisition-events.jsonl")
     summary = _read_json(REAL_CORPUS_DIR / "pdf-acquisition-summary.json")
@@ -404,7 +526,9 @@ def _real_verifier_inputs(tmp_path: Path) -> tuple[Path, Path, Path, dict[str, o
     return selection_path, events_path, summary_path, selection, events, summary
 
 
-def _verify_mutation(tmp_path: Path, *, reject_unsafe_claims: bool = True) -> tuple[ModuleType, list[dict[str, object]]]:
+def _verify_mutation(
+    tmp_path: Path, *, reject_unsafe_claims: bool = True
+) -> tuple[ModuleType, list[dict[str, object]]]:
     verifier = _load_verifier()
     diagnostics = verifier.verify_files(
         selection_path=tmp_path / "selection.json",
@@ -440,18 +564,64 @@ def test_pdf_acquisition_verifier_accepts_real_artifacts(tmp_path: Path) -> None
 @pytest.mark.parametrize(
     "mutate,expected_code",
     [
-        (lambda _selection, _events, summary: summary.update({"url_ref_count": 14}), "corpus_scope_stale"),
-        (lambda selection, _events, _summary: selection.update({"refs": [ref for ref in selection["refs"] if ref["ref_id"] != "R15"]}), "missing_new_refs"),
-        (lambda _selection, events, _summary: next(event for event in events if event["ref_id"] == "R03")["candidate_pdf"].update({"is_candidate": True, "candidate_kind": "arxiv_abs_pdf_candidate"}), "non_arxiv_pdf_promotion"),
-        (lambda _selection, events, _summary: next(event for event in events if event["ref_id"] == "R01")["safety_flags"].update({"graph_write_attempted": True}), "unsafe_claim_detected"),
-        (lambda _selection, events, _summary: next(event for event in events if event["ref_id"] == "R02").update({"debug_raw_text": "<html>raw source body</html>"}), "raw_payload_leakage"),
-        (lambda _selection, events, _summary: next(event for event in events if event["ref_id"] == "R01")["pdf_artifact"].update({"sha256": "0" * 64}), "artifact_checksum_mismatch"),
-        (lambda _selection, events, _summary: next(event for event in events if event["ref_id"] == "R02")["pdf_acquisition"].pop("reason"), "required_nullable_field_missing"),
-        (lambda _selection, events, _summary: next(event for event in events if event["ref_id"] == "R10")["identity_group"].update({"ref_ids": ["R10"], "url_ref_count": 1, "has_url_variants": False}), "duplicate_identity_mismatch"),
+        (
+            lambda _selection, _events, summary: summary.update({"url_ref_count": 14}),
+            "corpus_scope_stale",
+        ),
+        (
+            lambda selection, _events, _summary: selection.update(
+                {"refs": [ref for ref in selection["refs"] if ref["ref_id"] != "R15"]}
+            ),
+            "missing_new_refs",
+        ),
+        (
+            lambda _selection, events, _summary: next(
+                event for event in events if event["ref_id"] == "R03"
+            )["candidate_pdf"].update(
+                {"is_candidate": True, "candidate_kind": "arxiv_abs_pdf_candidate"}
+            ),
+            "non_arxiv_pdf_promotion",
+        ),
+        (
+            lambda _selection, events, _summary: next(
+                event for event in events if event["ref_id"] == "R01"
+            )["safety_flags"].update({"graph_write_attempted": True}),
+            "unsafe_claim_detected",
+        ),
+        (
+            lambda _selection, events, _summary: next(
+                event for event in events if event["ref_id"] == "R02"
+            ).update({"debug_raw_text": "<html>raw source body</html>"}),
+            "raw_payload_leakage",
+        ),
+        (
+            lambda _selection, events, _summary: next(
+                event for event in events if event["ref_id"] == "R01"
+            )["pdf_artifact"].update({"sha256": "0" * 64}),
+            "artifact_checksum_mismatch",
+        ),
+        (
+            lambda _selection, events, _summary: next(
+                event for event in events if event["ref_id"] == "R02"
+            )["pdf_acquisition"].pop("reason"),
+            "required_nullable_field_missing",
+        ),
+        (
+            lambda _selection, events, _summary: next(
+                event for event in events if event["ref_id"] == "R10"
+            )["identity_group"].update(
+                {"ref_ids": ["R10"], "url_ref_count": 1, "has_url_variants": False}
+            ),
+            "duplicate_identity_mismatch",
+        ),
     ],
 )
-def test_pdf_acquisition_verifier_rejects_mutated_boundaries(tmp_path: Path, mutate, expected_code: str) -> None:
-    selection_path, events_path, summary_path, selection, events, summary = _real_verifier_inputs(tmp_path)
+def test_pdf_acquisition_verifier_rejects_mutated_boundaries(
+    tmp_path: Path, mutate, expected_code: str
+) -> None:
+    selection_path, events_path, summary_path, selection, events, summary = _real_verifier_inputs(
+        tmp_path
+    )
     mutate(selection, events, summary)
     _write_json(selection_path, selection)
     _write_jsonl(events_path, events)
@@ -463,7 +633,9 @@ def test_pdf_acquisition_verifier_rejects_mutated_boundaries(tmp_path: Path, mut
 
 
 def test_pdf_acquisition_verifier_rejects_malformed_existing_pdf_signature(tmp_path: Path) -> None:
-    selection_path, events_path, summary_path, selection, events, summary = _real_verifier_inputs(tmp_path)
+    selection_path, events_path, summary_path, selection, events, summary = _real_verifier_inputs(
+        tmp_path
+    )
     fake_pdf = tmp_path / "sources" / "R01-malformed.pdf"
     fake_pdf.parent.mkdir()
     fake_pdf.write_bytes(b"not-a-pdf but checksum matches\n")
@@ -488,8 +660,12 @@ def test_pdf_acquisition_verifier_rejects_malformed_existing_pdf_signature(tmp_p
     _assert_diagnostic_codes(diagnostics, "malformed_existing_pdf_signature")
 
 
-def test_pdf_acquisition_verifier_cli_fails_with_stable_diagnostic(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    selection_path, events_path, summary_path, selection, events, summary = _real_verifier_inputs(tmp_path)
+def test_pdf_acquisition_verifier_cli_fails_with_stable_diagnostic(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    selection_path, events_path, summary_path, selection, events, summary = _real_verifier_inputs(
+        tmp_path
+    )
     summary["pdf_status_counts"] = {"not_acquired": 21}
     _write_json(selection_path, selection)
     _write_jsonl(events_path, events)

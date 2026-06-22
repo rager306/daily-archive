@@ -35,7 +35,10 @@ def _has_named_file(path: Path, prefixes: tuple[str, ...]) -> bool:
     if not path.exists() or not path.is_dir():
         return False
     lowered_prefixes = tuple(prefix.lower() for prefix in prefixes)
-    return any(child.is_file() and child.name.lower().startswith(lowered_prefixes) for child in path.iterdir())
+    return any(
+        child.is_file() and child.name.lower().startswith(lowered_prefixes)
+        for child in path.iterdir()
+    )
 
 
 def _gitnexus_indexed(path: Path) -> bool:
@@ -88,7 +91,9 @@ def _check_vendor_source(name: str, path: str) -> dict[str, Any]:
 def check_grobid_vendor(vendor_dir: str = str(DEFAULT_VENDOR_DIR / "grobid")) -> dict[str, Any]:
     result = _check_vendor_source("grobid", vendor_dir)
     vendor_path = Path(vendor_dir)
-    result["has_dockerfile"] = bool(result["present"] and (vendor_path / "Dockerfile.crf").is_file())
+    result["has_dockerfile"] = bool(
+        result["present"] and (vendor_path / "Dockerfile.crf").is_file()
+    )
     if result["present"] and not result["has_dockerfile"]:
         result["status"] = "missing_dockerfile"
     return result

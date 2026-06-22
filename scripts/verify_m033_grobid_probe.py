@@ -54,7 +54,12 @@ def require_false_flags(
     for key in OPTIONAL_FALSE_SAFETY_KEYS:
         if key in flags and flags.get(key) is not False:
             failures.append(
-                {"code": "unsafe_optional_flag", "owner": owner, "flag": key, "value": flags.get(key)}
+                {
+                    "code": "unsafe_optional_flag",
+                    "owner": owner,
+                    "flag": key,
+                    "value": flags.get(key),
+                }
             )
 
 
@@ -100,7 +105,9 @@ def validate_run(probe_dir: Path, failures: list[dict[str, Any]]) -> dict[str, A
         if result.get("status") != "tei_written":
             failures.append({"code": "tei_not_written", "paper_key": paper})
         if not tei_path.exists() or tei_path.stat().st_size <= 1000:
-            failures.append({"code": "tei_missing_or_too_small", "paper_key": paper, "path": str(tei_path)})
+            failures.append(
+                {"code": "tei_missing_or_too_small", "paper_key": paper, "path": str(tei_path)}
+            )
         else:
             text = tei_path.read_text(encoding="utf-8", errors="replace")[:2000]
             if "<TEI" not in text and "<tei:TEI" not in text:
@@ -128,7 +135,9 @@ def validate_mapping(probe_dir: Path, failures: list[dict[str, Any]]) -> None:
         if quality.get("status") != "grobid-tei-candidate-evidence":
             failures.append({"code": "unexpected_quality_status", "status": quality.get("status")})
         if quality.get("paper_count") != 3:
-            failures.append({"code": "unexpected_quality_paper_count", "value": quality.get("paper_count")})
+            failures.append(
+                {"code": "unexpected_quality_paper_count", "value": quality.get("paper_count")}
+            )
         coverage = quality.get("coverage", {})
         for key in (
             "papers_with_title",

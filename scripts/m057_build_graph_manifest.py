@@ -38,7 +38,9 @@ def load_json(path: Path) -> dict[str, Any]:
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
 
 def stable_evidence_id(layer: str, ordinal: int, source_paper_id: str, target_paper_id: str) -> str:
@@ -60,7 +62,9 @@ def normalize_citation_edges(payload: dict[str, Any]) -> list[dict[str, Any]]:
                 "target_artifact_idx": 0,
                 "similarity_score": float(edge.get("citation_count", 1)),
                 "evidence_layer": "citation",
-                "evidence_id": stable_evidence_id("citation", ordinal, source_paper_id, target_paper_id),
+                "evidence_id": stable_evidence_id(
+                    "citation", ordinal, source_paper_id, target_paper_id
+                ),
             }
         )
     return normalized
@@ -81,7 +85,9 @@ def normalize_table_edges(payload: dict[str, Any]) -> list[dict[str, Any]]:
                 "target_artifact_idx": int(edge["table_b_idx"]),
                 "similarity_score": float(edge["similarity"]),
                 "evidence_layer": "table_similarity",
-                "evidence_id": stable_evidence_id("table", ordinal, source_paper_id, target_paper_id),
+                "evidence_id": stable_evidence_id(
+                    "table", ordinal, source_paper_id, target_paper_id
+                ),
             }
         )
     return normalized
@@ -102,7 +108,9 @@ def normalize_figure_edges(payload: dict[str, Any]) -> list[dict[str, Any]]:
                 "target_artifact_idx": int(edge["target_figure_idx"]),
                 "similarity_score": float(edge["similarity"]),
                 "evidence_layer": "figure_similarity",
-                "evidence_id": stable_evidence_id("figure", ordinal, source_paper_id, target_paper_id),
+                "evidence_id": stable_evidence_id(
+                    "figure", ordinal, source_paper_id, target_paper_id
+                ),
             }
         )
     return normalized

@@ -175,7 +175,9 @@ def markdown_context_index(root: Path = DEFAULT_PAGE_CONTEXT_ROOT) -> dict[str, 
     }
 
 
-def load_page_context(arxiv_id: str, markdown_index: dict[str, Path], *, max_chars: int = 1800) -> str:
+def load_page_context(
+    arxiv_id: str, markdown_index: dict[str, Path], *, max_chars: int = 1800
+) -> str:
     path = markdown_index.get(arxiv_id)
     if path is None:
         return "No M056 OpenDataLoader markdown context was found for this arXiv id."
@@ -251,7 +253,9 @@ def render_pdf_first_page_to_png(pdf_path: Path, output_path: Path) -> Path:
     try:
         import pypdfium2 as pdfium  # type: ignore[import-not-found]
     except Exception as exc:  # pragma: no cover - depends on runtime libraries
-        raise RuntimeError("PDF rendering is disabled because neither PyMuPDF nor pypdfium2 is available") from exc
+        raise RuntimeError(
+            "PDF rendering is disabled because neither PyMuPDF nor pypdfium2 is available"
+        ) from exc
 
     pdf = pdfium.PdfDocument(str(pdf_path))
     page = pdf[0]
@@ -286,7 +290,9 @@ def ensure_png_image(figure: FigureCandidate, image_cache_dir: Path) -> Path:
 def image_payload(image_path: Path) -> dict[str, Any]:
     data = image_path.read_bytes()
     if len(data) > MAX_IMAGE_BYTES:
-        raise ValueError(f"Image payload is too large for diagnostic judge: {image_path} ({len(data)} bytes)")
+        raise ValueError(
+            f"Image payload is too large for diagnostic judge: {image_path} ({len(data)} bytes)"
+        )
     media_type = mimetypes.guess_type(str(image_path))[0] or "image/png"
     if media_type not in {"image/png", "image/jpeg", "image/webp", "image/gif"}:
         media_type = "image/png"
@@ -333,7 +339,9 @@ Page context excerpt:
 """.strip()
 
 
-def build_request_body(binding: ModelBinding, figure: FigureCandidate, *, image: Path | None) -> dict[str, Any]:
+def build_request_body(
+    binding: ModelBinding, figure: FigureCandidate, *, image: Path | None
+) -> dict[str, Any]:
     content: list[dict[str, Any]] = [{"type": "text", "text": build_prompt(figure)}]
     if image is not None:
         content.append(image_payload(image))
@@ -391,7 +399,10 @@ def validate_score_payload(payload: dict[str, Any] | None) -> dict[str, Any]:
 
 
 def response_cost_note(_usage: dict[str, Any] | None) -> tuple[float | None, str]:
-    return None, "Usage tokens are captured when returned; cost is not measurable without an external MiniMax pricing table."
+    return (
+        None,
+        "Usage tokens are captured when returned; cost is not measurable without an external MiniMax pricing table.",
+    )
 
 
 def resolve_messages_endpoint(binding: ModelBinding, base_url: str | None = None) -> str:
@@ -446,7 +457,9 @@ def call_anthropic_messages(
                     "status_code": status_code,
                     "payload": payload,
                     "latency_ms": latency_ms,
-                    "usage": payload.get("usage") if isinstance(payload.get("usage"), dict) else None,
+                    "usage": payload.get("usage")
+                    if isinstance(payload.get("usage"), dict)
+                    else None,
                     "error": None,
                     "attempts": attempt + 1,
                 }
@@ -508,7 +521,9 @@ def judge_one_model(
         max_retries=max_retries,
         backoff_seconds=backoff_seconds,
     )
-    response_text = extract_text(result["payload"]) if isinstance(result.get("payload"), dict) else ""
+    response_text = (
+        extract_text(result["payload"]) if isinstance(result.get("payload"), dict) else ""
+    )
     score_payload: dict[str, Any] | None = None
     validation_error: str | None = None
     status = result["status"]
@@ -519,7 +534,9 @@ def judge_one_model(
         status = "failed"
     combined_error = result.get("error")
     if validation_error:
-        combined_error = f"{combined_error}; {validation_error}" if combined_error else validation_error
+        combined_error = (
+            f"{combined_error}; {validation_error}" if combined_error else validation_error
+        )
     cost_usd, cost_note = response_cost_note(result.get("usage"))
     return {
         "binding_id": binding.binding_id,
@@ -624,18 +641,30 @@ def judge_figure(
 def aggregate(records: list[dict[str, Any]]) -> dict[str, Any]:
     model_stats: dict[str, Any] = {}
     for binding_id in (FAST_BINDING_ID, QUALITY_BINDING_ID):
-        passed = [record["models"][binding_id] for record in records if record["models"][binding_id]["status"] == "passed"]
+        passed = [
+            record["models"][binding_id]
+            for record in records
+            if record["models"][binding_id]["status"] == "passed"
+        ]
         means = {}
         for key in DIMENSIONS:
             values = [float(item["scores"][key]) for item in passed if item.get("scores")]
             means[key] = round(statistics.mean(values), 4) if values else None
-        latencies = [float(item["latency_ms"]) for item in passed if item.get("latency_ms") is not None]
+        latencies = [
+            float(item["latency_ms"]) for item in passed if item.get("latency_ms") is not None
+        ]
         outlier_records = []
         for record in records:
             scores = record["models"][binding_id].get("scores") or {}
-            low_dims = [key for key in DIMENSIONS if isinstance(scores.get(key), int | float) and float(scores[key]) < 0.5]
+            low_dims = [
+                key
+                for key in DIMENSIONS
+                if isinstance(scores.get(key), int | float) and float(scores[key]) < 0.5
+            ]
             if low_dims:
-                outlier_records.append({"figure_id": record["figure"]["figure_id"], "dimensions": low_dims})
+                outlier_records.append(
+                    {"figure_id": record["figure"]["figure_id"], "dimensions": low_dims}
+                )
         model_stats[binding_id] = {
             "model_used": records[0]["models"][binding_id]["model_used"] if records else None,
             "passed_count": len(passed),
@@ -689,7 +718,9 @@ def write_reports(records: list[dict[str, Any]], output_dir: Path) -> dict[str, 
         "aggregate": aggregate_stats,
         "side_by_side": side_by_side,
     }
-    (output_dir / "comparison.json").write_text(json.dumps(comparison, indent=2, sort_keys=True) + "\n")
+    (output_dir / "comparison.json").write_text(
+        json.dumps(comparison, indent=2, sort_keys=True) + "\n"
+    )
     (output_dir / "judge-summary.json").write_text(
         json.dumps(
             {
@@ -744,13 +775,15 @@ def write_markdown_report(comparison: dict[str, Any], path: Path) -> None:
             f"{means['figure_completeness']} | {means['structural_fidelity']} | "
             f"{model['latency_avg_ms']} | {model['outlier_count']} | {model['failed_count']} |"
         )
-    lines.extend([
-        "",
-        "## Side-by-side",
-        "",
-        "| Figure | Category | Winner | Δ caption | Δ completeness | Δ structural |",
-        "|---|---|---|---:|---:|---:|",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Side-by-side",
+            "",
+            "| Figure | Category | Winner | Δ caption | Δ completeness | Δ structural |",
+            "|---|---|---|---:|---:|---:|",
+        ]
+    )
     for row in comparison["side_by_side"]:
         deltas = row["deltas_m3_minus_m27"]
         lines.append(
@@ -796,7 +829,13 @@ def run_judge(
         }
         for future in concurrent.futures.as_completed(future_to_figure):
             records.append(future.result())
-    records.sort(key=lambda record: (record["figure"]["category"], record["figure"]["arxiv_id"], record["figure"]["figure_idx"]))
+    records.sort(
+        key=lambda record: (
+            record["figure"]["category"],
+            record["figure"]["arxiv_id"],
+            record["figure"]["figure_idx"],
+        )
+    )
     return write_reports(records, output_dir)
 
 

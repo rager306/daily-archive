@@ -48,7 +48,9 @@ def load_json_object(path: str | Path, *, label: str) -> dict[str, Any]:
     try:
         payload = json.loads(json_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        raise ReviewerPacketPrototypeRenderError(f"{label} JSON is malformed at line {exc.lineno} column {exc.colno}") from exc
+        raise ReviewerPacketPrototypeRenderError(
+            f"{label} JSON is malformed at line {exc.lineno} column {exc.colno}"
+        ) from exc
     if not isinstance(payload, dict):
         raise ReviewerPacketPrototypeRenderError(f"{label} root must be a JSON object")
     return payload
@@ -58,7 +60,11 @@ def render_assessment_markdown(assessment: dict[str, Any]) -> str:
     """Render a redacted standalone assessment Markdown artifact."""
     _validate_assessment_payload(assessment, packet_count=None)
     counters = assessment["unsafe_counters"]
-    dimension_results = assessment.get("dimension_results") if isinstance(assessment.get("dimension_results"), dict) else {}
+    dimension_results = (
+        assessment.get("dimension_results")
+        if isinstance(assessment.get("dimension_results"), dict)
+        else {}
+    )
     lines = [
         "# S04 Reviewer Packet Independent Assessment",
         "",
@@ -97,11 +103,19 @@ def render_assessment_markdown(assessment: dict[str, Any]) -> str:
         if not isinstance(result, dict):
             continue
         codes = ", ".join(str(code) for code in result.get("finding_codes", [])) or "none"
-        lines.append(f"| {dimension} | {result.get('status', 'unknown')} | {str(result.get('blocks_import')).lower()} | {codes} |")
+        lines.append(
+            f"| {dimension} | {result.get('status', 'unknown')} | {str(result.get('blocks_import')).lower()} | {codes} |"
+        )
     lines.extend(["", "## Packet Findings", ""])
-    for finding in assessment.get("packet_findings", []) if isinstance(assessment.get("packet_findings"), list) else []:
+    for finding in (
+        assessment.get("packet_findings", [])
+        if isinstance(assessment.get("packet_findings"), list)
+        else []
+    ):
         if isinstance(finding, dict):
-            lines.append(f"- {finding.get('code', 'unknown')} at {finding.get('path', '/')} for {finding.get('packet_id', 'unknown')}")
+            lines.append(
+                f"- {finding.get('code', 'unknown')} at {finding.get('path', '/')} for {finding.get('packet_id', 'unknown')}"
+            )
     lines.append("")
     markdown = "\n".join(lines)
     _validate_markdown(markdown, label="assessment Markdown")
@@ -125,7 +139,9 @@ def render_prototype_files(
         raise ReviewerPacketPrototypeRenderError("generated assessment root must be a JSON object")
 
     _validate_packet_payload(prototype)
-    _validate_assessment_payload(assessment, packet_count=len(_list_of_dicts(prototype.get("packets"))))
+    _validate_assessment_payload(
+        assessment, packet_count=len(_list_of_dicts(prototype.get("packets")))
+    )
     packet_markdown = render_reviewer_packet_markdown(prototype)
     _validate_markdown(packet_markdown, label="packet Markdown")
     assessment_markdown = render_assessment_markdown(assessment)
@@ -163,37 +179,69 @@ def _validate_packet_payload(prototype: dict[str, Any]) -> None:
     if prototype.get("schema_version") != REVIEWER_PACKET_PROTOTYPE_VERSION:
         raise ReviewerPacketPrototypeRenderError("packet JSON schema mismatch at /schema_version")
     for finding in scan_forbidden_payload_keys(prototype):
-        raise ReviewerPacketPrototypeRenderError(f"packet JSON forbidden key {finding.code} at {finding.path}")
+        raise ReviewerPacketPrototypeRenderError(
+            f"packet JSON forbidden key {finding.code} at {finding.path}"
+        )
     packets = _list_of_dicts(prototype.get("packets"))
     if len(packets) <= 0:
         raise ReviewerPacketPrototypeRenderError("packet JSON has no packets at /packets")
     for index, packet in enumerate(packets):
         if packet.get("review_status") != "pending_review":
-            raise ReviewerPacketPrototypeRenderError(f"packet JSON unsafe review status at /packets/{index}/review_status object={packet.get('packet_id', '')}")
+            raise ReviewerPacketPrototypeRenderError(
+                f"packet JSON unsafe review status at /packets/{index}/review_status object={packet.get('packet_id', '')}"
+            )
         if packet.get("importable") is not False:
-            raise ReviewerPacketPrototypeRenderError(f"packet JSON importable packet at /packets/{index}/importable object={packet.get('packet_id', '')}")
+            raise ReviewerPacketPrototypeRenderError(
+                f"packet JSON importable packet at /packets/{index}/importable object={packet.get('packet_id', '')}"
+            )
         if packet.get("semantic_ready_for_kg") is not False:
-            raise ReviewerPacketPrototypeRenderError(f"packet JSON semantic-ready packet at /packets/{index}/semantic_ready_for_kg object={packet.get('packet_id', '')}")
+            raise ReviewerPacketPrototypeRenderError(
+                f"packet JSON semantic-ready packet at /packets/{index}/semantic_ready_for_kg object={packet.get('packet_id', '')}"
+            )
 
 
 def _validate_assessment_payload(assessment: dict[str, Any], *, packet_count: int | None) -> None:
     if assessment.get("schema_version") != REVIEWER_PACKET_ASSESSMENT_VERSION:
-        raise ReviewerPacketPrototypeRenderError("assessment JSON schema mismatch at /schema_version")
+        raise ReviewerPacketPrototypeRenderError(
+            "assessment JSON schema mismatch at /schema_version"
+        )
     for finding in scan_forbidden_payload_keys(assessment):
-        raise ReviewerPacketPrototypeRenderError(f"assessment JSON forbidden key {finding.code} at {finding.path}")
-    if assessment.get("verdict") in {"accepted", "accepting", "accepted_for_import", "import_ready", "importing"}:
+        raise ReviewerPacketPrototypeRenderError(
+            f"assessment JSON forbidden key {finding.code} at {finding.path}"
+        )
+    if assessment.get("verdict") in {
+        "accepted",
+        "accepting",
+        "accepted_for_import",
+        "import_ready",
+        "importing",
+    }:
         raise ReviewerPacketPrototypeRenderError("assessment JSON unsafe verdict at /verdict")
     if assessment.get("import_allowed") is not False:
-        raise ReviewerPacketPrototypeRenderError("assessment JSON import allowed at /import_allowed")
+        raise ReviewerPacketPrototypeRenderError(
+            "assessment JSON import allowed at /import_allowed"
+        )
     if assessment.get("semantic_ready_for_kg") is not False:
-        raise ReviewerPacketPrototypeRenderError("assessment JSON semantic ready at /semantic_ready_for_kg")
-    counters = assessment.get("unsafe_counters") if isinstance(assessment.get("unsafe_counters"), dict) else None
+        raise ReviewerPacketPrototypeRenderError(
+            "assessment JSON semantic ready at /semantic_ready_for_kg"
+        )
+    counters = (
+        assessment.get("unsafe_counters")
+        if isinstance(assessment.get("unsafe_counters"), dict)
+        else None
+    )
     if counters is None:
-        raise ReviewerPacketPrototypeRenderError("assessment JSON missing unsafe counters at /unsafe_counters")
+        raise ReviewerPacketPrototypeRenderError(
+            "assessment JSON missing unsafe counters at /unsafe_counters"
+        )
     if packet_count is not None and counters.get("packet_count") != packet_count:
-        raise ReviewerPacketPrototypeRenderError("assessment JSON packet count mismatch at /unsafe_counters/packet_count")
+        raise ReviewerPacketPrototypeRenderError(
+            "assessment JSON packet count mismatch at /unsafe_counters/packet_count"
+        )
     if not _unsafe_counters_zero(counters):
-        raise ReviewerPacketPrototypeRenderError("assessment JSON unsafe counter at /unsafe_counters")
+        raise ReviewerPacketPrototypeRenderError(
+            "assessment JSON unsafe counter at /unsafe_counters"
+        )
 
 
 def _validate_markdown(markdown: str, *, label: str) -> None:
@@ -205,7 +253,9 @@ def _validate_markdown(markdown: str, *, label: str) -> None:
     diagnostics = validate_chunk_repair_contract_markdown(markdown)
     if diagnostics:
         first = diagnostics[0]
-        raise ReviewerPacketPrototypeRenderError(f"{label} failed redaction checks: {first.code} at {first.path}")
+        raise ReviewerPacketPrototypeRenderError(
+            f"{label} failed redaction checks: {first.code} at {first.path}"
+        )
 
 
 def _write_all_after_validation(outputs: dict[Path, str]) -> None:
@@ -227,10 +277,22 @@ def _write_all_after_validation(outputs: dict[Path, str]) -> None:
 def _unsafe_counters_zero(counters: dict[str, Any]) -> bool:
     return all(
         counters.get(field) == 0
-        for field in ("accepted_count", "importable_count", "semantic_ready_count", "raw_text_embedded_count", "unsafe_safety_boundary_count")
+        for field in (
+            "accepted_count",
+            "importable_count",
+            "semantic_ready_count",
+            "raw_text_embedded_count",
+            "unsafe_safety_boundary_count",
+        )
     ) and all(
         counters.get(field) is False
-        for field in ("production_import_attempted", "ladybugdb_written", "secrets_included", "embeddings_included", "vectors_included")
+        for field in (
+            "production_import_attempted",
+            "ladybugdb_written",
+            "secrets_included",
+            "embeddings_included",
+            "vectors_included",
+        )
     )
 
 
@@ -242,12 +304,36 @@ def _list_of_dicts(value: Any) -> list[dict[str, Any]]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--repair-prototype", type=Path, required=True, help="S03 bounded repair prototype JSON")
-    parser.add_argument("--s02-contract", type=Path, required=True, help="S02 chunk-repair-contract JSON with stable IDs")
-    parser.add_argument("--json-output", type=Path, required=True, help="Destination for reviewer packet JSON")
-    parser.add_argument("--markdown-output", type=Path, required=True, help="Destination for reviewer packet Markdown")
-    parser.add_argument("--assessment-json-output", type=Path, required=True, help="Destination for standalone assessment JSON")
-    parser.add_argument("--assessment-markdown-output", type=Path, required=True, help="Destination for standalone assessment Markdown")
+    parser.add_argument(
+        "--repair-prototype", type=Path, required=True, help="S03 bounded repair prototype JSON"
+    )
+    parser.add_argument(
+        "--s02-contract",
+        type=Path,
+        required=True,
+        help="S02 chunk-repair-contract JSON with stable IDs",
+    )
+    parser.add_argument(
+        "--json-output", type=Path, required=True, help="Destination for reviewer packet JSON"
+    )
+    parser.add_argument(
+        "--markdown-output",
+        type=Path,
+        required=True,
+        help="Destination for reviewer packet Markdown",
+    )
+    parser.add_argument(
+        "--assessment-json-output",
+        type=Path,
+        required=True,
+        help="Destination for standalone assessment JSON",
+    )
+    parser.add_argument(
+        "--assessment-markdown-output",
+        type=Path,
+        required=True,
+        help="Destination for standalone assessment Markdown",
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -259,7 +345,12 @@ def main(argv: list[str] | None = None) -> int:
             args.assessment_json_output,
             args.assessment_markdown_output,
         )
-    except (FileNotFoundError, ReviewerPacketError, ReviewerPacketPrototypeRenderError, ValueError) as exc:
+    except (
+        FileNotFoundError,
+        ReviewerPacketError,
+        ReviewerPacketPrototypeRenderError,
+        ValueError,
+    ) as exc:
         sys.stderr.write(f"reviewer packet prototype render failed: {exc}\n")
         return 2
 

@@ -78,7 +78,9 @@ def test_scoring_matrix_has_top_3() -> None:
 def test_candidate_reports_have_17_criteria_each() -> None:
     for report_name in EXPECTED_REPORTS:
         text = (CANDIDATE_DIR / report_name).read_text(encoding="utf-8")
-        criteria_sections = [line for line in text.splitlines() if line.startswith("## ") and ". " in line]
+        criteria_sections = [
+            line for line in text.splitlines() if line.startswith("## ") and ". " in line
+        ]
         assert len(criteria_sections) >= 17, report_name
         for section in range(1, 19):
             assert f"## {section}." in text, report_name

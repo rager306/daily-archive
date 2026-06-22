@@ -7,6 +7,7 @@ import ladybug
 
 logger = logging.getLogger(__name__)
 
+
 def compute_graph_metrics(conn: ladybug.Connection) -> None:
     """Compute structural graph metrics using LadybugDB's algo extension.
 
@@ -33,9 +34,7 @@ def compute_graph_metrics(conn: ladybug.Connection) -> None:
         res = cast(
             Any,
             conn.execute(
-                "CALL page_rank('paper_kw_graph') "
-                "RETURN node.id, rank "
-                "ORDER BY rank DESC"
+                "CALL page_rank('paper_kw_graph') RETURN node.id, rank ORDER BY rank DESC"
             ),
         )
 
@@ -60,7 +59,9 @@ def compute_graph_metrics(conn: ladybug.Connection) -> None:
         """)
 
 
-def recommend_papers(conn: ladybug.Connection, profile_embedding: list[float], top_k: int = 10) -> list[dict]:
+def recommend_papers(
+    conn: ladybug.Connection, profile_embedding: list[float], top_k: int = 10
+) -> list[dict]:
     """Retrieve top-N personalized paper recommendations for Hermes.
 
     Performs a hybrid search combining:
@@ -91,14 +92,16 @@ def recommend_papers(conn: ladybug.Connection, profile_embedding: list[float], t
     recommendations = []
     while res.has_next():
         row = res.get_next()
-        recommendations.append({
-            "id": row[0],
-            "title": row[1],
-            "published": str(row[2]),
-            "base_score": row[3],
-            "vector_similarity": row[4],
-            "graph_centrality": row[5],
-            "hybrid_score": row[6]
-        })
+        recommendations.append(
+            {
+                "id": row[0],
+                "title": row[1],
+                "published": str(row[2]),
+                "base_score": row[3],
+                "vector_similarity": row[4],
+                "graph_centrality": row[5],
+                "hybrid_score": row[6],
+            }
+        )
 
     return recommendations

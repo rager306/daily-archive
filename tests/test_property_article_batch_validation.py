@@ -33,15 +33,22 @@ SAFE_SUBTREE_STATUSES = (
 BLOCKING_SUBTREE_STATUSES = ("blocked", "repair_required", "not_attempted", "absent")
 
 
-def _document(index: int, *, status: str = "complete_review_only", freshness: str = "fresh") -> dict[str, Any]:
+def _document(
+    index: int, *, status: str = "complete_review_only", freshness: str = "fresh"
+) -> dict[str, Any]:
     return {
         "document_id": f"prop-paper-{index:04d}",
         "paper_id": f"prop-paper-{index:04d}",
         "source_id": f"prop-paper-{index:04d}:source:normalized-md",
         "source_path": f"papers/prop-paper-{index:04d}/source/normalized.md",
         "source_sha256": f"{index + 1:064x}",
-        "subtrees": {name: {"status": status, "record_count": index + 1} for name in batch.SUBTREE_NAMES},
-        "freshness": {"status": freshness, "stale_artifact_count": 0 if freshness == "fresh" else 1},
+        "subtrees": {
+            name: {"status": status, "record_count": index + 1} for name in batch.SUBTREE_NAMES
+        },
+        "freshness": {
+            "status": freshness,
+            "stale_artifact_count": 0 if freshness == "fresh" else 1,
+        },
     }
 
 
@@ -83,7 +90,9 @@ def _assert_metadata_only(report: dict[str, Any]) -> None:
 
 @settings(max_examples=25, suppress_health_check=[HealthCheck.too_slow])
 @given(statuses=st.lists(st.sampled_from(SAFE_SUBTREE_STATUSES), min_size=10, max_size=10))
-def test_generated_safe_metadata_reports_are_deterministic_sorted_and_fixed_zero(statuses: list[str]) -> None:
+def test_generated_safe_metadata_reports_are_deterministic_sorted_and_fixed_zero(
+    statuses: list[str],
+) -> None:
     documents = [_document(index, status=statuses[index]) for index in range(10)]
     shuffled = list(reversed(deepcopy(documents)))
 
@@ -97,7 +106,9 @@ def test_generated_safe_metadata_reports_are_deterministic_sorted_and_fixed_zero
     )
     assert report["aggregate_diagnostics"]["document_count"] == 10
     assert report["aggregate_diagnostics"]["blocked_document_count"] == 0
-    assert report["aggregate_diagnostics"]["diagnostic_counts"] == dict.fromkeys(batch.DIAGNOSTIC_COUNTER_KEYS, 0)
+    assert report["aggregate_diagnostics"]["diagnostic_counts"] == dict.fromkeys(
+        batch.DIAGNOSTIC_COUNTER_KEYS, 0
+    )
     assert report["recommendation"] == "proceed_to_20_document_scale_review_only"
     assert batch.validate_article_batch_validation_report(report) == []
     _assert_metadata_only(report)
@@ -154,7 +165,10 @@ def test_generated_forbidden_payload_keys_are_path_addressed_without_payload_val
     assert matching
     assert matching[0]["json_path"] == f"$.documents[3].evidence.{forbidden_key}"
     assert sentinel not in serialized
-    assert report["aggregate_diagnostics"]["diagnostic_counts"]["forbidden_payload_detection_count"] >= 1
+    assert (
+        report["aggregate_diagnostics"]["diagnostic_counts"]["forbidden_payload_detection_count"]
+        >= 1
+    )
     assert report["recommendation"] == "repeat_10_document_batch_after_repairs"
     _assert_metadata_only(report)
 
@@ -165,9 +179,14 @@ def test_token_like_url_values_are_redacted_and_reported_by_path() -> None:
     documents[2]["subtrees"]["assets"]["manifest_path"] = "artifact.json?api_key=abc123"
 
     report = batch.build_article_batch_validation_report(_manifest(documents))
-    codes_by_path = {(diagnostic["code"], diagnostic["json_path"]) for diagnostic in report["diagnostics"]}
+    codes_by_path = {
+        (diagnostic["code"], diagnostic["json_path"]) for diagnostic in report["diagnostics"]
+    }
 
-    assert ("forbidden_payload_value:sensitive_token", "$.documents[2].source_path") in codes_by_path
+    assert (
+        "forbidden_payload_value:sensitive_token",
+        "$.documents[2].source_path",
+    ) in codes_by_path
     assert (
         "forbidden_payload_value:sensitive_token",
         "$.documents[2].subtrees.assets.manifest_path",
@@ -179,11 +198,16 @@ def test_token_like_url_values_are_redacted_and_reported_by_path() -> None:
     _assert_metadata_only(report)
 
 
-def test_stale_missing_malformed_and_unsafe_provenance_freshness_fail_closed(tmp_path: Path) -> None:
+def test_stale_missing_malformed_and_unsafe_provenance_freshness_fail_closed(
+    tmp_path: Path,
+) -> None:
     source = tmp_path / "source.json"
     output = tmp_path / "report.json"
     source.write_text('{"input": true}\n', encoding="utf-8")
-    output.write_text(json.dumps({"schema_version": batch.ARTICLE_BATCH_VALIDATION_SCHEMA_VERSION}) + "\n", encoding="utf-8")
+    output.write_text(
+        json.dumps({"schema_version": batch.ARTICLE_BATCH_VALIDATION_SCHEMA_VERSION}) + "\n",
+        encoding="utf-8",
+    )
     entry = {
         "schema_version": "m009-validation-cli-provenance.v1",
         "run_id": "freshness-property-run",
@@ -191,7 +215,9 @@ def test_stale_missing_malformed_and_unsafe_provenance_freshness_fail_closed(tmp
         "command": "validation-batch article-report",
         "inputs": [fingerprint_file(source)],
         "outputs": [fingerprint_file(output)],
-        "expected_artifact_metadata": {"schema_version": batch.ARTICLE_BATCH_VALIDATION_SCHEMA_VERSION},
+        "expected_artifact_metadata": {
+            "schema_version": batch.ARTICLE_BATCH_VALIDATION_SCHEMA_VERSION
+        },
         "exit_code": 0,
         **batch.default_safety_flags(),
     }
@@ -212,10 +238,15 @@ def test_stale_missing_malformed_and_unsafe_provenance_freshness_fail_closed(tmp
     assert missing["verdict"] == "missing"
     assert "missing_output" in {diagnostic["code"] for diagnostic in missing["diagnostics"]}
 
-    malformed = build_artifact_freshness_report({"schema_version": "wrong", "outputs": "not-a-list"})
+    malformed = build_artifact_freshness_report(
+        {"schema_version": "wrong", "outputs": "not-a-list"}
+    )
     assert malformed["verdict"] == "invalid_provenance"
 
-    output.write_text(json.dumps({"schema_version": batch.ARTICLE_BATCH_VALIDATION_SCHEMA_VERSION}) + "\n", encoding="utf-8")
+    output.write_text(
+        json.dumps({"schema_version": batch.ARTICLE_BATCH_VALIDATION_SCHEMA_VERSION}) + "\n",
+        encoding="utf-8",
+    )
     unsafe_entry = dict(entry)
     unsafe_entry["production_import_attempted"] = True
     unsafe = build_artifact_freshness_report(unsafe_entry)
@@ -228,7 +259,9 @@ def test_freshness_diagnostics_downgrade_batch_recommendation() -> None:
     documents[5]["freshness"] = {"status": "stale", "stale_artifact_count": 1}
 
     report = batch.build_article_batch_validation_report(_manifest(documents))
-    stale_row = next(row for row in report["document_status_rows"] if row["document_id"] == "prop-paper-0005")
+    stale_row = next(
+        row for row in report["document_status_rows"] if row["document_id"] == "prop-paper-0005"
+    )
 
     assert report["provenance_freshness_summary"] == {
         "status_counts": {"fresh": 9, "stale": 1},

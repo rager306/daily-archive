@@ -104,12 +104,13 @@ def make_png_base64(width: int = 64, height: int = 64) -> tuple[str, int]:
         rows.append(0)  # no filter
         for x in range(width):
             rows.extend(((x * 4) % 256, (y * 4) % 256, ((x + y) * 2) % 256))
-    ihdr = (
-        width.to_bytes(4, "big")
-        + height.to_bytes(4, "big")
-        + bytes([8, 2, 0, 0, 0])
+    ihdr = width.to_bytes(4, "big") + height.to_bytes(4, "big") + bytes([8, 2, 0, 0, 0])
+    png = (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", ihdr)
+        + chunk(b"IDAT", zlib.compress(bytes(rows), level=0))
+        + chunk(b"IEND", b"")
     )
-    png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", zlib.compress(bytes(rows), level=0)) + chunk(b"IEND", b"")
     return base64.b64encode(png).decode("ascii"), len(png)
 
 
@@ -176,7 +177,9 @@ def estimate_cost_usd(_model_name: str, _usage: dict[str, Any] | None) -> float 
     return None
 
 
-def call_minimax(binding: ModelBinding, body: dict[str, Any], *, timeout_seconds: int) -> dict[str, Any]:
+def call_minimax(
+    binding: ModelBinding, body: dict[str, Any], *, timeout_seconds: int
+) -> dict[str, Any]:
     api_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("MINIMAX_API_KEY")
     if not api_key:
         return {
@@ -292,32 +295,40 @@ def run_smoke(
     for test_id, binding_id in TEXT_TESTS:
         binding = bindings[binding_id]
         body = build_text_body(binding.model_name)
-        result = call_minimax(binding, body, timeout_seconds=timeout_seconds) if live else {
-            "status": "skipped",
-            "status_code": None,
-            "model_used": binding.model_name,
-            "latency_ms": None,
-            "response": None,
-            "usage": None,
-            "cost_estimate_usd": None,
-            "cost_estimate_note": "Skipped because live calls are disabled.",
-        }
+        result = (
+            call_minimax(binding, body, timeout_seconds=timeout_seconds)
+            if live
+            else {
+                "status": "skipped",
+                "status_code": None,
+                "model_used": binding.model_name,
+                "latency_ms": None,
+                "response": None,
+                "usage": None,
+                "cost_estimate_usd": None,
+                "cost_estimate_note": "Skipped because live calls are disabled.",
+            }
+        )
         result.update({"test_id": test_id, "binding_id": binding_id, "model_id": binding.model_id})
         results.append(result)
 
     image_test_id, image_binding_id = IMAGE_TEST
     image_binding = bindings[image_binding_id]
     image_body, png_bytes = build_image_body(image_binding.model_name)
-    image_result = call_minimax(image_binding, image_body, timeout_seconds=timeout_seconds) if live else {
-        "status": "skipped",
-        "status_code": None,
-        "model_used": image_binding.model_name,
-        "latency_ms": None,
-        "response": None,
-        "usage": None,
-        "cost_estimate_usd": None,
-        "cost_estimate_note": "Skipped because live calls are disabled.",
-    }
+    image_result = (
+        call_minimax(image_binding, image_body, timeout_seconds=timeout_seconds)
+        if live
+        else {
+            "status": "skipped",
+            "status_code": None,
+            "model_used": image_binding.model_name,
+            "latency_ms": None,
+            "response": None,
+            "usage": None,
+            "cost_estimate_usd": None,
+            "cost_estimate_note": "Skipped because live calls are disabled.",
+        }
+    )
     image_result.update(
         {
             "test_id": image_test_id,
@@ -348,7 +359,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--models-yaml", type=Path, default=DEFAULT_MODELS_YAML)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT_PATH)
     parser.add_argument("--timeout-seconds", type=int, default=60)
-    parser.add_argument("--no-live", action="store_true", help="Write a skipped report without network calls.")
+    parser.add_argument(
+        "--no-live", action="store_true", help="Write a skipped report without network calls."
+    )
     return parser.parse_args()
 
 
@@ -361,7 +374,12 @@ def main() -> int:
         live=not args.no_live,
     )
     failed = [result for result in report["results"] if result["status"] == "failed"]
-    print(json.dumps({"output": str(args.output), "failed": len(failed), "results": report["results"]}, indent=2))
+    print(
+        json.dumps(
+            {"output": str(args.output), "failed": len(failed), "results": report["results"]},
+            indent=2,
+        )
+    )
     return 1 if failed else 0
 
 

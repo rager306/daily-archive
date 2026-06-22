@@ -49,7 +49,9 @@ def check_false_flags(payload: dict[str, Any], where: str, failures: list[dict[s
         return
     for key in SAFETY_FALSE_KEYS:
         if flags.get(key) is not False:
-            failures.append({"code": "unsafe_flag", "where": where, "flag": key, "value": flags.get(key)})
+            failures.append(
+                {"code": "unsafe_flag", "where": where, "flag": key, "value": flags.get(key)}
+            )
 
 
 def verify(probe_root: Path, adapter_dir: Path) -> int:
@@ -61,7 +63,12 @@ def verify(probe_root: Path, adapter_dir: Path) -> int:
         if not path.exists() or path.stat().st_size == 0:
             failures.append({"code": "missing_or_empty_artifact", "path": str(path)})
     if failures:
-        closeout = {"schema": "m033.opendataloader_adaptix_adapter.closeout.v1", "status": "failed", "failure_count": len(failures), "failures": failures}
+        closeout = {
+            "schema": "m033.opendataloader_adaptix_adapter.closeout.v1",
+            "status": "failed",
+            "failure_count": len(failures),
+            "failures": failures,
+        }
         write_json(adapter_dir / "adaptix-adapter-closeout-summary.json", closeout)
         return 1
 
@@ -76,9 +83,17 @@ def verify(probe_root: Path, adapter_dir: Path) -> int:
     if summary.get("status") != "adaptix-adapter-candidate":
         failures.append({"code": "wrong_status", "status": summary.get("status")})
     if summary.get("paper_count") != len(expected_keys):
-        failures.append({"code": "paper_count_mismatch", "expected": len(expected_keys), "actual": summary.get("paper_count")})
+        failures.append(
+            {
+                "code": "paper_count_mismatch",
+                "expected": len(expected_keys),
+                "actual": summary.get("paper_count"),
+            }
+        )
     if summary.get("error_count") != 0:
-        failures.append({"code": "adapter_errors_present", "error_count": summary.get("error_count")})
+        failures.append(
+            {"code": "adapter_errors_present", "error_count": summary.get("error_count")}
+        )
     check_false_flags(summary, "summary", failures)
 
     results = summary.get("results")
@@ -87,14 +102,26 @@ def verify(probe_root: Path, adapter_dir: Path) -> int:
         results = []
     result_keys = {result.get("article_key") for result in results if isinstance(result, dict)}
     if result_keys != expected_keys:
-        failures.append({"code": "article_keys_mismatch", "expected": sorted(expected_keys), "actual": sorted(str(key) for key in result_keys)})
+        failures.append(
+            {
+                "code": "article_keys_mismatch",
+                "expected": sorted(expected_keys),
+                "actual": sorted(str(key) for key in result_keys),
+            }
+        )
     for result in results:
         if not isinstance(result, dict):
             failures.append({"code": "result_not_object"})
             continue
         article_key = str(result.get("article_key"))
         if result.get("status") != "mapped_candidate_only":
-            failures.append({"code": "unexpected_result_status", "article_key": article_key, "status": result.get("status")})
+            failures.append(
+                {
+                    "code": "unexpected_result_status",
+                    "article_key": article_key,
+                    "status": result.get("status"),
+                }
+            )
         check_false_flags(result, f"result:{article_key}", failures)
         candidate = result.get("candidate_summary")
         if not isinstance(candidate, dict):
@@ -104,7 +131,10 @@ def verify(probe_root: Path, adapter_dir: Path) -> int:
         page_index = candidate.get("page_index_candidate", {})
         if source_ref.get("candidate_only") is not True:
             failures.append({"code": "source_ref_not_candidate_only", "article_key": article_key})
-        if not isinstance(page_index.get("top_level_element_count"), int) or page_index.get("top_level_element_count", 0) <= 0:
+        if (
+            not isinstance(page_index.get("top_level_element_count"), int)
+            or page_index.get("top_level_element_count", 0) <= 0
+        ):
             failures.append({"code": "missing_top_level_elements", "article_key": article_key})
 
     if any(row.get("severity") == "error" for row in diagnostics):
@@ -140,10 +170,16 @@ def verify(probe_root: Path, adapter_dir: Path) -> int:
         lines += ["", "## Failures", ""]
         for failure in failures:
             lines.append(f"- `{failure['code']}` {failure}")
-    (adapter_dir / "adaptix-adapter-closeout-report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (adapter_dir / "adaptix-adapter-closeout-report.md").write_text(
+        "\n".join(lines) + "\n", encoding="utf-8"
+    )
     sys.stdout.write(
         json.dumps(
-            {"status": status, "failure_count": len(failures), "paper_count": summary.get("paper_count")},
+            {
+                "status": status,
+                "failure_count": len(failures),
+                "paper_count": summary.get("paper_count"),
+            },
             indent=2,
         )
         + "\n"

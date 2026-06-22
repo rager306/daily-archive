@@ -53,7 +53,9 @@ def _require_non_empty(value: str, field_name: str) -> None:
 
 def _require_metadata_safe(value: str, field_name: str) -> None:
     lowered = value.lower()
-    if any(forbidden in lowered for forbidden in FORBIDDEN_DIAGNOSTIC_KEYS) or _SECRET_SHAPED_PATTERN.search(value):
+    if any(
+        forbidden in lowered for forbidden in FORBIDDEN_DIAGNOSTIC_KEYS
+    ) or _SECRET_SHAPED_PATTERN.search(value):
         raise ValueError(f"{field_name} must be metadata-only")
 
 
@@ -80,7 +82,10 @@ class ReviewAssistancePacket:
     def __post_init__(self) -> None:
         _require_non_empty(self.candidate_id, "candidate_id")
         _require_non_empty(self.schema_version, "schema_version")
-        if self.review_state in AUTHORITATIVE_REVIEW_STATES or self.review_state != "diagnostic_only":
+        if (
+            self.review_state in AUTHORITATIVE_REVIEW_STATES
+            or self.review_state != "diagnostic_only"
+        ):
             raise ValueError("review assistance must remain diagnostic-only")
         if not 0 <= self.confidence <= 1:
             raise ValueError("confidence must be between 0 and 1")
@@ -145,7 +150,9 @@ def build_review_tool_invocation_record(
     """
     refs = _tuple(diagnostic_refs)
     if not refs:
-        refs = tuple(f"{review_packet.candidate_id}:{diagnostic}" for diagnostic in review_packet.diagnostics)
+        refs = tuple(
+            f"{review_packet.candidate_id}:{diagnostic}" for diagnostic in review_packet.diagnostics
+        )
     for diagnostic_ref in refs:
         _require_metadata_safe(diagnostic_ref, "diagnostic_ref")
     return ToolInvocationRecord(
@@ -162,7 +169,9 @@ def build_review_tool_invocation_record(
     )
 
 
-def validate_review_assistance_tool_input(payload: dict[str, Any], *, candidate: CandidatePacket) -> ReviewAssistancePacket:
+def validate_review_assistance_tool_input(
+    payload: dict[str, Any], *, candidate: CandidatePacket
+) -> ReviewAssistancePacket:
     if not isinstance(payload, dict):
         raise ValueError("review assistance tool input must be an object")
     unsafe_keys = sorted(key for key in payload if key in _AUTHORITY_KEYS and payload.get(key))

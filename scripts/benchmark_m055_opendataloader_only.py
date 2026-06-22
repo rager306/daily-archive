@@ -134,7 +134,9 @@ def _run_via_import_api(pdf_path: Path, temp_output_dir: Path, format_name: str)
         )
         return "import:convert"
 
-    raise OpenDataLoaderProbeError("opendataloader_pdf has no supported run, run_jar, or convert API")
+    raise OpenDataLoaderProbeError(
+        "opendataloader_pdf has no supported run, run_jar, or convert API"
+    )
 
 
 def _run_via_subprocess(pdf_path: Path, temp_output_dir: Path, format_name: str) -> str:
@@ -151,7 +153,9 @@ def _run_via_subprocess(pdf_path: Path, temp_output_dir: Path, format_name: str)
     ]
     completed = subprocess.run(command, check=False, capture_output=True, text=True, timeout=300)
     if completed.returncode != 0:
-        message = (completed.stderr or completed.stdout or "OpenDataLoader subprocess failed").strip()
+        message = (
+            completed.stderr or completed.stdout or "OpenDataLoader subprocess failed"
+        ).strip()
         raise OpenDataLoaderProbeError(message)
     return "subprocess:python -m opendataloader_pdf"
 
@@ -283,7 +287,9 @@ def _extract_markdown_metrics(
     markdown_size_bytes = len(markdown_text.encode("utf-8"))
     table_count = len(re.findall(r"\|\s*-{2,}\s*\|", markdown_text))
     table_count += markdown_text.lower().count("<table")
-    image_count = markdown_text.count("![") + len(re.findall(r"<img\b|<image\b", markdown_text, re.I))
+    image_count = markdown_text.count("![") + len(
+        re.findall(r"<img\b|<image\b", markdown_text, re.I)
+    )
     section_count = len(re.findall(r"(?m)^#{1,6}\s+\S", markdown_text))
     page_count = _layout_page_count(json_layout)
     bounding_box_count = _layout_bounding_box_count(json_layout)

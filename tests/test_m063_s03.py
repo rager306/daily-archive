@@ -15,7 +15,9 @@ SCORING_MATRIX_PATH = ROOT / "artifacts" / "m063-graphdb" / "scoring-matrix.md"
 LADYBUGDB_REPORT_PATH = ROOT / "artifacts" / "m063-graphdb" / "candidates" / "ladybugdb-report.md"
 CODEBASE_MEMORY_ADR_PATH = ROOT / ".codebase-memory" / "adr.md"
 CODEBASE_MEMORY_GRAPH_PATH = ROOT / ".codebase-memory" / "governance-graph.json"
-M045_TRAJECTORY_PATH = ROOT / "artifacts" / "m045-project-trajectory" / "current" / "trajectory-report.md"
+M045_TRAJECTORY_PATH = (
+    ROOT / "artifacts" / "m045-project-trajectory" / "current" / "trajectory-report.md"
+)
 M044_GUARDRAIL_PATH = ROOT / "artifacts" / "m044-grobid-architecture-guardrail" / "final-report.md"
 
 REGRESSION_TEST_FILES = [
@@ -56,7 +58,13 @@ def test_m063_closeout_artifacts() -> None:
 def test_ladybugdb_choice_documented() -> None:
     combined = "\n".join(
         path.read_text(encoding="utf-8")
-        for path in [REPORT_PATH, SUMMARY_PATH, VALIDATION_PATH, SCORING_MATRIX_PATH, LADYBUGDB_REPORT_PATH]
+        for path in [
+            REPORT_PATH,
+            SUMMARY_PATH,
+            VALIDATION_PATH,
+            SCORING_MATRIX_PATH,
+            LADYBUGDB_REPORT_PATH,
+        ]
     )
     assert "LadybugDB" in combined
     assert "primary production GraphDB" in combined

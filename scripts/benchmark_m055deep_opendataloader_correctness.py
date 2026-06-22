@@ -42,7 +42,9 @@ def _safety_defaults() -> dict[str, bool]:
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -73,7 +75,9 @@ def _is_alignment_separator(line: str) -> bool:
     if not _is_pipe_row(line):
         return False
     cells = _split_markdown_row(line)
-    return bool(cells) and all(cell.strip() and ALIGNMENT_CELL_RE.match(cell.strip()) for cell in cells)
+    return bool(cells) and all(
+        cell.strip() and ALIGNMENT_CELL_RE.match(cell.strip()) for cell in cells
+    )
 
 
 def _normalized_rows(rows: list[list[str]], cols: int) -> list[list[str]]:
@@ -103,11 +107,17 @@ def _parse_markdown_tables(markdown_text: str) -> list[dict[str, Any]]:
         separator_cells = _split_markdown_row(separator_line)
         body_rows: list[list[str]] = []
         cursor = index + 1
-        while cursor < len(lines) and _is_pipe_row(lines[cursor]) and not _is_alignment_separator(lines[cursor]):
+        while (
+            cursor < len(lines)
+            and _is_pipe_row(lines[cursor])
+            and not _is_alignment_separator(lines[cursor])
+        ):
             body_rows.append(_split_markdown_row(lines[cursor]))
             cursor += 1
 
-        cols = max([len(header_cells), len(separator_cells), *[len(row) for row in body_rows]] or [0])
+        cols = max(
+            [len(header_cells), len(separator_cells), *[len(row) for row in body_rows]] or [0]
+        )
         normalized_headers = _normalized_rows([header_cells], cols)[0] if cols else []
         normalized_body = _normalized_rows(body_rows, cols)
         tables.append(
@@ -151,25 +161,37 @@ def _svg_dimensions(data: bytes) -> dict[str, int | None]:
     width_match = re.search(r'\bwidth=["\'](?P<value>\d+(?:\.\d+)?)', text)
     height_match = re.search(r'\bheight=["\'](?P<value>\d+(?:\.\d+)?)', text)
     if width_match and height_match:
-        return {"width": int(float(width_match.group("value"))), "height": int(float(height_match.group("value")))}
+        return {
+            "width": int(float(width_match.group("value"))),
+            "height": int(float(height_match.group("value"))),
+        }
     viewbox_match = re.search(
         r'\bviewBox=["\']\s*[-\d.]+\s+[-\d.]+\s+(?P<width>\d+(?:\.\d+)?)\s+(?P<height>\d+(?:\.\d+)?)',
         text,
     )
     if viewbox_match:
-        return {"width": int(float(viewbox_match.group("width"))), "height": int(float(viewbox_match.group("height")))}
+        return {
+            "width": int(float(viewbox_match.group("width"))),
+            "height": int(float(viewbox_match.group("height"))),
+        }
     return {"width": None, "height": None}
 
 
 def _png_dimensions(data: bytes) -> dict[str, int | None]:
     if len(data) >= 24 and data.startswith(b"\x89PNG\r\n\x1a\n"):
-        return {"width": int.from_bytes(data[16:20], "big"), "height": int.from_bytes(data[20:24], "big")}
+        return {
+            "width": int.from_bytes(data[16:20], "big"),
+            "height": int.from_bytes(data[20:24], "big"),
+        }
     return {"width": None, "height": None}
 
 
 def _gif_dimensions(data: bytes) -> dict[str, int | None]:
     if len(data) >= 10 and (data.startswith(b"GIF87a") or data.startswith(b"GIF89a")):
-        return {"width": int.from_bytes(data[6:8], "little"), "height": int.from_bytes(data[8:10], "little")}
+        return {
+            "width": int.from_bytes(data[6:8], "little"),
+            "height": int.from_bytes(data[8:10], "little"),
+        }
     return {"width": None, "height": None}
 
 
@@ -220,7 +242,9 @@ def _detect_charts(image_files_dir: Path) -> list[dict[str, Any]]:
         return []
 
     charts: list[dict[str, Any]] = []
-    for image_path in sorted(path for path in image_files_dir.rglob("*") if path.suffix.lower() in IMAGE_SUFFIXES):
+    for image_path in sorted(
+        path for path in image_files_dir.rglob("*") if path.suffix.lower() in IMAGE_SUFFIXES
+    ):
         data = image_path.read_bytes()
         size_bytes = len(data)
         stripped = data.lstrip()[:128].lower()
@@ -231,7 +255,11 @@ def _detect_charts(image_files_dir: Path) -> list[dict[str, Any]]:
 
         chart_type = ""
         confidence = 0.0
-        if image_path.suffix.lower() == ".svg" or stripped.startswith(b"<svg") or stripped.startswith(b"<?xml"):
+        if (
+            image_path.suffix.lower() == ".svg"
+            or stripped.startswith(b"<svg")
+            or stripped.startswith(b"<?xml")
+        ):
             chart_type = "svg"
             confidence = 0.95
         elif aspect_ratio is not None and 0.5 <= aspect_ratio <= 2.0 and size_bytes > 5_000:
@@ -273,8 +301,13 @@ def _markdown_path(opendataloader_dir: Path, packet: dict[str, Any]) -> Path:
     return path if path.is_absolute() else opendataloader_dir / path
 
 
-def _image_dir_candidates(opendataloader_dir: Path, markdown_path: Path, markdown_text: str, arxiv_id: str) -> list[Path]:
-    candidates = [markdown_path.parent / f"{markdown_path.stem}_images", opendataloader_dir / f"{arxiv_id}_images"]
+def _image_dir_candidates(
+    opendataloader_dir: Path, markdown_path: Path, markdown_text: str, arxiv_id: str
+) -> list[Path]:
+    candidates = [
+        markdown_path.parent / f"{markdown_path.stem}_images",
+        opendataloader_dir / f"{arxiv_id}_images",
+    ]
     for match in MARKDOWN_IMAGE_RE.finditer(markdown_text):
         target = match.group("target").strip("<>")
         target_path = Path(target)
@@ -287,7 +320,9 @@ def _image_dir_candidates(opendataloader_dir: Path, markdown_path: Path, markdow
     return unique
 
 
-def _extract_correctness_metrics(pdf_dir: Path, opendataloader_packet: dict[str, Any]) -> dict[str, Any]:
+def _extract_correctness_metrics(
+    pdf_dir: Path, opendataloader_packet: dict[str, Any]
+) -> dict[str, Any]:
     """Extract table, caption, and chart correctness metrics for one packet."""
 
     opendataloader_dir = Path(pdf_dir)
@@ -302,7 +337,9 @@ def _extract_correctness_metrics(pdf_dir: Path, opendataloader_packet: dict[str,
     markdown_images = MARKDOWN_IMAGE_RE.findall(markdown_text)
 
     chart_records: list[dict[str, Any]] = []
-    for image_dir in _image_dir_candidates(opendataloader_dir, markdown_path, markdown_text, arxiv_id):
+    for image_dir in _image_dir_candidates(
+        opendataloader_dir, markdown_path, markdown_text, arxiv_id
+    ):
         chart_records.extend(_detect_charts(image_dir))
     deduped_charts = {record["image_path"]: record for record in chart_records}
     charts = [deduped_charts[key] for key in sorted(deduped_charts)]
@@ -312,9 +349,15 @@ def _extract_correctness_metrics(pdf_dir: Path, opendataloader_packet: dict[str,
     structured_tables = [
         table
         for table in tables
-        if table.get("has_alignment_separator") and int(table.get("rows", 0)) >= 2 and int(table.get("cols", 0)) >= 1
+        if table.get("has_alignment_separator")
+        and int(table.get("rows", 0)) >= 2
+        and int(table.get("cols", 0)) >= 1
     ]
-    figures_total = max(int(opendataloader_packet.get("image_count") or 0), len(markdown_images), len(figure_captions))
+    figures_total = max(
+        int(opendataloader_packet.get("image_count") or 0),
+        len(markdown_images),
+        len(figure_captions),
+    )
     figures_with_caption = min(len(figure_captions), figures_total) if figures_total else 0
     tables_with_caption = min(len(table_captions), len(tables)) if tables else 0
 
@@ -329,8 +372,12 @@ def _extract_correctness_metrics(pdf_dir: Path, opendataloader_packet: dict[str,
         "figures_with_caption": figures_with_caption,
         "charts_detected": len(charts),
         "chart_types_distribution": _distribution([str(chart["chart_type"]) for chart in charts]),
-        "image_caption_rate": round(figures_with_caption / figures_total, 3) if figures_total else 0.0,
-        "table_structure_quality_score": round(len(structured_tables) / len(tables), 3) if tables else 0.0,
+        "image_caption_rate": round(figures_with_caption / figures_total, 3)
+        if figures_total
+        else 0.0,
+        "table_structure_quality_score": round(len(structured_tables) / len(tables), 3)
+        if tables
+        else 0.0,
         "tables": tables,
         "captions": captions,
         "charts": charts,
@@ -356,7 +403,12 @@ def _error_packet(arxiv_id: str, source_packet_path: Path, exc: Exception) -> di
     }
 
 
-def _success_packet(manifest_entry: dict[str, Any], source_packet_path: Path, packet: dict[str, Any], metrics: dict[str, Any]) -> dict[str, Any]:
+def _success_packet(
+    manifest_entry: dict[str, Any],
+    source_packet_path: Path,
+    packet: dict[str, Any],
+    metrics: dict[str, Any],
+) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
         "article_key": manifest_entry.get("article_key"),
@@ -392,26 +444,42 @@ def _aggregate(per_pdf_packets: list[dict[str, Any]]) -> dict[str, Any]:
 
     total_tables = sum(int(packet.get("tables_total") or 0) for packet in successes)
     total_figures = sum(int(packet.get("figures_total") or 0) for packet in successes)
-    total_captioned_figures = sum(int(packet.get("figures_with_caption") or 0) for packet in successes)
+    total_captioned_figures = sum(
+        int(packet.get("figures_with_caption") or 0) for packet in successes
+    )
     return {
         "tables_total": total_tables,
-        "tables_with_caption": sum(int(packet.get("tables_with_caption") or 0) for packet in successes),
-        "avg_rows_per_table": _average([float(packet.get("avg_rows_per_table") or 0.0) for packet in successes]),
-        "avg_cols_per_table": _average([float(packet.get("avg_cols_per_table") or 0.0) for packet in successes]),
-        "tables_max_rows": max([int(packet.get("tables_max_rows") or 0) for packet in successes] or [0]),
-        "tables_max_cols": max([int(packet.get("tables_max_cols") or 0) for packet in successes] or [0]),
+        "tables_with_caption": sum(
+            int(packet.get("tables_with_caption") or 0) for packet in successes
+        ),
+        "avg_rows_per_table": _average(
+            [float(packet.get("avg_rows_per_table") or 0.0) for packet in successes]
+        ),
+        "avg_cols_per_table": _average(
+            [float(packet.get("avg_cols_per_table") or 0.0) for packet in successes]
+        ),
+        "tables_max_rows": max(
+            [int(packet.get("tables_max_rows") or 0) for packet in successes] or [0]
+        ),
+        "tables_max_cols": max(
+            [int(packet.get("tables_max_cols") or 0) for packet in successes] or [0]
+        ),
         "figures_total": total_figures,
         "figures_with_caption": total_captioned_figures,
         "charts_detected": sum(int(packet.get("charts_detected") or 0) for packet in successes),
         "chart_types_distribution": dict(sorted(chart_types.items())),
-        "image_caption_rate": round(total_captioned_figures / total_figures, 3) if total_figures else 0.0,
+        "image_caption_rate": round(total_captioned_figures / total_figures, 3)
+        if total_figures
+        else 0.0,
         "table_structure_quality_score": _average(
             [float(packet.get("table_structure_quality_score") or 0.0) for packet in successes]
         ),
     }
 
 
-def probe_opendataloader_correctness(corpus_manifest_path: Path, opendataloader_dir: Path, output_dir: Path) -> dict[str, Any]:
+def probe_opendataloader_correctness(
+    corpus_manifest_path: Path, opendataloader_dir: Path, output_dir: Path
+) -> dict[str, Any]:
     manifest = _load_json(Path(corpus_manifest_path))
     manifest_pdfs = manifest.get("pdfs")
     if not isinstance(manifest_pdfs, list):
@@ -464,7 +532,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
-    summary = probe_opendataloader_correctness(args.corpus_manifest, args.opendataloader_dir, args.output_dir)
+    summary = probe_opendataloader_correctness(
+        args.corpus_manifest, args.opendataloader_dir, args.output_dir
+    )
     print(json.dumps(summary, indent=2, sort_keys=True, ensure_ascii=False))
     return 0 if summary.get("error_count") == 0 else 1
 

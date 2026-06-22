@@ -67,10 +67,16 @@ def test_build_runtime_readiness_marks_live_hints_ready_without_network_call():
     )
 
     assert readiness["checks"]["grobid"]["status"] == "live_ready"
-    assert readiness["checks"]["grobid"]["local_hints"] == {"GROBID_URL_set": True, "docker_available": True}
+    assert readiness["checks"]["grobid"]["local_hints"] == {
+        "GROBID_URL_set": True,
+        "docker_available": True,
+    }
     assert readiness["checks"]["opendataloader_pdf"]["status"] == "live_ready"
     assert readiness["checks"]["adaptix"]["status"] == "live_ready"
-    assert readiness["checks"]["quant_mind_patterns"]["runtime_dependency_adoption_authorized"] is False
+    assert (
+        readiness["checks"]["quant_mind_patterns"]["runtime_dependency_adoption_authorized"]
+        is False
+    )
 
 
 def test_build_runtime_readiness_rejects_wrong_target_size():

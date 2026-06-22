@@ -28,7 +28,12 @@ EXTRACTION_ROUTES = {
     "relation_extraction",
     "metadata_graph",
 }
-EXCLUDED_EXTRACTION_ROUTES = {"retrieval_only", "table_extraction", "citation_graph", "figure_evidence"}
+EXCLUDED_EXTRACTION_ROUTES = {
+    "retrieval_only",
+    "table_extraction",
+    "citation_graph",
+    "figure_evidence",
+}
 
 
 @dataclass(frozen=True)
@@ -58,23 +63,38 @@ def run_extraction_gate(
     summary = _summary_payload(manifest, result)
     summary_path = output_dir / "extraction-route-summary.json"
     events_path = output_dir / "extraction-events.jsonl"
-    summary_path.write_text(json.dumps(to_redacted_dict(summary), indent=2, sort_keys=True), encoding="utf-8")
+    summary_path.write_text(
+        json.dumps(to_redacted_dict(summary), indent=2, sort_keys=True), encoding="utf-8"
+    )
     events_path.write_text("", encoding="utf-8")
     _append_event(events_path, {"event": "extraction_gate.summary", **summary})
     for entry in result.trusted_entries:
-        _append_event(events_path, {"event": "extraction_gate.trusted_route", **_entry_event(entry)})
+        _append_event(
+            events_path, {"event": "extraction_gate.trusted_route", **_entry_event(entry)}
+        )
     for entry in result.caveated_entries:
-        _append_event(events_path, {"event": "extraction_gate.caveated_route", **_entry_event(entry)})
+        _append_event(
+            events_path, {"event": "extraction_gate.caveated_route", **_entry_event(entry)}
+        )
     for entry in result.excluded_entries:
-        _append_event(events_path, {"event": "extraction_gate.excluded_route", **_entry_event(entry)})
+        _append_event(
+            events_path, {"event": "extraction_gate.excluded_route", **_entry_event(entry)}
+        )
     for entry in result.skipped_entries:
-        _append_event(events_path, {"event": "extraction_gate.skipped_route", **_entry_event(entry)})
+        _append_event(
+            events_path, {"event": "extraction_gate.skipped_route", **_entry_event(entry)}
+        )
     for draft in result.claim_drafts:
-        _append_event(events_path, {"event": "extraction_gate.claim_draft", **draft, "raw_text_included": False})
+        _append_event(
+            events_path,
+            {"event": "extraction_gate.claim_draft", **draft, "raw_text_included": False},
+        )
     return summary
 
 
-def decide_extraction(manifest: dict[str, Any], *, require_trusted: bool = True) -> ExtractionGateResult:
+def decide_extraction(
+    manifest: dict[str, Any], *, require_trusted: bool = True
+) -> ExtractionGateResult:
     """Decide whether extraction can run from manifest entries."""
     trusted_entries: list[dict[str, Any]] = []
     caveated_entries: list[dict[str, Any]] = []
@@ -136,7 +156,9 @@ def _summary_payload(manifest: dict[str, Any], result: ExtractionGateResult) -> 
         "blocked_reason": result.blocked_reason,
         "counts": {
             "trusted_routes": len(result.trusted_entries),
-            "trusted_candidates": sum(1 for entry in result.trusted_entries if entry.get("granularity") == "candidate"),
+            "trusted_candidates": sum(
+                1 for entry in result.trusted_entries if entry.get("granularity") == "candidate"
+            ),
             "caveated_routes": len(result.caveated_entries),
             "excluded_routes": len(result.excluded_entries),
             "skipped_routes": len(result.skipped_entries),

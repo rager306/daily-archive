@@ -47,7 +47,9 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 def _index_acquisition_by_key(log: dict[str, Any]) -> dict[str, dict[str, Any]]:
     """Map article_key -> acquisition entry from the M054 log."""
-    return {entry["article_key"]: entry for entry in log.get("entries", []) if "article_key" in entry}
+    return {
+        entry["article_key"]: entry for entry in log.get("entries", []) if "article_key" in entry
+    }
 
 
 def update_m043_target_subset(
@@ -106,7 +108,9 @@ def update_m043_target_subset(
 
 def main() -> int:
     if not DEFAULT_LOG_PATH.exists():
-        print(f"acquisition log not found at {DEFAULT_LOG_PATH}; run acquire_linked_target_pdfs.py first")
+        print(
+            f"acquisition log not found at {DEFAULT_LOG_PATH}; run acquire_linked_target_pdfs.py first"
+        )
         return 1
     if not DEFAULT_TARGET_PATH.exists():
         print(f"M043 target-subset not found at {DEFAULT_TARGET_PATH}")

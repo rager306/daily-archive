@@ -71,7 +71,9 @@ def load_packets(summary: dict[str, Any], per_pdf_dir: Path) -> list[dict[str, A
         packet = _read_json(packet_path)
         packet.setdefault("packet_path", _relative(packet_path))
         packets.append(packet)
-    return sorted(packets, key=lambda packet: str(packet.get("paper_id") or packet.get("arxiv_id") or ""))
+    return sorted(
+        packets, key=lambda packet: str(packet.get("paper_id") or packet.get("arxiv_id") or "")
+    )
 
 
 def count_statuses(packets: list[dict[str, Any]]) -> dict[str, int]:
@@ -148,7 +150,9 @@ def m022_candidates_block(packets: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def build_audit(summary: dict[str, Any], packets: list[dict[str, Any]], *, summary_path: Path, per_pdf_dir: Path) -> str:
+def build_audit(
+    summary: dict[str, Any], packets: list[dict[str, Any]], *, summary_path: Path, per_pdf_dir: Path
+) -> str:
     counts = count_statuses(packets)
     parts: list[str] = []
     parts.append("# M053 GROBID Pilot Audit")
@@ -173,7 +177,9 @@ def build_audit(summary: dict[str, Any], packets: list[dict[str, Any]], *, summa
     parts.append("")
     parts.append("## Safety defaults")
     parts.append("")
-    parts.append("Production import is not authorized by this audit; all safety defaults remain false.")
+    parts.append(
+        "Production import is not authorized by this audit; all safety defaults remain false."
+    )
     parts.append("")
     parts.append(safety_block())
     parts.append("")

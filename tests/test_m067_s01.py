@@ -63,7 +63,10 @@ def test_scoring_matrix_updated() -> None:
     assert "Neo4j remains the highest total scorer at **76/90**" not in text
     assert "Neo4j remains the highest total scorer after advanced criteria" in text
     assert "AGPLv3 remains viral for self-hosted distribution" in text
-    assert "License-clean candidates remain Apache AGE 64/90, LadybugDB 62/90, and HelixDB 54/90" in text
+    assert (
+        "License-clean candidates remain Apache AGE 64/90, LadybugDB 62/90, and HelixDB 54/90"
+        in text
+    )
 
 
 def test_5_safety_defaults() -> None:

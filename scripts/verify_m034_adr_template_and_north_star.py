@@ -100,7 +100,12 @@ def main() -> int:
     for marker in REQUIRED_TEMPLATE_MARKERS:
         require_marker(template, marker, "ADR-TEMPLATE", failures)
 
-    for marker in ["ADR-TEMPLATE.md", "ADR-000", "Defer Final GraphDB Selection", "Non-Authorization Reminder"]:
+    for marker in [
+        "ADR-TEMPLATE.md",
+        "ADR-000",
+        "Defer Final GraphDB Selection",
+        "Non-Authorization Reminder",
+    ]:
         require_marker(index, marker, "ADR-INDEX", failures)
 
     for marker in REQUIRED_ADR000_MARKERS:
@@ -110,14 +115,22 @@ def main() -> int:
 
     mermaid_count = adr.count("```mermaid")
     if not 2 <= mermaid_count <= 5:
-        failures.append(f"ADR-000 Mermaid diagram count must be between 2 and 5, got {mermaid_count}")
+        failures.append(
+            f"ADR-000 Mermaid diagram count must be between 2 and 5, got {mermaid_count}"
+        )
 
     if audit_path.exists():
         audit = json.loads(audit_path.read_text(encoding="utf-8"))
         counts = audit.get("classification_counts", {})
         if counts.get("needs-clarification", 0) <= 0:
-            failures.append("S01 audit did not expose needs-clarification records for ADR consumption")
-        if "needs-clarification" not in index and "Needs clarification" not in adr and "needs-clarification" not in adr:
+            failures.append(
+                "S01 audit did not expose needs-clarification records for ADR consumption"
+            )
+        if (
+            "needs-clarification" not in index
+            and "Needs clarification" not in adr
+            and "needs-clarification" not in adr
+        ):
             failures.append("ADR package does not visibly consume S01 needs-clarification findings")
     else:
         failures.append(f"missing S01 audit artifact: {audit_path}")

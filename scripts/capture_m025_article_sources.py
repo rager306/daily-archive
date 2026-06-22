@@ -81,7 +81,9 @@ def fallback_payload(article: dict[str, Any], variant: dict[str, Any], reason: s
     return html.encode("utf-8")
 
 
-def capture_variant(article_path: Path, article: dict[str, Any], variant: dict[str, Any]) -> dict[str, Any]:
+def capture_variant(
+    article_path: Path, article: dict[str, Any], variant: dict[str, Any]
+) -> dict[str, Any]:
     article_dir = article_path.parent
     target = safe_catalog_path(article_dir, str(variant["path"]))
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -117,8 +119,14 @@ def capture_variant(article_path: Path, article: dict[str, Any], variant: dict[s
     return updated
 
 
-def selected_article_paths(catalog_root: Path, index: dict[str, Any], selection: dict[str, Any]) -> list[Path]:
-    by_ref = {row["article_ref"]: row for row in index.get("articles", []) if isinstance(row, dict) and "article_ref" in row}
+def selected_article_paths(
+    catalog_root: Path, index: dict[str, Any], selection: dict[str, Any]
+) -> list[Path]:
+    by_ref = {
+        row["article_ref"]: row
+        for row in index.get("articles", [])
+        if isinstance(row, dict) and "article_ref" in row
+    }
     paths: list[Path] = []
     for row in selection.get("articles", []):
         article_ref = row.get("article_ref") if isinstance(row, dict) else None
@@ -146,7 +154,9 @@ def main(argv: list[str]) -> int:
         variants = article.get("source_variants")
         if not isinstance(variants, list) or not variants:
             raise ValueError(f"article has no source_variants: {article_path}")
-        article["source_variants"] = [capture_variant(article_path, article, variant) for variant in variants]
+        article["source_variants"] = [
+            capture_variant(article_path, article, variant) for variant in variants
+        ]
         article.setdefault("capture_summary", {})
         article["capture_summary"].update(
             {
@@ -159,7 +169,9 @@ def main(argv: list[str]) -> int:
         write_json(article_path, article)
         captured += len(article["source_variants"])
     duration_ms = int((time.perf_counter() - started) * 1000)
-    print(f"captured {captured} source variants for {len(selection.get('articles', []))} articles in {duration_ms}ms")
+    print(
+        f"captured {captured} source variants for {len(selection.get('articles', []))} articles in {duration_ms}ms"
+    )
     return 0
 
 

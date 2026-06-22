@@ -35,29 +35,33 @@ def run(command: list[str]) -> None:
 
 
 def main() -> int:
-    run([
-        "uv",
-        "run",
-        "pytest",
-        "tests/test_m036_real_corpus_no_write_smoke.py",
-        "tests/test_m036_real_corpus_smoke_audit.py",
-        "tests/test_universal_kb_smoke_cli.py",
-        "-q",
-    ])
-    run([
-        "uv",
-        "run",
-        "ruff",
-        "check",
-        "scripts/select_m036_real_corpus_smoke_batch.py",
-        "scripts/run_m036_real_corpus_no_write_smoke.py",
-        "scripts/audit_m036_real_corpus_smoke.py",
-        "scripts/verify_m036_real_corpus_no_write_smoke.py",
-        "src/arxiv_archive/universal_kb_smoke.py",
-        "tests/test_m036_real_corpus_no_write_smoke.py",
-        "tests/test_m036_real_corpus_smoke_audit.py",
-        "tests/test_universal_kb_smoke_cli.py",
-    ])
+    run(
+        [
+            "uv",
+            "run",
+            "pytest",
+            "tests/test_m036_real_corpus_no_write_smoke.py",
+            "tests/test_m036_real_corpus_smoke_audit.py",
+            "tests/test_universal_kb_smoke_cli.py",
+            "-q",
+        ]
+    )
+    run(
+        [
+            "uv",
+            "run",
+            "ruff",
+            "check",
+            "scripts/select_m036_real_corpus_smoke_batch.py",
+            "scripts/run_m036_real_corpus_no_write_smoke.py",
+            "scripts/audit_m036_real_corpus_smoke.py",
+            "scripts/verify_m036_real_corpus_no_write_smoke.py",
+            "src/arxiv_archive/universal_kb_smoke.py",
+            "tests/test_m036_real_corpus_no_write_smoke.py",
+            "tests/test_m036_real_corpus_smoke_audit.py",
+            "tests/test_universal_kb_smoke_cli.py",
+        ]
+    )
     api = smoke_api()
     paths = api.SmokePaths()
     result = api.run_all(limit=5, profile="full", paths=paths)

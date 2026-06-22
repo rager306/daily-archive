@@ -72,9 +72,13 @@ def resolve_output_path(pdf: dict[str, Any], expectation: dict[str, Any]) -> Pat
     arxiv_id = str(pdf["arxiv_id"])
     template = expectation.get("output_path_template")
     if template:
-        formatted = str(template).format(arxiv_id=arxiv_id, article_key=pdf.get("article_key", arxiv_id))
+        formatted = str(template).format(
+            arxiv_id=arxiv_id, article_key=pdf.get("article_key", arxiv_id)
+        )
         if "*" in formatted:
-            matches = sorted(Path(match) for match in glob.glob(str(repo_path(formatted)), recursive=True))
+            matches = sorted(
+                Path(match) for match in glob.glob(str(repo_path(formatted)), recursive=True)
+            )
             return matches[0] if matches else None
         return repo_path(formatted)
     batch_output = expectation.get("batch_output_path")
@@ -88,13 +92,29 @@ def validate_one(pdf: dict[str, Any], parser_name: str) -> ValidationResult:
     arxiv_id = str(pdf["arxiv_id"])
     expectation = find_parser_expectation(pdf, parser_name)
     if expectation is None:
-        return ValidationResult(arxiv_id, parser_name, None, False, 1, f"parser {parser_name!r} is not declared for {arxiv_id}")
+        return ValidationResult(
+            arxiv_id,
+            parser_name,
+            None,
+            False,
+            1,
+            f"parser {parser_name!r} is not declared for {arxiv_id}",
+        )
 
     output_path = resolve_output_path(pdf, expectation)
     if output_path is None:
-        return ValidationResult(arxiv_id, parser_name, None, False, 1, "parser output path could not be resolved")
+        return ValidationResult(
+            arxiv_id, parser_name, None, False, 1, "parser output path could not be resolved"
+        )
     if not output_path.exists():
-        return ValidationResult(arxiv_id, parser_name, output_path.relative_to(ROOT).as_posix(), False, 1, "parser output is missing")
+        return ValidationResult(
+            arxiv_id,
+            parser_name,
+            output_path.relative_to(ROOT).as_posix(),
+            False,
+            1,
+            "parser output is missing",
+        )
 
     schema_path = str(expectation["expected_output_schema"])
     validator = load_validator(schema_path)
@@ -111,7 +131,9 @@ def validate_one(pdf: dict[str, Any], parser_name: str) -> ValidationResult:
             len(errors),
             f"{len(errors)} schema error(s); first at {location}: {first.message}",
         )
-    return ValidationResult(arxiv_id, parser_name, output_path.relative_to(ROOT).as_posix(), True, 0, "ok")
+    return ValidationResult(
+        arxiv_id, parser_name, output_path.relative_to(ROOT).as_posix(), True, 0, "ok"
+    )
 
 
 def validate_manifest(manifest_path: Path, parser_name: str) -> list[ValidationResult]:
@@ -127,18 +149,28 @@ def print_results(results: list[ValidationResult]) -> None:
     """Print per-PDF validation results and aggregate stats."""
     passed = sum(1 for result in results if result.passed)
     failed = len(results) - passed
-    missing = sum(1 for result in results if result.output_path is None or result.message == "parser output is missing")
+    missing = sum(
+        1
+        for result in results
+        if result.output_path is None or result.message == "parser output is missing"
+    )
     for result in results:
         status = "PASS" if result.passed else "FAIL"
         path = result.output_path or "<unresolved>"
-        print(f"{status} {result.arxiv_id} parser={result.parser} output={path} errors={result.error_count} message={result.message}")
+        print(
+            f"{status} {result.arxiv_id} parser={result.parser} output={path} errors={result.error_count} message={result.message}"
+        )
     print(f"aggregate total={len(results)} passed={passed} failed={failed} missing={missing}")
 
 
 def main(argv: Iterable[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Validate parser JSON outputs referenced by a PDF batch manifest.")
+    parser = argparse.ArgumentParser(
+        description="Validate parser JSON outputs referenced by a PDF batch manifest."
+    )
     parser.add_argument("--manifest", required=True, help="Repository-relative manifest JSON path.")
-    parser.add_argument("--parser", required=True, help="Parser name declared in expected_parsers[].")
+    parser.add_argument(
+        "--parser", required=True, help="Parser name declared in expected_parsers[]."
+    )
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     try:

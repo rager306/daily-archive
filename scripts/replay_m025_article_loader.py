@@ -59,8 +59,14 @@ def redact_result(result: Any, variant: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def selected_article_entries(index: dict[str, Any], selection: dict[str, Any]) -> list[dict[str, Any]]:
-    by_ref = {row["article_ref"]: row for row in index.get("articles", []) if isinstance(row, dict) and "article_ref" in row}
+def selected_article_entries(
+    index: dict[str, Any], selection: dict[str, Any]
+) -> list[dict[str, Any]]:
+    by_ref = {
+        row["article_ref"]: row
+        for row in index.get("articles", [])
+        if isinstance(row, dict) and "article_ref" in row
+    }
     entries: list[dict[str, Any]] = []
     for row in selection.get("articles", []):
         article_ref = row.get("article_ref") if isinstance(row, dict) else None
@@ -84,7 +90,9 @@ def replay_article(catalog_root: Path, entry: dict[str, Any]) -> dict[str, Any]:
     variant_results: list[dict[str, Any]] = []
     for variant in variants:
         source_path = safe_catalog_path(article_path.parent, str(variant["path"]))
-        result = load_article_source(source_path, log_path=event_path, paper_id=str(article.get("article_key")))
+        result = load_article_source(
+            source_path, log_path=event_path, paper_id=str(article.get("article_key"))
+        )
         redacted = redact_result(result, variant)
         variant_results.append(redacted)
         variant["loader_outcome"] = result.outcome
@@ -133,12 +141,16 @@ def main(argv: list[str]) -> int:
     index = load_json(args.index)
     selection = load_json(args.selection)
     catalog_root = args.catalog.parent.resolve()
-    summaries = [replay_article(catalog_root, entry) for entry in selected_article_entries(index, selection)]
+    summaries = [
+        replay_article(catalog_root, entry) for entry in selected_article_entries(index, selection)
+    ]
     total = sum(summary["variant_count"] for summary in summaries)
     counts = Counter()
     for summary in summaries:
         counts.update(summary["outcome_counts"])
-    print(f"replayed loader for {len(summaries)} articles / {total} variants; outcomes={dict(sorted(counts.items()))}")
+    print(
+        f"replayed loader for {len(summaries)} articles / {total} variants; outcomes={dict(sorted(counts.items()))}"
+    )
     return 0
 
 

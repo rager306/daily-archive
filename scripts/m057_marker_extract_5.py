@@ -4,6 +4,7 @@
 Run Marker on 5 PDFs (1 anchor + 4 diverse) and emit per-pdf JSON packets
 + summary compatible with the existing M057 marker-extraction/ schema.
 """
+
 from __future__ import annotations
 
 import json
@@ -109,8 +110,11 @@ def main() -> None:
         per_pdf_path = PER_PDF_DIR / f"{arxiv_id}.json"
         per_pdf_path.write_text(json.dumps(packet, indent=2, ensure_ascii=False), encoding="utf-8")
         elapsed = packet.get("elapsed_sec", 0.0)
-        print(f"    -> {packet['status']} (tables={packet['table_count']}, "
-              f"words={packet['body_word_count']}, {elapsed:.1f}s)", flush=True)
+        print(
+            f"    -> {packet['status']} (tables={packet['table_count']}, "
+            f"words={packet['body_word_count']}, {elapsed:.1f}s)",
+            flush=True,
+        )
 
     total_elapsed = time.time() - total_start
     successful = [r for r in results if r["status"] == "marker_extracted"]
@@ -134,8 +138,11 @@ def main() -> None:
     summary_path = OUTPUT_ROOT / "summary.json"
     summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"\nSummary written: {summary_path}", flush=True)
-    print(f"Total: {total_elapsed:.1f}s for {len(results)} PDFs "
-          f"({total_elapsed / max(len(results), 1):.1f}s avg)", flush=True)
+    print(
+        f"Total: {total_elapsed:.1f}s for {len(results)} PDFs "
+        f"({total_elapsed / max(len(results), 1):.1f}s avg)",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":

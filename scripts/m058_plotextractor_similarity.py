@@ -47,11 +47,17 @@ def load_embeddings(path: Path = DEFAULT_EMBEDDINGS) -> dict[str, list[float]]:
 def _similarity_stats(values: list[float]) -> dict[str, float | None]:
     if not values:
         return {"min": None, "max": None, "mean": None}
-    return {"min": round(min(values), 6), "max": round(max(values), 6), "mean": round(mean(values), 6)}
+    return {
+        "min": round(min(values), 6),
+        "max": round(max(values), 6),
+        "mean": round(mean(values), 6),
+    }
 
 
 def _caption_excerpt(figure: dict[str, Any], *, limit: int = 180) -> str:
-    caption = str(figure.get("caption") or figure.get("caption_text") or "").replace("\n", " ").strip()
+    caption = (
+        str(figure.get("caption") or figure.get("caption_text") or "").replace("\n", " ").strip()
+    )
     if len(caption) <= limit:
         return caption
     return caption[: limit - 1].rstrip() + "…"
@@ -72,7 +78,9 @@ def compute_similarity_edges(
     figure_ids = sorted(figure_by_id)
     missing = [figure_id for figure_id in figure_ids if figure_id not in embedding_map]
     if missing:
-        raise ValueError(f"missing embeddings for {len(missing)} figures; first missing: {missing[0]}")
+        raise ValueError(
+            f"missing embeddings for {len(missing)} figures; first missing: {missing[0]}"
+        )
     if len(figure_ids) < 2:
         raise ValueError("at least two figures are required for similarity edges")
     matrix = np.asarray([embedding_map[figure_id] for figure_id in figure_ids], dtype=np.float32)
@@ -141,7 +149,9 @@ def compute_similarity_edges(
         "edges": edges,
     }
     edges_path.parent.mkdir(parents=True, exist_ok=True)
-    edges_path.write_text(json.dumps(edge_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    edges_path.write_text(
+        json.dumps(edge_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return edges, summary
 

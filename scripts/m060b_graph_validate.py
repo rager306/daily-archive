@@ -60,7 +60,9 @@ def validate_loopback(payload: dict[str, Any]) -> dict[str, Any]:
     """Validate the manifest loopback host contract."""
     actual = payload.get("loopback_bind_host")
     if actual == LOOPBACK_BIND_HOST:
-        return check_result("loopback_bind_host", "PASS", "Loopback bind host is 127.0.0.1.", actual)
+        return check_result(
+            "loopback_bind_host", "PASS", "Loopback bind host is 127.0.0.1.", actual
+        )
     return check_result(
         "loopback_bind_host",
         "FAIL",
@@ -91,7 +93,9 @@ def validate_citation_orphans(edges: list[dict[str, Any]]) -> dict[str, Any]:
 
 def validate_duplicate_edges(edges: list[dict[str, Any]]) -> dict[str, Any]:
     """Validate there are no duplicate artifact edges within one layer."""
-    duplicate_counter = Counter((edge_layer(edge), edge_source(edge), edge_target(edge)) for edge in edges)
+    duplicate_counter = Counter(
+        (edge_layer(edge), edge_source(edge), edge_target(edge)) for edge in edges
+    )
     duplicates = [
         {"layer": layer, "source": source, "target": target, "count": count}
         for (layer, source, target), count in sorted(duplicate_counter.items())
@@ -115,7 +119,10 @@ def validate_duplicate_edges(edges: list[dict[str, Any]]) -> dict[str, Any]:
 def validate_self_loops(edges: list[dict[str, Any]]) -> dict[str, Any]:
     """Validate the artifact-level NetworkX graph has no self-loops."""
     graph = build_graph(edges)
-    self_loops = [{"source": str(source), "target": str(target)} for source, target in nx.selfloop_edges(graph)]
+    self_loops = [
+        {"source": str(source), "target": str(target)}
+        for source, target in nx.selfloop_edges(graph)
+    ]
     if not self_loops:
         return check_result(
             "self_loops",
@@ -166,13 +173,26 @@ def validate_content_sha256(pdf_manifest_path: Path, sample_size: int = 5) -> di
             failures.append({"article_key": article_key, "error": "Missing path or content_sha256"})
             continue
         if not path.exists():
-            failures.append({"article_key": article_key, "path": str(path), "error": "PDF file missing"})
+            failures.append(
+                {"article_key": article_key, "path": str(path), "error": "PDF file missing"}
+            )
             continue
         actual = hashlib.sha256(path.read_bytes()).hexdigest()
-        result = {"article_key": article_key, "path": str(path.relative_to(ROOT)), "matches": actual == expected}
+        result = {
+            "article_key": article_key,
+            "path": str(path.relative_to(ROOT)),
+            "matches": actual == expected,
+        }
         checked.append(result)
         if actual != expected:
-            failures.append({"article_key": article_key, "path": str(path), "expected": expected, "actual": actual})
+            failures.append(
+                {
+                    "article_key": article_key,
+                    "path": str(path),
+                    "expected": expected,
+                    "actual": actual,
+                }
+            )
 
     if not failures and len(checked) == sample_size:
         return check_result(
@@ -218,7 +238,9 @@ def validate_layer_separation(edges: list[dict[str, Any]]) -> dict[str, Any]:
     )
 
 
-def validate_manifest(manifest_path: Path, pdf_manifest_path: Path = DEFAULT_PDF_MANIFEST) -> dict[str, Any]:
+def validate_manifest(
+    manifest_path: Path, pdf_manifest_path: Path = DEFAULT_PDF_MANIFEST
+) -> dict[str, Any]:
     """Run all graph-manifest validation checks."""
     payload = read_json(manifest_path)
     edges = payload.get("edges")
@@ -241,7 +263,11 @@ def validate_manifest(manifest_path: Path, pdf_manifest_path: Path = DEFAULT_PDF
         "manifest_path": str(manifest_path),
         "pdf_manifest_path": str(pdf_manifest_path),
         "overall_status": overall_status,
-        "summary": {"passed": len([c for c in checks if c["status"] == "PASS"]), "warnings": len(warned), "failed": len(failed)},
+        "summary": {
+            "passed": len([c for c in checks if c["status"] == "PASS"]),
+            "warnings": len(warned),
+            "failed": len(failed),
+        },
         "checks": checks,
     }
 
@@ -310,14 +336,18 @@ def render_markdown(validation: dict[str, Any]) -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST, help="Graph manifest JSON path")
+    parser.add_argument(
+        "--manifest", type=Path, default=DEFAULT_MANIFEST, help="Graph manifest JSON path"
+    )
     parser.add_argument(
         "--pdf-manifest",
         type=Path,
         default=DEFAULT_PDF_MANIFEST,
         help="PDF manifest used for the five-file content_sha256 sample",
     )
-    parser.add_argument("--output", type=Path, default=None, help="Output directory or validation JSON path")
+    parser.add_argument(
+        "--output", type=Path, default=None, help="Output directory or validation JSON path"
+    )
     return parser.parse_args()
 
 
@@ -332,7 +362,9 @@ def display_path(path: Path) -> str:
 def main() -> int:
     args = parse_args()
     manifest_path = args.manifest if args.manifest.is_absolute() else ROOT / args.manifest
-    pdf_manifest_path = args.pdf_manifest if args.pdf_manifest.is_absolute() else ROOT / args.pdf_manifest
+    pdf_manifest_path = (
+        args.pdf_manifest if args.pdf_manifest.is_absolute() else ROOT / args.pdf_manifest
+    )
     validation = validate_manifest(manifest_path, pdf_manifest_path)
     json_path, md_path = resolve_output_paths(args.output)
     if not json_path.is_absolute():

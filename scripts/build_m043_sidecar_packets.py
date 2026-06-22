@@ -22,9 +22,29 @@ DEFAULT_SOURCE = ROOT / "artifacts" / "m043-combined-sidecar-probe" / "source-re
 DEFAULT_RUNTIME = ROOT / "artifacts" / "m043-combined-sidecar-probe" / "runtime-readiness.json"
 DEFAULT_REUSE = ROOT / "artifacts" / "m043-combined-sidecar-probe" / "m033-reuse-matrix.json"
 DEFAULT_OUTPUT_DIR = ROOT / "artifacts" / "m043-combined-sidecar-probe"
-FALSE_KEYS = ("graph_write_allowed", "promotion_allowed", "production_import_attempted", "import_eligible")
-SYSTEMS = ("current_baseline", "grobid", "opendataloader_pdf", "adaptix", "quant_mind_patterns", "combined_architecture")
-FORBIDDEN_PACKET_KEYS = {"raw_text", "full_text", "markdown_body", "embedding", "vector", "prompt", "completion"}
+FALSE_KEYS = (
+    "graph_write_allowed",
+    "promotion_allowed",
+    "production_import_attempted",
+    "import_eligible",
+)
+SYSTEMS = (
+    "current_baseline",
+    "grobid",
+    "opendataloader_pdf",
+    "adaptix",
+    "quant_mind_patterns",
+    "combined_architecture",
+)
+FORBIDDEN_PACKET_KEYS = {
+    "raw_text",
+    "full_text",
+    "markdown_body",
+    "embedding",
+    "vector",
+    "prompt",
+    "completion",
+}
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -33,7 +53,9 @@ def load_json(path: Path) -> dict[str, Any]:
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
 
 
 def write_text(path: Path, text: str) -> None:
@@ -49,7 +71,9 @@ def _reuse_artifacts(reuse: dict[str, Any], system: str) -> list[str]:
     return list(reuse.get("systems", {}).get(system, {}).get("prior_artifacts", []))
 
 
-def sidecar_status(system: str, source: dict[str, Any], runtime: dict[str, Any]) -> tuple[str, list[str]]:
+def sidecar_status(
+    system: str, source: dict[str, Any], runtime: dict[str, Any]
+) -> tuple[str, list[str]]:
     runtime_status = _runtime_status(runtime, system)
     local_pdf = int(source.get("local_pdf_count", 0)) > 0
     local_source = int(source.get("local_source_file_count", 0)) > 0
@@ -82,9 +106,13 @@ def sidecar_status(system: str, source: dict[str, Any], runtime: dict[str, Any])
 
     if system == "adaptix":
         if runtime_status != "live_ready":
-            return "blocked_adapter_not_live_ready_replayable_prior_evidence", ["adaptix_not_live_ready"]
+            return "blocked_adapter_not_live_ready_replayable_prior_evidence", [
+                "adaptix_not_live_ready"
+            ]
         if not local_pdf:
-            return "blocked_waiting_for_target_opendataloader_fixed_json", ["target_opendataloader_fixed_json_missing"]
+            return "blocked_waiting_for_target_opendataloader_fixed_json", [
+                "target_opendataloader_fixed_json_missing"
+            ]
         return "ready_after_opendataloader_fixed_json", []
 
     if system == "quant_mind_patterns":
@@ -96,12 +124,20 @@ def sidecar_status(system: str, source: dict[str, Any], runtime: dict[str, Any])
     raise ValueError(f"unknown sidecar system: {system}")
 
 
-def build_packets(*, target: dict[str, Any], source_readiness: dict[str, Any], runtime: dict[str, Any], reuse: dict[str, Any]) -> dict[str, Any]:
+def build_packets(
+    *,
+    target: dict[str, Any],
+    source_readiness: dict[str, Any],
+    runtime: dict[str, Any],
+    reuse: dict[str, Any],
+) -> dict[str, Any]:
     for payload in (target, source_readiness, runtime, reuse):
         for key in FALSE_KEYS:
             if payload.get(key) is not False and key in payload:
                 raise ValueError(f"safety flag must remain false: {key}")
-    source_by_key = {record["article_key"]: record for record in source_readiness.get("records", [])}
+    source_by_key = {
+        record["article_key"]: record for record in source_readiness.get("records", [])
+    }
     packets: list[dict[str, Any]] = []
     status_counts: Counter[str] = Counter()
     for entry in target.get("articles", []):
@@ -186,7 +222,15 @@ def render_markdown(packet: dict[str, Any]) -> str:
     ]
     for status, count in packet["status_counts"].items():
         lines.append(f"| {status} | {count} |")
-    lines.extend(["", "## Article packets", "", "| Article | Current | GROBID | OpenDataLoader PDF | Adaptix | quant-mind |", "|---|---|---|---|---|---|"])
+    lines.extend(
+        [
+            "",
+            "## Article packets",
+            "",
+            "| Article | Current | GROBID | OpenDataLoader PDF | Adaptix | quant-mind |",
+            "|---|---|---|---|---|---|",
+        ]
+    )
     for article in packet["packets"]:
         sidecars = article["sidecars"]
         lines.append(

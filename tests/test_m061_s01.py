@@ -22,7 +22,11 @@ spec.loader.exec_module(m061_anchor_pilot)
 def pilot_output() -> dict[str, Any]:
     output_dir = m061_anchor_pilot.DEFAULT_OUTPUT_DIR
     summary = m061_anchor_pilot.run_pilot(output_dir=output_dir, max_papers=30)
-    return {"summary": summary, "output_dir": output_dir, "decision_path": output_dir.parent / "s01-decision.md"}
+    return {
+        "summary": summary,
+        "output_dir": output_dir,
+        "decision_path": output_dir.parent / "s01-decision.md",
+    }
 
 
 def read_json(path: Path) -> Any:
@@ -64,9 +68,14 @@ def test_8_stages_complete_per_paper_with_real_pdfs(pilot_output: dict[str, Any]
         assert paper["fully_processed_real_paper"] is True
         assert len(paper["stage_records"]) == 8
         assert {record["stage"] for record in paper["stage_records"]} == set(range(1, 9))
-        assert all(record["status"] not in {"failed", "partial", "validation_failed"} for record in paper["stage_records"])
+        assert all(
+            record["status"] not in {"failed", "partial", "validation_failed"}
+            for record in paper["stage_records"]
+        )
         assert paper["parser_result"]["grobid_status"] in {"success", "reused_existing_m056"}
-        plotextractor = read_json(pilot_output["output_dir"] / paper["parser_result"]["plotextractor_output"])
+        plotextractor = read_json(
+            pilot_output["output_dir"] / paper["parser_result"]["plotextractor_output"]
+        )
         assert plotextractor["per_pdf"][0]["tex_status"] == "downloaded_eprint_source"
 
 

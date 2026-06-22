@@ -195,19 +195,42 @@ def _write_inputs(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
 
 def _materialize(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
     selection, loader_summary, source_root, output_dir = _write_inputs(tmp_path)
-    assert main(["--selection", str(selection), "--loader-summary", str(loader_summary), "--source-dir", str(source_root), "--output-dir", str(output_dir)]) == 0
+    assert (
+        main(
+            [
+                "--selection",
+                str(selection),
+                "--loader-summary",
+                str(loader_summary),
+                "--source-dir",
+                str(source_root),
+                "--output-dir",
+                str(output_dir),
+            ]
+        )
+        == 0
+    )
     return selection, loader_summary, source_root, output_dir
 
 
 def _run(tmp_path: Path) -> tuple[dict[str, Any], list[dict[str, Any]], str, Path]:
     _selection, _loader_summary, _source_root, output_dir = _materialize(tmp_path)
-    summary = json.loads((output_dir / "conversion-quality-summary.json").read_text(encoding="utf-8"))
-    diagnostics = [json.loads(line) for line in (output_dir / "conversion-quality-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()]
+    summary = json.loads(
+        (output_dir / "conversion-quality-summary.json").read_text(encoding="utf-8")
+    )
+    diagnostics = [
+        json.loads(line)
+        for line in (output_dir / "conversion-quality-diagnostics.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
     report = (output_dir / "conversion-quality-report.md").read_text(encoding="utf-8")
     return summary, diagnostics, report, output_dir
 
 
-def _verify_args(selection: Path, loader_summary: Path, output_dir: Path, corpus: Path) -> list[str]:
+def _verify_args(
+    selection: Path, loader_summary: Path, output_dir: Path, corpus: Path
+) -> list[str]:
     return [
         "--selection",
         str(selection),
@@ -235,12 +258,18 @@ def _diagnostic_codes(findings: list[dict[str, Any]]) -> set[str]:
 
 
 def _row(summary: dict[str, Any], role: str, identity: str | None = None) -> dict[str, Any]:
-    matches = [row for row in summary["results"] if row["source_role"] == role and (identity is None or row["identity"] == identity)]
+    matches = [
+        row
+        for row in summary["results"]
+        if row["source_role"] == role and (identity is None or row["identity"] == identity)
+    ]
     assert len(matches) == 1
     return matches[0]
 
 
-def test_parser_conversion_replay_writes_hashed_converted_text_and_fail_closed_metadata(tmp_path: Path) -> None:
+def test_parser_conversion_replay_writes_hashed_converted_text_and_fail_closed_metadata(
+    tmp_path: Path,
+) -> None:
     summary, diagnostics, report, output_dir = _run(tmp_path)
 
     pdf_row = _row(summary, "arxiv_pdf", "arxiv:2507.19457")
@@ -262,7 +291,11 @@ def test_parser_conversion_replay_writes_hashed_converted_text_and_fail_closed_m
     assert summary["production_import_attempted"] is False
     assert summary["ladybugdb_written"] is False
     assert all(value is False for value in summary["fail_closed_safety_flags"].values())
-    assert all(value is False for row in summary["results"] for value in row["fail_closed_safety_flags"].values())
+    assert all(
+        value is False
+        for row in summary["results"]
+        for value in row["fail_closed_safety_flags"].values()
+    )
     assert {diag["code"] for diag in diagnostics} >= {
         "parser_ready_converted_text",
         "converted_text_low_quality",
@@ -272,13 +305,23 @@ def test_parser_conversion_replay_writes_hashed_converted_text_and_fail_closed_m
         "missing_source_artifact",
     }
     for diag in diagnostics:
-        assert {"code", "severity", "json_path", "identity", "article_ref", "source_role", "safe_path"} <= set(diag)
+        assert {
+            "code",
+            "severity",
+            "json_path",
+            "identity",
+            "article_ref",
+            "source_role",
+            "safe_path",
+        } <= set(diag)
     assert "## Failure Modes" in report
     assert "## Load Profile" in report
     assert "## Negative Tests" in report
 
 
-def test_parser_conversion_replay_refuses_low_quality_metadata_blocked_unsafe_and_missing_rows(tmp_path: Path) -> None:
+def test_parser_conversion_replay_refuses_low_quality_metadata_blocked_unsafe_and_missing_rows(
+    tmp_path: Path,
+) -> None:
     summary, _diagnostics, _report, _output_dir = _run(tmp_path)
 
     low_quality = _row(summary, "arxiv_html")
@@ -308,7 +351,9 @@ def test_parser_conversion_replay_refuses_low_quality_metadata_blocked_unsafe_an
     assert missing["safe_path"] == "missing/source/original.pdf"
 
 
-def test_parser_conversion_replay_refuses_real_fallback_html_stub_and_removes_stale_converted_text(tmp_path: Path) -> None:
+def test_parser_conversion_replay_refuses_real_fallback_html_stub_and_removes_stale_converted_text(
+    tmp_path: Path,
+) -> None:
     selection, loader_summary, source_root, output_dir = _write_inputs(tmp_path)
     fallback_path = source_root / "arxiv/cs-cl/2507.19457/source/article.html"
     fallback_path.write_text(
@@ -327,8 +372,24 @@ def test_parser_conversion_replay_refuses_real_fallback_html_stub_and_removes_st
     stale = output_dir / "converted-text" / "arxiv_cs-cl_2507.19457" / "arxiv_html.txt"
     _write(stale, "stale parser-ready html should be removed")
 
-    assert main(["--selection", str(selection), "--loader-summary", str(loader_summary), "--source-dir", str(source_root), "--output-dir", str(output_dir)]) == 0
-    summary = json.loads((output_dir / "conversion-quality-summary.json").read_text(encoding="utf-8"))
+    assert (
+        main(
+            [
+                "--selection",
+                str(selection),
+                "--loader-summary",
+                str(loader_summary),
+                "--source-dir",
+                str(source_root),
+                "--output-dir",
+                str(output_dir),
+            ]
+        )
+        == 0
+    )
+    summary = json.loads(
+        (output_dir / "conversion-quality-summary.json").read_text(encoding="utf-8")
+    )
     html = _row(summary, "arxiv_html")
 
     assert html["status"] == "low_quality"
@@ -338,7 +399,9 @@ def test_parser_conversion_replay_refuses_real_fallback_html_stub_and_removes_st
     assert not stale.exists()
 
 
-def test_parser_conversion_replay_metadata_and_reports_do_not_embed_raw_payloads(tmp_path: Path) -> None:
+def test_parser_conversion_replay_metadata_and_reports_do_not_embed_raw_payloads(
+    tmp_path: Path,
+) -> None:
     summary, _diagnostics, report, output_dir = _run(tmp_path)
     metadata = (output_dir / "conversion-quality-summary.json").read_text(encoding="utf-8")
     metadata += (output_dir / "conversion-quality-diagnostics.jsonl").read_text(encoding="utf-8")
@@ -350,24 +413,48 @@ def test_parser_conversion_replay_metadata_and_reports_do_not_embed_raw_payloads
     assert "</html" not in metadata.lower()
     assert "%PDF-" not in metadata
     assert "base64," not in metadata.lower()
-    assert all(row["converted_text_path"] is None for row in summary["results"] if row["parser_ready"] is not True)
+    assert all(
+        row["converted_text_path"] is None
+        for row in summary["results"]
+        if row["parser_ready"] is not True
+    )
 
 
-def test_parser_conversion_replay_absent_pymupdf_is_diagnostic_not_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_parser_conversion_replay_absent_pymupdf_is_diagnostic_not_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     import replay_m031_parser_conversion as replay
 
     selection, loader_summary, source_root, output_dir = _write_inputs(tmp_path)
     monkeypatch.setattr(replay, "fitz", None)
 
-    assert replay.main(["--selection", str(selection), "--loader-summary", str(loader_summary), "--source-dir", str(source_root), "--output-dir", str(output_dir)]) == 0
-    summary = json.loads((output_dir / "conversion-quality-summary.json").read_text(encoding="utf-8"))
+    assert (
+        replay.main(
+            [
+                "--selection",
+                str(selection),
+                "--loader-summary",
+                str(loader_summary),
+                "--source-dir",
+                str(source_root),
+                "--output-dir",
+                str(output_dir),
+            ]
+        )
+        == 0
+    )
+    summary = json.loads(
+        (output_dir / "conversion-quality-summary.json").read_text(encoding="utf-8")
+    )
     pdf_row = _row(summary, "arxiv_pdf", "arxiv:2507.19457")
     assert pdf_row["status"] == "blocked"
     assert pdf_row["diagnostic_code"] == "pymupdf_unavailable"
     assert pdf_row["parser_ready"] is False
 
 
-def test_parser_conversion_replay_malformed_json_returns_cli_diagnostic(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_parser_conversion_replay_malformed_json_returns_cli_diagnostic(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     selection = tmp_path / "selection.json"
     loader_summary = tmp_path / "loader.json"
     source_root = tmp_path / "source"
@@ -375,14 +462,27 @@ def test_parser_conversion_replay_malformed_json_returns_cli_diagnostic(tmp_path
     selection.write_text("{not json", encoding="utf-8")
     _write_json(loader_summary, {"results": []})
 
-    exit_code = main(["--selection", str(selection), "--loader-summary", str(loader_summary), "--source-dir", str(source_root), "--output-dir", str(tmp_path / "out")])
+    exit_code = main(
+        [
+            "--selection",
+            str(selection),
+            "--loader-summary",
+            str(loader_summary),
+            "--source-dir",
+            str(source_root),
+            "--output-dir",
+            str(tmp_path / "out"),
+        ]
+    )
 
     assert exit_code == 2
     stderr = capsys.readouterr().err
     assert "malformed_json" in stderr
 
 
-def test_parser_conversion_closeout_verifier_writes_metadata_only_audit_surface(tmp_path: Path) -> None:
+def test_parser_conversion_closeout_verifier_writes_metadata_only_audit_surface(
+    tmp_path: Path,
+) -> None:
     selection, loader_summary, _source_root, output_dir = _materialize(tmp_path)
     corpus = tmp_path / "corpus"
 
@@ -399,39 +499,64 @@ def test_parser_conversion_closeout_verifier_writes_metadata_only_audit_surface(
     assert "## Failure Modes" in report
     assert "## Load Profile" in report
     assert "## Negative Tests" in report
-    closeout_metadata = (corpus / "parser-conversion-closeout-summary.json").read_text(encoding="utf-8") + report
+    closeout_metadata = (corpus / "parser-conversion-closeout-summary.json").read_text(
+        encoding="utf-8"
+    ) + report
     assert "This fixture PDF contains enough local scientific prose" not in closeout_metadata
     assert "<html" not in closeout_metadata.lower()
     assert "%PDF-" not in closeout_metadata
 
 
-def test_parser_conversion_closeout_verifier_cli_fails_on_findings(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_parser_conversion_closeout_verifier_cli_fails_on_findings(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     selection, loader_summary, _source_root, output_dir = _materialize(tmp_path)
-    summary = json.loads((output_dir / "conversion-quality-summary.json").read_text(encoding="utf-8"))
+    summary = json.loads(
+        (output_dir / "conversion-quality-summary.json").read_text(encoding="utf-8")
+    )
     summary["network_fetch_attempted"] = True
     _write_json(output_dir / "conversion-quality-summary.json", summary)
 
-    exit_code = verify_main(_verify_args(selection, loader_summary, output_dir, tmp_path / "corpus"))
+    exit_code = verify_main(
+        _verify_args(selection, loader_summary, output_dir, tmp_path / "corpus")
+    )
 
     assert exit_code == 1
     assert "failed" in capsys.readouterr().out
 
 
-def test_parser_conversion_closeout_verifier_flags_mutated_converted_hash_and_missing_text(tmp_path: Path) -> None:
+def test_parser_conversion_closeout_verifier_flags_mutated_converted_hash_and_missing_text(
+    tmp_path: Path,
+) -> None:
     selection, loader_summary, _source_root, output_dir = _materialize(tmp_path)
-    summary = json.loads((output_dir / "conversion-quality-summary.json").read_text(encoding="utf-8"))
-    converted = Path(next(row for row in summary["results"] if row["parser_ready"] is True)["converted_text_path"])
+    summary = json.loads(
+        (output_dir / "conversion-quality-summary.json").read_text(encoding="utf-8")
+    )
+    converted = Path(
+        next(row for row in summary["results"] if row["parser_ready"] is True)[
+            "converted_text_path"
+        ]
+    )
     converted.write_text("tampered converted text", encoding="utf-8")
 
-    _summary, findings = verify(_verify_args(selection, loader_summary, output_dir, tmp_path / "corpus"))
-    assert {"converted_text_sha256_mismatch", "converted_text_byte_size_mismatch"} <= _diagnostic_codes(findings)
+    _summary, findings = verify(
+        _verify_args(selection, loader_summary, output_dir, tmp_path / "corpus")
+    )
+    assert {
+        "converted_text_sha256_mismatch",
+        "converted_text_byte_size_mismatch",
+    } <= _diagnostic_codes(findings)
 
     converted.unlink()
-    _summary, findings = verify(_verify_args(selection, loader_summary, output_dir, tmp_path / "corpus2"))
+    _summary, findings = verify(
+        _verify_args(selection, loader_summary, output_dir, tmp_path / "corpus2")
+    )
     assert "missing_converted_text_artifact" in _diagnostic_codes(findings)
 
 
-def test_parser_conversion_closeout_verifier_flags_unsafe_path_and_payload_leakage(tmp_path: Path) -> None:
+def test_parser_conversion_closeout_verifier_flags_unsafe_path_and_payload_leakage(
+    tmp_path: Path,
+) -> None:
     selection, loader_summary, _source_root, output_dir = _materialize(tmp_path)
     summary_path = output_dir / "conversion-quality-summary.json"
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
@@ -439,9 +564,13 @@ def test_parser_conversion_closeout_verifier_flags_unsafe_path_and_payload_leaka
     summary["results"][0]["raw_text"] = "RAW_PDF_SECRET <html"
     _write_json(summary_path, summary)
     report_path = output_dir / "conversion-quality-report.md"
-    report_path.write_text(report_path.read_text(encoding="utf-8") + "\nbase64,RAW\n", encoding="utf-8")
+    report_path.write_text(
+        report_path.read_text(encoding="utf-8") + "\nbase64,RAW\n", encoding="utf-8"
+    )
 
-    _summary, findings = verify(_verify_args(selection, loader_summary, output_dir, tmp_path / "corpus"))
+    _summary, findings = verify(
+        _verify_args(selection, loader_summary, output_dir, tmp_path / "corpus")
+    )
 
     codes = _diagnostic_codes(findings)
     assert "unsafe_safe_path" in codes
@@ -449,7 +578,9 @@ def test_parser_conversion_closeout_verifier_flags_unsafe_path_and_payload_leaka
     assert "metadata_payload_snippet_leakage" in codes
 
 
-def test_parser_conversion_closeout_verifier_flags_invalid_parser_ready_promotions_and_graph_flags(tmp_path: Path) -> None:
+def test_parser_conversion_closeout_verifier_flags_invalid_parser_ready_promotions_and_graph_flags(
+    tmp_path: Path,
+) -> None:
     selection, loader_summary, _source_root, output_dir = _materialize(tmp_path)
     summary_path = output_dir / "conversion-quality-summary.json"
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
@@ -465,7 +596,9 @@ def test_parser_conversion_closeout_verifier_flags_invalid_parser_ready_promotio
     summary["results"][0]["fail_closed_safety_flags"]["ladybugdb_written"] = True
     _write_json(summary_path, summary)
 
-    _summary, findings = verify(_verify_args(selection, loader_summary, output_dir, tmp_path / "corpus"))
+    _summary, findings = verify(
+        _verify_args(selection, loader_summary, output_dir, tmp_path / "corpus")
+    )
 
     codes = _diagnostic_codes(findings)
     assert "low_quality_html_parser_ready_claim" in codes

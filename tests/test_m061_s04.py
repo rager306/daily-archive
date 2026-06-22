@@ -85,10 +85,24 @@ def test_idempotent_ingestion(tmp_path: Path) -> None:
 
     def fake_fetcher(arxiv_id: str) -> ingest.ArxivMetadata:
         calls.append(arxiv_id)
-        return ingest.ArxivMetadata(arxiv_id=arxiv_id, category="cs-lg", title="Fixture Paper", source="test")
+        return ingest.ArxivMetadata(
+            arxiv_id=arxiv_id, category="cs-lg", title="Fixture Paper", source="test"
+        )
 
-    first = ingest.ingest_catalog(m061_root=source_root, arxiv_root=arxiv_root, fetcher=fake_fetcher, sleep=lambda _: None, update_index=False)
-    second = ingest.ingest_catalog(m061_root=source_root, arxiv_root=arxiv_root, fetcher=fake_fetcher, sleep=lambda _: None, update_index=False)
+    first = ingest.ingest_catalog(
+        m061_root=source_root,
+        arxiv_root=arxiv_root,
+        fetcher=fake_fetcher,
+        sleep=lambda _: None,
+        update_index=False,
+    )
+    second = ingest.ingest_catalog(
+        m061_root=source_root,
+        arxiv_root=arxiv_root,
+        fetcher=fake_fetcher,
+        sleep=lambda _: None,
+        update_index=False,
+    )
 
     assert [record.status for record in first.records] == ["ingested"]
     assert [record.status for record in second.records] == ["skipped"]
@@ -106,9 +120,17 @@ def test_5_anchors_all_processed() -> None:
 
 
 def test_m050_m064_s01_s02_s03_regression() -> None:
-    trajectory_json = json.loads((ROOT / "artifacts" / "project-trajectory" / "trajectory-report.json").read_text(encoding="utf-8"))
-    trajectory_md = (ROOT / "artifacts" / "project-trajectory" / "trajectory-report.md").read_text(encoding="utf-8")
-    m044_summary = (ROOT / ".gsd" / "milestones" / "M044-qq02k8" / "M044-qq02k8-SUMMARY.md").read_text(encoding="utf-8")
+    trajectory_json = json.loads(
+        (ROOT / "artifacts" / "project-trajectory" / "trajectory-report.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    trajectory_md = (ROOT / "artifacts" / "project-trajectory" / "trajectory-report.md").read_text(
+        encoding="utf-8"
+    )
+    m044_summary = (
+        ROOT / ".gsd" / "milestones" / "M044-qq02k8" / "M044-qq02k8-SUMMARY.md"
+    ).read_text(encoding="utf-8")
     serialized = json.dumps(trajectory_json, sort_keys=True) + trajectory_md
     assert "M045" in serialized
     assert trajectory_json["dimensions"]["architecture"]["status"] == "tracked"

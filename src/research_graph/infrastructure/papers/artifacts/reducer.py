@@ -188,9 +188,7 @@ def aggregate_article_artifact_log(
     Returns a reducer event with the same shape as `merge_article_artifact_results`
     plus `directory` and `malformed_artifact_count` fields.
     """
-    target_dir = (
-        Path(results_dir) if results_dir is not None else DEFAULT_WORK_REQUEST_DIR
-    )
+    target_dir = Path(results_dir) if results_dir is not None else DEFAULT_WORK_REQUEST_DIR
     target_dir = target_dir.resolve()
 
     if not target_dir.exists():

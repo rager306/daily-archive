@@ -68,7 +68,9 @@ def _args(tmp_path: Path, *, no_network: bool = True) -> Namespace:
         selection,
         {
             "selection_id": "fixture-selection",
-            "articles": [{"article_ref": article_ref, "source_code": "arxiv", "selection_role": "fixture"}],
+            "articles": [
+                {"article_ref": article_ref, "source_code": "arxiv", "selection_role": "fixture"}
+            ],
             "safety_flags": {
                 "graph_import_allowed": False,
                 "production_ladybugdb_write_allowed": False,
@@ -135,7 +137,9 @@ def _args(tmp_path: Path, *, no_network: bool = True) -> Namespace:
 
 def _write_events(path: Path, events: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(json.dumps(event, sort_keys=True) + "\n" for event in events), encoding="utf-8")
+    path.write_text(
+        "".join(json.dumps(event, sort_keys=True) + "\n" for event in events), encoding="utf-8"
+    )
 
 
 def test_boundary_replay_requires_no_network(tmp_path: Path) -> None:
@@ -254,17 +258,23 @@ def test_missing_local_source_becomes_per_article_blocker_not_raw_payload(tmp_pa
 
     events = run_replay(args)
     summary = summary_from_artifacts(args, events)
-    artifact = json.loads((args.boundary / "arxiv-cs-ai-2512.24601" / "boundary.json").read_text(encoding="utf-8"))
+    artifact = json.loads(
+        (args.boundary / "arxiv-cs-ai-2512.24601" / "boundary.json").read_text(encoding="utf-8")
+    )
 
     assert artifact["boundary_status"]["loader"] == "blocked"
     assert artifact["boundary_status"]["parser"] == "blocked"
-    assert any(diagnostic["code"] == "LOCAL_SOURCE_MISSING" for diagnostic in artifact["diagnostics"])
+    assert any(
+        diagnostic["code"] == "LOCAL_SOURCE_MISSING" for diagnostic in artifact["diagnostics"]
+    )
     assert "boundary_diagnostics" in summary["readiness"]["blockers"]
     assert summary["validation_passed"] is False
     assert "Recursive Language Models" not in json.dumps(artifact)
 
 
-def test_validation_blocks_unsafe_safety_flags_redaction_graph_claim_and_zero_chunks(tmp_path: Path) -> None:
+def test_validation_blocks_unsafe_safety_flags_redaction_graph_claim_and_zero_chunks(
+    tmp_path: Path,
+) -> None:
     args = _args(tmp_path)
     events = run_replay(args)
     artifact_path = args.boundary / "arxiv-cs-ai-2512.24601" / "boundary.json"
@@ -275,7 +285,9 @@ def test_validation_blocks_unsafe_safety_flags_redaction_graph_claim_and_zero_ch
     artifact["unsafe_raw_text"] = "raw article text should never appear"
     artifact["metrics"]["chunk_count"] = 0
     artifact["diagnostics"] = [
-        diagnostic for diagnostic in artifact["diagnostics"] if diagnostic.get("code") != "ZERO_CHUNKS_WITHOUT_DIAGNOSTIC"
+        diagnostic
+        for diagnostic in artifact["diagnostics"]
+        if diagnostic.get("code") != "ZERO_CHUNKS_WITHOUT_DIAGNOSTIC"
     ]
     _write_json(artifact_path, artifact)
 

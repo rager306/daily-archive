@@ -157,7 +157,9 @@ def append_validation_cli_provenance(log_path: str | Path, entry: dict[str, Any]
 
 def read_validation_cli_provenance_log(path: str | Path) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
-    for line_number, line in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), start=1):
+    for line_number, line in enumerate(
+        Path(path).read_text(encoding="utf-8").splitlines(), start=1
+    ):
         if not line.strip():
             continue
         try:
@@ -197,10 +199,16 @@ def build_artifact_freshness_report(entry: dict[str, Any]) -> dict[str, Any]:
     diagnostics.extend(_validate_entry_shape(entry))
     diagnostics.extend(_validate_safety(entry))
     input_current, input_diagnostics = _verify_fingerprints(entry.get("inputs", []), role="input")
-    output_current, output_diagnostics = _verify_fingerprints(entry.get("outputs", []), role="output")
+    output_current, output_diagnostics = _verify_fingerprints(
+        entry.get("outputs", []), role="output"
+    )
     diagnostics.extend(input_diagnostics)
     diagnostics.extend(output_diagnostics)
-    diagnostics.extend(_verify_expected_artifact_metadata(entry.get("outputs", []), entry.get("expected_artifact_metadata", {})))
+    diagnostics.extend(
+        _verify_expected_artifact_metadata(
+            entry.get("outputs", []), entry.get("expected_artifact_metadata", {})
+        )
+    )
     missing_count = sum(1 for item in diagnostics if item["code"].startswith("missing_"))
     mismatch_count = sum(
         1
@@ -240,7 +248,9 @@ def write_artifact_freshness_report(report: dict[str, Any], path: str | Path) ->
     return output_path
 
 
-def _verify_fingerprints(expected: Sequence[dict[str, Any]] | Any, *, role: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+def _verify_fingerprints(
+    expected: Sequence[dict[str, Any]] | Any, *, role: str
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     current: list[dict[str, Any]] = []
     diagnostics: list[dict[str, Any]] = []
     if isinstance(expected, (str, bytes)) or not isinstance(expected, Sequence):
@@ -267,14 +277,38 @@ def _verify_fingerprints(expected: Sequence[dict[str, Any]] | Any, *, role: str)
         path = expected_item.get("path")
         if not path or not Path(path).exists():
             current.append(_missing_fingerprint(path or ""))
-            diagnostics.append(_diagnostic("blocker", f"missing_{role}", f"Recorded {role} path is missing.", "Re-run the producing command or restore the file.", path))
+            diagnostics.append(
+                _diagnostic(
+                    "blocker",
+                    f"missing_{role}",
+                    f"Recorded {role} path is missing.",
+                    "Re-run the producing command or restore the file.",
+                    path,
+                )
+            )
             continue
         actual = fingerprint_file(path)
         current.append(actual)
         if actual["sha256"] != expected_item.get("sha256"):
-            diagnostics.append(_diagnostic("blocker", f"{role}_hash_changed", f"Recorded {role} hash no longer matches current file hash.", "Re-run the producing command or investigate manual artifact mutation.", path))
+            diagnostics.append(
+                _diagnostic(
+                    "blocker",
+                    f"{role}_hash_changed",
+                    f"Recorded {role} hash no longer matches current file hash.",
+                    "Re-run the producing command or investigate manual artifact mutation.",
+                    path,
+                )
+            )
         if actual["size_bytes"] != expected_item.get("size_bytes"):
-            diagnostics.append(_diagnostic("blocker", f"{role}_size_changed", f"Recorded {role} size no longer matches current file size.", "Re-run the producing command or investigate manual artifact mutation.", path))
+            diagnostics.append(
+                _diagnostic(
+                    "blocker",
+                    f"{role}_size_changed",
+                    f"Recorded {role} size no longer matches current file size.",
+                    "Re-run the producing command or investigate manual artifact mutation.",
+                    path,
+                )
+            )
     return current, diagnostics
 
 
@@ -329,16 +363,38 @@ def _verify_expected_artifact_metadata(
                 )
     return diagnostics
 
+
 def _validate_entry_shape(entry: dict[str, Any]) -> list[dict[str, Any]]:
     required = ("schema_version", "run_id", "batch_id", "command", "inputs", "outputs", "exit_code")
     diagnostics = []
     for key in required:
         if key not in entry:
-            diagnostics.append(_diagnostic("blocker", "invalid_provenance", f"Provenance entry is missing required key {key!r}.", "Regenerate provenance with the current schema."))
+            diagnostics.append(
+                _diagnostic(
+                    "blocker",
+                    "invalid_provenance",
+                    f"Provenance entry is missing required key {key!r}.",
+                    "Regenerate provenance with the current schema.",
+                )
+            )
     if entry.get("schema_version") != SCHEMA_VERSION:
-        diagnostics.append(_diagnostic("blocker", "invalid_provenance", "Provenance entry schema version is not supported.", "Regenerate provenance with the current schema."))
+        diagnostics.append(
+            _diagnostic(
+                "blocker",
+                "invalid_provenance",
+                "Provenance entry schema version is not supported.",
+                "Regenerate provenance with the current schema.",
+            )
+        )
     if entry.get("exit_code") != 0:
-        diagnostics.append(_diagnostic("blocker", "invalid_provenance", "Recorded command exit code was nonzero.", "Do not trust artifacts from failed commands."))
+        diagnostics.append(
+            _diagnostic(
+                "blocker",
+                "invalid_provenance",
+                "Recorded command exit code was nonzero.",
+                "Do not trust artifacts from failed commands.",
+            )
+        )
     return diagnostics
 
 
@@ -346,11 +402,20 @@ def _validate_safety(entry: dict[str, Any]) -> list[dict[str, Any]]:
     diagnostics = []
     for key in SAFETY_FLAG_KEYS:
         if entry.get(key, False) is True:
-            diagnostics.append(_diagnostic("blocker", "unsafe_safety_flag", f"Provenance safety flag {key} is true.", "Remove unsafe artifact content and rerun with redacted outputs."))
+            diagnostics.append(
+                _diagnostic(
+                    "blocker",
+                    "unsafe_safety_flag",
+                    f"Provenance safety flag {key} is true.",
+                    "Remove unsafe artifact content and rerun with redacted outputs.",
+                )
+            )
     return diagnostics
 
 
-def _diagnostic(severity: str, code: str, message: str, recommended_action: str, path: str | None = None) -> dict[str, Any]:
+def _diagnostic(
+    severity: str, code: str, message: str, recommended_action: str, path: str | None = None
+) -> dict[str, Any]:
     diagnostic = {
         "severity": severity,
         "code": code,

@@ -53,7 +53,9 @@ def annotate_overlapping_signal_windows(locators: list[dict[str, Any]]) -> None:
         if locator["locator_id"] not in overlapped_ids:
             continue
         append_unique(locator["diagnostic_codes"], "overlapping_signal_window")
-        append_unique(locator["source_spans"][0]["ambiguity_diagnostics"], "overlapping_signal_window")
+        append_unique(
+            locator["source_spans"][0]["ambiguity_diagnostics"], "overlapping_signal_window"
+        )
         if locator["state"] not in {"missing_span", "repair_required"}:
             locator["state"] = "ambiguous_span"
             locator["support_level"] = "nearby_context"

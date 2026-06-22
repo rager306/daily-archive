@@ -57,7 +57,9 @@ def _pdf_bytes(text: str) -> bytes:
     return data
 
 
-def _captured_row(root: Path, article_ref: str, role: str, local_path: str, data: str | bytes) -> dict[str, Any]:
+def _captured_row(
+    root: Path, article_ref: str, role: str, local_path: str, data: str | bytes
+) -> dict[str, Any]:
     artifact = _write(root / article_ref / local_path, data)
     return {
         "schema_version": "m027-source-acquisition.v1",
@@ -96,7 +98,9 @@ def _write_summary(path: Path, rows: list[dict[str, Any]]) -> Path:
     return path
 
 
-def _run_boundary(tmp_path: Path, rows: list[dict[str, Any]]) -> tuple[dict[str, Any], list[dict[str, Any]], str]:
+def _run_boundary(
+    tmp_path: Path, rows: list[dict[str, Any]]
+) -> tuple[dict[str, Any], list[dict[str, Any]], str]:
     source_root = tmp_path / "corpus"
     summary_path = _write_summary(source_root / "source-acquisition-summary.json", rows)
     output_summary = source_root / "conversion-quality-summary.json"
@@ -121,7 +125,9 @@ def _run_boundary(tmp_path: Path, rows: list[dict[str, Any]]) -> tuple[dict[str,
     )
     assert exit_code == 0
     summary = json.loads(output_summary.read_text(encoding="utf-8"))
-    diagnostics = [json.loads(line) for line in output_diagnostics.read_text(encoding="utf-8").splitlines()]
+    diagnostics = [
+        json.loads(line) for line in output_diagnostics.read_text(encoding="utf-8").splitlines()
+    ]
     report = output_report.read_text(encoding="utf-8")
     return summary, diagnostics, report
 
@@ -321,14 +327,18 @@ def test_missing_hash_mismatch_and_non_captured_rows_fail_closed(tmp_path: Path)
 
 
 def _write_conversion_artifacts(source_root: Path, summary: dict[str, Any]) -> None:
-    (source_root / "conversion-quality-summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    (source_root / "conversion-quality-summary.json").write_text(
+        json.dumps(summary, indent=2), encoding="utf-8"
+    )
     (source_root / "conversion-quality-diagnostics.jsonl").write_text(
         "".join(json.dumps(row, sort_keys=True) + "\n" for row in summary["results"]),
         encoding="utf-8",
     )
 
 
-def _arxiv_abs_row(source_root: Path, article_ref: str = "arxiv/mixed-source/2605.20897") -> dict[str, Any]:
+def _arxiv_abs_row(
+    source_root: Path, article_ref: str = "arxiv/mixed-source/2605.20897"
+) -> dict[str, Any]:
     return _captured_row(
         source_root,
         article_ref,
@@ -338,7 +348,9 @@ def _arxiv_abs_row(source_root: Path, article_ref: str = "arxiv/mixed-source/260
     )
 
 
-def _arxiv_pdf_row(source_root: Path, article_ref: str = "arxiv/mixed-source/2605.20897") -> dict[str, Any]:
+def _arxiv_pdf_row(
+    source_root: Path, article_ref: str = "arxiv/mixed-source/2605.20897"
+) -> dict[str, Any]:
     return _captured_row(
         source_root,
         article_ref,
@@ -351,9 +363,13 @@ def _arxiv_pdf_row(source_root: Path, article_ref: str = "arxiv/mixed-source/260
     )
 
 
-def test_conversion_verifier_fails_on_unsafe_converted_text_path(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_conversion_verifier_fails_on_unsafe_converted_text_path(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     source_root = tmp_path / "corpus"
-    summary, _diagnostics, _report = _run_boundary(tmp_path, [_arxiv_abs_row(source_root), _arxiv_pdf_row(source_root)])
+    summary, _diagnostics, _report = _run_boundary(
+        tmp_path, [_arxiv_abs_row(source_root), _arxiv_pdf_row(source_root)]
+    )
     pdf_row = _by_role(summary["results"], "arxiv_pdf")
     pdf_row["converted_text_path"] = "../escape.txt"
     _write_conversion_artifacts(source_root, summary)
@@ -366,11 +382,17 @@ def test_conversion_verifier_fails_on_stale_source_and_converted_hashes(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     source_root = tmp_path / "corpus"
-    summary, _diagnostics, _report = _run_boundary(tmp_path, [_arxiv_abs_row(source_root), _arxiv_pdf_row(source_root)])
+    summary, _diagnostics, _report = _run_boundary(
+        tmp_path, [_arxiv_abs_row(source_root), _arxiv_pdf_row(source_root)]
+    )
     pdf_row = _by_role(summary["results"], "arxiv_pdf")
-    Path(source_root / "arxiv/mixed-source/2605.20897/source/original.pdf").write_bytes(b"stale source bytes")
+    Path(source_root / "arxiv/mixed-source/2605.20897/source/original.pdf").write_bytes(
+        b"stale source bytes"
+    )
     converted_path = Path(pdf_row["converted_text_path"])
-    converted_path.write_text(converted_path.read_text(encoding="utf-8") + "\nstale converted text", encoding="utf-8")
+    converted_path.write_text(
+        converted_path.read_text(encoding="utf-8") + "\nstale converted text", encoding="utf-8"
+    )
 
     assert _verify_boundary(tmp_path, article_count=1, variant_count=2) == 1
     stderr = capsys.readouterr().err
@@ -382,7 +404,9 @@ def test_conversion_verifier_fails_on_metadata_payload_leakage(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     source_root = tmp_path / "corpus"
-    summary, _diagnostics, _report = _run_boundary(tmp_path, [_arxiv_abs_row(source_root), _arxiv_pdf_row(source_root)])
+    summary, _diagnostics, _report = _run_boundary(
+        tmp_path, [_arxiv_abs_row(source_root), _arxiv_pdf_row(source_root)]
+    )
     summary["text"] = "RAW_PDF_SECRET must never appear in metadata"
     _write_conversion_artifacts(source_root, summary)
 
@@ -404,9 +428,13 @@ def test_conversion_verifier_fails_when_arxiv_pdf_fallback_is_missing(
     assert "article_without_parser_ready_fallback" in stderr
 
 
-def test_conversion_verifier_fails_on_unsafe_safety_flags(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_conversion_verifier_fails_on_unsafe_safety_flags(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     source_root = tmp_path / "corpus"
-    summary, _diagnostics, _report = _run_boundary(tmp_path, [_arxiv_abs_row(source_root), _arxiv_pdf_row(source_root)])
+    summary, _diagnostics, _report = _run_boundary(
+        tmp_path, [_arxiv_abs_row(source_root), _arxiv_pdf_row(source_root)]
+    )
     summary["fail_closed_safety_flags"]["graph_import_allowed"] = True
     pdf_row = _by_role(summary["results"], "arxiv_pdf")
     pdf_row["fail_closed_safety_flags"]["production_ladybugdb_write_allowed"] = True

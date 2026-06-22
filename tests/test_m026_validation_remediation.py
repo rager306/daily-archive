@@ -24,7 +24,9 @@ ROADMAP_PATH = verify_m026_validation_remediation.ROADMAP_PATH
 VALIDATION_PATH = verify_m026_validation_remediation.VALIDATION_PATH
 MATRIX_PATH = verify_m026_validation_remediation.MATRIX_PATH
 AUDIT_JSON_PATH = verify_m026_validation_remediation.AUDIT_JSON_PATH
-BROAD_ACTIVE_OUT_OF_SCOPE_REQUIREMENTS = verify_m026_validation_remediation.BROAD_ACTIVE_OUT_OF_SCOPE_REQUIREMENTS
+BROAD_ACTIVE_OUT_OF_SCOPE_REQUIREMENTS = (
+    verify_m026_validation_remediation.BROAD_ACTIVE_OUT_OF_SCOPE_REQUIREMENTS
+)
 EXISTING_CONTEXT_REQUIREMENTS = verify_m026_validation_remediation.EXISTING_CONTEXT_REQUIREMENTS
 EXPECTED_SPECIAL_REQUIREMENTS = verify_m026_validation_remediation.EXPECTED_SPECIAL_REQUIREMENTS
 validate_audit = verify_m026_validation_remediation.validate_audit
@@ -62,9 +64,15 @@ def _base_matrix_row(requirement_id: str) -> dict[str, Any]:
         **semantics,
         "evidence_paths": ["doc/validation/m026_requirement_scope_matrix.json"],
         "observed_m026_evidence": [f"{requirement_id} metadata-only fixture evidence."],
-        "allowed_claims": [f"{requirement_id} fixture row preserves the scoped M026 interpretation."],
-        "forbidden_claims": [f"Do not widen {requirement_id} beyond the scoped fixture interpretation."],
-        "remaining_work": [f"{requirement_id} remains governed by future direct evidence if needed."],
+        "allowed_claims": [
+            f"{requirement_id} fixture row preserves the scoped M026 interpretation."
+        ],
+        "forbidden_claims": [
+            f"Do not widen {requirement_id} beyond the scoped fixture interpretation."
+        ],
+        "remaining_work": [
+            f"{requirement_id} remains governed by future direct evidence if needed."
+        ],
         "rationale": f"{requirement_id} fixture rationale mirrors S05 semantics.",
     }
 
@@ -76,7 +84,9 @@ def _base_matrix() -> dict[str, Any]:
         "schema_version": "m026-requirement-scope-matrix.v1",
         "metadata_only": True,
         "required_requirement_ids": list(REQUIRED_REQUIREMENT_IDS),
-        "requirements": [_base_matrix_row(requirement_id) for requirement_id in REQUIRED_REQUIREMENT_IDS],
+        "requirements": [
+            _base_matrix_row(requirement_id) for requirement_id in REQUIRED_REQUIREMENT_IDS
+        ],
     }
 
 
@@ -104,7 +114,10 @@ def _base_audit(matrix: dict[str, Any]) -> dict[str, Any]:
         "generated_at_utc": "2026-06-01T00:00:00Z",
         "metadata_only": True,
         "source_inputs": [MATRIX_PATH, ROADMAP_PATH, VALIDATION_PATH],
-        "remediation_target": {"validation_report": VALIDATION_PATH, "validation_verdict": "needs-remediation"},
+        "remediation_target": {
+            "validation_report": VALIDATION_PATH,
+            "validation_verdict": "needs-remediation",
+        },
         "criteria_source": {
             "canonical_success_criteria_source": ROADMAP_PATH,
             "criteria_source_decision": "Use roadmap fixture criteria.",
@@ -126,7 +139,9 @@ def _base_audit(matrix: dict[str, Any]) -> dict[str, Any]:
                 "R036": {"classification": "adjacent_evidence_not_full_requirement"},
                 "R040": {"classification": "in_scope_constraint_followed"},
                 "R050": {"classification": "out_of_scope_future_consumer"},
-                "broad_active_requirements": ", ".join(sorted(BROAD_ACTIVE_OUT_OF_SCOPE_REQUIREMENTS)),
+                "broad_active_requirements": ", ".join(
+                    sorted(BROAD_ACTIVE_OUT_OF_SCOPE_REQUIREMENTS)
+                ),
                 "historical_validated_requirements": "R001-R010, R014, and R030",
             },
             "requirement_rows": deepcopy(matrix["requirements"]),
@@ -151,7 +166,11 @@ def _base_audit(matrix: dict[str, Any]) -> dict[str, Any]:
         "safe_validation_wording": ["M026 remains a metadata-only validation remediation fixture."],
         "forbidden_claims": ["M026 implements the loader"],
         "remaining_work": ["Future milestones supply direct runtime evidence."],
-        "quality_gates": {"Q5": "fixture failure modes", "Q6": "fixture load profile", "Q7": "fixture negative tests"},
+        "quality_gates": {
+            "Q5": "fixture failure modes",
+            "Q6": "fixture load profile",
+            "Q7": "fixture negative tests",
+        },
         "observability_impact": "Diagnostics name exact JSON paths, classes, requirements, and stale Markdown markers.",
     }
 
@@ -318,7 +337,9 @@ def test_rejects_missing_or_extra_class(class_name: str, expected: str) -> None:
                 row for row in audit["canonical_verification_classes"] if row["class"] != class_name
             ]
             audit["rerun_ready_validation_inputs"]["verification_classes"] = [
-                row for row in audit["rerun_ready_validation_inputs"]["verification_classes"] if row["class"] != class_name
+                row
+                for row in audit["rerun_ready_validation_inputs"]["verification_classes"]
+                if row["class"] != class_name
             ]
         else:
             audit["canonical_verification_classes"].append(_class_row(class_name))
@@ -348,17 +369,23 @@ def test_rejects_non_pass_class_under_strict_mode() -> None:
 
 def test_rejects_wrong_criteria_source() -> None:
     def mutate(audit: dict[str, Any], _rendered: str, _matrix: dict[str, Any]) -> None:
-        audit["criteria_source"]["canonical_success_criteria_source"] = "doc/validation/not-roadmap.md"
+        audit["criteria_source"]["canonical_success_criteria_source"] = (
+            "doc/validation/not-roadmap.md"
+        )
         return None
 
-    assert any("$.criteria_source.canonical_success_criteria_source" in error for error in _errors(mutate))
+    assert any(
+        "$.criteria_source.canonical_success_criteria_source" in error for error in _errors(mutate)
+    )
 
 
 def test_rejects_stale_markdown() -> None:
     def mutate(_audit: dict[str, Any], rendered: str, _matrix: dict[str, Any]) -> str:
         return rendered.replace("| UAT | PASS |", "| UAT | FAIL |")
 
-    assert any("rendered markdown missing PASS class row for UAT" in error for error in _errors(mutate))
+    assert any(
+        "rendered markdown missing PASS class row for UAT" in error for error in _errors(mutate)
+    )
 
 
 @pytest.mark.parametrize(
@@ -368,19 +395,31 @@ def test_rejects_stale_markdown() -> None:
         ("R040", "s05_verdict", "globally_validated", "R040"),
         ("R050", "s05_verdict", "implemented_and_validated", "R050"),
         ("R019", "current_status", "validated", "audit R019 must remain active"),
-        ("R022", "m026_applicability", "missing_touched_coverage", "audit R022 must be classified out_of_scope_active_requirement"),
+        (
+            "R022",
+            "m026_applicability",
+            "missing_touched_coverage",
+            "audit R022 must be classified out_of_scope_active_requirement",
+        ),
     ],
 )
-def test_rejects_requirement_semantic_drift(requirement_id: str, field: str, value: str, expected: str) -> None:
+def test_rejects_requirement_semantic_drift(
+    requirement_id: str, field: str, value: str, expected: str
+) -> None:
     def mutate(audit: dict[str, Any], _rendered: str, matrix: dict[str, Any]) -> None:
-        for rows in (audit["requirement_coverage_interpretation"]["requirement_rows"], matrix["requirements"]):
+        for rows in (
+            audit["requirement_coverage_interpretation"]["requirement_rows"],
+            matrix["requirements"],
+        ):
             next(row for row in rows if row["requirement_id"] == requirement_id)[field] = value
         return None
 
     assert any(expected in error for error in _errors(mutate))
 
 
-@pytest.mark.parametrize("flag", ["kg_import_or_readiness_claimed", "raw_payloads_embedded", "binary_payloads_embedded"])
+@pytest.mark.parametrize(
+    "flag", ["kg_import_or_readiness_claimed", "raw_payloads_embedded", "binary_payloads_embedded"]
+)
 def test_rejects_unsafe_true_safety_flag(flag: str) -> None:
     def mutate(audit: dict[str, Any], _rendered: str, _matrix: dict[str, Any]) -> None:
         audit["safety_flags"][flag] = True
@@ -409,7 +448,10 @@ def test_rejects_unsafe_positive_phrase_outside_forbidden_claims() -> None:
         audit["safe_validation_wording"].append("M026 implements the loader.")
         return None
 
-    assert any("contains unsafe positive claim phrase: m026 implements the loader" in error for error in _errors(mutate))
+    assert any(
+        "contains unsafe positive claim phrase: m026 implements the loader" in error
+        for error in _errors(mutate)
+    )
 
 
 def test_rejects_unsafe_positive_phrase_in_markdown_outside_forbidden_claims() -> None:

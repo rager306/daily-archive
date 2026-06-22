@@ -92,7 +92,11 @@ def test_chunking_benchmark_contract_aggregates_methods() -> None:
                 asset_linkage_coverage_rate=0.1,
             ),
         ),
-        per_paper=(PaperMethodMetrics(paper_id="p1", method_id="baseline", chunk_count=10, refused_chunk_count=10),),
+        per_paper=(
+            PaperMethodMetrics(
+                paper_id="p1", method_id="baseline", chunk_count=10, refused_chunk_count=10
+            ),
+        ),
         recommendation_status="review_required",
         caveats=("no_method_import_ready",),
     ).to_contract()
@@ -148,7 +152,16 @@ def test_validate_benchmark_rejects_nested_raw_text_or_embedding_leakage() -> No
     leaked = "do not echo this raw chunk"
     benchmark = ChunkingBenchmark(input_corpus="gold", methods=(_method(),)).to_contract()
     benchmark["methods"][0]["caveats"].append({"raw_text": leaked})
-    benchmark["per_paper"].append({"paper_id": "p1", "method_id": "m", "chunk_count": 1, "import_eligible_chunk_count": 0, "refused_chunk_count": 1, "embedding": [0.1]})
+    benchmark["per_paper"].append(
+        {
+            "paper_id": "p1",
+            "method_id": "m",
+            "chunk_count": 1,
+            "import_eligible_chunk_count": 0,
+            "refused_chunk_count": 1,
+            "embedding": [0.1],
+        }
+    )
 
     validation = validate_chunking_benchmark(benchmark)
 
@@ -202,7 +215,10 @@ def test_method_from_structure_aware_summary_uses_annotation_and_asset_coverage(
             "counts_by_route": {"claim_extraction": 4, "retrieval_only": 6},
             "counts_by_chunk_type": {"claim_candidate": 4, "retrieval_context": 6},
             "counts_by_state": {"repair_required": 4, "ok_for_retrieval_only": 6},
-            "refusal_counts": {"claim_route_requires_review": 4, "retrieval_only_not_import_ready": 6},
+            "refusal_counts": {
+                "claim_route_requires_review": 4,
+                "retrieval_only_not_import_ready": 6,
+            },
         },
         annotation_summary={"annotated_chunk_count": 10},
         source_asset_summary={"asset_count": 2, "missing_counts": {"missing_original_pdf": 1}},
@@ -222,7 +238,13 @@ def test_method_from_simple_section_window_estimate_stays_import_blocked() -> No
             "paper_count": 2,
             "source_file_count": 3,
             "asset_count": 6,
-            "asset_counts_by_type": {"table": 2, "figure": 1, "equation": 1, "reference": 1, "metadata": 1},
+            "asset_counts_by_type": {
+                "table": 2,
+                "figure": 1,
+                "equation": 1,
+                "reference": 1,
+                "metadata": 1,
+            },
             "missing_counts": {"missing_original_pdf": 1},
         }
     ).to_contract()
@@ -264,7 +286,10 @@ def test_build_benchmark_from_artifacts_reads_redacted_summaries(tmp_path: Path)
                 "counts_by_route": {"table_extraction": 1, "retrieval_only": 3},
                 "counts_by_chunk_type": {"table_context": 1, "retrieval_context": 3},
                 "counts_by_state": {"repair_required": 1, "ok_for_retrieval_only": 3},
-                "refusal_counts": {"table_route_requires_review": 1, "retrieval_only_not_import_ready": 3},
+                "refusal_counts": {
+                    "table_route_requires_review": 1,
+                    "retrieval_only_not_import_ready": 3,
+                },
             }
         ),
         encoding="utf-8",
@@ -302,7 +327,9 @@ def test_build_benchmark_from_artifacts_reads_redacted_summaries(tmp_path: Path)
     assert "real_library_candidates_not_executed" in benchmark["caveats"]
 
 
-def test_write_chunking_benchmark_run_writes_redacted_summary_and_diagnostics(tmp_path: Path) -> None:
+def test_write_chunking_benchmark_run_writes_redacted_summary_and_diagnostics(
+    tmp_path: Path,
+) -> None:
     benchmark = ChunkingBenchmark(
         input_corpus="gold",
         methods=(_method("baseline"), _method("structure_aware")),
@@ -311,8 +338,15 @@ def test_write_chunking_benchmark_run_writes_redacted_summary_and_diagnostics(tm
 
     summary = write_chunking_benchmark_run(benchmark, tmp_path)
 
-    summary_file = json.loads((tmp_path / "chunking-benchmark-summary.json").read_text(encoding="utf-8"))
-    records = [json.loads(line) for line in (tmp_path / "chunking-benchmark-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()]
+    summary_file = json.loads(
+        (tmp_path / "chunking-benchmark-summary.json").read_text(encoding="utf-8")
+    )
+    records = [
+        json.loads(line)
+        for line in (tmp_path / "chunking-benchmark-diagnostics.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
     assert summary == summary_file
     assert summary_file["method_count"] == 2
     assert "methods" not in summary_file

@@ -13,8 +13,22 @@ from pathlib import Path
 from typing import Any
 
 REQUIRED_REQUIREMENT_IDS = {
-    "R019", "R022", "R023", "R024", "R027", "R029", "R030", "R031",
-    "R032", "R033", "R035", "R036", "R040", "R050", "R051", "R052",
+    "R019",
+    "R022",
+    "R023",
+    "R024",
+    "R027",
+    "R029",
+    "R030",
+    "R031",
+    "R032",
+    "R033",
+    "R035",
+    "R036",
+    "R040",
+    "R050",
+    "R051",
+    "R052",
 }
 
 IN_SCOPE_APPLICABILITIES = {
@@ -24,7 +38,12 @@ IN_SCOPE_APPLICABILITIES = {
 }
 
 REQUIRED_TOP_LEVEL_KEYS = {
-    "milestone_id", "slice_id", "scope_boundary", "requirements", "s09_handoff_gaps", "review_notes",
+    "milestone_id",
+    "slice_id",
+    "scope_boundary",
+    "requirements",
+    "s09_handoff_gaps",
+    "review_notes",
 }
 
 UNSAFE_SCOPE_EXPANSION_PHRASES = {
@@ -88,7 +107,15 @@ def validate_matrix(matrix: dict[str, Any]) -> list[str]:
             continue
         seen[requirement_id] = seen.get(requirement_id, 0) + 1
         rows[requirement_id] = row
-        for key in ("current_status", "m024_applicability", "coverage_verdict", "evidence_paths", "rationale", "allowed_claims", "forbidden_claims"):
+        for key in (
+            "current_status",
+            "m024_applicability",
+            "coverage_verdict",
+            "evidence_paths",
+            "rationale",
+            "allowed_claims",
+            "forbidden_claims",
+        ):
             if key not in row:
                 errors.append(f"{requirement_id} missing {key}")
 
@@ -104,7 +131,9 @@ def validate_matrix(matrix: dict[str, Any]) -> list[str]:
 
     for requirement_id, row in rows.items():
         evidence_paths = row.get("evidence_paths")
-        if not isinstance(evidence_paths, list) or not all(isinstance(path, str) and path for path in evidence_paths):
+        if not isinstance(evidence_paths, list) or not all(
+            isinstance(path, str) and path for path in evidence_paths
+        ):
             errors.append(f"{requirement_id} evidence_paths must be a non-empty list of strings")
         if row.get("m024_applicability") in IN_SCOPE_APPLICABILITIES and not evidence_paths:
             errors.append(f"{requirement_id} is in-scope but has no evidence_paths")
@@ -113,12 +142,16 @@ def validate_matrix(matrix: dict[str, Any]) -> list[str]:
         if not isinstance(row.get("forbidden_claims"), list) or not row.get("forbidden_claims"):
             errors.append(f"{requirement_id} forbidden_claims must be non-empty")
 
-        positive_text = "\n".join(_strings_from({
-            "coverage_verdict": row.get("coverage_verdict"),
-            "rationale": row.get("rationale"),
-            "allowed_claims": row.get("allowed_claims"),
-            "s09_followup": row.get("s09_followup"),
-        })).lower()
+        positive_text = "\n".join(
+            _strings_from(
+                {
+                    "coverage_verdict": row.get("coverage_verdict"),
+                    "rationale": row.get("rationale"),
+                    "allowed_claims": row.get("allowed_claims"),
+                    "s09_followup": row.get("s09_followup"),
+                }
+            )
+        ).lower()
         for phrase in UNSAFE_SCOPE_EXPANSION_PHRASES:
             if phrase in positive_text:
                 errors.append(f"{requirement_id} contains unsafe scope-expansion claim: {phrase}")
@@ -129,9 +162,15 @@ def validate_matrix(matrix: dict[str, Any]) -> list[str]:
             errors.append(f"{requirement_id} must remain advanced_not_validated")
         if row and row.get("m024_applicability") != "in_scope_advanced_partial":
             errors.append(f"{requirement_id} must be classified in_scope_advanced_partial")
-    if rows.get("R030") and rows["R030"].get("coverage_verdict") != "covered_by_existing_validation":
+    if (
+        rows.get("R030")
+        and rows["R030"].get("coverage_verdict") != "covered_by_existing_validation"
+    ):
         errors.append("R030 must be covered_by_existing_validation")
-    if rows.get("R036") and rows["R036"].get("coverage_verdict") not in {"validated_pending_requirement_update_review", "covered_by_existing_validation"}:
+    if rows.get("R036") and rows["R036"].get("coverage_verdict") not in {
+        "validated_pending_requirement_update_review",
+        "covered_by_existing_validation",
+    }:
         errors.append("R036 must be evidence-backed validated-pending-update or already covered")
 
     gaps = matrix.get("s09_handoff_gaps")

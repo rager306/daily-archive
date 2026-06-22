@@ -40,7 +40,9 @@ class MaintainabilityThresholds:
 DEFAULT_THRESHOLDS = MaintainabilityThresholds()
 
 
-def severity_for_score(score: float, thresholds: MaintainabilityThresholds = DEFAULT_THRESHOLDS) -> SeverityBand:
+def severity_for_score(
+    score: float, thresholds: MaintainabilityThresholds = DEFAULT_THRESHOLDS
+) -> SeverityBand:
     """Classify a score with the default advisory severity bands."""
     return thresholds.severity_for_score(score)
 

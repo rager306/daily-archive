@@ -13,7 +13,9 @@ from typing import Any
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CORPUS = ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "figure-caption-corpus.json"
+DEFAULT_CORPUS = (
+    ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "figure-caption-corpus.json"
+)
 DEFAULT_EMBEDDINGS = ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "embeddings.json"
 DEFAULT_EDGES = ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "edges.json"
 DEFAULT_SUMMARY = ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "summary.json"
@@ -69,7 +71,9 @@ def compute_similarity_edges(
     figure_ids = sorted(figure_by_id)
     missing = [figure_id for figure_id in figure_ids if figure_id not in embedding_map]
     if missing:
-        raise ValueError(f"missing embeddings for {len(missing)} figures; first missing: {missing[0]}")
+        raise ValueError(
+            f"missing embeddings for {len(missing)} figures; first missing: {missing[0]}"
+        )
     matrix = np.asarray([embedding_map[figure_id] for figure_id in figure_ids], dtype=np.float32)
     norms = np.linalg.norm(matrix, axis=1)
     if np.any(norms == 0):
@@ -99,7 +103,9 @@ def compute_similarity_edges(
                     "relation_type": relation_type,
                 }
             )
-    edges.sort(key=lambda edge: (-edge["similarity"], edge["source_figure_id"], edge["target_figure_id"]))
+    edges.sort(
+        key=lambda edge: (-edge["similarity"], edge["source_figure_id"], edge["target_figure_id"])
+    )
     values = [float(edge["similarity"]) for edge in edges]
     inter_doc_edges = sum(1 for edge in edges if edge["relation_type"] == "inter-doc")
     intra_doc_edges = len(edges) - inter_doc_edges
@@ -123,7 +129,9 @@ def compute_similarity_edges(
         "edges": edges,
     }
     edges_path.parent.mkdir(parents=True, exist_ok=True)
-    edges_path.write_text(json.dumps(edge_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    edges_path.write_text(
+        json.dumps(edge_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return edges, summary
 

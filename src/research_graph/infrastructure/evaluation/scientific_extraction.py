@@ -61,9 +61,7 @@ def entity_id(source_id: str, label: str) -> str:
     return f"entity:{source_id}:{_stable_slug(label)}"
 
 
-def relation_id(
-    source_id: str, from_entity_id: str, to_entity_id: str, relation_type: str
-) -> str:
+def relation_id(source_id: str, from_entity_id: str, to_entity_id: str, relation_type: str) -> str:
     """Build a deterministic relation ID from endpoints and relation type."""
     return (
         f"relation:{source_id}:{_stable_slug(from_entity_id)}:"
@@ -118,7 +116,9 @@ def validate_extraction_patch(patch: ExtractionPatch) -> list[str]:
 
     for entity in patch.entities:
         diagnostics.extend(validate_entity(entity))
-        diagnostics.extend(_validate_duplicate_draft_id(patch.source_id, draft_ids, entity.entity_id))
+        diagnostics.extend(
+            _validate_duplicate_draft_id(patch.source_id, draft_ids, entity.entity_id)
+        )
         diagnostics.extend(
             _validate_patch_membership(
                 "ScientificEntity",

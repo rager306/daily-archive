@@ -14,7 +14,9 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT_ROOT = ROOT / "artifacts" / "m058-plotextractor"
-DEFAULT_BASE_URL = os.environ.get("TEI_URL", os.environ.get("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000"))
+DEFAULT_BASE_URL = os.environ.get(
+    "TEI_URL", os.environ.get("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000")
+)
 DEFAULT_API_KEY = os.environ.get("FD_API_KEY")
 DEFAULT_MODEL_ID = os.environ.get("MODEL_ID", os.environ.get("FD_MODEL_NAME", "deepvk/USER-bge-m3"))
 DEFAULT_REDIS_HOST = os.environ.get("REDIS_HOST", "127.0.0.1")
@@ -50,7 +52,9 @@ class FdEmbeddingClient:
         self.api_key = api_key
         self.model_id = model_id
 
-    def embed_batch(self, texts: list[str], *, dimensions: int = DEFAULT_DIMENSIONS) -> list[list[float]]:
+    def embed_batch(
+        self, texts: list[str], *, dimensions: int = DEFAULT_DIMENSIONS
+    ) -> list[list[float]]:
         payload = {"input": texts, "model": self.model_id, "dimensions": dimensions}
         headers = {"Content-Type": "application/json", "X-Model-Id": self.model_id}
         if self.api_key:

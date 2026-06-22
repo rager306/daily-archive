@@ -46,7 +46,12 @@ def _echo_validation_batch_response(response: dict[str, Any], *, as_json: bool) 
             [
                 f"status: {response['status']}",
                 f"command: {response.get('command', 'validation-batch')}",
-                str(response.get("boundary", "No production KG import; validation-batch commands are operational diagnostics only.")),
+                str(
+                    response.get(
+                        "boundary",
+                        "No production KG import; validation-batch commands are operational diagnostics only.",
+                    )
+                ),
             ]
         )
     )
@@ -87,7 +92,9 @@ def validation_batch_init(
         Path,
         typer.Option("--output-dir", help="Directory where batch artifacts will be written."),
     ],
-    limit: Annotated[int | None, typer.Option("--limit", help="Optional maximum papers to select.")] = None,
+    limit: Annotated[
+        int | None, typer.Option("--limit", help="Optional maximum papers to select.")
+    ] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Print JSON response.")] = False,
 ) -> None:
     """Initialize a validation batch state and selection manifest."""
@@ -157,11 +164,15 @@ def validation_batch_scan(
     ] = None,
     mixed_benchmark_path: Annotated[
         Path | None,
-        typer.Option("--mixed-benchmark-path", help="M005/S06 mixed benchmark JSON for context only."),
+        typer.Option(
+            "--mixed-benchmark-path", help="M005/S06 mixed benchmark JSON for context only."
+        ),
     ] = None,
     milestone_id: Annotated[
         str | None,
-        typer.Option("--milestone-id", help="Active milestone id to stamp into validation scan artifacts."),
+        typer.Option(
+            "--milestone-id", help="Active milestone id to stamp into validation scan artifacts."
+        ),
     ] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Print JSON response.")] = False,
 ) -> None:
@@ -198,12 +209,22 @@ def validation_batch_verify_artifacts(
         Path,
         typer.Option("--provenance-log", help="Validation CLI provenance JSONL log."),
     ],
-    run_id: Annotated[str | None, typer.Option("--run-id", help="Specific provenance run id to verify.")] = None,
-    batch_id: Annotated[str | None, typer.Option("--batch-id", help="Batch id used to select the newest matching run.")] = None,
-    command: Annotated[str | None, typer.Option("--command", help="Command label used to select the newest matching run.")] = None,
+    run_id: Annotated[
+        str | None, typer.Option("--run-id", help="Specific provenance run id to verify.")
+    ] = None,
+    batch_id: Annotated[
+        str | None,
+        typer.Option("--batch-id", help="Batch id used to select the newest matching run."),
+    ] = None,
+    command: Annotated[
+        str | None,
+        typer.Option("--command", help="Command label used to select the newest matching run."),
+    ] = None,
     report_path: Annotated[
         Path | None,
-        typer.Option("--report-path", help="Optional path where the freshness report JSON should be written."),
+        typer.Option(
+            "--report-path", help="Optional path where the freshness report JSON should be written."
+        ),
     ] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Print JSON response.")] = False,
 ) -> None:
@@ -234,21 +255,30 @@ def validation_batch_verify_artifacts(
 def validation_batch_article_report(
     output_dir: Annotated[
         Path,
-        typer.Option("--output-dir", help="Directory where S07 article report artifacts will be written."),
+        typer.Option(
+            "--output-dir", help="Directory where S07 article report artifacts will be written."
+        ),
     ],
     manifest_path: Annotated[
         Path | None,
-        typer.Option("--manifest-path", help="S07 article batch manifest JSON with metadata-only documents."),
+        typer.Option(
+            "--manifest-path", help="S07 article batch manifest JSON with metadata-only documents."
+        ),
     ] = None,
     state_path: Annotated[
         Path | None,
-        typer.Option("--state-path", help="Existing validation batch-state.json to adapt into article metadata rows."),
+        typer.Option(
+            "--state-path",
+            help="Existing validation batch-state.json to adapt into article metadata rows.",
+        ),
     ] = None,
     provenance_log: Annotated[
         Path | None,
         typer.Option("--provenance-log", help="Optional validation CLI provenance JSONL path."),
     ] = None,
-    limit: Annotated[int, typer.Option("--limit", help="Maximum documents to select, capped at ten.")] = 10,
+    limit: Annotated[
+        int, typer.Option("--limit", help="Maximum documents to select, capped at ten.")
+    ] = 10,
     json_output: Annotated[bool, typer.Option("--json", help="Print JSON response.")] = False,
 ) -> None:
     """Write the S07 metadata-only 10-document article validation report."""
@@ -292,8 +322,6 @@ def validation_batch_resume(
 ) -> None:
     """Contract-only stub for future resumable batch execution."""
     _validation_batch_stub("resume", batch_id=batch_id, as_json=json_output)
-
-
 
 
 def register(app: typer.Typer) -> None:

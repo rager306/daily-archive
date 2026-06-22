@@ -87,7 +87,9 @@ def article_artifacts_contract(
     ] = False,
 ) -> None:
     """Print the article-artifacts no-import boundary and schema versions."""
-    _echo_article_artifacts_response(_article_artifacts_boundary_payload("contract_only"), as_json=json_output)
+    _echo_article_artifacts_response(
+        _article_artifacts_boundary_payload("contract_only"), as_json=json_output
+    )
 
 
 def _load_fixture_structure(input_structure: Path) -> dict[str, Any]:
@@ -111,7 +113,9 @@ def _load_fixture_manifest(input_structure: Path) -> dict[str, Any]:
         raise typer.BadParameter(str(exc)) from exc
     diagnostics = validate_article_artifact_manifest(manifest)
     if diagnostics:
-        raise typer.BadParameter(f"generated fixture manifest failed contract validation with {len(diagnostics)} diagnostics")
+        raise typer.BadParameter(
+            f"generated fixture manifest failed contract validation with {len(diagnostics)} diagnostics"
+        )
     return manifest
 
 
@@ -170,7 +174,9 @@ def _helper_spans(span_ids: list[str], spans: dict[str, dict[str, Any]]) -> list
     return [dict(spans[span_id]) for span_id in span_ids if span_id in spans]
 
 
-def _merge_minimax_helper_candidates(manifest: dict[str, Any], candidates: tuple[dict[str, Any], ...]) -> int:
+def _merge_minimax_helper_candidates(
+    manifest: dict[str, Any], candidates: tuple[dict[str, Any], ...]
+) -> int:
     if not candidates:
         return 0
     paper_id = str(manifest["paper_id"])
@@ -238,7 +244,9 @@ def _merge_minimax_helper_candidates(manifest: dict[str, Any], candidates: tuple
     manifest["summary"]["diagnostic_summary"] = build_article_artifact_diagnostics_summary(manifest)
     diagnostics = validate_article_artifact_manifest(manifest)
     if diagnostics:
-        raise typer.BadParameter(f"merged helper manifest failed contract validation with {len(diagnostics)} diagnostics")
+        raise typer.BadParameter(
+            f"merged helper manifest failed contract validation with {len(diagnostics)} diagnostics"
+        )
     return len(helper_artifacts)
 
 
@@ -270,7 +278,9 @@ def _apply_article_artifacts_helper(
         return helper_diagnostics
     if helper != "minimax-mock":
         raise typer.BadParameter("helper must be one of: deterministic, none, minimax-mock")
-    helper_request = build_article_artifact_minimax_request(structure, max_candidates=max_helper_candidates)
+    helper_request = build_article_artifact_minimax_request(
+        structure, max_candidates=max_helper_candidates
+    )
     content_blocks = _load_minimax_mock_content_blocks(helper_response)
     helper_result = validate_article_artifact_minimax_response(
         content_blocks,
@@ -286,9 +296,13 @@ def _apply_article_artifacts_helper(
         {
             "helper_mode": helper,
             "helper_request_attempted": True,
-            "helper_validation_status": helper_result.diagnostics.get("response_validation_status", "invalid"),
+            "helper_validation_status": helper_result.diagnostics.get(
+                "response_validation_status", "invalid"
+            ),
             "merged_candidate_count": merged_count,
-            "provider_candidate_count": helper_result.diagnostics.get("provider_candidate_count", 0),
+            "provider_candidate_count": helper_result.diagnostics.get(
+                "provider_candidate_count", 0
+            ),
             "blocked_import_flags": {
                 "production_import_attempted": False,
                 "ladybugdb_written": False,
@@ -312,20 +326,30 @@ def article_artifacts_detect(
     ],
     output_dir: Annotated[
         Path,
-        typer.Option("--output-dir", help="Directory where redacted article-artifact manifests will be written."),
+        typer.Option(
+            "--output-dir",
+            help="Directory where redacted article-artifact manifests will be written.",
+        ),
     ],
     json_output: Annotated[bool, typer.Option("--json", help="Print JSON response.")] = False,
     helper: Annotated[
         str,
-        typer.Option("--helper", help="Optional helper mode: deterministic, none, or minimax-mock."),
+        typer.Option(
+            "--helper", help="Optional helper mode: deterministic, none, or minimax-mock."
+        ),
     ] = "deterministic",
     helper_response: Annotated[
         Path | None,
-        typer.Option("--helper-response", help="JSON MiniMax content blocks for --helper minimax-mock."),
+        typer.Option(
+            "--helper-response", help="JSON MiniMax content blocks for --helper minimax-mock."
+        ),
     ] = None,
     max_helper_candidates: Annotated[
         int,
-        typer.Option("--max-helper-candidates", help="Maximum helper candidates accepted from MiniMax mock output."),
+        typer.Option(
+            "--max-helper-candidates",
+            help="Maximum helper candidates accepted from MiniMax mock output.",
+        ),
     ] = 24,
 ) -> None:
     """Generate review-only article artifact manifests from deterministic fixtures."""
@@ -336,7 +360,9 @@ def article_artifacts_detect(
         raise typer.BadParameter(str(exc)) from exc
     diagnostics = validate_article_artifact_manifest(manifest)
     if diagnostics:
-        raise typer.BadParameter(f"generated fixture manifest failed contract validation with {len(diagnostics)} diagnostics")
+        raise typer.BadParameter(
+            f"generated fixture manifest failed contract validation with {len(diagnostics)} diagnostics"
+        )
     helper_diagnostics = _apply_article_artifacts_helper(
         manifest,
         structure=structure,
@@ -410,8 +436,6 @@ def article_artifacts_detect(
         }
     )
     _echo_article_artifacts_response(response, as_json=json_output)
-
-
 
 
 def register(app: typer.Typer) -> None:

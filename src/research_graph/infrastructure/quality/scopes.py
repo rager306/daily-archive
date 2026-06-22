@@ -13,7 +13,9 @@ DEFAULT_QUALITY_EXCLUDES = (
 )
 
 
-def normalize_scope(paths: tuple[str | Path, ...] | list[str | Path] | None = None) -> tuple[Path, ...]:
+def normalize_scope(
+    paths: tuple[str | Path, ...] | list[str | Path] | None = None,
+) -> tuple[Path, ...]:
     """Return explicit scan paths or the repository's default Python package scope."""
     if not paths:
         return DEFAULT_QUALITY_SCOPE

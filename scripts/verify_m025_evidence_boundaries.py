@@ -133,7 +133,9 @@ def _source_ref(article: ArticleSelection, catalog_entry: dict[str, Any]) -> dic
         "source_id": f"{article.article_ref}:source:{catalog_entry.get('primary_source_role') or article.source_code}",
         "source_code": article.source_code,
         "article_path": article_path,
-        "sha256": str(catalog_entry.get("sha256") or _sha256_text(article.article_ref + article_path)),
+        "sha256": str(
+            catalog_entry.get("sha256") or _sha256_text(article.article_ref + article_path)
+        ),
     }
 
 
@@ -153,7 +155,9 @@ def _source_element_id(article_ref: str, element_type: str, idx: int) -> str:
     return f"{article_ref}:element:{element_type}:{idx + 1:04d}"
 
 
-def _chunk_refs(article: ArticleSelection, chunk_manifest_path: Path, chunks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _chunk_refs(
+    article: ArticleSelection, chunk_manifest_path: Path, chunks: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     return [
         {
             "chunk_id": _chunk_id(article.article_ref, chunk, idx),
@@ -204,7 +208,9 @@ def _base_payload(
     }
 
 
-def _asset_payload(base: dict[str, Any], article: ArticleSelection, chunks: list[dict[str, Any]]) -> dict[str, Any]:
+def _asset_payload(
+    base: dict[str, Any], article: ArticleSelection, chunks: list[dict[str, Any]]
+) -> dict[str, Any]:
     items: list[dict[str, Any]] = []
     for idx, chunk in enumerate(chunks):
         chunk_type = _chunk_type(chunk)
@@ -231,10 +237,15 @@ def _asset_payload(base: dict[str, Any], article: ArticleSelection, chunks: list
     return _payload_with_items_or_diagnostic(base, items, evidence_type="assets")
 
 
-def _table_payload(base: dict[str, Any], article: ArticleSelection, chunks: list[dict[str, Any]]) -> dict[str, Any]:
+def _table_payload(
+    base: dict[str, Any], article: ArticleSelection, chunks: list[dict[str, Any]]
+) -> dict[str, Any]:
     items: list[dict[str, Any]] = []
     for idx, chunk in enumerate(chunks):
-        if _chunk_type(chunk) not in TABLE_CHUNK_TYPES and str(chunk.get("route") or "") != "table_extraction":
+        if (
+            _chunk_type(chunk) not in TABLE_CHUNK_TYPES
+            and str(chunk.get("route") or "") != "table_extraction"
+        ):
             continue
         ordinal = len(items) + 1
         items.append(
@@ -246,7 +257,9 @@ def _table_payload(base: dict[str, Any], article: ArticleSelection, chunks: list
                 "chunk_ids": [_chunk_id(article.article_ref, chunk, idx)],
                 "column_count": None,
                 "row_count": None,
-                "structure_sha256": _sha256_text(f"{article.article_ref}:table:{_chunk_id(article.article_ref, chunk, idx)}"),
+                "structure_sha256": _sha256_text(
+                    f"{article.article_ref}:table:{_chunk_id(article.article_ref, chunk, idx)}"
+                ),
                 "cell_payload_embedded": False,
                 "raw_text_embedded": False,
                 "interpretation_status": "metadata_only",
@@ -255,10 +268,15 @@ def _table_payload(base: dict[str, Any], article: ArticleSelection, chunks: list
     return _payload_with_items_or_diagnostic(base, items, evidence_type="tables")
 
 
-def _link_payload(base: dict[str, Any], article: ArticleSelection, chunks: list[dict[str, Any]]) -> dict[str, Any]:
+def _link_payload(
+    base: dict[str, Any], article: ArticleSelection, chunks: list[dict[str, Any]]
+) -> dict[str, Any]:
     items: list[dict[str, Any]] = []
     for idx, chunk in enumerate(chunks):
-        if _chunk_type(chunk) not in LINK_CHUNK_TYPES and str(chunk.get("route") or "") != "citation_graph":
+        if (
+            _chunk_type(chunk) not in LINK_CHUNK_TYPES
+            and str(chunk.get("route") or "") != "citation_graph"
+        ):
             continue
         ordinal = len(items) + 1
         items.append(
@@ -282,14 +300,18 @@ def _link_payload(base: dict[str, Any], article: ArticleSelection, chunks: list[
     return _payload_with_items_or_diagnostic(base, items, evidence_type="links")
 
 
-def _identity_payload(base: dict[str, Any], article: ArticleSelection, catalog_entry: dict[str, Any]) -> dict[str, Any]:
+def _identity_payload(
+    base: dict[str, Any], article: ArticleSelection, catalog_entry: dict[str, Any]
+) -> dict[str, Any]:
     item = {
         "identity_id": f"{article.article_ref}:identity:catalog-ref",
         "identity_type": "article_ref",
         "article_ref": article.article_ref,
         "source_element_id": f"{article.article_ref}:element:metadata:article-ref",
         "source_span_id": f"{article.article_ref}:span:metadata:article-ref",
-        "normalized_value": str(catalog_entry.get("article_key") or article.article_ref.rsplit("/", 1)[-1]).lower(),
+        "normalized_value": str(
+            catalog_entry.get("article_key") or article.article_ref.rsplit("/", 1)[-1]
+        ).lower(),
         "normalization": {"algorithm": "catalog-key-lowercase", "version": 1},
         "dedup_decision": "source_identity_review_required",
         "review_state": "review_required",
@@ -303,7 +325,9 @@ def _identity_payload(base: dict[str, Any], article: ArticleSelection, catalog_e
     return payload
 
 
-def _payload_with_items_or_diagnostic(base: dict[str, Any], items: list[dict[str, Any]], *, evidence_type: str) -> dict[str, Any]:
+def _payload_with_items_or_diagnostic(
+    base: dict[str, Any], items: list[dict[str, Any]], *, evidence_type: str
+) -> dict[str, Any]:
     payload = dict(base)
     diagnostics = list(base["diagnostics"])
     unsupported_type_count = int(base["summary"].get("unsupported_type_count", 0))
@@ -358,7 +382,9 @@ def replay(args: argparse.Namespace) -> list[dict[str, Any]]:
     for article in _selection_articles(selection):
         catalog_entry = catalog_refs.get(article.article_ref)
         if catalog_entry is None:
-            raise EvidenceReplayError(f"selection article {article.article_ref} is absent from catalog index")
+            raise EvidenceReplayError(
+                f"selection article {article.article_ref} is absent from catalog index"
+            )
         chunk_manifest, chunks = _read_chunks(args.chunks, article.article_ref)
         article_dir = args.evidence / _article_slug(article.article_ref)
         events.append(_event("evidence.article_started", article_ref=article.article_ref))
@@ -406,7 +432,9 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
         try:
             payload = json.loads(line)
         except json.JSONDecodeError as exc:
-            raise EvidenceReplayError(f"events file is not valid JSONL at line {idx}: {path}: {exc}") from exc
+            raise EvidenceReplayError(
+                f"events file is not valid JSONL at line {idx}: {path}: {exc}"
+            ) from exc
         if not isinstance(payload, dict):
             raise EvidenceReplayError(f"events file line {idx} must be a JSON object: {path}")
         events.append(payload)
@@ -493,17 +521,45 @@ def _validate_safety_flags(payload: dict[str, Any], *, path: Path) -> list[dict[
 def _validate_provenance(payload: dict[str, Any], *, path: Path) -> list[dict[str, Any]]:
     findings: list[dict[str, Any]] = []
     if not isinstance(payload.get("source_ref"), dict):
-        findings.append({"code": "SOURCE_REF_MISSING", "severity": "error", "path": str(path), "json_path": "$.source_ref"})
+        findings.append(
+            {
+                "code": "SOURCE_REF_MISSING",
+                "severity": "error",
+                "path": str(path),
+                "json_path": "$.source_ref",
+            }
+        )
     chunk_refs = payload.get("chunk_refs")
     if not isinstance(chunk_refs, list) or not chunk_refs:
-        findings.append({"code": "CHUNK_REFS_MISSING", "severity": "error", "path": str(path), "json_path": "$.chunk_refs"})
+        findings.append(
+            {
+                "code": "CHUNK_REFS_MISSING",
+                "severity": "error",
+                "path": str(path),
+                "json_path": "$.chunk_refs",
+            }
+        )
     items = payload.get("items")
     if not isinstance(items, list):
-        findings.append({"code": "ITEMS_NOT_LIST", "severity": "error", "path": str(path), "json_path": "$.items"})
+        findings.append(
+            {
+                "code": "ITEMS_NOT_LIST",
+                "severity": "error",
+                "path": str(path),
+                "json_path": "$.items",
+            }
+        )
         return findings
     for idx, item in enumerate(items):
         if not isinstance(item, dict):
-            findings.append({"code": "ITEM_NOT_OBJECT", "severity": "error", "path": str(path), "json_path": f"$.items[{idx}]"})
+            findings.append(
+                {
+                    "code": "ITEM_NOT_OBJECT",
+                    "severity": "error",
+                    "path": str(path),
+                    "json_path": f"$.items[{idx}]",
+                }
+            )
             continue
         serialized = json.dumps(item, sort_keys=True)
         has_chunk = "chunk_id" in serialized
@@ -536,7 +592,9 @@ def validate_evidence(args: argparse.Namespace) -> dict[str, Any]:
 
     for article in selected:
         if article.article_ref not in catalog_refs:
-            raise EvidenceReplayError(f"selection article {article.article_ref} is absent from catalog index")
+            raise EvidenceReplayError(
+                f"selection article {article.article_ref} is absent from catalog index"
+            )
         article_dir = args.evidence / _article_slug(article.article_ref)
         per_article = {
             "article_ref": article.article_ref,
@@ -584,8 +642,15 @@ def validate_evidence(args: argparse.Namespace) -> dict[str, Any]:
     for event in events:
         event_type = str(event.get("event_type") or "unknown")
         event_counts[event_type] = event_counts.get(event_type, 0) + 1
-        if getattr(args, "require_no_import_flags", False) and event_type == "evidence.artifact_written":
-            for key in ("trusted_kg_import_allowed", "ladybugdb_written", "production_import_attempted"):
+        if (
+            getattr(args, "require_no_import_flags", False)
+            and event_type == "evidence.artifact_written"
+        ):
+            for key in (
+                "trusted_kg_import_allowed",
+                "ladybugdb_written",
+                "production_import_attempted",
+            ):
                 if event.get(key) is not False:
                     findings.append(
                         {
@@ -612,7 +677,8 @@ def validate_evidence(args: argparse.Namespace) -> dict[str, Any]:
     missing_evidence_diagnostics = [
         {"code": code, "count": count}
         for code, count in sorted(aggregate_diagnostics.items())
-        if code in {"EVIDENCE_TYPE_NOT_OBSERVED", "S06_CHUNKS_EMPTY", "S06_ROADMAP_HANDOFF_RECONSTRUCTED"}
+        if code
+        in {"EVIDENCE_TYPE_NOT_OBSERVED", "S06_CHUNKS_EMPTY", "S06_ROADMAP_HANDOFF_RECONSTRUCTED"}
     ]
     summary = {
         "schema_version": "m025-article-evidence-summary.v00.01",
@@ -632,8 +698,12 @@ def validate_evidence(args: argparse.Namespace) -> dict[str, Any]:
         },
         "redaction_checks": {
             "required": bool(getattr(args, "require_redaction", False)),
-            "forbidden_value_findings": sum(1 for finding in findings if finding["code"] == "REDACTION_FORBIDDEN_FRAGMENT"),
-            "passed": not any(finding["code"] == "REDACTION_FORBIDDEN_FRAGMENT" for finding in findings),
+            "forbidden_value_findings": sum(
+                1 for finding in findings if finding["code"] == "REDACTION_FORBIDDEN_FRAGMENT"
+            ),
+            "passed": not any(
+                finding["code"] == "REDACTION_FORBIDDEN_FRAGMENT" for finding in findings
+            ),
         },
         "safety_state": {
             "metadata_only": True,
@@ -758,8 +828,13 @@ def main(argv: list[str] | None = None) -> int:
                 raise EvidenceReplayError("replay mode requires both --chunks and --write-events")
             events = replay(args)
             args.write_events.parent.mkdir(parents=True, exist_ok=True)
-            args.write_events.write_text("".join(json.dumps(event, sort_keys=True) + "\n" for event in events), encoding="utf-8")
-            completed_count = sum(1 for event in events if event["event_type"] == "evidence.article_completed")
+            args.write_events.write_text(
+                "".join(json.dumps(event, sort_keys=True) + "\n" for event in events),
+                encoding="utf-8",
+            )
+            completed_count = sum(
+                1 for event in events if event["event_type"] == "evidence.article_completed"
+            )
             sys.stdout.write(
                 f"wrote separated evidence for {completed_count} articles to {args.evidence}; events={args.write_events}\n"
             )
@@ -772,7 +847,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.write_report is not None:
             _write_report(args.write_report, summary)
         if not summary["validation_passed"]:
-            sys.stderr.write(f"ERROR: evidence boundary validation failed with {len(summary['findings'])} finding(s)\n")
+            sys.stderr.write(
+                f"ERROR: evidence boundary validation failed with {len(summary['findings'])} finding(s)\n"
+            )
             return 2
         sys.stdout.write(
             f"validated evidence boundaries for {summary['article_count']} articles; findings=0; "

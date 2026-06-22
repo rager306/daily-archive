@@ -13,7 +13,9 @@ from collections import Counter, defaultdict
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-ARXIV_URL_RE = re.compile(r"^https://arxiv\.org/(abs|pdf|html)/(\d{4}\.\d{4,5})(v\d+)?(?:\.pdf)?/?$")
+ARXIV_URL_RE = re.compile(
+    r"^https://arxiv\.org/(abs|pdf|html)/(\d{4}\.\d{4,5})(v\d+)?(?:\.pdf)?/?$"
+)
 REQUIRED_SAFETY_FALSE = (
     "graph_import_allowed",
     "production_ladybugdb_write_allowed",
@@ -122,29 +124,48 @@ def _variant_role(variant: dict[str, Any]) -> str | None:
     return str(role) if role else None
 
 
-def _entry_from_catalog_record(record: dict[str, Any], relative_path: Path) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
+def _entry_from_catalog_record(
+    record: dict[str, Any], relative_path: Path
+) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
     diagnostics: list[dict[str, Any]] = []
     article_ref = str(record.get("catalog_path") or relative_path.parent.as_posix())
     if article_ref.startswith("article_catalog/"):
         article_ref = article_ref.removeprefix("article_catalog/")
     if not _is_safe_ref(article_ref):
-        diagnostics.append({"level": "error", "code": "unsafe_catalog_article_ref", "article_ref": article_ref, "path": relative_path.as_posix()})
+        diagnostics.append(
+            {
+                "level": "error",
+                "code": "unsafe_catalog_article_ref",
+                "article_ref": article_ref,
+                "path": relative_path.as_posix(),
+            }
+        )
         return None, diagnostics
 
     identity = record.get("identity") if isinstance(record.get("identity"), dict) else {}
-    source_strategy = record.get("source_strategy") if isinstance(record.get("source_strategy"), dict) else {}
-    variants = record.get("source_variants") if isinstance(record.get("source_variants"), list) else []
+    source_strategy = (
+        record.get("source_strategy") if isinstance(record.get("source_strategy"), dict) else {}
+    )
+    variants = (
+        record.get("source_variants") if isinstance(record.get("source_variants"), list) else []
+    )
     primary_variant_id = source_strategy.get("primary_source_variant_id")
-    primary_variant = next((variant for variant in variants if variant.get("variant_id") == primary_variant_id), None)
+    primary_variant = next(
+        (variant for variant in variants if variant.get("variant_id") == primary_variant_id), None
+    )
     if primary_variant is None:
-        primary_variant = next((variant for variant in variants if variant.get("is_primary") is True), None)
+        primary_variant = next(
+            (variant for variant in variants if variant.get("is_primary") is True), None
+        )
     primary_role = _variant_role(primary_variant or {})
     if primary_role is None:
         preferred = source_strategy.get("preferred_content_order")
         if isinstance(preferred, list) and preferred:
             primary_role = str(preferred[0])
     if primary_role is None:
-        diagnostics.append({"level": "warning", "code": "missing_primary_source_role", "article_ref": article_ref})
+        diagnostics.append(
+            {"level": "warning", "code": "missing_primary_source_role", "article_ref": article_ref}
+        )
         primary_role = "unknown"
 
     content_fallback_roles: list[str] = []
@@ -153,7 +174,11 @@ def _entry_from_catalog_record(record: dict[str, Any], relative_path: Path) -> t
         role = _variant_role(variant)
         if not role:
             continue
-        if variant.get("is_content_bearing") is True and role != primary_role and role not in content_fallback_roles:
+        if (
+            variant.get("is_content_bearing") is True
+            and role != primary_role
+            and role not in content_fallback_roles
+        ):
             content_fallback_roles.append(role)
         if variant.get("is_metadata_only") is True and role not in metadata_roles:
             metadata_roles.append(role)
@@ -161,16 +186,22 @@ def _entry_from_catalog_record(record: dict[str, Any], relative_path: Path) -> t
     title = identity.get("title") or record.get("title")
     canonical_url = identity.get("canonical_url") or identity.get("abs_url") or identity.get("url")
     if not title:
-        diagnostics.append({"level": "warning", "code": "missing_catalog_title", "article_ref": article_ref})
+        diagnostics.append(
+            {"level": "warning", "code": "missing_catalog_title", "article_ref": article_ref}
+        )
     if not canonical_url:
-        diagnostics.append({"level": "error", "code": "missing_catalog_canonical_url", "article_ref": article_ref})
+        diagnostics.append(
+            {"level": "error", "code": "missing_catalog_canonical_url", "article_ref": article_ref}
+        )
         return None, diagnostics
 
     entry: dict[str, Any] = {
         "article_ref": article_ref,
         "article_key": str(record.get("article_key") or PurePosixPath(article_ref).name),
         "source_code": str(record.get("source_code") or PurePosixPath(article_ref).parts[0]),
-        "coarse_topic_code": str(record.get("coarse_topic_code") or PurePosixPath(article_ref).parts[1]),
+        "coarse_topic_code": str(
+            record.get("coarse_topic_code") or PurePosixPath(article_ref).parts[1]
+        ),
         "canonical_url": str(canonical_url),
         "primary_source_role": primary_role,
         "content_fallback_roles": content_fallback_roles,
@@ -184,7 +215,11 @@ def _entry_from_catalog_record(record: dict[str, Any], relative_path: Path) -> t
     seed_url = identity.get("seed_url")
     if seed_url:
         entry["seed_url"] = str(seed_url)
-    registration_summary = record.get("registration_summary") if isinstance(record.get("registration_summary"), dict) else {}
+    registration_summary = (
+        record.get("registration_summary")
+        if isinstance(record.get("registration_summary"), dict)
+        else {}
+    )
     registration_id = registration_summary.get("registration_id") or record.get("registration_id")
     if registration_id:
         entry["registration_id"] = str(registration_id)
@@ -235,13 +270,17 @@ def _build_indexes(entries: list[dict[str, Any]]) -> dict[str, Any]:
         "by_article_key": dict(sorted(by_article_key.items())),
         "by_citation_key": dict(sorted(by_citation_key.items())),
         "by_source_code": {key: sorted(value) for key, value in sorted(by_source_code.items())},
-        "by_coarse_topic_code": {key: sorted(value) for key, value in sorted(by_coarse_topic_code.items())},
+        "by_coarse_topic_code": {
+            key: sorted(value) for key, value in sorted(by_coarse_topic_code.items())
+        },
         "by_canonical_url": dict(sorted(by_canonical_url.items())),
         "by_title": dict(sorted(by_title.items())),
     }
 
 
-def rebuild_index(catalog_path: Path, selection_path: Path | None = None) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
+def rebuild_index(
+    catalog_path: Path, selection_path: Path | None = None
+) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
     catalog = _read_json(catalog_path)
     catalog_root = catalog_path.parent
     record_root = catalog_root / "article_catalog"
@@ -259,7 +298,14 @@ def rebuild_index(catalog_path: Path, selection_path: Path | None = None) -> tup
             if entry is not None:
                 entries_by_ref[str(entry["article_ref"])] = entry
         except Exception as exc:
-            diagnostics.append({"level": "error", "code": "catalog_record_read_failed", "path": str(article_file), "message": str(exc)})
+            diagnostics.append(
+                {
+                    "level": "error",
+                    "code": "catalog_record_read_failed",
+                    "path": str(article_file),
+                    "message": str(exc),
+                }
+            )
 
     selection_entries_considered = 0
     selection_stub_entries_added = 0
@@ -267,11 +313,19 @@ def rebuild_index(catalog_path: Path, selection_path: Path | None = None) -> tup
         selection = _read_json(selection_path)
         articles = selection.get("articles")
         if not isinstance(articles, list):
-            diagnostics.append({"level": "error", "code": "selection_articles_missing", "path": str(selection_path)})
+            diagnostics.append(
+                {
+                    "level": "error",
+                    "code": "selection_articles_missing",
+                    "path": str(selection_path),
+                }
+            )
             articles = []
         for article in articles:
             if not isinstance(article, dict):
-                diagnostics.append({"level": "error", "code": "selection_article_not_object", "article": article})
+                diagnostics.append(
+                    {"level": "error", "code": "selection_article_not_object", "article": article}
+                )
                 continue
             selection_entries_considered += 1
             try:
@@ -280,16 +334,29 @@ def rebuild_index(catalog_path: Path, selection_path: Path | None = None) -> tup
                     entries_by_ref[article_ref] = _selection_stub_entry(article)
                     selection_stub_entries_added += 1
             except Exception as exc:
-                diagnostics.append({"level": "error", "code": "selection_stub_entry_failed", "article": article, "message": str(exc)})
+                diagnostics.append(
+                    {
+                        "level": "error",
+                        "code": "selection_stub_entry_failed",
+                        "article": article,
+                        "message": str(exc),
+                    }
+                )
 
     entries = sorted(entries_by_ref.values(), key=lambda item: str(item["article_ref"]))
     article_refs = [str(entry["article_ref"]) for entry in entries]
     article_keys = [str(entry["article_key"]) for entry in entries]
     canonical_urls = [str(entry["canonical_url"]) for entry in entries]
-    for label, values in (("article_ref", article_refs), ("article_key", article_keys), ("canonical_url", canonical_urls)):
+    for label, values in (
+        ("article_ref", article_refs),
+        ("article_key", article_keys),
+        ("canonical_url", canonical_urls),
+    ):
         duplicates = sorted(value for value, count in Counter(values).items() if count > 1)
         if duplicates:
-            diagnostics.append({"level": "error", "code": f"duplicate_index_{label}", "duplicates": duplicates})
+            diagnostics.append(
+                {"level": "error", "code": f"duplicate_index_{label}", "duplicates": duplicates}
+            )
 
     index = {
         "schema_version": INDEX_SCHEMA_VERSION,
@@ -312,7 +379,9 @@ def rebuild_index(catalog_path: Path, selection_path: Path | None = None) -> tup
     index["lookup_policy"] = {
         "cli_must_use_index": bool(index["lookup_policy"].get("cli_must_use_index", True)),
         "full_tree_scan_allowed": bool(index["lookup_policy"].get("full_tree_scan_allowed", False)),
-        "refresh_command_rebuilds_index": bool(index["lookup_policy"].get("refresh_command_rebuilds_index", True)),
+        "refresh_command_rebuilds_index": bool(
+            index["lookup_policy"].get("refresh_command_rebuilds_index", True)
+        ),
     }
 
     report = {
@@ -331,9 +400,15 @@ def rebuild_index(catalog_path: Path, selection_path: Path | None = None) -> tup
         "entries_emitted": len(entries),
         "index_lookup_url_count": len(index["indexes"]["by_canonical_url"]),
         "index_lookup_article_key_count": len(index["indexes"]["by_article_key"]),
-        "catalog_record_present_count": len([entry for entry in entries if entry.get("catalog_record_present") is not False]),
-        "placeholder_entry_count": len([entry for entry in entries if entry.get("catalog_record_present") is False]),
-        "diagnostic_counts": dict(sorted(Counter(row.get("code", "unknown") for row in diagnostics).items())),
+        "catalog_record_present_count": len(
+            [entry for entry in entries if entry.get("catalog_record_present") is not False]
+        ),
+        "placeholder_entry_count": len(
+            [entry for entry in entries if entry.get("catalog_record_present") is False]
+        ),
+        "diagnostic_counts": dict(
+            sorted(Counter(row.get("code", "unknown") for row in diagnostics).items())
+        ),
         "error_count": sum(1 for row in diagnostics if row.get("level") == "error"),
     }
     return index, report, diagnostics
@@ -343,12 +418,25 @@ def _load_catalog_refs(catalog_path: Path) -> tuple[set[str], set[str]]:
     catalog = _read_json(catalog_path)
     index_path = catalog_path.parent / catalog.get("index", {}).get("path", "index.json")
     index = _read_json(index_path)
-    refs = {entry["article_ref"] for entry in index.get("articles", []) if entry.get("article_ref") and entry.get("catalog_record_present") is not False}
-    urls = {entry["canonical_url"] for entry in index.get("articles", []) if entry.get("canonical_url") and entry.get("catalog_record_present") is not False}
+    refs = {
+        entry["article_ref"]
+        for entry in index.get("articles", [])
+        if entry.get("article_ref") and entry.get("catalog_record_present") is not False
+    }
+    urls = {
+        entry["canonical_url"]
+        for entry in index.get("articles", [])
+        if entry.get("canonical_url") and entry.get("catalog_record_present") is not False
+    }
     return refs, urls
 
 
-def verify(selection_path: Path, catalog_path: Path, expected_count: int, expected_duplicate_url: str | None) -> dict[str, Any]:
+def verify(
+    selection_path: Path,
+    catalog_path: Path,
+    expected_count: int,
+    expected_duplicate_url: str | None,
+) -> dict[str, Any]:
     selection = _read_json(selection_path)
     provenance_path = selection_path.with_name("selection-provenance.json")
     summary_path = selection_path.with_name("selection-summary.json")
@@ -359,56 +447,151 @@ def verify(selection_path: Path, catalog_path: Path, expected_count: int, expect
     diagnostics: list[dict[str, Any]] = []
     articles = selection.get("articles")
     if not isinstance(articles, list):
-        diagnostics.append({"level": "error", "code": "selection_articles_missing", "path": str(selection_path)})
+        diagnostics.append(
+            {"level": "error", "code": "selection_articles_missing", "path": str(selection_path)}
+        )
         articles = []
 
     identity_keys = [article.get("identity_key") for article in articles]
     canonical_urls = [article.get("canonical_url") for article in articles]
     if len(articles) != expected_count:
-        diagnostics.append({"level": "error", "code": "unexpected_unique_article_count", "expected": expected_count, "actual": len(articles)})
+        diagnostics.append(
+            {
+                "level": "error",
+                "code": "unexpected_unique_article_count",
+                "expected": expected_count,
+                "actual": len(articles),
+            }
+        )
     if len(set(identity_keys)) != len(identity_keys):
-        diagnostics.append({"level": "error", "code": "duplicate_identity_keys", "duplicates": sorted({key for key in identity_keys if identity_keys.count(key) > 1})})
+        diagnostics.append(
+            {
+                "level": "error",
+                "code": "duplicate_identity_keys",
+                "duplicates": sorted(
+                    {key for key in identity_keys if identity_keys.count(key) > 1}
+                ),
+            }
+        )
     if len(set(canonical_urls)) != len(canonical_urls):
         diagnostics.append({"level": "error", "code": "duplicate_canonical_urls_in_selection"})
 
     for article in articles:
-        for field in ("identity_key", "source_code", "article_key", "canonical_url", "seed_url", "source_strategy", "catalog_resolution", "provenance_sources"):
+        for field in (
+            "identity_key",
+            "source_code",
+            "article_key",
+            "canonical_url",
+            "seed_url",
+            "source_strategy",
+            "catalog_resolution",
+            "provenance_sources",
+        ):
             if field not in article:
-                diagnostics.append({"level": "error", "code": "article_missing_required_field", "field": field, "article": article})
+                diagnostics.append(
+                    {
+                        "level": "error",
+                        "code": "article_missing_required_field",
+                        "field": field,
+                        "article": article,
+                    }
+                )
         resolution = article.get("catalog_resolution")
         if resolution not in {"resolved", "unresolved"}:
-            diagnostics.append({"level": "error", "code": "invalid_catalog_resolution", "article": article})
+            diagnostics.append(
+                {"level": "error", "code": "invalid_catalog_resolution", "article": article}
+            )
         if resolution == "resolved":
             if article.get("article_ref") not in catalog_refs:
-                diagnostics.append({"level": "error", "code": "resolved_article_ref_not_in_catalog", "article_ref": article.get("article_ref")})
-            if _canonical_url(str(article.get("canonical_url"))) not in {_canonical_url(url) for url in catalog_urls}:
-                diagnostics.append({"level": "error", "code": "resolved_canonical_url_not_in_catalog", "canonical_url": article.get("canonical_url")})
+                diagnostics.append(
+                    {
+                        "level": "error",
+                        "code": "resolved_article_ref_not_in_catalog",
+                        "article_ref": article.get("article_ref"),
+                    }
+                )
+            if _canonical_url(str(article.get("canonical_url"))) not in {
+                _canonical_url(url) for url in catalog_urls
+            }:
+                diagnostics.append(
+                    {
+                        "level": "error",
+                        "code": "resolved_canonical_url_not_in_catalog",
+                        "canonical_url": article.get("canonical_url"),
+                    }
+                )
 
     safety = selection.get("safety_flags", {})
     for flag in REQUIRED_SAFETY_FALSE:
         if safety.get(flag) is not False:
-            diagnostics.append({"level": "error", "code": "unsafe_flag_not_false", "flag": flag, "actual": safety.get(flag)})
+            diagnostics.append(
+                {
+                    "level": "error",
+                    "code": "unsafe_flag_not_false",
+                    "flag": flag,
+                    "actual": safety.get(flag),
+                }
+            )
 
     summary_count = summary.get("unique_article_count")
     provenance_count = provenance.get("unique_article_count")
     if summary_count != len(articles) or provenance_count != len(articles):
-        diagnostics.append({"level": "error", "code": "artifact_count_mismatch", "selection": len(articles), "summary": summary_count, "provenance": provenance_count})
+        diagnostics.append(
+            {
+                "level": "error",
+                "code": "artifact_count_mismatch",
+                "selection": len(articles),
+                "summary": summary_count,
+                "provenance": provenance_count,
+            }
+        )
 
     duplicate_urls = summary.get("duplicate_urls", {})
     if expected_duplicate_url and duplicate_urls.get(expected_duplicate_url, 0) < 2:
-        diagnostics.append({"level": "error", "code": "expected_duplicate_url_missing", "url": expected_duplicate_url, "duplicates": duplicate_urls})
+        diagnostics.append(
+            {
+                "level": "error",
+                "code": "expected_duplicate_url_missing",
+                "url": expected_duplicate_url,
+                "duplicates": duplicate_urls,
+            }
+        )
     if summary.get("duplicate_url_count", 0) != len(duplicate_urls):
         diagnostics.append({"level": "error", "code": "duplicate_url_counter_mismatch"})
 
     resolution_counts = {"resolved": 0, "unresolved": 0}
     for article in articles:
-        resolution_counts[str(article.get("catalog_resolution"))] = resolution_counts.get(str(article.get("catalog_resolution")), 0) + 1
-    if summary.get("index_resolution") != {key: value for key, value in sorted(resolution_counts.items()) if value}:
-        diagnostics.append({"level": "error", "code": "index_resolution_counter_mismatch", "expected": resolution_counts, "actual": summary.get("index_resolution")})
+        resolution_counts[str(article.get("catalog_resolution"))] = (
+            resolution_counts.get(str(article.get("catalog_resolution")), 0) + 1
+        )
+    if summary.get("index_resolution") != {
+        key: value for key, value in sorted(resolution_counts.items()) if value
+    }:
+        diagnostics.append(
+            {
+                "level": "error",
+                "code": "index_resolution_counter_mismatch",
+                "expected": resolution_counts,
+                "actual": summary.get("index_resolution"),
+            }
+        )
 
-    m028_expansion_count = sum(1 for row in provenance.get("articles", []) for obs in row.get("observations", []) if obs.get("source_id") == "M028" and obs.get("source_subset") == "newly_accepted_expansion_refs")
+    m028_expansion_count = sum(
+        1
+        for row in provenance.get("articles", [])
+        for obs in row.get("observations", [])
+        if obs.get("source_id") == "M028"
+        and obs.get("source_subset") == "newly_accepted_expansion_refs"
+    )
     if m028_expansion_count != 7:
-        diagnostics.append({"level": "error", "code": "m028_expansion_provenance_count_mismatch", "expected": 7, "actual": m028_expansion_count})
+        diagnostics.append(
+            {
+                "level": "error",
+                "code": "m028_expansion_provenance_count_mismatch",
+                "expected": 7,
+                "actual": m028_expansion_count,
+            }
+        )
 
     return {
         "status": "passed" if not diagnostics else "failed",
@@ -456,8 +639,12 @@ def _validate_index_contract(
     if not isinstance(articles, list):
         articles = []
     indexes = index.get("indexes") if isinstance(index.get("indexes"), dict) else {}
-    by_canonical_url = indexes.get("by_canonical_url") if isinstance(indexes.get("by_canonical_url"), dict) else {}
-    by_article_key = indexes.get("by_article_key") if isinstance(indexes.get("by_article_key"), dict) else {}
+    by_canonical_url = (
+        indexes.get("by_canonical_url") if isinstance(indexes.get("by_canonical_url"), dict) else {}
+    )
+    by_article_key = (
+        indexes.get("by_article_key") if isinstance(indexes.get("by_article_key"), dict) else {}
+    )
     index_entries = [entry for entry in index.get("articles", []) if isinstance(entry, dict)]
     index_entries_by_ref = {entry.get("article_ref"): entry for entry in index_entries}
 
@@ -473,12 +660,24 @@ def _validate_index_contract(
                 selected_url_lookup_count += 1
             else:
                 missing_url_count += 1
-                diagnostics.append({"level": "error", "code": "selected_url_missing_from_index", "canonical_url": canonical_url})
+                diagnostics.append(
+                    {
+                        "level": "error",
+                        "code": "selected_url_missing_from_index",
+                        "canonical_url": canonical_url,
+                    }
+                )
             if article_key in by_article_key:
                 selected_article_key_lookup_count += 1
             else:
                 missing_key_count += 1
-                diagnostics.append({"level": "error", "code": "selected_article_key_missing_from_index", "article_key": article_key})
+                diagnostics.append(
+                    {
+                        "level": "error",
+                        "code": "selected_article_key_missing_from_index",
+                        "article_key": article_key,
+                    }
+                )
 
     title_bearing_catalog_rows = 0
     placeholder_title_count = 0
@@ -488,12 +687,24 @@ def _validate_index_contract(
             if entry.get("catalog_record_present") is False:
                 if entry.get("title"):
                     placeholder_title_count += 1
-                    diagnostics.append({"level": "error", "code": "placeholder_entry_has_invented_title", "article_ref": entry.get("article_ref")})
+                    diagnostics.append(
+                        {
+                            "level": "error",
+                            "code": "placeholder_entry_has_invented_title",
+                            "article_ref": entry.get("article_ref"),
+                        }
+                    )
             elif entry.get("title"):
                 title_bearing_catalog_rows += 1
             else:
                 catalog_entry_missing_title_count += 1
-                diagnostics.append({"level": "error", "code": "catalog_entry_missing_title", "article_ref": entry.get("article_ref")})
+                diagnostics.append(
+                    {
+                        "level": "error",
+                        "code": "catalog_entry_missing_title",
+                        "article_ref": entry.get("article_ref"),
+                    }
+                )
 
     unsafe_ref_count = 0
     unsafe_path_count = 0
@@ -503,10 +714,26 @@ def _validate_index_contract(
             article_path = str(entry.get("article_path", ""))
             if not _is_safe_ref(article_ref):
                 unsafe_ref_count += 1
-                diagnostics.append({"level": "error", "code": "unsafe_index_article_ref", "article_ref": article_ref})
-            if not article_path.startswith("article_catalog/") or not article_path.endswith("/article.json") or not _is_safe_ref(article_path):
+                diagnostics.append(
+                    {
+                        "level": "error",
+                        "code": "unsafe_index_article_ref",
+                        "article_ref": article_ref,
+                    }
+                )
+            if (
+                not article_path.startswith("article_catalog/")
+                or not article_path.endswith("/article.json")
+                or not _is_safe_ref(article_path)
+            ):
                 unsafe_path_count += 1
-                diagnostics.append({"level": "error", "code": "unsafe_index_article_path", "article_path": article_path})
+                diagnostics.append(
+                    {
+                        "level": "error",
+                        "code": "unsafe_index_article_path",
+                        "article_path": article_path,
+                    }
+                )
 
     duplicate_url_lookup_targets: list[str] = []
     duplicate_key_lookup_targets: list[str] = []
@@ -514,9 +741,21 @@ def _validate_index_contract(
         duplicate_url_lookup_targets = _duplicate_mapping_values(by_canonical_url)
         duplicate_key_lookup_targets = _duplicate_mapping_values(by_article_key)
         if duplicate_url_lookup_targets:
-            diagnostics.append({"level": "error", "code": "duplicate_url_lookup_targets", "article_refs": duplicate_url_lookup_targets})
+            diagnostics.append(
+                {
+                    "level": "error",
+                    "code": "duplicate_url_lookup_targets",
+                    "article_refs": duplicate_url_lookup_targets,
+                }
+            )
         if duplicate_key_lookup_targets:
-            diagnostics.append({"level": "error", "code": "duplicate_article_key_lookup_targets", "article_refs": duplicate_key_lookup_targets})
+            diagnostics.append(
+                {
+                    "level": "error",
+                    "code": "duplicate_article_key_lookup_targets",
+                    "article_refs": duplicate_key_lookup_targets,
+                }
+            )
 
     contract = {
         "index_schema_version": index.get("schema_version"),
@@ -550,12 +789,16 @@ def _selection_contract_summary(
     payload = dict(summary)
     payload.update(
         {
-            "validation_status": "passed" if not any(row.get("level") == "error" for row in diagnostics) else "failed",
+            "validation_status": "passed"
+            if not any(row.get("level") == "error" for row in diagnostics)
+            else "failed",
             "selection_id": result.get("selection_id") or summary.get("selection_id"),
             "unique_article_count": result.get("unique_article_count"),
             "duplicate_url_count": result.get("duplicate_url_count"),
             "index_resolution": result.get("index_resolution"),
-            "diagnostic_counts": dict(sorted(Counter(row.get("code", "unknown") for row in diagnostics).items())),
+            "diagnostic_counts": dict(
+                sorted(Counter(row.get("code", "unknown") for row in diagnostics).items())
+            ),
             "error_count": sum(1 for row in diagnostics if row.get("level") == "error"),
             "warning_count": sum(1 for row in diagnostics if row.get("level") == "warning"),
         }
@@ -566,7 +809,9 @@ def _selection_contract_summary(
 
 
 def _selection_report(summary: dict[str, Any], diagnostics: list[dict[str, Any]]) -> str:
-    index_contract = summary.get("index_contract", {}) if isinstance(summary.get("index_contract"), dict) else {}
+    index_contract = (
+        summary.get("index_contract", {}) if isinstance(summary.get("index_contract"), dict) else {}
+    )
     lines = [
         "# M029 Unified Corpus Selection Report",
         "",
@@ -584,7 +829,10 @@ def _selection_report(summary: dict[str, Any], diagnostics: list[dict[str, Any]]
         "## Diagnostics",
     ]
     if diagnostics:
-        lines.extend(f"- `{row.get('code', 'unknown')}` ({row.get('level', 'unknown')}): {json.dumps(row, sort_keys=True)}" for row in diagnostics)
+        lines.extend(
+            f"- `{row.get('code', 'unknown')}` ({row.get('level', 'unknown')}): {json.dumps(row, sort_keys=True)}"
+            for row in diagnostics
+        )
     else:
         lines.append("- None.")
     lines.append("")
@@ -616,7 +864,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     try:
-        result = verify(args.selection, args.catalog, args.expect_unique_article_count, args.expect_duplicate_url)
+        result = verify(
+            args.selection,
+            args.catalog,
+            args.expect_unique_article_count,
+            args.expect_duplicate_url,
+        )
         rebuild_result: dict[str, Any] | None = None
         index_contract: dict[str, Any] | None = None
         diagnostics: list[dict[str, Any]] = list(result.get("diagnostics", []))
@@ -646,7 +899,9 @@ def main(argv: list[str] | None = None) -> int:
                 if not report["idempotent"]:
                     diagnostics.append({"level": "error", "code": "index_rebuild_not_idempotent"})
             report["index_contract"] = index_contract
-            report["diagnostic_counts"] = dict(sorted(Counter(row.get("code", "unknown") for row in diagnostics).items()))
+            report["diagnostic_counts"] = dict(
+                sorted(Counter(row.get("code", "unknown") for row in diagnostics).items())
+            )
             report["error_count"] = sum(1 for row in diagnostics if row.get("level") == "error")
             if args.write_index_report:
                 _write_json_atomic(args.write_index_report, report)
@@ -658,11 +913,19 @@ def main(argv: list[str] | None = None) -> int:
                 "idempotent": report.get("idempotent"),
                 "existing_index_matches_rebuild": report.get("existing_index_matches_rebuild"),
             }
-        elif args.index or args.require_index or args.check_index_titles or args.check_safe_traversal or args.check_duplicate_lookups:
+        elif (
+            args.index
+            or args.require_index
+            or args.check_index_titles
+            or args.check_safe_traversal
+            or args.check_duplicate_lookups
+        ):
             index_path = args.index
             if index_path is None:
                 catalog = _read_json(args.catalog)
-                index_path = args.catalog.parent / catalog.get("index", {}).get("path", "index.json")
+                index_path = args.catalog.parent / catalog.get("index", {}).get(
+                    "path", "index.json"
+                )
             index = _read_json(index_path)
             contract_diagnostics, index_contract = _validate_index_contract(
                 index,
@@ -679,10 +942,14 @@ def main(argv: list[str] | None = None) -> int:
             result["index_rebuild"] = rebuild_result
         if index_contract is not None:
             result["index_contract"] = index_contract
-        result["status"] = "passed" if not any(row.get("level") == "error" for row in diagnostics) else "failed"
+        result["status"] = (
+            "passed" if not any(row.get("level") == "error" for row in diagnostics) else "failed"
+        )
 
         if args.write_summary or args.write_report:
-            summary = _selection_contract_summary(args.selection, result, diagnostics, index_contract)
+            summary = _selection_contract_summary(
+                args.selection, result, diagnostics, index_contract
+            )
             if args.write_summary:
                 _write_json_atomic(args.write_summary, summary)
             if args.write_report:
@@ -690,7 +957,13 @@ def main(argv: list[str] | None = None) -> int:
         if args.write_diagnostics:
             _write_jsonl_atomic(args.write_diagnostics, diagnostics)
     except Exception as exc:
-        print(json.dumps({"status": "failed", "code": "verification_error", "message": str(exc)}, sort_keys=True), file=sys.stderr)
+        print(
+            json.dumps(
+                {"status": "failed", "code": "verification_error", "message": str(exc)},
+                sort_keys=True,
+            ),
+            file=sys.stderr,
+        )
         return 1
     stream = sys.stdout if result["status"] == "passed" else sys.stderr
     print(json.dumps(result, sort_keys=True), file=stream)

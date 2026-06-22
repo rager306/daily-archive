@@ -37,7 +37,9 @@ def _pdf_bytes(text: str) -> bytes:
     return payload
 
 
-def _source_row(source_root: Path, article_ref: str, role: str, local_path: str, data: str | bytes) -> dict[str, Any]:
+def _source_row(
+    source_root: Path, article_ref: str, role: str, local_path: str, data: str | bytes
+) -> dict[str, Any]:
     artifact = _write(source_root / local_path, data)
     article_key = article_ref.rsplit("/", 1)[-1]
     return {
@@ -123,7 +125,10 @@ def _write_inputs(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path, Path]:
             "schema_version": "article-corpus-selection.v00.01",
             "selection_id": "m029-unified-corpus-v1",
             "articles": [
-                {"article_ref": "arxiv/mixed-source/2605.20897", "seed_url": "https://arxiv.org/abs/2605.20897"},
+                {
+                    "article_ref": "arxiv/mixed-source/2605.20897",
+                    "seed_url": "https://arxiv.org/abs/2605.20897",
+                },
                 {"article_ref": "vendor/blog/short", "seed_url": "https://example.test/short"},
             ],
         },
@@ -142,11 +147,25 @@ def _write_inputs(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path, Path]:
             "results": rows,
         },
     )
-    return selection, source_summary, conversion_summary, conversion_diagnostics, conversion_report, source_root
+    return (
+        selection,
+        source_summary,
+        conversion_summary,
+        conversion_diagnostics,
+        conversion_report,
+        source_root,
+    )
 
 
 def _verify_args(tmp_path: Path) -> list[str]:
-    selection, source_summary, conversion_summary, conversion_diagnostics, conversion_report, source_root = _write_inputs(tmp_path)
+    (
+        selection,
+        source_summary,
+        conversion_summary,
+        conversion_diagnostics,
+        conversion_report,
+        source_root,
+    ) = _write_inputs(tmp_path)
     return [
         "verify_m029_unified_conversion_quality_boundary.py",
         "--selection",
@@ -172,7 +191,9 @@ def _verify_args(tmp_path: Path) -> list[str]:
 
 
 def _load_summary(tmp_path: Path) -> dict[str, Any]:
-    return json.loads((tmp_path / "corpus" / "conversion-quality-summary.json").read_text(encoding="utf-8"))
+    return json.loads(
+        (tmp_path / "corpus" / "conversion-quality-summary.json").read_text(encoding="utf-8")
+    )
 
 
 def _write_conversion_artifacts(tmp_path: Path, summary: dict[str, Any]) -> None:
@@ -190,7 +211,9 @@ def _row_by_role(summary: dict[str, Any], role: str) -> dict[str, Any]:
     return matches[0]
 
 
-def test_verifier_builds_metadata_only_conversion_artifacts_and_no_substantive_body_diagnostic(tmp_path: Path) -> None:
+def test_verifier_builds_metadata_only_conversion_artifacts_and_no_substantive_body_diagnostic(
+    tmp_path: Path,
+) -> None:
     assert verify_main(_verify_args(tmp_path)) == 0
 
     summary = _load_summary(tmp_path)
@@ -212,7 +235,9 @@ def test_verifier_builds_metadata_only_conversion_artifacts_and_no_substantive_b
     assert summary["counts"] == {"converted": 1, "low_quality": 1, "metadata_only": 1}
 
 
-def test_verifier_fails_closed_on_unsafe_converted_text_path(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_verifier_fails_closed_on_unsafe_converted_text_path(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     assert verify_main(_verify_args(tmp_path)) == 0
     summary = _load_summary(tmp_path)
     _row_by_role(summary, "arxiv_pdf")["converted_text_path"] = "../escape.txt"
@@ -222,25 +247,35 @@ def test_verifier_fails_closed_on_unsafe_converted_text_path(tmp_path: Path, cap
     assert "unsafe_converted_text_path" in capsys.readouterr().err
 
 
-def test_verifier_fails_closed_when_source_artifact_hash_drifts(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_verifier_fails_closed_when_source_artifact_hash_drifts(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     assert verify_main(_verify_args(tmp_path)) == 0
-    (tmp_path / "corpus" / "source" / "arxiv/mixed-source/2605.20897/source/original.pdf").write_bytes(b"drifted source")
+    (
+        tmp_path / "corpus" / "source" / "arxiv/mixed-source/2605.20897/source/original.pdf"
+    ).write_bytes(b"drifted source")
 
     assert verify_main(_verify_args(tmp_path)) == 1
     assert "source_sha256_mismatch" in capsys.readouterr().err
 
 
-def test_verifier_fails_closed_when_converted_payload_hash_drifts(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_verifier_fails_closed_when_converted_payload_hash_drifts(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     assert verify_main(_verify_args(tmp_path)) == 0
     summary = _load_summary(tmp_path)
     converted_path = Path(_row_by_role(summary, "arxiv_pdf")["converted_text_path"])
-    converted_path.write_text(converted_path.read_text(encoding="utf-8") + "\nstale converted text", encoding="utf-8")
+    converted_path.write_text(
+        converted_path.read_text(encoding="utf-8") + "\nstale converted text", encoding="utf-8"
+    )
 
     assert verify_main(_verify_args(tmp_path)) == 1
     assert "converted_text_sha256_mismatch" in capsys.readouterr().err
 
 
-def test_verifier_fails_closed_on_unsafe_safety_flag(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_verifier_fails_closed_on_unsafe_safety_flag(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     assert verify_main(_verify_args(tmp_path)) == 0
     summary = _load_summary(tmp_path)
     _row_by_role(summary, "arxiv_pdf")["fail_closed_safety_flags"]["graph_import_allowed"] = True

@@ -93,7 +93,9 @@ def load_default_targets(target_subset_path: Path = DEFAULT_TARGET_SUBSET) -> li
         pdf_path = Path(raw_path)
         if not pdf_path.is_absolute():
             pdf_path = REPO_ROOT / pdf_path
-        targets.append(PdfTarget(str(record.get("article_key") or paper_id_from_path(pdf_path)), pdf_path))
+        targets.append(
+            PdfTarget(str(record.get("article_key") or paper_id_from_path(pdf_path)), pdf_path)
+        )
     return targets
 
 
@@ -107,7 +109,10 @@ def collect_pdf_targets(
     if pdf_paths:
         targets.extend(PdfTarget(paper_id_from_path(path), path.resolve()) for path in pdf_paths)
     if pdf_dir:
-        targets.extend(PdfTarget(paper_id_from_path(path), path.resolve()) for path in sorted(pdf_dir.glob("*.pdf")))
+        targets.extend(
+            PdfTarget(paper_id_from_path(path), path.resolve())
+            for path in sorted(pdf_dir.glob("*.pdf"))
+        )
     return targets or load_default_targets(target_subset_path)
 
 
@@ -142,7 +147,9 @@ def check_grobid_available(grobid_url: str, *, timeout: int = SERVICE_TIMEOUT_SE
 
 def iter_local_names(root: ET.Element, local_name: str) -> int:
     suffix = "}" + local_name
-    return sum(1 for element in root.iter() if element.tag == local_name or element.tag.endswith(suffix))
+    return sum(
+        1 for element in root.iter() if element.tag == local_name or element.tag.endswith(suffix)
+    )
 
 
 def count_tei_elements(tei: bytes) -> tuple[int, int]:
@@ -188,7 +195,9 @@ def build_multipart_body(pdf_path: Path) -> tuple[bytes, str]:
     return b"".join(parts), boundary
 
 
-def post_grobid_header(pdf_path: Path, grobid_url: str, *, timeout: int = DEFAULT_TIMEOUT_SECONDS) -> tuple[bytes, int]:
+def post_grobid_header(
+    pdf_path: Path, grobid_url: str, *, timeout: int = DEFAULT_TIMEOUT_SECONDS
+) -> tuple[bytes, int]:
     body, boundary = build_multipart_body(pdf_path)
     request = urllib.request.Request(
         f"{normalize_grobid_url(grobid_url)}/api/processHeaderDocument",
@@ -252,7 +261,12 @@ def probe_pdf(
     packet_path = output_dir / f"{target.paper_id}.json"
     tei_path = output_dir / f"{target.paper_id}.tei.xml"
     if dry_run:
-        packet = make_packet(target, status="grobid_unavailable", grobid_url=grobid_url, note="dry_run_skipped_grobid_call")
+        packet = make_packet(
+            target,
+            status="grobid_unavailable",
+            grobid_url=grobid_url,
+            note="dry_run_skipped_grobid_call",
+        )
         atomic_write_json(packet_path, packet)
         return packet
     if not target.pdf_path.exists():
@@ -260,7 +274,9 @@ def probe_pdf(
         atomic_write_json(packet_path, packet)
         return packet
     if not service_available:
-        packet = make_packet(target, status="grobid_unavailable", grobid_url=grobid_url, note="grobid_isalive_failed")
+        packet = make_packet(
+            target, status="grobid_unavailable", grobid_url=grobid_url, note="grobid_isalive_failed"
+        )
         atomic_write_json(packet_path, packet)
         return packet
 
@@ -275,7 +291,11 @@ def probe_pdf(
         try:
             tei, http_status = post_grobid_header(target.pdf_path, grobid_url, timeout=timeout)
             ref_count, body_count = count_tei_elements(tei)
-            final_status = "low_quality_source" if is_low_quality_source(tei, ref_count=ref_count, body_element_count=body_count) else "success"
+            final_status = (
+                "low_quality_source"
+                if is_low_quality_source(tei, ref_count=ref_count, body_element_count=body_count)
+                else "success"
+            )
             final_http_status = http_status
             final_tei = tei
             final_ref_count = ref_count
@@ -399,10 +419,16 @@ def run_probe(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--pdf-path", type=Path, action="append", default=None, help="PDF path; may be repeated")
-    parser.add_argument("--pdf-dir", type=Path, default=None, help="Directory containing PDFs to probe")
+    parser.add_argument(
+        "--pdf-path", type=Path, action="append", default=None, help="PDF path; may be repeated"
+    )
+    parser.add_argument(
+        "--pdf-dir", type=Path, default=None, help="Directory containing PDFs to probe"
+    )
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
-    parser.add_argument("--grobid-url", default=None, help="GROBID base URL; defaults to GROBID_URL or localhost")
+    parser.add_argument(
+        "--grobid-url", default=None, help="GROBID base URL; defaults to GROBID_URL or localhost"
+    )
     parser.add_argument("--max-retries", type=int, default=DEFAULT_MAX_RETRIES)
     parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT_SECONDS)
     parser.add_argument("--dry-run", action="store_true")
@@ -421,7 +447,12 @@ def main(argv: list[str] | None = None) -> int:
         timeout=args.timeout,
         dry_run=args.dry_run,
     )
-    print(json.dumps({"summary_path": str(args.output_dir / "summary.json"), "counts": summary["counts"]}, sort_keys=True))
+    print(
+        json.dumps(
+            {"summary_path": str(args.output_dir / "summary.json"), "counts": summary["counts"]},
+            sort_keys=True,
+        )
+    )
     return 0
 
 

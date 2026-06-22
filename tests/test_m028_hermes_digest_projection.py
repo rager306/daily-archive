@@ -42,7 +42,9 @@ def _read_json(path: Path) -> dict[str, object]:
 
 
 def _read_jsonl(path: Path) -> list[dict[str, object]]:
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return [
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
 
 
 def _write_json(path: Path, payload: dict[str, object]) -> None:
@@ -50,7 +52,9 @@ def _write_json(path: Path, payload: dict[str, object]) -> None:
 
 
 def _write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
-    path.write_text("\n".join(json.dumps(row, sort_keys=True) for row in rows) + "\n", encoding="utf-8")
+    path.write_text(
+        "\n".join(json.dumps(row, sort_keys=True) for row in rows) + "\n", encoding="utf-8"
+    )
 
 
 def _real_inputs() -> tuple[list[dict[str, object]], dict[str, object]]:
@@ -102,7 +106,9 @@ def _safe_flags(module: ModuleType) -> dict[str, bool]:
     return {str(key): False for key in module.UNSAFE_SAFETY_FLAG_KEYS}
 
 
-def _artifact(path: str | None, content_type: str | None, *, byte_count: int | None = 42) -> dict[str, object]:
+def _artifact(
+    path: str | None, content_type: str | None, *, byte_count: int | None = 42
+) -> dict[str, object]:
     return {
         "path": path,
         "sha256": "1" * 64 if path is not None else None,
@@ -122,10 +128,24 @@ def _minimal_bundle(
     source_quality_status: str,
     warning: bool = False,
 ) -> dict[str, object]:
-    source_family = "arxiv" if source_kind.startswith("arxiv_") else "nature" if source_kind == "nature_article_url" else "company_blog"
-    url_variant = "pdf_url" if source_kind == "arxiv_pdf_url" else "abs_url" if source_kind == "arxiv_abs_url" else source_kind
+    source_family = (
+        "arxiv"
+        if source_kind.startswith("arxiv_")
+        else "nature"
+        if source_kind == "nature_article_url"
+        else "company_blog"
+    )
+    url_variant = (
+        "pdf_url"
+        if source_kind == "arxiv_pdf_url"
+        else "abs_url"
+        if source_kind == "arxiv_abs_url"
+        else source_kind
+    )
     source_path = f"fixtures/{ref_id}-{source_kind}.dat"
-    content_type = "application/pdf" if source_kind == "arxiv_pdf_url" else "text/html; charset=utf-8"
+    content_type = (
+        "application/pdf" if source_kind == "arxiv_pdf_url" else "text/html; charset=utf-8"
+    )
     pdf_path = source_path if pdf_status == "acquired_existing_pdf" else None
     diagnostics: list[dict[str, object]] = []
     if warning:
@@ -157,7 +177,10 @@ def _minimal_bundle(
         "source_metadata": {
             "metadata_status": "metadata_available",
             "diagnostic_count": len(diagnostics),
-            "optional_metadata_gaps": [{"field": field, "reason": "fixture_minimal_metadata"} for field in module.OPTIONAL_BIBLIOGRAPHIC_FIELDS],
+            "optional_metadata_gaps": [
+                {"field": field, "reason": "fixture_minimal_metadata"}
+                for field in module.OPTIONAL_BIBLIOGRAPHIC_FIELDS
+            ],
         },
         "loader_evidence": {
             "bundle_status": "metadata_only_bundle_ready",
@@ -170,7 +193,9 @@ def _minimal_bundle(
             "outcome": "safe_for_downstream_metadata_projection_only",
         },
         "pdf_diagnostic": {
-            "candidate_kind": "explicit_arxiv_pdf_url" if source_kind == "arxiv_pdf_url" else "not_fixture_pdf_source",
+            "candidate_kind": "explicit_arxiv_pdf_url"
+            if source_kind == "arxiv_pdf_url"
+            else "not_fixture_pdf_source",
             "status": pdf_status,
             "terminal": True,
             "reason": "fixture_status",
@@ -183,11 +208,47 @@ def _minimal_bundle(
 
 def _minimal_inputs(module: ModuleType) -> tuple[list[dict[str, object]], dict[str, object]]:
     bundles = [
-        _minimal_bundle(module, "R01", "arxiv_pdf_url", "arxiv:2605.20897", pdf_status="acquired_existing_pdf", source_quality_status="source_metadata_with_verified_pdf_artifact"),
-        _minimal_bundle(module, "R02", "arxiv_abs_url", "arxiv:2605.21401", pdf_status="not_acquired", source_quality_status="source_metadata_without_pdf_artifact", warning=True),
-        _minimal_bundle(module, "R03", "nature_article_url", "nature:articles_example", pdf_status="not_applicable", source_quality_status="source_metadata_non_pdf_source"),
-        _minimal_bundle(module, "R04", "company_blog_url", "company_blog:nvidia:example", pdf_status="not_applicable", source_quality_status="source_metadata_non_pdf_source"),
-        _minimal_bundle(module, "R10", "arxiv_abs_url", "arxiv:2605.20897", pdf_status="not_acquired", source_quality_status="source_metadata_without_pdf_artifact"),
+        _minimal_bundle(
+            module,
+            "R01",
+            "arxiv_pdf_url",
+            "arxiv:2605.20897",
+            pdf_status="acquired_existing_pdf",
+            source_quality_status="source_metadata_with_verified_pdf_artifact",
+        ),
+        _minimal_bundle(
+            module,
+            "R02",
+            "arxiv_abs_url",
+            "arxiv:2605.21401",
+            pdf_status="not_acquired",
+            source_quality_status="source_metadata_without_pdf_artifact",
+            warning=True,
+        ),
+        _minimal_bundle(
+            module,
+            "R03",
+            "nature_article_url",
+            "nature:articles_example",
+            pdf_status="not_applicable",
+            source_quality_status="source_metadata_non_pdf_source",
+        ),
+        _minimal_bundle(
+            module,
+            "R04",
+            "company_blog_url",
+            "company_blog:nvidia:example",
+            pdf_status="not_applicable",
+            source_quality_status="source_metadata_non_pdf_source",
+        ),
+        _minimal_bundle(
+            module,
+            "R10",
+            "arxiv_abs_url",
+            "arxiv:2605.20897",
+            pdf_status="not_acquired",
+            source_quality_status="source_metadata_without_pdf_artifact",
+        ),
     ]
     duplicate_group = {
         "group_id": "identity:arxiv:2605.20897",
@@ -205,10 +266,17 @@ def _minimal_inputs(module: ModuleType) -> tuple[list[dict[str, object]], dict[s
         "url_ref_count": 5,
         "ref_count": 5,
         "normalized_identity_count": 4,
-        "source_kind_counts": {"arxiv_abs_url": 2, "arxiv_pdf_url": 1, "company_blog_url": 1, "nature_article_url": 1},
+        "source_kind_counts": {
+            "arxiv_abs_url": 2,
+            "arxiv_pdf_url": 1,
+            "company_blog_url": 1,
+            "nature_article_url": 1,
+        },
         "duplicate_identity_groups": [duplicate_group],
         "unsafe_claim_counts": _zero_unsafe_counts(module),
-        "input_fingerprints": {"selection": {"path": "fixtures/selection.json", "sha256": "2" * 64}},
+        "input_fingerprints": {
+            "selection": {"path": "fixtures/selection.json", "sha256": "2" * 64}
+        },
     }
     return bundles, summary
 
@@ -218,11 +286,17 @@ def _configure_minimal_scope(monkeypatch: pytest.MonkeyPatch, module: ModuleType
     monkeypatch.setattr(module, "EXPECTED_IDENTITY_COUNT", 4)
     monkeypatch.setattr(module, "EXPECTED_REF_IDS", ["R01", "R02", "R03", "R04", "R10"])
     monkeypatch.setattr(module, "EXPANDED_SCOPE_REF_IDS", ["R10"])
-    monkeypatch.setattr(module, "EXPECTED_SOURCE_KIND_COUNTS", {"arxiv_abs_url": 2, "arxiv_pdf_url": 1, "company_blog_url": 1, "nature_article_url": 1})
+    monkeypatch.setattr(
+        module,
+        "EXPECTED_SOURCE_KIND_COUNTS",
+        {"arxiv_abs_url": 2, "arxiv_pdf_url": 1, "company_blog_url": 1, "nature_article_url": 1},
+    )
     monkeypatch.setattr(module, "EXPECTED_DUPLICATE_GROUP", ["R01", "R10"])
 
 
-def test_minimal_fixture_projection_is_deterministic_metadata_only_and_linked(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_minimal_fixture_projection_is_deterministic_metadata_only_and_linked(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     module = _load_script()
     _configure_minimal_scope(monkeypatch, module)
     bundles, summary = _minimal_inputs(module)
@@ -237,8 +311,17 @@ def test_minimal_fixture_projection_is_deterministic_metadata_only_and_linked(tm
     assert first == second
     assert first["summary"]["url_ref_count"] == 5
     assert first["summary"]["normalized_identity_count"] == 4
-    assert first["summary"]["source_kind_counts"] == {"arxiv_abs_url": 2, "arxiv_pdf_url": 1, "company_blog_url": 1, "nature_article_url": 1}
-    assert first["summary"]["pdf_status_counts"] == {"acquired_existing_pdf": 1, "not_acquired": 2, "not_applicable": 2}
+    assert first["summary"]["source_kind_counts"] == {
+        "arxiv_abs_url": 2,
+        "arxiv_pdf_url": 1,
+        "company_blog_url": 1,
+        "nature_article_url": 1,
+    }
+    assert first["summary"]["pdf_status_counts"] == {
+        "acquired_existing_pdf": 1,
+        "not_acquired": 2,
+        "not_applicable": 2,
+    }
     assert first["summary"]["diagnostic_counts"] == {"pdf_not_acquired_fixture_warning": 1}
     assert first["summary"]["duplicate_identity_groups"][0]["ref_ids"] == ["R01", "R10"]
     assert all(value == 0 for value in first["unsafe_counters"].values())
@@ -250,7 +333,9 @@ def test_minimal_fixture_projection_is_deterministic_metadata_only_and_linked(tm
     assert r01["artifact_refs"]["source_artifact"]["path"] == "fixtures/R01-arxiv_pdf_url.dat"
     assert r01["artifact_refs"]["source_artifact"]["payload_embedded"] is False
     assert r01["identity_group"]["ref_ids"] == ["R01", "R10"]
-    assert "## Failure Modes" in (tmp_path / "out-a" / "hermes-digest-projection-report.md").read_text(encoding="utf-8")
+    assert "## Failure Modes" in (
+        tmp_path / "out-a" / "hermes-digest-projection-report.md"
+    ).read_text(encoding="utf-8")
 
 
 def test_projection_from_real_s04_scope_is_digest_only_and_fail_closed(tmp_path: Path) -> None:
@@ -270,7 +355,15 @@ def test_projection_from_real_s04_scope_is_digest_only_and_fail_closed(tmp_path:
         "company_blog_url": 1,
         "nature_article_url": 1,
     }
-    assert {item["ref_id"] for item in projection["items"] if item["ref_id"] >= "R15"} == {"R15", "R16", "R17", "R18", "R19", "R20", "R21"}
+    assert {item["ref_id"] for item in projection["items"] if item["ref_id"] >= "R15"} == {
+        "R15",
+        "R16",
+        "R17",
+        "R18",
+        "R19",
+        "R20",
+        "R21",
+    }
     r01 = next(item for item in projection["items"] if item["ref_id"] == "R01")
     r10 = next(item for item in projection["items"] if item["ref_id"] == "R10")
     assert r01["identity_group"]["ref_ids"] == ["R01", "R10"]
@@ -292,7 +385,10 @@ def test_projection_from_real_s04_scope_is_digest_only_and_fail_closed(tmp_path:
     assert projection["generator"]["model_attempted"] is False
     assert projection["generator"]["graph_write_attempted"] is False
     assert r01["bibliographic_fields"]["title"]["value"] is None
-    assert r01["bibliographic_fields"]["title"]["diagnostic"] == "metadata_value_not_in_loader_evidence_bundle"
+    assert (
+        r01["bibliographic_fields"]["title"]["diagnostic"]
+        == "metadata_value_not_in_loader_evidence_bundle"
+    )
     assert "source_artifact" in r01["artifact_refs"]
     assert (tmp_path / "hermes-digest-projection.json").exists()
     report = (tmp_path / "hermes-digest-projection-report.md").read_text(encoding="utf-8")
@@ -379,7 +475,15 @@ def test_verifier_accepts_regenerated_real_projection_contract(tmp_path: Path) -
     assert diagnostics == []
     assert digest["summary"]["url_ref_count"] == 21
     assert digest["summary"]["normalized_identity_count"] == 20
-    assert set(digest["summary"]["expanded_scope_ref_ids"]) == {"R15", "R16", "R17", "R18", "R19", "R20", "R21"}
+    assert set(digest["summary"]["expanded_scope_ref_ids"]) == {
+        "R15",
+        "R16",
+        "R17",
+        "R18",
+        "R19",
+        "R20",
+        "R21",
+    }
     assert digest["summary"]["duplicate_identity_groups"][0]["ref_ids"] == ["R01", "R10"]
     assert all(value == 0 for value in digest["unsafe_counters"].values())
 

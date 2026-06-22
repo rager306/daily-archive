@@ -92,10 +92,20 @@ def test_selects_only_matching_trusted_candidate_claim() -> None:
 def test_refuses_non_candidate_and_non_eligible_entries() -> None:
     entries = [
         _manifest_entry(granularity="route", candidate_id=None, chunk_id=None),
-        _manifest_entry(final_eligibility="eligible_with_caveat", candidate_id="c-caveat", chunk_id="chunk-caveat"),
-        _manifest_entry(final_eligibility="repair_required", candidate_id="c-repair", chunk_id="chunk-repair"),
-        _manifest_entry(final_eligibility="route_excluded", candidate_id="c-excluded", chunk_id="chunk-excluded"),
-        _manifest_entry(final_eligibility="review_required", candidate_id="c-review", chunk_id="chunk-review"),
+        _manifest_entry(
+            final_eligibility="eligible_with_caveat",
+            candidate_id="c-caveat",
+            chunk_id="chunk-caveat",
+        ),
+        _manifest_entry(
+            final_eligibility="repair_required", candidate_id="c-repair", chunk_id="chunk-repair"
+        ),
+        _manifest_entry(
+            final_eligibility="route_excluded", candidate_id="c-excluded", chunk_id="chunk-excluded"
+        ),
+        _manifest_entry(
+            final_eligibility="review_required", candidate_id="c-review", chunk_id="chunk-review"
+        ),
     ]
 
     result = select_trusted_candidate_claims(
@@ -114,11 +124,17 @@ def test_refuses_non_candidate_and_non_eligible_entries() -> None:
 
 def test_refuses_route_level_eligible_metadata_and_method_entries() -> None:
     entries = [
-        _manifest_entry(route="metadata_graph", granularity="route", candidate_id=None, chunk_id=None),
-        _manifest_entry(route="method_extraction", granularity="route", candidate_id=None, chunk_id=None),
+        _manifest_entry(
+            route="metadata_graph", granularity="route", candidate_id=None, chunk_id=None
+        ),
+        _manifest_entry(
+            route="method_extraction", granularity="route", candidate_id=None, chunk_id=None
+        ),
     ]
 
-    result = select_trusted_candidate_claims(manifest=_manifest(entries), extraction_summary=_summary([]))
+    result = select_trusted_candidate_claims(
+        manifest=_manifest(entries), extraction_summary=_summary([])
+    )
 
     assert result.trusted_claims == []
     assert result.counts["refused_not_candidate_granularity"] == 2
@@ -204,7 +220,9 @@ def test_persist_validation_subset_records_refusal_counts(tmp_path: Path) -> Non
             _manifest(
                 [
                     _manifest_entry(),
-                    _manifest_entry(final_eligibility="repair_required", candidate_id="c2", chunk_id="chunk-2"),
+                    _manifest_entry(
+                        final_eligibility="repair_required", candidate_id="c2", chunk_id="chunk-2"
+                    ),
                 ]
             )
         ),
@@ -229,11 +247,29 @@ def test_write_refusal_evidence_groups_negative_paths(tmp_path: Path) -> None:
             [
                 _manifest_entry(),
                 _manifest_entry(granularity="route", candidate_id=None, chunk_id=None),
-                _manifest_entry(final_eligibility="eligible_with_caveat", candidate_id="c-caveat", chunk_id="chunk-caveat"),
-                _manifest_entry(final_eligibility="repair_required", candidate_id="c-repair", chunk_id="chunk-repair"),
-                _manifest_entry(final_eligibility="route_excluded", candidate_id="c-excluded", chunk_id="chunk-excluded"),
-                _manifest_entry(final_eligibility="review_required", candidate_id="c-review", chunk_id="chunk-review"),
-                _manifest_entry(route="metadata_graph", granularity="route", candidate_id=None, chunk_id=None),
+                _manifest_entry(
+                    final_eligibility="eligible_with_caveat",
+                    candidate_id="c-caveat",
+                    chunk_id="chunk-caveat",
+                ),
+                _manifest_entry(
+                    final_eligibility="repair_required",
+                    candidate_id="c-repair",
+                    chunk_id="chunk-repair",
+                ),
+                _manifest_entry(
+                    final_eligibility="route_excluded",
+                    candidate_id="c-excluded",
+                    chunk_id="chunk-excluded",
+                ),
+                _manifest_entry(
+                    final_eligibility="review_required",
+                    candidate_id="c-review",
+                    chunk_id="chunk-review",
+                ),
+                _manifest_entry(
+                    route="metadata_graph", granularity="route", candidate_id=None, chunk_id=None
+                ),
             ]
         ),
         extraction_summary=_summary([_claim_draft()]),

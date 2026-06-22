@@ -38,7 +38,9 @@ def verify(coverage_path: Path, output_path: Path) -> dict[str, Any]:
     diagnostics = _diagnostics_from_coverage(coverage)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        queue = UniversalKBQueue(Path(tmpdir) / "m073-queue.sqlite", clock=FixedClock()).initialize()
+        queue = UniversalKBQueue(
+            Path(tmpdir) / "m073-queue.sqlite", clock=FixedClock()
+        ).initialize()
         queue.enqueue(
             job_id="job-m073-parser-evidence-gate",
             stage="benchmark",
@@ -67,9 +69,10 @@ def verify(coverage_path: Path, output_path: Path) -> dict[str, Any]:
         raise RuntimeError("write_eligibility changed from false")
     if payload["promotion_eligibility"] is not False:
         raise RuntimeError("promotion_eligibility changed from false")
-    if payload["diagnostics"].get("validation_parser_manifest_coverage") != coverage["splits"][
-        "validation"
-    ]["parser_manifest_coverage"]:
+    if (
+        payload["diagnostics"].get("validation_parser_manifest_coverage")
+        != coverage["splits"]["validation"]["parser_manifest_coverage"]
+    ):
         raise RuntimeError("validation parser coverage was not persisted")
 
     report = {

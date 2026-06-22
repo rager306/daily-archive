@@ -9,8 +9,12 @@ from typing import Any
 
 import pytest
 
-MODULE_PATH = Path(__file__).parents[1] / "scripts" / "verify_m027_requirement_scope_reconciliation.py"
-spec = importlib.util.spec_from_file_location("verify_m027_requirement_scope_reconciliation", MODULE_PATH)
+MODULE_PATH = (
+    Path(__file__).parents[1] / "scripts" / "verify_m027_requirement_scope_reconciliation.py"
+)
+spec = importlib.util.spec_from_file_location(
+    "verify_m027_requirement_scope_reconciliation", MODULE_PATH
+)
 assert spec is not None and spec.loader is not None
 verify_m027_requirement_scope_reconciliation = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = verify_m027_requirement_scope_reconciliation
@@ -20,8 +24,12 @@ validate_matrix = verify_m027_requirement_scope_reconciliation.validate_matrix
 main = verify_m027_requirement_scope_reconciliation.main
 REQUIRED_IDS = verify_m027_requirement_scope_reconciliation.REQUIRED_REQUIREMENT_IDS
 
-REAL_MATRIX = Path(__file__).parents[1] / "doc" / "validation" / "m027_requirement_scope_matrix.json"
-REAL_RENDERED = Path(__file__).parents[1] / "doc" / "validation" / "m027_requirement_scope_matrix.md"
+REAL_MATRIX = (
+    Path(__file__).parents[1] / "doc" / "validation" / "m027_requirement_scope_matrix.json"
+)
+REAL_RENDERED = (
+    Path(__file__).parents[1] / "doc" / "validation" / "m027_requirement_scope_matrix.md"
+)
 
 
 def _load_real_matrix() -> dict[str, Any]:
@@ -49,7 +57,9 @@ def _materialize_non_planning_evidence(tmp_path: Path, matrix: dict[str, Any]) -
         evidence.write_text("{}\n", encoding="utf-8")
 
 
-def _errors(matrix: dict[str, Any], rendered: str | None = None, tmp_path: Path | None = None) -> list[str]:
+def _errors(
+    matrix: dict[str, Any], rendered: str | None = None, tmp_path: Path | None = None
+) -> list[str]:
     root = tmp_path or Path(__file__).parents[1]
     if tmp_path is not None:
         _materialize_non_planning_evidence(tmp_path, matrix)
@@ -85,14 +95,18 @@ def test_cli_rejects_malformed_json(tmp_path: Path) -> None:
     malformed = tmp_path / "matrix.json"
     malformed.write_text("{not json", encoding="utf-8")
 
-    exit_code = main(["--matrix", str(malformed), "--rendered", str(REAL_RENDERED), "--validate-only"])
+    exit_code = main(
+        ["--matrix", str(malformed), "--rendered", str(REAL_RENDERED), "--validate-only"]
+    )
 
     assert exit_code == 2
 
 
 def test_rejects_missing_required_requirement_id(tmp_path: Path) -> None:
     matrix = _load_real_matrix()
-    matrix["requirements"] = [row for row in matrix["requirements"] if row["requirement_id"] != "R027"]
+    matrix["requirements"] = [
+        row for row in matrix["requirements"] if row["requirement_id"] != "R027"
+    ]
 
     errors = _errors(matrix, tmp_path=tmp_path)
 
@@ -148,7 +162,9 @@ def test_can_require_planning_evidence_existence(tmp_path: Path) -> None:
         require_planning_evidence=True,
     )
 
-    assert any("R024 evidence path does not exist: .gsd/does/not/exist.md" in error for error in errors)
+    assert any(
+        "R024 evidence path does not exist: .gsd/does/not/exist.md" in error for error in errors
+    )
 
 
 @pytest.mark.parametrize(
@@ -164,7 +180,9 @@ def test_can_require_planning_evidence_existence(tmp_path: Path) -> None:
         ("R029", "M027 activates optimizer behavior."),
     ],
 )
-def test_rejects_unsafe_positive_claim_phrases(tmp_path: Path, requirement_id: str, claim: str) -> None:
+def test_rejects_unsafe_positive_claim_phrases(
+    tmp_path: Path, requirement_id: str, claim: str
+) -> None:
     matrix = _load_real_matrix()
     _row(matrix, requirement_id)["allowed_claims"].append(claim)
 
@@ -189,14 +207,21 @@ def test_rejects_unsafe_true_boolean_fields(tmp_path: Path, field: str) -> None:
 
     errors = _errors(matrix, tmp_path=tmp_path)
 
-    assert any("unsafe boolean field must not be true" in error and field in error for error in errors) or any(
-        f"$.safety_flags.{field} must be false" in error for error in errors
-    )
+    assert any(
+        "unsafe boolean field must not be true" in error and field in error for error in errors
+    ) or any(f"$.safety_flags.{field} must be false" in error for error in errors)
 
 
 @pytest.mark.parametrize(
     "field",
-    ["raw_article_text", "binary_payload", "base64_payload", "vector_payload", "secret_value", "production_connection"],
+    [
+        "raw_article_text",
+        "binary_payload",
+        "base64_payload",
+        "vector_payload",
+        "secret_value",
+        "production_connection",
+    ],
 )
 def test_rejects_raw_payload_or_secret_field_names(tmp_path: Path, field: str) -> None:
     matrix = _load_real_matrix()
@@ -204,12 +229,20 @@ def test_rejects_raw_payload_or_secret_field_names(tmp_path: Path, field: str) -
 
     errors = _errors(matrix, tmp_path=tmp_path)
 
-    assert any("contains unsafe raw/binary/base64/vector/secret field name" in error and field in error for error in errors)
+    assert any(
+        "contains unsafe raw/binary/base64/vector/secret field name" in error and field in error
+        for error in errors
+    )
 
 
 @pytest.mark.parametrize(
     "marker",
-    ["-----BEGIN PRIVATE KEY-----", "data:application/pdf;base64,AAAA", "secret=do-not-store", "password=do-not-store"],
+    [
+        "-----BEGIN PRIVATE KEY-----",
+        "data:application/pdf;base64,AAAA",
+        "secret=do-not-store",
+        "password=do-not-store",
+    ],
 )
 def test_rejects_raw_payload_base64_or_secret_leakage_markers(tmp_path: Path, marker: str) -> None:
     matrix = _load_real_matrix()
@@ -217,11 +250,15 @@ def test_rejects_raw_payload_base64_or_secret_leakage_markers(tmp_path: Path, ma
 
     errors = _errors(matrix, tmp_path=tmp_path)
 
-    assert any("contains raw payload, base64, or secret leakage marker" in error for error in errors)
+    assert any(
+        "contains raw payload, base64, or secret leakage marker" in error for error in errors
+    )
 
 
 @pytest.mark.parametrize("requirement_id", ["R019", "R022", "R023", "R031", "R032", "R033"])
-def test_rejects_false_validation_of_future_out_of_scope_requirements(tmp_path: Path, requirement_id: str) -> None:
+def test_rejects_false_validation_of_future_out_of_scope_requirements(
+    tmp_path: Path, requirement_id: str
+) -> None:
     matrix = _load_real_matrix()
     row = _row(matrix, requirement_id)
     row["current_status"] = "validated"
@@ -230,7 +267,10 @@ def test_rejects_false_validation_of_future_out_of_scope_requirements(tmp_path: 
 
     errors = _errors(matrix, tmp_path=tmp_path)
 
-    assert any(requirement_id in error and ("must remain active" in error or "unsafe claim" in error) for error in errors)
+    assert any(
+        requirement_id in error and ("must remain active" in error or "unsafe claim" in error)
+        for error in errors
+    )
 
 
 def test_rejects_false_global_validation_of_advanced_requirement(tmp_path: Path) -> None:
@@ -241,7 +281,9 @@ def test_rejects_false_global_validation_of_advanced_requirement(tmp_path: Path)
 
     errors = _errors(matrix, tmp_path=tmp_path)
 
-    assert any("R024 s08_verdict must be advanced_not_globally_validated" in error for error in errors)
+    assert any(
+        "R024 s08_verdict must be advanced_not_globally_validated" in error for error in errors
+    )
     assert any("unsafe claim phrase" in error and "R024" in error for error in errors)
 
 
@@ -268,11 +310,17 @@ def test_rejects_stale_rendered_markdown(tmp_path: Path) -> None:
 
 def test_rejects_rendered_markdown_with_stale_source_matrix_path(tmp_path: Path) -> None:
     matrix = _load_real_matrix()
-    rendered = _load_rendered().replace("doc/validation/m027_requirement_scope_matrix.json", "doc/validation/old.json")
+    rendered = _load_rendered().replace(
+        "doc/validation/m027_requirement_scope_matrix.json", "doc/validation/old.json"
+    )
 
     errors = _errors(matrix, rendered=rendered, tmp_path=tmp_path)
 
-    assert any("rendered markdown missing marker: doc/validation/m027_requirement_scope_matrix.json" in error for error in errors)
+    assert any(
+        "rendered markdown missing marker: doc/validation/m027_requirement_scope_matrix.json"
+        in error
+        for error in errors
+    )
 
 
 def test_cli_rejects_negative_fixture(tmp_path: Path) -> None:
@@ -283,6 +331,8 @@ def test_cli_rejects_negative_fixture(tmp_path: Path) -> None:
     _write_json(matrix_path, matrix)
     rendered_path.write_text(_load_rendered(), encoding="utf-8")
 
-    exit_code = main(["--matrix", str(matrix_path), "--rendered", str(rendered_path), "--validate-only"])
+    exit_code = main(
+        ["--matrix", str(matrix_path), "--rendered", str(rendered_path), "--validate-only"]
+    )
 
     assert exit_code == 1

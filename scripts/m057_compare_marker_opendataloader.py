@@ -10,14 +10,25 @@ from statistics import mean
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_MARKER_SUMMARY = ROOT / "artifacts" / "m057-fd-marker" / "marker-extraction" / "summary.json"
+DEFAULT_MARKER_SUMMARY = (
+    ROOT / "artifacts" / "m057-fd-marker" / "marker-extraction" / "summary.json"
+)
 DEFAULT_JSON_OUTPUT = ROOT / "artifacts" / "m057-fd-marker" / "marker-vs-opendataloader.json"
 DEFAULT_MD_OUTPUT = ROOT / "artifacts" / "m057-fd-marker" / "marker-vs-opendataloader.md"
 
 OPEN_DATALOADER_SOURCES: tuple[dict[str, str], ...] = (
-    {"name": "m055-opendataloader-only", "path": "artifacts/m055-parser-benchmark/opendataloader-only"},
-    {"name": "m055deep-opendataloader-20", "path": "artifacts/m055deep-parser-benchmark/opendataloader-20"},
-    {"name": "m055deep-opendataloader-correctness", "path": "artifacts/m055deep-parser-benchmark/opendataloader-correctness"},
+    {
+        "name": "m055-opendataloader-only",
+        "path": "artifacts/m055-parser-benchmark/opendataloader-only",
+    },
+    {
+        "name": "m055deep-opendataloader-20",
+        "path": "artifacts/m055deep-parser-benchmark/opendataloader-20",
+    },
+    {
+        "name": "m055deep-opendataloader-correctness",
+        "path": "artifacts/m055deep-parser-benchmark/opendataloader-correctness",
+    },
     {"name": "m056-wave-1", "path": "artifacts/m056-bfs-graph/wave-1/opendataloader"},
     {"name": "m056-wave-2", "path": "artifacts/m056-bfs-graph/wave-2/opendataloader"},
     {"name": "m056-wave-3", "path": "artifacts/m056-bfs-graph/wave-3/opendataloader"},
@@ -53,7 +64,11 @@ def source_quality_default(source_dir: Path) -> float | None:
 
 
 def packet_quality(packet: dict[str, Any], source_default: float | None) -> float:
-    for key in ("table_structure_quality_avg", "table_quality_avg", "table_structure_quality_score"):
+    for key in (
+        "table_structure_quality_avg",
+        "table_quality_avg",
+        "table_structure_quality_score",
+    ):
         value = packet.get(key)
         if isinstance(value, int | float):
             return float(value)
@@ -87,8 +102,16 @@ def collect_opendataloader_packets() -> dict[str, dict[str, Any]]:
             if current is None:
                 best_by_id[arxiv_id] = candidate
                 continue
-            candidate_key = (candidate["table_structure_quality_avg"], candidate["table_count"], candidate["status"] == "success")
-            current_key = (current["table_structure_quality_avg"], current["table_count"], current["status"] == "success")
+            candidate_key = (
+                candidate["table_structure_quality_avg"],
+                candidate["table_count"],
+                candidate["status"] == "success",
+            )
+            current_key = (
+                current["table_structure_quality_avg"],
+                current["table_count"],
+                current["status"] == "success",
+            )
             if candidate_key > current_key:
                 best_by_id[arxiv_id] = candidate
     return best_by_id
@@ -108,7 +131,9 @@ def compare(marker_summary_path: Path = DEFAULT_MARKER_SUMMARY) -> dict[str, Any
         baseline = opendataloader.get(arxiv_id)
         marker_quality = float(marker.get("table_structure_quality_avg") or 0.0)
         marker_table_count = int(marker.get("table_count") or 0)
-        baseline_quality = float(baseline.get("table_structure_quality_avg") or 0.0) if baseline else 0.0
+        baseline_quality = (
+            float(baseline.get("table_structure_quality_avg") or 0.0) if baseline else 0.0
+        )
         baseline_table_count = int(baseline.get("table_count") or 0) if baseline else 0
         delta = round(marker_quality - baseline_quality, 3)
         quality_deltas.append(delta)
@@ -133,11 +158,17 @@ def compare(marker_summary_path: Path = DEFAULT_MARKER_SUMMARY) -> dict[str, Any
             }
         )
 
-    marker_better_pct = round((marker_better_count / compared_count) * 100, 3) if compared_count else 0.0
+    marker_better_pct = (
+        round((marker_better_count / compared_count) * 100, 3) if compared_count else 0.0
+    )
     return {
         "schema_version": "m057-fd-marker.marker-vs-opendataloader.v1",
         "safety_defaults": SAFETY_DEFAULTS,
-        "marker_summary_path": str(marker_summary_path.relative_to(ROOT) if marker_summary_path.is_absolute() else marker_summary_path),
+        "marker_summary_path": str(
+            marker_summary_path.relative_to(ROOT)
+            if marker_summary_path.is_absolute()
+            else marker_summary_path
+        ),
         "opendataloader_sources": list(OPEN_DATALOADER_SOURCES),
         "summary": {
             "total_marker_pdfs": len(marker_packets),
@@ -145,10 +176,20 @@ def compare(marker_summary_path: Path = DEFAULT_MARKER_SUMMARY) -> dict[str, Any
             "marker_better_count": marker_better_count,
             "marker_better_percent": marker_better_pct,
             "average_quality_delta": round(mean(quality_deltas), 3) if quality_deltas else 0.0,
-            "marker_average_quality": round(mean(float(row["marker_table_structure_quality_avg"]) for row in rows), 3) if rows else 0.0,
-            "opendataloader_average_quality": round(mean(float(row["opendataloader_table_structure_quality_avg"]) for row in rows), 3) if rows else 0.0,
+            "marker_average_quality": round(
+                mean(float(row["marker_table_structure_quality_avg"]) for row in rows), 3
+            )
+            if rows
+            else 0.0,
+            "opendataloader_average_quality": round(
+                mean(float(row["opendataloader_table_structure_quality_avg"]) for row in rows), 3
+            )
+            if rows
+            else 0.0,
             "marker_total_table_count": sum(int(row["marker_table_count"]) for row in rows),
-            "opendataloader_total_table_count": sum(int(row["opendataloader_table_count"]) for row in rows),
+            "opendataloader_total_table_count": sum(
+                int(row["opendataloader_table_count"]) for row in rows
+            ),
         },
         "per_pdf": rows,
     }
@@ -187,7 +228,11 @@ def render_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def write_outputs(report: dict[str, Any], json_output: Path = DEFAULT_JSON_OUTPUT, md_output: Path = DEFAULT_MD_OUTPUT) -> None:
+def write_outputs(
+    report: dict[str, Any],
+    json_output: Path = DEFAULT_JSON_OUTPUT,
+    md_output: Path = DEFAULT_MD_OUTPUT,
+) -> None:
     json_output.parent.mkdir(parents=True, exist_ok=True)
     json_output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     md_output.write_text(render_markdown(report), encoding="utf-8")

@@ -18,6 +18,7 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
+
 def _env_int(name: str, default: int) -> int:
     try:
         return int(os.environ.get(name, str(default)))
@@ -65,8 +66,12 @@ def _env_list(name: str, default: list[float]) -> list[float]:
         return default
 
 
-DEFAULT_TEI_URL = _env_str("TEI_URL", _env_str("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000"))
-DEFAULT_ENDPOINT = _env_str("FD_EMBEDDINGS_ENDPOINT", f"{DEFAULT_TEI_URL.rstrip('/')}/v1/embeddings")
+DEFAULT_TEI_URL = _env_str(
+    "TEI_URL", _env_str("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000")
+)
+DEFAULT_ENDPOINT = _env_str(
+    "FD_EMBEDDINGS_ENDPOINT", f"{DEFAULT_TEI_URL.rstrip('/')}/v1/embeddings"
+)
 DEFAULT_API_KEY = os.environ.get("FD_API_KEY")
 DEFAULT_MODEL_ID = _env_str("MODEL_ID", _env_str("FD_MODEL_NAME", "deepvk/USER-bge-m3"))
 DEFAULT_MODEL_NAME = DEFAULT_MODEL_ID
@@ -75,7 +80,9 @@ DEFAULT_REDIS_PORT = _env_int("REDIS_PORT", 6379)
 DEFAULT_DIMENSIONS = _env_int("FD_DIMENSIONS", 1024)
 DEFAULT_BATCH_SIZE = _env_int("FD_BATCH_SIZE", 32)
 DEFAULT_TIMEOUT_SECONDS = _env_float("FD_REQUEST_TIMEOUT_SECONDS", 120.0)
-DEFAULT_RETRY_SCHEDULE_SECONDS = tuple(_env_list("FD_RETRY_BACKOFF_SECONDS", [1.0, 5.0, 15.0, 60.0, 300.0]))
+DEFAULT_RETRY_SCHEDULE_SECONDS = tuple(
+    _env_list("FD_RETRY_BACKOFF_SECONDS", [1.0, 5.0, 15.0, 60.0, 300.0])
+)
 DEFAULT_MAX_ATTEMPTS = _env_int("FD_MAX_RETRIES", 3)
 DEFAULT_CIRCUIT_FAILURE_THRESHOLD = _env_int("FD_CIRCUIT_FAILURE_THRESHOLD", 3)
 DEFAULT_CIRCUIT_OPEN_SECONDS = _env_float("FD_CIRCUIT_OPEN_SECONDS", 60.0)
@@ -114,8 +121,12 @@ def _load_dotenv_if_present(path: str | Path = ".env") -> None:
 _load_dotenv_if_present()
 # Re-evaluate fd env defaults now that .env has been loaded. Module-import
 # ``DEFAULT_*`` constants must reflect the loaded ``FD_API_KEY`` and friends.
-DEFAULT_TEI_URL = _env_str("TEI_URL", _env_str("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000"))
-DEFAULT_ENDPOINT = _env_str("FD_EMBEDDINGS_ENDPOINT", f"{DEFAULT_TEI_URL.rstrip('/')}/v1/embeddings")
+DEFAULT_TEI_URL = _env_str(
+    "TEI_URL", _env_str("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000")
+)
+DEFAULT_ENDPOINT = _env_str(
+    "FD_EMBEDDINGS_ENDPOINT", f"{DEFAULT_TEI_URL.rstrip('/')}/v1/embeddings"
+)
 DEFAULT_API_KEY = os.environ.get("FD_API_KEY")
 DEFAULT_MODEL_ID = _env_str("MODEL_ID", _env_str("FD_MODEL_NAME", "deepvk/USER-bge-m3"))
 DEFAULT_MODEL_NAME = DEFAULT_MODEL_ID
@@ -124,7 +135,9 @@ DEFAULT_REDIS_PORT = _env_int("REDIS_PORT", 6379)
 DEFAULT_DIMENSIONS = _env_int("FD_DIMENSIONS", 1024)
 DEFAULT_BATCH_SIZE = _env_int("FD_BATCH_SIZE", 32)
 DEFAULT_TIMEOUT_SECONDS = _env_float("FD_REQUEST_TIMEOUT_SECONDS", 120.0)
-DEFAULT_RETRY_SCHEDULE_SECONDS = tuple(_env_list("FD_RETRY_BACKOFF_SECONDS", [1.0, 5.0, 15.0, 60.0, 300.0]))
+DEFAULT_RETRY_SCHEDULE_SECONDS = tuple(
+    _env_list("FD_RETRY_BACKOFF_SECONDS", [1.0, 5.0, 15.0, 60.0, 300.0])
+)
 DEFAULT_MAX_ATTEMPTS = _env_int("FD_MAX_RETRIES", 3)
 DEFAULT_CIRCUIT_FAILURE_THRESHOLD = _env_int("FD_CIRCUIT_FAILURE_THRESHOLD", 3)
 DEFAULT_CIRCUIT_OPEN_SECONDS = _env_float("FD_CIRCUIT_OPEN_SECONDS", 60.0)
@@ -303,7 +316,9 @@ class Embedder:
                         "circuit_state": self._circuit_state,
                     },
                 )
-                response = await client.post(self.endpoint, json=payload, headers=self.request_headers)
+                response = await client.post(
+                    self.endpoint, json=payload, headers=self.request_headers
+                )
                 latency = self._time_fn() - started_at
                 self._latencies.append(latency)
 
@@ -312,7 +327,9 @@ class Embedder:
                 response.raise_for_status()
 
                 self._observe_cache(response)
-                embeddings = self._parse_embeddings_response(response.json(), expected_count=len(texts))
+                embeddings = self._parse_embeddings_response(
+                    response.json(), expected_count=len(texts)
+                )
                 self._record_success()
                 logger.info(
                     "fd embedding request succeeded",
@@ -442,7 +459,9 @@ class Embedder:
 
     def _parse_embeddings_response(self, data: Any, *, expected_count: int) -> list[list[float]]:
         if not isinstance(data, dict):
-            raise FdEmbeddingError(f"Expected OpenAI-style object response, got {type(data).__name__}")
+            raise FdEmbeddingError(
+                f"Expected OpenAI-style object response, got {type(data).__name__}"
+            )
         items = data.get("data")
         if not isinstance(items, list):
             raise FdEmbeddingError("Expected OpenAI-style response with list field 'data'")

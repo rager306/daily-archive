@@ -81,7 +81,9 @@ def load_locator_artifact(path: str | Path) -> dict[str, Any]:
             f"malformed locator evidence JSON at {input_path}: line {exc.lineno} column {exc.colno}"
         ) from exc
     if not isinstance(payload, dict):
-        raise LocatorEvidenceAuditError(f"locator evidence root must be a JSON object: {input_path}")
+        raise LocatorEvidenceAuditError(
+            f"locator evidence root must be a JSON object: {input_path}"
+        )
     return payload
 
 
@@ -122,7 +124,12 @@ def audit_locator_evidence(
     )
     invariant_drift = _invariant_drift(first_proof_invariants, expected) if strict else []
 
-    failures = [*summary_drift, *unsafe_safety_flag_paths, *missing_span_locator_ids, *invariant_drift]
+    failures = [
+        *summary_drift,
+        *unsafe_safety_flag_paths,
+        *missing_span_locator_ids,
+        *invariant_drift,
+    ]
     if failures:
         labels: list[str] = []
         if summary_drift:
@@ -135,15 +142,24 @@ def audit_locator_evidence(
             labels.append("invariant drift: " + "; ".join(invariant_drift))
         raise LocatorEvidenceAuditError("; ".join(labels))
 
-    spans = [span for locator in locators for span in locator.get("source_spans", []) if isinstance(span, dict)]
+    spans = [
+        span
+        for locator in locators
+        for span in locator.get("source_spans", [])
+        if isinstance(span, dict)
+    ]
     audit = {
         "schema_version": "locator_evidence_audit.v1",
         "input_schema_version": artifact.get("schema_version"),
         "strict": strict,
         "first_proof_invariants": first_proof_invariants,
         "stable_ids": {
-            "source_ids": sorted(str(source.get("source_id", "unknown")) for source in source_ledger),
-            "locator_ids": sorted(str(locator.get("locator_id", "unknown")) for locator in locators),
+            "source_ids": sorted(
+                str(source.get("source_id", "unknown")) for source in source_ledger
+            ),
+            "locator_ids": sorted(
+                str(locator.get("locator_id", "unknown")) for locator in locators
+            ),
             "span_ids": sorted(str(span.get("span_id", "unknown")) for span in spans),
         },
         "distributions": _distributions(locators),
@@ -227,78 +243,80 @@ def render_locator_evidence_audit_markdown(audit: dict[str, Any]) -> str:
     ]
     for key, value in invariants.items():
         lines.append(f"| `{key}` | `{value}` |")
-    lines.extend([
-        "",
-        "## Per-Target Summary",
-        "",
-        f"- Papers: `{invariants['paper_count']}`",
-        f"- Sources: `{invariants['source_count']}`",
-        f"- Locators: `{invariants['locator_count']}`",
-        f"- Located locators: `{invariants['located_count']}`",
-        f"- Review-required locators: `{invariants['review_required_count']}`",
-        f"- Retrieval-only locators: `{invariants['retrieval_only_count']}`",
-        f"- Ambiguous-span locators: `{invariants['ambiguous_span_count']}`",
-        f"- Import-eligible locators: `{invariants['import_eligible_count']}`",
-        "",
-        "## Ambiguity Taxonomy",
-        "",
-        "### Routes",
-        *(_bullet_counts(distributions["routes"])),
-        "",
-        "### States",
-        *(_bullet_counts(distributions["states"])),
-        "",
-        "### Diagnostic Code Classes",
-        *(_bullet_counts(audit["diagnostic_code_classes"])),
-        "",
-        "### Diagnostic Codes",
-        *(_bullet_counts(distributions["diagnostic_codes"])),
-        "",
-        "## Source-Span Coordinate and Hash Coverage",
-        "",
-        f"- Locator count: `{coverage['locator_count']}`",
-        f"- Locators with source spans: `{coverage['locators_with_source_spans']}`",
-        f"- Locators without source spans: `{coverage['locators_without_source_spans']}`",
-        f"- Span count: `{coverage['span_count']}`",
-        f"- Spans with hashes: `{coverage['spans_with_hash']}`",
-        f"- Coordinate spans with character bounds: `{coverage['coordinate_spans_with_char_bounds']}`",
-        f"- Coordinate spans with line bounds: `{coverage['coordinate_spans_with_line_bounds']}`",
-        f"- Artifact-record span count: `{coverage['artifact_record_span_count']}`",
-        "",
-        "### Coordinate Spaces",
-        *(_bullet_counts(coverage["coordinate_space_distribution"])),
-        "",
-        "## Source Ledger Safety Summary",
-        "",
-        f"- Source ledger entries: `{ledger['source_count']}`",
-        f"- Sources with hashes: `{ledger['sources_with_hash']}`",
-        f"- Source text embedded non-false paths: `{len(ledger['source_text_embedded_nonfalse_paths'])}`",
-        f"- Source binary embedded non-false paths: `{len(ledger['source_binary_embedded_nonfalse_paths'])}`",
-        "",
-        "### Conversion Statuses",
-        *(_bullet_counts(ledger["conversion_status_distribution"])),
-        "",
-        "### Source Hash Algorithms",
-        *(_bullet_counts(ledger["source_hash_algorithm_distribution"])),
-        "",
-        "## S02 Repair-Context Gaps",
-        "",
-        f"- Missing-span locator IDs: `{len(gaps['missing_span_locator_ids'])}`",
-        f"- Repair-required locator IDs: `{len(gaps['repair_required_locator_ids'])}`",
-        f"- Conflicting-evidence locator IDs: `{len(gaps['conflicting_evidence_locator_ids'])}`",
-        f"- Artifact-record span IDs: `{len(gaps['artifact_record_span_ids'])}`",
-        "",
-        "## Safety Blockers",
-        "",
-        f"- Validator diagnostics: `{len(blockers['validator_diagnostics'])}`",
-        f"- Forbidden payload key paths: `{len(blockers['forbidden_payload_key_paths'])}`",
-        f"- Unsafe safety flag paths: `{len(blockers['unsafe_safety_flag_paths'])}`",
-        f"- Summary drift entries: `{len(blockers['summary_drift'])}`",
-        f"- Invariant drift entries: `{len(blockers['invariant_drift'])}`",
-        f"- No-import blocker intact: `{blockers['no_import_blocker_intact']}`",
-        "",
-        "### Explicit No-Go Constraints",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Per-Target Summary",
+            "",
+            f"- Papers: `{invariants['paper_count']}`",
+            f"- Sources: `{invariants['source_count']}`",
+            f"- Locators: `{invariants['locator_count']}`",
+            f"- Located locators: `{invariants['located_count']}`",
+            f"- Review-required locators: `{invariants['review_required_count']}`",
+            f"- Retrieval-only locators: `{invariants['retrieval_only_count']}`",
+            f"- Ambiguous-span locators: `{invariants['ambiguous_span_count']}`",
+            f"- Import-eligible locators: `{invariants['import_eligible_count']}`",
+            "",
+            "## Ambiguity Taxonomy",
+            "",
+            "### Routes",
+            *(_bullet_counts(distributions["routes"])),
+            "",
+            "### States",
+            *(_bullet_counts(distributions["states"])),
+            "",
+            "### Diagnostic Code Classes",
+            *(_bullet_counts(audit["diagnostic_code_classes"])),
+            "",
+            "### Diagnostic Codes",
+            *(_bullet_counts(distributions["diagnostic_codes"])),
+            "",
+            "## Source-Span Coordinate and Hash Coverage",
+            "",
+            f"- Locator count: `{coverage['locator_count']}`",
+            f"- Locators with source spans: `{coverage['locators_with_source_spans']}`",
+            f"- Locators without source spans: `{coverage['locators_without_source_spans']}`",
+            f"- Span count: `{coverage['span_count']}`",
+            f"- Spans with hashes: `{coverage['spans_with_hash']}`",
+            f"- Coordinate spans with character bounds: `{coverage['coordinate_spans_with_char_bounds']}`",
+            f"- Coordinate spans with line bounds: `{coverage['coordinate_spans_with_line_bounds']}`",
+            f"- Artifact-record span count: `{coverage['artifact_record_span_count']}`",
+            "",
+            "### Coordinate Spaces",
+            *(_bullet_counts(coverage["coordinate_space_distribution"])),
+            "",
+            "## Source Ledger Safety Summary",
+            "",
+            f"- Source ledger entries: `{ledger['source_count']}`",
+            f"- Sources with hashes: `{ledger['sources_with_hash']}`",
+            f"- Source text embedded non-false paths: `{len(ledger['source_text_embedded_nonfalse_paths'])}`",
+            f"- Source binary embedded non-false paths: `{len(ledger['source_binary_embedded_nonfalse_paths'])}`",
+            "",
+            "### Conversion Statuses",
+            *(_bullet_counts(ledger["conversion_status_distribution"])),
+            "",
+            "### Source Hash Algorithms",
+            *(_bullet_counts(ledger["source_hash_algorithm_distribution"])),
+            "",
+            "## S02 Repair-Context Gaps",
+            "",
+            f"- Missing-span locator IDs: `{len(gaps['missing_span_locator_ids'])}`",
+            f"- Repair-required locator IDs: `{len(gaps['repair_required_locator_ids'])}`",
+            f"- Conflicting-evidence locator IDs: `{len(gaps['conflicting_evidence_locator_ids'])}`",
+            f"- Artifact-record span IDs: `{len(gaps['artifact_record_span_ids'])}`",
+            "",
+            "## Safety Blockers",
+            "",
+            f"- Validator diagnostics: `{len(blockers['validator_diagnostics'])}`",
+            f"- Forbidden payload key paths: `{len(blockers['forbidden_payload_key_paths'])}`",
+            f"- Unsafe safety flag paths: `{len(blockers['unsafe_safety_flag_paths'])}`",
+            f"- Summary drift entries: `{len(blockers['summary_drift'])}`",
+            f"- Invariant drift entries: `{len(blockers['invariant_drift'])}`",
+            f"- No-import blocker intact: `{blockers['no_import_blocker_intact']}`",
+            "",
+            "### Explicit No-Go Constraints",
+        ]
+    )
     lines.extend(f"- {blocker}" for blocker in explicit_blockers)
     lines.append("")
     return "\n".join(lines)
@@ -333,8 +351,12 @@ def _first_proof_invariants(
         "conflicting_evidence_count": states["conflicting_evidence"],
         "retrieval_only_count": states["retrieval_only"],
         "repair_required_count": states["repair_required"],
-        "import_eligible_count": sum(1 for locator in locators if locator.get("import_eligible") is True),
-        "promoted_to_fact_count": sum(1 for locator in locators if locator.get("promoted_to_fact") is True),
+        "import_eligible_count": sum(
+            1 for locator in locators if locator.get("import_eligible") is True
+        ),
+        "promoted_to_fact_count": sum(
+            1 for locator in locators if locator.get("promoted_to_fact") is True
+        ),
     }
 
 
@@ -370,9 +392,13 @@ def _distributions(locators: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
         "routes": _counter_dict(locator.get("route") for locator in locators),
         "states": _counter_dict(locator.get("state") for locator in locators),
         "candidate_types": _counter_dict(locator.get("candidate_type") for locator in locators),
-        "review_queue_reasons": _counter_dict(locator.get("review_queue_reason") for locator in locators),
+        "review_queue_reasons": _counter_dict(
+            locator.get("review_queue_reason") for locator in locators
+        ),
         "support_levels": _counter_dict(locator.get("support_level") for locator in locators),
-        "uncertainty_labels": _counter_dict(locator.get("uncertainty_label") for locator in locators),
+        "uncertainty_labels": _counter_dict(
+            locator.get("uncertainty_label") for locator in locators
+        ),
         "diagnostic_codes": _counter_dict(
             code for locator in locators for code in locator.get("diagnostic_codes", [])
         ),
@@ -402,31 +428,53 @@ def _diagnostic_code_classes(locators: list[dict[str, Any]]) -> dict[str, int]:
     return dict(sorted(classes.items()))
 
 
-def _source_span_coverage(locators: list[dict[str, Any]], spans: list[dict[str, Any]]) -> dict[str, Any]:
+def _source_span_coverage(
+    locators: list[dict[str, Any]], spans: list[dict[str, Any]]
+) -> dict[str, Any]:
     coordinate_spans = [span for span in spans if span.get("coordinate_space") != "artifact_record"]
     return {
         "locator_count": len(locators),
         "locators_with_source_spans": sum(1 for locator in locators if locator.get("source_spans")),
-        "locators_without_source_spans": sum(1 for locator in locators if not locator.get("source_spans")),
+        "locators_without_source_spans": sum(
+            1 for locator in locators if not locator.get("source_spans")
+        ),
         "span_count": len(spans),
-        "coordinate_space_distribution": _counter_dict(span.get("coordinate_space") for span in spans),
-        "spans_with_hash": sum(1 for span in spans if isinstance(span.get("span_hash"), str) and bool(span.get("span_hash"))),
+        "coordinate_space_distribution": _counter_dict(
+            span.get("coordinate_space") for span in spans
+        ),
+        "spans_with_hash": sum(
+            1
+            for span in spans
+            if isinstance(span.get("span_hash"), str) and bool(span.get("span_hash"))
+        ),
         "coordinate_spans_with_char_bounds": sum(
-            1 for span in coordinate_spans if isinstance(span.get("char_start"), int) and isinstance(span.get("char_end"), int)
+            1
+            for span in coordinate_spans
+            if isinstance(span.get("char_start"), int) and isinstance(span.get("char_end"), int)
         ),
         "coordinate_spans_with_line_bounds": sum(
-            1 for span in coordinate_spans if isinstance(span.get("line_start"), int) and isinstance(span.get("line_end"), int)
+            1
+            for span in coordinate_spans
+            if isinstance(span.get("line_start"), int) and isinstance(span.get("line_end"), int)
         ),
-        "artifact_record_span_count": sum(1 for span in spans if span.get("coordinate_space") == "artifact_record"),
+        "artifact_record_span_count": sum(
+            1 for span in spans if span.get("coordinate_space") == "artifact_record"
+        ),
     }
 
 
 def _source_ledger_safety(source_ledger: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "source_count": len(source_ledger),
-        "conversion_status_distribution": _counter_dict(source.get("conversion_status") for source in source_ledger),
-        "source_hash_algorithm_distribution": _counter_dict(source.get("source_hash_algorithm") for source in source_ledger),
-        "sources_with_hash": sum(1 for source in source_ledger if source.get("source_hash") not in {None, "", "missing"}),
+        "conversion_status_distribution": _counter_dict(
+            source.get("conversion_status") for source in source_ledger
+        ),
+        "source_hash_algorithm_distribution": _counter_dict(
+            source.get("source_hash_algorithm") for source in source_ledger
+        ),
+        "sources_with_hash": sum(
+            1 for source in source_ledger if source.get("source_hash") not in {None, "", "missing"}
+        ),
         "source_text_embedded_nonfalse_paths": sorted(
             f"/source_ledger[{index}]/raw_text_embedded"
             for index, source in enumerate(source_ledger)
@@ -440,7 +488,9 @@ def _source_ledger_safety(source_ledger: list[dict[str, Any]]) -> dict[str, Any]
     }
 
 
-def _repair_context_gaps(locators: list[dict[str, Any]], spans: list[dict[str, Any]]) -> dict[str, Any]:
+def _repair_context_gaps(
+    locators: list[dict[str, Any]], spans: list[dict[str, Any]]
+) -> dict[str, Any]:
     return {
         "missing_span_locator_ids": sorted(
             str(locator.get("locator_id", "unknown"))
@@ -474,7 +524,9 @@ def _assert_audit_is_redacted(value: Any, path: str = "") -> None:
         for key, child in value.items():
             child_path = f"{path}/{key}" if path else f"/{key}"
             if key in FORBIDDEN_OUTPUT_KEYS:
-                raise LocatorEvidenceAuditError(f"audit output would serialize forbidden key: {child_path}")
+                raise LocatorEvidenceAuditError(
+                    f"audit output would serialize forbidden key: {child_path}"
+                )
             _assert_audit_is_redacted(child, child_path)
     elif isinstance(value, list):
         for index, child in enumerate(value):
@@ -483,11 +535,19 @@ def _assert_audit_is_redacted(value: Any, path: str = "") -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("input", nargs="?", type=Path, help="Candidate locator artifact JSON to audit")
-    parser.add_argument("--input", dest="input_option", type=Path, help="Candidate locator artifact JSON to audit")
+    parser.add_argument(
+        "input", nargs="?", type=Path, help="Candidate locator artifact JSON to audit"
+    )
+    parser.add_argument(
+        "--input", dest="input_option", type=Path, help="Candidate locator artifact JSON to audit"
+    )
     parser.add_argument("--output", type=Path, help="Legacy alias for --json-output")
-    parser.add_argument("--json-output", type=Path, help="Optional path for the redacted audit JSON")
-    parser.add_argument("--markdown-output", type=Path, help="Optional path for the reviewer-facing Markdown audit")
+    parser.add_argument(
+        "--json-output", type=Path, help="Optional path for the redacted audit JSON"
+    )
+    parser.add_argument(
+        "--markdown-output", type=Path, help="Optional path for the reviewer-facing Markdown audit"
+    )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
         "--strict",

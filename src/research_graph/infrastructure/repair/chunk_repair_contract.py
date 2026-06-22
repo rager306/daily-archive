@@ -54,7 +54,14 @@ REQUIRED_TARGET_FIELDS = (
     "safety_boundaries",
     "reviewer",
 )
-REQUIRED_SPAN_FIELDS = ("span_id", "source_id", "coordinate_space", "char_start", "char_end", "span_hash")
+REQUIRED_SPAN_FIELDS = (
+    "span_id",
+    "source_id",
+    "coordinate_space",
+    "char_start",
+    "char_end",
+    "span_hash",
+)
 REQUIRED_FALSE_SAFETY_FIELDS = (
     "import_eligible",
     "promoted_to_fact",
@@ -88,7 +95,17 @@ ACCEPTED_REVIEWER_FIELDS = ("reviewer_id", "reviewed_at", "decision_summary", "e
 RETRIEVAL_ONLY_ROUTES = frozenset({"retrieval_context"})
 REPAIR_ROUTES = frozenset({"repair_context"})
 SAFE_HEX_SHA256 = re.compile(r"^[0-9a-f]{64}$")
-MARKDOWN_FORBIDDEN_PATTERNS = ("```", "raw_text", "chunk_text", "paper_text", "claim_text", "embedding=", "vector=", "api_key", "token=")
+MARKDOWN_FORBIDDEN_PATTERNS = (
+    "```",
+    "raw_text",
+    "chunk_text",
+    "paper_text",
+    "claim_text",
+    "embedding=",
+    "vector=",
+    "api_key",
+    "token=",
+)
 
 
 @dataclass(frozen=True)
@@ -137,7 +154,9 @@ class ChunkRepairValidationResult:
         return dict(sorted(counts.items()))
 
 
-def validate_chunk_repair_contract(payload: dict[str, Any], expected_audit: dict[str, Any] | None = None) -> ChunkRepairValidationResult:
+def validate_chunk_repair_contract(
+    payload: dict[str, Any], expected_audit: dict[str, Any] | None = None
+) -> ChunkRepairValidationResult:
     """Validate one review-only chunk repair contract payload.
 
     ``expected_audit`` may provide ``locator_ids``, ``source_ids``, and
@@ -152,7 +171,9 @@ def validate_chunk_repair_contract(payload: dict[str, Any], expected_audit: dict
             import_eligible_count=0,
             production_write_count=0,
             semantic_ready_count=0,
-            diagnostics=[ChunkRepairDiagnostic(code="payload_not_object", path="/", object_type="contract")],
+            diagnostics=[
+                ChunkRepairDiagnostic(code="payload_not_object", path="/", object_type="contract")
+            ],
         )
 
     diagnostics.extend(_validate_header(payload))
@@ -161,11 +182,19 @@ def validate_chunk_repair_contract(payload: dict[str, Any], expected_audit: dict
     expected = _expected_sets(expected_audit)
     diagnostics.extend(expected["diagnostics"])
 
-    source_ids = expected["source_ids"] if expected["source_ids"] is not None else _source_ids(payload.get("source_ledger"))
+    source_ids = (
+        expected["source_ids"]
+        if expected["source_ids"] is not None
+        else _source_ids(payload.get("source_ledger"))
+    )
 
     repair_targets = _list_of_dicts(payload.get("repair_targets"))
     if not isinstance(payload.get("repair_targets"), list):
-        diagnostics.append(ChunkRepairDiagnostic(code="missing_repair_targets", path="/repair_targets", object_type="contract"))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="missing_repair_targets", path="/repair_targets", object_type="contract"
+            )
+        )
 
     import_eligible_count = 0
     production_write_count = 0
@@ -179,7 +208,10 @@ def validate_chunk_repair_contract(payload: dict[str, Any], expected_audit: dict
         safety = target.get("safety_boundaries")
         if isinstance(safety, dict):
             import_eligible_count += int(safety.get("import_eligible") is True)
-            production_write_count += int(safety.get("production_write_attempted") is True or safety.get("ladybugdb_written") is True)
+            production_write_count += int(
+                safety.get("production_write_attempted") is True
+                or safety.get("ladybugdb_written") is True
+            )
             semantic_ready_count += int(safety.get("semantic_ready_for_kg") is True)
             promoted_to_fact_count += int(safety.get("promoted_to_fact") is True)
         if target.get("review_status") == "pending_review":
@@ -243,12 +275,16 @@ def validation_to_dict(result: ChunkRepairValidationResult) -> dict[str, Any]:
     }
 
 
-def build_chunk_repair_contract_from_audit(audit: dict[str, Any], *, source_audit_path: str) -> dict[str, Any]:
+def build_chunk_repair_contract_from_audit(
+    audit: dict[str, Any], *, source_audit_path: str
+) -> dict[str, Any]:
     """Build a review-only empty repair contract from one redacted S01 audit."""
     audit_diagnostics = validate_locator_evidence_audit_for_repair_contract(audit)
     if audit_diagnostics:
         codes = ", ".join(diagnostic.code for diagnostic in audit_diagnostics)
-        raise ValueError(f"source audit is not eligible for chunk repair contract rendering: {codes}")
+        raise ValueError(
+            f"source audit is not eligible for chunk repair contract rendering: {codes}"
+        )
 
     stable_ids = audit["stable_ids"]
     invariants = audit["first_proof_invariants"]
@@ -358,46 +394,122 @@ def build_chunk_repair_contract_from_audit(audit: dict[str, Any], *, source_audi
     }
 
 
-def validate_locator_evidence_audit_for_repair_contract(audit: dict[str, Any]) -> list[ChunkRepairDiagnostic]:
+def validate_locator_evidence_audit_for_repair_contract(
+    audit: dict[str, Any],
+) -> list[ChunkRepairDiagnostic]:
     """Validate that one redacted S01 audit can seed the S02 repair contract."""
     diagnostics: list[ChunkRepairDiagnostic] = []
     if not isinstance(audit, dict):
-        return [ChunkRepairDiagnostic(code="audit_not_object", path="/", object_type="source_audit")]
+        return [
+            ChunkRepairDiagnostic(code="audit_not_object", path="/", object_type="source_audit")
+        ]
     if audit.get("schema_version") != "locator_evidence_audit.v1":
-        diagnostics.append(ChunkRepairDiagnostic(code="audit_schema_version_mismatch", path="/schema_version", object_type="source_audit"))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="audit_schema_version_mismatch",
+                path="/schema_version",
+                object_type="source_audit",
+            )
+        )
     if audit.get("strict") is not True:
-        diagnostics.append(ChunkRepairDiagnostic(code="audit_not_strict", path="/strict", object_type="source_audit"))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="audit_not_strict", path="/strict", object_type="source_audit"
+            )
+        )
     invariants = audit.get("first_proof_invariants")
     if not isinstance(invariants, dict):
-        diagnostics.append(ChunkRepairDiagnostic(code="missing_audit_invariants", path="/first_proof_invariants", object_type="source_audit"))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="missing_audit_invariants",
+                path="/first_proof_invariants",
+                object_type="source_audit",
+            )
+        )
         invariants = {}
     stable_ids = audit.get("stable_ids")
     if not isinstance(stable_ids, dict):
-        diagnostics.append(ChunkRepairDiagnostic(code="missing_audit_stable_ids", path="/stable_ids", object_type="source_audit"))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="missing_audit_stable_ids", path="/stable_ids", object_type="source_audit"
+            )
+        )
         stable_ids = {}
     for field in ("source_ids", "locator_ids", "span_ids"):
         value = stable_ids.get(field)
         if not isinstance(value, list) or any(not _string_or_none(item) for item in value):
-            diagnostics.append(ChunkRepairDiagnostic(code=f"malformed_audit_{field}", path=f"/stable_ids/{field}", object_type="source_audit"))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code=f"malformed_audit_{field}",
+                    path=f"/stable_ids/{field}",
+                    object_type="source_audit",
+                )
+            )
     count_checks = {
-        "source_count": len(stable_ids.get("source_ids", [])) if isinstance(stable_ids.get("source_ids"), list) else None,
-        "locator_count": len(stable_ids.get("locator_ids", [])) if isinstance(stable_ids.get("locator_ids"), list) else None,
+        "source_count": len(stable_ids.get("source_ids", []))
+        if isinstance(stable_ids.get("source_ids"), list)
+        else None,
+        "locator_count": len(stable_ids.get("locator_ids", []))
+        if isinstance(stable_ids.get("locator_ids"), list)
+        else None,
     }
     for field, observed in count_checks.items():
         if observed is not None and invariants.get(field) != observed:
-            diagnostics.append(ChunkRepairDiagnostic(code=f"audit_{field}_drift", path=f"/first_proof_invariants/{field}", object_type="source_audit"))
-    for field in ("import_eligible_count", "promoted_to_fact_count", "repair_required_count", "missing_span_count", "conflicting_evidence_count"):
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code=f"audit_{field}_drift",
+                    path=f"/first_proof_invariants/{field}",
+                    object_type="source_audit",
+                )
+            )
+    for field in (
+        "import_eligible_count",
+        "promoted_to_fact_count",
+        "repair_required_count",
+        "missing_span_count",
+        "conflicting_evidence_count",
+    ):
         if invariants.get(field) != 0:
-            diagnostics.append(ChunkRepairDiagnostic(code=f"audit_{field}_nonzero", path=f"/first_proof_invariants/{field}", object_type="source_audit"))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code=f"audit_{field}_nonzero",
+                    path=f"/first_proof_invariants/{field}",
+                    object_type="source_audit",
+                )
+            )
     blockers = audit.get("safety_blockers")
     if not isinstance(blockers, dict):
-        diagnostics.append(ChunkRepairDiagnostic(code="missing_audit_safety_blockers", path="/safety_blockers", object_type="source_audit"))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="missing_audit_safety_blockers",
+                path="/safety_blockers",
+                object_type="source_audit",
+            )
+        )
     else:
-        for field in ("validator_diagnostics", "forbidden_payload_key_paths", "unsafe_safety_flag_paths", "summary_drift", "invariant_drift"):
+        for field in (
+            "validator_diagnostics",
+            "forbidden_payload_key_paths",
+            "unsafe_safety_flag_paths",
+            "summary_drift",
+            "invariant_drift",
+        ):
             if blockers.get(field) != []:
-                diagnostics.append(ChunkRepairDiagnostic(code=f"audit_{field}_present", path=f"/safety_blockers/{field}", object_type="source_audit"))
+                diagnostics.append(
+                    ChunkRepairDiagnostic(
+                        code=f"audit_{field}_present",
+                        path=f"/safety_blockers/{field}",
+                        object_type="source_audit",
+                    )
+                )
         if blockers.get("no_import_blocker_intact") is not True:
-            diagnostics.append(ChunkRepairDiagnostic(code="audit_no_import_blocker_not_intact", path="/safety_blockers/no_import_blocker_intact", object_type="source_audit"))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code="audit_no_import_blocker_not_intact",
+                    path="/safety_blockers/no_import_blocker_intact",
+                    object_type="source_audit",
+                )
+            )
     diagnostics.extend(_diagnostics_from_forbidden_keys(scan_forbidden_payload_keys(audit)))
     return diagnostics
 
@@ -430,41 +542,47 @@ def render_chunk_repair_contract_markdown(contract: dict[str, Any]) -> str:
     ]
     for key, value in invariants.items():
         lines.append(f"| {key} | {value} |")
-    lines.extend([
-        "",
-        "## Stable ID Counts",
-        "",
-        f"- Papers: {counts['paper_count']}",
-        f"- Sources: {counts['source_count']}",
-        f"- Locators: {counts['locator_count']}",
-        f"- Spans: {counts['span_count']}",
-        f"- Ambiguous spans: {counts['ambiguous_span_count']}",
-        f"- Retrieval-only contexts: {counts['retrieval_only_count']}",
-        "",
-        "## Safety Boundary",
-        "",
-    ])
-    lines.extend(f"- {_markdown_safe_field_name(key)}: {str(value).lower()}" for key, value in safety.items())
-    lines.extend([
-        "",
-        "## Allowed Review Vocabulary",
-        "",
-        f"- Repair kinds: {', '.join(vocab['repair_kinds'])}",
-        f"- Review statuses: {', '.join(vocab['review_statuses'])}",
-        f"- Routes: {', '.join(vocab['routes'])}",
-        f"- States: {', '.join(vocab['states'])}",
-        f"- Coordinate spaces: {', '.join(vocab['coordinate_spaces'])}",
-        "",
-        "## Target Field Contract",
-        "",
-        f"- Required target fields: {', '.join(fields['required_target_fields'])}",
-        f"- Required span fields: {', '.join(fields['required_span_fields'])}",
-        f"- Required false safety fields: {', '.join(_markdown_safe_field_names(fields['required_false_safety_fields']))}",
-        f"- Accepted-review reviewer fields: {', '.join(fields['accepted_reviewer_fields'])}",
-        "",
-        "## Reviewer Questions",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Stable ID Counts",
+            "",
+            f"- Papers: {counts['paper_count']}",
+            f"- Sources: {counts['source_count']}",
+            f"- Locators: {counts['locator_count']}",
+            f"- Spans: {counts['span_count']}",
+            f"- Ambiguous spans: {counts['ambiguous_span_count']}",
+            f"- Retrieval-only contexts: {counts['retrieval_only_count']}",
+            "",
+            "## Safety Boundary",
+            "",
+        ]
+    )
+    lines.extend(
+        f"- {_markdown_safe_field_name(key)}: {str(value).lower()}" for key, value in safety.items()
+    )
+    lines.extend(
+        [
+            "",
+            "## Allowed Review Vocabulary",
+            "",
+            f"- Repair kinds: {', '.join(vocab['repair_kinds'])}",
+            f"- Review statuses: {', '.join(vocab['review_statuses'])}",
+            f"- Routes: {', '.join(vocab['routes'])}",
+            f"- States: {', '.join(vocab['states'])}",
+            f"- Coordinate spaces: {', '.join(vocab['coordinate_spaces'])}",
+            "",
+            "## Target Field Contract",
+            "",
+            f"- Required target fields: {', '.join(fields['required_target_fields'])}",
+            f"- Required span fields: {', '.join(fields['required_span_fields'])}",
+            f"- Required false safety fields: {', '.join(_markdown_safe_field_names(fields['required_false_safety_fields']))}",
+            f"- Accepted-review reviewer fields: {', '.join(fields['accepted_reviewer_fields'])}",
+            "",
+            "## Reviewer Questions",
+            "",
+        ]
+    )
     lines.extend(f"- {requirement}" for requirement in contract["reviewer_output_requirements"])
     lines.extend(["", "## Explicit No-Go Constraints", ""])
     lines.extend(f"- {blocker}" for blocker in contract["explicit_blockers"])
@@ -482,7 +600,14 @@ def validate_chunk_repair_contract_markdown(markdown: str) -> list[ChunkRepairDi
     diagnostics: list[ChunkRepairDiagnostic] = []
     for pattern in MARKDOWN_FORBIDDEN_PATTERNS:
         if pattern in markdown:
-            diagnostics.append(ChunkRepairDiagnostic(code="markdown_forbidden_pattern", path="/markdown", object_id=pattern, object_type="markdown"))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code="markdown_forbidden_pattern",
+                    path="/markdown",
+                    object_id=pattern,
+                    object_type="markdown",
+                )
+            )
     unsafe_true_markers = (
         "import_eligible: true",
         "promoted_to_fact: true",
@@ -496,7 +621,11 @@ def validate_chunk_repair_contract_markdown(markdown: str) -> list[ChunkRepairDi
     )
     lowered = markdown.lower()
     if any(marker in lowered for marker in unsafe_true_markers):
-        diagnostics.append(ChunkRepairDiagnostic(code="markdown_true_safety_flag", path="/markdown", object_type="markdown"))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="markdown_true_safety_flag", path="/markdown", object_type="markdown"
+            )
+        )
     return diagnostics
 
 
@@ -530,7 +659,9 @@ def expected_audit_from_contract(contract: dict[str, Any]) -> dict[str, Any]:
     return {
         "source_ids": stable_ids.get("source_ids", []),
         "locator_ids": stable_ids.get("locator_ids", []),
-        "paper_ids": [_paper_id_from_source_id(source_id) for source_id in stable_ids.get("source_ids", [])],
+        "paper_ids": [
+            _paper_id_from_source_id(source_id) for source_id in stable_ids.get("source_ids", [])
+        ],
     }
 
 
@@ -541,7 +672,11 @@ def scan_forbidden_payload_keys(value: Any, *, path: str = "") -> list[Forbidden
         for key in sorted(value):
             key_path = f"{path}/{_escape_path(str(key))}"
             if key in FORBIDDEN_PAYLOAD_KEYS:
-                findings.append(ForbiddenPayloadKeyFinding(path=key_path, key=str(key), code=_forbidden_key_code(str(key))))
+                findings.append(
+                    ForbiddenPayloadKeyFinding(
+                        path=key_path, key=str(key), code=_forbidden_key_code(str(key))
+                    )
+                )
             findings.extend(scan_forbidden_payload_keys(value[key], path=key_path))
     elif isinstance(value, list):
         for index, item in enumerate(value):
@@ -559,12 +694,24 @@ def _paper_id_from_source_id(source_id: Any) -> str:
 def _validate_header(payload: dict[str, Any]) -> list[ChunkRepairDiagnostic]:
     diagnostics: list[ChunkRepairDiagnostic] = []
     if payload.get("schema_version") != CHUNK_REPAIR_CONTRACT_VERSION:
-        diagnostics.append(ChunkRepairDiagnostic(code="schema_version_mismatch", path="/schema_version", object_type="contract"))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="schema_version_mismatch", path="/schema_version", object_type="contract"
+            )
+        )
     if payload.get("contract_version") != CHUNK_REPAIR_CONTRACT_VERSION:
-        diagnostics.append(ChunkRepairDiagnostic(code="contract_version_mismatch", path="/contract_version", object_type="contract"))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="contract_version_mismatch", path="/contract_version", object_type="contract"
+            )
+        )
     for field in ("run_id", "paper_id", "source_ledger", "repair_targets", "diagnostics"):
         if field not in payload or payload.get(field) is None:
-            diagnostics.append(ChunkRepairDiagnostic(code=f"missing_{field}", path=f"/{field}", object_type="contract"))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code=f"missing_{field}", path=f"/{field}", object_type="contract"
+                )
+            )
     return diagnostics
 
 
@@ -583,112 +730,393 @@ def _validate_target(
     state = _string_or_none(target.get("state"))
     for field in REQUIRED_TARGET_FIELDS:
         if field not in target or (target.get(field) is None and field != "reviewer"):
-            diagnostics.append(ChunkRepairDiagnostic(code=f"missing_{field}", path=f"{path}/{field}", object_id=target_id, object_type="repair_target", route=route))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code=f"missing_{field}",
+                    path=f"{path}/{field}",
+                    object_id=target_id,
+                    object_type="repair_target",
+                    route=route,
+                )
+            )
     if target_id is None:
-        diagnostics.append(ChunkRepairDiagnostic(code="missing_target_id", path=f"{path}/target_id", object_type="repair_target", route=route))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="missing_target_id",
+                path=f"{path}/target_id",
+                object_type="repair_target",
+                route=route,
+            )
+        )
     target_paper_id = _string_or_none(target.get("paper_id"))
     paper_id_known = expected_paper_ids is not None and target_paper_id in expected_paper_ids
     if expected_paper_ids is not None and not paper_id_known:
-        diagnostics.append(ChunkRepairDiagnostic(code="unresolved_paper_id", path=f"{path}/paper_id", object_id=target_id, object_type="repair_target", route=route))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="unresolved_paper_id",
+                path=f"{path}/paper_id",
+                object_id=target_id,
+                object_type="repair_target",
+                route=route,
+            )
+        )
     if not paper_id_known and target_paper_id != package_paper_id:
-        diagnostics.append(ChunkRepairDiagnostic(code="paper_id_mismatch", path=f"{path}/paper_id", object_id=target_id, object_type="repair_target", route=route))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="paper_id_mismatch",
+                path=f"{path}/paper_id",
+                object_id=target_id,
+                object_type="repair_target",
+                route=route,
+            )
+        )
     locator_id = _string_or_none(target.get("locator_id"))
     if locator_id is None:
-        diagnostics.append(ChunkRepairDiagnostic(code="missing_locator_id", path=f"{path}/locator_id", object_id=target_id, object_type="repair_target", route=route))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="missing_locator_id",
+                path=f"{path}/locator_id",
+                object_id=target_id,
+                object_type="repair_target",
+                route=route,
+            )
+        )
     elif expected_locator_ids is not None and locator_id not in expected_locator_ids:
-        diagnostics.append(ChunkRepairDiagnostic(code="unresolved_locator_id", path=f"{path}/locator_id", object_id=target_id, object_type="repair_target", route=route))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="unresolved_locator_id",
+                path=f"{path}/locator_id",
+                object_id=target_id,
+                object_type="repair_target",
+                route=route,
+            )
+        )
     if target.get("repair_kind") not in ALLOWED_REPAIR_KINDS:
-        diagnostics.append(ChunkRepairDiagnostic(code="invalid_repair_kind", path=f"{path}/repair_kind", object_id=target_id, object_type="repair_target", route=route))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="invalid_repair_kind",
+                path=f"{path}/repair_kind",
+                object_id=target_id,
+                object_type="repair_target",
+                route=route,
+            )
+        )
     if target.get("candidate_type") not in ALLOWED_CANDIDATE_TYPES:
-        diagnostics.append(ChunkRepairDiagnostic(code="invalid_candidate_type", path=f"{path}/candidate_type", object_id=target_id, object_type="repair_target", route=route))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="invalid_candidate_type",
+                path=f"{path}/candidate_type",
+                object_id=target_id,
+                object_type="repair_target",
+                route=route,
+            )
+        )
     if route not in ALLOWED_ROUTES:
-        diagnostics.append(ChunkRepairDiagnostic(code="invalid_repair_route", path=f"{path}/route", object_id=target_id, object_type="repair_target", route=route))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="invalid_repair_route",
+                path=f"{path}/route",
+                object_id=target_id,
+                object_type="repair_target",
+                route=route,
+            )
+        )
     if state not in ALLOWED_STATES:
-        diagnostics.append(ChunkRepairDiagnostic(code="invalid_repair_state", path=f"{path}/state", object_id=target_id, object_type="repair_target", route=route))
-    diagnostics.extend(_validate_route_state(route=route, state=state, path=path, object_id=target_id))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="invalid_repair_state",
+                path=f"{path}/state",
+                object_id=target_id,
+                object_type="repair_target",
+                route=route,
+            )
+        )
+    diagnostics.extend(
+        _validate_route_state(route=route, state=state, path=path, object_id=target_id)
+    )
     if target.get("review_status") not in ALLOWED_REVIEW_STATUSES:
-        diagnostics.append(ChunkRepairDiagnostic(code="invalid_review_status", path=f"{path}/review_status", object_id=target_id, object_type="repair_target", route=route))
-    diagnostics.extend(_validate_string_list(target.get("section_path"), path=f"{path}/section_path", code="missing_section_path", object_id=target_id, object_type="repair_target", route=route))
-    diagnostics.extend(_validate_source_refs(target.get("source_artifact_refs"), path=f"{path}/source_artifact_refs", known_source_ids=known_source_ids, object_id=target_id, route=route))
-    diagnostics.extend(_validate_spans(target.get("source_spans"), path=f"{path}/source_spans", known_source_ids=known_source_ids, object_id=target_id, route=route))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="invalid_review_status",
+                path=f"{path}/review_status",
+                object_id=target_id,
+                object_type="repair_target",
+                route=route,
+            )
+        )
+    diagnostics.extend(
+        _validate_string_list(
+            target.get("section_path"),
+            path=f"{path}/section_path",
+            code="missing_section_path",
+            object_id=target_id,
+            object_type="repair_target",
+            route=route,
+        )
+    )
+    diagnostics.extend(
+        _validate_source_refs(
+            target.get("source_artifact_refs"),
+            path=f"{path}/source_artifact_refs",
+            known_source_ids=known_source_ids,
+            object_id=target_id,
+            route=route,
+        )
+    )
+    diagnostics.extend(
+        _validate_spans(
+            target.get("source_spans"),
+            path=f"{path}/source_spans",
+            known_source_ids=known_source_ids,
+            object_id=target_id,
+            route=route,
+        )
+    )
     diagnostics.extend(_validate_uses(target, path=path, object_id=target_id, route=route))
-    diagnostics.extend(_validate_safety_boundaries(target.get("safety_boundaries"), path=f"{path}/safety_boundaries", object_id=target_id, route=route))
+    diagnostics.extend(
+        _validate_safety_boundaries(
+            target.get("safety_boundaries"),
+            path=f"{path}/safety_boundaries",
+            object_id=target_id,
+            route=route,
+        )
+    )
     diagnostics.extend(_validate_reviewer(target, path=path, object_id=target_id, route=route))
     return diagnostics
 
 
-def _validate_route_state(*, route: str | None, state: str | None, path: str, object_id: str | None) -> list[ChunkRepairDiagnostic]:
+def _validate_route_state(
+    *, route: str | None, state: str | None, path: str, object_id: str | None
+) -> list[ChunkRepairDiagnostic]:
     diagnostics: list[ChunkRepairDiagnostic] = []
     if route in RETRIEVAL_ONLY_ROUTES and state not in {"retrieval_only", "review_required"}:
-        diagnostics.append(ChunkRepairDiagnostic(code="route_state_confusion", path=f"{path}/state", object_id=object_id, object_type="repair_target", route=route))
-    if route in REPAIR_ROUTES and state not in {"repair_required", "missing_span", "ambiguous_span", "conflicting_evidence"}:
-        diagnostics.append(ChunkRepairDiagnostic(code="route_state_confusion", path=f"{path}/state", object_id=object_id, object_type="repair_target", route=route))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="route_state_confusion",
+                path=f"{path}/state",
+                object_id=object_id,
+                object_type="repair_target",
+                route=route,
+            )
+        )
+    if route in REPAIR_ROUTES and state not in {
+        "repair_required",
+        "missing_span",
+        "ambiguous_span",
+        "conflicting_evidence",
+    }:
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="route_state_confusion",
+                path=f"{path}/state",
+                object_id=object_id,
+                object_type="repair_target",
+                route=route,
+            )
+        )
     return diagnostics
 
 
-def _validate_string_list(value: Any, *, path: str, code: str, object_id: str | None, object_type: str, route: str | None) -> list[ChunkRepairDiagnostic]:
+def _validate_string_list(
+    value: Any, *, path: str, code: str, object_id: str | None, object_type: str, route: str | None
+) -> list[ChunkRepairDiagnostic]:
     if not isinstance(value, list) or not value or any(not _string_or_none(item) for item in value):
-        return [ChunkRepairDiagnostic(code=code, path=path, object_id=object_id, object_type=object_type, route=route)]
+        return [
+            ChunkRepairDiagnostic(
+                code=code, path=path, object_id=object_id, object_type=object_type, route=route
+            )
+        ]
     return []
 
 
-def _validate_source_refs(value: Any, *, path: str, known_source_ids: set[str], object_id: str | None, route: str | None) -> list[ChunkRepairDiagnostic]:
-    diagnostics = _validate_string_list(value, path=path, code="missing_source_artifact_refs", object_id=object_id, object_type="repair_target", route=route)
+def _validate_source_refs(
+    value: Any, *, path: str, known_source_ids: set[str], object_id: str | None, route: str | None
+) -> list[ChunkRepairDiagnostic]:
+    diagnostics = _validate_string_list(
+        value,
+        path=path,
+        code="missing_source_artifact_refs",
+        object_id=object_id,
+        object_type="repair_target",
+        route=route,
+    )
     if diagnostics:
         return diagnostics
     for index, source_id in enumerate(value):
         if str(source_id) not in known_source_ids:
-            diagnostics.append(ChunkRepairDiagnostic(code="unresolved_source_id", path=f"{path}/{index}", object_id=object_id, object_type="repair_target", route=route))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code="unresolved_source_id",
+                    path=f"{path}/{index}",
+                    object_id=object_id,
+                    object_type="repair_target",
+                    route=route,
+                )
+            )
     return diagnostics
 
 
-def _validate_spans(value: Any, *, path: str, known_source_ids: set[str], object_id: str | None, route: str | None) -> list[ChunkRepairDiagnostic]:
+def _validate_spans(
+    value: Any, *, path: str, known_source_ids: set[str], object_id: str | None, route: str | None
+) -> list[ChunkRepairDiagnostic]:
     diagnostics: list[ChunkRepairDiagnostic] = []
     if not isinstance(value, list) or not value:
-        return [ChunkRepairDiagnostic(code="missing_source_spans", path=path, object_id=object_id, object_type="repair_target", route=route)]
+        return [
+            ChunkRepairDiagnostic(
+                code="missing_source_spans",
+                path=path,
+                object_id=object_id,
+                object_type="repair_target",
+                route=route,
+            )
+        ]
     for index, span in enumerate(value):
         span_path = f"{path}/{index}"
         if not isinstance(span, dict):
-            diagnostics.append(ChunkRepairDiagnostic(code="invalid_source_span", path=span_path, object_id=object_id, object_type="source_span", route=route))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code="invalid_source_span",
+                    path=span_path,
+                    object_id=object_id,
+                    object_type="source_span",
+                    route=route,
+                )
+            )
             continue
         span_id = _string_or_none(span.get("span_id"))
         for field in REQUIRED_SPAN_FIELDS:
             if field not in span or span.get(field) is None:
-                diagnostics.append(ChunkRepairDiagnostic(code=f"missing_{field}", path=f"{span_path}/{field}", object_id=span_id or object_id, object_type="source_span", route=route))
+                diagnostics.append(
+                    ChunkRepairDiagnostic(
+                        code=f"missing_{field}",
+                        path=f"{span_path}/{field}",
+                        object_id=span_id or object_id,
+                        object_type="source_span",
+                        route=route,
+                    )
+                )
         if span.get("coordinate_space") not in ALLOWED_COORDINATE_SPACES:
-            diagnostics.append(ChunkRepairDiagnostic(code="unsupported_coordinate_space", path=f"{span_path}/coordinate_space", object_id=span_id or object_id, object_type="source_span", route=route))
-        if not isinstance(span.get("char_start"), int) or not isinstance(span.get("char_end"), int) or span.get("char_end", 0) <= span.get("char_start", 0):
-            diagnostics.append(ChunkRepairDiagnostic(code="invalid_coordinate_bounds", path=f"{span_path}/char_start", object_id=span_id or object_id, object_type="source_span", route=route))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code="unsupported_coordinate_space",
+                    path=f"{span_path}/coordinate_space",
+                    object_id=span_id or object_id,
+                    object_type="source_span",
+                    route=route,
+                )
+            )
+        if (
+            not isinstance(span.get("char_start"), int)
+            or not isinstance(span.get("char_end"), int)
+            or span.get("char_end", 0) <= span.get("char_start", 0)
+        ):
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code="invalid_coordinate_bounds",
+                    path=f"{span_path}/char_start",
+                    object_id=span_id or object_id,
+                    object_type="source_span",
+                    route=route,
+                )
+            )
         if _string_or_none(span.get("source_id")) not in known_source_ids:
-            diagnostics.append(ChunkRepairDiagnostic(code="unresolved_source_id", path=f"{span_path}/source_id", object_id=span_id or object_id, object_type="source_span", route=route))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code="unresolved_source_id",
+                    path=f"{span_path}/source_id",
+                    object_id=span_id or object_id,
+                    object_type="source_span",
+                    route=route,
+                )
+            )
         span_hash = _string_or_none(span.get("span_hash"))
         if span_hash is None:
-            diagnostics.append(ChunkRepairDiagnostic(code="missing_span_hash", path=f"{span_path}/span_hash", object_id=span_id or object_id, object_type="source_span", route=route))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code="missing_span_hash",
+                    path=f"{span_path}/span_hash",
+                    object_id=span_id or object_id,
+                    object_type="source_span",
+                    route=route,
+                )
+            )
         elif not SAFE_HEX_SHA256.match(span_hash):
-            diagnostics.append(ChunkRepairDiagnostic(code="invalid_span_hash", path=f"{span_path}/span_hash", object_id=span_id or object_id, object_type="source_span", route=route))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code="invalid_span_hash",
+                    path=f"{span_path}/span_hash",
+                    object_id=span_id or object_id,
+                    object_type="source_span",
+                    route=route,
+                )
+            )
         if span.get("raw_text_embedded") is not False:
-            diagnostics.append(ChunkRepairDiagnostic(code="raw_text_leakage", path=f"{span_path}/raw_text_embedded", object_id=span_id or object_id, object_type="source_span", route=route))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code="raw_text_leakage",
+                    path=f"{span_path}/raw_text_embedded",
+                    object_id=span_id or object_id,
+                    object_type="source_span",
+                    route=route,
+                )
+            )
     return diagnostics
 
 
-def _validate_uses(target: dict[str, Any], *, path: str, object_id: str | None, route: str | None) -> list[ChunkRepairDiagnostic]:
+def _validate_uses(
+    target: dict[str, Any], *, path: str, object_id: str | None, route: str | None
+) -> list[ChunkRepairDiagnostic]:
     diagnostics: list[ChunkRepairDiagnostic] = []
     allowed = _string_set(target.get("allowed_uses"))
     excluded = _string_set(target.get("excluded_uses"))
     if allowed != set(ALLOWED_USES):
-        diagnostics.append(ChunkRepairDiagnostic(code="allowed_uses_mismatch", path=f"{path}/allowed_uses", object_id=object_id, object_type="repair_target", route=route))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="allowed_uses_mismatch",
+                path=f"{path}/allowed_uses",
+                object_id=object_id,
+                object_type="repair_target",
+                route=route,
+            )
+        )
     missing_excluded = set(EXCLUDED_USES) - excluded
     if missing_excluded:
-        diagnostics.append(ChunkRepairDiagnostic(code="excluded_uses_mismatch", path=f"{path}/excluded_uses", object_id=object_id, object_type="repair_target", route=route))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="excluded_uses_mismatch",
+                path=f"{path}/excluded_uses",
+                object_id=object_id,
+                object_type="repair_target",
+                route=route,
+            )
+        )
     if "trusted_kg_import" in allowed:
-        diagnostics.append(ChunkRepairDiagnostic(code="trusted_kg_import_allowed", path=f"{path}/allowed_uses", object_id=object_id, object_type="repair_target", route=route))
+        diagnostics.append(
+            ChunkRepairDiagnostic(
+                code="trusted_kg_import_allowed",
+                path=f"{path}/allowed_uses",
+                object_id=object_id,
+                object_type="repair_target",
+                route=route,
+            )
+        )
     return diagnostics
 
 
-def _validate_safety_boundaries(value: Any, *, path: str, object_id: str | None, route: str | None) -> list[ChunkRepairDiagnostic]:
+def _validate_safety_boundaries(
+    value: Any, *, path: str, object_id: str | None, route: str | None
+) -> list[ChunkRepairDiagnostic]:
     diagnostics: list[ChunkRepairDiagnostic] = []
     if not isinstance(value, dict):
-        return [ChunkRepairDiagnostic(code="missing_safety_boundaries", path=path, object_id=object_id, object_type="repair_target", route=route)]
+        return [
+            ChunkRepairDiagnostic(
+                code="missing_safety_boundaries",
+                path=path,
+                object_id=object_id,
+                object_type="repair_target",
+                route=route,
+            )
+        ]
     true_code_by_field = {
         "import_eligible": "import_eligible_true",
         "promoted_to_fact": "promoted_to_fact_true",
@@ -704,22 +1132,56 @@ def _validate_safety_boundaries(value: Any, *, path: str, object_id: str | None,
     }
     for field in REQUIRED_FALSE_SAFETY_FIELDS:
         if field not in value:
-            diagnostics.append(ChunkRepairDiagnostic(code=f"missing_{field}", path=f"{path}/{field}", object_id=object_id, object_type="repair_target", route=route))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code=f"missing_{field}",
+                    path=f"{path}/{field}",
+                    object_id=object_id,
+                    object_type="repair_target",
+                    route=route,
+                )
+            )
         elif value.get(field) is not False:
-            diagnostics.append(ChunkRepairDiagnostic(code=true_code_by_field[field], path=f"{path}/{field}", object_id=object_id, object_type="repair_target", route=route))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code=true_code_by_field[field],
+                    path=f"{path}/{field}",
+                    object_id=object_id,
+                    object_type="repair_target",
+                    route=route,
+                )
+            )
     return diagnostics
 
 
-def _validate_reviewer(target: dict[str, Any], *, path: str, object_id: str | None, route: str | None) -> list[ChunkRepairDiagnostic]:
+def _validate_reviewer(
+    target: dict[str, Any], *, path: str, object_id: str | None, route: str | None
+) -> list[ChunkRepairDiagnostic]:
     if target.get("review_status") != "accepted":
         return []
     reviewer = target.get("reviewer")
     if not isinstance(reviewer, dict):
-        return [ChunkRepairDiagnostic(code="missing_reviewer", path=f"{path}/reviewer", object_id=object_id, object_type="repair_target", route=route)]
+        return [
+            ChunkRepairDiagnostic(
+                code="missing_reviewer",
+                path=f"{path}/reviewer",
+                object_id=object_id,
+                object_type="repair_target",
+                route=route,
+            )
+        ]
     diagnostics: list[ChunkRepairDiagnostic] = []
     for field in ACCEPTED_REVIEWER_FIELDS:
         if field not in reviewer or reviewer.get(field) in (None, "", []):
-            diagnostics.append(ChunkRepairDiagnostic(code=f"missing_{field}", path=f"{path}/reviewer/{field}", object_id=object_id, object_type="reviewer", route=route))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code=f"missing_{field}",
+                    path=f"{path}/reviewer/{field}",
+                    object_id=object_id,
+                    object_type="reviewer",
+                    route=route,
+                )
+            )
     return diagnostics
 
 
@@ -736,10 +1198,18 @@ def _validate_contract_diagnostics(
 ) -> list[ChunkRepairDiagnostic]:
     diagnostics: list[ChunkRepairDiagnostic] = []
     if not isinstance(value, dict):
-        return [ChunkRepairDiagnostic(code="missing_diagnostics", path="/diagnostics", object_type="diagnostics")]
+        return [
+            ChunkRepairDiagnostic(
+                code="missing_diagnostics", path="/diagnostics", object_type="diagnostics"
+            )
+        ]
     for field in REQUIRED_DIAGNOSTIC_FIELDS:
         if field not in value:
-            diagnostics.append(ChunkRepairDiagnostic(code=f"missing_{field}", path=f"/diagnostics/{field}", object_type="diagnostics"))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code=f"missing_{field}", path=f"/diagnostics/{field}", object_type="diagnostics"
+                )
+            )
     expected_counts = {
         "target_count": target_count,
         "pending_review_count": pending_review_count,
@@ -760,7 +1230,13 @@ def _validate_contract_diagnostics(
     }
     for field, expected in expected_counts.items():
         if value.get(field) != expected:
-            diagnostics.append(ChunkRepairDiagnostic(code=mismatch_codes[field], path=f"/diagnostics/{field}", object_type="diagnostics"))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code=mismatch_codes[field],
+                    path=f"/diagnostics/{field}",
+                    object_type="diagnostics",
+                )
+            )
     for field in (
         "raw_text_included",
         "chunk_text_included",
@@ -771,13 +1247,26 @@ def _validate_contract_diagnostics(
         "production_import_attempted",
     ):
         if value.get(field) is not False:
-            code = "raw_text_leakage" if field in {"raw_text_included", "chunk_text_included"} else f"{field}_true"
-            diagnostics.append(ChunkRepairDiagnostic(code=code, path=f"/diagnostics/{field}", object_type="diagnostics"))
+            code = (
+                "raw_text_leakage"
+                if field in {"raw_text_included", "chunk_text_included"}
+                else f"{field}_true"
+            )
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code=code, path=f"/diagnostics/{field}", object_type="diagnostics"
+                )
+            )
     return diagnostics
 
 
-def _diagnostics_from_forbidden_keys(findings: list[ForbiddenPayloadKeyFinding]) -> list[ChunkRepairDiagnostic]:
-    return [ChunkRepairDiagnostic(code=finding.code, path=finding.path, object_type="payload") for finding in findings]
+def _diagnostics_from_forbidden_keys(
+    findings: list[ForbiddenPayloadKeyFinding],
+) -> list[ChunkRepairDiagnostic]:
+    return [
+        ChunkRepairDiagnostic(code=finding.code, path=finding.path, object_type="payload")
+        for finding in findings
+    ]
 
 
 def _forbidden_key_code(key: str) -> str:
@@ -796,7 +1285,12 @@ def _forbidden_key_code(key: str) -> str:
 
 def _expected_sets(expected_audit: dict[str, Any] | None) -> dict[str, Any]:
     diagnostics: list[ChunkRepairDiagnostic] = []
-    result: dict[str, Any] = {"locator_ids": None, "source_ids": None, "paper_ids": None, "diagnostics": diagnostics}
+    result: dict[str, Any] = {
+        "locator_ids": None,
+        "source_ids": None,
+        "paper_ids": None,
+        "diagnostics": diagnostics,
+    }
     if expected_audit is None:
         return result
     for field in ("locator_ids", "source_ids", "paper_ids"):
@@ -804,7 +1298,13 @@ def _expected_sets(expected_audit: dict[str, Any] | None) -> dict[str, Any]:
         if value is None:
             continue
         if not isinstance(value, (list, set, tuple)):
-            diagnostics.append(ChunkRepairDiagnostic(code=f"malformed_expected_{field}", path=f"/expected_audit/{field}", object_type="expected_audit"))
+            diagnostics.append(
+                ChunkRepairDiagnostic(
+                    code=f"malformed_expected_{field}",
+                    path=f"/expected_audit/{field}",
+                    object_type="expected_audit",
+                )
+            )
             result[field] = set()
         else:
             result[field] = {str(item) for item in value if item is not None}
@@ -814,7 +1314,11 @@ def _expected_sets(expected_audit: dict[str, Any] | None) -> dict[str, Any]:
 def _source_ids(value: Any) -> set[str]:
     if not isinstance(value, list):
         return set()
-    return {_string_or_none(item.get("source_id")) for item in value if isinstance(item, dict) and _string_or_none(item.get("source_id"))}  # type: ignore[misc]
+    return {
+        _string_or_none(item.get("source_id"))
+        for item in value
+        if isinstance(item, dict) and _string_or_none(item.get("source_id"))
+    }  # type: ignore[misc]
 
 
 def _list_of_dicts(value: Any) -> list[dict[str, Any]]:

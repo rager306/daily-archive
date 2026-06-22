@@ -72,7 +72,9 @@ def _load_json(path: Path) -> dict[str, Any]:
     except FileNotFoundError as exc:
         raise BaselineRecoveryError(f"required local input is missing: {path}") from exc
     except json.JSONDecodeError as exc:
-        raise BaselineRecoveryError(f"required local input is not valid JSON: {path}: {exc}") from exc
+        raise BaselineRecoveryError(
+            f"required local input is not valid JSON: {path}: {exc}"
+        ) from exc
     if not isinstance(payload, dict):
         raise BaselineRecoveryError(f"required local input must be a JSON object: {path}")
     return payload
@@ -132,7 +134,9 @@ def _count_chunks(path: Path) -> tuple[int, list[dict[str, Any]]]:
     if not isinstance(chunks, list):
         raise BaselineRecoveryError(f"chunk artifact has non-list chunks/items: {path}")
     diagnostics = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), list) else []
-    return len([chunk for chunk in chunks if isinstance(chunk, dict)]), [d for d in diagnostics if isinstance(d, dict)]
+    return len([chunk for chunk in chunks if isinstance(chunk, dict)]), [
+        d for d in diagnostics if isinstance(d, dict)
+    ]
 
 
 def _evidence_metrics(paths: dict[str, Path]) -> tuple[dict[str, int], dict[str, int]]:
@@ -145,7 +149,9 @@ def _evidence_metrics(paths: dict[str, Path]) -> tuple[dict[str, int], dict[str,
             counts[evidence_type] = int(summary.get("item_count") or 0)
             diagnostics[evidence_type] = int(summary.get("diagnostic_count") or 0)
         except (TypeError, ValueError) as exc:
-            raise BaselineRecoveryError(f"evidence summary metrics must be integers: {path}") from exc
+            raise BaselineRecoveryError(
+                f"evidence summary metrics must be integers: {path}"
+            ) from exc
     return counts, diagnostics
 
 
@@ -153,18 +159,27 @@ def _resolve_local_inputs(corpus_root: Path, article_ref: str) -> tuple[Path, di
     slug = _article_slug(article_ref)
     chunk_path = corpus_root / "chunking" / slug / "chunks.json"
     if not chunk_path.exists():
-        raise BaselineRecoveryError(f"missing local chunking artifact for {article_ref}: {chunk_path}")
-    evidence_paths = {evidence_type: corpus_root / "evidence" / slug / f"{evidence_type}.json" for evidence_type in EVIDENCE_TYPES}
+        raise BaselineRecoveryError(
+            f"missing local chunking artifact for {article_ref}: {chunk_path}"
+        )
+    evidence_paths = {
+        evidence_type: corpus_root / "evidence" / slug / f"{evidence_type}.json"
+        for evidence_type in EVIDENCE_TYPES
+    }
     missing = [str(path) for path in evidence_paths.values() if not path.exists()]
     if missing:
-        raise BaselineRecoveryError(f"missing local evidence artifact(s) for {article_ref}: {', '.join(missing)}")
+        raise BaselineRecoveryError(
+            f"missing local evidence artifact(s) for {article_ref}: {', '.join(missing)}"
+        )
     return chunk_path, evidence_paths
 
 
 def run_recovery(args: argparse.Namespace) -> list[dict[str, Any]]:
     _validate_paths_are_local(args)
     if not getattr(args, "no_network", False):
-        raise BaselineRecoveryError("baseline recovery requires --no-network so missing local artifacts fail closed")
+        raise BaselineRecoveryError(
+            "baseline recovery requires --no-network so missing local artifacts fail closed"
+        )
     catalog = _load_json(args.catalog)
     index = _load_json(args.index)
     selection = _load_json(args.selection)
@@ -191,7 +206,9 @@ def run_recovery(args: argparse.Namespace) -> list[dict[str, Any]]:
     for article in selected:
         catalog_entry = catalog_refs.get(article.article_ref)
         if catalog_entry is None:
-            raise BaselineRecoveryError(f"selection article {article.article_ref} is absent from catalog index")
+            raise BaselineRecoveryError(
+                f"selection article {article.article_ref} is absent from catalog index"
+            )
         slug = _article_slug(article.article_ref)
         chunk_path, evidence_paths = _resolve_local_inputs(corpus_root, article.article_ref)
         chunk_count, chunk_diagnostics = _count_chunks(chunk_path)
@@ -296,7 +313,9 @@ def _read_baseline_artifacts(baseline: Path) -> list[dict[str, Any]]:
     return artifacts
 
 
-def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any]]) -> dict[str, Any]:
+def _summary_from_artifacts(
+    args: argparse.Namespace, events: list[dict[str, Any]]
+) -> dict[str, Any]:
     artifacts = _read_baseline_artifacts(args.baseline)
     article_results: list[dict[str, Any]] = []
     diagnostic_counts: dict[str, int] = {}
@@ -304,16 +323,28 @@ def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any
     provenance_counts: dict[str, int] = {}
     for artifact in artifacts:
         article_ref = str(artifact.get("article_ref"))
-        provenance = artifact.get("baseline_provenance") if isinstance(artifact.get("baseline_provenance"), dict) else {}
+        provenance = (
+            artifact.get("baseline_provenance")
+            if isinstance(artifact.get("baseline_provenance"), dict)
+            else {}
+        )
         provenance_kind = str(provenance.get("kind") or "unknown")
         provenance_counts[provenance_kind] = provenance_counts.get(provenance_kind, 0) + 1
-        diagnostics = artifact.get("diagnostics") if isinstance(artifact.get("diagnostics"), list) else []
+        diagnostics = (
+            artifact.get("diagnostics") if isinstance(artifact.get("diagnostics"), list) else []
+        )
         for diagnostic in diagnostics:
             if isinstance(diagnostic, dict):
                 code = str(diagnostic.get("code") or "UNKNOWN")
                 diagnostic_counts[code] = diagnostic_counts.get(code, 0) + 1
-        safety_state = artifact.get("safety_state") if isinstance(artifact.get("safety_state"), dict) else {}
-        violated = {key: safety_state.get(key) for key in FALSE_SAFETY_FLAGS if safety_state.get(key) is not False}
+        safety_state = (
+            artifact.get("safety_state") if isinstance(artifact.get("safety_state"), dict) else {}
+        )
+        violated = {
+            key: safety_state.get(key)
+            for key in FALSE_SAFETY_FLAGS
+            if safety_state.get(key) is not False
+        }
         if violated:
             safety_violations.append({"article_ref": article_ref, "violations": violated})
         metrics = artifact.get("metrics") if isinstance(artifact.get("metrics"), dict) else {}
@@ -323,7 +354,9 @@ def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any
                 "path": artifact.get("_path"),
                 "baseline_provenance_kind": provenance_kind,
                 "chunk_count": int(metrics.get("chunk_count") or 0),
-                "evidence_counts": metrics.get("evidence_counts") if isinstance(metrics.get("evidence_counts"), dict) else {},
+                "evidence_counts": metrics.get("evidence_counts")
+                if isinstance(metrics.get("evidence_counts"), dict)
+                else {},
                 "diagnostic_count": len([item for item in diagnostics if isinstance(item, dict)]),
                 "final_replay_compatible": bool(
                     isinstance(artifact.get("readiness"), dict)
@@ -333,8 +366,12 @@ def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any
         )
     no_network_proof = {
         "required": True,
-        "network_fetch_attempted": any(event.get("network_fetch_attempted") is True for event in events),
-        "all_events_no_network": all(event.get("no_network") is True for event in events if "no_network" in event),
+        "network_fetch_attempted": any(
+            event.get("network_fetch_attempted") is True for event in events
+        ),
+        "all_events_no_network": all(
+            event.get("no_network") is True for event in events if "no_network" in event
+        ),
     }
     no_write_safety = {
         "require_no_import_flags": bool(getattr(args, "require_no_import_flags", False)),
@@ -346,7 +383,10 @@ def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any
     ready = (
         not safety_violations
         and not no_network_proof["network_fetch_attempted"]
-        and all(result["baseline_provenance_kind"] == "regenerated_local_baseline" for result in article_results)
+        and all(
+            result["baseline_provenance_kind"] == "regenerated_local_baseline"
+            for result in article_results
+        )
         and all(result["final_replay_compatible"] for result in article_results)
     )
     blockers: list[str] = []
@@ -354,7 +394,10 @@ def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any
         blockers.append("safety_flag_violation")
     if no_network_proof["network_fetch_attempted"]:
         blockers.append("network_fetch_attempted")
-    if any(result["baseline_provenance_kind"] != "regenerated_local_baseline" for result in article_results):
+    if any(
+        result["baseline_provenance_kind"] != "regenerated_local_baseline"
+        for result in article_results
+    ):
         blockers.append("unexpected_baseline_provenance")
     if any(not result["final_replay_compatible"] for result in article_results):
         blockers.append("not_final_replay_compatible")
@@ -400,17 +443,17 @@ def _write_report(path: Path, summary: dict[str, Any]) -> None:
 
 ## Decision
 
-- Baseline recovery completed: **{str(summary['readiness']['baseline_recovery_completed']).lower()}**
-- Decision: **{summary['readiness']['decision']}**
-- Blockers: {', '.join(blockers)}
+- Baseline recovery completed: **{str(summary["readiness"]["baseline_recovery_completed"]).lower()}**
+- Decision: **{summary["readiness"]["decision"]}**
+- Blockers: {", ".join(blockers)}
 - Graph readiness claim: **false**
 
 This report discloses that the baseline was regenerated from local current-pipeline artifacts only. It is not a recovered historical production baseline and carries no graph-readiness claim.
 
 ## Baseline Provenance
 
-- Baseline path: `{summary['baseline_path']}`
-- Provenance counts: `{json.dumps(summary['provenance_counts'], sort_keys=True)}`
+- Baseline path: `{summary["baseline_path"]}`
+- Provenance counts: `{json.dumps(summary["provenance_counts"], sort_keys=True)}`
 
 {chr(10).join(rows)}
 
@@ -420,11 +463,11 @@ This report discloses that the baseline was regenerated from local current-pipel
 
 ## No-Network Proof
 
-`{json.dumps(summary['no_network_proof'], sort_keys=True)}`
+`{json.dumps(summary["no_network_proof"], sort_keys=True)}`
 
 ## No-Write Safety Evidence
 
-`{json.dumps(summary['no_write_safety'], sort_keys=True)}`
+`{json.dumps(summary["no_write_safety"], sort_keys=True)}`
 
 ## Failure Modes
 
@@ -472,19 +515,33 @@ def main(argv: list[str] | None = None) -> int:
         events = run_recovery(args)
         if args.write_events is not None:
             args.write_events.parent.mkdir(parents=True, exist_ok=True)
-            args.write_events.write_text("".join(json.dumps(event, sort_keys=True) + "\n" for event in events), encoding="utf-8")
+            args.write_events.write_text(
+                "".join(json.dumps(event, sort_keys=True) + "\n" for event in events),
+                encoding="utf-8",
+            )
         summary = None
-        if args.write_summary or args.write_report or args.require_no_import_flags or args.require_no_network:
+        if (
+            args.write_summary
+            or args.write_report
+            or args.require_no_import_flags
+            or args.require_no_network
+        ):
             summary = _summary_from_artifacts(args, events)
             if args.require_no_network and summary["no_network_proof"]["network_fetch_attempted"]:
-                raise BaselineRecoveryError("network fetch was attempted despite --require-no-network")
+                raise BaselineRecoveryError(
+                    "network fetch was attempted despite --require-no-network"
+                )
             if args.require_no_import_flags and summary["no_write_safety"]["safety_violations"]:
-                raise BaselineRecoveryError("baseline artifacts contain graph/import/write safety flag violations")
+                raise BaselineRecoveryError(
+                    "baseline artifacts contain graph/import/write safety flag violations"
+                )
         if args.write_summary is not None and summary is not None:
             _write_json(args.write_summary, summary)
         if args.write_report is not None and summary is not None:
             _write_report(args.write_report, summary)
-        completed = sum(1 for event in events if event["event_type"] == "baseline_recovery.article_completed")
+        completed = sum(
+            1 for event in events if event["event_type"] == "baseline_recovery.article_completed"
+        )
         sys.stdout.write(
             f"wrote baseline recovery artifacts for {completed} articles to {args.baseline}; "
             f"summary={args.write_summary}; report={args.write_report}\n"

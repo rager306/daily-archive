@@ -93,7 +93,10 @@ def _has_nonempty_value(value: Any) -> bool:
 def _contains_false_flag(payload: Any) -> bool:
     if isinstance(payload, dict):
         return any(
-            (key in {"behavior_changed", "runtime_replay_required", "readiness_claimed"} and value is False)
+            (
+                key in {"behavior_changed", "runtime_replay_required", "readiness_claimed"}
+                and value is False
+            )
             or _contains_false_flag(value)
             for key, value in payload.items()
         )
@@ -163,24 +166,40 @@ def validate_inventory(inventory: dict[str, Any]) -> list[str]:
             errors.append(f"M030_PIPELINE_INVENTORY_STATUS: {module_id} must be covered")
         for field in sorted(REQUIRED_ROW_FIELDS):
             if not _has_nonempty_value(row.get(field)):
-                errors.append(f"M030_PIPELINE_INVENTORY_ROW_FIELD: {module_id} missing non-empty {field}")
+                errors.append(
+                    f"M030_PIPELINE_INVENTORY_ROW_FIELD: {module_id} missing non-empty {field}"
+                )
 
     for stage in sorted(REQUIRED_STAGES):
         covered_ids = _as_nonempty_str_list(coverage.get(stage))
         if not covered_ids:
-            errors.append(f"M030_PIPELINE_INVENTORY_STAGE_MISSING: {stage} has no stage_coverage rows")
+            errors.append(
+                f"M030_PIPELINE_INVENTORY_STAGE_MISSING: {stage} has no stage_coverage rows"
+            )
             continue
         for module_id in covered_ids:
             if module_id not in module_ids:
-                errors.append(f"M030_PIPELINE_INVENTORY_STAGE_LINK: {stage} references unknown {module_id}")
+                errors.append(
+                    f"M030_PIPELINE_INVENTORY_STAGE_LINK: {stage} references unknown {module_id}"
+                )
             if module_id not in modules_by_stage.get(stage, []):
-                errors.append(f"M030_PIPELINE_INVENTORY_STAGE_LINK: {module_id} is not a {stage} module row")
+                errors.append(
+                    f"M030_PIPELINE_INVENTORY_STAGE_LINK: {module_id} is not a {stage} module row"
+                )
 
-    graph_rows = [row for row in modules if isinstance(row, dict) and row.get("stage") == "graph_import_boundary"]
+    graph_rows = [
+        row
+        for row in modules
+        if isinstance(row, dict) and row.get("stage") == "graph_import_boundary"
+    ]
     if not graph_rows:
-        errors.append("M030_PIPELINE_INVENTORY_GRAPH_BOUNDARY: missing graph_import_boundary module row")
+        errors.append(
+            "M030_PIPELINE_INVENTORY_GRAPH_BOUNDARY: missing graph_import_boundary module row"
+        )
     elif not any(_contains_fail_closed_boundary(row) for row in graph_rows):
-        errors.append("M030_PIPELINE_INVENTORY_GRAPH_BOUNDARY: graph_import_boundary lacks fail-closed false/zero boundary evidence")
+        errors.append(
+            "M030_PIPELINE_INVENTORY_GRAPH_BOUNDARY: graph_import_boundary lacks fail-closed false/zero boundary evidence"
+        )
 
     scope_boundary = inventory.get("scope_boundary")
     if not isinstance(scope_boundary, dict):
@@ -201,7 +220,10 @@ def validate_inventory(inventory: dict[str, Any]) -> list[str]:
                 continue
             if gate_payload.get("verdict") != "addressed":
                 errors.append(f"M030_PIPELINE_INVENTORY_QUALITY_GATE: {gate} must be addressed")
-            if not isinstance(gate_payload.get("summary"), str) or not gate_payload["summary"].strip():
+            if (
+                not isinstance(gate_payload.get("summary"), str)
+                or not gate_payload["summary"].strip()
+            ):
                 errors.append(f"M030_PIPELINE_INVENTORY_QUALITY_GATE: {gate} missing summary")
     return errors
 
@@ -235,10 +257,14 @@ def validate_report(report_path: Path, inventory: dict[str, Any]) -> list[str]:
             continue
         module_id = row.get("module_id")
         if isinstance(module_id, str) and module_id not in text:
-            errors.append(f"M030_PIPELINE_INVENTORY_REPORT_MODULE: report missing module {module_id}")
+            errors.append(
+                f"M030_PIPELINE_INVENTORY_REPORT_MODULE: report missing module {module_id}"
+            )
         for evidence_path in _as_nonempty_str_list(row.get("evidence_paths")):
             if evidence_path not in text:
-                errors.append(f"M030_PIPELINE_INVENTORY_REPORT_EVIDENCE: report missing evidence path {evidence_path}")
+                errors.append(
+                    f"M030_PIPELINE_INVENTORY_REPORT_EVIDENCE: report missing evidence path {evidence_path}"
+                )
     return errors
 
 
@@ -246,10 +272,16 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--inventory", required=True, type=Path)
     parser.add_argument("--report", required=True, type=Path)
-    parser.add_argument("--validate-only", action="store_true", help="Validate existing local inventory/report artifacts only.")
+    parser.add_argument(
+        "--validate-only",
+        action="store_true",
+        help="Validate existing local inventory/report artifacts only.",
+    )
     args = parser.parse_args(argv)
     if not args.validate_only:
-        parser.error("only --validate-only is supported; this verifier must not fetch, replay, or write")
+        parser.error(
+            "only --validate-only is supported; this verifier must not fetch, replay, or write"
+        )
     return args
 
 

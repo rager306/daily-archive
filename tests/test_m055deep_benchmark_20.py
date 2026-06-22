@@ -79,7 +79,9 @@ def test_grobid_fulltext_20_pdfs() -> None:
     assert len(packets) == 20
     assert {packet["arxiv_id"] for packet in packets} == manifest_ids()
     assert Counter(packet["status"] for packet in packets) == Counter(summary["aggregate_counts"])
-    assert all(packet["status"] in {"success", "low_quality_source", "blocked"} for packet in packets)
+    assert all(
+        packet["status"] in {"success", "low_quality_source", "blocked"} for packet in packets
+    )
 
 
 def test_opendataloader_20_pdfs() -> None:
@@ -90,14 +92,19 @@ def test_opendataloader_20_pdfs() -> None:
     assert len(packets) == 20
     assert {packet["arxiv_id"] for packet in packets} == manifest_ids()
     assert Counter(packet["status"] for packet in packets) == Counter(summary["aggregate_counts"])
-    assert all(packet["status"] in {"success", "low_quality_source", "opendataloader_unavailable"} for packet in packets)
+    assert all(
+        packet["status"] in {"success", "low_quality_source", "opendataloader_unavailable"}
+        for packet in packets
+    )
 
 
 def test_aggregate_counts() -> None:
     grobid = read_json(GROBID_DIR / "summary.json")
     opendataloader = read_json(OPENDATALOADER_DIR / "summary.json")
 
-    assert normalized_status_counts(grobid) == Counter({"success": 20, "low_quality_source": 0, "blocked": 0})
+    assert normalized_status_counts(grobid) == Counter(
+        {"success": 20, "low_quality_source": 0, "blocked": 0}
+    )
     normalized_opendataloader = normalized_status_counts(opendataloader)
     assert set(normalized_opendataloader) == {"success", "low_quality_source", "blocked"}
     assert sum(normalized_opendataloader.values()) == 20
@@ -106,7 +113,10 @@ def test_aggregate_counts() -> None:
 
 
 def test_5_safety_defaults_all_false() -> None:
-    summaries = [read_json(GROBID_DIR / "summary.json"), read_json(OPENDATALOADER_DIR / "summary.json")]
+    summaries = [
+        read_json(GROBID_DIR / "summary.json"),
+        read_json(OPENDATALOADER_DIR / "summary.json"),
+    ]
     packets = per_pdf_packets(GROBID_DIR) + per_pdf_packets(OPENDATALOADER_DIR)
 
     for summary in summaries:
@@ -126,8 +136,12 @@ def test_idempotent_summary() -> None:
     assert grobid["aggregate_counts"] == dict(grobid_counts)
     assert grobid["total_ref_count"] == sum(packet["ref_count"] for packet in grobid_packets)
     assert grobid["total_bibl_count"] == sum(packet["bibl_count"] for packet in grobid_packets)
-    assert grobid["total_body_element_count"] == sum(packet["body_element_count"] for packet in grobid_packets)
-    assert grobid["total_equation_count"] == sum(packet["equation_count"] for packet in grobid_packets)
+    assert grobid["total_body_element_count"] == sum(
+        packet["body_element_count"] for packet in grobid_packets
+    )
+    assert grobid["total_equation_count"] == sum(
+        packet["equation_count"] for packet in grobid_packets
+    )
     assert grobid["total_figure_count"] == sum(packet["figure_count"] for packet in grobid_packets)
 
     opendataloader_counts = Counter(dict.fromkeys(opendataloader["aggregate_counts"], 0))
@@ -136,10 +150,18 @@ def test_idempotent_summary() -> None:
     assert opendataloader["total_markdown_size_bytes"] == sum(
         packet["markdown_size_bytes"] for packet in opendataloader_packets
     )
-    assert opendataloader["total_table_count"] == sum(packet["table_count"] for packet in opendataloader_packets)
-    assert opendataloader["total_image_count"] == sum(packet["image_count"] for packet in opendataloader_packets)
-    assert opendataloader["total_section_count"] == sum(packet["section_count"] for packet in opendataloader_packets)
-    assert opendataloader["total_page_count"] == sum(packet["page_count"] for packet in opendataloader_packets)
+    assert opendataloader["total_table_count"] == sum(
+        packet["table_count"] for packet in opendataloader_packets
+    )
+    assert opendataloader["total_image_count"] == sum(
+        packet["image_count"] for packet in opendataloader_packets
+    )
+    assert opendataloader["total_section_count"] == sum(
+        packet["section_count"] for packet in opendataloader_packets
+    )
+    assert opendataloader["total_page_count"] == sum(
+        packet["page_count"] for packet in opendataloader_packets
+    )
     assert opendataloader["total_bounding_box_count"] == sum(
         packet["bounding_box_count"] for packet in opendataloader_packets
     )

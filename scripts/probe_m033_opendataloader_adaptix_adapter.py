@@ -128,7 +128,9 @@ def summarize_document(article_key: str, source_path: Path, raw: dict[str, Any])
     raw_type_counts = Counter(str(obj.get("type")) for obj in all_objects if obj.get("type"))
     raw_key_counts = Counter(key for obj in all_objects for key in obj)
     top_level_extra_counts = Counter(key for element in doc.kids for key in element.extra)
-    page_numbers = sorted({element.page_number for element in doc.kids if element.page_number is not None})
+    page_numbers = sorted(
+        {element.page_number for element in doc.kids if element.page_number is not None}
+    )
     elements_with_bbox = sum(1 for element in doc.kids if element.bounding_box is not None)
     elements_with_content = sum(1 for element in doc.kids if element.content)
     heading_count = sum(count for typ, count in raw_type_counts.items() if "heading" in typ.lower())
@@ -183,7 +185,9 @@ def summarize_document(article_key: str, source_path: Path, raw: dict[str, Any])
     }
 
 
-def diagnostic(article_key: str, severity: str, code: str, message: str, path: str | None = None) -> dict[str, Any]:
+def diagnostic(
+    article_key: str, severity: str, code: str, message: str, path: str | None = None
+) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "article_key": article_key,
         "severity": severity,
@@ -228,7 +232,9 @@ def render_report(results: list[dict[str, Any]], diagnostics: list[dict[str, Any
     lines += ["", "## Diagnostics", ""]
     if diagnostics:
         for diag in diagnostics:
-            lines.append(f"- `{diag['severity']}` `{diag['code']}` {diag['article_key']}: {diag['message']}")
+            lines.append(
+                f"- `{diag['severity']}` `{diag['code']}` {diag['article_key']}: {diag['message']}"
+            )
     else:
         lines.append("No adapter diagnostics were emitted.")
     lines += [
@@ -275,7 +281,11 @@ def run_probe(probe_root: Path, output_dir: Path) -> int:
                     f"{path}{trail}",
                 )
             )
-    status = "adaptix-adapter-candidate" if results and not any(d["severity"] == "error" for d in diagnostics) else "needs-attention"
+    status = (
+        "adaptix-adapter-candidate"
+        if results and not any(d["severity"] == "error" for d in diagnostics)
+        else "needs-attention"
+    )
     summary = {
         "schema": "m033.opendataloader_adaptix_adapter.summary.v1",
         "status": status,

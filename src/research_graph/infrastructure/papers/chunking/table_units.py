@@ -16,4 +16,6 @@ TABLE_SEPARATOR_RE = re.compile(r"^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\
 
 def is_table_block(text: str) -> bool:
     """Return True when a Markdown block contains pipe-table structure."""
-    return any(TABLE_RE.match(line) for line in text.splitlines()) or any(TABLE_SEPARATOR_RE.match(line) for line in text.splitlines())
+    return any(TABLE_RE.match(line) for line in text.splitlines()) or any(
+        TABLE_SEPARATOR_RE.match(line) for line in text.splitlines()
+    )

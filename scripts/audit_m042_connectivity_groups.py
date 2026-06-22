@@ -28,7 +28,9 @@ def load_json(path: Path) -> dict[str, Any]:
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
 
 
 def write_text(path: Path, text: str) -> None:
@@ -43,7 +45,9 @@ def infer_selected_source_key(evidence_ref: str, selected_keys: set[str]) -> str
     return None
 
 
-def build_nodes(articles: list[dict[str, Any]], repair_report: dict[str, Any]) -> list[dict[str, Any]]:
+def build_nodes(
+    articles: list[dict[str, Any]], repair_report: dict[str, Any]
+) -> list[dict[str, Any]]:
     repair_by_key = {record["article_key"]: record for record in repair_report.get("records", [])}
     nodes: list[dict[str, Any]] = []
     for entry in articles:
@@ -54,14 +58,18 @@ def build_nodes(articles: list[dict[str, Any]], repair_report: dict[str, Any]) -
                 "article_key": key,
                 "category": entry.get("m041_category"),
                 "catalog_path": entry.get("catalog_path"),
-                "metadata_status": repair.get("after_status") or entry.get("metadata_status") or "not_applicable",
+                "metadata_status": repair.get("after_status")
+                or entry.get("metadata_status")
+                or "not_applicable",
                 "connectivity_role": entry.get("connectivity_role", ""),
             }
         )
     return nodes
 
 
-def build_evidence_edges(articles: list[dict[str, Any]], selected_keys: set[str]) -> list[dict[str, Any]]:
+def build_evidence_edges(
+    articles: list[dict[str, Any]], selected_keys: set[str]
+) -> list[dict[str, Any]]:
     edges: list[dict[str, Any]] = []
     for entry in articles:
         if entry.get("m041_category") != "reference_linked":
@@ -80,13 +88,16 @@ def build_evidence_edges(articles: list[dict[str, Any]], selected_keys: set[str]
                     "source_ref": evidence,
                     "target": target,
                     "target_category": entry.get("m041_category"),
-                    "connects_selected_nodes": source_key in selected_keys and target in selected_keys,
+                    "connects_selected_nodes": source_key in selected_keys
+                    and target in selected_keys,
                 }
             )
     return edges
 
 
-def connected_components(nodes: list[dict[str, Any]], edges: list[dict[str, Any]]) -> list[list[str]]:
+def connected_components(
+    nodes: list[dict[str, Any]], edges: list[dict[str, Any]]
+) -> list[list[str]]:
     selected_keys = {node["article_key"] for node in nodes}
     adjacency: dict[str, set[str]] = defaultdict(set)
     for key in selected_keys:
@@ -94,7 +105,11 @@ def connected_components(nodes: list[dict[str, Any]], edges: list[dict[str, Any]
     for edge in edges:
         source = edge.get("source")
         target = edge.get("target")
-        if edge.get("connects_selected_nodes") and isinstance(source, str) and isinstance(target, str):
+        if (
+            edge.get("connects_selected_nodes")
+            and isinstance(source, str)
+            and isinstance(target, str)
+        ):
             adjacency[source].add(target)
             adjacency[target].add(source)
 
@@ -117,13 +132,17 @@ def connected_components(nodes: list[dict[str, Any]], edges: list[dict[str, Any]
     return sorted(components, key=lambda component: (-len(component), component[0]))
 
 
-def audit_connectivity(*, manifest_path: Path, repair_report_path: Path, output_dir: Path) -> dict[str, Any]:
+def audit_connectivity(
+    *, manifest_path: Path, repair_report_path: Path, output_dir: Path
+) -> dict[str, Any]:
     manifest = load_json(manifest_path)
     repair_report = load_json(repair_report_path)
     articles = manifest.get("articles")
     if not isinstance(articles, list):
         raise ValueError("manifest articles must be a list")
-    safety_flags = manifest.get("safety_flags") if isinstance(manifest.get("safety_flags"), dict) else {}
+    safety_flags = (
+        manifest.get("safety_flags") if isinstance(manifest.get("safety_flags"), dict) else {}
+    )
     if any(safety_flags.get(key) is not False for key in FALSE_SAFETY_KEYS):
         raise ValueError("M041 manifest safety flags must remain false")
 
@@ -132,7 +151,9 @@ def audit_connectivity(*, manifest_path: Path, repair_report_path: Path, output_
     edges = build_evidence_edges(articles, selected_keys)
     components = connected_components(nodes, edges)
     isolated = [component[0] for component in components if len(component) == 1]
-    hermes_group = sorted(node["article_key"] for node in nodes if node["category"] == "hermes_review_section")
+    hermes_group = sorted(
+        node["article_key"] for node in nodes if node["category"] == "hermes_review_section"
+    )
     category_counts: dict[str, int] = {}
     for node in nodes:
         category = str(node["category"])
@@ -149,7 +170,9 @@ def audit_connectivity(*, manifest_path: Path, repair_report_path: Path, output_
             "local_reference": sum(1 for edge in edges if edge["kind"] == "local_reference"),
             "selected_node_edges": sum(1 for edge in edges if edge["connects_selected_nodes"]),
         },
-        "components": [{"size": len(component), "article_keys": component} for component in components],
+        "components": [
+            {"size": len(component), "article_keys": component} for component in components
+        ],
         "component_count": len(components),
         "largest_component_size": len(components[0]) if components else 0,
         "isolated_article_count": len(isolated),

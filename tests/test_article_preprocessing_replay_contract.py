@@ -19,7 +19,9 @@ spec.loader.exec_module(verify_m025_final_preprocessing_replay)
 FinalReplayError = verify_m025_final_preprocessing_replay.FinalReplayError
 run_replay = verify_m025_final_preprocessing_replay.run_replay
 
-FIXTURE_CONTRACT = Path(__file__).parent / "fixtures" / "article_preprocessing_replay_v00_01" / "contract.json"
+FIXTURE_CONTRACT = (
+    Path(__file__).parent / "fixtures" / "article_preprocessing_replay_v00_01" / "contract.json"
+)
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
@@ -63,7 +65,9 @@ def _args(tmp_path: Path, *, no_network: bool = True) -> Namespace:
         selection,
         {
             "selection_id": "fixture-selection",
-            "articles": [{"article_ref": article_ref, "source_code": "arxiv", "selection_role": "fixture"}],
+            "articles": [
+                {"article_ref": article_ref, "source_code": "arxiv", "selection_role": "fixture"}
+            ],
             "safety_flags": {
                 "graph_import_allowed": False,
                 "production_ladybugdb_write_allowed": False,
@@ -101,7 +105,13 @@ def test_contract_fixture_defines_final_replay_shape() -> None:
     contract = _contract()
 
     assert contract["schema_version"] == "m025-article-preprocessing-final-artifact.v00.01"
-    assert set(contract["required_final_artifact_refs"]) == {"chunking", "assets", "tables", "links", "identity"}
+    assert set(contract["required_final_artifact_refs"]) == {
+        "chunking",
+        "assets",
+        "tables",
+        "links",
+        "identity",
+    }
     assert "baseline_missing" in contract["allowed_baseline_comparison_categories"]
     assert "production_import_attempted" in contract["required_false_safety_flags"]
     assert "ladybugdb_written" in contract["required_false_safety_flags"]
@@ -128,7 +138,10 @@ def test_final_replay_writes_contract_compliant_per_article_artifact(tmp_path: P
     assert artifact["schema_version"] == contract["schema_version"]
     assert set(artifact["final_artifact_refs"]) == set(contract["required_final_artifact_refs"])
     assert artifact["network"] == {"no_network_required": True, "network_fetch_attempted": False}
-    assert artifact["baseline_comparison"]["category"] in contract["allowed_baseline_comparison_categories"]
+    assert (
+        artifact["baseline_comparison"]["category"]
+        in contract["allowed_baseline_comparison_categories"]
+    )
     assert artifact["baseline_comparison"]["category"] == "baseline_missing"
     assert artifact["readiness"]["larger_validation_ready"] is False
     for flag in contract["required_false_safety_flags"]:
@@ -144,16 +157,24 @@ def test_final_replay_rejects_missing_local_evidence_instead_of_fetching(tmp_pat
         run_replay(args)
 
 
-def test_final_replay_summary_report_and_decision_are_blocked_without_baseline(tmp_path: Path) -> None:
+def test_final_replay_summary_report_and_decision_are_blocked_without_baseline(
+    tmp_path: Path,
+) -> None:
     args = _args(tmp_path)
     args.events = args.write_events
     args.require_no_import_flags = True
     events = run_replay(args)
     summary = verify_m025_final_preprocessing_replay._summary_from_artifacts(args, events)
 
-    verify_m025_final_preprocessing_replay._write_summary(args.selection.parent / "summary.json", summary)
-    verify_m025_final_preprocessing_replay._write_report(args.selection.parent / "report.md", summary)
-    verify_m025_final_preprocessing_replay._write_decision(args.selection.parent / "decision.json", summary)
+    verify_m025_final_preprocessing_replay._write_summary(
+        args.selection.parent / "summary.json", summary
+    )
+    verify_m025_final_preprocessing_replay._write_report(
+        args.selection.parent / "report.md", summary
+    )
+    verify_m025_final_preprocessing_replay._write_decision(
+        args.selection.parent / "decision.json", summary
+    )
 
     decision = json.loads((args.selection.parent / "decision.json").read_text(encoding="utf-8"))
     report = (args.selection.parent / "report.md").read_text(encoding="utf-8")
@@ -171,7 +192,9 @@ def test_final_replay_summary_report_and_decision_are_blocked_without_baseline(t
 def test_require_no_import_flags_fails_on_safety_violation(tmp_path: Path) -> None:
     args = _args(tmp_path)
     events = run_replay(args)
-    args.write_events.write_text("".join(json.dumps(event) + "\n" for event in events), encoding="utf-8")
+    args.write_events.write_text(
+        "".join(json.dumps(event) + "\n" for event in events), encoding="utf-8"
+    )
     artifact_path = args.final / "arxiv-cs-ai-2512.24601" / "final.json"
     artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
     artifact["safety_state"]["ladybugdb_written"] = True

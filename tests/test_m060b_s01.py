@@ -70,7 +70,9 @@ def test_graph_stats_total_nodes_edges(tmp_path: Path) -> None:
 def test_graph_stats_per_layer_counts_and_similarity() -> None:
     stats = graph_stats.compute_stats(MANIFEST)
 
-    assert {layer: data["edge_count"] for layer, data in stats["per_layer"].items()} == EXPECTED_LAYER_COUNTS
+    assert {
+        layer: data["edge_count"] for layer, data in stats["per_layer"].items()
+    } == EXPECTED_LAYER_COUNTS
     assert stats["per_layer"]["citation"]["mean_similarity"] is None
     assert stats["per_layer"]["table_similarity"]["mean_similarity"] is not None
     assert stats["per_layer"]["figure_similarity_v1"]["mean_similarity"] is not None
@@ -134,7 +136,9 @@ def test_m050_m062_inputs_are_not_modified_by_stats_or_validation(tmp_path: Path
     stats = graph_stats.compute_stats(MANIFEST)
     graph_stats.write_stats(stats, tmp_path / "stats.json", tmp_path / "stats.md")
     validation = graph_validate.validate_manifest(MANIFEST)
-    graph_validate.write_validation(validation, tmp_path / "validation.json", tmp_path / "validation.md")
+    graph_validate.write_validation(
+        validation, tmp_path / "validation.json", tmp_path / "validation.md"
+    )
 
     after = {path: path.stat().st_mtime_ns for path in protected_paths}
     assert after == before

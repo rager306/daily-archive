@@ -81,7 +81,9 @@ def _s02_contract() -> dict[str, object]:
 
 
 def _s03_payload() -> dict[str, object]:
-    return build_bounded_chunk_repair_contract(_s02_contract(), _locator_batch(), max_target_count=6)
+    return build_bounded_chunk_repair_contract(
+        _s02_contract(), _locator_batch(), max_target_count=6
+    )
 
 
 def _write_safe_inputs(tmp_path: Path) -> dict[str, Path]:
@@ -98,9 +100,16 @@ def _write_safe_inputs(tmp_path: Path) -> dict[str, Path]:
         "final_gate": tmp_path / "m022-final-gate.json",
     }
     paths["packets_json"].write_text(json.dumps(prototype, indent=2), encoding="utf-8")
-    paths["packets_markdown"].write_text(render_reviewer_packet_markdown(prototype), encoding="utf-8")
-    paths["assessment_json"].write_text(json.dumps(prototype["assessment"], indent=2), encoding="utf-8")
-    paths["assessment_markdown"].write_text("# Independent Packet Assessment\n\nVerdict: blocked_pending_semantic_acceptance\n\nImport allowed: false\n", encoding="utf-8")
+    paths["packets_markdown"].write_text(
+        render_reviewer_packet_markdown(prototype), encoding="utf-8"
+    )
+    paths["assessment_json"].write_text(
+        json.dumps(prototype["assessment"], indent=2), encoding="utf-8"
+    )
+    paths["assessment_markdown"].write_text(
+        "# Independent Packet Assessment\n\nVerdict: blocked_pending_semantic_acceptance\n\nImport allowed: false\n",
+        encoding="utf-8",
+    )
     paths["repair_prototype"].write_text(json.dumps(repair, indent=2), encoding="utf-8")
     paths["s02_contract"].write_text(json.dumps(s02, indent=2), encoding="utf-8")
     return paths
@@ -135,7 +144,9 @@ def test_final_gate_accepts_safe_fixture_and_builds_deterministic_shape(tmp_path
         repair_prototype_path=paths["repair_prototype"],
         s02_contract_path=paths["s02_contract"],
     )
-    paths["final_gate"].write_text(json.dumps(final_gate, indent=2, sort_keys=True), encoding="utf-8")
+    paths["final_gate"].write_text(
+        json.dumps(final_gate, indent=2, sort_keys=True), encoding="utf-8"
+    )
     summary = _verify(paths)
 
     assert summary["passed"] is True
@@ -147,12 +158,17 @@ def test_final_gate_accepts_safe_fixture_and_builds_deterministic_shape(tmp_path
     assert final_gate["blocked_boundaries"]["kg_import_blocked"] is True
     assert final_gate["blocked_boundaries"]["import_allowed"] is False
     assert final_gate["blocked_boundaries"]["semantic_ready_for_kg"] is False
-    assert final_gate["final_recommendation"]["action"] == "human_semantic_review_or_bounded_repair_only"
+    assert (
+        final_gate["final_recommendation"]["action"]
+        == "human_semantic_review_or_bounded_repair_only"
+    )
     assert final_gate["final_recommendation"]["kg_import_allowed"] is False
     assert not validate_final_gate(final_gate, expected_packet_count=6)
 
 
-def test_cli_writes_final_gate_and_emits_redacted_summary(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_writes_final_gate_and_emits_redacted_summary(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     paths = _write_safe_inputs(tmp_path)
 
     code = final_gate_cli_main(
@@ -189,70 +205,115 @@ def test_cli_writes_final_gate_and_emits_redacted_summary(tmp_path: Path, capsys
     ("mutator", "code", "path"),
     [
         (lambda paths: paths["packets_json"].unlink(), "file not found", ""),
-        (lambda paths: paths["packets_json"].write_text('{"broken": ', encoding="utf-8"), "JSON is malformed", ""),
         (
-            lambda paths: _mutate_json(paths["packets_json"], lambda payload: payload["packets"].pop()),
+            lambda paths: paths["packets_json"].write_text('{"broken": ', encoding="utf-8"),
+            "JSON is malformed",
+            "",
+        ),
+        (
+            lambda paths: _mutate_json(
+                paths["packets_json"], lambda payload: payload["packets"].pop()
+            ),
             "final_gate_packet_count_not_six",
             "/packets",
         ),
         (
-            lambda paths: _mutate_json(paths["packets_json"], lambda payload: payload["packets"][0].__setitem__("review_status", "accepted")),
+            lambda paths: _mutate_json(
+                paths["packets_json"],
+                lambda payload: payload["packets"][0].__setitem__("review_status", "accepted"),
+            ),
             "packet_not_pending_review",
             "/packets/0/review_status",
         ),
         (
-            lambda paths: _mutate_json(paths["packets_json"], lambda payload: payload["packets"][0].__setitem__("importable", True)),
+            lambda paths: _mutate_json(
+                paths["packets_json"],
+                lambda payload: payload["packets"][0].__setitem__("importable", True),
+            ),
             "packet_importable",
             "/packets/0/importable",
         ),
         (
-            lambda paths: _mutate_json(paths["packets_json"], lambda payload: payload["packets"][0].__setitem__("semantic_ready_for_kg", True)),
+            lambda paths: _mutate_json(
+                paths["packets_json"],
+                lambda payload: payload["packets"][0].__setitem__("semantic_ready_for_kg", True),
+            ),
             "packet_semantic_ready",
             "/packets/0/semantic_ready_for_kg",
         ),
         (
-            lambda paths: _mutate_json(paths["packets_json"], lambda payload: payload["packets"][0].__setitem__("api_key", "DO_NOT_LEAK")),
+            lambda paths: _mutate_json(
+                paths["packets_json"],
+                lambda payload: payload["packets"][0].__setitem__("api_key", "DO_NOT_LEAK"),
+            ),
             "secret_leakage",
             "/packets/0/api_key",
         ),
         (
-            lambda paths: _mutate_json(paths["assessment_json"], lambda payload: payload.__setitem__("verdict", "import_ready")),
+            lambda paths: _mutate_json(
+                paths["assessment_json"],
+                lambda payload: payload.__setitem__("verdict", "import_ready"),
+            ),
             "assessment_verdict_drift",
             "/verdict",
         ),
         (
-            lambda paths: _mutate_json(paths["assessment_json"], lambda payload: payload.__setitem__("import_allowed", True)),
+            lambda paths: _mutate_json(
+                paths["assessment_json"],
+                lambda payload: payload.__setitem__("import_allowed", True),
+            ),
             "assessment_import_allowed",
             "/import_allowed",
         ),
         (
-            lambda paths: _mutate_json(paths["assessment_json"], lambda payload: payload.__setitem__("semantic_ready_for_kg", True)),
+            lambda paths: _mutate_json(
+                paths["assessment_json"],
+                lambda payload: payload.__setitem__("semantic_ready_for_kg", True),
+            ),
             "assessment_semantic_ready",
             "/semantic_ready_for_kg",
         ),
         (
-            lambda paths: _mutate_json(paths["assessment_json"], lambda payload: payload["unsafe_counters"].__setitem__("semantic_ready_count", 1)),
+            lambda paths: _mutate_json(
+                paths["assessment_json"],
+                lambda payload: payload["unsafe_counters"].__setitem__("semantic_ready_count", 1),
+            ),
             "unsafe_counter_nonzero",
             "/unsafe_counters/semantic_ready_count",
         ),
         (
-            lambda paths: _mutate_json(paths["assessment_json"], lambda payload: payload["unsafe_counters"].__setitem__("vectors_included", True)),
+            lambda paths: _mutate_json(
+                paths["assessment_json"],
+                lambda payload: payload["unsafe_counters"].__setitem__("vectors_included", True),
+            ),
             "unsafe_counter_true",
             "/unsafe_counters/vectors_included",
         ),
         (
-            lambda paths: _mutate_json(paths["repair_prototype"], lambda payload: payload["diagnostics"].__setitem__("production_import_attempted", True)),
+            lambda paths: _mutate_json(
+                paths["repair_prototype"],
+                lambda payload: payload["diagnostics"].__setitem__(
+                    "production_import_attempted", True
+                ),
+            ),
             "repair_diagnostic_unsafe_boolean",
             "/diagnostics/production_import_attempted",
         ),
         (
-            lambda paths: _mutate_json(paths["s02_contract"], lambda payload: payload["safety_boundary"].__setitem__("trusted_kg_import_allowed", True)),
+            lambda paths: _mutate_json(
+                paths["s02_contract"],
+                lambda payload: payload["safety_boundary"].__setitem__(
+                    "trusted_kg_import_allowed", True
+                ),
+            ),
             "s02_safety_boundary_unsafe",
             "/safety_boundary/trusted_kg_import_allowed",
         ),
     ],
 )
-def test_source_artifact_failures_are_redacted_and_fail_closed(tmp_path: Path, mutator, code: str, path: str, capsys: pytest.CaptureFixture[str]) -> None:
+def test_source_artifact_failures_are_redacted_and_fail_closed(
+    tmp_path: Path, mutator, code: str, path: str, capsys: pytest.CaptureFixture[str]
+) -> None:
     paths = _write_safe_inputs(tmp_path)
     mutator(paths)
 
@@ -284,17 +345,51 @@ def test_source_artifact_failures_are_redacted_and_fail_closed(tmp_path: Path, m
 @pytest.mark.parametrize(
     ("mutator", "code", "path"),
     [
-        (lambda gate: gate.__setitem__("schema_version", "wrong"), "final_gate_schema_mismatch", "/schema_version"),
-        (lambda gate: gate["packet_summary"].__setitem__("packet_count", 5), "final_gate_packet_count_mismatch", "/packet_summary/packet_count"),
-        (lambda gate: gate["packet_summary"].__setitem__("review_status_counts", {"accepted": 1}), "final_gate_review_status_not_pending", "/packet_summary/review_status_counts"),
-        (lambda gate: gate["blocked_boundaries"].__setitem__("kg_import_blocked", False), "final_gate_boundary_polarity_drift", "/blocked_boundaries/kg_import_blocked"),
-        (lambda gate: gate["blocked_boundaries"].__setitem__("import_allowed", True), "final_gate_boundary_polarity_drift", "/blocked_boundaries/import_allowed"),
-        (lambda gate: gate["final_recommendation"].__setitem__("kg_import_allowed", True), "final_gate_recommendation_unsafe_claim", "/final_recommendation/kg_import_allowed"),
-        (lambda gate: gate["requirement_outcomes"]["R024"].__setitem__("import_allowed_claimed", True), "final_gate_requirement_unsafe_claim", "/requirement_outcomes/R024/import_allowed_claimed"),
+        (
+            lambda gate: gate.__setitem__("schema_version", "wrong"),
+            "final_gate_schema_mismatch",
+            "/schema_version",
+        ),
+        (
+            lambda gate: gate["packet_summary"].__setitem__("packet_count", 5),
+            "final_gate_packet_count_mismatch",
+            "/packet_summary/packet_count",
+        ),
+        (
+            lambda gate: gate["packet_summary"].__setitem__(
+                "review_status_counts", {"accepted": 1}
+            ),
+            "final_gate_review_status_not_pending",
+            "/packet_summary/review_status_counts",
+        ),
+        (
+            lambda gate: gate["blocked_boundaries"].__setitem__("kg_import_blocked", False),
+            "final_gate_boundary_polarity_drift",
+            "/blocked_boundaries/kg_import_blocked",
+        ),
+        (
+            lambda gate: gate["blocked_boundaries"].__setitem__("import_allowed", True),
+            "final_gate_boundary_polarity_drift",
+            "/blocked_boundaries/import_allowed",
+        ),
+        (
+            lambda gate: gate["final_recommendation"].__setitem__("kg_import_allowed", True),
+            "final_gate_recommendation_unsafe_claim",
+            "/final_recommendation/kg_import_allowed",
+        ),
+        (
+            lambda gate: gate["requirement_outcomes"]["R024"].__setitem__(
+                "import_allowed_claimed", True
+            ),
+            "final_gate_requirement_unsafe_claim",
+            "/requirement_outcomes/R024/import_allowed_claimed",
+        ),
         (lambda gate: gate.__setitem__("api_key", "DO_NOT_LEAK"), "secret_leakage", "/api_key"),
     ],
 )
-def test_final_gate_json_validation_rejects_drift_and_unsafe_claims(tmp_path: Path, mutator, code: str, path: str) -> None:
+def test_final_gate_json_validation_rejects_drift_and_unsafe_claims(
+    tmp_path: Path, mutator, code: str, path: str
+) -> None:
     paths = _write_safe_inputs(tmp_path)
     final_gate = build_final_gate(
         packet_json_path=paths["packets_json"],
@@ -311,7 +406,9 @@ def test_final_gate_json_validation_rejects_drift_and_unsafe_claims(tmp_path: Pa
 
     assert {finding.code for finding in findings} >= {code}
     assert path in {finding.path for finding in findings}
-    assert "DO_NOT_LEAK" not in json.dumps([finding.__dict__ for finding in findings], sort_keys=True)
+    assert "DO_NOT_LEAK" not in json.dumps(
+        [finding.__dict__ for finding in findings], sort_keys=True
+    )
 
 
 def test_markdown_code_fence_and_forbidden_marker_are_rejected(tmp_path: Path) -> None:

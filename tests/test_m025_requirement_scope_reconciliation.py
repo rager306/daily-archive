@@ -9,8 +9,12 @@ from typing import Any
 
 import pytest
 
-MODULE_PATH = Path(__file__).parents[1] / "scripts" / "verify_m025_requirement_scope_reconciliation.py"
-spec = importlib.util.spec_from_file_location("verify_m025_requirement_scope_reconciliation", MODULE_PATH)
+MODULE_PATH = (
+    Path(__file__).parents[1] / "scripts" / "verify_m025_requirement_scope_reconciliation.py"
+)
+spec = importlib.util.spec_from_file_location(
+    "verify_m025_requirement_scope_reconciliation", MODULE_PATH
+)
 assert spec is not None and spec.loader is not None
 verify_m025_requirement_scope_reconciliation = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = verify_m025_requirement_scope_reconciliation
@@ -20,8 +24,12 @@ validate_matrix = verify_m025_requirement_scope_reconciliation.validate_matrix
 validate_coverage_handoff = verify_m025_requirement_scope_reconciliation.validate_coverage_handoff
 main = verify_m025_requirement_scope_reconciliation.main
 
-REAL_MATRIX = Path(__file__).parents[1] / "doc" / "validation" / "m025_requirement_scope_matrix.json"
-REAL_RENDERED = Path(__file__).parents[1] / "doc" / "validation" / "m025_requirement_scope_matrix.md"
+REAL_MATRIX = (
+    Path(__file__).parents[1] / "doc" / "validation" / "m025_requirement_scope_matrix.json"
+)
+REAL_RENDERED = (
+    Path(__file__).parents[1] / "doc" / "validation" / "m025_requirement_scope_matrix.md"
+)
 REQUIRED_IDS = {"R024", "R027", "R029", "R030", "R036", "R040"}
 
 
@@ -48,7 +56,9 @@ def _materialize_non_planning_evidence(tmp_path: Path, matrix: dict[str, Any]) -
             evidence.write_text("{}\n", encoding="utf-8")
 
 
-def _errors(matrix: dict[str, Any], rendered: str | None = None, tmp_path: Path | None = None) -> list[str]:
+def _errors(
+    matrix: dict[str, Any], rendered: str | None = None, tmp_path: Path | None = None
+) -> list[str]:
     root = tmp_path or Path(__file__).parents[1]
     if tmp_path is not None:
         _materialize_non_planning_evidence(tmp_path, matrix)
@@ -97,7 +107,9 @@ def test_cli_passes_against_real_matrix_with_manual_closeout_evidence() -> None:
 
 def test_rejects_missing_required_requirement_id(tmp_path: Path) -> None:
     matrix = _load_real_matrix()
-    matrix["requirements"] = [row for row in matrix["requirements"] if row["requirement_id"] != "R029"]
+    matrix["requirements"] = [
+        row for row in matrix["requirements"] if row["requirement_id"] != "R029"
+    ]
 
     errors = _errors(matrix, tmp_path=tmp_path)
 
@@ -120,7 +132,9 @@ def test_rejects_malformed_required_row_fields(tmp_path: Path) -> None:
     errors = _errors(matrix, tmp_path=tmp_path)
 
     assert any("R024 missing required fields: allowed_claims" in error for error in errors)
-    assert any("R024 allowed_claims must be a non-empty list of strings" in error for error in errors)
+    assert any(
+        "R024 allowed_claims must be a non-empty list of strings" in error for error in errors
+    )
 
 
 @pytest.mark.parametrize(
@@ -150,7 +164,9 @@ def test_rejects_malformed_or_missing_evidence_paths(bad_path: str, expected: st
         ("R040", "M025 fully validates all future infrastructure safety wrapping."),
     ],
 )
-def test_rejects_unsafe_positive_claim_phrases(tmp_path: Path, requirement_id: str, claim: str) -> None:
+def test_rejects_unsafe_positive_claim_phrases(
+    tmp_path: Path, requirement_id: str, claim: str
+) -> None:
     matrix = _load_real_matrix()
     _row(matrix, requirement_id)["allowed_claims"].append(claim)
 
@@ -177,18 +193,25 @@ def test_rejects_unsafe_true_boolean_fields(tmp_path: Path, field: str, expected
     assert any(expected in error and field in error for error in errors)
 
 
-@pytest.mark.parametrize("field", ["raw_article_text", "binary_payload", "base64_payload", "vector_payload"])
+@pytest.mark.parametrize(
+    "field", ["raw_article_text", "binary_payload", "base64_payload", "vector_payload"]
+)
 def test_rejects_raw_payload_field_names(tmp_path: Path, field: str) -> None:
     matrix = _load_real_matrix()
     _row(matrix, "R030")[field] = "payload must not be stored in coverage artifacts"
 
     errors = _errors(matrix, tmp_path=tmp_path)
 
-    assert any("contains unsafe raw/binary/base64/vector/secret field name" in error and field in error for error in errors)
+    assert any(
+        "contains unsafe raw/binary/base64/vector/secret field name" in error and field in error
+        for error in errors
+    )
 
 
 @pytest.mark.parametrize("requirement_id", ["R024", "R027", "R029", "R036"])
-def test_rejects_broad_active_requirements_marked_validated(tmp_path: Path, requirement_id: str) -> None:
+def test_rejects_broad_active_requirements_marked_validated(
+    tmp_path: Path, requirement_id: str
+) -> None:
     matrix = _load_real_matrix()
     row = _row(matrix, requirement_id)
     row["current_status"] = "validated"
@@ -197,7 +220,9 @@ def test_rejects_broad_active_requirements_marked_validated(tmp_path: Path, requ
 
     errors = _errors(matrix, tmp_path=tmp_path)
 
-    assert any(requirement_id in error and ("must" in error or "unsafe claim" in error) for error in errors)
+    assert any(
+        requirement_id in error and ("must" in error or "unsafe claim" in error) for error in errors
+    )
 
 
 def test_rejects_r030_reopened_or_newly_validated(tmp_path: Path) -> None:

@@ -124,7 +124,11 @@ def parse_requirements(text: str) -> list[RequirementEntry]:
         status = extract_bullet(block, "Status") or "unknown"
         source = extract_bullet(block, "Source") or "unknown"
         owner = extract_bullet(block, "Primary owning slice") or "unassigned"
-        entries.append(RequirementEntry(req_id, title, clean_cell(status), clean_cell(source), clean_cell(owner)))
+        entries.append(
+            RequirementEntry(
+                req_id, title, clean_cell(status), clean_cell(source), clean_cell(owner)
+            )
+        )
     return entries
 
 
@@ -224,86 +228,102 @@ def render_digest(
     for req in requirements:
         lines.append(f"| {req.req_id} | {req.status} | {req.owner} | {req.source} | {req.title} |")
 
-    lines.extend([
-        "",
-        "## Decision Index",
-        "",
-        "| ID | When | Scope | Decision | Choice |",
-        "|---|---|---|---|---|",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Decision Index",
+            "",
+            "| ID | When | Scope | Decision | Choice |",
+            "|---|---|---|---|---|",
+        ]
+    )
     for decision in decisions:
         lines.append(
             f"| {decision.decision_id} | {decision.when} | {decision.scope} | {decision.decision} | {decision.choice} |"
         )
 
-    lines.extend([
-        "",
-        "## ADR Index",
-        "",
-        "| ADR | Status | Path | Title |",
-        "|---|---|---|---|",
-    ])
+    lines.extend(
+        [
+            "",
+            "## ADR Index",
+            "",
+            "| ADR | Status | Path | Title |",
+            "|---|---|---|---|",
+        ]
+    )
     for adr in adrs:
         lines.append(f"| {adr.adr_id} | {adr.status} | `{adr.path}` | {adr.title} |")
 
     highlighted_adrs = [adr for adr in adrs if adr.adr_id == "ADR-016"]
     if highlighted_adrs:
-        lines.extend([
-            "",
-            "## ADR Decision Highlights",
-            "",
-            "Generated excerpts for ADRs whose current binding status affects implementation defaults.",
-            "",
-        ])
+        lines.extend(
+            [
+                "",
+                "## ADR Decision Highlights",
+                "",
+                "Generated excerpts for ADRs whose current binding status affects implementation defaults.",
+                "",
+            ]
+        )
         for adr in highlighted_adrs:
             adr_text = read_text(ROOT / adr.path)
-            lines.extend([
-                f"### {adr.adr_id}: {adr.title}",
-                "",
-                "| Library | Decision | Authorized role | Rationale |",
-                "|---|---|---|---|",
-            ])
+            lines.extend(
+                [
+                    f"### {adr.adr_id}: {adr.title}",
+                    "",
+                    "| Library | Decision | Authorized role | Rationale |",
+                    "|---|---|---|---|",
+                ]
+            )
             adoption_rows = extract_adoption_table_rows(adr_text)
             if adoption_rows:
                 lines.extend(adoption_rows)
             else:
-                lines.append("| unavailable | unknown | unknown | Adoption table not found in canonical ADR. |")
+                lines.append(
+                    "| unavailable | unknown | unknown | Adoption table not found in canonical ADR. |"
+                )
             lines.append("")
 
-    lines.extend([
-        "",
-        "## Typed Graph Projection",
-        "",
-        "The graph-shaped projection lives in `.codebase-memory/governance-graph.json`. It is generated mirror state, not canonical state, and exists for codebase-memory search/readback and future typed ingestion once supported.",
-        "",
-        "## ADR Relationship Graph Notes",
-        "",
-        "- ADR-000 establishes the Universal KB north-star scope and prevents overfitting to arXiv, PDFs, scientific papers, or RAG-only assumptions.",
-        "- ADR-004 allows sidecars to produce candidate evidence, but not import-ready graph facts.",
-        "- ADR-005 blocks direct extractor, parser, sidecar, adapter, or LLM-helper writes to GraphDB and requires candidate, validation, review, and readiness boundaries before any promotion.",
-        "- M035 validates the no-write Universal KB prototype at fixture level.",
-        "- M036 validates the no-write smoke on 5 real local article artifacts.",
-        "- M037 consolidates the smoke control surface without changing ADR-005 or expanding beyond 5 articles.",
-        "- D075 chooses the hybrid governance model: GSD canonical, GitNexus code-safety, codebase-memory fast recall mirror.",
-        "- D076 adds typed graph projection artifacts because codebase-memory MCP custom edge ingestion is not yet implemented.",
-        "- R062 requires this generated mirror to stay non-canonical and verifiable.",
-        "- R063 requires the typed graph projection to expose verifiable ADR/R/D nodes and edges while preserving source-of-truth boundaries.",
-        "",
-        "## Refresh Commands",
-        "",
-        "```bash",
-        "uv run python scripts/sync_codebase_memory_governance.py",
-        "uv run python scripts/sync_codebase_memory_governance.py --check",
-        "```",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Typed Graph Projection",
+            "",
+            "The graph-shaped projection lives in `.codebase-memory/governance-graph.json`. It is generated mirror state, not canonical state, and exists for codebase-memory search/readback and future typed ingestion once supported.",
+            "",
+            "## ADR Relationship Graph Notes",
+            "",
+            "- ADR-000 establishes the Universal KB north-star scope and prevents overfitting to arXiv, PDFs, scientific papers, or RAG-only assumptions.",
+            "- ADR-004 allows sidecars to produce candidate evidence, but not import-ready graph facts.",
+            "- ADR-005 blocks direct extractor, parser, sidecar, adapter, or LLM-helper writes to GraphDB and requires candidate, validation, review, and readiness boundaries before any promotion.",
+            "- M035 validates the no-write Universal KB prototype at fixture level.",
+            "- M036 validates the no-write smoke on 5 real local article artifacts.",
+            "- M037 consolidates the smoke control surface without changing ADR-005 or expanding beyond 5 articles.",
+            "- D075 chooses the hybrid governance model: GSD canonical, GitNexus code-safety, codebase-memory fast recall mirror.",
+            "- D076 adds typed graph projection artifacts because codebase-memory MCP custom edge ingestion is not yet implemented.",
+            "- R062 requires this generated mirror to stay non-canonical and verifiable.",
+            "- R063 requires the typed graph projection to expose verifiable ADR/R/D nodes and edges while preserving source-of-truth boundaries.",
+            "",
+            "## Refresh Commands",
+            "",
+            "```bash",
+            "uv run python scripts/sync_codebase_memory_governance.py",
+            "uv run python scripts/sync_codebase_memory_governance.py --check",
+            "```",
+            "",
+        ]
+    )
     rendered = "\n".join(lines)
     check_safe_text(rendered)
     return rendered
 
 
-def graph_node(node_id: str, node_type: str, title: str, source: str, status: str = "active") -> GraphNode:
-    return GraphNode(id=node_id, type=node_type, title=title, canonical_source=source, status=status)
+def graph_node(
+    node_id: str, node_type: str, title: str, source: str, status: str = "active"
+) -> GraphNode:
+    return GraphNode(
+        id=node_id, type=node_type, title=title, canonical_source=source, status=status
+    )
 
 
 def build_graph(
@@ -313,7 +333,9 @@ def build_graph(
     edges: list[GraphEdge] = []
 
     for req in requirements:
-        nodes[req.req_id] = graph_node(req.req_id, "Requirement", req.title, ".gsd/REQUIREMENTS.md", req.status)
+        nodes[req.req_id] = graph_node(
+            req.req_id, "Requirement", req.title, ".gsd/REQUIREMENTS.md", req.status
+        )
     for decision in decisions:
         nodes[decision.decision_id] = graph_node(
             decision.decision_id,
@@ -333,7 +355,9 @@ def build_graph(
         "M039": "Typed governance graph projection",
     }
     for milestone_id, title in milestone_titles.items():
-        nodes[milestone_id] = graph_node(milestone_id, "Milestone", title, ".gsd/milestones", "historical")
+        nodes[milestone_id] = graph_node(
+            milestone_id, "Milestone", title, ".gsd/milestones", "historical"
+        )
 
     artifact_titles = {
         "ARTIFACT-CODEBASE-MEMORY-ADR-MIRROR": ".codebase-memory/adr.md",
@@ -356,17 +380,57 @@ def build_graph(
 
     add("D076", "extends", "D075", "Typed projection extends the hybrid governance-memory model.")
     add("D076", "implements", "R063", "D076 chooses artifact-first typed projection for R063.")
-    add("D075", "implements", "R062", "D075 defines the non-canonical mirror model required by R062.")
+    add(
+        "D075",
+        "implements",
+        "R062",
+        "D075 defines the non-canonical mirror model required by R062.",
+    )
     add("R063", "owned_by", "M039", "M039 owns typed governance graph projection delivery.")
     add("R062", "validated_by", "M038", "M038 validated the generated ADR/R/D mirror.")
-    add("M038", "provides", "ARTIFACT-CODEBASE-MEMORY-ADR-MIRROR", "M038 generated the markdown recall mirror.")
-    add("M039", "provides", "ARTIFACT-GOVERNANCE-GRAPH", "M039 generates the typed graph projection.")
-    add("ARTIFACT-GOVERNANCE-GRAPH", "mirrors", "ARTIFACT-CODEBASE-MEMORY-ADR-MIRROR", "Both artifacts are generated from canonical GSD/ADR inputs.")
-    add("ADR-005", "blocks", "SAFETY-NO-DIRECT-GRAPHDB-WRITES", "ADR-005 is the binding no direct GraphDB path rule.")
-    add("SAFETY-NO-DIRECT-GRAPHDB-WRITES", "constrains", "R063", "The typed graph projection must remain metadata-only and non-promotional.")
+    add(
+        "M038",
+        "provides",
+        "ARTIFACT-CODEBASE-MEMORY-ADR-MIRROR",
+        "M038 generated the markdown recall mirror.",
+    )
+    add(
+        "M039",
+        "provides",
+        "ARTIFACT-GOVERNANCE-GRAPH",
+        "M039 generates the typed graph projection.",
+    )
+    add(
+        "ARTIFACT-GOVERNANCE-GRAPH",
+        "mirrors",
+        "ARTIFACT-CODEBASE-MEMORY-ADR-MIRROR",
+        "Both artifacts are generated from canonical GSD/ADR inputs.",
+    )
+    add(
+        "ADR-005",
+        "blocks",
+        "SAFETY-NO-DIRECT-GRAPHDB-WRITES",
+        "ADR-005 is the binding no direct GraphDB path rule.",
+    )
+    add(
+        "SAFETY-NO-DIRECT-GRAPHDB-WRITES",
+        "constrains",
+        "R063",
+        "The typed graph projection must remain metadata-only and non-promotional.",
+    )
     add("M035", "validates", "ADR-005", "M035 validates the no-write rule at fixture level.")
-    add("M036", "validates", "ADR-005", "M036 validates the no-write rule on 5 real local article artifacts.")
-    add("M037", "preserves", "ADR-005", "M037 consolidates controls without weakening no-write constraints.")
+    add(
+        "M036",
+        "validates",
+        "ADR-005",
+        "M036 validates the no-write rule on 5 real local article artifacts.",
+    )
+    add(
+        "M037",
+        "preserves",
+        "ADR-005",
+        "M037 consolidates controls without weakening no-write constraints.",
+    )
 
     graph = {
         "schema_version": "governance-graph/v1",
@@ -379,7 +443,12 @@ def build_graph(
         },
         "source_of_truth_warning": "GSD remains canonical for requirements and decisions; ADR docs remain canonical for architecture; this JSON is a codebase-memory recall projection only.",
         "nodes": [asdict(nodes[node_id]) for node_id in sorted(nodes)],
-        "edges": [asdict(edge) for edge in sorted(edges, key=lambda edge: (edge.source, edge.relationship, edge.target))],
+        "edges": [
+            asdict(edge)
+            for edge in sorted(
+                edges, key=lambda edge: (edge.source, edge.relationship, edge.target)
+            )
+        ],
     }
     validate_graph(graph)
     return graph
@@ -461,7 +530,9 @@ def check_outputs(output: Path, graph_output: Path) -> None:
     if actual_graph != expected_graph:
         stale.append(display_path(graph_output))
     if stale:
-        raise SystemExit(f"stale governance mirror artifacts: {', '.join(stale)}; run sync_codebase_memory_governance.py")
+        raise SystemExit(
+            f"stale governance mirror artifacts: {', '.join(stale)}; run sync_codebase_memory_governance.py"
+        )
     sys.stdout.write(f"ok {display_path(output)}\n")
     sys.stdout.write(f"ok {display_path(graph_output)}\n")
 
@@ -477,7 +548,9 @@ def check_digest(output: Path) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--check", action="store_true", help="fail if generated artifacts are stale")
+    parser.add_argument(
+        "--check", action="store_true", help="fail if generated artifacts are stale"
+    )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--graph-output", type=Path, default=DEFAULT_GRAPH_OUTPUT)
     args = parser.parse_args(argv)

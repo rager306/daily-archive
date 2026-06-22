@@ -103,7 +103,9 @@ def test_contract_test_handles_fd_down(tmp_path: Path) -> None:
 
 def test_m050_m068_s01_regression_contracts() -> None:
     embedder = (ROOT / "src" / "arxiv_archive" / "embedder.py").read_text(encoding="utf-8")
-    adr = (ROOT / "doc" / "adr" / "ADR-019-fd-embedding-service-contract.md").read_text(encoding="utf-8")
+    adr = (ROOT / "doc" / "adr" / "ADR-019-fd-embedding-service-contract.md").read_text(
+        encoding="utf-8"
+    )
     assert "DEFAULT_TEI_URL" in embedder
     assert "DEFAULT_API_KEY" in embedder
     assert "DEFAULT_MODEL_ID" in embedder

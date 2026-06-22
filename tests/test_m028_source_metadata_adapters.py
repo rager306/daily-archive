@@ -38,7 +38,9 @@ def _write_json(path: Path, payload: dict[str, object]) -> None:
 
 
 def _write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
-    path.write_text("\n".join(json.dumps(row, sort_keys=True) for row in rows) + "\n", encoding="utf-8")
+    path.write_text(
+        "\n".join(json.dumps(row, sort_keys=True) for row in rows) + "\n", encoding="utf-8"
+    )
 
 
 def _read_json(path: Path) -> dict[str, object]:
@@ -46,7 +48,9 @@ def _read_json(path: Path) -> dict[str, object]:
 
 
 def _read_jsonl(path: Path) -> list[dict[str, object]]:
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return [
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
 
 
 def _sha256(path: Path) -> str:
@@ -124,7 +128,11 @@ def _artifact_files(root: Path) -> dict[str, Path]:
 def _acquisition_rows(paths: dict[str, Path], root: Path) -> list[dict[str, object]]:
     rows = []
     kinds = {"R01": "arxiv_pdf_url", "R02": "arxiv_abs_url", "R03": "company_blog_url"}
-    identities = {"R01": "arxiv:2605.20897", "R02": "arxiv:2605.20897", "R03": "company_blog:nvidia:example"}
+    identities = {
+        "R01": "arxiv:2605.20897",
+        "R02": "arxiv:2605.20897",
+        "R03": "company_blog:nvidia:example",
+    }
     urls = {
         "R01": "https://arxiv.org/pdf/2605.20897.pdf",
         "R02": "https://arxiv.org/abs/2605.20897",
@@ -144,7 +152,9 @@ def _acquisition_rows(paths: dict[str, Path], root: Path) -> list[dict[str, obje
                 "source_kind": kinds[ref_id],
                 "normalized_identity": identities[ref_id],
                 "artifact_path": str(artifact_path.relative_to(root)),
-                "content_type": "application/pdf" if artifact_path.suffix == ".pdf" else "text/html; charset=utf-8",
+                "content_type": "application/pdf"
+                if artifact_path.suffix == ".pdf"
+                else "text/html; charset=utf-8",
                 "byte_count": artifact_path.stat().st_size,
                 "sha256": _sha256(artifact_path),
                 "http_status": 200,
@@ -185,7 +195,11 @@ def _expanded_refs() -> list[dict[str, object]]:
     ]
     refs: list[dict[str, object]] = []
     for ref_id, source_kind, identity in ref_specs:
-        ref: dict[str, object] = {"ref_id": ref_id, "source_kind": source_kind, "normalized_identity": identity}
+        ref: dict[str, object] = {
+            "ref_id": ref_id,
+            "source_kind": source_kind,
+            "normalized_identity": identity,
+        }
         if source_kind.startswith("arxiv_"):
             arxiv_id = identity.removeprefix("arxiv:")
             variant = "pdf" if source_kind == "arxiv_pdf_url" else "abs"
@@ -206,7 +220,12 @@ def _expanded_refs() -> list[dict[str, object]]:
                 }
             )
         else:
-            ref.update({"url": "https://www.nature.com/articles/example", "canonical_url": "https://www.nature.com/articles/example"})
+            ref.update(
+                {
+                    "url": "https://www.nature.com/articles/example",
+                    "canonical_url": "https://www.nature.com/articles/example",
+                }
+            )
         refs.append(ref)
     return refs
 
@@ -234,7 +253,7 @@ def _expanded_artifacts(root: Path, refs: list[dict[str, object]]) -> dict[str, 
                   <meta name="citation_title" content="{title}">
                   <meta name="citation_author" content="Fixture Author">
                   <meta name="citation_date" content="2026-05-20">
-                  <meta name="citation_arxiv_id" content="{str(ref.get('arxiv_id', '')).removeprefix('arxiv:')}">
+                  <meta name="citation_arxiv_id" content="{str(ref.get("arxiv_id", "")).removeprefix("arxiv:")}">
                 </head><body>source body for {ref_id} must not be serialized</body></html>
                 """,
                 encoding="utf-8",
@@ -243,7 +262,9 @@ def _expanded_artifacts(root: Path, refs: list[dict[str, object]]) -> dict[str, 
     return paths
 
 
-def _expanded_acquisition_rows(refs: list[dict[str, object]], paths: dict[str, Path], root: Path) -> list[dict[str, object]]:
+def _expanded_acquisition_rows(
+    refs: list[dict[str, object]], paths: dict[str, Path], root: Path
+) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     for ref in refs:
         ref_id = str(ref["ref_id"])
@@ -256,7 +277,9 @@ def _expanded_acquisition_rows(refs: list[dict[str, object]], paths: dict[str, P
                 "source_kind": ref["source_kind"],
                 "normalized_identity": ref["normalized_identity"],
                 "artifact_path": str(artifact_path.relative_to(root)),
-                "content_type": "application/pdf" if artifact_path.suffix == ".pdf" else "text/html; charset=utf-8",
+                "content_type": "application/pdf"
+                if artifact_path.suffix == ".pdf"
+                else "text/html; charset=utf-8",
                 "byte_count": artifact_path.stat().st_size,
                 "sha256": _sha256(artifact_path),
                 "http_status": 200,
@@ -284,7 +307,9 @@ def expanded_outputs(tmp_path: Path) -> dict[str, object]:
     _write_json(selection_path, selection)
     _write_jsonl(acquisition_path, acquisition_events)
 
-    metadata_events, summary = builder.build_metadata_outputs(selection_path, acquisition_path, out_dir, repo_root=tmp_path)
+    metadata_events, summary = builder.build_metadata_outputs(
+        selection_path, acquisition_path, out_dir, repo_root=tmp_path
+    )
 
     return {
         "selection": selection,
@@ -318,20 +343,36 @@ def test_build_outputs_preserve_refs_identities_and_metadata_only_payloads(tmp_p
     _write_json(selection_path, _selection())
     _write_jsonl(acquisition_path, _acquisition_rows(paths, tmp_path))
 
-    events, summary = script.build_metadata_outputs(selection_path, acquisition_path, out_dir, repo_root=tmp_path)
+    events, summary = script.build_metadata_outputs(
+        selection_path, acquisition_path, out_dir, repo_root=tmp_path
+    )
 
     assert summary["url_ref_count"] == 3
     assert summary["normalized_identity_count"] == 2
     assert summary["duplicate_identity_group_count"] == 1
-    assert summary["source_kind_counts"] == {"arxiv_abs_url": 1, "arxiv_pdf_url": 1, "company_blog_url": 1}
+    assert summary["source_kind_counts"] == {
+        "arxiv_abs_url": 1,
+        "arxiv_pdf_url": 1,
+        "company_blog_url": 1,
+    }
     assert all(flag is False for flag in summary["safety_flags"].values())
     assert [event["ref_id"] for event in events] == ["R01", "R02", "R03"]
     assert events[0]["url_variant"] == "pdf_url"
     assert events[1]["identity_group"]["ref_ids"] == ["R01", "R02"]
     assert events[1]["optional_metadata"]["title"]["value"] == "Metadata Adapter Paper"
     assert events[2]["source_family"] == "company_blog"
-    serialized = (out_dir / "source-metadata-summary.json").read_text() + (out_dir / "source-metadata-events.jsonl").read_text()
-    for forbidden in ["<html", "</html>", "%PDF-", "raw_text", "chunk_text", "trusted_fact", "body must not be serialized"]:
+    serialized = (out_dir / "source-metadata-summary.json").read_text() + (
+        out_dir / "source-metadata-events.jsonl"
+    ).read_text()
+    for forbidden in [
+        "<html",
+        "</html>",
+        "%PDF-",
+        "raw_text",
+        "chunk_text",
+        "trusted_fact",
+        "body must not be serialized",
+    ]:
         assert forbidden.lower() not in serialized.lower()
 
 
@@ -343,7 +384,9 @@ def test_missing_acquisition_event_is_blocked_not_silent(tmp_path: Path) -> None
     _write_json(selection_path, _selection())
     _write_jsonl(acquisition_path, _acquisition_rows(paths, tmp_path)[:2])
 
-    events, summary = script.build_metadata_outputs(selection_path, acquisition_path, tmp_path / "out", repo_root=tmp_path)
+    events, summary = script.build_metadata_outputs(
+        selection_path, acquisition_path, tmp_path / "out", repo_root=tmp_path
+    )
 
     blocked = events[-1]
     assert blocked["ref_id"] == "R03"
@@ -362,7 +405,9 @@ def test_checksum_mismatch_records_diagnostic(tmp_path: Path) -> None:
     _write_json(selection_path, _selection())
     _write_jsonl(acquisition_path, rows)
 
-    events, summary = script.build_metadata_outputs(selection_path, acquisition_path, tmp_path / "out", repo_root=tmp_path)
+    events, summary = script.build_metadata_outputs(
+        selection_path, acquisition_path, tmp_path / "out", repo_root=tmp_path
+    )
 
     arxiv_abs = events[1]
     assert arxiv_abs["metadata_status"] == "metadata_available_with_diagnostics"
@@ -378,7 +423,9 @@ def test_rejects_malformed_selection(tmp_path: Path) -> None:
     _write_jsonl(acquisition_path, [])
 
     with pytest.raises(script.AdapterInputError, match="selection_ref_required_fields"):
-        script.build_metadata_outputs(selection_path, acquisition_path, tmp_path / "out", repo_root=tmp_path)
+        script.build_metadata_outputs(
+            selection_path, acquisition_path, tmp_path / "out", repo_root=tmp_path
+        )
 
 
 def test_verifier_accepts_expanded_fixture_outputs(expanded_outputs: dict[str, object]) -> None:
@@ -399,12 +446,20 @@ def test_verifier_accepts_real_expanded_artifacts() -> None:
     assert diagnostics == []
 
 
-def test_verifier_rejects_stale_fourteen_ref_assumptions(expanded_outputs: dict[str, object]) -> None:
+def test_verifier_rejects_stale_fourteen_ref_assumptions(
+    expanded_outputs: dict[str, object],
+) -> None:
     outputs = deepcopy(expanded_outputs)
     keep_ref_ids = {f"R{index:02d}" for index in range(1, 15)}
-    outputs["selection"]["refs"] = [ref for ref in outputs["selection"]["refs"] if ref["ref_id"] in keep_ref_ids]
-    outputs["acquisition_events"] = [row for row in outputs["acquisition_events"] if row["ref_id"] in keep_ref_ids]
-    outputs["metadata_events"] = [event for event in outputs["metadata_events"] if event["ref_id"] in keep_ref_ids]
+    outputs["selection"]["refs"] = [
+        ref for ref in outputs["selection"]["refs"] if ref["ref_id"] in keep_ref_ids
+    ]
+    outputs["acquisition_events"] = [
+        row for row in outputs["acquisition_events"] if row["ref_id"] in keep_ref_ids
+    ]
+    outputs["metadata_events"] = [
+        event for event in outputs["metadata_events"] if event["ref_id"] in keep_ref_ids
+    ]
     outputs["summary"]["url_ref_count"] = 14
     outputs["summary"]["ref_count"] = 14
     outputs["summary"]["ref_ids"] = [event["ref_id"] for event in outputs["metadata_events"]]
@@ -417,9 +472,15 @@ def test_verifier_rejects_stale_fourteen_ref_assumptions(expanded_outputs: dict[
 
 def test_verifier_rejects_missing_new_refs(expanded_outputs: dict[str, object]) -> None:
     outputs = deepcopy(expanded_outputs)
-    outputs["selection"]["refs"] = [ref for ref in outputs["selection"]["refs"] if ref["ref_id"] != "R21"]
-    outputs["metadata_events"] = [event for event in outputs["metadata_events"] if event["ref_id"] != "R21"]
-    outputs["acquisition_events"] = [row for row in outputs["acquisition_events"] if row["ref_id"] != "R21"]
+    outputs["selection"]["refs"] = [
+        ref for ref in outputs["selection"]["refs"] if ref["ref_id"] != "R21"
+    ]
+    outputs["metadata_events"] = [
+        event for event in outputs["metadata_events"] if event["ref_id"] != "R21"
+    ]
+    outputs["acquisition_events"] = [
+        row for row in outputs["acquisition_events"] if row["ref_id"] != "R21"
+    ]
     outputs["summary"]["ref_ids"] = [event["ref_id"] for event in outputs["metadata_events"]]
 
     codes = _diagnostic_codes(outputs)
@@ -447,7 +508,9 @@ def test_verifier_rejects_source_kind_drift(expanded_outputs: dict[str, object])
     assert "selection_metadata_mismatch" in codes
 
 
-def test_verifier_rejects_broken_acquisition_references(expanded_outputs: dict[str, object]) -> None:
+def test_verifier_rejects_broken_acquisition_references(
+    expanded_outputs: dict[str, object],
+) -> None:
     outputs = deepcopy(expanded_outputs)
     outputs["metadata_events"][0]["artifact"]["path"] = "sources/missing.pdf"
 
@@ -461,7 +524,9 @@ def test_verifier_rejects_raw_payload_leakage(expanded_outputs: dict[str, object
     assert "raw_payload_leakage" in _diagnostic_codes(outputs)
 
 
-def test_verifier_requires_nullable_optional_gap_diagnostics(expanded_outputs: dict[str, object]) -> None:
+def test_verifier_requires_nullable_optional_gap_diagnostics(
+    expanded_outputs: dict[str, object],
+) -> None:
     outputs = deepcopy(expanded_outputs)
     first_event = outputs["metadata_events"][0]
     first_event["optional_metadata"].pop("doi")

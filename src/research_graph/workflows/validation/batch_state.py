@@ -149,7 +149,9 @@ def selected_paper_from_dict(payload: dict[str, Any]) -> SelectedPaper:
         selection_role=str(payload["selection_role"]),
         rank=payload.get("rank"),
         risk_tags=tuple(str(value) for value in payload.get("risk_tags", ())),
-        source_paths={str(key): str(value) for key, value in payload.get("source_paths", {}).items()},
+        source_paths={
+            str(key): str(value) for key, value in payload.get("source_paths", {}).items()
+        },
         notes=tuple(str(value) for value in payload.get("notes", ())),
     )
 
@@ -209,7 +211,8 @@ def batch_state_to_dict(state: ValidationBatchState) -> dict[str, Any]:
         "input_manifests": list(state.input_manifests),
         "artifact_paths": asdict(state.artifact_paths),
         "source_readiness_by_paper": {
-            paper_id: asdict(readiness) for paper_id, readiness in sorted(state.source_readiness_by_paper.items())
+            paper_id: asdict(readiness)
+            for paper_id, readiness in sorted(state.source_readiness_by_paper.items())
         },
         "review": asdict(state.review),
         "recommendation": asdict(state.recommendation),
@@ -227,7 +230,9 @@ def batch_state_from_dict(payload: dict[str, Any]) -> ValidationBatchState:
         schema_version=schema_version,
         batch_id=str(payload["batch_id"]),
         phase=str(payload.get("phase", "planned")),
-        selected_papers=tuple(selected_paper_from_dict(value) for value in payload.get("selected_papers", ())),
+        selected_papers=tuple(
+            selected_paper_from_dict(value) for value in payload.get("selected_papers", ())
+        ),
         input_manifests=tuple(str(value) for value in payload.get("input_manifests", ())),
         artifact_paths=scan_artifact_paths_from_dict(payload.get("artifact_paths", {})),
         source_readiness_by_paper={
@@ -244,7 +249,9 @@ def batch_state_from_dict(payload: dict[str, Any]) -> ValidationBatchState:
 def write_batch_state(state: ValidationBatchState, path: str | Path) -> Path:
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(batch_state_to_dict(state), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    output_path.write_text(
+        json.dumps(batch_state_to_dict(state), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     return output_path
 
 
@@ -271,7 +278,9 @@ def validate_safety_flags(flags: ValidationSafetyFlags | dict[str, bool]) -> lis
     return diagnostics
 
 
-def detect_source_contradictions(paper: SelectedPaper, readiness: SourceReadiness) -> list[dict[str, str]]:
+def detect_source_contradictions(
+    paper: SelectedPaper, readiness: SourceReadiness
+) -> list[dict[str, str]]:
     diagnostics: list[dict[str, str]] = []
     risk_tags = set(paper.risk_tags)
     if readiness.ready_for_markdown_scan and not readiness.markdown_present:

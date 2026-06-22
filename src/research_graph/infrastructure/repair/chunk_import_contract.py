@@ -24,10 +24,16 @@ TRUSTED_IMPORT_USE = "trusted_kg_import"
 FORBIDDEN_RAW_FIELDS = frozenset({"text", "raw_text", "chunk_text", "paper_text", "claim_text"})
 FORBIDDEN_EMBEDDING_FIELDS = frozenset({"embedding", "embeddings"})
 FORBIDDEN_VECTOR_FIELDS = frozenset({"vector", "vectors"})
-FORBIDDEN_SECRET_FIELDS = frozenset({"secret", "secrets", "token", "tokens", "api_key", "credentials"})
+FORBIDDEN_SECRET_FIELDS = frozenset(
+    {"secret", "secrets", "token", "tokens", "api_key", "credentials"}
+)
 FORBIDDEN_OPTIMIZER_FIELDS = frozenset({"optimizer_trace", "optimizer_traces"})
-CLAIM_ROUTE_FORBIDDEN_CHUNK_TYPES = frozenset({"reference_entry", "metadata", "administrative", "noise", "unknown"})
-VALID_STATES = frozenset({GRAPH_READY_STATE, RETRIEVAL_ONLY_STATE, REPAIR_REQUIRED_STATE, REJECT_STATE})
+CLAIM_ROUTE_FORBIDDEN_CHUNK_TYPES = frozenset(
+    {"reference_entry", "metadata", "administrative", "noise", "unknown"}
+)
+VALID_STATES = frozenset(
+    {GRAPH_READY_STATE, RETRIEVAL_ONLY_STATE, REPAIR_REQUIRED_STATE, REJECT_STATE}
+)
 VALID_ROUTES = frozenset(
     {
         "claim_extraction",
@@ -48,7 +54,9 @@ ROUTE_COMPATIBLE_CHUNK_TYPES = {
     "entity_candidate_extraction": frozenset(
         {"claim_candidate", "method_candidate", "result_candidate", "definition_candidate"}
     ),
-    "relation_extraction": frozenset({"claim_candidate", "result_candidate", "table_context", "table_row_group"}),
+    "relation_extraction": frozenset(
+        {"claim_candidate", "result_candidate", "table_context", "table_row_group"}
+    ),
     "table_extraction": frozenset({"table_context", "table_row_group"}),
     "citation_graph": frozenset({"citation_context", "reference_entry"}),
     "metadata_graph": frozenset({"metadata", "administrative"}),
@@ -120,7 +128,11 @@ def validate_import_ready_package(package: dict[str, Any]) -> ContractValidation
     """Validate one package against M005/S01 import-ready chunk invariants."""
     diagnostics: list[ContractDiagnostic] = []
     diagnostics.extend(_validate_package_header(package))
-    diagnostics.extend(_validate_redaction(package, object_id=_string_or_none(package.get("paper_id")), object_type="package"))
+    diagnostics.extend(
+        _validate_redaction(
+            package, object_id=_string_or_none(package.get("paper_id")), object_type="package"
+        )
+    )
 
     paper_id = _string_or_none(package.get("paper_id"))
     elements = _list_of_dicts(package.get("elements"))
@@ -129,7 +141,9 @@ def validate_import_ready_package(package: dict[str, Any]) -> ContractValidation
     evidence_paths = _list_of_dicts(package.get("evidence_paths"))
 
     diagnostics.extend(_validate_paper_identity(package.get("paper"), package_paper_id=paper_id))
-    diagnostics.extend(_validate_conversion_record(package.get("conversion"), package_paper_id=paper_id))
+    diagnostics.extend(
+        _validate_conversion_record(package.get("conversion"), package_paper_id=paper_id)
+    )
     diagnostics.extend(_validate_elements(elements=elements, package_paper_id=paper_id))
 
     element_ids = {_string_or_none(element.get("element_id")) for element in elements}
@@ -161,7 +175,11 @@ def validate_import_ready_package(package: dict[str, Any]) -> ContractValidation
             refused += 1
 
     for annotation in annotations:
-        diagnostics.extend(_validate_annotation(annotation=annotation, chunk_ids=chunk_ids, package_paper_id=paper_id))
+        diagnostics.extend(
+            _validate_annotation(
+                annotation=annotation, chunk_ids=chunk_ids, package_paper_id=paper_id
+            )
+        )
 
     for evidence_path in evidence_paths:
         diagnostics.extend(
@@ -212,65 +230,138 @@ def validation_to_dict(result: ContractValidationResult) -> dict[str, Any]:
 def _validate_package_header(package: dict[str, Any]) -> list[ContractDiagnostic]:
     diagnostics: list[ContractDiagnostic] = []
     if package.get("schema_version") != EXPECTED_SCHEMA_VERSION:
-        diagnostics.append(ContractDiagnostic(reason="schema_version_mismatch", object_type="package"))
+        diagnostics.append(
+            ContractDiagnostic(reason="schema_version_mismatch", object_type="package")
+        )
     if package.get("contract_version") != EXPECTED_CONTRACT_VERSION:
-        diagnostics.append(ContractDiagnostic(reason="contract_version_mismatch", object_type="package"))
+        diagnostics.append(
+            ContractDiagnostic(reason="contract_version_mismatch", object_type="package")
+        )
     if not package.get("paper_id"):
         diagnostics.append(ContractDiagnostic(reason="missing_paper_id", object_type="package"))
-    for field in ("paper", "conversion", "elements", "chunks", "annotations", "evidence_paths", "diagnostics"):
+    for field in (
+        "paper",
+        "conversion",
+        "elements",
+        "chunks",
+        "annotations",
+        "evidence_paths",
+        "diagnostics",
+    ):
         if field not in package:
             diagnostics.append(ContractDiagnostic(reason=f"missing_{field}", object_type="package"))
     return diagnostics
 
 
-def _validate_paper_identity(value: Any, *, package_paper_id: str | None) -> list[ContractDiagnostic]:
+def _validate_paper_identity(
+    value: Any, *, package_paper_id: str | None
+) -> list[ContractDiagnostic]:
     if not isinstance(value, dict):
         return [ContractDiagnostic(reason="missing_paper", object_type="paper")]
-    diagnostics = _required_fields(value, fields=("paper_id", "source_artifacts"), object_id=package_paper_id, object_type="paper")
+    diagnostics = _required_fields(
+        value,
+        fields=("paper_id", "source_artifacts"),
+        object_id=package_paper_id,
+        object_type="paper",
+    )
     diagnostics.extend(_validate_redaction(value, object_id=package_paper_id, object_type="paper"))
     if _string_or_none(value.get("paper_id")) != package_paper_id:
-        diagnostics.append(ContractDiagnostic(reason="paper_id_mismatch", object_id=package_paper_id, object_type="paper"))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="paper_id_mismatch", object_id=package_paper_id, object_type="paper"
+            )
+        )
     if not isinstance(value.get("source_artifacts"), list):
-        diagnostics.append(ContractDiagnostic(reason="missing_source_artifacts", object_id=package_paper_id, object_type="paper"))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="missing_source_artifacts", object_id=package_paper_id, object_type="paper"
+            )
+        )
     return diagnostics
 
 
-def _validate_conversion_record(value: Any, *, package_paper_id: str | None) -> list[ContractDiagnostic]:
+def _validate_conversion_record(
+    value: Any, *, package_paper_id: str | None
+) -> list[ContractDiagnostic]:
     if not isinstance(value, dict):
-        return [ContractDiagnostic(reason="missing_conversion", object_id=package_paper_id, object_type="conversion")]
+        return [
+            ContractDiagnostic(
+                reason="missing_conversion", object_id=package_paper_id, object_type="conversion"
+            )
+        ]
     diagnostics = _required_fields(
         value,
         fields=("conversion_id", "converter", "source_artifact", "quality_state", "warnings"),
         object_id=_string_or_none(value.get("conversion_id")),
         object_type="conversion",
     )
-    diagnostics.extend(_validate_redaction(value, object_id=_string_or_none(value.get("conversion_id")), object_type="conversion"))
+    diagnostics.extend(
+        _validate_redaction(
+            value, object_id=_string_or_none(value.get("conversion_id")), object_type="conversion"
+        )
+    )
     if value.get("raw_text_included") is not False:
-        diagnostics.append(ContractDiagnostic(reason="raw_text_leakage", object_id=package_paper_id, object_type="conversion"))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="raw_text_leakage", object_id=package_paper_id, object_type="conversion"
+            )
+        )
     if value.get("embeddings_included") is not False:
-        diagnostics.append(ContractDiagnostic(reason="embedding_leakage", object_id=package_paper_id, object_type="conversion"))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="embedding_leakage", object_id=package_paper_id, object_type="conversion"
+            )
+        )
     if value.get("quality_state") not in VALID_STATES:
-        diagnostics.append(ContractDiagnostic(reason="invalid_state_for_import", object_id=package_paper_id, object_type="conversion"))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="invalid_state_for_import",
+                object_id=package_paper_id,
+                object_type="conversion",
+            )
+        )
     return diagnostics
 
 
-def _validate_elements(*, elements: list[dict[str, Any]], package_paper_id: str | None) -> list[ContractDiagnostic]:
+def _validate_elements(
+    *, elements: list[dict[str, Any]], package_paper_id: str | None
+) -> list[ContractDiagnostic]:
     diagnostics: list[ContractDiagnostic] = []
     for element in elements:
         element_id = _string_or_none(element.get("element_id"))
         diagnostics.extend(
             _required_fields(
                 element,
-                fields=("element_id", "paper_id", "element_type", "section_path", "order_index", "quality_state", "warnings"),
+                fields=(
+                    "element_id",
+                    "paper_id",
+                    "element_type",
+                    "section_path",
+                    "order_index",
+                    "quality_state",
+                    "warnings",
+                ),
                 object_id=element_id,
                 object_type="element",
             )
         )
-        diagnostics.extend(_validate_redaction(element, object_id=element_id, object_type="element"))
+        diagnostics.extend(
+            _validate_redaction(element, object_id=element_id, object_type="element")
+        )
         if _string_or_none(element.get("paper_id")) != package_paper_id:
-            diagnostics.append(ContractDiagnostic(reason="missing_paper_id", object_id=element_id, object_type="element"))
-        if element.get("quality_state") == GRAPH_READY_STATE and not _valid_source_span(element.get("source_span")):
-            diagnostics.append(ContractDiagnostic(reason="missing_source_span", object_id=element_id, object_type="element"))
+            diagnostics.append(
+                ContractDiagnostic(
+                    reason="missing_paper_id", object_id=element_id, object_type="element"
+                )
+            )
+        if element.get("quality_state") == GRAPH_READY_STATE and not _valid_source_span(
+            element.get("source_span")
+        ):
+            diagnostics.append(
+                ContractDiagnostic(
+                    reason="missing_source_span", object_id=element_id, object_type="element"
+                )
+            )
     return diagnostics
 
 
@@ -312,23 +403,54 @@ def _validate_chunk(
         )
     )
     if chunk_id is None:
-        diagnostics.append(ContractDiagnostic(reason="missing_chunk_id", object_type="chunk", route=route))
+        diagnostics.append(
+            ContractDiagnostic(reason="missing_chunk_id", object_type="chunk", route=route)
+        )
     if _string_or_none(chunk.get("paper_id")) != package_paper_id:
-        diagnostics.append(ContractDiagnostic(reason="missing_paper_id", object_id=chunk_id, object_type="chunk", route=route))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="missing_paper_id", object_id=chunk_id, object_type="chunk", route=route
+            )
+        )
     if chunk_type is None:
-        diagnostics.append(ContractDiagnostic(reason="missing_chunk_type", object_id=chunk_id, object_type="chunk", route=route))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="missing_chunk_type", object_id=chunk_id, object_type="chunk", route=route
+            )
+        )
     if route is None:
-        diagnostics.append(ContractDiagnostic(reason="missing_route", object_id=chunk_id, object_type="chunk"))
+        diagnostics.append(
+            ContractDiagnostic(reason="missing_route", object_id=chunk_id, object_type="chunk")
+        )
     if state not in VALID_STATES:
-        diagnostics.append(ContractDiagnostic(reason="invalid_state_for_import", object_id=chunk_id, object_type="chunk", route=route))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="invalid_state_for_import",
+                object_id=chunk_id,
+                object_type="chunk",
+                route=route,
+            )
+        )
     parent_ids = chunk.get("parent_element_ids")
     if not isinstance(parent_ids, list) or not parent_ids:
-        diagnostics.append(ContractDiagnostic(reason="missing_parent_element", object_id=chunk_id, object_type="chunk", route=route))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="missing_parent_element",
+                object_id=chunk_id,
+                object_type="chunk",
+                route=route,
+            )
+        )
     else:
         for parent_id in parent_ids:
             if str(parent_id) not in element_ids:
                 diagnostics.append(
-                    ContractDiagnostic(reason="unresolved_parent_element", object_id=chunk_id, object_type="chunk", route=route)
+                    ContractDiagnostic(
+                        reason="unresolved_parent_element",
+                        object_id=chunk_id,
+                        object_type="chunk",
+                        route=route,
+                    )
                 )
     if state == GRAPH_READY_STATE:
         diagnostics.extend(
@@ -341,15 +463,46 @@ def _validate_chunk(
                 evidence_paths_by_id=evidence_paths_by_id,
             )
         )
-    elif state == RETRIEVAL_ONLY_STATE and TRUSTED_IMPORT_USE in _string_list(chunk.get("allowed_uses")):
-        diagnostics.append(ContractDiagnostic(reason="retrieval_only_not_importable", object_id=chunk_id, object_type="chunk", route=route))
-    elif state == REPAIR_REQUIRED_STATE and TRUSTED_IMPORT_USE in _string_list(chunk.get("allowed_uses")):
-        diagnostics.append(ContractDiagnostic(reason="repair_required_not_importable", object_id=chunk_id, object_type="chunk", route=route))
+    elif state == RETRIEVAL_ONLY_STATE and TRUSTED_IMPORT_USE in _string_list(
+        chunk.get("allowed_uses")
+    ):
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="retrieval_only_not_importable",
+                object_id=chunk_id,
+                object_type="chunk",
+                route=route,
+            )
+        )
+    elif state == REPAIR_REQUIRED_STATE and TRUSTED_IMPORT_USE in _string_list(
+        chunk.get("allowed_uses")
+    ):
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="repair_required_not_importable",
+                object_id=chunk_id,
+                object_type="chunk",
+                route=route,
+            )
+        )
     elif state == REJECT_STATE and TRUSTED_IMPORT_USE in _string_list(chunk.get("allowed_uses")):
-        diagnostics.append(ContractDiagnostic(reason="rejected_not_importable", object_id=chunk_id, object_type="chunk", route=route))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="rejected_not_importable",
+                object_id=chunk_id,
+                object_type="chunk",
+                route=route,
+            )
+        )
     if route == "claim_extraction" and chunk_type in CLAIM_ROUTE_FORBIDDEN_CHUNK_TYPES:
-        reason = "reference_pollutes_claim_route" if chunk_type == "reference_entry" else "metadata_pollutes_claim_route"
-        diagnostics.append(ContractDiagnostic(reason=reason, object_id=chunk_id, object_type="chunk", route=route))
+        reason = (
+            "reference_pollutes_claim_route"
+            if chunk_type == "reference_entry"
+            else "metadata_pollutes_claim_route"
+        )
+        diagnostics.append(
+            ContractDiagnostic(reason=reason, object_id=chunk_id, object_type="chunk", route=route)
+        )
     return diagnostics
 
 
@@ -365,33 +518,90 @@ def _validate_graph_ready_chunk(
     diagnostics: list[ContractDiagnostic] = []
     source_span = chunk.get("source_span")
     if not _valid_source_span(source_span):
-        diagnostics.append(ContractDiagnostic(reason="missing_source_span", object_id=chunk_id, object_type="chunk", route=route))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="missing_source_span", object_id=chunk_id, object_type="chunk", route=route
+            )
+        )
     evidence_path_id = _string_or_none(chunk.get("evidence_path_id"))
     if evidence_path_id is None:
-        diagnostics.append(ContractDiagnostic(reason="missing_evidence_path", object_id=chunk_id, object_type="chunk", route=route))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="missing_evidence_path", object_id=chunk_id, object_type="chunk", route=route
+            )
+        )
     elif evidence_path_id not in evidence_path_ids:
-        diagnostics.append(ContractDiagnostic(reason="unresolved_evidence_path", object_id=chunk_id, object_type="chunk", route=route))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="unresolved_evidence_path",
+                object_id=chunk_id,
+                object_type="chunk",
+                route=route,
+            )
+        )
     elif not _evidence_span_contains_chunk_span(
         evidence_paths_by_id[evidence_path_id].get("source_span"),
         source_span,
     ):
-        diagnostics.append(ContractDiagnostic(reason="invalid_source_span", object_id=chunk_id, object_type="chunk", route=route))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="invalid_source_span", object_id=chunk_id, object_type="chunk", route=route
+            )
+        )
     allowed_uses = _string_list(chunk.get("allowed_uses"))
     excluded_uses = _string_list(chunk.get("excluded_uses"))
     if TRUSTED_IMPORT_USE not in allowed_uses or TRUSTED_IMPORT_USE in excluded_uses:
-        diagnostics.append(ContractDiagnostic(reason="route_excluded_from_import", object_id=chunk_id, object_type="chunk", route=route))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="route_excluded_from_import",
+                object_id=chunk_id,
+                object_type="chunk",
+                route=route,
+            )
+        )
     if route in NON_IMPORT_ROUTES:
-        reason = "retrieval_only_not_importable" if route == "retrieval_only" else "route_excluded_from_import"
-        diagnostics.append(ContractDiagnostic(reason=reason, object_id=chunk_id, object_type="chunk", route=route))
+        reason = (
+            "retrieval_only_not_importable"
+            if route == "retrieval_only"
+            else "route_excluded_from_import"
+        )
+        diagnostics.append(
+            ContractDiagnostic(reason=reason, object_id=chunk_id, object_type="chunk", route=route)
+        )
     if route not in VALID_ROUTES:
-        diagnostics.append(ContractDiagnostic(reason="invalid_route", object_id=chunk_id, object_type="chunk", route=route))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="invalid_route", object_id=chunk_id, object_type="chunk", route=route
+            )
+        )
     elif chunk_type not in ROUTE_COMPATIBLE_CHUNK_TYPES.get(route, frozenset()):
-        diagnostics.append(ContractDiagnostic(reason="route_chunk_type_mismatch", object_id=chunk_id, object_type="chunk", route=route))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="route_chunk_type_mismatch",
+                object_id=chunk_id,
+                object_type="chunk",
+                route=route,
+            )
+        )
     warnings = _list_of_dicts(chunk.get("quality_warnings"))
     for warning in warnings:
-        diagnostics.extend(_validate_quality_warning(warning, fallback_object_id=chunk_id, object_type="warning", route=route))
-        if warning.get("blocks_import") is True or warning.get("severity") in {"repair_required", "blocker"}:
-            diagnostics.append(ContractDiagnostic(reason="warning_blocks_import", object_id=chunk_id, object_type="chunk", route=route))
+        diagnostics.extend(
+            _validate_quality_warning(
+                warning, fallback_object_id=chunk_id, object_type="warning", route=route
+            )
+        )
+        if warning.get("blocks_import") is True or warning.get("severity") in {
+            "repair_required",
+            "blocker",
+        }:
+            diagnostics.append(
+                ContractDiagnostic(
+                    reason="warning_blocks_import",
+                    object_id=chunk_id,
+                    object_type="chunk",
+                    route=route,
+                )
+            )
             break
     return diagnostics
 
@@ -405,21 +615,49 @@ def _validate_annotation(
     diagnostics: list[ContractDiagnostic] = []
     annotation_id = _string_or_none(annotation.get("annotation_id"))
     chunk_id = _string_or_none(annotation.get("chunk_id"))
-    diagnostics.extend(_validate_redaction(annotation, object_id=annotation_id, object_type="annotation"))
+    diagnostics.extend(
+        _validate_redaction(annotation, object_id=annotation_id, object_type="annotation")
+    )
     diagnostics.extend(
         _required_fields(
             annotation,
-            fields=("annotation_id", "paper_id", "chunk_id", "method", "annotation_type", "values", "confidence_class", "promoted_to_fact", "warnings"),
+            fields=(
+                "annotation_id",
+                "paper_id",
+                "chunk_id",
+                "method",
+                "annotation_type",
+                "values",
+                "confidence_class",
+                "promoted_to_fact",
+                "warnings",
+            ),
             object_id=annotation_id,
             object_type="annotation",
         )
     )
     if _string_or_none(annotation.get("paper_id")) != package_paper_id:
-        diagnostics.append(ContractDiagnostic(reason="missing_paper_id", object_id=annotation_id, object_type="annotation"))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="missing_paper_id", object_id=annotation_id, object_type="annotation"
+            )
+        )
     if chunk_id not in chunk_ids:
-        diagnostics.append(ContractDiagnostic(reason="unresolved_annotation_chunk", object_id=annotation_id, object_type="annotation"))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="unresolved_annotation_chunk",
+                object_id=annotation_id,
+                object_type="annotation",
+            )
+        )
     if annotation.get("promoted_to_fact") is True:
-        diagnostics.append(ContractDiagnostic(reason="annotation_promoted_to_fact", object_id=annotation_id, object_type="annotation"))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="annotation_promoted_to_fact",
+                object_id=annotation_id,
+                object_type="annotation",
+            )
+        )
     return diagnostics
 
 
@@ -433,24 +671,56 @@ def _validate_evidence_path(
     diagnostics: list[ContractDiagnostic] = []
     evidence_path_id = _string_or_none(evidence_path.get("evidence_path_id"))
     chunk_id = _string_or_none(evidence_path.get("chunk_id"))
-    diagnostics.extend(_validate_redaction(evidence_path, object_id=evidence_path_id, object_type="evidence_path"))
+    diagnostics.extend(
+        _validate_redaction(evidence_path, object_id=evidence_path_id, object_type="evidence_path")
+    )
     diagnostics.extend(
         _required_fields(
             evidence_path,
-            fields=("evidence_path_id", "paper_id", "chunk_id", "source_element_ids", "source_artifact", "source_span", "provenance_chain"),
+            fields=(
+                "evidence_path_id",
+                "paper_id",
+                "chunk_id",
+                "source_element_ids",
+                "source_artifact",
+                "source_span",
+                "provenance_chain",
+            ),
             object_id=evidence_path_id,
             object_type="evidence_path",
         )
     )
     if _string_or_none(evidence_path.get("paper_id")) != package_paper_id:
-        diagnostics.append(ContractDiagnostic(reason="missing_paper_id", object_id=evidence_path_id, object_type="evidence_path"))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="missing_paper_id", object_id=evidence_path_id, object_type="evidence_path"
+            )
+        )
     if chunk_id not in chunk_ids:
-        diagnostics.append(ContractDiagnostic(reason="unresolved_evidence_path", object_id=evidence_path_id, object_type="evidence_path"))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="unresolved_evidence_path",
+                object_id=evidence_path_id,
+                object_type="evidence_path",
+            )
+        )
     for element_id in _string_list(evidence_path.get("source_element_ids")):
         if element_id not in element_ids:
-            diagnostics.append(ContractDiagnostic(reason="unresolved_parent_element", object_id=evidence_path_id, object_type="evidence_path"))
+            diagnostics.append(
+                ContractDiagnostic(
+                    reason="unresolved_parent_element",
+                    object_id=evidence_path_id,
+                    object_type="evidence_path",
+                )
+            )
     if not _valid_source_span(evidence_path.get("source_span")):
-        diagnostics.append(ContractDiagnostic(reason="missing_source_span", object_id=evidence_path_id, object_type="evidence_path"))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="missing_source_span",
+                object_id=evidence_path_id,
+                object_type="evidence_path",
+            )
+        )
     return diagnostics
 
 
@@ -488,15 +758,29 @@ def _validate_package_diagnostics(
     if value.get("raw_text_included") is not False:
         diagnostics.append(ContractDiagnostic(reason="raw_text_leakage", object_type="diagnostics"))
     if value.get("embeddings_included") is not False:
-        diagnostics.append(ContractDiagnostic(reason="embedding_leakage", object_type="diagnostics"))
+        diagnostics.append(
+            ContractDiagnostic(reason="embedding_leakage", object_type="diagnostics")
+        )
     if value.get("ladybugdb_written") is not False:
-        diagnostics.append(ContractDiagnostic(reason="production_write_attempted", object_type="diagnostics"))
+        diagnostics.append(
+            ContractDiagnostic(reason="production_write_attempted", object_type="diagnostics")
+        )
     if value.get("production_import_attempted") is not False:
-        diagnostics.append(ContractDiagnostic(reason="production_import_attempted", object_type="diagnostics"))
+        diagnostics.append(
+            ContractDiagnostic(reason="production_import_attempted", object_type="diagnostics")
+        )
     if value.get("import_eligible_chunk_count") != computed_import_eligible:
-        diagnostics.append(ContractDiagnostic(reason="diagnostics_import_count_mismatch", object_type="diagnostics"))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="diagnostics_import_count_mismatch", object_type="diagnostics"
+            )
+        )
     if value.get("refused_chunk_count") != computed_refused:
-        diagnostics.append(ContractDiagnostic(reason="diagnostics_refusal_count_mismatch", object_type="diagnostics"))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="diagnostics_refusal_count_mismatch", object_type="diagnostics"
+            )
+        )
     return diagnostics
 
 
@@ -514,33 +798,84 @@ def _validate_quality_warning(
         object_type=object_type,
         route=route,
     )
-    diagnostics.extend(_validate_redaction(warning, object_id=_string_or_none(warning.get("object_id")) or fallback_object_id, object_type=object_type))
+    diagnostics.extend(
+        _validate_redaction(
+            warning,
+            object_id=_string_or_none(warning.get("object_id")) or fallback_object_id,
+            object_type=object_type,
+        )
+    )
     return diagnostics
 
 
-def _validate_redaction(payload: dict[str, Any], *, object_id: str | None, object_type: str) -> list[ContractDiagnostic]:
+def _validate_redaction(
+    payload: dict[str, Any], *, object_id: str | None, object_type: str
+) -> list[ContractDiagnostic]:
     diagnostics: list[ContractDiagnostic] = []
     for field in sorted(FORBIDDEN_RAW_FIELDS & set(payload)):
-        diagnostics.append(ContractDiagnostic(reason="raw_text_leakage", object_id=object_id or field, object_type=object_type))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="raw_text_leakage", object_id=object_id or field, object_type=object_type
+            )
+        )
     for field in sorted(FORBIDDEN_EMBEDDING_FIELDS & set(payload)):
-        diagnostics.append(ContractDiagnostic(reason="embedding_leakage", object_id=object_id or field, object_type=object_type))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="embedding_leakage", object_id=object_id or field, object_type=object_type
+            )
+        )
     for field in sorted(FORBIDDEN_VECTOR_FIELDS & set(payload)):
-        diagnostics.append(ContractDiagnostic(reason="vector_leakage", object_id=object_id or field, object_type=object_type))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="vector_leakage", object_id=object_id or field, object_type=object_type
+            )
+        )
     for field in sorted(FORBIDDEN_SECRET_FIELDS & set(payload)):
-        diagnostics.append(ContractDiagnostic(reason="secret_leakage", object_id=object_id or field, object_type=object_type))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="secret_leakage", object_id=object_id or field, object_type=object_type
+            )
+        )
     for field in sorted(FORBIDDEN_OPTIMIZER_FIELDS & set(payload)):
-        diagnostics.append(ContractDiagnostic(reason="optimizer_trace_leakage", object_id=object_id or field, object_type=object_type))
+        diagnostics.append(
+            ContractDiagnostic(
+                reason="optimizer_trace_leakage",
+                object_id=object_id or field,
+                object_type=object_type,
+            )
+        )
     redaction = payload.get("redaction")
     if isinstance(redaction, dict):
-        if redaction.get("raw_text_included") is True or redaction.get("chunk_text_included") is True:
-            diagnostics.append(ContractDiagnostic(reason="raw_text_leakage", object_id=object_id, object_type=object_type))
+        if (
+            redaction.get("raw_text_included") is True
+            or redaction.get("chunk_text_included") is True
+        ):
+            diagnostics.append(
+                ContractDiagnostic(
+                    reason="raw_text_leakage", object_id=object_id, object_type=object_type
+                )
+            )
         if redaction.get("embeddings_included") is True:
-            diagnostics.append(ContractDiagnostic(reason="embedding_leakage", object_id=object_id, object_type=object_type))
+            diagnostics.append(
+                ContractDiagnostic(
+                    reason="embedding_leakage", object_id=object_id, object_type=object_type
+                )
+            )
         if redaction.get("vectors_included") is True:
-            diagnostics.append(ContractDiagnostic(reason="vector_leakage", object_id=object_id, object_type=object_type))
+            diagnostics.append(
+                ContractDiagnostic(
+                    reason="vector_leakage", object_id=object_id, object_type=object_type
+                )
+            )
         if redaction.get("secrets_included") is True:
-            diagnostics.append(ContractDiagnostic(reason="secret_leakage", object_id=object_id, object_type=object_type))
-    diagnostics.extend(_validate_nested_redaction(payload, object_id=object_id, object_type=object_type, path=()))
+            diagnostics.append(
+                ContractDiagnostic(
+                    reason="secret_leakage", object_id=object_id, object_type=object_type
+                )
+            )
+    diagnostics.extend(
+        _validate_nested_redaction(payload, object_id=object_id, object_type=object_type, path=())
+    )
     return diagnostics
 
 
@@ -575,7 +910,9 @@ def _validate_nested_redaction(
                 diagnostics.append(
                     ContractDiagnostic(
                         reason=reason,
-                        object_id=_redaction_path(object_id=object_id, object_type=object_type, path=(*path, str(field))),
+                        object_id=_redaction_path(
+                            object_id=object_id, object_type=object_type, path=(*path, str(field))
+                        ),
                         object_type=object_type,
                     )
                 )
@@ -618,7 +955,12 @@ def _required_fields(
     for field in fields:
         if field not in payload or payload.get(field) is None:
             diagnostics.append(
-                ContractDiagnostic(reason=f"missing_{field}", object_id=object_id, object_type=object_type, route=route)
+                ContractDiagnostic(
+                    reason=f"missing_{field}",
+                    object_id=object_id,
+                    object_type=object_type,
+                    route=route,
+                )
             )
     return diagnostics
 

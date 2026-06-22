@@ -197,13 +197,13 @@ def render_report(summary: dict[str, Any]) -> str:
 
     return f"""# M061 REPORT: 2-hop BFS evidence and M064 trigger evaluation
 
-Generated: {summary['generated_at']}
+Generated: {summary["generated_at"]}
 Scope: M064-wqfgfa S01-S03 evidence package for M061 2-hop BFS closeout.
 Network host reference: `127.0.0.1`.
 
 ## 0. Резюме M061
 
-M061 завершил 2-hop BFS на 5 anchor papers: `{', '.join(ANCHORS)}`. Citation-layer граф содержит {graph['citation_node_count']} nodes и {graph['citation_edge_count']} citation edges; всего в 5-layer diagnostic graph {graph['total_edge_count']} edges. arXiv acquisition сделал {agg['total_arxiv_requests']} requests и получил {agg['total_http_429_count']} HTTP 429s.
+M061 завершил 2-hop BFS на 5 anchor papers: `{", ".join(ANCHORS)}`. Citation-layer граф содержит {graph["citation_node_count"]} nodes и {graph["citation_edge_count"]} citation edges; всего в 5-layer diagnostic graph {graph["total_edge_count"]} edges. arXiv acquisition сделал {agg["total_arxiv_requests"]} requests и получил {agg["total_http_429_count"]} HTTP 429s.
 
 Итоговое решение: **CONFIRM DEFER M064**. Синхронное выполнение достаточно для текущего масштаба; queue execution remains deferred per ADR-017. Graph writes is not authorized, production import is not authorized, fact promotion is not authorized, external network is disabled by default, and LLM calls are disabled by default.
 
@@ -215,41 +215,41 @@ M061 проверял не только breadth of retrieval, но и operationa
 
 ## 2. S01 v2 pilot results
 
-S01 v2 обработал 1 anchor `{S01_ANCHOR}` и подтвердил GO to S02. Пилот дал {s01['two_hop_new_arxiv_id_count']} new 2-hop arXiv IDs, {s01['fully_processed_real_paper_count']} fully processed papers, {fmt(s01['real_paper_throughput_per_min'], 2)} papers/min и {s01['http_429_count']} HTTP 429s.
+S01 v2 обработал 1 anchor `{S01_ANCHOR}` и подтвердил GO to S02. Пилот дал {s01["two_hop_new_arxiv_id_count"]} new 2-hop arXiv IDs, {s01["fully_processed_real_paper_count"]} fully processed papers, {fmt(s01["real_paper_throughput_per_min"], 2)} papers/min и {s01["http_429_count"]} HTTP 429s.
 
 Network override worked: external acquisition был явно scoped to M064-wqfgfa S01, while external network is disabled by default. M3 judge calls stayed diagnostic-only through evidence reuse.
 
 ## 3. S02 results
 
-S02 добавил 4 anchors и довёл полный набор до 5 anchors. Четыре S02 anchors дали {s02_processed} processed papers и {s02_requests} arXiv requests; cumulative throughput across S01+S02 is {fmt(agg['cumulative_real_paper_throughput_per_min'], 2)} papers/min.
+S02 добавил 4 anchors и довёл полный набор до 5 anchors. Четыре S02 anchors дали {s02_processed} processed papers и {s02_requests} arXiv requests; cumulative throughput across S01+S02 is {fmt(agg["cumulative_real_paper_throughput_per_min"], 2)} papers/min.
 
-5-layer graph validates: `structural_graph_valid={str(graph['structural_graph_valid']).lower()}`, `layer_count={graph['layer_count']}`. One anchor used fallback acquisition for missing M056 corpus presence, but this remained documented and diagnostic-only.
+5-layer graph validates: `structural_graph_valid={str(graph["structural_graph_valid"]).lower()}`, `layer_count={graph["layer_count"]}`. One anchor used fallback acquisition for missing M056 corpus presence, but this remained documented and diagnostic-only.
 
 {render_anchor_table(summary)}
 
 ## 4. arXiv rate limit metrics
 
-Across M061, arXiv acquisition made {agg['total_arxiv_requests']} requests: 323 is the recorded cumulative total, with {agg['total_http_429_count']} HTTP 429 responses and {fmt(agg['average_pacing_delay_seconds'], 2)}s average pacing. The configured minimum interval was 3.0s, and retry/backoff honored the no-429 path.
+Across M061, arXiv acquisition made {agg["total_arxiv_requests"]} requests: 323 is the recorded cumulative total, with {agg["total_http_429_count"]} HTTP 429 responses and {fmt(agg["average_pacing_delay_seconds"], 2)}s average pacing. The configured minimum interval was 3.0s, and retry/backoff honored the no-429 path.
 
 The observed request distribution by anchor is captured in `m061-summary.json`; no evidence suggests the synchronous pacing model needs replacement now.
 
 ## 5. M3 judge integration
 
-M3 judge integration succeeded for all anchors with {fmt(agg['m3_judge_success_rate'] * 100, 1)}% success. The binding remains diagnostic-only: graph writes is not authorized, production import is not authorized, fact promotion is not authorized, and LLM calls are disabled by default outside explicitly scoped diagnostics.
+M3 judge integration succeeded for all anchors with {fmt(agg["m3_judge_success_rate"] * 100, 1)}% success. The binding remains diagnostic-only: graph writes is not authorized, production import is not authorized, fact promotion is not authorized, and LLM calls are disabled by default outside explicitly scoped diagnostics.
 
 This supports ADR-014's model choice without promoting judge outputs to production facts.
 
 ## 6. 5-layer graph stats
 
-Citation layer: {graph['citation_node_count']} nodes, {graph['citation_edge_count']} edges. Full diagnostic graph: {graph['layer_count']} layers, {graph['total_edge_count']} total edges, {graph['total_node_count_by_layer_sum']} layer-summed nodes.
+Citation layer: {graph["citation_node_count"]} nodes, {graph["citation_edge_count"]} edges. Full diagnostic graph: {graph["layer_count"]} layers, {graph["total_edge_count"]} total edges, {graph["total_node_count_by_layer_sum"]} layer-summed nodes.
 
 {render_layer_table(summary)}
 
 ## 7. ADR-018 evaluation + M064 trigger decision
 
-ADR-018 records the trigger evaluation: **CONFIRM DEFER M064**. The ADR-017 trigger is not met because M061 proves synchronous execution is sufficient at this scale: {fmt(agg['cumulative_real_paper_throughput_per_min'], 2)} papers/min, no HTTP 429s, and no queue-specific failure mode.
+ADR-018 records the trigger evaluation: **CONFIRM DEFER M064**. The ADR-017 trigger is not met because M061 proves synchronous execution is sufficient at this scale: {fmt(agg["cumulative_real_paper_throughput_per_min"], 2)} papers/min, no HTTP 429s, and no queue-specific failure mode.
 
-M045 trajectory: `{agg['m045_trajectory']}`. M044 guardrail: `{agg['m044_guardrail']}`. Queue execution remains false; sync execution remains true.
+M045 trajectory: `{agg["m045_trajectory"]}`. M044 guardrail: `{agg["m044_guardrail"]}`. Queue execution remains false; sync execution remains true.
 
 ## 8. Lessons + next milestones
 
@@ -265,7 +265,7 @@ def render_decision(summary: dict[str, Any]) -> str:
     graph = summary["graph"]
     return f"""# M061 Decision: 2-hop BFS evidence and M064 trigger
 
-Generated: {summary['generated_at']}
+Generated: {summary["generated_at"]}
 
 ## Decision
 
@@ -275,12 +275,12 @@ Generated: {summary['generated_at']}
 
 | Gate | Threshold | Observed | Result |
 |---|---:|---:|---|
-| Anchors completed | 5 | {agg['anchor_count']} | pass |
-| Citation edges | >= 8911 | {graph['citation_edge_count']} | pass |
-| HTTP 429 responses | 0 | {agg['total_http_429_count']} | pass |
-| Cumulative throughput | >= 1 paper/min | {fmt(agg['cumulative_real_paper_throughput_per_min'], 2)} | pass |
-| M3 judge success | >= 80% | {fmt(agg['m3_judge_success_rate'] * 100, 1)}% | pass |
-| Graph validates | true | {str(graph['structural_graph_valid']).lower()} | pass |
+| Anchors completed | 5 | {agg["anchor_count"]} | pass |
+| Citation edges | >= 8911 | {graph["citation_edge_count"]} | pass |
+| HTTP 429 responses | 0 | {agg["total_http_429_count"]} | pass |
+| Cumulative throughput | >= 1 paper/min | {fmt(agg["cumulative_real_paper_throughput_per_min"], 2)} | pass |
+| M3 judge success | >= 80% | {fmt(agg["m3_judge_success_rate"] * 100, 1)}% | pass |
+| Graph validates | true | {str(graph["structural_graph_valid"]).lower()} | pass |
 
 ## Safety posture
 
@@ -365,7 +365,7 @@ Out of scope:
 
 ## 6. Trade-off Analysis
 
-Confirming deferral avoids building infrastructure ahead of evidence. M061 processed {agg['fully_processed_real_paper_count']} real papers at {fmt(agg['cumulative_real_paper_throughput_per_min'], 2)} papers/min with {agg['total_http_429_count']} HTTP 429s, which is enough for current validation work.
+Confirming deferral avoids building infrastructure ahead of evidence. M061 processed {agg["fully_processed_real_paper_count"]} real papers at {fmt(agg["cumulative_real_paper_throughput_per_min"], 2)} papers/min with {agg["total_http_429_count"]} HTTP 429s, which is enough for current validation work.
 
 The trade-off is that future larger runs may still need queue execution. ADR-017 remains revisable when M062, M063, and fresh scale evidence demonstrate a concrete async requirement.
 
@@ -398,12 +398,12 @@ The required host reference is `127.0.0.1`; no alternate loopback hostname shoul
 
 | Evidence | Required result | Observed |
 |---|---|---|
-| Anchors | 5 complete anchors | {agg['anchor_count']} |
-| arXiv requests | 0 HTTP 429s | {agg['total_http_429_count']} |
-| Throughput | >= 1 paper/min | {fmt(agg['cumulative_real_paper_throughput_per_min'], 2)} |
-| M3 judge | >= 80% success | {fmt(agg['m3_judge_success_rate'] * 100, 1)}% |
-| Citation graph | 2662 nodes / 8911 edges | {graph['citation_node_count']} / {graph['citation_edge_count']} |
-| 5-layer graph | structurally valid | {str(graph['structural_graph_valid']).lower()} |
+| Anchors | 5 complete anchors | {agg["anchor_count"]} |
+| arXiv requests | 0 HTTP 429s | {agg["total_http_429_count"]} |
+| Throughput | >= 1 paper/min | {fmt(agg["cumulative_real_paper_throughput_per_min"], 2)} |
+| M3 judge | >= 80% success | {fmt(agg["m3_judge_success_rate"] * 100, 1)}% |
+| Citation graph | 2662 nodes / 8911 edges | {graph["citation_node_count"]} / {graph["citation_edge_count"]} |
+| 5-layer graph | structurally valid | {str(graph["structural_graph_valid"]).lower()} |
 
 ## 11. Open Questions
 
@@ -444,7 +444,7 @@ def render_closeout_summary(summary: dict[str, Any]) -> str:
 id: M064-wqfgfa
 title: "M061 2-hop BFS with M3 Judge Integration at Scale"
 status: complete
-completed_at: {summary['generated_at']}
+completed_at: {summary["generated_at"]}
 key_decisions:
   - M061 completed 5-anchor 2-hop BFS evidence synthesis.
   - ADR-018 confirms defer M064 because sync execution remains sufficient per ADR-017.
@@ -465,7 +465,7 @@ lessons_learned:
 
 # Milestone Summary: M064-wqfgfa
 
-M064-wqfgfa executed the M061 2-hop BFS evidence package: S01 v2 pilot, S02 four-anchor scale-out, and S03 synthesis. The milestone completed {agg['anchor_count']} anchors, {agg['fully_processed_real_paper_count']} real processed papers, {agg['total_arxiv_requests']} arXiv requests, and {agg['total_http_429_count']} HTTP 429 responses.
+M064-wqfgfa executed the M061 2-hop BFS evidence package: S01 v2 pilot, S02 four-anchor scale-out, and S03 synthesis. The milestone completed {agg["anchor_count"]} anchors, {agg["fully_processed_real_paper_count"]} real processed papers, {agg["total_arxiv_requests"]} arXiv requests, and {agg["total_http_429_count"]} HTTP 429 responses.
 
 ## Result
 
@@ -473,12 +473,12 @@ M061 is closed. REPORT, ADR-018, summary JSON, decision markdown, validation, an
 
 ## Evidence
 
-- Citation layer: {graph['citation_node_count']} nodes and {graph['citation_edge_count']} edges.
-- Full graph: {graph['layer_count']} layers and {graph['total_edge_count']} total edges.
-- Throughput: {fmt(agg['cumulative_real_paper_throughput_per_min'], 2)} papers/min cumulative.
-- M3 judge success: {fmt(agg['m3_judge_success_rate'] * 100, 1)}%.
-- M045 trajectory: `{agg['m045_trajectory']}`.
-- M044 guardrail: `{agg['m044_guardrail']}`.
+- Citation layer: {graph["citation_node_count"]} nodes and {graph["citation_edge_count"]} edges.
+- Full graph: {graph["layer_count"]} layers and {graph["total_edge_count"]} total edges.
+- Throughput: {fmt(agg["cumulative_real_paper_throughput_per_min"], 2)} papers/min cumulative.
+- M3 judge success: {fmt(agg["m3_judge_success_rate"] * 100, 1)}%.
+- M045 trajectory: `{agg["m045_trajectory"]}`.
+- M044 guardrail: `{agg["m044_guardrail"]}`.
 
 ## Decision
 
@@ -514,8 +514,8 @@ remediation_round: 0
 
 | Slice | Claimed output | Delivered output | Result |
 |---|---|---|---|
-| S01 | 1-anchor pilot with M3 diagnostics | 1 anchor, {fmt(summary['anchors'][0]['real_paper_throughput_per_min'], 2)} papers/min, 0 HTTP 429s | pass |
-| S02 | 4 more anchors and 5-layer graph | 5 anchors cumulative, {fmt(agg['cumulative_real_paper_throughput_per_min'], 2)} papers/min, graph valid | pass |
+| S01 | 1-anchor pilot with M3 diagnostics | 1 anchor, {fmt(summary["anchors"][0]["real_paper_throughput_per_min"], 2)} papers/min, 0 HTTP 429s | pass |
+| S02 | 4 more anchors and 5-layer graph | 5 anchors cumulative, {fmt(agg["cumulative_real_paper_throughput_per_min"], 2)} papers/min, graph valid | pass |
 | S03 | REPORT, ADR-018, closeout | REPORT, ADR-018, summary, validation, tests | pass |
 
 ## Cross-Slice Integration
@@ -537,7 +537,7 @@ M061 evidence covers 2-hop BFS scaling, arXiv pacing, M3 diagnostic integration,
 
 ## Verdict Rationale
 
-Pass: M061 closes with {agg['anchor_count']} anchors, {graph['citation_edge_count']} citation edges, {agg['total_http_429_count']} HTTP 429s, validated 5-layer graph evidence, and ADR-018 confirms M064 remains deferred.
+Pass: M061 closes with {agg["anchor_count"]} anchors, {graph["citation_edge_count"]} citation edges, {agg["total_http_429_count"]} HTTP 429s, validated 5-layer graph evidence, and ADR-018 confirms M064 remains deferred.
 """
 
 
@@ -548,7 +548,9 @@ def write_text(path: Path, content: str) -> None:
 
 def write_outputs(summary: dict[str, Any]) -> None:
     write_text(REPORT_PATH, render_report(summary))
-    write_text(SUMMARY_JSON_PATH, json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
+    write_text(
+        SUMMARY_JSON_PATH, json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    )
     write_text(DECISION_PATH, render_decision(summary))
     write_text(ADR_PATH, render_adr(summary))
     write_text(CLOSEOUT_SUMMARY_PATH, render_closeout_summary(summary))
@@ -557,16 +559,45 @@ def write_outputs(summary: dict[str, Any]) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--check", action="store_true", help="Generate in memory and report target paths without writing")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Generate in memory and report target paths without writing",
+    )
     args = parser.parse_args(argv)
 
     summary = collect_summary(utc_now())
     if args.check:
-        print(json.dumps({"status": "ok", "targets": [rel(path) for path in [REPORT_PATH, SUMMARY_JSON_PATH, DECISION_PATH, ADR_PATH, CLOSEOUT_SUMMARY_PATH, VALIDATION_PATH]]}, indent=2))
+        print(
+            json.dumps(
+                {
+                    "status": "ok",
+                    "targets": [
+                        rel(path)
+                        for path in [
+                            REPORT_PATH,
+                            SUMMARY_JSON_PATH,
+                            DECISION_PATH,
+                            ADR_PATH,
+                            CLOSEOUT_SUMMARY_PATH,
+                            VALIDATION_PATH,
+                        ]
+                    ],
+                },
+                indent=2,
+            )
+        )
         return 0
 
     write_outputs(summary)
-    for path in [REPORT_PATH, SUMMARY_JSON_PATH, DECISION_PATH, ADR_PATH, CLOSEOUT_SUMMARY_PATH, VALIDATION_PATH]:
+    for path in [
+        REPORT_PATH,
+        SUMMARY_JSON_PATH,
+        DECISION_PATH,
+        ADR_PATH,
+        CLOSEOUT_SUMMARY_PATH,
+        VALIDATION_PATH,
+    ]:
         print(f"wrote {rel(path)}")
     return 0
 

@@ -9,8 +9,12 @@ from typing import Any
 
 import pytest
 
-MODULE_PATH = Path(__file__).parents[1] / "scripts" / "verify_m027_provenance_and_riskratchet_gate.py"
-spec = importlib.util.spec_from_file_location("verify_m027_provenance_and_riskratchet_gate", MODULE_PATH)
+MODULE_PATH = (
+    Path(__file__).parents[1] / "scripts" / "verify_m027_provenance_and_riskratchet_gate.py"
+)
+spec = importlib.util.spec_from_file_location(
+    "verify_m027_provenance_and_riskratchet_gate", MODULE_PATH
+)
 assert spec is not None and spec.loader is not None
 gate = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = gate
@@ -28,7 +32,9 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 
 def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in rows), encoding="utf-8")
+    path.write_text(
+        "".join(json.dumps(row, sort_keys=True) + "\n" for row in rows), encoding="utf-8"
+    )
 
 
 def _artifact_row(path: Path, root: Path, role: str) -> dict[str, Any]:
@@ -52,7 +58,9 @@ def _fixture(tmp_path: Path) -> Namespace:
             "schema_version": "m027-end-to-end-mixed-replay-artifact.v1",
             "article_ref": "article/one",
             "variant_count": 1,
-            "variants": [{"article_ref": "article/one", "variant_id": "one:source:pdf", "parser_ready": True}],
+            "variants": [
+                {"article_ref": "article/one", "variant_id": "one:source:pdf", "parser_ready": True}
+            ],
             "network_fetch_attempted": False,
             "production_import_attempted": False,
             "graph_import_allowed": False,
@@ -64,11 +72,48 @@ def _fixture(tmp_path: Path) -> Namespace:
     report_path = corpus / "end-to-end-mixed-replay-report.md"
     decision_path = corpus / "end-to-end-mixed-replay-readiness-decision.json"
     verification_path = corpus / "end-to-end-mixed-replay-verification.json"
-    _write_jsonl(diagnostics_path, [{"schema_version": "m027-end-to-end-mixed-replay-diagnostic.v1", "diagnostic_code": "end_to_end_boundaries_completed", "network_fetch_attempted": False}])
-    _write_jsonl(events_path, [{"schema_version": "m027-end-to-end-mixed-replay-diagnostic.v1", "event_type": "replay_completed", "network_fetch_attempted": False}])
+    _write_jsonl(
+        diagnostics_path,
+        [
+            {
+                "schema_version": "m027-end-to-end-mixed-replay-diagnostic.v1",
+                "diagnostic_code": "end_to_end_boundaries_completed",
+                "network_fetch_attempted": False,
+            }
+        ],
+    )
+    _write_jsonl(
+        events_path,
+        [
+            {
+                "schema_version": "m027-end-to-end-mixed-replay-diagnostic.v1",
+                "event_type": "replay_completed",
+                "network_fetch_attempted": False,
+            }
+        ],
+    )
     report_path.write_text("# S05 report\n\nredacted metadata only\n", encoding="utf-8")
-    _write_json(decision_path, {"schema_version": "m027-end-to-end-mixed-replay-readiness-decision.v1", "ready_for_import": False, "network_fetch_attempted": False, "graph_import_allowed": False, "ladybugdb_written": False})
-    _write_json(verification_path, {"schema_version": "m027-end-to-end-mixed-replay-verifier.v1", "status": "passed", "verification_result": "passed", "network_fetch_attempted": False, "graph_import_allowed": False, "ladybugdb_written": False})
+    _write_json(
+        decision_path,
+        {
+            "schema_version": "m027-end-to-end-mixed-replay-readiness-decision.v1",
+            "ready_for_import": False,
+            "network_fetch_attempted": False,
+            "graph_import_allowed": False,
+            "ladybugdb_written": False,
+        },
+    )
+    _write_json(
+        verification_path,
+        {
+            "schema_version": "m027-end-to-end-mixed-replay-verifier.v1",
+            "status": "passed",
+            "verification_result": "passed",
+            "network_fetch_attempted": False,
+            "graph_import_allowed": False,
+            "ladybugdb_written": False,
+        },
+    )
     summary_path = corpus / "end-to-end-mixed-replay-summary.json"
     _write_json(
         summary_path,
@@ -116,7 +161,13 @@ def _fixture(tmp_path: Path) -> Namespace:
     )
 
 
-def _fake_risk_report(args: Namespace, monkeypatch: pytest.MonkeyPatch, *, blocking: bool = False, pass_fail_affected: bool = False) -> None:
+def _fake_risk_report(
+    args: Namespace,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    blocking: bool = False,
+    pass_fail_affected: bool = False,
+) -> None:
     def fake_run_quality_gate(*, paths, output_dir, baseline_path=None, base_ref="HEAD"):
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
@@ -128,7 +179,12 @@ def _fake_risk_report(args: Namespace, monkeypatch: pytest.MonkeyPatch, *, block
             "pass_fail_affected": pass_fail_affected,
             "tool_status": "ok",
             "tool_error": None,
-            "summary": {"total_functions": 3, "max_score": 12.0, "average_score": 4.0, "by_severity": {"low": 2, "medium": 1, "high": 0, "critical": 0}},
+            "summary": {
+                "total_functions": 3,
+                "max_score": 12.0,
+                "average_score": 4.0,
+                "by_severity": {"low": 2, "medium": 1, "high": 0, "critical": 0},
+            },
             "riskratchet": {"blocking": False, "functions": []},
             "quality_gate": {
                 "diagnostic_only": True,
@@ -141,7 +197,10 @@ def _fake_risk_report(args: Namespace, monkeypatch: pytest.MonkeyPatch, *, block
             },
         }
         _write_json(args.maintainability_json, report)
-        args.maintainability_report.write_text("# Local Maintainability Diagnostic\n\nDiagnostic-only and non-blocking.\n", encoding="utf-8")
+        args.maintainability_report.write_text(
+            "# Local Maintainability Diagnostic\n\nDiagnostic-only and non-blocking.\n",
+            encoding="utf-8",
+        )
         return report
 
     monkeypatch.setattr(gate.run_quality_gate, "run_quality_gate", fake_run_quality_gate)
@@ -151,7 +210,9 @@ def _codes(rows: list[dict[str, Any]]) -> set[str]:
     return {str(row.get("diagnostic_code")) for row in rows}
 
 
-def test_gate_generates_happy_path_and_self_hash_exclusion(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_gate_generates_happy_path_and_self_hash_exclusion(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     args = _fixture(tmp_path)
     _fake_risk_report(args, monkeypatch)
 
@@ -179,10 +240,18 @@ def test_gate_generates_happy_path_and_self_hash_exclusion(tmp_path: Path, monke
     assert args.maintainability_json.exists()
     assert args.maintainability_report.exists()
     roles = {row["role"] for row in summary["provenance"]["output_artifacts"]}
-    assert {"summary", "diagnostics", "report", "maintainability_json", "maintainability_report"} <= roles
+    assert {
+        "summary",
+        "diagnostics",
+        "report",
+        "maintainability_json",
+        "maintainability_report",
+    } <= roles
 
 
-def test_validate_only_reads_existing_outputs_without_rerunning_riskratchet(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_validate_only_reads_existing_outputs_without_rerunning_riskratchet(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     args = _fixture(tmp_path)
     _fake_risk_report(args, monkeypatch)
     gate.generate(args)
@@ -200,7 +269,9 @@ def test_validate_only_reads_existing_outputs_without_rerunning_riskratchet(tmp_
     assert args.summary_output.stat().st_mtime_ns == mtime
 
 
-def test_validate_only_reports_missing_and_malformed_artifacts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_validate_only_reports_missing_and_malformed_artifacts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     args = _fixture(tmp_path)
     _fake_risk_report(args, monkeypatch)
     gate.generate(args)
@@ -214,7 +285,9 @@ def test_validate_only_reports_missing_and_malformed_artifacts(tmp_path: Path, m
     assert "malformed_json_artifact" in codes
 
 
-def test_gate_rejects_unsafe_flags_redaction_riskratchet_and_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_gate_rejects_unsafe_flags_redaction_riskratchet_and_paths(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     args = _fixture(tmp_path)
     _fake_risk_report(args, monkeypatch, blocking=True, pass_fail_affected=True)
     summary_payload = json.loads(args.s05_summary.read_text(encoding="utf-8"))
@@ -222,7 +295,17 @@ def test_gate_rejects_unsafe_flags_redaction_riskratchet_and_paths(tmp_path: Pat
     summary_payload["output_artifacts"][1]["sha256"] = "0" * 64
     summary_payload["output_artifacts"][2]["path"] = "https://example.invalid/events.jsonl"
     _write_json(args.s05_summary, summary_payload)
-    args.s05_readiness_decision.write_text(json.dumps({"ready_for_import": False, "safe_note": "RAW_PDF_SECRET <html", "graph_import_allowed": False}) + "\n", encoding="utf-8")
+    args.s05_readiness_decision.write_text(
+        json.dumps(
+            {
+                "ready_for_import": False,
+                "safe_note": "RAW_PDF_SECRET <html",
+                "graph_import_allowed": False,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
     summary, diagnostics = gate.generate(args)
 
@@ -236,7 +319,9 @@ def test_gate_rejects_unsafe_flags_redaction_riskratchet_and_paths(tmp_path: Pat
     assert any(code.startswith("unsafe_s05_output_artifact_path") for code in codes)
 
 
-def test_validate_only_rejects_unsafe_summary_flag_and_stale_output_hash(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_validate_only_rejects_unsafe_summary_flag_and_stale_output_hash(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     args = _fixture(tmp_path)
     _fake_risk_report(args, monkeypatch)
     gate.generate(args)

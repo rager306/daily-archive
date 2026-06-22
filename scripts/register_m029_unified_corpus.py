@@ -43,8 +43,10 @@ FAIL_CLOSED_SAFETY_FLAGS: dict[str, bool] = {
     "raw_binary_embedded_in_metadata": False,
 }
 
-ARXIV_URL_RE = re.compile(r"^https://arxiv\.org/(abs|pdf|html)/(\d{4}\.\d{4,5})(v\d+)?(?:\.pdf)?/?$")
-URL_RE = re.compile(r'https?://[^\s`)>\"]+')
+ARXIV_URL_RE = re.compile(
+    r"^https://arxiv\.org/(abs|pdf|html)/(\d{4}\.\d{4,5})(v\d+)?(?:\.pdf)?/?$"
+)
+URL_RE = re.compile(r"https?://[^\s`)>\"]+")
 M028_EXPANSION_HEADER = "Newly accepted expansion refs:"
 M028_NEXT_HEADER_RE = re.compile(r"^\s{4}[A-Z].*:$")
 
@@ -86,7 +88,9 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 def _atomic_write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as handle:
+    with tempfile.NamedTemporaryFile(
+        "w", encoding="utf-8", dir=path.parent, delete=False
+    ) as handle:
         json.dump(payload, handle, indent=2, sort_keys=True)
         handle.write("\n")
         temp_name = handle.name
@@ -96,7 +100,9 @@ def _atomic_write_json(path: Path, payload: dict[str, Any]) -> None:
 def _clean_url(raw_url: str) -> str:
     raw_url = raw_url.strip().rstrip(".,")
     parts = urlsplit(raw_url)
-    return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), parts.path.rstrip("/"), parts.query, ""))
+    return urlunsplit(
+        (parts.scheme.lower(), parts.netloc.lower(), parts.path.rstrip("/"), parts.query, "")
+    )
 
 
 def _arxiv_match(url: str) -> re.Match[str] | None:
@@ -124,9 +130,20 @@ def _identity_from_url(url: str) -> tuple[str, str, str, str]:
         article_key = clean.split("/articles/", 1)[1]
         return "nature", article_key, f"nature:{article_key}", clean
     if clean == "https://pageindex.ai/blog/pageindex-intro":
-        return "company_blog", "pageindex_zhang2025pageindex", "company_blog:pageindex_zhang2025pageindex", clean
+        return (
+            "company_blog",
+            "pageindex_zhang2025pageindex",
+            "company_blog:pageindex_zhang2025pageindex",
+            clean,
+        )
     if "developer.nvidia.com/blog/" in clean:
-        article_key = clean.split("/blog/", 1)[1].split("?", 1)[0].strip("/").replace("/", "_").replace("-", "_")
+        article_key = (
+            clean.split("/blog/", 1)[1]
+            .split("?", 1)[0]
+            .strip("/")
+            .replace("/", "_")
+            .replace("-", "_")
+        )
         return "company_blog", article_key, f"company_blog:{article_key}", clean
     host_path = urlsplit(clean).netloc + urlsplit(clean).path.rstrip("/")
     article_key = re.sub(r"[^a-zA-Z0-9]+", "_", host_path).strip("_").lower()
@@ -163,7 +180,9 @@ def _load_catalog_index(catalog_root: Path) -> dict[str, Any]:
     return {"by_ref": by_ref, "by_url": by_url, "by_key": by_key}
 
 
-def _catalog_entry_for(catalog: dict[str, Any], url: str, article_ref_hint: str | None, article_key: str) -> dict[str, Any] | None:
+def _catalog_entry_for(
+    catalog: dict[str, Any], url: str, article_ref_hint: str | None, article_key: str
+) -> dict[str, Any] | None:
     by_ref = catalog["by_ref"]
     by_url = catalog["by_url"]
     by_key = catalog["by_key"]
@@ -218,7 +237,9 @@ def _selection_observations(selection_path: Path, source_id: str) -> list[Source
     return observations
 
 
-def _extract_m028_urls(roadmap_path: Path) -> tuple[list[SourceObservation], list[SourceObservation]]:
+def _extract_m028_urls(
+    roadmap_path: Path,
+) -> tuple[list[SourceObservation], list[SourceObservation]]:
     try:
         lines = roadmap_path.read_text(encoding="utf-8").splitlines()
     except FileNotFoundError as exc:
@@ -238,7 +259,9 @@ def _extract_m028_urls(roadmap_path: Path) -> tuple[list[SourceObservation], lis
             obs = SourceObservation(
                 source_id=M028_SOURCE_ID,
                 source_path=str(roadmap_path),
-                source_subset="newly_accepted_expansion_refs" if in_expansion else "roadmap_url_refs",
+                source_subset="newly_accepted_expansion_refs"
+                if in_expansion
+                else "roadmap_url_refs",
                 url=url,
                 url_role="roadmap_url_ref",
             )
@@ -246,11 +269,15 @@ def _extract_m028_urls(roadmap_path: Path) -> tuple[list[SourceObservation], lis
             if in_expansion:
                 expansion_observations.append(obs)
     if len(expansion_observations) != 7:
-        raise ValueError(f"expected 7 M028 newly accepted expansion refs, found {len(expansion_observations)}")
+        raise ValueError(
+            f"expected 7 M028 newly accepted expansion refs, found {len(expansion_observations)}"
+        )
     return all_observations, expansion_observations
 
 
-def _selected_observations(m025_path: Path, m027_path: Path, m028_roadmap_path: Path) -> tuple[list[SourceObservation], list[SourceObservation]]:
+def _selected_observations(
+    m025_path: Path, m027_path: Path, m028_roadmap_path: Path
+) -> tuple[list[SourceObservation], list[SourceObservation]]:
     m025 = _selection_observations(m025_path, M025_SOURCE_ID)
     m027 = _selection_observations(m027_path, M027_SOURCE_ID)
     m028_all, m028_expansion = _extract_m028_urls(m028_roadmap_path)
@@ -259,7 +286,11 @@ def _selected_observations(m025_path: Path, m027_path: Path, m028_roadmap_path: 
     return selected, provenance_pool
 
 
-def _build_entries(selected: Iterable[SourceObservation], provenance_pool: Iterable[SourceObservation], catalog: dict[str, Any]) -> tuple[list[RegistryEntry], dict[str, Any]]:
+def _build_entries(
+    selected: Iterable[SourceObservation],
+    provenance_pool: Iterable[SourceObservation],
+    catalog: dict[str, Any],
+) -> tuple[list[RegistryEntry], dict[str, Any]]:
     selected_by_identity: dict[str, SourceObservation] = {}
     selected_order: list[str] = []
     for obs in selected:
@@ -281,7 +312,9 @@ def _build_entries(selected: Iterable[SourceObservation], provenance_pool: Itera
     for identity_key in selected_order:
         selected_obs = selected_by_identity[identity_key]
         source_code, article_key, _, canonical_url = _identity_from_url(selected_obs.url)
-        catalog_entry = _catalog_entry_for(catalog, selected_obs.url, selected_obs.article_ref_hint, article_key)
+        catalog_entry = _catalog_entry_for(
+            catalog, selected_obs.url, selected_obs.article_ref_hint, article_key
+        )
         article_ref = catalog_entry.get("article_ref") if catalog_entry else None
         article_path = catalog_entry.get("article_path") if catalog_entry else None
         resolution = "resolved" if catalog_entry else "unresolved"
@@ -292,13 +325,18 @@ def _build_entries(selected: Iterable[SourceObservation], provenance_pool: Itera
                 identity_key=identity_key,
                 source_code=source_code,
                 article_key=article_key,
-                canonical_url=str(catalog_entry.get("canonical_url", canonical_url)) if catalog_entry else canonical_url,
+                canonical_url=str(catalog_entry.get("canonical_url", canonical_url))
+                if catalog_entry
+                else canonical_url,
                 selected_seed_url=selected_obs.url,
                 source_strategy=_source_strategy(selected_obs.url, source_code, catalog_entry),
                 catalog_resolution=resolution,
                 article_ref=str(article_ref) if article_ref else None,
                 article_path=str(article_path) if article_path else None,
-                provenance=sorted(provenance_by_identity.get(identity_key, [selected_obs]), key=lambda item: (item.source_id, item.source_subset, item.url_role, item.url)),
+                provenance=sorted(
+                    provenance_by_identity.get(identity_key, [selected_obs]),
+                    key=lambda item: (item.source_id, item.source_subset, item.url_role, item.url),
+                ),
             )
         )
 
@@ -374,7 +412,12 @@ def _selection_payload(entries: list[RegistryEntry]) -> dict[str, Any]:
     }
 
 
-def _summary_payload(entries: list[RegistryEntry], counters: dict[str, Any], selection_path: Path, provenance_path: Path) -> dict[str, Any]:
+def _summary_payload(
+    entries: list[RegistryEntry],
+    counters: dict[str, Any],
+    selection_path: Path,
+    provenance_path: Path,
+) -> dict[str, Any]:
     return {
         "schema_version": SUMMARY_SCHEMA_VERSION,
         "selection_id": SELECTION_ID,
@@ -402,32 +445,60 @@ def _summary_payload(entries: list[RegistryEntry], counters: dict[str, Any], sel
     }
 
 
-def build_registry(m025_path: Path, m027_path: Path, m028_roadmap_path: Path, catalog_root: Path) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+def build_registry(
+    m025_path: Path, m027_path: Path, m028_roadmap_path: Path, catalog_root: Path
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     selected, provenance_pool = _selected_observations(m025_path, m027_path, m028_roadmap_path)
     catalog = _load_catalog_index(catalog_root)
     entries, counters = _build_entries(selected, provenance_pool, catalog)
     if len(entries) != 18:
-        raise ValueError(f"M029 provisional registry expected 18 unique article identities, found {len(entries)}")
+        raise ValueError(
+            f"M029 provisional registry expected 18 unique article identities, found {len(entries)}"
+        )
     selection_path = Path("data/article_corpora") / SELECTION_ID / "selection.json"
     provenance_path = Path("data/article_corpora") / SELECTION_ID / "selection-provenance.json"
-    return _selection_payload(entries), _provenance_payload(entries, counters), _summary_payload(entries, counters, selection_path, provenance_path)
+    return (
+        _selection_payload(entries),
+        _provenance_payload(entries, counters),
+        _summary_payload(entries, counters, selection_path, provenance_path),
+    )
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--write", action="store_true", help="Write the M029 selection, provenance, and summary artifacts.")
-    parser.add_argument("--m025-selection", type=Path, default=Path("data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/selection.json"))
-    parser.add_argument("--m027-selection", type=Path, default=Path("data/article_corpora/m027-mixed-source-corpus-v1/selection.json"))
-    parser.add_argument("--m028-roadmap", type=Path, default=Path(".gsd/milestones/M028-8hwqjk/M028-8hwqjk-ROADMAP.md"))
+    parser.add_argument(
+        "--write",
+        action="store_true",
+        help="Write the M029 selection, provenance, and summary artifacts.",
+    )
+    parser.add_argument(
+        "--m025-selection",
+        type=Path,
+        default=Path("data/article_corpora/m025-rlm-dspy-pageindex-smoke-v1/selection.json"),
+    )
+    parser.add_argument(
+        "--m027-selection",
+        type=Path,
+        default=Path("data/article_corpora/m027-mixed-source-corpus-v1/selection.json"),
+    )
+    parser.add_argument(
+        "--m028-roadmap",
+        type=Path,
+        default=Path(".gsd/milestones/M028-8hwqjk/M028-8hwqjk-ROADMAP.md"),
+    )
     parser.add_argument("--catalog-root", type=Path, default=Path("data/article_catalog"))
-    parser.add_argument("--output-dir", type=Path, default=Path("data/article_corpora") / SELECTION_ID)
+    parser.add_argument(
+        "--output-dir", type=Path, default=Path("data/article_corpora") / SELECTION_ID
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     try:
-        selection, provenance, summary = build_registry(args.m025_selection, args.m027_selection, args.m028_roadmap, args.catalog_root)
+        selection, provenance, summary = build_registry(
+            args.m025_selection, args.m027_selection, args.m028_roadmap, args.catalog_root
+        )
         selection_path = args.output_dir / "selection.json"
         provenance_path = args.output_dir / "selection-provenance.json"
         summary_path = args.output_dir / "selection-summary.json"

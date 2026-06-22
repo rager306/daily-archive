@@ -37,12 +37,20 @@ def _diagnostics_from_results(results: dict[str, Any]) -> dict[str, Any]:
 def verify(results_path: Path, output_path: Path) -> dict[str, Any]:
     results = json.loads(results_path.read_text())
     diagnostics = _diagnostics_from_results(results)
-    total_retry_count = sum(int(results[split]["total_retry_count"]) for split in ("train", "validation"))
-    mean_cost = sum(float(results[split]["mean_cost_estimate"]) for split in ("train", "validation")) / 2
-    mean_latency = int(sum(float(results[split]["mean_latency_ms"]) for split in ("train", "validation")) / 2)
+    total_retry_count = sum(
+        int(results[split]["total_retry_count"]) for split in ("train", "validation")
+    )
+    mean_cost = (
+        sum(float(results[split]["mean_cost_estimate"]) for split in ("train", "validation")) / 2
+    )
+    mean_latency = int(
+        sum(float(results[split]["mean_latency_ms"]) for split in ("train", "validation")) / 2
+    )
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        queue = UniversalKBQueue(Path(tmpdir) / "m072-queue.sqlite", clock=FixedClock()).initialize()
+        queue = UniversalKBQueue(
+            Path(tmpdir) / "m072-queue.sqlite", clock=FixedClock()
+        ).initialize()
         queue.enqueue(
             job_id="job-m072-reviewed-benchmark",
             stage="benchmark",

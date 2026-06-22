@@ -34,7 +34,9 @@ def test_acquisition_min_25_pdfs() -> None:
     log = load_json(ACQUISITION_LOG)
     assert log["requested_count"] == 30
     assert log["success_count"] >= 25
-    assert log["success_count"] == len([entry for entry in log["entries"] if entry["status"] == "acquired"])
+    assert log["success_count"] == len(
+        [entry for entry in log["entries"] if entry["status"] == "acquired"]
+    )
 
 
 def test_grobid_fulltext_30_packets() -> None:

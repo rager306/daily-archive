@@ -166,7 +166,11 @@ def probe_availability(grobid_url: str, auto_install: bool = False) -> dict[str,
     if auto_install and not opendataloader["installed"]:
         _attempt_install_opendataloader()
         opendataloader = _probe_opendataloader()
-    install_attempt = LAST_INSTALL_ATTEMPT or {"attempted": False, "succeeded": False, "attempts": []}
+    install_attempt = LAST_INSTALL_ATTEMPT or {
+        "attempted": False,
+        "succeeded": False,
+        "attempts": [],
+    }
     opendataloader["install_attempt"] = install_attempt
 
     if not grobid["available"]:

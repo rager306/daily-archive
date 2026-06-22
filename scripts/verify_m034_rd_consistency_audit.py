@@ -85,20 +85,48 @@ def main() -> int:
     inventory_req_ids = {r["id"] for r in inventory.get("requirements", [])}
     inventory_dec_ids = {d["id"] for d in inventory.get("decisions", [])}
 
-    require(req_ids == inventory_req_ids, "inventory requirement IDs do not match REQUIREMENTS.md", failures)
-    require(dec_ids == inventory_dec_ids, "inventory decision IDs do not match DECISIONS.md", failures)
-    require(not inventory.get("duplicates", {}).get("requirements"), "duplicate requirement IDs in inventory", failures)
-    require(not inventory.get("duplicates", {}).get("decisions"), "duplicate decision IDs in inventory", failures)
+    require(
+        req_ids == inventory_req_ids,
+        "inventory requirement IDs do not match REQUIREMENTS.md",
+        failures,
+    )
+    require(
+        dec_ids == inventory_dec_ids, "inventory decision IDs do not match DECISIONS.md", failures
+    )
+    require(
+        not inventory.get("duplicates", {}).get("requirements"),
+        "duplicate requirement IDs in inventory",
+        failures,
+    )
+    require(
+        not inventory.get("duplicates", {}).get("decisions"),
+        "duplicate decision IDs in inventory",
+        failures,
+    )
 
     audit_records = audit.get("records", [])
     audit_ids = {(r.get("kind"), r.get("id")) for r in audit_records}
-    expected_ids = {("requirement", rid) for rid in req_ids} | {("decision", did) for did in dec_ids}
-    require(audit_ids == expected_ids, "audit records do not exactly cover inventory/source R/D IDs", failures)
+    expected_ids = {("requirement", rid) for rid in req_ids} | {
+        ("decision", did) for did in dec_ids
+    }
+    require(
+        audit_ids == expected_ids,
+        "audit records do not exactly cover inventory/source R/D IDs",
+        failures,
+    )
 
     for record in audit_records:
         classification = record.get("classification")
-        require(classification in VALID_CLASSIFICATIONS, f"invalid classification for {record.get('id')}: {classification}", failures)
-        require(isinstance(record.get("findings"), list) and record["findings"], f"missing findings for {record.get('id')}", failures)
+        require(
+            classification in VALID_CLASSIFICATIONS,
+            f"invalid classification for {record.get('id')}: {classification}",
+            failures,
+        )
+        require(
+            isinstance(record.get("findings"), list) and record["findings"],
+            f"missing findings for {record.get('id')}",
+            failures,
+        )
 
     routed_ids = {(r.get("kind"), r.get("id")) for r in routes.get("routes", [])}
     needing_routes = {
@@ -106,7 +134,11 @@ def main() -> int:
         for r in audit_records
         if r.get("classification") in ROUTED_CLASSIFICATIONS
     }
-    require(routed_ids == needing_routes, "correction routes do not cover all non-final audit findings", failures)
+    require(
+        routed_ids == needing_routes,
+        "correction routes do not cover all non-final audit findings",
+        failures,
+    )
 
     combined_text = "\n".join(
         [
@@ -121,8 +153,14 @@ def main() -> int:
 
     classification_counts: dict[str, int] = {}
     for record in audit_records:
-        classification_counts[record["classification"]] = classification_counts.get(record["classification"], 0) + 1
-    require(classification_counts == audit.get("classification_counts"), "classification_counts mismatch audit records", failures)
+        classification_counts[record["classification"]] = (
+            classification_counts.get(record["classification"], 0) + 1
+        )
+    require(
+        classification_counts == audit.get("classification_counts"),
+        "classification_counts mismatch audit records",
+        failures,
+    )
 
     if failures:
         sys.stderr.write("M034 R/D consistency audit verification failed:\n")
@@ -132,8 +170,7 @@ def main() -> int:
 
     sys.stdout.write("M034 R/D consistency audit verification passed\n")
     sys.stdout.write(
-        f"requirements={len(req_ids)} decisions={len(dec_ids)} "
-        f"records={len(audit_records)}\n"
+        f"requirements={len(req_ids)} decisions={len(dec_ids)} records={len(audit_records)}\n"
     )
     sys.stdout.write(f"classification_counts={classification_counts}\n")
     sys.stdout.write(f"routed_findings={len(routed_ids)}\n")

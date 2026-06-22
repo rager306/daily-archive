@@ -78,8 +78,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--closeout-summary", type=Path, default=DEFAULT_CLOSEOUT_SUMMARY)
     parser.add_argument("--summary", type=Path, default=DEFAULT_CHUNK_EVIDENCE_SUMMARY)
-    parser.add_argument("--structure-aware-package", type=Path, default=DEFAULT_STRUCTURE_AWARE_PACKAGE)
-    parser.add_argument("--graph-readiness-package", type=Path, default=DEFAULT_GRAPH_READINESS_PACKAGE)
+    parser.add_argument(
+        "--structure-aware-package", type=Path, default=DEFAULT_STRUCTURE_AWARE_PACKAGE
+    )
+    parser.add_argument(
+        "--graph-readiness-package", type=Path, default=DEFAULT_GRAPH_READINESS_PACKAGE
+    )
     parser.add_argument("--independent-review-events", type=Path, default=DEFAULT_REVIEW_EVENTS)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     return parser.parse_args(argv)
@@ -114,9 +118,13 @@ def run_replay(
     """Build, validate, and write the M031 import-boundary rehearsal artifacts."""
     _assert_existing_json_path(closeout_summary_path, code="M031_CLOSEOUT_PATH_UNSAFE")
     _assert_existing_json_path(summary_path, code="M031_SUMMARY_PATH_UNSAFE")
-    _assert_existing_json_path(structure_aware_package_path, code="M031_STRUCTURE_PACKAGE_PATH_UNSAFE")
+    _assert_existing_json_path(
+        structure_aware_package_path, code="M031_STRUCTURE_PACKAGE_PATH_UNSAFE"
+    )
     _assert_existing_json_path(graph_readiness_package_path, code="M031_GRAPH_PACKAGE_PATH_UNSAFE")
-    _assert_existing_jsonl_path(independent_review_events_path, code="M031_REVIEW_EVENTS_PATH_UNSAFE")
+    _assert_existing_jsonl_path(
+        independent_review_events_path, code="M031_REVIEW_EVENTS_PATH_UNSAFE"
+    )
 
     closeout_summary = _read_json_object(closeout_summary_path)
     summary = _read_json_object(summary_path)
@@ -141,10 +149,14 @@ def run_replay(
     validation = validate_import_boundary_rehearsal(contract)
     if not validation.valid_rehearsal:
         reasons = ",".join(validation.refusal_counts)
-        raise RehearsalReplayError("M031_IMPORT_BOUNDARY_CONTRACT_INVALID", f"contract validation failed: {reasons}")
+        raise RehearsalReplayError(
+            "M031_IMPORT_BOUNDARY_CONTRACT_INVALID", f"contract validation failed: {reasons}"
+        )
 
     _validate_contract_counts(contract=contract, closeout_summary=closeout_summary, summary=summary)
-    summary_record = _summary_record(contract, validation_diagnostic_count=len(validation.diagnostics))
+    summary_record = _summary_record(
+        contract, validation_diagnostic_count=len(validation.diagnostics)
+    )
     diagnostic_records = _diagnostic_records(contract)
     report = _render_report(summary_record=summary_record, diagnostics=diagnostic_records)
 
@@ -152,9 +164,14 @@ def run_replay(
     summary_path_out = output_dir / "import-boundary-summary.json"
     diagnostics_path_out = output_dir / "import-boundary-diagnostics.jsonl"
     report_path_out = output_dir / "import-boundary-report.md"
-    summary_path_out.write_text(json.dumps(summary_record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    summary_path_out.write_text(
+        json.dumps(summary_record, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     diagnostics_path_out.write_text(
-        "".join(json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n" for record in diagnostic_records),
+        "".join(
+            json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n"
+            for record in diagnostic_records
+        ),
         encoding="utf-8",
     )
     report_path_out.write_text(report, encoding="utf-8")
@@ -180,9 +197,13 @@ def _validate_preconditions(
     review_events: list[dict[str, Any]],
 ) -> None:
     if closeout_summary.get("status") != "passed":
-        raise RehearsalReplayError("M031_CLOSEOUT_NOT_PASSED", "S04 closeout status must be passed", json_path="$.status")
+        raise RehearsalReplayError(
+            "M031_CLOSEOUT_NOT_PASSED", "S04 closeout status must be passed", json_path="$.status"
+        )
     if not review_events:
-        raise RehearsalReplayError("M031_REVIEW_EVENTS_ABSENT", "independent-review events must be present")
+        raise RehearsalReplayError(
+            "M031_REVIEW_EVENTS_ABSENT", "independent-review events must be present"
+        )
     event_names = {str(event.get("event")) for event in review_events}
     if "independent_review.requested" not in event_names:
         raise RehearsalReplayError(
@@ -191,7 +212,11 @@ def _validate_preconditions(
             json_path="$.independent_review_events",
         )
     if summary.get("row_count") != closeout_summary.get("row_count"):
-        raise RehearsalReplayError("M031_ROW_COUNT_DRIFT", "summary and closeout row counts differ", json_path="$.row_count")
+        raise RehearsalReplayError(
+            "M031_ROW_COUNT_DRIFT",
+            "summary and closeout row counts differ",
+            json_path="$.row_count",
+        )
     if summary.get("parser_ready_row_count") != closeout_summary.get("parser_ready_row_count"):
         raise RehearsalReplayError(
             "M031_PARSER_READY_COUNT_DRIFT",
@@ -212,19 +237,35 @@ def _validate_preconditions(
         _assert_fail_closed_flags(payload, label=label)
 
 
-def _validate_contract_counts(*, contract: dict[str, Any], closeout_summary: dict[str, Any], summary: dict[str, Any]) -> None:
+def _validate_contract_counts(
+    *, contract: dict[str, Any], closeout_summary: dict[str, Any], summary: dict[str, Any]
+) -> None:
     if contract.get("candidate_count") != closeout_summary.get("row_count"):
-        raise RehearsalReplayError("M031_CANDIDATE_COUNT_DRIFT", "candidate count must match S04 row count", json_path="$.candidate_count")
+        raise RehearsalReplayError(
+            "M031_CANDIDATE_COUNT_DRIFT",
+            "candidate count must match S04 row count",
+            json_path="$.candidate_count",
+        )
     if contract.get("candidate_count") != len(contract.get("candidates", [])):
-        raise RehearsalReplayError("M031_CANDIDATE_COUNT_DRIFT", "candidate count must match candidates length", json_path="$.candidates")
-    import_eligible_count = sum(1 for candidate in contract.get("candidates", []) if candidate.get("import_eligible") is True)
+        raise RehearsalReplayError(
+            "M031_CANDIDATE_COUNT_DRIFT",
+            "candidate count must match candidates length",
+            json_path="$.candidates",
+        )
+    import_eligible_count = sum(
+        1
+        for candidate in contract.get("candidates", [])
+        if candidate.get("import_eligible") is True
+    )
     if contract.get("accepted_count") != 0 or import_eligible_count != 0:
         raise RehearsalReplayError(
             "M031_STRUCTURAL_LABEL_MISINTERPRETED_AS_APPROVAL",
             "refusal-only rehearsal must not accept or mark candidates import-eligible",
             json_path="$.accepted_count",
         )
-    if contract.get("source_m031_summary", {}).get("zero_chunk_refusal_count") != summary.get("zero_chunk_refusal_count"):
+    if contract.get("source_m031_summary", {}).get("zero_chunk_refusal_count") != summary.get(
+        "zero_chunk_refusal_count"
+    ):
         raise RehearsalReplayError(
             "M031_ZERO_CHUNK_REFUSAL_COUNT_DRIFT",
             "contract and summary zero-chunk refusal counts differ",
@@ -232,9 +273,13 @@ def _validate_contract_counts(*, contract: dict[str, Any], closeout_summary: dic
         )
 
 
-def _summary_record(contract: dict[str, Any], *, validation_diagnostic_count: int) -> dict[str, Any]:
+def _summary_record(
+    contract: dict[str, Any], *, validation_diagnostic_count: int
+) -> dict[str, Any]:
     candidate_records = list(contract.get("candidates", []))
-    import_eligible_count = sum(1 for candidate in candidate_records if candidate.get("import_eligible") is True)
+    import_eligible_count = sum(
+        1 for candidate in candidate_records if candidate.get("import_eligible") is True
+    )
     summary = {key: value for key, value in contract.items() if key != "candidates"}
     summary.update(
         {
@@ -270,7 +315,11 @@ def _diagnostic_records(contract: dict[str, Any]) -> list[dict[str, Any]]:
                 "review_state": candidate.get("review_state"),
                 "output_contract_completed": candidate.get("output_contract_completed"),
                 "independent_review_completed": candidate.get("independent_review_completed"),
-                "fail_closed_flags": {flag: candidate.get(flag, False) for flag in FAIL_CLOSED_FLAGS if flag in candidate},
+                "fail_closed_flags": {
+                    flag: candidate.get(flag, False)
+                    for flag in FAIL_CLOSED_FLAGS
+                    if flag in candidate
+                },
             }
         )
     return records
@@ -324,7 +373,13 @@ def _render_report(*, summary_record: dict[str, Any], diagnostics: list[dict[str
                 reasons=", ".join(record.get("refusal_reasons", [])),
             )
         )
-    lines.extend(["", "No raw text, chunk text, PDF bytes, HTML, embeddings, vectors, secrets, model traces, optimizer traces, external fetch state, graph writes, or LadybugDB writes are included.", ""])
+    lines.extend(
+        [
+            "",
+            "No raw text, chunk text, PDF bytes, HTML, embeddings, vectors, secrets, model traces, optimizer traces, external fetch state, graph writes, or LadybugDB writes are included.",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -351,7 +406,11 @@ def _assert_fail_closed_flags(payload: dict[str, Any], *, label: str) -> None:
     nested_flags = payload.get("fail_closed_safety_flags")
     for flag in FAIL_CLOSED_FLAGS:
         if payload.get(flag) is True:
-            raise RehearsalReplayError("M031_FAIL_CLOSED_FLAG_TRUE", f"{label}.{flag} must remain false", json_path=f"$.{flag}")
+            raise RehearsalReplayError(
+                "M031_FAIL_CLOSED_FLAG_TRUE",
+                f"{label}.{flag} must remain false",
+                json_path=f"$.{flag}",
+            )
         if isinstance(nested_flags, dict) and nested_flags.get(flag) is True:
             raise RehearsalReplayError(
                 "M031_FAIL_CLOSED_FLAG_TRUE",
@@ -366,7 +425,9 @@ def _read_json_object(path: Path) -> dict[str, Any]:
     except json.JSONDecodeError as exc:
         raise RehearsalReplayError("M031_MALFORMED_JSON", exc.msg, json_path=str(path)) from exc
     if not isinstance(value, dict):
-        raise RehearsalReplayError("M031_MALFORMED_JSON", "expected JSON object", json_path=str(path))
+        raise RehearsalReplayError(
+            "M031_MALFORMED_JSON", "expected JSON object", json_path=str(path)
+        )
     return value
 
 
@@ -375,7 +436,9 @@ def _read_jsonl_objects(path: Path) -> list[dict[str, Any]]:
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
     except UnicodeDecodeError as exc:
-        raise RehearsalReplayError("M031_MALFORMED_JSONL", "JSONL must be UTF-8", json_path=str(path)) from exc
+        raise RehearsalReplayError(
+            "M031_MALFORMED_JSONL", "JSONL must be UTF-8", json_path=str(path)
+        ) from exc
     for line_number, line in enumerate(lines, start=1):
         stripped = line.strip()
         if not stripped:
@@ -383,9 +446,13 @@ def _read_jsonl_objects(path: Path) -> list[dict[str, Any]]:
         try:
             value = json.loads(stripped)
         except json.JSONDecodeError as exc:
-            raise RehearsalReplayError("M031_MALFORMED_JSONL", exc.msg, json_path=f"{path}:{line_number}") from exc
+            raise RehearsalReplayError(
+                "M031_MALFORMED_JSONL", exc.msg, json_path=f"{path}:{line_number}"
+            ) from exc
         if not isinstance(value, dict):
-            raise RehearsalReplayError("M031_MALFORMED_JSONL", "expected JSON object", json_path=f"{path}:{line_number}")
+            raise RehearsalReplayError(
+                "M031_MALFORMED_JSONL", "expected JSON object", json_path=f"{path}:{line_number}"
+            )
         records.append(value)
     return records
 

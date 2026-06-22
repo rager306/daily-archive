@@ -112,9 +112,9 @@ def test_redacted_article_structure_fixture_validates_expected_manifest() -> Non
     assert {source["source_id"] for source in structure["source_refs"]} == {
         source["source_id"] for source in manifest["source_refs"]
     }
-    assert {placeholder["artifact_id"] for placeholder in structure["artifact_placeholders"]}.issubset(
-        {artifact["artifact_id"] for artifact in manifest["artifacts"]}
-    )
+    assert {
+        placeholder["artifact_id"] for placeholder in structure["artifact_placeholders"]
+    }.issubset({artifact["artifact_id"] for artifact in manifest["artifacts"]})
     assert {span["span_id"] for span in structure["safe_spans"]}.issuperset(
         {
             "fixture-paper-0001:span:caption-figure-0001",
@@ -143,22 +143,20 @@ def test_redacted_article_structure_fixture_validates_expected_manifest() -> Non
         "raw paper text",
         "raw_model_output",
         "raw_minimax_response",
-        "\"text\":",
-        "\"caption_text\":",
-        "\"embedding\":",
-        "\"vector\":",
-        "\"secret\":",
-        "\"optimizer_trace\":",
-        "\"source_of_truth\":",
-        "trusted_kg_import_allowed\": true",
-        "ladybugdb_written\": true",
-        "production_import_attempted\": true",
-        "model_outputs_included\": true",
+        '"text":',
+        '"caption_text":',
+        '"embedding":',
+        '"vector":',
+        '"secret":',
+        '"optimizer_trace":',
+        '"source_of_truth":',
+        'trusted_kg_import_allowed": true',
+        'ladybugdb_written": true',
+        'production_import_attempted": true',
+        'model_outputs_included": true',
     )
     for fragment in forbidden_fragments:
         assert fragment not in serialized
-
-
 
 
 def test_deterministic_fixture_detector_generates_candidates_from_structure() -> None:
@@ -180,7 +178,9 @@ def test_deterministic_fixture_detector_generates_candidates_from_structure() ->
         "supports": 1,
     }
     assert manifest["summary"]["missing_span_count"] == 0
-    assert manifest["summary"]["diagnostic_summary"]["review_state_counts"] == {"review_required": 5}
+    assert manifest["summary"]["diagnostic_summary"]["review_state_counts"] == {
+        "review_required": 5
+    }
     artifact_ids = {artifact["artifact_id"] for artifact in manifest["artifacts"]}
     assert "fixture-paper-0001:artifact:section:methods" in artifact_ids
     assert "fixture-paper-0001:artifact:section:results" in artifact_ids
@@ -251,7 +251,9 @@ def test_deterministic_fixture_detector_reports_missing_spans_without_raw_payloa
 
     assert validate_article_artifact_manifest(manifest) == []
     assert manifest["summary"]["missing_span_count"] == 1
-    assert manifest["summary"]["diagnostic_summary"]["diagnostic_counts_by_code"] == {"missing_span": 1}
+    assert manifest["summary"]["diagnostic_summary"]["diagnostic_counts_by_code"] == {
+        "missing_span": 1
+    }
     assert manifest["diagnostics"][0]["code"] == "missing_span"
     assert "raw paper text" not in json.dumps(manifest["diagnostics"])
 
@@ -285,6 +287,7 @@ def test_source_reference_can_be_built_from_loader_result(tmp_path: Path) -> Non
     assert payload["conversion_status"] == "loaded"
     assert payload["raw_text_embedded"] is False
     assert payload["raw_binary_embedded"] is False
+
 
 def test_artifact_manifest_serializes_redacted_contract() -> None:
     manifest = _manifest()
@@ -330,7 +333,7 @@ def test_section_lineage_uses_ids_and_ordinals_not_titles_or_text() -> None:
     serialized = json.dumps(lineage)
     assert "section_title" not in serialized
     assert "section_text" not in serialized
-    assert "raw_text\":" not in serialized
+    assert 'raw_text":' not in serialized
     assert lineage["source_span"]["raw_text_embedded"] is False
 
 
@@ -395,7 +398,9 @@ def test_validation_rejects_minimax_source_of_truth_and_broken_source_refs() -> 
     manifest = _manifest()
     manifest["artifacts"][0]["metadata"]["source_of_truth"] = "MiniMax extraction"
     manifest["artifacts"][0]["source_spans"][0]["source_id"] = "missing-source"
-    manifest["artifacts"][0]["section_lineage"]["source_span"]["coordinate_space"] = "normalized_markdown_char"
+    manifest["artifacts"][0]["section_lineage"]["source_span"]["coordinate_space"] = (
+        "normalized_markdown_char"
+    )
     manifest["artifacts"][0]["section_lineage"]["source_span"]["char_start"] = None
     manifest["artifacts"][0]["section_lineage"]["source_span"]["char_end"] = None
 
@@ -505,7 +510,9 @@ def test_run_diagnostics_artifact_carries_stable_codes_and_no_import_flags() -> 
     assert diagnostics["diagnostic_count"] == 1
     assert diagnostics["diagnostic_codes"] == ["review_required"]
     assert diagnostics["diagnostic_counts_by_code"] == {"review_required": 1}
-    assert diagnostics["manifest_diagnostic_summaries"]["p1"]["diagnostic_counts_by_code"] == {"review_required": 1}
+    assert diagnostics["manifest_diagnostic_summaries"]["p1"]["diagnostic_counts_by_code"] == {
+        "review_required": 1
+    }
     assert diagnostics["production_import_attempted"] is False
     assert diagnostics["ladybugdb_written"] is False
     assert diagnostics["trusted_kg_import_allowed"] is False

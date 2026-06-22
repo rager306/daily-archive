@@ -45,7 +45,9 @@ def load_json_object(path: str | Path, *, label: str) -> dict[str, Any]:
     try:
         payload = json.loads(json_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        raise BoundedRepairPrototypeRenderError(f"{label} JSON is malformed at line {exc.lineno} column {exc.colno}") from exc
+        raise BoundedRepairPrototypeRenderError(
+            f"{label} JSON is malformed at line {exc.lineno} column {exc.colno}"
+        ) from exc
     if not isinstance(payload, dict):
         raise BoundedRepairPrototypeRenderError(f"{label} root must be a JSON object")
     return payload
@@ -62,18 +64,26 @@ def render_prototype_files(
     """Build, validate, and write bounded repair prototype outputs."""
     contract = load_json_object(contract_path, label="S02 contract")
     locator_batch = load_json_object(locator_batch_path, label="locator batch")
-    payload = build_bounded_chunk_repair_contract(contract, locator_batch, max_target_count=max_target_count)
+    payload = build_bounded_chunk_repair_contract(
+        contract, locator_batch, max_target_count=max_target_count
+    )
 
-    validation = validate_chunk_repair_contract(payload, expected_audit=expected_audit_from_contract(payload))
+    validation = validate_chunk_repair_contract(
+        payload, expected_audit=expected_audit_from_contract(payload)
+    )
     if not validation.passed:
         codes = ", ".join(sorted(validation.refusal_counts))
-        raise BoundedRepairPrototypeRenderError(f"rendered prototype failed contract validation: {codes}")
+        raise BoundedRepairPrototypeRenderError(
+            f"rendered prototype failed contract validation: {codes}"
+        )
 
     markdown = render_bounded_chunk_repair_markdown(payload)
     markdown_diagnostics = validate_chunk_repair_contract_markdown(markdown)
     if markdown_diagnostics:
         codes = ", ".join(sorted({diagnostic.code for diagnostic in markdown_diagnostics}))
-        raise BoundedRepairPrototypeRenderError(f"rendered Markdown failed redaction checks: {codes}")
+        raise BoundedRepairPrototypeRenderError(
+            f"rendered Markdown failed redaction checks: {codes}"
+        )
 
     json_text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
     json_output.parent.mkdir(parents=True, exist_ok=True)
@@ -96,11 +106,30 @@ def render_prototype_files(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--contract", type=Path, required=True, help="S02 chunk-repair-contract JSON")
-    parser.add_argument("--locator-batch", type=Path, required=True, help="Redacted deterministic locator batch JSON")
-    parser.add_argument("--json-output", type=Path, required=True, help="Destination for bounded repair prototype JSON")
-    parser.add_argument("--markdown-output", type=Path, required=True, help="Destination for bounded repair prototype Markdown")
-    parser.add_argument("--max-target-count", type=int, default=6, help="Maximum selected repair targets")
+    parser.add_argument(
+        "--contract", type=Path, required=True, help="S02 chunk-repair-contract JSON"
+    )
+    parser.add_argument(
+        "--locator-batch",
+        type=Path,
+        required=True,
+        help="Redacted deterministic locator batch JSON",
+    )
+    parser.add_argument(
+        "--json-output",
+        type=Path,
+        required=True,
+        help="Destination for bounded repair prototype JSON",
+    )
+    parser.add_argument(
+        "--markdown-output",
+        type=Path,
+        required=True,
+        help="Destination for bounded repair prototype Markdown",
+    )
+    parser.add_argument(
+        "--max-target-count", type=int, default=6, help="Maximum selected repair targets"
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -111,7 +140,12 @@ def main(argv: list[str] | None = None) -> int:
             args.markdown_output,
             max_target_count=args.max_target_count,
         )
-    except (FileNotFoundError, BoundedChunkRepairError, BoundedRepairPrototypeRenderError, ValueError) as exc:
+    except (
+        FileNotFoundError,
+        BoundedChunkRepairError,
+        BoundedRepairPrototypeRenderError,
+        ValueError,
+    ) as exc:
         sys.stderr.write(f"bounded repair prototype render failed: {exc}\n")
         return 2
 

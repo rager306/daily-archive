@@ -450,7 +450,9 @@ def _coerce_source(
     if isinstance(source, ArticleLoadSource):
         explicit_type = source.source_type if source_type == "auto" else source_type
         explicit_paper_id = source.paper_id if paper_id is None else paper_id
-        return ArticleLoadSource(source.source_path, paper_id=explicit_paper_id, source_type=explicit_type)
+        return ArticleLoadSource(
+            source.source_path, paper_id=explicit_paper_id, source_type=explicit_type
+        )
     return ArticleLoadSource(Path(source), paper_id=paper_id, source_type=source_type)
 
 

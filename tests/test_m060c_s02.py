@@ -33,7 +33,9 @@ def test_applicability_matrix_emitted(matrix_report: dict) -> None:
     markdown = markdown_path.read_text(encoding="utf-8")
     assert payload["artifact"] == "m060c_s02_applicability_matrix"
     assert "# M060c S02 Applicability Matrix" in markdown
-    assert "| Library | Milestone | Score | Use-case fit | Integration cost | Decision |" in markdown
+    assert (
+        "| Library | Milestone | Score | Use-case fit | Integration cost | Decision |" in markdown
+    )
 
 
 def test_applicability_matrix_7_libraries(matrix_report: dict) -> None:

@@ -115,7 +115,9 @@ def _count_chunks(path: Path) -> tuple[int, list[dict[str, Any]]]:
     if not isinstance(chunks, list):
         raise FinalReplayError(f"chunk artifact has non-list chunks/items: {path}")
     diagnostics = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), list) else []
-    return len([chunk for chunk in chunks if isinstance(chunk, dict)]), [d for d in diagnostics if isinstance(d, dict)]
+    return len([chunk for chunk in chunks if isinstance(chunk, dict)]), [
+        d for d in diagnostics if isinstance(d, dict)
+    ]
 
 
 def _evidence_metrics(paths: dict[str, Path]) -> tuple[dict[str, int], dict[str, int]]:
@@ -130,7 +132,11 @@ def _evidence_metrics(paths: dict[str, Path]) -> tuple[dict[str, int], dict[str,
 
 
 def _candidate_baseline_paths(baseline: Path, slug: str) -> list[Path]:
-    return [baseline / slug / "final.json", baseline / slug / "preprocessing-final.json", baseline / f"{slug}.json"]
+    return [
+        baseline / slug / "final.json",
+        baseline / slug / "preprocessing-final.json",
+        baseline / f"{slug}.json",
+    ]
 
 
 def _baseline_comparison(baseline: Path, slug: str, metrics: dict[str, Any]) -> dict[str, Any]:
@@ -141,7 +147,9 @@ def _baseline_comparison(baseline: Path, slug: str, metrics: dict[str, Any]) -> 
             "message": "Baseline directory is absent; final replay is blocked from claiming parity.",
             "metric_deltas": {},
         }
-    baseline_path = next((path for path in _candidate_baseline_paths(baseline, slug) if path.exists()), None)
+    baseline_path = next(
+        (path for path in _candidate_baseline_paths(baseline, slug) if path.exists()), None
+    )
     if baseline_path is None:
         return {
             "category": "baseline_missing",
@@ -150,16 +158,27 @@ def _baseline_comparison(baseline: Path, slug: str, metrics: dict[str, Any]) -> 
             "metric_deltas": {},
         }
     baseline_payload = _load_json(baseline_path)
-    baseline_metrics = baseline_payload.get("metrics") if isinstance(baseline_payload.get("metrics"), dict) else {}
+    baseline_metrics = (
+        baseline_payload.get("metrics") if isinstance(baseline_payload.get("metrics"), dict) else {}
+    )
     current_flat = {
         "chunk_count": int(metrics.get("chunk_count") or 0),
-        **{f"evidence_{key}_count": int(value) for key, value in dict(metrics.get("evidence_counts") or {}).items()},
+        **{
+            f"evidence_{key}_count": int(value)
+            for key, value in dict(metrics.get("evidence_counts") or {}).items()
+        },
     }
     baseline_flat = {
         "chunk_count": int(baseline_metrics.get("chunk_count") or 0),
-        **{f"evidence_{key}_count": int(value) for key, value in dict(baseline_metrics.get("evidence_counts") or {}).items()},
+        **{
+            f"evidence_{key}_count": int(value)
+            for key, value in dict(baseline_metrics.get("evidence_counts") or {}).items()
+        },
     }
-    deltas = {key: current_flat.get(key, 0) - baseline_flat.get(key, 0) for key in sorted(set(current_flat) | set(baseline_flat))}
+    deltas = {
+        key: current_flat.get(key, 0) - baseline_flat.get(key, 0)
+        for key in sorted(set(current_flat) | set(baseline_flat))
+    }
     category = "exact_match" if all(delta == 0 for delta in deltas.values()) else "metric_delta"
     return {
         "category": category,
@@ -174,16 +193,23 @@ def _resolve_local_inputs(corpus_root: Path, article_ref: str) -> tuple[Path, di
     chunk_path = corpus_root / "chunking" / slug / "chunks.json"
     if not chunk_path.exists():
         raise FinalReplayError(f"missing local chunking artifact for {article_ref}: {chunk_path}")
-    evidence_paths = {evidence_type: corpus_root / "evidence" / slug / f"{evidence_type}.json" for evidence_type in EVIDENCE_TYPES}
+    evidence_paths = {
+        evidence_type: corpus_root / "evidence" / slug / f"{evidence_type}.json"
+        for evidence_type in EVIDENCE_TYPES
+    }
     missing = [str(path) for path in evidence_paths.values() if not path.exists()]
     if missing:
-        raise FinalReplayError(f"missing local evidence artifact(s) for {article_ref}: {', '.join(missing)}")
+        raise FinalReplayError(
+            f"missing local evidence artifact(s) for {article_ref}: {', '.join(missing)}"
+        )
     return chunk_path, evidence_paths
 
 
 def run_replay(args: argparse.Namespace) -> list[dict[str, Any]]:
     if not getattr(args, "no_network", False):
-        raise FinalReplayError("final replay requires --no-network so missing local artifacts fail closed")
+        raise FinalReplayError(
+            "final replay requires --no-network so missing local artifacts fail closed"
+        )
     catalog = _load_json(args.catalog)
     index = _load_json(args.index)
     selection = _load_json(args.selection)
@@ -207,7 +233,9 @@ def run_replay(args: argparse.Namespace) -> list[dict[str, Any]]:
     for article in selected:
         catalog_entry = catalog_refs.get(article.article_ref)
         if catalog_entry is None:
-            raise FinalReplayError(f"selection article {article.article_ref} is absent from catalog index")
+            raise FinalReplayError(
+                f"selection article {article.article_ref} is absent from catalog index"
+            )
         slug = _article_slug(article.article_ref)
         chunk_path, evidence_paths = _resolve_local_inputs(corpus_root, article.article_ref)
         chunk_count, chunk_diagnostics = _count_chunks(chunk_path)
@@ -221,7 +249,9 @@ def run_replay(args: argparse.Namespace) -> list[dict[str, Any]]:
         }
         comparison = _baseline_comparison(args.baseline, slug, metrics)
         if comparison["category"] not in BASELINE_CATEGORIES:
-            raise FinalReplayError(f"unsupported baseline comparison category: {comparison['category']}")
+            raise FinalReplayError(
+                f"unsupported baseline comparison category: {comparison['category']}"
+            )
         diagnostics = list(chunk_diagnostics)
         if comparison["category"] == "baseline_missing":
             diagnostics.append(
@@ -265,7 +295,9 @@ def run_replay(args: argparse.Namespace) -> list[dict[str, Any]]:
             "readiness": {
                 "preprocessing_replay_completed": True,
                 "larger_validation_ready": comparison["category"] != "baseline_missing",
-                "blocked_reason": "baseline_missing" if comparison["category"] == "baseline_missing" else None,
+                "blocked_reason": "baseline_missing"
+                if comparison["category"] == "baseline_missing"
+                else None,
             },
         }
         output_path = args.final / slug / "final.json"
@@ -325,7 +357,9 @@ def _classification_for(category: str) -> str:
     return "blocked"
 
 
-def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any]]) -> dict[str, Any]:
+def _summary_from_artifacts(
+    args: argparse.Namespace, events: list[dict[str, Any]]
+) -> dict[str, Any]:
     artifacts = _read_final_artifacts(args.final)
     behavior_counts: dict[str, int] = {}
     comparison_counts: dict[str, int] = {}
@@ -334,18 +368,30 @@ def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any
     safety_violations: list[dict[str, Any]] = []
     for artifact in artifacts:
         article_ref = str(artifact.get("article_ref"))
-        comparison = artifact.get("baseline_comparison") if isinstance(artifact.get("baseline_comparison"), dict) else {}
+        comparison = (
+            artifact.get("baseline_comparison")
+            if isinstance(artifact.get("baseline_comparison"), dict)
+            else {}
+        )
         category = str(comparison.get("category") or "unknown")
         behavior = _classification_for(category)
         comparison_counts[category] = comparison_counts.get(category, 0) + 1
         behavior_counts[behavior] = behavior_counts.get(behavior, 0) + 1
-        diagnostics = artifact.get("diagnostics") if isinstance(artifact.get("diagnostics"), list) else []
+        diagnostics = (
+            artifact.get("diagnostics") if isinstance(artifact.get("diagnostics"), list) else []
+        )
         for diagnostic in diagnostics:
             if isinstance(diagnostic, dict):
                 code = str(diagnostic.get("code") or "UNKNOWN")
                 diagnostic_counts[code] = diagnostic_counts.get(code, 0) + 1
-        safety_state = artifact.get("safety_state") if isinstance(artifact.get("safety_state"), dict) else {}
-        violated = {key: safety_state.get(key) for key in FALSE_SAFETY_FLAGS if safety_state.get(key) is not False}
+        safety_state = (
+            artifact.get("safety_state") if isinstance(artifact.get("safety_state"), dict) else {}
+        )
+        violated = {
+            key: safety_state.get(key)
+            for key in FALSE_SAFETY_FLAGS
+            if safety_state.get(key) is not False
+        }
         if violated:
             safety_violations.append({"article_ref": article_ref, "violations": violated})
         article_results.append(
@@ -359,13 +405,19 @@ def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any
                     and artifact["readiness"].get("larger_validation_ready") is True
                 ),
                 "diagnostic_count": len([item for item in diagnostics if isinstance(item, dict)]),
-                "metrics": artifact.get("metrics") if isinstance(artifact.get("metrics"), dict) else {},
+                "metrics": artifact.get("metrics")
+                if isinstance(artifact.get("metrics"), dict)
+                else {},
             }
         )
     no_network_proof = {
         "required": True,
-        "network_fetch_attempted": any(event.get("network_fetch_attempted") is True for event in events),
-        "all_events_no_network": all(event.get("no_network") is True for event in events if "no_network" in event),
+        "network_fetch_attempted": any(
+            event.get("network_fetch_attempted") is True for event in events
+        ),
+        "all_events_no_network": all(
+            event.get("no_network") is True for event in events if "no_network" in event
+        ),
     }
     no_write_safety = {
         "require_no_import_flags": bool(getattr(args, "require_no_import_flags", False)),
@@ -374,7 +426,9 @@ def _summary_from_artifacts(args: argparse.Namespace, events: list[dict[str, Any
         "production_import_attempted": False,
         "ladybugdb_written": False,
     }
-    ready = not safety_violations and all(result["larger_validation_ready"] for result in article_results)
+    ready = not safety_violations and all(
+        result["larger_validation_ready"] for result in article_results
+    )
     blockers: list[str] = []
     if any(result["baseline_category"] == "baseline_missing" for result in article_results):
         blockers.append("baseline_missing")
@@ -413,7 +467,9 @@ def _write_decision(path: Path, summary: dict[str, Any]) -> None:
     decision = {
         "schema_version": "m025-preprocessing-readiness-decision.v00.01",
         "decision": summary["readiness"]["decision"],
-        "larger_preprocessing_validation_ready": summary["readiness"]["larger_preprocessing_validation_ready"],
+        "larger_preprocessing_validation_ready": summary["readiness"][
+            "larger_preprocessing_validation_ready"
+        ],
         "blockers": summary["readiness"]["blockers"],
         "graph_readiness_claim": False,
         "rationale": summary["readiness"]["message"],
@@ -451,19 +507,19 @@ def _write_report(path: Path, summary: dict[str, Any]) -> None:
 
 ## Decision
 
-- Larger preprocessing validation ready: **{str(summary['readiness']['larger_preprocessing_validation_ready']).lower()}**
-- Decision: **{summary['readiness']['decision']}**
-- Blockers: {', '.join(blockers)}
+- Larger preprocessing validation ready: **{str(summary["readiness"]["larger_preprocessing_validation_ready"]).lower()}**
+- Decision: **{summary["readiness"]["decision"]}**
+- Blockers: {", ".join(blockers)}
 - Graph readiness claim: **false**
 
 M025 makes no graph readiness claim. This report only evaluates whether the refactored preprocessing replay over the fixed five-article local smoke corpus is ready for larger preprocessing validation.
 
 ## Baseline Comparison
 
-- Baseline path: `{summary['baseline_path']}`
-- Final replay path: `{summary['final_path']}`
-- Behavior counts: `{json.dumps(summary['behavior_counts'], sort_keys=True)}`
-- Baseline comparison counts: `{json.dumps(summary['baseline_comparison_counts'], sort_keys=True)}`
+- Baseline path: `{summary["baseline_path"]}`
+- Final replay path: `{summary["final_path"]}`
+- Behavior counts: `{json.dumps(summary["behavior_counts"], sort_keys=True)}`
+- Baseline comparison counts: `{json.dumps(summary["baseline_comparison_counts"], sort_keys=True)}`
 
 {chr(10).join(rows)}
 
@@ -473,15 +529,15 @@ M025 makes no graph readiness claim. This report only evaluates whether the refa
 
 ## Readiness Blockers
 
-{chr(10).join(f'- {blocker}' for blocker in blockers)}
+{chr(10).join(f"- {blocker}" for blocker in blockers)}
 
 ## No-Network Proof
 
-`{json.dumps(summary['no_network_proof'], sort_keys=True)}`
+`{json.dumps(summary["no_network_proof"], sort_keys=True)}`
 
 ## No-Write Safety Evidence
 
-`{json.dumps(summary['no_write_safety'], sort_keys=True)}`
+`{json.dumps(summary["no_write_safety"], sort_keys=True)}`
 
 ## Failure Modes
 
@@ -512,7 +568,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--baseline", required=True, type=Path)
     parser.add_argument("--final", required=True, type=Path)
     parser.add_argument("--write-events", type=Path)
-    parser.add_argument("--events", type=Path, help="Read an existing final replay event log instead of rewriting it.")
+    parser.add_argument(
+        "--events",
+        type=Path,
+        help="Read an existing final replay event log instead of rewriting it.",
+    )
     parser.add_argument("--no-network", action="store_true")
     parser.add_argument("--require-no-network", action="store_true")
     parser.add_argument("--require-no-import-flags", action="store_true")
@@ -524,7 +584,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _events_from_path(path: Path) -> list[dict[str, Any]]:
     try:
-        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        return [
+            json.loads(line)
+            for line in path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
     except FileNotFoundError as exc:
         raise FinalReplayError(f"required local event log is missing: {path}") from exc
     except json.JSONDecodeError as exc:
@@ -539,22 +603,29 @@ def main(argv: list[str] | None = None) -> int:
         if args.events is not None and args.write_events is None:
             events = _events_from_path(args.events)
             _read_final_artifacts(args.final)
-            completed = sum(1 for event in events if event.get("event_type") == "final_replay.article_completed")
+            completed = sum(
+                1 for event in events if event.get("event_type") == "final_replay.article_completed"
+            )
         else:
             events = run_replay(args)
             if args.write_events is not None:
                 args.write_events.parent.mkdir(parents=True, exist_ok=True)
                 args.write_events.write_text(
-                    "".join(json.dumps(event, sort_keys=True) + "\n" for event in events), encoding="utf-8"
+                    "".join(json.dumps(event, sort_keys=True) + "\n" for event in events),
+                    encoding="utf-8",
                 )
-            completed = sum(1 for event in events if event["event_type"] == "final_replay.article_completed")
+            completed = sum(
+                1 for event in events if event["event_type"] == "final_replay.article_completed"
+            )
         summary = None
         if args.write_summary or args.write_report or args.write_decision:
             summary = _summary_from_artifacts(args, events)
             if args.require_no_network and summary["no_network_proof"]["network_fetch_attempted"]:
                 raise FinalReplayError("network fetch was attempted despite --require-no-network")
             if args.require_no_import_flags and summary["no_write_safety"]["safety_violations"]:
-                raise FinalReplayError("final replay artifacts contain graph/import/write safety flag violations")
+                raise FinalReplayError(
+                    "final replay artifacts contain graph/import/write safety flag violations"
+                )
         if args.write_summary is not None and summary is not None:
             _write_summary(args.write_summary, summary)
         if args.write_report is not None and summary is not None:

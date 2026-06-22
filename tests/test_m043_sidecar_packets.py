@@ -51,7 +51,12 @@ def _source(*, local_pdf_count: int = 0) -> dict:
     }
 
 
-def _runtime(*, grobid: str = "replayable_prior_evidence", opendataloader: str = "live_ready", adaptix: str = "live_ready") -> dict:
+def _runtime(
+    *,
+    grobid: str = "replayable_prior_evidence",
+    opendataloader: str = "live_ready",
+    adaptix: str = "live_ready",
+) -> dict:
     return {
         "checks": {
             "current_baseline": {"status": "ready"},
@@ -82,13 +87,27 @@ def _reuse() -> dict:
 
 
 def test_build_packets_blocks_pdf_sidecars_without_local_pdf():
-    packet = packets_mod.build_packets(target=_target(), source_readiness=_source(local_pdf_count=0), runtime=_runtime(), reuse=_reuse())
+    packet = packets_mod.build_packets(
+        target=_target(),
+        source_readiness=_source(local_pdf_count=0),
+        runtime=_runtime(),
+        reuse=_reuse(),
+    )
 
     article = packet["packets"][0]
     assert article["sidecars"]["current_baseline"]["status"] == "ready_contract_reference"
-    assert article["sidecars"]["grobid"]["status"] == "blocked_target_specific_run_replayable_prior_evidence"
-    assert article["sidecars"]["opendataloader_pdf"]["status"] == "blocked_target_specific_run_replayable_prior_evidence"
-    assert article["sidecars"]["adaptix"]["status"] == "blocked_waiting_for_target_opendataloader_fixed_json"
+    assert (
+        article["sidecars"]["grobid"]["status"]
+        == "blocked_target_specific_run_replayable_prior_evidence"
+    )
+    assert (
+        article["sidecars"]["opendataloader_pdf"]["status"]
+        == "blocked_target_specific_run_replayable_prior_evidence"
+    )
+    assert (
+        article["sidecars"]["adaptix"]["status"]
+        == "blocked_waiting_for_target_opendataloader_fixed_json"
+    )
     assert "local_pdf_missing" in article["sidecars"]["opendataloader_pdf"]["blockers"]
     assert packet["forbidden_payload_fields_absent"] is True
     assert packet["graph_write_allowed"] is False
@@ -114,7 +133,9 @@ def test_build_packets_rejects_enabled_safety_flag():
     target["graph_write_allowed"] = True
 
     try:
-        packets_mod.build_packets(target=target, source_readiness=_source(), runtime=_runtime(), reuse=_reuse())
+        packets_mod.build_packets(
+            target=target, source_readiness=_source(), runtime=_runtime(), reuse=_reuse()
+        )
     except ValueError as exc:
         assert "safety flag" in str(exc)
     else:  # pragma: no cover - defensive failure branch
@@ -131,7 +152,9 @@ def test_assert_no_forbidden_fields_rejects_raw_text():
 
 
 def test_render_markdown_includes_status_counts():
-    packet = packets_mod.build_packets(target=_target(), source_readiness=_source(), runtime=_runtime(), reuse=_reuse())
+    packet = packets_mod.build_packets(
+        target=_target(), source_readiness=_source(), runtime=_runtime(), reuse=_reuse()
+    )
     markdown = packets_mod.render_markdown(packet)
 
     assert "Graph writes: disabled" in markdown

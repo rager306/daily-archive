@@ -122,7 +122,9 @@ def build_artifact_scaffold_gate(
     manifest = build_article_artifact_manifest_from_structure(structure)
     manifest_findings = validate_article_artifact_manifest(manifest)
     if manifest_findings:
-        raise ArtifactScaffoldGateError(f"fixture manifest failed validation with {len(manifest_findings)} diagnostics")
+        raise ArtifactScaffoldGateError(
+            f"fixture manifest failed validation with {len(manifest_findings)} diagnostics"
+        )
 
     input_hashes = {"input_structure_sha256": _sha256_file(structure_path)}
     output_paths = {
@@ -149,7 +151,9 @@ def build_artifact_scaffold_gate(
         minimax_cases=benchmark_gold["gold"],
     )
 
-    manifest_summary = manifest.get("summary", {}) if isinstance(manifest.get("summary"), dict) else {}
+    manifest_summary = (
+        manifest.get("summary", {}) if isinstance(manifest.get("summary"), dict) else {}
+    )
     review_states = _count_review_states(manifest)
     unsafe_counters = _unsafe_counters(
         manifest=manifest,
@@ -176,7 +180,9 @@ def build_artifact_scaffold_gate(
             "artifact_count": int(manifest_summary.get("artifact_count", 0)),
             "candidate_link_count": int(manifest_summary.get("candidate_link_count", 0)),
             "artifact_counts_by_type": dict(manifest_summary.get("artifact_counts_by_type", {})),
-            "candidate_link_type_counts": dict(manifest_summary.get("candidate_link_type_counts", {})),
+            "candidate_link_type_counts": dict(
+                manifest_summary.get("candidate_link_type_counts", {})
+            ),
             "review_state_counts": review_states,
             "missing_span_count": int(manifest_summary.get("missing_span_count", 0)),
             "diagnostic_count": len(manifest.get("diagnostics", [])),
@@ -233,21 +239,51 @@ def verify_artifact_scaffold_gate(gate: dict[str, Any]) -> list[dict[str, Any]]:
     findings: list[dict[str, Any]] = []
     if gate.get("schema_version") != FINAL_GATE_SCHEMA_VERSION:
         findings.append({"code": "schema_version_mismatch", "json_path": "/schema_version"})
-    flags = gate.get("blocked_operation_flags") if isinstance(gate.get("blocked_operation_flags"), dict) else {}
+    flags = (
+        gate.get("blocked_operation_flags")
+        if isinstance(gate.get("blocked_operation_flags"), dict)
+        else {}
+    )
     for key, expected in BLOCKED_OPERATION_FLAGS.items():
         if flags.get(key) != expected:
-            findings.append({"code": "blocked_operation_flag_mismatch", "json_path": f"/blocked_operation_flags/{key}"})
-    helper = gate.get("minimax_helper_status") if isinstance(gate.get("minimax_helper_status"), dict) else {}
+            findings.append(
+                {
+                    "code": "blocked_operation_flag_mismatch",
+                    "json_path": f"/blocked_operation_flags/{key}",
+                }
+            )
+    helper = (
+        gate.get("minimax_helper_status")
+        if isinstance(gate.get("minimax_helper_status"), dict)
+        else {}
+    )
     if helper.get("raw_prompt_persisted") is not False:
-        findings.append({"code": "helper_raw_prompt_persisted", "json_path": "/minimax_helper_status/raw_prompt_persisted"})
+        findings.append(
+            {
+                "code": "helper_raw_prompt_persisted",
+                "json_path": "/minimax_helper_status/raw_prompt_persisted",
+            }
+        )
     if helper.get("raw_response_persisted") is not False:
-        findings.append({"code": "helper_raw_response_persisted", "json_path": "/minimax_helper_status/raw_response_persisted"})
+        findings.append(
+            {
+                "code": "helper_raw_response_persisted",
+                "json_path": "/minimax_helper_status/raw_response_persisted",
+            }
+        )
     if helper.get("minimax_source_of_truth") is not False:
-        findings.append({"code": "helper_marked_source_of_truth", "json_path": "/minimax_helper_status/minimax_source_of_truth"})
+        findings.append(
+            {
+                "code": "helper_marked_source_of_truth",
+                "json_path": "/minimax_helper_status/minimax_source_of_truth",
+            }
+        )
     serialized = json.dumps(gate, sort_keys=True).lower()
     for fragment in FORBIDDEN_SERIALIZED_FRAGMENTS:
         if fragment.lower() in serialized:
-            findings.append({"code": "forbidden_serialized_fragment", "json_path": "/", "fragment": fragment})
+            findings.append(
+                {"code": "forbidden_serialized_fragment", "json_path": "/", "fragment": fragment}
+            )
     return findings
 
 
@@ -261,10 +297,12 @@ def render_artifact_scaffold_review_markdown(gate: dict[str, Any]) -> str:
     unsafe = gate["unsafe_counters"]
     flags = gate["blocked_operation_flags"]
     artifact_rows = [
-        f"| {name} | {count} |" for name, count in sorted(manifest["artifact_counts_by_type"].items())
+        f"| {name} | {count} |"
+        for name, count in sorted(manifest["artifact_counts_by_type"].items())
     ]
     link_rows = [
-        f"| {name} | {count} |" for name, count in sorted(manifest["candidate_link_type_counts"].items())
+        f"| {name} | {count} |"
+        for name, count in sorted(manifest["candidate_link_type_counts"].items())
     ]
     return "\n".join(
         [
@@ -377,9 +415,15 @@ def _unsafe_counters(
     helper_diagnostics: dict[str, Any],
     benchmark_report: dict[str, Any],
 ) -> dict[str, int]:
-    runs = benchmark_report.get("runs", {}) if isinstance(benchmark_report.get("runs"), dict) else {}
-    all_run_raw_leakage = sum(int(run.get("totals", {}).get("raw_leakage_count", 0)) for run in runs.values())
-    all_run_unsafe_auth = sum(int(run.get("totals", {}).get("unsafe_authorization_count", 0)) for run in runs.values())
+    runs = (
+        benchmark_report.get("runs", {}) if isinstance(benchmark_report.get("runs"), dict) else {}
+    )
+    all_run_raw_leakage = sum(
+        int(run.get("totals", {}).get("raw_leakage_count", 0)) for run in runs.values()
+    )
+    all_run_unsafe_auth = sum(
+        int(run.get("totals", {}).get("unsafe_authorization_count", 0)) for run in runs.values()
+    )
     return {
         "manifest_raw_leakage_count": count_raw_leakage(manifest),
         "manifest_unsafe_authorization_count": count_unsafe_authorizations(manifest),
@@ -387,9 +431,15 @@ def _unsafe_counters(
         "run_summary_unsafe_authorization_count": count_unsafe_authorizations(run_summary),
         "diagnostics_raw_leakage_count": count_raw_leakage(diagnostics),
         "diagnostics_unsafe_authorization_count": count_unsafe_authorizations(diagnostics),
-        "helper_raw_prompt_persisted_count": int(helper_diagnostics.get("raw_prompt_persisted") is True),
-        "helper_raw_response_persisted_count": int(helper_diagnostics.get("raw_response_persisted") is True),
-        "helper_source_of_truth_count": int(helper_diagnostics.get("minimax_source_of_truth") is True),
+        "helper_raw_prompt_persisted_count": int(
+            helper_diagnostics.get("raw_prompt_persisted") is True
+        ),
+        "helper_raw_response_persisted_count": int(
+            helper_diagnostics.get("raw_response_persisted") is True
+        ),
+        "helper_source_of_truth_count": int(
+            helper_diagnostics.get("minimax_source_of_truth") is True
+        ),
         "benchmark_all_runs_raw_leakage_count": all_run_raw_leakage,
         "benchmark_all_runs_unsafe_authorization_count": all_run_unsafe_auth,
         "production_import_attempted_count": 0,
@@ -440,13 +490,17 @@ def _write_text(path: Path, content: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Build and verify the M023 article artifact scaffold gate.")
+    parser = argparse.ArgumentParser(
+        description="Build and verify the M023 article artifact scaffold gate."
+    )
     parser.add_argument("--structure", type=Path, default=DEFAULT_STRUCTURE_PATH)
     parser.add_argument("--benchmark-cases", type=Path, default=DEFAULT_BENCHMARK_CASES_PATH)
     parser.add_argument("--benchmark-gold", type=Path, default=DEFAULT_BENCHMARK_GOLD_PATH)
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument("--output-markdown", type=Path, required=True)
-    parser.add_argument("--strict", action="store_true", help="Exit non-zero if final-gate boundary checks fail.")
+    parser.add_argument(
+        "--strict", action="store_true", help="Exit non-zero if final-gate boundary checks fail."
+    )
     args = parser.parse_args(argv)
 
     try:

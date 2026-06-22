@@ -21,6 +21,7 @@ def dict_to_scored_paper(data: dict[str, Any]) -> ScoredPaper:
 
 # --- Property: deserialized papers preserve critical fields ---
 
+
 def test_arxiv_paper_roundtrip() -> None:
     """ArxivPaper serialized to dict and back must preserve all fields."""
     original = ArxivPaper(
@@ -115,6 +116,7 @@ def test_scored_paper_embedding_roundtrip() -> None:
 
 # --- Property: session file format is valid JSON ---
 
+
 def test_session_file_is_valid_json(tmp_path: Path) -> None:
     """Session file written by cli.save_session must be valid JSON parseable."""
     from research_graph.cli import save_session
@@ -134,13 +136,11 @@ def test_session_file_is_valid_json(tmp_path: Path) -> None:
     ]
 
     engine = ScoringEngine()
-    scored = [
-        engine.score(p, None, [f"kw{i}"])
-        for i, p in enumerate(papers)
-    ]
+    scored = [engine.score(p, None, [f"kw{i}"]) for i, p in enumerate(papers)]
 
     # Override SESSIONS_DIR to tmp_path for test
     import research_graph.cli as cli_module
+
     original_sessions_dir = cli_module.SESSIONS_DIR
     cli_module.SESSIONS_DIR = tmp_path / "sessions"
 
@@ -154,6 +154,7 @@ def test_session_file_is_valid_json(tmp_path: Path) -> None:
 
 
 # --- Pipeline integration: score preserves ordering ---
+
 
 def test_pipeline_score_preserves_order() -> None:
     """Higher component scores must produce higher total scores."""
@@ -174,6 +175,7 @@ def test_pipeline_score_preserves_order() -> None:
 
     # Score with 100 citations
     from research_graph.infrastructure.corpus.sources.semantic_scholar import SemanticScholarPaper
+
     s2 = engine.score(
         base_paper,
         SemanticScholarPaper(
@@ -187,12 +189,11 @@ def test_pipeline_score_preserves_order() -> None:
     )
 
     # More citations => higher score
-    assert s2.score >= s1.score, (
-        f"More citations should give higher score: {s2.score} < {s1.score}"
-    )
+    assert s2.score >= s1.score, f"More citations should give higher score: {s2.score} < {s1.score}"
 
 
 # --- Edge: empty paper list ---
+
 
 def test_pipeline_empty_paper_list() -> None:
     """Sorting empty list must not crash."""
@@ -203,6 +204,7 @@ def test_pipeline_empty_paper_list() -> None:
 
 
 # --- Edge: single paper ---
+
 
 def test_pipeline_single_paper() -> None:
     """Single paper pipeline must return that paper as top-1."""

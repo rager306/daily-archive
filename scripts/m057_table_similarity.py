@@ -13,7 +13,9 @@ from typing import Any
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CORPUS = ROOT / "artifacts" / "m057-fd-marker" / "table-similarity" / "table-text-corpus.json"
+DEFAULT_CORPUS = (
+    ROOT / "artifacts" / "m057-fd-marker" / "table-similarity" / "table-text-corpus.json"
+)
 DEFAULT_EMBEDDINGS = ROOT / "artifacts" / "m057-fd-marker" / "table-similarity" / "embeddings.json"
 DEFAULT_EDGES = ROOT / "artifacts" / "m057-fd-marker" / "table-similarity" / "edges.json"
 DEFAULT_SUMMARY = ROOT / "artifacts" / "m057-fd-marker" / "table-similarity" / "summary.json"
@@ -68,7 +70,9 @@ def compute_similarity_edges(
     table_ids = sorted(table_by_id)
     missing = [table_id for table_id in table_ids if table_id not in embedding_map]
     if missing:
-        raise ValueError(f"missing embeddings for {len(missing)} tables; first missing: {missing[0]}")
+        raise ValueError(
+            f"missing embeddings for {len(missing)} tables; first missing: {missing[0]}"
+        )
     matrix = np.asarray([embedding_map[table_id] for table_id in table_ids], dtype=np.float32)
     if matrix.ndim != 2 or matrix.shape[1] != 1024:
         raise ValueError(f"expected embedding matrix with 1024 columns, got {matrix.shape}")
@@ -136,7 +140,9 @@ def compute_similarity_edges(
         "edges": edges,
     }
     edges_path.parent.mkdir(parents=True, exist_ok=True)
-    edges_path.write_text(json.dumps(edges_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    edges_path.write_text(
+        json.dumps(edges_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return edges, summary
 

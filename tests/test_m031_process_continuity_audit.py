@@ -16,7 +16,9 @@ IMPORT_DIAGNOSTICS = CORPUS_DIR / "import-boundary-rehearsal" / "import-boundary
 
 
 def _run(args: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run([sys.executable, SCRIPT.as_posix(), *args], check=False, capture_output=True, text=True)
+    return subprocess.run(
+        [sys.executable, SCRIPT.as_posix(), *args], check=False, capture_output=True, text=True
+    )
 
 
 def _read_json(path: Path) -> dict[str, object]:
@@ -41,7 +43,9 @@ def _copy_outputs(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
     return matrix_json, matrix_md, audit_json, audit_md
 
 
-def _validate_args(matrix_json: Path, matrix_md: Path, audit_json: Path, audit_md: Path) -> list[str]:
+def _validate_args(
+    matrix_json: Path, matrix_md: Path, audit_json: Path, audit_md: Path
+) -> list[str]:
     return [
         "--validate-only",
         "--matrix-json",
@@ -149,7 +153,9 @@ def test_generation_rejects_missing_import_boundary_refusal_artifacts(tmp_path: 
     empty_diagnostics = tmp_path / "empty-import-diagnostics.jsonl"
     empty_diagnostics.write_text("", encoding="utf-8")
 
-    result = _run(["--import-diagnostics", empty_diagnostics.as_posix(), *_generation_output_args(tmp_path)])
+    result = _run(
+        ["--import-diagnostics", empty_diagnostics.as_posix(), *_generation_output_args(tmp_path)]
+    )
 
     assert result.returncode == 2
     assert "M031_IMPORT_BOUNDARY_REFUSAL_ARTIFACT_MISSING" in result.stderr
@@ -166,7 +172,9 @@ def test_generation_rejects_completed_review_claim_without_verdict_evidence(tmp_
                 event["output_contract_completed"] = True
                 event["independent_review_completed"] = True
             events.append(event)
-    events_path.write_text("".join(json.dumps(event, sort_keys=True) + "\n" for event in events), encoding="utf-8")
+    events_path.write_text(
+        "".join(json.dumps(event, sort_keys=True) + "\n" for event in events), encoding="utf-8"
+    )
 
     result = _run(["--review-events", events_path.as_posix(), *_generation_output_args(tmp_path)])
 
@@ -177,7 +185,9 @@ def test_generation_rejects_completed_review_claim_without_verdict_evidence(tmp_
 
 def test_validate_only_rejects_report_missing_required_coverage(tmp_path: Path) -> None:
     matrix_json, matrix_md, audit_json, audit_md = _copy_outputs(tmp_path)
-    audit_text = audit_md.read_text(encoding="utf-8").replace("## Negative Tests", "## Removed Negative Section")
+    audit_text = audit_md.read_text(encoding="utf-8").replace(
+        "## Negative Tests", "## Removed Negative Section"
+    )
     audit_md.write_text(audit_text, encoding="utf-8")
 
     result = _run(_validate_args(matrix_json, matrix_md, audit_json, audit_md))

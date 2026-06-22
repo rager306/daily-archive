@@ -127,7 +127,9 @@ def patch_analysis_components(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(cli, "Embedder", FakeEmbedder)
 
     def fail_if_persisted(*_args: object, **_kwargs: object) -> Path:
-        raise AssertionError("run_analysis() must not call save_session(); persistence belongs to S03")
+        raise AssertionError(
+            "run_analysis() must not call save_session(); persistence belongs to S03"
+        )
 
     monkeypatch.setattr(cli, "save_session", fail_if_persisted)
 
@@ -149,7 +151,11 @@ def test_run_analysis_returns_done_daily_analysis_sorted_and_capped(
     assert [paper.score for paper in analysis.papers] == sorted(
         [paper.score for paper in analysis.papers], reverse=True
     )
-    assert [paper.paper.id for paper in analysis.papers[:3]] == ["2605.00001", "2605.00002", "2605.00003"]
+    assert [paper.paper.id for paper in analysis.papers[:3]] == [
+        "2605.00001",
+        "2605.00002",
+        "2605.00003",
+    ]
     assert len(analysis.top_papers) == 10
     assert analysis.top_papers == analysis.papers[:10]
     assert isinstance(analysis.analysis_timestamp, datetime)
@@ -351,7 +357,6 @@ def test_cli_malformed_date_fails_typer_validation() -> None:
     combined_output = f"{result.stdout}\n{result.stderr}"
     assert "date must be in YYYY-MM-DD format" in combined_output
     assert "empty" not in combined_output.lower()
-
 
 
 def make_s03_done_analysis() -> DailyAnalysis:
@@ -713,7 +718,7 @@ def write_s05_sitecustomize(tmp_path: Path) -> Path:
     """Install a child-process stub that replaces live analysis dependencies."""
     sitecustomize = tmp_path / "sitecustomize.py"
     sitecustomize.write_text(
-        '''\
+        """\
 import os
 from datetime import UTC, date, datetime
 
@@ -778,7 +783,7 @@ def _fake_run_analysis(run_date):
 
 
 cli.run_analysis = _fake_run_analysis
-'''
+"""
     )
     return sitecustomize
 

@@ -272,9 +272,15 @@ def render_report(bfs_dir: Path = DEFAULT_BFS_DIR, output: Path = DEFAULT_OUTPUT
         acquisition = analysis.get("acquisition", {})
         parser_quality = analysis.get("parser_quality", {})
         success = int(acquisition.get("success_count", 0))
-        grobid_success = int(parser_quality.get("grobid_success_count", parser_quality.get("grobid_success", success)))
+        grobid_success = int(
+            parser_quality.get(
+                "grobid_success_count", parser_quality.get("grobid_success", success)
+            )
+        )
         odl_success = int(
-            parser_quality.get("opendataloader_success_count", parser_quality.get("opendataloader_success", 0))
+            parser_quality.get(
+                "opendataloader_success_count", parser_quality.get("opendataloader_success", 0)
+            )
         )
         safety_false = all(value is False for value in analysis.get("safety_defaults", {}).values())
         lines.append(
@@ -282,9 +288,7 @@ def render_report(bfs_dir: Path = DEFAULT_BFS_DIR, output: Path = DEFAULT_OUTPUT
         )
         cumulative += WAVE_EDGE_DELTAS[wave]
         status = "saturated" if WAVE_EDGE_DELTAS[wave] == 0 or wave in {2, 3} else "expanded"
-        saturation_rows.append(
-            f"| {wave} | {WAVE_EDGE_DELTAS[wave]} | {cumulative} | {status} |"
-        )
+        saturation_rows.append(f"| {wave} | {WAVE_EDGE_DELTAS[wave]} | {cumulative} | {status} |")
 
     lines.extend(
         [
@@ -370,7 +374,11 @@ def render_report(bfs_dir: Path = DEFAULT_BFS_DIR, output: Path = DEFAULT_OUTPUT
         row = manifests[arxiv_id]
         grobid = grobid_packets.get(arxiv_id, {})
         odl = opendataloader_packets.get(arxiv_id, {})
-        odl_status = "success" if odl and not odl.get("error") and not odl.get("low_quality_source") else "low_or_unavailable"
+        odl_status = (
+            "success"
+            if odl and not odl.get("error") and not odl.get("low_quality_source")
+            else "low_or_unavailable"
+        )
         if arxiv_id == ANCHOR_ARXIV_ID:
             odl_status = "anchor-not-routed"
         lines.append(

@@ -13,7 +13,9 @@ CODEBASE_MEMORY_ADR = ROOT / ".codebase-memory" / "adr.md"
 CODEBASE_MEMORY_GRAPH = ROOT / ".codebase-memory" / "governance-graph.json"
 SCORING_MATRIX = ROOT / "artifacts" / "m066-graphdb-reselection" / "scoring-matrix.md"
 DISTRIBUTION_MODEL = ROOT / "artifacts" / "m066-graphdb-reselection" / "distribution-model.md"
-FALKOR_REPORT = ROOT / "artifacts" / "m066-graphdb-reselection" / "candidates" / "falkordb-report.md"
+FALKOR_REPORT = (
+    ROOT / "artifacts" / "m066-graphdb-reselection" / "candidates" / "falkordb-report.md"
+)
 M045_REPORT = ROOT / "artifacts" / "m045-project-trajectory" / "current" / "trajectory-report.json"
 M044_REPORT = ROOT / "artifacts" / "m044-grobid-architecture-guardrail" / "final-report.md"
 M050_E2E = ROOT / "tests" / "test_m050_e2e_pipeline.py"
@@ -63,7 +65,10 @@ def test_adr_021_amendment_log_present() -> None:
     text = read(ADR_021)
     assert "## 16. Amendment Log" in text
     assert "SUPERSEDED by ADR-022" in text
-    assert "FalkorDB chosen for self-hosted daily-archive (70/90 score) instead of Neo4j (76/90)" in text
+    assert (
+        "FalkorDB chosen for self-hosted daily-archive (70/90 score) instead of Neo4j (76/90)"
+        in text
+    )
     assert "FalkorDB = SSPLv1 (NOT AGPLv3, NOT RSAL 2.0)" in text
     assert "SaaS triggers Section 13 OR commercial license" in text
 
@@ -81,15 +86,27 @@ def test_adr_020_amendment_log_2nd_entry_present() -> None:
 def test_adr_index_updated() -> None:
     text = read(ADR_INDEX)
     assert "Project-level ADR count: 22" in text
-    assert "| ADR-020 | Superseded by ADR-022 | M063 GraphDB Selection (LadybugDB primary) | `doc/adr/ADR-020-graphdb-selection.md` |" in text
-    assert "| ADR-021 | Superseded by ADR-022 | M066 GraphDB Re-Selection (Neo4j primary) | `doc/adr/ADR-021-graphdb-reselection.md` |" in text
-    assert "| ADR-022 | Accepted (binding) | M067 GraphDB Re-Selection Self-Hosted (FalkorDB primary) | `doc/adr/ADR-022-graphdb-reselection-self-hosted.md` |" in text
+    assert (
+        "| ADR-020 | Superseded by ADR-022 | M063 GraphDB Selection (LadybugDB primary) | `doc/adr/ADR-020-graphdb-selection.md` |"
+        in text
+    )
+    assert (
+        "| ADR-021 | Superseded by ADR-022 | M066 GraphDB Re-Selection (Neo4j primary) | `doc/adr/ADR-021-graphdb-reselection.md` |"
+        in text
+    )
+    assert (
+        "| ADR-022 | Accepted (binding) | M067 GraphDB Re-Selection Self-Hosted (FalkorDB primary) | `doc/adr/ADR-022-graphdb-reselection-self-hosted.md` |"
+        in text
+    )
 
 
 def test_codebase_memory_synced() -> None:
     adr_text = read(CODEBASE_MEMORY_ADR)
     graph = json.loads(read(CODEBASE_MEMORY_GRAPH))
-    assert "| ADR-022 | Accepted (binding) | `doc/adr/ADR-022-graphdb-reselection-self-hosted.md` | GraphDB Re-Selection Self-Hosted |" in adr_text
+    assert (
+        "| ADR-022 | Accepted (binding) | `doc/adr/ADR-022-graphdb-reselection-self-hosted.md` | GraphDB Re-Selection Self-Hosted |"
+        in adr_text
+    )
     adr_node = next(node for node in graph["nodes"] if node["id"] == "ADR-022")
     assert adr_node["title"] == "GraphDB Re-Selection Self-Hosted"
     assert adr_node["status"] == "Accepted (binding)"

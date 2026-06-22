@@ -38,7 +38,9 @@ def _write_jsonl(path: Path, records: list[dict[str, object] | str]) -> None:
 
 def test_load_retrieval_fixture_accepts_valid_redacted_records(tmp_path: Path) -> None:
     path = tmp_path / "persisted-candidate-claims.jsonl"
-    _write_jsonl(path, [_valid_record(), _valid_record(paper_id="p2", candidate_id="c2", chunk_id="chunk-2")])
+    _write_jsonl(
+        path, [_valid_record(), _valid_record(paper_id="p2", candidate_id="c2", chunk_id="chunk-2")]
+    )
 
     result = load_retrieval_fixture(path)
 
@@ -125,7 +127,9 @@ def test_fixture_load_serialization_is_redacted(tmp_path: Path) -> None:
 
 def test_run_retrieval_validation_exact_id_queries_cover_fixture_records(tmp_path: Path) -> None:
     path = tmp_path / "persisted-candidate-claims.jsonl"
-    _write_jsonl(path, [_valid_record(), _valid_record(paper_id="p2", candidate_id="c2", chunk_id="chunk-2")])
+    _write_jsonl(
+        path, [_valid_record(), _valid_record(paper_id="p2", candidate_id="c2", chunk_id="chunk-2")]
+    )
 
     result = run_retrieval_validation(path)
 
@@ -139,7 +143,12 @@ def test_run_retrieval_validation_exact_id_queries_cover_fixture_records(tmp_pat
     assert result.summary["embeddings_included"] is False
     assert result.summary["llm_used"] is False
     assert result.summary["ladybugdb_used"] is False
-    assert {event["query_type"] for event in result.events} == {"paper_id", "candidate_id", "chunk_id", "source_artifact"}
+    assert {event["query_type"] for event in result.events} == {
+        "paper_id",
+        "candidate_id",
+        "chunk_id",
+        "source_artifact",
+    }
     assert all(event["hit"] for event in result.events)
     assert all(event["raw_text_included"] is False for event in result.events)
 
@@ -204,7 +213,9 @@ def test_run_exclusion_checks_pass_when_refused_entries_are_absent(tmp_path: Pat
         },
     )
 
-    payload = run_exclusion_checks(claims_path=claims_path, refusals_path=refusals_path, output_path=output_path)
+    payload = run_exclusion_checks(
+        claims_path=claims_path, refusals_path=refusals_path, output_path=output_path
+    )
 
     assert output_path.exists()
     assert payload["passed"] is True
@@ -235,7 +246,9 @@ def test_run_exclusion_checks_fails_when_refused_candidate_is_persisted(tmp_path
     assert payload["forbidden_hits"][0]["match_type"] == "candidate_id"
 
 
-def test_run_exclusion_checks_allows_refused_sibling_candidate_from_same_chunk(tmp_path: Path) -> None:
+def test_run_exclusion_checks_allows_refused_sibling_candidate_from_same_chunk(
+    tmp_path: Path,
+) -> None:
     claims_path = tmp_path / "claims.jsonl"
     refusals_path = tmp_path / "refusals.json"
     _write_jsonl(claims_path, [_valid_record(candidate_id="allowed", chunk_id="shared-chunk")])

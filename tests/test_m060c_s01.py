@@ -43,7 +43,11 @@ def test_benchmark_runs_3_libraries(benchmark_report: dict) -> None:
         "synthetic_120",
     }
     assert len(benchmark_report["results"]) == 3 * 3 * 4
-    assert {result["status"] for result in benchmark_report["results"]} <= {"ok", "skipped", "error"}
+    assert {result["status"] for result in benchmark_report["results"]} <= {
+        "ok",
+        "skipped",
+        "error",
+    }
 
 
 def test_benchmark_has_all_4_algorithms(benchmark_report: dict) -> None:
@@ -67,10 +71,22 @@ def test_benchmark_comparison_table(benchmark_report: dict) -> None:
     rows = benchmark_report["comparison_table"]
     assert len(rows) == 9
     for row in rows:
-        assert {"graph", "library", "nodes", "edges", "bfs", "pagerank", "shortest_path", "connected_components"} <= set(row)
+        assert {
+            "graph",
+            "library",
+            "nodes",
+            "edges",
+            "bfs",
+            "pagerank",
+            "shortest_path",
+            "connected_components",
+        } <= set(row)
     markdown_path = Path(benchmark_report["metadata"]["markdown_path"])
     markdown = markdown_path.read_text(encoding="utf-8")
-    assert "| Graph | Library | Nodes | Edges | BFS | PageRank | Shortest path | Connected components |" in markdown
+    assert (
+        "| Graph | Library | Nodes | Edges | BFS | PageRank | Shortest path | Connected components |"
+        in markdown
+    )
     assert "## Speedup vs NetworkX" in markdown
     assert FORBIDDEN_LOOPBACK_HOSTNAME not in markdown
 
@@ -97,7 +113,9 @@ def test_5_safety_defaults(benchmark_report: dict) -> None:
 def test_m050_m060g_regression_surfaces_remain_read_only() -> None:
     report = (ROOT / "artifacts" / "m060g-judge" / "REPORT.md").read_text(encoding="utf-8")
     scope = (ROOT / "artifacts" / "m060g-judge" / "m061-scope.md").read_text(encoding="utf-8")
-    guardrail = ROOT / "artifacts" / "m044-grobid-architecture-guardrail" / "architecture-context-pack.json"
+    guardrail = (
+        ROOT / "artifacts" / "m044-grobid-architecture-guardrail" / "architecture-context-pack.json"
+    )
     assert guardrail.exists()
     for phrase in (
         "Graph writes are not authorized.",

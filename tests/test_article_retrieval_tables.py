@@ -107,10 +107,14 @@ def retrieval_tables_contract():
     """
 
     try:
-        return importlib.import_module("research_graph.infrastructure.papers.indexing.retrieval_tables")
+        return importlib.import_module(
+            "research_graph.infrastructure.papers.indexing.retrieval_tables"
+        )
     except ModuleNotFoundError as exc:
         if exc.name == "research_graph.infrastructure.papers.indexing.retrieval_tables":
-            pytest.xfail("research_graph.infrastructure.papers.indexing.retrieval_tables is not implemented yet")
+            pytest.xfail(
+                "research_graph.infrastructure.papers.indexing.retrieval_tables is not implemented yet"
+            )
         raise
 
 
@@ -205,13 +209,20 @@ def test_redacted_fixture_manifest_is_metadata_only_json_contract() -> None:
     _assert_metadata_only(manifest)
 
 
-def test_minimal_manifest_validates_schema_counters_and_review_only_statuses(retrieval_tables_contract) -> None:
+def test_minimal_manifest_validates_schema_counters_and_review_only_statuses(
+    retrieval_tables_contract,
+) -> None:
     manifest = _load_fixture("minimal_manifest.json")
 
-    assert retrieval_tables_contract.ARTICLE_RETRIEVAL_TABLES_SCHEMA_VERSION == "m024-article-retrieval-tables.v1"
+    assert (
+        retrieval_tables_contract.ARTICLE_RETRIEVAL_TABLES_SCHEMA_VERSION
+        == "m024-article-retrieval-tables.v1"
+    )
     assert retrieval_tables_contract.validate_article_retrieval_table_manifest(manifest) == []
     assert set(retrieval_tables_contract.ALLOWED_BENCHMARK_STATUSES) == EXPECTED_VALID_STATUSES
-    assert set(retrieval_tables_contract.DIAGNOSTIC_COUNTER_KEYS) == EXPECTED_DIAGNOSTIC_COUNTER_KEYS
+    assert (
+        set(retrieval_tables_contract.DIAGNOSTIC_COUNTER_KEYS) == EXPECTED_DIAGNOSTIC_COUNTER_KEYS
+    )
     assert manifest["summary"] == {
         "retrieval_unit_count": 3,
         "table_candidate_count": 1,
@@ -241,14 +252,22 @@ def test_minimal_manifest_validates_schema_counters_and_review_only_statuses(ret
         "production_import_attempted_count": 0,
         "graph_readiness_count": 0,
     }
-    assert {unit["benchmark_status"] for unit in manifest["retrieval_units"]} == {"included_review_only"}
-    assert {candidate["benchmark_status"] for candidate in manifest["table_candidates"]} == {"included_review_only"}
+    assert {unit["benchmark_status"] for unit in manifest["retrieval_units"]} == {
+        "included_review_only"
+    }
+    assert {candidate["benchmark_status"] for candidate in manifest["table_candidates"]} == {
+        "included_review_only"
+    }
     _assert_metadata_only(manifest)
 
 
-def test_build_manifest_ranks_retrieval_units_with_stable_cpu_only_tiebreakers(retrieval_tables_contract) -> None:
+def test_build_manifest_ranks_retrieval_units_with_stable_cpu_only_tiebreakers(
+    retrieval_tables_contract,
+) -> None:
     fixture = _load_fixture("minimal_manifest.json")
-    built = retrieval_tables_contract.build_article_retrieval_table_manifest(**_builder_kwargs(fixture))
+    built = retrieval_tables_contract.build_article_retrieval_table_manifest(
+        **_builder_kwargs(fixture)
+    )
 
     assert retrieval_tables_contract.validate_article_retrieval_table_manifest(built) == []
     assert [unit["unit_id"] for unit in built["retrieval_units"]] == [
@@ -257,7 +276,10 @@ def test_build_manifest_ranks_retrieval_units_with_stable_cpu_only_tiebreakers(r
         "fixture-paper-0001:retrieval-unit:table:0001",
     ]
     assert [unit["rank"] for unit in built["retrieval_units"]] == [1, 2, 3]
-    assert built["retrieval_units"][0]["benchmark_score"] == built["retrieval_units"][1]["benchmark_score"]
+    assert (
+        built["retrieval_units"][0]["benchmark_score"]
+        == built["retrieval_units"][1]["benchmark_score"]
+    )
     assert built["retrieval_units"][0]["unit_id"] < built["retrieval_units"][1]["unit_id"]
     assert built["summary"]["ranking_tie_count"] == 1
     assert built["safety_flags"]["cpu_only"] is True
@@ -267,7 +289,9 @@ def test_build_manifest_ranks_retrieval_units_with_stable_cpu_only_tiebreakers(r
     _assert_metadata_only(built)
 
 
-def test_table_candidates_preserve_asset_page_index_and_source_provenance_without_table_payloads(retrieval_tables_contract) -> None:
+def test_table_candidates_preserve_asset_page_index_and_source_provenance_without_table_payloads(
+    retrieval_tables_contract,
+) -> None:
     manifest = _load_fixture("minimal_manifest.json")
     candidate = manifest["table_candidates"][0]
 
@@ -296,7 +320,9 @@ def test_table_candidates_preserve_asset_page_index_and_source_provenance_withou
     _assert_metadata_only(candidate)
 
 
-def test_summary_helper_returns_aggregate_benchmark_and_fixed_zero_import_counters(retrieval_tables_contract) -> None:
+def test_summary_helper_returns_aggregate_benchmark_and_fixed_zero_import_counters(
+    retrieval_tables_contract,
+) -> None:
     manifest = _load_fixture("minimal_manifest.json")
 
     summary = retrieval_tables_contract.summarize_article_retrieval_tables(manifest)
@@ -318,7 +344,9 @@ def test_summary_helper_returns_aggregate_benchmark_and_fixed_zero_import_counte
     assert summary["graph_readiness_count"] == 0
 
 
-def test_to_redacted_dict_and_to_json_never_emit_forbidden_payloads_or_unsafe_flags(retrieval_tables_contract) -> None:
+def test_to_redacted_dict_and_to_json_never_emit_forbidden_payloads_or_unsafe_flags(
+    retrieval_tables_contract,
+) -> None:
     manifest = _load_fixture("minimal_manifest.json")
 
     redacted = retrieval_tables_contract.to_redacted_dict(manifest)
@@ -335,32 +363,44 @@ def test_to_redacted_dict_and_to_json_never_emit_forbidden_payloads_or_unsafe_fl
     ("mutator", "expected_code", "expected_path"),
     [
         (
-            lambda manifest: manifest["retrieval_units"].append(deepcopy(manifest["retrieval_units"][0])),
+            lambda manifest: manifest["retrieval_units"].append(
+                deepcopy(manifest["retrieval_units"][0])
+            ),
             "duplicate_id",
             "$.retrieval_units[3].unit_id",
         ),
         (
-            lambda manifest: manifest["source_refs"][0].update({"source_id": "bad source id with spaces"}),
+            lambda manifest: manifest["source_refs"][0].update(
+                {"source_id": "bad source id with spaces"}
+            ),
             "malformed_source_ref",
             "$.source_refs[0].source_id",
         ),
         (
-            lambda manifest: manifest["retrieval_units"][0].update({"page_index_anchor_id": "fixture-paper-0001:page-index-anchor:missing"}),
+            lambda manifest: manifest["retrieval_units"][0].update(
+                {"page_index_anchor_id": "fixture-paper-0001:page-index-anchor:missing"}
+            ),
             "missing_page_index_provenance",
             "$.retrieval_units[0].page_index_anchor_id",
         ),
         (
-            lambda manifest: manifest["table_candidates"][0].update({"asset_id": "fixture-paper-0001:asset:table:missing"}),
+            lambda manifest: manifest["table_candidates"][0].update(
+                {"asset_id": "fixture-paper-0001:asset:table:missing"}
+            ),
             "missing_asset_provenance",
             "$.table_candidates[0].asset_id",
         ),
         (
-            lambda manifest: manifest["table_candidates"][0].update({"benchmark_status": "accepted_for_import"}),
+            lambda manifest: manifest["table_candidates"][0].update(
+                {"benchmark_status": "accepted_for_import"}
+            ),
             "bad_vocabulary",
             "$.table_candidates[0].benchmark_status",
         ),
         (
-            lambda manifest: manifest["table_candidates"][0].update({"caption_text": "FORBIDDEN_CAPTION_TEXT_DO_NOT_ECHO"}),
+            lambda manifest: manifest["table_candidates"][0].update(
+                {"caption_text": "FORBIDDEN_CAPTION_TEXT_DO_NOT_ECHO"}
+            ),
             "forbidden_payload_key",
             "$.table_candidates[0].caption_text",
         ),
@@ -396,18 +436,24 @@ def test_validate_manifest_reports_negative_cases_with_stable_codes_and_paths(
     mutator(manifest)
 
     diagnostics = retrieval_tables_contract.validate_article_retrieval_table_manifest(manifest)
-    diagnostic_manifest = {"diagnostics": [diagnostic.to_redacted_dict() for diagnostic in diagnostics]}
+    diagnostic_manifest = {
+        "diagnostics": [diagnostic.to_redacted_dict() for diagnostic in diagnostics]
+    }
 
     assert expected_code in _diagnostic_codes(diagnostic_manifest)
     assert expected_path in _diagnostic_paths(diagnostic_manifest)
     _assert_metadata_only(diagnostic_manifest)
 
 
-def test_unsafe_fixture_collects_all_safety_and_provenance_failures(retrieval_tables_contract) -> None:
+def test_unsafe_fixture_collects_all_safety_and_provenance_failures(
+    retrieval_tables_contract,
+) -> None:
     manifest = _load_fixture("unsafe_manifest.json")
 
     diagnostics = retrieval_tables_contract.validate_article_retrieval_table_manifest(manifest)
-    diagnostic_manifest = {"diagnostics": [diagnostic.to_redacted_dict() for diagnostic in diagnostics]}
+    diagnostic_manifest = {
+        "diagnostics": [diagnostic.to_redacted_dict() for diagnostic in diagnostics]
+    }
     codes = _diagnostic_codes(diagnostic_manifest)
 
     assert {
@@ -428,7 +474,9 @@ def test_unsafe_fixture_collects_all_safety_and_provenance_failures(retrieval_ta
     _assert_metadata_only(diagnostic_manifest)
 
 
-def test_validation_does_not_read_gitignored_planning_or_audit_artifacts(retrieval_tables_contract, monkeypatch) -> None:
+def test_validation_does_not_read_gitignored_planning_or_audit_artifacts(
+    retrieval_tables_contract, monkeypatch
+) -> None:
     manifest = _load_fixture("minimal_manifest.json")
     original_read_text = Path.read_text
 

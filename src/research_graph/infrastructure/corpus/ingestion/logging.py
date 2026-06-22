@@ -94,7 +94,11 @@ def emit_load_terminal(
     """Emit exactly one metadata-only terminal event for a load attempt."""
     if logger is None:
         return
-    event = "source.load_completed" if outcome in {"loaded", "loaded_metadata_only"} else "source.load_failed"
+    event = (
+        "source.load_completed"
+        if outcome in {"loaded", "loaded_metadata_only"}
+        else "source.load_failed"
+    )
     status = "success" if event == "source.load_completed" else "failed"
     payload = ingestion_event_payload(
         event=event,

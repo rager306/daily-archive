@@ -114,7 +114,9 @@ def main() -> int:
         return 1
 
     sys.stdout.write("M034 contracts/invariants verification passed\n")
-    sys.stdout.write(f"files={len(FILES)} contracts={len(CONTRACT_MARKERS)} statuses={len(STATUS_MARKERS)}\n")
+    sys.stdout.write(
+        f"files={len(FILES)} contracts={len(CONTRACT_MARKERS)} statuses={len(STATUS_MARKERS)}\n"
+    )
     return 0
 
 

@@ -144,7 +144,11 @@ def _summary_counts(packets: dict[str, dict[str, Any]]) -> dict[str, int]:
 
 def _packet_safety_defaults_false(packet: dict[str, Any]) -> bool:
     safety = packet.get("safety_defaults")
-    return isinstance(safety, dict) and bool(safety) and all(value is False for value in safety.values())
+    return (
+        isinstance(safety, dict)
+        and bool(safety)
+        and all(value is False for value in safety.values())
+    )
 
 
 def _edge_records(
@@ -166,7 +170,9 @@ def _edge_records(
     return edges
 
 
-def _build_cumulative_corpus(existing_corpus: dict[str, Any], wave_manifest: dict[str, Any]) -> dict[str, Any]:
+def _build_cumulative_corpus(
+    existing_corpus: dict[str, Any], wave_manifest: dict[str, Any]
+) -> dict[str, Any]:
     existing_pdfs = []
     for entry in existing_corpus.get("pdfs", []):
         copied = dict(entry)
@@ -186,7 +192,11 @@ def _build_cumulative_corpus(existing_corpus: dict[str, Any], wave_manifest: dic
         },
         "expected_total": 50,
         "actual_total": len(existing_pdfs) + len(wave_pdfs),
-        "source_counts": dict(Counter(str(entry.get("source_milestone", "unknown")) for entry in existing_pdfs + wave_pdfs)),
+        "source_counts": dict(
+            Counter(
+                str(entry.get("source_milestone", "unknown")) for entry in existing_pdfs + wave_pdfs
+            )
+        ),
         "safety_defaults": _safety_defaults(),
         "pdfs": existing_pdfs + wave_pdfs,
     }
@@ -206,15 +216,23 @@ def analyze_wave_1(
     grobid_packets = _load_packets(grobid_dir)
     opendataloader_packets = _load_packets(opendataloader_dir)
     wave_pdfs = list(wave_manifest.get("pdfs", []))
-    existing_ids = {str(entry.get("arxiv_id")) for entry in existing_corpus.get("pdfs", []) if entry.get("arxiv_id")}
+    existing_ids = {
+        str(entry.get("arxiv_id"))
+        for entry in existing_corpus.get("pdfs", [])
+        if entry.get("arxiv_id")
+    }
     target_ids = set(existing_ids)
     target_ids.add(anchor_arxiv_id)
     edges = _edge_records(wave_pdfs=wave_pdfs, grobid_dir=grobid_dir, target_ids=target_ids)
 
-    category_distribution = Counter(str(entry.get("category", "mixed-source")) for entry in wave_pdfs)
+    category_distribution = Counter(
+        str(entry.get("category", "mixed-source")) for entry in wave_pdfs
+    )
     for category in SUPPORTED_CATEGORIES:
         category_distribution.setdefault(category, 0)
-    length_distribution = Counter(_length_bucket(int(entry.get("pages_estimate") or 0)) for entry in wave_pdfs)
+    length_distribution = Counter(
+        _length_bucket(int(entry.get("pages_estimate") or 0)) for entry in wave_pdfs
+    )
     for bucket in ("short", "medium", "long"):
         length_distribution.setdefault(bucket, 0)
 
@@ -231,7 +249,9 @@ def analyze_wave_1(
 
     anchor_surname = (anchor_author.get("surname") or "").casefold()
     self_cluster_matches = 0
-    anchor_citing_sources = {edge["source_arxiv_id"] for edge in edges if edge["target_arxiv_id"] == anchor_arxiv_id}
+    anchor_citing_sources = {
+        edge["source_arxiv_id"] for edge in edges if edge["target_arxiv_id"] == anchor_arxiv_id
+    }
     for entry in wave_pdfs:
         arxiv_id = str(entry["arxiv_id"])
         author = _first_author_from_tei(_tei_path(grobid_dir, arxiv_id))
@@ -241,7 +261,9 @@ def analyze_wave_1(
             self_cluster_matches += 1
 
     wave_count = len(wave_pdfs)
-    self_cluster_percent = round((self_cluster_matches / wave_count * 100.0), 2) if wave_count else 0.0
+    self_cluster_percent = (
+        round((self_cluster_matches / wave_count * 100.0), 2) if wave_count else 0.0
+    )
     cumulative = _build_cumulative_corpus(existing_corpus, wave_manifest)
     _atomic_write_json(wave_dir / "cumulative-corpus.json", cumulative)
 
@@ -264,12 +286,19 @@ def analyze_wave_1(
         },
         "parser_quality": {
             "grobid_packet_count": len(grobid_packets),
-            "grobid_success_count": sum(1 for packet in grobid_packets.values() if packet.get("status") == "success"),
+            "grobid_success_count": sum(
+                1 for packet in grobid_packets.values() if packet.get("status") == "success"
+            ),
             "grobid_quality_counts": _summary_counts(grobid_packets),
             "opendataloader_packet_count": len(opendataloader_packets),
-            "opendataloader_success_count": sum(1 for packet in opendataloader_packets.values() if packet.get("status") == "success"),
+            "opendataloader_success_count": sum(
+                1 for packet in opendataloader_packets.values() if packet.get("status") == "success"
+            ),
             "opendataloader_quality_counts": _summary_counts(opendataloader_packets),
-            "all_packet_safety_defaults_false": all(_packet_safety_defaults_false(packet) for packet in list(grobid_packets.values()) + list(opendataloader_packets.values())),
+            "all_packet_safety_defaults_false": all(
+                _packet_safety_defaults_false(packet)
+                for packet in list(grobid_packets.values()) + list(opendataloader_packets.values())
+            ),
         },
         "connectivity": {
             "target_count": len(target_ids),

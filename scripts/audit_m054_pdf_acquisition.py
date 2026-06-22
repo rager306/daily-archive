@@ -116,7 +116,9 @@ def build_audit(
     parts.append("## Inputs")
     parts.append("")
     parts.append(f"- Acquisition log: `{log_path.relative_to(REPO_ROOT)}` (sha256:{log_digest})")
-    parts.append(f"- Target subset: `{target_path.relative_to(REPO_ROOT)}` (sha256:{target_digest})")
+    parts.append(
+        f"- Target subset: `{target_path.relative_to(REPO_ROOT)}` (sha256:{target_digest})"
+    )
     parts.append(f"- Records expected: {expected_count}")
     parts.append(f"- Records acquired: {acquired_count} ({coverage_pct:.1f}%)")
     parts.append(f"- Total bytes acquired: {_bytes_human(acquired_bytes)}")
@@ -204,7 +206,9 @@ def build_audit(
 
 def main() -> int:
     if not DEFAULT_LOG_PATH.exists():
-        print(f"acquisition-log.json not found at {DEFAULT_LOG_PATH}; run acquire_linked_target_pdfs.py first")
+        print(
+            f"acquisition-log.json not found at {DEFAULT_LOG_PATH}; run acquire_linked_target_pdfs.py first"
+        )
         return 1
     log = _read_json(DEFAULT_LOG_PATH)
     if DEFAULT_TARGET_PATH.exists():

@@ -93,7 +93,9 @@ def test_smoke_test_runs_both_models(live_smoke_report: dict) -> None:
 
 
 def test_m27_response_format(live_smoke_report: dict) -> None:
-    result = next(result for result in live_smoke_report["results"] if result["test_id"] == "m27_text")
+    result = next(
+        result for result in live_smoke_report["results"] if result["test_id"] == "m27_text"
+    )
 
     assert result["status_code"] == 200
     assert result["model_used"] == "MiniMax-M2.7-highspeed"
@@ -101,7 +103,11 @@ def test_m27_response_format(live_smoke_report: dict) -> None:
 
 
 def test_m3_multimodal_image_input(live_smoke_report: dict) -> None:
-    result = next(result for result in live_smoke_report["results"] if result["test_id"] == "m3_multimodal_image")
+    result = next(
+        result
+        for result in live_smoke_report["results"]
+        if result["test_id"] == "m3_multimodal_image"
+    )
 
     assert result["status_code"] == 200
     assert result["model_used"] == "MiniMax-M3"

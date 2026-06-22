@@ -51,7 +51,18 @@ FAIL_CLOSED_SAFETY_FLAGS: dict[str, bool] = {
     "raw_binary_embedded_in_metadata": False,
 }
 
-FORBIDDEN_RESULT_KEYS = {"text", "raw_text", "html", "pdf", "binary", "bytes", "base64", "payload", "content", "body"}
+FORBIDDEN_RESULT_KEYS = {
+    "text",
+    "raw_text",
+    "html",
+    "pdf",
+    "binary",
+    "bytes",
+    "base64",
+    "payload",
+    "content",
+    "body",
+}
 FORBIDDEN_SNIPPETS = ("<html", "</html", "%PDF-", "base64,")
 
 
@@ -104,7 +115,11 @@ def safe_child_path(root: Path, rel_path: str, *, code: str = "unsafe_relative_p
     if "://" in rel_path:
         raise ValueError("url_not_allowed_as_local_path")
     normalized = PurePosixPath(rel_path.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part == "" for part in normalized.parts):
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part == "" for part in normalized.parts)
+    ):
         raise ValueError(code)
     root_resolved = root.resolve()
     resolved = (root_resolved / normalized.as_posix()).resolve()
@@ -122,7 +137,9 @@ def safe_article_segment(article_ref: str | None, article_key: str | None) -> st
     return "/".join(parts)
 
 
-def confined_source_target(output_dir: Path, article_ref: str | None, article_key: str | None, role_target: str) -> tuple[Path, str]:
+def confined_source_target(
+    output_dir: Path, article_ref: str | None, article_key: str | None, role_target: str
+) -> tuple[Path, str]:
     rel_path = f"{safe_article_segment(article_ref, article_key)}/{role_target}"
     target = safe_child_path(output_dir, rel_path, code="unsafe_output_source_path")
     return target, target.relative_to(output_dir.resolve()).as_posix()
@@ -157,13 +174,25 @@ def result_base(
     byte_size: int = 0,
     media_type: str | None = None,
 ) -> dict[str, Any]:
-    article_ref = selection_row.get("article_ref") if isinstance(selection_row.get("article_ref"), str) else None
-    article_key = selection_row.get("article_key") if isinstance(selection_row.get("article_key"), str) else None
+    article_ref = (
+        selection_row.get("article_ref")
+        if isinstance(selection_row.get("article_ref"), str)
+        else None
+    )
+    article_key = (
+        selection_row.get("article_key")
+        if isinstance(selection_row.get("article_key"), str)
+        else None
+    )
     url = None
     if variant and isinstance(variant.get("url"), str):
         url = variant.get("url")
     if url is None:
-        url = selection_row.get("seed_url") if isinstance(selection_row.get("seed_url"), str) else selection_row.get("canonical_url")
+        url = (
+            selection_row.get("seed_url")
+            if isinstance(selection_row.get("seed_url"), str)
+            else selection_row.get("canonical_url")
+        )
     result = {
         "schema_version": SCHEMA_VERSION,
         "milestone_id": MILESTONE_ID,
@@ -171,13 +200,21 @@ def result_base(
         "selection_id": SELECTION_ID,
         "article_ref": article_ref,
         "article_key": article_key,
-        "identity_key": selection_row.get("identity_key") if isinstance(selection_row.get("identity_key"), str) else None,
-        "catalog_resolution": selection_row.get("catalog_resolution") if isinstance(selection_row.get("catalog_resolution"), str) else None,
-        "variant_id": variant.get("variant_id") if variant and isinstance(variant.get("variant_id"), str) else None,
+        "identity_key": selection_row.get("identity_key")
+        if isinstance(selection_row.get("identity_key"), str)
+        else None,
+        "catalog_resolution": selection_row.get("catalog_resolution")
+        if isinstance(selection_row.get("catalog_resolution"), str)
+        else None,
+        "variant_id": variant.get("variant_id")
+        if variant and isinstance(variant.get("variant_id"), str)
+        else None,
         "source_role": source_role,
         "url_role": source_role,
         "url": url,
-        "source_strategy": selection_row.get("source_strategy") if isinstance(selection_row.get("source_strategy"), str) else None,
+        "source_strategy": selection_row.get("source_strategy")
+        if isinstance(selection_row.get("source_strategy"), str)
+        else None,
         "status": status,
         "terminal_state": status,
         "diagnostic_code": diagnostic_code,
@@ -235,7 +272,9 @@ def source_result_for_variant(
             failure_reason="source role is not part of the M029 acquisition boundary",
             local_path=None,
             source_catalog_path=None,
-            media_type=variant.get("media_type") if isinstance(variant.get("media_type"), str) else None,
+            media_type=variant.get("media_type")
+            if isinstance(variant.get("media_type"), str)
+            else None,
         )
 
     article_dir = article_path.parent
@@ -250,7 +289,9 @@ def source_result_for_variant(
             failure_reason="catalog source variant does not expose a local path",
             local_path=None,
             source_catalog_path=None,
-            media_type=variant.get("media_type") if isinstance(variant.get("media_type"), str) else None,
+            media_type=variant.get("media_type")
+            if isinstance(variant.get("media_type"), str)
+            else None,
         )
     try:
         source_path = safe_child_path(article_dir, supplied, code="unsafe_catalog_source_path")
@@ -264,12 +305,18 @@ def source_result_for_variant(
             failure_reason="catalog source path is not allowed",
             local_path=None,
             source_catalog_path=supplied,
-            media_type=variant.get("media_type") if isinstance(variant.get("media_type"), str) else None,
+            media_type=variant.get("media_type")
+            if isinstance(variant.get("media_type"), str)
+            else None,
         )
     target, local_path = confined_source_target(
         output_dir,
-        selection_row.get("article_ref") if isinstance(selection_row.get("article_ref"), str) else None,
-        selection_row.get("article_key") if isinstance(selection_row.get("article_key"), str) else None,
+        selection_row.get("article_ref")
+        if isinstance(selection_row.get("article_ref"), str)
+        else None,
+        selection_row.get("article_key")
+        if isinstance(selection_row.get("article_key"), str)
+        else None,
         ROLE_TARGETS[role],
     )
     if not source_path.exists():
@@ -282,7 +329,9 @@ def source_result_for_variant(
             failure_reason="catalog metadata references a source artifact that is absent locally",
             local_path=local_path,
             source_catalog_path=source_path.as_posix(),
-            media_type=variant.get("media_type") if isinstance(variant.get("media_type"), str) else None,
+            media_type=variant.get("media_type")
+            if isinstance(variant.get("media_type"), str)
+            else None,
         )
     if source_path.stat().st_size == 0:
         return result_base(
@@ -294,7 +343,9 @@ def source_result_for_variant(
             failure_reason="catalog source artifact is empty",
             local_path=local_path,
             source_catalog_path=source_path.as_posix(),
-            media_type=variant.get("media_type") if isinstance(variant.get("media_type"), str) else None,
+            media_type=variant.get("media_type")
+            if isinstance(variant.get("media_type"), str)
+            else None,
         )
     if write:
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -311,7 +362,9 @@ def source_result_for_variant(
         source_catalog_path=source_path.as_posix(),
         sha256=sha256_file(artifact_path),
         byte_size=artifact_path.stat().st_size,
-        media_type=variant.get("media_type") if isinstance(variant.get("media_type"), str) else None,
+        media_type=variant.get("media_type")
+        if isinstance(variant.get("media_type"), str)
+        else None,
     )
 
 
@@ -321,8 +374,12 @@ def unresolved_result(selection_row: Mapping[str, Any], output_dir: Path) -> dic
     if role in ROLE_TARGETS:
         _, local_path = confined_source_target(
             output_dir,
-            selection_row.get("article_ref") if isinstance(selection_row.get("article_ref"), str) else None,
-            selection_row.get("article_key") if isinstance(selection_row.get("article_key"), str) else None,
+            selection_row.get("article_ref")
+            if isinstance(selection_row.get("article_ref"), str)
+            else None,
+            selection_row.get("article_key")
+            if isinstance(selection_row.get("article_key"), str)
+            else None,
             ROLE_TARGETS[role],
         )
     return result_base(
@@ -393,7 +450,11 @@ def capture_selection(
                 )
             )
             continue
-        selected_variants = [variant for variant in variants if isinstance(variant, dict) and variant.get("source_role") in ROLE_TARGETS]
+        selected_variants = [
+            variant
+            for variant in variants
+            if isinstance(variant, dict) and variant.get("source_role") in ROLE_TARGETS
+        ]
         if not selected_variants:
             results.append(
                 result_base(
@@ -409,20 +470,44 @@ def capture_selection(
             )
             continue
         for variant in selected_variants:
-            results.append(source_result_for_variant(selection_row=row, article_path=article_path, variant=variant, output_dir=output_dir, write=write))
+            results.append(
+                source_result_for_variant(
+                    selection_row=row,
+                    article_path=article_path,
+                    variant=variant,
+                    output_dir=output_dir,
+                    write=write,
+                )
+            )
     return results
 
 
-def build_summary(results: list[dict[str, Any]], *, selection_path: Path, catalog_path: Path, index_path: Path, output_dir: Path, duration_ms: int) -> dict[str, Any]:
+def build_summary(
+    results: list[dict[str, Any]],
+    *,
+    selection_path: Path,
+    catalog_path: Path,
+    index_path: Path,
+    output_dir: Path,
+    duration_ms: int,
+) -> dict[str, Any]:
     counts: dict[str, int] = {"captured": 0, "blocked": 0, "failed": 0}
-    by_url: dict[str, dict[str, int]] = defaultdict(lambda: {"captured": 0, "blocked": 0, "failed": 0})
-    by_role: dict[str, dict[str, int]] = defaultdict(lambda: {"captured": 0, "blocked": 0, "failed": 0})
+    by_url: dict[str, dict[str, int]] = defaultdict(
+        lambda: {"captured": 0, "blocked": 0, "failed": 0}
+    )
+    by_role: dict[str, dict[str, int]] = defaultdict(
+        lambda: {"captured": 0, "blocked": 0, "failed": 0}
+    )
     for result in results:
         status = str(result.get("status"))
         if status in counts:
             counts[status] += 1
             url = result.get("url") if isinstance(result.get("url"), str) else "<missing-url>"
-            role = result.get("source_role") if isinstance(result.get("source_role"), str) else "<missing-role>"
+            role = (
+                result.get("source_role")
+                if isinstance(result.get("source_role"), str)
+                else "<missing-role>"
+            )
             by_url[url][status] += 1
             by_role[role][status] += 1
     return {
@@ -430,14 +515,26 @@ def build_summary(results: list[dict[str, Any]], *, selection_path: Path, catalo
         "milestone_id": MILESTONE_ID,
         "slice_id": SLICE_ID,
         "selection_id": SELECTION_ID,
-        "status": "completed_with_diagnostics" if counts["blocked"] or counts["failed"] else "captured",
-        "article_count": len({(r.get("article_ref"), r.get("article_key"), r.get("url")) for r in results}),
+        "status": "completed_with_diagnostics"
+        if counts["blocked"] or counts["failed"]
+        else "captured",
+        "article_count": len(
+            {(r.get("article_ref"), r.get("article_key"), r.get("url")) for r in results}
+        ),
         "variant_count": len(results),
         "counts": counts,
-        "per_url_terminal_state_counts": {url: dict(value) for url, value in sorted(by_url.items())},
-        "per_role_terminal_state_counts": {role: dict(value) for role, value in sorted(by_role.items())},
+        "per_url_terminal_state_counts": {
+            url: dict(value) for url, value in sorted(by_url.items())
+        },
+        "per_role_terminal_state_counts": {
+            role: dict(value) for role, value in sorted(by_role.items())
+        },
         "results": results,
-        "input_paths": {"selection": selection_path.as_posix(), "catalog": catalog_path.as_posix(), "index": index_path.as_posix()},
+        "input_paths": {
+            "selection": selection_path.as_posix(),
+            "catalog": catalog_path.as_posix(),
+            "index": index_path.as_posix(),
+        },
         "output_paths": {"source_dir": output_dir.as_posix()},
         "duration_ms": duration_ms,
         "capture_phase_network_allowed": False,
@@ -477,15 +574,27 @@ def render_report(summary: Mapping[str, Any]) -> str:
         "## Role Counts",
         "",
     ]
-    role_counts = summary.get("per_role_terminal_state_counts") if isinstance(summary.get("per_role_terminal_state_counts"), dict) else {}
+    role_counts = (
+        summary.get("per_role_terminal_state_counts")
+        if isinstance(summary.get("per_role_terminal_state_counts"), dict)
+        else {}
+    )
     for role, value in role_counts.items():
         if isinstance(value, dict):
-            lines.append(f"- `{role}`: captured={value.get('captured', 0)} blocked={value.get('blocked', 0)} failed={value.get('failed', 0)}")
+            lines.append(
+                f"- `{role}`: captured={value.get('captured', 0)} blocked={value.get('blocked', 0)} failed={value.get('failed', 0)}"
+            )
     lines.extend(["", "## URLs", ""])
-    url_counts = summary.get("per_url_terminal_state_counts") if isinstance(summary.get("per_url_terminal_state_counts"), dict) else {}
+    url_counts = (
+        summary.get("per_url_terminal_state_counts")
+        if isinstance(summary.get("per_url_terminal_state_counts"), dict)
+        else {}
+    )
     for url, value in url_counts.items():
         if isinstance(value, dict):
-            lines.append(f"- `{url}`: captured={value.get('captured', 0)} blocked={value.get('blocked', 0)} failed={value.get('failed', 0)}")
+            lines.append(
+                f"- `{url}`: captured={value.get('captured', 0)} blocked={value.get('blocked', 0)} failed={value.get('failed', 0)}"
+            )
     lines.extend(["", "## Results", ""])
     for result in summary.get("results", []):
         if isinstance(result, dict):
@@ -543,7 +652,16 @@ def main(argv: list[str]) -> int:
     atomic_write_text(report_path, render_report(summary))
     for artifact_path in (summary_path, diagnostics_path, report_path):
         assert_metadata_artifact_is_redacted(artifact_path)
-    print(json.dumps({"summary_path": summary_path.as_posix(), "variant_count": len(results), "counts": summary["counts"]}, sort_keys=True))
+    print(
+        json.dumps(
+            {
+                "summary_path": summary_path.as_posix(),
+                "variant_count": len(results),
+                "counts": summary["counts"],
+            },
+            sort_keys=True,
+        )
+    )
     return 0 if summary["counts"]["failed"] == 0 else 1
 
 

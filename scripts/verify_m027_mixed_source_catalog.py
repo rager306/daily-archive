@@ -179,8 +179,12 @@ def _input_paths(selection: dict[str, Any]) -> list[Path]:
     return paths
 
 
-def _build_provenance(selection: dict[str, Any], diagnostics: list[dict[str, Any]], *, exit_code: int) -> dict[str, Any]:
-    input_hashes = { _rel(path): _hash_or_diagnostic(path, diagnostics) for path in _input_paths(selection) }
+def _build_provenance(
+    selection: dict[str, Any], diagnostics: list[dict[str, Any]], *, exit_code: int
+) -> dict[str, Any]:
+    input_hashes = {
+        _rel(path): _hash_or_diagnostic(path, diagnostics) for path in _input_paths(selection)
+    }
     output_hashes = {
         _rel(DIAGNOSTICS_PATH): _hash_or_diagnostic(DIAGNOSTICS_PATH, diagnostics),
         _rel(REPORT_PATH): _hash_or_diagnostic(REPORT_PATH, diagnostics),
@@ -214,7 +218,9 @@ def _article_lookup(selection: dict[str, Any]) -> dict[str, dict[str, Any]]:
     }
 
 
-def _enrich_diagnostics(rows: list[dict[str, Any]], selection: dict[str, Any]) -> list[dict[str, Any]]:
+def _enrich_diagnostics(
+    rows: list[dict[str, Any]], selection: dict[str, Any]
+) -> list[dict[str, Any]]:
     by_ref = _article_lookup(selection)
     enriched: list[dict[str, Any]] = []
     for row in rows:
@@ -226,7 +232,10 @@ def _enrich_diagnostics(rows: list[dict[str, Any]], selection: dict[str, Any]) -
         item.setdefault("slice_id", SLICE_ID)
         item.setdefault("network_fetch_attempted", False)
         item.setdefault("fail_closed_safety_flags", FAIL_CLOSED_SAFETY_FLAGS)
-        item.setdefault("lookup_key", selection_row.get("article_key") or selection_row.get("canonical_url") or article_ref)
+        item.setdefault(
+            "lookup_key",
+            selection_row.get("article_key") or selection_row.get("canonical_url") or article_ref,
+        )
         item.setdefault("file_path", selection_row.get("article_path") or _rel(SELECTION_PATH))
         item.setdefault("json_path", "$.articles" if article_ref else "$")
         item.setdefault("failing_invariant", item.get("message"))
@@ -257,7 +266,9 @@ def _failure_diagnostics(errors: list[str]) -> list[dict[str, Any]]:
 
 
 def _append_report_sections(report: str, summary: dict[str, Any]) -> str:
-    report = report.replace("Expected load is five selected articles", "Expected load is six selected articles")
+    report = report.replace(
+        "Expected load is five selected articles", "Expected load is six selected articles"
+    )
     report = report.replace("`run-summary.json` records", "`catalog-summary.json` records")
     report = report.replace("`diagnostics.jsonl` records", "`catalog-diagnostics.jsonl` records")
     articles = summary.get("articles", []) if isinstance(summary.get("articles"), list) else []
@@ -277,7 +288,9 @@ def _append_report_sections(report: str, summary: dict[str, Any]) -> str:
         ]
     )
     for article in articles:
-        lines.append(f"| {article.get('seed_url')} | `{article.get('article_ref')}` | {article.get('title')} |")
+        lines.append(
+            f"| {article.get('seed_url')} | `{article.get('article_ref')}` | {article.get('title')} |"
+        )
     lines.extend(
         [
             "",
@@ -293,7 +306,13 @@ def _append_report_sections(report: str, summary: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _enrich_summary(summary: dict[str, Any], selection: dict[str, Any], diagnostics: list[dict[str, Any]], *, exit_code: int) -> dict[str, Any]:
+def _enrich_summary(
+    summary: dict[str, Any],
+    selection: dict[str, Any],
+    diagnostics: list[dict[str, Any]],
+    *,
+    exit_code: int,
+) -> dict[str, Any]:
     by_ref = _article_lookup(selection)
     for article in summary.get("articles", []):
         if not isinstance(article, dict):
@@ -318,12 +337,19 @@ def _enrich_summary(summary: dict[str, Any], selection: dict[str, Any], diagnost
 
 
 def _has_artifact_hash_error(diagnostics: list[dict[str, Any]]) -> bool:
-    return any(row.get("code") == "artifact_hash" and row.get("severity", "error") == "error" for row in diagnostics)
+    return any(
+        row.get("code") == "artifact_hash" and row.get("severity", "error") == "error"
+        for row in diagnostics
+    )
 
 
 def main() -> int:
     os.chdir(ROOT)
-    args = parse_args(VALIDATOR_ARGS, default_expected_selection_id=SELECTION_ID, default_report_title=REPORT_TITLE)
+    args = parse_args(
+        VALIDATOR_ARGS,
+        default_expected_selection_id=SELECTION_ID,
+        default_report_title=REPORT_TITLE,
+    )
     errors, _report = validate(args)
     selection: dict[str, Any] = {}
     try:
@@ -361,12 +387,18 @@ def main() -> int:
             out_of_scope=OUT_OF_SCOPE,
         )
     )
-    summary["provenance"]["output_hashes"][_rel(REPORT_PATH)] = _hash_or_diagnostic(REPORT_PATH, diagnostics)
+    summary["provenance"]["output_hashes"][_rel(REPORT_PATH)] = _hash_or_diagnostic(
+        REPORT_PATH, diagnostics
+    )
     write_jsonl_atomic(DIAGNOSTICS_PATH, diagnostics)
-    summary["provenance"]["output_hashes"][_rel(DIAGNOSTICS_PATH)] = _hash_or_diagnostic(DIAGNOSTICS_PATH, diagnostics)
+    summary["provenance"]["output_hashes"][_rel(DIAGNOSTICS_PATH)] = _hash_or_diagnostic(
+        DIAGNOSTICS_PATH, diagnostics
+    )
     if _has_artifact_hash_error(diagnostics):
         write_jsonl_atomic(DIAGNOSTICS_PATH, diagnostics)
-        sys.stderr.write("M027 mixed-source catalog validation failed: unable to hash one or more output artifacts.\n")
+        sys.stderr.write(
+            "M027 mixed-source catalog validation failed: unable to hash one or more output artifacts.\n"
+        )
         return 1
     write_json_atomic(SUMMARY_PATH, summary)
     sys.stdout.write(

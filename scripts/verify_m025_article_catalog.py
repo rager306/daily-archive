@@ -57,7 +57,9 @@ def load_json(path: Path) -> dict[str, Any]:
 def write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     data = json.dumps(payload, indent=2, sort_keys=False, ensure_ascii=False) + "\n"
-    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False, prefix=f".{path.name}.") as handle:
+    with tempfile.NamedTemporaryFile(
+        "w", encoding="utf-8", dir=path.parent, delete=False, prefix=f".{path.name}."
+    ) as handle:
         temp_name = handle.name
         handle.write(data)
         handle.flush()
@@ -67,7 +69,9 @@ def write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
 
 def write_jsonl_atomic(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False, prefix=f".{path.name}.") as handle:
+    with tempfile.NamedTemporaryFile(
+        "w", encoding="utf-8", dir=path.parent, delete=False, prefix=f".{path.name}."
+    ) as handle:
         temp_name = handle.name
         for row in rows:
             handle.write(json.dumps(row, sort_keys=True, ensure_ascii=False) + "\n")
@@ -76,7 +80,9 @@ def write_jsonl_atomic(path: Path, rows: list[dict[str, Any]]) -> None:
     os.replace(temp_name, path)
 
 
-def diagnostic(code: str, message: str, *, severity: str = "error", **fields: Any) -> dict[str, Any]:
+def diagnostic(
+    code: str, message: str, *, severity: str = "error", **fields: Any
+) -> dict[str, Any]:
     row: dict[str, Any] = {"severity": severity, "code": code, "message": message}
     row.update({key: value for key, value in fields.items() if value is not None})
     return row
@@ -133,8 +139,15 @@ def article_ref_from_path(article_path: str) -> str:
 
 def validate_catalog(catalog_path: Path, catalog: dict[str, Any]) -> list[str]:
     errors: list[str] = []
-    require_equal(errors, "catalog.schema_version", catalog.get("schema_version"), CATALOG_SCHEMA_VERSION)
-    require_equal(errors, "catalog.article_schema_version", catalog.get("article_schema_version"), ARTICLE_SCHEMA_VERSION)
+    require_equal(
+        errors, "catalog.schema_version", catalog.get("schema_version"), CATALOG_SCHEMA_VERSION
+    )
+    require_equal(
+        errors,
+        "catalog.article_schema_version",
+        catalog.get("article_schema_version"),
+        ARTICLE_SCHEMA_VERSION,
+    )
     require_equal(errors, "catalog.root", catalog.get("root"), "data/article_catalog")
     require_equal(
         errors,
@@ -146,18 +159,44 @@ def validate_catalog(catalog_path: Path, catalog: dict[str, Any]) -> list[str]:
     if not isinstance(index_policy, dict):
         errors.append("catalog.index must be an object")
     else:
-        require_equal(errors, "catalog.index.schema_version", index_policy.get("schema_version"), INDEX_SCHEMA_VERSION)
+        require_equal(
+            errors,
+            "catalog.index.schema_version",
+            index_policy.get("schema_version"),
+            INDEX_SCHEMA_VERSION,
+        )
         require_equal(errors, "catalog.index.path", index_policy.get("path"), "index.json")
-        require_equal(errors, "catalog.index.cli_must_use_index", index_policy.get("cli_must_use_index"), True)
-        require_equal(errors, "catalog.index.full_tree_scan_allowed", index_policy.get("full_tree_scan_allowed"), False)
+        require_equal(
+            errors, "catalog.index.cli_must_use_index", index_policy.get("cli_must_use_index"), True
+        )
+        require_equal(
+            errors,
+            "catalog.index.full_tree_scan_allowed",
+            index_policy.get("full_tree_scan_allowed"),
+            False,
+        )
         require_equal(
             errors,
             "catalog.index.refresh_command_rebuilds_index",
             index_policy.get("refresh_command_rebuilds_index"),
             True,
         )
-        lookup_keys = set(index_policy.get("lookup_keys", [])) if isinstance(index_policy.get("lookup_keys"), list) else set()
-        missing_lookup = sorted({"article_key", "citation_key", "canonical_url", "source_code", "coarse_topic_code", "title"} - lookup_keys)
+        lookup_keys = (
+            set(index_policy.get("lookup_keys", []))
+            if isinstance(index_policy.get("lookup_keys"), list)
+            else set()
+        )
+        missing_lookup = sorted(
+            {
+                "article_key",
+                "citation_key",
+                "canonical_url",
+                "source_code",
+                "coarse_topic_code",
+                "title",
+            }
+            - lookup_keys
+        )
         if missing_lookup:
             errors.append(f"catalog.index.lookup_keys missing: {', '.join(missing_lookup)}")
     for schema_name in ("article-catalog-schema.v00.01.json", "article-schema.v00.01.json"):
@@ -208,15 +247,37 @@ def validate_index(
 ) -> tuple[list[str], dict[str, dict[str, Any]]]:
     errors: list[str] = []
     if require_index:
-        require_equal(errors, "index.schema_version", index.get("schema_version"), INDEX_SCHEMA_VERSION)
-        require_equal(errors, "index.catalog_schema_version", index.get("catalog_schema_version"), CATALOG_SCHEMA_VERSION)
-        require_equal(errors, "index.article_schema_version", index.get("article_schema_version"), ARTICLE_SCHEMA_VERSION)
+        require_equal(
+            errors, "index.schema_version", index.get("schema_version"), INDEX_SCHEMA_VERSION
+        )
+        require_equal(
+            errors,
+            "index.catalog_schema_version",
+            index.get("catalog_schema_version"),
+            CATALOG_SCHEMA_VERSION,
+        )
+        require_equal(
+            errors,
+            "index.article_schema_version",
+            index.get("article_schema_version"),
+            ARTICLE_SCHEMA_VERSION,
+        )
         lookup_policy = index.get("lookup_policy")
         if not isinstance(lookup_policy, dict):
             errors.append("index.lookup_policy must be an object")
         else:
-            require_equal(errors, "index.lookup_policy.cli_must_use_index", lookup_policy.get("cli_must_use_index"), True)
-            require_equal(errors, "index.lookup_policy.full_tree_scan_allowed", lookup_policy.get("full_tree_scan_allowed"), False)
+            require_equal(
+                errors,
+                "index.lookup_policy.cli_must_use_index",
+                lookup_policy.get("cli_must_use_index"),
+                True,
+            )
+            require_equal(
+                errors,
+                "index.lookup_policy.full_tree_scan_allowed",
+                lookup_policy.get("full_tree_scan_allowed"),
+                False,
+            )
             require_equal(
                 errors,
                 "index.lookup_policy.refresh_command_rebuilds_index",
@@ -259,17 +320,41 @@ def validate_index(
         except ValueError as exc:
             errors.append(str(exc))
             continue
-        require_equal(errors, f"{article_ref}.schema_version", article.get("schema_version"), ARTICLE_SCHEMA_VERSION)
-        require_equal(errors, f"{article_ref}.catalog_path", article.get("catalog_path"), article_ref)
-        require_equal(errors, f"{article_ref}.source_code", article.get("source_code"), entry.get("source_code"))
-        require_equal(errors, f"{article_ref}.coarse_topic_code", article.get("coarse_topic_code"), entry.get("coarse_topic_code"))
-        require_equal(errors, f"{article_ref}.article_key", article.get("article_key"), entry.get("article_key"))
+        require_equal(
+            errors,
+            f"{article_ref}.schema_version",
+            article.get("schema_version"),
+            ARTICLE_SCHEMA_VERSION,
+        )
+        require_equal(
+            errors, f"{article_ref}.catalog_path", article.get("catalog_path"), article_ref
+        )
+        require_equal(
+            errors,
+            f"{article_ref}.source_code",
+            article.get("source_code"),
+            entry.get("source_code"),
+        )
+        require_equal(
+            errors,
+            f"{article_ref}.coarse_topic_code",
+            article.get("coarse_topic_code"),
+            entry.get("coarse_topic_code"),
+        )
+        require_equal(
+            errors,
+            f"{article_ref}.article_key",
+            article.get("article_key"),
+            entry.get("article_key"),
+        )
         if check_index_titles:
             require_equal(
                 errors,
                 f"{article_ref}.index_title",
                 entry.get("title"),
-                article.get("identity", {}).get("title") if isinstance(article.get("identity"), dict) else None,
+                article.get("identity", {}).get("title")
+                if isinstance(article.get("identity"), dict)
+                else None,
             )
         variants = article.get("source_variants")
         if not isinstance(variants, list) or not variants:
@@ -293,8 +378,16 @@ def validate_index(
             for article_ref, entry in by_ref.items():
                 value = entry.get(lookup_key)
                 if isinstance(value, str) and value:
-                    require_equal(errors, f"index.indexes.{lookup_name}[{value!r}]", lookup.get(value), article_ref)
-        for group_name, lookup_key in (("by_source_code", "source_code"), ("by_coarse_topic_code", "coarse_topic_code")):
+                    require_equal(
+                        errors,
+                        f"index.indexes.{lookup_name}[{value!r}]",
+                        lookup.get(value),
+                        article_ref,
+                    )
+        for group_name, lookup_key in (
+            ("by_source_code", "source_code"),
+            ("by_coarse_topic_code", "coarse_topic_code"),
+        ):
             grouped = indexes.get(group_name)
             if not isinstance(grouped, dict):
                 errors.append(f"index.indexes.{group_name} must be an object")
@@ -303,7 +396,9 @@ def validate_index(
                 group_value = entry.get(lookup_key)
                 refs = grouped.get(group_value) if isinstance(group_value, str) else None
                 if not isinstance(refs, list) or article_ref not in refs:
-                    errors.append(f"index.indexes.{group_name}[{group_value!r}] missing {article_ref}")
+                    errors.append(
+                        f"index.indexes.{group_name}[{group_value!r}] missing {article_ref}"
+                    )
     check_safety_flags(errors, "index", index)
     return errors, by_ref
 
@@ -317,17 +412,44 @@ def validate_selection(
     allow_index_superset: bool = False,
 ) -> list[str]:
     errors: list[str] = []
-    require_equal(errors, "selection.schema_version", selection.get("schema_version"), SELECTION_SCHEMA_VERSION)
+    require_equal(
+        errors,
+        "selection.schema_version",
+        selection.get("schema_version"),
+        SELECTION_SCHEMA_VERSION,
+    )
     if expected_selection_id is not None:
-        require_equal(errors, "selection.selection_id", selection.get("selection_id"), expected_selection_id)
-    require_equal(errors, "selection.catalog_schema_version", selection.get("catalog_schema_version"), CATALOG_SCHEMA_VERSION)
-    require_equal(errors, "selection.article_schema_version", selection.get("article_schema_version"), ARTICLE_SCHEMA_VERSION)
+        require_equal(
+            errors, "selection.selection_id", selection.get("selection_id"), expected_selection_id
+        )
+    require_equal(
+        errors,
+        "selection.catalog_schema_version",
+        selection.get("catalog_schema_version"),
+        CATALOG_SCHEMA_VERSION,
+    )
+    require_equal(
+        errors,
+        "selection.article_schema_version",
+        selection.get("article_schema_version"),
+        ARTICLE_SCHEMA_VERSION,
+    )
     network_policy = selection.get("network_policy")
     if not isinstance(network_policy, dict):
         errors.append("selection.network_policy must be an object")
     else:
-        require_equal(errors, "selection.network_policy.test_phase_must_not_fetch", network_policy.get("test_phase_must_not_fetch"), True)
-        require_equal(errors, "selection.network_policy.pipeline_phase_reads_catalog_only", network_policy.get("pipeline_phase_reads_catalog_only"), True)
+        require_equal(
+            errors,
+            "selection.network_policy.test_phase_must_not_fetch",
+            network_policy.get("test_phase_must_not_fetch"),
+            True,
+        )
+        require_equal(
+            errors,
+            "selection.network_policy.pipeline_phase_reads_catalog_only",
+            network_policy.get("pipeline_phase_reads_catalog_only"),
+            True,
+        )
     articles = selection.get("articles")
     if not isinstance(articles, list) or not articles:
         errors.append("selection.articles must be a non-empty list")
@@ -339,7 +461,9 @@ def validate_selection(
                 continue
             article_ref = row.get("article_ref")
             if not isinstance(article_ref, str) or not article_ref:
-                errors.append(f"selection.articles[{position}].article_ref must be a non-empty string")
+                errors.append(
+                    f"selection.articles[{position}].article_ref must be a non-empty string"
+                )
                 continue
             selection_refs.add(article_ref)
             if article_ref not in index_articles:
@@ -356,7 +480,9 @@ def validate_selection(
                 errors.append(f"selection {article_ref} title does not match index")
         missing_from_selection = sorted(set(index_articles) - selection_refs)
         if missing_from_selection and not allow_index_superset:
-            errors.append(f"index articles missing from selection: {', '.join(missing_from_selection)}")
+            errors.append(
+                f"index articles missing from selection: {', '.join(missing_from_selection)}"
+            )
     check_safety_flags(errors, "selection", selection)
     return errors
 
@@ -374,11 +500,15 @@ def _selection_article_records(
             continue
         entry = index_articles.get(article_ref)
         if not isinstance(entry, dict):
-            records.append((article_ref, catalog_path.parent / "<missing>", None, "missing_index_entry"))
+            records.append(
+                (article_ref, catalog_path.parent / "<missing>", None, "missing_index_entry")
+            )
             continue
         article_path = entry.get("article_path")
         if not isinstance(article_path, str):
-            records.append((article_ref, catalog_path.parent / "<missing>", None, "missing_article_path"))
+            records.append(
+                (article_ref, catalog_path.parent / "<missing>", None, "missing_article_path")
+            )
             continue
         try:
             path = article_manifest_path(catalog_path, article_path)
@@ -409,9 +539,13 @@ def check_captured_sources(
     check_checksums: bool,
 ) -> list[str]:
     errors: list[str] = []
-    for article_ref, article_path, article, load_error in _selection_article_records(catalog_path, selection, index_articles):
+    for article_ref, article_path, article, load_error in _selection_article_records(
+        catalog_path, selection, index_articles
+    ):
         if load_error:
-            errors.append(f"{article_ref} cannot load article record for capture checks: {load_error}")
+            errors.append(
+                f"{article_ref} cannot load article record for capture checks: {load_error}"
+            )
             continue
         assert article is not None
         variants = article.get("source_variants")
@@ -439,13 +573,20 @@ def check_captured_sources(
                 continue
             byte_size = source_path.stat().st_size
             if variant.get("byte_size") != byte_size:
-                errors.append(f"{article_ref} {variant_id} byte_size drift: metadata={variant.get('byte_size')!r} actual={byte_size!r}")
+                errors.append(
+                    f"{article_ref} {variant_id} byte_size drift: metadata={variant.get('byte_size')!r} actual={byte_size!r}"
+                )
             if check_checksums:
                 actual_sha = hashlib.sha256(source_path.read_bytes()).hexdigest()
                 if variant.get("sha256") != actual_sha:
                     errors.append(f"{article_ref} {variant_id} sha256 drift")
-            if variant.get("raw_text_embedded") is not False or variant.get("raw_binary_embedded") is not False:
-                errors.append(f"{article_ref} {variant_id} raw payload embedding flags must be false")
+            if (
+                variant.get("raw_text_embedded") is not False
+                or variant.get("raw_binary_embedded") is not False
+            ):
+                errors.append(
+                    f"{article_ref} {variant_id} raw payload embedding flags must be false"
+                )
     return errors
 
 
@@ -467,10 +608,24 @@ def check_loader_events(
     check_redaction: bool,
 ) -> list[str]:
     errors: list[str] = []
-    forbidden = ["raw_text", "raw_bytes", "binary_payload", "base64", "embedding", "embeddings", "vector", "vectors", "api_key"]
-    for article_ref, article_path, article, load_error in _selection_article_records(catalog_path, selection, index_articles):
+    forbidden = [
+        "raw_text",
+        "raw_bytes",
+        "binary_payload",
+        "base64",
+        "embedding",
+        "embeddings",
+        "vector",
+        "vectors",
+        "api_key",
+    ]
+    for article_ref, article_path, article, load_error in _selection_article_records(
+        catalog_path, selection, index_articles
+    ):
         if load_error:
-            errors.append(f"{article_ref} cannot load article record for loader checks: {load_error}")
+            errors.append(
+                f"{article_ref} cannot load article record for loader checks: {load_error}"
+            )
             continue
         assert article is not None
         loader_dir = article_path.parent / "loader"
@@ -488,48 +643,96 @@ def check_loader_events(
         except (ValueError, json.JSONDecodeError) as exc:
             errors.append(f"{article_ref} malformed loader artifact: {exc}")
             continue
-        variants = article.get("source_variants") if isinstance(article.get("source_variants"), list) else []
-        terminal_events = [row for row in events if row.get("event") in {"source.load_completed", "source.load_failed", "source.load_metadata_only"}]
+        variants = (
+            article.get("source_variants")
+            if isinstance(article.get("source_variants"), list)
+            else []
+        )
+        terminal_events = [
+            row
+            for row in events
+            if row.get("event")
+            in {"source.load_completed", "source.load_failed", "source.load_metadata_only"}
+        ]
         if len(terminal_events) != len(variants):
             errors.append(f"{article_ref} terminal loader event count must match source variants")
-        if summary.get("lookup_surface") != "index.json" or summary.get("full_tree_scan_attempted") is not False:
+        if (
+            summary.get("lookup_surface") != "index.json"
+            or summary.get("full_tree_scan_attempted") is not False
+        ):
             errors.append(f"{article_ref} loader summary must declare index-only lookup")
         for variant in variants:
-            if isinstance(variant, dict) and variant.get("loader_outcome") not in {"loaded", "loaded_metadata_only", "failed"}:
-                errors.append(f"{article_ref} {variant.get('variant_id')} has invalid loader_outcome {variant.get('loader_outcome')!r}")
+            if isinstance(variant, dict) and variant.get("loader_outcome") not in {
+                "loaded",
+                "loaded_metadata_only",
+                "failed",
+            }:
+                errors.append(
+                    f"{article_ref} {variant.get('variant_id')} has invalid loader_outcome {variant.get('loader_outcome')!r}"
+                )
         if check_redaction:
             serialized = json.dumps({"events": events, "summary": summary}, sort_keys=True)
             for token in forbidden:
                 if token in serialized:
-                    errors.append(f"{article_ref} loader artifacts contain forbidden token {token!r}")
+                    errors.append(
+                        f"{article_ref} loader artifacts contain forbidden token {token!r}"
+                    )
     return errors
 
 
-def iter_canonical_article_record_paths(catalog_path: Path) -> tuple[list[Path], list[dict[str, Any]]]:
+def iter_canonical_article_record_paths(
+    catalog_path: Path,
+) -> tuple[list[Path], list[dict[str, Any]]]:
     """Return only canonical source/topic/key/article.json records under the catalog root."""
     root = catalog_root(catalog_path)
     records_root = root / CATALOG_RECORD_DIR
     diagnostics: list[dict[str, Any]] = []
     if not records_root.exists():
-        diagnostics.append(diagnostic("missing_records_root", "catalog article record directory is missing", path=str(records_root)))
+        diagnostics.append(
+            diagnostic(
+                "missing_records_root",
+                "catalog article record directory is missing",
+                path=str(records_root),
+            )
+        )
         return [], diagnostics
     paths: list[Path] = []
-    for source_dir in sorted((p for p in records_root.iterdir() if p.is_dir()), key=lambda p: p.name):
-        for topic_dir in sorted((p for p in source_dir.iterdir() if p.is_dir()), key=lambda p: p.name):
-            for article_dir in sorted((p for p in topic_dir.iterdir() if p.is_dir()), key=lambda p: p.name):
+    for source_dir in sorted(
+        (p for p in records_root.iterdir() if p.is_dir()), key=lambda p: p.name
+    ):
+        for topic_dir in sorted(
+            (p for p in source_dir.iterdir() if p.is_dir()), key=lambda p: p.name
+        ):
+            for article_dir in sorted(
+                (p for p in topic_dir.iterdir() if p.is_dir()), key=lambda p: p.name
+            ):
                 article_path = article_dir / "article.json"
                 if not article_path.exists():
-                    diagnostics.append(diagnostic("missing_article_record", "canonical article directory is missing article.json", path=str(article_path)))
+                    diagnostics.append(
+                        diagnostic(
+                            "missing_article_record",
+                            "canonical article directory is missing article.json",
+                            path=str(article_path),
+                        )
+                    )
                     continue
                 resolved = article_path.resolve()
                 if not resolved.is_relative_to(root):
-                    diagnostics.append(diagnostic("unsafe_traversal", "article record resolves outside catalog root", path=str(article_path)))
+                    diagnostics.append(
+                        diagnostic(
+                            "unsafe_traversal",
+                            "article record resolves outside catalog root",
+                            path=str(article_path),
+                        )
+                    )
                     continue
                 paths.append(article_path)
     return paths, diagnostics
 
 
-def article_entry_from_record(catalog_path: Path, record_path: Path, article: dict[str, Any]) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
+def article_entry_from_record(
+    catalog_path: Path, record_path: Path, article: dict[str, Any]
+) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
     diags: list[dict[str, Any]] = []
     root = catalog_root(catalog_path)
     rel_path = record_path.resolve().relative_to(root).as_posix()
@@ -540,14 +743,26 @@ def article_entry_from_record(catalog_path: Path, record_path: Path, article: di
 
     source_code, coarse_topic_code, article_key = article_ref.split("/", 2)
     identity = article.get("identity") if isinstance(article.get("identity"), dict) else {}
-    variants = article.get("source_variants") if isinstance(article.get("source_variants"), list) else []
-    primary_roles = [v.get("source_role") for v in variants if isinstance(v, dict) and v.get("is_primary") is True]
+    variants = (
+        article.get("source_variants") if isinstance(article.get("source_variants"), list) else []
+    )
+    primary_roles = [
+        v.get("source_role")
+        for v in variants
+        if isinstance(v, dict) and v.get("is_primary") is True
+    ]
     fallback_roles = [
         v.get("source_role")
         for v in variants
-        if isinstance(v, dict) and v.get("is_content_bearing") is True and v.get("is_primary") is not True
+        if isinstance(v, dict)
+        and v.get("is_content_bearing") is True
+        and v.get("is_primary") is not True
     ]
-    metadata_roles = [v.get("source_role") for v in variants if isinstance(v, dict) and v.get("is_metadata_only") is True]
+    metadata_roles = [
+        v.get("source_role")
+        for v in variants
+        if isinstance(v, dict) and v.get("is_metadata_only") is True
+    ]
 
     required = {
         "schema_version": ARTICLE_SCHEMA_VERSION,
@@ -559,15 +774,39 @@ def article_entry_from_record(catalog_path: Path, record_path: Path, article: di
     for key, expected in required.items():
         actual = article.get(key)
         if actual != expected:
-            diags.append(diagnostic("malformed_article_record", f"{article_ref}.{key} must be {expected!r}; got {actual!r}", article_ref=article_ref))
+            diags.append(
+                diagnostic(
+                    "malformed_article_record",
+                    f"{article_ref}.{key} must be {expected!r}; got {actual!r}",
+                    article_ref=article_ref,
+                )
+            )
     title = identity.get("title")
     canonical_url = identity.get("canonical_url")
     if not isinstance(title, str) or not title:
-        diags.append(diagnostic("malformed_article_record", "article identity.title must be a non-empty string", article_ref=article_ref))
+        diags.append(
+            diagnostic(
+                "malformed_article_record",
+                "article identity.title must be a non-empty string",
+                article_ref=article_ref,
+            )
+        )
     if not isinstance(canonical_url, str) or not canonical_url:
-        diags.append(diagnostic("malformed_article_record", "article identity.canonical_url must be a non-empty string", article_ref=article_ref))
+        diags.append(
+            diagnostic(
+                "malformed_article_record",
+                "article identity.canonical_url must be a non-empty string",
+                article_ref=article_ref,
+            )
+        )
     if not variants:
-        diags.append(diagnostic("malformed_article_record", "article source_variants must be a non-empty list", article_ref=article_ref))
+        diags.append(
+            diagnostic(
+                "malformed_article_record",
+                "article source_variants must be a non-empty list",
+                article_ref=article_ref,
+            )
+        )
 
     check_errors: list[str] = []
     check_safety_flags(check_errors, article_ref, article)
@@ -617,7 +856,9 @@ def add_scalar_lookup(
         lookup[key] = article_ref
 
 
-def build_lookup_maps(entries: list[dict[str, Any]], diagnostics: list[dict[str, Any]]) -> dict[str, Any]:
+def build_lookup_maps(
+    entries: list[dict[str, Any]], diagnostics: list[dict[str, Any]]
+) -> dict[str, Any]:
     indexes: dict[str, Any] = {
         "by_article_key": {},
         "by_citation_key": {},
@@ -628,12 +869,34 @@ def build_lookup_maps(entries: list[dict[str, Any]], diagnostics: list[dict[str,
     }
     for entry in entries:
         article_ref = entry["article_ref"]
-        add_scalar_lookup(indexes["by_article_key"], diagnostics, "by_article_key", entry.get("article_key", ""), article_ref)
-        add_scalar_lookup(indexes["by_citation_key"], diagnostics, "by_citation_key", entry.get("citation_key", ""), article_ref)
-        add_scalar_lookup(indexes["by_canonical_url"], diagnostics, "by_canonical_url", entry.get("canonical_url", ""), article_ref)
-        add_scalar_lookup(indexes["by_title"], diagnostics, "by_title", entry.get("title", ""), article_ref)
+        add_scalar_lookup(
+            indexes["by_article_key"],
+            diagnostics,
+            "by_article_key",
+            entry.get("article_key", ""),
+            article_ref,
+        )
+        add_scalar_lookup(
+            indexes["by_citation_key"],
+            diagnostics,
+            "by_citation_key",
+            entry.get("citation_key", ""),
+            article_ref,
+        )
+        add_scalar_lookup(
+            indexes["by_canonical_url"],
+            diagnostics,
+            "by_canonical_url",
+            entry.get("canonical_url", ""),
+            article_ref,
+        )
+        add_scalar_lookup(
+            indexes["by_title"], diagnostics, "by_title", entry.get("title", ""), article_ref
+        )
         indexes["by_source_code"].setdefault(entry.get("source_code"), []).append(article_ref)
-        indexes["by_coarse_topic_code"].setdefault(entry.get("coarse_topic_code"), []).append(article_ref)
+        indexes["by_coarse_topic_code"].setdefault(entry.get("coarse_topic_code"), []).append(
+            article_ref
+        )
     for map_name, lookup in indexes.items():
         if map_name in {"by_source_code", "by_coarse_topic_code"}:
             indexes[map_name] = {key: sorted(value) for key, value in sorted(lookup.items())}
@@ -642,7 +905,9 @@ def build_lookup_maps(entries: list[dict[str, Any]], diagnostics: list[dict[str,
     return indexes
 
 
-def rebuild_index_from_articles(catalog_path: Path, existing_index: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+def rebuild_index_from_articles(
+    catalog_path: Path, existing_index: dict[str, Any]
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     records, diagnostics = iter_canonical_article_record_paths(catalog_path)
     entries: list[dict[str, Any]] = []
     seen_refs: set[str] = set()
@@ -650,14 +915,22 @@ def rebuild_index_from_articles(catalog_path: Path, existing_index: dict[str, An
         try:
             article = load_json(record_path)
         except ValueError as exc:
-            diagnostics.append(diagnostic("malformed_article_record", str(exc), path=str(record_path)))
+            diagnostics.append(
+                diagnostic("malformed_article_record", str(exc), path=str(record_path))
+            )
             continue
         entry, entry_diags = article_entry_from_record(catalog_path, record_path, article)
         diagnostics.extend(entry_diags)
         if entry is None:
             continue
         if entry["article_ref"] in seen_refs:
-            diagnostics.append(diagnostic("duplicate_lookup_key", f"duplicate article_ref: {entry['article_ref']}", article_ref=entry["article_ref"]))
+            diagnostics.append(
+                diagnostic(
+                    "duplicate_lookup_key",
+                    f"duplicate article_ref: {entry['article_ref']}",
+                    article_ref=entry["article_ref"],
+                )
+            )
         seen_refs.add(entry["article_ref"])
         entries.append(entry)
 
@@ -667,7 +940,9 @@ def rebuild_index_from_articles(catalog_path: Path, existing_index: dict[str, An
         "schema_version": INDEX_SCHEMA_VERSION,
         "catalog_schema_version": CATALOG_SCHEMA_VERSION,
         "article_schema_version": ARTICLE_SCHEMA_VERSION,
-        "index_id": existing_index.get("index_id", "daily_archive_article_catalog_index_fixture_v00_01"),
+        "index_id": existing_index.get(
+            "index_id", "daily_archive_article_catalog_index_fixture_v00_01"
+        ),
         "generated_from": f"{CATALOG_RECORD_DIR}/",
         "lookup_policy": {
             "cli_must_use_index": True,
@@ -704,14 +979,32 @@ def normalize_lookup_maps(indexes: Any) -> Any:
     return normalized
 
 
-def compare_existing_to_rebuilt(existing: dict[str, Any], rebuilt: dict[str, Any]) -> list[dict[str, Any]]:
+def compare_existing_to_rebuilt(
+    existing: dict[str, Any], rebuilt: dict[str, Any]
+) -> list[dict[str, Any]]:
     diagnostics: list[dict[str, Any]] = []
-    existing_by_ref = {row.get("article_ref"): row for row in existing.get("articles", []) if isinstance(row, dict)}
-    rebuilt_by_ref = {row.get("article_ref"): row for row in rebuilt.get("articles", []) if isinstance(row, dict)}
+    existing_by_ref = {
+        row.get("article_ref"): row for row in existing.get("articles", []) if isinstance(row, dict)
+    }
+    rebuilt_by_ref = {
+        row.get("article_ref"): row for row in rebuilt.get("articles", []) if isinstance(row, dict)
+    }
     for article_ref in sorted(set(rebuilt_by_ref) - set(existing_by_ref)):
-        diagnostics.append(diagnostic("missing_index_entry", f"existing index is missing {article_ref}", article_ref=article_ref))
+        diagnostics.append(
+            diagnostic(
+                "missing_index_entry",
+                f"existing index is missing {article_ref}",
+                article_ref=article_ref,
+            )
+        )
     for article_ref in sorted(set(existing_by_ref) - set(rebuilt_by_ref)):
-        diagnostics.append(diagnostic("stale_index_entry", f"existing index has stale {article_ref}", article_ref=article_ref))
+        diagnostics.append(
+            diagnostic(
+                "stale_index_entry",
+                f"existing index has stale {article_ref}",
+                article_ref=article_ref,
+            )
+        )
     drift_fields = {
         "article_path": "path_drift",
         "title": "title_drift",
@@ -733,8 +1026,12 @@ def compare_existing_to_rebuilt(existing: dict[str, Any], rebuilt: dict[str, Any
                         field=field,
                     )
                 )
-    if normalize_lookup_maps(existing.get("indexes")) != normalize_lookup_maps(rebuilt.get("indexes")):
-        diagnostics.append(diagnostic("lookup_map_drift", "existing lookup maps differ from rebuilt projection"))
+    if normalize_lookup_maps(existing.get("indexes")) != normalize_lookup_maps(
+        rebuilt.get("indexes")
+    ):
+        diagnostics.append(
+            diagnostic("lookup_map_drift", "existing lookup maps differ from rebuilt projection")
+        )
     return diagnostics
 
 
@@ -766,12 +1063,16 @@ def build_rebuild_report(
         "diagnostic_counts": counts,
         "error_count": error_count,
         "existing_index_matches_rebuild": existing_matches_rebuilt,
-        "idempotent": second_pass_matches if second_pass_matches is not None else existing_matches_rebuilt,
+        "idempotent": second_pass_matches
+        if second_pass_matches is not None
+        else existing_matches_rebuilt,
         "wrote_index": str(write_index) if write_index else None,
     }
 
 
-def run_rebuild(args: argparse.Namespace, existing_index: dict[str, Any]) -> tuple[list[str], dict[str, Any], list[dict[str, Any]]]:
+def run_rebuild(
+    args: argparse.Namespace, existing_index: dict[str, Any]
+) -> tuple[list[str], dict[str, Any], list[dict[str, Any]]]:
     rebuilt, diagnostics = rebuild_index_from_articles(args.catalog, existing_index)
     diagnostics.extend(compare_existing_to_rebuilt(existing_index, rebuilt))
     existing_matches_rebuilt = existing_index == rebuilt
@@ -784,11 +1085,15 @@ def run_rebuild(args: argparse.Namespace, existing_index: dict[str, Any]) -> tup
             diagnostics.append(diagnostic("write_index_failed", str(exc)))
             written = {}
         second_rebuilt, second_diagnostics = rebuild_index_from_articles(args.catalog, written)
-        second_pass_matches = written == second_rebuilt and not [d for d in second_diagnostics if d.get("severity") == "error"]
+        second_pass_matches = written == second_rebuilt and not [
+            d for d in second_diagnostics if d.get("severity") == "error"
+        ]
         diagnostics.extend(second_diagnostics)
     elif args.check_index_idempotent:
         second_rebuilt, second_diagnostics = rebuild_index_from_articles(args.catalog, rebuilt)
-        second_pass_matches = rebuilt == second_rebuilt and not [d for d in second_diagnostics if d.get("severity") == "error"]
+        second_pass_matches = rebuilt == second_rebuilt and not [
+            d for d in second_diagnostics if d.get("severity") == "error"
+        ]
         diagnostics.extend(second_diagnostics)
 
     report = build_rebuild_report(
@@ -803,7 +1108,11 @@ def run_rebuild(args: argparse.Namespace, existing_index: dict[str, Any]) -> tup
     if args.write_diagnostics:
         write_jsonl_atomic(args.write_diagnostics, diagnostics)
 
-    errors = [f"{row.get('code')}: {row['message']}" for row in diagnostics if row.get("severity") == "error"]
+    errors = [
+        f"{row.get('code')}: {row['message']}"
+        for row in diagnostics
+        if row.get("severity") == "error"
+    ]
     if args.check_index_idempotent and report["idempotent"] is not True:
         errors.append("rebuilt index is not idempotent")
     return errors, report, diagnostics
@@ -839,7 +1148,11 @@ def build_catalog_readiness_artifacts(
 ) -> tuple[dict[str, Any], list[dict[str, Any]], str]:
     diagnostics: list[dict[str, Any]] = []
     selected_rows = selection.get("articles") if isinstance(selection.get("articles"), list) else []
-    selected_refs = [row.get("article_ref") for row in selected_rows if isinstance(row, dict) and isinstance(row.get("article_ref"), str)]
+    selected_refs = [
+        row.get("article_ref")
+        for row in selected_rows
+        if isinstance(row, dict) and isinstance(row.get("article_ref"), str)
+    ]
     stored_rebuild_report = _load_rebuild_report(catalog_path)
     rebuild_evidence = dict(stored_rebuild_report)
     if rebuild_report:
@@ -851,7 +1164,9 @@ def build_catalog_readiness_artifacts(
             "index_readiness",
             "catalog index readiness evidence",
             severity="info",
-            index_article_count=len(index.get("articles", [])) if isinstance(index.get("articles"), list) else 0,
+            index_article_count=len(index.get("articles", []))
+            if isinstance(index.get("articles"), list)
+            else 0,
             index_idempotent=rebuild_evidence.get("idempotent"),
             existing_index_matches_rebuild=rebuild_evidence.get("existing_index_matches_rebuild"),
             network_fetch_attempted=rebuild_evidence.get("network_fetch_attempted"),
@@ -869,15 +1184,37 @@ def build_catalog_readiness_artifacts(
     capture_status_counts: dict[str, int] = {}
     lightweight_formats = {"html", "markdown", "text", "ocr_text"}
 
-    for article_ref, article_path, article, load_error in _selection_article_records(catalog_path, selection, index_articles):
+    for article_ref, article_path, article, load_error in _selection_article_records(
+        catalog_path, selection, index_articles
+    ):
         if load_error or article is None:
-            blocked_articles.append({"article_ref": article_ref, "reason": load_error or "missing_article"})
-            diagnostics.append(diagnostic("article_blocked", "article record could not be loaded", article_ref=article_ref, reason=load_error))
+            blocked_articles.append(
+                {"article_ref": article_ref, "reason": load_error or "missing_article"}
+            )
+            diagnostics.append(
+                diagnostic(
+                    "article_blocked",
+                    "article record could not be loaded",
+                    article_ref=article_ref,
+                    reason=load_error,
+                )
+            )
             continue
         entry = index_articles.get(article_ref, {})
         identity = article.get("identity") if isinstance(article.get("identity"), dict) else {}
-        variants = article.get("source_variants") if isinstance(article.get("source_variants"), list) else []
-        primary = next((variant for variant in variants if isinstance(variant, dict) and variant.get("is_primary") is True), None)
+        variants = (
+            article.get("source_variants")
+            if isinstance(article.get("source_variants"), list)
+            else []
+        )
+        primary = next(
+            (
+                variant
+                for variant in variants
+                if isinstance(variant, dict) and variant.get("is_primary") is True
+            ),
+            None,
+        )
         fallback_pdfs = [
             variant
             for variant in variants
@@ -936,17 +1273,29 @@ def build_catalog_readiness_artifacts(
                 )
             )
         if article_blockers:
-            blocked_articles.append({"article_ref": article_ref, "reason": ",".join(article_blockers)})
+            blocked_articles.append(
+                {"article_ref": article_ref, "reason": ",".join(article_blockers)}
+            )
         article_summary = {
             "article_ref": article_ref,
             "article_key": article.get("article_key"),
             "source_code": article.get("source_code"),
             "coarse_topic_code": article.get("coarse_topic_code"),
             "title": identity.get("title") or entry.get("title"),
-            "primary_source_role": primary.get("source_role") if isinstance(primary, dict) else None,
-            "primary_source_format": primary.get("source_format") if isinstance(primary, dict) else None,
-            "primary_loader_outcome": primary.get("loader_outcome") if isinstance(primary, dict) else None,
-            "captured_variant_count": sum(1 for variant in variants if isinstance(variant, dict) and variant.get("capture_status") == "captured"),
+            "primary_source_role": primary.get("source_role")
+            if isinstance(primary, dict)
+            else None,
+            "primary_source_format": primary.get("source_format")
+            if isinstance(primary, dict)
+            else None,
+            "primary_loader_outcome": primary.get("loader_outcome")
+            if isinstance(primary, dict)
+            else None,
+            "captured_variant_count": sum(
+                1
+                for variant in variants
+                if isinstance(variant, dict) and variant.get("capture_status") == "captured"
+            ),
             "variant_count": len([variant for variant in variants if isinstance(variant, dict)]),
             "pdf_fallback_preserved": bool(fallback_pdfs),
             "blocked_before_s02": bool(article_blockers),
@@ -955,14 +1304,26 @@ def build_catalog_readiness_artifacts(
             "article_path": str(article_path),
         }
         articles.append(article_summary)
-        diagnostics.append(diagnostic("article_readiness", "selected article readiness", severity="info", **article_summary))
+        diagnostics.append(
+            diagnostic(
+                "article_readiness",
+                "selected article readiness",
+                severity="info",
+                **article_summary,
+            )
+        )
 
     summary = {
         "schema_version": "article-corpus-run-summary.v00.01",
         "selection_id": selection.get("selection_id"),
         "catalog_schema_version": CATALOG_SCHEMA_VERSION,
         "article_schema_version": ARTICLE_SCHEMA_VERSION,
-        "selection_path": str(catalog_path.parent.parent / "article_corpora" / str(selection.get("selection_id")) / "selection.json"),
+        "selection_path": str(
+            catalog_path.parent.parent
+            / "article_corpora"
+            / str(selection.get("selection_id"))
+            / "selection.json"
+        ),
         "article_count": len(selected_refs),
         "variant_count": total_variants,
         "captured_variant_count": captured_variants,
@@ -976,7 +1337,9 @@ def build_catalog_readiness_artifacts(
             "full_tree_scan_attempted": False,
             "rebuild_report_path": rebuild_evidence.get("path"),
             "rebuild_report_present": rebuild_evidence.get("present"),
-            "existing_index_matches_rebuild": rebuild_evidence.get("existing_index_matches_rebuild"),
+            "existing_index_matches_rebuild": rebuild_evidence.get(
+                "existing_index_matches_rebuild"
+            ),
             "idempotent": rebuild_evidence.get("idempotent"),
             "network_fetch_attempted": rebuild_evidence.get("network_fetch_attempted"),
         },
@@ -1003,7 +1366,12 @@ def build_catalog_readiness_artifacts(
     return summary, diagnostics, report
 
 
-def render_catalog_report(summary: dict[str, Any], diagnostics: list[dict[str, Any]], *, report_title: str = DEFAULT_REPORT_TITLE) -> str:
+def render_catalog_report(
+    summary: dict[str, Any],
+    diagnostics: list[dict[str, Any]],
+    *,
+    report_title: str = DEFAULT_REPORT_TITLE,
+) -> str:
     articles = summary.get("articles") if isinstance(summary.get("articles"), list) else []
     lines = [
         f"# {report_title}",
@@ -1036,49 +1404,59 @@ def render_catalog_report(summary: dict[str, Any], diagnostics: list[dict[str, A
             f"{article.get('captured_variant_count')}/{article.get('variant_count')} | "
             f"{article.get('pdf_fallback_preserved')} | {article.get('blocked_before_s02')} |"
         )
-    lines.extend([
-        "",
-        "## Source Variant Diagnostics",
-        "| Article | Role | Format | Primary | Capability | Capture | Checksum | Loader Outcome | Fallback Reason |",
-        "|---|---|---|---:|---|---|---|---|---|",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Source Variant Diagnostics",
+            "| Article | Role | Format | Primary | Capability | Capture | Checksum | Loader Outcome | Fallback Reason |",
+            "|---|---|---|---:|---|---|---|---|---|",
+        ]
+    )
     for row in diagnostics:
         if row.get("code") != "source_variant_readiness":
             continue
-        capability = "metadata" if row.get("is_metadata_only") else "content" if row.get("is_content_bearing") else "auxiliary"
+        capability = (
+            "metadata"
+            if row.get("is_metadata_only")
+            else "content"
+            if row.get("is_content_bearing")
+            else "auxiliary"
+        )
         checksum = str(row.get("checksum") or "")[:12]
         lines.append(
             "| "
             f"{row.get('article_ref')} | {row.get('source_role')} | {row.get('source_format')} | {row.get('is_primary')} | "
             f"{capability} | {row.get('capture_status')} | {checksum} | {row.get('loader_outcome')} | {row.get('fallback_reason') or ''} |"
         )
-    lines.extend([
-        "",
-        "## Failure Modes",
-        "- Filesystem dependency: missing catalog, index, selection, article records, loader events, or captured source files bubble as validator errors with non-zero exit; artifact writes are atomic temp-file-plus-rename writes.",
-        "- Malformed JSON dependency: `load_json` rejects malformed or non-object JSON and the CLI exits non-zero before writing readiness success claims.",
-        "- Index drift dependency: `--check-index-idempotent` rebuilds the projection in memory and fails if the existing index no longer matches an idempotent rebuild report.",
-        "- Network dependency: S01 report generation has no network mode; tests and pipeline validation report `network_fetch_attempted=false` instead of refreshing implicitly.",
-        "- Subprocess dependency: callers observe standard CLI exit codes; failed validation prints concrete diagnostics to stderr.",
-        "",
-        "## Load Profile",
-        "- Expected load is five selected articles and their local variants; 10x load first saturates local filesystem reads and optional checksum hashing, not network or database resources.",
-        "- Protection: normal validation resolves articles through `index.json`, full tree traversal is confined to explicit rebuild/idempotency checks, and output writes are bounded JSON/JSONL/Markdown files.",
-        "- No pool sizing or rate limiting is needed because report generation has no async, network, API, or database runtime dimension.",
-        "",
-        "## Negative Tests",
-        "- `tests/test_m025_article_catalog_verifier.py::test_m025_article_catalog_verifier_rejects_index_title_drift` covers index/article title drift.",
-        "- `tests/test_m025_article_catalog_verifier.py::test_m025_article_catalog_verifier_rejects_selection_not_in_index` covers invalid selection references.",
-        "- `tests/test_m025_article_catalog_verifier.py::test_m025_article_catalog_rebuild_rejects_duplicate_lookup_key` covers duplicate lookup/index rebuild failures.",
-        "- `tests/test_m025_article_catalog_verifier.py::test_m025_article_catalog_verifier_rejects_unsafe_index_traversal` covers unsafe catalog-relative paths.",
-        "- `tests/test_m025_article_catalog_verifier.py::test_m025_article_catalog_verifier_writes_catalog_readiness_outputs` covers final summary/report/diagnostics generation and planned S02 blocker reporting.",
-        "",
-        "## Observability Impact",
-        "- `run-summary.json` records article, variant, loader, rebuild, network, blocker, and safety counts for S02 handoff.",
-        "- `diagnostics.jsonl` records machine-readable index, article, and source-variant readiness rows without raw payloads or vectors.",
-        "- `catalog-report.md` provides a human-readable handoff stating primary lightweight variants, preserved PDF fallbacks, idempotency evidence, and S02 blockers.",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Failure Modes",
+            "- Filesystem dependency: missing catalog, index, selection, article records, loader events, or captured source files bubble as validator errors with non-zero exit; artifact writes are atomic temp-file-plus-rename writes.",
+            "- Malformed JSON dependency: `load_json` rejects malformed or non-object JSON and the CLI exits non-zero before writing readiness success claims.",
+            "- Index drift dependency: `--check-index-idempotent` rebuilds the projection in memory and fails if the existing index no longer matches an idempotent rebuild report.",
+            "- Network dependency: S01 report generation has no network mode; tests and pipeline validation report `network_fetch_attempted=false` instead of refreshing implicitly.",
+            "- Subprocess dependency: callers observe standard CLI exit codes; failed validation prints concrete diagnostics to stderr.",
+            "",
+            "## Load Profile",
+            "- Expected load is five selected articles and their local variants; 10x load first saturates local filesystem reads and optional checksum hashing, not network or database resources.",
+            "- Protection: normal validation resolves articles through `index.json`, full tree traversal is confined to explicit rebuild/idempotency checks, and output writes are bounded JSON/JSONL/Markdown files.",
+            "- No pool sizing or rate limiting is needed because report generation has no async, network, API, or database runtime dimension.",
+            "",
+            "## Negative Tests",
+            "- `tests/test_m025_article_catalog_verifier.py::test_m025_article_catalog_verifier_rejects_index_title_drift` covers index/article title drift.",
+            "- `tests/test_m025_article_catalog_verifier.py::test_m025_article_catalog_verifier_rejects_selection_not_in_index` covers invalid selection references.",
+            "- `tests/test_m025_article_catalog_verifier.py::test_m025_article_catalog_rebuild_rejects_duplicate_lookup_key` covers duplicate lookup/index rebuild failures.",
+            "- `tests/test_m025_article_catalog_verifier.py::test_m025_article_catalog_verifier_rejects_unsafe_index_traversal` covers unsafe catalog-relative paths.",
+            "- `tests/test_m025_article_catalog_verifier.py::test_m025_article_catalog_verifier_writes_catalog_readiness_outputs` covers final summary/report/diagnostics generation and planned S02 blocker reporting.",
+            "",
+            "## Observability Impact",
+            "- `run-summary.json` records article, variant, loader, rebuild, network, blocker, and safety counts for S02 handoff.",
+            "- `diagnostics.jsonl` records machine-readable index, article, and source-variant readiness rows without raw payloads or vectors.",
+            "- `catalog-report.md` provides a human-readable handoff stating primary lightweight variants, preserved PDF fallbacks, idempotency evidence, and S02 blockers.",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -1101,17 +1479,27 @@ def validate(args: argparse.Namespace) -> tuple[list[str], dict[str, Any] | None
         check_duplicate_lookups=args.check_duplicate_lookups,
     )
     errors.extend(index_errors)
-    errors.extend(validate_selection(
-        selection,
-        index_articles,
-        expected_selection_id=args.expected_selection_id,
-        require_selection_titles=args.require_selection_titles,
-        allow_index_superset=args.allow_index_superset,
-    ))
+    errors.extend(
+        validate_selection(
+            selection,
+            index_articles,
+            expected_selection_id=args.expected_selection_id,
+            require_selection_titles=args.require_selection_titles,
+            allow_index_superset=args.allow_index_superset,
+        )
+    )
     if args.require_captured_sources:
-        errors.extend(check_captured_sources(args.catalog, selection, index_articles, check_checksums=args.check_checksums))
+        errors.extend(
+            check_captured_sources(
+                args.catalog, selection, index_articles, check_checksums=args.check_checksums
+            )
+        )
     if args.require_loader_events:
-        errors.extend(check_loader_events(args.catalog, selection, index_articles, check_redaction=args.check_redaction))
+        errors.extend(
+            check_loader_events(
+                args.catalog, selection, index_articles, check_redaction=args.check_redaction
+            )
+        )
     report = None
     if args.rebuild_index:
         rebuild_errors, report, _diagnostics = run_rebuild(args, index)
@@ -1124,15 +1512,24 @@ def validate(args: argparse.Namespace) -> tuple[list[str], dict[str, Any] | None
             rebuilt,
             diagnostics,
             existing_matches_rebuilt=index == rebuilt,
-            second_pass_matches=rebuilt == second_rebuilt and not [d for d in second_diagnostics if d.get("severity") == "error"],
+            second_pass_matches=rebuilt == second_rebuilt
+            and not [d for d in second_diagnostics if d.get("severity") == "error"],
             write_index=None,
         )
-        errors.extend(f"{row.get('code')}: {row['message']}" for row in diagnostics if row.get("severity") == "error")
+        errors.extend(
+            f"{row.get('code')}: {row['message']}"
+            for row in diagnostics
+            if row.get("severity") == "error"
+        )
         if report["idempotent"] is not True:
             errors.append("rebuilt index is not idempotent")
     if args.check_index_lookup_only:
         errors.extend(check_static_lookup_policy(Path(__file__)))
-    if not errors and (args.write_summary or args.write_report or (args.write_diagnostics and not args.rebuild_index)):
+    if not errors and (
+        args.write_summary
+        or args.write_report
+        or (args.write_diagnostics and not args.rebuild_index)
+    ):
         summary, readiness_diagnostics, markdown_report = build_catalog_readiness_artifacts(
             args.catalog,
             index,
@@ -1174,40 +1571,131 @@ def check_static_lookup_policy(script_path: Path) -> list[str]:
         func = node.func
         if not isinstance(func, ast.Attribute) or func.attr not in {"glob", "rglob"}:
             continue
-        literal_args = [arg.value for arg in node.args if isinstance(arg, ast.Constant) and isinstance(arg.value, str)]
+        literal_args = [
+            arg.value
+            for arg in node.args
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str)
+        ]
         if any("article.json" in value for value in literal_args):
             owner = enclosing_function(node)
             if owner not in REBUILD_TRAVERSAL_FUNCTIONS:
-                errors.append(f"broad catalog scan for article.json is outside rebuild function: {owner or '<module>'}")
+                errors.append(
+                    f"broad catalog scan for article.json is outside rebuild function: {owner or '<module>'}"
+                )
     return errors
 
 
-def parse_args(argv: list[str], *, default_expected_selection_id: str | None = EXPECTED_SELECTION_ID, default_report_title: str = "M025 S01 Catalog Readiness Report") -> argparse.Namespace:
+def parse_args(
+    argv: list[str],
+    *,
+    default_expected_selection_id: str | None = EXPECTED_SELECTION_ID,
+    default_report_title: str = "M025 S01 Catalog Readiness Report",
+) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--catalog", required=True, type=Path)
     parser.add_argument("--index", required=True, type=Path)
     parser.add_argument("--selection", required=True, type=Path)
-    parser.add_argument("--validate-only", action="store_true", help="Validate existing local artifacts without fetching or rebuilding.")
-    parser.add_argument("--rebuild-index", action="store_true", help="Explicitly rebuild index.json from canonical local article records.")
-    parser.add_argument("--write-index", type=Path, help="Atomically write the rebuilt index to this path.")
-    parser.add_argument("--write-index-report", type=Path, help="Atomically write the rebuild report JSON to this path.")
-    parser.add_argument("--write-summary", type=Path, help="Atomically write the catalog readiness run summary JSON to this path.")
-    parser.add_argument("--write-diagnostics", type=Path, help="Atomically write readiness or rebuild diagnostics as JSONL to this path.")
-    parser.add_argument("--write-report", type=Path, help="Write the human-readable catalog readiness report Markdown to this path.")
-    parser.add_argument("--require-index", action="store_true", help="Require index policy fields for index-only CLI lookup.")
-    parser.add_argument("--check-index-idempotent", action="store_true", help="Require rebuilt index projection to be idempotent.")
-    parser.add_argument("--check-index-titles", action="store_true", help="Require every index title to mirror article identity.title.")
-    parser.add_argument("--check-safe-traversal", action="store_true", help="Reject catalog paths that escape the catalog root or do not match canonical record layout.")
-    parser.add_argument("--check-duplicate-lookups", action="store_true", help="Reject duplicate article lookup keys.")
-    parser.add_argument("--require-captured-sources", action="store_true", help="Require selected source variants to have local captured files.")
-    parser.add_argument("--check-checksums", action="store_true", help="Verify captured source byte sizes and sha256 checksums.")
-    parser.add_argument("--require-loader-events", action="store_true", help="Require local loader summaries/events for selected source variants.")
-    parser.add_argument("--check-redaction", action="store_true", help="Reject raw payload or vector/secret-like fields in loader artifacts.")
-    parser.add_argument("--check-index-lookup-only", action="store_true", help="Run the AST-aware guard that normal lookup must not scan article records.")
-    parser.add_argument("--expected-selection-id", default=default_expected_selection_id, help="Optional strict selection_id to require; omit in generic callers to accept any corpus selection.")
-    parser.add_argument("--require-selection-titles", action="store_true", help="Require selected article rows to carry titles matching index.json.")
-    parser.add_argument("--allow-index-superset", action="store_true", help="Allow index.json to contain catalog rows outside the current corpus selection.")
-    parser.add_argument("--report-title", default=default_report_title, help="Markdown title for readiness reports.")
+    parser.add_argument(
+        "--validate-only",
+        action="store_true",
+        help="Validate existing local artifacts without fetching or rebuilding.",
+    )
+    parser.add_argument(
+        "--rebuild-index",
+        action="store_true",
+        help="Explicitly rebuild index.json from canonical local article records.",
+    )
+    parser.add_argument(
+        "--write-index", type=Path, help="Atomically write the rebuilt index to this path."
+    )
+    parser.add_argument(
+        "--write-index-report",
+        type=Path,
+        help="Atomically write the rebuild report JSON to this path.",
+    )
+    parser.add_argument(
+        "--write-summary",
+        type=Path,
+        help="Atomically write the catalog readiness run summary JSON to this path.",
+    )
+    parser.add_argument(
+        "--write-diagnostics",
+        type=Path,
+        help="Atomically write readiness or rebuild diagnostics as JSONL to this path.",
+    )
+    parser.add_argument(
+        "--write-report",
+        type=Path,
+        help="Write the human-readable catalog readiness report Markdown to this path.",
+    )
+    parser.add_argument(
+        "--require-index",
+        action="store_true",
+        help="Require index policy fields for index-only CLI lookup.",
+    )
+    parser.add_argument(
+        "--check-index-idempotent",
+        action="store_true",
+        help="Require rebuilt index projection to be idempotent.",
+    )
+    parser.add_argument(
+        "--check-index-titles",
+        action="store_true",
+        help="Require every index title to mirror article identity.title.",
+    )
+    parser.add_argument(
+        "--check-safe-traversal",
+        action="store_true",
+        help="Reject catalog paths that escape the catalog root or do not match canonical record layout.",
+    )
+    parser.add_argument(
+        "--check-duplicate-lookups",
+        action="store_true",
+        help="Reject duplicate article lookup keys.",
+    )
+    parser.add_argument(
+        "--require-captured-sources",
+        action="store_true",
+        help="Require selected source variants to have local captured files.",
+    )
+    parser.add_argument(
+        "--check-checksums",
+        action="store_true",
+        help="Verify captured source byte sizes and sha256 checksums.",
+    )
+    parser.add_argument(
+        "--require-loader-events",
+        action="store_true",
+        help="Require local loader summaries/events for selected source variants.",
+    )
+    parser.add_argument(
+        "--check-redaction",
+        action="store_true",
+        help="Reject raw payload or vector/secret-like fields in loader artifacts.",
+    )
+    parser.add_argument(
+        "--check-index-lookup-only",
+        action="store_true",
+        help="Run the AST-aware guard that normal lookup must not scan article records.",
+    )
+    parser.add_argument(
+        "--expected-selection-id",
+        default=default_expected_selection_id,
+        help="Optional strict selection_id to require; omit in generic callers to accept any corpus selection.",
+    )
+    parser.add_argument(
+        "--require-selection-titles",
+        action="store_true",
+        help="Require selected article rows to carry titles matching index.json.",
+    )
+    parser.add_argument(
+        "--allow-index-superset",
+        action="store_true",
+        help="Allow index.json to contain catalog rows outside the current corpus selection.",
+    )
+    parser.add_argument(
+        "--report-title", default=default_report_title, help="Markdown title for readiness reports."
+    )
     args = parser.parse_args(argv)
     if args.write_index and not args.rebuild_index:
         parser.error("--write-index requires --rebuild-index")
@@ -1221,7 +1709,9 @@ def parse_args(argv: list[str], *, default_expected_selection_id: str | None = E
         or args.check_redaction
         or args.check_index_lookup_only
     ):
-        parser.error("choose --validate-only, --rebuild-index, or a concrete check mode; no network fetch mode exists")
+        parser.error(
+            "choose --validate-only, --rebuild-index, or a concrete check mode; no network fetch mode exists"
+        )
     return args
 
 

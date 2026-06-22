@@ -76,12 +76,17 @@ def build_bounded_chunk_repair_contract(
 
     selected = _select_locators(locators, max_target_count=max_target_count)
     if not selected:
-        raise BoundedChunkRepairError(code="no_eligible_locators", path="/locators", object_type="locator_batch")
+        raise BoundedChunkRepairError(
+            code="no_eligible_locators", path="/locators", object_type="locator_batch"
+        )
 
     repaired_contract = deepcopy(contract)
     repaired_contract["schema_version"] = CHUNK_REPAIR_CONTRACT_VERSION
     repaired_contract["contract_version"] = CHUNK_REPAIR_CONTRACT_VERSION
-    repaired_contract["repair_targets"] = [_target_from_locator(locator, index=index) for index, locator in enumerate(selected, start=1)]
+    repaired_contract["repair_targets"] = [
+        _target_from_locator(locator, index=index)
+        for index, locator in enumerate(selected, start=1)
+    ]
     repaired_contract["diagnostics"] = _contract_diagnostics(repaired_contract["repair_targets"])
 
     expected_audit = expected_audit_from_contract(repaired_contract)
@@ -106,7 +111,9 @@ def summarize_bounded_chunk_repair_contract(payload: dict[str, Any]) -> dict[str
         repair_state = str(target.get("repair_state", "unknown"))
         route_quality_state = str(target.get("route_quality_state", "unknown"))
         repair_states[repair_state] = repair_states.get(repair_state, 0) + 1
-        route_quality_states[route_quality_state] = route_quality_states.get(route_quality_state, 0) + 1
+        route_quality_states[route_quality_state] = (
+            route_quality_states.get(route_quality_state, 0) + 1
+        )
     diagnostics = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
     return {
         "schema_version": "bounded-chunk-repair-summary.v1",
@@ -136,16 +143,24 @@ def render_bounded_chunk_repair_markdown(payload: dict[str, Any]) -> str:
     safety assertions. It intentionally avoids code fences and forbidden payload
     marker strings enforced by the S02 Markdown validator.
     """
-    validation = validate_chunk_repair_contract(payload, expected_audit=expected_audit_from_contract(payload))
+    validation = validate_chunk_repair_contract(
+        payload, expected_audit=expected_audit_from_contract(payload)
+    )
     if not validation.passed:
         codes = ", ".join(sorted(validation.refusal_counts))
-        raise BoundedChunkRepairError(code=f"contract_validation_failed:{codes}", path="/", object_type="contract")
+        raise BoundedChunkRepairError(
+            code=f"contract_validation_failed:{codes}", path="/", object_type="contract"
+        )
 
     summary = summarize_bounded_chunk_repair_contract(payload)
     targets = _list_of_dicts(payload.get("repair_targets"))
     diagnostics = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
-    source_audit = payload.get("source_audit") if isinstance(payload.get("source_audit"), dict) else {}
-    stable_counts = payload.get("stable_id_counts") if isinstance(payload.get("stable_id_counts"), dict) else {}
+    source_audit = (
+        payload.get("source_audit") if isinstance(payload.get("source_audit"), dict) else {}
+    )
+    stable_counts = (
+        payload.get("stable_id_counts") if isinstance(payload.get("stable_id_counts"), dict) else {}
+    )
     lines = [
         "# S03 Bounded Repair Prototype",
         "",
@@ -172,49 +187,65 @@ def render_bounded_chunk_repair_markdown(payload: dict[str, Any]) -> str:
     lines.extend(["", "## Route Quality Counts", "", "| Route quality | Count |", "|---|---:|"])
     for state, count in summary["route_quality_state_counts"].items():
         lines.append(f"| {state} | {count} |")
-    lines.extend([
-        "",
-        "## Safety Boundary Counts",
-        "",
-        f"- Import eligibility count: {diagnostics.get('import_eligible_count')}",
-        f"- Fact promotion count: {diagnostics.get('promoted_to_fact_count')}",
-        f"- Production write count: {diagnostics.get('production_write_count')}",
-        f"- Semantic readiness count: {diagnostics.get('semantic_ready_count')}",
-        f"- Source payload included: {str(diagnostics.get('raw_text_included')).lower()}",
-        f"- Chunk payload included: {str(diagnostics.get('chunk_text_included')).lower()}",
-        f"- Model embedding payloads included: {str(diagnostics.get('embeddings_included')).lower()}",
-        f"- Model vector payloads included: {str(diagnostics.get('vectors_included')).lower()}",
-        f"- Secret values included: {str(diagnostics.get('secrets_included')).lower()}",
-        f"- LadybugDB write attempted: {str(diagnostics.get('ladybugdb_written')).lower()}",
-        f"- Production import attempted: {str(diagnostics.get('production_import_attempted')).lower()}",
-        "",
-        "## Target Classifications",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Safety Boundary Counts",
+            "",
+            f"- Import eligibility count: {diagnostics.get('import_eligible_count')}",
+            f"- Fact promotion count: {diagnostics.get('promoted_to_fact_count')}",
+            f"- Production write count: {diagnostics.get('production_write_count')}",
+            f"- Semantic readiness count: {diagnostics.get('semantic_ready_count')}",
+            f"- Source payload included: {str(diagnostics.get('raw_text_included')).lower()}",
+            f"- Chunk payload included: {str(diagnostics.get('chunk_text_included')).lower()}",
+            f"- Model embedding payloads included: {str(diagnostics.get('embeddings_included')).lower()}",
+            f"- Model vector payloads included: {str(diagnostics.get('vectors_included')).lower()}",
+            f"- Secret values included: {str(diagnostics.get('secrets_included')).lower()}",
+            f"- LadybugDB write attempted: {str(diagnostics.get('ladybugdb_written')).lower()}",
+            f"- Production import attempted: {str(diagnostics.get('production_import_attempted')).lower()}",
+            "",
+            "## Target Classifications",
+            "",
+        ]
+    )
     for target in targets:
-        before = target.get("before_diagnostics") if isinstance(target.get("before_diagnostics"), dict) else {}
-        after = target.get("after_diagnostics") if isinstance(target.get("after_diagnostics"), dict) else {}
+        before = (
+            target.get("before_diagnostics")
+            if isinstance(target.get("before_diagnostics"), dict)
+            else {}
+        )
+        after = (
+            target.get("after_diagnostics")
+            if isinstance(target.get("after_diagnostics"), dict)
+            else {}
+        )
         before_codes = ", ".join(str(code) for code in before.get("codes", [])) or "none"
         after_codes = ", ".join(str(code) for code in after.get("codes", [])) or "none"
-        span_ids = ", ".join(str(span.get("span_id")) for span in _list_of_dicts(target.get("source_spans")))
-        source_ids = ", ".join(str(source_id) for source_id in target.get("source_artifact_refs", []))
-        lines.extend([
-            f"### {target['target_id']}",
-            "",
-            f"- Locator ID: {target['locator_id']}",
-            f"- Source IDs: {source_ids}",
-            f"- Span IDs: {span_ids}",
-            f"- Repair state: {target.get('repair_state')}",
-            f"- Route quality: {target.get('route_quality_state')}",
-            f"- Review status: {target.get('review_status')}",
-            f"- Repair kind: {target.get('repair_kind')}",
-            f"- Before diagnostic codes: {before_codes}",
-            f"- After diagnostic codes: {after_codes}",
-            f"- After safe to import: {str(after.get('safe_to_import')).lower()}",
-            f"- Section lineage status: {target.get('section_lineage', {}).get('status', 'unresolved') if isinstance(target.get('section_lineage'), dict) else 'unresolved'}",
-            "- Classification: explicit needs-review or non-repairable until a human reviewer accepts evidence outside this prototype",
-            "",
-        ])
+        span_ids = ", ".join(
+            str(span.get("span_id")) for span in _list_of_dicts(target.get("source_spans"))
+        )
+        source_ids = ", ".join(
+            str(source_id) for source_id in target.get("source_artifact_refs", [])
+        )
+        lines.extend(
+            [
+                f"### {target['target_id']}",
+                "",
+                f"- Locator ID: {target['locator_id']}",
+                f"- Source IDs: {source_ids}",
+                f"- Span IDs: {span_ids}",
+                f"- Repair state: {target.get('repair_state')}",
+                f"- Route quality: {target.get('route_quality_state')}",
+                f"- Review status: {target.get('review_status')}",
+                f"- Repair kind: {target.get('repair_kind')}",
+                f"- Before diagnostic codes: {before_codes}",
+                f"- After diagnostic codes: {after_codes}",
+                f"- After safe to import: {str(after.get('safe_to_import')).lower()}",
+                f"- Section lineage status: {target.get('section_lineage', {}).get('status', 'unresolved') if isinstance(target.get('section_lineage'), dict) else 'unresolved'}",
+                "- Classification: explicit needs-review or non-repairable until a human reviewer accepts evidence outside this prototype",
+                "",
+            ]
+        )
     markdown = "\n".join(lines)
     markdown_diagnostics = validate_chunk_repair_contract_markdown(markdown)
     if markdown_diagnostics:
@@ -228,20 +259,32 @@ def render_bounded_chunk_repair_markdown(payload: dict[str, Any]) -> str:
     return markdown
 
 
-def _validate_builder_inputs(contract: dict[str, Any], locator_batch: dict[str, Any], *, max_target_count: int) -> None:
+def _validate_builder_inputs(
+    contract: dict[str, Any], locator_batch: dict[str, Any], *, max_target_count: int
+) -> None:
     if not isinstance(contract, dict):
         raise BoundedChunkRepairError(code="contract_not_object", path="/", object_type="contract")
     if not isinstance(locator_batch, dict):
-        raise BoundedChunkRepairError(code="locator_batch_not_object", path="/", object_type="locator_batch")
+        raise BoundedChunkRepairError(
+            code="locator_batch_not_object", path="/", object_type="locator_batch"
+        )
     if max_target_count < 1:
-        raise BoundedChunkRepairError(code="invalid_max_target_count", path="/max_target_count", object_type="builder_config")
+        raise BoundedChunkRepairError(
+            code="invalid_max_target_count", path="/max_target_count", object_type="builder_config"
+        )
     if contract.get("schema_version") != CHUNK_REPAIR_CONTRACT_VERSION:
-        raise BoundedChunkRepairError(code="contract_schema_mismatch", path="/schema_version", object_type="contract")
+        raise BoundedChunkRepairError(
+            code="contract_schema_mismatch", path="/schema_version", object_type="contract"
+        )
     if locator_batch.get("schema_version") != CANDIDATE_LOCATOR_PROTOCOL_VERSION:
-        raise BoundedChunkRepairError(code="locator_schema_mismatch", path="/schema_version", object_type="locator_batch")
+        raise BoundedChunkRepairError(
+            code="locator_schema_mismatch", path="/schema_version", object_type="locator_batch"
+        )
 
     for finding in scan_forbidden_payload_keys(locator_batch):
-        raise BoundedChunkRepairError(code=finding.code, path=finding.path, object_type="locator_batch")
+        raise BoundedChunkRepairError(
+            code=finding.code, path=finding.path, object_type="locator_batch"
+        )
     for finding in scan_forbidden_payload_keys(contract):
         raise BoundedChunkRepairError(code=finding.code, path=finding.path, object_type="contract")
 
@@ -258,14 +301,22 @@ def _validate_builder_inputs(contract: dict[str, Any], locator_batch: dict[str, 
 def _validate_locator_safety(locator_batch: dict[str, Any]) -> None:
     safety_flags = locator_batch.get("safety_flags")
     if not isinstance(safety_flags, dict):
-        raise BoundedChunkRepairError(code="missing_safety_flags", path="/safety_flags", object_type="locator_batch")
+        raise BoundedChunkRepairError(
+            code="missing_safety_flags", path="/safety_flags", object_type="locator_batch"
+        )
     for field in REQUIRED_FALSE_LOCATOR_SAFETY_FIELDS:
         if safety_flags.get(field) is not False:
-            raise BoundedChunkRepairError(code="unsafe_safety_flag", path=f"/safety_flags/{field}", object_type="locator_batch")
+            raise BoundedChunkRepairError(
+                code="unsafe_safety_flag",
+                path=f"/safety_flags/{field}",
+                object_type="locator_batch",
+            )
     summary = locator_batch.get("summary") if isinstance(locator_batch.get("summary"), dict) else {}
     for field in ("import_eligible_count", "promoted_to_fact_count"):
         if summary.get(field) != 0:
-            raise BoundedChunkRepairError(code="unsafe_summary_counter", path=f"/summary/{field}", object_type="locator_batch")
+            raise BoundedChunkRepairError(
+                code="unsafe_summary_counter", path=f"/summary/{field}", object_type="locator_batch"
+            )
 
 
 def _known_contract_ids(contract: dict[str, Any]) -> dict[str, set[str]]:
@@ -276,37 +327,80 @@ def _known_contract_ids(contract: dict[str, Any]) -> dict[str, set[str]]:
     paper_ids = set(expected_audit_from_contract(contract).get("paper_ids") or [])
     if not paper_ids:
         paper_ids = _string_set([contract.get("paper_id")])
-    return {"source_ids": source_ids, "locator_ids": locator_ids, "span_ids": span_ids, "paper_ids": paper_ids}
+    return {
+        "source_ids": source_ids,
+        "locator_ids": locator_ids,
+        "span_ids": span_ids,
+        "paper_ids": paper_ids,
+    }
 
 
-def _validate_locator_lineage(locators: list[dict[str, Any]], known_ids: dict[str, set[str]]) -> None:
+def _validate_locator_lineage(
+    locators: list[dict[str, Any]], known_ids: dict[str, set[str]]
+) -> None:
     if not locators:
-        raise BoundedChunkRepairError(code="missing_locators", path="/locators", object_type="locator_batch")
+        raise BoundedChunkRepairError(
+            code="missing_locators", path="/locators", object_type="locator_batch"
+        )
     for index, locator in enumerate(locators):
         locator_id = str(locator.get("locator_id", ""))
         path = f"/locators/{index}"
         if locator_id not in known_ids["locator_ids"]:
-            raise BoundedChunkRepairError(code="unresolved_locator_id", path=f"{path}/locator_id", object_id=locator_id, object_type="locator")
+            raise BoundedChunkRepairError(
+                code="unresolved_locator_id",
+                path=f"{path}/locator_id",
+                object_id=locator_id,
+                object_type="locator",
+            )
         if str(locator.get("paper_id", "")) not in known_ids["paper_ids"]:
-            raise BoundedChunkRepairError(code="unresolved_paper_id", path=f"{path}/paper_id", object_id=locator_id, object_type="locator")
+            raise BoundedChunkRepairError(
+                code="unresolved_paper_id",
+                path=f"{path}/paper_id",
+                object_id=locator_id,
+                object_type="locator",
+            )
         spans = _list_of_dicts(locator.get("source_spans"))
         if not spans:
-            raise BoundedChunkRepairError(code="missing_source_spans", path=f"{path}/source_spans", object_id=locator_id, object_type="locator")
+            raise BoundedChunkRepairError(
+                code="missing_source_spans",
+                path=f"{path}/source_spans",
+                object_id=locator_id,
+                object_type="locator",
+            )
         for span_index, span in enumerate(spans):
             span_id = str(span.get("span_id", ""))
             source_id = str(span.get("source_id", ""))
             if span_id not in known_ids["span_ids"]:
-                raise BoundedChunkRepairError(code="unresolved_span_id", path=f"{path}/source_spans/{span_index}/span_id", object_id=span_id, object_type="source_span")
+                raise BoundedChunkRepairError(
+                    code="unresolved_span_id",
+                    path=f"{path}/source_spans/{span_index}/span_id",
+                    object_id=span_id,
+                    object_type="source_span",
+                )
             if source_id not in known_ids["source_ids"]:
-                raise BoundedChunkRepairError(code="unresolved_source_id", path=f"{path}/source_spans/{span_index}/source_id", object_id=span_id, object_type="source_span")
+                raise BoundedChunkRepairError(
+                    code="unresolved_source_id",
+                    path=f"{path}/source_spans/{span_index}/source_id",
+                    object_id=span_id,
+                    object_type="source_span",
+                )
 
 
-def _select_locators(locators: list[dict[str, Any]], *, max_target_count: int) -> list[dict[str, Any]]:
+def _select_locators(
+    locators: list[dict[str, Any]], *, max_target_count: int
+) -> list[dict[str, Any]]:
     eligible = [locator for locator in locators if _is_supported_locator(locator)]
     selected: list[dict[str, Any]] = []
     selected_ids: set[str] = set()
     for category in TARGET_COVERAGE_CATEGORIES:
-        match = next((locator for locator in sorted(eligible, key=_locator_sort_key) if _locator_matches_category(locator, category)), None)
+        match = next(
+            (
+                locator
+                for locator in sorted(eligible, key=_locator_sort_key)
+                if _locator_matches_category(locator, category)
+            ),
+            None,
+        )
         if match and match["locator_id"] not in selected_ids:
             selected.append(match)
             selected_ids.add(str(match["locator_id"]))
@@ -328,7 +422,9 @@ def _target_from_locator(locator: dict[str, Any], *, index: int) -> dict[str, An
     state = str(locator["state"])
     spans = [_span_from_locator_span(span) for span in _list_of_dicts(locator["source_spans"])]
     source_ids = sorted({span["source_id"] for span in spans})
-    before_codes = sorted(str(code) for code in locator.get("diagnostic_codes", []) if code is not None)
+    before_codes = sorted(
+        str(code) for code in locator.get("diagnostic_codes", []) if code is not None
+    )
     return {
         "target_id": f"bounded-repair-target-{index:03d}-{locator_id}",
         "paper_id": str(locator["paper_id"]),
@@ -385,8 +481,12 @@ def _contract_diagnostics(targets: list[dict[str, Any]]) -> dict[str, Any]:
     repair_state_counts: dict[str, int] = {}
     route_quality_counts: dict[str, int] = {}
     for target in targets:
-        repair_state_counts[target["repair_state"]] = repair_state_counts.get(target["repair_state"], 0) + 1
-        route_quality_counts[target["route_quality_state"]] = route_quality_counts.get(target["route_quality_state"], 0) + 1
+        repair_state_counts[target["repair_state"]] = (
+            repair_state_counts.get(target["repair_state"], 0) + 1
+        )
+        route_quality_counts[target["route_quality_state"]] = (
+            route_quality_counts.get(target["route_quality_state"], 0) + 1
+        )
     return {
         "target_count": len(targets),
         "pending_review_count": len(targets),
@@ -410,13 +510,25 @@ def _contract_diagnostics(targets: list[dict[str, Any]]) -> dict[str, Any]:
 def _repair_kind(*, route: str, state: str) -> str:
     if route == "retrieval_context":
         return "retrieval_only_review"
-    if route == "repair_context" or state in {"ambiguous_span", "missing_span", "conflicting_evidence", "repair_required"}:
+    if route == "repair_context" or state in {
+        "ambiguous_span",
+        "missing_span",
+        "conflicting_evidence",
+        "repair_required",
+    }:
         return "chunk_span_repair"
     return "section_route_review"
 
 
 def _repair_state(state: str) -> str:
-    if state in {"retrieval_only", "review_required", "ambiguous_span", "missing_span", "conflicting_evidence", "repair_required"}:
+    if state in {
+        "retrieval_only",
+        "review_required",
+        "ambiguous_span",
+        "missing_span",
+        "conflicting_evidence",
+        "repair_required",
+    }:
         return state
     return "review_required"
 
@@ -434,10 +546,20 @@ def _route_quality_state(locator: dict[str, Any]) -> str:
 
 def _is_supported_locator(locator: dict[str, Any]) -> bool:
     if locator.get("route") == "repair_context":
-        return locator.get("state") in {"repair_required", "ambiguous_span", "missing_span", "conflicting_evidence"}
+        return locator.get("state") in {
+            "repair_required",
+            "ambiguous_span",
+            "missing_span",
+            "conflicting_evidence",
+        }
     if locator.get("route") == "retrieval_context":
         return locator.get("state") in {"retrieval_only", "review_required"}
-    return locator.get("state") in {"review_required", "ambiguous_span", "missing_span", "conflicting_evidence"}
+    return locator.get("state") in {
+        "review_required",
+        "ambiguous_span",
+        "missing_span",
+        "conflicting_evidence",
+    }
 
 
 def _locator_matches_category(locator: dict[str, Any], category: str) -> bool:
@@ -445,7 +567,10 @@ def _locator_matches_category(locator: dict[str, Any], category: str) -> bool:
     if category in {"broad_signal_many_matches", "overlapping_signal_window"}:
         return category in codes
     if category == "retrieval_or_review_required":
-        return locator.get("route") == "retrieval_context" and locator.get("state") in {"retrieval_only", "review_required"}
+        return locator.get("route") == "retrieval_context" and locator.get("state") in {
+            "retrieval_only",
+            "review_required",
+        }
     if category == "method_location":
         return locator.get("route") == "method_location"
     return False
@@ -473,11 +598,19 @@ def _string_set(value: Any) -> set[str]:
 
 
 def _source_ids_from_contract(contract: dict[str, Any]) -> set[str]:
-    return {str(item["source_id"]) for item in _list_of_dicts(contract.get("source_ledger")) if item.get("source_id")}
+    return {
+        str(item["source_id"])
+        for item in _list_of_dicts(contract.get("source_ledger"))
+        if item.get("source_id")
+    }
 
 
 def _locator_ids_from_contract(contract: dict[str, Any]) -> set[str]:
-    return {str(target["locator_id"]) for target in _list_of_dicts(contract.get("repair_targets")) if target.get("locator_id")}
+    return {
+        str(target["locator_id"])
+        for target in _list_of_dicts(contract.get("repair_targets"))
+        if target.get("locator_id")
+    }
 
 
 def _span_ids_from_contract(contract: dict[str, Any]) -> set[str]:

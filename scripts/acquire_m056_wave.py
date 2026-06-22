@@ -130,7 +130,9 @@ def _fetch_arxiv_categories(arxiv_ids: list[str], *, timeout: int) -> dict[str, 
     categories = dict.fromkeys(arxiv_ids, "mixed-source")
     if not arxiv_ids:
         return categories
-    query = urllib.parse.urlencode({"id_list": ",".join(arxiv_ids), "max_results": str(len(arxiv_ids))})
+    query = urllib.parse.urlencode(
+        {"id_list": ",".join(arxiv_ids), "max_results": str(len(arxiv_ids))}
+    )
     request = urllib.request.Request(
         f"https://export.arxiv.org/api/query?{query}",
         headers={"User-Agent": USER_AGENT},
@@ -193,9 +195,19 @@ def _download_pdf(
                 tmp_path = dest_path.with_suffix(dest_path.suffix + ".tmp")
                 tmp_path.write_bytes(body)
                 tmp_path.replace(dest_path)
-                return {"status": "acquired", "attempts": attempts, "http_status": http_status, "error": None}
+                return {
+                    "status": "acquired",
+                    "attempts": attempts,
+                    "http_status": http_status,
+                    "error": None,
+                }
             if http_status == 404:
-                return {"status": "blocked", "attempts": attempts, "http_status": http_status, "error": "HTTP 404"}
+                return {
+                    "status": "blocked",
+                    "attempts": attempts,
+                    "http_status": http_status,
+                    "error": "HTTP 404",
+                }
             last_error = f"HTTP {http_status}"
         except urllib.error.HTTPError as exc:
             last_http_status = int(exc.code)
@@ -212,7 +224,12 @@ def _download_pdf(
                 }
             )
             if exc.code == 404:
-                return {"status": "blocked", "attempts": attempts, "http_status": int(exc.code), "error": last_error}
+                return {
+                    "status": "blocked",
+                    "attempts": attempts,
+                    "http_status": int(exc.code),
+                    "error": last_error,
+                }
         except (OSError, urllib.error.URLError, TimeoutError) as exc:
             last_error = f"{type(exc).__name__}: {exc}"
             attempts.append(
@@ -254,10 +271,16 @@ def _entry_from_existing_pdf(arxiv_id: str, category: str, pdf_path: Path) -> di
     }
 
 
-def _alternative_candidates(wave_order: list[str], requested_ids: list[str], failed_id: str) -> list[str]:
+def _alternative_candidates(
+    wave_order: list[str], requested_ids: list[str], failed_id: str
+) -> list[str]:
     prefix = failed_id.split(".", 1)[0]
     requested = set(requested_ids)
-    candidates = [item for item in wave_order if item not in requested and item != ANCHOR_ARXIV_ID and item.startswith(prefix + ".")]
+    candidates = [
+        item
+        for item in wave_order
+        if item not in requested and item != ANCHOR_ARXIV_ID and item.startswith(prefix + ".")
+    ]
     return [item for item in candidates if ARXIV_ID_RE.match(item)]
 
 
@@ -311,7 +334,11 @@ def acquire_wave(
     manifest_source_label: str,
 ) -> dict[str, Any]:
     wave_order = _load_wave_order(wave_order_path)
-    requested_ids = WAVE_1_ARXIV_IDS if use_task_wave_ids else [item for item in wave_order if item != ANCHOR_ARXIV_ID][:DEFAULT_TARGET_COUNT]
+    requested_ids = (
+        WAVE_1_ARXIV_IDS
+        if use_task_wave_ids
+        else [item for item in wave_order if item != ANCHOR_ARXIV_ID][:DEFAULT_TARGET_COUNT]
+    )
     if len(requested_ids) != DEFAULT_TARGET_COUNT:
         raise ValueError(f"expected {DEFAULT_TARGET_COUNT} requested IDs, got {len(requested_ids)}")
     invalid_ids = [item for item in requested_ids if not ARXIV_ID_RE.match(item)]
@@ -340,9 +367,15 @@ def acquire_wave(
                 "category": category,
                 "path": str(pdf_path.as_posix()),
                 "pdf_url": f"https://arxiv.org/pdf/{candidate_id}",
-                "sha256": _sha256(pdf_path) if result["status"] == "acquired" and pdf_path.exists() else None,
-                "bytes": pdf_path.stat().st_size if result["status"] == "acquired" and pdf_path.exists() else 0,
-                "pages_estimate": _estimate_pdf_pages(pdf_path) if result["status"] == "acquired" and pdf_path.exists() else 0,
+                "sha256": _sha256(pdf_path)
+                if result["status"] == "acquired" and pdf_path.exists()
+                else None,
+                "bytes": pdf_path.stat().st_size
+                if result["status"] == "acquired" and pdf_path.exists()
+                else 0,
+                "pages_estimate": _estimate_pdf_pages(pdf_path)
+                if result["status"] == "acquired" and pdf_path.exists()
+                else 0,
                 "attempts": result["attempts"],
                 "http_status": result["http_status"],
                 "error": result["error"],
@@ -355,9 +388,13 @@ def acquire_wave(
             for alt_id in _alternative_candidates(wave_order, requested_ids, requested_id):
                 if alt_id in used_alternatives:
                     continue
-                alt_category = _fetch_arxiv_categories([alt_id], timeout=timeout).get(alt_id, "mixed-source")
+                alt_category = _fetch_arxiv_categories([alt_id], timeout=timeout).get(
+                    alt_id, "mixed-source"
+                )
                 alt_path = _target_pdf_path(article_catalog_root, alt_category, alt_id)
-                alt_result = _download_pdf(alt_id, alt_path, max_retries=max_retries, timeout=timeout)
+                alt_result = _download_pdf(
+                    alt_id, alt_path, max_retries=max_retries, timeout=timeout
+                )
                 entry.setdefault("alternative_attempts", []).append(
                     {
                         "arxiv_id": alt_id,
@@ -387,17 +424,31 @@ def acquire_wave(
                     }
                     break
                 break
-        entries.append(entry if entry is not None else {"status": "network_error", "arxiv_id": requested_id, "error": "no attempt recorded"})
+        entries.append(
+            entry
+            if entry is not None
+            else {
+                "status": "network_error",
+                "arxiv_id": requested_id,
+                "error": "no attempt recorded",
+            }
+        )
 
     status_counts = Counter(str(entry.get("status", "network_error")) for entry in entries)
-    category_counts = Counter(str(entry.get("category", "mixed-source")) for entry in entries if entry.get("status") == "acquired")
+    category_counts = Counter(
+        str(entry.get("category", "mixed-source"))
+        for entry in entries
+        if entry.get("status") == "acquired"
+    )
     log = {
         "schema_version": SCHEMA_VERSION,
         "generated_at": _utc_now(),
         "inputs": {
             "wave_order_path": str(wave_order_path),
             "article_catalog_root": str(article_catalog_root.as_posix()),
-            "source_order": "task_explicit_wave_1_ids" if use_task_wave_ids else "wave_order_after_self_skip",
+            "source_order": "task_explicit_wave_1_ids"
+            if use_task_wave_ids
+            else "wave_order_after_self_skip",
         },
         "anchor_arxiv_id": ANCHOR_ARXIV_ID,
         "requested_count": len(requested_ids),
@@ -433,7 +484,11 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--article-catalog-root", type=Path, default=DEFAULT_ARTICLE_CATALOG_ROOT)
     parser.add_argument("--max-retries", type=int, default=DEFAULT_MAX_RETRIES)
     parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT_SECONDS)
-    parser.add_argument("--wave-order-source", action="store_true", help="Use /tmp/wave-order.json after self-skip instead of task explicit Wave 1 IDs.")
+    parser.add_argument(
+        "--wave-order-source",
+        action="store_true",
+        help="Use /tmp/wave-order.json after self-skip instead of task explicit Wave 1 IDs.",
+    )
     parser.add_argument("--source-milestone", default="M056-lchpnp/S01")
     parser.add_argument("--manifest-schema-version", default="m056-bfs-wave-1-corpus-manifest.v1")
     parser.add_argument("--manifest-source-label", default="M056-lchpnp S01 Wave 1 acquisition")

@@ -38,7 +38,9 @@ def first_manifest_arxiv_id(manifest_path: Path) -> str:
     return str(pdfs[0]["arxiv_id"])
 
 
-def run_e2e(manifest_path: Path = DEFAULT_MANIFEST, output_dir: Path = DEFAULT_OUTPUT_DIR) -> dict[str, Any]:
+def run_e2e(
+    manifest_path: Path = DEFAULT_MANIFEST, output_dir: Path = DEFAULT_OUTPUT_DIR
+) -> dict[str, Any]:
     """Run validation for two parsers and replay GROBID for one PDF."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -82,8 +84,16 @@ def run_e2e(manifest_path: Path = DEFAULT_MANIFEST, output_dir: Path = DEFAULT_O
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--manifest", default=str(DEFAULT_MANIFEST.relative_to(ROOT)), help="Repository-relative manifest path.")
-    parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR.relative_to(ROOT)), help="Repository-relative output directory for reports.")
+    parser.add_argument(
+        "--manifest",
+        default=str(DEFAULT_MANIFEST.relative_to(ROOT)),
+        help="Repository-relative manifest path.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        default=str(DEFAULT_OUTPUT_DIR.relative_to(ROOT)),
+        help="Repository-relative output directory for reports.",
+    )
     parser.add_argument("--json", action="store_true", help="Emit the e2e summary as JSON.")
     return parser
 

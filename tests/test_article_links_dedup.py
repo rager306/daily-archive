@@ -100,7 +100,9 @@ def links_dedup_contract():
         return importlib.import_module("research_graph.infrastructure.papers.indexing.links_dedup")
     except ModuleNotFoundError as exc:
         if exc.name == "research_graph.infrastructure.papers.indexing.links_dedup":
-            pytest.xfail("research_graph.infrastructure.papers.indexing.links_dedup is not implemented yet")
+            pytest.xfail(
+                "research_graph.infrastructure.papers.indexing.links_dedup is not implemented yet"
+            )
         raise
 
 
@@ -160,7 +162,9 @@ def test_redacted_fixture_manifests_are_metadata_only_json_contracts() -> None:
         _assert_metadata_only(manifest)
 
 
-def test_minimal_manifest_validates_family_schema_and_benchmark_counters(links_dedup_contract) -> None:
+def test_minimal_manifest_validates_family_schema_and_benchmark_counters(
+    links_dedup_contract,
+) -> None:
     manifest = _load_fixture("minimal_manifest.json")
 
     assert links_dedup_contract.ARTICLE_LINKS_DEDUP_SCHEMA_VERSION == "m024-article-links-dedup.v1"
@@ -218,15 +222,23 @@ def test_minimal_manifest_validates_family_schema_and_benchmark_counters(links_d
     _assert_metadata_only(manifest)
 
 
-def test_normalization_helpers_canonicalize_metadata_signals_without_secret_url_tokens(links_dedup_contract) -> None:
-    assert links_dedup_contract.normalize_doi(" https://doi.org/10.48550/ARXIV.2605.00001 ") == "10.48550/arxiv.2605.00001"
-    assert links_dedup_contract.normalize_arxiv_id(" arXiv:2605.00001V2 ") == "2605.00001v2"
-    assert links_dedup_contract.normalize_hash_signal("SHA256:CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC") == (
-        "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+def test_normalization_helpers_canonicalize_metadata_signals_without_secret_url_tokens(
+    links_dedup_contract,
+) -> None:
+    assert (
+        links_dedup_contract.normalize_doi(" https://doi.org/10.48550/ARXIV.2605.00001 ")
+        == "10.48550/arxiv.2605.00001"
     )
-    assert links_dedup_contract.normalize_url(
-        "HTTPS://Example.ORG/papers/2605.00001?token=secret-token&session=abc#abstract"
-    ) == "https://example.org/papers/2605.00001"
+    assert links_dedup_contract.normalize_arxiv_id(" arXiv:2605.00001V2 ") == "2605.00001v2"
+    assert links_dedup_contract.normalize_hash_signal(
+        "SHA256:CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+    ) == ("cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc")
+    assert (
+        links_dedup_contract.normalize_url(
+            "HTTPS://Example.ORG/papers/2605.00001?token=secret-token&session=abc#abstract"
+        )
+        == "https://example.org/papers/2605.00001"
+    )
 
 
 def test_empty_family_lists_are_valid_but_report_zero_coverage_shape(links_dedup_contract) -> None:
@@ -252,11 +264,15 @@ def test_empty_family_lists_are_valid_but_report_zero_coverage_shape(links_dedup
     _assert_metadata_only(rebuilt)
 
 
-def test_malformed_refs_duplicate_ids_bad_vocabularies_and_unsafe_flags_fail_closed(links_dedup_contract) -> None:
+def test_malformed_refs_duplicate_ids_bad_vocabularies_and_unsafe_flags_fail_closed(
+    links_dedup_contract,
+) -> None:
     manifest = deepcopy(_load_fixture("minimal_manifest.json"))
     manifest["source_refs"][0]["sha256"] = "not-a-sha256"
     manifest["citation_links"].append(deepcopy(manifest["citation_links"][0]))
-    manifest["citation_links"][0]["source_page_index_anchor_id"] = "fixture-paper-0001:page-index-anchor:missing"
+    manifest["citation_links"][0]["source_page_index_anchor_id"] = (
+        "fixture-paper-0001:page-index-anchor:missing"
+    )
     manifest["structural_links"][0]["relationship"] = "contains_raw_payload"
     manifest["structural_links"][0]["review_state"] = "trusted"
     manifest["dedup_candidates"][0]["decision"] = "auto_merge"
@@ -293,7 +309,9 @@ def test_malformed_refs_duplicate_ids_bad_vocabularies_and_unsafe_flags_fail_clo
     _assert_metadata_only(rebuilt)
 
 
-def test_raw_payload_keys_are_diagnosed_and_redacted_from_output_manifest(links_dedup_contract) -> None:
+def test_raw_payload_keys_are_diagnosed_and_redacted_from_output_manifest(
+    links_dedup_contract,
+) -> None:
     manifest = deepcopy(_load_fixture("minimal_manifest.json"))
     manifest["source_refs"][0]["title"] = "FORBIDDEN_RAW_TITLE_DO_NOT_ECHO"
     manifest["citation_links"][0]["target_ref"]["reference"] = "FORBIDDEN_RAW_REFERENCE_DO_NOT_ECHO"
@@ -314,7 +332,9 @@ def test_raw_payload_keys_are_diagnosed_and_redacted_from_output_manifest(links_
     _assert_metadata_only(rebuilt)
 
 
-def test_url_query_tokens_conflicting_signals_and_insufficient_metadata_are_reported(links_dedup_contract) -> None:
+def test_url_query_tokens_conflicting_signals_and_insufficient_metadata_are_reported(
+    links_dedup_contract,
+) -> None:
     manifest = deepcopy(_load_fixture("minimal_manifest.json"))
     manifest["metadata_signals"][0]["normalized_value"] = "10.48550/arxiv.2605.00002"
     manifest["metadata_signals"].append(
@@ -384,7 +404,9 @@ def test_url_query_tokens_conflicting_signals_and_insufficient_metadata_are_repo
     _assert_metadata_only(rebuilt)
 
 
-def test_conflict_fixture_documents_redacted_diagnostics_for_later_aggregation(links_dedup_contract) -> None:
+def test_conflict_fixture_documents_redacted_diagnostics_for_later_aggregation(
+    links_dedup_contract,
+) -> None:
     manifest = _load_fixture("conflict_manifest.json")
     diagnostics = links_dedup_contract.validate_article_links_dedup_manifest(manifest)
     combined = {"diagnostics": manifest["diagnostics"] + diagnostics}

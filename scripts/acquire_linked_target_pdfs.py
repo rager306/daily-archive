@@ -64,7 +64,9 @@ def _classify_exception(exc: BaseException) -> str:
 
 def _head_probe(url: str, *, timeout: int = 10) -> tuple[str, int, dict[str, str]]:
     """Probe URL via HEAD request. Returns (status, http_code, headers)."""
-    request = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "daily-archive-acquire/1.0"})
+    request = urllib.request.Request(
+        url, method="HEAD", headers={"User-Agent": "daily-archive-acquire/1.0"}
+    )
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             return ("ok", response.status, dict(response.headers))
@@ -132,7 +134,7 @@ def _download_with_retry(
             )
             last_exc = exc
             if attempt < max_retries:
-                time.sleep(backoff_base ** attempt)
+                time.sleep(backoff_base**attempt)
 
     classified = _classify_exception(last_exc) if last_exc else "network_error"
     return {

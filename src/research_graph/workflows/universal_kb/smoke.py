@@ -89,7 +89,9 @@ def write_manifest(path: Path, *, limit: int) -> dict[str, Any]:
             "production_import_attempted": False,
             "import_eligible": False,
         },
-        "diagnostics": sorted({diagnostic for entry in entries for diagnostic in entry["diagnostics"]}),
+        "diagnostics": sorted(
+            {diagnostic for entry in entries for diagnostic in entry["diagnostics"]}
+        ),
     }
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -129,7 +131,12 @@ def scan_json_artifacts(base_dir: Path) -> int:
     return len(files)
 
 
-SAFETY_KEYS = ("graph_write_allowed", "promotion_allowed", "production_import_attempted", "import_eligible")
+SAFETY_KEYS = (
+    "graph_write_allowed",
+    "promotion_allowed",
+    "production_import_attempted",
+    "import_eligible",
+)
 
 
 def require_false_flags(payload: dict[str, Any], *, label: str) -> None:
@@ -150,7 +157,9 @@ def require_article_flags_false(articles: Any, *, label: str) -> None:
             require_false_flags(article, label=f"{label}[{index}]")
 
 
-def validate_persisted_state(manifest_payload: dict[str, Any], run_summary: dict[str, Any], audit: dict[str, Any]) -> None:
+def validate_persisted_state(
+    manifest_payload: dict[str, Any], run_summary: dict[str, Any], audit: dict[str, Any]
+) -> None:
     require_false_flags(manifest_payload.get("safety_flags", {}), label="manifest.safety_flags")
     require_article_flags_false(manifest_payload.get("articles", []), label="manifest.articles")
     if run_summary:
@@ -160,17 +169,23 @@ def validate_persisted_state(manifest_payload: dict[str, Any], run_summary: dict
         require_false_flags(audit.get("safety", {}), label="audit.safety")
 
 
-def summarize(*, paths: SmokePaths, profile: str, manifest: dict[str, Any] | None = None) -> dict[str, Any]:
+def summarize(
+    *, paths: SmokePaths, profile: str, manifest: dict[str, Any] | None = None
+) -> dict[str, Any]:
     manifest_payload = manifest if manifest is not None else load_json(paths.manifest)
     run_summary = load_json(paths.run_summary) if paths.run_summary.exists() else {}
     audit = load_json(paths.audit_json) if paths.audit_json.exists() else {}
     validate_persisted_state(manifest_payload, run_summary, audit)
     return {
         "profile": profile,
-        "article_count": int(run_summary.get("article_count") or manifest_payload.get("article_count") or 0),
+        "article_count": int(
+            run_summary.get("article_count") or manifest_payload.get("article_count") or 0
+        ),
         "completed_handoff_count": int(run_summary.get("completed_handoff_count") or 0),
         "blockers_for_import": audit.get("blockers_for_import", []),
-        "json_artifacts_scanned": scan_json_artifacts(paths.base_dir) if paths.base_dir.exists() else 0,
+        "json_artifacts_scanned": scan_json_artifacts(paths.base_dir)
+        if paths.base_dir.exists()
+        else 0,
         "graph_write_allowed": False,
         "promotion_allowed": False,
         "production_import_attempted": False,
@@ -179,10 +194,14 @@ def summarize(*, paths: SmokePaths, profile: str, manifest: dict[str, Any] | Non
 
 
 def run_m035_verifier() -> None:
-    subprocess.run([sys.executable, "scripts/verify_m035_universal_kb_prototype.py"], cwd=ROOT, check=True)
+    subprocess.run(
+        [sys.executable, "scripts/verify_m035_universal_kb_prototype.py"], cwd=ROOT, check=True
+    )
 
 
-def run_all(*, limit: int = 5, profile: str = "fast", paths: SmokePaths | None = None) -> dict[str, Any]:
+def run_all(
+    *, limit: int = 5, profile: str = "fast", paths: SmokePaths | None = None
+) -> dict[str, Any]:
     require_profile(profile)
     resolved_paths = resolve_paths(paths)
     if profile == "full":
@@ -198,8 +217,14 @@ def run_verify(*, profile: str = "fast", paths: SmokePaths | None = None) -> dic
     resolved_paths = resolve_paths(paths)
     if profile == "full":
         run_m035_verifier()
-    if not resolved_paths.manifest.exists() or not resolved_paths.run_summary.exists() or not resolved_paths.audit_json.exists():
-        raise FileNotFoundError("smoke manifest, run summary, and audit artifacts must exist before verify")
+    if (
+        not resolved_paths.manifest.exists()
+        or not resolved_paths.run_summary.exists()
+        or not resolved_paths.audit_json.exists()
+    ):
+        raise FileNotFoundError(
+            "smoke manifest, run summary, and audit artifacts must exist before verify"
+        )
     result = summarize(paths=resolved_paths, profile=profile)
     if result["article_count"] < MIN_SMOKE_ARTICLES or result["article_count"] > MAX_SMOKE_ARTICLES:
         raise AssertionError(
@@ -215,7 +240,9 @@ def print_result(result: dict[str, Any]) -> None:
     emit(f"articles={result['article_count']}")
     emit(f"handoffs={result['completed_handoff_count']}")
     emit(f"blockers={','.join(result['blockers_for_import']) or 'none'}")
-    emit("graph_write_allowed=false promotion_allowed=false production_import_attempted=false import_eligible=false")
+    emit(
+        "graph_write_allowed=false promotion_allowed=false production_import_attempted=false import_eligible=false"
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:

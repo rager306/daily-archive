@@ -166,7 +166,12 @@ def test_figure_similarity_no_intra_doc_edges() -> None:
 
 
 def test_5_safety_defaults() -> None:
-    for payload in (_load_json(CORPUS), _load_json(EMBEDDINGS), _load_json(EDGES), _load_json(SUMMARY)):
+    for payload in (
+        _load_json(CORPUS),
+        _load_json(EMBEDDINGS),
+        _load_json(EDGES),
+        _load_json(SUMMARY),
+    ):
         _assert_five_false_safety_defaults(payload)
     for module in (figure_caption_build, figure_embed, figure_similarity):
         _assert_five_false_safety_defaults({"safety_defaults": module.SAFETY_DEFAULTS})

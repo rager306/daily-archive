@@ -28,7 +28,14 @@ def _provenance_fixture(tmp_path: Path) -> tuple[Path, Path, Path, dict]:
     started = datetime(2026, 5, 20, 6, 0, 0, tzinfo=UTC)
     entry = build_validation_cli_provenance_entry(
         command="validation-batch scan",
-        argv=["validation-batch", "scan", "--state-path", str(input_path), "--token", "secret-token"],
+        argv=[
+            "validation-batch",
+            "scan",
+            "--state-path",
+            str(input_path),
+            "--token",
+            "secret-token",
+        ],
         batch_id="fixture-freshness",
         input_paths=[input_path],
         output_paths=[output_path],

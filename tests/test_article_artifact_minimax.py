@@ -65,7 +65,10 @@ def test_builds_forced_tool_request_from_redacted_article_structure() -> None:
     safe = helper_request.to_sanitized_dict()
     dumped = json.dumps(safe)
     assert request.auth_header == "X-Api-Key"
-    assert request.body["tool_choice"] == {"type": "tool", "name": MINIMAX_ARTIFACT_HELPER_TOOL_NAME}
+    assert request.body["tool_choice"] == {
+        "type": "tool",
+        "name": MINIMAX_ARTIFACT_HELPER_TOOL_NAME,
+    }
     assert request.body["tools"][0]["input_schema"]["required"] == [
         "schema_version",
         "source_schema_version",
@@ -139,8 +142,13 @@ def test_rejects_invalid_review_state_and_source_of_truth_flags_without_merging(
 
     assert result.candidates == ()
     assert result.diagnostics["response_validation_status"] == "invalid"
-    assert "schema_enum_mismatch:$.artifact_hints[0].review_state" in result.diagnostics["diagnostic_codes"]
-    assert "schema_enum_mismatch:$.minimax_source_of_truth" in result.diagnostics["diagnostic_codes"]
+    assert (
+        "schema_enum_mismatch:$.artifact_hints[0].review_state"
+        in result.diagnostics["diagnostic_codes"]
+    )
+    assert (
+        "schema_enum_mismatch:$.minimax_source_of_truth" in result.diagnostics["diagnostic_codes"]
+    )
     assert result.diagnostics["raw_response_persisted"] is False
 
 
@@ -180,8 +188,14 @@ def test_rejects_unsafe_artifact_id_collisions_and_duplicate_helper_ids() -> Non
 
     assert result.candidates == ()
     assert result.diagnostics["response_validation_status"] == "invalid"
-    assert "unsafe_artifact_id_collision:$.artifact_hints[0].artifact_id" in result.diagnostics["diagnostic_codes"]
-    assert "duplicate_helper_artifact_id:$.artifact_hints[1].artifact_id" in result.diagnostics["diagnostic_codes"]
+    assert (
+        "unsafe_artifact_id_collision:$.artifact_hints[0].artifact_id"
+        in result.diagnostics["diagnostic_codes"]
+    )
+    assert (
+        "duplicate_helper_artifact_id:$.artifact_hints[1].artifact_id"
+        in result.diagnostics["diagnostic_codes"]
+    )
     assert result.diagnostics["raw_response_persisted"] is False
 
 
@@ -201,15 +215,18 @@ def test_rejects_invalid_candidate_links_and_unknown_spans_without_merging() -> 
 
     assert result.candidates == ()
     assert result.diagnostics["response_validation_status"] == "invalid"
-    assert "invalid_candidate_link_source:$.artifact_hints[0].candidate_links[0].source_artifact_id" in result.diagnostics[
-        "diagnostic_codes"
-    ]
-    assert "invalid_candidate_link_target:$.artifact_hints[0].candidate_links[0].target_ref" in result.diagnostics[
-        "diagnostic_codes"
-    ]
-    assert "unknown_candidate_link_span_id:$.artifact_hints[0].candidate_links[0].evidence_span_ids[0]" in result.diagnostics[
-        "diagnostic_codes"
-    ]
+    assert (
+        "invalid_candidate_link_source:$.artifact_hints[0].candidate_links[0].source_artifact_id"
+        in result.diagnostics["diagnostic_codes"]
+    )
+    assert (
+        "invalid_candidate_link_target:$.artifact_hints[0].candidate_links[0].target_ref"
+        in result.diagnostics["diagnostic_codes"]
+    )
+    assert (
+        "unknown_candidate_link_span_id:$.artifact_hints[0].candidate_links[0].evidence_span_ids[0]"
+        in result.diagnostics["diagnostic_codes"]
+    )
 
 
 def test_rejects_raw_payload_markers_and_unsafe_import_or_write_flags() -> None:
@@ -234,9 +251,17 @@ def test_rejects_raw_payload_markers_and_unsafe_import_or_write_flags() -> None:
     assert "forbidden_payload_key:$.raw_minimax_response" in result.diagnostics["diagnostic_codes"]
     assert "raw_payload_marker:$.raw_minimax_response" in result.diagnostics["diagnostic_codes"]
     assert "kg_import_allowed_true:$.kg_import_allowed" in result.diagnostics["diagnostic_codes"]
-    assert "trusted_kg_import_allowed_true:$.trusted_kg_import_allowed" in result.diagnostics["diagnostic_codes"]
-    assert "production_write_flag_true:$.production_import_attempted" in result.diagnostics["diagnostic_codes"]
-    assert "production_write_flag_true:$.ladybugdb_written" in result.diagnostics["diagnostic_codes"]
+    assert (
+        "trusted_kg_import_allowed_true:$.trusted_kg_import_allowed"
+        in result.diagnostics["diagnostic_codes"]
+    )
+    assert (
+        "production_write_flag_true:$.production_import_attempted"
+        in result.diagnostics["diagnostic_codes"]
+    )
+    assert (
+        "production_write_flag_true:$.ladybugdb_written" in result.diagnostics["diagnostic_codes"]
+    )
     assert "trusted_import_allowed:$.allowed_uses" in result.diagnostics["diagnostic_codes"]
     assert "RAW PAPER TEXT" not in dumped
 
@@ -269,14 +294,21 @@ def test_rejects_invalid_candidate_limit() -> None:
     with pytest.raises(ValueError, match="positive"):
         build_article_artifact_minimax_request(_structure(), max_candidates=0)
 
+
 def test_article_artifact_minimax_old_module_is_archived_with_canonical_breadcrumb() -> None:
-    top_level_archive_path = Path("archive/package-layout-shims/wave-01/src/arxiv_archive/article_artifact_minimax.py")
-    package_archive_path = Path("archive/package-rename-waves/wave-01/src/arxiv_archive/artifacts/minimax_boundary.py")
+    top_level_archive_path = Path(
+        "archive/package-layout-shims/wave-01/src/arxiv_archive/article_artifact_minimax.py"
+    )
+    package_archive_path = Path(
+        "archive/package-rename-waves/wave-01/src/arxiv_archive/artifacts/minimax_boundary.py"
+    )
     canonical_path = Path("src/research_graph/papers/artifacts/minimax_boundary.py")
 
     assert top_level_archive_path.exists()
     assert package_archive_path.exists()
     assert not Path("src/arxiv_archive/article_artifact_minimax.py").exists()
     assert not Path("src/arxiv_archive/artifacts/minimax_boundary.py").exists()
-    assert "Formerly: src/arxiv_archive/artifacts/minimax_boundary.py" in canonical_path.read_text(encoding="utf-8")
+    assert "Formerly: src/arxiv_archive/artifacts/minimax_boundary.py" in canonical_path.read_text(
+        encoding="utf-8"
+    )
     assert MINIMAX_ARTIFACT_HELPER_SCHEMA_VERSION.endswith("-minimax-artifact-helper.v1")

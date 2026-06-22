@@ -27,7 +27,9 @@ async def test_live_fd_embed_1_input() -> None:
 async def test_live_fd_batch_10_inputs() -> None:
     embedder = Embedder(endpoint=FD_EMBEDDINGS_ENDPOINT, timeout_seconds=120.0, retry_sleep=False)
     try:
-        embeddings = await embedder.embed_batch([f"M062 S01 batch input {index}" for index in range(10)])
+        embeddings = await embedder.embed_batch(
+            [f"M062 S01 batch input {index}" for index in range(10)]
+        )
     finally:
         await embedder.close()
 

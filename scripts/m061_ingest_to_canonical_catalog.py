@@ -201,7 +201,11 @@ def parse_retry_after(value: str | None) -> float | None:
 
 
 class RequestPacer:
-    def __init__(self, min_interval_seconds: float = ARXIV_API_MIN_INTERVAL_SECONDS, sleep: Callable[[float], None] = time.sleep) -> None:
+    def __init__(
+        self,
+        min_interval_seconds: float = ARXIV_API_MIN_INTERVAL_SECONDS,
+        sleep: Callable[[float], None] = time.sleep,
+    ) -> None:
         self.min_interval_seconds = min_interval_seconds
         self.sleep = sleep
         self.last_request_started_at: float | None = None
@@ -238,7 +242,9 @@ def fetch_arxiv_metadata(
     from research_graph.infrastructure.corpus.sources.arxiv_client import ArxivClient
 
     client = ArxivClient()
-    request = urllib.request.Request(arxiv_query_url(arxiv_id), headers={"User-Agent": ARXIV_USER_AGENT})
+    request = urllib.request.Request(
+        arxiv_query_url(arxiv_id), headers={"User-Agent": ARXIV_USER_AGENT}
+    )
     last_error: str | None = None
     for attempt in range(ARXIV_MAX_RETRY_ATTEMPTS + 1):
         pacer.wait()
@@ -254,13 +260,19 @@ def fetch_arxiv_metadata(
             category = normalize_category(paper.categories[0] if paper.categories else None)
             if category == FALLBACK_CATEGORY:
                 raise RuntimeError(f"arxiv API returned no category for {arxiv_id}")
-            return ArxivMetadata(arxiv_id=arxiv_id, category=category, title=paper.title.strip(), source="arxiv_api")
+            return ArxivMetadata(
+                arxiv_id=arxiv_id, category=category, title=paper.title.strip(), source="arxiv_api"
+            )
         except urllib.error.HTTPError as exc:
             last_error = f"HTTP {exc.code}: {exc.reason}"
             if exc.code == 429:
                 metrics.rate_limit_429s += 1
                 retry_after = parse_retry_after(exc.headers.get("Retry-After"))
-                delay = retry_after if retry_after is not None else ARXIV_BACKOFF_SECONDS[min(attempt, len(ARXIV_BACKOFF_SECONDS) - 1)]
+                delay = (
+                    retry_after
+                    if retry_after is not None
+                    else ARXIV_BACKOFF_SECONDS[min(attempt, len(ARXIV_BACKOFF_SECONDS) - 1)]
+                )
             else:
                 delay = ARXIV_BACKOFF_SECONDS[min(attempt, len(ARXIV_BACKOFF_SECONDS) - 1)]
         except (urllib.error.URLError, TimeoutError, RuntimeError, ValueError) as exc:
@@ -283,7 +295,9 @@ def fetch_arxiv_metadata(
     )
 
 
-def build_article_record(arxiv_id: str, category: str, title: str, dest_pdf: Path) -> dict[str, Any]:
+def build_article_record(
+    arxiv_id: str, category: str, title: str, dest_pdf: Path
+) -> dict[str, Any]:
     article_ref = f"arxiv/{category}/{arxiv_id}"
     try:
         rel_pdf_path = dest_pdf.relative_to(CATALOG_ROOT).as_posix()
@@ -389,7 +403,9 @@ def write_article_record(article_path: Path, article: dict[str, Any]) -> None:
     article_path.write_text(json.dumps(article, indent=2, sort_keys=False) + "\n", encoding="utf-8")
 
 
-def update_index_if_exists(catalog_root: Path = CATALOG_ROOT) -> tuple[bool, int | None, list[dict[str, Any]]]:
+def update_index_if_exists(
+    catalog_root: Path = CATALOG_ROOT,
+) -> tuple[bool, int | None, list[dict[str, Any]]]:
     index_path = catalog_root / "article_catalog" / "index.json"
     if not index_path.exists():
         return False, None, []
@@ -402,7 +418,11 @@ def update_index_if_exists(catalog_root: Path = CATALOG_ROOT) -> tuple[bool, int
     catalog_manifest_path = catalog_root / "catalog.json"
     rebuilt, diagnostics = rebuild_index_from_articles(catalog_manifest_path, existing)
     index_path.write_text(json.dumps(rebuilt, indent=2, sort_keys=False) + "\n", encoding="utf-8")
-    return True, len(rebuilt.get("articles", [])) if isinstance(rebuilt.get("articles"), list) else None, diagnostics
+    return (
+        True,
+        len(rebuilt.get("articles", [])) if isinstance(rebuilt.get("articles"), list) else None,
+        diagnostics,
+    )
 
 
 def ingest_catalog(
@@ -419,7 +439,9 @@ def ingest_catalog(
     unique_ids = sorted(membership)
     missing_pdfs = [arxiv_id for arxiv_id in unique_ids if arxiv_id not in pdf_paths]
     if missing_pdfs:
-        raise FileNotFoundError(f"Missing M061 PDFs for selected arxiv_ids: {', '.join(missing_pdfs)}")
+        raise FileNotFoundError(
+            f"Missing M061 PDFs for selected arxiv_ids: {', '.join(missing_pdfs)}"
+        )
 
     before_count = catalog_pdf_count(arxiv_root)
     metrics = ApiMetrics()
@@ -466,7 +488,12 @@ def ingest_catalog(
                     )
                 )
                 continue
-            metadata = ArxivMetadata(arxiv_id=arxiv_id, category=category, title=f"arXiv {arxiv_id}", source="existing_catalog_category")
+            metadata = ArxivMetadata(
+                arxiv_id=arxiv_id,
+                category=category,
+                title=f"arXiv {arxiv_id}",
+                source="existing_catalog_category",
+            )
             status = "updated"
         else:
             metadata = metadata_fetcher(arxiv_id)
@@ -548,15 +575,25 @@ def render_report(result: IngestResult, report_path: Path = REPORT_PATH) -> str:
         f"Уникальные записи: ingested={status_counts.get('ingested', 0)}, updated={status_counts.get('updated', 0)}, "
         f"metadata_created={status_counts.get('metadata_created', 0)}, skipped={status_counts.get('skipped', 0)}, fallback={fallback_count}."
     )
-    lines.append("Graph writes is not authorized; production import is not authorized; LLM calls are disabled.")
+    lines.append(
+        "Graph writes is not authorized; production import is not authorized; LLM calls are disabled."
+    )
     lines.append("")
     lines.append("## 1. Per-arxiv_id")
     lines.append("")
     lines.append("| arxiv_id | anchors | source | dest | category | status | fallback |")
     lines.append("|---|---|---|---|---|---|---|")
     for record in sorted(result.records, key=lambda item: item.arxiv_id):
-        source_rel = record.source_pdf.relative_to(ROOT).as_posix() if record.source_pdf.is_absolute() else record.source_pdf.as_posix()
-        dest_rel = record.dest_pdf.relative_to(ROOT).as_posix() if record.dest_pdf.is_absolute() else record.dest_pdf.as_posix()
+        source_rel = (
+            record.source_pdf.relative_to(ROOT).as_posix()
+            if record.source_pdf.is_absolute()
+            else record.source_pdf.as_posix()
+        )
+        dest_rel = (
+            record.dest_pdf.relative_to(ROOT).as_posix()
+            if record.dest_pdf.is_absolute()
+            else record.dest_pdf.as_posix()
+        )
         lines.append(
             f"| {record.arxiv_id} | {', '.join(record.anchor_ids)} | `{source_rel}` | `{dest_rel}` | "
             f"{record.category} | {record.status} | {str(record.fallback).lower()} |"
@@ -583,9 +620,13 @@ def render_report(result: IngestResult, report_path: Path = REPORT_PATH) -> str:
     lines.append("")
     lines.append("## 4. Канонический каталог")
     lines.append("")
-    lines.append(f"- PDF count: {result.before_catalog_pdf_count} -> {result.after_catalog_pdf_count}")
+    lines.append(
+        f"- PDF count: {result.before_catalog_pdf_count} -> {result.after_catalog_pdf_count}"
+    )
     lines.append(f"- index.json updated: {str(result.index_updated).lower()}")
-    lines.append(f"- index entries: {result.index_entries if result.index_entries is not None else 'n/a'}")
+    lines.append(
+        f"- index entries: {result.index_entries if result.index_entries is not None else 'n/a'}"
+    )
     lines.append("- category distribution:")
     for category, count in sorted(category_counts.items()):
         lines.append(f"  - {category}: {count}")
@@ -599,9 +640,15 @@ def render_report(result: IngestResult, report_path: Path = REPORT_PATH) -> str:
     lines.append("")
     lines.append("## 5. Lessons + next steps")
     lines.append("")
-    lines.append("- Входные selected JSON содержат 150 выбранных позиций, не 151; расхождение сохранено как S04 deviation.")
-    lines.append("- Повторы между anchor-ациями схлопнуты в 32 уникальных arxiv_id; повторный запуск безопасен и пропускает matching SHA256 без сети.")
-    lines.append("- Следующий шаг: отдельным milestone/slice запускать parser/chunker; текущий S04 не заявляет parser, chunk или graph readiness.")
+    lines.append(
+        "- Входные selected JSON содержат 150 выбранных позиций, не 151; расхождение сохранено как S04 deviation."
+    )
+    lines.append(
+        "- Повторы между anchor-ациями схлопнуты в 32 уникальных arxiv_id; повторный запуск безопасен и пропускает matching SHA256 без сети."
+    )
+    lines.append(
+        "- Следующий шаг: отдельным milestone/slice запускать parser/chunker; текущий S04 не заявляет parser, chunk или graph readiness."
+    )
     text = "\n".join(lines) + "\n"
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(text, encoding="utf-8")
@@ -610,7 +657,9 @@ def render_report(result: IngestResult, report_path: Path = REPORT_PATH) -> str:
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--no-index", action="store_true", help="Do not update index.json after ingestion")
+    parser.add_argument(
+        "--no-index", action="store_true", help="Do not update index.json after ingestion"
+    )
     return parser.parse_args(argv)
 
 
@@ -622,7 +671,9 @@ def main(argv: list[str] | None = None) -> int:
     fallback_count = sum(1 for record in result.records if record.fallback)
     print(f"processed_pdf_copies={result.discovered_pdf_total}")
     print(f"unique_arxiv_ids={result.unique_arxiv_ids}")
-    print(f"ingested={status_counts.get('ingested', 0) + status_counts.get('updated', 0) + status_counts.get('metadata_created', 0)}")
+    print(
+        f"ingested={status_counts.get('ingested', 0) + status_counts.get('updated', 0) + status_counts.get('metadata_created', 0)}"
+    )
     print(f"skipped={status_counts.get('skipped', 0)}")
     print(f"fallback={fallback_count}")
     print(f"arxiv_api_requests={result.api_metrics.requests_made}")

@@ -454,7 +454,10 @@ def validate_evidence_path_ref(
             )
         )
 
-    if evidence_path.quality_state in {GraphReadinessState.REPAIR_REQUIRED, GraphReadinessState.REJECT}:
+    if evidence_path.quality_state in {
+        GraphReadinessState.REPAIR_REQUIRED,
+        GraphReadinessState.REJECT,
+    }:
         warnings.append(
             QualityWarning(
                 code="evidence_path_state_blocks_extraction",

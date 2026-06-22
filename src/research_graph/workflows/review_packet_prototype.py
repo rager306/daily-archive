@@ -90,9 +90,13 @@ def build_reviewer_packet_prototype(
     _validate_inputs(repair_payload, s02_contract)
     targets = _list_of_dicts(repair_payload.get("repair_targets"))
     if not targets:
-        raise ReviewerPacketError(code="empty_repair_targets", path="/repair_targets", object_type="repair_payload")
+        raise ReviewerPacketError(
+            code="empty_repair_targets", path="/repair_targets", object_type="repair_payload"
+        )
 
-    packets = [_packet_from_target(target, index=index) for index, target in enumerate(targets, start=1)]
+    packets = [
+        _packet_from_target(target, index=index) for index, target in enumerate(targets, start=1)
+    ]
     assessment = build_reviewer_packet_assessment(packets)
     prototype = {
         "schema_version": REVIEWER_PACKET_PROTOTYPE_VERSION,
@@ -122,17 +126,47 @@ def build_reviewer_packet_assessment(packets: list[dict[str, Any]]) -> dict[str,
         importable = packet.get("importable")
         semantic_ready = packet.get("semantic_ready_for_kg")
         if review_status != "pending_review":
-            findings.append(_finding("packet_not_pending_review", path=f"{path}/review_status", packet_id=packet_id))
+            findings.append(
+                _finding(
+                    "packet_not_pending_review", path=f"{path}/review_status", packet_id=packet_id
+                )
+            )
         if importable is not False:
-            findings.append(_finding("packet_importable", path=f"{path}/importable", packet_id=packet_id))
+            findings.append(
+                _finding("packet_importable", path=f"{path}/importable", packet_id=packet_id)
+            )
         if semantic_ready is not False:
-            findings.append(_finding("packet_semantic_ready", path=f"{path}/semantic_ready_for_kg", packet_id=packet_id))
+            findings.append(
+                _finding(
+                    "packet_semantic_ready",
+                    path=f"{path}/semantic_ready_for_kg",
+                    packet_id=packet_id,
+                )
+            )
         if packet.get("raw_text_embedded") is not False:
-            findings.append(_finding("packet_raw_payload_embedded", path=f"{path}/raw_text_embedded", packet_id=packet_id))
+            findings.append(
+                _finding(
+                    "packet_raw_payload_embedded",
+                    path=f"{path}/raw_text_embedded",
+                    packet_id=packet_id,
+                )
+            )
         if not packet.get("review_questions"):
-            findings.append(_finding("packet_missing_review_questions", path=f"{path}/review_questions", packet_id=packet_id))
+            findings.append(
+                _finding(
+                    "packet_missing_review_questions",
+                    path=f"{path}/review_questions",
+                    packet_id=packet_id,
+                )
+            )
         if _unsafe_boundary_true(packet.get("safety_boundaries")):
-            findings.append(_finding("packet_unsafe_safety_boundary", path=f"{path}/safety_boundaries", packet_id=packet_id))
+            findings.append(
+                _finding(
+                    "packet_unsafe_safety_boundary",
+                    path=f"{path}/safety_boundaries",
+                    packet_id=packet_id,
+                )
+            )
 
     pending_count = sum(1 for packet in packets if packet.get("review_status") == "pending_review")
     verdict = "continue_repair" if findings else "blocked_pending_semantic_acceptance"
@@ -162,15 +196,24 @@ def build_reviewer_packet_assessment(packets: list[dict[str, Any]]) -> dict[str,
                 "finding_codes": ["human_review_required_before_import"],
             },
         },
-        "packet_findings": findings or [_finding("pending_semantic_acceptance", path="/packets", packet_id="all")],
+        "packet_findings": findings
+        or [_finding("pending_semantic_acceptance", path="/packets", packet_id="all")],
         "unsafe_counters": {
             "packet_count": len(packets),
             "pending_review_count": pending_count,
-            "accepted_count": sum(1 for packet in packets if packet.get("review_status") == "accepted"),
+            "accepted_count": sum(
+                1 for packet in packets if packet.get("review_status") == "accepted"
+            ),
             "importable_count": sum(1 for packet in packets if packet.get("importable") is True),
-            "semantic_ready_count": sum(1 for packet in packets if packet.get("semantic_ready_for_kg") is True),
-            "raw_text_embedded_count": sum(1 for packet in packets if packet.get("raw_text_embedded") is True),
-            "unsafe_safety_boundary_count": sum(1 for packet in packets if _unsafe_boundary_true(packet.get("safety_boundaries"))),
+            "semantic_ready_count": sum(
+                1 for packet in packets if packet.get("semantic_ready_for_kg") is True
+            ),
+            "raw_text_embedded_count": sum(
+                1 for packet in packets if packet.get("raw_text_embedded") is True
+            ),
+            "unsafe_safety_boundary_count": sum(
+                1 for packet in packets if _unsafe_boundary_true(packet.get("safety_boundaries"))
+            ),
             "production_import_attempted": False,
             "ladybugdb_written": False,
             "secrets_included": False,
@@ -193,7 +236,9 @@ def summarize_reviewer_packet_prototype(prototype: dict[str, Any]) -> dict[str, 
         _increment(route_counts, str(packet.get("route", "unknown")))
         _increment(repair_counts, str(packet.get("repair_state", "unknown")))
         _increment(route_quality_counts, str(packet.get("route_quality_state", "unknown")))
-    assessment = prototype.get("assessment") if isinstance(prototype.get("assessment"), dict) else {}
+    assessment = (
+        prototype.get("assessment") if isinstance(prototype.get("assessment"), dict) else {}
+    )
     return {
         "schema_version": "reviewer-packet-summary.v1",
         "packet_count": len(packets),
@@ -257,7 +302,9 @@ def render_reviewer_packet_markdown(prototype: dict[str, Any]) -> str:
     for packet in _list_of_dicts(prototype.get("packets")):
         before_codes = ", ".join(packet["before_diagnostic_codes"]) or "none"
         after_codes = ", ".join(packet["after_diagnostic_codes"]) or "none"
-        span_refs = ", ".join(span["span_id"] for span in _list_of_dicts(packet.get("span_refs"))) or "none"
+        span_refs = (
+            ", ".join(span["span_id"] for span in _list_of_dicts(packet.get("span_refs"))) or "none"
+        )
         source_refs = ", ".join(packet.get("source_refs", [])) or "none"
         questions = "; ".join(packet.get("review_questions", []))
         decisions = ", ".join(packet.get("allowed_non_importing_decisions", []))
@@ -303,18 +350,32 @@ def render_reviewer_packet_markdown(prototype: dict[str, Any]) -> str:
 
 def _validate_inputs(repair_payload: dict[str, Any], s02_contract: dict[str, Any] | None) -> None:
     if not isinstance(repair_payload, dict):
-        raise ReviewerPacketError(code="repair_payload_not_object", path="/", object_type="repair_payload")
+        raise ReviewerPacketError(
+            code="repair_payload_not_object", path="/", object_type="repair_payload"
+        )
     if s02_contract is not None and not isinstance(s02_contract, dict):
-        raise ReviewerPacketError(code="s02_contract_not_object", path="/", object_type="s02_contract")
+        raise ReviewerPacketError(
+            code="s02_contract_not_object", path="/", object_type="s02_contract"
+        )
     for finding in scan_forbidden_payload_keys(repair_payload):
-        raise ReviewerPacketError(code=finding.code, path=finding.path, object_type="repair_payload")
+        raise ReviewerPacketError(
+            code=finding.code, path=finding.path, object_type="repair_payload"
+        )
     if s02_contract is not None:
         for finding in scan_forbidden_payload_keys(s02_contract):
-            raise ReviewerPacketError(code=finding.code, path=finding.path, object_type="s02_contract")
-    if isinstance(repair_payload.get("repair_targets"), list) and not repair_payload.get("repair_targets"):
-        raise ReviewerPacketError(code="empty_repair_targets", path="/repair_targets", object_type="repair_payload")
+            raise ReviewerPacketError(
+                code=finding.code, path=finding.path, object_type="s02_contract"
+            )
+    if isinstance(repair_payload.get("repair_targets"), list) and not repair_payload.get(
+        "repair_targets"
+    ):
+        raise ReviewerPacketError(
+            code="empty_repair_targets", path="/repair_targets", object_type="repair_payload"
+        )
 
-    validation = validate_chunk_repair_contract(repair_payload, expected_audit=expected_audit_from_contract(repair_payload))
+    validation = validate_chunk_repair_contract(
+        repair_payload, expected_audit=expected_audit_from_contract(repair_payload)
+    )
     if not validation.passed:
         first = validation.diagnostics[0]
         raise ReviewerPacketError(
@@ -334,25 +395,58 @@ def _validate_s02_subset(repair_payload: dict[str, Any], s02_contract: dict[str,
         target_id = str(target.get("target_id", ""))
         base = f"/repair_targets/{target_index}"
         if str(target.get("paper_id", "")) not in known["paper_ids"]:
-            raise ReviewerPacketError(code="paper_id_not_in_s02_stable_ids", path=f"{base}/paper_id", object_id=target_id, object_type="repair_target")
+            raise ReviewerPacketError(
+                code="paper_id_not_in_s02_stable_ids",
+                path=f"{base}/paper_id",
+                object_id=target_id,
+                object_type="repair_target",
+            )
         if str(target.get("locator_id", "")) not in known["locator_ids"]:
-            raise ReviewerPacketError(code="locator_id_not_in_s02_stable_ids", path=f"{base}/locator_id", object_id=target_id, object_type="repair_target")
+            raise ReviewerPacketError(
+                code="locator_id_not_in_s02_stable_ids",
+                path=f"{base}/locator_id",
+                object_id=target_id,
+                object_type="repair_target",
+            )
         for source_index, source_id in enumerate(target.get("source_artifact_refs", [])):
             if str(source_id) not in known["source_ids"]:
-                raise ReviewerPacketError(code="source_id_not_in_s02_stable_ids", path=f"{base}/source_artifact_refs/{source_index}", object_id=target_id, object_type="repair_target")
+                raise ReviewerPacketError(
+                    code="source_id_not_in_s02_stable_ids",
+                    path=f"{base}/source_artifact_refs/{source_index}",
+                    object_id=target_id,
+                    object_type="repair_target",
+                )
         for span_index, span in enumerate(_list_of_dicts(target.get("source_spans"))):
             span_id = str(span.get("span_id", ""))
             if span_id not in known["span_ids"]:
-                raise ReviewerPacketError(code="span_id_not_in_s02_stable_ids", path=f"{base}/source_spans/{span_index}/span_id", object_id=span_id, object_type="source_span")
+                raise ReviewerPacketError(
+                    code="span_id_not_in_s02_stable_ids",
+                    path=f"{base}/source_spans/{span_index}/span_id",
+                    object_id=span_id,
+                    object_type="source_span",
+                )
             if str(span.get("source_id", "")) not in known["source_ids"]:
-                raise ReviewerPacketError(code="source_id_not_in_s02_stable_ids", path=f"{base}/source_spans/{span_index}/source_id", object_id=span_id, object_type="source_span")
+                raise ReviewerPacketError(
+                    code="source_id_not_in_s02_stable_ids",
+                    path=f"{base}/source_spans/{span_index}/source_id",
+                    object_id=span_id,
+                    object_type="source_span",
+                )
 
 
 def _packet_from_target(target: dict[str, Any], *, index: int) -> dict[str, Any]:
     target_id = str(target["target_id"])
-    before = target.get("before_diagnostics") if isinstance(target.get("before_diagnostics"), dict) else {}
-    after = target.get("after_diagnostics") if isinstance(target.get("after_diagnostics"), dict) else {}
-    section_lineage = target.get("section_lineage") if isinstance(target.get("section_lineage"), dict) else {}
+    before = (
+        target.get("before_diagnostics")
+        if isinstance(target.get("before_diagnostics"), dict)
+        else {}
+    )
+    after = (
+        target.get("after_diagnostics") if isinstance(target.get("after_diagnostics"), dict) else {}
+    )
+    section_lineage = (
+        target.get("section_lineage") if isinstance(target.get("section_lineage"), dict) else {}
+    )
     return {
         "packet_id": f"reviewer-packet-{index:03d}-{target_id}",
         "target_id": target_id,
@@ -366,7 +460,9 @@ def _packet_from_target(target: dict[str, Any], *, index: int) -> dict[str, Any]
         "importable": False,
         "semantic_ready_for_kg": False,
         "raw_text_embedded": False,
-        "source_refs": sorted(str(source_id) for source_id in target.get("source_artifact_refs", [])),
+        "source_refs": sorted(
+            str(source_id) for source_id in target.get("source_artifact_refs", [])
+        ),
         "span_refs": [_span_ref(span) for span in _list_of_dicts(target.get("source_spans"))],
         "section_lineage": {
             "status": str(section_lineage.get("status", "unresolved")),
@@ -374,8 +470,12 @@ def _packet_from_target(target: dict[str, Any], *, index: int) -> dict[str, Any]
             "section_path_proven": section_lineage.get("section_path_proven") is True,
             "section_path_labels": [str(label) for label in target.get("section_path", [])],
         },
-        "before_diagnostic_codes": sorted(str(code) for code in before.get("codes", target.get("diagnostic_codes", []))),
-        "after_diagnostic_codes": sorted(str(code) for code in after.get("codes", ["kg_import_blocked"])),
+        "before_diagnostic_codes": sorted(
+            str(code) for code in before.get("codes", target.get("diagnostic_codes", []))
+        ),
+        "after_diagnostic_codes": sorted(
+            str(code) for code in after.get("codes", ["kg_import_blocked"])
+        ),
         "review_questions": _review_questions(target),
         "allowed_non_importing_decisions": list(ALLOWED_NON_IMPORTING_DECISIONS),
         "excluded_uses": list(EXCLUDED_USES),
@@ -404,16 +504,24 @@ def _review_questions(target: dict[str, Any]) -> list[str]:
         "Should this target stay pending, be rejected for KG import, or be sent to another bounded repair iteration?",
     ]
     if state in {"ambiguous_span", "missing_span", "conflicting_evidence", "repair_required"}:
-        questions.append("What non-importing repair action is needed before a semantic acceptance decision?")
+        questions.append(
+            "What non-importing repair action is needed before a semantic acceptance decision?"
+        )
     else:
-        questions.append("Is retrieval-only context sufficient for reviewer navigation while remaining non-importable?")
+        questions.append(
+            "Is retrieval-only context sufficient for reviewer navigation while remaining non-importable?"
+        )
     return questions
 
 
-def _prototype_diagnostics(packets: list[dict[str, Any]], assessment: dict[str, Any]) -> dict[str, Any]:
+def _prototype_diagnostics(
+    packets: list[dict[str, Any]], assessment: dict[str, Any]
+) -> dict[str, Any]:
     return {
         "packet_count": len(packets),
-        "pending_review_count": sum(1 for packet in packets if packet.get("review_status") == "pending_review"),
+        "pending_review_count": sum(
+            1 for packet in packets if packet.get("review_status") == "pending_review"
+        ),
         "assessment_verdict": assessment["verdict"],
         "route_counts": _count_by(packets, "route"),
         "repair_state_counts": _count_by(packets, "repair_state"),
@@ -439,14 +547,20 @@ def _validate_zero_unsafe_contract_counters(payload: dict[str, Any]) -> None:
     }
     for field, expected in expected_zero_or_false.items():
         if diagnostics.get(field) != expected:
-            raise ReviewerPacketError(code="unsafe_contract_counter", path=f"/diagnostics/{field}", object_type="repair_payload")
+            raise ReviewerPacketError(
+                code="unsafe_contract_counter",
+                path=f"/diagnostics/{field}",
+                object_type="repair_payload",
+            )
 
 
 def _validate_prototype_safety(prototype: dict[str, Any]) -> None:
     if not isinstance(prototype, dict):
         raise ReviewerPacketError(code="prototype_not_object", path="/", object_type="prototype")
     if prototype.get("schema_version") != REVIEWER_PACKET_PROTOTYPE_VERSION:
-        raise ReviewerPacketError(code="prototype_schema_mismatch", path="/schema_version", object_type="prototype")
+        raise ReviewerPacketError(
+            code="prototype_schema_mismatch", path="/schema_version", object_type="prototype"
+        )
     for finding in scan_forbidden_payload_keys(prototype):
         raise ReviewerPacketError(code=finding.code, path=finding.path, object_type="prototype")
     packets = _list_of_dicts(prototype.get("packets"))
@@ -455,37 +569,99 @@ def _validate_prototype_safety(prototype: dict[str, Any]) -> None:
     for index, packet in enumerate(packets):
         base = f"/packets/{index}"
         if packet.get("review_status") != "pending_review":
-            raise ReviewerPacketError(code="packet_not_pending_review", path=f"{base}/review_status", object_id=str(packet.get("packet_id", "")), object_type="packet")
+            raise ReviewerPacketError(
+                code="packet_not_pending_review",
+                path=f"{base}/review_status",
+                object_id=str(packet.get("packet_id", "")),
+                object_type="packet",
+            )
         if packet.get("importable") is not False:
-            raise ReviewerPacketError(code="packet_importable", path=f"{base}/importable", object_id=str(packet.get("packet_id", "")), object_type="packet")
+            raise ReviewerPacketError(
+                code="packet_importable",
+                path=f"{base}/importable",
+                object_id=str(packet.get("packet_id", "")),
+                object_type="packet",
+            )
         if packet.get("semantic_ready_for_kg") is not False:
-            raise ReviewerPacketError(code="packet_semantic_ready", path=f"{base}/semantic_ready_for_kg", object_id=str(packet.get("packet_id", "")), object_type="packet")
+            raise ReviewerPacketError(
+                code="packet_semantic_ready",
+                path=f"{base}/semantic_ready_for_kg",
+                object_id=str(packet.get("packet_id", "")),
+                object_type="packet",
+            )
         if packet.get("raw_text_embedded") is not False:
-            raise ReviewerPacketError(code="packet_raw_payload_embedded", path=f"{base}/raw_text_embedded", object_id=str(packet.get("packet_id", "")), object_type="packet")
+            raise ReviewerPacketError(
+                code="packet_raw_payload_embedded",
+                path=f"{base}/raw_text_embedded",
+                object_id=str(packet.get("packet_id", "")),
+                object_type="packet",
+            )
         if _unsafe_boundary_true(packet.get("safety_boundaries")):
-            raise ReviewerPacketError(code="packet_unsafe_safety_boundary", path=f"{base}/safety_boundaries", object_id=str(packet.get("packet_id", "")), object_type="packet")
-    assessment = prototype.get("assessment") if isinstance(prototype.get("assessment"), dict) else {}
-    counters = assessment.get("unsafe_counters") if isinstance(assessment.get("unsafe_counters"), dict) else {}
-    for field in ("accepted_count", "importable_count", "semantic_ready_count", "raw_text_embedded_count", "unsafe_safety_boundary_count"):
+            raise ReviewerPacketError(
+                code="packet_unsafe_safety_boundary",
+                path=f"{base}/safety_boundaries",
+                object_id=str(packet.get("packet_id", "")),
+                object_type="packet",
+            )
+    assessment = (
+        prototype.get("assessment") if isinstance(prototype.get("assessment"), dict) else {}
+    )
+    counters = (
+        assessment.get("unsafe_counters")
+        if isinstance(assessment.get("unsafe_counters"), dict)
+        else {}
+    )
+    for field in (
+        "accepted_count",
+        "importable_count",
+        "semantic_ready_count",
+        "raw_text_embedded_count",
+        "unsafe_safety_boundary_count",
+    ):
         if counters.get(field) != 0:
-            raise ReviewerPacketError(code="unsafe_assessment_counter", path=f"/assessment/unsafe_counters/{field}", object_type="assessment")
-    for field in ("production_import_attempted", "ladybugdb_written", "secrets_included", "embeddings_included", "vectors_included"):
+            raise ReviewerPacketError(
+                code="unsafe_assessment_counter",
+                path=f"/assessment/unsafe_counters/{field}",
+                object_type="assessment",
+            )
+    for field in (
+        "production_import_attempted",
+        "ladybugdb_written",
+        "secrets_included",
+        "embeddings_included",
+        "vectors_included",
+    ):
         if counters.get(field) is not False:
-            raise ReviewerPacketError(code="unsafe_assessment_counter", path=f"/assessment/unsafe_counters/{field}", object_type="assessment")
+            raise ReviewerPacketError(
+                code="unsafe_assessment_counter",
+                path=f"/assessment/unsafe_counters/{field}",
+                object_type="assessment",
+            )
 
 
 def _copied_false_safety_boundaries(target: dict[str, Any]) -> dict[str, bool]:
-    safety = target.get("safety_boundaries") if isinstance(target.get("safety_boundaries"), dict) else {}
+    safety = (
+        target.get("safety_boundaries") if isinstance(target.get("safety_boundaries"), dict) else {}
+    )
     copied: dict[str, bool] = {}
     for field in REQUIRED_FALSE_SAFETY_FIELDS:
         if safety.get(field) is not False:
-            raise ReviewerPacketError(code="unsafe_target_safety_boundary", path=f"/safety_boundaries/{field}", object_id=str(target.get("target_id", "")), object_type="repair_target")
+            raise ReviewerPacketError(
+                code="unsafe_target_safety_boundary",
+                path=f"/safety_boundaries/{field}",
+                object_id=str(target.get("target_id", "")),
+                object_type="repair_target",
+            )
         copied[field] = False
     return copied
 
 
 def _copied_global_false_boundaries(repair_payload: dict[str, Any]) -> dict[str, Any]:
-    diagnostics = repair_payload.get("diagnostics") if isinstance(repair_payload.get("diagnostics"), dict) else {}
+    diagnostics = (
+        repair_payload.get("diagnostics")
+        if isinstance(repair_payload.get("diagnostics"), dict)
+        else {}
+    )
     return {field: diagnostics.get(field) for field in UNSAFE_COUNTER_FIELDS}
 
 
@@ -497,7 +673,11 @@ def _unsafe_boundary_true(value: Any) -> bool:
 
 def _known_ids(contract: dict[str, Any]) -> dict[str, set[str]]:
     stable = contract.get("stable_ids") if isinstance(contract.get("stable_ids"), dict) else {}
-    source_ids = _string_set(stable.get("source_ids")) or {str(item["source_id"]) for item in _list_of_dicts(contract.get("source_ledger")) if item.get("source_id")}
+    source_ids = _string_set(stable.get("source_ids")) or {
+        str(item["source_id"])
+        for item in _list_of_dicts(contract.get("source_ledger"))
+        if item.get("source_id")
+    }
     locator_ids = _string_set(stable.get("locator_ids"))
     span_ids = _string_set(stable.get("span_ids"))
     for target in _list_of_dicts(contract.get("repair_targets")):
@@ -509,7 +689,12 @@ def _known_ids(contract: dict[str, Any]) -> dict[str, set[str]]:
     paper_ids = set(expected_audit_from_contract(contract).get("paper_ids") or [])
     if contract.get("paper_id"):
         paper_ids.add(str(contract["paper_id"]))
-    return {"source_ids": source_ids, "locator_ids": locator_ids, "span_ids": span_ids, "paper_ids": paper_ids}
+    return {
+        "source_ids": source_ids,
+        "locator_ids": locator_ids,
+        "span_ids": span_ids,
+        "paper_ids": paper_ids,
+    }
 
 
 def _finding(code: str, *, path: str, packet_id: str) -> dict[str, Any]:

@@ -117,7 +117,9 @@ def _dimension(
     }
 
 
-def _compare_metadata(grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]) -> dict[str, Any]:
+def _compare_metadata(
+    grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]
+) -> dict[str, Any]:
     grobid_metrics = {
         "header_title_present": _as_bool(grobid_packet.get("header_title_present")),
         "header_author_count": _as_int(grobid_packet.get("header_author_count")),
@@ -141,10 +143,14 @@ def _compare_metadata(grobid_packet: dict[str, Any], opendataloader_packet: dict
     else:
         winner = "none"
         reason = "Neither parser exposed usable metadata signals."
-    return _dimension(winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics)
+    return _dimension(
+        winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics
+    )
 
 
-def _compare_citations(grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]) -> dict[str, Any]:
+def _compare_citations(
+    grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]
+) -> dict[str, Any]:
     grobid_metrics = {
         "ref_count": _as_int(grobid_packet.get("ref_count")),
         "bibl_count": _as_int(grobid_packet.get("bibl_count")),
@@ -160,10 +166,14 @@ def _compare_citations(grobid_packet: dict[str, Any], opendataloader_packet: dic
     else:
         winner = "none"
         reason = "Neither parser exposed native citation extraction for this packet."
-    return _dimension(winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics)
+    return _dimension(
+        winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics
+    )
 
 
-def _compare_body_content(grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]) -> dict[str, Any]:
+def _compare_body_content(
+    grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]
+) -> dict[str, Any]:
     grobid_metrics = {"body_element_count": _as_int(grobid_packet.get("body_element_count"))}
     opendl_metrics = {
         "markdown_size_bytes": _as_int(opendataloader_packet.get("markdown_size_bytes")),
@@ -173,31 +183,46 @@ def _compare_body_content(grobid_packet: dict[str, Any], opendataloader_packet: 
     opendl_score = int(opendl_metrics["markdown_size_bytes"] >= BODY_MARKDOWN_MIN_BYTES)
     opendl_score += int(opendl_metrics["table_count"] > 0)
     opendl_score += int(opendl_metrics["image_count"] > 0)
-    if opendl_score > 0 and opendl_metrics["markdown_size_bytes"] > grobid_metrics["body_element_count"]:
+    if (
+        opendl_score > 0
+        and opendl_metrics["markdown_size_bytes"] > grobid_metrics["body_element_count"]
+    ):
         winner = "opendataloader"
-        reason = "OpenDataLoader exposes substantial markdown body content plus table/image signals."
+        reason = (
+            "OpenDataLoader exposes substantial markdown body content plus table/image signals."
+        )
     elif grobid_metrics["body_element_count"] > 0:
         winner = "grobid"
         reason = "GROBID exposes TEI body elements while OpenDataLoader body signals are weak."
     else:
         winner = "none"
         reason = "Neither parser exposed usable body content."
-    return _dimension(winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics)
+    return _dimension(
+        winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics
+    )
 
 
-def _compare_layout(grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]) -> dict[str, Any]:
+def _compare_layout(
+    grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]
+) -> dict[str, Any]:
     grobid_metrics = {"native_layout_extraction": False, "bounding_box_count": None}
-    opendl_metrics = {"bounding_box_count": _as_int(opendataloader_packet.get("bounding_box_count"))}
+    opendl_metrics = {
+        "bounding_box_count": _as_int(opendataloader_packet.get("bounding_box_count"))
+    }
     if opendl_metrics["bounding_box_count"] >= LAYOUT_MIN_BOUNDING_BOXES:
         winner = "opendataloader"
         reason = "OpenDataLoader exposes layout bounding boxes; GROBID header probe has no layout output."
     else:
         winner = "none"
         reason = "Neither parser exposed layout bounding boxes."
-    return _dimension(winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics)
+    return _dimension(
+        winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics
+    )
 
 
-def _compare_processing_time(grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]) -> dict[str, Any]:
+def _compare_processing_time(
+    grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]
+) -> dict[str, Any]:
     grobid_ms = _as_int(grobid_packet.get("duration_ms"))
     opendl_ms = _as_int(opendataloader_packet.get("duration_ms"))
     grobid_metrics = {"duration_ms": grobid_ms}
@@ -223,10 +248,14 @@ def _compare_processing_time(grobid_packet: dict[str, Any], opendataloader_packe
         else:
             winner = "opendataloader"
             reason = "OpenDataLoader completed faster for this packet."
-    return _dimension(winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics)
+    return _dimension(
+        winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics
+    )
 
 
-def _compare_quality(grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]) -> dict[str, Any]:
+def _compare_quality(
+    grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]
+) -> dict[str, Any]:
     grobid_metrics = {
         "status": grobid_packet.get("status"),
         "low_quality_source": _as_bool(grobid_packet.get("low_quality_source")),
@@ -237,7 +266,9 @@ def _compare_quality(grobid_packet: dict[str, Any], opendataloader_packet: dict[
     }
     if grobid_metrics["low_quality_source"] and not opendl_metrics["low_quality_source"]:
         winner = "opendataloader"
-        reason = "GROBID marked the source low quality while OpenDataLoader succeeded without that flag."
+        reason = (
+            "GROBID marked the source low quality while OpenDataLoader succeeded without that flag."
+        )
     elif opendl_metrics["low_quality_source"] and not grobid_metrics["low_quality_source"]:
         winner = "grobid"
         reason = "OpenDataLoader marked the source low quality while GROBID did not."
@@ -247,10 +278,14 @@ def _compare_quality(grobid_packet: dict[str, Any], opendataloader_packet: dict[
     else:
         winner = "none"
         reason = "Quality flags are not comparable."
-    return _dimension(winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics)
+    return _dimension(
+        winner=winner, reason=reason, grobid=grobid_metrics, opendataloader=opendl_metrics
+    )
 
 
-def _compare_dimensions(grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]) -> dict[str, Any]:
+def _compare_dimensions(
+    grobid_packet: dict[str, Any], opendataloader_packet: dict[str, Any]
+) -> dict[str, Any]:
     """Compare parser outputs dimension-by-dimension."""
     return {
         "metadata": _compare_metadata(grobid_packet, opendataloader_packet),
@@ -265,7 +300,9 @@ def _compare_dimensions(grobid_packet: dict[str, Any], opendataloader_packet: di
 def _propose_route(comparison: dict[str, Any]) -> dict[str, Any]:
     """Propose routing from measured dimension winners, without hardcoding hybrid."""
     use_grobid_for = [dim for dim in ROUTING_DIMENSIONS if comparison[dim]["winner"] == "grobid"]
-    use_opendataloader_for = [dim for dim in ROUTING_DIMENSIONS if comparison[dim]["winner"] == "opendataloader"]
+    use_opendataloader_for = [
+        dim for dim in ROUTING_DIMENSIONS if comparison[dim]["winner"] == "opendataloader"
+    ]
     diagnostic_winners = {dim: comparison[dim]["winner"] for dim in DIAGNOSTIC_DIMENSIONS}
 
     if use_grobid_for and use_opendataloader_for:
@@ -278,9 +315,15 @@ def _propose_route(comparison: dict[str, Any]) -> dict[str, Any]:
         hybrid_route = "manual_review"
 
     core_winners = [comparison[dim]["winner"] for dim in ROUTING_DIMENSIONS]
-    if hybrid_route == "grobid_header + opendataloader_body" and set(core_winners) >= {"grobid", "opendataloader"}:
+    if hybrid_route == "grobid_header + opendataloader_body" and set(core_winners) >= {
+        "grobid",
+        "opendataloader",
+    }:
         confidence = "high"
-    elif hybrid_route in {"grobid_only", "opendataloader_only"} and core_winners.count(use_grobid_for and "grobid" or "opendataloader") >= 3:
+    elif (
+        hybrid_route in {"grobid_only", "opendataloader_only"}
+        and core_winners.count(use_grobid_for and "grobid" or "opendataloader") >= 3
+    ):
         confidence = "medium"
     elif any(winner in {"grobid", "opendataloader"} for winner in core_winners):
         confidence = "medium"
@@ -333,7 +376,8 @@ def _identify_residual_gaps(comparison: dict[str, Any]) -> list[dict[str, Any]]:
         )
 
     if body["winner"] == "opendataloader" and (
-        _as_int(body["opendataloader"].get("table_count")) > 0 or _as_int(body["opendataloader"].get("image_count")) > 0
+        _as_int(body["opendataloader"].get("table_count")) > 0
+        or _as_int(body["opendataloader"].get("image_count")) > 0
     ):
         gaps.append(
             {
@@ -390,10 +434,13 @@ def _comparison_packet(
         "schema_version": SCHEMA_VERSION,
         "generated_at": _utc_now(),
         "arxiv_id": arxiv_id,
-        "article_key": grobid_packet.get("article_key") or opendataloader_packet.get("article_key") or arxiv_id,
+        "article_key": grobid_packet.get("article_key")
+        or opendataloader_packet.get("article_key")
+        or arxiv_id,
         "category": grobid_packet.get("category") or opendataloader_packet.get("category"),
         "pdf_path": grobid_packet.get("pdf_path") or opendataloader_packet.get("pdf_path"),
-        "manifest_sha256": grobid_packet.get("manifest_sha256") or opendataloader_packet.get("manifest_sha256"),
+        "manifest_sha256": grobid_packet.get("manifest_sha256")
+        or opendataloader_packet.get("manifest_sha256"),
         "grobid_metrics": grobid_metrics,
         "opendataloader_metrics": opendl_metrics,
         "comparison_table": comparison,
@@ -431,7 +478,9 @@ def _summarize(packets: list[dict[str, Any]], output_dir: Path) -> dict[str, Any
     total_pdfs = len(packets)
     hybrid_count = route_counts.get("grobid_header + opendataloader_body", 0)
     aggregate_recommendation = {
-        "recommended_route": "grobid_header + opendataloader_body" if hybrid_count == total_pdfs and total_pdfs else "mixed_or_review",
+        "recommended_route": "grobid_header + opendataloader_body"
+        if hybrid_count == total_pdfs and total_pdfs
+        else "mixed_or_review",
         "hybrid_pdf_count": hybrid_count,
         "hybrid_percent": round((hybrid_count / total_pdfs) * 100, 2) if total_pdfs else 0.0,
         "route_counts": route_counts,

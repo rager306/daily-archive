@@ -202,7 +202,9 @@ def read_env_config(candidate: CandidateCriteria) -> dict[str, str]:
     """Read ANTHROPIC-style environment overrides for a candidate."""
     prefix = candidate.slug.upper()
     host = os.environ.get(f"{prefix}_DB_HOST", os.environ.get("DB_HOST", "127.0.0.1"))
-    port = os.environ.get(f"{prefix}_DB_PORT", os.environ.get("DB_PORT", str(candidate.default_port)))
+    port = os.environ.get(
+        f"{prefix}_DB_PORT", os.environ.get("DB_PORT", str(candidate.default_port))
+    )
     user = os.environ.get(f"{prefix}_DB_USER", os.environ.get("DB_USER", ""))
     password = os.environ.get(f"{prefix}_DB_PASSWORD", os.environ.get("DB_PASSWORD", ""))
     db_url = os.environ.get(f"{prefix}_DB_URL", os.environ.get("DB_URL", f"tcp://{host}:{port}"))
@@ -233,7 +235,9 @@ def load_m062_shape(path: Path = M062_CONTRACT) -> dict[str, int]:
     return fallback
 
 
-def build_synthetic_workload(layer_counts: dict[str, int], *, max_nodes: int = 3000, max_edges: int = 9000) -> dict[str, Any]:
+def build_synthetic_workload(
+    layer_counts: dict[str, int], *, max_nodes: int = 3000, max_edges: int = 9000
+) -> dict[str, Any]:
     """Build deterministic 5-layer nodes, edges, and tiny vectors."""
     layers = ["citation", "table", "figure_v1", "figure_v2", "judge"]
     nodes: list[dict[str, Any]] = []
@@ -251,7 +255,9 @@ def build_synthetic_workload(layer_counts: dict[str, int], *, max_nodes: int = 3
     for idx in range(max_edges):
         src = nodes[idx % max_nodes]["id"]
         dst = nodes[(idx * 7 + 13) % max_nodes]["id"]
-        relation = f"{nodes[idx % max_nodes]['layer']}_to_{nodes[(idx * 7 + 13) % max_nodes]['layer']}"
+        relation = (
+            f"{nodes[idx % max_nodes]['layer']}_to_{nodes[(idx * 7 + 13) % max_nodes]['layer']}"
+        )
         edges.append((src, relation, dst))
     return {"layer_counts": layer_counts, "nodes": nodes, "edges": edges}
 
@@ -286,8 +292,12 @@ def run_offline_queries(workload: dict[str, Any]) -> dict[str, dict[str, float]]
 
     query_fns = {
         "citation_lookup": lambda: len(adjacency.get("citation:100", [])),
-        "table_similarity": lambda: max(dot(target_vector, n["vector"]) for n in by_layer["table"][:500]),
-        "figure_similarity": lambda: [n["id"] for n in by_layer["figure_v1"][:8] + by_layer["figure_v2"][:8]],
+        "table_similarity": lambda: max(
+            dot(target_vector, n["vector"]) for n in by_layer["table"][:500]
+        ),
+        "figure_similarity": lambda: [
+            n["id"] for n in by_layer["figure_v1"][:8] + by_layer["figure_v2"][:8]
+        ],
         "judge_lookup": lambda: [n for n in by_layer["judge"] if n["score"] >= 95][:10],
         "vector_search": lambda: sorted(
             ((dot(target_vector, n["vector"]), n["id"]) for n in nodes[:1000]), reverse=True
@@ -313,7 +323,12 @@ def benchmark_candidate(candidate: CandidateCriteria, workload: dict[str, Any]) 
     edge_count = len(workload["edges"])
     load_ms = (time.perf_counter() - start) * 1000
     query_results = run_offline_queries(workload)
-    all_timings = [value for stats in query_results.values() for key, value in stats.items() if key.endswith("_ms")]
+    all_timings = [
+        value
+        for stats in query_results.values()
+        for key, value in stats.items()
+        if key.endswith("_ms")
+    ]
     client_available = importlib.util.find_spec(candidate.import_module) is not None
     vendor_path = VENDOR_SOURCE / candidate.slug
     client_markers = VENDORED_PYTHON_CLIENT_MARKERS[candidate.slug]
@@ -388,9 +403,20 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     if args.allow_network or args.allow_production_import:
-        raise SystemExit("Real DB/network benchmark is disabled for M063 S01; use offline harness only.")
+        raise SystemExit(
+            "Real DB/network benchmark is disabled for M063 S01; use offline harness only."
+        )
     payload = run_benchmark(args.output)
-    print(json.dumps({"output": str(args.output), "candidates": len(payload["candidates"]), "queries": QUERY_NAMES}, sort_keys=True))
+    print(
+        json.dumps(
+            {
+                "output": str(args.output),
+                "candidates": len(payload["candidates"]),
+                "queries": QUERY_NAMES,
+            },
+            sort_keys=True,
+        )
+    )
     return 0
 
 

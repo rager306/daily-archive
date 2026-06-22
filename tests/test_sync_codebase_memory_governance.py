@@ -35,9 +35,7 @@ def _all_adr_files() -> list[Path]:
     return [
         p
         for p in ADR_DIR.rglob("ADR-*.md")
-        if p.name.startswith("ADR-")
-        and "TEMPLATE" not in p.name
-        and "INDEX" not in p.name
+        if p.name.startswith("ADR-") and "TEMPLATE" not in p.name and "INDEX" not in p.name
     ]
 
 

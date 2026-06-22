@@ -75,7 +75,14 @@ FORBIDDEN_OUTPUT_SNIPPETS = ("<html", "</html", "%PDF-", "base64,")
 class AcquisitionError(ValueError):
     """Typed validation error for deterministic CLI diagnostics."""
 
-    def __init__(self, code: str, message: str, *, identity: str | None = None, article_ref: str | None = None):
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        *,
+        identity: str | None = None,
+        article_ref: str | None = None,
+    ):
         super().__init__(message)
         self.code = code
         self.identity = identity
@@ -134,9 +141,15 @@ def safe_child_path(root: Path, rel_path: str, *, code: str = "unsafe_relative_p
     if not isinstance(rel_path, str) or not rel_path.strip():
         raise AcquisitionError(code, f"empty unsafe relative path: {rel_path!r}")
     if "://" in rel_path:
-        raise AcquisitionError("url_not_allowed_as_local_path", f"URL cannot be used as a local path: {rel_path}")
+        raise AcquisitionError(
+            "url_not_allowed_as_local_path", f"URL cannot be used as a local path: {rel_path}"
+        )
     normalized = PurePosixPath(rel_path.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part in ("", ".") for part in normalized.parts):
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part in ("", ".") for part in normalized.parts)
+    ):
         raise AcquisitionError(code, f"unsafe relative path: {rel_path}")
     root_resolved = root.resolve()
     resolved = (root_resolved / normalized.as_posix()).resolve()
@@ -154,7 +167,9 @@ def safe_article_segment(article_ref: str | None, article_key: str | None) -> st
     return "/".join(parts)
 
 
-def confined_source_target(output_dir: Path, article_ref: str | None, article_key: str | None, role_target: str) -> tuple[Path, str]:
+def confined_source_target(
+    output_dir: Path, article_ref: str | None, article_key: str | None, role_target: str
+) -> tuple[Path, str]:
     rel_path = f"{safe_article_segment(article_ref, article_key)}/{role_target}"
     target = safe_child_path(output_dir, rel_path, code="unsafe_output_source_path")
     return target, target.relative_to(output_dir.resolve()).as_posix()
@@ -210,8 +225,12 @@ def result_base(
         "sha256": sha256,
         "byte_size": byte_size,
         "media_type": media_type,
-        "is_metadata_only": bool(variant.get("is_metadata_only")) if variant is not None and isinstance(variant.get("is_metadata_only"), bool) else None,
-        "requires_conversion": bool(variant.get("requires_conversion")) if variant is not None and isinstance(variant.get("requires_conversion"), bool) else None,
+        "is_metadata_only": bool(variant.get("is_metadata_only"))
+        if variant is not None and isinstance(variant.get("is_metadata_only"), bool)
+        else None,
+        "requires_conversion": bool(variant.get("requires_conversion"))
+        if variant is not None and isinstance(variant.get("requires_conversion"), bool)
+        else None,
         "network_fetch_attempted": False,
         "network_fetch_allowed": False,
         "captured_at": utc_now() if status == "captured" else None,
@@ -287,7 +306,9 @@ def source_result_for_variant(
             media_type=media_type,
         )
 
-    local_value = variant.get("local_path") or variant.get("path") or variant.get("catalog_relative_path")
+    local_value = (
+        variant.get("local_path") or variant.get("path") or variant.get("catalog_relative_path")
+    )
     if not isinstance(local_value, str):
         return result_base(
             identity=identity,
@@ -307,10 +328,17 @@ def source_result_for_variant(
         )
 
     if not article_path:
-        raise AcquisitionError("missing_article_path", "catalog-backed article is missing article_path", identity=identity, article_ref=article_ref)
+        raise AcquisitionError(
+            "missing_article_path",
+            "catalog-backed article is missing article_path",
+            identity=identity,
+            article_ref=article_ref,
+        )
     try:
         article_json_path = safe_child_path(catalog_root, article_path, code="unsafe_article_path")
-        source_path = safe_child_path(article_json_path.parent, local_value, code="unsafe_catalog_source_path")
+        source_path = safe_child_path(
+            article_json_path.parent, local_value, code="unsafe_catalog_source_path"
+        )
     except AcquisitionError as exc:
         return result_base(
             identity=identity,
@@ -329,7 +357,9 @@ def source_result_for_variant(
             media_type=media_type,
         )
 
-    target, local_path = confined_source_target(output_dir, article_ref, article_key, ROLE_TARGETS[role])
+    target, local_path = confined_source_target(
+        output_dir, article_ref, article_key, ROLE_TARGETS[role]
+    )
     source_catalog_path = source_path.relative_to(catalog_root.resolve()).as_posix()
     if not source_path.exists():
         return result_base(
@@ -390,19 +420,25 @@ def source_result_for_variant(
     )
 
 
-def replay_selection(*, selection_path: Path, catalog_root: Path, output_dir: Path, write: bool = True) -> list[dict[str, Any]]:
+def replay_selection(
+    *, selection_path: Path, catalog_root: Path, output_dir: Path, write: bool = True
+) -> list[dict[str, Any]]:
     selection = load_json_object(selection_path)
     articles = selection.get("articles")
     if not isinstance(articles, list):
         raise AcquisitionError("malformed_selection_articles", "selection articles must be a list")
     blockers = selection.get("catalog_blockers")
     if not isinstance(blockers, list):
-        raise AcquisitionError("malformed_selection_blockers", "selection catalog_blockers must be a list")
+        raise AcquisitionError(
+            "malformed_selection_blockers", "selection catalog_blockers must be a list"
+        )
 
     results: list[dict[str, Any]] = []
     for article in articles:
         if not isinstance(article, Mapping):
-            raise AcquisitionError("malformed_selection_article", "selection article rows must be objects")
+            raise AcquisitionError(
+                "malformed_selection_article", "selection article rows must be objects"
+            )
         variants = article.get("source_variants")
         if not isinstance(variants, list) or not variants:
             raise AcquisitionError(
@@ -419,11 +455,21 @@ def replay_selection(*, selection_path: Path, catalog_root: Path, output_dir: Pa
                     identity=_string_value(article, "identity"),
                     article_ref=_string_value(article, "article_ref"),
                 )
-            results.append(source_result_for_variant(article=article, variant=variant, catalog_root=catalog_root, output_dir=output_dir, write=write))
+            results.append(
+                source_result_for_variant(
+                    article=article,
+                    variant=variant,
+                    catalog_root=catalog_root,
+                    output_dir=output_dir,
+                    write=write,
+                )
+            )
 
     for blocker in blockers:
         if not isinstance(blocker, Mapping):
-            raise AcquisitionError("malformed_selection_blocker", "selection blocker rows must be objects")
+            raise AcquisitionError(
+                "malformed_selection_blocker", "selection blocker rows must be objects"
+            )
         results.append(blocker_result(blocker))
     return results
 
@@ -437,15 +483,27 @@ def build_summary(
     duration_ms: int,
 ) -> dict[str, Any]:
     counts: dict[str, int] = {"captured": 0, "blocked": 0, "failed": 0}
-    per_identity: dict[str, dict[str, int]] = defaultdict(lambda: {"captured": 0, "blocked": 0, "failed": 0})
-    per_role: dict[str, dict[str, int]] = defaultdict(lambda: {"captured": 0, "blocked": 0, "failed": 0})
+    per_identity: dict[str, dict[str, int]] = defaultdict(
+        lambda: {"captured": 0, "blocked": 0, "failed": 0}
+    )
+    per_role: dict[str, dict[str, int]] = defaultdict(
+        lambda: {"captured": 0, "blocked": 0, "failed": 0}
+    )
     for result in results:
         status = str(result.get("status"))
         if status not in counts:
             continue
         counts[status] += 1
-        identity = result.get("identity") if isinstance(result.get("identity"), str) else "<missing-identity>"
-        role = result.get("source_role") if isinstance(result.get("source_role"), str) else "<missing-role>"
+        identity = (
+            result.get("identity")
+            if isinstance(result.get("identity"), str)
+            else "<missing-identity>"
+        )
+        role = (
+            result.get("source_role")
+            if isinstance(result.get("source_role"), str)
+            else "<missing-role>"
+        )
         per_identity[identity][status] += 1
         per_role[role][status] += 1
     return {
@@ -453,13 +511,22 @@ def build_summary(
         "milestone_id": MILESTONE_ID,
         "slice_id": SLICE_ID,
         "selection_id": SELECTION_ID,
-        "status": "completed_with_diagnostics" if counts["blocked"] or counts["failed"] else "captured",
+        "status": "completed_with_diagnostics"
+        if counts["blocked"] or counts["failed"]
+        else "captured",
         "variant_or_blocker_count": len(results),
         "counts": counts,
-        "per_identity_terminal_state_counts": {key: dict(value) for key, value in sorted(per_identity.items())},
-        "per_role_terminal_state_counts": {key: dict(value) for key, value in sorted(per_role.items())},
+        "per_identity_terminal_state_counts": {
+            key: dict(value) for key, value in sorted(per_identity.items())
+        },
+        "per_role_terminal_state_counts": {
+            key: dict(value) for key, value in sorted(per_role.items())
+        },
         "results": results,
-        "input_paths": {"selection": selection_path.as_posix(), "catalog_root": catalog_root.as_posix()},
+        "input_paths": {
+            "selection": selection_path.as_posix(),
+            "catalog_root": catalog_root.as_posix(),
+        },
         "output_paths": {"source_dir": output_dir.as_posix()},
         "duration_ms": duration_ms,
         "network_fetch_allowed": False,
@@ -518,15 +585,27 @@ def render_report(summary: Mapping[str, Any]) -> str:
         "## Role Counts",
         "",
     ]
-    role_counts = summary.get("per_role_terminal_state_counts") if isinstance(summary.get("per_role_terminal_state_counts"), Mapping) else {}
+    role_counts = (
+        summary.get("per_role_terminal_state_counts")
+        if isinstance(summary.get("per_role_terminal_state_counts"), Mapping)
+        else {}
+    )
     for role, value in role_counts.items():
         if isinstance(value, Mapping):
-            lines.append(f"- `{role}`: captured={value.get('captured', 0)} blocked={value.get('blocked', 0)} failed={value.get('failed', 0)}")
+            lines.append(
+                f"- `{role}`: captured={value.get('captured', 0)} blocked={value.get('blocked', 0)} failed={value.get('failed', 0)}"
+            )
     lines.extend(["", "## Identity Counts", ""])
-    identity_counts = summary.get("per_identity_terminal_state_counts") if isinstance(summary.get("per_identity_terminal_state_counts"), Mapping) else {}
+    identity_counts = (
+        summary.get("per_identity_terminal_state_counts")
+        if isinstance(summary.get("per_identity_terminal_state_counts"), Mapping)
+        else {}
+    )
     for identity, value in identity_counts.items():
         if isinstance(value, Mapping):
-            lines.append(f"- `{identity}`: captured={value.get('captured', 0)} blocked={value.get('blocked', 0)} failed={value.get('failed', 0)}")
+            lines.append(
+                f"- `{identity}`: captured={value.get('captured', 0)} blocked={value.get('blocked', 0)} failed={value.get('failed', 0)}"
+            )
     lines.extend(["", "## Results", ""])
     for result in summary.get("results", []):
         if isinstance(result, Mapping):
@@ -538,12 +617,24 @@ def render_report(summary: Mapping[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def validate_output_metadata_only(payload: Any, *, path: str = "$", in_safe_key: bool = False) -> None:
+def validate_output_metadata_only(
+    payload: Any, *, path: str = "$", in_safe_key: bool = False
+) -> None:
     if isinstance(payload, Mapping):
         for key, value in payload.items():
-            safe_key = key in {"media_type", "source_role", "diagnostic_code", "blocker_code", "failure_reason", "source_catalog_path", "local_path"}
+            safe_key = key in {
+                "media_type",
+                "source_role",
+                "diagnostic_code",
+                "blocker_code",
+                "failure_reason",
+                "source_catalog_path",
+                "local_path",
+            }
             if key in FORBIDDEN_OUTPUT_KEYS:
-                raise AcquisitionError("raw_payload_output_key", f"forbidden raw-payload output key at {path}.{key}")
+                raise AcquisitionError(
+                    "raw_payload_output_key", f"forbidden raw-payload output key at {path}.{key}"
+                )
             validate_output_metadata_only(value, path=f"{path}.{key}", in_safe_key=safe_key)
     elif isinstance(payload, list):
         for index, item in enumerate(payload):
@@ -552,7 +643,9 @@ def validate_output_metadata_only(payload: Any, *, path: str = "$", in_safe_key:
         lowered = payload.lower()
         for snippet in FORBIDDEN_OUTPUT_SNIPPETS:
             if snippet.lower() in lowered and not in_safe_key:
-                raise AcquisitionError("raw_payload_output_snippet", f"forbidden raw-payload snippet at {path}")
+                raise AcquisitionError(
+                    "raw_payload_output_snippet", f"forbidden raw-payload snippet at {path}"
+                )
 
 
 def assert_metadata_artifact_is_redacted(path: Path) -> None:
@@ -560,7 +653,9 @@ def assert_metadata_artifact_is_redacted(path: Path) -> None:
     lowered = text.lower()
     found = [token for token in FORBIDDEN_OUTPUT_SNIPPETS if token.lower() in lowered]
     if found:
-        raise AcquisitionError("raw_payload_artifact_snippet", f"metadata artifact is not redacted: {path}: {found}")
+        raise AcquisitionError(
+            "raw_payload_artifact_snippet", f"metadata artifact is not redacted: {path}: {found}"
+        )
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -579,8 +674,18 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     started = time.perf_counter()
     try:
-        for cli_path in (args.selection, args.catalog_root, args.output_dir, args.write_summary, args.write_diagnostics, args.write_report):
-            if not cli_path.is_absolute() and ".." in PurePosixPath(str(cli_path).replace("\\", "/")).parts:
+        for cli_path in (
+            args.selection,
+            args.catalog_root,
+            args.output_dir,
+            args.write_summary,
+            args.write_diagnostics,
+            args.write_report,
+        ):
+            if (
+                not cli_path.is_absolute()
+                and ".." in PurePosixPath(str(cli_path).replace("\\", "/")).parts
+            ):
                 raise AcquisitionError("unsafe_cli_path", f"unsafe CLI path: {cli_path}")
         output_dir = args.output_dir.resolve()
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -604,7 +709,17 @@ def main(argv: list[str] | None = None) -> int:
         atomic_write_text(args.write_report, report)
         for artifact_path in (args.write_summary, args.write_diagnostics, args.write_report):
             assert_metadata_artifact_is_redacted(artifact_path)
-        sys.stdout.write(json.dumps({"status": summary["status"], "counts": summary["counts"], "summary": args.write_summary.as_posix()}, sort_keys=True) + "\n")
+        sys.stdout.write(
+            json.dumps(
+                {
+                    "status": summary["status"],
+                    "counts": summary["counts"],
+                    "summary": args.write_summary.as_posix(),
+                },
+                sort_keys=True,
+            )
+            + "\n"
+        )
         return 0 if summary["counts"]["failed"] == 0 else 1
     except AcquisitionError as exc:
         sys.stderr.write(

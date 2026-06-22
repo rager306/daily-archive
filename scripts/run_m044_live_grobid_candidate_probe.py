@@ -22,11 +22,27 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TARGET = ROOT / "artifacts" / "m043-combined-sidecar-probe" / "target-subset.json"
 DEFAULT_SOURCE = ROOT / "artifacts" / "m043-combined-sidecar-probe" / "source-readiness.json"
-DEFAULT_RUNTIME_UPDATE = ROOT / "artifacts" / "m044-grobid-architecture-guardrail" / "grobid-runtime-update.json"
+DEFAULT_RUNTIME_UPDATE = (
+    ROOT / "artifacts" / "m044-grobid-architecture-guardrail" / "grobid-runtime-update.json"
+)
 DEFAULT_OUTPUT_DIR = ROOT / "artifacts" / "m044-grobid-architecture-guardrail"
 DEFAULT_GUARDRAIL = ROOT / "scripts" / "verify_m044_sidecar_architecture_guardrail.py"
-FORBIDDEN_KEYS = {"raw_text", "full_text", "tei_xml", "markdown_body", "embedding", "vector", "prompt", "completion"}
-FALSE_KEYS = ("graph_write_allowed", "promotion_allowed", "production_import_attempted", "import_eligible")
+FORBIDDEN_KEYS = {
+    "raw_text",
+    "full_text",
+    "tei_xml",
+    "markdown_body",
+    "embedding",
+    "vector",
+    "prompt",
+    "completion",
+}
+FALSE_KEYS = (
+    "graph_write_allowed",
+    "promotion_allowed",
+    "production_import_attempted",
+    "import_eligible",
+)
 GrobidSubmitter = Callable[[Path, str, int], bytes]
 
 
@@ -36,7 +52,9 @@ def load_json(path: Path) -> dict[str, Any]:
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
 
 
 def write_text(path: Path, text: str) -> None:
@@ -45,7 +63,9 @@ def write_text(path: Path, text: str) -> None:
 
 
 def run_guardrail(command: Path = DEFAULT_GUARDRAIL) -> None:
-    result = subprocess.run([sys.executable, str(command)], cwd=ROOT, text=True, capture_output=True, timeout=30)
+    result = subprocess.run(
+        [sys.executable, str(command)], cwd=ROOT, text=True, capture_output=True, timeout=30
+    )
     if result.returncode != 0:
         raise RuntimeError(f"architecture guardrail failed: {result.stderr or result.stdout}")
 
@@ -67,7 +87,10 @@ def submit_pdf_to_grobid(pdf_path: Path, service_url: str, timeout: int) -> byte
     request = urllib.request.Request(
         f"{service_url.rstrip('/')}/api/processFulltextDocument",
         data=body,
-        headers={"Content-Type": f"multipart/form-data; boundary={boundary}", "Accept": "application/xml"},
+        headers={
+            "Content-Type": f"multipart/form-data; boundary={boundary}",
+            "Accept": "application/xml",
+        },
         method="POST",
     )
     with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -120,7 +143,9 @@ def build_live_grobid_packets(
         run_guardrail()
     service_url = str(runtime_update.get("service_url", ""))
     service_live = runtime_update.get("current_grobid_status") == "live_ready"
-    source_by_key = {record["article_key"]: record for record in source_readiness.get("records", [])}
+    source_by_key = {
+        record["article_key"]: record for record in source_readiness.get("records", [])
+    }
     packets: list[dict[str, Any]] = []
     for entry in target.get("articles", []):
         key = entry["article_key"]
@@ -146,10 +171,22 @@ def build_live_grobid_packets(
             pdf_path = pdf_files[0]
             try:
                 tei_bytes = submitter(pdf_path, service_url, timeout)
-                packet.update({"status": "live_success", "blockers": [], "pdf_ref": str(pdf_path.relative_to(ROOT))})
+                packet.update(
+                    {
+                        "status": "live_success",
+                        "blockers": [],
+                        "pdf_ref": str(pdf_path.relative_to(ROOT)),
+                    }
+                )
                 packet.update(summarize_tei(tei_bytes))
             except (ET.ParseError, urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
-                packet.update({"status": "live_error", "blockers": [f"{type(exc).__name__}: {exc}"], "pdf_ref": str(pdf_path.relative_to(ROOT))})
+                packet.update(
+                    {
+                        "status": "live_error",
+                        "blockers": [f"{type(exc).__name__}: {exc}"],
+                        "pdf_ref": str(pdf_path.relative_to(ROOT)),
+                    }
+                )
         packets.append(packet)
 
     status_counts: dict[str, int] = {}

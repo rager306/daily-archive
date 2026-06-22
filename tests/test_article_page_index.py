@@ -21,7 +21,6 @@ PAGE_INDEX_FIXTURES = Path(__file__).parent / "fixtures" / "article_page_index"
 FORBIDDEN_SENTINEL = "FORBIDDEN_SENTINEL_DO_NOT_ECHO"
 
 
-
 @pytest.fixture()
 def page_index_contract():
     """Load the future article_page_index module without failing collection.
@@ -35,8 +34,11 @@ def page_index_contract():
         return importlib.import_module("research_graph.infrastructure.papers.indexing.page_index")
     except ModuleNotFoundError as exc:
         if exc.name == "research_graph.infrastructure.papers.indexing.page_index":
-            pytest.xfail("research_graph.infrastructure.papers.indexing.page_index is not implemented yet")
+            pytest.xfail(
+                "research_graph.infrastructure.papers.indexing.page_index is not implemented yet"
+            )
         raise
+
 
 FORBIDDEN_PAYLOAD_FRAGMENTS = (
     '"text":',
@@ -104,7 +106,9 @@ def _diagnostic_paths(page_index: dict) -> set[str]:
     return {diagnostic["json_path"] for diagnostic in page_index.get("diagnostics", [])}
 
 
-def test_builds_deterministic_article_page_index_from_redacted_structure(page_index_contract) -> None:
+def test_builds_deterministic_article_page_index_from_redacted_structure(
+    page_index_contract,
+) -> None:
     page_index = page_index_contract.build_article_page_index_from_structure(_basic_structure())
 
     assert page_index_contract.validate_article_page_index(page_index) == []
@@ -155,9 +159,15 @@ def test_navigation_helpers_return_parent_child_next_and_paths(page_index_contra
     page_index = page_index_contract.build_article_page_index_from_structure(_basic_structure())
 
     root = page_index_contract.node_by_id(page_index, "fixture-paper-0001:page-index:section:root")
-    methods = page_index_contract.node_by_id(page_index, "fixture-paper-0001:page-index:section:methods")
-    results = page_index_contract.node_by_id(page_index, "fixture-paper-0001:page-index:section:results")
-    figure = page_index_contract.node_by_id(page_index, "fixture-paper-0001:page-index:artifact:figure:0001")
+    methods = page_index_contract.node_by_id(
+        page_index, "fixture-paper-0001:page-index:section:methods"
+    )
+    results = page_index_contract.node_by_id(
+        page_index, "fixture-paper-0001:page-index:section:results"
+    )
+    figure = page_index_contract.node_by_id(
+        page_index, "fixture-paper-0001:page-index:artifact:figure:0001"
+    )
 
     assert root is not None
     assert methods is not None
@@ -171,25 +181,46 @@ def test_navigation_helpers_return_parent_child_next_and_paths(page_index_contra
     assert methods["parent_id"] == root["node_id"]
     assert figure["parent_id"] == results["node_id"]
     assert methods["next_id"] == "fixture-paper-0001:page-index:artifact:equation:0001"
-    assert [node["node_id"] for node in page_index_contract.children_of(page_index, root["node_id"])] == root["children_ids"]
+    assert [
+        node["node_id"] for node in page_index_contract.children_of(page_index, root["node_id"])
+    ] == root["children_ids"]
     assert page_index_contract.path_to(page_index, figure["node_id"]) == [
         "fixture-paper-0001:page-index:section:root",
         "fixture-paper-0001:page-index:section:results",
         "fixture-paper-0001:page-index:artifact:figure:0001",
     ]
-    assert [node["node_id"] for node in page_index_contract.walk_next(page_index)] == [node["node_id"] for node in page_index["nodes"]]
+    assert [node["node_id"] for node in page_index_contract.walk_next(page_index)] == [
+        node["node_id"] for node in page_index["nodes"]
+    ]
 
 
-def test_nodes_and_anchors_preserve_source_span_hash_provenance_and_section_vocabulary(page_index_contract) -> None:
+def test_nodes_and_anchors_preserve_source_span_hash_provenance_and_section_vocabulary(
+    page_index_contract,
+) -> None:
     page_index = page_index_contract.build_article_page_index_from_structure(_basic_structure())
     section_nodes = [node for node in page_index["nodes"] if node["node_type"] == "section"]
 
     assert page_index_contract.ALLOWED_PAGE_INDEX_SECTION_TYPES == frozenset(
-        {"root", "abstract", "introduction", "background", "methods", "results", "discussion", "conclusion", "appendix", "unknown"}
+        {
+            "root",
+            "abstract",
+            "introduction",
+            "background",
+            "methods",
+            "results",
+            "discussion",
+            "conclusion",
+            "appendix",
+            "unknown",
+        }
     )
-    assert {node["summary"]["section_type"] for node in section_nodes} <= page_index_contract.ALLOWED_PAGE_INDEX_SECTION_TYPES
+    assert {
+        node["summary"]["section_type"] for node in section_nodes
+    } <= page_index_contract.ALLOWED_PAGE_INDEX_SECTION_TYPES
 
-    methods = page_index_contract.node_by_id(page_index, "fixture-paper-0001:page-index:section:methods")
+    methods = page_index_contract.node_by_id(
+        page_index, "fixture-paper-0001:page-index:section:methods"
+    )
     assert methods is not None
     assert methods["source_ref_ids"] == ["fixture-paper-0001:source:normalized-md"]
     assert methods["source_span"] == {
@@ -206,7 +237,8 @@ def test_nodes_and_anchors_preserve_source_span_hash_provenance_and_section_voca
     }
 
     figure_anchors = [
-        anchor for anchor in page_index["anchors"]
+        anchor
+        for anchor in page_index["anchors"]
         if anchor["node_id"] == "fixture-paper-0001:page-index:artifact:figure:0001"
     ]
     assert [anchor["span_id"] for anchor in figure_anchors] == [
@@ -248,7 +280,9 @@ def test_malformed_structure_reports_stable_redacted_diagnostics(page_index_cont
     _assert_metadata_only(diagnostic_payload)
 
 
-def test_empty_or_no_section_structure_creates_metadata_only_fallback_node(page_index_contract) -> None:
+def test_empty_or_no_section_structure_creates_metadata_only_fallback_node(
+    page_index_contract,
+) -> None:
     structure = _basic_structure()
     structure["sections"] = []
     structure["artifact_placeholders"] = []
@@ -294,12 +328,16 @@ def test_empty_or_no_section_structure_creates_metadata_only_fallback_node(page_
     ("mutation", "expected_code", "expected_path"),
     [
         (
-            lambda structure: structure["sections"][1].update(parent_section_id="fixture-paper-0001:section:missing"),
+            lambda structure: structure["sections"][1].update(
+                parent_section_id="fixture-paper-0001:section:missing"
+            ),
             "missing_parent",
             "/sections[1]/parent_section_id",
         ),
         (
-            lambda structure: structure["sections"][1].update(span_id="fixture-paper-0001:span:missing"),
+            lambda structure: structure["sections"][1].update(
+                span_id="fixture-paper-0001:span:missing"
+            ),
             "missing_span",
             "/sections[1]/span_id",
         ),
@@ -309,12 +347,16 @@ def test_empty_or_no_section_structure_creates_metadata_only_fallback_node(page_
             "/sections[3]/section_id",
         ),
         (
-            lambda structure: structure["sections"][1].update(section_type="unsupported_appendix_type"),
+            lambda structure: structure["sections"][1].update(
+                section_type="unsupported_appendix_type"
+            ),
             "unsupported_section_type",
             "/sections[1]/section_type",
         ),
         (
-            lambda structure: structure["artifact_placeholders"][0].update(caption_text=FORBIDDEN_SENTINEL),
+            lambda structure: structure["artifact_placeholders"][0].update(
+                caption_text=FORBIDDEN_SENTINEL
+            ),
             "forbidden_payload_key",
             "/artifact_placeholders[0]/caption_text",
         ),
@@ -325,7 +367,9 @@ def test_empty_or_no_section_structure_creates_metadata_only_fallback_node(page_
         ),
     ],
 )
-def test_negative_structure_mutations_have_specific_redacted_diagnostics(page_index_contract, mutation, expected_code: str, expected_path: str) -> None:
+def test_negative_structure_mutations_have_specific_redacted_diagnostics(
+    page_index_contract, mutation, expected_code: str, expected_path: str
+) -> None:
     structure = _basic_structure()
     mutation(structure)
 

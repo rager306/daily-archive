@@ -31,7 +31,13 @@ DEFAULT_DISCOVERY = BASE_DIR / "discovery.json"
 DEFAULT_REPORT = BASE_DIR / "report.md"
 ARTICLE_ROOT = ROOT / "data" / "article_catalog" / "article_catalog"
 M040_MANIFEST = ROOT / "artifacts" / "m036-real-corpus-no-write-smoke" / "manifest.json"
-HERMES_DIGEST = ROOT / "data" / "article_corpora" / "m028-universal-loader-runtime-smoke-v1" / "hermes-digest-projection.json"
+HERMES_DIGEST = (
+    ROOT
+    / "data"
+    / "article_corpora"
+    / "m028-universal-loader-runtime-smoke-v1"
+    / "hermes-digest-projection.json"
+)
 MIN_TARGET = 20
 MAX_TARGET = 30
 BASELINE_COUNT = 10
@@ -87,7 +93,9 @@ def display_path(path: Path) -> str:
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
 
 
 def write_text(path: Path, text: str) -> None:
@@ -154,7 +162,13 @@ def load_hermes_review_candidates(*, known: set[str]) -> dict[str, Any]:
 def discover_reference_ids(*, known: set[str]) -> dict[str, Any]:
     refs_by_source: dict[str, list[str]] = {}
     for path in sorted(ARTICLE_ROOT.rglob("source/*")):
-        if not path.is_file() or path.suffix.lower() not in {".html", ".md", ".txt", ".xml", ".json"}:
+        if not path.is_file() or path.suffix.lower() not in {
+            ".html",
+            ".md",
+            ".txt",
+            ".xml",
+            ".json",
+        }:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
         found = sorted({normalize_arxiv_id(item) for item in ARXIV_RE.findall(text)} - known)
@@ -211,7 +225,9 @@ def fetch_arxiv_records(arxiv_ids: list[str]) -> list[ArxivRecord]:
     if not arxiv_ids:
         return []
     query = ",".join(arxiv_ids)
-    url = "https://export.arxiv.org/api/query?" + urllib.parse.urlencode({"id_list": query, "max_results": len(arxiv_ids)})
+    url = "https://export.arxiv.org/api/query?" + urllib.parse.urlencode(
+        {"id_list": query, "max_results": len(arxiv_ids)}
+    )
     try:
         root = ET.fromstring(fetch_url(url))
     except Exception as exc:
@@ -220,7 +236,9 @@ def fetch_arxiv_records(arxiv_ids: list[str]) -> list[ArxivRecord]:
     for entry in root.findall("atom:entry", ARXIV_NS):
         raw_id = entry.findtext("atom:id", default="", namespaces=ARXIV_NS).rsplit("/", 1)[-1]
         arxiv_id = normalize_arxiv_id(raw_id)
-        title = " ".join(entry.findtext("atom:title", default="untitled", namespaces=ARXIV_NS).split())
+        title = " ".join(
+            entry.findtext("atom:title", default="untitled", namespaces=ARXIV_NS).split()
+        )
         summary = " ".join(entry.findtext("atom:summary", default="", namespaces=ARXIV_NS).split())
         primary = entry.find("arxiv:primary_category", ARXIV_NS)
         primary_category = primary.attrib.get("term", "cs.AI") if primary is not None else "cs.AI"
@@ -234,7 +252,10 @@ def fetch_arxiv_records(arxiv_ids: list[str]) -> list[ArxivRecord]:
             abs_url=f"https://arxiv.org/abs/{arxiv_id}",
             pdf_url=f"https://arxiv.org/pdf/{arxiv_id}",
         )
-    return [records_by_id.get(arxiv_id) or stub_arxiv_record(arxiv_id, reason="missing_api_entry") for arxiv_id in arxiv_ids]
+    return [
+        records_by_id.get(arxiv_id) or stub_arxiv_record(arxiv_id, reason="missing_api_entry")
+        for arxiv_id in arxiv_ids
+    ]
 
 
 def fetch_fresh_arxiv_ids(*, exclude: set[str], count: int) -> list[str]:
@@ -250,7 +271,9 @@ def fetch_fresh_arxiv_ids(*, exclude: set[str], count: int) -> list[str]:
     root = ET.fromstring(fetch_url(url))
     ids: list[str] = []
     for entry in root.findall("atom:entry", ARXIV_NS):
-        arxiv_id = normalize_arxiv_id(entry.findtext("atom:id", default="", namespaces=ARXIV_NS).rsplit("/", 1)[-1])
+        arxiv_id = normalize_arxiv_id(
+            entry.findtext("atom:id", default="", namespaces=ARXIV_NS).rsplit("/", 1)[-1]
+        )
         if arxiv_id and arxiv_id not in exclude and arxiv_id not in ids:
             ids.append(arxiv_id)
         if len(ids) >= count:
@@ -259,7 +282,13 @@ def fetch_fresh_arxiv_ids(*, exclude: set[str], count: int) -> list[str]:
 
 
 def article_path_for(record: ArxivRecord) -> Path:
-    return ARTICLE_ROOT / "arxiv" / topic_from_category(record.primary_category) / record.arxiv_id / "article.json"
+    return (
+        ARTICLE_ROOT
+        / "arxiv"
+        / topic_from_category(record.primary_category)
+        / record.arxiv_id
+        / "article.json"
+    )
 
 
 def render_abs_stub(record: ArxivRecord) -> str:
@@ -341,7 +370,9 @@ def load_baseline_entries() -> list[dict[str, Any]]:
     return baseline
 
 
-def entry_from_article_path(article_path: Path, *, category: str, linked_from: list[str]) -> dict[str, Any]:
+def entry_from_article_path(
+    article_path: Path, *, category: str, linked_from: list[str]
+) -> dict[str, Any]:
     entry = candidate_entry(article_path)
     if entry is None:
         raise ValueError(f"article is not selectable: {article_path}")
@@ -351,7 +382,9 @@ def entry_from_article_path(article_path: Path, *, category: str, linked_from: l
     return entry
 
 
-def build_mixed_manifest(*, target_count: int, no_network: bool = False) -> tuple[dict[str, Any], dict[str, Any]]:
+def build_mixed_manifest(
+    *, target_count: int, no_network: bool = False
+) -> tuple[dict[str, Any], dict[str, Any]]:
     if target_count < MIN_TARGET or target_count > MAX_TARGET:
         raise ValueError(f"target count must be between {MIN_TARGET} and {MAX_TARGET}")
     baseline = load_baseline_entries()
@@ -362,7 +395,12 @@ def build_mixed_manifest(*, target_count: int, no_network: bool = False) -> tupl
     selected_ids = {normalize_arxiv_id(str(entry["article_key"])) for entry in selected}
     acquisition: list[dict[str, Any]] = []
 
-    def add_records(records: list[ArxivRecord], *, category: str, linked_from_map: dict[str, list[str]] | None = None) -> None:
+    def add_records(
+        records: list[ArxivRecord],
+        *,
+        category: str,
+        linked_from_map: dict[str, list[str]] | None = None,
+    ) -> None:
         for record in records:
             if len(selected) >= target_count:
                 break
@@ -370,14 +408,24 @@ def build_mixed_manifest(*, target_count: int, no_network: bool = False) -> tupl
                 continue
             linked_from = linked_from_map.get(record.arxiv_id, []) if linked_from_map else []
             article_path = write_arxiv_article(record, category=category, linked_from=linked_from)
-            selected.append(entry_from_article_path(article_path, category=category, linked_from=linked_from))
+            selected.append(
+                entry_from_article_path(article_path, category=category, linked_from=linked_from)
+            )
             selected_ids.add(record.arxiv_id)
-            acquisition.append({"article_key": record.arxiv_id, "category": category, "path": display_path(article_path)})
+            acquisition.append(
+                {
+                    "article_key": record.arxiv_id,
+                    "category": category,
+                    "path": display_path(article_path),
+                }
+            )
 
     if not no_network:
         reference_ids = list(reference_discovery["reference_candidates"])
         required_reference_count = min(5, max(0, target_count - len(selected)))
-        reference_to_fetch = [ref for ref in reference_ids if ref not in selected_ids][:required_reference_count]
+        reference_to_fetch = [ref for ref in reference_ids if ref not in selected_ids][
+            :required_reference_count
+        ]
         linked_from_map: dict[str, list[str]] = {ref: [] for ref in reference_to_fetch}
         for source_path, refs in reference_discovery["references_by_source"].items():
             for ref in refs:
@@ -387,18 +435,33 @@ def build_mixed_manifest(*, target_count: int, no_network: bool = False) -> tupl
             raise ValueError(
                 f"only found {len(reference_to_fetch)} reference-linked articles; need {required_reference_count}"
             )
-        add_records(fetch_arxiv_records(reference_to_fetch), category="reference_linked", linked_from_map=linked_from_map)
+        add_records(
+            fetch_arxiv_records(reference_to_fetch),
+            category="reference_linked",
+            linked_from_map=linked_from_map,
+        )
 
-        hermes_ids = [arxiv_id for arxiv_id in hermes_discovery["hermes_candidates"] if arxiv_id not in selected_ids]
+        hermes_ids = [
+            arxiv_id
+            for arxiv_id in hermes_discovery["hermes_candidates"]
+            if arxiv_id not in selected_ids
+        ]
         needed_hermes = max(0, min(target_count - len(selected), 10))
         hermes_to_fetch = hermes_ids[:needed_hermes]
         hermes_refs_by_id = {
-            arxiv_id: [f"hermes:{ref_id}" for ref_id in hermes_discovery["hermes_refs_by_id"].get(arxiv_id, [])]
+            arxiv_id: [
+                f"hermes:{ref_id}"
+                for ref_id in hermes_discovery["hermes_refs_by_id"].get(arxiv_id, [])
+            ]
             for arxiv_id in hermes_to_fetch
         }
         if hermes_to_fetch:
             time.sleep(3)
-            add_records(fetch_arxiv_records(hermes_to_fetch), category="hermes_review_section", linked_from_map=hermes_refs_by_id)
+            add_records(
+                fetch_arxiv_records(hermes_to_fetch),
+                category="hermes_review_section",
+                linked_from_map=hermes_refs_by_id,
+            )
 
         remaining = target_count - len(selected)
         if remaining > 0:
@@ -431,7 +494,8 @@ def build_mixed_manifest(*, target_count: int, no_network: bool = False) -> tupl
             "used_count": category_counts.get("hermes_review_section", 0),
             "fallback_reason": None
             if category_counts.get("hermes_review_section", 0)
-            else hermes_discovery.get("fallback_reason") or "no_hermes_candidates_used_or_network_skipped",
+            else hermes_discovery.get("fallback_reason")
+            or "no_hermes_candidates_used_or_network_skipped",
         },
         "reference_discovery": {
             "candidate_count": reference_discovery["reference_candidate_count"],
@@ -443,7 +507,9 @@ def build_mixed_manifest(*, target_count: int, no_network: bool = False) -> tupl
         },
         "articles": selected,
         "safety_flags": dict(SMOKE_SAFETY_FLAGS),
-        "diagnostics": sorted({diagnostic for entry in selected for diagnostic in entry.get("diagnostics", [])}),
+        "diagnostics": sorted(
+            {diagnostic for entry in selected for diagnostic in entry.get("diagnostics", [])}
+        ),
     }
     discovery = {
         "hermes": hermes_discovery,
@@ -491,13 +557,17 @@ def main() -> int:
         emit(f"reference_candidates={discovery['reference_candidate_count']}")
         return 0
 
-    manifest, discovery = build_mixed_manifest(target_count=args.target_count, no_network=args.no_network)
+    manifest, discovery = build_mixed_manifest(
+        target_count=args.target_count, no_network=args.no_network
+    )
     write_json(args.output, manifest)
     write_json(args.discovery_output, discovery)
     write_report(args.report_output, manifest, discovery)
     emit(f"article_count={manifest['article_count']}")
     emit(f"category_counts={manifest['category_counts']}")
-    emit("graph_write_allowed=false promotion_allowed=false production_import_attempted=false import_eligible=false")
+    emit(
+        "graph_write_allowed=false promotion_allowed=false production_import_attempted=false import_eligible=false"
+    )
     return 0
 
 

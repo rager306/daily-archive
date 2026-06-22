@@ -147,7 +147,9 @@ def _get(environ: Mapping[str, str], key: str, default: str | None = None) -> st
 def _validate_provider(provider: str) -> None:
     if provider not in SUPPORTED_PROVIDERS:
         supported = ", ".join(SUPPORTED_PROVIDERS)
-        raise LLMProviderConfigError(f"unsupported provider {provider!r}; expected one of: {supported}")
+        raise LLMProviderConfigError(
+            f"unsupported provider {provider!r}; expected one of: {supported}"
+        )
 
 
 def _validate_compression_mode(compression_mode: str) -> None:
@@ -184,9 +186,7 @@ def load_provider_config(
             api_key_env="GLM_API_KEY",
             api_key=_get(env, "GLM_API_KEY"),
             anthropic_base_url_env="GLM_ANTHROPIC_BASE_URL",
-            anthropic_base_url=_get(
-                env, "GLM_ANTHROPIC_BASE_URL", GLM_DEFAULT_ANTHROPIC_BASE_URL
-            )
+            anthropic_base_url=_get(env, "GLM_ANTHROPIC_BASE_URL", GLM_DEFAULT_ANTHROPIC_BASE_URL)
             or GLM_DEFAULT_ANTHROPIC_BASE_URL,
             chat_completions_url_env="GLM_CHAT_COMPLETIONS_URL",
             chat_completions_url=_get(
@@ -215,9 +215,7 @@ def load_provider_config(
         model_env="MINIMAX_MODEL",
         model=_get(env, "MINIMAX_MODEL", MINIMAX_DEFAULT_MODEL) or MINIMAX_DEFAULT_MODEL,
         small_fast_model_env="MINIMAX_SMALL_FAST_MODEL",
-        small_fast_model=_get(
-            env, "MINIMAX_SMALL_FAST_MODEL", MINIMAX_DEFAULT_SMALL_FAST_MODEL
-        ),
+        small_fast_model=_get(env, "MINIMAX_SMALL_FAST_MODEL", MINIMAX_DEFAULT_SMALL_FAST_MODEL),
         api_timeout_ms_env="MINIMAX_API_TIMEOUT_MS",
         api_timeout_ms=_get(env, "MINIMAX_API_TIMEOUT_MS", MINIMAX_DEFAULT_TIMEOUT_MS),
         compression_mode=compression_mode,

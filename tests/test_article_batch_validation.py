@@ -165,7 +165,11 @@ def test_unsafe_manifest_fails_closed_with_path_addressed_blockers_and_redaction
     ("documents", "expected_code", "expected_recommendation"),
     [
         ([], "empty_batch", "repeat_10_document_batch_after_repairs"),
-        ([_load_fixture("ten_document_manifest.json")["documents"][0]], "batch_size_mismatch", "repeat_10_document_batch_after_repairs"),
+        (
+            [_load_fixture("ten_document_manifest.json")["documents"][0]],
+            "batch_size_mismatch",
+            "repeat_10_document_batch_after_repairs",
+        ),
     ],
 )
 def test_empty_and_fewer_than_ten_batches_are_blocked(
@@ -188,8 +192,12 @@ def test_missing_path_or_checksum_blocks_only_that_document_and_downgrades_recom
 
     report = batch.build_article_batch_validation_report(manifest)
 
-    blocked_rows = [row for row in report["document_status_rows"] if row["status"] == "blocked_review_only"]
-    ready_rows = [row for row in report["document_status_rows"] if row["status"] == "ready_review_only"]
+    blocked_rows = [
+        row for row in report["document_status_rows"] if row["status"] == "blocked_review_only"
+    ]
+    ready_rows = [
+        row for row in report["document_status_rows"] if row["status"] == "ready_review_only"
+    ]
     assert [row["document_id"] for row in blocked_rows] == ["fixture-paper-0005"]
     assert len(ready_rows) == 9
     assert report["recommendation"] == "collect_missing_local_sources"
@@ -215,7 +223,9 @@ def test_malformed_subtree_and_stale_freshness_block_report_without_exceptions()
 
 
 def test_malformed_manifest_shape_returns_stable_diagnostics() -> None:
-    report = batch.build_article_batch_validation_report({"batch_id": "bad", "documents": "not-a-list"})
+    report = batch.build_article_batch_validation_report(
+        {"batch_id": "bad", "documents": "not-a-list"}
+    )
 
     assert "malformed_documents" in _codes(report)
     assert report["aggregate_diagnostics"]["document_count"] == 0

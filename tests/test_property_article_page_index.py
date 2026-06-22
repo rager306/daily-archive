@@ -92,7 +92,9 @@ UNSAFE_FLAGS = st.sampled_from(
 )
 
 
-def _base_structure(paper_id: str, section_slugs: list[str], *, include_artifacts: bool = True) -> dict[str, Any]:
+def _base_structure(
+    paper_id: str, section_slugs: list[str], *, include_artifacts: bool = True
+) -> dict[str, Any]:
     root_id = f"{paper_id}:section:root"
     child_slugs = [slug for slug in section_slugs if slug != "root"]
     sections = [
@@ -212,7 +214,9 @@ def structure_strategy(*, include_artifacts: bool = True) -> st.SearchStrategy[d
     return st.builds(
         _base_structure,
         PAPER_IDS,
-        st.lists(SAFE_SLUG, min_size=1, max_size=5, unique=True).map(lambda slugs: ["root", *slugs]),
+        st.lists(SAFE_SLUG, min_size=1, max_size=5, unique=True).map(
+            lambda slugs: ["root", *slugs]
+        ),
         include_artifacts=st.just(include_artifacts),
     )
 
@@ -272,8 +276,12 @@ def _diagnostic_codes(page_index: dict[str, Any]) -> set[str]:
 
 
 @settings(max_examples=60)
-@given(span_hash=HEX64, coordinate_space=st.sampled_from(sorted(ALLOWED_PAGE_INDEX_COORDINATE_SPACES)))
-def test_source_span_adaptix_roundtrip_preserves_redacted_shape(span_hash: str, coordinate_space: str) -> None:
+@given(
+    span_hash=HEX64, coordinate_space=st.sampled_from(sorted(ALLOWED_PAGE_INDEX_COORDINATE_SPACES))
+)
+def test_source_span_adaptix_roundtrip_preserves_redacted_shape(
+    span_hash: str, coordinate_space: str
+) -> None:
     span = ArticlePageIndexSourceSpan(
         span_id="property:span:0001",
         source_id="property:source:normalized-md",
@@ -295,7 +303,9 @@ def test_source_span_adaptix_roundtrip_preserves_redacted_shape(span_hash: str, 
 
 @settings(max_examples=60)
 @given(code=SAFE_SLUG, json_path=SAFE_SLUG.map(lambda value: f"/generated/{value}"))
-def test_diagnostic_adaptix_roundtrip_preserves_stable_code_path_and_redaction(code: str, json_path: str) -> None:
+def test_diagnostic_adaptix_roundtrip_preserves_stable_code_path_and_redaction(
+    code: str, json_path: str
+) -> None:
     diagnostic = ArticlePageIndexDiagnostic(
         code=code,
         json_path=json_path,
@@ -304,7 +314,9 @@ def test_diagnostic_adaptix_roundtrip_preserves_stable_code_path_and_redaction(c
         blocks_import=True,
     )
 
-    restored = PAGE_INDEX_RETORT.load(PAGE_INDEX_RETORT.dump(diagnostic), ArticlePageIndexDiagnostic)
+    restored = PAGE_INDEX_RETORT.load(
+        PAGE_INDEX_RETORT.dump(diagnostic), ArticlePageIndexDiagnostic
+    )
 
     assert restored == diagnostic
     assert restored.to_redacted_dict() == diagnostic.to_redacted_dict()
@@ -333,13 +345,17 @@ def test_build_serialization_and_validation_are_deterministic(structure: dict[st
 
 @settings(max_examples=40)
 @given(structure=structure_strategy())
-def test_navigation_ids_paths_and_anchor_ids_follow_input_ordering_rules(structure: dict[str, Any]) -> None:
+def test_navigation_ids_paths_and_anchor_ids_follow_input_ordering_rules(
+    structure: dict[str, Any],
+) -> None:
     page_index = build_article_page_index_from_structure(structure)
     nodes = page_index["nodes"]
     anchors = page_index["anchors"]
 
     assert [node["order"] for node in nodes] == list(range(len(nodes)))
-    assert [node["node_id"] for node in walk_next(page_index)] == [node["node_id"] for node in nodes]
+    assert [node["node_id"] for node in walk_next(page_index)] == [
+        node["node_id"] for node in nodes
+    ]
     assert len({node["node_id"] for node in nodes}) == len(nodes)
     assert len({anchor["anchor_id"] for anchor in anchors}) == len(anchors)
     for node in nodes:
@@ -358,12 +374,16 @@ def test_navigation_ids_paths_and_anchor_ids_follow_input_ordering_rules(structu
 # --- Property: fail-closed validation and redacted diagnostics under malformed inputs ---
 
 
-def mutate_structure(structure: dict[str, Any], mutation: str, forbidden_key: str, unsafe_flag: str) -> dict[str, Any]:
+def mutate_structure(
+    structure: dict[str, Any], mutation: str, forbidden_key: str, unsafe_flag: str
+) -> dict[str, Any]:
     mutated = deepcopy(structure)
     if mutation == "duplicate_section_id":
         mutated["sections"].append(dict(mutated["sections"][-1]))
     elif mutation == "missing_parent":
-        mutated["sections"][-1]["parent_section_id"] = f"{mutated['paper_id']}:section:missing-parent"
+        mutated["sections"][-1]["parent_section_id"] = (
+            f"{mutated['paper_id']}:section:missing-parent"
+        )
     elif mutation == "missing_span":
         mutated["sections"][-1]["span_id"] = f"{mutated['paper_id']}:span:missing"
     elif mutation == "unsupported_section_type":
@@ -414,7 +434,9 @@ def mutate_structure(structure: dict[str, Any], mutation: str, forbidden_key: st
 def test_mutated_structures_emit_stable_redacted_diagnostics_or_fallback(
     structure: dict[str, Any], mutation: str, forbidden_key: str, unsafe_flag: str
 ) -> None:
-    page_index = build_article_page_index_from_structure(mutate_structure(structure, mutation, forbidden_key, unsafe_flag))
+    page_index = build_article_page_index_from_structure(
+        mutate_structure(structure, mutation, forbidden_key, unsafe_flag)
+    )
     codes = _diagnostic_codes(page_index)
 
     if mutation == "empty_sections":
@@ -437,15 +459,26 @@ def test_mutated_structures_emit_stable_redacted_diagnostics_or_fallback(
 
 
 @settings(max_examples=80)
-@given(page_index=structure_strategy().map(build_article_page_index_from_structure), unsafe_flag=UNSAFE_FLAGS)
-def test_mutated_page_index_manifests_validate_fail_closed(page_index: dict[str, Any], unsafe_flag: str) -> None:
+@given(
+    page_index=structure_strategy().map(build_article_page_index_from_structure),
+    unsafe_flag=UNSAFE_FLAGS,
+)
+def test_mutated_page_index_manifests_validate_fail_closed(
+    page_index: dict[str, Any], unsafe_flag: str
+) -> None:
     mutated = deepcopy(page_index)
-    if unsafe_flag in {"trusted_kg_import_allowed", "ladybugdb_written", "production_import_attempted"}:
+    if unsafe_flag in {
+        "trusted_kg_import_allowed",
+        "ladybugdb_written",
+        "production_import_attempted",
+    }:
         mutated[unsafe_flag] = True
     elif unsafe_flag == "import_eligible":
         mutated["nodes"][0]["import_eligible"] = True
     elif unsafe_flag == "promoted_to_fact":
-        mutated["anchors"][0 if mutated["anchors"] else -1]["promoted_to_fact"] = True if mutated["anchors"] else False
+        mutated["anchors"][0 if mutated["anchors"] else -1]["promoted_to_fact"] = (
+            True if mutated["anchors"] else False
+        )
         if not mutated["anchors"]:
             mutated["promoted_to_fact_count"] = 1
     else:
@@ -460,9 +493,15 @@ def test_mutated_page_index_manifests_validate_fail_closed(page_index: dict[str,
 
 
 @settings(max_examples=40)
-@given(section_type=st.text(min_size=1, max_size=24).filter(lambda value: value not in ALLOWED_PAGE_INDEX_SECTION_TYPES))
+@given(
+    section_type=st.text(min_size=1, max_size=24).filter(
+        lambda value: value not in ALLOWED_PAGE_INDEX_SECTION_TYPES
+    )
+)
 def test_unsupported_section_vocabularies_are_diagnostics_not_crashes(section_type: str) -> None:
-    structure = _base_structure("property-paper-vocab", ["root", "methods"], include_artifacts=False)
+    structure = _base_structure(
+        "property-paper-vocab", ["root", "methods"], include_artifacts=False
+    )
     structure["sections"][1]["section_type"] = section_type
 
     page_index = build_article_page_index_from_structure(structure)
@@ -475,7 +514,9 @@ def test_unsupported_section_vocabularies_are_diagnostics_not_crashes(section_ty
 
 @settings(max_examples=40)
 @given(span_hash=HEX64)
-def test_page_index_node_and_anchor_dataclasses_roundtrip_without_import_claims(span_hash: str) -> None:
+def test_page_index_node_and_anchor_dataclasses_roundtrip_without_import_claims(
+    span_hash: str,
+) -> None:
     span = ArticlePageIndexSourceSpan(
         span_id="property:span:roundtrip",
         source_id="property:source:roundtrip",
@@ -504,7 +545,11 @@ def test_page_index_node_and_anchor_dataclasses_roundtrip_without_import_claims(
         next_id=None,
         path=("property-paper:page-index:section:methods",),
         order=0,
-        summary={"section_id": "property-paper:section:methods", "section_type": "methods", "ordinal_path": [1]},
+        summary={
+            "section_id": "property-paper:section:methods",
+            "section_type": "methods",
+            "ordinal_path": [1],
+        },
         source_ref_ids=("property:source:roundtrip",),
         source_span=span,
         anchor_ids=(anchor.anchor_id,),
@@ -519,4 +564,6 @@ def test_page_index_node_and_anchor_dataclasses_roundtrip_without_import_claims(
     assert restored_node.to_redacted_dict()["promoted_to_fact"] is False
     assert restored_anchor.to_redacted_dict()["import_eligible"] is False
     assert restored_anchor.to_redacted_dict()["promoted_to_fact"] is False
-    _assert_metadata_only({"node": restored_node.to_redacted_dict(), "anchor": restored_anchor.to_redacted_dict()})
+    _assert_metadata_only(
+        {"node": restored_node.to_redacted_dict(), "anchor": restored_anchor.to_redacted_dict()}
+    )

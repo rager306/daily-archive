@@ -138,7 +138,9 @@ def _extract_authors_from_tei(path: Path | None) -> list[str]:
     return authors
 
 
-def _edge_records(packets: list[dict[str, Any]], target_arxiv_ids: set[str]) -> list[dict[str, str]]:
+def _edge_records(
+    packets: list[dict[str, Any]], target_arxiv_ids: set[str]
+) -> list[dict[str, str]]:
     edges: set[tuple[str, str]] = set()
     for packet in packets:
         source = packet.get("arxiv_id")
@@ -147,7 +149,9 @@ def _edge_records(packets: list[dict[str, Any]], target_arxiv_ids: set[str]) -> 
         for target in _extract_arxiv_refs_from_tei(_tei_path(packet)):
             if target in target_arxiv_ids and target != source:
                 edges.add((source, target))
-    return [{"source_arxiv_id": source, "target_arxiv_id": target} for source, target in sorted(edges)]
+    return [
+        {"source_arxiv_id": source, "target_arxiv_id": target} for source, target in sorted(edges)
+    ]
 
 
 def _edge_key(edge: dict[str, str]) -> tuple[str, str]:
@@ -233,12 +237,16 @@ def analyze_wave_4(
     target_arxiv_ids.add(anchor_arxiv_id)
 
     previous_connectivity = wave_3_analysis["connectivity"]
-    previous_cumulative_edges = _sorted_edges(list(previous_connectivity.get("cumulative_edges", [])))
+    previous_cumulative_edges = _sorted_edges(
+        list(previous_connectivity.get("cumulative_edges", []))
+    )
     wave_4_edges = _edge_records(wave_4_grobid_packets, target_arxiv_ids)
     cumulative_edges = _sorted_edges(
         [
             {"source_arxiv_id": source, "target_arxiv_id": target}
-            for source, target in {_edge_key(edge) for edge in previous_cumulative_edges + wave_4_edges}
+            for source, target in {
+                _edge_key(edge) for edge in previous_cumulative_edges + wave_4_edges
+            }
         ]
     )
     previous_wave_count = int(previous_connectivity.get("wave_3_new_edge_count", 0))
@@ -272,7 +280,9 @@ def analyze_wave_4(
     for packet in wave_4_grobid_packets:
         arxiv_id = packet.get("arxiv_id")
         authors = _extract_authors_from_tei(_tei_path(packet))
-        if isinstance(arxiv_id, str) and any(anchor_first_author.lower() in author.lower() for author in authors):
+        if isinstance(arxiv_id, str) and any(
+            anchor_first_author.lower() in author.lower() for author in authors
+        ):
             matching_self_citations.append(arxiv_id)
 
     parser_quality = {
@@ -372,7 +382,7 @@ def _render_markdown(analysis: dict[str, Any]) -> str:
     matching_percent = matching_count / wave_pdf_count * 100
     return f"""# M056 Wave 4 Analysis
 
-Generated: `{analysis['generated_at']}`
+Generated: `{analysis["generated_at"]}`
 
 ## Safety
 
@@ -385,51 +395,51 @@ Generated: `{analysis['generated_at']}`
 
 ## Acquisition
 
-- Success: {acquisition['success_count']}
-- Blocked: {acquisition['blocked_count']}
-- Network errors: {acquisition['network_error_count']}
-- Status counts: {_render_counts(acquisition['status_counts'])}
+- Success: {acquisition["success_count"]}
+- Blocked: {acquisition["blocked_count"]}
+- Network errors: {acquisition["network_error_count"]}
+- Status counts: {_render_counts(acquisition["status_counts"])}
 
 ## Parser quality
 
-- GROBID packets: {parser_quality['grobid_packet_count']}
-- GROBID success: {parser_quality['grobid_success_count']}
-- GROBID quality counts: {_render_counts(parser_quality['grobid_quality_counts'])}
-- OpenDataLoader packets: {parser_quality['opendataloader_packet_count']}
-- OpenDataLoader success: {parser_quality['opendataloader_success_count']}
-- OpenDataLoader quality counts: {_render_counts(parser_quality['opendataloader_quality_counts'])}
-- Packet safety defaults all false: {parser_quality['packet_safety_defaults_all_false']}
+- GROBID packets: {parser_quality["grobid_packet_count"]}
+- GROBID success: {parser_quality["grobid_success_count"]}
+- GROBID quality counts: {_render_counts(parser_quality["grobid_quality_counts"])}
+- OpenDataLoader packets: {parser_quality["opendataloader_packet_count"]}
+- OpenDataLoader success: {parser_quality["opendataloader_success_count"]}
+- OpenDataLoader quality counts: {_render_counts(parser_quality["opendataloader_quality_counts"])}
+- Packet safety defaults all false: {parser_quality["packet_safety_defaults_all_false"]}
 
 ## Connectivity gain
 
-- Target set: 20 existing corpus PDFs + anchor `{connectivity['anchor_arxiv_id']}`
-- Wave 1 directed edges to target set: {connectivity['wave_1_edge_count']}
-- Wave 2 new directed edges to target set: {connectivity['wave_2_new_edge_count']}
-- Wave 3 new directed edges to target set: {connectivity['wave_3_new_edge_count']}
-- Wave 4 new directed edges to target set: {connectivity['wave_4_new_edge_count']}
-- Delta vs Wave 3: {connectivity['connectivity_gain_delta_vs_wave_3']}
-- Cumulative directed edges: {connectivity['cumulative_edge_count']}
-- Saturation status: {connectivity['saturation_status']}
+- Target set: 20 existing corpus PDFs + anchor `{connectivity["anchor_arxiv_id"]}`
+- Wave 1 directed edges to target set: {connectivity["wave_1_edge_count"]}
+- Wave 2 new directed edges to target set: {connectivity["wave_2_new_edge_count"]}
+- Wave 3 new directed edges to target set: {connectivity["wave_3_new_edge_count"]}
+- Wave 4 new directed edges to target set: {connectivity["wave_4_new_edge_count"]}
+- Delta vs Wave 3: {connectivity["connectivity_gain_delta_vs_wave_3"]}
+- Cumulative directed edges: {connectivity["cumulative_edge_count"]}
+- Saturation status: {connectivity["saturation_status"]}
 
 ### Edge saturation by wave
 
-- Wave 1: {connectivity['edge_saturation_by_wave']['wave_1']}
-- Wave 2: {connectivity['edge_saturation_by_wave']['wave_2']}
-- Wave 3: {connectivity['edge_saturation_by_wave']['wave_3']}
-- Wave 4: {connectivity['edge_saturation_by_wave']['wave_4']}
+- Wave 1: {connectivity["edge_saturation_by_wave"]["wave_1"]}
+- Wave 2: {connectivity["edge_saturation_by_wave"]["wave_2"]}
+- Wave 3: {connectivity["edge_saturation_by_wave"]["wave_3"]}
+- Wave 4: {connectivity["edge_saturation_by_wave"]["wave_4"]}
 
 ### New edges added this wave
 
-{_render_edges(connectivity['wave_4_new_edges'])}
+{_render_edges(connectivity["wave_4_new_edges"])}
 
 ### Cumulative edges
 
-{_render_edges(connectivity['cumulative_edges'])}
+{_render_edges(connectivity["cumulative_edges"])}
 
 ## Self-citation cluster
 
-- Anchor first author: {self_cluster['anchor_first_author']}
-- Matching Wave 4 PDFs: {matching_count} / {self_cluster['wave_4_pdf_count']} ({matching_percent:.1f}%)
+- Anchor first author: {self_cluster["anchor_first_author"]}
+- Matching Wave 4 PDFs: {matching_count} / {self_cluster["wave_4_pdf_count"]} ({matching_percent:.1f}%)
 
 ## Category distribution
 
@@ -441,9 +451,9 @@ Generated: `{analysis['generated_at']}`
 
 ## Cumulative corpus
 
-- Expected total PDFs: {cumulative_corpus['expected_total']}
-- Actual total PDFs: {cumulative_corpus['actual_total']}
-- Path: `{cumulative_corpus['path']}`
+- Expected total PDFs: {cumulative_corpus["expected_total"]}
+- Actual total PDFs: {cumulative_corpus["actual_total"]}
+- Path: `{cumulative_corpus["path"]}`
 """
 
 

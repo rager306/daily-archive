@@ -37,10 +37,34 @@ def _m030_selection() -> dict[str, Any]:
         "schema_version": "article-corpus-selection.v00.02",
         "selection_id": "m029-pipeline-architecture-audit-v1",
         "refs": [
-            {"ref_id": "m029-ref-001", "normalized_identity": "arxiv:2507.19457", "catalog_status": "already_cataloged", "prior_selection_status": "not_in_m028_selection", "source_kind": "arxiv_abs_url"},
-            {"ref_id": "m029-ref-002", "normalized_identity": "stanford:cs224n:gradient-notes", "catalog_status": "missing_from_article_catalog", "prior_selection_status": "not_in_m028_selection", "source_kind": "external_pdf_url"},
-            {"ref_id": "m029-ref-003", "normalized_identity": "arxiv:2605.29548", "catalog_status": "missing_from_article_catalog", "prior_selection_status": "not_in_m028_selection", "source_kind": "arxiv_abs_url"},
-            {"ref_id": "m029-ref-004", "normalized_identity": "arxiv:2605.26099", "catalog_status": "missing_from_article_catalog", "prior_selection_status": "already_in_m028_selection", "source_kind": "arxiv_abs_url"},
+            {
+                "ref_id": "m029-ref-001",
+                "normalized_identity": "arxiv:2507.19457",
+                "catalog_status": "already_cataloged",
+                "prior_selection_status": "not_in_m028_selection",
+                "source_kind": "arxiv_abs_url",
+            },
+            {
+                "ref_id": "m029-ref-002",
+                "normalized_identity": "stanford:cs224n:gradient-notes",
+                "catalog_status": "missing_from_article_catalog",
+                "prior_selection_status": "not_in_m028_selection",
+                "source_kind": "external_pdf_url",
+            },
+            {
+                "ref_id": "m029-ref-003",
+                "normalized_identity": "arxiv:2605.29548",
+                "catalog_status": "missing_from_article_catalog",
+                "prior_selection_status": "not_in_m028_selection",
+                "source_kind": "arxiv_abs_url",
+            },
+            {
+                "ref_id": "m029-ref-004",
+                "normalized_identity": "arxiv:2605.26099",
+                "catalog_status": "missing_from_article_catalog",
+                "prior_selection_status": "already_in_m028_selection",
+                "source_kind": "arxiv_abs_url",
+            },
         ],
     }
 
@@ -131,7 +155,10 @@ def _evidence() -> dict[str, Any]:
         "verdict_reason": "M030 completion/S06 output and M030-derived M029 replan proof are absent.",
         "input_artifact_audit": [
             {"path": "data/article_corpora/m029-unified-corpus-v1/selection.json", "present": True},
-            {"path": "data/article_corpora/m029-unified-corpus-v1/readiness-verify-summary.json", "present": True},
+            {
+                "path": "data/article_corpora/m029-unified-corpus-v1/readiness-verify-summary.json",
+                "present": True,
+            },
         ],
         "prerequisite_audit": {
             "status": "blocked_missing_m030_completion_and_s06_outputs",
@@ -150,7 +177,10 @@ def _evidence() -> dict[str, Any]:
             "status": "blocked_missing_m030_derived_m029_replan_proof",
             "m029_replan_required_after_m030": True,
             "m030_derived_m029_replan_proof_present": False,
-            "candidate_replan_artifacts": ["artifacts/m029/REPLAN.md", "artifacts/m029/ASSESSMENT.md"],
+            "candidate_replan_artifacts": [
+                "artifacts/m029/REPLAN.md",
+                "artifacts/m029/ASSESSMENT.md",
+            ],
             "present_replan_artifacts": [],
         },
         "bounded_ref_reconciliation": _bounded_rows(),
@@ -159,7 +189,8 @@ def _evidence() -> dict[str, Any]:
             "missing_from_provisional_m029_count": 2,
             "represented_in_provisional_m029_count": 2,
         },
-        "provisional_m029_readiness_counts": _readiness() | {"interpretation": "Internal evidence only."},
+        "provisional_m029_readiness_counts": _readiness()
+        | {"interpretation": "Internal evidence only."},
         "requirement_coverage": _requirement_rows(),
         "metadata_only_boundary": {
             "relative_paths_only": True,
@@ -188,11 +219,36 @@ def _evidence() -> dict[str, Any]:
 
 def _diagnostics_jsonl_rows() -> list[dict[str, Any]]:
     return [
-        {"code": "M029_REMEDIATION_MISSING_M030_COMPLETION", "severity": "blocking", "json_path": "$.prerequisite_audit.m030_completion_artifact_present", "message": "M030 completion evidence is absent."},
-        {"code": "M029_REMEDIATION_MISSING_M030_S06_ROADMAP_OUTPUT", "severity": "blocking", "json_path": "$.prerequisite_audit.m030_s06_summary_present", "message": "M030/S06 roadmap output evidence is absent."},
-        {"code": "M029_REMEDIATION_MISSING_M029_REPLAN_PROOF", "severity": "blocking", "json_path": "$.replan_audit.m030_derived_m029_replan_proof_present", "message": "No M030-derived M029 replan proof artifact was found."},
-        {"code": "M029_REMEDIATION_MISSING_BOUNDED_REF", "severity": "blocking", "json_path": "$.bounded_ref_reconciliation[1].present_in_provisional_m029_selection", "message": "Bounded ref is absent."},
-        {"code": "M029_REMEDIATION_MISSING_BOUNDED_REF", "severity": "blocking", "json_path": "$.bounded_ref_reconciliation[2].present_in_provisional_m029_selection", "message": "Bounded ref is absent."},
+        {
+            "code": "M029_REMEDIATION_MISSING_M030_COMPLETION",
+            "severity": "blocking",
+            "json_path": "$.prerequisite_audit.m030_completion_artifact_present",
+            "message": "M030 completion evidence is absent.",
+        },
+        {
+            "code": "M029_REMEDIATION_MISSING_M030_S06_ROADMAP_OUTPUT",
+            "severity": "blocking",
+            "json_path": "$.prerequisite_audit.m030_s06_summary_present",
+            "message": "M030/S06 roadmap output evidence is absent.",
+        },
+        {
+            "code": "M029_REMEDIATION_MISSING_M029_REPLAN_PROOF",
+            "severity": "blocking",
+            "json_path": "$.replan_audit.m030_derived_m029_replan_proof_present",
+            "message": "No M030-derived M029 replan proof artifact was found.",
+        },
+        {
+            "code": "M029_REMEDIATION_MISSING_BOUNDED_REF",
+            "severity": "blocking",
+            "json_path": "$.bounded_ref_reconciliation[1].present_in_provisional_m029_selection",
+            "message": "Bounded ref is absent.",
+        },
+        {
+            "code": "M029_REMEDIATION_MISSING_BOUNDED_REF",
+            "severity": "blocking",
+            "json_path": "$.bounded_ref_reconciliation[2].present_in_provisional_m029_selection",
+            "message": "Bounded ref is absent.",
+        },
     ]
 
 
@@ -209,7 +265,7 @@ def _report(evidence: dict[str, Any]) -> str:
 
 ## Verdict
 
-`{evidence['verdict']}`
+`{evidence["verdict"]}`
 
 ## Prerequisite and Replan Status
 M030 completion false; S06 summary false; M029 replan proof false.
@@ -250,18 +306,31 @@ Complete M030 and then replan M029.
 """
 
 
-def _fixture() -> tuple[dict[str, Any], str, list[dict[str, Any]], dict[str, Any], dict[str, Any], dict[str, Any]]:
+def _fixture() -> tuple[
+    dict[str, Any], str, list[dict[str, Any]], dict[str, Any], dict[str, Any], dict[str, Any]
+]:
     evidence = _evidence()
-    return evidence, _report(evidence), _diagnostics_jsonl_rows(), _m029_selection(), _m030_selection(), _readiness()
+    return (
+        evidence,
+        _report(evidence),
+        _diagnostics_jsonl_rows(),
+        _m029_selection(),
+        _m030_selection(),
+        _readiness(),
+    )
 
 
 def _errors(mutator=None) -> list[dict[str, Any]]:
     evidence, report, diagnostic_rows, m029_selection, m030_selection, readiness = _fixture()
     if mutator is not None:
-        maybe_report = mutator(evidence, report, diagnostic_rows, m029_selection, m030_selection, readiness)
+        maybe_report = mutator(
+            evidence, report, diagnostic_rows, m029_selection, m030_selection, readiness
+        )
         if isinstance(maybe_report, str):
             report = maybe_report
-    return validate_remediation(evidence, report, diagnostic_rows, m029_selection, m030_selection, readiness)
+    return validate_remediation(
+        evidence, report, diagnostic_rows, m029_selection, m030_selection, readiness
+    )
 
 
 def _codes(errors: list[dict[str, Any]]) -> set[str]:
@@ -286,7 +355,9 @@ def _write_fixture_files(tmp_path: Path) -> dict[str, Path]:
     }
     _write_json(paths["evidence"], evidence)
     paths["report"].write_text(report, encoding="utf-8")
-    paths["diagnostics"].write_text("\n".join(json.dumps(row) for row in diagnostic_rows) + "\n", encoding="utf-8")
+    paths["diagnostics"].write_text(
+        "\n".join(json.dumps(row) for row in diagnostic_rows) + "\n", encoding="utf-8"
+    )
     _write_json(paths["m029_selection"], m029_selection)
     _write_json(paths["m030_selection"], m030_selection)
     _write_json(paths["readiness"], readiness)
@@ -297,20 +368,31 @@ def _rel(path: Path, root: Path) -> str:
     return path.relative_to(root).as_posix()
 
 
-def test_positive_fixture_passes_and_writes_metadata_summary(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_positive_fixture_passes_and_writes_metadata_summary(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     paths = _write_fixture_files(tmp_path)
     monkeypatch.chdir(tmp_path)
 
-    exit_code = main([
-        "--evidence", _rel(paths["evidence"], tmp_path),
-        "--report", _rel(paths["report"], tmp_path),
-        "--diagnostics", _rel(paths["diagnostics"], tmp_path),
-        "--m029-selection", _rel(paths["m029_selection"], tmp_path),
-        "--m030-selection", _rel(paths["m030_selection"], tmp_path),
-        "--readiness-verify", _rel(paths["readiness"], tmp_path),
-        "--write-verify-summary", _rel(paths["summary"], tmp_path),
-        "--validate-only",
-    ])
+    exit_code = main(
+        [
+            "--evidence",
+            _rel(paths["evidence"], tmp_path),
+            "--report",
+            _rel(paths["report"], tmp_path),
+            "--diagnostics",
+            _rel(paths["diagnostics"], tmp_path),
+            "--m029-selection",
+            _rel(paths["m029_selection"], tmp_path),
+            "--m030-selection",
+            _rel(paths["m030_selection"], tmp_path),
+            "--readiness-verify",
+            _rel(paths["readiness"], tmp_path),
+            "--write-verify-summary",
+            _rel(paths["summary"], tmp_path),
+            "--validate-only",
+        ]
+    )
 
     assert exit_code == 0
     summary = json.loads(paths["summary"].read_text(encoding="utf-8"))
@@ -334,7 +416,9 @@ def test_positive_fixture_passes_and_writes_metadata_summary(tmp_path: Path, mon
         ),
         (
             "missing M030 completion evidence overclaim",
-            lambda evidence, *_: evidence["prerequisite_audit"].__setitem__("m030_completion_artifact_present", True),
+            lambda evidence, *_: evidence["prerequisite_audit"].__setitem__(
+                "m030_completion_artifact_present", True
+            ),
             "M029_REMEDIATION_PREREQUISITE_OVERCLAIM",
         ),
         (
@@ -344,7 +428,9 @@ def test_positive_fixture_passes_and_writes_metadata_summary(tmp_path: Path, mon
         ),
         (
             "readiness count drift",
-            lambda evidence, *_: evidence["provisional_m029_readiness_counts"].__setitem__("ready_count", 12),
+            lambda evidence, *_: evidence["provisional_m029_readiness_counts"].__setitem__(
+                "ready_count", 12
+            ),
             "M029_REMEDIATION_READINESS_COUNT_DRIFT",
         ),
         (
@@ -354,7 +440,9 @@ def test_positive_fixture_passes_and_writes_metadata_summary(tmp_path: Path, mon
         ),
         (
             "raw payload field name",
-            lambda evidence, *_: evidence.__setitem__("raw_article_text", "payload must never appear"),
+            lambda evidence, *_: evidence.__setitem__(
+                "raw_article_text", "payload must never appear"
+            ),
             "M029_REMEDIATION_RAW_PAYLOAD_FIELD",
         ),
         (
@@ -381,45 +469,71 @@ def test_forbidden_claims_section_itself_is_allowed_for_dossier_inventory() -> N
 
 
 def test_missing_required_diagnostic_row_fails_closed() -> None:
-    def mutate(evidence: dict[str, Any], _report: str, diagnostic_rows: list[dict[str, Any]], *_args: Any) -> None:
+    def mutate(
+        evidence: dict[str, Any], _report: str, diagnostic_rows: list[dict[str, Any]], *_args: Any
+    ) -> None:
         evidence["diagnostic_count"] = 4
-        diagnostic_rows[:] = [row for row in diagnostic_rows if row["code"] != "M029_REMEDIATION_MISSING_M029_REPLAN_PROOF"]
+        diagnostic_rows[:] = [
+            row
+            for row in diagnostic_rows
+            if row["code"] != "M029_REMEDIATION_MISSING_M029_REPLAN_PROOF"
+        ]
         evidence["diagnostic_codes"] = sorted({row["code"] for row in diagnostic_rows})
         return None
 
     assert "M029_REMEDIATION_DIAGNOSTIC_DRIFT" in _codes(_errors(mutate))
 
 
-def test_malformed_jsonl_returns_nonzero_with_line_context(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_malformed_jsonl_returns_nonzero_with_line_context(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     paths = _write_fixture_files(tmp_path)
     paths["diagnostics"].write_text('{"code":"ok"}\nnot-json\n', encoding="utf-8")
     monkeypatch.chdir(tmp_path)
 
-    exit_code = main([
-        "--evidence", _rel(paths["evidence"], tmp_path),
-        "--report", _rel(paths["report"], tmp_path),
-        "--diagnostics", _rel(paths["diagnostics"], tmp_path),
-        "--m029-selection", _rel(paths["m029_selection"], tmp_path),
-        "--m030-selection", _rel(paths["m030_selection"], tmp_path),
-        "--readiness-verify", _rel(paths["readiness"], tmp_path),
-    ])
+    exit_code = main(
+        [
+            "--evidence",
+            _rel(paths["evidence"], tmp_path),
+            "--report",
+            _rel(paths["report"], tmp_path),
+            "--diagnostics",
+            _rel(paths["diagnostics"], tmp_path),
+            "--m029-selection",
+            _rel(paths["m029_selection"], tmp_path),
+            "--m030-selection",
+            _rel(paths["m030_selection"], tmp_path),
+            "--readiness-verify",
+            _rel(paths["readiness"], tmp_path),
+        ]
+    )
 
     assert exit_code == 2
     assert "diagnostics.jsonl:2" in capsys.readouterr().err
 
 
-def test_absolute_input_path_is_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_absolute_input_path_is_rejected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     paths = _write_fixture_files(tmp_path)
     monkeypatch.chdir(tmp_path)
 
-    exit_code = main([
-        "--evidence", str(paths["evidence"].resolve()),
-        "--report", _rel(paths["report"], tmp_path),
-        "--diagnostics", _rel(paths["diagnostics"], tmp_path),
-        "--m029-selection", _rel(paths["m029_selection"], tmp_path),
-        "--m030-selection", _rel(paths["m030_selection"], tmp_path),
-        "--readiness-verify", _rel(paths["readiness"], tmp_path),
-    ])
+    exit_code = main(
+        [
+            "--evidence",
+            str(paths["evidence"].resolve()),
+            "--report",
+            _rel(paths["report"], tmp_path),
+            "--diagnostics",
+            _rel(paths["diagnostics"], tmp_path),
+            "--m029-selection",
+            _rel(paths["m029_selection"], tmp_path),
+            "--m030-selection",
+            _rel(paths["m030_selection"], tmp_path),
+            "--readiness-verify",
+            _rel(paths["readiness"], tmp_path),
+        ]
+    )
 
     assert exit_code == 2
     assert "repo-relative" in capsys.readouterr().err
@@ -428,9 +542,12 @@ def test_absolute_input_path_is_rejected(tmp_path: Path, monkeypatch: pytest.Mon
 def test_real_t01_artifacts_validate_in_repo_when_present() -> None:
     root = Path(__file__).parents[1]
     required = [
-        root / "data/article_corpora/m029-unified-corpus-v1/validation-remediation/remediation-evidence.json",
-        root / "data/article_corpora/m029-unified-corpus-v1/validation-remediation/remediation-report.md",
-        root / "data/article_corpora/m029-unified-corpus-v1/validation-remediation/remediation-diagnostics.jsonl",
+        root
+        / "data/article_corpora/m029-unified-corpus-v1/validation-remediation/remediation-evidence.json",
+        root
+        / "data/article_corpora/m029-unified-corpus-v1/validation-remediation/remediation-report.md",
+        root
+        / "data/article_corpora/m029-unified-corpus-v1/validation-remediation/remediation-diagnostics.jsonl",
         root / "data/article_corpora/m029-unified-corpus-v1/selection.json",
         root / "data/article_corpora/m029-pipeline-architecture-audit-v1/selection.json",
         root / "data/article_corpora/m029-unified-corpus-v1/readiness-verify-summary.json",
@@ -440,9 +557,18 @@ def test_real_t01_artifacts_validate_in_repo_when_present() -> None:
 
     evidence = json.loads(required[0].read_text(encoding="utf-8"))
     report = required[1].read_text(encoding="utf-8")
-    diagnostic_rows = [json.loads(line) for line in required[2].read_text(encoding="utf-8").splitlines() if line.strip()]
+    diagnostic_rows = [
+        json.loads(line)
+        for line in required[2].read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
     m029_selection = json.loads(required[3].read_text(encoding="utf-8"))
     m030_selection = json.loads(required[4].read_text(encoding="utf-8"))
     readiness = json.loads(required[5].read_text(encoding="utf-8"))
 
-    assert validate_remediation(evidence, report, diagnostic_rows, m029_selection, m030_selection, readiness) == []
+    assert (
+        validate_remediation(
+            evidence, report, diagnostic_rows, m029_selection, m030_selection, readiness
+        )
+        == []
+    )

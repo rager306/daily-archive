@@ -71,7 +71,10 @@ def test_adr_020_alternatives_considered() -> None:
 def test_adr_index_updated() -> None:
     text = ADR_INDEX_PATH.read_text(encoding="utf-8")
     assert "Project-level ADR count: 20" in text
-    assert "| ADR-020 | Accepted (binding) | M063 GraphDB Selection (LadybugDB primary) | `doc/adr/ADR-020-graphdb-selection.md` | M063 GraphDB Selection (LadybugDB primary). |" in text
+    assert (
+        "| ADR-020 | Accepted (binding) | M063 GraphDB Selection (LadybugDB primary) | `doc/adr/ADR-020-graphdb-selection.md` | M063 GraphDB Selection (LadybugDB primary). |"
+        in text
+    )
 
 
 def test_codebase_memory_synced() -> None:

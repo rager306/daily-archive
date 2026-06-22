@@ -9,7 +9,9 @@ from typing import Any
 SCRIPT = Path(__file__).parents[1] / "scripts" / "verify_article_catalog.py"
 WRAPPER_SCRIPT = Path(__file__).parents[1] / "scripts" / "verify_m027_mixed_source_catalog.py"
 REGISTER_SCRIPT = Path(__file__).parents[1] / "scripts" / "register_m027_mixed_source_corpus.py"
-REGISTER_M029_SCRIPT = Path(__file__).parents[1] / "scripts" / "register_m029_missing_metadata_refs.py"
+REGISTER_M029_SCRIPT = (
+    Path(__file__).parents[1] / "scripts" / "register_m029_missing_metadata_refs.py"
+)
 VERIFY_M030_SCRIPT = Path(__file__).parents[1] / "scripts" / "verify_m030_requested_ref_intake.py"
 SELECTION_ID = "m027-mixed-source-corpus-v1"
 
@@ -105,7 +107,9 @@ def _copy_m027_scaffold(tmp_path: Path) -> tuple[Path, Path, Path]:
     corpus_dir.mkdir(parents=True)
     (catalog_dir / "schemas").mkdir()
     for schema_name in ("article-catalog-schema.v00.01.json", "article-schema.v00.01.json"):
-        (catalog_dir / "schemas" / schema_name).write_text(json.dumps({"type": "object"}), encoding="utf-8")
+        (catalog_dir / "schemas" / schema_name).write_text(
+            json.dumps({"type": "object"}), encoding="utf-8"
+        )
 
     articles = {
         "arxiv/cs-ai/2401.00001": _article(
@@ -210,7 +214,14 @@ def _copy_m027_scaffold(tmp_path: Path) -> tuple[Path, Path, Path]:
             "cli_must_use_index": True,
             "full_tree_scan_allowed": False,
             "refresh_command_rebuilds_index": True,
-            "lookup_keys": ["article_key", "citation_key", "canonical_url", "source_code", "coarse_topic_code", "title"],
+            "lookup_keys": [
+                "article_key",
+                "citation_key",
+                "canonical_url",
+                "source_code",
+                "coarse_topic_code",
+                "title",
+            ],
         },
         "safety_flags": {
             "metadata_manifests_embed_raw_text": False,
@@ -228,7 +239,9 @@ def _copy_m027_scaffold(tmp_path: Path) -> tuple[Path, Path, Path]:
     return catalog_dir / "catalog.json", catalog_dir / "index.json", corpus_dir / "selection.json"
 
 
-def _run_generic(catalog: Path, index: Path, selection: Path, *extra: str) -> subprocess.CompletedProcess[str]:
+def _run_generic(
+    catalog: Path, index: Path, selection: Path, *extra: str
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [
             sys.executable,
@@ -274,7 +287,13 @@ def test_m027_wrapper_emits_local_only_handoff_artifacts() -> None:
         assert "M027 mixed-source catalog validation passed" in result.stdout
 
         summary = json.loads((real_corpus_dir / "catalog-summary.json").read_text(encoding="utf-8"))
-        diagnostics = [json.loads(line) for line in (real_corpus_dir / "catalog-diagnostics.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+        diagnostics = [
+            json.loads(line)
+            for line in (real_corpus_dir / "catalog-diagnostics.jsonl")
+            .read_text(encoding="utf-8")
+            .splitlines()
+            if line.strip()
+        ]
         report = (real_corpus_dir / "catalog-report.md").read_text(encoding="utf-8")
     finally:
         # Restore pre-test state to keep working tree clean.
@@ -300,9 +319,17 @@ def test_m027_wrapper_emits_local_only_handoff_artifacts() -> None:
         "trusted_facts_claimed": False,
         "ladybugdb_write_claimed": False,
     }
-    assert summary["provenance"]["command"] == ["uv", "run", "python", "scripts/verify_m027_mixed_source_catalog.py"]
+    assert summary["provenance"]["command"] == [
+        "uv",
+        "run",
+        "python",
+        "scripts/verify_m027_mixed_source_catalog.py",
+    ]
     assert summary["provenance"]["exit_code"] == 0
-    assert "data/article_corpora/m027-mixed-source-corpus-v1/catalog-report.md" in summary["provenance"]["output_hashes"]
+    assert (
+        "data/article_corpora/m027-mixed-source-corpus-v1/catalog-report.md"
+        in summary["provenance"]["output_hashes"]
+    )
 
     expected_urls = [
         "https://arxiv.org/pdf/2605.20897",
@@ -316,16 +343,24 @@ def test_m027_wrapper_emits_local_only_handoff_artifacts() -> None:
     assert all(row["article_ref"] in report for row in summary["articles"])
     assert all(url in report for url in expected_urls)
     assert "Validate-only network_fetch_attempted=false" in report
-    assert "Out of scope: captured sources, conversion, parser readiness, chunks, production imports, trusted facts, and LadybugDB writes." in report
+    assert (
+        "Out of scope: captured sources, conversion, parser readiness, chunks, production imports, trusted facts, and LadybugDB writes."
+        in report
+    )
     assert "Expected load is six selected articles" in report
     assert "Expected load is five selected articles" not in report
     assert diagnostics
     assert all(row.get("selection_id") == SELECTION_ID for row in diagnostics)
     assert all(row.get("network_fetch_attempted") is False for row in diagnostics)
-    assert all("json_path" in row and "failing_invariant" in row and "file_path" in row for row in diagnostics)
+    assert all(
+        "json_path" in row and "failing_invariant" in row and "file_path" in row
+        for row in diagnostics
+    )
 
 
-def test_generic_verifier_accepts_m027_mixed_source_selection_id_and_url_shapes(tmp_path: Path) -> None:
+def test_generic_verifier_accepts_m027_mixed_source_selection_id_and_url_shapes(
+    tmp_path: Path,
+) -> None:
     catalog, index, selection = _copy_m027_scaffold(tmp_path)
     summary = selection.parent / "run-summary.json"
     diagnostics = selection.parent / "diagnostics.jsonl"
@@ -349,14 +384,18 @@ def test_generic_verifier_accepts_m027_mixed_source_selection_id_and_url_shapes(
     assert payload["selection_id"] == SELECTION_ID
     assert payload["network"]["network_fetch_attempted_during_validation"] is False
     assert payload["index"]["full_tree_scan_attempted"] is False
-    indexed_urls = {row["canonical_url"] for row in json.loads(index.read_text(encoding="utf-8"))["articles"]}
+    indexed_urls = {
+        row["canonical_url"] for row in json.loads(index.read_text(encoding="utf-8"))["articles"]
+    }
     assert "https://arxiv.org/abs/2401.00001" in indexed_urls
     assert "https://arxiv.org/abs/2401.00002" in indexed_urls
     assert "https://www.nature.com/articles/s41587-024-00000-0" in indexed_urls
     assert "Article Catalog Readiness Report" in report.read_text(encoding="utf-8")
 
 
-def test_generic_verifier_rejects_duplicate_lookup_keys_before_readiness_outputs(tmp_path: Path) -> None:
+def test_generic_verifier_rejects_duplicate_lookup_keys_before_readiness_outputs(
+    tmp_path: Path,
+) -> None:
     catalog, index, selection = _copy_m027_scaffold(tmp_path)
     payload = json.loads(index.read_text(encoding="utf-8"))
     payload["articles"][1]["title"] = payload["articles"][0]["title"]
@@ -455,7 +494,9 @@ def test_generic_verifier_allows_shared_index_superset_when_requested(tmp_path: 
     assert superset_result.returncode == 0, superset_result.stderr
 
 
-def test_registration_command_writes_six_rows_idempotently_and_preserves_existing_index(tmp_path: Path) -> None:
+def test_registration_command_writes_six_rows_idempotently_and_preserves_existing_index(
+    tmp_path: Path,
+) -> None:
     catalog_root = tmp_path / "article_catalog"
     corpora_root = tmp_path / "article_corpora"
     catalog_root.mkdir(parents=True)
@@ -478,10 +519,17 @@ def test_registration_command_writes_six_rows_idempotently_and_preserves_existin
         "article_schema_version": "article.v00.01",
         "index_id": "temp_index",
         "generated_from": "article_catalog/",
-        "lookup_policy": {"cli_must_use_index": True, "full_tree_scan_allowed": False, "refresh_command_rebuilds_index": True},
+        "lookup_policy": {
+            "cli_must_use_index": True,
+            "full_tree_scan_allowed": False,
+            "refresh_command_rebuilds_index": True,
+        },
         "articles": [preserved_entry],
         "indexes": _build_indexes([preserved_entry]),
-        "safety_flags": {"graph_import_allowed": False, "production_ladybugdb_write_allowed": False},
+        "safety_flags": {
+            "graph_import_allowed": False,
+            "production_ladybugdb_write_allowed": False,
+        },
     }
     (catalog_root / "index.json").write_text(json.dumps(index_payload, indent=2), encoding="utf-8")
 
@@ -505,7 +553,9 @@ def test_registration_command_writes_six_rows_idempotently_and_preserves_existin
     refs = {row["article_ref"] for row in index_after["articles"]}
     assert preserved_ref in refs
     assert len([ref for ref in refs if "/mixed-source/" in ref]) == 6
-    selection = json.loads((corpora_root / SELECTION_ID / "selection.json").read_text(encoding="utf-8"))
+    selection = json.loads(
+        (corpora_root / SELECTION_ID / "selection.json").read_text(encoding="utf-8")
+    )
     assert [row["seed_url"] for row in selection["articles"]] == [
         "https://arxiv.org/pdf/2605.20897",
         "https://arxiv.org/abs/2605.21401",
@@ -520,7 +570,9 @@ def test_registration_command_writes_six_rows_idempotently_and_preserves_existin
     assert all(row.get("network_fetch_attempted") is False for row in selection["articles"])
 
 
-def test_m029_registration_command_writes_two_metadata_only_refs_with_fail_closed_flags(tmp_path: Path) -> None:
+def test_m029_registration_command_writes_two_metadata_only_refs_with_fail_closed_flags(
+    tmp_path: Path,
+) -> None:
     catalog_root = tmp_path / "article_catalog"
     catalog_root.mkdir(parents=True)
     preserved_ref = "arxiv/cs-ai/2512.24601"
@@ -542,10 +594,17 @@ def test_m029_registration_command_writes_two_metadata_only_refs_with_fail_close
         "article_schema_version": "article.v00.01",
         "index_id": "temp_index",
         "generated_from": "article_catalog/",
-        "lookup_policy": {"cli_must_use_index": True, "full_tree_scan_allowed": False, "refresh_command_rebuilds_index": True},
+        "lookup_policy": {
+            "cli_must_use_index": True,
+            "full_tree_scan_allowed": False,
+            "refresh_command_rebuilds_index": True,
+        },
         "articles": [preserved_entry],
         "indexes": _build_indexes([preserved_entry]),
-        "safety_flags": {"graph_import_allowed": False, "production_ladybugdb_write_allowed": False},
+        "safety_flags": {
+            "graph_import_allowed": False,
+            "production_ladybugdb_write_allowed": False,
+        },
     }
     catalog_payload = {
         "schema_version": "article-catalog.v00.01",
@@ -558,12 +617,23 @@ def test_m029_registration_command_writes_two_metadata_only_refs_with_fail_close
                 "allowed_source_roles": ["arxiv_abs_page", "arxiv_pdf"],
             }
         ],
-        "safety_flags": {"graph_import_allowed": False, "production_ladybugdb_write_allowed": False},
+        "safety_flags": {
+            "graph_import_allowed": False,
+            "production_ladybugdb_write_allowed": False,
+        },
     }
-    (catalog_root / "catalog.json").write_text(json.dumps(catalog_payload, indent=2), encoding="utf-8")
+    (catalog_root / "catalog.json").write_text(
+        json.dumps(catalog_payload, indent=2), encoding="utf-8"
+    )
     (catalog_root / "index.json").write_text(json.dumps(index_payload, indent=2), encoding="utf-8")
 
-    command = [sys.executable, str(REGISTER_M029_SCRIPT), "--write", "--catalog-root", str(catalog_root)]
+    command = [
+        sys.executable,
+        str(REGISTER_M029_SCRIPT),
+        "--write",
+        "--catalog-root",
+        str(catalog_root),
+    ]
     first = subprocess.run(command, capture_output=True, check=False, text=True)
     assert first.returncode == 0, first.stderr
     assert "duplicate_normalized_identity" not in first.stderr
@@ -580,9 +650,14 @@ def test_m029_registration_command_writes_two_metadata_only_refs_with_fail_close
     assert preserved_ref in refs
     assert "stanford/cs224n/gradient-notes" in refs
     assert "arxiv/mixed-source/2605.29548" in refs
-    assert refs["stanford/cs224n/gradient-notes"]["normalized_identity"] == "stanford:cs224n:gradient-notes"
+    assert (
+        refs["stanford/cs224n/gradient-notes"]["normalized_identity"]
+        == "stanford:cs224n:gradient-notes"
+    )
     assert refs["arxiv/mixed-source/2605.29548"]["normalized_identity"] == "arxiv:2605.29548"
-    assert index_after["indexes"]["by_source_code"]["stanford"] == ["stanford/cs224n/gradient-notes"]
+    assert index_after["indexes"]["by_source_code"]["stanford"] == [
+        "stanford/cs224n/gradient-notes"
+    ]
 
     catalog_after = json.loads((catalog_root / "catalog.json").read_text(encoding="utf-8"))
     assert any(source["source_code"] == "stanford" for source in catalog_after["sources"])
@@ -592,23 +667,31 @@ def test_m029_registration_command_writes_two_metadata_only_refs_with_fail_close
             "catalog": catalog_after,
             "index": index_after,
             "articles": [
-                json.loads((catalog_root / refs["stanford/cs224n/gradient-notes"]["article_path"]).read_text(encoding="utf-8")),
-                json.loads((catalog_root / refs["arxiv/mixed-source/2605.29548"]["article_path"]).read_text(encoding="utf-8")),
+                json.loads(
+                    (
+                        catalog_root / refs["stanford/cs224n/gradient-notes"]["article_path"]
+                    ).read_text(encoding="utf-8")
+                ),
+                json.loads(
+                    (
+                        catalog_root / refs["arxiv/mixed-source/2605.29548"]["article_path"]
+                    ).read_text(encoding="utf-8")
+                ),
             ],
         },
         sort_keys=True,
     )
     forbidden_snippets = [
-        "trusted_kg_import_allowed\": true",
-        "production_ladybugdb_write_allowed\": true",
-        "raw_text_embedded\": true",
-        "raw_binary_embedded\": true",
-        "production_import_attempted\": true",
-        "ladybugdb_written\": true",
-        "network_fetch_attempted\": true",
-        "parser_readiness_claimed\": true",
-        "chunk_readiness_claimed\": true",
-        "graph_readiness_claimed\": true",
+        'trusted_kg_import_allowed": true',
+        'production_ladybugdb_write_allowed": true',
+        'raw_text_embedded": true',
+        'raw_binary_embedded": true',
+        'production_import_attempted": true',
+        'ladybugdb_written": true',
+        'network_fetch_attempted": true',
+        'parser_readiness_claimed": true',
+        'chunk_readiness_claimed": true',
+        'graph_readiness_claimed": true',
     ]
     for snippet in forbidden_snippets:
         assert snippet not in serialized
@@ -627,7 +710,9 @@ def test_m030_requested_ref_intake_closeout_baseline_is_current() -> None:
             "--catalog-index",
             str(root / "data/article_catalog/index.json"),
             "--m028-selection",
-            str(root / "data/article_corpora/m028-universal-loader-runtime-smoke-v1/selection.json"),
+            str(
+                root / "data/article_corpora/m028-universal-loader-runtime-smoke-v1/selection.json"
+            ),
             "--validate-only",
         ],
         capture_output=True,
@@ -642,7 +727,9 @@ def test_m030_requested_ref_intake_closeout_baseline_is_current() -> None:
 def test_m030_requested_ref_intake_rejects_unsafe_claims(tmp_path: Path) -> None:
     root = Path(__file__).parents[1]
     selection = json.loads(
-        (root / "data/article_corpora/m029-pipeline-architecture-audit-v1/selection.json").read_text(encoding="utf-8")
+        (
+            root / "data/article_corpora/m029-pipeline-architecture-audit-v1/selection.json"
+        ).read_text(encoding="utf-8")
     )
     selection["refs"][0]["unsafe_claims"]["graph_ready_claimed"] = True
     unsafe_selection = tmp_path / "selection.json"
@@ -659,7 +746,9 @@ def test_m030_requested_ref_intake_rejects_unsafe_claims(tmp_path: Path) -> None
             "--catalog-index",
             str(root / "data/article_catalog/index.json"),
             "--m028-selection",
-            str(root / "data/article_corpora/m028-universal-loader-runtime-smoke-v1/selection.json"),
+            str(
+                root / "data/article_corpora/m028-universal-loader-runtime-smoke-v1/selection.json"
+            ),
             "--validate-only",
         ],
         capture_output=True,

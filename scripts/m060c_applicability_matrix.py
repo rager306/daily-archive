@@ -344,9 +344,7 @@ def build_m060c_s02_applicability_matrix() -> dict[str, Any]:
 
     aggregate = {
         library: sum(
-            1
-            for cell in cells
-            if cell["library"] == library and cell["applicability_score"] >= 2
+            1 for cell in cells if cell["library"] == library and cell["applicability_score"] >= 2
         )
         for library in LIBRARIES
     }

@@ -99,7 +99,9 @@ def _manifest(paper_id: str, *, metadata_signal_count: int = 2) -> dict[str, Any
             "source_span_id": span_id,
             "review_state": "review_required",
         }
-        for index, (signal_type, normalized_value) in enumerate(signal_templates[:metadata_signal_count], start=1)
+        for index, (signal_type, normalized_value) in enumerate(
+            signal_templates[:metadata_signal_count], start=1
+        )
     ]
     return {
         "paper_id": paper_id,
@@ -126,9 +128,14 @@ def _manifest(paper_id: str, *, metadata_signal_count: int = 2) -> dict[str, Any
                 "link_id": f"{paper_id}:link:citation:0001",
                 "source_page_index_node_id": f"{paper_id}:page-index:section:results",
                 "source_page_index_anchor_id": anchor_id,
-                "target_ref": {"target_type": "reference_entry", "target_id": f"{paper_id}:reference:0001"},
+                "target_ref": {
+                    "target_type": "reference_entry",
+                    "target_id": f"{paper_id}:reference:0001",
+                },
                 "source_span_ids": [span_id],
-                "evidence_signal_ids": [metadata_signals[0]["signal_id"]] if metadata_signals else [],
+                "evidence_signal_ids": [metadata_signals[0]["signal_id"]]
+                if metadata_signals
+                else [],
                 "review_state": "review_required",
             }
         ],
@@ -176,8 +183,15 @@ def _diagnostic_codes(payload: dict[str, Any]) -> set[str]:
 
 
 @settings(max_examples=80)
-@given(prefix=SAFE_SLUG, parts=st.lists(st.one_of(SAFE_VALUE, st.integers(), st.booleans(), st.none()), min_size=0, max_size=5))
-def test_deterministic_id_is_stable_prefix_scoped_and_json_safe(prefix: str, parts: list[Any]) -> None:
+@given(
+    prefix=SAFE_SLUG,
+    parts=st.lists(
+        st.one_of(SAFE_VALUE, st.integers(), st.booleans(), st.none()), min_size=0, max_size=5
+    ),
+)
+def test_deterministic_id_is_stable_prefix_scoped_and_json_safe(
+    prefix: str, parts: list[Any]
+) -> None:
     first = deterministic_id(prefix, *parts)
     second = deterministic_id(prefix, *deepcopy(parts))
     alternate_prefix = deterministic_id(f"other-{prefix}", *parts)
@@ -211,7 +225,9 @@ def test_arxiv_normalization_strips_known_prefixes_without_dropping_version(arxi
 
 @settings(max_examples=80)
 @given(host=URL_HOSTS, path=SAFE_SLUG, token=SAFE_SLUG)
-def test_url_normalization_removes_query_fragments_and_is_idempotent(host: str, path: str, token: str) -> None:
+def test_url_normalization_removes_query_fragments_and_is_idempotent(
+    host: str, path: str, token: str
+) -> None:
     url = f"HTTPS://{host.upper()}/papers/{path}/?token={token}&session=abc#abstract"
     normalized = normalize_url(url)
 
@@ -233,7 +249,9 @@ def test_hash_signal_normalization_is_lowercase_idempotent(hash_value: str) -> N
 
 @settings(max_examples=60)
 @given(paper_id=PAPER_IDS)
-def test_manifest_build_and_json_serialization_are_deterministic_metadata_only(paper_id: str) -> None:
+def test_manifest_build_and_json_serialization_are_deterministic_metadata_only(
+    paper_id: str,
+) -> None:
     manifest = _manifest(paper_id, metadata_signal_count=3)
 
     first = build_article_links_dedup_manifest(deepcopy(manifest))
@@ -253,9 +271,15 @@ def test_manifest_build_and_json_serialization_are_deterministic_metadata_only(p
 @settings(max_examples=80)
 @given(
     paper_id=PAPER_IDS,
-    relationship=st.text(min_size=1, max_size=24).filter(lambda value: value not in ALLOWED_STRUCTURAL_RELATIONSHIPS),
-    signal_type=st.text(min_size=1, max_size=24).filter(lambda value: value not in ALLOWED_METADATA_SIGNAL_TYPES),
-    decision=st.text(min_size=1, max_size=40).filter(lambda value: value not in ALLOWED_DEDUP_DECISIONS),
+    relationship=st.text(min_size=1, max_size=24).filter(
+        lambda value: value not in ALLOWED_STRUCTURAL_RELATIONSHIPS
+    ),
+    signal_type=st.text(min_size=1, max_size=24).filter(
+        lambda value: value not in ALLOWED_METADATA_SIGNAL_TYPES
+    ),
+    decision=st.text(min_size=1, max_size=40).filter(
+        lambda value: value not in ALLOWED_DEDUP_DECISIONS
+    ),
 )
 def test_unsupported_vocabularies_emit_bad_vocabulary_diagnostics_not_crashes(
     paper_id: str, relationship: str, signal_type: str, decision: str
@@ -275,7 +299,9 @@ def test_unsupported_vocabularies_emit_bad_vocabulary_diagnostics_not_crashes(
 
 @settings(max_examples=80)
 @given(paper_id=PAPER_IDS)
-def test_duplicate_ids_conflicting_signals_and_insufficient_candidates_are_counted_fail_closed(paper_id: str) -> None:
+def test_duplicate_ids_conflicting_signals_and_insufficient_candidates_are_counted_fail_closed(
+    paper_id: str,
+) -> None:
     manifest = _manifest(paper_id, metadata_signal_count=2)
     manifest["citation_links"].append(deepcopy(manifest["citation_links"][0]))
     manifest["metadata_signals"][1]["signal_type"] = "doi"
@@ -284,7 +310,10 @@ def test_duplicate_ids_conflicting_signals_and_insufficient_candidates_are_count
         {
             **manifest["dedup_candidates"][0],
             "decision": "conflicting_metadata_review_required",
-            "evidence_signal_ids": [manifest["metadata_signals"][0]["signal_id"], manifest["metadata_signals"][1]["signal_id"]],
+            "evidence_signal_ids": [
+                manifest["metadata_signals"][0]["signal_id"],
+                manifest["metadata_signals"][1]["signal_id"],
+            ],
         },
         {
             **manifest["dedup_candidates"][0],
@@ -298,7 +327,11 @@ def test_duplicate_ids_conflicting_signals_and_insufficient_candidates_are_count
     rebuilt = build_article_links_dedup_manifest(manifest)
     codes = _diagnostic_codes(rebuilt)
 
-    assert {"duplicate_id", "conflicting_metadata_signals", "insufficient_metadata_for_dedup"} <= codes
+    assert {
+        "duplicate_id",
+        "conflicting_metadata_signals",
+        "insufficient_metadata_for_dedup",
+    } <= codes
     assert rebuilt["summary"]["diagnostic_counts"]["duplicate_id_count"] == 1
     assert rebuilt["summary"]["diagnostic_counts"]["conflict_count"] == 1
     assert rebuilt["summary"]["diagnostic_counts"]["insufficient_metadata_count"] == 1
@@ -309,11 +342,19 @@ def test_duplicate_ids_conflicting_signals_and_insufficient_candidates_are_count
 
 @settings(max_examples=100)
 @given(paper_id=PAPER_IDS, forbidden_key=FORBIDDEN_PAYLOAD_KEYS, unsafe_flag=UNSAFE_FLAG_KEYS)
-def test_forbidden_payload_keys_and_unsafe_flags_are_redacted_and_counted(paper_id: str, forbidden_key: str, unsafe_flag: str) -> None:
+def test_forbidden_payload_keys_and_unsafe_flags_are_redacted_and_counted(
+    paper_id: str, forbidden_key: str, unsafe_flag: str
+) -> None:
     manifest = _manifest(paper_id)
     manifest["source_refs"][0][forbidden_key] = "FORBIDDEN_RAW_TITLE_DO_NOT_ECHO"
     manifest["citation_links"][0]["target_ref"]["reference"] = "FORBIDDEN_RAW_REFERENCE_DO_NOT_ECHO"
-    if unsafe_flag in {"trusted_kg_import_allowed", "ladybugdb_written", "production_import_attempted", "model_outputs_included", "raw_payloads_included"}:
+    if unsafe_flag in {
+        "trusted_kg_import_allowed",
+        "ladybugdb_written",
+        "production_import_attempted",
+        "model_outputs_included",
+        "raw_payloads_included",
+    }:
         manifest.setdefault("safety_flags", {})[unsafe_flag] = True
     else:
         manifest["dedup_candidates"][0][unsafe_flag] = True

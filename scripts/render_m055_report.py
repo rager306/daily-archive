@@ -83,11 +83,20 @@ def _load_inputs(base_dir: Path) -> dict[str, Any]:
     opendl_summary = _load_json(base_dir / "opendataloader-only" / "summary.json")
     routing_summary = _load_json(base_dir / "hybrid-routing" / "summary.json")
 
-    grobid_packets = {path.stem: _load_json(path) for path in _packet_paths(base_dir, "grobid-only")}
-    opendl_packets = {path.stem: _load_json(path) for path in _packet_paths(base_dir, "opendataloader-only")}
-    routing_packets = {path.stem: _load_json(path) for path in _packet_paths(base_dir, "hybrid-routing")}
+    grobid_packets = {
+        path.stem: _load_json(path) for path in _packet_paths(base_dir, "grobid-only")
+    }
+    opendl_packets = {
+        path.stem: _load_json(path) for path in _packet_paths(base_dir, "opendataloader-only")
+    }
+    routing_packets = {
+        path.stem: _load_json(path) for path in _packet_paths(base_dir, "hybrid-routing")
+    }
 
-    missing = sorted((set(grobid_packets) | set(opendl_packets) | set(routing_packets)) - (set(grobid_packets) & set(opendl_packets) & set(routing_packets)))
+    missing = sorted(
+        (set(grobid_packets) | set(opendl_packets) | set(routing_packets))
+        - (set(grobid_packets) & set(opendl_packets) & set(routing_packets))
+    )
     if missing:
         raise ValueError(f"Per-PDF packet sets do not match: {missing}")
 
@@ -134,7 +143,7 @@ def _render_header(data: dict[str, Any]) -> list[str]:
         "",
         "### Evidence Snapshot",
         "",
-        * _md_table(
+        *_md_table(
             ["Evidence", "Value"],
             [
                 ["PDFs benchmarked", total_pdfs],
@@ -160,25 +169,57 @@ def _render_input_inventory(data: dict[str, Any]) -> list[str]:
         "The report is derived from previously completed S02, S03, and S04 artifacts.",
         "It does not rerun parsers and does not mutate benchmark inputs.",
         "",
-        * _md_table(
+        *_md_table(
             ["Slice", "Artifact", "Schema", "Role"],
             [
-                ["S02", "artifacts/m055-parser-benchmark/grobid-only/summary.json", grobid_summary.get("schema_version"), "GROBID-only baseline summary"],
-                ["S03", "artifacts/m055-parser-benchmark/opendataloader-only/summary.json", opendl_summary.get("schema_version"), "OpenDataLoader-only baseline summary"],
-                ["S04", "artifacts/m055-parser-benchmark/hybrid-routing/summary.json", routing_summary.get("schema_version"), "Hybrid routing comparison"],
-                ["S01", "artifacts/m055-parser-benchmark/corpus-manifest.json", "manifest", "Five-PDF benchmark corpus"],
+                [
+                    "S02",
+                    "artifacts/m055-parser-benchmark/grobid-only/summary.json",
+                    grobid_summary.get("schema_version"),
+                    "GROBID-only baseline summary",
+                ],
+                [
+                    "S03",
+                    "artifacts/m055-parser-benchmark/opendataloader-only/summary.json",
+                    opendl_summary.get("schema_version"),
+                    "OpenDataLoader-only baseline summary",
+                ],
+                [
+                    "S04",
+                    "artifacts/m055-parser-benchmark/hybrid-routing/summary.json",
+                    routing_summary.get("schema_version"),
+                    "Hybrid routing comparison",
+                ],
+                [
+                    "S01",
+                    "artifacts/m055-parser-benchmark/corpus-manifest.json",
+                    "manifest",
+                    "Five-PDF benchmark corpus",
+                ],
             ],
         ),
         "",
         "### Aggregate Parser Metrics",
         "",
-        * _md_table(
+        *_md_table(
             ["Metric", "GROBID", "OpenDataLoader"],
             [
-                ["Successful packets", grobid_summary.get("success_count", 0), opendl_summary.get("success_count", 0)],
-                ["Low-quality-source packets", grobid_summary.get("low_quality_source_count", 0), opendl_summary.get("low_quality_source_count", 0)],
+                [
+                    "Successful packets",
+                    grobid_summary.get("success_count", 0),
+                    opendl_summary.get("success_count", 0),
+                ],
+                [
+                    "Low-quality-source packets",
+                    grobid_summary.get("low_quality_source_count", 0),
+                    opendl_summary.get("low_quality_source_count", 0),
+                ],
                 ["Total TEI bytes", grobid_summary.get("total_tei_bytes", "n/a"), "n/a"],
-                ["Total markdown bytes", "n/a", opendl_summary.get("total_markdown_size_bytes", "n/a")],
+                [
+                    "Total markdown bytes",
+                    "n/a",
+                    opendl_summary.get("total_markdown_size_bytes", "n/a"),
+                ],
                 ["Total references", grobid_summary.get("total_refs", "n/a"), "n/a"],
                 ["Total bibliography entries", grobid_summary.get("total_bibls", "n/a"), "n/a"],
                 ["Total body elements", grobid_summary.get("total_body_elements", "n/a"), "n/a"],
@@ -186,7 +227,11 @@ def _render_input_inventory(data: dict[str, Any]) -> list[str]:
                 ["Total sections", "n/a", opendl_summary.get("total_section_count", "n/a")],
                 ["Total tables", "n/a", opendl_summary.get("total_table_count", "n/a")],
                 ["Total images", "n/a", opendl_summary.get("total_image_count", "n/a")],
-                ["Total bounding boxes", "n/a", opendl_summary.get("total_bounding_box_count", "n/a")],
+                [
+                    "Total bounding boxes",
+                    "n/a",
+                    opendl_summary.get("total_bounding_box_count", "n/a"),
+                ],
             ],
         ),
         "",
@@ -204,14 +249,30 @@ def _render_corpus_table(data: dict[str, Any]) -> list[str]:
         route = _route_name(routing.get("recommended_route"))
         grobid_metrics = f"TEI {grobid.get('bytes')} bytes; refs {grobid.get('ref_count')}; bibls {grobid.get('bibl_count')}; body {grobid.get('body_element_count')}"
         opendl_metrics = f"MD {opendl.get('markdown_size_bytes')} bytes; sections {opendl.get('section_count')}; tables {opendl.get('table_count')}; images {opendl.get('image_count')}; boxes {opendl.get('bounding_box_count')}"
-        rows.append([aid, pdf.get("category"), pdf.get("pages_estimate"), grobid_metrics, opendl_metrics, route])
+        rows.append(
+            [
+                aid,
+                pdf.get("category"),
+                pdf.get("pages_estimate"),
+                grobid_metrics,
+                opendl_metrics,
+                route,
+            ]
+        )
     return [
         "## Per-PDF Summary Table",
         "",
         "This table satisfies the benchmark reporting contract: `arxiv_id | category | pages | GROBID TEI metrics | OpenDataLoader md metrics | recommended route`.",
         "",
-        * _md_table(
-            ["arxiv_id", "category", "pages", "GROBID TEI metrics", "OpenDataLoader md metrics", "recommended route"],
+        *_md_table(
+            [
+                "arxiv_id",
+                "category",
+                "pages",
+                "GROBID TEI metrics",
+                "OpenDataLoader md metrics",
+                "recommended route",
+            ],
             rows,
         ),
         "",
@@ -226,10 +287,24 @@ def _render_dimension_analysis(data: dict[str, Any]) -> list[str]:
         "The six benchmark dimensions split cleanly into two parser responsibilities.",
         "No evaluated dimension requires a single-parser winner for all downstream work.",
         "",
-        * _md_table(
-            ["Dimension", "Benchmark winner", "GROBID wins", "OpenDataLoader wins", "Ties", "Interpretation"],
+        *_md_table(
             [
-                [dimension, DIMENSION_OWNERS[dimension], counts.get("grobid", 0), counts.get("opendataloader", 0), counts.get("tie", 0), DIMENSION_LABELS[dimension]]
+                "Dimension",
+                "Benchmark winner",
+                "GROBID wins",
+                "OpenDataLoader wins",
+                "Ties",
+                "Interpretation",
+            ],
+            [
+                [
+                    dimension,
+                    DIMENSION_OWNERS[dimension],
+                    counts.get("grobid", 0),
+                    counts.get("opendataloader", 0),
+                    counts.get("tie", 0),
+                    DIMENSION_LABELS[dimension],
+                ]
                 for dimension, counts in winners.items()
             ],
         ),
@@ -267,11 +342,28 @@ def _render_dimension_analysis(data: dict[str, Any]) -> list[str]:
             "Quality scoring should therefore distinguish useful header semantics from insufficient full-document extraction.",
         ],
     }
-    for dimension in ["metadata", "citations", "processing_time", "body_content", "layout", "quality"]:
+    for dimension in [
+        "metadata",
+        "citations",
+        "processing_time",
+        "body_content",
+        "layout",
+        "quality",
+    ]:
         lines.extend([f"### {dimension}: {DIMENSION_OWNERS[dimension]}", ""])
         for item in explanations[dimension]:
             lines.append(f"- {item}")
-        lines.extend(["- Routing implication: " + ("use GROBID output in the merged packet." if DIMENSION_OWNERS[dimension] == "GROBID" else "use OpenDataLoader output in the merged packet."), ""])
+        lines.extend(
+            [
+                "- Routing implication: "
+                + (
+                    "use GROBID output in the merged packet."
+                    if DIMENSION_OWNERS[dimension] == "GROBID"
+                    else "use OpenDataLoader output in the merged packet."
+                ),
+                "",
+            ]
+        )
     return lines
 
 
@@ -289,19 +381,49 @@ def _render_per_pdf_details(data: dict[str, Any]) -> list[str]:
             [
                 f"### PDF {aid}",
                 "",
-                f"Category: `{manifest.get('category', grobid.get('category', opendl.get('category')) )}`",
+                f"Category: `{manifest.get('category', grobid.get('category', opendl.get('category')))}`",
                 f"Pages: `{manifest.get('pages_estimate', opendl.get('page_count'))}`",
                 f"Recommended route: `{route}`",
                 "",
-                * _md_table(
+                *_md_table(
                     ["Metric family", "GROBID", "OpenDataLoader", "Winner"],
                     [
-                        ["metadata", f"title={grobid.get('header_title_present')}; authors={grobid.get('header_author_count')}; abstract={grobid.get('abstract_present')}", "no native scholarly header contract", comparison.get("metadata", {}).get("winner", "grobid")],
-                        ["citations", f"refs={grobid.get('ref_count')}; bibls={grobid.get('bibl_count')}", "no native citation extraction", comparison.get("citations", {}).get("winner", "grobid")],
-                        ["processing_time", f"{grobid.get('duration_ms')} ms", f"{opendl.get('duration_ms')} ms", comparison.get("processing_time", {}).get("winner", "grobid")],
-                        ["body_content", f"body_elements={grobid.get('body_element_count')}", f"markdown={opendl.get('markdown_size_bytes')} bytes; sections={opendl.get('section_count')}", comparison.get("body_content", {}).get("winner", "opendataloader")],
-                        ["layout", "no native layout packet", f"tables={opendl.get('table_count')}; images={opendl.get('image_count')}; boxes={opendl.get('bounding_box_count')}", comparison.get("layout", {}).get("winner", "opendataloader")],
-                        ["quality", f"low_quality_source={grobid.get('low_quality_source')}", f"low_quality_source={opendl.get('low_quality_source')}", comparison.get("quality", {}).get("winner", "opendataloader")],
+                        [
+                            "metadata",
+                            f"title={grobid.get('header_title_present')}; authors={grobid.get('header_author_count')}; abstract={grobid.get('abstract_present')}",
+                            "no native scholarly header contract",
+                            comparison.get("metadata", {}).get("winner", "grobid"),
+                        ],
+                        [
+                            "citations",
+                            f"refs={grobid.get('ref_count')}; bibls={grobid.get('bibl_count')}",
+                            "no native citation extraction",
+                            comparison.get("citations", {}).get("winner", "grobid"),
+                        ],
+                        [
+                            "processing_time",
+                            f"{grobid.get('duration_ms')} ms",
+                            f"{opendl.get('duration_ms')} ms",
+                            comparison.get("processing_time", {}).get("winner", "grobid"),
+                        ],
+                        [
+                            "body_content",
+                            f"body_elements={grobid.get('body_element_count')}",
+                            f"markdown={opendl.get('markdown_size_bytes')} bytes; sections={opendl.get('section_count')}",
+                            comparison.get("body_content", {}).get("winner", "opendataloader"),
+                        ],
+                        [
+                            "layout",
+                            "no native layout packet",
+                            f"tables={opendl.get('table_count')}; images={opendl.get('image_count')}; boxes={opendl.get('bounding_box_count')}",
+                            comparison.get("layout", {}).get("winner", "opendataloader"),
+                        ],
+                        [
+                            "quality",
+                            f"low_quality_source={grobid.get('low_quality_source')}",
+                            f"low_quality_source={opendl.get('low_quality_source')}",
+                            comparison.get("quality", {}).get("winner", "opendataloader"),
+                        ],
                     ],
                 ),
                 "",
@@ -323,7 +445,7 @@ def _render_per_pdf_details(data: dict[str, Any]) -> list[str]:
                 "",
                 "#### Per-PDF Decision Record",
                 "",
-                * _md_table(
+                *_md_table(
                     ["Field", "Value"],
                     [
                         ["arxiv_id", aid],
@@ -341,14 +463,17 @@ def _render_per_pdf_details(data: dict[str, Any]) -> list[str]:
 
 def _render_gap_analysis(data: dict[str, Any]) -> list[str]:
     gap_counts = data["routing_summary"].get("residual_gap_counts", {})
-    rows = [[gap, count, "medium", "Handle in M057 merge/reconciliation pilot"] for gap, count in gap_counts.items()]
+    rows = [
+        [gap, count, "medium", "Handle in M057 merge/reconciliation pilot"]
+        for gap, count in gap_counts.items()
+    ]
     lines = [
         "## Gap Analysis",
         "",
         "The benchmark recommends a hybrid parser architecture, but the recommendation is not a complete graph-ingestion design.",
         "The residual gaps are the work items that the next implementation milestone must retire before any graph-facing path is considered.",
         "",
-        * _md_table(["Gap", "Affected PDFs", "Severity", "Required response"], rows),
+        *_md_table(["Gap", "Affected PDFs", "Severity", "Required response"], rows),
         "",
         "### Gap 1: citation_to_body_alignment",
         "",
@@ -381,16 +506,44 @@ def _render_reconciliation() -> list[str]:
         "",
         "M055 does not replace the earlier architecture evidence; it narrows the parser choice inside the existing safety frame.",
         "",
-        * _md_table(
+        *_md_table(
             ["Prior evidence", "Constraint carried forward", "M055 reconciliation"],
             [
-                ["M033", "Candidate evidence must remain bounded before graph promotion.", "Hybrid parser packets remain candidate evidence and do not authorize import."],
-                ["M033", "Sidecar-style evidence producers are acceptable when boundaries are explicit.", "GROBID and OpenDataLoader are separate sidecar producers feeding a bounded merge layer."],
-                ["M043", "Prior parser evidence showed OpenDataLoader body/layout usefulness but did not settle scholarly header/citation ownership.", "M055 confirms OpenDataLoader for body/layout and adds GROBID ownership for metadata/citations."],
-                ["ADR-001", "Scientific papers are the first proving domain and require citations, figures, tables, sections, source spans, and review burden.", "Hybrid parser architecture better covers paper-domain needs than either parser alone."],
-                ["M048 pattern 3.1", "Bounded candidate generation must be explicit.", "The merge layer must carry candidate-only provenance."],
-                ["M048 pattern 3.4", "Promotion requires checks separate from extraction.", "Parser success is not semantic truth and is not graph authorization."],
-                ["M048 pattern 3.6", "Diagnostics must be reviewable and reproducible.", "Per-PDF packets plus this report form a reproducible benchmark trail."],
+                [
+                    "M033",
+                    "Candidate evidence must remain bounded before graph promotion.",
+                    "Hybrid parser packets remain candidate evidence and do not authorize import.",
+                ],
+                [
+                    "M033",
+                    "Sidecar-style evidence producers are acceptable when boundaries are explicit.",
+                    "GROBID and OpenDataLoader are separate sidecar producers feeding a bounded merge layer.",
+                ],
+                [
+                    "M043",
+                    "Prior parser evidence showed OpenDataLoader body/layout usefulness but did not settle scholarly header/citation ownership.",
+                    "M055 confirms OpenDataLoader for body/layout and adds GROBID ownership for metadata/citations.",
+                ],
+                [
+                    "ADR-001",
+                    "Scientific papers are the first proving domain and require citations, figures, tables, sections, source spans, and review burden.",
+                    "Hybrid parser architecture better covers paper-domain needs than either parser alone.",
+                ],
+                [
+                    "M048 pattern 3.1",
+                    "Bounded candidate generation must be explicit.",
+                    "The merge layer must carry candidate-only provenance.",
+                ],
+                [
+                    "M048 pattern 3.4",
+                    "Promotion requires checks separate from extraction.",
+                    "Parser success is not semantic truth and is not graph authorization.",
+                ],
+                [
+                    "M048 pattern 3.6",
+                    "Diagnostics must be reviewable and reproducible.",
+                    "Per-PDF packets plus this report form a reproducible benchmark trail.",
+                ],
             ],
         ),
         "",
@@ -414,14 +567,34 @@ def _render_safety_block() -> list[str]:
         json.dumps(SAFETY_DEFAULTS, indent=2, sort_keys=True),
         "```",
         "",
-        * _md_table(
+        *_md_table(
             ["Flag", "Default", "Meaning"],
             [
-                ["graph_import_allowed", _as_bool_text(SAFETY_DEFAULTS["graph_import_allowed"]), "No parser output may be imported into a graph as part of M055."],
-                ["graphdb_written", _as_bool_text(SAFETY_DEFAULTS["graphdb_written"]), "No graph database write occurred."],
-                ["import_eligible", _as_bool_text(SAFETY_DEFAULTS["import_eligible"]), "Benchmark packets are not eligible for production import."],
-                ["ladybugdb_written", _as_bool_text(SAFETY_DEFAULTS["ladybugdb_written"]), "No LadybugDB write occurred."],
-                ["production_import_attempted", _as_bool_text(SAFETY_DEFAULTS["production_import_attempted"]), "No production import was attempted."],
+                [
+                    "graph_import_allowed",
+                    _as_bool_text(SAFETY_DEFAULTS["graph_import_allowed"]),
+                    "No parser output may be imported into a graph as part of M055.",
+                ],
+                [
+                    "graphdb_written",
+                    _as_bool_text(SAFETY_DEFAULTS["graphdb_written"]),
+                    "No graph database write occurred.",
+                ],
+                [
+                    "import_eligible",
+                    _as_bool_text(SAFETY_DEFAULTS["import_eligible"]),
+                    "Benchmark packets are not eligible for production import.",
+                ],
+                [
+                    "ladybugdb_written",
+                    _as_bool_text(SAFETY_DEFAULTS["ladybugdb_written"]),
+                    "No LadybugDB write occurred.",
+                ],
+                [
+                    "production_import_attempted",
+                    _as_bool_text(SAFETY_DEFAULTS["production_import_attempted"]),
+                    "No production import was attempted.",
+                ],
             ],
         ),
         "",
@@ -484,19 +657,59 @@ def _render_appendices(data: dict[str, Any]) -> list[str]:
         "",
         "## Appendix B: Field Ownership Contract",
         "",
-        * _md_table(
+        *_md_table(
             ["Hybrid packet field family", "Owning source", "Reason", "M057 obligation"],
             [
                 ["title", "GROBID", "native header extraction", "preserve source packet pointer"],
                 ["authors", "GROBID", "native header extraction", "preserve source packet pointer"],
-                ["abstract", "GROBID", "native header extraction", "preserve source packet pointer"],
-                ["references", "GROBID", "native citation extraction", "preserve citation packet pointer"],
-                ["bibliography", "GROBID", "native bibliography extraction", "preserve citation packet pointer"],
-                ["markdown_body", "OpenDataLoader", "substantial markdown body output", "preserve markdown artifact path"],
-                ["sections", "OpenDataLoader", "section count and markdown structure", "preserve section diagnostics"],
-                ["tables", "OpenDataLoader", "table detection in markdown/layout", "mark semantic links unresolved"],
-                ["images", "OpenDataLoader", "image detection in markdown/layout", "mark semantic links unresolved"],
-                ["bounding_boxes", "OpenDataLoader", "layout packet support", "preserve layout artifact path"],
+                [
+                    "abstract",
+                    "GROBID",
+                    "native header extraction",
+                    "preserve source packet pointer",
+                ],
+                [
+                    "references",
+                    "GROBID",
+                    "native citation extraction",
+                    "preserve citation packet pointer",
+                ],
+                [
+                    "bibliography",
+                    "GROBID",
+                    "native bibliography extraction",
+                    "preserve citation packet pointer",
+                ],
+                [
+                    "markdown_body",
+                    "OpenDataLoader",
+                    "substantial markdown body output",
+                    "preserve markdown artifact path",
+                ],
+                [
+                    "sections",
+                    "OpenDataLoader",
+                    "section count and markdown structure",
+                    "preserve section diagnostics",
+                ],
+                [
+                    "tables",
+                    "OpenDataLoader",
+                    "table detection in markdown/layout",
+                    "mark semantic links unresolved",
+                ],
+                [
+                    "images",
+                    "OpenDataLoader",
+                    "image detection in markdown/layout",
+                    "mark semantic links unresolved",
+                ],
+                [
+                    "bounding_boxes",
+                    "OpenDataLoader",
+                    "layout packet support",
+                    "preserve layout artifact path",
+                ],
             ],
         ),
         "",

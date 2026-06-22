@@ -47,16 +47,27 @@ def require_text(path: Path, failures: list[dict[str, Any]]) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
-def require_false_flags(owner: str, flags: dict[str, Any] | None, failures: list[dict[str, Any]]) -> None:
+def require_false_flags(
+    owner: str, flags: dict[str, Any] | None, failures: list[dict[str, Any]]
+) -> None:
     if not isinstance(flags, dict):
         failures.append({"code": "missing_safety_flags", "owner": owner})
         return
     for key in FALSE_FLAG_KEYS:
         if flags.get(key) is not False:
-            failures.append({"code": "unsafe_flag", "owner": owner, "flag": key, "value": flags.get(key)})
+            failures.append(
+                {"code": "unsafe_flag", "owner": owner, "flag": key, "value": flags.get(key)}
+            )
     for key in OPTIONAL_FALSE_FLAG_KEYS:
         if key in flags and flags.get(key) is not False:
-            failures.append({"code": "unsafe_optional_flag", "owner": owner, "flag": key, "value": flags.get(key)})
+            failures.append(
+                {
+                    "code": "unsafe_optional_flag",
+                    "owner": owner,
+                    "flag": key,
+                    "value": flags.get(key),
+                }
+            )
 
 
 def validate_requirements(study_dir: Path, failures: list[dict[str, Any]]) -> None:
@@ -66,8 +77,13 @@ def validate_requirements(study_dir: Path, failures: list[dict[str, Any]]) -> No
         require_false_flags("requirements_summary", summary.get("safety_flags"), failures)
         runtime = summary.get("runtime_requirements", {})
         if runtime.get("python_requires") != ">=3.10":
-            failures.append({"code": "missing_python_requirement", "value": runtime.get("python_requires")})
-        if runtime.get("docker_or_compose_found") is not False or runtime.get("container_required") is not False:
+            failures.append(
+                {"code": "missing_python_requirement", "value": runtime.get("python_requires")}
+            )
+        if (
+            runtime.get("docker_or_compose_found") is not False
+            or runtime.get("container_required") is not False
+        ):
             failures.append({"code": "unexpected_container_requirement"})
         deps = set(summary.get("core_dependencies", []))
         if "openai-agents>=0.14" not in deps:
@@ -77,7 +93,9 @@ def validate_requirements(study_dir: Path, failures: list[dict[str, Any]]) -> No
             failures.append({"code": "missing_openai_key_requirement"})
         decision = summary.get("runtime_decision", {})
         if decision.get("decision") != "do-not-run-live-quantmind-runtime-in-M033-S04":
-            failures.append({"code": "unexpected_runtime_decision", "value": decision.get("decision")})
+            failures.append(
+                {"code": "unexpected_runtime_decision", "value": decision.get("decision")}
+            )
         if "paper_flow" not in decision.get("do_not_run", []):
             failures.append({"code": "paper_flow_not_forbidden"})
     for needle in (
@@ -95,8 +113,14 @@ def validate_implemented_vs_vision(study_dir: Path, failures: list[dict[str, Any
     text = require_text(study_dir / "quantmind-implemented-vs-vision.md", failures)
     if payload:
         require_false_flags("implemented_vs_vision", payload.get("safety_flags"), failures)
-        implemented = {item.get("name"): item.get("status") for item in payload.get("implemented_or_usable_patterns", [])}
-        not_ready = {item.get("name"): item.get("status") for item in payload.get("not_ready_or_aspirational", [])}
+        implemented = {
+            item.get("name"): item.get("status")
+            for item in payload.get("implemented_or_usable_patterns", [])
+        }
+        not_ready = {
+            item.get("name"): item.get("status")
+            for item in payload.get("not_ready_or_aspirational", [])
+        }
         expected_impl = {
             "TreeKnowledge": "implemented-pattern",
             "Paper and PaperKnowledgeCard": "implemented-pattern",
@@ -104,7 +128,13 @@ def validate_implemented_vs_vision(study_dir: Path, failures: list[dict[str, Any
         }
         for name, expected in expected_impl.items():
             if implemented.get(name) != expected:
-                failures.append({"code": "implemented_pattern_missing", "name": name, "value": implemented.get(name)})
+                failures.append(
+                    {
+                        "code": "implemented_pattern_missing",
+                        "name": name,
+                        "value": implemented.get(name),
+                    }
+                )
         expected_not_ready = {
             "GraphKnowledge": "placeholder-not-implemented",
             "storage layer": "missing-from-package",
@@ -113,11 +143,23 @@ def validate_implemented_vs_vision(study_dir: Path, failures: list[dict[str, Any
         }
         for name, expected in expected_not_ready.items():
             if not_ready.get(name) != expected:
-                failures.append({"code": "not_ready_boundary_missing", "name": name, "value": not_ready.get(name)})
+                failures.append(
+                    {
+                        "code": "not_ready_boundary_missing",
+                        "name": name,
+                        "value": not_ready.get(name),
+                    }
+                )
         classification = payload.get("classification", {})
         if classification.get("as_runtime_dependency_for_M033") != "not_recommended":
             failures.append({"code": "runtime_dependency_not_rejected"})
-    for needle in ("GraphKnowledge", "storage layer", "retrieval API", "TreeKnowledge", "PaperKnowledgeCard"):
+    for needle in (
+        "GraphKnowledge",
+        "storage layer",
+        "retrieval API",
+        "TreeKnowledge",
+        "PaperKnowledgeCard",
+    ):
         if needle not in text:
             failures.append({"code": "missing_vision_report_text", "needle": needle})
 
@@ -129,7 +171,12 @@ def validate_pattern_map(study_dir: Path, failures: list[dict[str, Any]]) -> Non
     if pattern_map:
         require_false_flags("pattern_map", pattern_map.get("safety_flags"), failures)
         if pattern_map.get("classification") != "pattern-source-not-dependency":
-            failures.append({"code": "unexpected_pattern_classification", "value": pattern_map.get("classification")})
+            failures.append(
+                {
+                    "code": "unexpected_pattern_classification",
+                    "value": pattern_map.get("classification"),
+                }
+            )
         names = {item.get("quantmind_pattern") for item in pattern_map.get("patterns_to_adopt", [])}
         for name in (
             "TreeKnowledge / TreeNode",

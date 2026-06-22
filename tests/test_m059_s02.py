@@ -38,7 +38,10 @@ def test_safety_defaults_and_loopback_are_explicit() -> None:
     assert replay.SAFETY_DEFAULTS == SAFETY_DEFAULTS
     assert validate_batch.DEFAULT_LOOPBACK_BASE_URL == "http://127.0.0.1:8070"
     assert replay.DEFAULT_LOOPBACK_BASE_URL == "http://127.0.0.1:8070"
-    for path in [ROOT / "scripts/m059_validate_pdf_batch.py", ROOT / "scripts/m059_replay_ingest.py"]:
+    for path in [
+        ROOT / "scripts/m059_validate_pdf_batch.py",
+        ROOT / "scripts/m059_replay_ingest.py",
+    ]:
         source = path.read_text(encoding="utf-8")
         assert "localhost" not in source.lower()
 
@@ -104,7 +107,10 @@ def test_validate_pdf_batch_cli_outputs_aggregate() -> None:
         text=True,
         capture_output=True,
     )
-    assert "aggregate batch=m054-pdf-acquisition parser=grobid total=5 passed=5 failed=0" in completed.stdout
+    assert (
+        "aggregate batch=m054-pdf-acquisition parser=grobid total=5 passed=5 failed=0"
+        in completed.stdout
+    )
 
 
 def test_e2e_runner_writes_reports_and_decision_exists(tmp_path: Path) -> None:

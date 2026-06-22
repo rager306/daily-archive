@@ -90,15 +90,20 @@ def synthesize_manifest(
     scope: str = "prose_claims_only",
 ) -> ManifestResult:
     """Synthesize route and candidate eligibility from automated and review events."""
-    requested = [event for event in review_events if event.get("event") == "independent_review.requested"]
-    findings = [event for event in review_events if event.get("event") == "independent_review.finding"]
-    global_findings = [finding for finding in findings if finding.get("finding_code") == FALSE_CONFIDENCE_FINDING]
+    requested = [
+        event for event in review_events if event.get("event") == "independent_review.requested"
+    ]
+    findings = [
+        event for event in review_events if event.get("event") == "independent_review.finding"
+    ]
+    global_findings = [
+        finding for finding in findings if finding.get("finding_code") == FALSE_CONFIDENCE_FINDING
+    ]
     route_findings = [finding for finding in findings if not _is_candidate_finding(finding)]
     candidate_findings = [finding for finding in findings if _is_candidate_finding(finding)]
     review_artifacts = {event["paper_id"]: event.get("review_artifact_path") for event in requested}
     routes_by_paper = {
-        event["paper_id"]: sorted((event.get("routes") or {}).keys())
-        for event in requested
+        event["paper_id"]: sorted((event.get("routes") or {}).keys()) for event in requested
     }
 
     entries: list[ManifestEntry] = []
@@ -119,9 +124,13 @@ def synthesize_manifest(
             )
             continue
 
-        review_routes = sorted({*reviewed_routes, *_finding_routes_for_paper(route_findings, paper_id=paper_id)})
+        review_routes = sorted(
+            {*reviewed_routes, *_finding_routes_for_paper(route_findings, paper_id=paper_id)}
+        )
         for route in review_routes:
-            matching_route_findings = _matching_findings(route_findings, paper_id=paper_id, route=route)
+            matching_route_findings = _matching_findings(
+                route_findings, paper_id=paper_id, route=route
+            )
             entries.append(
                 _entry_for_route(
                     paper_id=paper_id,
@@ -153,9 +162,13 @@ def _entry_for_route(
     scope: str,
 ) -> ManifestEntry:
     blocking_findings = [finding for finding in findings if finding.get("severity") == "blocker"]
-    repair_findings = [finding for finding in findings if finding.get("severity") == "repair_required"]
+    repair_findings = [
+        finding for finding in findings if finding.get("severity") == "repair_required"
+    ]
     warn_findings = [finding for finding in findings if finding.get("severity") == "warn"]
-    eligible_findings = [finding for finding in findings if finding.get("finding_code") in ELIGIBLE_FINDING_CODES]
+    eligible_findings = [
+        finding for finding in findings if finding.get("finding_code") in ELIGIBLE_FINDING_CODES
+    ]
     finding_codes = [str(finding.get("finding_code")) for finding in findings]
     messages = [str(finding.get("finding")) for finding in findings]
 
@@ -181,7 +194,9 @@ def _entry_for_route(
         independent_review_verdict = "BLOCKER"
     elif base_eligibility == "route_excluded":
         final_eligibility = "route_excluded"
-        independent_review_verdict = "REPAIR" if repair_findings else "FLAG" if warn_findings else "PASS"
+        independent_review_verdict = (
+            "REPAIR" if repair_findings else "FLAG" if warn_findings else "PASS"
+        )
     elif repair_findings:
         final_eligibility = "repair_required"
         independent_review_verdict = "REPAIR"
@@ -193,7 +208,9 @@ def _entry_for_route(
         independent_review_verdict = "PASS"
     else:
         final_eligibility = base_eligibility
-        independent_review_verdict = "FLAG" if base_eligibility == "eligible_with_caveat" else "PASS"
+        independent_review_verdict = (
+            "FLAG" if base_eligibility == "eligible_with_caveat" else "PASS"
+        )
 
     required_repairs = messages if final_eligibility in {"repair_required", "blocked"} else []
     if final_eligibility == "route_excluded" and repair_findings:
@@ -261,9 +278,13 @@ def _entry_for_candidate(
     findings: list[dict[str, Any]],
 ) -> ManifestEntry:
     blocking_findings = [finding for finding in findings if finding.get("severity") == "blocker"]
-    repair_findings = [finding for finding in findings if finding.get("severity") == "repair_required"]
+    repair_findings = [
+        finding for finding in findings if finding.get("severity") == "repair_required"
+    ]
     warn_findings = [finding for finding in findings if finding.get("severity") == "warn"]
-    eligible_findings = [finding for finding in findings if finding.get("finding_code") in ELIGIBLE_FINDING_CODES]
+    eligible_findings = [
+        finding for finding in findings if finding.get("finding_code") in ELIGIBLE_FINDING_CODES
+    ]
     finding_codes = [str(finding.get("finding_code")) for finding in findings]
     messages = [str(finding.get("finding")) for finding in findings if finding.get("finding")]
 
@@ -286,7 +307,9 @@ def _entry_for_candidate(
     first = findings[0]
     chunk_id = _string_or_none(first.get("chunk_id"))
     candidate_id = _string_or_none(first.get("candidate_id"))
-    source_artifact = _string_or_none(first.get("source_artifact") or first.get("source_artifact_path"))
+    source_artifact = _string_or_none(
+        first.get("source_artifact") or first.get("source_artifact_path")
+    )
     required_repairs = messages if final_eligibility in {"repair_required", "blocked"} else []
     caveats = messages if final_eligibility == "eligible_with_caveat" else []
     return ManifestEntry(
@@ -370,7 +393,9 @@ def _manifest_to_dict(
     for entry in result.entries:
         counts[entry.final_eligibility] = counts.get(entry.final_eligibility, 0) + 1
         granularity_counts = counts_by_granularity.setdefault(entry.granularity, {})
-        granularity_counts[entry.final_eligibility] = granularity_counts.get(entry.final_eligibility, 0) + 1
+        granularity_counts[entry.final_eligibility] = (
+            granularity_counts.get(entry.final_eligibility, 0) + 1
+        )
     return {
         "schema_version": "s05-eligibility-manifest.v2",
         "scope": result.scope,

@@ -63,9 +63,7 @@ class SemanticScholarClient:
         except (httpx.HTTPError, httpx.TimeoutException):
             return None
 
-    async def fetch_batch(
-        self, arxiv_ids: list[str]
-    ) -> dict[str, SemanticScholarPaper | None]:
+    async def fetch_batch(self, arxiv_ids: list[str]) -> dict[str, SemanticScholarPaper | None]:
         """Fetch metadata for multiple arxiv papers.
 
         Args:

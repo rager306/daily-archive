@@ -58,7 +58,9 @@ def _embedder_env(**overrides: str):
         importlib.reload(embedder_module)
 
 
-def _openai_embedding_response(request: httpx.Request, *, dimensions: int = DEFAULT_DIMENSIONS) -> httpx.Response:
+def _openai_embedding_response(
+    request: httpx.Request, *, dimensions: int = DEFAULT_DIMENSIONS
+) -> httpx.Response:
     payload = json.loads(request.content.decode("utf-8"))
     data = [
         {
@@ -75,7 +77,10 @@ def _openai_embedding_response(request: httpx.Request, *, dimensions: int = DEFA
             "object": "list",
             "data": data,
             "model": "deepvk/USER-bge-m3",
-            "usage": {"prompt_tokens": len(payload["input"]), "total_tokens": len(payload["input"])},
+            "usage": {
+                "prompt_tokens": len(payload["input"]),
+                "total_tokens": len(payload["input"]),
+            },
         },
         headers={"X-Cache": "HIT"},
         request=request,
@@ -116,7 +121,11 @@ async def test_embedder_uses_openai_shape() -> None:
     await embedder.embed_batch(["alpha", "beta"])
 
     assert observed_payloads == [
-        {"input": ["alpha", "beta"], "model": "deepvk/USER-bge-m3", "dimensions": DEFAULT_DIMENSIONS}
+        {
+            "input": ["alpha", "beta"],
+            "model": "deepvk/USER-bge-m3",
+            "dimensions": DEFAULT_DIMENSIONS,
+        }
     ]
     assert "inputs" not in observed_payloads[0]
     assert "truncate" not in observed_payloads[0]
@@ -230,7 +239,9 @@ async def test_retry_on_5xx() -> None:
         nonlocal calls
         calls += 1
         if calls < 3:
-            return httpx.Response(503, json={"error": "overload"}, headers={"Retry-After": "0"}, request=request)
+            return httpx.Response(
+                503, json={"error": "overload"}, headers={"Retry-After": "0"}, request=request
+            )
         return _openai_embedding_response(request)
 
     embedder = Embedder(client=_client(handler), sleep=_no_sleep_factory(delays))

@@ -15,7 +15,9 @@ DEFAULT_M058_EDGES = M058_ROOT / "edges.json"
 DEFAULT_M058_CORPUS = M058_ROOT / "figure-caption-corpus.json"
 DEFAULT_M057_SUMMARY = ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "summary.json"
 DEFAULT_M057_EDGES = ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "edges.json"
-DEFAULT_M057_CORPUS = ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "figure-caption-corpus.json"
+DEFAULT_M057_CORPUS = (
+    ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "figure-caption-corpus.json"
+)
 DEFAULT_OUTPUT_JSON = M058_ROOT / "v2-vs-m057.json"
 DEFAULT_OUTPUT_MD = M058_ROOT / "v2-vs-m057.md"
 DEFAULT_DECISION = M058_ROOT / "s01-decision.md"
@@ -99,11 +101,13 @@ def compare_v2_vs_m057(
         },
         "pilot_caption_coverage": {
             "v2": round(
-                float(m058_summary.get("total_captions", 0)) / max(float(m058_summary.get("total_figures", 0)), 1.0),
+                float(m058_summary.get("total_captions", 0))
+                / max(float(m058_summary.get("total_figures", 0)), 1.0),
                 6,
             ),
             "m057": round(
-                sum(1 for figure in m057_figures if figure.get("caption")) / max(len(m057_figures), 1),
+                sum(1 for figure in m057_figures if figure.get("caption"))
+                / max(len(m057_figures), 1),
                 6,
             ),
         },
@@ -124,11 +128,19 @@ def compare_v2_vs_m057(
             "m057": float((m057_summary.get("similarity_stats") or {}).get("mean") or 0.0),
         },
         "label_availability": {
-            "v2": round(sum(1 for figure in m058_figures if figure.get("label")) / max(len(m058_figures), 1), 6),
+            "v2": round(
+                sum(1 for figure in m058_figures if figure.get("label"))
+                / max(len(m058_figures), 1),
+                6,
+            ),
             "m057": 0.0,
         },
         "image_path_availability": {
-            "v2": round(sum(1 for figure in m058_figures if figure.get("image_path")) / max(len(m058_figures), 1), 6),
+            "v2": round(
+                sum(1 for figure in m058_figures if figure.get("image_path"))
+                / max(len(m058_figures), 1),
+                6,
+            ),
             "m057": 0.0,
         },
     }
@@ -159,7 +171,9 @@ def compare_v2_vs_m057(
         "decision_rationale": rationale,
     }
     output_json_path.parent.mkdir(parents=True, exist_ok=True)
-    output_json_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    output_json_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     md = render_markdown(payload)
     output_md_path.write_text(md, encoding="utf-8")
     decision_path.write_text(render_decision_markdown(payload), encoding="utf-8")
@@ -244,7 +258,12 @@ def main(argv: list[str] | None = None) -> int:
         output_md_path=args.output_md,
         decision_path=args.decision,
     )
-    print(json.dumps({"decision_for_s02": payload["decision_for_s02"], "output": str(args.output_json)}, sort_keys=True))
+    print(
+        json.dumps(
+            {"decision_for_s02": payload["decision_for_s02"], "output": str(args.output_json)},
+            sort_keys=True,
+        )
+    )
     return 0
 
 

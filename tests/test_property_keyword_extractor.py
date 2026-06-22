@@ -34,7 +34,13 @@ def test_keywords_are_strings_and_not_empty(text: str) -> None:
 
 
 @settings(max_examples=100)
-@given(text=st.text(min_size=0, max_size=2000, alphabet=st.characters(whitelist_categories=["Lu", "Ll", "Nd", "Zs"])))
+@given(
+    text=st.text(
+        min_size=0,
+        max_size=2000,
+        alphabet=st.characters(whitelist_categories=["Lu", "Ll", "Nd", "Zs"]),
+    )
+)
 def test_empty_or_whitespace_handled(text: str) -> None:
     """Pure whitespace or empty text must not crash."""
     extractor = KeywordExtractor()
@@ -47,10 +53,7 @@ def test_empty_or_whitespace_handled(text: str) -> None:
     text=st.text(
         min_size=1,
         max_size=1000,
-        alphabet=st.characters(
-            whitelist_categories=["Lu", "Ll"],
-            whitelist_characters=" ,.-"
-        ),
+        alphabet=st.characters(whitelist_categories=["Lu", "Ll"], whitelist_characters=" ,.-"),
     )
 )
 def test_repeated_word_increases_extraction(
@@ -66,6 +69,6 @@ def test_repeated_word_increases_extraction(
 
     # The repeated term should be in keywords (or its components)
     keyword_str = " ".join(keywords).lower()
-    assert any(
-        term[:10].lower() in keyword_str for _ in [1]
-    ), f"Repeated term '{term}' not extracted from text with repetitions"
+    assert any(term[:10].lower() in keyword_str for _ in [1]), (
+        f"Repeated term '{term}' not extracted from text with repetitions"
+    )

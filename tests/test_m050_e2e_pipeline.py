@@ -66,6 +66,7 @@ def _synthetic_structure(paper_id: str = "e2e-mock-001") -> dict[str, Any]:
 
 # ---------- e2e tests ----------
 
+
 def test_e2e_two_work_requests_one_structure(tmp_path: Path) -> None:
     structure = _synthetic_structure("e2e-paper-A")
 
@@ -110,7 +111,10 @@ def test_e2e_safety_defaults_in_full_aggregate(tmp_path: Path) -> None:
         structure, max_candidates=2, run_id="e2e-safety"
     )
     completed = run_worker_pool(
-        [request], structures={request.work_id: structure}, transport=MockTransport(), storage_dir=tmp_path
+        [request],
+        structures={request.work_id: structure},
+        transport=MockTransport(),
+        storage_dir=tmp_path,
     )
     assert len(completed) == 1
 
@@ -132,7 +136,10 @@ def test_e2e_artifact_files_present_in_storage_dir(tmp_path: Path) -> None:
         structure, max_candidates=2, run_id="e2e-storage"
     )
     run_worker_pool(
-        [request], structures={request.work_id: structure}, transport=MockTransport(), storage_dir=tmp_path
+        [request],
+        structures={request.work_id: structure},
+        transport=MockTransport(),
+        storage_dir=tmp_path,
     )
 
     # The work-request file must exist at tmp_path/<work_id>.json
@@ -149,11 +156,12 @@ def test_e2e_artifact_files_present_in_storage_dir(tmp_path: Path) -> None:
 
 def test_e2e_aggregate_deterministic_on_rerun(tmp_path: Path) -> None:
     structure = _synthetic_structure("e2e-paper-D")
-    request = request_article_artifact_classification(
-        structure, max_candidates=2, run_id="e2e-det"
-    )
+    request = request_article_artifact_classification(structure, max_candidates=2, run_id="e2e-det")
     run_worker_pool(
-        [request], structures={request.work_id: structure}, transport=MockTransport(), storage_dir=tmp_path
+        [request],
+        structures={request.work_id: structure},
+        transport=MockTransport(),
+        storage_dir=tmp_path,
     )
 
     # Re-aggregate twice. Only `generated_at` should differ.
@@ -176,11 +184,17 @@ def test_e2e_merge_dedup_when_same_work_id_replayed(tmp_path: Path) -> None:
     )
     # First run writes the artifact.
     run_worker_pool(
-        [request], structures={request.work_id: structure}, transport=MockTransport(), storage_dir=tmp_path
+        [request],
+        structures={request.work_id: structure},
+        transport=MockTransport(),
+        storage_dir=tmp_path,
     )
     # Second run re-processes the same work_id and overwrites the artifact.
     run_worker_pool(
-        [request], structures={request.work_id: structure}, transport=MockTransport(), storage_dir=tmp_path
+        [request],
+        structures={request.work_id: structure},
+        transport=MockTransport(),
+        storage_dir=tmp_path,
     )
 
     aggregate = aggregate_article_artifact_log(tmp_path)
@@ -198,7 +212,7 @@ def test_e2e_no_safety_default_ever_flips_true(tmp_path: Path) -> None:
     # 3 work requests, one each of valid/invalid/skipped_no_structure.
     requests = []
     # noqa: B007
-    for i, _status in  enumerate(("valid", "invalid", "skipped_no_structure")):
+    for i, _status in enumerate(("valid", "invalid", "skipped_no_structure")):
         # We can't directly set validation_status from the requester;
         # the worker records whatever the validator emits. For E2E,
         # we just want multiple work_ids in the aggregate. The

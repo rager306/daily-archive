@@ -96,7 +96,15 @@ SAFE_TEXT_KEYS = {
 class CloseoutError(ValueError):
     """Typed contract failure used for deterministic closeout diagnostics."""
 
-    def __init__(self, code: str, message: str, *, identity: str | None = None, article_ref: str | None = None, json_path: str = "$") -> None:
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        *,
+        identity: str | None = None,
+        article_ref: str | None = None,
+        json_path: str = "$",
+    ) -> None:
         super().__init__(message)
         self.code = code
         self.identity = identity
@@ -135,11 +143,17 @@ def load_json_object(path: Path) -> dict[str, Any]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        raise CloseoutError("malformed_json", f"malformed JSON at {path}: {exc}", json_path=str(path)) from exc
+        raise CloseoutError(
+            "malformed_json", f"malformed JSON at {path}: {exc}", json_path=str(path)
+        ) from exc
     except OSError as exc:
-        raise CloseoutError("json_read_failed", f"failed to read {path}: {exc}", json_path=str(path)) from exc
+        raise CloseoutError(
+            "json_read_failed", f"failed to read {path}: {exc}", json_path=str(path)
+        ) from exc
     if not isinstance(payload, dict):
-        raise CloseoutError("malformed_json_object", f"expected JSON object at {path}", json_path=str(path))
+        raise CloseoutError(
+            "malformed_json_object", f"expected JSON object at {path}", json_path=str(path)
+        )
     return payload
 
 
@@ -151,13 +165,21 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def safe_child_path(root: Path, rel_path: str | None, *, code: str = "unsafe_relative_path") -> Path:
+def safe_child_path(
+    root: Path, rel_path: str | None, *, code: str = "unsafe_relative_path"
+) -> Path:
     if not isinstance(rel_path, str) or not rel_path.strip():
         raise CloseoutError(code, f"empty unsafe relative path: {rel_path!r}")
     if "://" in rel_path:
-        raise CloseoutError("url_not_allowed_as_local_path", f"URL cannot be used as a local path: {rel_path}")
+        raise CloseoutError(
+            "url_not_allowed_as_local_path", f"URL cannot be used as a local path: {rel_path}"
+        )
     normalized = PurePosixPath(rel_path.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part in ("", ".") for part in normalized.parts):
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part in ("", ".") for part in normalized.parts)
+    ):
         raise CloseoutError(code, f"unsafe relative path: {rel_path}")
     root_resolved = root.resolve()
     resolved = (root_resolved / normalized.as_posix()).resolve()
@@ -173,7 +195,9 @@ def _rows(payload: Mapping[str, Any], key: str, *, code: str) -> list[dict[str, 
     rows: list[dict[str, Any]] = []
     for index, row in enumerate(value):
         if not isinstance(row, dict):
-            raise CloseoutError(code, f"{key}[{index}] must be an object", json_path=f"$.{key}[{index}]")
+            raise CloseoutError(
+                code, f"{key}[{index}] must be an object", json_path=f"$.{key}[{index}]"
+            )
         rows.append(row)
     return rows
 
@@ -187,7 +211,14 @@ def _row_key(row: Mapping[str, Any]) -> tuple[str | None, str | None, str | None
     )
 
 
-def diagnostic(code: str, message: str, *, severity: str = "info", row: Mapping[str, Any] | None = None, json_path: str = "$") -> dict[str, Any]:
+def diagnostic(
+    code: str,
+    message: str,
+    *,
+    severity: str = "info",
+    row: Mapping[str, Any] | None = None,
+    json_path: str = "$",
+) -> dict[str, Any]:
     row = row or {}
     return {
         "schema_version": SCHEMA_VERSION,
@@ -216,50 +247,106 @@ def error_to_diagnostic(exc: CloseoutError) -> dict[str, Any]:
     }
 
 
-def assert_ids(selection: Mapping[str, Any], acquisition: Mapping[str, Any], loader: Mapping[str, Any]) -> None:
-    for name, payload in (("selection", selection), ("acquisition", acquisition), ("loader", loader)):
+def assert_ids(
+    selection: Mapping[str, Any], acquisition: Mapping[str, Any], loader: Mapping[str, Any]
+) -> None:
+    for name, payload in (
+        ("selection", selection),
+        ("acquisition", acquisition),
+        ("loader", loader),
+    ):
         if payload.get("milestone_id") != MILESTONE_ID:
-            raise CloseoutError("milestone_id_mismatch", f"{name} milestone_id mismatch", json_path=f"$.{name}.milestone_id")
+            raise CloseoutError(
+                "milestone_id_mismatch",
+                f"{name} milestone_id mismatch",
+                json_path=f"$.{name}.milestone_id",
+            )
         if payload.get("slice_id") != SLICE_ID:
-            raise CloseoutError("slice_id_mismatch", f"{name} slice_id mismatch", json_path=f"$.{name}.slice_id")
+            raise CloseoutError(
+                "slice_id_mismatch", f"{name} slice_id mismatch", json_path=f"$.{name}.slice_id"
+            )
         if payload.get("selection_id") != SELECTION_ID:
-            raise CloseoutError("selection_id_mismatch", f"{name} selection_id mismatch", json_path=f"$.{name}.selection_id")
+            raise CloseoutError(
+                "selection_id_mismatch",
+                f"{name} selection_id mismatch",
+                json_path=f"$.{name}.selection_id",
+            )
 
 
-def assert_selection_contract(selection: Mapping[str, Any], diagnostics: list[dict[str, Any]]) -> tuple[set[str], list[dict[str, Any]], list[dict[str, Any]]]:
+def assert_selection_contract(
+    selection: Mapping[str, Any], diagnostics: list[dict[str, Any]]
+) -> tuple[set[str], list[dict[str, Any]], list[dict[str, Any]]]:
     counts = selection.get("counts")
     if not isinstance(counts, Mapping):
-        raise CloseoutError("selection_counts_missing", "selection is missing counts", json_path="$.counts")
+        raise CloseoutError(
+            "selection_counts_missing", "selection is missing counts", json_path="$.counts"
+        )
     for key, expected in EXPECTED_COUNTS.items():
         if counts.get(key) != expected:
-            raise CloseoutError("selection_count_mismatch", f"selection count {key}={counts.get(key)!r}, expected {expected}", json_path=f"$.counts.{key}")
+            raise CloseoutError(
+                "selection_count_mismatch",
+                f"selection count {key}={counts.get(key)!r}, expected {expected}",
+                json_path=f"$.counts.{key}",
+            )
     requested_refs = _rows(selection, "requested_refs", code="selection_requested_refs_malformed")
     articles = _rows(selection, "articles", code="selection_articles_malformed")
     blockers = _rows(selection, "catalog_blockers", code="selection_blockers_malformed")
-    identities = {row.get("identity") for row in requested_refs if isinstance(row.get("identity"), str)}
+    identities = {
+        row.get("identity") for row in requested_refs if isinstance(row.get("identity"), str)
+    }
     if len(identities) != EXPECTED_COUNTS["requested_ref_count"]:
-        raise CloseoutError("requested_identity_count_mismatch", "requested identities are missing or duplicated", json_path="$.requested_refs")
-    represented = {row.get("identity") for row in articles + blockers if isinstance(row.get("identity"), str)}
+        raise CloseoutError(
+            "requested_identity_count_mismatch",
+            "requested identities are missing or duplicated",
+            json_path="$.requested_refs",
+        )
+    represented = {
+        row.get("identity") for row in articles + blockers if isinstance(row.get("identity"), str)
+    }
     missing = identities - represented
     extra = represented - identities
     if missing or extra:
-        raise CloseoutError("requested_identity_not_represented", f"identity representation mismatch missing={sorted(missing)} extra={sorted(extra)}")
+        raise CloseoutError(
+            "requested_identity_not_represented",
+            f"identity representation mismatch missing={sorted(missing)} extra={sorted(extra)}",
+        )
     for article in articles:
         if not article.get("article_ref") or not article.get("article_path"):
-            raise CloseoutError("catalog_backed_row_missing_article_json", "catalog-backed row lacks article_ref/article_path", identity=article.get("identity"), json_path="$.articles")
+            raise CloseoutError(
+                "catalog_backed_row_missing_article_json",
+                "catalog-backed row lacks article_ref/article_path",
+                identity=article.get("identity"),
+                json_path="$.articles",
+            )
     for blocker in blockers:
         if not blocker.get("blocker_code"):
-            raise CloseoutError("typed_blocker_missing_code", "typed blocker row lacks blocker_code", identity=blocker.get("identity"), json_path="$.catalog_blockers")
-    diagnostics.append(diagnostic("selection_contract_ok", "all requested identities are represented by catalog rows or typed blockers"))
+            raise CloseoutError(
+                "typed_blocker_missing_code",
+                "typed blocker row lacks blocker_code",
+                identity=blocker.get("identity"),
+                json_path="$.catalog_blockers",
+            )
+    diagnostics.append(
+        diagnostic(
+            "selection_contract_ok",
+            "all requested identities are represented by catalog rows or typed blockers",
+        )
+    )
     return identities, articles, blockers
 
 
 def assert_flag_value(name: str, value: Any, *, json_path: str) -> None:
     if name in TRUE_METADATA_FLAGS:
         if value is not True:
-            raise CloseoutError("metadata_only_flag_not_true", f"metadata-only safety flag {name}={value!r}", json_path=json_path)
+            raise CloseoutError(
+                "metadata_only_flag_not_true",
+                f"metadata-only safety flag {name}={value!r}",
+                json_path=json_path,
+            )
     elif name in FALSE_SAFETY_FLAGS and value is not False:
-        raise CloseoutError("unsafe_safety_flag", f"unsafe safety flag {name}={value!r}", json_path=json_path)
+        raise CloseoutError(
+            "unsafe_safety_flag", f"unsafe safety flag {name}={value!r}", json_path=json_path
+        )
 
 
 def assert_fail_closed_flags(payload: Any, *, json_path: str = "$") -> None:
@@ -267,9 +354,17 @@ def assert_fail_closed_flags(payload: Any, *, json_path: str = "$") -> None:
         for key, value in payload.items():
             if key in FALSE_SAFETY_FLAGS or key in TRUE_METADATA_FLAGS:
                 assert_flag_value(key, value, json_path=f"{json_path}.{key}")
-            if key == "fail_closed_safety_flags" or key == "safety_flags" or key.endswith("_safety_flags"):
+            if (
+                key == "fail_closed_safety_flags"
+                or key == "safety_flags"
+                or key.endswith("_safety_flags")
+            ):
                 if not isinstance(value, Mapping):
-                    raise CloseoutError("safety_flags_malformed", f"{key} must be an object", json_path=f"{json_path}.{key}")
+                    raise CloseoutError(
+                        "safety_flags_malformed",
+                        f"{key} must be an object",
+                        json_path=f"{json_path}.{key}",
+                    )
                 for flag, flag_value in value.items():
                     if isinstance(flag, str):
                         assert_flag_value(flag, flag_value, json_path=f"{json_path}.{key}.{flag}")
@@ -284,7 +379,11 @@ def validate_metadata_only(payload: Any, *, path: str = "$", in_safe_key: bool =
         for key, value in payload.items():
             safe_key = str(key) in SAFE_TEXT_KEYS
             if key in FORBIDDEN_OUTPUT_KEYS:
-                raise CloseoutError("raw_payload_output_key", f"forbidden raw-payload output key at {path}.{key}", json_path=f"{path}.{key}")
+                raise CloseoutError(
+                    "raw_payload_output_key",
+                    f"forbidden raw-payload output key at {path}.{key}",
+                    json_path=f"{path}.{key}",
+                )
             validate_metadata_only(value, path=f"{path}.{key}", in_safe_key=safe_key)
     elif isinstance(payload, list):
         for index, item in enumerate(payload):
@@ -293,7 +392,11 @@ def validate_metadata_only(payload: Any, *, path: str = "$", in_safe_key: bool =
         lowered = payload.lower()
         for snippet in FORBIDDEN_OUTPUT_SNIPPETS:
             if snippet.lower() in lowered:
-                raise CloseoutError("raw_payload_output_snippet", f"forbidden raw-payload snippet at {path}", json_path=path)
+                raise CloseoutError(
+                    "raw_payload_output_snippet",
+                    f"forbidden raw-payload snippet at {path}",
+                    json_path=path,
+                )
 
 
 def assert_artifact_redacted(path: Path) -> None:
@@ -301,41 +404,90 @@ def assert_artifact_redacted(path: Path) -> None:
     lowered = text.lower()
     found = [snippet for snippet in FORBIDDEN_OUTPUT_SNIPPETS if snippet.lower() in lowered]
     if found:
-        raise CloseoutError("raw_payload_artifact_snippet", f"metadata artifact is not redacted: {path}: {found}", json_path=path.as_posix())
+        raise CloseoutError(
+            "raw_payload_artifact_snippet",
+            f"metadata artifact is not redacted: {path}: {found}",
+            json_path=path.as_posix(),
+        )
 
 
-def assert_hashes_and_paths(acquisition_rows: list[dict[str, Any]], loader_rows: list[dict[str, Any]], *, source_dir: Path, loader_dir: Path, diagnostics: list[dict[str, Any]]) -> None:
+def assert_hashes_and_paths(
+    acquisition_rows: list[dict[str, Any]],
+    loader_rows: list[dict[str, Any]],
+    *,
+    source_dir: Path,
+    loader_dir: Path,
+    diagnostics: list[dict[str, Any]],
+) -> None:
     for row in acquisition_rows:
         local_path = row.get("local_path")
         if isinstance(local_path, str):
-            source_path = safe_child_path(source_dir, local_path, code="unsafe_acquisition_local_path")
+            source_path = safe_child_path(
+                source_dir, local_path, code="unsafe_acquisition_local_path"
+            )
             for safe_path in row.get("safe_local_paths", []):
                 safe_child_path(source_dir, safe_path, code="unsafe_acquisition_safe_local_path")
             if row.get("status") == "captured":
                 if not source_path.exists() or not source_path.is_file():
-                    raise CloseoutError("captured_file_missing", f"captured file is missing: {local_path}", identity=row.get("identity"), article_ref=row.get("article_ref"))
+                    raise CloseoutError(
+                        "captured_file_missing",
+                        f"captured file is missing: {local_path}",
+                        identity=row.get("identity"),
+                        article_ref=row.get("article_ref"),
+                    )
                 expected_hash = row.get("sha256")
                 expected_size = row.get("byte_size")
                 actual_hash = sha256_file(source_path)
                 actual_size = source_path.stat().st_size
                 if expected_hash != actual_hash:
-                    raise CloseoutError("captured_hash_mismatch", f"captured hash mismatch for {local_path}", identity=row.get("identity"), article_ref=row.get("article_ref"))
+                    raise CloseoutError(
+                        "captured_hash_mismatch",
+                        f"captured hash mismatch for {local_path}",
+                        identity=row.get("identity"),
+                        article_ref=row.get("article_ref"),
+                    )
                 if expected_size != actual_size:
-                    raise CloseoutError("captured_byte_size_mismatch", f"captured byte size mismatch for {local_path}", identity=row.get("identity"), article_ref=row.get("article_ref"))
-                diagnostics.append(diagnostic("captured_file_hash_ok", "captured file hash and byte size match", row=row))
+                    raise CloseoutError(
+                        "captured_byte_size_mismatch",
+                        f"captured byte size mismatch for {local_path}",
+                        identity=row.get("identity"),
+                        article_ref=row.get("article_ref"),
+                    )
+                diagnostics.append(
+                    diagnostic(
+                        "captured_file_hash_ok", "captured file hash and byte size match", row=row
+                    )
+                )
     for row in loader_rows:
         if isinstance(row.get("local_path"), str):
             safe_child_path(source_dir, row["local_path"], code="unsafe_loader_local_path")
         if isinstance(row.get("event_path"), str):
-            event_path = safe_child_path(loader_dir, row["event_path"], code="unsafe_loader_event_path")
+            event_path = safe_child_path(
+                loader_dir, row["event_path"], code="unsafe_loader_event_path"
+            )
             if row.get("loader_attempted") is True and not event_path.exists():
-                raise CloseoutError("loader_event_log_missing", f"loader event log is missing: {row['event_path']}", identity=row.get("identity"), article_ref=row.get("article_ref"))
+                raise CloseoutError(
+                    "loader_event_log_missing",
+                    f"loader event log is missing: {row['event_path']}",
+                    identity=row.get("identity"),
+                    article_ref=row.get("article_ref"),
+                )
             if event_path.exists():
                 assert_artifact_redacted(event_path)
-                diagnostics.append(diagnostic("loader_event_log_redacted", "loader event log path is confined and redacted", row=row))
+                diagnostics.append(
+                    diagnostic(
+                        "loader_event_log_redacted",
+                        "loader event log path is confined and redacted",
+                        row=row,
+                    )
+                )
 
 
-def assert_acquisition_loader_alignment(acquisition_rows: list[dict[str, Any]], loader_rows: list[dict[str, Any]], diagnostics: list[dict[str, Any]]) -> None:
+def assert_acquisition_loader_alignment(
+    acquisition_rows: list[dict[str, Any]],
+    loader_rows: list[dict[str, Any]],
+    diagnostics: list[dict[str, Any]],
+) -> None:
     acquisition_by_key = {_row_key(row): row for row in acquisition_rows}
     loader_by_key = {_row_key(row): row for row in loader_rows}
     if len(acquisition_by_key) != len(acquisition_rows):
@@ -345,25 +497,67 @@ def assert_acquisition_loader_alignment(acquisition_rows: list[dict[str, Any]], 
     missing_loader = set(acquisition_by_key) - set(loader_by_key)
     unexpected_loader = set(loader_by_key) - set(acquisition_by_key)
     if missing_loader or unexpected_loader:
-        raise CloseoutError("loader_acquisition_row_mismatch", f"loader/acquisition rows differ missing={sorted(missing_loader)} extra={sorted(unexpected_loader)}")
-    captured_keys = {key for key, row in acquisition_by_key.items() if row.get("status") == "captured"}
-    attempted_keys = {key for key, row in loader_by_key.items() if row.get("loader_attempted") is True}
+        raise CloseoutError(
+            "loader_acquisition_row_mismatch",
+            f"loader/acquisition rows differ missing={sorted(missing_loader)} extra={sorted(unexpected_loader)}",
+        )
+    captured_keys = {
+        key for key, row in acquisition_by_key.items() if row.get("status") == "captured"
+    }
+    attempted_keys = {
+        key for key, row in loader_by_key.items() if row.get("loader_attempted") is True
+    }
     if captured_keys != attempted_keys:
-        raise CloseoutError("loader_attempt_captured_mismatch", f"loader attempts do not match captured acquisition rows missing={sorted(captured_keys - attempted_keys)} extra={sorted(attempted_keys - captured_keys)}")
+        raise CloseoutError(
+            "loader_attempt_captured_mismatch",
+            f"loader attempts do not match captured acquisition rows missing={sorted(captured_keys - attempted_keys)} extra={sorted(attempted_keys - captured_keys)}",
+        )
     for key, acquisition_row in acquisition_by_key.items():
         loader_row = loader_by_key[key]
         if acquisition_row.get("status") != "captured":
-            if loader_row.get("status") != "blocked" or loader_row.get("loader_attempted") is not False:
-                raise CloseoutError("loader_blocker_missing", "non-captured acquisition row is not a loader blocker", identity=acquisition_row.get("identity"), article_ref=acquisition_row.get("article_ref"))
+            if (
+                loader_row.get("status") != "blocked"
+                or loader_row.get("loader_attempted") is not False
+            ):
+                raise CloseoutError(
+                    "loader_blocker_missing",
+                    "non-captured acquisition row is not a loader blocker",
+                    identity=acquisition_row.get("identity"),
+                    article_ref=acquisition_row.get("article_ref"),
+                )
             if not loader_row.get("blocker_code"):
-                raise CloseoutError("loader_blocker_missing_code", "loader blocker row lacks blocker_code", identity=acquisition_row.get("identity"), article_ref=acquisition_row.get("article_ref"))
+                raise CloseoutError(
+                    "loader_blocker_missing_code",
+                    "loader blocker row lacks blocker_code",
+                    identity=acquisition_row.get("identity"),
+                    article_ref=acquisition_row.get("article_ref"),
+                )
         else:
-            if loader_row.get("sha256") != acquisition_row.get("sha256") or loader_row.get("byte_size") != acquisition_row.get("byte_size"):
-                raise CloseoutError("loader_capture_hash_size_mismatch", "loader row does not preserve acquisition hash/size", identity=acquisition_row.get("identity"), article_ref=acquisition_row.get("article_ref"))
-    diagnostics.append(diagnostic("acquisition_loader_alignment_ok", "loader attempts exactly match captured acquisition rows and blockers align to non-captured rows"))
+            if loader_row.get("sha256") != acquisition_row.get("sha256") or loader_row.get(
+                "byte_size"
+            ) != acquisition_row.get("byte_size"):
+                raise CloseoutError(
+                    "loader_capture_hash_size_mismatch",
+                    "loader row does not preserve acquisition hash/size",
+                    identity=acquisition_row.get("identity"),
+                    article_ref=acquisition_row.get("article_ref"),
+                )
+    diagnostics.append(
+        diagnostic(
+            "acquisition_loader_alignment_ok",
+            "loader attempts exactly match captured acquisition rows and blockers align to non-captured rows",
+        )
+    )
 
 
-def assert_summary_counts(selection_identities: set[str], selection_articles: list[dict[str, Any]], selection_blockers: list[dict[str, Any]], acquisition: Mapping[str, Any], loader: Mapping[str, Any], diagnostics: list[dict[str, Any]]) -> dict[str, Any]:
+def assert_summary_counts(
+    selection_identities: set[str],
+    selection_articles: list[dict[str, Any]],
+    selection_blockers: list[dict[str, Any]],
+    acquisition: Mapping[str, Any],
+    loader: Mapping[str, Any],
+    diagnostics: list[dict[str, Any]],
+) -> dict[str, Any]:
     acquisition_rows = _rows(acquisition, "results", code="acquisition_results_malformed")
     loader_rows = _rows(loader, "results", code="loader_results_malformed")
     acquisition_counts = dict(Counter(row.get("status") for row in acquisition_rows))
@@ -375,43 +569,103 @@ def assert_summary_counts(selection_identities: set[str], selection_articles: li
         "failed": loader_status_counts.get("failed", 0),
         "loader_blocked": loader_status_counts.get("blocked", 0),
     }
-    if acquisition.get("counts") != {"captured": acquisition_counts.get("captured", 0), "blocked": acquisition_counts.get("blocked", 0), "failed": acquisition_counts.get("failed", 0)}:
-        raise CloseoutError("acquisition_count_mismatch", "acquisition summary counts do not match result rows", json_path="$.acquisition.counts")
+    if acquisition.get("counts") != {
+        "captured": acquisition_counts.get("captured", 0),
+        "blocked": acquisition_counts.get("blocked", 0),
+        "failed": acquisition_counts.get("failed", 0),
+    }:
+        raise CloseoutError(
+            "acquisition_count_mismatch",
+            "acquisition summary counts do not match result rows",
+            json_path="$.acquisition.counts",
+        )
     if loader.get("counts") != loader_counts:
-        raise CloseoutError("loader_count_mismatch", "loader summary counts do not match result rows", json_path="$.loader.counts")
-    row_identities = {row.get("identity") for row in acquisition_rows + loader_rows if isinstance(row.get("identity"), str)}
+        raise CloseoutError(
+            "loader_count_mismatch",
+            "loader summary counts do not match result rows",
+            json_path="$.loader.counts",
+        )
+    row_identities = {
+        row.get("identity")
+        for row in acquisition_rows + loader_rows
+        if isinstance(row.get("identity"), str)
+    }
     if row_identities != selection_identities:
-        raise CloseoutError("terminal_identity_coverage_mismatch", f"terminal rows do not cover requested identities: {sorted(selection_identities - row_identities)}")
-    expected_terminal_rows = sum(len(article.get("source_variants", [])) for article in selection_articles) + len(selection_blockers)
-    if len(acquisition_rows) != expected_terminal_rows or len(loader_rows) != expected_terminal_rows:
-        raise CloseoutError("terminal_row_count_mismatch", f"expected {expected_terminal_rows} terminal rows, got acquisition={len(acquisition_rows)} loader={len(loader_rows)}")
-    diagnostics.append(diagnostic("summary_counts_ok", "selection, acquisition, and loader counts agree"))
-    return {"acquisition_counts": dict(acquisition_counts), "loader_counts": loader_counts, "terminal_row_count": expected_terminal_rows}
+        raise CloseoutError(
+            "terminal_identity_coverage_mismatch",
+            f"terminal rows do not cover requested identities: {sorted(selection_identities - row_identities)}",
+        )
+    expected_terminal_rows = sum(
+        len(article.get("source_variants", [])) for article in selection_articles
+    ) + len(selection_blockers)
+    if (
+        len(acquisition_rows) != expected_terminal_rows
+        or len(loader_rows) != expected_terminal_rows
+    ):
+        raise CloseoutError(
+            "terminal_row_count_mismatch",
+            f"expected {expected_terminal_rows} terminal rows, got acquisition={len(acquisition_rows)} loader={len(loader_rows)}",
+        )
+    diagnostics.append(
+        diagnostic("summary_counts_ok", "selection, acquisition, and loader counts agree")
+    )
+    return {
+        "acquisition_counts": dict(acquisition_counts),
+        "loader_counts": loader_counts,
+        "terminal_row_count": expected_terminal_rows,
+    }
 
 
-def per_identity_counts(rows: list[dict[str, Any]], *, status_key: str = "status") -> dict[str, dict[str, int]]:
+def per_identity_counts(
+    rows: list[dict[str, Any]], *, status_key: str = "status"
+) -> dict[str, dict[str, int]]:
     counts: dict[str, dict[str, int]] = defaultdict(dict)
     for row in rows:
-        identity = row.get("identity") if isinstance(row.get("identity"), str) else "<missing-identity>"
+        identity = (
+            row.get("identity") if isinstance(row.get("identity"), str) else "<missing-identity>"
+        )
         status = str(row.get(status_key))
         counts[identity][status] = counts[identity].get(status, 0) + 1
     return {key: dict(value) for key, value in sorted(counts.items())}
 
 
-def verify_contract(*, selection_path: Path, acquisition_summary_path: Path, loader_summary_path: Path, source_dir: Path, loader_dir: Path, duration_ms: int = 0) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+def verify_contract(
+    *,
+    selection_path: Path,
+    acquisition_summary_path: Path,
+    loader_summary_path: Path,
+    source_dir: Path,
+    loader_dir: Path,
+    duration_ms: int = 0,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     diagnostics: list[dict[str, Any]] = []
     selection = load_json_object(selection_path)
     acquisition = load_json_object(acquisition_summary_path)
     loader = load_json_object(loader_summary_path)
     assert_ids(selection, acquisition, loader)
-    selection_identities, selection_articles, selection_blockers = assert_selection_contract(selection, diagnostics)
+    selection_identities, selection_articles, selection_blockers = assert_selection_contract(
+        selection, diagnostics
+    )
     assert_fail_closed_flags(selection, json_path="$.selection")
     assert_fail_closed_flags(acquisition, json_path="$.acquisition")
     assert_fail_closed_flags(loader, json_path="$.loader")
-    count_payload = assert_summary_counts(selection_identities, selection_articles, selection_blockers, acquisition, loader, diagnostics)
+    count_payload = assert_summary_counts(
+        selection_identities,
+        selection_articles,
+        selection_blockers,
+        acquisition,
+        loader,
+        diagnostics,
+    )
     acquisition_rows = _rows(acquisition, "results", code="acquisition_results_malformed")
     loader_rows = _rows(loader, "results", code="loader_results_malformed")
-    assert_hashes_and_paths(acquisition_rows, loader_rows, source_dir=source_dir, loader_dir=loader_dir, diagnostics=diagnostics)
+    assert_hashes_and_paths(
+        acquisition_rows,
+        loader_rows,
+        source_dir=source_dir,
+        loader_dir=loader_dir,
+        diagnostics=diagnostics,
+    )
     assert_acquisition_loader_alignment(acquisition_rows, loader_rows, diagnostics)
     redaction_payload = {"selection": selection, "acquisition": acquisition, "loader": loader}
     validate_metadata_only(redaction_payload)
@@ -464,7 +718,9 @@ def verify_contract(*, selection_path: Path, acquisition_summary_path: Path, loa
         "generated_at": utc_now(),
     }
     validate_metadata_only(summary)
-    diagnostics.append(diagnostic("closeout_contract_passed", "S02 closeout evidence contract passed"))
+    diagnostics.append(
+        diagnostic("closeout_contract_passed", "S02 closeout evidence contract passed")
+    )
     return summary, diagnostics
 
 
@@ -541,7 +797,13 @@ def failed_summary(exc: CloseoutError, *, duration_ms: int) -> dict[str, Any]:
         "slice_id": SLICE_ID,
         "selection_id": SELECTION_ID,
         "status": "failed",
-        "failure": {"code": exc.code, "message": str(exc), "identity": exc.identity, "article_ref": exc.article_ref, "json_path": exc.json_path},
+        "failure": {
+            "code": exc.code,
+            "message": str(exc),
+            "identity": exc.identity,
+            "article_ref": exc.article_ref,
+            "json_path": exc.json_path,
+        },
         "fail_closed_safety_flags": {
             "metadata_only_closeout": True,
             "network_fetch_attempted": False,
@@ -570,7 +832,18 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     started = time.perf_counter()
     try:
-        _reject_unsafe_cli_paths((args.selection, args.acquisition_summary, args.loader_summary, args.source_dir, args.loader_dir, args.write_summary, args.write_diagnostics, args.write_report))
+        _reject_unsafe_cli_paths(
+            (
+                args.selection,
+                args.acquisition_summary,
+                args.loader_summary,
+                args.source_dir,
+                args.loader_dir,
+                args.write_summary,
+                args.write_diagnostics,
+                args.write_report,
+            )
+        )
         summary, diagnostics = verify_contract(
             selection_path=args.selection,
             acquisition_summary_path=args.acquisition_summary,
@@ -586,7 +859,17 @@ def main(argv: list[str] | None = None) -> int:
         atomic_write_text(args.write_report, report)
         for artifact_path in (args.write_summary, args.write_diagnostics, args.write_report):
             assert_artifact_redacted(artifact_path)
-        sys.stdout.write(json.dumps({"status": "passed", "summary": args.write_summary.as_posix(), "counts": summary["counts"]}, sort_keys=True) + "\n")
+        sys.stdout.write(
+            json.dumps(
+                {
+                    "status": "passed",
+                    "summary": args.write_summary.as_posix(),
+                    "counts": summary["counts"],
+                },
+                sort_keys=True,
+            )
+            + "\n"
+        )
         return 0
     except CloseoutError as exc:
         duration_ms = int((time.perf_counter() - started) * 1000)
@@ -598,9 +881,22 @@ def main(argv: list[str] | None = None) -> int:
             write_jsonl(args.write_diagnostics, diagnostics)
             atomic_write_text(args.write_report, report)
         except OSError as write_exc:
-            sys.stderr.write(json.dumps({"status": "failed", "code": "closeout_report_write_failed", "message": str(write_exc)}, sort_keys=True) + "\n")
+            sys.stderr.write(
+                json.dumps(
+                    {
+                        "status": "failed",
+                        "code": "closeout_report_write_failed",
+                        "message": str(write_exc),
+                    },
+                    sort_keys=True,
+                )
+                + "\n"
+            )
             return 2
-        sys.stderr.write(json.dumps({"status": "failed", "code": exc.code, "message": str(exc)}, sort_keys=True) + "\n")
+        sys.stderr.write(
+            json.dumps({"status": "failed", "code": exc.code, "message": str(exc)}, sort_keys=True)
+            + "\n"
+        )
         return 2
 
 

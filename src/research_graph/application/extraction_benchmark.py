@@ -66,7 +66,9 @@ def evaluate_files(gold_path: str | Path, prediction_path: str | Path) -> dict[s
     return evaluate_records(load_jsonl(gold_path), load_jsonl(prediction_path))
 
 
-def evaluate_records(gold_records: list[dict[str, Any]], prediction_records: list[dict[str, Any]]) -> dict[str, Any]:
+def evaluate_records(
+    gold_records: list[dict[str, Any]], prediction_records: list[dict[str, Any]]
+) -> dict[str, Any]:
     gold_by_case = _records_by_case(gold_records, "gold")
     prediction_by_case = _records_by_case(prediction_records, "prediction")
     missing_predictions = sorted(set(gold_by_case) - set(prediction_by_case))
@@ -104,9 +106,13 @@ def evaluate_records(gold_records: list[dict[str, Any]], prediction_records: lis
         prediction_entity_map = _entity_key_by_id(prediction_record)
 
         gold_entity_keys.update((case_id, *entity_key) for entity_key in gold_entity_map.values())
-        prediction_entity_keys.update((case_id, *entity_key) for entity_key in prediction_entity_map.values())
+        prediction_entity_keys.update(
+            (case_id, *entity_key) for entity_key in prediction_entity_map.values()
+        )
         gold_relation_keys.update(_relation_keys(case_id, gold_record, gold_entity_map))
-        prediction_relation_keys.update(_relation_keys(case_id, prediction_record, prediction_entity_map))
+        prediction_relation_keys.update(
+            _relation_keys(case_id, prediction_record, prediction_entity_map)
+        )
 
         item_count, valid_item_count = _evidence_counts(prediction_record)
         predicted_items += item_count
@@ -181,7 +187,16 @@ def _records_by_case(records: list[dict[str, Any]], role: str) -> dict[str, dict
 
 def _validate_record(record: dict[str, Any], *, role: str) -> list[str]:
     errors: list[str] = []
-    for key in ("case_id", "paper_id", "source_artifact_refs", "entities", "relations", "schema_valid", "json_valid", "operational"):
+    for key in (
+        "case_id",
+        "paper_id",
+        "source_artifact_refs",
+        "entities",
+        "relations",
+        "schema_valid",
+        "json_valid",
+        "operational",
+    ):
         if key not in record:
             errors.append(f"missing:{key}")
     if not isinstance(record.get("source_artifact_refs"), list) or not all(
@@ -200,7 +215,9 @@ def _validate_record(record: dict[str, Any], *, role: str) -> list[str]:
     if not isinstance(record.get("relations"), list):
         errors.append("invalid:relations")
     else:
-        entity_ids = {entity.get("id") for entity in record.get("entities", []) if isinstance(entity, dict)}
+        entity_ids = {
+            entity.get("id") for entity in record.get("entities", []) if isinstance(entity, dict)
+        }
         for relation in record["relations"]:
             errors.extend(_validate_relation(relation, entity_ids))
     operational = record.get("operational")
@@ -214,7 +231,10 @@ def _validate_record(record: dict[str, Any], *, role: str) -> list[str]:
             errors.append("invalid:operational.cost_estimate")
         if _negative_number(operational.get("latency_ms")):
             errors.append("invalid:operational.latency_ms")
-        if not isinstance(operational.get("retry_count"), int) or operational.get("retry_count", 0) < 0:
+        if (
+            not isinstance(operational.get("retry_count"), int)
+            or operational.get("retry_count", 0) < 0
+        ):
             errors.append("invalid:operational.retry_count")
     if role == "gold" and errors:
         raise ValueError(f"gold fixture is invalid for {record.get('case_id')}: {errors}")
@@ -293,7 +313,11 @@ def _evidence_counts(record: dict[str, Any]) -> tuple[int, int]:
             continue
         total += 1
         refs = item.get("evidence_refs")
-        if isinstance(refs, list) and refs and all(isinstance(ref, str) and ref.startswith("evidence:") for ref in refs):
+        if (
+            isinstance(refs, list)
+            and refs
+            and all(isinstance(ref, str) and ref.startswith("evidence:") for ref in refs)
+        ):
             valid += 1
     return total, valid
 

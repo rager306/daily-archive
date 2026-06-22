@@ -112,7 +112,10 @@ def validate_selection(selection: dict[str, Any]) -> list[dict[str, Any]]:
         source_kind = ref.get("source_kind")
         normalized_identity = ref.get("normalized_identity")
         canonical_url = ref.get("canonical_url")
-        if not all(isinstance(value, str) and value for value in (ref_id, url, source_kind, normalized_identity, canonical_url)):
+        if not all(
+            isinstance(value, str) and value
+            for value in (ref_id, url, source_kind, normalized_identity, canonical_url)
+        ):
             raise AdapterInputError(f"selection_ref_required_fields:{index}")
         if ref_id in seen_ref_ids:
             raise AdapterInputError(f"selection_ref_duplicate:{ref_id}")
@@ -149,7 +152,9 @@ def unversioned_arxiv_id(arxiv_id: str | None) -> str | None:
 def canonical_url_for_ref(ref: dict[str, Any]) -> str:
     source_kind = str(ref.get("source_kind"))
     if source_kind.startswith("arxiv_"):
-        arxiv_id = unversioned_arxiv_id(str(ref.get("arxiv_unversioned_id") or ref.get("arxiv_id") or ""))
+        arxiv_id = unversioned_arxiv_id(
+            str(ref.get("arxiv_unversioned_id") or ref.get("arxiv_id") or "")
+        )
         if not arxiv_id:
             arxiv_id = unversioned_arxiv_id(arxiv_id_from_url(str(ref["url"])))
         if arxiv_id:
@@ -192,7 +197,9 @@ def build_identity_groups(refs: list[dict[str, Any]]) -> dict[str, dict[str, Any
             "ref_ids": ref_ids,
             "url_ref_count": len(ref_ids),
             "has_url_variants": len(ref_ids) > 1,
-            "url_variants": [classify_variant(str(ref["url"]), str(ref["source_kind"])) for ref in group_refs],
+            "url_variants": [
+                classify_variant(str(ref["url"]), str(ref["source_kind"])) for ref in group_refs
+            ],
         }
     return identity_groups
 
@@ -210,7 +217,10 @@ def html_metadata(path: Path) -> dict[str, list[str]]:
     document = path.read_text(encoding="utf-8", errors="replace")
     metadata: dict[str, list[str]] = defaultdict(list)
     for tag_match in META_TAG_RE.finditer(document):
-        attrs = {name.lower(): clean_metadata_value(value) for name, _, value in ATTR_RE.findall(tag_match.group(1))}
+        attrs = {
+            name.lower(): clean_metadata_value(value)
+            for name, _, value in ATTR_RE.findall(tag_match.group(1))
+        }
         key = attrs.get("name") or attrs.get("property") or attrs.get("itemprop")
         content = attrs.get("content")
         if key and content:
@@ -223,7 +233,9 @@ def html_metadata(path: Path) -> dict[str, list[str]]:
     return dict(metadata)
 
 
-def first_metadata_value(metadata: dict[str, list[str]], keys: tuple[str, ...]) -> tuple[str | None, str | None]:
+def first_metadata_value(
+    metadata: dict[str, list[str]], keys: tuple[str, ...]
+) -> tuple[str | None, str | None]:
     for key in keys:
         values = metadata.get(key.lower()) or []
         for value in values:
@@ -233,9 +245,15 @@ def first_metadata_value(metadata: dict[str, list[str]], keys: tuple[str, ...]) 
     return None, None
 
 
-def metadata_list(metadata: dict[str, list[str]], keys: tuple[str, ...], *, limit: int = 50) -> tuple[list[str], str | None]:
+def metadata_list(
+    metadata: dict[str, list[str]], keys: tuple[str, ...], *, limit: int = 50
+) -> tuple[list[str], str | None]:
     for key in keys:
-        values = [value for value in (clean_metadata_value(item) for item in metadata.get(key.lower(), [])) if value]
+        values = [
+            value
+            for value in (clean_metadata_value(item) for item in metadata.get(key.lower(), []))
+            if value
+        ]
         if values:
             return values[:limit], key
     return [], None
@@ -251,19 +269,33 @@ def optional_value(value: Any, source: str | None, *, reason: str = "not_found")
     }
 
 
-def derive_optional_metadata(ref: dict[str, Any], artifact_path: Path | None, source_kind: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+def derive_optional_metadata(
+    ref: dict[str, Any], artifact_path: Path | None, source_kind: str
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     diagnostics: list[dict[str, Any]] = []
     metadata: dict[str, list[str]] = {}
-    if artifact_path is not None and artifact_path.exists() and artifact_path.suffix.lower() in {".html", ".htm"}:
+    if (
+        artifact_path is not None
+        and artifact_path.exists()
+        and artifact_path.suffix.lower() in {".html", ".htm"}
+    ):
         try:
             metadata = html_metadata(artifact_path)
         except UnicodeDecodeError:
-            diagnostics.append(diagnostic("artifact_metadata_decode_failed", ref["ref_id"], "warning", "artifact"))
+            diagnostics.append(
+                diagnostic("artifact_metadata_decode_failed", ref["ref_id"], "warning", "artifact")
+            )
 
     family = source_family(source_kind)
     title_keys = ("citation_title", "og:title", "twitter:title", "dc.title", "html:title")
     author_keys = ("citation_author", "author", "article:author", "dc.creator")
-    published_keys = ("citation_date", "citation_publication_date", "article:published_time", "date", "dc.date")
+    published_keys = (
+        "citation_date",
+        "citation_publication_date",
+        "article:published_time",
+        "date",
+        "dc.date",
+    )
     updated_keys = ("article:modified_time", "citation_online_date", "lastmod", "dc.modified")
     doi_keys = ("citation_doi", "dc.identifier", "prism.doi")
     pdf_keys = ("citation_pdf_url",)
@@ -278,8 +310,12 @@ def derive_optional_metadata(ref: dict[str, Any], artifact_path: Path | None, so
     artifact_arxiv_id = None
     artifact_arxiv_source = None
     if family == "arxiv":
-        artifact_arxiv_id, artifact_arxiv_source = first_metadata_value(metadata, ("citation_arxiv_id",))
-        artifact_arxiv_id = unversioned_arxiv_id(artifact_arxiv_id or str(ref.get("arxiv_unversioned_id") or ref.get("arxiv_id") or ""))
+        artifact_arxiv_id, artifact_arxiv_source = first_metadata_value(
+            metadata, ("citation_arxiv_id",)
+        )
+        artifact_arxiv_id = unversioned_arxiv_id(
+            artifact_arxiv_id or str(ref.get("arxiv_unversioned_id") or ref.get("arxiv_id") or "")
+        )
         artifact_arxiv_source = artifact_arxiv_source or "selection"
 
     optional_metadata = {
@@ -287,13 +323,19 @@ def derive_optional_metadata(ref: dict[str, Any], artifact_path: Path | None, so
         "authors": optional_value(authors, authors_source),
         "published_date": optional_value(published, published_source),
         "updated_date": optional_value(updated, updated_source),
-        "doi": optional_value(doi, doi_source, reason="not_applicable" if family in {"arxiv", "company_blog"} else "not_found"),
+        "doi": optional_value(
+            doi,
+            doi_source,
+            reason="not_applicable" if family in {"arxiv", "company_blog"} else "not_found",
+        ),
         "artifact_arxiv_id": optional_value(
             artifact_arxiv_id,
             artifact_arxiv_source,
             reason="not_applicable" if family != "arxiv" else "not_found",
         ),
-        "pdf_url": optional_value(pdf_url, pdf_source, reason="not_applicable" if family != "arxiv" else "not_found"),
+        "pdf_url": optional_value(
+            pdf_url, pdf_source, reason="not_applicable" if family != "arxiv" else "not_found"
+        ),
     }
 
     for field_name, field_value in optional_metadata.items():
@@ -336,19 +378,27 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def artifact_record(ref: dict[str, Any], acquisition: dict[str, Any] | None, repo_root: Path) -> tuple[dict[str, Any], Path | None, list[dict[str, Any]]]:
+def artifact_record(
+    ref: dict[str, Any], acquisition: dict[str, Any] | None, repo_root: Path
+) -> tuple[dict[str, Any], Path | None, list[dict[str, Any]]]:
     diagnostics: list[dict[str, Any]] = []
     if acquisition is None:
-        diagnostics.append(diagnostic("missing_acquisition_event", ref["ref_id"], "error", "acquisition"))
-        return {
-            "path": None,
-            "exists": False,
-            "content_type": None,
-            "byte_count": None,
-            "sha256": None,
-            "checksum_verified": False,
-            "payload_embedded": False,
-        }, None, diagnostics
+        diagnostics.append(
+            diagnostic("missing_acquisition_event", ref["ref_id"], "error", "acquisition")
+        )
+        return (
+            {
+                "path": None,
+                "exists": False,
+                "content_type": None,
+                "byte_count": None,
+                "sha256": None,
+                "checksum_verified": False,
+                "payload_embedded": False,
+            },
+            None,
+            diagnostics,
+        )
 
     path_value = acquisition.get("artifact_path")
     artifact_path = repo_root / path_value if isinstance(path_value, str) and path_value else None
@@ -357,9 +407,13 @@ def artifact_record(ref: dict[str, Any], acquisition: dict[str, Any] | None, rep
     actual_byte_count: int | None = None
 
     if artifact_path is None:
-        diagnostics.append(diagnostic("artifact_path_missing", ref["ref_id"], "error", "artifact.path"))
+        diagnostics.append(
+            diagnostic("artifact_path_missing", ref["ref_id"], "error", "artifact.path")
+        )
     elif not exists:
-        diagnostics.append(diagnostic("artifact_file_missing", ref["ref_id"], "error", "artifact.path"))
+        diagnostics.append(
+            diagnostic("artifact_file_missing", ref["ref_id"], "error", "artifact.path")
+        )
     else:
         actual_byte_count = artifact_path.stat().st_size
         expected_byte_count = acquisition.get("byte_count")
@@ -386,15 +440,21 @@ def artifact_record(ref: dict[str, Any], acquisition: dict[str, Any] | None, rep
                 )
             )
 
-    return {
-        "path": path_value if isinstance(path_value, str) else None,
-        "exists": exists,
-        "content_type": acquisition.get("content_type"),
-        "byte_count": actual_byte_count if actual_byte_count is not None else acquisition.get("byte_count"),
-        "sha256": acquisition.get("sha256"),
-        "checksum_verified": checksum_verified,
-        "payload_embedded": False,
-    }, artifact_path, diagnostics
+    return (
+        {
+            "path": path_value if isinstance(path_value, str) else None,
+            "exists": exists,
+            "content_type": acquisition.get("content_type"),
+            "byte_count": actual_byte_count
+            if actual_byte_count is not None
+            else acquisition.get("byte_count"),
+            "sha256": acquisition.get("sha256"),
+            "checksum_verified": checksum_verified,
+            "payload_embedded": False,
+        },
+        artifact_path,
+        diagnostics,
+    )
 
 
 def build_event(
@@ -410,26 +470,51 @@ def build_event(
 
     if acquisition is not None:
         if acquisition.get("source_kind") != source_kind:
-            diagnostics.append(diagnostic("source_kind_drift", ref["ref_id"], "error", "source_kind"))
+            diagnostics.append(
+                diagnostic("source_kind_drift", ref["ref_id"], "error", "source_kind")
+            )
         if acquisition.get("normalized_identity") != normalized_identity:
-            diagnostics.append(diagnostic("normalized_identity_drift", ref["ref_id"], "error", "normalized_identity"))
+            diagnostics.append(
+                diagnostic(
+                    "normalized_identity_drift", ref["ref_id"], "error", "normalized_identity"
+                )
+            )
         if acquisition.get("terminal") is not True:
-            diagnostics.append(diagnostic("acquisition_not_terminal", ref["ref_id"], "error", "acquisition.terminal"))
+            diagnostics.append(
+                diagnostic(
+                    "acquisition_not_terminal", ref["ref_id"], "error", "acquisition.terminal"
+                )
+            )
         if acquisition.get("status") != "captured":
-            diagnostics.append(diagnostic("acquisition_not_captured", ref["ref_id"], "warning", "acquisition.status"))
+            diagnostics.append(
+                diagnostic(
+                    "acquisition_not_captured", ref["ref_id"], "warning", "acquisition.status"
+                )
+            )
 
     artifact, artifact_path, artifact_diagnostics = artifact_record(ref, acquisition, repo_root)
-    optional_metadata, metadata_diagnostics = derive_optional_metadata(ref, artifact_path, source_kind)
+    optional_metadata, metadata_diagnostics = derive_optional_metadata(
+        ref, artifact_path, source_kind
+    )
     diagnostics.extend(artifact_diagnostics)
     diagnostics.extend(metadata_diagnostics)
 
     if source_kind.startswith("arxiv_"):
-        selected_arxiv_id = unversioned_arxiv_id(str(ref.get("arxiv_unversioned_id") or ref.get("arxiv_id") or ""))
+        selected_arxiv_id = unversioned_arxiv_id(
+            str(ref.get("arxiv_unversioned_id") or ref.get("arxiv_id") or "")
+        )
         url_arxiv_id = unversioned_arxiv_id(arxiv_id_from_url(str(ref["url"])))
         if selected_arxiv_id and url_arxiv_id and selected_arxiv_id != url_arxiv_id:
             diagnostics.append(diagnostic("arxiv_url_id_drift", ref["ref_id"], "error", "url"))
 
-    blocking_codes = {"missing_acquisition_event", "artifact_path_missing", "artifact_file_missing", "source_kind_drift", "normalized_identity_drift", "acquisition_not_terminal"}
+    blocking_codes = {
+        "missing_acquisition_event",
+        "artifact_path_missing",
+        "artifact_file_missing",
+        "source_kind_drift",
+        "normalized_identity_drift",
+        "acquisition_not_terminal",
+    }
     has_blocking = any(item["code"] in blocking_codes for item in diagnostics)
     has_warning = any(item["severity"] == "warning" for item in diagnostics)
 
@@ -453,12 +538,18 @@ def build_event(
             "status": acquisition.get("status") if acquisition else None,
             "terminal": acquisition.get("terminal") if acquisition else False,
             "http_status": acquisition.get("http_status") if acquisition else None,
-            "failure_code": acquisition.get("failure_code") if acquisition else "missing_acquisition_event",
+            "failure_code": acquisition.get("failure_code")
+            if acquisition
+            else "missing_acquisition_event",
             "captured": bool(acquisition and acquisition.get("status") == "captured"),
         },
         "artifact": artifact,
         "normalized": {
-            "arxiv_id": unversioned_arxiv_id(str(ref.get("arxiv_unversioned_id") or ref.get("arxiv_id") or "")) if source_kind.startswith("arxiv_") else None,
+            "arxiv_id": unversioned_arxiv_id(
+                str(ref.get("arxiv_unversioned_id") or ref.get("arxiv_id") or "")
+            )
+            if source_kind.startswith("arxiv_")
+            else None,
             "canonical_url": canonical_url,
             "identity": normalized_identity,
         },
@@ -474,7 +565,9 @@ def build_event(
     }
 
 
-def summarize_events(events: list[dict[str, Any]], identity_groups: dict[str, dict[str, Any]]) -> dict[str, Any]:
+def summarize_events(
+    events: list[dict[str, Any]], identity_groups: dict[str, dict[str, Any]]
+) -> dict[str, Any]:
     source_kind_counts = Counter(str(event["source_kind"]) for event in events)
     source_family_counts = Counter(str(event["source_family"]) for event in events)
     acquisition_status_counts = Counter(str(event["acquisition"].get("status")) for event in events)
@@ -521,10 +614,22 @@ def summarize_events(events: list[dict[str, Any]], identity_groups: dict[str, di
             "protection": "single-pass streaming checksum, no network calls, no parser invocation, no body serialization, deterministic per-ref iteration",
         },
         "failure_modes": [
-            {"dependency": "selection JSON", "failure_path": "missing or malformed input raises AdapterInputError before writing partial outputs"},
-            {"dependency": "acquisition JSONL", "failure_path": "missing, malformed, or duplicate ref events raise AdapterInputError before writing partial outputs"},
-            {"dependency": "captured artifact filesystem", "failure_path": "missing artifact emits blocked per-ref diagnostic without embedding payloads"},
-            {"dependency": "artifact checksum", "failure_path": "byte/hash drift emits per-ref warning diagnostics and summary counts"},
+            {
+                "dependency": "selection JSON",
+                "failure_path": "missing or malformed input raises AdapterInputError before writing partial outputs",
+            },
+            {
+                "dependency": "acquisition JSONL",
+                "failure_path": "missing, malformed, or duplicate ref events raise AdapterInputError before writing partial outputs",
+            },
+            {
+                "dependency": "captured artifact filesystem",
+                "failure_path": "missing artifact emits blocked per-ref diagnostic without embedding payloads",
+            },
+            {
+                "dependency": "artifact checksum",
+                "failure_path": "byte/hash drift emits per-ref warning diagnostics and summary counts",
+            },
         ],
         "negative_tests": [
             "tests/test_m028_source_metadata_adapters.py::test_missing_acquisition_event_is_blocked_not_silent",
@@ -534,7 +639,13 @@ def summarize_events(events: list[dict[str, Any]], identity_groups: dict[str, di
     }
 
 
-def build_metadata_outputs(selection_path: Path, acquisition_events_path: Path, out_dir: Path, *, repo_root: Path | None = None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def build_metadata_outputs(
+    selection_path: Path,
+    acquisition_events_path: Path,
+    out_dir: Path,
+    *,
+    repo_root: Path | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     repo_root = repo_root or Path.cwd()
     selection = read_json(selection_path)
     refs = validate_selection(selection)
@@ -542,13 +653,20 @@ def build_metadata_outputs(selection_path: Path, acquisition_events_path: Path, 
     acquisition_events_by_ref = acquisition_by_ref(acquisition_events)
     identity_groups = build_identity_groups(refs)
 
-    events = [build_event(ref, acquisition_events_by_ref.get(str(ref["ref_id"])), identity_groups, repo_root) for ref in refs]
+    events = [
+        build_event(
+            ref, acquisition_events_by_ref.get(str(ref["ref_id"])), identity_groups, repo_root
+        )
+        for ref in refs
+    ]
     summary = summarize_events(events, identity_groups)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     events_path = out_dir / EVENTS_FILENAME
     summary_path = out_dir / SUMMARY_FILENAME
-    events_path.write_text("\n".join(json.dumps(event, sort_keys=True) for event in events) + "\n", encoding="utf-8")
+    events_path.write_text(
+        "\n".join(json.dumps(event, sort_keys=True) for event in events) + "\n", encoding="utf-8"
+    )
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return events, summary
 
@@ -564,7 +682,9 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     try:
-        events, summary = build_metadata_outputs(args.selection, args.acquisition_events, args.out_dir)
+        events, summary = build_metadata_outputs(
+            args.selection, args.acquisition_events, args.out_dir
+        )
     except AdapterInputError as exc:
         raise SystemExit(str(exc)) from exc
     sys.stdout.write(

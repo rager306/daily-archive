@@ -159,7 +159,11 @@ def safe_catalog_path(root: Path, rel_path: str) -> Path:
     if "://" in rel_path:
         raise ValueError("url_not_allowed_as_local_path")
     normalized = PurePosixPath(rel_path.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part == "" for part in normalized.parts):
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part == "" for part in normalized.parts)
+    ):
         raise ValueError("unsafe_catalog_relative_path")
     root_resolved = root.resolve()
     resolved = (root_resolved / normalized.as_posix()).resolve()
@@ -184,7 +188,9 @@ def validate_relative_cli_path(path: Path, code: str) -> None:
         raise ValueError(code)
 
 
-def target_path_for_variant(article_dir: Path, variant: Mapping[str, Any]) -> tuple[Path | None, str | None, str | None]:
+def target_path_for_variant(
+    article_dir: Path, variant: Mapping[str, Any]
+) -> tuple[Path | None, str | None, str | None]:
     role = variant.get("source_role")
     if not isinstance(role, str) or role not in ROLE_TARGETS:
         return None, None, "unsupported_source_role"
@@ -214,7 +220,9 @@ def default_fetcher(url: str) -> FetchResponse:
         media_type = response.headers.get_content_type() if response.headers else None
         status_code = getattr(response, "status", None)
         final_url = response.geturl()
-        return FetchResponse(response.read(), media_type=media_type, status_code=status_code, final_url=final_url)
+        return FetchResponse(
+            response.read(), media_type=media_type, status_code=status_code, final_url=final_url
+        )
 
 
 def fixture_response_fetcher(response_dir: Path) -> Fetcher:
@@ -270,7 +278,9 @@ def diagnostic_result(
         "selection_id": SELECTION_ID,
         "article_ref": article_ref,
         "article_key": None,
-        "variant_id": variant.get("variant_id") if isinstance(variant.get("variant_id"), str) else None,
+        "variant_id": variant.get("variant_id")
+        if isinstance(variant.get("variant_id"), str)
+        else None,
         "source_role": role if isinstance(role, str) else None,
         "url_role": role if isinstance(role, str) else None,
         "url": variant.get("url") if isinstance(variant.get("url"), str) else None,
@@ -306,15 +316,21 @@ def captured_result(
     command_provenance: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     role = str(variant["source_role"])
-    article_ref = article.get("catalog_path") if isinstance(article.get("catalog_path"), str) else None
+    article_ref = (
+        article.get("catalog_path") if isinstance(article.get("catalog_path"), str) else None
+    )
     result = {
         "schema_version": SOURCE_ACQUISITION_SCHEMA_VERSION,
         "milestone_id": MILESTONE_ID,
         "slice_id": SLICE_ID,
         "selection_id": SELECTION_ID,
         "article_ref": article_ref,
-        "article_key": article.get("article_key") if isinstance(article.get("article_key"), str) else None,
-        "variant_id": variant.get("variant_id") if isinstance(variant.get("variant_id"), str) else None,
+        "article_key": article.get("article_key")
+        if isinstance(article.get("article_key"), str)
+        else None,
+        "variant_id": variant.get("variant_id")
+        if isinstance(variant.get("variant_id"), str)
+        else None,
         "source_role": role,
         "url_role": role,
         "url": variant.get("url") if isinstance(variant.get("url"), str) else None,
@@ -365,7 +381,9 @@ def capture_variant(
     """Capture one source variant or return a metadata-only blocked/failed result."""
 
     article_dir = article_path.parent
-    article_ref = article.get("catalog_path") if isinstance(article.get("catalog_path"), str) else None
+    article_ref = (
+        article.get("catalog_path") if isinstance(article.get("catalog_path"), str) else None
+    )
     target, local_path, path_error = target_path_for_variant(article_dir, variant)
     if path_error is not None:
         return diagnostic_result(
@@ -375,7 +393,9 @@ def capture_variant(
             diagnostic_code=path_error,
             failure_reason="source variant target path is not allowed",
             local_path=local_path,
-            media_type=variant.get("media_type") if isinstance(variant.get("media_type"), str) else None,
+            media_type=variant.get("media_type")
+            if isinstance(variant.get("media_type"), str)
+            else None,
             command_provenance=command_provenance,
         )
 
@@ -388,7 +408,9 @@ def capture_variant(
             diagnostic_code="missing_source_url",
             failure_reason="source variant URL is missing",
             local_path=local_path,
-            media_type=variant.get("media_type") if isinstance(variant.get("media_type"), str) else None,
+            media_type=variant.get("media_type")
+            if isinstance(variant.get("media_type"), str)
+            else None,
             command_provenance=command_provenance,
         )
 
@@ -403,7 +425,9 @@ def capture_variant(
             diagnostic_code="fetch_timeout",
             failure_reason=str(exc) or "fetch timed out",
             local_path=local_path,
-            media_type=variant.get("media_type") if isinstance(variant.get("media_type"), str) else None,
+            media_type=variant.get("media_type")
+            if isinstance(variant.get("media_type"), str)
+            else None,
             network_fetch_attempted=True,
             command_provenance=command_provenance,
         )
@@ -415,7 +439,9 @@ def capture_variant(
             diagnostic_code="fetch_failed",
             failure_reason=f"{type(exc).__name__}: {exc}",
             local_path=local_path,
-            media_type=variant.get("media_type") if isinstance(variant.get("media_type"), str) else None,
+            media_type=variant.get("media_type")
+            if isinstance(variant.get("media_type"), str)
+            else None,
             network_fetch_attempted=True,
             command_provenance=command_provenance,
         )
@@ -449,7 +475,9 @@ def capture_variant(
     )
 
 
-def selected_article_paths(catalog_root: Path, index: Mapping[str, Any], selection: Mapping[str, Any]) -> list[Path]:
+def selected_article_paths(
+    catalog_root: Path, index: Mapping[str, Any], selection: Mapping[str, Any]
+) -> list[Path]:
     rows = index.get("articles")
     selected = selection.get("articles")
     if not isinstance(rows, list) or not isinstance(selected, list):
@@ -526,7 +554,9 @@ def variant_update_from_result(result: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def update_article_record(article: dict[str, Any], results: list[dict[str, Any]]) -> dict[str, int]:
-    by_variant = {result.get("variant_id"): result for result in results if result.get("variant_id")}
+    by_variant = {
+        result.get("variant_id"): result for result in results if result.get("variant_id")
+    }
     counts: dict[str, int] = {"selected": 0, "captured": 0, "blocked": 0, "failed": 0}
     variants = article.get("source_variants")
     if not isinstance(variants, list):
@@ -550,7 +580,9 @@ def update_article_record(article: dict[str, Any], results: list[dict[str, Any]]
         "milestone_id": MILESTONE_ID,
         "slice_id": SLICE_ID,
         "selection_id": SELECTION_ID,
-        "status": "completed_with_diagnostics" if counts["blocked"] or counts["failed"] else "captured",
+        "status": "completed_with_diagnostics"
+        if counts["blocked"] or counts["failed"]
+        else "captured",
         "selected_count": counts["selected"],
         "captured_count": counts["captured"],
         "blocked_count": counts["blocked"],
@@ -561,7 +593,10 @@ def update_article_record(article: dict[str, Any], results: list[dict[str, Any]]
         "fail_closed_safety_flags": dict(FAIL_CLOSED_SAFETY_FLAGS),
         "updated_at": utc_now(),
     }
-    article["safety_flags"] = {**dict(article.get("safety_flags") or {}), **FAIL_CLOSED_SAFETY_FLAGS}
+    article["safety_flags"] = {
+        **dict(article.get("safety_flags") or {}),
+        **FAIL_CLOSED_SAFETY_FLAGS,
+    }
     return counts
 
 
@@ -590,7 +625,9 @@ def build_summary(
         "milestone_id": MILESTONE_ID,
         "slice_id": SLICE_ID,
         "selection_id": SELECTION_ID,
-        "status": "completed_with_diagnostics" if counts["blocked"] or counts["failed"] else "captured",
+        "status": "completed_with_diagnostics"
+        if counts["blocked"] or counts["failed"]
+        else "captured",
         "exit_code_style_status": 0 if counts["failed"] == 0 else 1,
         "article_count": len(article_counts or {}),
         "variant_count": len(results),
@@ -694,18 +731,31 @@ def capture_selection_and_update_catalog(
         for article_path in article_paths:
             article = load_json(article_path)
             counts = update_article_record(article, article_results.get(article_path, []))
-            article_ref = article.get("catalog_path") if isinstance(article.get("catalog_path"), str) else str(article_path)
+            article_ref = (
+                article.get("catalog_path")
+                if isinstance(article.get("catalog_path"), str)
+                else str(article_path)
+            )
             article_counts[article_ref] = dict(counts)
             write_json(article_path, article)
     else:
         for article_path in article_paths:
             article = load_json(article_path)
-            counts = {"selected": len(article_results.get(article_path, [])), "captured": 0, "blocked": 0, "failed": 0}
+            counts = {
+                "selected": len(article_results.get(article_path, [])),
+                "captured": 0,
+                "blocked": 0,
+                "failed": 0,
+            }
             for result in article_results.get(article_path, []):
                 status = str(result.get("status"))
                 if status in counts:
                     counts[status] += 1
-            article_ref = article.get("catalog_path") if isinstance(article.get("catalog_path"), str) else str(article_path)
+            article_ref = (
+                article.get("catalog_path")
+                if isinstance(article.get("catalog_path"), str)
+                else str(article_path)
+            )
             article_counts[article_ref] = counts
     return all_results, article_counts, article_paths
 
@@ -740,18 +790,28 @@ def render_report(summary: Mapping[str, Any]) -> str:
         "",
     ]
     input_paths = summary.get("input_paths") if isinstance(summary.get("input_paths"), dict) else {}
-    input_hash_map = summary.get("input_hashes") if isinstance(summary.get("input_hashes"), dict) else {}
+    input_hash_map = (
+        summary.get("input_hashes") if isinstance(summary.get("input_hashes"), dict) else {}
+    )
     for name, path in input_paths.items():
         lines.append(f"- `{name}`: `{path}` sha256=`{input_hash_map.get(name)}`")
 
     lines.extend(["", "## Outputs", ""])
-    output_paths = summary.get("output_paths") if isinstance(summary.get("output_paths"), dict) else {}
-    output_hash_map = summary.get("output_hashes") if isinstance(summary.get("output_hashes"), dict) else {}
+    output_paths = (
+        summary.get("output_paths") if isinstance(summary.get("output_paths"), dict) else {}
+    )
+    output_hash_map = (
+        summary.get("output_hashes") if isinstance(summary.get("output_hashes"), dict) else {}
+    )
     for name, path in output_paths.items():
         lines.append(f"- `{name}`: `{path}` sha256=`{output_hash_map.get(name)}`")
 
     lines.extend(["", "## Article Counts", ""])
-    article_counts = summary.get("article_capture_counts") if isinstance(summary.get("article_capture_counts"), dict) else {}
+    article_counts = (
+        summary.get("article_capture_counts")
+        if isinstance(summary.get("article_capture_counts"), dict)
+        else {}
+    )
     for article_ref, article_count in article_counts.items():
         if isinstance(article_count, dict):
             lines.append(
@@ -772,7 +832,14 @@ def render_report(summary: Mapping[str, Any]) -> str:
 
 def assert_metadata_artifact_is_redacted(path: Path) -> None:
     payload = path.read_text(encoding="utf-8")
-    forbidden = ["<html", "</html", "%PDF-", "base64,", "fixture arxiv abstract page", "fixture nature article page"]
+    forbidden = [
+        "<html",
+        "</html",
+        "%PDF-",
+        "base64,",
+        "fixture arxiv abstract page",
+        "fixture nature article page",
+    ]
     found = [token for token in forbidden if token in payload]
     if found:
         raise ValueError(f"metadata artifact is not redacted: {path}: {found}")
@@ -794,7 +861,11 @@ def main(argv: list[str]) -> int:
         default=Path("data/article_corpora/m027-mixed-source-corpus-v1"),
     )
     parser.add_argument("--fixture-response-dir", type=Path)
-    parser.add_argument("--dry-run", action="store_true", help="Validate and summarize without writing captured source bytes or article JSON.")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate and summarize without writing captured source bytes or article JSON.",
+    )
     args = parser.parse_args(argv[1:])
 
     started = time.perf_counter()
@@ -803,10 +874,16 @@ def main(argv: list[str]) -> int:
     validate_relative_cli_path(args.selection, "unsafe_selection_path_traversal")
     validate_relative_cli_path(args.catalog, "unsafe_catalog_path_traversal")
     if args.fixture_response_dir is not None:
-        validate_relative_cli_path(args.fixture_response_dir, "unsafe_fixture_response_dir_traversal")
+        validate_relative_cli_path(
+            args.fixture_response_dir, "unsafe_fixture_response_dir_traversal"
+        )
 
     provenance = command_provenance(argv)
-    fetcher = fixture_response_fetcher(args.fixture_response_dir) if args.fixture_response_dir else default_fetcher
+    fetcher = (
+        fixture_response_fetcher(args.fixture_response_dir)
+        if args.fixture_response_dir
+        else default_fetcher
+    )
     output_dir = args.output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     summary_path = confined_child_path(output_dir, "source-acquisition-summary.json")
@@ -849,7 +926,16 @@ def main(argv: list[str]) -> int:
     for artifact_path in output_paths.values():
         assert_metadata_artifact_is_redacted(artifact_path)
 
-    print(json.dumps({"summary_path": str(summary_path), "variant_count": len(results), "counts": summary["counts"]}, sort_keys=True))
+    print(
+        json.dumps(
+            {
+                "summary_path": str(summary_path),
+                "variant_count": len(results),
+                "counts": summary["counts"],
+            },
+            sort_keys=True,
+        )
+    )
     return 0 if not summary["counts"]["failed"] else 1
 
 

@@ -113,7 +113,10 @@ def test_code_memory_synced() -> None:
     assert "doc/adr/ADR-019-fd-embedding-service-contract.md" in mirror
     adr_019_nodes = [node for node in graph.get("nodes", []) if node.get("id") == "ADR-019"]
     assert adr_019_nodes
-    assert adr_019_nodes[0].get("canonical_source") == "doc/adr/ADR-019-fd-embedding-service-contract.md"
+    assert (
+        adr_019_nodes[0].get("canonical_source")
+        == "doc/adr/ADR-019-fd-embedding-service-contract.md"
+    )
 
 
 def test_5_safety_defaults() -> None:
@@ -129,7 +132,7 @@ def test_127_not_127() -> None:
     report = REPORT_PATH.read_text(encoding="utf-8")
     assert "localhost" not in script.lower()
     assert "localhost" not in report.lower()
-    assert "DEFAULT_TEI_URL = \"http://tei:80\"" in script
+    assert 'DEFAULT_TEI_URL = "http://tei:80"' in script
     assert "127.0.0.1" not in VALIDATION_PATH.read_text(encoding="utf-8")
 
 

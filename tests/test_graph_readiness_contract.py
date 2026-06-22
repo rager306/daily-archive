@@ -32,7 +32,9 @@ def _span() -> SourceSpan:
     )
 
 
-def _chunk(*, routes: list[ChunkRoute] | None = None, source_span: SourceSpan | None = None) -> GraphReadyChunk:
+def _chunk(
+    *, routes: list[ChunkRoute] | None = None, source_span: SourceSpan | None = None
+) -> GraphReadyChunk:
     return GraphReadyChunk(
         chunk_id="2605.00001v1:introduction:chunk-0001",
         paper_id="2605.00001v1",
@@ -82,7 +84,9 @@ def _report() -> GraphReadinessReport:
     )
 
 
-def _package(*, chunk: GraphReadyChunk | None = None, evidence_path: EvidencePathRef | None = None) -> NormalizedPaperPackage:
+def _package(
+    *, chunk: GraphReadyChunk | None = None, evidence_path: EvidencePathRef | None = None
+) -> NormalizedPaperPackage:
     chunk = chunk or _chunk()
     evidence_path = evidence_path or _evidence_path(chunk)
     return NormalizedPaperPackage(
@@ -200,7 +204,9 @@ def test_redacted_serialization_hashes_raw_text_fields() -> None:
     redacted = to_redacted_dict(payload)
 
     assert redacted["paper_id"] == "2605.00001v1"
-    assert redacted["chunk_text"]["sha256"] == stable_text_hash("This raw chunk must not be logged.")
+    assert redacted["chunk_text"]["sha256"] == stable_text_hash(
+        "This raw chunk must not be logged."
+    )
     assert redacted["chunk_text"]["length"] == len("This raw chunk must not be logged.")
     assert redacted["nested"]["prompt"]["sha256"] == stable_text_hash("do not log prompts")
     assert "This raw chunk" not in str(redacted)

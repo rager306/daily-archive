@@ -170,12 +170,16 @@ def validate_audit(audit: dict[str, Any], *, root: Path) -> list[str]:
     source_paths: set[str] = set()
     for index, row in enumerate(source_artifacts):
         if not isinstance(row, dict):
-            errors.append(f"M030_CONTINUITY_SOURCE_ARTIFACT_ROW: source_artifacts[{index}] must be an object")
+            errors.append(
+                f"M030_CONTINUITY_SOURCE_ARTIFACT_ROW: source_artifacts[{index}] must be an object"
+            )
             continue
         path = row.get("path")
         role = row.get("role")
         if not isinstance(path, str) or not path.strip():
-            errors.append(f"M030_CONTINUITY_SOURCE_ARTIFACT_PATH: source_artifacts[{index}] missing path")
+            errors.append(
+                f"M030_CONTINUITY_SOURCE_ARTIFACT_PATH: source_artifacts[{index}] missing path"
+            )
             continue
         source_paths.add(path)
         if not isinstance(role, str) or not role.strip():
@@ -186,11 +190,19 @@ def validate_audit(audit: dict[str, Any], *, root: Path) -> list[str]:
             errors.append(f"M030_CONTINUITY_SOURCE_ARTIFACT_EXISTS: {path} does not exist")
     missing_sources = sorted(REQUIRED_SOURCE_ARTIFACTS - source_paths)
     if missing_sources:
-        errors.append(f"M030_CONTINUITY_SOURCE_ARTIFACTS: missing required source artifacts {missing_sources}")
+        errors.append(
+            f"M030_CONTINUITY_SOURCE_ARTIFACTS: missing required source artifacts {missing_sources}"
+        )
 
-    selection = audit.get("input_evidence_summary", {}).get("selection") if isinstance(audit.get("input_evidence_summary"), dict) else None
+    selection = (
+        audit.get("input_evidence_summary", {}).get("selection")
+        if isinstance(audit.get("input_evidence_summary"), dict)
+        else None
+    )
     if not isinstance(selection, dict):
-        errors.append("M030_CONTINUITY_SELECTION: input_evidence_summary.selection must be an object")
+        errors.append(
+            "M030_CONTINUITY_SELECTION: input_evidence_summary.selection must be an object"
+        )
     else:
         if selection.get("requested_url_refs") != 4:
             errors.append("M030_CONTINUITY_SELECTION: requested_url_refs must be 4")
@@ -254,16 +266,22 @@ def validate_audit(audit: dict[str, Any], *, root: Path) -> list[str]:
         from_stage = row.get("from_stage")
         to_stage = row.get("to_stage")
         if from_stage not in stage_ids:
-            errors.append(f"M030_CONTINUITY_EDGE_STAGE: {edge_id} from_stage {from_stage!r} missing stage row")
+            errors.append(
+                f"M030_CONTINUITY_EDGE_STAGE: {edge_id} from_stage {from_stage!r} missing stage row"
+            )
         if to_stage not in stage_ids:
-            errors.append(f"M030_CONTINUITY_EDGE_STAGE: {edge_id} to_stage {to_stage!r} missing stage row")
+            errors.append(
+                f"M030_CONTINUITY_EDGE_STAGE: {edge_id} to_stage {to_stage!r} missing stage row"
+            )
         if not isinstance(row.get("continuity_state"), str) or not row["continuity_state"].strip():
             errors.append(f"M030_CONTINUITY_EDGE_FIELD: {edge_id} missing continuity_state")
         for field in sorted(REQUIRED_EDGE_FIELDS):
             if not _has_nonempty_list(row.get(field)):
                 errors.append(f"M030_CONTINUITY_EDGE_FIELD: {edge_id} missing non-empty {field}")
         if len(_as_nonempty_str_list(row.get("failure_modes"))) < 2:
-            errors.append(f"M030_CONTINUITY_EDGE_FAILURE_MODES: {edge_id} must describe at least two failure modes")
+            errors.append(
+                f"M030_CONTINUITY_EDGE_FAILURE_MODES: {edge_id} must describe at least two failure modes"
+            )
 
     missing_edges = sorted(set(EXPECTED_EDGES) - edge_ids)
     if missing_edges:
@@ -278,20 +296,38 @@ def validate_audit(audit: dict[str, Any], *, root: Path) -> list[str]:
                 f"{edge_id} expected {expected_from}->{expected_to}, got {row.get('from_stage')}->{row.get('to_stage')}"
             )
 
-    graph_stage = [row for row in stages if isinstance(row, dict) and row.get("stage_id") == "graph_import_boundary"]
-    graph_edges = [row for row in edges if isinstance(row, dict) and "graph_import" in str(row.get("edge_id", ""))]
-    graph_payload = {"stage": graph_stage, "edges": graph_edges, "diagnostic_contract": audit.get("diagnostic_contract")}
+    graph_stage = [
+        row
+        for row in stages
+        if isinstance(row, dict) and row.get("stage_id") == "graph_import_boundary"
+    ]
+    graph_edges = [
+        row
+        for row in edges
+        if isinstance(row, dict) and "graph_import" in str(row.get("edge_id", ""))
+    ]
+    graph_payload = {
+        "stage": graph_stage,
+        "edges": graph_edges,
+        "diagnostic_contract": audit.get("diagnostic_contract"),
+    }
     if not _contains_fail_closed_boundary(graph_payload):
-        errors.append("M030_CONTINUITY_GRAPH_IMPORT_BOUNDARY: graph/import readiness is not visibly fail-closed")
+        errors.append(
+            "M030_CONTINUITY_GRAPH_IMPORT_BOUNDARY: graph/import readiness is not visibly fail-closed"
+        )
 
     breakpoints = audit.get("known_breakpoints")
     if not isinstance(breakpoints, list):
         errors.append("M030_CONTINUITY_BREAKPOINTS: known_breakpoints must be a list")
         breakpoints = []
     breakpoint_ids = {row.get("breakpoint_id") for row in breakpoints if isinstance(row, dict)}
-    missing_breakpoints = sorted(REQUIRED_BREAKPOINTS - {item for item in breakpoint_ids if isinstance(item, str)})
+    missing_breakpoints = sorted(
+        REQUIRED_BREAKPOINTS - {item for item in breakpoint_ids if isinstance(item, str)}
+    )
     if missing_breakpoints:
-        errors.append(f"M030_CONTINUITY_BREAKPOINTS: missing required breakpoints {missing_breakpoints}")
+        errors.append(
+            f"M030_CONTINUITY_BREAKPOINTS: missing required breakpoints {missing_breakpoints}"
+        )
     for row in breakpoints:
         if not isinstance(row, dict):
             continue
@@ -304,13 +340,25 @@ def validate_audit(audit: dict[str, Any], *, root: Path) -> list[str]:
     if not isinstance(diagnostic_contract, dict):
         errors.append("M030_CONTINUITY_DIAGNOSTIC_CONTRACT: diagnostic_contract must be an object")
     else:
-        required_future_fields = set(_as_nonempty_str_list(diagnostic_contract.get("edge_fields_required_for_future_updates")))
-        if required_future_fields != ({"edge_id", "from_stage", "to_stage", "continuity_state"} | REQUIRED_EDGE_FIELDS):
-            errors.append("M030_CONTINUITY_DIAGNOSTIC_CONTRACT: edge_fields_required_for_future_updates is incomplete")
-        fail_closed_flags = _as_nonempty_str_list(diagnostic_contract.get("fail_closed_booleans_to_preserve_until_verified"))
+        required_future_fields = set(
+            _as_nonempty_str_list(
+                diagnostic_contract.get("edge_fields_required_for_future_updates")
+            )
+        )
+        if required_future_fields != (
+            {"edge_id", "from_stage", "to_stage", "continuity_state"} | REQUIRED_EDGE_FIELDS
+        ):
+            errors.append(
+                "M030_CONTINUITY_DIAGNOSTIC_CONTRACT: edge_fields_required_for_future_updates is incomplete"
+            )
+        fail_closed_flags = _as_nonempty_str_list(
+            diagnostic_contract.get("fail_closed_booleans_to_preserve_until_verified")
+        )
         for flag in FAIL_CLOSED_SELECTION_FLAGS:
             if not any(flag in item for item in fail_closed_flags):
-                errors.append(f"M030_CONTINUITY_DIAGNOSTIC_CONTRACT: missing fail-closed flag {flag}")
+                errors.append(
+                    f"M030_CONTINUITY_DIAGNOSTIC_CONTRACT: missing fail-closed flag {flag}"
+                )
 
     return errors
 
@@ -327,9 +375,15 @@ def validate_report(report_path: Path, audit: dict[str, Any]) -> list[str]:
             errors.append(f"M030_CONTINUITY_REPORT_STAGE: report missing stage {stage_id}")
     for breakpoint_id in REQUIRED_BREAKPOINTS:
         if breakpoint_id not in text and breakpoint_id.split("_", 1)[0] not in text:
-            errors.append(f"M030_CONTINUITY_REPORT_BREAKPOINT: report missing breakpoint {breakpoint_id}")
-    if not _contains_fail_closed_boundary({"report": text, "audit": audit.get("diagnostic_contract")}):
-        errors.append("M030_CONTINUITY_REPORT_FAIL_CLOSED: report missing fail-closed graph/import boundary language")
+            errors.append(
+                f"M030_CONTINUITY_REPORT_BREAKPOINT: report missing breakpoint {breakpoint_id}"
+            )
+    if not _contains_fail_closed_boundary(
+        {"report": text, "audit": audit.get("diagnostic_contract")}
+    ):
+        errors.append(
+            "M030_CONTINUITY_REPORT_FAIL_CLOSED: report missing fail-closed graph/import boundary language"
+        )
     return errors
 
 
@@ -337,10 +391,16 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--audit", required=True, type=Path)
     parser.add_argument("--report", required=True, type=Path)
-    parser.add_argument("--validate-only", action="store_true", help="Validate existing local audit/report artifacts only.")
+    parser.add_argument(
+        "--validate-only",
+        action="store_true",
+        help="Validate existing local audit/report artifacts only.",
+    )
     args = parser.parse_args(argv)
     if not args.validate_only:
-        parser.error("only --validate-only is supported; this verifier must not fetch, replay, or write")
+        parser.error(
+            "only --validate-only is supported; this verifier must not fetch, replay, or write"
+        )
     return args
 
 

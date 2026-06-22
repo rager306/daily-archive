@@ -44,7 +44,14 @@ DIAGNOSTICS_OUTPUT_PATH = CORPUS_DIR / "conversion-quality-diagnostics.jsonl"
 REPORT_OUTPUT_PATH = CORPUS_DIR / "conversion-quality-report.md"
 
 CAPTURED_STATUS = "captured"
-SUPPORTED_ROLES = {"arxiv_abs_page", "arxiv_html", "arxiv_pdf", "nature_html", "publisher_html", "web_article_html"}
+SUPPORTED_ROLES = {
+    "arxiv_abs_page",
+    "arxiv_html",
+    "arxiv_pdf",
+    "nature_html",
+    "publisher_html",
+    "web_article_html",
+}
 PDF_ROLES = {"arxiv_pdf", "publisher_pdf"}
 HTML_ROLES = {"arxiv_abs_page", "arxiv_html", "nature_html", "publisher_html", "web_article_html"}
 MAX_PDF_PAGES = 8
@@ -158,7 +165,11 @@ def validate_safe_relative_path(value: Any, *, label: str) -> PurePosixPath:
     if "://" in value:
         raise ValueError(f"url_not_allowed_as_{label}")
     normalized = PurePosixPath(value.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part == "" for part in normalized.parts):
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part == "" for part in normalized.parts)
+    ):
         raise ValueError(f"unsafe_{label}")
     return normalized
 
@@ -171,7 +182,9 @@ def safe_local_path(value: Any) -> PurePosixPath:
     return validate_safe_relative_path(value, label="local_path")
 
 
-def source_artifact_path(source_dir: Path, article_ref: PurePosixPath, local_path: PurePosixPath) -> Path:
+def source_artifact_path(
+    source_dir: Path, article_ref: PurePosixPath, local_path: PurePosixPath
+) -> Path:
     root = source_dir.resolve()
     local_parts = local_path.parts
     article_parts = article_ref.parts
@@ -208,7 +221,9 @@ def file_hashes(paths: Iterable[Path]) -> dict[str, str | None]:
     return hashes
 
 
-def diagnostic_base(row: Mapping[str, Any], *, status: str, diagnostic_code: str, failure_reason: str | None) -> dict[str, Any]:
+def diagnostic_base(
+    row: Mapping[str, Any], *, status: str, diagnostic_code: str, failure_reason: str | None
+) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
         "milestone_id": MILESTONE_ID,
@@ -239,7 +254,9 @@ def diagnostic_base(row: Mapping[str, Any], *, status: str, diagnostic_code: str
     }
 
 
-def blocked_result(row: Mapping[str, Any], code: str, reason: str, *, source_path: Path | None = None) -> dict[str, Any]:
+def blocked_result(
+    row: Mapping[str, Any], code: str, reason: str, *, source_path: Path | None = None
+) -> dict[str, Any]:
     result = diagnostic_base(row, status="blocked", diagnostic_code=code, failure_reason=reason)
     result.update(
         {
@@ -252,13 +269,20 @@ def blocked_result(row: Mapping[str, Any], code: str, reason: str, *, source_pat
             "semantic_body_detected": False,
             "parser_ready_gate": "blocked",
             "fallback_reason": reason,
-            "quality": {"status": "blocked", "char_count": 0, "line_count": 0, "warnings": [reason]},
+            "quality": {
+                "status": "blocked",
+                "char_count": 0,
+                "line_count": 0,
+                "warnings": [reason],
+            },
         }
     )
     return result
 
 
-def verify_source_bytes(row: Mapping[str, Any], source_path: Path) -> tuple[bool, str | None, int, str | None]:
+def verify_source_bytes(
+    row: Mapping[str, Any], source_path: Path
+) -> tuple[bool, str | None, int, str | None]:
     if not source_path.exists():
         return False, None, 0, "missing_source_artifact"
     if not source_path.is_file():
@@ -310,7 +334,11 @@ def classify_abs_html(source_path: Path) -> tuple[str | None, dict[str, Any], di
         "paragraph_count": len(soup.find_all("p")),
         "section_count": len(soup.find_all(["section", "h2", "h3"])),
     }
-    status = "metadata_only" if structure["abstract_like_count"] or structure["title_count"] else "low_quality"
+    status = (
+        "metadata_only"
+        if structure["abstract_like_count"] or structure["title_count"]
+        else "low_quality"
+    )
     quality = {
         "status": status,
         "char_count": 0,
@@ -320,12 +348,20 @@ def classify_abs_html(source_path: Path) -> tuple[str | None, dict[str, Any], di
     return None, quality, structure
 
 
-def extract_article_html(source_path: Path, *, source_role: str) -> tuple[str, dict[str, Any], dict[str, Any]]:
+def extract_article_html(
+    source_path: Path, *, source_role: str
+) -> tuple[str, dict[str, Any], dict[str, Any]]:
     html = source_path.read_text(encoding="utf-8", errors="replace")
     soup = BeautifulSoup(html, "html.parser")
     for tag in soup(["script", "style", "noscript", "svg", "nav", "header", "footer", "aside"]):
         tag.decompose()
-    article = soup.find("article") or soup.find(attrs={"role": "main"}) or soup.find("main") or soup.body or soup
+    article = (
+        soup.find("article")
+        or soup.find(attrs={"role": "main"})
+        or soup.find("main")
+        or soup.body
+        or soup
+    )
     paragraphs = article.find_all("p") if article else []
     headings = article.find_all(["h1", "h2", "h3"]) if article else []
     text_parts = [node.get_text(" ", strip=True) for node in [*headings, *paragraphs]]
@@ -341,20 +377,30 @@ def extract_article_html(source_path: Path, *, source_role: str) -> tuple[str, d
     quality = text_quality(text)
     if not structure["semantic_body_detected"]:
         quality["status"] = "low_quality" if text.strip() else "empty"
-        quality["warnings"].append("HTML lacks a semantic article body after navigation/header/footer removal")
+        quality["warnings"].append(
+            "HTML lacks a semantic article body after navigation/header/footer removal"
+        )
     return text, quality, structure
 
 
 def extract_pdf_text(source_path: Path) -> tuple[str, dict[str, Any], dict[str, Any]]:
     if fitz is None:
-        return "", text_quality("", warning="PyMuPDF fitz is unavailable"), {"page_count": 0, "pages_processed": 0}
+        return (
+            "",
+            text_quality("", warning="PyMuPDF fitz is unavailable"),
+            {"page_count": 0, "pages_processed": 0},
+        )
     try:
         document = fitz.open(source_path)  # type: ignore[union-attr]
     except Exception as exc:
-        return "", text_quality("", warning=f"PyMuPDF failed to open PDF: {type(exc).__name__}"), {
-            "page_count": 0,
-            "pages_processed": 0,
-        }
+        return (
+            "",
+            text_quality("", warning=f"PyMuPDF failed to open PDF: {type(exc).__name__}"),
+            {
+                "page_count": 0,
+                "pages_processed": 0,
+            },
+        )
     try:
         page_count = len(document)
         pages_processed = min(page_count, MAX_PDF_PAGES)
@@ -382,12 +428,16 @@ def write_converted_text(path: Path, text: str) -> dict[str, Any]:
     }
 
 
-def convert_captured_row(row: Mapping[str, Any], *, output_dir: Path, converted_text_dir: Path) -> dict[str, Any]:
+def convert_captured_row(
+    row: Mapping[str, Any], *, output_dir: Path, converted_text_dir: Path
+) -> dict[str, Any]:
     if row.get("status") != CAPTURED_STATUS:
         return blocked_result(row, "source_not_captured", "S02 row was not captured")
     source_role = row.get("source_role")
     if source_role not in SUPPORTED_ROLES:
-        return blocked_result(row, "unsupported_source_role", f"unsupported source role: {source_role}")
+        return blocked_result(
+            row, "unsupported_source_role", f"unsupported source role: {source_role}"
+        )
     try:
         article_ref_path = safe_article_ref(row.get("article_ref"))
         local_path = safe_local_path(row.get("local_path"))
@@ -404,7 +454,9 @@ def convert_captured_row(row: Mapping[str, Any], *, output_dir: Path, converted_
             source_path=source_path,
         )
 
-    result = diagnostic_base(row, status="converted", diagnostic_code="converted_source_artifact", failure_reason=None)
+    result = diagnostic_base(
+        row, status="converted", diagnostic_code="converted_source_artifact", failure_reason=None
+    )
     result.update(
         {
             "source_path_resolved": rel(source_path),
@@ -427,7 +479,11 @@ def convert_captured_row(row: Mapping[str, Any], *, output_dir: Path, converted_
     if source_role == "arxiv_abs_page":
         text, quality, structure = classify_abs_html(source_path)
         result["status"] = quality["status"]
-        result["diagnostic_code"] = "arxiv_abs_html_metadata_only" if quality["status"] == "metadata_only" else "arxiv_abs_html_low_quality"
+        result["diagnostic_code"] = (
+            "arxiv_abs_html_metadata_only"
+            if quality["status"] == "metadata_only"
+            else "arxiv_abs_html_low_quality"
+        )
         result["code"] = result["diagnostic_code"]
         result["failure_reason"] = "arxiv abstract/navigation page is not parser-ready full text"
         result["conversion_attempted"] = True
@@ -446,7 +502,9 @@ def convert_captured_row(row: Mapping[str, Any], *, output_dir: Path, converted_
 
     if source_role != "arxiv_abs_page":
         if quality["status"] == "ok" and text:
-            text_path = converted_text_path(converted_text_dir, str(row.get("article_ref")), str(source_role))
+            text_path = converted_text_path(
+                converted_text_dir, str(row.get("article_ref")), str(source_role)
+            )
             result.update(write_converted_text(text_path, text))
             result["parser_ready"] = True
             result["semantic_body_detected"] = bool(structure.get("semantic_body_detected", True))
@@ -456,9 +514,15 @@ def convert_captured_row(row: Mapping[str, Any], *, output_dir: Path, converted_
             result["code"] = "parser_ready_converted_text"
         else:
             result["status"] = "low_quality" if quality["status"] != "empty" else "failed"
-            result["diagnostic_code"] = "converted_text_low_quality" if quality["status"] != "empty" else "empty_converted_text"
+            result["diagnostic_code"] = (
+                "converted_text_low_quality"
+                if quality["status"] != "empty"
+                else "empty_converted_text"
+            )
             result["code"] = result["diagnostic_code"]
-            result["failure_reason"] = "; ".join(quality.get("warnings", [])) or "converted text is not parser-ready"
+            result["failure_reason"] = (
+                "; ".join(quality.get("warnings", [])) or "converted text is not parser-ready"
+            )
             result["parser_ready"] = False
             result["semantic_body_detected"] = bool(structure.get("semantic_body_detected", False))
             result["parser_ready_gate"] = "failed"
@@ -473,7 +537,9 @@ def convert_captured_row(row: Mapping[str, Any], *, output_dir: Path, converted_
     return result
 
 
-def validate_no_payload_keys(value: Any, *, path: str = "$", errors: list[str] | None = None) -> list[str]:
+def validate_no_payload_keys(
+    value: Any, *, path: str = "$", errors: list[str] | None = None
+) -> list[str]:
     found = [] if errors is None else errors
     if isinstance(value, dict):
         for key, item in value.items():
@@ -486,12 +552,19 @@ def validate_no_payload_keys(value: Any, *, path: str = "$", errors: list[str] |
     return found
 
 
-def build_provenance(args: argparse.Namespace, *, exit_code: int, duration_ms: int) -> dict[str, Any]:
+def build_provenance(
+    args: argparse.Namespace, *, exit_code: int, duration_ms: int
+) -> dict[str, Any]:
     outputs = [args.output_summary, args.output_diagnostics, args.output_report]
     hashable_outputs = [args.output_diagnostics, args.output_report]
     return {
         "schema_version": SCHEMA_VERSION,
-        "command": ["uv", "run", "python", "scripts/convert_m029_unified_source_quality_boundary.py"],
+        "command": [
+            "uv",
+            "run",
+            "python",
+            "scripts/convert_m029_unified_source_quality_boundary.py",
+        ],
         "argv": ["scripts/convert_m029_unified_source_quality_boundary.py"],
         "cwd": str(ROOT),
         "git_commit": git_commit(ROOT),
@@ -567,16 +640,26 @@ def run_conversion(args: argparse.Namespace) -> tuple[int, dict[str, Any], list[
     diagnostics: list[dict[str, Any]] = []
     for row in rows:
         if not isinstance(row, dict):
-            diagnostics.append(blocked_result({}, "malformed_result_row", "S02 result row is not an object"))
+            diagnostics.append(
+                blocked_result({}, "malformed_result_row", "S02 result row is not an object")
+            )
             continue
         diagnostics.append(
-            convert_captured_row(row, output_dir=args.source_dir, converted_text_dir=args.output_dir)
+            convert_captured_row(
+                row, output_dir=args.source_dir, converted_text_dir=args.output_dir
+            )
         )
 
     counts = Counter(str(row.get("status")) for row in diagnostics)
     parser_ready_count = sum(1 for row in diagnostics if row.get("parser_ready") is True)
-    article_refs = sorted({str(row.get("article_ref")) for row in diagnostics if row.get("article_ref")})
-    status = "completed_with_diagnostics" if any(row.get("status") in {"blocked", "failed", "low_quality"} for row in diagnostics) else "completed"
+    article_refs = sorted(
+        {str(row.get("article_ref")) for row in diagnostics if row.get("article_ref")}
+    )
+    status = (
+        "completed_with_diagnostics"
+        if any(row.get("status") in {"blocked", "failed", "low_quality"} for row in diagnostics)
+        else "completed"
+    )
     exit_code = 0
     summary = {
         "schema_version": SCHEMA_VERSION,
@@ -625,7 +708,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     args = parser.parse_args(argv[1:])
     corpus_dir = args.output_dir.parent
     args.output_summary = args.output_summary or corpus_dir / "conversion-quality-summary.json"
-    args.output_diagnostics = args.output_diagnostics or corpus_dir / "conversion-quality-diagnostics.jsonl"
+    args.output_diagnostics = (
+        args.output_diagnostics or corpus_dir / "conversion-quality-diagnostics.jsonl"
+    )
     args.output_report = args.output_report or corpus_dir / "conversion-quality-report.md"
     return args
 

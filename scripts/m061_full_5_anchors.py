@@ -100,8 +100,12 @@ def aggregate_rate_metrics(metrics_list: list[dict[str, Any]]) -> dict[str, Any]
         aggregate["http_429_count"] += int(metrics.get("http_429_count", 0))
         aggregate["retry_attempts"] += int(metrics.get("retry_attempts", 0))
         aggregate["retry_after_honored_count"] += int(metrics.get("retry_after_honored_count", 0))
-        aggregate["retry_after_delay_seconds_total"] += float(metrics.get("retry_after_delay_seconds_total", 0.0))
-        aggregate["backoff_delay_seconds_total"] += float(metrics.get("backoff_delay_seconds_total", 0.0))
+        aggregate["retry_after_delay_seconds_total"] += float(
+            metrics.get("retry_after_delay_seconds_total", 0.0)
+        )
+        aggregate["backoff_delay_seconds_total"] += float(
+            metrics.get("backoff_delay_seconds_total", 0.0)
+        )
         pacing_count = int(metrics.get("pacing_delay_count", 0))
         pacing_delay = float(metrics.get("pacing_delay_seconds_total", 0.0))
         aggregate["pacing_delay_count"] += pacing_count
@@ -112,7 +116,9 @@ def aggregate_rate_metrics(metrics_list: list[dict[str, Any]]) -> dict[str, Any]
             request_kinds[kind] = request_kinds.get(kind, 0) + int(count)
     requests = aggregate["requests_made"]
     aggregate["http_429_rate"] = aggregate["http_429_count"] / requests if requests else 0.0
-    aggregate["average_pacing_delay_seconds"] = total_pacing_delay / total_pacing_count if total_pacing_count else 0.0
+    aggregate["average_pacing_delay_seconds"] = (
+        total_pacing_delay / total_pacing_count if total_pacing_count else 0.0
+    )
     return aggregate
 
 
@@ -140,14 +146,22 @@ def fetch_anchor_metadata(client: Any, anchor_arxiv_id: str) -> dict[str, str]:
 
 def extract_arxiv_refs_from_eprint(eprint_path: Path, anchor_arxiv_id: str) -> list[str]:
     latex_text = s01.extract_latex_text(eprint_path)
-    candidates = re.findall(r"(?<!\d)(?:arXiv:)?((?:\d{4}\.\d{4,5})(?:v\d+)?)(?!\d)", latex_text, flags=re.IGNORECASE)
+    candidates = re.findall(
+        r"(?<!\d)(?:arXiv:)?((?:\d{4}\.\d{4,5})(?:v\d+)?)(?!\d)", latex_text, flags=re.IGNORECASE
+    )
     refs = [s01.normalize_arxiv_id(candidate) for candidate in candidates]
-    return unique_sorted([ref for ref in refs if ref and ref != anchor_arxiv_id and s01.plausible_arxiv_id(ref)])
+    return unique_sorted(
+        [ref for ref in refs if ref and ref != anchor_arxiv_id and s01.plausible_arxiv_id(ref)]
+    )
 
 
 def load_m056_corpus_refs(cumulative_corpus: dict[str, Any], anchor_arxiv_id: str) -> list[str]:
     return unique_sorted(
-        [item["arxiv_id"] for item in cumulative_corpus.get("pdfs", []) if item.get("arxiv_id") and item.get("arxiv_id") != anchor_arxiv_id]
+        [
+            item["arxiv_id"]
+            for item in cumulative_corpus.get("pdfs", [])
+            if item.get("arxiv_id") and item.get("arxiv_id") != anchor_arxiv_id
+        ]
     )
 
 
@@ -172,8 +186,12 @@ def stage_1_anchor_acquisition_s02(
     eprint_dir.mkdir(parents=True, exist_ok=True)
     pdf_path = pdf_dir / f"{anchor_arxiv_id}.pdf"
     eprint_path = eprint_dir / f"{anchor_arxiv_id}.tar"
-    pdf_path.write_bytes(client.get_pdf(s01.ARXIV_PDF_URL_TEMPLATE.format(arxiv_id=anchor_arxiv_id)))
-    eprint_path.write_bytes(client.get_eprint(s01.ARXIV_EPRINT_URL_TEMPLATE.format(arxiv_id=anchor_arxiv_id)))
+    pdf_path.write_bytes(
+        client.get_pdf(s01.ARXIV_PDF_URL_TEMPLATE.format(arxiv_id=anchor_arxiv_id))
+    )
+    eprint_path.write_bytes(
+        client.get_eprint(s01.ARXIV_EPRINT_URL_TEMPLATE.format(arxiv_id=anchor_arxiv_id))
+    )
     refs = extract_arxiv_refs_from_eprint(eprint_path, anchor_arxiv_id)
     one_hop_ref_source = "live_eprint_arxiv_reference_extraction"
     if not refs:
@@ -213,10 +231,14 @@ def one_hop_validation_s02(
     fallback_used: bool,
 ) -> dict[str, Any]:
     if not fallback_used:
-        stage2 = s01.stage_2_one_hop_validation(cumulative_corpus, candidate_edges, one_hop_refs, anchor_arxiv_id)
+        stage2 = s01.stage_2_one_hop_validation(
+            cumulative_corpus, candidate_edges, one_hop_refs, anchor_arxiv_id
+        )
         stage2["generated_by"] = GENERATED_BY
         return stage2
-    corpus_refs = {item["arxiv_id"] for item in cumulative_corpus.get("pdfs", []) if item.get("arxiv_id")}
+    corpus_refs = {
+        item["arxiv_id"] for item in cumulative_corpus.get("pdfs", []) if item.get("arxiv_id")
+    }
     refs_in_m056 = sorted(set(one_hop_refs) & corpus_refs)
     return {
         "stage": 2,
@@ -254,11 +276,13 @@ def run_anchor_s02(
     inter_anchor_pacing_delay_seconds = 0.0
 
     stage_started = time.perf_counter()
-    stage1, fallback_refs, fallback_metrics, not_before, inter_delay = stage_1_anchor_acquisition_s02(
-        paths,
-        cumulative_corpus,
-        anchor_arxiv_id,
-        not_before,
+    stage1, fallback_refs, fallback_metrics, not_before, inter_delay = (
+        stage_1_anchor_acquisition_s02(
+            paths,
+            cumulative_corpus,
+            anchor_arxiv_id,
+            not_before,
+        )
     )
     inter_anchor_pacing_delay_seconds += inter_delay
     if fallback_metrics:
@@ -275,11 +299,15 @@ def run_anchor_s02(
         fallback_used = True
 
     stage_started = time.perf_counter()
-    stage2 = one_hop_validation_s02(cumulative_corpus, candidate_edges, one_hop_refs, anchor_arxiv_id, fallback_used)
+    stage2 = one_hop_validation_s02(
+        cumulative_corpus, candidate_edges, one_hop_refs, anchor_arxiv_id, fallback_used
+    )
     stage_timings["one_hop_validation"] = time.perf_counter() - stage_started
 
     stage_started = time.perf_counter()
-    stage3, bfs_edges, new_2hop_ids = s01.stage_3_two_hop_bfs(one_hop_refs, tei_index, anchor_arxiv_id)
+    stage3, bfs_edges, new_2hop_ids = s01.stage_3_two_hop_bfs(
+        one_hop_refs, tei_index, anchor_arxiv_id
+    )
     stage3["generated_by"] = GENERATED_BY
     stage3["fallback_used"] = fallback_used
     stage_timings["two_hop_bfs"] = time.perf_counter() - stage_started
@@ -287,16 +315,22 @@ def run_anchor_s02(
     not_before, inter_delay = wait_for_global_arxiv_window(not_before)
     inter_anchor_pacing_delay_seconds += inter_delay
     stage_started = time.perf_counter()
-    arxiv_acquisition, selected_ids, acquired_pdf_paths, acquired_eprint_paths = s01.stage_4_real_arxiv_acquisition(
-        paths,
-        new_2hop_ids,
-        max_papers,
+    arxiv_acquisition, selected_ids, acquired_pdf_paths, acquired_eprint_paths = (
+        s01.stage_4_real_arxiv_acquisition(
+            paths,
+            new_2hop_ids,
+            max_papers,
+        )
     )
     arxiv_acquisition["external_network_override"] = S02_NETWORK_OVERRIDE
     arxiv_acquisition["generated_by"] = GENERATED_BY
     arxiv_acquisition["inter_anchor_pacing_delay_seconds"] = inter_anchor_pacing_delay_seconds
     rate_metric_parts.append(arxiv_acquisition["rate_limit_metrics"])
-    not_before = next_arxiv_window() if arxiv_acquisition["rate_limit_metrics"].get("requests_made", 0) else not_before
+    not_before = (
+        next_arxiv_window()
+        if arxiv_acquisition["rate_limit_metrics"].get("requests_made", 0)
+        else not_before
+    )
     stage_timings["real_arxiv_acquisition"] = time.perf_counter() - stage_started
 
     stage_started = time.perf_counter()
@@ -310,7 +344,9 @@ def run_anchor_s02(
     )
     stage4_8["external_network_override"] = S02_NETWORK_OVERRIDE
     stage4_8["generated_by"] = GENERATED_BY
-    stage_timings["grobid_opendataloader_plotextractor_fdembed_manifest"] = time.perf_counter() - stage_started
+    stage_timings["grobid_opendataloader_plotextractor_fdembed_manifest"] = (
+        time.perf_counter() - stage_started
+    )
 
     stage_started = time.perf_counter()
     m3_report = s01.stage_7_m3_judge(paths)
@@ -335,9 +371,15 @@ def run_anchor_s02(
     elapsed_seconds = time.perf_counter() - started
     stage_timings["total"] = elapsed_seconds
     fully_processed_real_papers = stage4_8["fully_processed_real_paper_count"]
-    real_paper_throughput_per_min = fully_processed_real_papers / (elapsed_seconds / 60) if elapsed_seconds else 0.0
+    real_paper_throughput_per_min = (
+        fully_processed_real_papers / (elapsed_seconds / 60) if elapsed_seconds else 0.0
+    )
     acquisition_seconds = stage_timings["real_arxiv_acquisition"]
-    acquisition_throughput_per_min = arxiv_acquisition["downloaded_pdf_count"] / (acquisition_seconds / 60) if acquisition_seconds else 0.0
+    acquisition_throughput_per_min = (
+        arxiv_acquisition["downloaded_pdf_count"] / (acquisition_seconds / 60)
+        if acquisition_seconds
+        else 0.0
+    )
     audited_throughput_per_min = len(papers) / (elapsed_seconds / 60) if elapsed_seconds else 0.0
     combined_anchor_metrics = aggregate_rate_metrics(rate_metric_parts)
 
@@ -347,7 +389,11 @@ def run_anchor_s02(
     s01.write_json(paths.acquisition_dir / "arxiv-acquisition.json", arxiv_acquisition)
     s01.write_json(
         paths.acquisition_dir / "selected-2hop-papers.json",
-        {"selected_arxiv_ids": selected_ids, "count": len(selected_ids), "source": "real_arxiv_acquisition"},
+        {
+            "selected_arxiv_ids": selected_ids,
+            "count": len(selected_ids),
+            "source": "real_arxiv_acquisition",
+        },
     )
     s01.write_json(paths.parsing_dir / "per-paper-stage-report.json", stage4_8)
 
@@ -383,16 +429,24 @@ def run_anchor_s02(
         "real_arxiv_acquisition_throughput_per_min": acquisition_throughput_per_min,
         "audited_stage_record_throughput_per_min": audited_throughput_per_min,
         "graph_layer_count": graph_manifest["layer_count"],
-        "graph_node_count_per_layer": {layer["name"]: layer["node_count"] for layer in graph_manifest["layers"]},
-        "graph_edge_count_per_layer": {layer["name"]: layer["edge_count"] for layer in graph_manifest["layers"]},
+        "graph_node_count_per_layer": {
+            layer["name"]: layer["node_count"] for layer in graph_manifest["layers"]
+        },
+        "graph_edge_count_per_layer": {
+            layer["name"]: layer["edge_count"] for layer in graph_manifest["layers"]
+        },
         "inter_anchor_pacing_delay_seconds": inter_anchor_pacing_delay_seconds,
         "artifacts": {
             "anchor_acquisition": display_path(paths.acquisition_dir / "anchor-acquisition.json"),
             "one_hop_validation": display_path(paths.acquisition_dir / "one-hop-validation.json"),
             "two_hop_bfs": display_path(paths.acquisition_dir / "two-hop-bfs.json"),
             "arxiv_acquisition": display_path(paths.acquisition_dir / "arxiv-acquisition.json"),
-            "selected_2hop_papers": display_path(paths.acquisition_dir / "selected-2hop-papers.json"),
-            "per_paper_stage_report": display_path(paths.parsing_dir / "per-paper-stage-report.json"),
+            "selected_2hop_papers": display_path(
+                paths.acquisition_dir / "selected-2hop-papers.json"
+            ),
+            "per_paper_stage_report": display_path(
+                paths.parsing_dir / "per-paper-stage-report.json"
+            ),
             "m3_judgments": display_path(paths.judgments_dir / "m3-judgments.json"),
             "graph_manifest": display_path(paths.graph_dir / "5-layer-graph-manifest.json"),
         },
@@ -406,7 +460,9 @@ def load_anchor_summary(anchor_arxiv_id: str) -> dict[str, Any]:
 
 
 def load_anchor_bfs(anchor_arxiv_id: str) -> dict[str, Any]:
-    return read_json(BASE_OUTPUT_DIR / f"anchor-{anchor_arxiv_id}" / "acquisition" / "two-hop-bfs.json")
+    return read_json(
+        BASE_OUTPUT_DIR / f"anchor-{anchor_arxiv_id}" / "acquisition" / "two-hop-bfs.json"
+    )
 
 
 def build_combined_graph_manifest(anchor_summaries: list[dict[str, Any]]) -> dict[str, Any]:
@@ -415,7 +471,9 @@ def build_combined_graph_manifest(anchor_summaries: list[dict[str, Any]]) -> dic
     figure_v1_payload = read_json(s01.M057_ROOT / "figure-links" / "edges.json")
     figure_v2_payload = read_json(s01.M058_ROOT / "edges.json")
 
-    m056_nodes = {node.get("arxiv_id") for node in citation_payload.get("nodes", []) if node.get("arxiv_id")}
+    m056_nodes = {
+        node.get("arxiv_id") for node in citation_payload.get("nodes", []) if node.get("arxiv_id")
+    }
     combined_bfs_edges: set[tuple[str, str, str]] = set()
     combined_new_nodes: set[str] = set()
     source_artifacts = ["artifacts/m056-bfs-graph/candidate-edges.json"]
@@ -447,25 +505,40 @@ def build_combined_graph_manifest(anchor_summaries: list[dict[str, Any]]) -> dic
             "name": "table_similarity_m057",
             "source_artifacts": ["artifacts/m057-fd-marker/table-similarity/edges.json"],
             "edge_count": len(table_payload.get("edges", [])),
-            "node_count": len({edge.get("paper_a") for edge in table_payload.get("edges", [])} | {edge.get("paper_b") for edge in table_payload.get("edges", [])}),
+            "node_count": len(
+                {edge.get("paper_a") for edge in table_payload.get("edges", [])}
+                | {edge.get("paper_b") for edge in table_payload.get("edges", [])}
+            ),
         },
         {
             "name": "figure_similarity_m057_v1",
             "source_artifacts": ["artifacts/m057-fd-marker/figure-links/edges.json"],
             "edge_count": len(figure_v1_payload.get("edges", [])),
-            "node_count": len({edge.get("figure_a_id") for edge in figure_v1_payload.get("edges", [])} | {edge.get("figure_b_id") for edge in figure_v1_payload.get("edges", [])}),
+            "node_count": len(
+                {edge.get("figure_a_id") for edge in figure_v1_payload.get("edges", [])}
+                | {edge.get("figure_b_id") for edge in figure_v1_payload.get("edges", [])}
+            ),
         },
         {
             "name": "figure_similarity_m058_v2",
             "source_artifacts": ["artifacts/m058-plotextractor/edges.json"],
             "edge_count": len(figure_v2_payload.get("edges", [])),
-            "node_count": len({edge.get("figure_a_id") for edge in figure_v2_payload.get("edges", [])} | {edge.get("figure_b_id") for edge in figure_v2_payload.get("edges", [])}),
+            "node_count": len(
+                {edge.get("figure_a_id") for edge in figure_v2_payload.get("edges", [])}
+                | {edge.get("figure_b_id") for edge in figure_v2_payload.get("edges", [])}
+            ),
         },
         {
             "name": "judge_scores_m3_m060g_diagnostic",
-            "source_artifacts": [summary["artifacts"]["m3_judgments"] for summary in anchor_summaries],
-            "edge_count": sum(int(summary.get("m3_judge_figure_count", 0)) for summary in anchor_summaries),
-            "node_count": sum(int(summary.get("m3_judge_figure_count", 0)) for summary in anchor_summaries),
+            "source_artifacts": [
+                summary["artifacts"]["m3_judgments"] for summary in anchor_summaries
+            ],
+            "edge_count": sum(
+                int(summary.get("m3_judge_figure_count", 0)) for summary in anchor_summaries
+            ),
+            "node_count": sum(
+                int(summary.get("m3_judge_figure_count", 0)) for summary in anchor_summaries
+            ),
         },
     ]
     manifest = {
@@ -489,10 +562,16 @@ def build_combined_graph_manifest(anchor_summaries: list[dict[str, Any]]) -> dic
             "layer_count_ok": len(layers) == 5,
             "anchor_count_ok": len(anchor_summaries) == 5,
             "per_paper_manifest_count": len(per_paper_sources),
-            "structural_graph_valid": len(layers) == 5 and len(anchor_summaries) == 5 and len(per_paper_sources) == 5,
+            "structural_graph_valid": len(layers) == 5
+            and len(anchor_summaries) == 5
+            and len(per_paper_sources) == 5,
             "static_layer_schema_notices": {
-                "table_layer_errors": s01.validate_layer_payload(s01.TABLE_SCHEMA_PATH, s01.M057_ROOT / "table-similarity" / "edges.json"),
-                "figure_v2_layer_errors": s01.validate_layer_payload(s01.PLOTEXTRACTOR_SCHEMA_PATH, s01.M058_ROOT / "edges.json"),
+                "table_layer_errors": s01.validate_layer_payload(
+                    s01.TABLE_SCHEMA_PATH, s01.M057_ROOT / "table-similarity" / "edges.json"
+                ),
+                "figure_v2_layer_errors": s01.validate_layer_payload(
+                    s01.PLOTEXTRACTOR_SCHEMA_PATH, s01.M058_ROOT / "edges.json"
+                ),
             },
         },
     }
@@ -500,10 +579,18 @@ def build_combined_graph_manifest(anchor_summaries: list[dict[str, Any]]) -> dic
     return manifest
 
 
-def build_combined_summary(anchor_summaries: list[dict[str, Any]], graph_manifest: dict[str, Any], wall_seconds: float) -> dict[str, Any]:
-    cumulative_rate = aggregate_rate_metrics([summary["arxiv_rate_limit_metrics"] for summary in anchor_summaries])
-    total_fully_processed = sum(int(summary.get("fully_processed_real_paper_count", 0)) for summary in anchor_summaries)
-    total_elapsed_seconds = sum(float(summary.get("elapsed_seconds", 0.0)) for summary in anchor_summaries)
+def build_combined_summary(
+    anchor_summaries: list[dict[str, Any]], graph_manifest: dict[str, Any], wall_seconds: float
+) -> dict[str, Any]:
+    cumulative_rate = aggregate_rate_metrics(
+        [summary["arxiv_rate_limit_metrics"] for summary in anchor_summaries]
+    )
+    total_fully_processed = sum(
+        int(summary.get("fully_processed_real_paper_count", 0)) for summary in anchor_summaries
+    )
+    total_elapsed_seconds = sum(
+        float(summary.get("elapsed_seconds", 0.0)) for summary in anchor_summaries
+    )
     summary = {
         "schema_version": "m061-2hop.s02-combined-summary.v1",
         "generated_at": s01.utc_now(),
@@ -530,18 +617,29 @@ def build_combined_summary(anchor_summaries: list[dict[str, Any]], graph_manifes
             for summary in anchor_summaries
         },
         "total_fully_processed_real_paper_count": total_fully_processed,
-        "total_papers_audited_count": sum(int(summary.get("papers_audited_count", 0)) for summary in anchor_summaries),
+        "total_papers_audited_count": sum(
+            int(summary.get("papers_audited_count", 0)) for summary in anchor_summaries
+        ),
         "total_elapsed_seconds_by_anchor_sum": total_elapsed_seconds,
         "s02_wall_seconds": wall_seconds,
-        "cumulative_real_paper_throughput_per_min": total_fully_processed / (total_elapsed_seconds / 60) if total_elapsed_seconds else 0.0,
+        "cumulative_real_paper_throughput_per_min": total_fully_processed
+        / (total_elapsed_seconds / 60)
+        if total_elapsed_seconds
+        else 0.0,
         "arxiv_rate_limit_metrics": cumulative_rate,
         "graph_manifest": display_path(BASE_OUTPUT_DIR / "5-anchor-5-layer-graph-manifest.json"),
         "graph_layer_count": graph_manifest["layer_count"],
-        "graph_node_count_per_layer": {layer["name"]: layer["node_count"] for layer in graph_manifest["layers"]},
-        "graph_edge_count_per_layer": {layer["name"]: layer["edge_count"] for layer in graph_manifest["layers"]},
+        "graph_node_count_per_layer": {
+            layer["name"]: layer["node_count"] for layer in graph_manifest["layers"]
+        },
+        "graph_edge_count_per_layer": {
+            layer["name"]: layer["edge_count"] for layer in graph_manifest["layers"]
+        },
         "graph_validation": graph_manifest["validation"],
         "artifacts": {
-            "combined_graph_manifest": display_path(BASE_OUTPUT_DIR / "5-anchor-5-layer-graph-manifest.json"),
+            "combined_graph_manifest": display_path(
+                BASE_OUTPUT_DIR / "5-anchor-5-layer-graph-manifest.json"
+            ),
             "combined_summary": display_path(BASE_OUTPUT_DIR / "combined-5-anchor-summary.json"),
             "decision": display_path(BASE_OUTPUT_DIR / "s02-decision.md"),
         },
@@ -552,7 +650,10 @@ def build_combined_summary(anchor_summaries: list[dict[str, Any]], graph_manifes
 
 def build_decision_doc(summary: dict[str, Any]) -> str:
     throughput = summary["cumulative_real_paper_throughput_per_min"]
-    graph_valid = summary["graph_layer_count"] == 5 and summary["graph_validation"].get("structural_graph_valid") is True
+    graph_valid = (
+        summary["graph_layer_count"] == 5
+        and summary["graph_validation"].get("structural_graph_valid") is True
+    )
     no_429 = summary["arxiv_rate_limit_metrics"].get("http_429_count", 0) == 0
     decision = "GO to S03 synthesis" if throughput >= 1.0 and graph_valid else "ADJUST before S03"
     result = "pass" if decision.startswith("GO") else "fail"
@@ -630,7 +731,9 @@ def run_s02(max_papers: int = 30, anchors: list[str] | None = None) -> dict[str,
         _, not_before = run_anchor_s02(anchor, max_papers=max_papers, not_before=not_before)
     anchor_summaries = [load_anchor_summary(anchor) for anchor in ALL_ANCHORS]
     graph_manifest = build_combined_graph_manifest(anchor_summaries)
-    combined_summary = build_combined_summary(anchor_summaries, graph_manifest, time.perf_counter() - started)
+    combined_summary = build_combined_summary(
+        anchor_summaries, graph_manifest, time.perf_counter() - started
+    )
     decision_doc = build_decision_doc(combined_summary)
     (BASE_OUTPUT_DIR / "s02-decision.md").write_text(decision_doc)
     return combined_summary
@@ -640,7 +743,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run M061 S02 5-anchor 2-hop BFS pipeline.")
     parser.add_argument("--max-papers", type=int, default=30)
     parser.add_argument("--anchors", nargs="*", default=S02_ANCHORS, choices=S02_ANCHORS)
-    parser.add_argument("--combine-only", action="store_true", help="Combine existing anchor artifacts without network acquisition.")
+    parser.add_argument(
+        "--combine-only",
+        action="store_true",
+        help="Combine existing anchor artifacts without network acquisition.",
+    )
     return parser.parse_args()
 
 

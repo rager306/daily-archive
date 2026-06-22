@@ -162,7 +162,9 @@ def _with_evidence_args(verify_args: list[str], corpus: Path) -> list[str]:
     ]
 
 
-def test_runtime_smoke_writes_loaded_and_zero_chunk_artifacts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_runtime_smoke_writes_loaded_and_zero_chunk_artifacts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.chdir(tmp_path)
     run_args, verify_args, corpus = _runtime_args(tmp_path)
 
@@ -184,7 +186,9 @@ def test_runtime_smoke_writes_loaded_and_zero_chunk_artifacts(tmp_path: Path, mo
     assert summary["ladybugdb_written"] is False
 
 
-def test_runtime_verifier_fails_closed_on_identity_mismatch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_runtime_verifier_fails_closed_on_identity_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     monkeypatch.chdir(tmp_path)
     run_args, verify_args, corpus = _runtime_args(tmp_path)
     assert run_main(run_args) == 0
@@ -197,7 +201,9 @@ def test_runtime_verifier_fails_closed_on_identity_mismatch(tmp_path: Path, monk
     assert "article_identity_mismatch" in capsys.readouterr().err
 
 
-def test_runtime_verifier_fails_closed_on_import_flag(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_runtime_verifier_fails_closed_on_import_flag(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     monkeypatch.chdir(tmp_path)
     run_args, verify_args, corpus = _runtime_args(tmp_path)
     assert run_main(run_args) == 0
@@ -231,7 +237,9 @@ def test_runtime_verifier_fails_when_parser_ready_article_is_zero_chunk(
     assert "parser_ready_article_not_loaded" in capsys.readouterr().err
 
 
-def test_runtime_verifier_writes_loader_evidence_bundle(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_runtime_verifier_writes_loader_evidence_bundle(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.chdir(tmp_path)
     run_args, verify_args, corpus = _runtime_args(tmp_path)
     assert run_main(run_args) == 0
@@ -239,7 +247,10 @@ def test_runtime_verifier_writes_loader_evidence_bundle(tmp_path: Path, monkeypa
     assert verify_main(_with_evidence_args(verify_args, corpus)) == 0
 
     evidence_summary = json.loads((corpus / "evidence-summary.json").read_text(encoding="utf-8"))
-    diagnostics = [json.loads(line) for line in (corpus / "evidence-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()]
+    diagnostics = [
+        json.loads(line)
+        for line in (corpus / "evidence-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
     evidence_files = sorted((corpus / "evidence").glob("*.evidence.json"))
     assert evidence_summary["article_count"] == 2
     assert evidence_summary["evidence_record_count"] == 2
@@ -247,7 +258,9 @@ def test_runtime_verifier_writes_loader_evidence_bundle(tmp_path: Path, monkeypa
     assert evidence_summary["zero_chunk_count"] == 1
     assert len(diagnostics) == 2
     assert len(evidence_files) == 2
-    zero_record = json.loads((corpus / "evidence" / "web_article-two.evidence.json").read_text(encoding="utf-8"))
+    zero_record = json.loads(
+        (corpus / "evidence" / "web_article-two.evidence.json").read_text(encoding="utf-8")
+    )
     assert zero_record["zero_chunk"] is True
     assert zero_record["runtime_evidence_count"] == 0
     assert zero_record["failure_reason"] == "no_parser_ready_converted_text"

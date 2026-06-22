@@ -12,7 +12,9 @@ from research_graph.infrastructure.repair.chunk_baseline_measurement import (
 from research_graph.infrastructure.repair.chunk_import_contract import validate_import_ready_package
 
 
-def _paper(tmp_path: Path, *, paper_id: str = "p1", full_text: str | None = None) -> dict[str, object]:
+def _paper(
+    tmp_path: Path, *, paper_id: str = "p1", full_text: str | None = None
+) -> dict[str, object]:
     paper_dir = tmp_path / paper_id
     paper_dir.mkdir()
     required_paths: list[str] = [str(paper_dir / "full_text.md")]
@@ -59,7 +61,9 @@ def test_build_baseline_package_marks_current_chunks_retrieval_only(tmp_path: Pa
     assert validation.refused_chunk_count == 2
     assert package["diagnostics"]["package_state"] == "ok_for_retrieval_only"
     assert package["diagnostics"]["counts_by_route"] == {"retrieval_only": 2}
-    assert package["diagnostics"]["refusal_counts"] == {"baseline_retrieval_only_not_import_ready": 2}
+    assert package["diagnostics"]["refusal_counts"] == {
+        "baseline_retrieval_only_not_import_ready": 2
+    }
     assert all(chunk["route"] == "retrieval_only" for chunk in package["chunks"])
     assert all(chunk["redaction"]["chunk_text_included"] is False for chunk in package["chunks"])
 
@@ -103,7 +107,9 @@ def test_measure_manifest_aggregates_redacted_baseline(tmp_path: Path) -> None:
 
 
 def test_write_baseline_run_outputs_summary_and_jsonl(tmp_path: Path) -> None:
-    manifest = _manifest(tmp_path, [_paper(tmp_path, full_text="# Title\n\n## Body\n\nSubstantive body.")])
+    manifest = _manifest(
+        tmp_path, [_paper(tmp_path, full_text="# Title\n\n## Body\n\nSubstantive body.")]
+    )
     result = measure_manifest(manifest)
     out = tmp_path / "out"
 
@@ -121,7 +127,9 @@ def test_write_baseline_run_outputs_summary_and_jsonl(tmp_path: Path) -> None:
     assert "Substantive body" not in json.dumps(record)
 
 
-def test_write_review_samples_separates_markdown_snippets_from_machine_index(tmp_path: Path) -> None:
+def test_write_review_samples_separates_markdown_snippets_from_machine_index(
+    tmp_path: Path,
+) -> None:
     paper = _paper(
         tmp_path,
         paper_id="p1",

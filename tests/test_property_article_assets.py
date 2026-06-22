@@ -22,15 +22,40 @@ PAPER_IDS = st.from_regex(r"26[0-9]{2}\.assets-[a-f0-9]{4}", fullmatch=True)
 RUN_IDS = st.from_regex(r"m024-assets-property-[a-f0-9]{6}", fullmatch=True)
 HEX64 = st.text(alphabet="0123456789abcdef", min_size=64, max_size=64)
 ASSET_TYPES = st.sampled_from(sorted(ALLOWED_ASSET_TYPES))
-PRESERVATION_STATES = st.sampled_from(["placeholder_only", "source_linked", "linked_not_extracted", "blocked", "missing_source"])
+PRESERVATION_STATES = st.sampled_from(
+    ["placeholder_only", "source_linked", "linked_not_extracted", "blocked", "missing_source"]
+)
 INTERPRETATION_STATUSES = st.sampled_from(
-    ["not_interpreted", "needs_human_review", "interpretation_deferred", "metadata_only", "review_required", "blocked"]
+    [
+        "not_interpreted",
+        "needs_human_review",
+        "interpretation_deferred",
+        "metadata_only",
+        "review_required",
+        "blocked",
+    ]
 )
 FORBIDDEN_KEY_VALUES = st.sampled_from(
-    ["caption_text", "table_text", "equation_text", "image_bytes", "base64", "embedding", "vector", "payload", "api_key"]
+    [
+        "caption_text",
+        "table_text",
+        "equation_text",
+        "image_bytes",
+        "base64",
+        "embedding",
+        "vector",
+        "payload",
+        "api_key",
+    ]
 )
 FORBIDDEN_SENTINEL = "PROPERTY_FORBIDDEN_SENTINEL_DO_NOT_ECHO"
-UNSAFE_FLAGS = ("trusted_kg_import_allowed", "production_import_attempted", "ladybugdb_written", "import_eligible", "promoted_to_fact")
+UNSAFE_FLAGS = (
+    "trusted_kg_import_allowed",
+    "production_import_attempted",
+    "ladybugdb_written",
+    "import_eligible",
+    "promoted_to_fact",
+)
 
 
 def source_ref(paper_id: str, source_index: int, sha256: str = "a" * 64) -> dict[str, Any]:
@@ -51,7 +76,9 @@ def source_ref(paper_id: str, source_index: int, sha256: str = "a" * 64) -> dict
     }
 
 
-def source_span(paper_id: str, source_id: str, index: int, span_hash: str = "b" * 64) -> dict[str, Any]:
+def source_span(
+    paper_id: str, source_id: str, index: int, span_hash: str = "b" * 64
+) -> dict[str, Any]:
     return {
         "span_id": f"{paper_id}:span:asset-{index:04d}",
         "source_id": source_id,
@@ -66,7 +93,9 @@ def source_span(paper_id: str, source_id: str, index: int, span_hash: str = "b" 
     }
 
 
-def page_index_for_placeholders(paper_id: str, placeholders: list[dict[str, Any]]) -> dict[str, Any]:
+def page_index_for_placeholders(
+    paper_id: str, placeholders: list[dict[str, Any]]
+) -> dict[str, Any]:
     nodes: list[dict[str, Any]] = []
     anchors: list[dict[str, Any]] = []
     for placeholder in placeholders:
@@ -131,8 +160,12 @@ def placeholder(
     result: dict[str, Any] = {
         "source_asset_ref": ref,
         "asset_type": asset_type,
-        "page_index_node_id": f"{paper_id}:page-index:artifact:{asset_type}:{index:04d}" if include_page_ref else f"missing-node-{index:04d}",
-        "page_index_anchor_id": f"{paper_id}:page-index-anchor:{asset_type}:{index:04d}" if include_anchor_ref else f"missing-anchor-{index:04d}",
+        "page_index_node_id": f"{paper_id}:page-index:artifact:{asset_type}:{index:04d}"
+        if include_page_ref
+        else f"missing-node-{index:04d}",
+        "page_index_anchor_id": f"{paper_id}:page-index-anchor:{asset_type}:{index:04d}"
+        if include_anchor_ref
+        else f"missing-anchor-{index:04d}",
         "source_file_id": source_id if include_source_ref else f"missing-source-{index:04d}",
         "source_span_id": f"{paper_id}:span:asset-{index:04d}",
         "preservation_state": preservation_state,
@@ -146,7 +179,17 @@ def placeholder(
 def assert_metadata_only(payload: dict[str, Any]) -> None:
     serialized = json.dumps(payload, sort_keys=True)
     assert FORBIDDEN_SENTINEL not in serialized
-    for key in ("caption_text", "table_text", "equation_text", "image_bytes", "base64", "embedding", "vector", "payload", "api_key"):
+    for key in (
+        "caption_text",
+        "table_text",
+        "equation_text",
+        "image_bytes",
+        "base64",
+        "embedding",
+        "vector",
+        "payload",
+        "api_key",
+    ):
         assert f'"{key}":' not in serialized
     for unsafe_fragment in (
         '"trusted_kg_import_allowed": true',
@@ -185,7 +228,9 @@ def test_single_asset_manifest_serialization_roundtrip_is_deterministic(
     assert json.loads(serialized_once) == manifest
     assert validate_article_asset_manifest(manifest) == []
     assert manifest["schema_version"] == ARTICLE_ASSET_MANIFEST_SCHEMA_VERSION
-    assert manifest["assets"][0]["asset_id"] == f"{paper_id}:asset:{asset_type.replace('_', '-')}:0001"
+    assert (
+        manifest["assets"][0]["asset_id"] == f"{paper_id}:asset:{asset_type.replace('_', '-')}:0001"
+    )
     assert manifest["summary"]["asset_count"] == 1
     assert manifest["summary"]["hash_coverage_rate"] == 1.0
     assert manifest["summary"]["page_index_anchor_coverage_rate"] == 1.0
@@ -195,7 +240,9 @@ def test_single_asset_manifest_serialization_roundtrip_is_deterministic(
 
 @settings(max_examples=60)
 @given(paper_id=PAPER_IDS, run_id=RUN_IDS)
-def test_empty_asset_lists_have_bounded_zero_coverage_and_no_blockers(paper_id: str, run_id: str) -> None:
+def test_empty_asset_lists_have_bounded_zero_coverage_and_no_blockers(
+    paper_id: str, run_id: str
+) -> None:
     manifest = build_article_asset_manifest(
         {
             "paper_id": paper_id,
@@ -267,7 +314,9 @@ def test_generated_metadata_manifests_fail_closed_for_missing_or_blocked_records
     assert validate_article_asset_manifest(manifest) == []
     expected_blocked = missing_source or missing_page or missing_anchor or missing_span
     assert (manifest["summary"]["blocker_count"] > 0) is expected_blocked
-    assert manifest["subtree"]["status"] == ("blocked" if expected_blocked else "review_only_not_import_eligible")
+    assert manifest["subtree"]["status"] == (
+        "blocked" if expected_blocked else "review_only_not_import_eligible"
+    )
     assert manifest["import_eligible_count"] == 0
     assert manifest["promoted_to_fact_count"] == 0
     assert manifest["summary"]["import_ineligible_count"] == manifest["summary"]["asset_count"]
@@ -278,7 +327,12 @@ def test_generated_metadata_manifests_fail_closed_for_missing_or_blocked_records
 
 
 @settings(max_examples=70)
-@given(paper_id=PAPER_IDS, run_id=RUN_IDS, forbidden_key=FORBIDDEN_KEY_VALUES, unsafe_flag=st.sampled_from(UNSAFE_FLAGS))
+@given(
+    paper_id=PAPER_IDS,
+    run_id=RUN_IDS,
+    forbidden_key=FORBIDDEN_KEY_VALUES,
+    unsafe_flag=st.sampled_from(UNSAFE_FLAGS),
+)
 def test_generated_forbidden_keys_and_unsafe_flags_are_redacted_and_fail_closed(
     paper_id: str, run_id: str, forbidden_key: str, unsafe_flag: str
 ) -> None:
@@ -318,7 +372,13 @@ def test_duplicate_ids_invalid_vocabularies_and_malformed_hashes_return_stable_d
     paper_id: str, run_id: str, asset_type: str
 ) -> None:
     source = source_ref(paper_id, 1, sha256="not-a-sha256")
-    first = placeholder(paper_id, 0, source_id=source["source_id"], asset_type=asset_type, source_asset_ref=f"{asset_type}:1")
+    first = placeholder(
+        paper_id,
+        0,
+        source_id=source["source_id"],
+        asset_type=asset_type,
+        source_asset_ref=f"{asset_type}:1",
+    )
     second = deepcopy(first)
     second["interpretation_status"] = "interpreted_as_truth"
     second["preservation_state"] = "production_imported"
@@ -343,8 +403,15 @@ def test_duplicate_ids_invalid_vocabularies_and_malformed_hashes_return_stable_d
     } <= diagnostic_codes(manifest)
     assert manifest["summary"]["blocker_count"] >= 5
     assert manifest["subtree"]["status"] == "blocked"
-    validation_codes = {str(diagnostic["code"]) for diagnostic in validate_article_asset_manifest(manifest)}
-    assert {"duplicate_asset_id", "malformed_sha256", "invalid_interpretation_status", "invalid_preservation_state"} <= validation_codes
+    validation_codes = {
+        str(diagnostic["code"]) for diagnostic in validate_article_asset_manifest(manifest)
+    }
+    assert {
+        "duplicate_asset_id",
+        "malformed_sha256",
+        "invalid_interpretation_status",
+        "invalid_preservation_state",
+    } <= validation_codes
     assert_metadata_only(manifest)
 
 
@@ -355,10 +422,14 @@ def test_duplicate_ids_invalid_vocabularies_and_malformed_hashes_return_stable_d
             {
                 "asset_type": ASSET_TYPES,
                 "source_sha256": st.one_of(HEX64, st.none(), st.just("bad")),
-                "page_index_anchor_id": st.one_of(st.from_regex(r"anchor:[a-f0-9]{4}", fullmatch=True), st.none(), st.just("")),
+                "page_index_anchor_id": st.one_of(
+                    st.from_regex(r"anchor:[a-f0-9]{4}", fullmatch=True), st.none(), st.just("")
+                ),
                 "source_span": st.one_of(
                     st.none(),
-                    st.fixed_dictionaries({"span_id": st.from_regex(r"span:[a-f0-9]{4}", fullmatch=True)}),
+                    st.fixed_dictionaries(
+                        {"span_id": st.from_regex(r"span:[a-f0-9]{4}", fullmatch=True)}
+                    ),
                     st.just({}),
                 ),
             }
@@ -367,8 +438,13 @@ def test_duplicate_ids_invalid_vocabularies_and_malformed_hashes_return_stable_d
         max_size=8,
     )
 )
-def test_summary_coverage_rates_are_bounded_for_generated_asset_lists(assets: list[dict[str, Any]]) -> None:
-    diagnostics = [{"code": "generated_blocker", "blocks_import": True}, {"code": "generated_warning", "blocks_import": False}]
+def test_summary_coverage_rates_are_bounded_for_generated_asset_lists(
+    assets: list[dict[str, Any]],
+) -> None:
+    diagnostics = [
+        {"code": "generated_blocker", "blocks_import": True},
+        {"code": "generated_warning", "blocks_import": False},
+    ]
 
     summary = summarize_article_assets(assets, source_refs=[], diagnostics=diagnostics)
 

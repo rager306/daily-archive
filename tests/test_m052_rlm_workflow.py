@@ -38,7 +38,9 @@ def _minimal_structure(paper_id: str = "m052-minimal-paper") -> dict[str, Any]:
     root = structure["sections"][0]
     structure["sections"] = [root]
     structure["artifact_placeholders"] = []
-    structure["safe_spans"] = [span for span in structure["safe_spans"] if span["span_id"] == root["span_id"]]
+    structure["safe_spans"] = [
+        span for span in structure["safe_spans"] if span["span_id"] == root["span_id"]
+    ]
     return structure
 
 
@@ -97,7 +99,9 @@ def test_workflow_trajectory_step_sanitized_dict() -> None:
 
 
 def test_workflow_trajectory_aggregate_safety_defaults() -> None:
-    step = WorkflowTrajectoryStep(step_type="helper_invoke", work_id="wid-1", run_id="run-trajectory")
+    step = WorkflowTrajectoryStep(
+        step_type="helper_invoke", work_id="wid-1", run_id="run-trajectory"
+    )
     trajectory = WorkflowTrajectory(run_id="run-trajectory", work_ids=("wid-1",), steps=(step,))
 
     assert trajectory.schema_version == REDUCER_SCHEMA_VERSION
@@ -116,7 +120,10 @@ def test_run_document_workflow_minimal_structure() -> None:
     )
 
     assert result.trajectory.schema_version == REDUCER_SCHEMA_VERSION
-    assert [step.step_type for step in result.trajectory.steps] == ["section_navigate", "span_visit"]
+    assert [step.step_type for step in result.trajectory.steps] == [
+        "section_navigate",
+        "span_visit",
+    ]
     assert result.trajectory.work_ids == ()
     assert result.aggregate_summary["total_unique_work_ids"] == 0
     assert result.safety_audit["import_authority"] == "import is not authorized"
@@ -173,7 +180,9 @@ def test_workflow_helper_invoke_carries_m050_work_id() -> None:
         run_id="run-helper-work-id",
     )
 
-    helper_work_ids = tuple(step.work_id for step in result.trajectory.steps if step.step_type == "helper_invoke")
+    helper_work_ids = tuple(
+        step.work_id for step in result.trajectory.steps if step.step_type == "helper_invoke"
+    )
     assert helper_work_ids
     assert helper_work_ids == result.trajectory.work_ids
     assert set(helper_work_ids) == set(result.aggregate_summary["work_ids"])

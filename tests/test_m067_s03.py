@@ -111,7 +111,9 @@ def test_adr_022_referenced() -> None:
 
 
 def test_adr_021_supersede_documented() -> None:
-    combined = "\n".join([read(REPORT), read(SUMMARY), read(VALIDATION), read(ADR_021), read(ADR_020)])
+    combined = "\n".join(
+        [read(REPORT), read(SUMMARY), read(VALIDATION), read(ADR_021), read(ADR_020)]
+    )
 
     assert "ADR-021" in combined
     assert "ADR-020" in combined
@@ -134,7 +136,10 @@ def test_code_memory_synced() -> None:
     canonical_ids = {path.stem.split("-")[1] for path in canonical_adr_files()}
 
     assert len(canonical_ids) >= 22
-    assert "| ADR-022 | Accepted (binding) | `doc/adr/ADR-022-graphdb-reselection-self-hosted.md` | GraphDB Re-Selection Self-Hosted |" in adr_text
+    assert (
+        "| ADR-022 | Accepted (binding) | `doc/adr/ADR-022-graphdb-reselection-self-hosted.md` | GraphDB Re-Selection Self-Hosted |"
+        in adr_text
+    )
     for adr_number in sorted(canonical_ids):
         assert f"ADR-{adr_number}" in adr_text
 

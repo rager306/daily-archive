@@ -72,7 +72,10 @@ def _fixture_args(tmp_path: Path) -> tuple[list[str], list[str], Path]:
         "ladybugdb_written": False,
         "trusted_kg_import_allowed": False,
         "graph_import_allowed": False,
-        "fail_closed_safety_flags": {"graph_import_allowed": False, "network_fetch_attempted": False},
+        "fail_closed_safety_flags": {
+            "graph_import_allowed": False,
+            "network_fetch_attempted": False,
+        },
     }
     zero_row = {
         **zero_article,
@@ -90,7 +93,10 @@ def _fixture_args(tmp_path: Path) -> tuple[list[str], list[str], Path]:
         "ladybugdb_written": False,
         "trusted_kg_import_allowed": False,
         "graph_import_allowed": False,
-        "fail_closed_safety_flags": {"graph_import_allowed": False, "network_fetch_attempted": False},
+        "fail_closed_safety_flags": {
+            "graph_import_allowed": False,
+            "network_fetch_attempted": False,
+        },
     }
     _write_json(
         runtime_summary,
@@ -109,7 +115,10 @@ def _fixture_args(tmp_path: Path) -> tuple[list[str], list[str], Path]:
             "ladybugdb_written": False,
             "trusted_kg_import_allowed": False,
             "graph_import_allowed": False,
-            "fail_closed_safety_flags": {"graph_import_allowed": False, "network_fetch_attempted": False},
+            "fail_closed_safety_flags": {
+                "graph_import_allowed": False,
+                "network_fetch_attempted": False,
+            },
         },
     )
     for row in [loaded_row, zero_row]:
@@ -119,7 +128,9 @@ def _fixture_args(tmp_path: Path) -> tuple[list[str], list[str], Path]:
             "milestone_id": "M029-eb0ljz",
             "slice_id": "S04",
             "selection_id": "m029-unified-corpus-v1",
-            "evidence_path": (evidence_dir / f"{row['article_key']}.evidence.json").relative_to(tmp_path).as_posix(),
+            "evidence_path": (evidence_dir / f"{row['article_key']}.evidence.json")
+            .relative_to(tmp_path)
+            .as_posix(),
         }
         _write_json(evidence_dir / f"{row['article_key']}.evidence.json", evidence)
 
@@ -152,7 +163,9 @@ def _fixture_args(tmp_path: Path) -> tuple[list[str], list[str], Path]:
     return run_args, verify_args, corpus
 
 
-def test_unified_replay_writes_summary_diagnostics_report(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_unified_replay_writes_summary_diagnostics_report(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.chdir(tmp_path)
     run_args, verify_args, corpus = _fixture_args(tmp_path)
 
@@ -160,7 +173,10 @@ def test_unified_replay_writes_summary_diagnostics_report(tmp_path: Path, monkey
     assert verify_main(verify_args) == 0
 
     summary = json.loads((corpus / "replay-summary.json").read_text(encoding="utf-8"))
-    diagnostics = [json.loads(line) for line in (corpus / "replay-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()]
+    diagnostics = [
+        json.loads(line)
+        for line in (corpus / "replay-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
     report = (corpus / "replay-report.md").read_text(encoding="utf-8")
     assert summary["article_count"] == 2
     assert summary["runtime_loaded_count"] == 1
@@ -174,7 +190,9 @@ def test_unified_replay_writes_summary_diagnostics_report(tmp_path: Path, monkey
     assert len(list((corpus / "replay").glob("*.replay.json"))) == 2
 
 
-def test_unified_replay_fails_when_evidence_record_missing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_unified_replay_fails_when_evidence_record_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     monkeypatch.chdir(tmp_path)
     run_args, _verify_args, corpus = _fixture_args(tmp_path)
     (corpus / "evidence" / "article-two.evidence.json").unlink()
@@ -183,7 +201,9 @@ def test_unified_replay_fails_when_evidence_record_missing(tmp_path: Path, monke
     assert "missing evidence record" in capsys.readouterr().err
 
 
-def test_unified_replay_fails_closed_on_unsafe_evidence_flag(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_unified_replay_fails_closed_on_unsafe_evidence_flag(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     monkeypatch.chdir(tmp_path)
     run_args, _verify_args, corpus = _fixture_args(tmp_path)
     evidence_path = corpus / "evidence" / "article-one.evidence.json"
@@ -197,7 +217,9 @@ def test_unified_replay_fails_closed_on_unsafe_evidence_flag(tmp_path: Path, mon
     assert "graph_import_allowed" in stderr
 
 
-def test_unified_replay_verifier_detects_runtime_count_drift(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_unified_replay_verifier_detects_runtime_count_drift(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     monkeypatch.chdir(tmp_path)
     run_args, verify_args, corpus = _fixture_args(tmp_path)
     assert run_main(run_args) == 0

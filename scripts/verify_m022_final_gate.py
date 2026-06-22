@@ -107,7 +107,11 @@ def build_final_gate(
 
     packets = _list_of_dicts(inputs["packet_json"].get("packets"))
     assessment = inputs["assessment_json"]
-    unsafe_counters = assessment.get("unsafe_counters") if isinstance(assessment.get("unsafe_counters"), dict) else {}
+    unsafe_counters = (
+        assessment.get("unsafe_counters")
+        if isinstance(assessment.get("unsafe_counters"), dict)
+        else {}
+    )
     repair_targets = _list_of_dicts(inputs["repair_prototype"].get("repair_targets"))
     final_gate = {
         "schema_version": FINAL_GATE_SCHEMA_VERSION,
@@ -121,10 +125,30 @@ def build_final_gate(
         },
         "packet_summary": {
             "packet_count": len(packets),
-            "review_status_counts": dict(sorted(Counter(str(packet.get("review_status", "missing")) for packet in packets).items())),
-            "repair_state_counts": dict(sorted(Counter(str(packet.get("repair_state", "missing")) for packet in packets).items())),
-            "route_counts": dict(sorted(Counter(str(packet.get("route", "missing")) for packet in packets).items())),
-            "route_quality_state_counts": dict(sorted(Counter(str(packet.get("route_quality_state", "missing")) for packet in packets).items())),
+            "review_status_counts": dict(
+                sorted(
+                    Counter(
+                        str(packet.get("review_status", "missing")) for packet in packets
+                    ).items()
+                )
+            ),
+            "repair_state_counts": dict(
+                sorted(
+                    Counter(
+                        str(packet.get("repair_state", "missing")) for packet in packets
+                    ).items()
+                )
+            ),
+            "route_counts": dict(
+                sorted(Counter(str(packet.get("route", "missing")) for packet in packets).items())
+            ),
+            "route_quality_state_counts": dict(
+                sorted(
+                    Counter(
+                        str(packet.get("route_quality_state", "missing")) for packet in packets
+                    ).items()
+                )
+            ),
             "repair_target_count": len(repair_targets),
             "unsafe_counters_zero": _unsafe_counters_zero(unsafe_counters),
         },
@@ -168,19 +192,41 @@ def verify_files(
     findings = verify_source_artifacts(**inputs)
     packets = _list_of_dicts(inputs["packet_json"].get("packets"))
     assessment = inputs["assessment_json"]
-    unsafe_counters = assessment.get("unsafe_counters") if isinstance(assessment.get("unsafe_counters"), dict) else {}
+    unsafe_counters = (
+        assessment.get("unsafe_counters")
+        if isinstance(assessment.get("unsafe_counters"), dict)
+        else {}
+    )
     final_gate = None
     if final_gate_path is not None:
         final_gate = load_json_object(final_gate_path, label="M022 final gate")
         findings.extend(validate_final_gate(final_gate, expected_packet_count=len(packets)))
     return {
         "passed": not findings,
-        "schema_version": final_gate.get("schema_version") if isinstance(final_gate, dict) else FINAL_GATE_SCHEMA_VERSION,
+        "schema_version": final_gate.get("schema_version")
+        if isinstance(final_gate, dict)
+        else FINAL_GATE_SCHEMA_VERSION,
         "packet_count": len(packets),
-        "review_status_counts": dict(sorted(Counter(str(packet.get("review_status", "missing")) for packet in packets).items())),
-        "repair_state_counts": dict(sorted(Counter(str(packet.get("repair_state", "missing")) for packet in packets).items())),
-        "route_counts": dict(sorted(Counter(str(packet.get("route", "missing")) for packet in packets).items())),
-        "route_quality_state_counts": dict(sorted(Counter(str(packet.get("route_quality_state", "missing")) for packet in packets).items())),
+        "review_status_counts": dict(
+            sorted(
+                Counter(str(packet.get("review_status", "missing")) for packet in packets).items()
+            )
+        ),
+        "repair_state_counts": dict(
+            sorted(
+                Counter(str(packet.get("repair_state", "missing")) for packet in packets).items()
+            )
+        ),
+        "route_counts": dict(
+            sorted(Counter(str(packet.get("route", "missing")) for packet in packets).items())
+        ),
+        "route_quality_state_counts": dict(
+            sorted(
+                Counter(
+                    str(packet.get("route_quality_state", "missing")) for packet in packets
+                ).items()
+            )
+        ),
         "assessment_verdict": assessment.get("verdict", "missing"),
         "requirement_outcomes": _requirement_outcomes(len(packets)),
         "blocked_boundaries": _boundary_summary(final_gate),
@@ -215,27 +261,49 @@ def verify_source_artifacts(
     findings.extend(_forbidden_key_findings(s02_contract, base_type="s02_contract"))
     packets = _list_of_dicts(packet_json.get("packets"))
     if len(packets) != 6:
-        findings.append(FinalGateFinding("final_gate_packet_count_not_six", "/packets", "prototype"))
+        findings.append(
+            FinalGateFinding("final_gate_packet_count_not_six", "/packets", "prototype")
+        )
     if assessment_json.get("verdict") != SAFE_ASSESSMENT_VERDICT:
         findings.append(FinalGateFinding("assessment_verdict_drift", "/verdict", "assessment"))
     if assessment_json.get("import_allowed") is not False:
-        findings.append(FinalGateFinding("assessment_import_allowed", "/import_allowed", "assessment"))
+        findings.append(
+            FinalGateFinding("assessment_import_allowed", "/import_allowed", "assessment")
+        )
     if assessment_json.get("semantic_ready_for_kg") is not False:
-        findings.append(FinalGateFinding("assessment_semantic_ready", "/semantic_ready_for_kg", "assessment"))
-    unsafe_counters = assessment_json.get("unsafe_counters") if isinstance(assessment_json.get("unsafe_counters"), dict) else {}
-    findings.extend(_unsafe_counter_findings(unsafe_counters, base_path="/unsafe_counters", object_type="assessment"))
+        findings.append(
+            FinalGateFinding("assessment_semantic_ready", "/semantic_ready_for_kg", "assessment")
+        )
+    unsafe_counters = (
+        assessment_json.get("unsafe_counters")
+        if isinstance(assessment_json.get("unsafe_counters"), dict)
+        else {}
+    )
+    findings.extend(
+        _unsafe_counter_findings(
+            unsafe_counters, base_path="/unsafe_counters", object_type="assessment"
+        )
+    )
     findings.extend(_repair_source_boundary_findings(repair_prototype))
     findings.extend(_contract_boundary_findings(s02_contract))
     return findings
 
 
-def validate_final_gate(final_gate: dict[str, Any], *, expected_packet_count: int | None = None) -> list[FinalGateFinding]:
+def validate_final_gate(
+    final_gate: dict[str, Any], *, expected_packet_count: int | None = None
+) -> list[FinalGateFinding]:
     """Validate a generated final-gate JSON object fail-closed."""
     findings: list[FinalGateFinding] = []
     findings.extend(_forbidden_key_findings(final_gate, base_type="final_gate"))
     if final_gate.get("schema_version") != FINAL_GATE_SCHEMA_VERSION:
-        findings.append(FinalGateFinding("final_gate_schema_mismatch", "/schema_version", "final_gate"))
-    source_artifacts = final_gate.get("source_artifacts") if isinstance(final_gate.get("source_artifacts"), dict) else {}
+        findings.append(
+            FinalGateFinding("final_gate_schema_mismatch", "/schema_version", "final_gate")
+        )
+    source_artifacts = (
+        final_gate.get("source_artifacts")
+        if isinstance(final_gate.get("source_artifacts"), dict)
+        else {}
+    )
     for key in (
         "reviewer_packet_json",
         "reviewer_packet_markdown",
@@ -245,31 +313,76 @@ def validate_final_gate(final_gate: dict[str, Any], *, expected_packet_count: in
         "chunk_repair_contract_json",
     ):
         if not isinstance(source_artifacts.get(key), str) or not source_artifacts.get(key):
-            findings.append(FinalGateFinding("final_gate_missing_source_artifact", f"/source_artifacts/{key}", "final_gate"))
-    packet_summary = final_gate.get("packet_summary") if isinstance(final_gate.get("packet_summary"), dict) else {}
-    if expected_packet_count is not None and packet_summary.get("packet_count") != expected_packet_count:
-        findings.append(FinalGateFinding("final_gate_packet_count_mismatch", "/packet_summary/packet_count", "final_gate"))
+            findings.append(
+                FinalGateFinding(
+                    "final_gate_missing_source_artifact", f"/source_artifacts/{key}", "final_gate"
+                )
+            )
+    packet_summary = (
+        final_gate.get("packet_summary")
+        if isinstance(final_gate.get("packet_summary"), dict)
+        else {}
+    )
+    if (
+        expected_packet_count is not None
+        and packet_summary.get("packet_count") != expected_packet_count
+    ):
+        findings.append(
+            FinalGateFinding(
+                "final_gate_packet_count_mismatch", "/packet_summary/packet_count", "final_gate"
+            )
+        )
     if packet_summary.get("packet_count") != 6:
-        findings.append(FinalGateFinding("final_gate_packet_count_not_six", "/packet_summary/packet_count", "final_gate"))
+        findings.append(
+            FinalGateFinding(
+                "final_gate_packet_count_not_six", "/packet_summary/packet_count", "final_gate"
+            )
+        )
     if packet_summary.get("review_status_counts") != {"pending_review": 6}:
-        findings.append(FinalGateFinding("final_gate_review_status_not_pending", "/packet_summary/review_status_counts", "final_gate"))
+        findings.append(
+            FinalGateFinding(
+                "final_gate_review_status_not_pending",
+                "/packet_summary/review_status_counts",
+                "final_gate",
+            )
+        )
     if packet_summary.get("unsafe_counters_zero") is not True:
-        findings.append(FinalGateFinding("final_gate_unsafe_counters_not_zero", "/packet_summary/unsafe_counters_zero", "final_gate"))
+        findings.append(
+            FinalGateFinding(
+                "final_gate_unsafe_counters_not_zero",
+                "/packet_summary/unsafe_counters_zero",
+                "final_gate",
+            )
+        )
     if final_gate.get("assessment_verdict") != SAFE_ASSESSMENT_VERDICT:
-        findings.append(FinalGateFinding("final_gate_assessment_verdict_drift", "/assessment_verdict", "final_gate"))
+        findings.append(
+            FinalGateFinding(
+                "final_gate_assessment_verdict_drift", "/assessment_verdict", "final_gate"
+            )
+        )
     findings.extend(_requirement_findings(final_gate.get("requirement_outcomes")))
     findings.extend(_blocked_boundary_findings(final_gate.get("blocked_boundaries")))
     findings.extend(_recommendation_findings(final_gate.get("final_recommendation")))
     commands = final_gate.get("verification_commands")
-    if not isinstance(commands, list) or not commands or not all(isinstance(command, str) and command for command in commands):
-        findings.append(FinalGateFinding("final_gate_missing_verification_commands", "/verification_commands", "final_gate"))
+    if (
+        not isinstance(commands, list)
+        or not commands
+        or not all(isinstance(command, str) and command for command in commands)
+    ):
+        findings.append(
+            FinalGateFinding(
+                "final_gate_missing_verification_commands", "/verification_commands", "final_gate"
+            )
+        )
     return findings
 
 
 def write_final_gate(final_gate: dict[str, Any], output_path: Path) -> None:
     """Write final-gate JSON deterministically."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(final_gate, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    output_path.write_text(
+        json.dumps(final_gate, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
 
 def _load_inputs(
@@ -300,38 +413,90 @@ def _load_inputs(
 
 
 def _forbidden_key_findings(payload: dict[str, Any], *, base_type: str) -> list[FinalGateFinding]:
-    return [FinalGateFinding(finding.code, finding.path, base_type) for finding in scan_forbidden_payload_keys(payload)]
+    return [
+        FinalGateFinding(finding.code, finding.path, base_type)
+        for finding in scan_forbidden_payload_keys(payload)
+    ]
 
 
-def _unsafe_counter_findings(counters: dict[str, Any], *, base_path: str, object_type: str) -> list[FinalGateFinding]:
+def _unsafe_counter_findings(
+    counters: dict[str, Any], *, base_path: str, object_type: str
+) -> list[FinalGateFinding]:
     findings: list[FinalGateFinding] = []
     for field in UNSAFE_COUNTER_FIELDS:
         if counters.get(field) != 0:
-            findings.append(FinalGateFinding("unsafe_counter_nonzero", f"{base_path}/{field}", object_type))
+            findings.append(
+                FinalGateFinding("unsafe_counter_nonzero", f"{base_path}/{field}", object_type)
+            )
     for field in UNSAFE_BOOLEAN_FIELDS:
         if counters.get(field) is not False:
-            findings.append(FinalGateFinding("unsafe_counter_true", f"{base_path}/{field}", object_type))
+            findings.append(
+                FinalGateFinding("unsafe_counter_true", f"{base_path}/{field}", object_type)
+            )
     return findings
 
 
 def _repair_source_boundary_findings(repair_prototype: dict[str, Any]) -> list[FinalGateFinding]:
     findings: list[FinalGateFinding] = []
-    diagnostics = repair_prototype.get("diagnostics") if isinstance(repair_prototype.get("diagnostics"), dict) else {}
-    for field in ("import_eligible_count", "production_write_count", "promoted_to_fact_count", "semantic_ready_count", "accepted_count"):
+    diagnostics = (
+        repair_prototype.get("diagnostics")
+        if isinstance(repair_prototype.get("diagnostics"), dict)
+        else {}
+    )
+    for field in (
+        "import_eligible_count",
+        "production_write_count",
+        "promoted_to_fact_count",
+        "semantic_ready_count",
+        "accepted_count",
+    ):
         if diagnostics.get(field) != 0:
-            findings.append(FinalGateFinding("repair_diagnostic_unsafe_count", f"/diagnostics/{field}", "repair_prototype"))
-    for field in ("chunk_text_included", "raw_text_included", "embeddings_included", "vectors_included", "secrets_included", "production_import_attempted", "ladybugdb_written"):
+            findings.append(
+                FinalGateFinding(
+                    "repair_diagnostic_unsafe_count", f"/diagnostics/{field}", "repair_prototype"
+                )
+            )
+    for field in (
+        "chunk_text_included",
+        "raw_text_included",
+        "embeddings_included",
+        "vectors_included",
+        "secrets_included",
+        "production_import_attempted",
+        "ladybugdb_written",
+    ):
         if diagnostics.get(field) is not False:
-            findings.append(FinalGateFinding("repair_diagnostic_unsafe_boolean", f"/diagnostics/{field}", "repair_prototype"))
+            findings.append(
+                FinalGateFinding(
+                    "repair_diagnostic_unsafe_boolean", f"/diagnostics/{field}", "repair_prototype"
+                )
+            )
     return findings
 
 
 def _contract_boundary_findings(contract: dict[str, Any]) -> list[FinalGateFinding]:
     findings: list[FinalGateFinding] = []
-    safety = contract.get("safety_boundary") if isinstance(contract.get("safety_boundary"), dict) else {}
-    for field in ("import_eligible", "ladybugdb_written", "production_write_attempted", "promoted_to_fact", "semantic_ready_for_kg", "source_payloads_included", "embeddings_included", "vectors_included", "secrets_included", "trusted_kg_import_allowed"):
+    safety = (
+        contract.get("safety_boundary") if isinstance(contract.get("safety_boundary"), dict) else {}
+    )
+    for field in (
+        "import_eligible",
+        "ladybugdb_written",
+        "production_write_attempted",
+        "promoted_to_fact",
+        "semantic_ready_for_kg",
+        "source_payloads_included",
+        "embeddings_included",
+        "vectors_included",
+        "secrets_included",
+        "trusted_kg_import_allowed",
+    ):
         if safety.get(field) is not False:
-            findings.append(FinalGateFinding("s02_safety_boundary_unsafe", f"/safety_boundary/{field}", "s02_contract"))
+            findings.append(
+                FinalGateFinding(
+                    "s02_safety_boundary_unsafe", f"/safety_boundary/{field}", "s02_contract"
+                )
+            )
     return findings
 
 
@@ -365,55 +530,137 @@ def _requirement_outcomes(packet_count: int) -> dict[str, dict[str, Any]]:
 def _requirement_findings(value: Any) -> list[FinalGateFinding]:
     findings: list[FinalGateFinding] = []
     if not isinstance(value, dict):
-        return [FinalGateFinding("final_gate_missing_requirement_outcomes", "/requirement_outcomes", "final_gate")]
+        return [
+            FinalGateFinding(
+                "final_gate_missing_requirement_outcomes", "/requirement_outcomes", "final_gate"
+            )
+        ]
     for requirement_id in REQUIRED_REQUIREMENT_OUTCOMES:
         outcome = value.get(requirement_id)
         if not isinstance(outcome, dict):
-            findings.append(FinalGateFinding("final_gate_missing_requirement_outcome", f"/requirement_outcomes/{requirement_id}", "requirement", requirement_id))
+            findings.append(
+                FinalGateFinding(
+                    "final_gate_missing_requirement_outcome",
+                    f"/requirement_outcomes/{requirement_id}",
+                    "requirement",
+                    requirement_id,
+                )
+            )
             continue
         status = outcome.get("status")
         if not isinstance(status, str) or not status:
-            findings.append(FinalGateFinding("final_gate_requirement_status_missing", f"/requirement_outcomes/{requirement_id}/status", "requirement", requirement_id))
+            findings.append(
+                FinalGateFinding(
+                    "final_gate_requirement_status_missing",
+                    f"/requirement_outcomes/{requirement_id}/status",
+                    "requirement",
+                    requirement_id,
+                )
+            )
         for key, field_value in outcome.items():
-            if key.endswith(("_claimed", "_included", "_attempted", "_allowed")) and field_value is not False:
-                findings.append(FinalGateFinding("final_gate_requirement_unsafe_claim", f"/requirement_outcomes/{requirement_id}/{key}", "requirement", requirement_id))
+            if (
+                key.endswith(("_claimed", "_included", "_attempted", "_allowed"))
+                and field_value is not False
+            ):
+                findings.append(
+                    FinalGateFinding(
+                        "final_gate_requirement_unsafe_claim",
+                        f"/requirement_outcomes/{requirement_id}/{key}",
+                        "requirement",
+                        requirement_id,
+                    )
+                )
     return findings
 
 
 def _blocked_boundary_findings(value: Any) -> list[FinalGateFinding]:
     findings: list[FinalGateFinding] = []
     if not isinstance(value, dict):
-        return [FinalGateFinding("final_gate_missing_blocked_boundaries", "/blocked_boundaries", "final_gate")]
+        return [
+            FinalGateFinding(
+                "final_gate_missing_blocked_boundaries", "/blocked_boundaries", "final_gate"
+            )
+        ]
     for key, expected in BLOCKED_BOUNDARIES.items():
         if value.get(key) is not expected:
-            findings.append(FinalGateFinding("final_gate_boundary_polarity_drift", f"/blocked_boundaries/{key}", "boundary", key))
+            findings.append(
+                FinalGateFinding(
+                    "final_gate_boundary_polarity_drift",
+                    f"/blocked_boundaries/{key}",
+                    "boundary",
+                    key,
+                )
+            )
     for key, field_value in value.items():
         if key.endswith("_blocked") and field_value is not True:
-            findings.append(FinalGateFinding("final_gate_boundary_not_blocked", f"/blocked_boundaries/{key}", "boundary", str(key)))
-        if key.endswith(("_allowed", "_claimed", "_included", "_attempted")) and field_value is not False:
-            findings.append(FinalGateFinding("final_gate_boundary_unsafe_claim", f"/blocked_boundaries/{key}", "boundary", str(key)))
+            findings.append(
+                FinalGateFinding(
+                    "final_gate_boundary_not_blocked",
+                    f"/blocked_boundaries/{key}",
+                    "boundary",
+                    str(key),
+                )
+            )
+        if (
+            key.endswith(("_allowed", "_claimed", "_included", "_attempted"))
+            and field_value is not False
+        ):
+            findings.append(
+                FinalGateFinding(
+                    "final_gate_boundary_unsafe_claim",
+                    f"/blocked_boundaries/{key}",
+                    "boundary",
+                    str(key),
+                )
+            )
     return findings
 
 
 def _recommendation_findings(value: Any) -> list[FinalGateFinding]:
     if not isinstance(value, dict):
-        return [FinalGateFinding("final_gate_missing_recommendation", "/final_recommendation", "final_gate")]
+        return [
+            FinalGateFinding(
+                "final_gate_missing_recommendation", "/final_recommendation", "final_gate"
+            )
+        ]
     findings: list[FinalGateFinding] = []
     if value.get("action") != "human_semantic_review_or_bounded_repair_only":
-        findings.append(FinalGateFinding("final_gate_recommendation_action_drift", "/final_recommendation/action", "final_gate"))
-    for key in ("kg_import_allowed", "semantic_ready_for_kg_claimed", "production_write_attempted", "positive_import_recommendation_claimed"):
+        findings.append(
+            FinalGateFinding(
+                "final_gate_recommendation_action_drift",
+                "/final_recommendation/action",
+                "final_gate",
+            )
+        )
+    for key in (
+        "kg_import_allowed",
+        "semantic_ready_for_kg_claimed",
+        "production_write_attempted",
+        "positive_import_recommendation_claimed",
+    ):
         if value.get(key) is not False:
-            findings.append(FinalGateFinding("final_gate_recommendation_unsafe_claim", f"/final_recommendation/{key}", "final_gate"))
+            findings.append(
+                FinalGateFinding(
+                    "final_gate_recommendation_unsafe_claim",
+                    f"/final_recommendation/{key}",
+                    "final_gate",
+                )
+            )
     return findings
 
 
 def _unsafe_counters_zero(counters: dict[str, Any]) -> bool:
-    return all(counters.get(field) == 0 for field in UNSAFE_COUNTER_FIELDS) and all(counters.get(field) is False for field in UNSAFE_BOOLEAN_FIELDS)
+    return all(counters.get(field) == 0 for field in UNSAFE_COUNTER_FIELDS) and all(
+        counters.get(field) is False for field in UNSAFE_BOOLEAN_FIELDS
+    )
 
 
 def _boundary_summary(final_gate: dict[str, Any] | None) -> dict[str, bool]:
     if isinstance(final_gate, dict) and isinstance(final_gate.get("blocked_boundaries"), dict):
-        return {key: bool(final_gate["blocked_boundaries"].get(key)) for key in sorted(BLOCKED_BOUNDARIES)}
+        return {
+            key: bool(final_gate["blocked_boundaries"].get(key))
+            for key in sorted(BLOCKED_BOUNDARIES)
+        }
     return dict(BLOCKED_BOUNDARIES)
 
 
@@ -457,13 +704,32 @@ def _summary_line(summary: dict[str, Any]) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--packets-json", type=Path, required=True, help="S04 reviewer packet JSON")
-    parser.add_argument("--packets-markdown", type=Path, required=True, help="S04 reviewer packet Markdown")
-    parser.add_argument("--assessment-json", type=Path, required=True, help="S04 independent assessment JSON")
-    parser.add_argument("--assessment-markdown", type=Path, required=True, help="S04 independent assessment Markdown")
-    parser.add_argument("--repair-prototype", type=Path, required=True, help="S03 bounded repair prototype JSON")
-    parser.add_argument("--s02-contract", type=Path, required=True, help="S02 chunk repair contract JSON")
-    parser.add_argument("--final-gate", type=Path, help="Optional existing final-gate JSON to validate")
-    parser.add_argument("--write-final-gate", type=Path, help="Write a deterministic final-gate JSON after source validation")
+    parser.add_argument(
+        "--packets-markdown", type=Path, required=True, help="S04 reviewer packet Markdown"
+    )
+    parser.add_argument(
+        "--assessment-json", type=Path, required=True, help="S04 independent assessment JSON"
+    )
+    parser.add_argument(
+        "--assessment-markdown",
+        type=Path,
+        required=True,
+        help="S04 independent assessment Markdown",
+    )
+    parser.add_argument(
+        "--repair-prototype", type=Path, required=True, help="S03 bounded repair prototype JSON"
+    )
+    parser.add_argument(
+        "--s02-contract", type=Path, required=True, help="S02 chunk repair contract JSON"
+    )
+    parser.add_argument(
+        "--final-gate", type=Path, help="Optional existing final-gate JSON to validate"
+    )
+    parser.add_argument(
+        "--write-final-gate",
+        type=Path,
+        help="Write a deterministic final-gate JSON after source validation",
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -489,11 +755,18 @@ def main(argv: list[str] | None = None) -> int:
             args.s02_contract,
             final_gate_path,
         )
-    except (FileNotFoundError, FinalGateVerifyError, ReviewerPacketPrototypeVerifyError, ValueError) as exc:
+    except (
+        FileNotFoundError,
+        FinalGateVerifyError,
+        ReviewerPacketPrototypeVerifyError,
+        ValueError,
+    ) as exc:
         sys.stderr.write(f"M022 final gate verify failed: {exc}\n")
         return 2
     if not summary["passed"]:
-        sys.stderr.write("M022 final gate verify failed: " + json.dumps(summary, sort_keys=True) + "\n")
+        sys.stderr.write(
+            "M022 final gate verify failed: " + json.dumps(summary, sort_keys=True) + "\n"
+        )
         return 2
     sys.stdout.write(_summary_line(summary) + "\n")
     return 0

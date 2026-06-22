@@ -84,7 +84,9 @@ def test_service_unavailable_on_connection_error(monkeypatch: pytest.MonkeyPatch
     assert probe.check_grobid_available("http://grobid.test") is False
 
 
-def test_post_grobid_header_sends_multipart_to_header_endpoint(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_post_grobid_header_sends_multipart_to_header_endpoint(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     pdf_path = make_pdf(tmp_path)
     seen: dict[str, object] = {}
 
@@ -110,7 +112,9 @@ def test_post_grobid_header_sends_multipart_to_header_endpoint(tmp_path: Path, m
     assert seen["has_flags"] is True
 
 
-def test_probe_success_writes_tei_and_packet(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_probe_success_writes_tei_and_packet(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     target = make_target(tmp_path, "success")
     tei = tei_payload(refs=2, bodies=1, padding=1200)
     monkeypatch.setattr(probe, "post_grobid_header", lambda *_args, **_kwargs: (tei, 200))
@@ -126,9 +130,13 @@ def test_probe_success_writes_tei_and_packet(tmp_path: Path, monkeypatch: pytest
     assert json.loads((tmp_path / "out" / "success.json").read_text())["status"] == "success"
 
 
-def test_low_quality_source_when_tei_is_under_one_kib(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_low_quality_source_when_tei_is_under_one_kib(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     target = make_target(tmp_path, "small")
-    monkeypatch.setattr(probe, "post_grobid_header", lambda *_args, **_kwargs: (tei_payload(padding=10), 200))
+    monkeypatch.setattr(
+        probe, "post_grobid_header", lambda *_args, **_kwargs: (tei_payload(padding=10), 200)
+    )
 
     packet = probe.probe_pdf(target, grobid_url="http://grobid.test", output_dir=tmp_path / "out")
 
@@ -137,9 +145,15 @@ def test_low_quality_source_when_tei_is_under_one_kib(tmp_path: Path, monkeypatc
     assert packet["m022_repair_candidate"] is True
 
 
-def test_low_quality_source_when_zero_ref_elements(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_low_quality_source_when_zero_ref_elements(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     target = make_target(tmp_path, "noref")
-    monkeypatch.setattr(probe, "post_grobid_header", lambda *_args, **_kwargs: (tei_payload(refs=0, bodies=1, padding=1400), 200))
+    monkeypatch.setattr(
+        probe,
+        "post_grobid_header",
+        lambda *_args, **_kwargs: (tei_payload(refs=0, bodies=1, padding=1400), 200),
+    )
 
     packet = probe.probe_pdf(target, grobid_url="http://grobid.test", output_dir=tmp_path / "out")
 
@@ -148,7 +162,9 @@ def test_low_quality_source_when_zero_ref_elements(tmp_path: Path, monkeypatch: 
     assert packet["body_element_count"] == 1
 
 
-def test_low_quality_source_when_zero_body_elements(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_low_quality_source_when_zero_body_elements(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     target = make_target(tmp_path, "nobody")
     tei = b"<TEI><text>" + b"<ref>r</ref>" + (b"x" * 1200) + b"</text></TEI>"
     monkeypatch.setattr(probe, "post_grobid_header", lambda *_args, **_kwargs: (tei, 200))
@@ -160,7 +176,9 @@ def test_low_quality_source_when_zero_body_elements(tmp_path: Path, monkeypatch:
     assert packet["body_element_count"] == 0
 
 
-def test_bounded_retry_stops_after_three_attempts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_bounded_retry_stops_after_three_attempts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     target = make_target(tmp_path, "retry")
     calls = 0
 
@@ -172,39 +190,51 @@ def test_bounded_retry_stops_after_three_attempts(tmp_path: Path, monkeypatch: p
     monkeypatch.setattr(probe, "post_grobid_header", fail)
     monkeypatch.setattr(probe.time, "sleep", lambda *_args, **_kwargs: None)
 
-    packet = probe.probe_pdf(target, grobid_url="http://grobid.test", output_dir=tmp_path / "out", max_retries=3)
+    packet = probe.probe_pdf(
+        target, grobid_url="http://grobid.test", output_dir=tmp_path / "out", max_retries=3
+    )
 
     assert calls == 3
     assert packet["status"] == "network_error"
     assert len(packet["attempts"]) == 3
 
 
-def test_success_on_first_attempt_does_not_retry(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_success_on_first_attempt_does_not_retry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     target = make_target(tmp_path, "first")
     mocked = mock.Mock(return_value=(tei_payload(), 200))
     monkeypatch.setattr(probe, "post_grobid_header", mocked)
 
-    packet = probe.probe_pdf(target, grobid_url="http://grobid.test", output_dir=tmp_path / "out", max_retries=3)
+    packet = probe.probe_pdf(
+        target, grobid_url="http://grobid.test", output_dir=tmp_path / "out", max_retries=3
+    )
 
     assert packet["status"] == "success"
     assert mocked.call_count == 1
     assert len(packet["attempts"]) == 1
 
 
-def test_blocked_http_error_stops_without_retry(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_blocked_http_error_stops_without_retry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     target = make_target(tmp_path, "blocked")
     error = urllib.error.HTTPError("http://grobid.test", 400, "bad", hdrs=None, fp=None)
     mocked = mock.Mock(side_effect=error)
     monkeypatch.setattr(probe, "post_grobid_header", mocked)
 
-    packet = probe.probe_pdf(target, grobid_url="http://grobid.test", output_dir=tmp_path / "out", max_retries=3)
+    packet = probe.probe_pdf(
+        target, grobid_url="http://grobid.test", output_dir=tmp_path / "out", max_retries=3
+    )
 
     assert packet["status"] == "blocked"
     assert packet["http_status"] == 400
     assert mocked.call_count == 1
 
 
-def test_atomic_write_uses_tmp_then_replace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_atomic_write_uses_tmp_then_replace(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     target = make_target(tmp_path, "atomic")
     tei = tei_payload()
     replacements: list[tuple[str, str]] = []
@@ -234,10 +264,12 @@ def fail(*args, **kwargs):
 
 urllib.request.urlopen = fail
 sys.argv = ['probe', '--dry-run', '--pdf-path', {str(pdf_path)!r}, '--output-dir', {str(out_dir)!r}]
-runpy.run_path({str(ROOT / 'scripts' / 'probe_m053_grobid_pilot.py')!r}, run_name='__main__')
+runpy.run_path({str(ROOT / "scripts" / "probe_m053_grobid_pilot.py")!r}, run_name='__main__')
 """
 
-    subprocess.run([sys.executable, "-c", code], cwd=ROOT, check=True, capture_output=True, text=True)
+    subprocess.run(
+        [sys.executable, "-c", code], cwd=ROOT, check=True, capture_output=True, text=True
+    )
 
     packet = json.loads((out_dir / "dry.json").read_text(encoding="utf-8"))
     assert packet["status"] == "grobid_unavailable"
@@ -246,7 +278,9 @@ runpy.run_path({str(ROOT / 'scripts' / 'probe_m053_grobid_pilot.py')!r}, run_nam
 
 def test_packet_schema_required_fields_present(tmp_path: Path) -> None:
     target = make_target(tmp_path, "schema")
-    packet = probe.probe_pdf(target, grobid_url="http://grobid.test", output_dir=tmp_path / "out", dry_run=True)
+    packet = probe.probe_pdf(
+        target, grobid_url="http://grobid.test", output_dir=tmp_path / "out", dry_run=True
+    )
 
     required = {
         "schema_version",
@@ -269,7 +303,9 @@ def test_packet_schema_required_fields_present(tmp_path: Path) -> None:
 
 def test_safety_defaults_all_false_on_every_output(tmp_path: Path) -> None:
     target = make_target(tmp_path, "safe")
-    summary = probe.run_probe([target], output_dir=tmp_path / "out", grobid_url="http://grobid.test", dry_run=True)
+    summary = probe.run_probe(
+        [target], output_dir=tmp_path / "out", grobid_url="http://grobid.test", dry_run=True
+    )
     packet = json.loads((tmp_path / "out" / "safe.json").read_text(encoding="utf-8"))
 
     assert summary["safety_defaults"] == probe.SAFETY_DEFAULTS
@@ -278,9 +314,15 @@ def test_safety_defaults_all_false_on_every_output(tmp_path: Path) -> None:
     assert all(value is False for value in packet["safety_defaults"].values())
 
 
-def test_m022_repair_candidate_true_for_low_quality_source(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_m022_repair_candidate_true_for_low_quality_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     target = make_target(tmp_path, "repair")
-    monkeypatch.setattr(probe, "post_grobid_header", lambda *_args, **_kwargs: (tei_payload(refs=0, padding=1400), 200))
+    monkeypatch.setattr(
+        probe,
+        "post_grobid_header",
+        lambda *_args, **_kwargs: (tei_payload(refs=0, padding=1400), 200),
+    )
 
     packet = probe.probe_pdf(target, grobid_url="http://grobid.test", output_dir=tmp_path / "out")
 
@@ -289,9 +331,20 @@ def test_m022_repair_candidate_true_for_low_quality_source(tmp_path: Path, monke
 
 
 def test_summary_idempotent_modulo_generated_at(tmp_path: Path) -> None:
-    targets = [probe.PdfTarget("idem-a", make_pdf(tmp_path, "idem-a.pdf")), probe.PdfTarget("idem-b", make_pdf(tmp_path, "idem-b.pdf"))]
+    targets = [
+        probe.PdfTarget("idem-a", make_pdf(tmp_path, "idem-a.pdf")),
+        probe.PdfTarget("idem-b", make_pdf(tmp_path, "idem-b.pdf")),
+    ]
 
-    first = copy.deepcopy(probe.run_probe(targets, output_dir=tmp_path / "out", grobid_url="http://grobid.test", dry_run=True))
-    second = copy.deepcopy(probe.run_probe(targets, output_dir=tmp_path / "out", grobid_url="http://grobid.test", dry_run=True))
+    first = copy.deepcopy(
+        probe.run_probe(
+            targets, output_dir=tmp_path / "out", grobid_url="http://grobid.test", dry_run=True
+        )
+    )
+    second = copy.deepcopy(
+        probe.run_probe(
+            targets, output_dir=tmp_path / "out", grobid_url="http://grobid.test", dry_run=True
+        )
+    )
 
     assert strip_generated_at(first) == strip_generated_at(second)

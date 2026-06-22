@@ -57,7 +57,12 @@ def test_e2e_comparison_result_valid(tmp_path: Path) -> None:
         "budget_exhausted",
     }
     assert comparison["baseline_count"] == 4
-    assert comparison["baseline_labels"] == ["vector_only", "graph_one_hop", "hybrid", "heuristic_bfs"]
+    assert comparison["baseline_labels"] == [
+        "vector_only",
+        "graph_one_hop",
+        "hybrid",
+        "heuristic_bfs",
+    ]
 
 
 def test_e2e_evaluation_metrics_present(tmp_path: Path) -> None:

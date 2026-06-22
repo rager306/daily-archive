@@ -163,8 +163,7 @@ def get_model(registry: ModelsRegistry, model_id: str) -> ModelSpec:
     """Look up a model by id. Raises KeyError on unknown."""
     if model_id not in registry.models:
         raise KeyError(
-            f"model_id={model_id!r} not in registry; "
-            f"available: {sorted(registry.models.keys())}"
+            f"model_id={model_id!r} not in registry; available: {sorted(registry.models.keys())}"
         )
     return registry.models[model_id]
 

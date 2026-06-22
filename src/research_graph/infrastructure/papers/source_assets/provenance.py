@@ -11,7 +11,9 @@ from __future__ import annotations
 from typing import Any
 
 
-def source_preservation_provenance(*, original_reference: str, source: str = "gold_manifest_required_path") -> dict[str, Any]:
+def source_preservation_provenance(
+    *, original_reference: str, source: str = "gold_manifest_required_path"
+) -> dict[str, Any]:
     """Return redacted provenance metadata for copied source artifacts."""
     return {
         "source": source,

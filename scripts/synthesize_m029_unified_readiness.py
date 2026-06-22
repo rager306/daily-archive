@@ -97,7 +97,11 @@ def safe_relative_path(value: Any, *, label: str) -> PurePosixPath:
     if "://" in value:
         raise ValueError(f"url_not_allowed_as_{label}")
     normalized = PurePosixPath(value.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part == "" for part in normalized.parts):
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part == "" for part in normalized.parts)
+    ):
         raise ValueError(f"unsafe_{label}")
     return normalized
 
@@ -135,7 +139,9 @@ def selected_articles(selection: Mapping[str, Any]) -> list[dict[str, Any]]:
     return normalized
 
 
-def index_by_identity(rows: Sequence[Mapping[str, Any]]) -> tuple[dict[str, Mapping[str, Any]], dict[str, Mapping[str, Any]]]:
+def index_by_identity(
+    rows: Sequence[Mapping[str, Any]],
+) -> tuple[dict[str, Mapping[str, Any]], dict[str, Mapping[str, Any]]]:
     by_article_ref: dict[str, Mapping[str, Any]] = {}
     by_identity_key: dict[str, Mapping[str, Any]] = {}
     for row in rows:
@@ -195,8 +201,12 @@ def build_rows(
         raise ValueError("replay summary results must be a list")
     if not isinstance(runtime_rows, list):
         raise ValueError("runtime smoke summary results must be a list")
-    replay_by_ref, replay_by_identity = index_by_identity([row for row in replay_rows if isinstance(row, Mapping)])
-    runtime_by_ref, runtime_by_identity = index_by_identity([row for row in runtime_rows if isinstance(row, Mapping)])
+    replay_by_ref, replay_by_identity = index_by_identity(
+        [row for row in replay_rows if isinstance(row, Mapping)]
+    )
+    runtime_by_ref, runtime_by_identity = index_by_identity(
+        [row for row in runtime_rows if isinstance(row, Mapping)]
+    )
     rows: list[dict[str, Any]] = []
     for article in articles:
         article_ref = article_key_for(article)
@@ -210,13 +220,26 @@ def build_rows(
         unsafe = sorted(set(row_unsafe_flags(replay_row) + row_unsafe_flags(runtime_row)))
         if unsafe:
             raise ValueError(f"unsafe readiness input flags for {article_ref}: {','.join(unsafe)}")
-        runtime_chunk_count = int(replay_row.get("runtime_chunk_count", runtime_row.get("runtime_chunk_count", 0)) or 0)
-        runtime_evidence_count = int(replay_row.get("runtime_evidence_count", runtime_row.get("runtime_evidence_count", 0)) or 0)
-        zero_chunk = bool(replay_row.get("zero_chunk") is True or runtime_row.get("zero_chunk") is True or runtime_chunk_count == 0)
+        runtime_chunk_count = int(
+            replay_row.get("runtime_chunk_count", runtime_row.get("runtime_chunk_count", 0)) or 0
+        )
+        runtime_evidence_count = int(
+            replay_row.get("runtime_evidence_count", runtime_row.get("runtime_evidence_count", 0))
+            or 0
+        )
+        zero_chunk = bool(
+            replay_row.get("zero_chunk") is True
+            or runtime_row.get("zero_chunk") is True
+            or runtime_chunk_count == 0
+        )
         if zero_chunk:
             readiness_status = "partial_zero_chunk_blocked"
             readiness_category = "partial"
-            block_reason = str(replay_row.get("failure_reason") or runtime_row.get("failure_reason") or "zero chunks")
+            block_reason = str(
+                replay_row.get("failure_reason")
+                or runtime_row.get("failure_reason")
+                or "zero chunks"
+            )
         else:
             readiness_status = "ready_for_local_replay_review"
             readiness_category = "ready"
@@ -239,16 +262,19 @@ def build_rows(
             "readiness_category": readiness_category,
             "block_reason": block_reason,
             "runtime_status": runtime_row.get("status"),
-            "runtime_diagnostic_code": runtime_row.get("diagnostic_code") or runtime_row.get("code"),
+            "runtime_diagnostic_code": runtime_row.get("diagnostic_code")
+            or runtime_row.get("code"),
             "replay_status": replay_row.get("status"),
             "replay_diagnostic_code": replay_row.get("diagnostic_code") or replay_row.get("code"),
             "runtime_evidence_count": runtime_evidence_count,
             "runtime_chunk_count": runtime_chunk_count,
             "zero_chunk": zero_chunk,
-            "parser_ready_from_conversion": replay_row.get("parser_ready_from_conversion") is True or runtime_row.get("parser_ready_from_conversion") is True,
+            "parser_ready_from_conversion": replay_row.get("parser_ready_from_conversion") is True
+            or runtime_row.get("parser_ready_from_conversion") is True,
             "evidence_path": replay_row.get("evidence_path"),
             "replay_record_path": replay_row.get("replay_record_path"),
-            "runtime_event_log_path": replay_row.get("runtime_event_log_path") or runtime_row.get("runtime_event_log_path"),
+            "runtime_event_log_path": replay_row.get("runtime_event_log_path")
+            or runtime_row.get("runtime_event_log_path"),
             **FAIL_CLOSED_SAFETY_FLAGS,
             "fail_closed_safety_flags": dict(FAIL_CLOSED_SAFETY_FLAGS),
         }
@@ -280,7 +306,9 @@ def build_summary(
         "status": "partial" if category_counts.get("partial", 0) else "ready",
         "created_at": utc_now(),
         "article_count": len(rows),
-        "selection_article_count": len(selection.get("articles", [])) if isinstance(selection.get("articles"), list) else None,
+        "selection_article_count": len(selection.get("articles", []))
+        if isinstance(selection.get("articles"), list)
+        else None,
         "unique_identity_count": len({str(row.get("identity_key")) for row in rows}),
         "dedupe_rule": "one selected article per article_ref/identity_key; provenance_sources preserve earlier milestone subset membership without inflating article_count",
         "ready_count": category_counts.get("ready", 0),
@@ -296,9 +324,42 @@ def build_summary(
         "source_strategy_counts": dict(sorted(source_strategy_counts.items())),
         "provenance_source_counts": provenance_counts(selected_articles(selection)),
         "upstream_artifacts": {
-            "selection": rel(Path(str(selection.get("selection_path", "data/article_corpora/m029-unified-corpus-v1/selection.json")))) if selection.get("selection_path") else None,
-            "replay_summary": rel(Path(str(replay_summary.get("replay_summary_path", "data/article_corpora/m029-unified-corpus-v1/replay-summary.json")))) if replay_summary.get("replay_summary_path") else None,
-            "runtime_smoke_summary": rel(Path(str(runtime_smoke_summary.get("runtime_summary_path", "data/article_corpora/m029-unified-corpus-v1/runtime-smoke-summary.json")))) if runtime_smoke_summary.get("runtime_summary_path") else None,
+            "selection": rel(
+                Path(
+                    str(
+                        selection.get(
+                            "selection_path",
+                            "data/article_corpora/m029-unified-corpus-v1/selection.json",
+                        )
+                    )
+                )
+            )
+            if selection.get("selection_path")
+            else None,
+            "replay_summary": rel(
+                Path(
+                    str(
+                        replay_summary.get(
+                            "replay_summary_path",
+                            "data/article_corpora/m029-unified-corpus-v1/replay-summary.json",
+                        )
+                    )
+                )
+            )
+            if replay_summary.get("replay_summary_path")
+            else None,
+            "runtime_smoke_summary": rel(
+                Path(
+                    str(
+                        runtime_smoke_summary.get(
+                            "runtime_summary_path",
+                            "data/article_corpora/m029-unified-corpus-v1/runtime-smoke-summary.json",
+                        )
+                    )
+                )
+            )
+            if runtime_smoke_summary.get("runtime_summary_path")
+            else None,
         },
         "readiness_summary_path": rel(summary_path),
         "readiness_decision_path": rel(decision_path),
@@ -352,7 +413,9 @@ def build_decision(summary: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def render_report(summary: Mapping[str, Any], decision: Mapping[str, Any], rows: Sequence[Mapping[str, Any]]) -> str:
+def render_report(
+    summary: Mapping[str, Any], decision: Mapping[str, Any], rows: Sequence[Mapping[str, Any]]
+) -> str:
     lines = [
         "# M029 Unified Corpus Readiness Report",
         "",
@@ -374,33 +437,37 @@ def render_report(summary: Mapping[str, Any], decision: Mapping[str, Any], rows:
     ]
     for source, count in dict(summary.get("provenance_source_counts", {})).items():
         lines.append(f"- `{source}`: {count}")
-    lines.extend([
-        "",
-        "## Final Counts and Block Reasons",
-        "",
-        "| Category | Count |",
-        "|---|---:|",
-        f"| Ready | {summary['ready_count']} |",
-        f"| Partial | {summary['partial_count']} |",
-        f"| Blocked | {summary['blocked_count']} |",
-        f"| Zero chunk | {summary['zero_chunk_count']} |",
-        "",
-        "### Block reasons",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Final Counts and Block Reasons",
+            "",
+            "| Category | Count |",
+            "|---|---:|",
+            f"| Ready | {summary['ready_count']} |",
+            f"| Partial | {summary['partial_count']} |",
+            f"| Blocked | {summary['blocked_count']} |",
+            f"| Zero chunk | {summary['zero_chunk_count']} |",
+            "",
+            "### Block reasons",
+            "",
+        ]
+    )
     block_reasons = dict(summary.get("block_reason_counts", {}))
     if block_reasons:
         for reason, count in block_reasons.items():
             lines.append(f"- `{reason}`: {count}")
     else:
         lines.append("- None.")
-    lines.extend([
-        "",
-        "## Article Readiness",
-        "",
-        "| Article | Identity | Provenance | Source strategy | Readiness | Evidence | Chunks | Block reason |",
-        "|---|---|---|---|---|---:|---:|---|",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Article Readiness",
+            "",
+            "| Article | Identity | Provenance | Source strategy | Readiness | Evidence | Chunks | Block reason |",
+            "|---|---|---|---|---|---:|---:|---|",
+        ]
+    )
     for row in rows:
         provenance = ",".join(str(item) for item in row.get("provenance_sources", []) if item)
         lines.append(
@@ -419,23 +486,25 @@ def render_report(summary: Mapping[str, Any], decision: Mapping[str, Any], rows:
             )
             + " |"
         )
-    lines.extend([
-        "",
-        "## Boundary Decision",
-        "",
-        "This readiness decision is preprocessing/local-replay only. Graph import, trusted KG promotion, production import, LadybugDB writes, network fetches, and raw payload embedding remain fail-closed and out of scope.",
-        "",
-        "## Safety Flags",
-        "",
-        f"- Network fetch attempted: `{str(summary['network_fetch_attempted']).lower()}`",
-        f"- Production import attempted: `{str(summary['production_import_attempted']).lower()}`",
-        f"- LadybugDB written: `{str(summary['ladybugdb_written']).lower()}`",
-        f"- Graph import allowed: `{str(summary['graph_import_allowed']).lower()}`",
-        f"- Trusted KG import allowed: `{str(summary['trusted_kg_import_allowed']).lower()}`",
-        f"- Raw text embedded in metadata: `{str(summary['raw_text_embedded_in_metadata']).lower()}`",
-        f"- Raw binary embedded in metadata: `{str(summary['raw_binary_embedded_in_metadata']).lower()}`",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Boundary Decision",
+            "",
+            "This readiness decision is preprocessing/local-replay only. Graph import, trusted KG promotion, production import, LadybugDB writes, network fetches, and raw payload embedding remain fail-closed and out of scope.",
+            "",
+            "## Safety Flags",
+            "",
+            f"- Network fetch attempted: `{str(summary['network_fetch_attempted']).lower()}`",
+            f"- Production import attempted: `{str(summary['production_import_attempted']).lower()}`",
+            f"- LadybugDB written: `{str(summary['ladybugdb_written']).lower()}`",
+            f"- Graph import allowed: `{str(summary['graph_import_allowed']).lower()}`",
+            f"- Trusted KG import allowed: `{str(summary['trusted_kg_import_allowed']).lower()}`",
+            f"- Raw text embedded in metadata: `{str(summary['raw_text_embedded_in_metadata']).lower()}`",
+            f"- Raw binary embedded in metadata: `{str(summary['raw_binary_embedded_in_metadata']).lower()}`",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -448,7 +517,11 @@ def run(args: argparse.Namespace) -> int:
     artifact_root = corpus_dir.parents[2] if len(corpus_dir.parents) >= 3 else ROOT
     if not output_dir.resolve().is_relative_to(corpus_dir.resolve()):
         raise ValueError("output_dir_outside_corpus")
-    for path, label in [(selection_path, "selection"), (replay_summary_path, "replay_summary"), (runtime_smoke_summary_path, "runtime_smoke_summary")]:
+    for path, label in [
+        (selection_path, "selection"),
+        (replay_summary_path, "replay_summary"),
+        (runtime_smoke_summary_path, "runtime_smoke_summary"),
+    ]:
         if not path.resolve().is_relative_to(artifact_root.resolve()):
             raise ValueError(f"{label}_outside_artifact_root")
     selection = load_json(selection_path)
@@ -457,12 +530,25 @@ def run(args: argparse.Namespace) -> int:
     selection["selection_path"] = rel(selection_path)
     replay_summary["replay_summary_path"] = rel(replay_summary_path)
     runtime_smoke_summary["runtime_summary_path"] = rel(runtime_smoke_summary_path)
-    for source_name, source in [("replay_summary", replay_summary), ("runtime_smoke_summary", runtime_smoke_summary)]:
+    for source_name, source in [
+        ("replay_summary", replay_summary),
+        ("runtime_smoke_summary", runtime_smoke_summary),
+    ]:
         unsafe = row_unsafe_flags(source)
         if unsafe:
             raise ValueError(f"unsafe {source_name} flags: {','.join(unsafe)}")
-    rows = build_rows(selection=selection, replay_summary=replay_summary, runtime_smoke_summary=runtime_smoke_summary)
-    summary = build_summary(selection=selection, replay_summary=replay_summary, runtime_smoke_summary=runtime_smoke_summary, rows=rows, output_dir=output_dir)
+    rows = build_rows(
+        selection=selection,
+        replay_summary=replay_summary,
+        runtime_smoke_summary=runtime_smoke_summary,
+    )
+    summary = build_summary(
+        selection=selection,
+        replay_summary=replay_summary,
+        runtime_smoke_summary=runtime_smoke_summary,
+        rows=rows,
+        output_dir=output_dir,
+    )
     decision = build_decision(summary)
     summary_path, decision_path, report_path, diagnostics_path = readiness_paths(output_dir)
     write_json(summary_path, summary)

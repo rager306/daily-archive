@@ -57,7 +57,9 @@ def write_json(path: Path, payload: Mapping[str, Any]) -> None:
 
 def write_jsonl(path: Path, rows: Iterable[Mapping[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in rows), encoding="utf-8")
+    path.write_text(
+        "".join(json.dumps(row, sort_keys=True) + "\n" for row in rows), encoding="utf-8"
+    )
 
 
 def sha256_file(path: Path) -> str:
@@ -74,7 +76,11 @@ def safe_child_path(root: Path, rel_path: str) -> Path:
     if "://" in rel_path:
         raise ValueError("url_not_allowed_as_local_path")
     normalized = PurePosixPath(rel_path.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part == "" for part in normalized.parts):
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part == "" for part in normalized.parts)
+    ):
         raise ValueError("unsafe_local_path")
     root_resolved = root.resolve()
     resolved = (root_resolved / normalized.as_posix()).resolve()
@@ -83,7 +89,9 @@ def safe_child_path(root: Path, rel_path: str) -> Path:
     return resolved
 
 
-def diagnostic(code: str, message: str, *, result: Mapping[str, Any] | None = None, severity: str = "error") -> dict[str, Any]:
+def diagnostic(
+    code: str, message: str, *, result: Mapping[str, Any] | None = None, severity: str = "error"
+) -> dict[str, Any]:
     return {
         "schema_version": VERIFY_SCHEMA_VERSION,
         "milestone_id": MILESTONE_ID,
@@ -114,23 +122,40 @@ def selected_urls(selection: Mapping[str, Any]) -> set[str]:
     for row in articles:
         if not isinstance(row, dict):
             raise ValueError("selection row must be an object")
-        url = row.get("seed_url") if isinstance(row.get("seed_url"), str) else row.get("canonical_url")
+        url = (
+            row.get("seed_url")
+            if isinstance(row.get("seed_url"), str)
+            else row.get("canonical_url")
+        )
         if not isinstance(url, str) or not url:
             raise ValueError("selection row missing seed/canonical URL")
         urls.add(url)
     return urls
 
 
-def validate_capture_summary(summary: Mapping[str, Any], selection: Mapping[str, Any], source_dir: Path, *, require_no_network: bool, require_no_import_flags: bool) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def validate_capture_summary(
+    summary: Mapping[str, Any],
+    selection: Mapping[str, Any],
+    source_dir: Path,
+    *,
+    require_no_network: bool,
+    require_no_import_flags: bool,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     errors: list[dict[str, Any]] = []
     results = summary.get("results")
     if not isinstance(results, list):
-        errors.append(diagnostic("missing_results", "capture summary does not contain a results list"))
+        errors.append(
+            diagnostic("missing_results", "capture summary does not contain a results list")
+        )
         results = []
 
     counts: dict[str, int] = {"captured": 0, "blocked": 0, "failed": 0}
-    by_url: dict[str, dict[str, int]] = defaultdict(lambda: {"captured": 0, "blocked": 0, "failed": 0})
-    by_role: dict[str, dict[str, int]] = defaultdict(lambda: {"captured": 0, "blocked": 0, "failed": 0})
+    by_url: dict[str, dict[str, int]] = defaultdict(
+        lambda: {"captured": 0, "blocked": 0, "failed": 0}
+    )
+    by_role: dict[str, dict[str, int]] = defaultdict(
+        lambda: {"captured": 0, "blocked": 0, "failed": 0}
+    )
     network_fetch_attempted_count = 0
 
     for item in results:
@@ -139,48 +164,101 @@ def validate_capture_summary(summary: Mapping[str, Any], selection: Mapping[str,
             continue
         status = item.get("status")
         if status not in TERMINAL_STATES:
-            errors.append(diagnostic("non_terminal_status", f"result status is not terminal: {status}", result=item))
+            errors.append(
+                diagnostic(
+                    "non_terminal_status", f"result status is not terminal: {status}", result=item
+                )
+            )
             continue
         counts[str(status)] += 1
         url = item.get("url") if isinstance(item.get("url"), str) else "<missing-url>"
-        role = item.get("source_role") if isinstance(item.get("source_role"), str) else "<missing-role>"
+        role = (
+            item.get("source_role")
+            if isinstance(item.get("source_role"), str)
+            else "<missing-role>"
+        )
         by_url[url][str(status)] += 1
         by_role[role][str(status)] += 1
 
         if item.get("network_fetch_attempted") is True:
             network_fetch_attempted_count += 1
             if require_no_network:
-                errors.append(diagnostic("network_fetch_attempted", "result recorded a network fetch despite local-only verification", result=item))
+                errors.append(
+                    diagnostic(
+                        "network_fetch_attempted",
+                        "result recorded a network fetch despite local-only verification",
+                        result=item,
+                    )
+                )
         if require_no_import_flags:
             for flag in UNSAFE_TRUE_FLAGS:
                 if item.get(flag) is True:
-                    errors.append(diagnostic("unsafe_import_or_payload_flag", f"unsafe flag is true: {flag}", result=item))
+                    errors.append(
+                        diagnostic(
+                            "unsafe_import_or_payload_flag",
+                            f"unsafe flag is true: {flag}",
+                            result=item,
+                        )
+                    )
             safety = item.get("fail_closed_safety_flags")
             if isinstance(safety, dict):
                 for flag in UNSAFE_TRUE_FLAGS:
                     if safety.get(flag) is True:
-                        errors.append(diagnostic("unsafe_fail_closed_flag", f"fail-closed safety flag is true: {flag}", result=item))
+                        errors.append(
+                            diagnostic(
+                                "unsafe_fail_closed_flag",
+                                f"fail-closed safety flag is true: {flag}",
+                                result=item,
+                            )
+                        )
         if status == "captured":
             local_path = item.get("local_path")
             try:
                 artifact = safe_child_path(source_dir, local_path)  # type: ignore[arg-type]
             except ValueError as exc:
-                errors.append(diagnostic(str(exc), "captured result has unsafe or missing local path", result=item))
+                errors.append(
+                    diagnostic(
+                        str(exc), "captured result has unsafe or missing local path", result=item
+                    )
+                )
                 continue
             if not artifact.exists():
-                errors.append(diagnostic("captured_artifact_missing", "captured local artifact is absent", result=item))
+                errors.append(
+                    diagnostic(
+                        "captured_artifact_missing",
+                        "captured local artifact is absent",
+                        result=item,
+                    )
+                )
                 continue
             byte_size = item.get("byte_size")
             if not isinstance(byte_size, int) or byte_size != artifact.stat().st_size:
-                errors.append(diagnostic("byte_size_mismatch", "captured artifact size does not match metadata", result=item))
+                errors.append(
+                    diagnostic(
+                        "byte_size_mismatch",
+                        "captured artifact size does not match metadata",
+                        result=item,
+                    )
+                )
             sha256 = item.get("sha256")
             if not isinstance(sha256, str) or sha256 != sha256_file(artifact):
-                errors.append(diagnostic("sha256_mismatch", "captured artifact hash does not match metadata", result=item))
+                errors.append(
+                    diagnostic(
+                        "sha256_mismatch",
+                        "captured artifact hash does not match metadata",
+                        result=item,
+                    )
+                )
 
     expected_urls = selected_urls(selection)
     observed_urls = {url for url in by_url if url != "<missing-url>"}
     for missing_url in sorted(expected_urls - observed_urls):
-        errors.append(diagnostic("selected_url_missing_terminal_state", f"selected URL has no acquisition terminal state: {missing_url}"))
+        errors.append(
+            diagnostic(
+                "selected_url_missing_terminal_state",
+                f"selected URL has no acquisition terminal state: {missing_url}",
+            )
+        )
 
     verification = {
         "schema_version": VERIFY_SCHEMA_VERSION,
@@ -191,8 +269,12 @@ def validate_capture_summary(summary: Mapping[str, Any], selection: Mapping[str,
         "article_count": len(expected_urls),
         "variant_count": len(results),
         "counts": counts,
-        "per_url_terminal_state_counts": {url: dict(value) for url, value in sorted(by_url.items())},
-        "per_role_terminal_state_counts": {role: dict(value) for role, value in sorted(by_role.items())},
+        "per_url_terminal_state_counts": {
+            url: dict(value) for url, value in sorted(by_url.items())
+        },
+        "per_role_terminal_state_counts": {
+            role: dict(value) for role, value in sorted(by_role.items())
+        },
         "network_fetch_attempted_count": network_fetch_attempted_count,
         "capture_summary_status": summary.get("status"),
         "results": results,
@@ -212,7 +294,9 @@ def validate_capture_summary(summary: Mapping[str, Any], selection: Mapping[str,
     return errors, verification
 
 
-def acquisition_diagnostics(summary: Mapping[str, Any], errors: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def acquisition_diagnostics(
+    summary: Mapping[str, Any], errors: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     """Return blocked/failed acquisition rows plus verifier errors for JSONL output."""
 
     rows: list[dict[str, Any]] = []
@@ -270,7 +354,9 @@ def _allowed_roles_by_source(catalog: Mapping[str, Any]) -> dict[str, set[str]]:
         if not isinstance(source, dict) or not isinstance(source.get("source_code"), str):
             continue
         roles = source.get("allowed_source_roles")
-        allowed[source["source_code"]] = {role for role in roles if isinstance(role, str)} if isinstance(roles, list) else set()
+        allowed[source["source_code"]] = (
+            {role for role in roles if isinstance(role, str)} if isinstance(roles, list) else set()
+        )
     return allowed
 
 
@@ -329,28 +415,69 @@ def normalize_source_strategies(
         if not isinstance(article, dict):
             raise ValueError("selection row must be an object")
         counts["articles"] += 1
-        article_ref = article.get("article_ref") if isinstance(article.get("article_ref"), str) else None
-        article_key = article.get("article_key") if isinstance(article.get("article_key"), str) else None
-        source_code = article.get("source_code") if isinstance(article.get("source_code"), str) else None
-        selection_strategy = article.get("source_strategy") if isinstance(article.get("source_strategy"), str) else None
-        catalog_resolution = article.get("catalog_resolution") if isinstance(article.get("catalog_resolution"), str) else "unknown"
+        article_ref = (
+            article.get("article_ref") if isinstance(article.get("article_ref"), str) else None
+        )
+        article_key = (
+            article.get("article_key") if isinstance(article.get("article_key"), str) else None
+        )
+        source_code = (
+            article.get("source_code") if isinstance(article.get("source_code"), str) else None
+        )
+        selection_strategy = (
+            article.get("source_strategy")
+            if isinstance(article.get("source_strategy"), str)
+            else None
+        )
+        catalog_resolution = (
+            article.get("catalog_resolution")
+            if isinstance(article.get("catalog_resolution"), str)
+            else "unknown"
+        )
         url = _article_url(article)
         index_row = index_by_ref.get(article_ref or "")
-        index_primary = index_row.get("primary_source_role") if isinstance(index_row, Mapping) and isinstance(index_row.get("primary_source_role"), str) else None
+        index_primary = (
+            index_row.get("primary_source_role")
+            if isinstance(index_row, Mapping)
+            and isinstance(index_row.get("primary_source_role"), str)
+            else None
+        )
         primary_role = index_primary or selection_strategy or "unknown"
-        fallback_roles = index_row.get("content_fallback_roles") if isinstance(index_row, Mapping) else []
+        fallback_roles = (
+            index_row.get("content_fallback_roles") if isinstance(index_row, Mapping) else []
+        )
         metadata_roles = index_row.get("metadata_roles") if isinstance(index_row, Mapping) else []
-        fallback_role_list = [role for role in fallback_roles if isinstance(role, str)] if isinstance(fallback_roles, list) else []
-        metadata_role_list = [role for role in metadata_roles if isinstance(role, str)] if isinstance(metadata_roles, list) else []
-        terminal_results = results_by_article_ref.get(article_ref or "") or results_by_article_key.get(article_key or "") or results_by_url.get(url, [])
-        terminal_by_role: dict[str, dict[str, int]] = defaultdict(lambda: {"captured": 0, "blocked": 0, "failed": 0})
+        fallback_role_list = (
+            [role for role in fallback_roles if isinstance(role, str)]
+            if isinstance(fallback_roles, list)
+            else []
+        )
+        metadata_role_list = (
+            [role for role in metadata_roles if isinstance(role, str)]
+            if isinstance(metadata_roles, list)
+            else []
+        )
+        terminal_results = (
+            results_by_article_ref.get(article_ref or "")
+            or results_by_article_key.get(article_key or "")
+            or results_by_url.get(url, [])
+        )
+        terminal_by_role: dict[str, dict[str, int]] = defaultdict(
+            lambda: {"captured": 0, "blocked": 0, "failed": 0}
+        )
         for result in terminal_results:
-            role = result.get("source_role") if isinstance(result.get("source_role"), str) else "unknown"
+            role = (
+                result.get("source_role")
+                if isinstance(result.get("source_role"), str)
+                else "unknown"
+            )
             status = result.get("status")
             if status in TERMINAL_STATES:
                 terminal_by_role[role][str(status)] += 1
 
-        primary_counts = terminal_by_role.get(primary_role, {"captured": 0, "blocked": 0, "failed": 0})
+        primary_counts = terminal_by_role.get(
+            primary_role, {"captured": 0, "blocked": 0, "failed": 0}
+        )
         if primary_counts["captured"]:
             primary_state = "captured"
             counts["primary_captured"] += 1
@@ -364,7 +491,11 @@ def normalize_source_strategies(
             primary_state = "missing"
             counts["primary_missing_terminal"] += 1
 
-        fallback_captured_roles = [role for role in fallback_role_list if terminal_by_role.get(role, {}).get("captured", 0) > 0]
+        fallback_captured_roles = [
+            role
+            for role in fallback_role_list
+            if terminal_by_role.get(role, {}).get("captured", 0) > 0
+        ]
         fallback_needed = primary_state != "captured" and bool(fallback_captured_roles)
         if fallback_needed:
             counts["fallback_needed"] += 1
@@ -443,11 +574,17 @@ def normalize_source_strategies(
                 "capture_policy": capture_policy,
                 "capture_phase_network_allowed": False,
                 "replay_phase_network_allowed": False,
-                "terminal_state_counts_by_role": {role: dict(value) for role, value in sorted(terminal_by_role.items())},
+                "terminal_state_counts_by_role": {
+                    role: dict(value) for role, value in sorted(terminal_by_role.items())
+                },
                 "primary_terminal_state": primary_state,
                 "fallback_captured_roles": fallback_captured_roles,
                 "fallback_needed": fallback_needed,
-                "diagnostic_codes": [row["diagnostic_code"] for row in diagnostics if row.get("article_key") == article_key and row.get("url") == url],
+                "diagnostic_codes": [
+                    row["diagnostic_code"]
+                    for row in diagnostics
+                    if row.get("article_key") == article_key and row.get("url") == url
+                ],
                 "graph_import_allowed": False,
                 "production_import_attempted": False,
                 "ladybugdb_written": False,
@@ -461,7 +598,9 @@ def normalize_source_strategies(
         "milestone_id": MILESTONE_ID,
         "slice_id": SLICE_ID,
         "selection_id": SELECTION_ID,
-        "status": "passed" if not [d for d in diagnostics if d.get("severity") == "error"] else "failed",
+        "status": "passed"
+        if not [d for d in diagnostics if d.get("severity") == "error"]
+        else "failed",
         "article_count": counts["articles"],
         "counts": counts,
         "by_primary_source_role": dict(sorted(by_primary_role.items())),
@@ -535,14 +674,22 @@ def render_report(summary: Mapping[str, Any]) -> str:
         "## Role Counts",
         "",
     ]
-    role_counts = summary.get("per_role_terminal_state_counts") if isinstance(summary.get("per_role_terminal_state_counts"), dict) else {}
+    role_counts = (
+        summary.get("per_role_terminal_state_counts")
+        if isinstance(summary.get("per_role_terminal_state_counts"), dict)
+        else {}
+    )
     for role, value in role_counts.items():
         if isinstance(value, dict):
-            lines.append(f"- `{role}`: captured={value.get('captured', 0)} blocked={value.get('blocked', 0)} failed={value.get('failed', 0)}")
+            lines.append(
+                f"- `{role}`: captured={value.get('captured', 0)} blocked={value.get('blocked', 0)} failed={value.get('failed', 0)}"
+            )
     lines.extend(["", "## Blocked or Failed Diagnostics", ""])
     for result in summary.get("results", []):
         if isinstance(result, dict) and result.get("status") != "captured":
-            lines.append(f"- `{result.get('url')}` `{result.get('source_role')}`: {result.get('status')} ({result.get('diagnostic_code')}) — {result.get('failure_reason')}")
+            lines.append(
+                f"- `{result.get('url')}` `{result.get('source_role')}`: {result.get('status')} ({result.get('diagnostic_code')}) — {result.get('failure_reason')}"
+            )
     errors = summary.get("errors") if isinstance(summary.get("errors"), list) else []
     if errors:
         lines.extend(["", "## Verification Errors", ""])
@@ -563,7 +710,11 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--selection", required=True, type=Path)
     parser.add_argument("--source-dir", required=True, type=Path)
-    parser.add_argument("--source-summary", type=Path, help="Compatibility input alias; defaults to source-dir parent source-acquisition-summary.json.")
+    parser.add_argument(
+        "--source-summary",
+        type=Path,
+        help="Compatibility input alias; defaults to source-dir parent source-acquisition-summary.json.",
+    )
     parser.add_argument("--catalog", type=Path, default=Path("data/article_catalog/catalog.json"))
     parser.add_argument("--index", type=Path, default=Path("data/article_catalog/index.json"))
     parser.add_argument("--write-summary", type=Path)
@@ -578,14 +729,28 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv[1:])
 
     started = time.perf_counter()
-    write_requested = args.check_strategies or args.write_summary is not None or args.write_diagnostics is not None or args.write_report is not None
+    write_requested = (
+        args.check_strategies
+        or args.write_summary is not None
+        or args.write_diagnostics is not None
+        or args.write_report is not None
+    )
     default_summary_path = args.source_dir.parent / "source-acquisition-summary.json"
     if write_requested:
         args.write_summary = args.write_summary or default_summary_path
-        args.write_diagnostics = args.write_diagnostics or args.source_dir.parent / "source-acquisition-diagnostics.jsonl"
-        args.write_report = args.write_report or args.source_dir.parent / "source-acquisition-report.md"
+        args.write_diagnostics = (
+            args.write_diagnostics
+            or args.source_dir.parent / "source-acquisition-diagnostics.jsonl"
+        )
+        args.write_report = (
+            args.write_report or args.source_dir.parent / "source-acquisition-report.md"
+        )
     capture_summary_path = args.source_summary or default_summary_path
-    if not capture_summary_path.exists() and args.write_summary is not None and args.write_summary.exists():
+    if (
+        not capture_summary_path.exists()
+        and args.write_summary is not None
+        and args.write_summary.exists()
+    ):
         capture_summary_path = args.write_summary
     if not capture_summary_path.exists():
         raise FileNotFoundError(f"capture summary not found: {capture_summary_path}")
@@ -602,13 +767,24 @@ def main(argv: list[str]) -> int:
     verification["duration_ms"] = int((time.perf_counter() - started) * 1000)
 
     if not write_requested:
-        print(json.dumps({"summary_path": capture_summary_path.as_posix(), "error_count": len(errors), "counts": verification["counts"]}, sort_keys=True))
+        print(
+            json.dumps(
+                {
+                    "summary_path": capture_summary_path.as_posix(),
+                    "error_count": len(errors),
+                    "counts": verification["counts"],
+                },
+                sort_keys=True,
+            )
+        )
         return 0 if not errors else 1
 
     if args.check_strategies:
         catalog = load_json(args.catalog)
         index = load_json(args.index)
-        strategy_errors, strategy_summary, _strategy_rows = normalize_source_strategies(selection, verification, catalog, index)
+        strategy_errors, strategy_summary, _strategy_rows = normalize_source_strategies(
+            selection, verification, catalog, index
+        )
         strategy_summary["duration_ms"] = int((time.perf_counter() - started) * 1000)
         write_json(args.write_summary, strategy_summary)
         write_jsonl(args.write_diagnostics, strategy_errors)
@@ -619,7 +795,9 @@ def main(argv: list[str]) -> int:
             artifact_paths.append(args.write_report)
         for artifact_path in artifact_paths:
             assert_metadata_artifact_is_redacted(artifact_path)
-        total_errors = len(errors) + len([row for row in strategy_errors if row.get("severity") == "error"])
+        total_errors = len(errors) + len(
+            [row for row in strategy_errors if row.get("severity") == "error"]
+        )
         print(
             json.dumps(
                 {
@@ -643,7 +821,16 @@ def main(argv: list[str]) -> int:
         artifact_paths.append(args.write_report)
     for artifact_path in artifact_paths:
         assert_metadata_artifact_is_redacted(artifact_path)
-    print(json.dumps({"summary_path": args.write_summary.as_posix(), "error_count": len(errors), "counts": verification["counts"]}, sort_keys=True))
+    print(
+        json.dumps(
+            {
+                "summary_path": args.write_summary.as_posix(),
+                "error_count": len(errors),
+                "counts": verification["counts"],
+            },
+            sort_keys=True,
+        )
+    )
     return 0 if not errors else 1
 
 

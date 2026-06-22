@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """M058-cmjp1u S02: compare Marker pilot output with available OpenDataLoader packets."""
+
 from __future__ import annotations
 
 import json
@@ -52,7 +53,9 @@ def first_number(*values: Any) -> float | None:
 
 def odl_table_count(packet: dict[str, Any]) -> int | None:
     metrics = packet.get("correctness_metrics") or {}
-    value = first_number(packet.get("table_count"), packet.get("tables_total"), metrics.get("tables_total"))
+    value = first_number(
+        packet.get("table_count"), packet.get("tables_total"), metrics.get("tables_total")
+    )
     if value is not None:
         return int(value)
     tables = metrics.get("tables")
@@ -63,7 +66,9 @@ def odl_table_count(packet: dict[str, Any]) -> int | None:
 
 def odl_figure_count(packet: dict[str, Any]) -> int | None:
     metrics = packet.get("correctness_metrics") or {}
-    value = first_number(packet.get("figure_count"), packet.get("figures_total"), metrics.get("figures_total"))
+    value = first_number(
+        packet.get("figure_count"), packet.get("figures_total"), metrics.get("figures_total")
+    )
     if value is not None:
         return int(value)
     captions = metrics.get("captions")
@@ -83,10 +88,14 @@ def odl_body_word_count(packet: dict[str, Any]) -> int | None:
 
 
 def odl_elapsed_sec(packet: dict[str, Any]) -> float | None:
-    return first_number(packet.get("elapsed_sec"), packet.get("runtime_sec"), packet.get("pdf_parse_seconds"))
+    return first_number(
+        packet.get("elapsed_sec"), packet.get("runtime_sec"), packet.get("pdf_parse_seconds")
+    )
 
 
-def quality_score(table_count: int | None, figure_count: int | None, body_word_count: int | None) -> int:
+def quality_score(
+    table_count: int | None, figure_count: int | None, body_word_count: int | None
+) -> int:
     """Transparent extraction-coverage score for relative pilot comparison.
 
     Missing OpenDataLoader fields contribute zero rather than invented values.
@@ -103,7 +112,9 @@ def compare_packet(marker_packet: dict[str, Any]) -> dict[str, Any]:
     marker_elapsed_sec = first_number(marker_packet.get("elapsed_sec"))
 
     if odl_packet is None:
-        marker_score = quality_score(marker_table_count, marker_figure_count, marker_body_word_count)
+        marker_score = quality_score(
+            marker_table_count, marker_figure_count, marker_body_word_count
+        )
         return {
             "arxiv_id": arxiv_id,
             "status": "odl_not_available",
@@ -153,7 +164,9 @@ def compare_packet(marker_packet: dict[str, Any]) -> dict[str, Any]:
         "odl_elapsed_sec": odl_time,
         "odl_quality_score": odl_score,
         "table_count_delta": marker_table_count - odl_tables if odl_tables is not None else None,
-        "body_word_count_delta": marker_body_word_count - odl_words if odl_words is not None else None,
+        "body_word_count_delta": marker_body_word_count - odl_words
+        if odl_words is not None
+        else None,
         "time_ratio_marker_over_odl": round(marker_elapsed_sec / odl_time, 3)
         if marker_elapsed_sec is not None and odl_time not in (None, 0)
         else None,
@@ -166,10 +179,16 @@ def build_comparison() -> dict[str, Any]:
     marker_summary = load_json(MARKER_SUMMARY_PATH)
     comparisons = [compare_packet(packet) for packet in marker_summary["per_pdf"]]
     compared = [item for item in comparisons if item["status"] == "compared"]
-    quality_deltas = [item["quality_delta"] for item in compared if item.get("quality_delta") is not None]
+    quality_deltas = [
+        item["quality_delta"] for item in compared if item.get("quality_delta") is not None
+    ]
     marker_wins = [item for item in compared if item.get("marker_better_than_odl") is True]
-    extracted = [packet for packet in marker_summary["per_pdf"] if packet.get("status") == "marker_extracted"]
-    avg_marker_elapsed = mean(float(packet.get("elapsed_sec") or 0) for packet in extracted) if extracted else 0.0
+    extracted = [
+        packet for packet in marker_summary["per_pdf"] if packet.get("status") == "marker_extracted"
+    ]
+    avg_marker_elapsed = (
+        mean(float(packet.get("elapsed_sec") or 0) for packet in extracted) if extracted else 0.0
+    )
     avg_quality_delta = mean(quality_deltas) if quality_deltas else 0.0
     marker_win_percent = (len(marker_wins) / len(compared) * 100.0) if compared else 0.0
     page_limited = bool(marker_summary.get("page_range"))
@@ -241,7 +260,9 @@ def write_markdown_report(comparison: dict[str, Any]) -> str:
         lines.append(
             "| {arxiv_id} | {status} | {marker_table_count} | {odl_table_count} | "
             "{marker_body_word_count} | {odl_body_word_count} | {marker_elapsed_sec} | "
-            "{time_ratio_marker_over_odl} | {quality_delta} | {marker_better_than_odl} |".format(**item)
+            "{time_ratio_marker_over_odl} | {quality_delta} | {marker_better_than_odl} |".format(
+                **item
+            )
         )
     lines.extend(
         [
@@ -291,7 +312,9 @@ def write_decision(comparison: dict[str, Any]) -> str:
 def write_outputs() -> dict[str, Any]:
     comparison = build_comparison()
     OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
-    COMPARISON_JSON.write_text(json.dumps(comparison, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    COMPARISON_JSON.write_text(
+        json.dumps(comparison, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     COMPARISON_MD.write_text(write_markdown_report(comparison), encoding="utf-8")
     DECISION_MD.write_text(write_decision(comparison), encoding="utf-8")
     print(f"Wrote {COMPARISON_JSON}")

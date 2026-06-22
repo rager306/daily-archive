@@ -112,7 +112,9 @@ def _load_corpus_nodes(bfs_dir: Path) -> dict[str, dict[str, Any]]:
             )
             nodes[arxiv_id]["in_corpus"] = True
             nodes[arxiv_id]["source_milestone"] = (
-                pdf.get("source_milestone") or nodes[arxiv_id].get("source_milestone") or SOURCE_MILESTONE
+                pdf.get("source_milestone")
+                or nodes[arxiv_id].get("source_milestone")
+                or SOURCE_MILESTONE
             )
             nodes[arxiv_id]["category"] = pdf.get("category") or nodes[arxiv_id].get("category")
 
@@ -222,7 +224,10 @@ def build_candidate_edges(bfs_dir: Path = DEFAULT_BFS_DIR) -> dict[str, Any]:
                 )
                 cited_node["in_corpus"] = cited_id in corpus_ids
                 cited_node["title"] = cited_node.get("title") or cited_title
-                if cited_id in corpus_ids and cited_node.get("source_milestone") == "external-reference":
+                if (
+                    cited_id in corpus_ids
+                    and cited_node.get("source_milestone") == "external-reference"
+                ):
                     cited_node["source_milestone"] = SOURCE_MILESTONE
 
     edges = [
@@ -250,7 +255,9 @@ def build_candidate_edges(bfs_dir: Path = DEFAULT_BFS_DIR) -> dict[str, Any]:
         for node in sorted(nodes.values(), key=lambda item: str(item.get("arxiv_id")))
     ]
 
-    internal_edges = [edge for edge in edges if edge["paper_a_in_corpus"] and edge["paper_b_in_corpus"]]
+    internal_edges = [
+        edge for edge in edges if edge["paper_a_in_corpus"] and edge["paper_b_in_corpus"]
+    ]
     return {
         "schema_version": SCHEMA_VERSION,
         "source_milestone": SOURCE_MILESTONE,

@@ -9,15 +9,23 @@ from typing import Any
 
 import pytest
 
-RECOVERY_MODULE_PATH = Path(__file__).parents[1] / "scripts" / "verify_m025_baseline_recovery_replay.py"
-recovery_spec = importlib.util.spec_from_file_location("verify_m025_baseline_recovery_replay", RECOVERY_MODULE_PATH)
+RECOVERY_MODULE_PATH = (
+    Path(__file__).parents[1] / "scripts" / "verify_m025_baseline_recovery_replay.py"
+)
+recovery_spec = importlib.util.spec_from_file_location(
+    "verify_m025_baseline_recovery_replay", RECOVERY_MODULE_PATH
+)
 assert recovery_spec is not None and recovery_spec.loader is not None
 verify_m025_baseline_recovery_replay = importlib.util.module_from_spec(recovery_spec)
 sys.modules[recovery_spec.name] = verify_m025_baseline_recovery_replay
 recovery_spec.loader.exec_module(verify_m025_baseline_recovery_replay)
 
-OUTPUTS_MODULE_PATH = Path(__file__).parents[1] / "scripts" / "verify_m025_baseline_recovery_outputs.py"
-outputs_spec = importlib.util.spec_from_file_location("verify_m025_baseline_recovery_outputs", OUTPUTS_MODULE_PATH)
+OUTPUTS_MODULE_PATH = (
+    Path(__file__).parents[1] / "scripts" / "verify_m025_baseline_recovery_outputs.py"
+)
+outputs_spec = importlib.util.spec_from_file_location(
+    "verify_m025_baseline_recovery_outputs", OUTPUTS_MODULE_PATH
+)
 assert outputs_spec is not None and outputs_spec.loader is not None
 verify_m025_baseline_recovery_outputs = importlib.util.module_from_spec(outputs_spec)
 sys.modules[outputs_spec.name] = verify_m025_baseline_recovery_outputs
@@ -26,7 +34,9 @@ outputs_spec.loader.exec_module(verify_m025_baseline_recovery_outputs)
 BaselineRecoveryError = verify_m025_baseline_recovery_replay.BaselineRecoveryError
 run_recovery = verify_m025_baseline_recovery_replay.run_recovery
 
-FIXTURE_CONTRACT = Path(__file__).parent / "fixtures" / "article_baseline_recovery_v00_01" / "contract.json"
+FIXTURE_CONTRACT = (
+    Path(__file__).parent / "fixtures" / "article_baseline_recovery_v00_01" / "contract.json"
+)
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
@@ -69,7 +79,9 @@ def _args(tmp_path: Path, *, no_network: bool = True) -> Namespace:
         selection,
         {
             "selection_id": "fixture-selection",
-            "articles": [{"article_ref": article_ref, "source_code": "arxiv", "selection_role": "fixture"}],
+            "articles": [
+                {"article_ref": article_ref, "source_code": "arxiv", "selection_role": "fixture"}
+            ],
             "safety_flags": {
                 "graph_import_allowed": False,
                 "production_ladybugdb_write_allowed": False,
@@ -115,9 +127,18 @@ def test_contract_fixture_defines_baseline_recovery_shape() -> None:
     contract = _contract()
 
     assert contract["schema_version"] == "m025-baseline-recovery-artifact.v00.01"
-    assert set(contract["required_final_artifact_refs"]) == {"chunking", "assets", "tables", "links", "identity"}
+    assert set(contract["required_final_artifact_refs"]) == {
+        "chunking",
+        "assets",
+        "tables",
+        "links",
+        "identity",
+    }
     assert contract["required_baseline_provenance"]["kind"] == "regenerated_local_baseline"
-    assert contract["required_network"] == {"no_network_required": True, "network_fetch_attempted": False}
+    assert contract["required_network"] == {
+        "no_network_required": True,
+        "network_fetch_attempted": False,
+    }
     assert "production_import_attempted" in contract["required_false_safety_flags"]
     assert "ladybugdb_written" in contract["required_false_safety_flags"]
 
@@ -129,7 +150,9 @@ def test_baseline_recovery_requires_no_network_execution(tmp_path: Path) -> None
         run_recovery(args)
 
 
-def test_baseline_recovery_writes_contract_compliant_artifact_summary_and_report(tmp_path: Path) -> None:
+def test_baseline_recovery_writes_contract_compliant_artifact_summary_and_report(
+    tmp_path: Path,
+) -> None:
     args = _args(tmp_path)
     args.write_summary = args.selection.parent / "baseline-recovery-summary.json"
     args.write_report = args.selection.parent / "baseline-recovery-report.md"
@@ -264,7 +287,9 @@ def test_validation_helper_accepts_plan_alias_flags_and_recovery_surfaces(tmp_pa
     args.write_report = args.selection.parent / "baseline-recovery-report.md"
     args.require_no_import_flags = True
     events = run_recovery(args)
-    args.write_events.write_text("".join(json.dumps(event, sort_keys=True) + "\n" for event in events), encoding="utf-8")
+    args.write_events.write_text(
+        "".join(json.dumps(event, sort_keys=True) + "\n" for event in events), encoding="utf-8"
+    )
     summary = verify_m025_baseline_recovery_replay._summary_from_artifacts(args, events)
     verify_m025_baseline_recovery_replay._write_json(args.write_summary, summary)
 
@@ -286,7 +311,9 @@ def test_validation_helper_accepts_plan_alias_flags_and_recovery_surfaces(tmp_pa
     assert exit_code == 0
 
 
-def test_validation_helper_accepts_t03_final_summary_and_readiness_decision_flags(tmp_path: Path) -> None:
+def test_validation_helper_accepts_t03_final_summary_and_readiness_decision_flags(
+    tmp_path: Path,
+) -> None:
     final_summary = tmp_path / "final-replay-summary.json"
     readiness_decision = tmp_path / "readiness-decision.json"
     _write_json(

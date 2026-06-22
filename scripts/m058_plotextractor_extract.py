@@ -120,7 +120,12 @@ def download_tex_tarball(
                 raise TexDownloadError(f"empty TeX tarball response for {arxiv_id}")
             tarball_path.write_bytes(data)
             return tarball_path
-        except (TimeoutError, urllib.error.URLError, urllib.error.HTTPError, TexDownloadError) as exc:
+        except (
+            TimeoutError,
+            urllib.error.URLError,
+            urllib.error.HTTPError,
+            TexDownloadError,
+        ) as exc:
             last_error = exc
             if attempt < retries:
                 time.sleep(min(2**attempt, 5))
@@ -135,7 +140,9 @@ def _caption_text(raw: Any) -> str:
     return str(raw).strip()
 
 
-def normalize_plotextractor_figures(arxiv_id: str, records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def normalize_plotextractor_figures(
+    arxiv_id: str, records: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     """Normalize plotextractor output into the S01 artifact schema."""
 
     figures: list[dict[str, Any]] = []
@@ -260,7 +267,9 @@ def extract_figures_from_tex_source(arxiv_id: str, tex_root: Path) -> list[dict[
                 continue
             label = _command_argument(env, "label")
             image_refs = _all_command_arguments(env, "includegraphics")
-            image_path = _resolve_image_path(tex_file, image_refs[0], tex_root) if image_refs else ""
+            image_path = (
+                _resolve_image_path(tex_file, image_refs[0], tex_root) if image_refs else ""
+            )
             idx = len(figures) + 1
             figures.append(
                 {
@@ -277,12 +286,17 @@ def extract_figures_from_tex_source(arxiv_id: str, tex_root: Path) -> list[dict[
     return figures
 
 
-def merge_figure_records(arxiv_id: str, records: list[dict[str, Any]], tex_root: Path) -> list[dict[str, Any]]:
+def merge_figure_records(
+    arxiv_id: str, records: list[dict[str, Any]], tex_root: Path
+) -> list[dict[str, Any]]:
     """Merge plotextractor records with TeX fallback captions and reindex."""
 
     merged: list[dict[str, Any]] = []
     seen: set[tuple[str, str]] = set()
-    for figure in [*normalize_plotextractor_figures(arxiv_id, records), *extract_figures_from_tex_source(arxiv_id, tex_root)]:
+    for figure in [
+        *normalize_plotextractor_figures(arxiv_id, records),
+        *extract_figures_from_tex_source(arxiv_id, tex_root),
+    ]:
         caption = re.sub(r"\s+", " ", str(figure.get("caption_text") or "")).strip().lower()
         label = str(figure.get("label") or "").strip().lower()
         key = (label, caption[:160])
@@ -372,7 +386,9 @@ def _flatten_corpus(packets: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return figures
 
 
-def write_summary(packets: list[dict[str, Any]], *, summary_path: Path = DEFAULT_SUMMARY) -> dict[str, Any]:
+def write_summary(
+    packets: list[dict[str, Any]], *, summary_path: Path = DEFAULT_SUMMARY
+) -> dict[str, Any]:
     """Write the aggregate extraction summary and v2 caption corpus."""
 
     figures = _flatten_corpus(packets)

@@ -18,7 +18,9 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT = ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "figure-caption-corpus.json"
+DEFAULT_OUTPUT = (
+    ROOT / "artifacts" / "m057-fd-marker" / "figure-links" / "figure-caption-corpus.json"
+)
 
 SAFETY_DEFAULTS: dict[str, bool] = {
     "graph_writes_authorized": False,
@@ -68,7 +70,9 @@ def load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _resolve_markdown_path(source_root: Path, packet: dict[str, Any], packet_path: Path) -> Path | None:
+def _resolve_markdown_path(
+    source_root: Path, packet: dict[str, Any], packet_path: Path
+) -> Path | None:
     markdown_path = packet.get("markdown_path")
     candidates: list[Path] = []
     if markdown_path:
@@ -119,7 +123,9 @@ def extract_markdown_figure_captions(markdown_text: str) -> list[dict[str, Any]]
         key = (figure_label.lower(), caption.lower())
         if caption and key not in seen:
             seen.add(key)
-            captions.append({"figure_label": figure_label, "caption": caption, "line_number": start_line})
+            captions.append(
+                {"figure_label": figure_label, "caption": caption, "line_number": start_line}
+            )
         index += 1
     return captions
 
@@ -166,7 +172,9 @@ def iter_figure_records(sources: Iterable[tuple[str, Path]]) -> Iterable[dict[st
             continue
         for packet_path in sorted(per_pdf.glob("*.json")):
             packet = load_json(packet_path)
-            arxiv_id = clean_text(packet.get("arxiv_id") or packet.get("article_key") or packet_path.stem)
+            arxiv_id = clean_text(
+                packet.get("arxiv_id") or packet.get("article_key") or packet_path.stem
+            )
             if not arxiv_id:
                 continue
             markdown_path = _resolve_markdown_path(source_root, packet, packet_path)
@@ -189,7 +197,8 @@ def iter_figure_records(sources: Iterable[tuple[str, Path]]) -> Iterable[dict[st
                     "figure_id": figure_id,
                     "arxiv_id": arxiv_id,
                     "figure_idx": figure_idx,
-                    "figure_label": clean_text(caption_info.get("figure_label")) or f"Figure {figure_idx}",
+                    "figure_label": clean_text(caption_info.get("figure_label"))
+                    or f"Figure {figure_idx}",
                     "caption": caption,
                     "text_repr": f"Figure from {arxiv_id}: {caption}",
                     "source_milestone": _source_milestone(source_name),
@@ -208,7 +217,10 @@ def build_corpus(*, output_path: Path = DEFAULT_OUTPUT) -> dict[str, Any]:
         "figure_count": len(figures),
         "figures": figures,
         "sources": [
-            {"name": name, "path": str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)}
+            {
+                "name": name,
+                "path": str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path),
+            }
             for name, path in source_roots()
         ],
     }
@@ -226,7 +238,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     payload = build_corpus(output_path=args.output)
-    print(json.dumps({"output": str(args.output), "figure_count": payload["figure_count"]}, sort_keys=True))
+    print(
+        json.dumps(
+            {"output": str(args.output), "figure_count": payload["figure_count"]}, sort_keys=True
+        )
+    )
     return 0
 
 

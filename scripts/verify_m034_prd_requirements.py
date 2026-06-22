@@ -68,7 +68,9 @@ def main() -> int:
     fr_ids = set(re.findall(r"\| (FR-\d{3}|PFR-\d{3}|SFR-\d{3}) \|", fr))
     nfr_ids = set(re.findall(r"\| (NFR-\d{3}) \|", nfr))
     if len(fr_ids) < 15:
-        failures.append(f"expected at least 15 functional/safety requirement IDs, got {len(fr_ids)}")
+        failures.append(
+            f"expected at least 15 functional/safety requirement IDs, got {len(fr_ids)}"
+        )
     if len(nfr_ids) < 10:
         failures.append(f"expected at least 10 non-functional requirement IDs, got {len(nfr_ids)}")
     if "Acceptance Criteria" not in fr or "Acceptance Criteria" not in nfr:

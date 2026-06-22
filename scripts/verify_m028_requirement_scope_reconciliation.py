@@ -25,7 +25,18 @@ DEFAULT_MATRIX = Path("doc/validation/m028_requirement_scope_matrix.json")
 DEFAULT_RENDERED = Path("doc/validation/m028_requirement_scope_matrix.md")
 
 M028_SMOKE_LOADER_REQUIREMENT_IDS = {"R024", "R027", "R029"}
-FUTURE_OUT_OF_SCOPE_REQUIREMENT_IDS = {"R019", "R022", "R023", "R031", "R032", "R033", "R035", "R050", "R051", "R052"}
+FUTURE_OUT_OF_SCOPE_REQUIREMENT_IDS = {
+    "R019",
+    "R022",
+    "R023",
+    "R031",
+    "R032",
+    "R033",
+    "R035",
+    "R050",
+    "R051",
+    "R052",
+}
 R036_SUPPORTED_REQUIREMENT_IDS = {"R036"}
 R040_SAFETY_REQUIREMENT_IDS = {"R040"}
 REQUIRED_REQUIREMENT_IDS = (
@@ -303,28 +314,70 @@ def _validate_evidence_path(
 ) -> list[str]:
     errors: list[str] = []
     if not path_value or path_value.strip() != path_value:
-        return [_diag("M028_MATRIX_EVIDENCE_PATH_INVALID", owner_path, f"evidence path is blank or padded: {path_value!r}")]
+        return [
+            _diag(
+                "M028_MATRIX_EVIDENCE_PATH_INVALID",
+                owner_path,
+                f"evidence path is blank or padded: {path_value!r}",
+            )
+        ]
     if "://" in path_value:
-        errors.append(_diag("M028_MATRIX_EVIDENCE_PATH_INVALID", owner_path, f"evidence path must be a repo-relative path, not a URL: {path_value}"))
+        errors.append(
+            _diag(
+                "M028_MATRIX_EVIDENCE_PATH_INVALID",
+                owner_path,
+                f"evidence path must be a repo-relative path, not a URL: {path_value}",
+            )
+        )
     path = Path(path_value)
     if path.is_absolute():
-        errors.append(_diag("M028_MATRIX_EVIDENCE_PATH_INVALID", owner_path, f"evidence path must be relative: {path_value}"))
+        errors.append(
+            _diag(
+                "M028_MATRIX_EVIDENCE_PATH_INVALID",
+                owner_path,
+                f"evidence path must be relative: {path_value}",
+            )
+        )
         return errors
     if any(part == ".." for part in path.parts):
-        errors.append(_diag("M028_MATRIX_EVIDENCE_PATH_INVALID", owner_path, f"evidence path must not escape the repo: {path_value}"))
+        errors.append(
+            _diag(
+                "M028_MATRIX_EVIDENCE_PATH_INVALID",
+                owner_path,
+                f"evidence path must not escape the repo: {path_value}",
+            )
+        )
         return errors
     if path.suffix and path.suffix not in ALLOWED_EVIDENCE_SUFFIXES:
-        errors.append(_diag("M028_MATRIX_EVIDENCE_PATH_INVALID", owner_path, f"evidence path has unsupported extension: {path_value}"))
+        errors.append(
+            _diag(
+                "M028_MATRIX_EVIDENCE_PATH_INVALID",
+                owner_path,
+                f"evidence path has unsupported extension: {path_value}",
+            )
+        )
     if _is_planning_path(path_value) and not require_planning_evidence:
         return errors
     resolved = (repo_root / path).resolve()
     try:
         resolved.relative_to(repo_root.resolve())
     except ValueError:
-        errors.append(_diag("M028_MATRIX_EVIDENCE_PATH_INVALID", owner_path, f"evidence path escapes repo root: {path_value}"))
+        errors.append(
+            _diag(
+                "M028_MATRIX_EVIDENCE_PATH_INVALID",
+                owner_path,
+                f"evidence path escapes repo root: {path_value}",
+            )
+        )
         return errors
     if not resolved.exists():
-        errors.append(_diag("M028_MATRIX_EVIDENCE_PATH_INVALID", owner_path, f"evidence path does not exist: {path_value}"))
+        errors.append(
+            _diag(
+                "M028_MATRIX_EVIDENCE_PATH_INVALID",
+                owner_path,
+                f"evidence path does not exist: {path_value}",
+            )
+        )
     return errors
 
 
@@ -335,12 +388,22 @@ def _validate_safety_flags(matrix: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     missing = sorted(REQUIRED_SAFETY_FLAGS - set(safety_flags))
     if missing:
-        errors.append(_diag("M028_MATRIX_UNSAFE_FLAG_TRUE", "$.safety_flags", f"missing required fields: {', '.join(missing)}"))
+        errors.append(
+            _diag(
+                "M028_MATRIX_UNSAFE_FLAG_TRUE",
+                "$.safety_flags",
+                f"missing required fields: {', '.join(missing)}",
+            )
+        )
     if safety_flags.get("metadata_only") is not True:
-        errors.append(_diag("M028_MATRIX_UNSAFE_FLAG_TRUE", "$.safety_flags.metadata_only", "must be true"))
+        errors.append(
+            _diag("M028_MATRIX_UNSAFE_FLAG_TRUE", "$.safety_flags.metadata_only", "must be true")
+        )
     for key in sorted(FALSE_SAFETY_FLAGS & set(safety_flags)):
         if safety_flags.get(key) is not False:
-            errors.append(_diag("M028_MATRIX_UNSAFE_FLAG_TRUE", f"$.safety_flags.{key}", "must be false"))
+            errors.append(
+                _diag("M028_MATRIX_UNSAFE_FLAG_TRUE", f"$.safety_flags.{key}", "must be false")
+            )
     return errors
 
 
@@ -350,19 +413,29 @@ def _positive_text_for_matrix(matrix: dict[str, Any]) -> dict[str, str]:
     if isinstance(scope, dict):
         for key in ("summary", "in_scope", "safe_next_step"):
             positive[f"$.scope_boundary.{key}"] = "\n".join(_strings_from(scope.get(key)))
-    positive["$.validation_recommendation"] = "\n".join(_strings_from(matrix.get("validation_recommendation")))
+    positive["$.validation_recommendation"] = "\n".join(
+        _strings_from(matrix.get("validation_recommendation"))
+    )
     quality_gates = matrix.get("quality_gates")
     if isinstance(quality_gates, dict):
-        positive["$.quality_gates.observability_impact"] = "\n".join(_strings_from(quality_gates.get("observability_impact")))
+        positive["$.quality_gates.observability_impact"] = "\n".join(
+            _strings_from(quality_gates.get("observability_impact"))
+        )
     requirements = matrix.get("requirements")
     if isinstance(requirements, list):
         for index, row in enumerate(requirements):
             if not isinstance(row, dict):
                 continue
-            rid = row.get("requirement_id") if isinstance(row.get("requirement_id"), str) else f"index {index}"
+            rid = (
+                row.get("requirement_id")
+                if isinstance(row.get("requirement_id"), str)
+                else f"index {index}"
+            )
             for key in POSITIVE_TEXT_KEYS:
                 if key in row:
-                    positive[f"$.requirements[{index}]({rid}).{key}"] = "\n".join(_strings_from(row.get(key)))
+                    positive[f"$.requirements[{index}]({rid}).{key}"] = "\n".join(
+                        _strings_from(row.get(key))
+                    )
     return positive
 
 
@@ -383,24 +456,57 @@ def validate_matrix(
 
     missing_top = sorted(REQUIRED_TOP_LEVEL_KEYS - set(matrix))
     if missing_top:
-        errors.append(_diag("M028_MATRIX_MARKDOWN_STALE", "$", f"missing top-level keys: {', '.join(missing_top)}"))
+        errors.append(
+            _diag(
+                "M028_MATRIX_MARKDOWN_STALE",
+                "$",
+                f"missing top-level keys: {', '.join(missing_top)}",
+            )
+        )
     if matrix.get("milestone_id") != MILESTONE_ID:
-        errors.append(_diag("M028_MATRIX_MARKDOWN_STALE", "$.milestone_id", f"must be {MILESTONE_ID}"))
+        errors.append(
+            _diag("M028_MATRIX_MARKDOWN_STALE", "$.milestone_id", f"must be {MILESTONE_ID}")
+        )
     if matrix.get("slice_id") != SLICE_ID:
         errors.append(_diag("M028_MATRIX_MARKDOWN_STALE", "$.slice_id", f"must be {SLICE_ID}"))
     if matrix.get("schema_version") != SCHEMA_VERSION:
-        errors.append(_diag("M028_MATRIX_MARKDOWN_STALE", "$.schema_version", f"must be {SCHEMA_VERSION}"))
+        errors.append(
+            _diag("M028_MATRIX_MARKDOWN_STALE", "$.schema_version", f"must be {SCHEMA_VERSION}")
+        )
     if matrix.get("metadata_only") is not True:
         errors.append(_diag("M028_MATRIX_UNSAFE_FLAG_TRUE", "$.metadata_only", "must be true"))
     if matrix.get("no_runtime_surface_changed") is not True:
-        errors.append(_diag("M028_MATRIX_UNSAFE_FLAG_TRUE", "$.no_runtime_surface_changed", "must be true"))
+        errors.append(
+            _diag("M028_MATRIX_UNSAFE_FLAG_TRUE", "$.no_runtime_surface_changed", "must be true")
+        )
     errors.extend(_validate_safety_flags(matrix))
 
     source_paths = matrix.get("source_input_paths")
-    if not isinstance(source_paths, list) or not source_paths or not all(isinstance(item, str) and item for item in source_paths):
-        errors.append(_diag("M028_MATRIX_EVIDENCE_PATH_INVALID", "$.source_input_paths", "must be a non-empty list of strings"))
-    elif not any(path.startswith("data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/") for path in source_paths):
-        errors.append(_diag("M028_MATRIX_EVIDENCE_PATH_INVALID", "$.source_input_paths", "must include M028 smoke replay closeout artifacts"))
+    if (
+        not isinstance(source_paths, list)
+        or not source_paths
+        or not all(isinstance(item, str) and item for item in source_paths)
+    ):
+        errors.append(
+            _diag(
+                "M028_MATRIX_EVIDENCE_PATH_INVALID",
+                "$.source_input_paths",
+                "must be a non-empty list of strings",
+            )
+        )
+    elif not any(
+        path.startswith(
+            "data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/"
+        )
+        for path in source_paths
+    ):
+        errors.append(
+            _diag(
+                "M028_MATRIX_EVIDENCE_PATH_INVALID",
+                "$.source_input_paths",
+                "must include M028 smoke replay closeout artifacts",
+            )
+        )
     else:
         for index, path_value in enumerate(source_paths):
             errors.extend(
@@ -413,19 +519,41 @@ def validate_matrix(
             )
 
     declared_required = matrix.get("required_requirement_ids")
-    if not isinstance(declared_required, list) or not all(isinstance(item, str) for item in declared_required):
-        errors.append(_diag("M028_MATRIX_REQUIRED_ROW_MISSING", "$.required_requirement_ids", "must be a list of strings"))
+    if not isinstance(declared_required, list) or not all(
+        isinstance(item, str) for item in declared_required
+    ):
+        errors.append(
+            _diag(
+                "M028_MATRIX_REQUIRED_ROW_MISSING",
+                "$.required_requirement_ids",
+                "must be a list of strings",
+            )
+        )
     elif set(declared_required) != required:
         missing_declared = sorted(required - set(declared_required))
         extra_declared = sorted(set(declared_required) - required)
         if missing_declared:
-            errors.append(_diag("M028_MATRIX_REQUIRED_ROW_MISSING", "$.required_requirement_ids", f"missing ids: {', '.join(missing_declared)}"))
+            errors.append(
+                _diag(
+                    "M028_MATRIX_REQUIRED_ROW_MISSING",
+                    "$.required_requirement_ids",
+                    f"missing ids: {', '.join(missing_declared)}",
+                )
+            )
         if extra_declared:
-            errors.append(_diag("M028_MATRIX_REQUIRED_ROW_MISSING", "$.required_requirement_ids", f"has unexpected ids: {', '.join(extra_declared)}"))
+            errors.append(
+                _diag(
+                    "M028_MATRIX_REQUIRED_ROW_MISSING",
+                    "$.required_requirement_ids",
+                    f"has unexpected ids: {', '.join(extra_declared)}",
+                )
+            )
 
     requirements = matrix.get("requirements")
     if not isinstance(requirements, list):
-        return errors + [_diag("M028_MATRIX_REQUIRED_ROW_MISSING", "$.requirements", "must be a list")]
+        return errors + [
+            _diag("M028_MATRIX_REQUIRED_ROW_MISSING", "$.requirements", "must be a list")
+        ]
 
     seen: dict[str, int] = {}
     rows: dict[str, dict[str, Any]] = {}
@@ -437,24 +565,54 @@ def validate_matrix(
             continue
         rid = row.get("requirement_id")
         if not isinstance(rid, str) or not rid:
-            errors.append(_diag("M028_MATRIX_REQUIRED_ROW_MISSING", f"{row_path}.requirement_id", "missing or not a string"))
+            errors.append(
+                _diag(
+                    "M028_MATRIX_REQUIRED_ROW_MISSING",
+                    f"{row_path}.requirement_id",
+                    "missing or not a string",
+                )
+            )
             continue
         seen[rid] = seen.get(rid, 0) + 1
         rows[rid] = row
         row_paths[rid] = row_path
         missing_row_keys = sorted(REQUIRED_ROW_KEYS - set(row))
         if missing_row_keys:
-            errors.append(_diag("M028_MATRIX_REQUIRED_ROW_MISSING", row_path, f"{rid} missing required fields: {', '.join(missing_row_keys)}"))
+            errors.append(
+                _diag(
+                    "M028_MATRIX_REQUIRED_ROW_MISSING",
+                    row_path,
+                    f"{rid} missing required fields: {', '.join(missing_row_keys)}",
+                )
+            )
 
     missing_ids = sorted(required - set(seen))
     extra_ids = sorted(set(seen) - required)
     duplicate_ids = sorted(rid for rid, count in seen.items() if count > 1)
     if missing_ids:
-        errors.append(_diag("M028_MATRIX_REQUIRED_ROW_MISSING", "$.requirements", f"missing requirement rows: {', '.join(missing_ids)}"))
+        errors.append(
+            _diag(
+                "M028_MATRIX_REQUIRED_ROW_MISSING",
+                "$.requirements",
+                f"missing requirement rows: {', '.join(missing_ids)}",
+            )
+        )
     if extra_ids:
-        errors.append(_diag("M028_MATRIX_REQUIRED_ROW_MISSING", "$.requirements", f"unexpected requirement rows: {', '.join(extra_ids)}"))
+        errors.append(
+            _diag(
+                "M028_MATRIX_REQUIRED_ROW_MISSING",
+                "$.requirements",
+                f"unexpected requirement rows: {', '.join(extra_ids)}",
+            )
+        )
     if duplicate_ids:
-        errors.append(_diag("M028_MATRIX_REQUIRED_ROW_DUPLICATE", "$.requirements", f"duplicate requirement rows: {', '.join(duplicate_ids)}"))
+        errors.append(
+            _diag(
+                "M028_MATRIX_REQUIRED_ROW_DUPLICATE",
+                "$.requirements",
+                f"duplicate requirement rows: {', '.join(duplicate_ids)}",
+            )
+        )
 
     for rid, expected in EXPECTED_CLASSIFICATIONS.items():
         row = rows.get(rid)
@@ -463,18 +621,36 @@ def validate_matrix(
         row_path = row_paths[rid]
         for key, expected_value in expected.items():
             if row.get(key) != expected_value:
-                errors.append(_diag("M028_MATRIX_UNSAFE_CLAIM_LEAKED", f"{row_path}.{key}", f"{rid} {key} must be {expected_value}, found {row.get(key)!r}"))
+                errors.append(
+                    _diag(
+                        "M028_MATRIX_UNSAFE_CLAIM_LEAKED",
+                        f"{row_path}.{key}",
+                        f"{rid} {key} must be {expected_value}, found {row.get(key)!r}",
+                    )
+                )
 
     for rid, row in rows.items():
         row_path = row_paths[rid]
         evidence_paths = row.get("evidence_paths")
         if not isinstance(evidence_paths, list) or not evidence_paths:
-            errors.append(_diag("M028_MATRIX_EVIDENCE_PATH_INVALID", f"{row_path}.evidence_paths", f"{rid} evidence_paths must be a non-empty list"))
+            errors.append(
+                _diag(
+                    "M028_MATRIX_EVIDENCE_PATH_INVALID",
+                    f"{row_path}.evidence_paths",
+                    f"{rid} evidence_paths must be a non-empty list",
+                )
+            )
         else:
             for index, path_value in enumerate(evidence_paths):
                 path_location = f"{row_path}.evidence_paths[{index}]"
                 if not isinstance(path_value, str):
-                    errors.append(_diag("M028_MATRIX_EVIDENCE_PATH_INVALID", path_location, f"{rid} evidence path must be a string: {path_value!r}"))
+                    errors.append(
+                        _diag(
+                            "M028_MATRIX_EVIDENCE_PATH_INVALID",
+                            path_location,
+                            f"{rid} evidence path must be a string: {path_value!r}",
+                        )
+                    )
                     continue
                 errors.extend(
                     _validate_evidence_path(
@@ -484,84 +660,245 @@ def validate_matrix(
                         require_planning_evidence=require_planning_evidence,
                     )
                 )
-        for key in ("allowed_claims", "forbidden_claims", "remaining_work", "observed_m028_evidence"):
+        for key in (
+            "allowed_claims",
+            "forbidden_claims",
+            "remaining_work",
+            "observed_m028_evidence",
+        ):
             value = row.get(key)
-            if not isinstance(value, list) or not value or not all(isinstance(item, str) and item for item in value):
-                errors.append(_diag("M028_MATRIX_REQUIRED_ROW_MISSING", f"{row_path}.{key}", f"{rid} {key} must be a non-empty list of strings"))
+            if (
+                not isinstance(value, list)
+                or not value
+                or not all(isinstance(item, str) and item for item in value)
+            ):
+                errors.append(
+                    _diag(
+                        "M028_MATRIX_REQUIRED_ROW_MISSING",
+                        f"{row_path}.{key}",
+                        f"{rid} {key} must be a non-empty list of strings",
+                    )
+                )
         if not isinstance(row.get("rationale"), str) or not row.get("rationale"):
-            errors.append(_diag("M028_MATRIX_REQUIRED_ROW_MISSING", f"{row_path}.rationale", f"{rid} rationale must be a non-empty string"))
+            errors.append(
+                _diag(
+                    "M028_MATRIX_REQUIRED_ROW_MISSING",
+                    f"{row_path}.rationale",
+                    f"{rid} rationale must be a non-empty string",
+                )
+            )
 
     for rid in sorted(M028_SMOKE_LOADER_REQUIREMENT_IDS):
         row = rows.get(rid)
         if row is None:
             continue
         row_path = row_paths[rid]
-        positive = "\n".join(_strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})).lower()
+        positive = "\n".join(
+            _strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})
+        ).lower()
         if row.get("current_status") != "active":
-            errors.append(_diag("M028_MATRIX_UNSAFE_CLAIM_LEAKED", f"{row_path}.current_status", f"{rid} current_status must remain active"))
+            errors.append(
+                _diag(
+                    "M028_MATRIX_UNSAFE_CLAIM_LEAKED",
+                    f"{row_path}.current_status",
+                    f"{rid} current_status must remain active",
+                )
+            )
         if row.get("s07_verdict") != "advanced_by_smoke_loader_not_globally_validated":
-            errors.append(_diag("M028_MATRIX_UNSAFE_CLAIM_LEAKED", f"{row_path}.s07_verdict", f"{rid} must be smoke-loader evidence only, not globally validated"))
-        if "fully validates" in positive or "global validation accepted" in positive or "global validation closed" in positive:
-            errors.append(_diag("M028_MATRIX_UNSAFE_CLAIM_LEAKED", row_path, f"{rid} must be M028 smoke-loader evidence, not globally validated"))
+            errors.append(
+                _diag(
+                    "M028_MATRIX_UNSAFE_CLAIM_LEAKED",
+                    f"{row_path}.s07_verdict",
+                    f"{rid} must be smoke-loader evidence only, not globally validated",
+                )
+            )
+        if (
+            "fully validates" in positive
+            or "global validation accepted" in positive
+            or "global validation closed" in positive
+        ):
+            errors.append(
+                _diag(
+                    "M028_MATRIX_UNSAFE_CLAIM_LEAKED",
+                    row_path,
+                    f"{rid} must be M028 smoke-loader evidence, not globally validated",
+                )
+            )
 
     for rid in sorted(FUTURE_OUT_OF_SCOPE_REQUIREMENT_IDS):
         row = rows.get(rid)
         if row is None:
             continue
         row_path = row_paths[rid]
-        positive = "\n".join(_strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})).lower()
-        if row.get("current_status") != "active" or row.get("s07_verdict") != "not_advanced_not_validated_by_m028":
-            errors.append(_diag("M028_MATRIX_UNSAFE_CLAIM_LEAKED", row_path, f"{rid} must remain active/future/out-of-scope and not validated by M028"))
-        if "advanced" in positive and "not advanced" not in positive and "future/out-of-scope" not in positive:
-            errors.append(_diag("M028_MATRIX_UNSAFE_CLAIM_LEAKED", row_path, f"{rid} must not be described as advanced by M028"))
+        positive = "\n".join(
+            _strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})
+        ).lower()
+        if (
+            row.get("current_status") != "active"
+            or row.get("s07_verdict") != "not_advanced_not_validated_by_m028"
+        ):
+            errors.append(
+                _diag(
+                    "M028_MATRIX_UNSAFE_CLAIM_LEAKED",
+                    row_path,
+                    f"{rid} must remain active/future/out-of-scope and not validated by M028",
+                )
+            )
+        if (
+            "advanced" in positive
+            and "not advanced" not in positive
+            and "future/out-of-scope" not in positive
+        ):
+            errors.append(
+                _diag(
+                    "M028_MATRIX_UNSAFE_CLAIM_LEAKED",
+                    row_path,
+                    f"{rid} must not be described as advanced by M028",
+                )
+            )
 
     row = rows.get("R036")
     if row is not None:
         row_path = row_paths["R036"]
-        positive = "\n".join(_strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})).lower()
+        positive = "\n".join(
+            _strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})
+        ).lower()
         if row.get("current_status") != "validated":
-            errors.append(_diag("M028_MATRIX_UNSAFE_CLAIM_LEAKED", f"{row_path}.current_status", "R036 must preserve its already validated status"))
+            errors.append(
+                _diag(
+                    "M028_MATRIX_UNSAFE_CLAIM_LEAKED",
+                    f"{row_path}.current_status",
+                    "R036 must preserve its already validated status",
+                )
+            )
         if row.get("s07_verdict") != "supported_not_revalidated_by_m028":
-            errors.append(_diag("M028_MATRIX_UNSAFE_CLAIM_LEAKED", f"{row_path}.s07_verdict", "R036 must be supported but not revalidated by M028"))
-        if "already validated" not in positive or "support" not in positive or "provenance" not in positive:
-            errors.append(_diag("M028_MATRIX_UNSAFE_CLAIM_LEAKED", row_path, "R036 must be already validated and only supported by M028 replay provenance"))
-        if "newly validates" in positive or "globally validates" in positive or "closes all future" in positive:
-            errors.append(_diag("M028_MATRIX_UNSAFE_CLAIM_LEAKED", row_path, "R036 must not carry a false global validation claim"))
+            errors.append(
+                _diag(
+                    "M028_MATRIX_UNSAFE_CLAIM_LEAKED",
+                    f"{row_path}.s07_verdict",
+                    "R036 must be supported but not revalidated by M028",
+                )
+            )
+        if (
+            "already validated" not in positive
+            or "support" not in positive
+            or "provenance" not in positive
+        ):
+            errors.append(
+                _diag(
+                    "M028_MATRIX_UNSAFE_CLAIM_LEAKED",
+                    row_path,
+                    "R036 must be already validated and only supported by M028 replay provenance",
+                )
+            )
+        if (
+            "newly validates" in positive
+            or "globally validates" in positive
+            or "closes all future" in positive
+        ):
+            errors.append(
+                _diag(
+                    "M028_MATRIX_UNSAFE_CLAIM_LEAKED",
+                    row_path,
+                    "R036 must not carry a false global validation claim",
+                )
+            )
 
     row = rows.get("R040")
     if row is not None:
         row_path = row_paths["R040"]
-        positive = "\n".join(_strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})).lower()
+        positive = "\n".join(
+            _strings_from({key: row.get(key) for key in POSITIVE_TEXT_KEYS})
+        ).lower()
         if row.get("current_status") != "active":
-            errors.append(_diag("M028_MATRIX_UNSAFE_CLAIM_LEAKED", f"{row_path}.current_status", "R040 must remain an active safety constraint"))
+            errors.append(
+                _diag(
+                    "M028_MATRIX_UNSAFE_CLAIM_LEAKED",
+                    f"{row_path}.current_status",
+                    "R040 must remain an active safety constraint",
+                )
+            )
         if row.get("s07_verdict") != "preserved_and_advanced_not_validated":
-            errors.append(_diag("M028_MATRIX_UNSAFE_CLAIM_LEAKED", f"{row_path}.s07_verdict", "R040 must be preserved/advanced but not validated"))
-        if "active safety constraint" not in positive or "not claiming" not in positive and "without claiming" not in positive:
-            errors.append(_diag("M028_MATRIX_UNSAFE_CLAIM_LEAKED", row_path, "R040 must remain an active safety constraint without main Scientific KG activation claims"))
-        if "fully validates" in positive or "production writes" in positive and "without claiming" not in positive:
-            errors.append(_diag("M028_MATRIX_UNSAFE_CLAIM_LEAKED", row_path, "R040 must not carry a false global validation or production-write claim"))
+            errors.append(
+                _diag(
+                    "M028_MATRIX_UNSAFE_CLAIM_LEAKED",
+                    f"{row_path}.s07_verdict",
+                    "R040 must be preserved/advanced but not validated",
+                )
+            )
+        if (
+            "active safety constraint" not in positive
+            or "not claiming" not in positive
+            and "without claiming" not in positive
+        ):
+            errors.append(
+                _diag(
+                    "M028_MATRIX_UNSAFE_CLAIM_LEAKED",
+                    row_path,
+                    "R040 must remain an active safety constraint without main Scientific KG activation claims",
+                )
+            )
+        if (
+            "fully validates" in positive
+            or "production writes" in positive
+            and "without claiming" not in positive
+        ):
+            errors.append(
+                _diag(
+                    "M028_MATRIX_UNSAFE_CLAIM_LEAKED",
+                    row_path,
+                    "R040 must not carry a false global validation or production-write claim",
+                )
+            )
 
     if reject_unsafe_claims:
         for path, text in _positive_text_for_matrix(matrix).items():
             lowered = text.lower()
             for phrase in sorted(UNSAFE_POSITIVE_CLAIM_PHRASES):
                 if phrase in lowered:
-                    errors.append(_diag("M028_MATRIX_UNSAFE_CLAIM_LEAKED", path, f"contains unsafe claim phrase: {phrase}"))
+                    errors.append(
+                        _diag(
+                            "M028_MATRIX_UNSAFE_CLAIM_LEAKED",
+                            path,
+                            f"contains unsafe claim phrase: {phrase}",
+                        )
+                    )
 
     for path, value in _walk(matrix):
         field_name = _field_name_from_path(path)
         if isinstance(value, bool) and value is True and field_name in UNSAFE_TRUE_BOOLEAN_KEYS:
-            errors.append(_diag("M028_MATRIX_UNSAFE_FLAG_TRUE", path, "unsafe boolean field must not be true"))
+            errors.append(
+                _diag("M028_MATRIX_UNSAFE_FLAG_TRUE", path, "unsafe boolean field must not be true")
+            )
         if any(fragment in field_name for fragment in UNSAFE_FIELD_NAME_FRAGMENTS):
             if not path.startswith("$.safety_flags."):
-                errors.append(_diag("M028_MATRIX_UNSAFE_CLAIM_LEAKED", path, "contains unsafe raw/binary/base64/vector/secret field name"))
+                errors.append(
+                    _diag(
+                        "M028_MATRIX_UNSAFE_CLAIM_LEAKED",
+                        path,
+                        "contains unsafe raw/binary/base64/vector/secret field name",
+                    )
+                )
         if isinstance(value, str):
             lowered = value.lower()
-            if "-----begin" in lowered or "base64," in lowered or "secret=" in lowered or "password=" in lowered:
-                errors.append(_diag("M028_MATRIX_UNSAFE_CLAIM_LEAKED", path, "contains raw payload, base64, or secret leakage marker"))
+            if (
+                "-----begin" in lowered
+                or "base64," in lowered
+                or "secret=" in lowered
+                or "password=" in lowered
+            ):
+                errors.append(
+                    _diag(
+                        "M028_MATRIX_UNSAFE_CLAIM_LEAKED",
+                        path,
+                        "contains raw payload, base64, or secret leakage marker",
+                    )
+                )
 
     if not rendered_markdown.strip():
-        errors.append(_diag("M028_MATRIX_MARKDOWN_STALE", "$rendered", "rendered markdown is empty"))
+        errors.append(
+            _diag("M028_MATRIX_MARKDOWN_STALE", "$rendered", "rendered markdown is empty")
+        )
     for marker in (
         "# M028 Requirement Scope Matrix",
         "doc/validation/m028_requirement_scope_matrix.json",
@@ -577,14 +914,32 @@ def validate_matrix(
         "## Observability Impact",
     ):
         if marker not in rendered_markdown:
-            errors.append(_diag("M028_MATRIX_MARKDOWN_STALE", "$rendered", f"rendered markdown missing marker: {marker}"))
+            errors.append(
+                _diag(
+                    "M028_MATRIX_MARKDOWN_STALE",
+                    "$rendered",
+                    f"rendered markdown missing marker: {marker}",
+                )
+            )
     for rid in sorted(required):
         if rid not in rendered_markdown:
-            errors.append(_diag("M028_MATRIX_MARKDOWN_STALE", "$rendered", f"rendered markdown missing requirement id: {rid}"))
+            errors.append(
+                _diag(
+                    "M028_MATRIX_MARKDOWN_STALE",
+                    "$rendered",
+                    f"rendered markdown missing requirement id: {rid}",
+                )
+            )
         expected = EXPECTED_CLASSIFICATIONS.get(rid, {})
         for key, expected_value in expected.items():
             if expected_value not in rendered_markdown:
-                errors.append(_diag("M028_MATRIX_MARKDOWN_STALE", "$rendered", f"rendered markdown missing {rid} {key}: {expected_value}"))
+                errors.append(
+                    _diag(
+                        "M028_MATRIX_MARKDOWN_STALE",
+                        "$rendered",
+                        f"rendered markdown missing {rid} {key}: {expected_value}",
+                    )
+                )
 
     return errors
 
@@ -593,21 +948,40 @@ def _load_json(path: Path) -> dict[str, Any]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
-        raise MatrixValidationError(_diag("M028_MATRIX_JSON_MALFORMED", "$", f"matrix file not found: {path}")) from exc
+        raise MatrixValidationError(
+            _diag("M028_MATRIX_JSON_MALFORMED", "$", f"matrix file not found: {path}")
+        ) from exc
     except json.JSONDecodeError as exc:
-        raise MatrixValidationError(_diag("M028_MATRIX_JSON_MALFORMED", "$", f"malformed JSON at {path}: {exc}")) from exc
+        raise MatrixValidationError(
+            _diag("M028_MATRIX_JSON_MALFORMED", "$", f"malformed JSON at {path}: {exc}")
+        ) from exc
     if not isinstance(payload, dict):
-        raise MatrixValidationError(_diag("M028_MATRIX_JSON_MALFORMED", "$", "matrix root must be an object"))
+        raise MatrixValidationError(
+            _diag("M028_MATRIX_JSON_MALFORMED", "$", "matrix root must be an object")
+        )
     return payload
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--matrix", type=Path, default=DEFAULT_MATRIX, help="Path to m028_requirement_scope_matrix.json")
-    parser.add_argument("--rendered", type=Path, default=DEFAULT_RENDERED, help="Path to rendered matrix markdown")
+    parser.add_argument(
+        "--matrix",
+        type=Path,
+        default=DEFAULT_MATRIX,
+        help="Path to m028_requirement_scope_matrix.json",
+    )
+    parser.add_argument(
+        "--rendered", type=Path, default=DEFAULT_RENDERED, help="Path to rendered matrix markdown"
+    )
     parser.add_argument("--repo-root", type=Path, default=Path.cwd())
-    parser.add_argument("--require-requirements", nargs="+", default=sorted(REQUIRED_REQUIREMENT_IDS))
-    parser.add_argument("--validate-only", action="store_true", help="Validate artifacts without generating or mutating outputs.")
+    parser.add_argument(
+        "--require-requirements", nargs="+", default=sorted(REQUIRED_REQUIREMENT_IDS)
+    )
+    parser.add_argument(
+        "--validate-only",
+        action="store_true",
+        help="Validate artifacts without generating or mutating outputs.",
+    )
     parser.add_argument("--reject-unsafe-claims", action="store_true", default=True)
     parser.add_argument(
         "--require-planning-evidence",
@@ -625,7 +999,13 @@ def main(argv: list[str] | None = None) -> int:
         try:
             rendered = args.rendered.read_text(encoding="utf-8")
         except FileNotFoundError as exc:
-            raise MatrixValidationError(_diag("M028_MATRIX_MARKDOWN_STALE", "$rendered", f"rendered markdown file not found: {args.rendered}")) from exc
+            raise MatrixValidationError(
+                _diag(
+                    "M028_MATRIX_MARKDOWN_STALE",
+                    "$rendered",
+                    f"rendered markdown file not found: {args.rendered}",
+                )
+            ) from exc
         errors = validate_matrix(
             matrix,
             rendered,

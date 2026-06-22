@@ -91,7 +91,11 @@ def safe_relative_path(value: Any, *, label: str) -> PurePosixPath:
     if "://" in value:
         raise ValueError(f"url_not_allowed_as_{label}")
     normalized = PurePosixPath(value.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part == "" for part in normalized.parts):
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part == "" for part in normalized.parts)
+    ):
         raise ValueError(f"unsafe_{label}")
     return normalized
 
@@ -119,12 +123,12 @@ def summary_output_paths(output_dir: Path) -> tuple[Path, Path, Path]:
     )
 
 
-
 def article_key_for(row: Mapping[str, Any]) -> str:
     value = row.get("article_ref") or row.get("identity_key")
     if not isinstance(value, str) or not value:
         raise ValueError("missing_article_ref_or_identity_key")
     return value
+
 
 def selection_articles(selection: Mapping[str, Any]) -> list[dict[str, Any]]:
     articles = selection.get("articles")
@@ -143,7 +147,9 @@ def selection_articles(selection: Mapping[str, Any]) -> list[dict[str, Any]]:
     return normalized
 
 
-def conversion_rows_by_article(conversion_summary: Mapping[str, Any]) -> dict[str, list[dict[str, Any]]]:
+def conversion_rows_by_article(
+    conversion_summary: Mapping[str, Any],
+) -> dict[str, list[dict[str, Any]]]:
     rows = conversion_summary.get("results")
     if not isinstance(rows, list):
         raise ValueError("conversion summary results must be a list")
@@ -184,10 +190,14 @@ def unsafe_flags(payload: Mapping[str, Any]) -> list[str]:
 
 
 def best_runtime_row(rows: Sequence[Mapping[str, Any]]) -> Mapping[str, Any] | None:
-    parser_ready = [row for row in rows if row.get("parser_ready") is True and row.get("converted_text_path")]
+    parser_ready = [
+        row for row in rows if row.get("parser_ready") is True and row.get("converted_text_path")
+    ]
     if parser_ready:
         return sorted(parser_ready, key=lambda row: str(row.get("variant_id", "")))[0]
-    converted = [row for row in rows if row.get("status") == "converted" and row.get("converted_text_path")]
+    converted = [
+        row for row in rows if row.get("status") == "converted" and row.get("converted_text_path")
+    ]
     if converted:
         return sorted(converted, key=lambda row: str(row.get("variant_id", "")))[0]
     return None
@@ -229,7 +239,11 @@ def runtime_loaded_row(
         line_count = sum(1 for line in result.text.splitlines() if line.strip())
     evidence_count = 1 if result.outcome == "loaded" and line_count > 0 else 0
     diagnostic_code = "runtime_loader_loaded" if evidence_count else "runtime_loader_zero_chunk"
-    failure_reason = result.failure_reason if result.failure_reason else (None if evidence_count else "zero_runtime_chunks")
+    failure_reason = (
+        result.failure_reason
+        if result.failure_reason
+        else (None if evidence_count else "zero_runtime_chunks")
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "milestone_id": MILESTONE_ID,
@@ -280,7 +294,9 @@ def runtime_loaded_row(
     }
 
 
-def zero_chunk_row(*, article: Mapping[str, Any], rows: Sequence[Mapping[str, Any]], reason: str) -> dict[str, Any]:
+def zero_chunk_row(
+    *, article: Mapping[str, Any], rows: Sequence[Mapping[str, Any]], reason: str
+) -> dict[str, Any]:
     status_counts = Counter(str(row.get("status", "unknown")) for row in rows)
     role_counts = Counter(str(row.get("source_role", "unknown")) for row in rows)
     return {
@@ -353,21 +369,37 @@ def build_runtime_rows(
             continue
         unsafe = [flag for row in conversion_rows for flag in unsafe_flags(row)]
         if unsafe:
-            rows.append(zero_chunk_row(article=article, rows=conversion_rows, reason=f"unsafe_conversion_flags:{','.join(sorted(set(unsafe)))}"))
+            rows.append(
+                zero_chunk_row(
+                    article=article,
+                    rows=conversion_rows,
+                    reason=f"unsafe_conversion_flags:{','.join(sorted(set(unsafe)))}",
+                )
+            )
             continue
         selected = best_runtime_row(conversion_rows)
         if selected is None:
-            rows.append(zero_chunk_row(article=article, rows=conversion_rows, reason="no_parser_ready_converted_text"))
+            rows.append(
+                zero_chunk_row(
+                    article=article, rows=conversion_rows, reason="no_parser_ready_converted_text"
+                )
+            )
             continue
         try:
-            converted_path = safe_under_root(artifact_root, selected.get("converted_text_path"), label="converted_text_path")
+            converted_path = safe_under_root(
+                artifact_root, selected.get("converted_text_path"), label="converted_text_path"
+            )
             if not converted_path.is_relative_to(corpus_dir.resolve()):
                 raise ValueError("converted_text_path_outside_corpus")
         except ValueError as exc:
             rows.append(zero_chunk_row(article=article, rows=conversion_rows, reason=str(exc)))
             continue
         if not converted_path.exists() or not converted_path.is_file():
-            rows.append(zero_chunk_row(article=article, rows=conversion_rows, reason="converted_text_missing"))
+            rows.append(
+                zero_chunk_row(
+                    article=article, rows=conversion_rows, reason="converted_text_missing"
+                )
+            )
             continue
         rows.append(
             runtime_loaded_row(
@@ -449,7 +481,9 @@ def build_summary(
         "status": "passed" if rows else "failed",
         "created_at": utc_now(),
         "article_count": len(rows),
-        "selection_article_count": len(selection.get("articles", [])) if isinstance(selection.get("articles"), list) else None,
+        "selection_article_count": len(selection.get("articles", []))
+        if isinstance(selection.get("articles"), list)
+        else None,
         "conversion_article_count": conversion_summary.get("article_count"),
         "source_article_count": source_summary.get("article_count"),
         "runtime_loaded_count": status_counts.get("loaded", 0),
@@ -459,8 +493,12 @@ def build_summary(
         "counts": dict(sorted(status_counts.items())),
         "source_strategy_counts": dict(sorted(source_strategy_counts.items())),
         "runtime_event_dir": rel(output_dir, artifact_root),
-        "runtime_summary_path": rel(output_dir.parent / "runtime-smoke-summary.json", artifact_root),
-        "runtime_diagnostics_path": rel(output_dir.parent / "runtime-smoke-diagnostics.jsonl", artifact_root),
+        "runtime_summary_path": rel(
+            output_dir.parent / "runtime-smoke-summary.json", artifact_root
+        ),
+        "runtime_diagnostics_path": rel(
+            output_dir.parent / "runtime-smoke-diagnostics.jsonl", artifact_root
+        ),
         "runtime_report_path": rel(output_dir.parent / "runtime-smoke-report.md", artifact_root),
         "network_fetch_attempted": False,
         "production_import_attempted": False,

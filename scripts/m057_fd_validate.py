@@ -19,7 +19,9 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_BASE_URL = os.environ.get("TEI_URL", os.environ.get("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000"))
+DEFAULT_BASE_URL = os.environ.get(
+    "TEI_URL", os.environ.get("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000")
+)
 DEFAULT_API_KEY = os.environ.get("FD_API_KEY")
 EXPECTED_MODEL = os.environ.get("MODEL_ID", os.environ.get("FD_MODEL_NAME", "deepvk/USER-bge-m3"))
 DEFAULT_REDIS_HOST = os.environ.get("REDIS_HOST", "127.0.0.1")
@@ -137,7 +139,11 @@ def run_validation(base_url: str = DEFAULT_BASE_URL, latency_calls: int = 100) -
         verdict(
             "test_single_embedding_1024d",
             single.status_code == 200 and single_dim == 1024,
-            details={"status_code": single.status_code, "dimension": single_dim, "latency_ms": round(single.latency_ms, 3)},
+            details={
+                "status_code": single.status_code,
+                "dimension": single_dim,
+                "latency_ms": round(single.latency_ms, 3),
+            },
         )
     )
 
@@ -148,7 +154,9 @@ def run_validation(base_url: str = DEFAULT_BASE_URL, latency_calls: int = 100) -
     tests.append(
         verdict(
             "test_batch_embedding",
-            batch.status_code == 200 and len(batch_data) == 32 and all(dim == 1024 for dim in batch_dims),
+            batch.status_code == 200
+            and len(batch_data) == 32
+            and all(dim == 1024 for dim in batch_dims),
             details={
                 "status_code": batch.status_code,
                 "returned": len(batch_data),
@@ -165,11 +173,15 @@ def run_validation(base_url: str = DEFAULT_BASE_URL, latency_calls: int = 100) -
     tests.append(
         verdict(
             "test_cache_behavior",
-            first.status_code == 200 and second.status_code == 200 and second.latency_ms < first.latency_ms,
+            first.status_code == 200
+            and second.status_code == 200
+            and second.latency_ms < first.latency_ms,
             details={
                 "first_latency_ms": round(first.latency_ms, 3),
                 "second_latency_ms": round(second.latency_ms, 3),
-                "speedup_ratio": round(first.latency_ms / second.latency_ms, 3) if second.latency_ms else None,
+                "speedup_ratio": round(first.latency_ms / second.latency_ms, 3)
+                if second.latency_ms
+                else None,
             },
         )
     )
@@ -202,7 +214,10 @@ def run_validation(base_url: str = DEFAULT_BASE_URL, latency_calls: int = 100) -
     tests.append(
         verdict(
             "test_dimensions_1024_512",
-            dim1024.status_code == 200 and dim512.status_code == 200 and dim1024_len == 1024 and dim512_len == 512,
+            dim1024.status_code == 200
+            and dim512.status_code == 200
+            and dim1024_len == 1024
+            and dim512_len == 512,
             details={
                 "dimension_1024_status_code": dim1024.status_code,
                 "dimension_1024_length": dim1024_len,
@@ -220,7 +235,10 @@ def run_validation(base_url: str = DEFAULT_BASE_URL, latency_calls: int = 100) -
     tests.append(
         verdict(
             "test_error_handling",
-            all(result.status_code >= 400 and result.payload.get("error") for result in invalid_cases.values()),
+            all(
+                result.status_code >= 400 and result.payload.get("error")
+                for result in invalid_cases.values()
+            ),
             details={
                 name: {"status_code": result.status_code, "error": result.payload.get("error")}
                 for name, result in invalid_cases.items()

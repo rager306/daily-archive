@@ -86,7 +86,14 @@ SAFE_TEXT_KEYS = {
 class LoaderEvidenceError(ValueError):
     """Typed validation error for deterministic CLI diagnostics."""
 
-    def __init__(self, code: str, message: str, *, identity: str | None = None, article_ref: str | None = None):
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        *,
+        identity: str | None = None,
+        article_ref: str | None = None,
+    ):
         super().__init__(message)
         self.code = code
         self.identity = identity
@@ -107,7 +114,10 @@ class RedactedLoaderEventLogger:
         if isinstance(source_path, str):
             resolved = Path(source_path).resolve()
             if not resolved.is_relative_to(self.source_dir):
-                raise LoaderEvidenceError("loader_event_source_path_escape", f"loader event source path escapes source-dir: {source_path}")
+                raise LoaderEvidenceError(
+                    "loader_event_source_path_escape",
+                    f"loader event source path escapes source-dir: {source_path}",
+                )
             safe_payload["source_path"] = resolved.relative_to(self.source_dir).as_posix()
         with self.log_path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(safe_payload, ensure_ascii=False, sort_keys=True) + "\n")
@@ -169,9 +179,15 @@ def safe_child_path(root: Path, rel_path: str, *, code: str = "unsafe_relative_p
     if not isinstance(rel_path, str) or not rel_path.strip():
         raise LoaderEvidenceError(code, f"empty unsafe relative path: {rel_path!r}")
     if "://" in rel_path:
-        raise LoaderEvidenceError("url_not_allowed_as_local_path", f"URL cannot be used as a local path: {rel_path}")
+        raise LoaderEvidenceError(
+            "url_not_allowed_as_local_path", f"URL cannot be used as a local path: {rel_path}"
+        )
     normalized = PurePosixPath(rel_path.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part in ("", ".") for part in normalized.parts):
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part in ("", ".") for part in normalized.parts)
+    ):
         raise LoaderEvidenceError(code, f"unsafe relative path: {rel_path}")
     root_resolved = root.resolve()
     resolved = (root_resolved / normalized.as_posix()).resolve()
@@ -189,7 +205,9 @@ def safe_article_segment(article_ref: str | None, article_key: str | None) -> st
     return "/".join(parts)
 
 
-def event_log_path(output_dir: Path, article_ref: str | None, article_key: str | None) -> tuple[Path, str]:
+def event_log_path(
+    output_dir: Path, article_ref: str | None, article_key: str | None
+) -> tuple[Path, str]:
     rel_path = f"{safe_article_segment(article_ref, article_key)}/events.jsonl"
     target = safe_child_path(output_dir, rel_path, code="unsafe_event_output_path")
     return target, target.relative_to(output_dir.resolve()).as_posix()
@@ -215,7 +233,14 @@ def source_type_for_row(row: Mapping[str, Any]) -> str:
     return "auto"
 
 
-def result_common(row: Mapping[str, Any], *, status: str, diagnostic_code: str, blocker_code: str | None, failure_reason: str | None) -> dict[str, Any]:
+def result_common(
+    row: Mapping[str, Any],
+    *,
+    status: str,
+    diagnostic_code: str,
+    blocker_code: str | None,
+    failure_reason: str | None,
+) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
         "milestone_id": MILESTONE_ID,
@@ -236,13 +261,21 @@ def result_common(row: Mapping[str, Any], *, status: str, diagnostic_code: str, 
         "blocker_code": blocker_code,
         "failure_reason": failure_reason,
         "local_path": string_value(row, "local_path"),
-        "safe_local_paths": [string_value(row, "local_path")] if string_value(row, "local_path") else [],
+        "safe_local_paths": [string_value(row, "local_path")]
+        if string_value(row, "local_path")
+        else [],
         "acquisition_status": string_value(row, "status"),
         "acquisition_diagnostic_code": string_value(row, "diagnostic_code"),
         "acquisition_sha256": string_value(row, "sha256"),
-        "acquisition_byte_size": row.get("byte_size") if isinstance(row.get("byte_size"), int) else None,
-        "is_metadata_only": row.get("is_metadata_only") if isinstance(row.get("is_metadata_only"), bool) else None,
-        "requires_conversion": row.get("requires_conversion") if isinstance(row.get("requires_conversion"), bool) else None,
+        "acquisition_byte_size": row.get("byte_size")
+        if isinstance(row.get("byte_size"), int)
+        else None,
+        "is_metadata_only": row.get("is_metadata_only")
+        if isinstance(row.get("is_metadata_only"), bool)
+        else None,
+        "requires_conversion": row.get("requires_conversion")
+        if isinstance(row.get("requires_conversion"), bool)
+        else None,
         "network_fetch_attempted": False,
         "network_fetch_allowed": False,
         "raw_text_embedded": False,
@@ -262,13 +295,19 @@ def result_common(row: Mapping[str, Any], *, status: str, diagnostic_code: str, 
     }
 
 
-def loader_blocker_from_acquisition(row: Mapping[str, Any], *, diagnostic_code: str | None = None, failure_reason: str | None = None) -> dict[str, Any]:
+def loader_blocker_from_acquisition(
+    row: Mapping[str, Any], *, diagnostic_code: str | None = None, failure_reason: str | None = None
+) -> dict[str, Any]:
     blocker = result_common(
         row,
         status="blocked",
         diagnostic_code=diagnostic_code or "acquisition_not_captured",
-        blocker_code=string_value(row, "blocker_code") or string_value(row, "diagnostic_code") or "acquisition_not_captured",
-        failure_reason=failure_reason or string_value(row, "failure_reason") or "acquisition row was not captured; loader not attempted",
+        blocker_code=string_value(row, "blocker_code")
+        or string_value(row, "diagnostic_code")
+        or "acquisition_not_captured",
+        failure_reason=failure_reason
+        or string_value(row, "failure_reason")
+        or "acquisition row was not captured; loader not attempted",
     )
     blocker.update(
         {
@@ -289,34 +328,78 @@ def loader_blocker_from_acquisition(row: Mapping[str, Any], *, diagnostic_code: 
     return blocker
 
 
-def loader_result_for_capture(row: Mapping[str, Any], *, source_dir: Path, output_dir: Path) -> dict[str, Any]:
+def loader_result_for_capture(
+    row: Mapping[str, Any], *, source_dir: Path, output_dir: Path
+) -> dict[str, Any]:
     local_path = string_value(row, "local_path")
     if local_path is None:
-        return loader_blocker_from_acquisition(row, diagnostic_code="captured_missing_local_path", failure_reason="captured row is missing local_path")
+        return loader_blocker_from_acquisition(
+            row,
+            diagnostic_code="captured_missing_local_path",
+            failure_reason="captured row is missing local_path",
+        )
     try:
         source_path = safe_child_path(source_dir, local_path, code="unsafe_captured_source_path")
     except LoaderEvidenceError as exc:
-        return loader_blocker_from_acquisition(row, diagnostic_code=exc.code, failure_reason=str(exc))
+        return loader_blocker_from_acquisition(
+            row, diagnostic_code=exc.code, failure_reason=str(exc)
+        )
 
     if not source_path.exists():
-        return loader_blocker_from_acquisition(row, diagnostic_code="captured_source_missing", failure_reason="captured artifact is absent from source-dir")
+        return loader_blocker_from_acquisition(
+            row,
+            diagnostic_code="captured_source_missing",
+            failure_reason="captured artifact is absent from source-dir",
+        )
     actual_sha = sha256_file(source_path)
     expected_sha = string_value(row, "sha256")
     if expected_sha and actual_sha != expected_sha:
-        return loader_blocker_from_acquisition(row, diagnostic_code="captured_hash_mismatch", failure_reason="captured artifact sha256 does not match acquisition summary")
+        return loader_blocker_from_acquisition(
+            row,
+            diagnostic_code="captured_hash_mismatch",
+            failure_reason="captured artifact sha256 does not match acquisition summary",
+        )
     expected_size = row.get("byte_size") if isinstance(row.get("byte_size"), int) else None
     actual_size = source_path.stat().st_size
     if expected_size is not None and actual_size != expected_size:
-        return loader_blocker_from_acquisition(row, diagnostic_code="captured_size_mismatch", failure_reason="captured artifact byte_size does not match acquisition summary")
+        return loader_blocker_from_acquisition(
+            row,
+            diagnostic_code="captured_size_mismatch",
+            failure_reason="captured artifact byte_size does not match acquisition summary",
+        )
 
-    log_path, event_rel = event_log_path(output_dir, string_value(row, "article_ref"), string_value(row, "article_key"))
+    log_path, event_rel = event_log_path(
+        output_dir, string_value(row, "article_ref"), string_value(row, "article_key")
+    )
     result = load_article_source(
-        ArticleLoadSource(source_path, paper_id=string_value(row, "article_key"), source_type=source_type_for_row(row)),
+        ArticleLoadSource(
+            source_path,
+            paper_id=string_value(row, "article_key"),
+            source_type=source_type_for_row(row),
+        ),
         logger=RedactedLoaderEventLogger(log_path, source_dir=source_dir),
     )
-    diagnostic_code = "loader_loaded" if result.outcome == "loaded" else ("loader_loaded_metadata_only" if result.outcome == "loaded_metadata_only" else f"loader_{result.failure_reason or 'failed'}")
-    status = "loaded" if result.outcome == "loaded" else ("loaded_metadata_only" if result.outcome == "loaded_metadata_only" else "failed")
-    evidence = result_common(row, status=status, diagnostic_code=diagnostic_code, blocker_code=None, failure_reason=result.failure_reason)
+    diagnostic_code = (
+        "loader_loaded"
+        if result.outcome == "loaded"
+        else (
+            "loader_loaded_metadata_only"
+            if result.outcome == "loaded_metadata_only"
+            else f"loader_{result.failure_reason or 'failed'}"
+        )
+    )
+    status = (
+        "loaded"
+        if result.outcome == "loaded"
+        else ("loaded_metadata_only" if result.outcome == "loaded_metadata_only" else "failed")
+    )
+    evidence = result_common(
+        row,
+        status=status,
+        diagnostic_code=diagnostic_code,
+        blocker_code=None,
+        failure_reason=result.failure_reason,
+    )
     evidence.update(
         {
             "loader_attempted": True,
@@ -337,14 +420,24 @@ def loader_result_for_capture(row: Mapping[str, Any], *, source_dir: Path, outpu
     return evidence
 
 
-def validate_selection_alignment(selection: Mapping[str, Any], acquisition: Mapping[str, Any]) -> None:
+def validate_selection_alignment(
+    selection: Mapping[str, Any], acquisition: Mapping[str, Any]
+) -> None:
     if selection.get("selection_id") != acquisition.get("selection_id"):
-        raise LoaderEvidenceError("selection_acquisition_mismatch", "selection_id mismatch between selection and acquisition summary")
+        raise LoaderEvidenceError(
+            "selection_acquisition_mismatch",
+            "selection_id mismatch between selection and acquisition summary",
+        )
     if acquisition.get("schema_version") != "m031-catalog-backed-acquisition.v1":
-        raise LoaderEvidenceError("unexpected_acquisition_schema", "acquisition summary schema is not m031-catalog-backed-acquisition.v1")
+        raise LoaderEvidenceError(
+            "unexpected_acquisition_schema",
+            "acquisition summary schema is not m031-catalog-backed-acquisition.v1",
+        )
     results = acquisition.get("results")
     if not isinstance(results, list):
-        raise LoaderEvidenceError("malformed_acquisition_results", "acquisition summary results must be a list")
+        raise LoaderEvidenceError(
+            "malformed_acquisition_results", "acquisition summary results must be a list"
+        )
 
 
 def replay_loader_evidence(
@@ -364,9 +457,13 @@ def replay_loader_evidence(
     rows: list[dict[str, Any]] = []
     for row in acquisition["results"]:
         if not isinstance(row, Mapping):
-            raise LoaderEvidenceError("malformed_acquisition_result", "acquisition result rows must be objects")
+            raise LoaderEvidenceError(
+                "malformed_acquisition_result", "acquisition result rows must be objects"
+            )
         if string_value(row, "status") == "captured":
-            rows.append(loader_result_for_capture(row, source_dir=source_dir, output_dir=output_dir))
+            rows.append(
+                loader_result_for_capture(row, source_dir=source_dir, output_dir=output_dir)
+            )
         else:
             rows.append(loader_blocker_from_acquisition(row))
     return rows
@@ -389,11 +486,19 @@ def build_summary(
         "failed": outcomes.get("failed", 0),
         "loader_blocked": outcomes.get("blocked", 0),
     }
-    per_identity: dict[str, dict[str, int]] = defaultdict(lambda: {"loaded": 0, "loaded_metadata_only": 0, "failed": 0, "blocked": 0})
-    per_role: dict[str, dict[str, int]] = defaultdict(lambda: {"loaded": 0, "loaded_metadata_only": 0, "failed": 0, "blocked": 0})
+    per_identity: dict[str, dict[str, int]] = defaultdict(
+        lambda: {"loaded": 0, "loaded_metadata_only": 0, "failed": 0, "blocked": 0}
+    )
+    per_role: dict[str, dict[str, int]] = defaultdict(
+        lambda: {"loaded": 0, "loaded_metadata_only": 0, "failed": 0, "blocked": 0}
+    )
     for row in rows:
-        identity = row.get("identity") if isinstance(row.get("identity"), str) else "<missing-identity>"
-        role = row.get("source_role") if isinstance(row.get("source_role"), str) else "<missing-role>"
+        identity = (
+            row.get("identity") if isinstance(row.get("identity"), str) else "<missing-identity>"
+        )
+        role = (
+            row.get("source_role") if isinstance(row.get("source_role"), str) else "<missing-role>"
+        )
         status = str(row.get("status"))
         if status in per_identity[identity]:
             per_identity[identity][status] += 1
@@ -403,11 +508,17 @@ def build_summary(
         "milestone_id": MILESTONE_ID,
         "slice_id": SLICE_ID,
         "selection_id": SELECTION_ID,
-        "status": "completed_with_diagnostics" if counts["loader_blocked"] or counts["failed"] else "loaded",
+        "status": "completed_with_diagnostics"
+        if counts["loader_blocked"] or counts["failed"]
+        else "loaded",
         "loader_row_count": len(rows),
         "counts": counts,
-        "per_identity_loader_state_counts": {key: dict(value) for key, value in sorted(per_identity.items())},
-        "per_role_loader_state_counts": {key: dict(value) for key, value in sorted(per_role.items())},
+        "per_identity_loader_state_counts": {
+            key: dict(value) for key, value in sorted(per_identity.items())
+        },
+        "per_role_loader_state_counts": {
+            key: dict(value) for key, value in sorted(per_role.items())
+        },
         "results": rows,
         "input_paths": {
             "selection": selection_path.as_posix(),
@@ -475,7 +586,11 @@ def render_report(summary: Mapping[str, Any]) -> str:
         "## Role Counts",
         "",
     ]
-    role_counts = summary.get("per_role_loader_state_counts") if isinstance(summary.get("per_role_loader_state_counts"), Mapping) else {}
+    role_counts = (
+        summary.get("per_role_loader_state_counts")
+        if isinstance(summary.get("per_role_loader_state_counts"), Mapping)
+        else {}
+    )
     for role, value in role_counts.items():
         if isinstance(value, Mapping):
             lines.append(
@@ -493,12 +608,16 @@ def render_report(summary: Mapping[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def validate_output_metadata_only(payload: Any, *, path: str = "$", in_safe_key: bool = False) -> None:
+def validate_output_metadata_only(
+    payload: Any, *, path: str = "$", in_safe_key: bool = False
+) -> None:
     if isinstance(payload, Mapping):
         for key, value in payload.items():
             safe_key = key in SAFE_TEXT_KEYS
             if key in FORBIDDEN_OUTPUT_KEYS:
-                raise LoaderEvidenceError("raw_payload_output_key", f"forbidden raw-payload output key at {path}.{key}")
+                raise LoaderEvidenceError(
+                    "raw_payload_output_key", f"forbidden raw-payload output key at {path}.{key}"
+                )
             validate_output_metadata_only(value, path=f"{path}.{key}", in_safe_key=safe_key)
     elif isinstance(payload, list):
         for index, item in enumerate(payload):
@@ -507,7 +626,9 @@ def validate_output_metadata_only(payload: Any, *, path: str = "$", in_safe_key:
         lowered = payload.lower()
         for snippet in FORBIDDEN_OUTPUT_SNIPPETS:
             if snippet.lower() in lowered and not in_safe_key:
-                raise LoaderEvidenceError("raw_payload_output_snippet", f"forbidden raw-payload snippet at {path}")
+                raise LoaderEvidenceError(
+                    "raw_payload_output_snippet", f"forbidden raw-payload snippet at {path}"
+                )
 
 
 def assert_metadata_artifact_is_redacted(path: Path) -> None:
@@ -515,25 +636,37 @@ def assert_metadata_artifact_is_redacted(path: Path) -> None:
     lowered = text.lower()
     found = [token for token in FORBIDDEN_OUTPUT_SNIPPETS if token.lower() in lowered]
     if found:
-        raise LoaderEvidenceError("raw_payload_artifact_snippet", f"metadata artifact is not redacted: {path}: {found}")
+        raise LoaderEvidenceError(
+            "raw_payload_artifact_snippet", f"metadata artifact is not redacted: {path}: {found}"
+        )
 
 
 def assert_fail_closed_flags(summary: Mapping[str, Any]) -> None:
     flag_map = summary.get("fail_closed_safety_flags")
     if not isinstance(flag_map, Mapping):
-        raise LoaderEvidenceError("missing_fail_closed_flags", "summary is missing fail_closed_safety_flags")
+        raise LoaderEvidenceError(
+            "missing_fail_closed_flags", "summary is missing fail_closed_safety_flags"
+        )
     for flag, expected in FAIL_CLOSED_SAFETY_FLAGS.items():
         if flag_map.get(flag) is not expected:
-            raise LoaderEvidenceError("unsafe_safety_flag", f"unexpected safety flag {flag}={flag_map.get(flag)!r}")
+            raise LoaderEvidenceError(
+                "unsafe_safety_flag", f"unexpected safety flag {flag}={flag_map.get(flag)!r}"
+            )
     for row in summary.get("results", []):
         if not isinstance(row, Mapping):
             continue
         row_flags = row.get("fail_closed_safety_flags")
         if not isinstance(row_flags, Mapping):
-            raise LoaderEvidenceError("missing_row_fail_closed_flags", "loader evidence row is missing fail_closed_safety_flags")
+            raise LoaderEvidenceError(
+                "missing_row_fail_closed_flags",
+                "loader evidence row is missing fail_closed_safety_flags",
+            )
         for flag, expected in FAIL_CLOSED_SAFETY_FLAGS.items():
             if row_flags.get(flag) is not expected:
-                raise LoaderEvidenceError("unsafe_safety_flag", f"unexpected row safety flag {flag}={row_flags.get(flag)!r}")
+                raise LoaderEvidenceError(
+                    "unsafe_safety_flag",
+                    f"unexpected row safety flag {flag}={row_flags.get(flag)!r}",
+                )
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -552,8 +685,19 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     started = time.perf_counter()
     try:
-        for cli_path in (args.selection, args.acquisition_summary, args.source_dir, args.output_dir, args.write_summary, args.write_diagnostics, args.write_report):
-            if not cli_path.is_absolute() and ".." in PurePosixPath(str(cli_path).replace("\\", "/")).parts:
+        for cli_path in (
+            args.selection,
+            args.acquisition_summary,
+            args.source_dir,
+            args.output_dir,
+            args.write_summary,
+            args.write_diagnostics,
+            args.write_report,
+        ):
+            if (
+                not cli_path.is_absolute()
+                and ".." in PurePosixPath(str(cli_path).replace("\\", "/")).parts
+            ):
                 raise LoaderEvidenceError("unsafe_cli_path", f"unsafe CLI path: {cli_path}")
         output_dir = args.output_dir.resolve()
         rows = replay_loader_evidence(
@@ -578,7 +722,17 @@ def main(argv: list[str] | None = None) -> int:
         atomic_write_text(args.write_report, report)
         for artifact_path in (args.write_summary, args.write_diagnostics, args.write_report):
             assert_metadata_artifact_is_redacted(artifact_path)
-        sys.stdout.write(json.dumps({"status": summary["status"], "counts": summary["counts"], "summary": args.write_summary.as_posix()}, sort_keys=True) + "\n")
+        sys.stdout.write(
+            json.dumps(
+                {
+                    "status": summary["status"],
+                    "counts": summary["counts"],
+                    "summary": args.write_summary.as_posix(),
+                },
+                sort_keys=True,
+            )
+            + "\n"
+        )
         return 0 if summary["counts"]["failed"] == 0 else 1
     except LoaderEvidenceError as exc:
         sys.stderr.write(

@@ -189,7 +189,9 @@ def _relative_paths(root: Path, paths: dict[str, Path]) -> dict[str, Path]:
     return {key: path.relative_to(root) for key, path in paths.items()}
 
 
-def test_positive_cli_writes_requested_outputs_under_validation_remediation(tmp_path: Path, monkeypatch) -> None:
+def test_positive_cli_writes_requested_outputs_under_validation_remediation(
+    tmp_path: Path, monkeypatch
+) -> None:
     paths = _relative_paths(tmp_path, _write_fixture_tree(tmp_path))
     monkeypatch.chdir(tmp_path)
     evidence_out = OUTPUT_DIR / "evidence.json"
@@ -213,7 +215,12 @@ def test_positive_cli_writes_requested_outputs_under_validation_remediation(tmp_
     )
 
     assert exit_code == 0
-    assert json.loads(evidence_out.read_text(encoding="utf-8"))["s02_assessment_reconciliation"]["fresh_65_pass_evidence_present"] is True
+    assert (
+        json.loads(evidence_out.read_text(encoding="utf-8"))["s02_assessment_reconciliation"][
+            "fresh_65_pass_evidence_present"
+        ]
+        is True
+    )
     report = report_out.read_text(encoding="utf-8")
     assert "M031 Validation Remediation Dossier" in report
     assert "## Reader Action" in report
@@ -222,8 +229,12 @@ def test_positive_cli_writes_requested_outputs_under_validation_remediation(tmp_
     assert "S06 does not enable production graph import or LadybugDB writes" in report
     assert "## Milestone Validation Handoff Snippets" in report
     assert json.loads(summary_out.read_text(encoding="utf-8"))["status"] == "passed"
-    diagnostic_rows = [json.loads(line) for line in diagnostics_out.read_text(encoding="utf-8").splitlines()]
-    assert [row["code"] for row in diagnostic_rows].count("M031_VALIDATION_REMEDIATION_STALE_S02_ASSESSMENT_RECONCILED") == 1
+    diagnostic_rows = [
+        json.loads(line) for line in diagnostics_out.read_text(encoding="utf-8").splitlines()
+    ]
+    assert [row["code"] for row in diagnostic_rows].count(
+        "M031_VALIDATION_REMEDIATION_STALE_S02_ASSESSMENT_RECONCILED"
+    ) == 1
 
 
 def test_rejects_stale_s02_failure_without_fresh_65_pass_evidence() -> None:
@@ -233,11 +244,19 @@ def test_rejects_stale_s02_failure_without_fresh_65_pass_evidence() -> None:
 
     errors = validate_evidence(evidence)
 
-    assert any(error["code"] == "M031_VALIDATION_REMEDIATION_MISSING_S02_65_PASS_EVIDENCE" for error in errors)
+    assert any(
+        error["code"] == "M031_VALIDATION_REMEDIATION_MISSING_S02_65_PASS_EVIDENCE"
+        for error in errors
+    )
 
 
 def test_cli_rejects_missing_65_pass_evidence_before_writes(tmp_path: Path, monkeypatch) -> None:
-    paths = _relative_paths(tmp_path, _write_fixture_tree(tmp_path, summary="# S02 Summary\n36 passed only\n", uat="# S02 UAT\n36 passed only\n"))
+    paths = _relative_paths(
+        tmp_path,
+        _write_fixture_tree(
+            tmp_path, summary="# S02 Summary\n36 passed only\n", uat="# S02 UAT\n36 passed only\n"
+        ),
+    )
     monkeypatch.chdir(tmp_path)
     output = OUTPUT_DIR / "evidence.json"
 
@@ -249,16 +268,22 @@ def test_cli_rejects_missing_65_pass_evidence_before_writes(tmp_path: Path, monk
 
 def test_rejects_missing_requirement_rows() -> None:
     evidence = _evidence()
-    evidence["requirement_coverage"] = [row for row in evidence["requirement_coverage"] if row["requirement_id"] != "R050"]
+    evidence["requirement_coverage"] = [
+        row for row in evidence["requirement_coverage"] if row["requirement_id"] != "R050"
+    ]
 
     errors = validate_evidence(evidence)
 
-    assert any(error["code"] == "M031_VALIDATION_REMEDIATION_MISSING_REQUIREMENT_ROW" for error in errors)
+    assert any(
+        error["code"] == "M031_VALIDATION_REMEDIATION_MISSING_REQUIREMENT_ROW" for error in errors
+    )
 
 
 def test_rejects_missing_canonical_class_rows() -> None:
     evidence = _evidence()
-    evidence["canonical_verification_classes"] = [row for row in evidence["canonical_verification_classes"] if row["class"] != "UAT"]
+    evidence["canonical_verification_classes"] = [
+        row for row in evidence["canonical_verification_classes"] if row["class"] != "UAT"
+    ]
 
     errors = validate_evidence(evidence)
 
@@ -281,7 +306,9 @@ def test_rejects_raw_payload_and_key_leakage() -> None:
 
     errors = validate_evidence(evidence)
 
-    assert any(error["code"] == "M031_VALIDATION_REMEDIATION_RAW_PAYLOAD_LEAKAGE" for error in errors)
+    assert any(
+        error["code"] == "M031_VALIDATION_REMEDIATION_RAW_PAYLOAD_LEAKAGE" for error in errors
+    )
 
 
 def test_rejects_permissive_graph_import_claims() -> None:
@@ -292,8 +319,13 @@ def test_rejects_permissive_graph_import_claims() -> None:
 
     errors = validate_evidence(evidence)
 
-    assert any(error["code"] == "M031_VALIDATION_REMEDIATION_PERMISSIVE_GRAPH_IMPORT_CLAIM" for error in errors)
-    assert any(error["code"] == "M031_VALIDATION_REMEDIATION_FORBIDDEN_POSITIVE_CLAIM" for error in errors)
+    assert any(
+        error["code"] == "M031_VALIDATION_REMEDIATION_PERMISSIVE_GRAPH_IMPORT_CLAIM"
+        for error in errors
+    )
+    assert any(
+        error["code"] == "M031_VALIDATION_REMEDIATION_FORBIDDEN_POSITIVE_CLAIM" for error in errors
+    )
 
 
 def test_rejects_malformed_diagnostics() -> None:
@@ -304,15 +336,21 @@ def test_rejects_malformed_diagnostics() -> None:
 
     errors = validate_diagnostics_rows(malformed)
 
-    assert any(error["code"] == "M031_VALIDATION_REMEDIATION_MALFORMED_DIAGNOSTIC" for error in errors)
+    assert any(
+        error["code"] == "M031_VALIDATION_REMEDIATION_MALFORMED_DIAGNOSTIC" for error in errors
+    )
 
 
 def test_cli_rejects_malformed_json_and_jsonl(tmp_path: Path, monkeypatch) -> None:
-    malformed_json_paths = _relative_paths(tmp_path, _write_fixture_tree(tmp_path, malformed_json=True))
+    malformed_json_paths = _relative_paths(
+        tmp_path, _write_fixture_tree(tmp_path, malformed_json=True)
+    )
     monkeypatch.chdir(tmp_path)
     assert main(_args(malformed_json_paths)) == 2
 
-    malformed_jsonl_paths = _relative_paths(tmp_path, _write_fixture_tree(tmp_path, malformed_jsonl=True))
+    malformed_jsonl_paths = _relative_paths(
+        tmp_path, _write_fixture_tree(tmp_path, malformed_jsonl=True)
+    )
     assert main(_args(malformed_jsonl_paths)) == 2
 
 
@@ -321,10 +359,21 @@ def test_rejects_path_traversal_and_out_of_corpus_outputs(tmp_path: Path, monkey
     monkeypatch.chdir(tmp_path)
 
     assert main(_args(paths, "--write-evidence", "../outside.json")) == 2
-    assert main(_args(paths, "--write-evidence", "data/article_corpora/m031-catalog-backed-replay-v1/not-remediation/evidence.json")) == 2
+    assert (
+        main(
+            _args(
+                paths,
+                "--write-evidence",
+                "data/article_corpora/m031-catalog-backed-replay-v1/not-remediation/evidence.json",
+            )
+        )
+        == 2
+    )
 
 
-def test_validate_only_without_write_creates_no_output_directory(tmp_path: Path, monkeypatch) -> None:
+def test_validate_only_without_write_creates_no_output_directory(
+    tmp_path: Path, monkeypatch
+) -> None:
     paths = _relative_paths(tmp_path, _write_fixture_tree(tmp_path))
     monkeypatch.chdir(tmp_path)
 

@@ -69,7 +69,9 @@ def run(argv: list[str]) -> int:
 
     with tempfile.TemporaryDirectory(prefix="article-catalog-selection-") as tmp_dir:
         selection_path = Path(tmp_dir) / "selection.json"
-        selection_path.write_text(json.dumps(build_default_selection(DEFAULT_INDEX), indent=2) + "\n", encoding="utf-8")
+        selection_path.write_text(
+            json.dumps(build_default_selection(DEFAULT_INDEX), indent=2) + "\n", encoding="utf-8"
+        )
         return run_core(
             [
                 argv[0],

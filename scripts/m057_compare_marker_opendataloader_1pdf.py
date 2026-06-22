@@ -5,6 +5,7 @@ After the env fix (transformers 4.57.6), Marker actually runs end-to-end.
 This script emits the comparison for 2605.28617v1 with real values
 (replacing the previous "marker_unavailable" placeholder data).
 """
+
 from __future__ import annotations
 
 import json
@@ -25,9 +26,9 @@ MARKER_PACKET = json.loads(
     (OUTPUT_ROOT / "marker-extraction/per-pdf/2605.28617v1.json").read_text(encoding="utf-8")
 )
 ODL_PACKET = json.loads(
-    Path("artifacts/m055deep-parser-benchmark/opendataloader-20/per-pdf/2605.28617v1.json").read_text(
-        encoding="utf-8"
-    )
+    Path(
+        "artifacts/m055deep-parser-benchmark/opendataloader-20/per-pdf/2605.28617v1.json"
+    ).read_text(encoding="utf-8")
 )
 
 comparison = {

@@ -184,7 +184,9 @@ def test_manifest_rejects_nested_raw_binary_or_embedding_leakage_without_echoing
     assert validation.valid_manifest is False
     assert validation.refusal_counts["raw_content_leakage"] >= 1
     assert validation.refusal_counts["embedding_leakage"] >= 1
-    serialized_diagnostics = json.dumps([diagnostic.__dict__ for diagnostic in validation.diagnostics])
+    serialized_diagnostics = json.dumps(
+        [diagnostic.__dict__ for diagnostic in validation.diagnostics]
+    )
     assert leaked_value not in serialized_diagnostics
     assert "0.1" not in serialized_diagnostics
 
@@ -263,8 +265,15 @@ def test_preserve_source_assets_manifest_writes_redacted_run_artifacts(tmp_path:
     write_source_asset_run(result, out)
 
     summary = json.loads((out / "source-preservation-summary.json").read_text(encoding="utf-8"))
-    diagnostics = [json.loads(line) for line in (out / "source-asset-package-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()]
-    per_paper_manifest = json.loads((out / "manifests" / "p2-source-assets.json").read_text(encoding="utf-8"))
+    diagnostics = [
+        json.loads(line)
+        for line in (out / "source-asset-package-diagnostics.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
+    per_paper_manifest = json.loads(
+        (out / "manifests" / "p2-source-assets.json").read_text(encoding="utf-8")
+    )
     assert summary["paper_count"] == 1
     assert summary["valid_manifest_count"] == 1
     assert summary["source_file_count"] == 2
@@ -272,7 +281,9 @@ def test_preserve_source_assets_manifest_writes_redacted_run_artifacts(tmp_path:
     assert diagnostics[0]["valid_manifest"] is True
     assert diagnostics[0]["source_file_count"] == 2
     assert validate_source_asset_manifest(per_paper_manifest).valid_manifest is True
-    serialized = json.dumps({"summary": summary, "diagnostics": diagnostics, "manifest": per_paper_manifest})
+    serialized = json.dumps(
+        {"summary": summary, "diagnostics": diagnostics, "manifest": per_paper_manifest}
+    )
     assert "Raw markdown content" not in serialized
     assert "%PDF fixture" not in serialized
     assert summary["raw_binary_included"] is False
@@ -283,7 +294,9 @@ def test_preserve_source_assets_manifest_writes_redacted_run_artifacts(tmp_path:
 def test_attach_annotation_asset_links_creates_redacted_assets(tmp_path: Path) -> None:
     paper_dir = tmp_path / "paper"
     paper_dir.mkdir()
-    (paper_dir / "full_text.md").write_text("# Paper\n\nTable text stays in source only.\n", encoding="utf-8")
+    (paper_dir / "full_text.md").write_text(
+        "# Paper\n\nTable text stays in source only.\n", encoding="utf-8"
+    )
     manifest = preserve_source_assets_for_paper(
         {"paper_id": "p3", "required_paths": [str(paper_dir)]},
         workspace_root=tmp_path / "out",
@@ -310,7 +323,10 @@ def test_attach_annotation_asset_links_creates_redacted_assets(tmp_path: Path) -
                         "state": "ok_for_retrieval_only",
                         "annotation_types": ["structural_type", "asset_link_hint"],
                         "confidence_classes": ["deterministic", "heuristic"],
-                        "warning_codes": ["asset_manifest_required", "figure_route_not_import_ready"],
+                        "warning_codes": [
+                            "asset_manifest_required",
+                            "figure_route_not_import_ready",
+                        ],
                     },
                     {
                         "chunk_id": "p3:chunk-prose",
@@ -374,23 +390,48 @@ def test_attach_annotation_asset_links_creates_redacted_assets(tmp_path: Path) -
     assert {asset["asset_type"] for asset in linked["assets"]} == {"table", "figure"}
     assert all(asset["promoted_to_fact"] is False for asset in linked["assets"])
     assert all("trusted_kg_import" in asset["excluded_uses"] for asset in linked["assets"])
-    assert all(asset["source_span"]["coordinate_space"] == "normalized_markdown" for asset in linked["assets"])
+    assert all(
+        asset["source_span"]["coordinate_space"] == "normalized_markdown"
+        for asset in linked["assets"]
+    )
     serialized = json.dumps(linked)
     assert "Table text stays" not in serialized
     assert "base64" in serialized
 
 
-def test_attach_annotation_asset_links_counts_reference_equation_and_metadata(tmp_path: Path) -> None:
-    manifest = SourceAssetManifest(paper_id="p4", workspace_root=str(tmp_path / "papers" / "p4")).to_contract()
+def test_attach_annotation_asset_links_counts_reference_equation_and_metadata(
+    tmp_path: Path,
+) -> None:
+    manifest = SourceAssetManifest(
+        paper_id="p4", workspace_root=str(tmp_path / "papers" / "p4")
+    ).to_contract()
     annotation_path = tmp_path / "annotations.jsonl"
     annotation_path.write_text(
         json.dumps(
             {
                 "paper_id": "p4",
                 "chunk_annotation_coverage": [
-                    {"chunk_id": "p4:eq", "chunk_type": "equation_context", "route": "retrieval_only", "state": "ok_for_retrieval_only", "warning_codes": []},
-                    {"chunk_id": "p4:ref", "chunk_type": "reference_entry", "route": "citation_graph", "state": "repair_required", "warning_codes": []},
-                    {"chunk_id": "p4:meta", "chunk_type": "metadata", "route": "metadata_graph", "state": "repair_required", "warning_codes": []},
+                    {
+                        "chunk_id": "p4:eq",
+                        "chunk_type": "equation_context",
+                        "route": "retrieval_only",
+                        "state": "ok_for_retrieval_only",
+                        "warning_codes": [],
+                    },
+                    {
+                        "chunk_id": "p4:ref",
+                        "chunk_type": "reference_entry",
+                        "route": "citation_graph",
+                        "state": "repair_required",
+                        "warning_codes": [],
+                    },
+                    {
+                        "chunk_id": "p4:meta",
+                        "chunk_type": "metadata",
+                        "route": "metadata_graph",
+                        "state": "repair_required",
+                        "warning_codes": [],
+                    },
                 ],
             }
         )
@@ -398,20 +439,34 @@ def test_attach_annotation_asset_links_counts_reference_equation_and_metadata(tm
         encoding="utf-8",
     )
 
-    linked = attach_annotation_asset_links((manifest,), annotation_diagnostics_path=annotation_path)[0]
+    linked = attach_annotation_asset_links(
+        (manifest,), annotation_diagnostics_path=annotation_path
+    )[0]
 
     assert validate_source_asset_manifest(linked).valid_manifest is True
-    assert linked["diagnostics"]["asset_counts_by_type"] == {"equation": 1, "metadata": 1, "reference": 1}
+    assert linked["diagnostics"]["asset_counts_by_type"] == {
+        "equation": 1,
+        "metadata": 1,
+        "reference": 1,
+    }
     assert linked["diagnostics"]["extraction_state_counts"] == {"linked_not_extracted": 3}
     assert all(asset["source_span"] is None for asset in linked["assets"])
-    assert all(any(warning["code"] == "missing_source_span" for warning in asset["warnings"]) for asset in linked["assets"])
-    assert all(any(warning["code"] == "missing_preserved_source_file" for warning in asset["warnings"]) for asset in linked["assets"])
+    assert all(
+        any(warning["code"] == "missing_source_span" for warning in asset["warnings"])
+        for asset in linked["assets"]
+    )
+    assert all(
+        any(warning["code"] == "missing_preserved_source_file" for warning in asset["warnings"])
+        for asset in linked["assets"]
+    )
 
 
 def test_build_source_asset_run_combines_preservation_and_annotation_links(tmp_path: Path) -> None:
     paper_dir = tmp_path / "paper"
     paper_dir.mkdir()
-    (paper_dir / "full_text.md").write_text("# Paper\n\nFigure caption raw content.\n", encoding="utf-8")
+    (paper_dir / "full_text.md").write_text(
+        "# Paper\n\nFigure caption raw content.\n", encoding="utf-8"
+    )
     manifest_path = tmp_path / "gold.json"
     manifest_path.write_text(
         json.dumps({"papers": [{"paper_id": "p5", "required_paths": [str(paper_dir)]}]}),

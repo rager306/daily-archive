@@ -271,16 +271,26 @@ def _read_text(path: Path, label: str) -> str:
 
 def _is_repo_relative_path(value: str) -> bool:
     path = Path(value)
-    return bool(value) and not path.is_absolute() and "://" not in value and "" not in path.parts and ".." not in path.parts
+    return (
+        bool(value)
+        and not path.is_absolute()
+        and "://" not in value
+        and "" not in path.parts
+        and ".." not in path.parts
+    )
 
 
-def _validate_repo_relative_path(value: Any, path: str, *, require_supported_suffix: bool = True) -> list[str]:
+def _validate_repo_relative_path(
+    value: Any, path: str, *, require_supported_suffix: bool = True
+) -> list[str]:
     if not isinstance(value, str):
         return [f"{path} must be a string repo-relative path"]
     if not value or value.strip() != value:
         return [f"{path} must not be blank or padded: {value!r}"]
     if not _is_repo_relative_path(value):
-        return [f"{path} must be repo-relative and must not contain traversal or URL syntax: {value}"]
+        return [
+            f"{path} must be repo-relative and must not contain traversal or URL syntax: {value}"
+        ]
     suffix = Path(value).suffix
     if require_supported_suffix and suffix and suffix not in ALLOWED_EVIDENCE_SUFFIXES:
         return [f"{path} has unsupported evidence suffix: {value}"]
@@ -388,7 +398,9 @@ def validate_safety_flags(audit: dict[str, Any]) -> list[str]:
 
 def validate_classes(audit: dict[str, Any], *, require_pass_classes: bool) -> list[str]:
     errors: list[str] = []
-    class_rows, row_errors = _class_rows_by_name(audit.get("canonical_verification_classes"), "$.canonical_verification_classes")
+    class_rows, row_errors = _class_rows_by_name(
+        audit.get("canonical_verification_classes"), "$.canonical_verification_classes"
+    )
     errors.extend(row_errors)
     actual = set(class_rows)
     expected = set(CANONICAL_CLASSES)
@@ -396,9 +408,13 @@ def validate_classes(audit: dict[str, Any], *, require_pass_classes: bool) -> li
         missing = sorted(expected - actual)
         extra = sorted(actual - expected)
         if missing:
-            errors.append(f"$.canonical_verification_classes missing canonical classes: {', '.join(missing)}")
+            errors.append(
+                f"$.canonical_verification_classes missing canonical classes: {', '.join(missing)}"
+            )
         if extra:
-            errors.append(f"$.canonical_verification_classes has unexpected classes: {', '.join(extra)}")
+            errors.append(
+                f"$.canonical_verification_classes has unexpected classes: {', '.join(extra)}"
+            )
     for class_name in CANONICAL_CLASSES:
         row = class_rows.get(class_name)
         if row is None:
@@ -413,7 +429,9 @@ def validate_classes(audit: dict[str, Any], *, require_pass_classes: bool) -> li
             errors.append(f"{class_path}.evidence_paths must be a non-empty list")
         else:
             for index, evidence in enumerate(evidence_paths):
-                errors.extend(_validate_repo_relative_path(evidence, f"{class_path}.evidence_paths[{index}]"))
+                errors.extend(
+                    _validate_repo_relative_path(evidence, f"{class_path}.evidence_paths[{index}]")
+                )
         if not isinstance(row.get("safe_claim"), str) or not row.get("safe_claim"):
             errors.append(f"{class_path}.safe_claim must be a non-empty string")
         if not isinstance(row.get("must_not_claim"), list) or not row.get("must_not_claim"):
@@ -430,9 +448,13 @@ def validate_classes(audit: dict[str, Any], *, require_pass_classes: bool) -> li
         missing = sorted(expected - set(rerun_rows))
         extra = sorted(set(rerun_rows) - expected)
         if missing:
-            errors.append(f"$.rerun_ready_validation_inputs.verification_classes missing classes: {', '.join(missing)}")
+            errors.append(
+                f"$.rerun_ready_validation_inputs.verification_classes missing classes: {', '.join(missing)}"
+            )
         if extra:
-            errors.append(f"$.rerun_ready_validation_inputs.verification_classes has unexpected classes: {', '.join(extra)}")
+            errors.append(
+                f"$.rerun_ready_validation_inputs.verification_classes has unexpected classes: {', '.join(extra)}"
+            )
     for class_name in CANONICAL_CLASSES:
         source = class_rows.get(class_name)
         rerun = rerun_rows.get(class_name)
@@ -450,7 +472,9 @@ def validate_classes(audit: dict[str, Any], *, require_pass_classes: bool) -> li
             if evidence != source.get("evidence_paths"):
                 errors.append(f"{rerun_path}.evidence must match canonical class evidence_paths")
             for index, evidence_path in enumerate(evidence):
-                errors.extend(_validate_repo_relative_path(evidence_path, f"{rerun_path}.evidence[{index}]"))
+                errors.extend(
+                    _validate_repo_relative_path(evidence_path, f"{rerun_path}.evidence[{index}]")
+                )
     return errors
 
 
@@ -463,13 +487,21 @@ def validate_requirement_interpretation(audit: dict[str, Any], matrix: dict[str,
     if matrix.get("metadata_only") is not True:
         errors.append("matrix $.metadata_only must be true")
 
-    declared_required = audit.get("scope_matrix", {}).get("required_requirement_ids") if isinstance(audit.get("scope_matrix"), dict) else None
+    declared_required = (
+        audit.get("scope_matrix", {}).get("required_requirement_ids")
+        if isinstance(audit.get("scope_matrix"), dict)
+        else None
+    )
     if set(declared_required or []) != set(REQUIRED_REQUIREMENT_IDS):
-        errors.append("$.scope_matrix.required_requirement_ids must exactly match the 27 S05 requirement IDs")
+        errors.append(
+            "$.scope_matrix.required_requirement_ids must exactly match the 27 S05 requirement IDs"
+        )
 
     matrix_required = matrix.get("required_requirement_ids")
     if set(matrix_required or []) != set(REQUIRED_REQUIREMENT_IDS):
-        errors.append("matrix $.required_requirement_ids must exactly match the 27 S05 requirement IDs")
+        errors.append(
+            "matrix $.required_requirement_ids must exactly match the 27 S05 requirement IDs"
+        )
 
     audit_rows, audit_row_errors = _rows_by_requirement(
         audit.get("requirement_coverage_interpretation", {}).get("requirement_rows")
@@ -477,18 +509,26 @@ def validate_requirement_interpretation(audit: dict[str, Any], matrix: dict[str,
         else None,
         "$.requirement_coverage_interpretation.requirement_rows",
     )
-    matrix_rows, matrix_row_errors = _rows_by_requirement(matrix.get("requirements"), "matrix $.requirements")
+    matrix_rows, matrix_row_errors = _rows_by_requirement(
+        matrix.get("requirements"), "matrix $.requirements"
+    )
     errors.extend(audit_row_errors)
     errors.extend(matrix_row_errors)
 
     missing_audit = sorted(set(REQUIRED_REQUIREMENT_IDS) - set(audit_rows))
     missing_matrix = sorted(set(REQUIRED_REQUIREMENT_IDS) - set(matrix_rows))
     if missing_audit:
-        errors.append(f"$.requirement_coverage_interpretation.requirement_rows missing ids: {', '.join(missing_audit)}")
+        errors.append(
+            f"$.requirement_coverage_interpretation.requirement_rows missing ids: {', '.join(missing_audit)}"
+        )
     if missing_matrix:
         errors.append(f"matrix $.requirements missing ids: {', '.join(missing_matrix)}")
 
-    required_semantics = audit.get("requirement_coverage_interpretation", {}).get("required_semantics") if isinstance(audit.get("requirement_coverage_interpretation"), dict) else None
+    required_semantics = (
+        audit.get("requirement_coverage_interpretation", {}).get("required_semantics")
+        if isinstance(audit.get("requirement_coverage_interpretation"), dict)
+        else None
+    )
     if not isinstance(required_semantics, dict):
         errors.append("$.requirement_coverage_interpretation.required_semantics must be an object")
         required_semantics = {}
@@ -498,12 +538,16 @@ def validate_requirement_interpretation(audit: dict[str, Any], matrix: dict[str,
         matrix_row = matrix_rows.get(rid)
         for key, expected_value in expected.items():
             if row is not None and row.get(key) != expected_value:
-                errors.append(f"$.requirement_coverage_interpretation.requirement_rows[{rid}].{key} must be {expected_value!r}")
+                errors.append(
+                    f"$.requirement_coverage_interpretation.requirement_rows[{rid}].{key} must be {expected_value!r}"
+                )
             if matrix_row is not None and matrix_row.get(key) != expected_value:
                 errors.append(f"matrix $.requirements[{rid}].{key} must be {expected_value!r}")
         semantics = required_semantics.get(rid)
         if not isinstance(semantics, dict):
-            errors.append(f"$.requirement_coverage_interpretation.required_semantics.{rid} must be present")
+            errors.append(
+                f"$.requirement_coverage_interpretation.required_semantics.{rid} must be present"
+            )
         elif semantics.get("classification") != expected["m026_applicability"]:
             errors.append(
                 f"$.requirement_coverage_interpretation.required_semantics.{rid}.classification must be {expected['m026_applicability']!r}"
@@ -530,25 +574,45 @@ def validate_requirement_interpretation(audit: dict[str, Any], matrix: dict[str,
                 continue
             if candidate.get("current_status") != "validated":
                 errors.append(f"{label} {rid} must remain existing validated context")
-            if candidate.get("recommended_requirement_action") != "preserve_existing_validated_status":
-                errors.append(f"{label} {rid} recommended action must preserve existing validated status")
+            if (
+                candidate.get("recommended_requirement_action")
+                != "preserve_existing_validated_status"
+            ):
+                errors.append(
+                    f"{label} {rid} recommended action must preserve existing validated status"
+                )
 
     for rid in sorted(set(REQUIRED_REQUIREMENT_IDS) & set(audit_rows) & set(matrix_rows)):
-        for key in ("current_status", "m026_applicability", "s05_verdict", "recommended_requirement_action"):
+        for key in (
+            "current_status",
+            "m026_applicability",
+            "s05_verdict",
+            "recommended_requirement_action",
+        ):
             if audit_rows[rid].get(key) != matrix_rows[rid].get(key):
                 errors.append(f"{rid} {key} mismatch between audit and matrix")
 
     broad_text = required_semantics.get("broad_active_requirements")
-    if not isinstance(broad_text, str) or not all(rid in broad_text for rid in BROAD_ACTIVE_OUT_OF_SCOPE_REQUIREMENTS):
-        errors.append("$.requirement_coverage_interpretation.required_semantics.broad_active_requirements must name all broad out-of-scope active requirements")
+    if not isinstance(broad_text, str) or not all(
+        rid in broad_text for rid in BROAD_ACTIVE_OUT_OF_SCOPE_REQUIREMENTS
+    ):
+        errors.append(
+            "$.requirement_coverage_interpretation.required_semantics.broad_active_requirements must name all broad out-of-scope active requirements"
+        )
     context_text = required_semantics.get("historical_validated_requirements")
     if not isinstance(context_text, str):
-        errors.append("$.requirement_coverage_interpretation.required_semantics.historical_validated_requirements must name all existing validated context requirements")
+        errors.append(
+            "$.requirement_coverage_interpretation.required_semantics.historical_validated_requirements must name all existing validated context requirements"
+        )
     else:
         missing_context = [
             rid
             for rid in sorted(EXISTING_CONTEXT_REQUIREMENTS)
-            if rid not in context_text and not (rid in {f"R00{number}" for number in range(1, 10)} | {"R010"} and "R001-R010" in context_text)
+            if rid not in context_text
+            and not (
+                rid in {f"R00{number}" for number in range(1, 10)} | {"R010"}
+                and "R001-R010" in context_text
+            )
         ]
         if missing_context:
             errors.append(
@@ -575,7 +639,9 @@ def validate_unsafe_claims(audit: dict[str, Any], rendered_markdown: str) -> lis
     scan_markdown = _strip_markdown_forbidden_section(rendered_markdown).lower()
     for phrase in sorted(UNSAFE_POSITIVE_CLAIM_PHRASES):
         if phrase in scan_markdown:
-            errors.append(f"markdown outside ## Forbidden Claims contains unsafe positive claim phrase: {phrase}")
+            errors.append(
+                f"markdown outside ## Forbidden Claims contains unsafe positive claim phrase: {phrase}"
+            )
     return errors
 
 
@@ -605,7 +671,9 @@ def validate_rendered_markdown(audit: dict[str, Any], rendered_markdown: str) ->
     commands = []
     rerun_inputs = audit.get("rerun_ready_validation_inputs")
     if isinstance(rerun_inputs, dict):
-        commands = rerun_inputs.get("commands") if isinstance(rerun_inputs.get("commands"), list) else []
+        commands = (
+            rerun_inputs.get("commands") if isinstance(rerun_inputs.get("commands"), list) else []
+        )
     required_markers.update(str(command) for command in commands if isinstance(command, str))
 
     for marker in sorted(required_markers):
@@ -677,7 +745,9 @@ def _criterion_supported_by_roadmap(criterion: str, roadmap: str) -> bool:
         "the",
         "with",
     }
-    tokens = {token for token in normalized_criterion.split() if len(token) > 3 and token not in stopwords}
+    tokens = {
+        token for token in normalized_criterion.split() if len(token) > 3 and token not in stopwords
+    }
     return bool(tokens) and tokens.issubset(set(normalized_roadmap.split()))
 
 
@@ -692,11 +762,17 @@ def validate_source_texts(audit: dict[str, Any], roadmap: str, validation: str) 
     else:
         for index, criterion in enumerate(roadmap_criteria):
             if not isinstance(criterion, str) or not criterion:
-                errors.append(f"$.criteria_source.roadmap_success_criteria[{index}] must be a non-empty string")
+                errors.append(
+                    f"$.criteria_source.roadmap_success_criteria[{index}] must be a non-empty string"
+                )
             elif not _criterion_supported_by_roadmap(criterion, roadmap):
-                errors.append(f"$.criteria_source.roadmap_success_criteria[{index}] not found in roadmap: {criterion}")
+                errors.append(
+                    f"$.criteria_source.roadmap_success_criteria[{index}] not found in roadmap: {criterion}"
+                )
     if "needs-remediation" not in validation:
-        errors.append("validation report must still show needs-remediation for current remediation input")
+        errors.append(
+            "validation report must still show needs-remediation for current remediation input"
+        )
     for marker in ("Requirement Coverage", "Verification Class Compliance", "Remediation Plan"):
         if marker not in validation:
             errors.append(f"validation report missing section marker: {marker}")
@@ -711,7 +787,9 @@ def validate_source_inputs(audit: dict[str, Any]) -> list[str]:
     required = {MATRIX_PATH, ROADMAP_PATH, VALIDATION_PATH}
     missing_required = sorted(required - set(inputs))
     if missing_required:
-        errors.append(f"$.source_inputs missing required source paths: {', '.join(missing_required)}")
+        errors.append(
+            f"$.source_inputs missing required source paths: {', '.join(missing_required)}"
+        )
     for index, value in enumerate(inputs):
         errors.extend(_validate_repo_relative_path(value, f"$.source_inputs[{index}]"))
     return errors
@@ -742,13 +820,34 @@ def validate_audit(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--audit", required=True, type=Path, help="Path to m026_validation_remediation_class_audit.json")
-    parser.add_argument("--rendered", required=True, type=Path, help="Path to rendered audit markdown")
-    parser.add_argument("--matrix", required=True, type=Path, help="Path to m026_requirement_scope_matrix.json")
-    parser.add_argument("--roadmap", required=True, type=Path, help="Path to M026 roadmap criteria source")
-    parser.add_argument("--validation", required=True, type=Path, help="Path to current M026 validation report")
-    parser.add_argument("--require-pass-classes", action="store_true", help="Require all canonical class rows to have PASS verdicts")
-    parser.add_argument("--reject-unsafe-claims", action="store_true", help="Reject unsafe positive closeout claims outside explicit forbidden-claims lists")
+    parser.add_argument(
+        "--audit",
+        required=True,
+        type=Path,
+        help="Path to m026_validation_remediation_class_audit.json",
+    )
+    parser.add_argument(
+        "--rendered", required=True, type=Path, help="Path to rendered audit markdown"
+    )
+    parser.add_argument(
+        "--matrix", required=True, type=Path, help="Path to m026_requirement_scope_matrix.json"
+    )
+    parser.add_argument(
+        "--roadmap", required=True, type=Path, help="Path to M026 roadmap criteria source"
+    )
+    parser.add_argument(
+        "--validation", required=True, type=Path, help="Path to current M026 validation report"
+    )
+    parser.add_argument(
+        "--require-pass-classes",
+        action="store_true",
+        help="Require all canonical class rows to have PASS verdicts",
+    )
+    parser.add_argument(
+        "--reject-unsafe-claims",
+        action="store_true",
+        help="Reject unsafe positive closeout claims outside explicit forbidden-claims lists",
+    )
     return parser
 
 
@@ -797,7 +896,9 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     class_count = len(audit.get("canonical_verification_classes", []))
-    requirement_count = len(audit.get("requirement_coverage_interpretation", {}).get("requirement_rows", []))
+    requirement_count = len(
+        audit.get("requirement_coverage_interpretation", {}).get("requirement_rows", [])
+    )
     sys.stdout.write(
         "M026 validation remediation verification passed: "
         f"{class_count} canonical classes and {requirement_count} requirement rows checked.\n"

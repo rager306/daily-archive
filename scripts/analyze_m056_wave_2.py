@@ -110,8 +110,22 @@ def _first_author_from_tei(path: Path) -> dict[str, str | None]:
         author = root.find(".//tei:sourceDesc//tei:author", ns)
     if author is None:
         return {"forename": None, "surname": None, "display": None}
-    forename = " ".join((node.text or "").strip() for node in author.findall(".//tei:forename", ns) if (node.text or "").strip()) or None
-    surname = " ".join((node.text or "").strip() for node in author.findall(".//tei:surname", ns) if (node.text or "").strip()) or None
+    forename = (
+        " ".join(
+            (node.text or "").strip()
+            for node in author.findall(".//tei:forename", ns)
+            if (node.text or "").strip()
+        )
+        or None
+    )
+    surname = (
+        " ".join(
+            (node.text or "").strip()
+            for node in author.findall(".//tei:surname", ns)
+            if (node.text or "").strip()
+        )
+        or None
+    )
     display = " ".join(part for part in (forename, surname) if part) or None
     return {"forename": forename, "surname": surname, "display": display}
 
@@ -129,7 +143,11 @@ def _status_for_packet(packet: dict[str, Any]) -> str:
 
 def _packet_safety_defaults_false(packet: dict[str, Any]) -> bool:
     safety = packet.get("safety_defaults")
-    return isinstance(safety, dict) and bool(safety) and all(value is False for value in safety.values())
+    return (
+        isinstance(safety, dict)
+        and bool(safety)
+        and all(value is False for value in safety.values())
+    )
 
 
 def _length_bucket(pages: int) -> str:
@@ -142,7 +160,9 @@ def _length_bucket(pages: int) -> str:
     return "long_26_plus"
 
 
-def _edge_records(*, wave_pdfs: list[dict[str, Any]], grobid_dir: Path, target_ids: set[str]) -> list[dict[str, str]]:
+def _edge_records(
+    *, wave_pdfs: list[dict[str, Any]], grobid_dir: Path, target_ids: set[str]
+) -> list[dict[str, str]]:
     edges: list[dict[str, str]] = []
     seen: set[tuple[str, str]] = set()
     for entry in wave_pdfs:
@@ -227,34 +247,59 @@ def analyze_wave_2(
     wave_1_opendataloader_packets = _load_packets(wave_1_opendataloader_dir)
     wave_2_opendataloader_packets = _load_packets(wave_2_opendataloader_dir)
 
-    existing_ids = {str(entry.get("arxiv_id")) for entry in existing_corpus.get("pdfs", []) if entry.get("arxiv_id")}
+    existing_ids = {
+        str(entry.get("arxiv_id"))
+        for entry in existing_corpus.get("pdfs", [])
+        if entry.get("arxiv_id")
+    }
     target_ids = set(existing_ids)
     target_ids.add(anchor_arxiv_id)
 
     wave_1_pdfs = list(wave_1_manifest.get("pdfs", []))
     wave_2_pdfs = list(wave_2_manifest.get("pdfs", []))
-    wave_1_edges = _edge_records(wave_pdfs=wave_1_pdfs, grobid_dir=wave_1_grobid_dir, target_ids=target_ids)
-    wave_2_edges = _edge_records(wave_pdfs=wave_2_pdfs, grobid_dir=wave_2_grobid_dir, target_ids=target_ids)
+    wave_1_edges = _edge_records(
+        wave_pdfs=wave_1_pdfs, grobid_dir=wave_1_grobid_dir, target_ids=target_ids
+    )
+    wave_2_edges = _edge_records(
+        wave_pdfs=wave_2_pdfs, grobid_dir=wave_2_grobid_dir, target_ids=target_ids
+    )
     cumulative_edges = sorted(
         {tuple(edge.items()) for edge in [*wave_1_edges, *wave_2_edges]},
         key=lambda items: (dict(items)["source_arxiv_id"], dict(items)["target_arxiv_id"]),
     )
     cumulative_edge_records = [dict(items) for items in cumulative_edges]
 
-    wave_2_category_distribution = Counter(str(entry.get("category", "mixed-source")) for entry in wave_2_pdfs)
-    cumulative_category_distribution = Counter(str(entry.get("category", "mixed-source")) for entry in [*wave_1_pdfs, *wave_2_pdfs])
+    wave_2_category_distribution = Counter(
+        str(entry.get("category", "mixed-source")) for entry in wave_2_pdfs
+    )
+    cumulative_category_distribution = Counter(
+        str(entry.get("category", "mixed-source")) for entry in [*wave_1_pdfs, *wave_2_pdfs]
+    )
     for category in SUPPORTED_CATEGORIES:
         wave_2_category_distribution.setdefault(category, 0)
         cumulative_category_distribution.setdefault(category, 0)
-    wave_2_length_distribution = Counter(_length_bucket(int(entry.get("pages_estimate") or 0)) for entry in wave_2_pdfs)
-    cumulative_length_distribution = Counter(_length_bucket(int(entry.get("pages_estimate") or 0)) for entry in [*wave_1_pdfs, *wave_2_pdfs])
+    wave_2_length_distribution = Counter(
+        _length_bucket(int(entry.get("pages_estimate") or 0)) for entry in wave_2_pdfs
+    )
+    cumulative_length_distribution = Counter(
+        _length_bucket(int(entry.get("pages_estimate") or 0))
+        for entry in [*wave_1_pdfs, *wave_2_pdfs]
+    )
 
-    anchor_author = _first_author_from_tei(wave_1_dir / "anchor-grobid" / "tei" / f"{anchor_arxiv_id}.tei.xml")
+    anchor_author = _first_author_from_tei(
+        wave_1_dir / "anchor-grobid" / "tei" / f"{anchor_arxiv_id}.tei.xml"
+    )
     anchor_surname = (anchor_author.get("surname") or "").casefold()
     first_authors: dict[str, dict[str, str | None]] = {}
-    anchor_citing_sources = {edge["source_arxiv_id"] for edge in cumulative_edge_records if edge["target_arxiv_id"] == anchor_arxiv_id}
+    anchor_citing_sources = {
+        edge["source_arxiv_id"]
+        for edge in cumulative_edge_records
+        if edge["target_arxiv_id"] == anchor_arxiv_id
+    }
     self_cluster_matches: list[str] = []
-    for entry, grobid_dir in [(entry, wave_1_grobid_dir) for entry in wave_1_pdfs] + [(entry, wave_2_grobid_dir) for entry in wave_2_pdfs]:
+    for entry, grobid_dir in [(entry, wave_1_grobid_dir) for entry in wave_1_pdfs] + [
+        (entry, wave_2_grobid_dir) for entry in wave_2_pdfs
+    ]:
         arxiv_id = str(entry["arxiv_id"])
         author = _first_author_from_tei(_tei_path(grobid_dir, arxiv_id))
         first_authors[arxiv_id] = author
@@ -287,7 +332,9 @@ def analyze_wave_2(
             "wave_2_acquisition_log": str((wave_2_dir / "acquisition-log.json").as_posix()),
             "wave_2_manifest": str((wave_2_dir / "corpus-manifest.json").as_posix()),
             "existing_corpus": str(existing_corpus_path.as_posix()),
-            "anchor_tei": str((wave_1_dir / "anchor-grobid" / "tei" / f"{anchor_arxiv_id}.tei.xml").as_posix()),
+            "anchor_tei": str(
+                (wave_1_dir / "anchor-grobid" / "tei" / f"{anchor_arxiv_id}.tei.xml").as_posix()
+            ),
         },
         "safety_defaults": _safety_defaults(),
         "acquisition": {
@@ -306,8 +353,12 @@ def analyze_wave_2(
             "wave_2_opendataloader_packet_count": len(wave_2_opendataloader_packets),
             "opendataloader_packet_count": len(wave_2_opendataloader_packets),
             "opendataloader_success_count": _success_count(wave_2_opendataloader_packets),
-            "opendataloader_quality_counts": dict(sorted(_quality_counts(wave_2_opendataloader_packets).items())),
-            "all_packet_safety_defaults_false": all(_packet_safety_defaults_false(packet) for packet in all_packets),
+            "opendataloader_quality_counts": dict(
+                sorted(_quality_counts(wave_2_opendataloader_packets).items())
+            ),
+            "all_packet_safety_defaults_false": all(
+                _packet_safety_defaults_false(packet) for packet in all_packets
+            ),
         },
         "connectivity": {
             "anchor_arxiv_id": anchor_arxiv_id,
@@ -317,7 +368,9 @@ def analyze_wave_2(
             "wave_2_new_edge_count": wave_2_edge_count,
             "connectivity_gain_delta_vs_wave_1": wave_2_edge_count - wave_1_edge_count,
             "cumulative_edge_count": len(cumulative_edge_records),
-            "saturation_status": "saturated" if wave_2_edge_count <= wave_1_edge_count else "growing",
+            "saturation_status": "saturated"
+            if wave_2_edge_count <= wave_1_edge_count
+            else "growing",
             "wave_1_edges": wave_1_edges,
             "wave_2_new_edges": wave_2_edges,
             "cumulative_edges": cumulative_edge_records,
@@ -328,7 +381,11 @@ def analyze_wave_2(
             "wave_2_pdf_count": len(wave_2_pdfs),
             "matching_cumulative_pdfs": len(self_cluster_matches),
             "matching_arxiv_ids": sorted(self_cluster_matches),
-            "percent": round((len(self_cluster_matches) / (len(wave_1_pdfs) + len(wave_2_pdfs)) * 100.0), 2) if (wave_1_pdfs or wave_2_pdfs) else 0.0,
+            "percent": round(
+                (len(self_cluster_matches) / (len(wave_1_pdfs) + len(wave_2_pdfs)) * 100.0), 2
+            )
+            if (wave_1_pdfs or wave_2_pdfs)
+            else 0.0,
             "first_authors": first_authors,
         },
         "category_distribution": dict(sorted(wave_2_category_distribution.items())),
@@ -405,37 +462,41 @@ def _render_markdown(analysis: dict[str, Any]) -> str:
         "",
     ]
     lines.extend([f"- {_render_edge(edge)}" for edge in wave_2_edges] or ["- none"])
-    lines.extend([
-        "",
-        "### Cumulative edges",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "### Cumulative edges",
+            "",
+        ]
+    )
     lines.extend([f"- {_render_edge(edge)}" for edge in cumulative_edges] or ["- none"])
-    lines.extend([
-        "",
-        "## Self-citation cluster",
-        "",
-        f"- Anchor first author: {self_cluster['anchor_first_author'].get('display') or 'unknown'}",
-        f"- Matching cumulative Wave PDFs: {self_cluster['matching_cumulative_pdfs']} / {self_cluster['cumulative_wave_pdf_count']} ({self_cluster['percent']}%)",
-        f"- Matching arXiv IDs: {', '.join(self_cluster['matching_arxiv_ids']) or 'none'}",
-        "",
-        "## Category distribution",
-        "",
-        f"- Wave 2: {_render_counts(analysis['category_distribution'])}",
-        f"- Cumulative waves: {_render_counts(analysis['cumulative_category_distribution'])}",
-        "",
-        "## Length distribution",
-        "",
-        f"- Wave 2: {_render_counts(analysis['length_distribution'])}",
-        f"- Cumulative waves: {_render_counts(analysis['cumulative_length_distribution'])}",
-        "",
-        "## Cumulative corpus",
-        "",
-        f"- Expected total: {analysis['cumulative_corpus']['expected_total']}",
-        f"- Actual total: {analysis['cumulative_corpus']['actual_total']}",
-        f"- Path: `{analysis['cumulative_corpus']['path']}`",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Self-citation cluster",
+            "",
+            f"- Anchor first author: {self_cluster['anchor_first_author'].get('display') or 'unknown'}",
+            f"- Matching cumulative Wave PDFs: {self_cluster['matching_cumulative_pdfs']} / {self_cluster['cumulative_wave_pdf_count']} ({self_cluster['percent']}%)",
+            f"- Matching arXiv IDs: {', '.join(self_cluster['matching_arxiv_ids']) or 'none'}",
+            "",
+            "## Category distribution",
+            "",
+            f"- Wave 2: {_render_counts(analysis['category_distribution'])}",
+            f"- Cumulative waves: {_render_counts(analysis['cumulative_category_distribution'])}",
+            "",
+            "## Length distribution",
+            "",
+            f"- Wave 2: {_render_counts(analysis['length_distribution'])}",
+            f"- Cumulative waves: {_render_counts(analysis['cumulative_length_distribution'])}",
+            "",
+            "## Cumulative corpus",
+            "",
+            f"- Expected total: {analysis['cumulative_corpus']['expected_total']}",
+            f"- Actual total: {analysis['cumulative_corpus']['actual_total']}",
+            f"- Path: `{analysis['cumulative_corpus']['path']}`",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 

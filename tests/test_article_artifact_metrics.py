@@ -30,7 +30,9 @@ def test_benchmark_fixtures_are_redacted_and_cover_required_artifact_types() -> 
 
     assert cases["schema_version"] == "m023-article-artifact-benchmark-cases.v1"
     assert gold["schema_version"] == "m023-article-artifact-benchmark-gold.v1"
-    assert {case["case_id"] for case in cases["cases"]} == {record["case_id"] for record in gold["gold"]}
+    assert {case["case_id"] for case in cases["cases"]} == {
+        record["case_id"] for record in gold["gold"]
+    }
 
     gold_types = {
         artifact["artifact_type"]
@@ -74,7 +76,9 @@ def test_metrics_report_artifact_link_span_lineage_and_review_burden() -> None:
     case = next(case for case in cases["cases"] if case["case_id"] == "positive-core-coverage")
     expected = next(record for record in gold["gold"] if record["case_id"] == case["case_id"])
 
-    metrics = calculate_article_artifact_metrics(case["manifest"], expected["manifest"], case_id=case["case_id"])
+    metrics = calculate_article_artifact_metrics(
+        case["manifest"], expected["manifest"], case_id=case["case_id"]
+    )
 
     assert metrics["schema_version"] == ARTICLE_ARTIFACT_METRICS_SCHEMA_VERSION
     assert metrics["artifact_precision"] == 1.0
@@ -94,7 +98,9 @@ def test_metrics_penalize_missing_spans_ambiguous_lineage_and_extra_links() -> N
     case = next(case for case in cases["cases"] if case["case_id"] == "ambiguous-and-missing-span")
     expected = next(record for record in gold["gold"] if record["case_id"] == case["case_id"])
 
-    metrics = calculate_article_artifact_metrics(case["manifest"], expected["manifest"], case_id=case["case_id"])
+    metrics = calculate_article_artifact_metrics(
+        case["manifest"], expected["manifest"], case_id=case["case_id"]
+    )
 
     assert metrics["artifact_counts"] == {
         "true_positive": 1,
@@ -119,7 +125,9 @@ def test_raw_leakage_and_unsafe_authorizations_are_counted_without_values() -> N
 
     gold = _load("benchmark_gold.json")
     expected = next(record for record in gold["gold"] if record["case_id"] == case["case_id"])
-    metrics = calculate_article_artifact_metrics(manifest, expected["manifest"], case_id=case["case_id"])
+    metrics = calculate_article_artifact_metrics(
+        manifest, expected["manifest"], case_id=case["case_id"]
+    )
 
     assert metrics["raw_leakage_count"] == 2
     assert metrics["raw_leakage_rate"] == 1.0
@@ -128,7 +136,9 @@ def test_raw_leakage_and_unsafe_authorizations_are_counted_without_values() -> N
 
 
 def test_benchmark_metrics_macro_and_totals_are_stable() -> None:
-    metrics = calculate_benchmark_metrics(_load("benchmark_cases.json"), _load("benchmark_gold.json"))
+    metrics = calculate_benchmark_metrics(
+        _load("benchmark_cases.json"), _load("benchmark_gold.json")
+    )
 
     assert metrics["schema_version"] == ARTICLE_ARTIFACT_METRICS_SCHEMA_VERSION
     assert metrics["case_count"] == 3
@@ -193,8 +203,13 @@ def test_benchmark_report_writer_emits_json_and_markdown(tmp_path: Path) -> None
     markdown_path = Path(written["markdown_path"])
     assert json_path.exists()
     assert markdown_path.exists()
-    assert json.loads(json_path.read_text(encoding="utf-8"))["schema_version"] == ARTICLE_ARTIFACT_BENCHMARK_REPORT_SCHEMA_VERSION
-    assert markdown_path.read_text(encoding="utf-8").startswith("# Article Artifact Benchmark Report")
+    assert (
+        json.loads(json_path.read_text(encoding="utf-8"))["schema_version"]
+        == ARTICLE_ARTIFACT_BENCHMARK_REPORT_SCHEMA_VERSION
+    )
+    assert markdown_path.read_text(encoding="utf-8").startswith(
+        "# Article Artifact Benchmark Report"
+    )
 
 
 def test_benchmark_metrics_reject_missing_gold_and_malformed_cases() -> None:
@@ -219,9 +234,14 @@ def test_benchmark_metrics_reject_missing_gold_and_malformed_cases() -> None:
 
 
 def test_review_burden_counts_artifacts_links_and_blocking_diagnostics() -> None:
-    case = next(case for case in _load("benchmark_cases.json")["cases"] if case["case_id"] == "ambiguous-and-missing-span")
+    case = next(
+        case
+        for case in _load("benchmark_cases.json")["cases"]
+        if case["case_id"] == "ambiguous-and-missing-span"
+    )
 
     assert calculate_review_burden(case["manifest"]) == 3
+
 
 def test_missing_false_safety_flags_are_treated_as_safe_defaults_for_old_fixtures() -> None:
     manifest = {
@@ -256,12 +276,18 @@ def test_missing_false_safety_flags_are_treated_as_safe_defaults_for_old_fixture
 
 
 def test_article_artifact_metrics_old_module_is_archived_with_canonical_breadcrumb() -> None:
-    top_level_archive_path = Path("archive/package-layout-shims/wave-01/src/arxiv_archive/article_artifact_metrics.py")
-    package_archive_path = Path("archive/package-rename-waves/wave-01/src/arxiv_archive/artifacts/metrics.py")
+    top_level_archive_path = Path(
+        "archive/package-layout-shims/wave-01/src/arxiv_archive/article_artifact_metrics.py"
+    )
+    package_archive_path = Path(
+        "archive/package-rename-waves/wave-01/src/arxiv_archive/artifacts/metrics.py"
+    )
     canonical_path = Path("src/research_graph/papers/artifacts/metrics.py")
 
     assert top_level_archive_path.exists()
     assert package_archive_path.exists()
     assert not Path("src/arxiv_archive/article_artifact_metrics.py").exists()
     assert not Path("src/arxiv_archive/artifacts/metrics.py").exists()
-    assert "Formerly: src/arxiv_archive/artifacts/metrics.py" in canonical_path.read_text(encoding="utf-8")
+    assert "Formerly: src/arxiv_archive/artifacts/metrics.py" in canonical_path.read_text(
+        encoding="utf-8"
+    )

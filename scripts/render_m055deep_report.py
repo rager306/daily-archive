@@ -62,7 +62,14 @@ def _fmt_float(value: Any) -> str:
 
 
 def _safety_block() -> list[str]:
-    lines = ["## Safety Defaults", "", "The benchmark and report are diagnostic only. Production import is not authorized.", "", "| Flag | Value |", "| --- | --- |"]
+    lines = [
+        "## Safety Defaults",
+        "",
+        "The benchmark and report are diagnostic only. Production import is not authorized.",
+        "",
+        "| Flag | Value |",
+        "| --- | --- |",
+    ]
     for key in sorted(SAFETY_DEFAULTS):
         lines.append(f"| `{key}` | `{str(SAFETY_DEFAULTS[key]).lower()}` |")
     lines.extend(
@@ -133,7 +140,14 @@ def _dimension_table(routing_summary: dict[str, Any]) -> list[str]:
         "processing_time": "GROBID is the plurality winner, though latency varies by PDF.",
         "quality": "GROBID has 20/20 successful fulltext packets; OpenDataLoader has one low-quality source.",
     }
-    for dimension in ["metadata", "citations", "body_content", "layout", "processing_time", "quality"]:
+    for dimension in [
+        "metadata",
+        "citations",
+        "body_content",
+        "layout",
+        "processing_time",
+        "quality",
+    ]:
         counts = routing_summary["dimension_winners"][dimension]
         lines.append(
             f"| {dimension} | {routing_summary['per_dimension_winner'][dimension]} | "
@@ -244,7 +258,17 @@ def _per_pdf_detail_sections(
         grobid = grobid_packets[arxiv_id]
         opendl = opendl_packets[arxiv_id]
         route = routing_packets[arxiv_id]
-        winners = {dimension: route["comparison_table"][dimension]["winner"] for dimension in ["metadata", "citations", "body_content", "layout", "processing_time", "quality"]}
+        winners = {
+            dimension: route["comparison_table"][dimension]["winner"]
+            for dimension in [
+                "metadata",
+                "citations",
+                "body_content",
+                "layout",
+                "processing_time",
+                "quality",
+            ]
+        }
         lines.extend(
             [
                 f"### {idx}. {arxiv_id}",
@@ -360,7 +384,9 @@ def render_report(
                 {
                     "schema_version": SCHEMA_VERSION,
                     "total_pdfs": routing20["total_pdfs"],
-                    "hybrid_percent": routing20["aggregate_routing_recommendation"]["hybrid_percent"],
+                    "hybrid_percent": routing20["aggregate_routing_recommendation"][
+                        "hybrid_percent"
+                    ],
                     "route_counts": routing20["aggregate_routing_recommendation"]["route_counts"],
                     "per_dimension_winner": routing20["per_dimension_winner"],
                     "length_bucket_patterns": routing20["length_bucket_patterns"],
@@ -373,7 +399,9 @@ def render_report(
             "",
         ]
     )
-    lines.extend(_per_pdf_detail_sections(manifest, grobid_packets, opendl_packets, routing_packets))
+    lines.extend(
+        _per_pdf_detail_sections(manifest, grobid_packets, opendl_packets, routing_packets)
+    )
 
     markdown = "\n".join(lines).rstrip() + "\n"
     output_path.parent.mkdir(parents=True, exist_ok=True)

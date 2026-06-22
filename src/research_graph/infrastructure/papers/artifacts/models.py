@@ -223,15 +223,20 @@ class SourceReference:
         """Build a redacted source reference from loader provenance metadata."""
         resolved_paper_id = paper_id or getattr(result, "paper_id", None)
         if not resolved_paper_id:
-            raise ValueError("paper_id is required to build a source reference from loader provenance")
+            raise ValueError(
+                "paper_id is required to build a source reference from loader provenance"
+            )
         return cls(
             source_id=str(result.source_id),
             paper_id=str(resolved_paper_id),
             source_role=source_role or str(getattr(result, "source_type", "article_source")),
-            source_path=str(result.source_path) if getattr(result, "source_path", None) is not None else None,
+            source_path=str(result.source_path)
+            if getattr(result, "source_path", None) is not None
+            else None,
             sha256=getattr(result, "sha256", None),
             media_type=getattr(result, "media_type", None),
-            conversion_status=conversion_status or str(getattr(result, "outcome", "review_required")),
+            conversion_status=conversion_status
+            or str(getattr(result, "outcome", "review_required")),
         )
 
     def to_redacted_dict(self) -> dict[str, Any]:
@@ -264,7 +269,9 @@ class SectionLineage:
             "parent_section_id": self.parent_section_id,
             "section_type": self.section_type,
             "ordinal_path": list(self.ordinal_path),
-            "source_span": self.source_span.to_redacted_dict() if self.source_span is not None else None,
+            "source_span": self.source_span.to_redacted_dict()
+            if self.source_span is not None
+            else None,
         }
 
 
@@ -323,7 +330,9 @@ class ArticleArtifactRecord:
             "review_state": self.review_state,
             "source_refs": [source.to_redacted_dict() for source in self.source_refs],
             "source_spans": [span.to_redacted_dict() for span in self.source_spans],
-            "section_lineage": self.section_lineage.to_redacted_dict() if self.section_lineage is not None else None,
+            "section_lineage": self.section_lineage.to_redacted_dict()
+            if self.section_lineage is not None
+            else None,
             "candidate_links": [link.to_redacted_dict() for link in self.candidate_links],
             "confidence_label": self.confidence_label,
             "detector": self.detector,
@@ -380,8 +389,12 @@ class ArticleArtifactRunSummary:
     output_paths: dict[str, Any] = field(default_factory=dict)
 
     def to_redacted_dict(self) -> dict[str, Any]:
-        artifact_count = sum(len(_list_of_dicts(manifest.get("artifacts"))) for manifest in self.manifests)
-        diagnostic_count = sum(len(_list_of_dicts(manifest.get("diagnostics"))) for manifest in self.manifests)
+        artifact_count = sum(
+            len(_list_of_dicts(manifest.get("artifacts"))) for manifest in self.manifests
+        )
+        diagnostic_count = sum(
+            len(_list_of_dicts(manifest.get("diagnostics"))) for manifest in self.manifests
+        )
         diagnostic_codes = sorted(
             {
                 str(diagnostic.get("code"))
@@ -396,13 +409,26 @@ class ArticleArtifactRunSummary:
             "manifest_schema_version": ARTICLE_ARTIFACT_SCHEMA_VERSION,
             "run_id": self.run_id,
             "paper_count": len(self.manifests),
-            "paper_ids": [str(manifest.get("paper_id")) for manifest in self.manifests if manifest.get("paper_id")],
+            "paper_ids": [
+                str(manifest.get("paper_id"))
+                for manifest in self.manifests
+                if manifest.get("paper_id")
+            ],
             "artifact_count": artifact_count,
             "diagnostic_count": diagnostic_count,
             "diagnostic_codes": diagnostic_codes,
-            "artifact_counts_by_type": _merge_counts(manifest.get("summary", {}).get("artifact_counts_by_type", {}) for manifest in self.manifests),
-            "review_state_counts": _merge_counts(manifest.get("summary", {}).get("review_state_counts", {}) for manifest in self.manifests),
-            "candidate_link_type_counts": _merge_counts(manifest.get("summary", {}).get("candidate_link_type_counts", {}) for manifest in self.manifests),
+            "artifact_counts_by_type": _merge_counts(
+                manifest.get("summary", {}).get("artifact_counts_by_type", {})
+                for manifest in self.manifests
+            ),
+            "review_state_counts": _merge_counts(
+                manifest.get("summary", {}).get("review_state_counts", {})
+                for manifest in self.manifests
+            ),
+            "candidate_link_type_counts": _merge_counts(
+                manifest.get("summary", {}).get("candidate_link_type_counts", {})
+                for manifest in self.manifests
+            ),
             "promoted_to_fact_count": 0,
             "import_eligible_count": 0,
             "production_import_attempted": False,
@@ -432,7 +458,9 @@ def build_article_artifact_run_diagnostics_artifact(
         "run_schema_version": ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION,
         "manifest_schema_version": ARTICLE_ARTIFACT_SCHEMA_VERSION,
         "run_id": run_id,
-        "paper_ids": [str(manifest.get("paper_id")) for manifest in manifests if manifest.get("paper_id")],
+        "paper_ids": [
+            str(manifest.get("paper_id")) for manifest in manifests if manifest.get("paper_id")
+        ],
         "diagnostic_count": len(diagnostics),
         "diagnostics": diagnostics,
         "diagnostic_counts_by_code": _counts(diagnostic.get("code") for diagnostic in diagnostics),
@@ -461,7 +489,9 @@ def build_article_artifact_run_diagnostics_artifact(
 
 def summarize_article_artifacts(artifacts: list[dict[str, Any]]) -> dict[str, Any]:
     """Build a redacted summary from serialized artifact records."""
-    links = [link for artifact in artifacts for link in _list_of_dicts(artifact.get("candidate_links"))]
+    links = [
+        link for artifact in artifacts for link in _list_of_dicts(artifact.get("candidate_links"))
+    ]
     return {
         "artifact_count": len(artifacts),
         "candidate_link_count": len(links),
@@ -469,13 +499,16 @@ def summarize_article_artifacts(artifacts: list[dict[str, Any]]) -> dict[str, An
         "review_state_counts": _counts(artifact.get("review_state") for artifact in artifacts),
         "candidate_link_type_counts": _counts(link.get("link_type") for link in links),
         "candidate_link_review_state_counts": _counts(link.get("review_state") for link in links),
-        "repair_required_count": sum(1 for artifact in artifacts if artifact.get("review_state") == "repair_required"),
-        "ambiguous_count": sum(1 for artifact in artifacts if artifact.get("review_state") == "ambiguous"),
+        "repair_required_count": sum(
+            1 for artifact in artifacts if artifact.get("review_state") == "repair_required"
+        ),
+        "ambiguous_count": sum(
+            1 for artifact in artifacts if artifact.get("review_state") == "ambiguous"
+        ),
         "promoted_to_fact_count": 0,
         "import_eligible_count": 0,
         "safety_flags": default_safety_flags(),
     }
-
 
 
 REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION = "m023-redacted-article-structure.v1"
@@ -494,13 +527,25 @@ def build_article_artifact_manifest_from_structure(
     """
     _validate_redacted_structure_boundary(structure)
     paper_id = str(structure["paper_id"])
-    source_refs = tuple(_source_ref_from_structure(source, paper_id) for source in _list_of_dicts(structure.get("source_refs")))
-    spans = {_string_or_none(span.get("span_id")): _span_from_structure(span) for span in _list_of_dicts(structure.get("safe_spans"))}
+    source_refs = tuple(
+        _source_ref_from_structure(source, paper_id)
+        for source in _list_of_dicts(structure.get("source_refs"))
+    )
+    spans = {
+        _string_or_none(span.get("span_id")): _span_from_structure(span)
+        for span in _list_of_dicts(structure.get("safe_spans"))
+    }
     spans.pop(None, None)
     sections = _list_of_dicts(structure.get("sections"))
-    section_by_id = {section.get("section_id"): section for section in sections if isinstance(section.get("section_id"), str)}
+    section_by_id = {
+        section.get("section_id"): section
+        for section in sections
+        if isinstance(section.get("section_id"), str)
+    }
     placeholders = _list_of_dicts(structure.get("artifact_placeholders"))
-    markers = _list_of_dicts(structure.get("structured_markers")) + _list_of_dicts(structure.get("scientific_markers"))
+    markers = _list_of_dicts(structure.get("structured_markers")) + _list_of_dicts(
+        structure.get("scientific_markers")
+    )
     all_placeholders = placeholders + markers
     contained_by_section: dict[str, list[dict[str, Any]]] = {}
     for placeholder in all_placeholders:
@@ -564,7 +609,9 @@ def build_article_artifact_manifest_from_structure(
         candidate_links = _placeholder_candidate_links(paper_id, placeholder, artifact_span, spans)
         diagnostic_codes: tuple[str, ...] = ()
         metadata: dict[str, Any] = {"fixture_role": _fixture_role_for_placeholder(artifact_type)}
-        if artifact_type in {"figure", "table"} and isinstance(placeholder.get("caption_span_id"), str):
+        if artifact_type in {"figure", "table"} and isinstance(
+            placeholder.get("caption_span_id"), str
+        ):
             metadata["caption_span_id"] = placeholder["caption_span_id"]
             diagnostic_codes = ("caption_span_present",)
         if artifact_type == "reference":
@@ -612,7 +659,9 @@ def build_article_artifact_diagnostics_summary(manifest: dict[str, Any]) -> dict
 
 def _validate_redacted_structure_boundary(structure: dict[str, Any]) -> None:
     if structure.get("schema_version") != REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION:
-        raise ValueError(f"input structure must use schema {REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION}")
+        raise ValueError(
+            f"input structure must use schema {REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION}"
+        )
     if not isinstance(structure.get("paper_id"), str) or not structure["paper_id"]:
         raise ValueError("input structure must include a non-empty paper_id")
     safety_flags = structure.get("safety_flags")
@@ -648,7 +697,9 @@ def _span_from_structure(span: dict[str, Any]) -> SourceSpan:
         char_end=span.get("char_end") if isinstance(span.get("char_end"), int) else None,
         page_start=span.get("page_start") if isinstance(span.get("page_start"), int) else None,
         page_end=span.get("page_end") if isinstance(span.get("page_end"), int) else None,
-        bbox=tuple(float(value) for value in bbox) if isinstance(bbox, list) and len(bbox) == 4 else None,
+        bbox=tuple(float(value) for value in bbox)
+        if isinstance(bbox, list) and len(bbox) == 4
+        else None,
         span_hash=_string_or_none(span.get("span_hash")),
     )
 
@@ -659,20 +710,27 @@ def _section_lineage(section: dict[str, Any], spans: dict[str, SourceSpan]) -> S
         section_id=str(section.get("section_id")),
         parent_section_id=_string_or_none(section.get("parent_section_id")),
         section_type=_string_or_none(section.get("section_type")),
-        ordinal_path=tuple(value for value in ordinal if isinstance(value, int)) if isinstance(ordinal, list) else (),
+        ordinal_path=tuple(value for value in ordinal if isinstance(value, int))
+        if isinstance(ordinal, list)
+        else (),
         source_span=spans.get(_string_or_none(section.get("span_id"))),
     )
 
 
 def _placeholder_candidate_links(
-    paper_id: str, placeholder: dict[str, Any], artifact_span: SourceSpan | None, spans: dict[str, SourceSpan]
+    paper_id: str,
+    placeholder: dict[str, Any],
+    artifact_span: SourceSpan | None,
+    spans: dict[str, SourceSpan],
 ) -> tuple[CandidateLink, ...]:
     artifact_id = str(placeholder.get("artifact_id"))
     artifact_type = str(placeholder.get("artifact_type"))
     links: list[CandidateLink] = []
     link_span = spans.get(_string_or_none(placeholder.get("caption_span_id"))) or artifact_span
     for target in _string_list(placeholder.get("candidate_link_targets")):
-        link_type: CandidateLinkType = "supports" if artifact_type in {"figure", "table"} else "candidate_for"
+        link_type: CandidateLinkType = (
+            "supports" if artifact_type in {"figure", "table"} else "candidate_for"
+        )
         links.append(
             CandidateLink(
                 link_id=f"{paper_id}:link:{_artifact_slug(artifact_id)}:{link_type}-{_artifact_slug(target)}",
@@ -751,17 +809,34 @@ def _missing_span_diagnostic(span_id: Any, object_id: str) -> ArticleArtifactDia
         blocks_import=True,
     )
 
+
 def validate_article_artifact_manifest(manifest: dict[str, Any]) -> list[dict[str, Any]]:
     """Return redacted diagnostics with stable codes and JSON paths."""
     diagnostics: list[ArticleArtifactDiagnostic] = []
     if manifest.get("schema_version") != ARTICLE_ARTIFACT_SCHEMA_VERSION:
         diagnostics.append(_diagnostic("invalid_schema_version", "/schema_version"))
-    diagnostics.extend(_required(manifest, ("schema_version", "run_id", "paper_id", "artifacts", "summary", "diagnostics", "safety_flags"), ""))
+    diagnostics.extend(
+        _required(
+            manifest,
+            (
+                "schema_version",
+                "run_id",
+                "paper_id",
+                "artifacts",
+                "summary",
+                "diagnostics",
+                "safety_flags",
+            ),
+            "",
+        )
+    )
     diagnostics.extend(_validate_forbidden_keys(manifest))
     diagnostics.extend(_validate_source_of_truth_markers(manifest))
     diagnostics.extend(_validate_safety_flags(manifest.get("safety_flags"), "/safety_flags"))
     if manifest.get("production_import_attempted") is not False:
-        diagnostics.append(_diagnostic("production_import_attempted", "/production_import_attempted"))
+        diagnostics.append(
+            _diagnostic("production_import_attempted", "/production_import_attempted")
+        )
     if manifest.get("ladybugdb_written") is not False:
         diagnostics.append(_diagnostic("ladybugdb_written", "/ladybugdb_written"))
     if manifest.get("promoted_to_fact_count") != 0:
@@ -771,13 +846,29 @@ def validate_article_artifact_manifest(manifest: dict[str, Any]) -> list[dict[st
 
     artifacts = _list_of_dicts(manifest.get("artifacts"))
     manifest_sources = _list_of_dicts(manifest.get("source_refs"))
-    known_source_ids = {source.get("source_id") for source in manifest_sources if isinstance(source.get("source_id"), str)}
-    diagnostics.extend(_validate_duplicate_ids(artifacts, "artifact_id", "/artifacts", "duplicate_artifact_id"))
-    diagnostics.extend(_validate_duplicate_ids(manifest_sources, "source_id", "/source_refs", "duplicate_source_id"))
+    known_source_ids = {
+        source.get("source_id")
+        for source in manifest_sources
+        if isinstance(source.get("source_id"), str)
+    }
+    diagnostics.extend(
+        _validate_duplicate_ids(artifacts, "artifact_id", "/artifacts", "duplicate_artifact_id")
+    )
+    diagnostics.extend(
+        _validate_duplicate_ids(
+            manifest_sources, "source_id", "/source_refs", "duplicate_source_id"
+        )
+    )
     for index, artifact in enumerate(artifacts):
-        diagnostics.extend(_validate_artifact(artifact, f"/artifacts[{index}]", manifest.get("paper_id"), known_source_ids))
+        diagnostics.extend(
+            _validate_artifact(
+                artifact, f"/artifacts[{index}]", manifest.get("paper_id"), known_source_ids
+            )
+        )
     for index, source in enumerate(manifest_sources):
-        diagnostics.extend(_validate_source_ref(source, f"/source_refs[{index}]", manifest.get("paper_id")))
+        diagnostics.extend(
+            _validate_source_ref(source, f"/source_refs[{index}]", manifest.get("paper_id"))
+        )
     for index, diagnostic_record in enumerate(_list_of_dicts(manifest.get("diagnostics"))):
         diagnostics.extend(_validate_diagnostic_record(diagnostic_record, f"/diagnostics[{index}]"))
     diagnostics.extend(_validate_summary(manifest.get("summary"), artifacts))
@@ -794,31 +885,82 @@ def _validate_artifact(
 ) -> list[ArticleArtifactDiagnostic]:
     diagnostics: list[ArticleArtifactDiagnostic] = []
     artifact_id = _string_or_none(artifact.get("artifact_id"))
-    diagnostics.extend(_required(artifact, ("artifact_id", "paper_id", "artifact_type", "review_state", "safety_flags", "allowed_uses", "excluded_uses"), path))
-    diagnostics.extend(_validate_non_empty_ids(artifact, ("artifact_id", "paper_id"), path, artifact_id))
+    diagnostics.extend(
+        _required(
+            artifact,
+            (
+                "artifact_id",
+                "paper_id",
+                "artifact_type",
+                "review_state",
+                "safety_flags",
+                "allowed_uses",
+                "excluded_uses",
+            ),
+            path,
+        )
+    )
+    diagnostics.extend(
+        _validate_non_empty_ids(artifact, ("artifact_id", "paper_id"), path, artifact_id)
+    )
     if artifact.get("paper_id") != paper_id:
         diagnostics.append(_diagnostic("paper_id_mismatch", f"{path}/paper_id", artifact_id))
     if artifact.get("artifact_type") not in ALLOWED_ARTIFACT_TYPES:
-        diagnostics.append(_diagnostic("invalid_artifact_type", f"{path}/artifact_type", artifact_id))
+        diagnostics.append(
+            _diagnostic("invalid_artifact_type", f"{path}/artifact_type", artifact_id)
+        )
     if artifact.get("review_state") not in ALLOWED_REVIEW_STATES:
         diagnostics.append(_diagnostic("invalid_review_state", f"{path}/review_state", artifact_id))
-    diagnostics.extend(_validate_safety_flags(artifact.get("safety_flags"), f"{path}/safety_flags", artifact_id))
+    diagnostics.extend(
+        _validate_safety_flags(artifact.get("safety_flags"), f"{path}/safety_flags", artifact_id)
+    )
     if artifact.get("promoted_to_fact") is not False:
-        diagnostics.append(_diagnostic("artifact_promoted_to_fact", f"{path}/promoted_to_fact", artifact_id))
+        diagnostics.append(
+            _diagnostic("artifact_promoted_to_fact", f"{path}/promoted_to_fact", artifact_id)
+        )
     if artifact.get("import_eligible") is not False:
-        diagnostics.append(_diagnostic("artifact_import_eligible", f"{path}/import_eligible", artifact_id))
+        diagnostics.append(
+            _diagnostic("artifact_import_eligible", f"{path}/import_eligible", artifact_id)
+        )
     diagnostics.extend(_validate_uses(artifact, path, artifact_id))
     for index, source in enumerate(_list_of_dicts(artifact.get("source_refs"))):
         diagnostics.extend(_validate_source_ref(source, f"{path}/source_refs[{index}]", paper_id))
     for index, span in enumerate(_list_of_dicts(artifact.get("source_spans"))):
-        diagnostics.extend(_validate_span(span, f"{path}/source_spans[{index}]", artifact_id, known_source_ids))
+        diagnostics.extend(
+            _validate_span(span, f"{path}/source_spans[{index}]", artifact_id, known_source_ids)
+        )
     lineage = artifact.get("section_lineage")
     if isinstance(lineage, dict) and isinstance(lineage.get("source_span"), dict):
-        diagnostics.extend(_validate_span(lineage["source_span"], f"{path}/section_lineage/source_span", artifact_id, known_source_ids))
+        diagnostics.extend(
+            _validate_span(
+                lineage["source_span"],
+                f"{path}/section_lineage/source_span",
+                artifact_id,
+                known_source_ids,
+            )
+        )
     for index, link in enumerate(_list_of_dicts(artifact.get("candidate_links"))):
-        diagnostics.extend(_validate_candidate_link(link, f"{path}/candidate_links[{index}]", artifact_id, known_source_ids))
-    diagnostics.extend(_validate_duplicate_ids(_list_of_dicts(artifact.get("candidate_links")), "link_id", f"{path}/candidate_links", "duplicate_candidate_link_id"))
-    diagnostics.extend(_validate_duplicate_ids(_list_of_dicts(artifact.get("source_spans")), "span_id", f"{path}/source_spans", "duplicate_source_span_id"))
+        diagnostics.extend(
+            _validate_candidate_link(
+                link, f"{path}/candidate_links[{index}]", artifact_id, known_source_ids
+            )
+        )
+    diagnostics.extend(
+        _validate_duplicate_ids(
+            _list_of_dicts(artifact.get("candidate_links")),
+            "link_id",
+            f"{path}/candidate_links",
+            "duplicate_candidate_link_id",
+        )
+    )
+    diagnostics.extend(
+        _validate_duplicate_ids(
+            _list_of_dicts(artifact.get("source_spans")),
+            "span_id",
+            f"{path}/source_spans",
+            "duplicate_source_span_id",
+        )
+    )
     return diagnostics
 
 
@@ -827,34 +969,76 @@ def _validate_candidate_link(
 ) -> list[ArticleArtifactDiagnostic]:
     diagnostics: list[ArticleArtifactDiagnostic] = []
     link_id = _string_or_none(link.get("link_id"))
-    diagnostics.extend(_required(link, ("link_id", "source_artifact_id", "target_ref", "link_type", "review_state", "allowed_uses", "excluded_uses"), path))
-    diagnostics.extend(_validate_non_empty_ids(link, ("link_id", "source_artifact_id", "target_ref"), path, link_id))
+    diagnostics.extend(
+        _required(
+            link,
+            (
+                "link_id",
+                "source_artifact_id",
+                "target_ref",
+                "link_type",
+                "review_state",
+                "allowed_uses",
+                "excluded_uses",
+            ),
+            path,
+        )
+    )
+    diagnostics.extend(
+        _validate_non_empty_ids(
+            link, ("link_id", "source_artifact_id", "target_ref"), path, link_id
+        )
+    )
     if link.get("source_artifact_id") != artifact_id:
-        diagnostics.append(_diagnostic("candidate_link_source_mismatch", f"{path}/source_artifact_id", link_id))
+        diagnostics.append(
+            _diagnostic("candidate_link_source_mismatch", f"{path}/source_artifact_id", link_id)
+        )
     if link.get("link_type") not in ALLOWED_CANDIDATE_LINK_TYPES:
         diagnostics.append(_diagnostic("invalid_candidate_link_type", f"{path}/link_type", link_id))
     if link.get("review_state") not in ALLOWED_REVIEW_STATES:
-        diagnostics.append(_diagnostic("invalid_candidate_link_review_state", f"{path}/review_state", link_id))
+        diagnostics.append(
+            _diagnostic("invalid_candidate_link_review_state", f"{path}/review_state", link_id)
+        )
     if link.get("promoted_to_fact") is not False:
-        diagnostics.append(_diagnostic("candidate_link_promoted_to_fact", f"{path}/promoted_to_fact", link_id))
+        diagnostics.append(
+            _diagnostic("candidate_link_promoted_to_fact", f"{path}/promoted_to_fact", link_id)
+        )
     if link.get("import_eligible") is not False:
-        diagnostics.append(_diagnostic("candidate_link_import_eligible", f"{path}/import_eligible", link_id))
+        diagnostics.append(
+            _diagnostic("candidate_link_import_eligible", f"{path}/import_eligible", link_id)
+        )
     diagnostics.extend(_validate_uses(link, path, link_id))
     for index, span in enumerate(_list_of_dicts(link.get("source_spans"))):
-        diagnostics.extend(_validate_span(span, f"{path}/source_spans[{index}]", link_id, known_source_ids))
+        diagnostics.extend(
+            _validate_span(span, f"{path}/source_spans[{index}]", link_id, known_source_ids)
+        )
     return diagnostics
 
 
-def _validate_source_ref(source: dict[str, Any], path: str, paper_id: Any) -> list[ArticleArtifactDiagnostic]:
-    diagnostics = _required(source, ("source_id", "paper_id", "source_role", "raw_text_embedded", "raw_binary_embedded"), path)
+def _validate_source_ref(
+    source: dict[str, Any], path: str, paper_id: Any
+) -> list[ArticleArtifactDiagnostic]:
+    diagnostics = _required(
+        source,
+        ("source_id", "paper_id", "source_role", "raw_text_embedded", "raw_binary_embedded"),
+        path,
+    )
     source_id = _string_or_none(source.get("source_id"))
-    diagnostics.extend(_validate_non_empty_ids(source, ("source_id", "paper_id", "source_role"), path, source_id))
+    diagnostics.extend(
+        _validate_non_empty_ids(source, ("source_id", "paper_id", "source_role"), path, source_id)
+    )
     if source.get("paper_id") != paper_id:
-        diagnostics.append(_diagnostic("source_ref_paper_id_mismatch", f"{path}/paper_id", source_id))
+        diagnostics.append(
+            _diagnostic("source_ref_paper_id_mismatch", f"{path}/paper_id", source_id)
+        )
     if source.get("raw_text_embedded") is not False:
-        diagnostics.append(_diagnostic("source_ref_raw_text_embedded", f"{path}/raw_text_embedded", source_id))
+        diagnostics.append(
+            _diagnostic("source_ref_raw_text_embedded", f"{path}/raw_text_embedded", source_id)
+        )
     if source.get("raw_binary_embedded") is not False:
-        diagnostics.append(_diagnostic("source_ref_raw_binary_embedded", f"{path}/raw_binary_embedded", source_id))
+        diagnostics.append(
+            _diagnostic("source_ref_raw_binary_embedded", f"{path}/raw_binary_embedded", source_id)
+        )
     sha = source.get("sha256")
     if sha is not None and not _valid_sha256(sha):
         diagnostics.append(_diagnostic("invalid_sha256", f"{path}/sha256", source_id))
@@ -864,48 +1048,96 @@ def _validate_source_ref(source: dict[str, Any], path: str, paper_id: Any) -> li
 def _validate_span(
     span: dict[str, Any], path: str, object_id: str | None, known_source_ids: set[str]
 ) -> list[ArticleArtifactDiagnostic]:
-    diagnostics = _required(span, ("span_id", "source_id", "coordinate_space", "raw_text_embedded"), path)
+    diagnostics = _required(
+        span, ("span_id", "source_id", "coordinate_space", "raw_text_embedded"), path
+    )
     diagnostics.extend(_validate_non_empty_ids(span, ("span_id", "source_id"), path, object_id))
     if isinstance(span.get("source_id"), str) and span.get("source_id") not in known_source_ids:
         diagnostics.append(_diagnostic("unknown_source_id", f"{path}/source_id", object_id))
     if span.get("coordinate_space") not in ALLOWED_COORDINATE_SPACES:
-        diagnostics.append(_diagnostic("invalid_coordinate_space", f"{path}/coordinate_space", object_id))
+        diagnostics.append(
+            _diagnostic("invalid_coordinate_space", f"{path}/coordinate_space", object_id)
+        )
     if span.get("raw_text_embedded") is not False:
-        diagnostics.append(_diagnostic("span_raw_text_embedded", f"{path}/raw_text_embedded", object_id))
+        diagnostics.append(
+            _diagnostic("span_raw_text_embedded", f"{path}/raw_text_embedded", object_id)
+        )
     if span.get("coordinate_space") != "artifact_record":
         char_start = span.get("char_start")
         char_end = span.get("char_end")
-        has_chars = isinstance(char_start, int) and isinstance(char_end, int) and char_end > char_start >= 0
-        has_page_bbox = span.get("coordinate_space") == "page_bbox" and isinstance(span.get("bbox"), list) and len(span.get("bbox")) == 4
+        has_chars = (
+            isinstance(char_start, int) and isinstance(char_end, int) and char_end > char_start >= 0
+        )
+        has_page_bbox = (
+            span.get("coordinate_space") == "page_bbox"
+            and isinstance(span.get("bbox"), list)
+            and len(span.get("bbox")) == 4
+        )
         if not has_chars and not has_page_bbox:
             diagnostics.append(_diagnostic("invalid_source_span_coordinates", path, object_id))
     return diagnostics
 
 
-def _validate_diagnostic_record(record: dict[str, Any], path: str) -> list[ArticleArtifactDiagnostic]:
+def _validate_diagnostic_record(
+    record: dict[str, Any], path: str
+) -> list[ArticleArtifactDiagnostic]:
     diagnostics = _required(record, ("code", "json_path", "severity", "blocks_import"), path)
     if record.get("severity") not in ALLOWED_SEVERITIES:
-        diagnostics.append(_diagnostic("invalid_diagnostic_severity", f"{path}/severity", _string_or_none(record.get("object_id"))))
-    if not isinstance(record.get("json_path"), str) or not str(record.get("json_path", "")).startswith("/"):
-        diagnostics.append(_diagnostic("invalid_diagnostic_json_path", f"{path}/json_path", _string_or_none(record.get("object_id"))))
+        diagnostics.append(
+            _diagnostic(
+                "invalid_diagnostic_severity",
+                f"{path}/severity",
+                _string_or_none(record.get("object_id")),
+            )
+        )
+    if not isinstance(record.get("json_path"), str) or not str(
+        record.get("json_path", "")
+    ).startswith("/"):
+        diagnostics.append(
+            _diagnostic(
+                "invalid_diagnostic_json_path",
+                f"{path}/json_path",
+                _string_or_none(record.get("object_id")),
+            )
+        )
     return diagnostics
 
 
-def _validate_summary(value: Any, artifacts: list[dict[str, Any]]) -> list[ArticleArtifactDiagnostic]:
+def _validate_summary(
+    value: Any, artifacts: list[dict[str, Any]]
+) -> list[ArticleArtifactDiagnostic]:
     if not isinstance(value, dict):
         return [_diagnostic("missing_summary", "/summary")]
-    diagnostics = _required(value, ("artifact_count", "candidate_link_count", "artifact_counts_by_type", "review_state_counts", "safety_flags"), "/summary")
+    diagnostics = _required(
+        value,
+        (
+            "artifact_count",
+            "candidate_link_count",
+            "artifact_counts_by_type",
+            "review_state_counts",
+            "safety_flags",
+        ),
+        "/summary",
+    )
     if value.get("artifact_count") != len(artifacts):
-        diagnostics.append(_diagnostic("summary_artifact_count_mismatch", "/summary/artifact_count"))
+        diagnostics.append(
+            _diagnostic("summary_artifact_count_mismatch", "/summary/artifact_count")
+        )
     if value.get("promoted_to_fact_count") != 0:
-        diagnostics.append(_diagnostic("summary_promoted_to_fact_count_nonzero", "/summary/promoted_to_fact_count"))
+        diagnostics.append(
+            _diagnostic("summary_promoted_to_fact_count_nonzero", "/summary/promoted_to_fact_count")
+        )
     if value.get("import_eligible_count") != 0:
-        diagnostics.append(_diagnostic("summary_import_eligible_count_nonzero", "/summary/import_eligible_count"))
+        diagnostics.append(
+            _diagnostic("summary_import_eligible_count_nonzero", "/summary/import_eligible_count")
+        )
     diagnostics.extend(_validate_safety_flags(value.get("safety_flags"), "/summary/safety_flags"))
     return diagnostics
 
 
-def _validate_uses(value: dict[str, Any], path: str, object_id: str | None) -> list[ArticleArtifactDiagnostic]:
+def _validate_uses(
+    value: dict[str, Any], path: str, object_id: str | None
+) -> list[ArticleArtifactDiagnostic]:
     diagnostics: list[ArticleArtifactDiagnostic] = []
     allowed_uses = set(_string_list(value.get("allowed_uses")))
     excluded_uses = set(_string_list(value.get("excluded_uses")))
@@ -913,11 +1145,15 @@ def _validate_uses(value: dict[str, Any], path: str, object_id: str | None) -> l
         diagnostics.append(_diagnostic("trusted_import_allowed", f"{path}/allowed_uses", object_id))
     for use in EXCLUDED_USES:
         if use not in excluded_uses:
-            diagnostics.append(_diagnostic("missing_excluded_use", f"{path}/excluded_uses", object_id))
+            diagnostics.append(
+                _diagnostic("missing_excluded_use", f"{path}/excluded_uses", object_id)
+            )
     return diagnostics
 
 
-def _validate_safety_flags(value: Any, path: str, object_id: str | None = None) -> list[ArticleArtifactDiagnostic]:
+def _validate_safety_flags(
+    value: Any, path: str, object_id: str | None = None
+) -> list[ArticleArtifactDiagnostic]:
     if not isinstance(value, dict):
         return [_diagnostic("missing_safety_flags", path, object_id)]
     diagnostics: list[ArticleArtifactDiagnostic] = []
@@ -930,7 +1166,11 @@ def _validate_safety_flags(value: Any, path: str, object_id: str | None = None) 
             # present.
             continue
         if value.get(key) is not expected:
-            code = f"safety_flag_true:{key}" if value.get(key) is True else f"safety_flag_invalid:{key}"
+            code = (
+                f"safety_flag_true:{key}"
+                if value.get(key) is True
+                else f"safety_flag_invalid:{key}"
+            )
             diagnostics.append(_diagnostic(code, f"{path}/{key}", object_id))
     return diagnostics
 
@@ -954,8 +1194,14 @@ def _validate_non_empty_ids(
 ) -> list[ArticleArtifactDiagnostic]:
     diagnostics: list[ArticleArtifactDiagnostic] = []
     for field_name in fields:
-        if field_name in value and isinstance(value.get(field_name), str) and not value[field_name].strip():
-            diagnostics.append(_diagnostic(f"empty_{field_name}", f"{path}/{field_name}", object_id))
+        if (
+            field_name in value
+            and isinstance(value.get(field_name), str)
+            and not value[field_name].strip()
+        ):
+            diagnostics.append(
+                _diagnostic(f"empty_{field_name}", f"{path}/{field_name}", object_id)
+            )
     return diagnostics
 
 
@@ -975,7 +1221,9 @@ def _validate_duplicate_ids(
     return diagnostics
 
 
-def _validate_source_of_truth_markers(value: Any, path: str = "") -> list[ArticleArtifactDiagnostic]:
+def _validate_source_of_truth_markers(
+    value: Any, path: str = ""
+) -> list[ArticleArtifactDiagnostic]:
     diagnostics: list[ArticleArtifactDiagnostic] = []
     if isinstance(value, dict):
         for key, child in value.items():
@@ -992,20 +1240,32 @@ def _validate_source_of_truth_markers(value: Any, path: str = "") -> list[Articl
     return diagnostics
 
 
-def _required(value: dict[str, Any], fields: tuple[str, ...], path: str) -> list[ArticleArtifactDiagnostic]:
+def _required(
+    value: dict[str, Any], fields: tuple[str, ...], path: str
+) -> list[ArticleArtifactDiagnostic]:
     diagnostics: list[ArticleArtifactDiagnostic] = []
     for field_name in fields:
         if field_name not in value or value.get(field_name) is None:
-            diagnostics.append(_diagnostic(f"missing_{field_name}", f"{path}/{field_name}" if path else f"/{field_name}"))
+            diagnostics.append(
+                _diagnostic(
+                    f"missing_{field_name}", f"{path}/{field_name}" if path else f"/{field_name}"
+                )
+            )
     return diagnostics
 
 
-def _diagnostic(code: str, json_path: str, object_id: str | None = None) -> ArticleArtifactDiagnostic:
+def _diagnostic(
+    code: str, json_path: str, object_id: str | None = None
+) -> ArticleArtifactDiagnostic:
     return ArticleArtifactDiagnostic(code=code, json_path=json_path, object_id=object_id)
 
 
 def _valid_sha256(value: Any) -> bool:
-    return isinstance(value, str) and len(value) == 64 and all(character in "0123456789abcdef" for character in value.lower())
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value.lower())
+    )
 
 
 def _list_of_dicts(value: Any) -> list[dict[str, Any]]:

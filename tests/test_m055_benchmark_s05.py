@@ -45,7 +45,10 @@ def test_report_contains_executive_summary(tmp_path: Path) -> None:
 def test_report_contains_per_pdf_tables(tmp_path: Path) -> None:
     text = render_to_tmp(tmp_path)
 
-    assert "| arxiv_id | category | pages | GROBID TEI metrics | OpenDataLoader md metrics | recommended route |" in text
+    assert (
+        "| arxiv_id | category | pages | GROBID TEI metrics | OpenDataLoader md metrics | recommended route |"
+        in text
+    )
     for arxiv_id in ARXIV_IDS:
         assert arxiv_id in text
         assert f"### PDF {arxiv_id}" in text

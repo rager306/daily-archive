@@ -87,14 +87,31 @@ DIAGNOSTIC_M3_OVERRIDE: dict[str, Any] = {
 }
 
 PARSER_EXPECTATIONS: list[dict[str, str]] = [
-    {"name": "grobid-fulltext", "version": "existing-m056-or-skip", "mode": "sync", "expected_output_schema": "schemas/grobid-tei.v1.json"},
-    {"name": "opendataloader", "version": "diagnostic-wrapper", "mode": "sync", "expected_output_schema": "schemas/opendataloader-pdf.v1.json"},
-    {"name": "plotextractor", "version": "existing-m058-or-skip", "mode": "sync", "expected_output_schema": "schemas/m058-plotextractor-figure-caption.v1.json"},
+    {
+        "name": "grobid-fulltext",
+        "version": "existing-m056-or-skip",
+        "mode": "sync",
+        "expected_output_schema": "schemas/grobid-tei.v1.json",
+    },
+    {
+        "name": "opendataloader",
+        "version": "diagnostic-wrapper",
+        "mode": "sync",
+        "expected_output_schema": "schemas/opendataloader-pdf.v1.json",
+    },
+    {
+        "name": "plotextractor",
+        "version": "existing-m058-or-skip",
+        "mode": "sync",
+        "expected_output_schema": "schemas/m058-plotextractor-figure-caption.v1.json",
+    },
 ]
 
 ARXIV_ID_RE = re.compile(r"(?i)(?:arxiv\s*:\s*)?(\d{4}\.\d{4,5})(?:v\d+)?")
 TEI_NS = {"tei": "http://www.tei-c.org/ns/1.0"}
 EMPTY_SHA256 = hashlib.sha256(b"").hexdigest()
+
+
 @dataclass(frozen=True)
 class PipelinePaths:
     output_dir: Path
@@ -104,19 +121,29 @@ class PipelinePaths:
     graph_dir: Path
     paper_manifest_dir: Path
     parser_output_dir: Path
+
+
 def utc_now() -> str:
     return dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat()
+
+
 def read_json(path: Path) -> Any:
     return json.loads(path.read_text())
+
+
 def write_json(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
 def ensure_dirs(output_dir: Path) -> PipelinePaths:
     paths = PipelinePaths(
         output_dir=output_dir,
@@ -137,16 +164,22 @@ def ensure_dirs(output_dir: Path) -> PipelinePaths:
     ):
         directory.mkdir(parents=True, exist_ok=True)
     return paths
+
+
 def display_path(path: Path) -> str:
     try:
         return str(path.relative_to(ROOT))
     except ValueError:
         return str(path)
+
+
 def normalize_arxiv_id(value: str | None) -> str | None:
     if not value:
         return None
     match = ARXIV_ID_RE.search(value)
     return match.group(1) if match else None
+
+
 def index_tei_files(root: Path = M056_ROOT) -> dict[str, Path]:
     index: dict[str, Path] = {}
     for path in root.rglob("*.tei.xml"):
@@ -154,6 +187,8 @@ def index_tei_files(root: Path = M056_ROOT) -> dict[str, Path]:
         if normalize_arxiv_id(arxiv_id):
             index[arxiv_id] = path
     return index
+
+
 def index_grobid_json(root: Path = M056_ROOT) -> dict[str, Path]:
     index: dict[str, Path] = {}
     for path in root.rglob("grobid-fulltext/per-pdf/*.json"):
@@ -165,6 +200,8 @@ def index_grobid_json(root: Path = M056_ROOT) -> dict[str, Path]:
         if arxiv_id:
             index[arxiv_id] = path
     return index
+
+
 def extract_arxiv_refs_from_tei(tei_path: Path, source_arxiv_id: str) -> list[str]:
     root = ET.parse(tei_path).getroot()
     refs: set[str] = set()
@@ -179,6 +216,8 @@ def extract_arxiv_refs_from_tei(tei_path: Path, source_arxiv_id: str) -> list[st
                 if candidate != source_arxiv_id:
                     refs.add(candidate)
     return sorted(refs)
+
+
 def load_one_hop_refs(cumulative_corpus: dict[str, Any], anchor_arxiv_id: str) -> list[str]:
     pdfs = cumulative_corpus.get("pdfs", [])
     refs = sorted({item["arxiv_id"] for item in pdfs if item.get("arxiv_id") != anchor_arxiv_id})
@@ -186,8 +225,19 @@ def load_one_hop_refs(cumulative_corpus: dict[str, Any], anchor_arxiv_id: str) -
     if expected is not None and expected != len(refs):
         raise RuntimeError(f"M056 1-hop ref count mismatch: expected {expected}, got {len(refs)}")
     return refs
-def stage_1_anchor_acquisition(cumulative_corpus: dict[str, Any], anchor_arxiv_id: str) -> dict[str, Any]:
-    anchor_pdf = next((item for item in cumulative_corpus.get("pdfs", []) if item.get("arxiv_id") == anchor_arxiv_id), None)
+
+
+def stage_1_anchor_acquisition(
+    cumulative_corpus: dict[str, Any], anchor_arxiv_id: str
+) -> dict[str, Any]:
+    anchor_pdf = next(
+        (
+            item
+            for item in cumulative_corpus.get("pdfs", [])
+            if item.get("arxiv_id") == anchor_arxiv_id
+        ),
+        None,
+    )
     verified = bool(anchor_pdf and (ROOT / anchor_pdf.get("path", "")).exists())
     return {
         "stage": 1,
@@ -201,8 +251,13 @@ def stage_1_anchor_acquisition(cumulative_corpus: dict[str, Any], anchor_arxiv_i
         "external_network_override": SAFETY_OVERRIDE,
         "note": "Anchor PDF was reused from M056 corpus; S01 v2 additionally authorizes scoped real arXiv acquisition.",
     }
+
+
 def stage_2_one_hop_validation(
-    cumulative_corpus: dict[str, Any], candidate_edges: dict[str, Any], one_hop_refs: list[str], anchor_arxiv_id: str
+    cumulative_corpus: dict[str, Any],
+    candidate_edges: dict[str, Any],
+    one_hop_refs: list[str],
+    anchor_arxiv_id: str,
 ) -> dict[str, Any]:
     edge_neighbors = {
         edge["paper_b"]
@@ -213,7 +268,9 @@ def stage_2_one_hop_validation(
     return {
         "stage": 2,
         "name": "one_hop_validation",
-        "status": "complete" if len(one_hop_refs) == cumulative_corpus.get("unique_1hop_pdf_count") else "failed",
+        "status": "complete"
+        if len(one_hop_refs) == cumulative_corpus.get("unique_1hop_pdf_count")
+        else "failed",
         "anchor_arxiv_id": anchor_arxiv_id,
         "m056_unique_1hop_pdf_count": cumulative_corpus.get("unique_1hop_pdf_count"),
         "validated_1hop_count": len(one_hop_refs),
@@ -222,6 +279,8 @@ def stage_2_one_hop_validation(
         "extra_candidate_edge_neighbors": sorted(edge_neighbors - corpus_refs)[:25],
         "safety_defaults": SAFETY_DEFAULTS,
     }
+
+
 def stage_3_two_hop_bfs(
     one_hop_refs: list[str], tei_index: dict[str, Path], anchor_arxiv_id: str
 ) -> tuple[dict[str, Any], list[dict[str, Any]], list[str]]:
@@ -267,9 +326,15 @@ def stage_3_two_hop_bfs(
         "safety_defaults": SAFETY_DEFAULTS,
     }
     return report, edges, new_2hop_ids
+
+
 def build_manifest_item(arxiv_id: str, pdf_path: Path | None) -> dict[str, Any]:
     if pdf_path and pdf_path.exists():
-        rel_path = str(pdf_path.relative_to(ROOT)) if pdf_path.is_absolute() and pdf_path.is_relative_to(ROOT) else str(pdf_path)
+        rel_path = (
+            str(pdf_path.relative_to(ROOT))
+            if pdf_path.is_absolute() and pdf_path.is_relative_to(ROOT)
+            else str(pdf_path)
+        )
         size_bytes = pdf_path.stat().st_size
         content_sha256 = sha256_file(pdf_path)
         storage_provider = "local"
@@ -287,6 +352,8 @@ def build_manifest_item(arxiv_id: str, pdf_path: Path | None) -> dict[str, Any]:
         "content_sha256": content_sha256,
         "expected_parsers": PARSER_EXPECTATIONS,
     }
+
+
 def find_existing_pdf_path(grobid_json_index: dict[str, Path], arxiv_id: str) -> Path | None:
     json_path = grobid_json_index.get(arxiv_id)
     if not json_path:
@@ -295,6 +362,8 @@ def find_existing_pdf_path(grobid_json_index: dict[str, Path], arxiv_id: str) ->
     pdf_path = payload.get("pdf_path")
     if not pdf_path:
         return None
+
+
 class ArxivRateLimitedClient:
     """Tiny stdlib arXiv client with explicit unauthenticated API pacing."""
 
@@ -378,9 +447,13 @@ class ArxivRateLimitedClient:
         requests = metrics["requests_made"]
         metrics["http_429_rate"] = metrics["http_429_count"] / requests if requests else 0.0
         metrics["average_pacing_delay_seconds"] = (
-            metrics["pacing_delay_seconds_total"] / metrics["pacing_delay_count"] if metrics["pacing_delay_count"] else 0.0
+            metrics["pacing_delay_seconds_total"] / metrics["pacing_delay_count"]
+            if metrics["pacing_delay_count"]
+            else 0.0
         )
         return metrics
+
+
 def _parse_retry_after_seconds(value: str | None) -> float | None:
     if not value:
         return None
@@ -388,17 +461,27 @@ def _parse_retry_after_seconds(value: str | None) -> float | None:
         return max(0.0, float(value.strip()))
     except ValueError:
         return None
+
+
 def plausible_arxiv_id(arxiv_id: str) -> bool:
     match = ARXIV_ID_PLAUSIBLE_RE.match(arxiv_id)
     if not match:
         return False
     month = int(match.group(2))
     return 1 <= month <= 12
+
+
 def chunked(items: list[str], size: int) -> Iterable[list[str]]:
     for index in range(0, len(items), size):
         yield items[index : index + size]
-def fetch_arxiv_metadata(client: ArxivRateLimitedClient, arxiv_ids: list[str]) -> dict[str, dict[str, str]]:
-    query = urllib.parse.urlencode({"id_list": ",".join(arxiv_ids), "max_results": str(len(arxiv_ids))})
+
+
+def fetch_arxiv_metadata(
+    client: ArxivRateLimitedClient, arxiv_ids: list[str]
+) -> dict[str, dict[str, str]]:
+    query = urllib.parse.urlencode(
+        {"id_list": ",".join(arxiv_ids), "max_results": str(len(arxiv_ids))}
+    )
     payload = client.get_api(f"{ARXIV_API_URL}?{query}")
     root = ET.fromstring(payload)
     atom = {"atom": "http://www.w3.org/2005/Atom"}
@@ -411,7 +494,11 @@ def fetch_arxiv_metadata(client: ArxivRateLimitedClient, arxiv_ids: list[str]) -
         title = " ".join((entry.findtext("atom:title", default="", namespaces=atom) or "").split())
         metadata[arxiv_id] = {"title": title, "api_id": id_text}
     return metadata
-def download_arxiv_pdf(client: ArxivRateLimitedClient, arxiv_id: str, pdf_dir: Path) -> tuple[Path | None, str | None]:
+
+
+def download_arxiv_pdf(
+    client: ArxivRateLimitedClient, arxiv_id: str, pdf_dir: Path
+) -> tuple[Path | None, str | None]:
     pdf_dir.mkdir(parents=True, exist_ok=True)
     pdf_path = pdf_dir / f"{arxiv_id}.pdf"
     try:
@@ -422,7 +509,11 @@ def download_arxiv_pdf(client: ArxivRateLimitedClient, arxiv_id: str, pdf_dir: P
         return None, "downloaded content is not a PDF"
     pdf_path.write_bytes(pdf_bytes)
     return pdf_path, None
-def download_arxiv_eprint(client: ArxivRateLimitedClient, arxiv_id: str, source_dir: Path) -> tuple[Path | None, str | None]:
+
+
+def download_arxiv_eprint(
+    client: ArxivRateLimitedClient, arxiv_id: str, source_dir: Path
+) -> tuple[Path | None, str | None]:
     source_dir.mkdir(parents=True, exist_ok=True)
     source_path = source_dir / f"{arxiv_id}.eprint"
     try:
@@ -433,6 +524,8 @@ def download_arxiv_eprint(client: ArxivRateLimitedClient, arxiv_id: str, source_
         return None, "downloaded e-print source is empty"
     source_path.write_bytes(source_bytes)
     return source_path, None
+
+
 def _decode_latex_bytes(payload: bytes) -> str:
     for decoder in (
         lambda data: gzip.decompress(data),
@@ -443,6 +536,8 @@ def _decode_latex_bytes(payload: bytes) -> str:
         except (OSError, EOFError, UnicodeDecodeError):
             continue
     return payload.decode("utf-8", errors="replace")
+
+
 def extract_latex_text(source_path: Path) -> str:
     payload = source_path.read_bytes()
     try:
@@ -458,10 +553,14 @@ def extract_latex_text(source_path: Path) -> str:
     except tarfile.TarError:
         pass
     return _decode_latex_bytes(payload)
+
+
 def _clean_latex_caption(caption: str) -> str:
     cleaned = re.sub(r"\\[a-zA-Z]+\*?(?:\[[^\]]*\])?", " ", caption)
     cleaned = cleaned.replace("{", " ").replace("}", " ")
     return " ".join(cleaned.split())
+
+
 def extract_tex_figure_captions(arxiv_id: str, source_path: Path | None) -> dict[str, Any]:
     if not source_path or not source_path.exists():
         return {
@@ -472,12 +571,18 @@ def extract_tex_figure_captions(arxiv_id: str, source_path: Path | None) -> dict
             "source_path": None,
         }
     latex_text = extract_latex_text(source_path)
-    figure_blocks = re.findall(r"\\begin\{figure\*?\}(.*?)\\end\{figure\*?\}", latex_text, flags=re.DOTALL)
+    figure_blocks = re.findall(
+        r"\\begin\{figure\*?\}(.*?)\\end\{figure\*?\}", latex_text, flags=re.DOTALL
+    )
     if not figure_blocks:
-        figure_blocks = re.findall(r"\\caption(?:\[[^\]]*\])?\{(.{1,2000}?)\}", latex_text, flags=re.DOTALL)
+        figure_blocks = re.findall(
+            r"\\caption(?:\[[^\]]*\])?\{(.{1,2000}?)\}", latex_text, flags=re.DOTALL
+        )
     figures: list[dict[str, Any]] = []
     for _idx, block in enumerate(figure_blocks, start=1):
-        caption_match = re.search(r"\\caption(?:\[[^\]]*\])?\{(.{1,2000}?)\}", block, flags=re.DOTALL)
+        caption_match = re.search(
+            r"\\caption(?:\[[^\]]*\])?\{(.{1,2000}?)\}", block, flags=re.DOTALL
+        )
         caption = caption_match.group(1) if caption_match else block
         label_match = re.search(r"\\label\{([^}]+)\}", block)
         cleaned_caption = _clean_latex_caption(caption)
@@ -504,7 +609,11 @@ def extract_tex_figure_captions(arxiv_id: str, source_path: Path | None) -> dict
         "figure_count": len(figures),
         "source_path": display_path(source_path),
     }
-def stage_4_real_arxiv_acquisition(paths: PipelinePaths, candidate_ids: list[str], max_papers: int) -> tuple[dict[str, Any], list[str], dict[str, Path]]:
+
+
+def stage_4_real_arxiv_acquisition(
+    paths: PipelinePaths, candidate_ids: list[str], max_papers: int
+) -> tuple[dict[str, Any], list[str], dict[str, Path]]:
     client = ArxivRateLimitedClient()
     pdf_dir = paths.acquisition_dir / "pdfs"
     source_dir = paths.acquisition_dir / "eprints"
@@ -540,15 +649,17 @@ def stage_4_real_arxiv_acquisition(paths: PipelinePaths, candidate_ids: list[str
                 pdf_paths[arxiv_id] = pdf_path
                 if source_path:
                     eprint_paths[arxiv_id] = source_path
-                attempts.append({
-                    "arxiv_id": arxiv_id,
-                    "status": "downloaded",
-                    "pdf_path": display_path(pdf_path),
-                    "eprint_path": display_path(source_path) if source_path else None,
-                    "eprint_error": source_error,
-                    "size_bytes": pdf_path.stat().st_size,
-                    "title": metadata[arxiv_id].get("title", ""),
-                })
+                attempts.append(
+                    {
+                        "arxiv_id": arxiv_id,
+                        "status": "downloaded",
+                        "pdf_path": display_path(pdf_path),
+                        "eprint_path": display_path(source_path) if source_path else None,
+                        "eprint_error": source_error,
+                        "size_bytes": pdf_path.stat().st_size,
+                        "title": metadata[arxiv_id].get("title", ""),
+                    }
+                )
             else:
                 attempts.append({"arxiv_id": arxiv_id, "status": "pdf_failed", "error": error})
 
@@ -572,6 +683,8 @@ def stage_4_real_arxiv_acquisition(paths: PipelinePaths, candidate_ids: list[str
         "safety_defaults": SAFETY_DEFAULTS,
     }
     return report, selected_ids, pdf_paths, eprint_paths
+
+
 def _multipart_pdf_request(endpoint: str, pdf_path: Path) -> urllib.request.Request:
     boundary = f"----daily-archive-m061-{uuid.uuid4().hex}"
     pdf_bytes = pdf_path.read_bytes()
@@ -591,6 +704,8 @@ def _multipart_pdf_request(endpoint: str, pdf_path: Path) -> urllib.request.Requ
     request.add_header("Content-Length", str(len(body)))
     request.add_header("User-Agent", ARXIV_USER_AGENT)
     return request
+
+
 def post_grobid_fulltext(pdf_path: Path) -> dict[str, Any]:
     started = time.perf_counter()
     try:
@@ -613,7 +728,11 @@ def post_grobid_fulltext(pdf_path: Path) -> dict[str, Any]:
             "tei_text": "",
             "error": f"{type(exc).__name__}:{exc}",
         }
-def grobid_payload_from_result(arxiv_id: str, pdf_path: Path | None, result: dict[str, Any], tei_path: Path) -> dict[str, Any]:
+
+
+def grobid_payload_from_result(
+    arxiv_id: str, pdf_path: Path | None, result: dict[str, Any], tei_path: Path
+) -> dict[str, Any]:
     tei_text = result.get("tei_text", "")
     if tei_text:
         tei_path.write_text("\n".join(line.rstrip() for line in tei_text.splitlines()) + "\n")
@@ -622,15 +741,24 @@ def grobid_payload_from_result(arxiv_id: str, pdf_path: Path | None, result: dic
     if tei_text:
         try:
             root = ET.fromstring(tei_text)
-            title = " ".join((root.findtext(".//tei:titleStmt/tei:title", default="", namespaces=TEI_NS) or "").split())
-            abstract = " ".join((root.findtext(".//tei:abstract", default="", namespaces=TEI_NS) or "").split())
+            title = " ".join(
+                (
+                    root.findtext(".//tei:titleStmt/tei:title", default="", namespaces=TEI_NS) or ""
+                ).split()
+            )
+            abstract = " ".join(
+                (root.findtext(".//tei:abstract", default="", namespaces=TEI_NS) or "").split()
+            )
         except ET.ParseError:
             pass
     return {
         "schema_version": "grobid-tei.v1",
         "tei_xml_sha256": sha256_file(tei_path) if tei_path.exists() else EMPTY_SHA256,
         "header": {"title": title, "authors": []},
-        "biblStruct": [{"arxiv_id": ref, "raw_reference": ref} for ref in sorted(set(ARXIV_ID_RE.findall(tei_text)))],
+        "biblStruct": [
+            {"arxiv_id": ref, "raw_reference": ref}
+            for ref in sorted(set(ARXIV_ID_RE.findall(tei_text)))
+        ],
         "abstract": abstract,
         "body_sections": [],
         "arxiv_id": arxiv_id,
@@ -643,10 +771,17 @@ def grobid_payload_from_result(arxiv_id: str, pdf_path: Path | None, result: dic
         "duration_seconds": result.get("duration_seconds"),
         "error": result.get("error"),
     }
+
+
 def validate_json(schema_path: Path, payload: dict[str, Any]) -> list[str]:
     schema = read_json(schema_path)
     validator = Draft7Validator(schema)
-    return [error.message for error in sorted(validator.iter_errors(payload), key=lambda item: item.path)]
+    return [
+        error.message
+        for error in sorted(validator.iter_errors(payload), key=lambda item: item.path)
+    ]
+
+
 def write_parser_wrappers(
     paths: PipelinePaths,
     arxiv_id: str,
@@ -666,7 +801,9 @@ def write_parser_wrappers(
         grobid_duration = 0.0
     elif pdf_path and pdf_path.exists():
         grobid_result = post_grobid_fulltext(pdf_path)
-        grobid_payload = grobid_payload_from_result(arxiv_id, pdf_path, grobid_result, grobid_tei_path)
+        grobid_payload = grobid_payload_from_result(
+            arxiv_id, pdf_path, grobid_result, grobid_tei_path
+        )
         grobid_status = grobid_result["status"]
         grobid_duration = grobid_result["duration_seconds"]
     else:
@@ -705,7 +842,9 @@ def write_parser_wrappers(
         "external_network_override": SAFETY_OVERRIDE,
         "message": "OpenDataLoader execution is disabled by default; wrapper records sync stage outcome for the real acquired PDF.",
     }
-    (parser_dir / "opendataloader.md").write_text(f"# {arxiv_id}\n\nReal PDF acquired for M064-wqfgfa S01 diagnostic wrapper.\n")
+    (parser_dir / "opendataloader.md").write_text(
+        f"# {arxiv_id}\n\nReal PDF acquired for M064-wqfgfa S01 diagnostic wrapper.\n"
+    )
     opendataloader_out = parser_dir / "opendataloader.json"
     write_json(opendataloader_out, opendataloader_payload)
 
@@ -743,7 +882,9 @@ def write_parser_wrappers(
     return {
         "parser_output_dir": str(parser_dir.relative_to(paths.output_dir)),
         "grobid_output": str(grobid_out.relative_to(paths.output_dir)),
-        "grobid_tei_output": str(grobid_tei_path.relative_to(paths.output_dir)) if grobid_tei_path.exists() else None,
+        "grobid_tei_output": str(grobid_tei_path.relative_to(paths.output_dir))
+        if grobid_tei_path.exists()
+        else None,
         "grobid_status": grobid_status,
         "grobid_duration_seconds": grobid_duration,
         "opendataloader_output": str(opendataloader_out.relative_to(paths.output_dir)),
@@ -751,6 +892,8 @@ def write_parser_wrappers(
         "validation_errors": validations,
         "validation_passed": all(not errors for errors in validations.values()),
     }
+
+
 def stage_4_to_8_per_paper(
     paths: PipelinePaths,
     selected_ids: list[str],
@@ -763,7 +906,9 @@ def stage_4_to_8_per_paper(
     papers: list[dict[str, Any]] = []
     stage_started = time.perf_counter()
     for arxiv_id in selected_ids:
-        pdf_path = acquired_pdf_paths.get(arxiv_id) or find_existing_pdf_path(grobid_json_index, arxiv_id)
+        pdf_path = acquired_pdf_paths.get(arxiv_id) or find_existing_pdf_path(
+            grobid_json_index, arxiv_id
+        )
         manifest_batch_id = f"m061-s01-{arxiv_id}"
         manifest = {
             "schema_version": "daily-archive.pdf-batch-manifest.v1",
@@ -774,7 +919,10 @@ def stage_4_to_8_per_paper(
                 "artifacts/m056-bfs-graph/candidate-edges.json",
                 "artifacts/m056-bfs-graph/cumulative-corpus.json",
             ],
-            "source_uris": [f"https://arxiv.org/pdf/{arxiv_id}", f"https://arxiv.org/e-print/{arxiv_id}"],
+            "source_uris": [
+                f"https://arxiv.org/pdf/{arxiv_id}",
+                f"https://arxiv.org/e-print/{arxiv_id}",
+            ],
             "pdfs": [build_manifest_item(arxiv_id, pdf_path)],
             "parser_expectations": PARSER_EXPECTATIONS,
             "diagnostic_only": True,
@@ -802,16 +950,38 @@ def stage_4_to_8_per_paper(
             pdf_path=pdf_path,
             eprint_path=acquired_eprint_paths.get(arxiv_id),
         )
-        parser_complete = bool(pdf_path and parser_result["validation_passed"] and parser_result["grobid_status"] in {"success", "reused_existing_m056"})
+        parser_complete = bool(
+            pdf_path
+            and parser_result["validation_passed"]
+            and parser_result["grobid_status"] in {"success", "reused_existing_m056"}
+        )
         stage_records = [
             {"stage": 1, "name": "anchor_acquisition", "status": "complete"},
             {"stage": 2, "name": "one_hop_validation", "status": "complete"},
             {"stage": 3, "name": "two_hop_bfs", "status": "complete"},
-            {"stage": 4, "name": "real_arxiv_acquisition", "status": "complete" if pdf_path else "failed"},
-            {"stage": 5, "name": "grobid_opendataloader_plotextractor", "status": "complete" if parser_complete else "partial", "grobid_status": parser_result["grobid_status"]},
-            {"stage": 6, "name": "fdembed", "status": "complete_existing_m057_fd_layer_reused", "fd_url": FD_URL},
+            {
+                "stage": 4,
+                "name": "real_arxiv_acquisition",
+                "status": "complete" if pdf_path else "failed",
+            },
+            {
+                "stage": 5,
+                "name": "grobid_opendataloader_plotextractor",
+                "status": "complete" if parser_complete else "partial",
+                "grobid_status": parser_result["grobid_status"],
+            },
+            {
+                "stage": 6,
+                "name": "fdembed",
+                "status": "complete_existing_m057_fd_layer_reused",
+                "fd_url": FD_URL,
+            },
             {"stage": 7, "name": "m3_judge", "status": "complete_reused_m060g_diagnostic"},
-            {"stage": 8, "name": "manifest_validation", "status": "complete" if not errors else "validation_failed"},
+            {
+                "stage": 8,
+                "name": "manifest_validation",
+                "status": "complete" if not errors else "validation_failed",
+            },
         ]
         fully_processed_real_paper = bool(pdf_path and parser_complete and not errors)
         papers.append(
@@ -832,14 +1002,33 @@ def stage_4_to_8_per_paper(
         "status": "complete",
         "selected_paper_count": len(selected_ids),
         "locally_available_pdf_count": sum(1 for paper in papers if paper["pdf_available_locally"]),
-        "fully_processed_real_paper_count": sum(1 for paper in papers if paper["fully_processed_real_paper"]),
-        "manifest_validation_passed_count": sum(1 for errors in manifest_schema_errors.values() if not errors),
-        "manifest_validation_success_rate": (
-            sum(1 for errors in manifest_schema_errors.values() if not errors) / len(selected_ids) if selected_ids else 0.0
+        "fully_processed_real_paper_count": sum(
+            1 for paper in papers if paper["fully_processed_real_paper"]
         ),
-        "grobid_success_count": sum(1 for paper in papers if paper["parser_result"]["grobid_status"] in {"success", "reused_existing_m056"}),
-        "plotextractor_eprint_success_count": sum(1 for paper in papers if read_json(paths.output_dir / paper["parser_result"]["plotextractor_output"])["per_pdf"][0].get("tex_status") == "downloaded_eprint_source"),
-        "grobid_wall_seconds": sum(paper["parser_result"].get("grobid_duration_seconds") or 0.0 for paper in papers),
+        "manifest_validation_passed_count": sum(
+            1 for errors in manifest_schema_errors.values() if not errors
+        ),
+        "manifest_validation_success_rate": (
+            sum(1 for errors in manifest_schema_errors.values() if not errors) / len(selected_ids)
+            if selected_ids
+            else 0.0
+        ),
+        "grobid_success_count": sum(
+            1
+            for paper in papers
+            if paper["parser_result"]["grobid_status"] in {"success", "reused_existing_m056"}
+        ),
+        "plotextractor_eprint_success_count": sum(
+            1
+            for paper in papers
+            if read_json(paths.output_dir / paper["parser_result"]["plotextractor_output"])[
+                "per_pdf"
+            ][0].get("tex_status")
+            == "downloaded_eprint_source"
+        ),
+        "grobid_wall_seconds": sum(
+            paper["parser_result"].get("grobid_duration_seconds") or 0.0 for paper in papers
+        ),
         "wall_seconds": time.perf_counter() - stage_started,
         "external_network_authorized_default": SAFETY_DEFAULTS["external_network_authorized"],
         "external_network_override": SAFETY_OVERRIDE,
@@ -848,10 +1037,14 @@ def stage_4_to_8_per_paper(
         "safety_defaults": SAFETY_DEFAULTS,
     }
     return report, papers
+
+
 def stage_7_m3_judge(paths: PipelinePaths) -> dict[str, Any]:
     comparison_path = M060G_ROOT / "comparison.json"
     comparison = read_json(comparison_path)
-    quality_stats = comparison.get("aggregate", {}).get("model_stats", {}).get("figure-qa-judge-quality", {})
+    quality_stats = (
+        comparison.get("aggregate", {}).get("model_stats", {}).get("figure-qa-judge-quality", {})
+    )
     figure_count = quality_stats.get("passed_count", 0) + quality_stats.get("failed_count", 0)
     success_rate = (quality_stats.get("passed_count", 0) / figure_count) if figure_count else 0.0
     per_figure_files = sorted(M060G_ROOT.glob("per-figure/*.json"))
@@ -872,9 +1065,13 @@ def stage_7_m3_judge(paths: PipelinePaths) -> dict[str, Any]:
     }
     write_json(paths.judgments_dir / "m3-judgments.json", report)
     return report
+
+
 def validate_layer_payload(schema_path: Path, payload_path: Path) -> list[str]:
     payload = read_json(payload_path)
     return validate_json(schema_path, payload)
+
+
 def stage_9_graph_manifest(
     paths: PipelinePaths,
     bfs_edges: list[dict[str, Any]],
@@ -893,25 +1090,41 @@ def stage_9_graph_manifest(
                 "artifacts/m061-2hop/anchor-2605.18747/acquisition/two-hop-bfs.json",
             ],
             "edge_count": len(citation_payload.get("edges", [])) + len(bfs_edges),
-            "node_count": len({node.get("arxiv_id") for node in citation_payload.get("nodes", []) if node.get("arxiv_id")} | set(new_2hop_ids)),
+            "node_count": len(
+                {
+                    node.get("arxiv_id")
+                    for node in citation_payload.get("nodes", [])
+                    if node.get("arxiv_id")
+                }
+                | set(new_2hop_ids)
+            ),
         },
         {
             "name": "table_similarity_m057",
             "source_artifacts": ["artifacts/m057-fd-marker/table-similarity/edges.json"],
             "edge_count": len(table_payload.get("edges", [])),
-            "node_count": len({edge.get("paper_a") for edge in table_payload.get("edges", [])} | {edge.get("paper_b") for edge in table_payload.get("edges", [])}),
+            "node_count": len(
+                {edge.get("paper_a") for edge in table_payload.get("edges", [])}
+                | {edge.get("paper_b") for edge in table_payload.get("edges", [])}
+            ),
         },
         {
             "name": "figure_similarity_m057_v1",
             "source_artifacts": ["artifacts/m057-fd-marker/figure-links/edges.json"],
             "edge_count": len(figure_v1_payload.get("edges", [])),
-            "node_count": len({edge.get("figure_a_id") for edge in figure_v1_payload.get("edges", [])} | {edge.get("figure_b_id") for edge in figure_v1_payload.get("edges", [])}),
+            "node_count": len(
+                {edge.get("figure_a_id") for edge in figure_v1_payload.get("edges", [])}
+                | {edge.get("figure_b_id") for edge in figure_v1_payload.get("edges", [])}
+            ),
         },
         {
             "name": "figure_similarity_m058_v2",
             "source_artifacts": ["artifacts/m058-plotextractor/edges.json"],
             "edge_count": len(figure_v2_payload.get("edges", [])),
-            "node_count": len({edge.get("figure_a_id") for edge in figure_v2_payload.get("edges", [])} | {edge.get("figure_b_id") for edge in figure_v2_payload.get("edges", [])}),
+            "node_count": len(
+                {edge.get("figure_a_id") for edge in figure_v2_payload.get("edges", [])}
+                | {edge.get("figure_b_id") for edge in figure_v2_payload.get("edges", [])}
+            ),
         },
         {
             "name": "judge_scores_m3_m060g_diagnostic",
@@ -935,12 +1148,18 @@ def stage_9_graph_manifest(
         "total_edge_count": sum(layer["edge_count"] for layer in layers),
         "total_node_count_by_layer_sum": sum(layer["node_count"] for layer in layers),
         "validation": {
-            "table_layer_errors": validate_layer_payload(TABLE_SCHEMA_PATH, M057_ROOT / "table-similarity" / "edges.json"),
-            "figure_v2_layer_errors": validate_layer_payload(PLOTEXTRACTOR_SCHEMA_PATH, M058_ROOT / "edges.json"),
+            "table_layer_errors": validate_layer_payload(
+                TABLE_SCHEMA_PATH, M057_ROOT / "table-similarity" / "edges.json"
+            ),
+            "figure_v2_layer_errors": validate_layer_payload(
+                PLOTEXTRACTOR_SCHEMA_PATH, M058_ROOT / "edges.json"
+            ),
         },
     }
     write_json(paths.graph_dir / "5-layer-graph-manifest.json", manifest)
     return manifest
+
+
 def build_decision(summary: dict[str, Any]) -> str:
     go_new_papers = summary["two_hop_new_arxiv_id_count"] >= 100
     go_m3 = summary["m3_judge_success_rate"] >= 0.80
@@ -993,7 +1212,13 @@ def build_decision(summary: dict[str, Any]) -> str:
         "",
     ]
     return "\n".join(lines)
-def run_pilot(output_dir: Path = DEFAULT_OUTPUT_DIR, anchor_arxiv_id: str = ANCHOR_ARXIV_ID, max_papers: int = 30) -> dict[str, Any]:
+
+
+def run_pilot(
+    output_dir: Path = DEFAULT_OUTPUT_DIR,
+    anchor_arxiv_id: str = ANCHOR_ARXIV_ID,
+    max_papers: int = 30,
+) -> dict[str, Any]:
     started = time.perf_counter()
     stage_timings: dict[str, float] = {}
     paths = ensure_dirs(output_dir)
@@ -1011,7 +1236,9 @@ def run_pilot(output_dir: Path = DEFAULT_OUTPUT_DIR, anchor_arxiv_id: str = ANCH
         raise RuntimeError("Anchor PDF is missing from M056 corpus")
 
     stage_started = time.perf_counter()
-    stage2 = stage_2_one_hop_validation(cumulative_corpus, candidate_edges, one_hop_refs, anchor_arxiv_id)
+    stage2 = stage_2_one_hop_validation(
+        cumulative_corpus, candidate_edges, one_hop_refs, anchor_arxiv_id
+    )
     stage_timings["one_hop_validation"] = time.perf_counter() - stage_started
 
     stage_started = time.perf_counter()
@@ -1019,12 +1246,23 @@ def run_pilot(output_dir: Path = DEFAULT_OUTPUT_DIR, anchor_arxiv_id: str = ANCH
     stage_timings["two_hop_bfs"] = time.perf_counter() - stage_started
 
     stage_started = time.perf_counter()
-    arxiv_acquisition, selected_ids, acquired_pdf_paths, acquired_eprint_paths = stage_4_real_arxiv_acquisition(paths, new_2hop_ids, max_papers)
+    arxiv_acquisition, selected_ids, acquired_pdf_paths, acquired_eprint_paths = (
+        stage_4_real_arxiv_acquisition(paths, new_2hop_ids, max_papers)
+    )
     stage_timings["real_arxiv_acquisition"] = time.perf_counter() - stage_started
 
     stage_started = time.perf_counter()
-    stage4_8, papers = stage_4_to_8_per_paper(paths, selected_ids, grobid_json_index, plotextractor_index, acquired_pdf_paths, acquired_eprint_paths)
-    stage_timings["grobid_opendataloader_plotextractor_fdembed_manifest"] = time.perf_counter() - stage_started
+    stage4_8, papers = stage_4_to_8_per_paper(
+        paths,
+        selected_ids,
+        grobid_json_index,
+        plotextractor_index,
+        acquired_pdf_paths,
+        acquired_eprint_paths,
+    )
+    stage_timings["grobid_opendataloader_plotextractor_fdembed_manifest"] = (
+        time.perf_counter() - stage_started
+    )
 
     stage_started = time.perf_counter()
     m3_report = stage_7_m3_judge(paths)
@@ -1037,15 +1275,28 @@ def run_pilot(output_dir: Path = DEFAULT_OUTPUT_DIR, anchor_arxiv_id: str = ANCH
     elapsed_seconds = time.perf_counter() - started
     stage_timings["total"] = elapsed_seconds
     fully_processed_real_papers = stage4_8["fully_processed_real_paper_count"]
-    real_paper_throughput_per_min = fully_processed_real_papers / (elapsed_seconds / 60) if elapsed_seconds else 0.0
-    acquisition_throughput_per_min = arxiv_acquisition["downloaded_pdf_count"] / (stage_timings["real_arxiv_acquisition"] / 60) if stage_timings["real_arxiv_acquisition"] else 0.0
+    real_paper_throughput_per_min = (
+        fully_processed_real_papers / (elapsed_seconds / 60) if elapsed_seconds else 0.0
+    )
+    acquisition_throughput_per_min = (
+        arxiv_acquisition["downloaded_pdf_count"] / (stage_timings["real_arxiv_acquisition"] / 60)
+        if stage_timings["real_arxiv_acquisition"]
+        else 0.0
+    )
     audited_throughput_per_min = len(papers) / (elapsed_seconds / 60) if elapsed_seconds else 0.0
 
     write_json(paths.acquisition_dir / "anchor-acquisition.json", stage1)
     write_json(paths.acquisition_dir / "one-hop-validation.json", stage2)
     write_json(paths.acquisition_dir / "two-hop-bfs.json", {**stage3, "edges": bfs_edges})
     write_json(paths.acquisition_dir / "arxiv-acquisition.json", arxiv_acquisition)
-    write_json(paths.acquisition_dir / "selected-2hop-papers.json", {"selected_arxiv_ids": selected_ids, "count": len(selected_ids), "source": "real_arxiv_acquisition"})
+    write_json(
+        paths.acquisition_dir / "selected-2hop-papers.json",
+        {
+            "selected_arxiv_ids": selected_ids,
+            "count": len(selected_ids),
+            "source": "real_arxiv_acquisition",
+        },
+    )
     write_json(paths.parsing_dir / "per-paper-stage-report.json", stage4_8)
 
     summary = {
@@ -1078,15 +1329,23 @@ def run_pilot(output_dir: Path = DEFAULT_OUTPUT_DIR, anchor_arxiv_id: str = ANCH
         "real_arxiv_acquisition_throughput_per_min": acquisition_throughput_per_min,
         "audited_stage_record_throughput_per_min": audited_throughput_per_min,
         "graph_layer_count": graph_manifest["layer_count"],
-        "graph_node_count_per_layer": {layer["name"]: layer["node_count"] for layer in graph_manifest["layers"]},
-        "graph_edge_count_per_layer": {layer["name"]: layer["edge_count"] for layer in graph_manifest["layers"]},
+        "graph_node_count_per_layer": {
+            layer["name"]: layer["node_count"] for layer in graph_manifest["layers"]
+        },
+        "graph_edge_count_per_layer": {
+            layer["name"]: layer["edge_count"] for layer in graph_manifest["layers"]
+        },
         "artifacts": {
             "anchor_acquisition": display_path(paths.acquisition_dir / "anchor-acquisition.json"),
             "one_hop_validation": display_path(paths.acquisition_dir / "one-hop-validation.json"),
             "two_hop_bfs": display_path(paths.acquisition_dir / "two-hop-bfs.json"),
             "arxiv_acquisition": display_path(paths.acquisition_dir / "arxiv-acquisition.json"),
-            "selected_2hop_papers": display_path(paths.acquisition_dir / "selected-2hop-papers.json"),
-            "per_paper_stage_report": display_path(paths.parsing_dir / "per-paper-stage-report.json"),
+            "selected_2hop_papers": display_path(
+                paths.acquisition_dir / "selected-2hop-papers.json"
+            ),
+            "per_paper_stage_report": display_path(
+                paths.parsing_dir / "per-paper-stage-report.json"
+            ),
             "m3_judgments": display_path(paths.judgments_dir / "m3-judgments.json"),
             "graph_manifest": display_path(paths.graph_dir / "5-layer-graph-manifest.json"),
         },
@@ -1097,16 +1356,24 @@ def run_pilot(output_dir: Path = DEFAULT_OUTPUT_DIR, anchor_arxiv_id: str = ANCH
     decision_path.parent.mkdir(parents=True, exist_ok=True)
     decision_path.write_text(decision)
     return summary
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run M061 S01 1-anchor 2-hop BFS pilot.")
     parser.add_argument("--anchor", default=ANCHOR_ARXIV_ID)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--max-papers", type=int, default=30)
     return parser.parse_args()
+
+
 def main() -> int:
     args = parse_args()
-    summary = run_pilot(output_dir=args.output_dir, anchor_arxiv_id=args.anchor, max_papers=args.max_papers)
+    summary = run_pilot(
+        output_dir=args.output_dir, anchor_arxiv_id=args.anchor, max_papers=args.max_papers
+    )
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

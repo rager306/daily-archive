@@ -16,8 +16,12 @@ replay = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = replay
 spec.loader.exec_module(replay)
 
-VERIFY_MODULE_PATH = Path(__file__).parents[1] / "scripts" / "verify_m027_current_pipeline_baseline.py"
-verify_spec = importlib.util.spec_from_file_location("verify_m027_current_pipeline_baseline", VERIFY_MODULE_PATH)
+VERIFY_MODULE_PATH = (
+    Path(__file__).parents[1] / "scripts" / "verify_m027_current_pipeline_baseline.py"
+)
+verify_spec = importlib.util.spec_from_file_location(
+    "verify_m027_current_pipeline_baseline", VERIFY_MODULE_PATH
+)
 assert verify_spec is not None and verify_spec.loader is not None
 verifier = importlib.util.module_from_spec(verify_spec)
 sys.modules[verify_spec.name] = verifier
@@ -35,11 +39,16 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def _fixture(tmp_path: Path, *, parser_text: str | None = None, metadata_only: bool = True) -> Namespace:
+def _fixture(
+    tmp_path: Path, *, parser_text: str | None = None, metadata_only: bool = True
+) -> Namespace:
     root = tmp_path
     corpus = root / "corpus"
     converted = corpus / "conversion-quality" / "article_one" / "arxiv_pdf.txt"
-    text = parser_text or "# Fixture Paper\n\n## Introduction\n\nThis fixture has enough local converted article prose for the current baseline path.\n\n## Method\n\nThe accepted behavior should create retrieval-only chunks and refuse import readiness.\n"
+    text = (
+        parser_text
+        or "# Fixture Paper\n\n## Introduction\n\nThis fixture has enough local converted article prose for the current baseline path.\n\n## Method\n\nThe accepted behavior should create retrieval-only chunks and refuse import readiness.\n"
+    )
     converted.parent.mkdir(parents=True, exist_ok=True)
     converted.write_text(text, encoding="utf-8")
     source_summary = corpus / "source-acquisition-summary.json"
@@ -106,7 +115,13 @@ def _write_replay_outputs(args: Namespace) -> tuple[dict[str, Any], list[dict[st
     return summary, diagnostics
 
 
-def _verifier_args(tmp_path: Path, args: Namespace, *, expected_article_count: int = 1, expected_variant_count: int = 2) -> Namespace:
+def _verifier_args(
+    tmp_path: Path,
+    args: Namespace,
+    *,
+    expected_article_count: int = 1,
+    expected_variant_count: int = 2,
+) -> Namespace:
     return Namespace(
         summary=args.output_summary,
         diagnostics=args.output_diagnostics,
@@ -123,7 +138,9 @@ def _diagnostic_codes(findings: list[dict[str, Any]]) -> set[str]:
     return {str(finding.get("diagnostic_code")) for finding in findings}
 
 
-def test_replay_requires_s03_linkage_and_no_network(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_replay_requires_s03_linkage_and_no_network(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path)
     args.no_network = False
@@ -139,7 +156,9 @@ def test_replay_requires_s03_linkage_and_no_network(tmp_path: Path, monkeypatch:
         replay.replay_baseline(args)
 
 
-def test_replay_rejects_converted_payload_hash_mismatch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_replay_rejects_converted_payload_hash_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path)
     converted = tmp_path / "corpus" / "conversion-quality" / "article_one" / "arxiv_pdf.txt"
@@ -149,7 +168,9 @@ def test_replay_rejects_converted_payload_hash_mismatch(tmp_path: Path, monkeypa
         replay.replay_baseline(args)
 
 
-def test_replay_captures_parser_ready_and_metadata_only_variants(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_replay_captures_parser_ready_and_metadata_only_variants(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path)
 
@@ -175,10 +196,17 @@ def test_replay_captures_parser_ready_and_metadata_only_variants(tmp_path: Path,
     artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
     assert artifact["article_ref"] == "article/one"
     assert artifact["variant_count"] == 2
-    assert all(record["baseline_artifact_path"].endswith("current-pipeline-baseline/article_one/baseline.json") for record in summary["article_results"])
+    assert all(
+        record["baseline_artifact_path"].endswith(
+            "current-pipeline-baseline/article_one/baseline.json"
+        )
+        for record in summary["article_results"]
+    )
 
 
-def test_replay_records_zero_chunk_current_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_replay_records_zero_chunk_current_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path, parser_text="   \n", metadata_only=False)
 
@@ -216,7 +244,9 @@ def test_metadata_artifacts_are_redacted(tmp_path: Path, monkeypatch: pytest.Mon
     assert "%PDF-" not in combined
 
 
-def test_verifier_accepts_valid_replay_outputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_verifier_accepts_valid_replay_outputs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     monkeypatch.setattr(verifier, "ROOT", tmp_path)
     args = _fixture(tmp_path)
@@ -232,19 +262,25 @@ def test_verifier_accepts_valid_replay_outputs(tmp_path: Path, monkeypatch: pyte
     assert verifier_summary["graph_import_allowed"] is False
 
 
-def test_verifier_flags_stale_s03_source_summary_hash(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_verifier_flags_stale_s03_source_summary_hash(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     monkeypatch.setattr(verifier, "ROOT", tmp_path)
     args = _fixture(tmp_path)
     _write_replay_outputs(args)
-    (tmp_path / "corpus" / "source-acquisition-summary.json").write_text('{"changed": true}\n', encoding="utf-8")
+    (tmp_path / "corpus" / "source-acquisition-summary.json").write_text(
+        '{"changed": true}\n', encoding="utf-8"
+    )
 
     _, findings = verifier.verify(_verifier_args(tmp_path, args))
 
     assert "s03_source_summary_sha256_mismatch" in _diagnostic_codes(findings)
 
 
-def test_verifier_flags_missing_per_article_artifact(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_verifier_flags_missing_per_article_artifact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     monkeypatch.setattr(verifier, "ROOT", tmp_path)
     args = _fixture(tmp_path)
@@ -256,7 +292,9 @@ def test_verifier_flags_missing_per_article_artifact(tmp_path: Path, monkeypatch
     assert "missing_baseline_artifact" in _diagnostic_codes(findings)
 
 
-def test_verifier_flags_stale_converted_payload_hash(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_verifier_flags_stale_converted_payload_hash(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     monkeypatch.setattr(verifier, "ROOT", tmp_path)
     args = _fixture(tmp_path)
@@ -271,7 +309,9 @@ def test_verifier_flags_stale_converted_payload_hash(tmp_path: Path, monkeypatch
     assert "converted_payload_byte_size_mismatch" in codes
 
 
-def test_verifier_flags_unsafe_baseline_artifact_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_verifier_flags_unsafe_baseline_artifact_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     monkeypatch.setattr(verifier, "ROOT", tmp_path)
     args = _fixture(tmp_path)
@@ -281,7 +321,9 @@ def test_verifier_flags_unsafe_baseline_artifact_path(tmp_path: Path, monkeypatc
 
     _, findings = verifier.verify(_verifier_args(tmp_path, args))
 
-    assert any(code.startswith("unsafe_baseline_artifact_path") for code in _diagnostic_codes(findings))
+    assert any(
+        code.startswith("unsafe_baseline_artifact_path") for code in _diagnostic_codes(findings)
+    )
 
 
 def test_verifier_flags_payload_leakage(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -299,7 +341,9 @@ def test_verifier_flags_payload_leakage(tmp_path: Path, monkeypatch: pytest.Monk
     assert "metadata_payload_snippet_leakage" in codes
 
 
-def test_verifier_flags_missing_baseline_rows(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_verifier_flags_missing_baseline_rows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     monkeypatch.setattr(verifier, "ROOT", tmp_path)
     args = _fixture(tmp_path)

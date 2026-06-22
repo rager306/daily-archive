@@ -88,7 +88,9 @@ CONCRETE_ENTITY_TYPES: Final[frozenset[str]] = frozenset(
 )
 
 # Module A source/author/venue/resource kinds.
-SOURCE_KINDS: Final[frozenset[str]] = frozenset({"paper", "textbook", "code_repo", "dataset", "tech_doc"})
+SOURCE_KINDS: Final[frozenset[str]] = frozenset(
+    {"paper", "textbook", "code_repo", "dataset", "tech_doc"}
+)
 
 #: All recognized entity_type values. TypedEntity validation constrains
 #: entity_type to this set (closed vocabulary per ADR-028 §2.1).

@@ -35,7 +35,9 @@ CANONICAL_CLASSES = ("Contract", "Integration", "Operational", "UAT")
 M027_ADVANCED_REQUIREMENT_IDS = {"R024", "R027", "R029"}
 FUTURE_OUT_OF_SCOPE_REQUIREMENT_IDS = {"R019", "R022", "R023", "R031", "R032", "R033"}
 CHAIN_REQUIREMENT_IDS = {"R036"}
-REQUIRED_REQUIREMENT_IDS = M027_ADVANCED_REQUIREMENT_IDS | FUTURE_OUT_OF_SCOPE_REQUIREMENT_IDS | CHAIN_REQUIREMENT_IDS
+REQUIRED_REQUIREMENT_IDS = (
+    M027_ADVANCED_REQUIREMENT_IDS | FUTURE_OUT_OF_SCOPE_REQUIREMENT_IDS | CHAIN_REQUIREMENT_IDS
+)
 
 EXPECTED_CLASSIFICATIONS: dict[str, dict[str, str]] = {
     **{
@@ -253,7 +255,9 @@ def _is_planning_path(path: str) -> bool:
     return path.replace("\\", "/").startswith(PLANNING_PATH_PREFIXES)
 
 
-def _validate_repo_path(path_value: Any, owner: str, *, repo_root: Path, require_planning_evidence: bool) -> list[str]:
+def _validate_repo_path(
+    path_value: Any, owner: str, *, repo_root: Path, require_planning_evidence: bool
+) -> list[str]:
     if not isinstance(path_value, str):
         return [f"{owner} path must be a string: {path_value!r}"]
     if not path_value or path_value.strip() != path_value:
@@ -396,8 +400,18 @@ def validate_audit(
             errors.append(f"{path} must be {expected!r}, found {value!r}")
 
     source_inputs = audit.get("source_inputs")
-    required_inputs = {ROADMAP_PATH, MATRIX_PATH, MATRIX_MARKDOWN_PATH, S07_SUMMARY_PATH, S07_REPORT_PATH, S07_DIAGNOSTICS_PATH, S06_SUMMARY_PATH}
-    if not isinstance(source_inputs, list) or not all(isinstance(item, str) for item in source_inputs):
+    required_inputs = {
+        ROADMAP_PATH,
+        MATRIX_PATH,
+        MATRIX_MARKDOWN_PATH,
+        S07_SUMMARY_PATH,
+        S07_REPORT_PATH,
+        S07_DIAGNOSTICS_PATH,
+        S06_SUMMARY_PATH,
+    }
+    if not isinstance(source_inputs, list) or not all(
+        isinstance(item, str) for item in source_inputs
+    ):
         errors.append("$.source_inputs must be a list of repo-relative paths")
     else:
         missing_inputs = sorted(required_inputs - set(source_inputs))
@@ -432,7 +446,9 @@ def validate_audit(
             if flags[key] != matrix_flags[key]:
                 errors.append(f"$.safety_flags.{key} must match matrix safety flag {key}")
 
-    matrix_rows, row_errors = _rows_by_id(matrix.get("requirements"), "requirement_id", "matrix.requirements")
+    matrix_rows, row_errors = _rows_by_id(
+        matrix.get("requirements"), "requirement_id", "matrix.requirements"
+    )
     errors.extend(row_errors)
     audit_rows, audit_row_errors = _rows_by_id(
         audit.get("requirement_coverage_interpretation", {}).get("requirement_rows")
@@ -454,13 +470,22 @@ def validate_audit(
                 continue
             for key, expected_value in expected.items():
                 if row.get(key) != expected_value:
-                    errors.append(f"{label} {rid} {key} must be {expected_value}, found {row.get(key)!r}")
+                    errors.append(
+                        f"{label} {rid} {key} must be {expected_value}, found {row.get(key)!r}"
+                    )
         if rid in matrix_rows and rid in audit_rows:
-            for key in ("current_status", "m027_applicability", "s08_verdict", "recommended_requirement_action"):
+            for key in (
+                "current_status",
+                "m027_applicability",
+                "s08_verdict",
+                "recommended_requirement_action",
+            ):
                 if audit_rows[rid].get(key) != matrix_rows[rid].get(key):
                     errors.append(f"audit {rid} {key} must match matrix")
 
-    class_rows, class_errors = _rows_by_id(audit.get("canonical_verification_classes"), "class", "$.canonical_verification_classes")
+    class_rows, class_errors = _rows_by_id(
+        audit.get("canonical_verification_classes"), "class", "$.canonical_verification_classes"
+    )
     errors.extend(class_errors)
     actual_classes = set(class_rows)
     expected_classes = set(CANONICAL_CLASSES)
@@ -468,11 +493,19 @@ def validate_audit(
         missing = sorted(expected_classes - actual_classes)
         extra = sorted(actual_classes - expected_classes)
         if missing:
-            errors.append(f"$.canonical_verification_classes missing canonical classes: {', '.join(missing)}")
+            errors.append(
+                f"$.canonical_verification_classes missing canonical classes: {', '.join(missing)}"
+            )
         if extra:
-            errors.append(f"$.canonical_verification_classes has unexpected classes: {', '.join(extra)}")
-    if isinstance(audit.get("canonical_verification_classes"), list) and [row.get("class") for row in audit["canonical_verification_classes"] if isinstance(row, dict)] != list(CANONICAL_CLASSES):
-        errors.append("$.canonical_verification_classes must be ordered Contract, Integration, Operational, UAT")
+            errors.append(
+                f"$.canonical_verification_classes has unexpected classes: {', '.join(extra)}"
+            )
+    if isinstance(audit.get("canonical_verification_classes"), list) and [
+        row.get("class") for row in audit["canonical_verification_classes"] if isinstance(row, dict)
+    ] != list(CANONICAL_CLASSES):
+        errors.append(
+            "$.canonical_verification_classes must be ordered Contract, Integration, Operational, UAT"
+        )
 
     for class_name in CANONICAL_CLASSES:
         row = class_rows.get(class_name)
@@ -484,7 +517,9 @@ def validate_audit(
         for key in ("scope", "planned_check", "safe_claim"):
             if not isinstance(row.get(key), str) or not row.get(key):
                 errors.append(f"{row_path}.{key} must be a non-empty string")
-        scope_text = "\n".join(_strings_from({k: row.get(k) for k in ("scope", "planned_check", "safe_claim")})).lower()
+        scope_text = "\n".join(
+            _strings_from({k: row.get(k) for k in ("scope", "planned_check", "safe_claim")})
+        ).lower()
         if "metadata-only" not in scope_text and "metadata only" not in scope_text:
             errors.append(f"{row_path} must constrain PASS semantics to metadata-only evidence")
         if "m027" not in scope_text or "s08" not in scope_text:
@@ -512,29 +547,50 @@ def validate_audit(
         errors.append("$.rerun_ready_validation_inputs must be an object")
     else:
         verification_classes = rerun.get("verification_classes")
-        rerun_rows, rerun_errors = _rows_by_id(verification_classes, "class", "$.rerun_ready_validation_inputs.verification_classes")
+        rerun_rows, rerun_errors = _rows_by_id(
+            verification_classes, "class", "$.rerun_ready_validation_inputs.verification_classes"
+        )
         errors.extend(rerun_errors)
         if set(rerun_rows) != expected_classes:
-            errors.append("$.rerun_ready_validation_inputs.verification_classes must list exactly the canonical classes")
+            errors.append(
+                "$.rerun_ready_validation_inputs.verification_classes must list exactly the canonical classes"
+            )
         for class_name in CANONICAL_CLASSES:
             class_row = class_rows.get(class_name)
             rerun_row = rerun_rows.get(class_name)
             if class_row and rerun_row:
                 if rerun_row.get("verdict") != class_row.get("verdict"):
-                    errors.append(f"rerun verification class {class_name} verdict must match audit row")
+                    errors.append(
+                        f"rerun verification class {class_name} verdict must match audit row"
+                    )
                 evidence = rerun_row.get("evidence")
-                if not isinstance(evidence, list) or MATRIX_PATH not in evidence or AUDIT_JSON_PATH not in evidence:
-                    errors.append(f"rerun verification class {class_name} evidence must include matrix and audit JSON")
+                if (
+                    not isinstance(evidence, list)
+                    or MATRIX_PATH not in evidence
+                    or AUDIT_JSON_PATH not in evidence
+                ):
+                    errors.append(
+                        f"rerun verification class {class_name} evidence must include matrix and audit JSON"
+                    )
         commands = rerun.get("commands")
         if not isinstance(commands, list) or not commands:
             errors.append("$.rerun_ready_validation_inputs.commands must be a non-empty list")
-        elif "uv run python scripts/verify_m027_validation_remediation.py --validate-only" not in commands:
-            errors.append("$.rerun_ready_validation_inputs.commands missing class-audit validate-only command")
+        elif (
+            "uv run python scripts/verify_m027_validation_remediation.py --validate-only"
+            not in commands
+        ):
+            errors.append(
+                "$.rerun_ready_validation_inputs.commands missing class-audit validate-only command"
+            )
 
     criteria = audit.get("criteria_source")
     if isinstance(criteria, dict):
         criteria_text = "\n".join(_strings_from(criteria.get("roadmap_success_criteria")))
-        for marker in ("six user-supplied mixed-source article URLs", "R036-style provenance", "preprocessing-only"):
+        for marker in (
+            "six user-supplied mixed-source article URLs",
+            "R036-style provenance",
+            "preprocessing-only",
+        ):
             if marker not in criteria_text and marker not in roadmap_markdown:
                 errors.append(f"$.criteria_source must preserve roadmap criterion marker: {marker}")
     else:
@@ -567,7 +623,12 @@ def validate_audit(
                 errors.append(f"{path} contains unsafe raw/binary/base64/vector/secret field name")
         if isinstance(value, str):
             lowered = value.lower()
-            if "-----begin" in lowered or "base64," in lowered or "secret=" in lowered or "password=" in lowered:
+            if (
+                "-----begin" in lowered
+                or "base64," in lowered
+                or "secret=" in lowered
+                or "password=" in lowered
+            ):
                 errors.append(f"{path} contains raw payload, base64, or secret leakage marker")
 
     if not rendered_markdown.strip():
@@ -597,7 +658,10 @@ def validate_audit(
         for expected_value in expected.values():
             if expected_value not in rendered_markdown:
                 errors.append(f"rendered markdown missing {rid} expected value: {expected_value}")
-    if "uv run python scripts/verify_m027_validation_remediation.py --validate-only" not in rendered_markdown:
+    if (
+        "uv run python scripts/verify_m027_validation_remediation.py --validate-only"
+        not in rendered_markdown
+    ):
         errors.append("rendered markdown missing validate-only rerun command")
 
     return errors
@@ -613,7 +677,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--s07-summary", type=Path, default=Path(S07_SUMMARY_PATH))
     parser.add_argument("--s07-report", type=Path, default=Path(S07_REPORT_PATH))
     parser.add_argument("--repo-root", type=Path, default=Path.cwd())
-    parser.add_argument("--validate-only", action="store_true", help="Validate artifacts without mutating outputs.")
+    parser.add_argument(
+        "--validate-only", action="store_true", help="Validate artifacts without mutating outputs."
+    )
     parser.add_argument("--require-pass-classes", action="store_true", default=True)
     parser.add_argument("--reject-unsafe-claims", action="store_true", default=True)
     parser.add_argument(

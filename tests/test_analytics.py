@@ -16,24 +16,35 @@ def test_db():
     conn.execute("INSTALL algo;")
     conn.execute("LOAD EXTENSION algo;")
 
-    conn.execute("CREATE NODE TABLE Paper(id STRING, title STRING, published DATE, emb FLOAT[512], score DOUBLE, PRIMARY KEY (id))")
+    conn.execute(
+        "CREATE NODE TABLE Paper(id STRING, title STRING, published DATE, emb FLOAT[512], score DOUBLE, PRIMARY KEY (id))"
+    )
     conn.execute("CREATE NODE TABLE Keyword(word STRING, PRIMARY KEY (word))")
     conn.execute("CREATE REL TABLE TAGGED_WITH(FROM Paper TO Keyword)")
 
     # Insert paper 1: High graph connectivity, low similarity
     emb1 = [0.1] * 512
-    conn.execute(f"CREATE (p:Paper {{id: '1', title: 'Graph Heavy', published: date('2024-01-01'), emb: {emb1}, score: 1.0}})")
+    conn.execute(
+        f"CREATE (p:Paper {{id: '1', title: 'Graph Heavy', published: date('2024-01-01'), emb: {emb1}, score: 1.0}})"
+    )
     conn.execute("CREATE (k1:Keyword {word: 'a'})")
     conn.execute("CREATE (k2:Keyword {word: 'b'})")
     conn.execute("CREATE (k3:Keyword {word: 'c'})")
-    conn.execute("MATCH (p:Paper {id: '1'}), (k:Keyword) WHERE k.word IN ['a','b','c'] CREATE (p)-[:TAGGED_WITH]->(k)")
+    conn.execute(
+        "MATCH (p:Paper {id: '1'}), (k:Keyword) WHERE k.word IN ['a','b','c'] CREATE (p)-[:TAGGED_WITH]->(k)"
+    )
 
     # Insert paper 2: High vector similarity, low graph connectivity
     emb2 = [0.9] * 512
-    conn.execute(f"CREATE (p:Paper {{id: '2', title: 'Vector Heavy', published: date('2024-01-01'), emb: {emb2}, score: 1.0}})")
-    conn.execute("MATCH (p:Paper {id: '2'}), (k:Keyword {word: 'a'}) CREATE (p)-[:TAGGED_WITH]->(k)")
+    conn.execute(
+        f"CREATE (p:Paper {{id: '2', title: 'Vector Heavy', published: date('2024-01-01'), emb: {emb2}, score: 1.0}})"
+    )
+    conn.execute(
+        "MATCH (p:Paper {id: '2'}), (k:Keyword {word: 'a'}) CREATE (p)-[:TAGGED_WITH]->(k)"
+    )
 
     return conn
+
 
 def test_compute_graph_metrics(test_db):
     compute_graph_metrics(test_db)
@@ -53,6 +64,7 @@ def test_compute_graph_metrics(test_db):
     assert results["1"] > 0
     assert results["2"] > 0
 
+
 def test_recommend_papers(test_db):
     compute_graph_metrics(test_db)
 
@@ -65,7 +77,9 @@ def test_recommend_papers(test_db):
     # Let's create Paper 3 with an orthogonal vector
     emb3 = [0.0] * 512
     emb3[0] = 1.0
-    test_db.execute(f"CREATE (p:Paper {{id: '3', title: 'Orthogonal', published: date('2024-01-01'), emb: {emb3}, score: 1.0}})")
+    test_db.execute(
+        f"CREATE (p:Paper {{id: '3', title: 'Orthogonal', published: date('2024-01-01'), emb: {emb3}, score: 1.0}})"
+    )
 
     profile = [0.0] * 512
     profile[0] = 1.0
@@ -82,15 +96,18 @@ def test_recommend_papers(test_db):
         assert "hybrid_score" in r
         assert "graph_centrality" in r
 
+
 def test_recommend_papers_invalid_profile(test_db):
     with pytest.raises(ValueError):
-        recommend_papers(test_db, [0.1] * 10) # Wrong dimension
+        recommend_papers(test_db, [0.1] * 10)  # Wrong dimension
 
 
 def make_empty_recommendation_db():
     db = ladybug.Database(":memory:")
     conn = ladybug.Connection(db)
-    conn.execute("CREATE NODE TABLE Paper(id STRING, title STRING, published DATE, emb FLOAT[512], score DOUBLE, PRIMARY KEY (id))")
+    conn.execute(
+        "CREATE NODE TABLE Paper(id STRING, title STRING, published DATE, emb FLOAT[512], score DOUBLE, PRIMARY KEY (id))"
+    )
     conn.execute("CREATE NODE TABLE Keyword(word STRING, PRIMARY KEY (word))")
     conn.execute("CREATE REL TABLE TAGGED_WITH(FROM Paper TO Keyword)")
     return conn
@@ -114,7 +131,9 @@ def test_recommend_papers_returns_empty_for_no_papers():
 
 def test_recommend_papers_skips_missing_embeddings():
     conn = make_empty_recommendation_db()
-    conn.execute("CREATE (p:Paper {id: 'missing', title: 'No Embedding', published: date('2024-01-01'), score: 1.0})")
+    conn.execute(
+        "CREATE (p:Paper {id: 'missing', title: 'No Embedding', published: date('2024-01-01'), score: 1.0})"
+    )
     compute_graph_metrics(conn)
 
     assert recommend_papers(conn, [0.1] * 512) == []
@@ -125,7 +144,9 @@ def test_recommend_papers_respects_top_k(test_db):
 
     emb3 = [0.0] * 512
     emb3[0] = 1.0
-    test_db.execute(f"CREATE (p:Paper {{id: '3', title: 'Third', published: date('2024-01-01'), emb: {emb3}, score: 1.0}})")
+    test_db.execute(
+        f"CREATE (p:Paper {{id: '3', title: 'Third', published: date('2024-01-01'), emb: {emb3}, score: 1.0}})"
+    )
 
     recs = recommend_papers(test_db, [0.1] * 512, top_k=2)
 

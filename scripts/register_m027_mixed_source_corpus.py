@@ -138,7 +138,11 @@ ARTICLE_SPECS: tuple[ArticleSpec, ...] = (
         canonical_url="https://arxiv.org/abs/2605.21401",
         seed_url="https://arxiv.org/abs/2605.21401",
         topic_tags=("llm-behavior", "obedience-experiment", "safety"),
-        identity_extra={"arxiv_id": "2605.21401", "abs_url": "https://arxiv.org/abs/2605.21401", "pdf_url": "https://arxiv.org/pdf/2605.21401"},
+        identity_extra={
+            "arxiv_id": "2605.21401",
+            "abs_url": "https://arxiv.org/abs/2605.21401",
+            "pdf_url": "https://arxiv.org/pdf/2605.21401",
+        },
         strategy={
             "primary_source_variant_id": "2605.21401:source:arxiv-abs",
             "preferred_content_order": ["arxiv_abs_page", "arxiv_pdf"],
@@ -159,7 +163,10 @@ ARTICLE_SPECS: tuple[ArticleSpec, ...] = (
         canonical_url="https://www.nature.com/articles/s44387-025-00019-5",
         seed_url="https://www.nature.com/articles/s44387-025-00019-5",
         topic_tags=("large-language-models", "scientific-method", "hypothesis-discovery"),
-        identity_extra={"doi_path": "s44387-025-00019-5", "publisher_url": "https://www.nature.com/articles/s44387-025-00019-5"},
+        identity_extra={
+            "doi_path": "s44387-025-00019-5",
+            "publisher_url": "https://www.nature.com/articles/s44387-025-00019-5",
+        },
         strategy={
             "primary_source_variant_id": "s44387-025-00019-5:source:nature-html",
             "preferred_content_order": ["nature_html"],
@@ -223,7 +230,11 @@ ARTICLE_SPECS: tuple[ArticleSpec, ...] = (
         canonical_url="https://arxiv.org/abs/2605.25522",
         seed_url="https://arxiv.org/abs/2605.25522",
         topic_tags=("graph-ann", "processing-in-memory", "billion-scale-search"),
-        identity_extra={"arxiv_id": "2605.25522", "abs_url": "https://arxiv.org/abs/2605.25522", "pdf_url": "https://arxiv.org/pdf/2605.25522"},
+        identity_extra={
+            "arxiv_id": "2605.25522",
+            "abs_url": "https://arxiv.org/abs/2605.25522",
+            "pdf_url": "https://arxiv.org/pdf/2605.25522",
+        },
         strategy={},
         variants=(),
     ),
@@ -238,7 +249,11 @@ ARTICLE_SPECS: tuple[ArticleSpec, ...] = (
         canonical_url="https://arxiv.org/abs/2603.04448",
         seed_url="https://arxiv.org/abs/2603.04448",
         topic_tags=("ai-skills", "skill-evaluation", "agent-tools"),
-        identity_extra={"arxiv_id": "2603.04448", "abs_url": "https://arxiv.org/abs/2603.04448", "pdf_url": "https://arxiv.org/pdf/2603.04448"},
+        identity_extra={
+            "arxiv_id": "2603.04448",
+            "abs_url": "https://arxiv.org/abs/2603.04448",
+            "pdf_url": "https://arxiv.org/pdf/2603.04448",
+        },
         strategy={},
         variants=(),
     ),
@@ -253,7 +268,11 @@ ARTICLE_SPECS: tuple[ArticleSpec, ...] = (
         canonical_url="https://arxiv.org/abs/2604.18478",
         seed_url="https://arxiv.org/abs/2604.18478",
         topic_tags=("world-model-memory", "vector-graph", "ontology-reconciliation"),
-        identity_extra={"arxiv_id": "2604.18478", "abs_url": "https://arxiv.org/abs/2604.18478", "pdf_url": "https://arxiv.org/pdf/2604.18478"},
+        identity_extra={
+            "arxiv_id": "2604.18478",
+            "abs_url": "https://arxiv.org/abs/2604.18478",
+            "pdf_url": "https://arxiv.org/pdf/2604.18478",
+        },
         strategy={},
         variants=(),
     ),
@@ -316,7 +335,12 @@ def _default_arxiv_variants(spec: ArticleSpec) -> tuple[dict[str, Any], ...]:
 
 
 def _path_safe(value: str) -> bool:
-    return bool(value) and value == value.strip("/") and ".." not in value.split("/") and all(part for part in value.split("/"))
+    return (
+        bool(value)
+        and value == value.strip("/")
+        and ".." not in value.split("/")
+        and all(part for part in value.split("/"))
+    )
 
 
 def _validate_specs(specs: Iterable[ArticleSpec]) -> list[dict[str, Any]]:
@@ -333,22 +357,78 @@ def _validate_specs(specs: Iterable[ArticleSpec]) -> list[dict[str, Any]]:
             "fail_closed_safety_flags": FAIL_CLOSED_SAFETY_FLAGS,
         }
         if spec.article_ref in seen_refs:
-            diagnostics.append({**base, "level": "error", "code": "duplicate_article_ref", "json_path": "$.articles", "message": "article_ref must be unique"})
+            diagnostics.append(
+                {
+                    **base,
+                    "level": "error",
+                    "code": "duplicate_article_ref",
+                    "json_path": "$.articles",
+                    "message": "article_ref must be unique",
+                }
+            )
         seen_refs.add(spec.article_ref)
         if spec.seed_url in seen_urls:
-            diagnostics.append({**base, "level": "error", "code": "duplicate_seed_url", "json_path": "$.articles", "message": "seed_url must be unique"})
+            diagnostics.append(
+                {
+                    **base,
+                    "level": "error",
+                    "code": "duplicate_seed_url",
+                    "json_path": "$.articles",
+                    "message": "seed_url must be unique",
+                }
+            )
         seen_urls.add(spec.seed_url)
         if spec.title in seen_titles:
-            diagnostics.append({**base, "level": "error", "code": "duplicate_title", "json_path": "$.articles", "message": "title must be unique for title lookup"})
+            diagnostics.append(
+                {
+                    **base,
+                    "level": "error",
+                    "code": "duplicate_title",
+                    "json_path": "$.articles",
+                    "message": "title must be unique for title lookup",
+                }
+            )
         seen_titles.add(spec.title)
         if not _path_safe(spec.article_ref):
-            diagnostics.append({**base, "level": "error", "code": "unsafe_article_ref", "json_path": "$.article_ref", "message": "article_ref must be path-safe"})
+            diagnostics.append(
+                {
+                    **base,
+                    "level": "error",
+                    "code": "unsafe_article_ref",
+                    "json_path": "$.article_ref",
+                    "message": "article_ref must be path-safe",
+                }
+            )
         if not spec.title.strip():
-            diagnostics.append({**base, "level": "error", "code": "missing_title", "json_path": "$.identity.title", "message": "title must be frozen before registration"})
+            diagnostics.append(
+                {
+                    **base,
+                    "level": "error",
+                    "code": "missing_title",
+                    "json_path": "$.identity.title",
+                    "message": "title must be frozen before registration",
+                }
+            )
         if spec.source_code not in {"arxiv", "nature"}:
-            diagnostics.append({**base, "level": "error", "code": "unsupported_source", "json_path": "$.source_code", "message": f"unsupported source_code {spec.source_code!r}"})
+            diagnostics.append(
+                {
+                    **base,
+                    "level": "error",
+                    "code": "unsupported_source",
+                    "json_path": "$.source_code",
+                    "message": f"unsupported source_code {spec.source_code!r}",
+                }
+            )
         if spec.source_code == "arxiv" and not re.fullmatch(r"\d{4}\.\d{4,5}", spec.article_key):
-            diagnostics.append({**base, "level": "error", "code": "malformed_arxiv_key", "json_path": "$.article_key", "message": "arxiv article_key must be normalized without /abs or /pdf suffix"})
+            diagnostics.append(
+                {
+                    **base,
+                    "level": "error",
+                    "code": "malformed_arxiv_key",
+                    "json_path": "$.article_key",
+                    "message": "arxiv article_key must be normalized without /abs or /pdf suffix",
+                }
+            )
     return diagnostics
 
 
@@ -402,7 +482,11 @@ def _index_entry(spec: ArticleSpec, article: dict[str, Any]) -> dict[str, Any]:
         for variant in article["source_variants"]
         if not variant.get("is_primary") and variant.get("is_content_bearing")
     ]
-    metadata_roles = [variant["source_role"] for variant in article["source_variants"] if variant.get("is_metadata_only")]
+    metadata_roles = [
+        variant["source_role"]
+        for variant in article["source_variants"]
+        if variant.get("is_metadata_only")
+    ]
     return {
         "article_ref": spec.article_ref,
         "article_key": spec.article_key,
@@ -510,7 +594,11 @@ def _build_indexes(entries: list[dict[str, Any]]) -> dict[str, Any]:
 
 def _merge_index(existing: dict[str, Any], new_entries: list[dict[str, Any]]) -> dict[str, Any]:
     replaced_refs = {entry["article_ref"] for entry in new_entries}
-    preserved_entries = [entry for entry in existing.get("articles", []) if entry.get("article_ref") not in replaced_refs]
+    preserved_entries = [
+        entry
+        for entry in existing.get("articles", [])
+        if entry.get("article_ref") not in replaced_refs
+    ]
     entries = sorted([*preserved_entries, *new_entries], key=lambda row: row["article_ref"])
     return {
         "schema_version": existing.get("schema_version", INDEX_SCHEMA_VERSION),
@@ -532,7 +620,9 @@ def _merge_index(existing: dict[str, Any], new_entries: list[dict[str, Any]]) ->
     }
 
 
-def _diagnostic_for_write(spec: ArticleSpec, article_path: Path, index_entry: dict[str, Any]) -> dict[str, Any]:
+def _diagnostic_for_write(
+    spec: ArticleSpec, article_path: Path, index_entry: dict[str, Any]
+) -> dict[str, Any]:
     return {
         "level": "info",
         "code": "registered_metadata_only_article",
@@ -549,7 +639,9 @@ def _diagnostic_for_write(spec: ArticleSpec, article_path: Path, index_entry: di
     }
 
 
-def register(catalog_root: Path, corpora_root: Path, *, write: bool) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def register(
+    catalog_root: Path, corpora_root: Path, *, write: bool
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     diagnostics = _validate_specs(ARTICLE_SPECS)
     if diagnostics:
         return diagnostics, {"status": "blocked", "selection_id": SELECTION_ID, "article_count": 0}
@@ -593,9 +685,23 @@ def register(catalog_root: Path, corpora_root: Path, *, write: bool) -> tuple[li
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--write", action="store_true", help="Write/refresh catalog article records, index, and M027 selection.")
-    parser.add_argument("--catalog-root", type=Path, default=Path("data/article_catalog"), help="Catalog root containing index.json and article_catalog/.")
-    parser.add_argument("--corpora-root", type=Path, default=Path("data/article_corpora"), help="Root directory for corpus selections.")
+    parser.add_argument(
+        "--write",
+        action="store_true",
+        help="Write/refresh catalog article records, index, and M027 selection.",
+    )
+    parser.add_argument(
+        "--catalog-root",
+        type=Path,
+        default=Path("data/article_catalog"),
+        help="Catalog root containing index.json and article_catalog/.",
+    )
+    parser.add_argument(
+        "--corpora-root",
+        type=Path,
+        default=Path("data/article_corpora"),
+        help="Root directory for corpus selections.",
+    )
     return parser.parse_args(argv)
 
 

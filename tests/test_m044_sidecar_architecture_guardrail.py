@@ -6,7 +6,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "scripts" / "verify_m044_sidecar_architecture_guardrail.py"
-spec = importlib.util.spec_from_file_location("verify_m044_sidecar_architecture_guardrail", MODULE_PATH)
+spec = importlib.util.spec_from_file_location(
+    "verify_m044_sidecar_architecture_guardrail", MODULE_PATH
+)
 assert spec is not None
 guard = importlib.util.module_from_spec(spec)
 sys.modules["verify_m044_sidecar_architecture_guardrail"] = guard
@@ -29,11 +31,15 @@ def _pack(tmp_path: Path) -> dict:
     return {
         "pack_id": "m044-sidecar-architecture-context-v1",
         "source_refs": source_refs,
-        "mandatory_decisions": [{"id": decision, "rule": "rule"} for decision in sorted(guard.REQUIRED_DECISIONS)],
+        "mandatory_decisions": [
+            {"id": decision, "rule": "rule"} for decision in sorted(guard.REQUIRED_DECISIONS)
+        ],
         "required_systems": sorted(guard.REQUIRED_SYSTEMS),
         "prohibited_claims": sorted(guard.REQUIRED_PROHIBITED_CLAIMS),
         "required_packet_flags": dict(guard.REQUIRED_PACKET_FLAGS),
-        "required_preflight_commands": ["uv run python scripts/verify_m044_sidecar_architecture_guardrail.py"],
+        "required_preflight_commands": [
+            "uv run python scripts/verify_m044_sidecar_architecture_guardrail.py"
+        ],
         "graph_write_allowed": False,
         "promotion_allowed": False,
         "production_import_attempted": False,
@@ -49,7 +55,9 @@ def test_verify_context_pack_accepts_complete_pack(tmp_path):
 
 def test_verify_context_pack_rejects_missing_decision(tmp_path):
     pack = _pack(tmp_path)
-    pack["mandatory_decisions"] = [item for item in pack["mandatory_decisions"] if item["id"] != "ADR-005"]
+    pack["mandatory_decisions"] = [
+        item for item in pack["mandatory_decisions"] if item["id"] != "ADR-005"
+    ]
 
     errors = guard.verify_context_pack(pack, root=tmp_path)
 

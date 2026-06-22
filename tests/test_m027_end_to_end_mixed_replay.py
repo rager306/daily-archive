@@ -16,8 +16,12 @@ replay = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = replay
 spec.loader.exec_module(replay)
 
-VERIFY_MODULE_PATH = Path(__file__).parents[1] / "scripts" / "verify_m027_end_to_end_mixed_replay.py"
-verify_spec = importlib.util.spec_from_file_location("verify_m027_end_to_end_mixed_replay", VERIFY_MODULE_PATH)
+VERIFY_MODULE_PATH = (
+    Path(__file__).parents[1] / "scripts" / "verify_m027_end_to_end_mixed_replay.py"
+)
+verify_spec = importlib.util.spec_from_file_location(
+    "verify_m027_end_to_end_mixed_replay", VERIFY_MODULE_PATH
+)
 assert verify_spec is not None and verify_spec.loader is not None
 verify_replay = importlib.util.module_from_spec(verify_spec)
 sys.modules[verify_spec.name] = verify_replay
@@ -45,7 +49,10 @@ def _fixture(
     root = tmp_path
     corpus = root / "corpus"
     converted = corpus / "conversion-quality" / "article_one" / "arxiv_pdf.txt"
-    text = parser_text or "# Fixture Paper\n\n## Introduction\n\nThis fixture has enough local converted article prose for the end to end replay path.\n\n## Method\n\nThe accepted behavior should create retrieval-only chunks and refuse import readiness.\n"
+    text = (
+        parser_text
+        or "# Fixture Paper\n\n## Introduction\n\nThis fixture has enough local converted article prose for the end to end replay path.\n\n## Method\n\nThe accepted behavior should create retrieval-only chunks and refuse import readiness.\n"
+    )
     converted.parent.mkdir(parents=True, exist_ok=True)
     converted.write_text(text, encoding="utf-8")
     source_summary = corpus / "source-acquisition-summary.json"
@@ -137,7 +144,9 @@ def _fixture(
     )
 
 
-def _write_replay_outputs(args: Namespace) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+def _write_replay_outputs(
+    args: Namespace,
+) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
     summary, diagnostics, events, decision = replay.replay_end_to_end(args)
     replay.write_json(args.output_summary, summary)
     replay.write_jsonl(args.output_diagnostics, diagnostics)
@@ -184,7 +193,9 @@ def _diagnostic_codes(findings: list[dict[str, Any]]) -> set[str]:
     return {str(finding.get("diagnostic_code")) for finding in findings}
 
 
-def test_replay_requires_no_network_and_s03_linkage(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_replay_requires_no_network_and_s03_linkage(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path)
     args.no_network = False
@@ -193,13 +204,17 @@ def test_replay_requires_no_network_and_s03_linkage(tmp_path: Path, monkeypatch:
         replay.replay_end_to_end(args)
 
     args.no_network = True
-    (tmp_path / "corpus" / "source-acquisition-summary.json").write_text('{"changed": true}\n', encoding="utf-8")
+    (tmp_path / "corpus" / "source-acquisition-summary.json").write_text(
+        '{"changed": true}\n', encoding="utf-8"
+    )
 
     with pytest.raises(EndToEndReplayError, match="stale S03 linkage"):
         replay.replay_end_to_end(args)
 
 
-def test_replay_rejects_converted_payload_hash_mismatch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_replay_rejects_converted_payload_hash_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path)
     converted = tmp_path / "corpus" / "conversion-quality" / "article_one" / "arxiv_pdf.txt"
@@ -209,7 +224,9 @@ def test_replay_rejects_converted_payload_hash_mismatch(tmp_path: Path, monkeypa
         replay.replay_end_to_end(args)
 
 
-def test_replay_captures_boundaries_and_baseline_comparison(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_replay_captures_boundaries_and_baseline_comparison(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path)
 
@@ -263,7 +280,9 @@ def test_replay_captures_boundaries_and_baseline_comparison(tmp_path: Path, monk
     assert parser_ready["baseline_comparison"]["category"] == "exact_match"
 
 
-def test_replay_records_s04_baseline_metric_delta(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_replay_records_s04_baseline_metric_delta(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path, metadata_only=False, baseline_delta=True)
 
@@ -273,7 +292,9 @@ def test_replay_records_s04_baseline_metric_delta(tmp_path: Path, monkeypatch: p
     assert "s04_baseline_metric_delta" in _diagnostic_codes(diagnostics)
 
 
-def test_replay_preserves_parser_ready_zero_chunk_diagnostic(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_replay_preserves_parser_ready_zero_chunk_diagnostic(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path, parser_text="   \n", metadata_only=False)
     baseline = json.loads(args.baseline_summary.read_text(encoding="utf-8"))
@@ -289,7 +310,9 @@ def test_replay_preserves_parser_ready_zero_chunk_diagnostic(tmp_path: Path, mon
     assert "parser_ready_zero_chunk_variants_preserved" in decision["blockers"]
 
 
-def test_replay_skips_metadata_only_without_payload(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_replay_skips_metadata_only_without_payload(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path)
 
@@ -347,7 +370,9 @@ def test_redaction_guard_rejects_payload_keys_and_snippets() -> None:
         replay.assert_no_metadata_leakage({"safe": "RAW_PDF_SECRET <html"})
 
 
-def test_validate_only_verifier_accepts_generated_replay_artifacts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_validate_only_verifier_accepts_generated_replay_artifacts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path)
     _write_replay_outputs(args)
@@ -361,7 +386,9 @@ def test_validate_only_verifier_accepts_generated_replay_artifacts(tmp_path: Pat
     assert verifier_summary["ladybugdb_written"] is False
 
 
-def test_validate_only_verifier_writes_closeout_artifacts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_validate_only_verifier_writes_closeout_artifacts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path)
     _write_replay_outputs(args)
@@ -414,7 +441,9 @@ def test_validate_only_verifier_writes_closeout_artifacts(tmp_path: Path, monkey
     assert "RAW_PDF_SECRET" not in combined
 
 
-def test_validate_only_verifier_rejects_missing_per_article_artifact(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_validate_only_verifier_rejects_missing_per_article_artifact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path)
     _write_replay_outputs(args)
@@ -423,12 +452,18 @@ def test_validate_only_verifier_rejects_missing_per_article_artifact(tmp_path: P
     assert "missing_per_article_replay_artifact" in _verify_codes(args, tmp_path)
 
 
-def test_validate_only_verifier_rejects_stale_s03_and_s04_hashes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_validate_only_verifier_rejects_stale_s03_and_s04_hashes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path)
     _write_replay_outputs(args)
-    (tmp_path / "corpus" / "source-acquisition-summary.json").write_text('{"changed": true}\n', encoding="utf-8")
-    _mutate_json(args.baseline_summary, lambda payload: payload.update({"changed_after_replay": True}))
+    (tmp_path / "corpus" / "source-acquisition-summary.json").write_text(
+        '{"changed": true}\n', encoding="utf-8"
+    )
+    _mutate_json(
+        args.baseline_summary, lambda payload: payload.update({"changed_after_replay": True})
+    )
 
     codes = _verify_codes(args, tmp_path)
 
@@ -436,12 +471,19 @@ def test_validate_only_verifier_rejects_stale_s03_and_s04_hashes(tmp_path: Path,
     assert "baseline_summary_sha256_mismatch" in codes
 
 
-def test_validate_only_verifier_rejects_unsafe_true_flags_and_payload_leakage(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_validate_only_verifier_rejects_unsafe_true_flags_and_payload_leakage(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path)
     _write_replay_outputs(args)
-    _mutate_json(args.output_summary, lambda payload: payload.update({"network_fetch_attempted": True}))
-    _mutate_json(args.output_dir / "article_one" / "replay.json", lambda payload: payload.update({"safe_note": "RAW_PDF_SECRET <html"}))
+    _mutate_json(
+        args.output_summary, lambda payload: payload.update({"network_fetch_attempted": True})
+    )
+    _mutate_json(
+        args.output_dir / "article_one" / "replay.json",
+        lambda payload: payload.update({"safe_note": "RAW_PDF_SECRET <html"}),
+    )
 
     codes = _verify_codes(args, tmp_path)
 
@@ -449,7 +491,9 @@ def test_validate_only_verifier_rejects_unsafe_true_flags_and_payload_leakage(tm
     assert "metadata_payload_snippet_leakage" in codes
 
 
-def test_validate_only_verifier_rejects_missing_baseline_rows(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_validate_only_verifier_rejects_missing_baseline_rows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path)
     _write_replay_outputs(args)
@@ -458,7 +502,9 @@ def test_validate_only_verifier_rejects_missing_baseline_rows(tmp_path: Path, mo
     assert "s04_baseline_row_missing" in _verify_codes(args, tmp_path)
 
 
-def test_validate_only_verifier_rejects_malformed_diagnostics(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_validate_only_verifier_rejects_malformed_diagnostics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path)
     _write_replay_outputs(args)
@@ -468,7 +514,9 @@ def test_validate_only_verifier_rejects_malformed_diagnostics(tmp_path: Path, mo
     assert "malformed_diagnostics_jsonl" in _verify_codes(args, tmp_path)
 
 
-def test_validate_only_verifier_rejects_stale_output_provenance_hash(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_validate_only_verifier_rejects_stale_output_provenance_hash(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(replay, "ROOT", tmp_path)
     args = _fixture(tmp_path)
     _write_replay_outputs(args)

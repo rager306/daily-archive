@@ -61,7 +61,9 @@ def test_missing_markdown_paper_ids_reads_manifest_flags(tmp_path: Path) -> None
     assert missing_markdown_paper_ids(manifest) == ["2001.00116v2", "2001.00119v2"]
 
 
-async def test_acquire_sources_for_manifest_writes_redacted_summary_and_diagnostics(tmp_path: Path) -> None:
+async def test_acquire_sources_for_manifest_writes_redacted_summary_and_diagnostics(
+    tmp_path: Path,
+) -> None:
     manifest = _manifest(tmp_path)
     research = tmp_path / "papers"
     cache = tmp_path / "cache"
@@ -73,8 +75,14 @@ async def test_acquire_sources_for_manifest_writes_redacted_summary_and_diagnost
     (research / "2001.00119v2" / "paper.json").write_text("{}", encoding="utf-8")
     converter = FakeConverter(
         {
-            "2001.00116v2": ConversionResult(markdown="# Converted\n\nSubstantive body", method="arxiv2md", error=None),
-            "2001.00119v2": ConversionResult(markdown=None, method="docling", error="network token raw text should not be present"),
+            "2001.00116v2": ConversionResult(
+                markdown="# Converted\n\nSubstantive body", method="arxiv2md", error=None
+            ),
+            "2001.00119v2": ConversionResult(
+                markdown=None,
+                method="docling",
+                error="network token raw text should not be present",
+            ),
         }
     )
 
@@ -86,7 +94,10 @@ async def test_acquire_sources_for_manifest_writes_redacted_summary_and_diagnost
     )
 
     summary = json.loads(paths["summary_path"].read_text(encoding="utf-8"))
-    diagnostics = [json.loads(line) for line in paths["diagnostics_path"].read_text(encoding="utf-8").splitlines()]
+    diagnostics = [
+        json.loads(line)
+        for line in paths["diagnostics_path"].read_text(encoding="utf-8").splitlines()
+    ]
 
     assert converter.calls == ["2001.00116v2", "2001.00119v2"]
     assert converter.closed is False
@@ -117,8 +128,12 @@ async def test_acquire_sources_for_manifest_rejects_low_quality_markdown(tmp_pat
     (research / "2001.00119v2").mkdir(parents=True)
     converter = FakeConverter(
         {
-            "2001.00116v2": ConversionResult(markdown="# Only headings", method="arxiv2md", error=None),
-            "2001.00119v2": ConversionResult(markdown="# Converted\n\nBody", method="docling", error=None),
+            "2001.00116v2": ConversionResult(
+                markdown="# Only headings", method="arxiv2md", error=None
+            ),
+            "2001.00119v2": ConversionResult(
+                markdown="# Converted\n\nBody", method="docling", error=None
+            ),
         }
     )
 
@@ -130,7 +145,10 @@ async def test_acquire_sources_for_manifest_rejects_low_quality_markdown(tmp_pat
     )
 
     summary = json.loads(paths["summary_path"].read_text(encoding="utf-8"))
-    diagnostics = [json.loads(line) for line in paths["diagnostics_path"].read_text(encoding="utf-8").splitlines()]
+    diagnostics = [
+        json.loads(line)
+        for line in paths["diagnostics_path"].read_text(encoding="utf-8").splitlines()
+    ]
 
     assert summary["acquired_markdown_count"] == 1
     assert diagnostics[1]["outcome"] == "conversion_failed"

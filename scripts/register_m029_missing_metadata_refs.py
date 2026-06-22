@@ -208,7 +208,12 @@ ARTICLE_SPECS: tuple[ArticleSpec, ...] = (
 
 
 def _path_safe(value: str) -> bool:
-    return bool(value) and value == value.strip("/") and ".." not in value.split("/") and all(part for part in value.split("/"))
+    return (
+        bool(value)
+        and value == value.strip("/")
+        and ".." not in value.split("/")
+        and all(part for part in value.split("/"))
+    )
 
 
 def _unsafe_true_paths(payload: Any, prefix: str = "$") -> list[str]:
@@ -305,7 +310,11 @@ def _index_entry(spec: ArticleSpec, article: dict[str, Any]) -> dict[str, Any]:
         for variant in article["source_variants"]
         if not variant.get("is_primary") and variant.get("is_content_bearing")
     ]
-    metadata_roles = [variant["source_role"] for variant in article["source_variants"] if variant.get("is_metadata_only")]
+    metadata_roles = [
+        variant["source_role"]
+        for variant in article["source_variants"]
+        if variant.get("is_metadata_only")
+    ]
     return {
         "article_ref": spec.article_ref,
         "article_key": spec.article_key,
@@ -386,7 +395,8 @@ def _merge_index(existing: dict[str, Any], new_entries: list[dict[str, Any]]) ->
     preserved_entries = [
         entry
         for entry in existing.get("articles", [])
-        if entry.get("article_ref") not in replaced_refs and entry.get("catalog_record_present") is not False
+        if entry.get("article_ref") not in replaced_refs
+        and entry.get("catalog_record_present") is not False
     ]
     entries = sorted([*preserved_entries, *new_entries], key=lambda row: row["article_ref"])
     return {
@@ -420,7 +430,13 @@ def _merge_catalog_sources(catalog: dict[str, Any]) -> dict[str, Any]:
         sources.append(stanford_source)
     else:
         sources = [
-            {**source, "allowed_source_roles": sorted(set(source.get("allowed_source_roles", [])) | set(stanford_source["allowed_source_roles"]))}
+            {
+                **source,
+                "allowed_source_roles": sorted(
+                    set(source.get("allowed_source_roles", []))
+                    | set(stanford_source["allowed_source_roles"])
+                ),
+            }
             if source.get("source_code") == "stanford"
             else source
             for source in sources
@@ -449,31 +465,97 @@ def _validate_specs(specs: Iterable[ArticleSpec]) -> list[dict[str, Any]]:
             "fail_closed_safety_flags": FAIL_CLOSED_SAFETY_FLAGS,
         }
         if spec.article_ref in seen_refs:
-            diagnostics.append({**base, "level": "error", "code": "duplicate_article_ref", "json_path": "$.articles", "message": "article_ref must be unique"})
+            diagnostics.append(
+                {
+                    **base,
+                    "level": "error",
+                    "code": "duplicate_article_ref",
+                    "json_path": "$.articles",
+                    "message": "article_ref must be unique",
+                }
+            )
         seen_refs.add(spec.article_ref)
         if spec.normalized_identity in seen_identities:
-            diagnostics.append({**base, "level": "error", "code": "duplicate_normalized_identity", "json_path": "$.identity.normalized_identity", "message": "normalized identity must be unique"})
+            diagnostics.append(
+                {
+                    **base,
+                    "level": "error",
+                    "code": "duplicate_normalized_identity",
+                    "json_path": "$.identity.normalized_identity",
+                    "message": "normalized identity must be unique",
+                }
+            )
         seen_identities.add(spec.normalized_identity)
         if spec.seed_url in seen_urls:
-            diagnostics.append({**base, "level": "error", "code": "duplicate_seed_url", "json_path": "$.articles", "message": "seed_url must be unique"})
+            diagnostics.append(
+                {
+                    **base,
+                    "level": "error",
+                    "code": "duplicate_seed_url",
+                    "json_path": "$.articles",
+                    "message": "seed_url must be unique",
+                }
+            )
         seen_urls.add(spec.seed_url)
         if spec.title in seen_titles:
-            diagnostics.append({**base, "level": "error", "code": "duplicate_title", "json_path": "$.articles", "message": "title must be unique for title lookup"})
+            diagnostics.append(
+                {
+                    **base,
+                    "level": "error",
+                    "code": "duplicate_title",
+                    "json_path": "$.articles",
+                    "message": "title must be unique for title lookup",
+                }
+            )
         seen_titles.add(spec.title)
         if not _path_safe(spec.article_ref):
-            diagnostics.append({**base, "level": "error", "code": "unsafe_article_ref", "json_path": "$.article_ref", "message": "article_ref must be path-safe"})
+            diagnostics.append(
+                {
+                    **base,
+                    "level": "error",
+                    "code": "unsafe_article_ref",
+                    "json_path": "$.article_ref",
+                    "message": "article_ref must be path-safe",
+                }
+            )
         if not spec.title.strip() or not spec.canonical_url.strip() or not spec.seed_url.strip():
-            diagnostics.append({**base, "level": "error", "code": "missing_metadata", "json_path": "$.identity", "message": "title, canonical_url, and seed_url must be frozen before registration"})
+            diagnostics.append(
+                {
+                    **base,
+                    "level": "error",
+                    "code": "missing_metadata",
+                    "json_path": "$.identity",
+                    "message": "title, canonical_url, and seed_url must be frozen before registration",
+                }
+            )
         if spec.source_code == "arxiv" and not re.fullmatch(r"\d{4}\.\d{4,5}", spec.article_key):
-            diagnostics.append({**base, "level": "error", "code": "malformed_arxiv_key", "json_path": "$.article_key", "message": "arxiv article_key must be normalized without /abs or /pdf suffix"})
+            diagnostics.append(
+                {
+                    **base,
+                    "level": "error",
+                    "code": "malformed_arxiv_key",
+                    "json_path": "$.article_key",
+                    "message": "arxiv article_key must be normalized without /abs or /pdf suffix",
+                }
+            )
         article = _article_record(spec)
         unsafe_paths = _unsafe_true_paths(article)
         if unsafe_paths:
-            diagnostics.append({**base, "level": "error", "code": "unsafe_readiness_or_persistence_flag", "json_path": unsafe_paths[0], "message": f"unsafe true flag blocks metadata-only registration: {unsafe_paths[0]}"})
+            diagnostics.append(
+                {
+                    **base,
+                    "level": "error",
+                    "code": "unsafe_readiness_or_persistence_flag",
+                    "json_path": unsafe_paths[0],
+                    "message": f"unsafe true flag blocks metadata-only registration: {unsafe_paths[0]}",
+                }
+            )
     return diagnostics
 
 
-def _diagnostic_for_write(spec: ArticleSpec, article_path: Path, index_entry: dict[str, Any]) -> dict[str, Any]:
+def _diagnostic_for_write(
+    spec: ArticleSpec, article_path: Path, index_entry: dict[str, Any]
+) -> dict[str, Any]:
     return {
         "level": "info",
         "code": "registered_metadata_only_article",
@@ -499,7 +581,14 @@ def register(catalog_root: Path, *, write: bool) -> tuple[list[dict[str, Any]], 
 
     catalog_path = catalog_root / "catalog.json"
     index_path = catalog_root / "index.json"
-    catalog = _read_json(catalog_path, {"schema_version": CATALOG_SCHEMA_VERSION, "article_schema_version": ARTICLE_SCHEMA_VERSION, "sources": []})
+    catalog = _read_json(
+        catalog_path,
+        {
+            "schema_version": CATALOG_SCHEMA_VERSION,
+            "article_schema_version": ARTICLE_SCHEMA_VERSION,
+            "sources": [],
+        },
+    )
     existing_index = _read_json(index_path, {"articles": []})
 
     articles: list[tuple[ArticleSpec, dict[str, Any], dict[str, Any], Path]] = []
@@ -543,8 +632,17 @@ def register(catalog_root: Path, *, write: bool) -> tuple[list[dict[str, Any]], 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--write", action="store_true", help="Write/refresh metadata-only catalog article records and index rows.")
-    parser.add_argument("--catalog-root", type=Path, default=Path("data/article_catalog"), help="Catalog root containing catalog.json, index.json, and article_catalog/.")
+    parser.add_argument(
+        "--write",
+        action="store_true",
+        help="Write/refresh metadata-only catalog article records and index rows.",
+    )
+    parser.add_argument(
+        "--catalog-root",
+        type=Path,
+        default=Path("data/article_catalog"),
+        help="Catalog root containing catalog.json, index.json, and article_catalog/.",
+    )
     return parser.parse_args(argv)
 
 

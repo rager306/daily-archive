@@ -44,7 +44,8 @@ async def test_embedder_batching(monkeypatch):
             ]
             return MockResponse({"object": "list", "data": data, "model": "test"})
 
-        async def aclose(self): pass
+        async def aclose(self):
+            pass
 
     client = MockClient()
     monkeypatch.setattr(embedder, "_get_client", lambda: _async_mock_client_factory(client))
@@ -72,13 +73,16 @@ async def test_embedder_empty():
 
 @pytest.mark.asyncio
 async def test_embedder_http_error(monkeypatch):
-    embedder = Embedder(max_attempts=1, circuit_failure_threshold=99, graceful_degradation_enabled=False)
+    embedder = Embedder(
+        max_attempts=1, circuit_failure_threshold=99, graceful_degradation_enabled=False
+    )
 
     class MockClient:
         async def post(self, url, json, **kwargs):
             raise httpx.RequestError("Server down")
 
-        async def aclose(self): pass
+        async def aclose(self):
+            pass
 
     client = MockClient()
     monkeypatch.setattr(embedder, "_get_client", lambda: _async_mock_client_factory(client))
@@ -103,13 +107,16 @@ async def test_embedder_get_client():
 
 @pytest.mark.asyncio
 async def test_embedder_malformed_response(monkeypatch):
-    embedder = Embedder(max_attempts=1, circuit_failure_threshold=99, graceful_degradation_enabled=False)
+    embedder = Embedder(
+        max_attempts=1, circuit_failure_threshold=99, graceful_degradation_enabled=False
+    )
 
     class MockClient:
         async def post(self, url, json, **kwargs):
             return MockResponse({"not": "a list"})
 
-        async def aclose(self): pass
+        async def aclose(self):
+            pass
 
     client = MockClient()
     monkeypatch.setattr(embedder, "_get_client", lambda: _async_mock_client_factory(client))

@@ -27,7 +27,14 @@ def _entry(tmp_path: Path) -> tuple[dict, Path, Path]:
     completed = started + timedelta(seconds=2)
     entry = build_validation_cli_provenance_entry(
         command="validation-batch scan",
-        argv=["validation-batch", "scan", "--api-key", "secret-value", "--state-path", str(input_path)],
+        argv=[
+            "validation-batch",
+            "scan",
+            "--api-key",
+            "secret-value",
+            "--state-path",
+            str(input_path),
+        ],
         batch_id="fixture-batch",
         input_paths=[input_path],
         output_paths=[output_path],
@@ -55,14 +62,16 @@ def test_fingerprint_file_hashes_bytes_without_content(tmp_path: Path) -> None:
 
 
 def test_redact_cli_args_removes_secret_like_values() -> None:
-    redacted = redact_cli_args([
-        "cmd",
-        "--api-key",
-        "abc",
-        "--token=def",
-        "--state-path",
-        "state.json",
-    ])
+    redacted = redact_cli_args(
+        [
+            "cmd",
+            "--api-key",
+            "abc",
+            "--token=def",
+            "--state-path",
+            "state.json",
+        ]
+    )
 
     dumped = " ".join(redacted)
     assert "abc" not in dumped
@@ -102,7 +111,12 @@ def test_append_and_read_provenance_jsonl_round_trip(tmp_path: Path) -> None:
 
     assert [item["run_id"] for item in entries] == ["run-001", "run-002"]
     assert select_provenance_entry(entries, run_id="run-001")["run_id"] == "run-001"
-    assert select_provenance_entry(entries, batch_id="fixture-batch", command="validation-batch scan")["run_id"] == "run-002"
+    assert (
+        select_provenance_entry(entries, batch_id="fixture-batch", command="validation-batch scan")[
+            "run_id"
+        ]
+        == "run-002"
+    )
 
 
 def test_freshness_report_passes_for_unchanged_files(tmp_path: Path) -> None:
@@ -152,7 +166,9 @@ def test_freshness_report_checks_expected_artifact_metadata(tmp_path: Path) -> N
     input_path = tmp_path / "state.json"
     output_path = tmp_path / "summary.json"
     input_path.write_text('{"state":"ready"}\n', encoding="utf-8")
-    output_path.write_text('{"milestone_id":"M009-fh0tg0","batch_id":"batch-1"}\n', encoding="utf-8")
+    output_path.write_text(
+        '{"milestone_id":"M009-fh0tg0","batch_id":"batch-1"}\n', encoding="utf-8"
+    )
     started = datetime(2026, 5, 20, 4, 0, 0, tzinfo=UTC)
     entry = build_validation_cli_provenance_entry(
         command="validation-batch scan",
@@ -167,12 +183,16 @@ def test_freshness_report_checks_expected_artifact_metadata(tmp_path: Path) -> N
     )
 
     assert build_artifact_freshness_report(entry)["verdict"] == "fresh"
-    output_path.write_text('{"milestone_id":"M006-638rza","batch_id":"batch-1"}\n', encoding="utf-8")
+    output_path.write_text(
+        '{"milestone_id":"M006-638rza","batch_id":"batch-1"}\n', encoding="utf-8"
+    )
     entry["outputs"] = [fingerprint_file(output_path)]
     report = build_artifact_freshness_report(entry)
 
     assert report["verdict"] == "stale"
-    assert "artifact_metadata_mismatch" in {diagnostic["code"] for diagnostic in report["diagnostics"]}
+    assert "artifact_metadata_mismatch" in {
+        diagnostic["code"] for diagnostic in report["diagnostics"]
+    }
 
 
 def test_freshness_report_can_be_written_without_raw_content(tmp_path: Path) -> None:

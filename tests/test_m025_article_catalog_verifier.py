@@ -157,7 +157,9 @@ def test_m025_article_catalog_verifier_rejects_selection_not_in_index(tmp_path: 
     assert "selection article_ref not present in index" in result.stderr
 
 
-def test_m025_article_catalog_rebuild_writes_idempotent_report_and_diagnostics(tmp_path: Path) -> None:
+def test_m025_article_catalog_rebuild_writes_idempotent_report_and_diagnostics(
+    tmp_path: Path,
+) -> None:
     catalog, index, selection = _copy_scaffold(tmp_path)
     report = index.parent / "index-rebuild-report.json"
     diagnostics = index.parent / "index-rebuild-diagnostics.jsonl"
@@ -179,7 +181,9 @@ def test_m025_article_catalog_verifier_writes_catalog_readiness_outputs(tmp_path
     diagnostics_path = selection.parent / "diagnostics.jsonl"
     report_path = selection.parent / "catalog-report.md"
 
-    result = _run_catalog_report(catalog, index, selection, summary_path, diagnostics_path, report_path)
+    result = _run_catalog_report(
+        catalog, index, selection, summary_path, diagnostics_path, report_path
+    )
 
     assert result.returncode == 0, result.stderr
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
@@ -188,8 +192,14 @@ def test_m025_article_catalog_verifier_writes_catalog_readiness_outputs(tmp_path
     assert summary["readiness"]["blocked_article_count"] == 5
     assert summary["index"]["idempotent"] is True
     assert summary["network"]["network_fetch_attempted_during_validation"] is False
-    diagnostics = [json.loads(line) for line in diagnostics_path.read_text(encoding="utf-8").splitlines()]
-    assert {row["code"] for row in diagnostics} >= {"index_readiness", "article_readiness", "source_variant_readiness"}
+    diagnostics = [
+        json.loads(line) for line in diagnostics_path.read_text(encoding="utf-8").splitlines()
+    ]
+    assert {row["code"] for row in diagnostics} >= {
+        "index_readiness",
+        "article_readiness",
+        "source_variant_readiness",
+    }
     report = report_path.read_text(encoding="utf-8")
     assert "## Failure Modes" in report
     assert "## Load Profile" in report
@@ -199,7 +209,9 @@ def test_m025_article_catalog_verifier_writes_catalog_readiness_outputs(tmp_path
 
 def test_m025_article_catalog_rebuild_rejects_duplicate_lookup_key(tmp_path: Path) -> None:
     catalog, index, selection = _copy_scaffold(tmp_path)
-    article_path = index.parent / "article_catalog" / "arxiv" / "cs-ai" / "2605.28617v1" / "article.json"
+    article_path = (
+        index.parent / "article_catalog" / "arxiv" / "cs-ai" / "2605.28617v1" / "article.json"
+    )
     article = json.loads(article_path.read_text(encoding="utf-8"))
     article["article_key"] = "2512.24601"
     article["catalog_path"] = "arxiv/cs-ai/2512.24601"

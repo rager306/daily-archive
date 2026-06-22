@@ -74,9 +74,9 @@ def top_degree_subgraph(graph: nx.DiGraph, max_nodes: int = MAX_VISUALIZATION_NO
         return graph.copy()
     top_nodes = [
         node
-        for node, _degree in sorted(
-            graph.degree(), key=lambda item: (-int(item[1]), str(item[0]))
-        )[:max_nodes]
+        for node, _degree in sorted(graph.degree(), key=lambda item: (-int(item[1]), str(item[0])))[
+            :max_nodes
+        ]
     ]
     return graph.subgraph(top_nodes).copy()
 
@@ -128,8 +128,7 @@ def render_with_matplotlib(graph: nx.DiGraph, output_path: Path) -> str:
     )
 
     legend_handles = [
-        Line2D([0], [0], color=LAYER_COLORS[layer], lw=2, label=layer)
-        for layer in LAYER_ORDER
+        Line2D([0], [0], color=LAYER_COLORS[layer], lw=2, label=layer) for layer in LAYER_ORDER
     ]
     ax.legend(handles=legend_handles, loc="lower left", frameon=True, fontsize=8)
     fig.tight_layout()
@@ -282,7 +281,9 @@ def render_with_stdlib_png(graph: nx.DiGraph, output_path: Path) -> str:
     return "stdlib_png_fallback"
 
 
-def render_graph(manifest_path: Path, output_path: Path, max_nodes: int = MAX_VISUALIZATION_NODES) -> dict[str, Any]:
+def render_graph(
+    manifest_path: Path, output_path: Path, max_nodes: int = MAX_VISUALIZATION_NODES
+) -> dict[str, Any]:
     """Load, subsample, and render the M060b graph preview PNG."""
     assert_safety_defaults()
     edges = load_edges(manifest_path)

@@ -87,7 +87,9 @@ def install_backend(*, skip_install: bool = False, timeout_seconds: int = 600) -
     nougat_install = {"attempted": False, "ok": False, "result": None}
     if not skip_install:
         marker_install["attempted"] = True
-        marker_install["result"] = run_command(["uv", "pip", "install", "marker-pdf"], timeout_seconds=timeout_seconds)
+        marker_install["result"] = run_command(
+            ["uv", "pip", "install", "marker-pdf"], timeout_seconds=timeout_seconds
+        )
         marker_install["ok"] = marker_install["result"]["exit_code"] == 0
     marker_preflight = run_command(["uv", "run", "marker_single", "--help"], timeout_seconds=60)
     if marker_preflight["exit_code"] == 0:
@@ -101,7 +103,9 @@ def install_backend(*, skip_install: bool = False, timeout_seconds: int = 600) -
 
     if not skip_install:
         nougat_install["attempted"] = True
-        nougat_install["result"] = run_command(["uv", "pip", "install", "nougat-ocr"], timeout_seconds=timeout_seconds)
+        nougat_install["result"] = run_command(
+            ["uv", "pip", "install", "nougat-ocr"], timeout_seconds=timeout_seconds
+        )
         nougat_install["ok"] = nougat_install["result"]["exit_code"] == 0
     nougat_preflight = run_command(["uv", "run", "nougat", "--help"], timeout_seconds=60)
     backend = "nougat" if nougat_preflight["exit_code"] == 0 else "none"
@@ -118,7 +122,9 @@ def extract_text_metrics(text: str) -> dict[str, Any]:
     table_lines = _MARKDOWN_TABLE_RE.findall(text)
     table_count = max(0, len(table_lines) // 2)
     if table_count:
-        table_structure_quality_avg = min(1.0, 0.5 + min(0.5, len(table_lines) / max(1, table_count * 4)))
+        table_structure_quality_avg = min(
+            1.0, 0.5 + min(0.5, len(table_lines) / max(1, table_count * 4))
+        )
     else:
         table_structure_quality_avg = 0.0
     return {
@@ -156,14 +162,18 @@ def unavailable_packet(arxiv_id: str, pdf_path: str, *, error: str, backend: str
     }
 
 
-def extract_one(pdf: dict[str, Any], backend: str, per_pdf_root: Path, timeout_seconds: int) -> dict[str, Any]:
+def extract_one(
+    pdf: dict[str, Any], backend: str, per_pdf_root: Path, timeout_seconds: int
+) -> dict[str, Any]:
     arxiv_id = pdf["arxiv_id"]
     pdf_path = str(pdf["path"])
     absolute_pdf_path = ROOT / pdf_path
     if not absolute_pdf_path.exists():
         return unavailable_packet(arxiv_id, pdf_path, error="pdf_missing", backend=backend)
     if backend not in {"marker", "nougat"}:
-        return unavailable_packet(arxiv_id, pdf_path, error="marker and nougat are not usable", backend="none")
+        return unavailable_packet(
+            arxiv_id, pdf_path, error="marker and nougat are not usable", backend="none"
+        )
 
     with tempfile.TemporaryDirectory(prefix=f"m057-{arxiv_id}-") as tmp_name:
         tmp_output = Path(tmp_name)
@@ -188,7 +198,9 @@ def extract_one(pdf: dict[str, Any], backend: str, per_pdf_root: Path, timeout_s
             )
         text = find_text_output(tmp_output)
         if not text.strip():
-            return unavailable_packet(arxiv_id, pdf_path, error=f"{backend} produced no text output", backend=backend)
+            return unavailable_packet(
+                arxiv_id, pdf_path, error=f"{backend} produced no text output", backend=backend
+            )
         metrics = extract_text_metrics(text)
         destination = per_pdf_root / f"{arxiv_id}.md"
         destination.write_text(text, encoding="utf-8")
@@ -231,7 +243,9 @@ def run_extraction(
     successful = [packet for packet in per_pdf if packet["status"] == "success"]
     summary = {
         "schema_version": "m057-fd-marker.marker-extraction.v1",
-        "manifest_path": str(manifest_path.relative_to(ROOT) if manifest_path.is_absolute() else manifest_path),
+        "manifest_path": str(
+            manifest_path.relative_to(ROOT) if manifest_path.is_absolute() else manifest_path
+        ),
         "output_dir": str(output_dir.relative_to(ROOT) if output_dir.is_absolute() else output_dir),
         "safety_defaults": SAFETY_DEFAULTS,
         "backend": backend,
@@ -244,13 +258,16 @@ def run_extraction(
         "total_equation_count": sum(int(packet["equation_count"]) for packet in per_pdf),
         "total_body_word_count": sum(int(packet["body_word_count"]) for packet in per_pdf),
         "table_structure_quality_avg": round(
-            sum(float(packet["table_structure_quality_avg"]) for packet in per_pdf) / len(per_pdf), 3
+            sum(float(packet["table_structure_quality_avg"]) for packet in per_pdf) / len(per_pdf),
+            3,
         )
         if per_pdf
         else 0.0,
         "per_pdf": per_pdf,
     }
-    (output_dir / "summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    (output_dir / "summary.json").write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     return summary
 
 
@@ -267,7 +284,16 @@ def main() -> int:
         skip_install=args.skip_install,
         per_pdf_timeout_seconds=args.per_pdf_timeout_seconds,
     )
-    print(json.dumps({"backend": summary["backend"], "total_pdfs": summary["total_pdfs"], "status_counts": summary["status_counts"]}, sort_keys=True))
+    print(
+        json.dumps(
+            {
+                "backend": summary["backend"],
+                "total_pdfs": summary["total_pdfs"],
+                "status_counts": summary["status_counts"],
+            },
+            sort_keys=True,
+        )
+    )
     return 0
 
 

@@ -39,8 +39,20 @@ def _manifest(tmp_path: Path) -> Path:
             "article_count": 5,
             "articles": [
                 _node("base-1", "baseline"),
-                _node("linked-1", "reference_linked", linked_from=["data/article_catalog/article_catalog/arxiv/cs-ai/base-1/source/article.html"]),
-                _node("linked-2", "reference_linked", linked_from=["data/article_catalog/article_catalog/arxiv/cs-ai/base-1/source/article.html"]),
+                _node(
+                    "linked-1",
+                    "reference_linked",
+                    linked_from=[
+                        "data/article_catalog/article_catalog/arxiv/cs-ai/base-1/source/article.html"
+                    ],
+                ),
+                _node(
+                    "linked-2",
+                    "reference_linked",
+                    linked_from=[
+                        "data/article_catalog/article_catalog/arxiv/cs-ai/base-1/source/article.html"
+                    ],
+                ),
                 _node("hermes-1", "hermes_review_section"),
                 _node("base-2", "baseline"),
             ],
@@ -73,10 +85,16 @@ def test_audit_connectivity_groups_reports_components_and_hermes_group(tmp_path)
     manifest = _manifest(tmp_path)
     repair = _repair_report(tmp_path)
 
-    audit = audit_mod.audit_connectivity(manifest_path=manifest, repair_report_path=repair, output_dir=tmp_path / "out")
+    audit = audit_mod.audit_connectivity(
+        manifest_path=manifest, repair_report_path=repair, output_dir=tmp_path / "out"
+    )
 
     assert audit["node_count"] == 5
-    assert audit["category_counts"] == {"baseline": 2, "reference_linked": 2, "hermes_review_section": 1}
+    assert audit["category_counts"] == {
+        "baseline": 2,
+        "reference_linked": 2,
+        "hermes_review_section": 1,
+    }
     assert audit["edge_counts"] == {"local_reference": 2, "selected_node_edges": 2}
     assert audit["largest_component_size"] == 3
     assert audit["components"][0]["article_keys"] == ["base-1", "linked-1", "linked-2"]
@@ -99,7 +117,13 @@ def test_audit_connectivity_groups_keeps_external_reference_as_evidence_not_comp
         {
             "article_count": 2,
             "articles": [
-                _node("linked-1", "reference_linked", linked_from=["data/article_catalog/article_catalog/arxiv/cs-ai/external/source/article.html"]),
+                _node(
+                    "linked-1",
+                    "reference_linked",
+                    linked_from=[
+                        "data/article_catalog/article_catalog/arxiv/cs-ai/external/source/article.html"
+                    ],
+                ),
                 _node("hermes-1", "hermes_review_section"),
             ],
             "safety_flags": {
@@ -112,7 +136,9 @@ def test_audit_connectivity_groups_keeps_external_reference_as_evidence_not_comp
     )
     repair = _repair_report(tmp_path)
 
-    audit = audit_mod.audit_connectivity(manifest_path=manifest, repair_report_path=repair, output_dir=tmp_path / "out")
+    audit = audit_mod.audit_connectivity(
+        manifest_path=manifest, repair_report_path=repair, output_dir=tmp_path / "out"
+    )
 
     assert audit["edge_counts"] == {"local_reference": 1, "selected_node_edges": 0}
     assert audit["component_count"] == 2
@@ -128,7 +154,11 @@ def test_audit_connectivity_groups_rejects_enabled_safety_flag(tmp_path):
     _write_json(manifest, payload)
 
     try:
-        audit_mod.audit_connectivity(manifest_path=manifest, repair_report_path=_repair_report(tmp_path), output_dir=tmp_path / "out")
+        audit_mod.audit_connectivity(
+            manifest_path=manifest,
+            repair_report_path=_repair_report(tmp_path),
+            output_dir=tmp_path / "out",
+        )
     except ValueError as exc:
         assert "safety flags" in str(exc)
     else:  # pragma: no cover - defensive failure branch

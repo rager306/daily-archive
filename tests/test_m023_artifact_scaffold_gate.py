@@ -130,4 +130,6 @@ def test_cli_writes_gate_json_and_markdown(tmp_path: Path) -> None:
     payload = json.loads(output_json.read_text(encoding="utf-8"))
     assert payload["schema_version"] == FINAL_GATE_SCHEMA_VERSION
     assert payload["strict_validation"]["passed"] is True
-    assert output_markdown.read_text(encoding="utf-8").startswith("# M023 Article Artifact Scaffold Gate Review")
+    assert output_markdown.read_text(encoding="utf-8").startswith(
+        "# M023 Article Artifact Scaffold Gate Review"
+    )

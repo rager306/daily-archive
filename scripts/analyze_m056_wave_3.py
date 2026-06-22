@@ -154,7 +154,9 @@ def _extract_authors_from_tei(path: Path) -> list[str]:
     return authors
 
 
-def _edge_records(*, wave_pdfs: list[dict[str, Any]], grobid_dir: Path, target_ids: set[str]) -> list[dict[str, str]]:
+def _edge_records(
+    *, wave_pdfs: list[dict[str, Any]], grobid_dir: Path, target_ids: set[str]
+) -> list[dict[str, str]]:
     edges: list[dict[str, str]] = []
     seen: set[tuple[str, str]] = set()
     for entry in wave_pdfs:
@@ -199,7 +201,9 @@ def _length_bucket(entry: dict[str, Any]) -> str:
 
 def _length_counts(pdfs: list[dict[str, Any]]) -> dict[str, int]:
     counts = Counter(_length_bucket(entry) for entry in pdfs)
-    return {bucket: counts.get(bucket, 0) for bucket in ("short_1_10", "medium_11_25", "long_26_plus")}
+    return {
+        bucket: counts.get(bucket, 0) for bucket in ("short_1_10", "medium_11_25", "long_26_plus")
+    }
 
 
 def _edge_key(edge: dict[str, str]) -> tuple[str, str]:
@@ -271,13 +275,19 @@ def analyze_wave_3(
     wave_2_analysis = _load_json(wave_2_dir / "analysis.json")
     wave_1_edges = wave_2_analysis["connectivity"].get("wave_1_edges", [])
     wave_2_edges = wave_2_analysis["connectivity"].get("wave_2_new_edges", [])
-    wave_3_edges = _edge_records(wave_pdfs=wave_3_pdfs, grobid_dir=wave_3_dir / "grobid-fulltext", target_ids=target_ids)
-    cumulative_edge_map = {_edge_key(edge): edge for edge in wave_1_edges + wave_2_edges + wave_3_edges}
+    wave_3_edges = _edge_records(
+        wave_pdfs=wave_3_pdfs, grobid_dir=wave_3_dir / "grobid-fulltext", target_ids=target_ids
+    )
+    cumulative_edge_map = {
+        _edge_key(edge): edge for edge in wave_1_edges + wave_2_edges + wave_3_edges
+    }
     cumulative_edges = _sorted_edges(list(cumulative_edge_map.values()))
 
     anchor_tei = wave_1_dir / "anchor-grobid" / "tei" / f"{anchor_arxiv_id}.tei.xml"
     anchor_first_author = _extract_first_author_from_tei(anchor_tei) or "unknown"
-    anchor_last_name = anchor_first_author.split()[-1].lower() if anchor_first_author != "unknown" else ""
+    anchor_last_name = (
+        anchor_first_author.split()[-1].lower() if anchor_first_author != "unknown" else ""
+    )
     self_citation_matches = []
     for entry in wave_3_pdfs:
         arxiv_id = str(entry.get("arxiv_id") or "")
@@ -329,8 +339,12 @@ def analyze_wave_3(
             "wave_3_opendataloader_packet_count": len(wave_3_opendataloader_packets),
             "opendataloader_packet_count": len(wave_3_opendataloader_packets),
             "opendataloader_success_count": _success_count(wave_3_opendataloader_packets),
-            "opendataloader_quality_counts": dict(sorted(_quality_counts(wave_3_opendataloader_packets).items())),
-            "all_packet_safety_defaults_false": all(_packet_safety_defaults_false(packet) for packet in all_packets),
+            "opendataloader_quality_counts": dict(
+                sorted(_quality_counts(wave_3_opendataloader_packets).items())
+            ),
+            "all_packet_safety_defaults_false": all(
+                _packet_safety_defaults_false(packet) for packet in all_packets
+            ),
         },
         "connectivity": {
             "anchor_arxiv_id": anchor_arxiv_id,
@@ -342,7 +356,11 @@ def analyze_wave_3(
             "wave_2_new_edges": _sorted_edges(wave_2_edges),
             "wave_3_new_edge_count": wave_3_edge_count,
             "wave_3_new_edges": _sorted_edges(wave_3_edges),
-            "edge_saturation_by_wave": {"wave_1": wave_1_edge_count, "wave_2": wave_2_edge_count, "wave_3": wave_3_edge_count},
+            "edge_saturation_by_wave": {
+                "wave_1": wave_1_edge_count,
+                "wave_2": wave_2_edge_count,
+                "wave_3": wave_3_edge_count,
+            },
             "connectivity_gain_delta_vs_wave_2": wave_3_edge_count - wave_2_edge_count,
             "cumulative_edge_count": len(cumulative_edges),
             "cumulative_edges": cumulative_edges,

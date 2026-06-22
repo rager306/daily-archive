@@ -81,12 +81,18 @@ def _entry(manifest: dict[str, object], paper_id: str, route: str) -> dict[str, 
     assert isinstance(entries, list)
     for item in entries:
         assert isinstance(item, dict)
-        if item["paper_id"] == paper_id and item["route"] == route and item.get("granularity") == "route":
+        if (
+            item["paper_id"] == paper_id
+            and item["route"] == route
+            and item.get("granularity") == "route"
+        ):
             return item
     raise AssertionError(f"missing route entry {paper_id} {route}")
 
 
-def _candidate_entry(manifest: dict[str, object], paper_id: str, route: str, candidate_id: str) -> dict[str, object]:
+def _candidate_entry(
+    manifest: dict[str, object], paper_id: str, route: str, candidate_id: str
+) -> dict[str, object]:
     entries = manifest["entries"]
     assert isinstance(entries, list)
     for item in entries:
@@ -148,7 +154,9 @@ def test_false_confidence_finding_is_preserved_as_global_not_route_blocker() -> 
     retrieval_entry = next(
         entry
         for entry in result.entries
-        if entry.paper_id == "p1" and entry.route == "retrieval_only" and entry.granularity == "route"
+        if entry.paper_id == "p1"
+        and entry.route == "retrieval_only"
+        and entry.granularity == "route"
     )
     assert retrieval_entry.final_eligibility == "eligible_with_caveat"
 

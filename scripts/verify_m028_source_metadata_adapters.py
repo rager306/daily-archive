@@ -106,7 +106,9 @@ class VerificationError(RuntimeError):
     """Raised when input files cannot be parsed enough to validate."""
 
 
-def diagnostic(code: str, json_path: str, message: str, *, details: dict[str, Any] | None = None) -> dict[str, Any]:
+def diagnostic(
+    code: str, json_path: str, message: str, *, details: dict[str, Any] | None = None
+) -> dict[str, Any]:
     if code not in SAFE_DIAGNOSTIC_CODES:
         raise AssertionError(f"unregistered diagnostic code: {code}")
     return {"code": code, "json_path": json_path, "message": message, "details": details or {}}
@@ -169,21 +171,33 @@ def counter_from(rows: list[dict[str, Any]], key: str) -> dict[str, int]:
     return dict(sorted(Counter(str(row.get(key)) for row in rows).items()))
 
 
-def validate_expanded_counts(refs: list[dict[str, Any]], events: list[dict[str, Any]], summary: dict[str, Any]) -> list[dict[str, Any]]:
+def validate_expanded_counts(
+    refs: list[dict[str, Any]], events: list[dict[str, Any]], summary: dict[str, Any]
+) -> list[dict[str, Any]]:
     diagnostics: list[dict[str, Any]] = []
-    if len(refs) != EXPECTED_URL_REF_COUNT or len(events) != EXPECTED_URL_REF_COUNT or summary.get("url_ref_count") != EXPECTED_URL_REF_COUNT:
+    if (
+        len(refs) != EXPECTED_URL_REF_COUNT
+        or len(events) != EXPECTED_URL_REF_COUNT
+        or summary.get("url_ref_count") != EXPECTED_URL_REF_COUNT
+    ):
         diagnostics.append(
             diagnostic(
                 "corpus_scope_stale",
                 "$.url_ref_count",
                 "M028 S02 must validate the expanded 21-URL-ref corpus, not the stale 14-ref scope.",
-                details={"selection": len(refs), "events": len(events), "summary": summary.get("url_ref_count")},
+                details={
+                    "selection": len(refs),
+                    "events": len(events),
+                    "summary": summary.get("url_ref_count"),
+                },
             )
         )
 
     selection_ref_ids = {str(ref.get("ref_id")) for ref in refs}
     event_ref_ids = {str(event.get("ref_id")) for event in events}
-    missing_new_refs = sorted(EXPECTED_NEW_REF_IDS - selection_ref_ids) + sorted(EXPECTED_NEW_REF_IDS - event_ref_ids)
+    missing_new_refs = sorted(EXPECTED_NEW_REF_IDS - selection_ref_ids) + sorted(
+        EXPECTED_NEW_REF_IDS - event_ref_ids
+    )
     if missing_new_refs:
         diagnostics.append(
             diagnostic(
@@ -195,59 +209,98 @@ def validate_expanded_counts(refs: list[dict[str, Any]], events: list[dict[str, 
         )
 
     identity_count = len({str(ref.get("normalized_identity")) for ref in refs})
-    if identity_count != EXPECTED_NORMALIZED_IDENTITY_COUNT or summary.get("normalized_identity_count") != EXPECTED_NORMALIZED_IDENTITY_COUNT:
+    if (
+        identity_count != EXPECTED_NORMALIZED_IDENTITY_COUNT
+        or summary.get("normalized_identity_count") != EXPECTED_NORMALIZED_IDENTITY_COUNT
+    ):
         diagnostics.append(
             diagnostic(
                 "identity_count_mismatch",
                 "$.normalized_identity_count",
                 "M028 S02 must preserve 20 normalized identities across 21 URL refs.",
-                details={"selection": identity_count, "summary": summary.get("normalized_identity_count")},
+                details={
+                    "selection": identity_count,
+                    "summary": summary.get("normalized_identity_count"),
+                },
             )
         )
     return diagnostics
 
 
-def validate_source_counts(refs: list[dict[str, Any]], events: list[dict[str, Any]], summary: dict[str, Any]) -> list[dict[str, Any]]:
+def validate_source_counts(
+    refs: list[dict[str, Any]], events: list[dict[str, Any]], summary: dict[str, Any]
+) -> list[dict[str, Any]]:
     diagnostics: list[dict[str, Any]] = []
     selection_kind_counts = counter_from(refs, "source_kind")
     event_kind_counts = counter_from(events, "source_kind")
-    if selection_kind_counts != EXPECTED_SOURCE_KIND_COUNTS or event_kind_counts != EXPECTED_SOURCE_KIND_COUNTS or summary.get("source_kind_counts") != EXPECTED_SOURCE_KIND_COUNTS:
+    if (
+        selection_kind_counts != EXPECTED_SOURCE_KIND_COUNTS
+        or event_kind_counts != EXPECTED_SOURCE_KIND_COUNTS
+        or summary.get("source_kind_counts") != EXPECTED_SOURCE_KIND_COUNTS
+    ):
         diagnostics.append(
             diagnostic(
                 "source_kind_drift",
                 "$.source_kind_counts",
                 "Source kind counts drifted from the accepted expanded corpus contract.",
-                details={"selection": selection_kind_counts, "events": event_kind_counts, "summary": summary.get("source_kind_counts")},
+                details={
+                    "selection": selection_kind_counts,
+                    "events": event_kind_counts,
+                    "summary": summary.get("source_kind_counts"),
+                },
             )
         )
 
     event_family_counts = counter_from(events, "source_family")
-    if event_family_counts != EXPECTED_SOURCE_FAMILY_COUNTS or summary.get("source_family_counts") != EXPECTED_SOURCE_FAMILY_COUNTS:
+    if (
+        event_family_counts != EXPECTED_SOURCE_FAMILY_COUNTS
+        or summary.get("source_family_counts") != EXPECTED_SOURCE_FAMILY_COUNTS
+    ):
         diagnostics.append(
             diagnostic(
                 "source_family_drift",
                 "$.source_family_counts",
                 "Source family classification counts drifted from arXiv/company-blog/Nature expectations.",
-                details={"events": event_family_counts, "summary": summary.get("source_family_counts")},
+                details={
+                    "events": event_family_counts,
+                    "summary": summary.get("source_family_counts"),
+                },
             )
         )
     return diagnostics
 
 
-def validate_duplicate_identity(refs: list[dict[str, Any]], events: list[dict[str, Any]], summary: dict[str, Any]) -> list[dict[str, Any]]:
+def validate_duplicate_identity(
+    refs: list[dict[str, Any]], events: list[dict[str, Any]], summary: dict[str, Any]
+) -> list[dict[str, Any]]:
     diagnostics: list[dict[str, Any]] = []
     refs_by_identity: dict[str, list[str]] = defaultdict(list)
     for ref in refs:
         refs_by_identity[str(ref.get("normalized_identity"))].append(str(ref.get("ref_id")))
 
     duplicate_ref_ids = refs_by_identity.get(EXPECTED_DUPLICATE_IDENTITY, [])
-    summary_groups = summary.get("duplicate_identity_groups") if isinstance(summary.get("duplicate_identity_groups"), list) else []
+    summary_groups = (
+        summary.get("duplicate_identity_groups")
+        if isinstance(summary.get("duplicate_identity_groups"), list)
+        else []
+    )
     expected_summary_group = next(
-        (group for group in summary_groups if isinstance(group, dict) and group.get("normalized_identity") == EXPECTED_DUPLICATE_IDENTITY),
+        (
+            group
+            for group in summary_groups
+            if isinstance(group, dict)
+            and group.get("normalized_identity") == EXPECTED_DUPLICATE_IDENTITY
+        ),
         None,
     )
-    event_groups = [event.get("identity_group") for event in events if event.get("normalized_identity") == EXPECTED_DUPLICATE_IDENTITY]
-    event_group_ref_ids = [group.get("ref_ids") for group in event_groups if isinstance(group, dict)]
+    event_groups = [
+        event.get("identity_group")
+        for event in events
+        if event.get("normalized_identity") == EXPECTED_DUPLICATE_IDENTITY
+    ]
+    event_group_ref_ids = [
+        group.get("ref_ids") for group in event_groups if isinstance(group, dict)
+    ]
     if (
         duplicate_ref_ids != EXPECTED_DUPLICATE_REF_IDS
         or not isinstance(expected_summary_group, dict)
@@ -260,7 +313,11 @@ def validate_duplicate_identity(refs: list[dict[str, Any]], events: list[dict[st
                 "duplicate_identity_mismatch",
                 "$.duplicate_identity_groups",
                 "The arxiv:2605.20897 duplicate URL identity must remain exactly R01/R10.",
-                details={"selection": duplicate_ref_ids, "summary_group": expected_summary_group, "event_groups": event_group_ref_ids},
+                details={
+                    "selection": duplicate_ref_ids,
+                    "summary_group": expected_summary_group,
+                    "event_groups": event_group_ref_ids,
+                },
             )
         )
     return diagnostics
@@ -274,10 +331,17 @@ def validate_schema(events: list[dict[str, Any]], summary: dict[str, Any]) -> li
                 "schema_mismatch",
                 "$.schema_version",
                 "Summary schema version does not match the metadata adapter verifier contract.",
-                details={"actual": summary.get("schema_version"), "expected": EXPECTED_SUMMARY_SCHEMA_VERSION},
+                details={
+                    "actual": summary.get("schema_version"),
+                    "expected": EXPECTED_SUMMARY_SCHEMA_VERSION,
+                },
             )
         )
-    bad_event_refs = [event.get("ref_id") for event in events if event.get("schema_version") != EXPECTED_EVENT_SCHEMA_VERSION]
+    bad_event_refs = [
+        event.get("ref_id")
+        for event in events
+        if event.get("schema_version") != EXPECTED_EVENT_SCHEMA_VERSION
+    ]
     if bad_event_refs:
         diagnostics.append(
             diagnostic(
@@ -290,16 +354,32 @@ def validate_schema(events: list[dict[str, Any]], summary: dict[str, Any]) -> li
     return diagnostics
 
 
-def validate_selection_event_alignment(refs: list[dict[str, Any]], events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def validate_selection_event_alignment(
+    refs: list[dict[str, Any]], events: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     diagnostics: list[dict[str, Any]] = []
     refs_by_id = by_ref_id(refs, "selection")
     events_by_id = by_ref_id(events, "metadata")
     missing = sorted(set(refs_by_id) - set(events_by_id))
     unexpected = sorted(set(events_by_id) - set(refs_by_id))
     if missing:
-        diagnostics.append(diagnostic("missing_metadata_event", "$.events", "Selection refs are missing metadata events.", details={"ref_ids": missing}))
+        diagnostics.append(
+            diagnostic(
+                "missing_metadata_event",
+                "$.events",
+                "Selection refs are missing metadata events.",
+                details={"ref_ids": missing},
+            )
+        )
     if unexpected:
-        diagnostics.append(diagnostic("unexpected_metadata_event", "$.events", "Metadata events include refs absent from selection.", details={"ref_ids": unexpected}))
+        diagnostics.append(
+            diagnostic(
+                "unexpected_metadata_event",
+                "$.events",
+                "Metadata events include refs absent from selection.",
+                details={"ref_ids": unexpected},
+            )
+        )
 
     for ref_id in sorted(set(refs_by_id) & set(events_by_id)):
         ref = refs_by_id[ref_id]
@@ -340,14 +420,22 @@ def validate_acquisition_linkage(
             )
             continue
 
-        event_acquisition = event.get("acquisition") if isinstance(event.get("acquisition"), dict) else {}
-        if event_acquisition.get("status") != acquisition.get("status") or event_acquisition.get("terminal") != acquisition.get("terminal"):
+        event_acquisition = (
+            event.get("acquisition") if isinstance(event.get("acquisition"), dict) else {}
+        )
+        if event_acquisition.get("status") != acquisition.get("status") or event_acquisition.get(
+            "terminal"
+        ) != acquisition.get("terminal"):
             diagnostics.append(
                 diagnostic(
                     "terminal_acquisition_mismatch",
                     f"$.events[ref_id={ref_id}].acquisition",
                     "Metadata acquisition status/terminal fields must link to terminal acquisition events.",
-                    details={"ref_id": ref_id, "event": event_acquisition, "acquisition": acquisition},
+                    details={
+                        "ref_id": ref_id,
+                        "event": event_acquisition,
+                        "acquisition": acquisition,
+                    },
                 )
             )
         if acquisition.get("terminal") is not True or acquisition.get("status") != "captured":
@@ -356,20 +444,32 @@ def validate_acquisition_linkage(
                     "terminal_acquisition_mismatch",
                     f"$.acquisition_events[ref_id={ref_id}]",
                     "Expanded S02 expects terminal captured acquisition events for all refs.",
-                    details={"ref_id": ref_id, "status": acquisition.get("status"), "terminal": acquisition.get("terminal")},
+                    details={
+                        "ref_id": ref_id,
+                        "status": acquisition.get("status"),
+                        "terminal": acquisition.get("terminal"),
+                    },
                 )
             )
 
         event_artifact = event.get("artifact") if isinstance(event.get("artifact"), dict) else {}
         artifact_path = event_artifact.get("path")
         acquisition_path = acquisition.get("artifact_path")
-        if artifact_path != acquisition_path or not isinstance(artifact_path, str) or not artifact_path:
+        if (
+            artifact_path != acquisition_path
+            or not isinstance(artifact_path, str)
+            or not artifact_path
+        ):
             diagnostics.append(
                 diagnostic(
                     "artifact_reference_broken",
                     f"$.events[ref_id={ref_id}].artifact.path",
                     "Metadata artifact path must match the acquisition artifact reference.",
-                    details={"ref_id": ref_id, "event_path": artifact_path, "acquisition_path": acquisition_path},
+                    details={
+                        "ref_id": ref_id,
+                        "event_path": artifact_path,
+                        "acquisition_path": acquisition_path,
+                    },
                 )
             )
             continue
@@ -383,7 +483,10 @@ def validate_acquisition_linkage(
                     details={"ref_id": ref_id, "artifact_path": artifact_path},
                 )
             )
-        if event_artifact.get("sha256") != acquisition.get("sha256") or event_artifact.get("checksum_verified") is not True:
+        if (
+            event_artifact.get("sha256") != acquisition.get("sha256")
+            or event_artifact.get("checksum_verified") is not True
+        ):
             diagnostics.append(
                 diagnostic(
                     "artifact_checksum_unverified",
@@ -399,18 +502,35 @@ def validate_optional_metadata(events: list[dict[str, Any]]) -> list[dict[str, A
     diagnostics: list[dict[str, Any]] = []
     for event in events:
         ref_id = str(event.get("ref_id"))
-        optional_metadata = event.get("optional_metadata") if isinstance(event.get("optional_metadata"), dict) else {}
-        gaps = event.get("optional_metadata_gaps") if isinstance(event.get("optional_metadata_gaps"), list) else []
+        optional_metadata = (
+            event.get("optional_metadata")
+            if isinstance(event.get("optional_metadata"), dict)
+            else {}
+        )
+        gaps = (
+            event.get("optional_metadata_gaps")
+            if isinstance(event.get("optional_metadata_gaps"), list)
+            else []
+        )
         gap_fields = {gap.get("field") for gap in gaps if isinstance(gap, dict)}
-        event_diagnostics = event.get("diagnostics") if isinstance(event.get("diagnostics"), list) else []
+        event_diagnostics = (
+            event.get("diagnostics") if isinstance(event.get("diagnostics"), list) else []
+        )
         diagnostic_gap_fields = {
             item.get("details", {}).get("field")
             for item in event_diagnostics
-            if isinstance(item, dict) and item.get("code") == "optional_metadata_missing" and isinstance(item.get("details"), dict)
+            if isinstance(item, dict)
+            and item.get("code") == "optional_metadata_missing"
+            and isinstance(item.get("details"), dict)
         }
         for field in REQUIRED_OPTIONAL_FIELDS:
             field_value = optional_metadata.get(field)
-            if not isinstance(field_value, dict) or "status" not in field_value or "value" not in field_value or "missing_reason" not in field_value:
+            if (
+                not isinstance(field_value, dict)
+                or "status" not in field_value
+                or "value" not in field_value
+                or "missing_reason" not in field_value
+            ):
                 diagnostics.append(
                     diagnostic(
                         "required_nullable_field_missing",
@@ -420,7 +540,9 @@ def validate_optional_metadata(events: list[dict[str, Any]]) -> list[dict[str, A
                     )
                 )
                 continue
-            if field_value.get("status") == "missing" and (field not in gap_fields or field not in diagnostic_gap_fields):
+            if field_value.get("status") == "missing" and (
+                field not in gap_fields or field not in diagnostic_gap_fields
+            ):
                 diagnostics.append(
                     diagnostic(
                         "optional_metadata_gap_missing",
@@ -443,10 +565,17 @@ def iter_nested_string_values(payload: Any) -> Any:
         yield payload
 
 
-def validate_metadata_only(events: list[dict[str, Any]], summary: dict[str, Any], *, reject_unsafe_claims: bool) -> list[dict[str, Any]]:
+def validate_metadata_only(
+    events: list[dict[str, Any]], summary: dict[str, Any], *, reject_unsafe_claims: bool
+) -> list[dict[str, Any]]:
     diagnostics: list[dict[str, Any]] = []
-    payload_blob = "\n".join(str(item).lower() for item in iter_nested_string_values({"events": events, "summary": summary}))
-    leaked_markers = sorted(marker for marker in FORBIDDEN_PAYLOAD_MARKERS if marker in payload_blob)
+    payload_blob = "\n".join(
+        str(item).lower()
+        for item in iter_nested_string_values({"events": events, "summary": summary})
+    )
+    leaked_markers = sorted(
+        marker for marker in FORBIDDEN_PAYLOAD_MARKERS if marker in payload_blob
+    )
     if leaked_markers:
         diagnostics.append(
             diagnostic(
@@ -458,21 +587,43 @@ def validate_metadata_only(events: list[dict[str, Any]], summary: dict[str, Any]
         )
 
     unsafe_claims: list[dict[str, Any]] = []
-    summary_flags = summary.get("safety_flags") if isinstance(summary.get("safety_flags"), dict) else {}
-    unsafe_counts = summary.get("unsafe_claim_counts") if isinstance(summary.get("unsafe_claim_counts"), dict) else {}
+    summary_flags = (
+        summary.get("safety_flags") if isinstance(summary.get("safety_flags"), dict) else {}
+    )
+    unsafe_counts = (
+        summary.get("unsafe_claim_counts")
+        if isinstance(summary.get("unsafe_claim_counts"), dict)
+        else {}
+    )
     for flag in UNSAFE_SUMMARY_FLAGS:
         if summary_flags.get(flag) not in (False, None):
-            unsafe_claims.append({"path": f"$.summary.safety_flags.{flag}", "value": summary_flags.get(flag)})
+            unsafe_claims.append(
+                {"path": f"$.summary.safety_flags.{flag}", "value": summary_flags.get(flag)}
+            )
         if unsafe_counts.get(flag, 0) not in (0, None):
-            unsafe_claims.append({"path": f"$.summary.unsafe_claim_counts.{flag}", "value": unsafe_counts.get(flag)})
+            unsafe_claims.append(
+                {"path": f"$.summary.unsafe_claim_counts.{flag}", "value": unsafe_counts.get(flag)}
+            )
     for event in events:
-        event_flags = event.get("safety_flags") if isinstance(event.get("safety_flags"), dict) else {}
+        event_flags = (
+            event.get("safety_flags") if isinstance(event.get("safety_flags"), dict) else {}
+        )
         for flag, value in event_flags.items():
             if value is not False:
-                unsafe_claims.append({"path": f"$.events[ref_id={event.get('ref_id')}].safety_flags.{flag}", "value": value})
+                unsafe_claims.append(
+                    {
+                        "path": f"$.events[ref_id={event.get('ref_id')}].safety_flags.{flag}",
+                        "value": value,
+                    }
+                )
         artifact = event.get("artifact") if isinstance(event.get("artifact"), dict) else {}
         if artifact.get("payload_embedded") is not False:
-            unsafe_claims.append({"path": f"$.events[ref_id={event.get('ref_id')}].artifact.payload_embedded", "value": artifact.get("payload_embedded")})
+            unsafe_claims.append(
+                {
+                    "path": f"$.events[ref_id={event.get('ref_id')}].artifact.payload_embedded",
+                    "value": artifact.get("payload_embedded"),
+                }
+            )
 
     if unsafe_claims and reject_unsafe_claims:
         diagnostics.append(
@@ -486,7 +637,9 @@ def validate_metadata_only(events: list[dict[str, Any]], summary: dict[str, Any]
     return diagnostics
 
 
-def validate_summary_consistency(events: list[dict[str, Any]], summary: dict[str, Any]) -> list[dict[str, Any]]:
+def validate_summary_consistency(
+    events: list[dict[str, Any]], summary: dict[str, Any]
+) -> list[dict[str, Any]]:
     diagnostics: list[dict[str, Any]] = []
     if summary.get("ref_ids") != [event.get("ref_id") for event in events]:
         diagnostics.append(
@@ -494,7 +647,10 @@ def validate_summary_consistency(events: list[dict[str, Any]], summary: dict[str
                 "summary_event_mismatch",
                 "$.ref_ids",
                 "Summary ref_ids must exactly match metadata event order.",
-                details={"summary": summary.get("ref_ids"), "events": [event.get("ref_id") for event in events]},
+                details={
+                    "summary": summary.get("ref_ids"),
+                    "events": [event.get("ref_id") for event in events],
+                },
             )
         )
     if summary.get("metadata_status_counts") != counter_from(events, "metadata_status"):
@@ -503,7 +659,10 @@ def validate_summary_consistency(events: list[dict[str, Any]], summary: dict[str
                 "summary_event_mismatch",
                 "$.metadata_status_counts",
                 "Summary metadata_status_counts must match event rows.",
-                details={"summary": summary.get("metadata_status_counts"), "events": counter_from(events, "metadata_status")},
+                details={
+                    "summary": summary.get("metadata_status_counts"),
+                    "events": counter_from(events, "metadata_status"),
+                },
             )
         )
     return diagnostics
@@ -525,9 +684,13 @@ def verify_contract(
     diagnostics.extend(validate_source_counts(refs, metadata_events, summary))
     diagnostics.extend(validate_duplicate_identity(refs, metadata_events, summary))
     diagnostics.extend(validate_selection_event_alignment(refs, metadata_events))
-    diagnostics.extend(validate_acquisition_linkage(metadata_events, acquisition_events, repo_root=repo_root))
+    diagnostics.extend(
+        validate_acquisition_linkage(metadata_events, acquisition_events, repo_root=repo_root)
+    )
     diagnostics.extend(validate_optional_metadata(metadata_events))
-    diagnostics.extend(validate_metadata_only(metadata_events, summary, reject_unsafe_claims=reject_unsafe_claims))
+    diagnostics.extend(
+        validate_metadata_only(metadata_events, summary, reject_unsafe_claims=reject_unsafe_claims)
+    )
     diagnostics.extend(validate_summary_consistency(metadata_events, summary))
     return diagnostics
 

@@ -261,7 +261,9 @@ def _packet_base(entry: dict[str, Any], *, grobid_url: str) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
         "generated_at": _utc_now(),
-        "arxiv_id": entry.get("arxiv_id") or entry.get("article_key") or Path(str(entry.get("path", "unknown"))).stem,
+        "arxiv_id": entry.get("arxiv_id")
+        or entry.get("article_key")
+        or Path(str(entry.get("path", "unknown"))).stem,
         "article_key": entry.get("article_key"),
         "category": entry.get("category"),
         "pdf_path": entry.get("path"),
@@ -283,7 +285,9 @@ def _write_low_level_outputs(
     _atomic_write_json(output_dir / "per-pdf" / f"{arxiv_id}.json", packet)
 
 
-def _packet_for_missing_pdf(entry: dict[str, Any], *, grobid_url: str, pdf_path: Path) -> dict[str, Any]:
+def _packet_for_missing_pdf(
+    entry: dict[str, Any], *, grobid_url: str, pdf_path: Path
+) -> dict[str, Any]:
     packet = _packet_base(entry, grobid_url=grobid_url)
     packet.update(_empty_packet_metrics())
     packet.update(
@@ -363,7 +367,9 @@ def _packet_from_probe_result(
             "error": error,
             "tei_path": str(Path("tei") / f"{arxiv_id}.tei.xml") if tei_text else None,
             "sha256_actual": sha256_actual,
-            "sha256_matches_manifest": sha256_actual == entry.get("sha256") if entry.get("sha256") else None,
+            "sha256_matches_manifest": sha256_actual == entry.get("sha256")
+            if entry.get("sha256")
+            else None,
         }
     )
     return packet, tei_text
@@ -378,7 +384,11 @@ def _probe_one_entry(
     timeout: int,
     dry_run: bool,
 ) -> dict[str, Any]:
-    arxiv_id = entry.get("arxiv_id") or entry.get("article_key") or Path(str(entry.get("path", "unknown"))).stem
+    arxiv_id = (
+        entry.get("arxiv_id")
+        or entry.get("article_key")
+        or Path(str(entry.get("path", "unknown"))).stem
+    )
     pdf_path = Path(str(entry.get("path", "")))
     if dry_run:
         packet = _packet_for_dry_run(entry, grobid_url=grobid_url)

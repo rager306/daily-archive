@@ -110,7 +110,14 @@ def test_5_safety_defaults() -> None:
         assert anchor["network_host_reference"] == "127.0.0.1"
     generated_text = "\n".join(
         path.read_text(encoding="utf-8")
-        for path in [SCRIPT_PATH, REPORT_PATH, DECISION_PATH, ADR_PATH, CLOSEOUT_SUMMARY_PATH, VALIDATION_PATH]
+        for path in [
+            SCRIPT_PATH,
+            REPORT_PATH,
+            DECISION_PATH,
+            ADR_PATH,
+            CLOSEOUT_SUMMARY_PATH,
+            VALIDATION_PATH,
+        ]
     )
     assert "local" + "host" not in generated_text
     assert "graph writes is not authorized" in generated_text

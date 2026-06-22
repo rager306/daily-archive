@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ADR_PATH = ROOT / "doc/adr/ADR-019-fd-embedding-service-contract.md"
 ADR_INDEX_PATH = ROOT / "doc/adr/ADR-INDEX.md"
 CODEBASE_MEMORY_ADR_PATH = ROOT / ".codebase-memory/adr.md"
-FORBIDDEN_HOST = "local" "host"
+FORBIDDEN_HOST = "localhost"
 
 EXPECTED_ERROR_CODES = {
     "input_required",
@@ -91,13 +91,22 @@ def test_adr_includes_45_test_cases_reference() -> None:
 
 def test_adr_index_updated() -> None:
     index_text = ADR_INDEX_PATH.read_text()
-    assert "| ADR-019 | Accepted (binding) | M062 fd Embedding Service Contract | `doc/adr/ADR-019-fd-embedding-service-contract.md` |" in index_text
-    assert "| ADR-018 | Accepted (binding) | M061 2-hop Evidence and M064 Trigger Evaluation |" in index_text
+    assert (
+        "| ADR-019 | Accepted (binding) | M062 fd Embedding Service Contract | `doc/adr/ADR-019-fd-embedding-service-contract.md` |"
+        in index_text
+    )
+    assert (
+        "| ADR-018 | Accepted (binding) | M061 2-hop Evidence and M064 Trigger Evaluation |"
+        in index_text
+    )
 
 
 def test_codebase_memory_synced_and_m062_s01_regression() -> None:
     memory_text = CODEBASE_MEMORY_ADR_PATH.read_text()
-    assert "| ADR-019 | Accepted (binding) | `doc/adr/ADR-019-fd-embedding-service-contract.md` | M062 fd Embedding Service Contract |" in memory_text
+    assert (
+        "| ADR-019 | Accepted (binding) | `doc/adr/ADR-019-fd-embedding-service-contract.md` | M062 fd Embedding Service Contract |"
+        in memory_text
+    )
     assert DEFAULT_ENDPOINT == "http://127.0.0.1:8000/v1/embeddings"
     assert DEFAULT_DIMENSIONS == 1024
     assert SAFETY_DEFAULTS == {

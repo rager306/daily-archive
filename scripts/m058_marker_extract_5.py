@@ -4,6 +4,7 @@
 The script is intentionally idempotent: each run rewrites the same per-PDF
 packets and summary under artifacts/m058-marker/pilot-5/.
 """
+
 from __future__ import annotations
 
 import json
@@ -68,11 +69,24 @@ class PilotPdf:
 # 5-PDF executable sample: four IDs from the S02 plan plus one available M058 S01
 # plotextractor PDF. The requested 2305.14314 is recorded above as unavailable.
 SAMPLE_PDFS: tuple[PilotPdf, ...] = (
-    PilotPdf("2603.21520", "cs-cl", "cs-cl/2603.21520/source/2603.21520.pdf", "M057 S01-fix sample"),
-    PilotPdf("2605.28617v1", "cs-ai", "cs-ai/2605.28617v1/source/original.pdf", "M057 S01-fix sample"),
-    PilotPdf("2508.07434", "cs-lg", "cs-cl/2508.07434/source/2508.07434.pdf", "M057 S01-fix sample"),
-    PilotPdf("2412.15118", "cs-cv", "cs-cl/2412.15118/source/2412.15118.pdf", "M057 S01-fix sample"),
-    PilotPdf("1804.02767", "cs-cv", "cs-cv/1804.02767/source/1804.02767.pdf", "M058 S01 plotextractor pilot"),
+    PilotPdf(
+        "2603.21520", "cs-cl", "cs-cl/2603.21520/source/2603.21520.pdf", "M057 S01-fix sample"
+    ),
+    PilotPdf(
+        "2605.28617v1", "cs-ai", "cs-ai/2605.28617v1/source/original.pdf", "M057 S01-fix sample"
+    ),
+    PilotPdf(
+        "2508.07434", "cs-lg", "cs-cl/2508.07434/source/2508.07434.pdf", "M057 S01-fix sample"
+    ),
+    PilotPdf(
+        "2412.15118", "cs-cv", "cs-cl/2412.15118/source/2412.15118.pdf", "M057 S01-fix sample"
+    ),
+    PilotPdf(
+        "1804.02767",
+        "cs-cv",
+        "cs-cv/1804.02767/source/1804.02767.pdf",
+        "M058 S01 plotextractor pilot",
+    ),
 )
 
 TABLE_ROW_RE = re.compile(r"^\s*\|.+\|\s*$", re.MULTILINE)
@@ -110,7 +124,9 @@ def make_pilot_pdf(source_pdf: Path, temp_dir: Path, arxiv_id: str) -> tuple[Pat
     return pilot_pdf, source_page_count, pilot_page_count
 
 
-def marker_packet_for_pdf(converter: PdfConverter, sample: PilotPdf, temp_dir: Path) -> dict[str, Any]:
+def marker_packet_for_pdf(
+    converter: PdfConverter, sample: PilotPdf, temp_dir: Path
+) -> dict[str, Any]:
     """Extract one bounded pilot PDF with Marker and return the normalized M058 packet."""
     pdf_path = sample.pdf_path
     common: dict[str, Any] = {
@@ -141,7 +157,9 @@ def marker_packet_for_pdf(converter: PdfConverter, sample: PilotPdf, temp_dir: P
 
     start = time.time()
     try:
-        pilot_pdf, source_page_count, marker_input_page_count = make_pilot_pdf(pdf_path, temp_dir, sample.arxiv_id)
+        pilot_pdf, source_page_count, marker_input_page_count = make_pilot_pdf(
+            pdf_path, temp_dir, sample.arxiv_id
+        )
         rendered = converter(str(pilot_pdf))
         markdown, _metadata, _images = text_from_rendered(rendered)
         elapsed_sec = time.time() - start
@@ -152,7 +170,8 @@ def marker_packet_for_pdf(converter: PdfConverter, sample: PilotPdf, temp_dir: P
             "marker_input_page_count": marker_input_page_count,
             "table_count": count_markdown_tables(markdown),
             "figure_count": len(FIGURE_RE.findall(markdown)),
-            "equation_count": len(DISPLAY_EQUATION_RE.findall(markdown)) + len(INLINE_EQUATION_RE.findall(markdown)),
+            "equation_count": len(DISPLAY_EQUATION_RE.findall(markdown))
+            + len(INLINE_EQUATION_RE.findall(markdown)),
             "body_word_count": len(markdown.split()),
             "markdown_length": len(markdown),
             "elapsed_sec": round(elapsed_sec, 3),
@@ -211,11 +230,17 @@ def run_marker_pilot() -> dict[str, Any]:
         "successful": len(extracted),
         "failed": len(results) - len(extracted),
         "total_elapsed_sec": total_elapsed_sec,
-        "avg_elapsed_sec": round(sum(packet["elapsed_sec"] for packet in results) / len(results), 3),
-        "avg_body_word_count": round(sum(packet["body_word_count"] for packet in extracted) / len(extracted), 1)
+        "avg_elapsed_sec": round(
+            sum(packet["elapsed_sec"] for packet in results) / len(results), 3
+        ),
+        "avg_body_word_count": round(
+            sum(packet["body_word_count"] for packet in extracted) / len(extracted), 1
+        )
         if extracted
         else 0.0,
-        "avg_markdown_length": round(sum(packet["markdown_length"] for packet in extracted) / len(extracted), 1)
+        "avg_markdown_length": round(
+            sum(packet["markdown_length"] for packet in extracted) / len(extracted), 1
+        )
         if extracted
         else 0.0,
         "safety_defaults": SAFETY_DEFAULTS,
@@ -227,7 +252,9 @@ def run_marker_pilot() -> dict[str, Any]:
         "transformers_version": package_version("transformers"),
         "per_pdf": results,
     }
-    (OUTPUT_ROOT / "summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    (OUTPUT_ROOT / "summary.json").write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     print(f"Wrote {OUTPUT_ROOT / 'summary.json'}", flush=True)
     return summary
 

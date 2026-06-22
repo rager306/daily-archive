@@ -19,7 +19,9 @@ EXPECTED_SCHEMA_VERSION = "m030-module-function-readiness-report.v1"
 EXPECTED_MILESTONE_ID = "M030-abwhdm"
 EXPECTED_SLICE_ID = "S03"
 EXPECTED_SOURCE_INVENTORY = "doc/architecture/m030_pipeline_module_inventory.json"
-EXPECTED_SOURCE_SELECTION = "data/article_corpora/m029-pipeline-architecture-audit-v1/selection.json"
+EXPECTED_SOURCE_SELECTION = (
+    "data/article_corpora/m029-pipeline-architecture-audit-v1/selection.json"
+)
 REQUIRED_STAGES = {
     "url_intake": "ready",
     "article_catalog": "partial",
@@ -31,7 +33,14 @@ REQUIRED_STAGES = {
     "graph_import_boundary": "unsafe-to-claim",
     "cross_stage_replay": "blocked",
 }
-ALLOWED_CLAIM_STATES = {"ready", "partial", "future-scope", "blocked", "deprecated", "unsafe-to-claim"}
+ALLOWED_CLAIM_STATES = {
+    "ready",
+    "partial",
+    "future-scope",
+    "blocked",
+    "deprecated",
+    "unsafe-to-claim",
+}
 REQUIRED_ROW_LIST_FIELDS = {
     "primary_functions_classes",
     "tests_verifiers",
@@ -144,12 +153,12 @@ def _contains_unsafe_positive_claim(row: dict[str, Any]) -> bool:
     positive_terms = (
         " ready",
         "ready ",
-        "ready_claimed\": true",
-        "attempted\": true",
-        "completed\": true",
-        "eligible\": true",
-        "written\": true",
-        "promoted\": true",
+        'ready_claimed": true',
+        'attempted": true',
+        'completed": true',
+        'eligible": true',
+        'written": true',
+        'promoted": true',
     )
     negative_terms = (
         "not ready",
@@ -164,7 +173,9 @@ def _contains_unsafe_positive_claim(row: dict[str, Any]) -> bool:
         "fail-closed",
         "zero",
     )
-    return any(term in text for term in positive_terms) and not any(term in text for term in negative_terms)
+    return any(term in text for term in positive_terms) and not any(
+        term in text for term in negative_terms
+    )
 
 
 def validate_matrix(matrix: dict[str, Any]) -> list[str]:
@@ -200,7 +211,9 @@ def validate_matrix(matrix: dict[str, Any]) -> list[str]:
                 if flags.get(flag) is not expected:
                     errors.append(f"M030_READINESS_SELECTION_FLAGS: {flag} must be {expected!r}")
             if flags.get("network_availability_checked") is not True:
-                errors.append("M030_READINESS_SELECTION_FLAGS: network_availability_checked must be true")
+                errors.append(
+                    "M030_READINESS_SELECTION_FLAGS: network_availability_checked must be true"
+                )
 
     stages = matrix.get("stages")
     if not isinstance(stages, list):
@@ -226,11 +239,17 @@ def validate_matrix(matrix: dict[str, Any]) -> list[str]:
         expected_state = REQUIRED_STAGES.get(stage)
         claim_state = row.get("claim_state")
         if claim_state not in ALLOWED_CLAIM_STATES:
-            errors.append(f"M030_READINESS_CLAIM_STATE: {row_name} has invalid claim_state {claim_state!r}")
+            errors.append(
+                f"M030_READINESS_CLAIM_STATE: {row_name} has invalid claim_state {claim_state!r}"
+            )
         if expected_state is not None and claim_state != expected_state:
-            errors.append(f"M030_READINESS_CLAIM_STATE: {row_name} expected {expected_state}, got {claim_state!r}")
+            errors.append(
+                f"M030_READINESS_CLAIM_STATE: {row_name} expected {expected_state}, got {claim_state!r}"
+            )
         if row.get("module_inventory_status") != "covered":
-            errors.append(f"M030_READINESS_INVENTORY: {row_name} module_inventory_status must be covered")
+            errors.append(
+                f"M030_READINESS_INVENTORY: {row_name} module_inventory_status must be covered"
+            )
 
         for field in ("label", "module_id", "rationale"):
             value = row.get(field)
@@ -242,16 +261,26 @@ def validate_matrix(matrix: dict[str, Any]) -> list[str]:
 
         unsafe_functions = row.get("unsafe_to_claim_functions")
         if not isinstance(unsafe_functions, list):
-            errors.append(f"M030_READINESS_UNSAFE_FUNCTIONS: {row_name} unsafe_to_claim_functions must be a list")
+            errors.append(
+                f"M030_READINESS_UNSAFE_FUNCTIONS: {row_name} unsafe_to_claim_functions must be a list"
+            )
         elif stage in UNSAFE_READY_STAGES and not _as_nonempty_str_list(unsafe_functions):
-            errors.append(f"M030_READINESS_UNSAFE_FUNCTIONS: {row_name} must list unsafe-to-claim functions")
+            errors.append(
+                f"M030_READINESS_UNSAFE_FUNCTIONS: {row_name} must list unsafe-to-claim functions"
+            )
 
         if stage in UNSAFE_READY_STAGES and claim_state == "ready":
-            errors.append(f"M030_READINESS_UNSAFE_READY: {row_name} must not be ready before replay evidence")
+            errors.append(
+                f"M030_READINESS_UNSAFE_READY: {row_name} must not be ready before replay evidence"
+            )
         if stage in UNSAFE_READY_STAGES and not _has_fail_closed_language(row):
-            errors.append(f"M030_READINESS_FAIL_CLOSED: {row_name} missing fail-closed/blocked/unsafe language")
+            errors.append(
+                f"M030_READINESS_FAIL_CLOSED: {row_name} missing fail-closed/blocked/unsafe language"
+            )
         if _contains_unsafe_positive_claim(row):
-            errors.append(f"M030_READINESS_UNSAFE_POSITIVE_CLAIM: {row_name} contains an unsafe positive readiness claim")
+            errors.append(
+                f"M030_READINESS_UNSAFE_POSITIVE_CLAIM: {row_name} contains an unsafe positive readiness claim"
+            )
 
     missing_stages = sorted(set(REQUIRED_STAGES) - seen_stages)
     if missing_stages:
@@ -277,14 +306,18 @@ def validate_report(report_path: Path, matrix: dict[str, Any]) -> list[str]:
         if isinstance(module_id, str) and module_id and module_id not in text:
             errors.append(f"M030_READINESS_REPORT_MODULE: report missing module {module_id!r}")
         if isinstance(claim_state, str) and claim_state and f"`{claim_state}`" not in text:
-            errors.append(f"M030_READINESS_REPORT_STATE: report missing claim state {claim_state!r}")
+            errors.append(
+                f"M030_READINESS_REPORT_STATE: report missing claim state {claim_state!r}"
+            )
     return errors
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--matrix", type=Path, required=True, help="Path to readiness JSON matrix")
-    parser.add_argument("--report", type=Path, required=True, help="Path to readiness Markdown report")
+    parser.add_argument(
+        "--report", type=Path, required=True, help="Path to readiness Markdown report"
+    )
     parser.add_argument(
         "--validate-only",
         action="store_true",

@@ -97,7 +97,9 @@ def load_retrieval_fixture(path: Path) -> RetrievalFixtureLoadResult:
     """Load S06 persisted candidate claims with strict redaction/provenance validation."""
     records: list[RetrievalFixtureRecord] = []
     refusals: list[FixtureRefusal] = []
-    for line_number, line in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), start=1):
+    for line_number, line in enumerate(
+        Path(path).read_text(encoding="utf-8").splitlines(), start=1
+    ):
         if not line.strip():
             continue
         try:
@@ -116,7 +118,9 @@ def load_retrieval_fixture(path: Path) -> RetrievalFixtureLoadResult:
     return RetrievalFixtureLoadResult(records=records, refusals=refusals)
 
 
-def run_retrieval_validation(claims_path: Path, *, output_dir: Path | None = None) -> RetrievalValidationResult:
+def run_retrieval_validation(
+    claims_path: Path, *, output_dir: Path | None = None
+) -> RetrievalValidationResult:
     """Run deterministic exact-ID retrieval validation over S06 trusted records."""
     load_result = load_retrieval_fixture(claims_path)
     if load_result.refusals:
@@ -184,7 +188,9 @@ def run_exclusion_checks(
     if output_path is not None:
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(json.dumps(to_redacted_dict(payload), indent=2, sort_keys=True), encoding="utf-8")
+        output_path.write_text(
+            json.dumps(to_redacted_dict(payload), indent=2, sort_keys=True), encoding="utf-8"
+        )
     return payload
 
 
@@ -200,11 +206,25 @@ def fixture_load_to_dict(result: RetrievalFixtureLoadResult) -> dict[str, Any]:
     }
 
 
-def _query_events_for_record(record: RetrievalFixtureRecord, records: list[RetrievalFixtureRecord]) -> list[dict[str, Any]]:
+def _query_events_for_record(
+    record: RetrievalFixtureRecord, records: list[RetrievalFixtureRecord]
+) -> list[dict[str, Any]]:
     return [
-        _query_event("paper_id", record.paper_id, [item for item in records if item.paper_id == record.paper_id]),
-        _query_event("candidate_id", record.candidate_id, [item for item in records if item.candidate_id == record.candidate_id]),
-        _query_event("chunk_id", record.chunk_id, [item for item in records if item.chunk_id == record.chunk_id]),
+        _query_event(
+            "paper_id",
+            record.paper_id,
+            [item for item in records if item.paper_id == record.paper_id],
+        ),
+        _query_event(
+            "candidate_id",
+            record.candidate_id,
+            [item for item in records if item.candidate_id == record.candidate_id],
+        ),
+        _query_event(
+            "chunk_id",
+            record.chunk_id,
+            [item for item in records if item.chunk_id == record.chunk_id],
+        ),
         _query_event(
             "source_artifact",
             record.source_artifact,
@@ -213,7 +233,9 @@ def _query_events_for_record(record: RetrievalFixtureRecord, records: list[Retri
     ]
 
 
-def _query_event(query_type: str, query_value: str, matches: list[RetrievalFixtureRecord]) -> dict[str, Any]:
+def _query_event(
+    query_type: str, query_value: str, matches: list[RetrievalFixtureRecord]
+) -> dict[str, Any]:
     return {
         "event": "retrieval_validation.query",
         "query_type": query_type,
@@ -293,11 +315,21 @@ def _record_refusal_reason(payload: dict[str, Any]) -> str | None:
         return "unexpected_persisted_scope"
     if payload.get("persisted") is not True:
         return "not_persisted"
-    if payload.get("raw_text_included") is not False or payload.get("claim_text_included") is not False:
+    if (
+        payload.get("raw_text_included") is not False
+        or payload.get("claim_text_included") is not False
+    ):
         return "raw_text_flag_not_false"
     if payload.get("embeddings_included") is not False:
         return "embeddings_flag_not_false"
-    for field in ("paper_id", "candidate_id", "chunk_id", "source_artifact", "entry_id", "claim_draft_id"):
+    for field in (
+        "paper_id",
+        "candidate_id",
+        "chunk_id",
+        "source_artifact",
+        "entry_id",
+        "claim_draft_id",
+    ):
         if not payload.get(field):
             return f"missing_{field}"
     finding_codes = payload.get("finding_codes")
@@ -339,7 +371,9 @@ def _string_or_none(value: Any) -> str | None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Load and validate S06 trusted-candidate retrieval fixture.")
+    parser = argparse.ArgumentParser(
+        description="Load and validate S06 trusted-candidate retrieval fixture."
+    )
     parser.add_argument("--claims", required=True, type=Path)
     parser.add_argument("--output", required=False, type=Path)
     parser.add_argument("--validate-retrieval-output-dir", required=False, type=Path)
@@ -354,11 +388,24 @@ def main(argv: list[str] | None = None) -> int:
             refusals_path=args.refusals,
             output_path=args.exclusion_output,
         )
-        sys.stdout.write(json.dumps(to_redacted_dict({"passed": exclusions["passed"], "forbidden_hit_count": exclusions["forbidden_hit_count"]}), indent=2, sort_keys=True))
+        sys.stdout.write(
+            json.dumps(
+                to_redacted_dict(
+                    {
+                        "passed": exclusions["passed"],
+                        "forbidden_hit_count": exclusions["forbidden_hit_count"],
+                    }
+                ),
+                indent=2,
+                sort_keys=True,
+            )
+        )
         sys.stdout.write("\n")
         return 0 if exclusions["passed"] else 1
     if args.validate_retrieval_output_dir is not None:
-        validation = run_retrieval_validation(args.claims, output_dir=args.validate_retrieval_output_dir)
+        validation = run_retrieval_validation(
+            args.claims, output_dir=args.validate_retrieval_output_dir
+        )
         sys.stdout.write(json.dumps(to_redacted_dict(validation.summary), indent=2, sort_keys=True))
         sys.stdout.write("\n")
         return 0 if validation.summary["load_refusals"] == 0 else 1

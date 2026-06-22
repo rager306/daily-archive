@@ -104,8 +104,12 @@ def test_5_safety_defaults() -> None:
     assert two_hop_preview.SAFETY_DEFAULTS == EXPECTED_SAFETY_DEFAULTS
     assert graph_visualize.LOOPBACK_BIND_HOST == "127.0.0.1"
     assert two_hop_preview.LOOPBACK_BIND_HOST == "127.0.0.1"
-    assert FORBIDDEN_LOOPBACK_ALIAS not in Path(graph_visualize.__file__).read_text(encoding="utf-8")
-    assert FORBIDDEN_LOOPBACK_ALIAS not in Path(two_hop_preview.__file__).read_text(encoding="utf-8")
+    assert FORBIDDEN_LOOPBACK_ALIAS not in Path(graph_visualize.__file__).read_text(
+        encoding="utf-8"
+    )
+    assert FORBIDDEN_LOOPBACK_ALIAS not in Path(two_hop_preview.__file__).read_text(
+        encoding="utf-8"
+    )
 
 
 def test_m050_m063_s01_regression_stats_contract() -> None:

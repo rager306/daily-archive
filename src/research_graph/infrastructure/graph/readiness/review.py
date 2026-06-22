@@ -139,7 +139,10 @@ def select_review_papers(
     for package in packages:
         if package.paper_id in selected:
             continue
-        if package.report.state in {GraphReadinessState.REPAIR_REQUIRED, GraphReadinessState.REJECT}:
+        if package.report.state in {
+            GraphReadinessState.REPAIR_REQUIRED,
+            GraphReadinessState.REJECT,
+        }:
             selected.append(package.paper_id)
 
     return selected
@@ -152,8 +155,13 @@ def render_review_bundle(
     snippet_chars: int = DEFAULT_SNIPPET_CHARS,
 ) -> str:
     """Render one bounded paper review bundle as Markdown."""
-    source_path = Path(manifest_doc.get("expected_full_text_path") or Path(manifest_doc["paper_dir"]) / "full_text.md")
-    source = FullTextSource(paper_id=package.paper_id, source_type="markdown", source_path=source_path)
+    source_path = Path(
+        manifest_doc.get("expected_full_text_path")
+        or Path(manifest_doc["paper_dir"]) / "full_text.md"
+    )
+    source = FullTextSource(
+        paper_id=package.paper_id, source_type="markdown", source_path=source_path
+    )
     ingestion = ingest_full_text(source)
     lines = [
         f"# Independent Review Bundle — {package.paper_id}",
@@ -180,24 +188,30 @@ def render_review_bundle(
     for route, details in sorted(package.report.routes.items()):
         lines.append(f"| `{route}` | {details.get('eligible', 0)} | {details.get('blocked', 0)} |")
 
-    lines.extend([
-        "",
-        "## Warnings",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Warnings",
+            "",
+        ]
+    )
     if package.warnings:
         for warning in package.warnings:
             lines.append(f"- `{warning.severity.value}` `{warning.code}` — {warning.message}")
     else:
         lines.append("- None recorded by automated baseline.")
 
-    lines.extend([
-        "",
-        "## Chunk Samples",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Chunk Samples",
+            "",
+        ]
+    )
     for chunk in _sample_chunks(package):
-        snippet = _snippet_for_chunk(ingestion.text, chunk.source_span.char_start, chunk.source_span.char_end, snippet_chars)
+        snippet = _snippet_for_chunk(
+            ingestion.text, chunk.source_span.char_start, chunk.source_span.char_end, snippet_chars
+        )
         lines.extend(
             [
                 f"### {chunk.chunk_id}",
@@ -332,7 +346,9 @@ def validate_review_artifacts(
                 diagnostics.append(f"{path} contains stale placeholder phrase: {phrase}")
 
     events = _read_events(events_path, diagnostics)
-    verdict_events = [event for event in events if event.get("event") == "independent_review.verdict"]
+    verdict_events = [
+        event for event in events if event.get("event") == "independent_review.verdict"
+    ]
     if require_completed_review:
         summary_path = review_dir / SUMMARY_FILENAME
         if not summary_path.exists():
@@ -341,17 +357,25 @@ def validate_review_artifacts(
             summary_text = summary_path.read_text(encoding="utf-8")
             for phrase in forbidden_phrases:
                 if phrase in summary_text:
-                    diagnostics.append(f"{summary_path} contains unreplaced placeholder phrase: {phrase}")
+                    diagnostics.append(
+                        f"{summary_path} contains unreplaced placeholder phrase: {phrase}"
+                    )
             if "verdict: PASS | FLAG | REPAIR | BLOCKER" in summary_text:
-                diagnostics.append(f"{summary_path} contains an unfilled output contract verdict union")
+                diagnostics.append(
+                    f"{summary_path} contains an unfilled output contract verdict union"
+                )
         if not verdict_events:
-            diagnostics.append("No independent_review.verdict event found in completed review events")
+            diagnostics.append(
+                "No independent_review.verdict event found in completed review events"
+            )
         for event in verdict_events:
             verdict = str(event.get("verdict", ""))
             if verdict not in {"PASS", "FLAG", "REPAIR", "BLOCKER"}:
                 diagnostics.append(f"Invalid completed review verdict: {verdict}")
             if event.get("output_contract_completed") is not True:
-                diagnostics.append("Completed review verdict is missing output_contract_completed=true")
+                diagnostics.append(
+                    "Completed review verdict is missing output_contract_completed=true"
+                )
     return ReviewArtifactValidation(ok=not diagnostics, diagnostics=diagnostics)
 
 
@@ -411,14 +435,21 @@ def _sample_chunks(package: NormalizedPaperPackage) -> list[Any]:
     atomic_split_chunks = [
         chunk
         for chunk in package.chunks
-        if any(warning.code == "atomic_claim_candidate_split" for warning in chunk.validation_warnings)
+        if any(
+            warning.code == "atomic_claim_candidate_split" for warning in chunk.validation_warnings
+        )
     ]
     repair_candidate_chunks = [
         chunk
         for chunk in package.chunks
-        if any(warning.code == "multi_claim_candidate_requires_atomic_split" for warning in chunk.validation_warnings)
+        if any(
+            warning.code == "multi_claim_candidate_requires_atomic_split"
+            for warning in chunk.validation_warnings
+        )
     ]
-    split_chunks = [chunk for chunk in package.chunks if chunk.parent_chunk_id or ":split-" in chunk.chunk_id]
+    split_chunks = [
+        chunk for chunk in package.chunks if chunk.parent_chunk_id or ":split-" in chunk.chunk_id
+    ]
     for chunk in [*atomic_split_chunks[:6], *repair_candidate_chunks[:3], *split_chunks[:4]]:
         if chunk.chunk_id in seen_ids:
             continue
@@ -460,7 +491,9 @@ def _snippet_for_chunk(text: str, start: int | None, end: int | None, limit: int
     return snippet[:limit].rstrip() + " …"
 
 
-def _review_request_event(run_id: str, package: NormalizedPaperPackage, path: Path) -> dict[str, Any]:
+def _review_request_event(
+    run_id: str, package: NormalizedPaperPackage, path: Path
+) -> dict[str, Any]:
     return {
         "event": "independent_review.requested",
         "run_id": run_id,
@@ -484,7 +517,9 @@ def _default_run_id() -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Generate or validate graph-readiness review bundles.")
+    parser = argparse.ArgumentParser(
+        description="Generate or validate graph-readiness review bundles."
+    )
     parser.add_argument("--corpus", type=Path)
     parser.add_argument("--review-dir", required=True, type=Path)
     parser.add_argument("--events", required=True, type=Path)
@@ -506,7 +541,13 @@ def main(argv: list[str] | None = None) -> int:
             events_path=args.events,
             require_completed_review=args.require_completed_review,
         )
-        sys.stdout.write(json.dumps({"ok": validation.ok, "diagnostics": validation.diagnostics}, indent=2, sort_keys=True))
+        sys.stdout.write(
+            json.dumps(
+                {"ok": validation.ok, "diagnostics": validation.diagnostics},
+                indent=2,
+                sort_keys=True,
+            )
+        )
         sys.stdout.write("\n")
         return 0 if validation.ok else 1
     if args.corpus is None:

@@ -47,7 +47,11 @@ def source_files(article_path: Path) -> list[Path]:
     source_dir = article_path.parent / "source"
     if not source_dir.exists():
         return []
-    return sorted(path for path in source_dir.iterdir() if path.is_file() and path.suffix.lower() in SOURCE_EXTENSIONS)
+    return sorted(
+        path
+        for path in source_dir.iterdir()
+        if path.is_file() and path.suffix.lower() in SOURCE_EXTENSIONS
+    )
 
 
 def loader_refs(article_path: Path) -> list[str]:
@@ -158,13 +162,17 @@ def main() -> int:
             "production_import_attempted": False,
             "import_eligible": False,
         },
-        "diagnostics": sorted({diagnostic for entry in entries for diagnostic in entry["diagnostics"]}),
+        "diagnostics": sorted(
+            {diagnostic for entry in entries for diagnostic in entry["diagnostics"]}
+        ),
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     emit(f"selected_articles={len(entries)}")
     emit(f"output={args.output}")
-    emit("graph_write_allowed=false promotion_allowed=false production_import_attempted=false import_eligible=false")
+    emit(
+        "graph_write_allowed=false promotion_allowed=false production_import_attempted=false import_eligible=false"
+    )
     return 0
 
 

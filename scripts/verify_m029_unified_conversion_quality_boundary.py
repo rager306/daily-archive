@@ -169,7 +169,11 @@ def safe_relative_path(value: Any, *, code_label: str) -> PurePosixPath:
     if "://" in value:
         raise ValueError(f"url_not_allowed_as_{code_label}")
     normalized = PurePosixPath(value.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part == "" for part in normalized.parts):
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part == "" for part in normalized.parts)
+    ):
         raise ValueError(f"unsafe_{code_label}")
     return normalized
 
@@ -233,7 +237,9 @@ def diagnostic(
     }
 
 
-def conversion_base(row: Mapping[str, Any], *, status: str, code: str, failure_reason: str | None) -> dict[str, Any]:
+def conversion_base(
+    row: Mapping[str, Any], *, status: str, code: str, failure_reason: str | None
+) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
         "milestone_id": MILESTONE_ID,
@@ -278,14 +284,23 @@ def conversion_base(row: Mapping[str, Any], *, status: str, code: str, failure_r
     }
 
 
-def blocked_conversion(row: Mapping[str, Any], code: str, reason: str, *, source_path: Path | None = None) -> dict[str, Any]:
+def blocked_conversion(
+    row: Mapping[str, Any], code: str, reason: str, *, source_path: Path | None = None
+) -> dict[str, Any]:
     result = conversion_base(row, status="blocked", code=code, failure_reason=reason)
     result["source_path_resolved"] = rel(source_path) if source_path else None
-    result["quality"] = {"status": "blocked", "char_count": 0, "line_count": 0, "warnings": [reason]}
+    result["quality"] = {
+        "status": "blocked",
+        "char_count": 0,
+        "line_count": 0,
+        "warnings": [reason],
+    }
     return result
 
 
-def verify_source_bytes(row: Mapping[str, Any], source_path: Path) -> tuple[bool, str | None, int, str | None]:
+def verify_source_bytes(
+    row: Mapping[str, Any], source_path: Path
+) -> tuple[bool, str | None, int, str | None]:
     if not source_path.exists():
         return False, None, 0, "missing_source_artifact"
     if not source_path.is_file():
@@ -315,7 +330,12 @@ def text_quality(value: str, *, warning: str | None = None) -> dict[str, Any]:
         warnings.append("converted text is below parser-ready character threshold")
     else:
         status = "ok"
-    return {"status": status, "char_count": len(stripped), "line_count": len(lines), "warnings": warnings}
+    return {
+        "status": status,
+        "char_count": len(stripped),
+        "line_count": len(lines),
+        "warnings": warnings,
+    }
 
 
 def classify_arxiv_abs_page(source_path: Path) -> tuple[None, dict[str, Any], dict[str, Any]]:
@@ -332,7 +352,9 @@ def classify_arxiv_abs_page(source_path: Path) -> tuple[None, dict[str, Any], di
         "section_count": len(soup.find_all(["section", "h2", "h3"])),
     }
     quality = {
-        "status": "metadata_only" if structure["title_count"] or structure["abstract_like_count"] or nav_like else "low_quality",
+        "status": "metadata_only"
+        if structure["title_count"] or structure["abstract_like_count"] or nav_like
+        else "low_quality",
         "char_count": 0,
         "line_count": 0,
         "warnings": ["arxiv abstract/navigation page has no substantive body"],
@@ -345,7 +367,13 @@ def extract_html_body(source_path: Path) -> tuple[str, dict[str, Any], dict[str,
     soup = BeautifulSoup(markup, "html.parser")
     for tag in soup(["script", "style", "noscript", "svg", "nav", "header", "footer"]):
         tag.decompose()
-    article = soup.find("article") or soup.find(attrs={"role": "main"}) or soup.find("main") or soup.body or soup
+    article = (
+        soup.find("article")
+        or soup.find(attrs={"role": "main"})
+        or soup.find("main")
+        or soup.body
+        or soup
+    )
     paragraphs = article.find_all("p") if article else []
     headings = article.find_all(["h1", "h2", "h3"]) if article else []
     text_parts = [node.get_text(" ", strip=True) for node in [*headings, *paragraphs]]
@@ -363,11 +391,19 @@ def extract_html_body(source_path: Path) -> tuple[str, dict[str, Any], dict[str,
 
 def extract_pdf_text(source_path: Path) -> tuple[str, dict[str, Any], dict[str, Any]]:
     if fitz is None:
-        return "", text_quality("", warning="PyMuPDF fitz is unavailable"), {"page_count": 0, "pages_processed": 0}
+        return (
+            "",
+            text_quality("", warning="PyMuPDF fitz is unavailable"),
+            {"page_count": 0, "pages_processed": 0},
+        )
     try:
         document = fitz.open(source_path)  # type: ignore[union-attr]
     except Exception as exc:
-        return "", text_quality("", warning=f"PyMuPDF failed to open PDF: {type(exc).__name__}"), {"page_count": 0, "pages_processed": 0}
+        return (
+            "",
+            text_quality("", warning=f"PyMuPDF failed to open PDF: {type(exc).__name__}"),
+            {"page_count": 0, "pages_processed": 0},
+        )
     try:
         page_count = len(document)
         pages_processed = min(page_count, MAX_PDF_PAGES)
@@ -394,12 +430,16 @@ def write_converted_text(path: Path, value: str) -> dict[str, Any]:
     }
 
 
-def convert_source_row(row: Mapping[str, Any], *, source_root: Path, converted_text_dir: Path) -> dict[str, Any]:
+def convert_source_row(
+    row: Mapping[str, Any], *, source_root: Path, converted_text_dir: Path
+) -> dict[str, Any]:
     if row.get("status") != CAPTURED_STATUS:
         return blocked_conversion(row, "source_not_captured", "S02 row was not captured")
     source_role = row.get("source_role")
     if source_role not in HTML_ROLES | PDF_ROLES:
-        return blocked_conversion(row, "unsupported_source_role", f"unsupported source role: {source_role}")
+        return blocked_conversion(
+            row, "unsupported_source_role", f"unsupported source role: {source_role}"
+        )
     try:
         safe_relative_path(row.get("article_ref"), code_label="article_ref")
         source_path = source_artifact_path(source_root, row.get("local_path"))
@@ -408,9 +448,16 @@ def convert_source_row(row: Mapping[str, Any], *, source_root: Path, converted_t
 
     verified, actual_hash, actual_size, failure_code = verify_source_bytes(row, source_path)
     if not verified:
-        return blocked_conversion(row, failure_code or "source_verification_failed", "captured source bytes do not match S02 metadata", source_path=source_path)
+        return blocked_conversion(
+            row,
+            failure_code or "source_verification_failed",
+            "captured source bytes do not match S02 metadata",
+            source_path=source_path,
+        )
 
-    result = conversion_base(row, status="converted", code="converted_source_artifact", failure_reason=None)
+    result = conversion_base(
+        row, status="converted", code="converted_source_artifact", failure_reason=None
+    )
     result.update(
         {
             "source_path_resolved": rel(source_path),
@@ -439,7 +486,9 @@ def convert_source_row(row: Mapping[str, Any], *, source_root: Path, converted_t
 
     if source_role not in ARXIV_METADATA_ROLES:
         if quality["status"] == "ok" and text:
-            payload_path = converted_text_path(converted_text_dir, str(row.get("article_ref")), str(source_role))
+            payload_path = converted_text_path(
+                converted_text_dir, str(row.get("article_ref")), str(source_role)
+            )
             result.update(write_converted_text(payload_path, text))
             result["parser_ready"] = True
             result["diagnostic_code"] = "parser_ready_converted_text"
@@ -447,10 +496,18 @@ def convert_source_row(row: Mapping[str, Any], *, source_root: Path, converted_t
         else:
             result["status"] = "low_quality" if quality["status"] != "empty" else "failed"
             result["terminal_state"] = result["status"]
-            result["diagnostic_code"] = "converted_text_low_quality" if quality["status"] != "empty" else "empty_converted_text"
+            result["diagnostic_code"] = (
+                "converted_text_low_quality"
+                if quality["status"] != "empty"
+                else "empty_converted_text"
+            )
             result["code"] = result["diagnostic_code"]
-            result["failure_reason"] = "; ".join(quality.get("warnings", [])) or "converted text is not parser-ready"
-            result["fallback_reason"] = "no_substantive_body" if quality["status"] in {"empty", "low_quality"} else None
+            result["failure_reason"] = (
+                "; ".join(quality.get("warnings", [])) or "converted text is not parser-ready"
+            )
+            result["fallback_reason"] = (
+                "no_substantive_body" if quality["status"] in {"empty", "low_quality"} else None
+            )
             result["parser_ready"] = False
 
     result["quality"] = quality
@@ -473,17 +530,31 @@ def build_conversion_artifacts(args: argparse.Namespace) -> None:
     rows = source_summary.get("results")
     if not isinstance(rows, list):
         raise ValueError("source acquisition summary missing results list")
-    diagnostics = [convert_source_row(row, source_root=args.source_root, converted_text_dir=args.converted_text_dir) for row in rows if isinstance(row, dict)]
+    diagnostics = [
+        convert_source_row(
+            row, source_root=args.source_root, converted_text_dir=args.converted_text_dir
+        )
+        for row in rows
+        if isinstance(row, dict)
+    ]
     counts = Counter(str(row.get("status")) for row in diagnostics)
-    article_refs = sorted({str(row.get("article_ref")) for row in diagnostics if row.get("article_ref")})
+    article_refs = sorted(
+        {str(row.get("article_ref")) for row in diagnostics if row.get("article_ref")}
+    )
     parser_ready_count = sum(1 for row in diagnostics if row.get("parser_ready") is True)
-    article_count = source_summary.get("article_count") if isinstance(source_summary.get("article_count"), int) else len(article_refs)
+    article_count = (
+        source_summary.get("article_count")
+        if isinstance(source_summary.get("article_count"), int)
+        else len(article_refs)
+    )
     summary = {
         "schema_version": SCHEMA_VERSION,
         "milestone_id": MILESTONE_ID,
         "slice_id": SLICE_ID,
         "selection_id": SELECTION_ID,
-        "status": "completed_with_diagnostics" if any(row.get("status") in {"blocked", "failed", "low_quality"} for row in diagnostics) else "completed",
+        "status": "completed_with_diagnostics"
+        if any(row.get("status") in {"blocked", "failed", "low_quality"} for row in diagnostics)
+        else "completed",
         "exit_code_style_status": 0,
         "article_count": article_count,
         "variant_count": len(diagnostics),
@@ -509,14 +580,23 @@ def build_conversion_artifacts(args: argparse.Namespace) -> None:
         "completed_at": "deterministic-local-replay",
         "provenance": {
             "schema_version": SCHEMA_VERSION,
-            "command": ["uv", "run", "python", "scripts/verify_m029_unified_conversion_quality_boundary.py"],
+            "command": [
+                "uv",
+                "run",
+                "python",
+                "scripts/verify_m029_unified_conversion_quality_boundary.py",
+            ],
             "cwd": str(ROOT),
             "milestone_id": MILESTONE_ID,
             "slice_id": SLICE_ID,
             "selection_id": SELECTION_ID,
             "input_paths": [rel(args.source_summary), rel(args.selection)],
             "input_hashes": file_hashes([args.source_summary, args.selection]),
-            "output_paths": [rel(args.conversion_summary), rel(args.conversion_diagnostics), rel(args.conversion_report)],
+            "output_paths": [
+                rel(args.conversion_summary),
+                rel(args.conversion_diagnostics),
+                rel(args.conversion_report),
+            ],
             "network_fetch_attempted": False,
             "production_import_attempted": False,
             "ladybugdb_written": False,
@@ -526,12 +606,18 @@ def build_conversion_artifacts(args: argparse.Namespace) -> None:
     }
     write_jsonl(args.conversion_diagnostics, diagnostics)
     atomic_write_text(args.conversion_report, render_report(summary))
-    summary["provenance"]["output_hashes"] = file_hashes([args.conversion_diagnostics, args.conversion_report])
+    summary["provenance"]["output_hashes"] = file_hashes(
+        [args.conversion_diagnostics, args.conversion_report]
+    )
     write_json(args.conversion_summary, summary)
 
 
 def conversion_artifacts_exist(args: argparse.Namespace) -> bool:
-    return args.conversion_summary.exists() and args.conversion_diagnostics.exists() and args.conversion_report.exists()
+    return (
+        args.conversion_summary.exists()
+        and args.conversion_diagnostics.exists()
+        and args.conversion_report.exists()
+    )
 
 
 def validate_no_payload_leakage(value: Any, *, serialized: str, where: str) -> list[dict[str, Any]]:
@@ -541,7 +627,14 @@ def validate_no_payload_leakage(value: Any, *, serialized: str, where: str) -> l
         if isinstance(node, dict):
             for key, item in node.items():
                 if key in FORBIDDEN_PAYLOAD_KEYS:
-                    diagnostics.append(diagnostic("metadata_payload_key_leakage", f"metadata artifact includes forbidden payload key {key!r}", path=where, json_path=f"{path}.{key}"))
+                    diagnostics.append(
+                        diagnostic(
+                            "metadata_payload_key_leakage",
+                            f"metadata artifact includes forbidden payload key {key!r}",
+                            path=where,
+                            json_path=f"{path}.{key}",
+                        )
+                    )
                 walk(item, f"{path}.{key}")
         elif isinstance(node, list):
             for index, item in enumerate(node):
@@ -551,34 +644,74 @@ def validate_no_payload_leakage(value: Any, *, serialized: str, where: str) -> l
     lowered = serialized.lower()
     for snippet in FORBIDDEN_SNIPPETS:
         if snippet.lower() in lowered:
-            diagnostics.append(diagnostic("metadata_payload_snippet_leakage", f"metadata artifact includes forbidden raw payload snippet {snippet!r}", path=where))
+            diagnostics.append(
+                diagnostic(
+                    "metadata_payload_snippet_leakage",
+                    f"metadata artifact includes forbidden raw payload snippet {snippet!r}",
+                    path=where,
+                )
+            )
     return diagnostics
 
 
-def false_flag_diagnostics(flags: Mapping[str, Any], *, where: str, row: Mapping[str, Any] | None = None) -> list[dict[str, Any]]:
+def false_flag_diagnostics(
+    flags: Mapping[str, Any], *, where: str, row: Mapping[str, Any] | None = None
+) -> list[dict[str, Any]]:
     findings: list[dict[str, Any]] = []
     for key in sorted(UNSAFE_TRUE_FLAGS):
         if flags.get(key) is True:
-            findings.append(diagnostic("unsafe_safety_flag_true", f"unsafe fail-closed flag is true: {key}", path=where, json_path=f"$.{key}", article_ref=str(row.get("article_ref")) if row and row.get("article_ref") else None, variant_id=str(row.get("variant_id")) if row and row.get("variant_id") else None, source_role=str(row.get("source_role")) if row and row.get("source_role") else None))
+            findings.append(
+                diagnostic(
+                    "unsafe_safety_flag_true",
+                    f"unsafe fail-closed flag is true: {key}",
+                    path=where,
+                    json_path=f"$.{key}",
+                    article_ref=str(row.get("article_ref"))
+                    if row and row.get("article_ref")
+                    else None,
+                    variant_id=str(row.get("variant_id"))
+                    if row and row.get("variant_id")
+                    else None,
+                    source_role=str(row.get("source_role"))
+                    if row and row.get("source_role")
+                    else None,
+                )
+            )
     return findings
 
 
-def index_source_rows(source_summary: Mapping[str, Any]) -> tuple[dict[tuple[str, str, str], dict[str, Any]], list[dict[str, Any]]]:
+def index_source_rows(
+    source_summary: Mapping[str, Any],
+) -> tuple[dict[tuple[str, str, str], dict[str, Any]], list[dict[str, Any]]]:
     rows = source_summary.get("results")
     if not isinstance(rows, list):
-        return {}, [diagnostic("missing_source_results", "S02 source summary is missing results list", path=SOURCE_SUMMARY_PATH)]
+        return {}, [
+            diagnostic(
+                "missing_source_results",
+                "S02 source summary is missing results list",
+                path=SOURCE_SUMMARY_PATH,
+            )
+        ]
     indexed: dict[tuple[str, str, str], dict[str, Any]] = {}
     findings: list[dict[str, Any]] = []
     for index, row in enumerate(rows):
         if not isinstance(row, dict):
-            findings.append(diagnostic("malformed_source_row", "S02 source row is not an object", json_path=f"$.results[{index}]"))
+            findings.append(
+                diagnostic(
+                    "malformed_source_row",
+                    "S02 source row is not an object",
+                    json_path=f"$.results[{index}]",
+                )
+            )
             continue
         key = (str(row.get("article_ref")), str(row.get("variant_id")), str(row.get("source_role")))
         indexed[key] = row
     return indexed, findings
 
 
-def validate_source_bytes(row: Mapping[str, Any], source_row: Mapping[str, Any], *, source_root: Path) -> list[dict[str, Any]]:
+def validate_source_bytes(
+    row: Mapping[str, Any], source_row: Mapping[str, Any], *, source_root: Path
+) -> list[dict[str, Any]]:
     findings: list[dict[str, Any]] = []
     article_ref = str(row.get("article_ref")) if row.get("article_ref") else None
     variant_id = str(row.get("variant_id")) if row.get("variant_id") else None
@@ -587,19 +720,65 @@ def validate_source_bytes(row: Mapping[str, Any], source_row: Mapping[str, Any],
         safe_relative_path(source_row.get("article_ref"), code_label="article_ref")
         source_path = source_artifact_path(source_root, source_row.get("local_path"))
     except ValueError as exc:
-        return [diagnostic(f"source_{exc}", f"unsafe S02 source locator: {exc}", article_ref=article_ref, variant_id=variant_id, source_role=source_role)]
+        return [
+            diagnostic(
+                f"source_{exc}",
+                f"unsafe S02 source locator: {exc}",
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        ]
     if not source_path.exists() or not source_path.is_file():
-        return [diagnostic("missing_source_artifact", "captured S02 source artifact is missing", path=source_path, article_ref=article_ref, variant_id=variant_id, source_role=source_role)]
+        return [
+            diagnostic(
+                "missing_source_artifact",
+                "captured S02 source artifact is missing",
+                path=source_path,
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        ]
     actual_hash = sha256_file(source_path)
     actual_size = source_path.stat().st_size
     expected_hash = source_row.get("sha256")
     expected_size = source_row.get("byte_size")
     if row.get("source_sha256") != expected_hash or actual_hash != expected_hash:
-        findings.append(diagnostic("source_sha256_mismatch", "source artifact hash no longer matches S02 handoff and S03 metadata", path=source_path, article_ref=article_ref, variant_id=variant_id, source_role=source_role))
+        findings.append(
+            diagnostic(
+                "source_sha256_mismatch",
+                "source artifact hash no longer matches S02 handoff and S03 metadata",
+                path=source_path,
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        )
     if row.get("source_byte_size") != expected_size or actual_size != expected_size:
-        findings.append(diagnostic("source_byte_size_mismatch", "source artifact byte size no longer matches S02 handoff and S03 metadata", path=source_path, article_ref=article_ref, variant_id=variant_id, source_role=source_role))
-    if row.get("source_sha256_verified") is not True or row.get("source_byte_size_verified") is not True:
-        findings.append(diagnostic("source_verification_not_recorded", "S03 row does not record verified source hash and byte size", article_ref=article_ref, variant_id=variant_id, source_role=source_role))
+        findings.append(
+            diagnostic(
+                "source_byte_size_mismatch",
+                "source artifact byte size no longer matches S02 handoff and S03 metadata",
+                path=source_path,
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        )
+    if (
+        row.get("source_sha256_verified") is not True
+        or row.get("source_byte_size_verified") is not True
+    ):
+        findings.append(
+            diagnostic(
+                "source_verification_not_recorded",
+                "S03 row does not record verified source hash and byte size",
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        )
     return findings
 
 
@@ -612,31 +791,107 @@ def validate_converted_text(row: Mapping[str, Any], *, corpus_dir: Path) -> list
     parser_ready = row.get("parser_ready") is True
     status = row.get("status")
     if not parser_ready:
-        if converted_path_value not in {None, ""} or row.get("converted_text_sha256") is not None or row.get("converted_text_byte_size") not in {0, None}:
-            findings.append(diagnostic("non_parser_ready_has_converted_payload", "non-parser-ready row points at converted text payload metadata", article_ref=article_ref, variant_id=variant_id, source_role=source_role))
+        if (
+            converted_path_value not in {None, ""}
+            or row.get("converted_text_sha256") is not None
+            or row.get("converted_text_byte_size") not in {0, None}
+        ):
+            findings.append(
+                diagnostic(
+                    "non_parser_ready_has_converted_payload",
+                    "non-parser-ready row points at converted text payload metadata",
+                    article_ref=article_ref,
+                    variant_id=variant_id,
+                    source_role=source_role,
+                )
+            )
         return findings
     if status != "converted" or row.get("diagnostic_code") != "parser_ready_converted_text":
-        findings.append(diagnostic("parser_ready_without_conversion_quality", "parser-ready row lacks converted status and parser_ready_converted_text code", article_ref=article_ref, variant_id=variant_id, source_role=source_role))
+        findings.append(
+            diagnostic(
+                "parser_ready_without_conversion_quality",
+                "parser-ready row lacks converted status and parser_ready_converted_text code",
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        )
     try:
         if isinstance(converted_path_value, str) and Path(converted_path_value).is_absolute():
             converted_path = Path(converted_path_value).resolve()
         else:
-            converted_path = safe_under_root(ROOT, converted_path_value, code_label="converted_text_path")
+            converted_path = safe_under_root(
+                ROOT, converted_path_value, code_label="converted_text_path"
+            )
     except ValueError as exc:
-        return [*findings, diagnostic(f"unsafe_converted_text_path:{exc}", f"unsafe converted text locator: {exc}", article_ref=article_ref, variant_id=variant_id, source_role=source_role)]
+        return [
+            *findings,
+            diagnostic(
+                f"unsafe_converted_text_path:{exc}",
+                f"unsafe converted text locator: {exc}",
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            ),
+        ]
     if not converted_path.exists() or not converted_path.is_file():
-        findings.append(diagnostic("missing_converted_text_artifact", "parser-ready converted text artifact is missing", path=converted_path, article_ref=article_ref, variant_id=variant_id, source_role=source_role))
+        findings.append(
+            diagnostic(
+                "missing_converted_text_artifact",
+                "parser-ready converted text artifact is missing",
+                path=converted_path,
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        )
         return findings
     if not converted_path.resolve().is_relative_to(corpus_dir.resolve()):
-        findings.append(diagnostic("converted_text_outside_corpus", "converted text artifact is outside the M029 unified corpus directory", path=converted_path, article_ref=article_ref, variant_id=variant_id, source_role=source_role))
+        findings.append(
+            diagnostic(
+                "converted_text_outside_corpus",
+                "converted text artifact is outside the M029 unified corpus directory",
+                path=converted_path,
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        )
     actual_hash = sha256_file(converted_path)
     actual_size = converted_path.stat().st_size
     if row.get("converted_text_sha256") != actual_hash:
-        findings.append(diagnostic("converted_text_sha256_mismatch", "converted text artifact hash is stale", path=converted_path, article_ref=article_ref, variant_id=variant_id, source_role=source_role))
+        findings.append(
+            diagnostic(
+                "converted_text_sha256_mismatch",
+                "converted text artifact hash is stale",
+                path=converted_path,
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        )
     if row.get("converted_text_byte_size") != actual_size:
-        findings.append(diagnostic("converted_text_byte_size_mismatch", "converted text artifact byte size is stale", path=converted_path, article_ref=article_ref, variant_id=variant_id, source_role=source_role))
+        findings.append(
+            diagnostic(
+                "converted_text_byte_size_mismatch",
+                "converted text artifact byte size is stale",
+                path=converted_path,
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        )
     if actual_size <= 0:
-        findings.append(diagnostic("empty_converted_text_artifact", "parser-ready converted text artifact is empty", path=converted_path, article_ref=article_ref, variant_id=variant_id, source_role=source_role))
+        findings.append(
+            diagnostic(
+                "empty_converted_text_artifact",
+                "parser-ready converted text artifact is empty",
+                path=converted_path,
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        )
     return findings
 
 
@@ -648,30 +903,99 @@ def validate_row_semantics(row: Mapping[str, Any]) -> list[dict[str, Any]]:
     status = row.get("status")
     code = row.get("diagnostic_code")
     if status not in TERMINAL_STATUSES:
-        findings.append(diagnostic("non_terminal_conversion_status", f"row has non-terminal status {status!r}", article_ref=article_ref, variant_id=variant_id, source_role=source_role))
+        findings.append(
+            diagnostic(
+                "non_terminal_conversion_status",
+                f"row has non-terminal status {status!r}",
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        )
     if not isinstance(code, str) or not code:
-        findings.append(diagnostic("missing_stable_diagnostic_code", "row lacks stable diagnostic code", article_ref=article_ref, variant_id=variant_id, source_role=source_role))
+        findings.append(
+            diagnostic(
+                "missing_stable_diagnostic_code",
+                "row lacks stable diagnostic code",
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        )
     if row.get("network_fetch_attempted") is not False:
-        findings.append(diagnostic("network_fetch_attempted_during_replay", "S03 conversion row attempted network access", article_ref=article_ref, variant_id=variant_id, source_role=source_role))
+        findings.append(
+            diagnostic(
+                "network_fetch_attempted_during_replay",
+                "S03 conversion row attempted network access",
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        )
     findings.extend(false_flag_diagnostics(row, where="conversion row", row=row))
     flags = row.get("fail_closed_safety_flags")
     if isinstance(flags, dict):
         findings.extend(false_flag_diagnostics(flags, where="fail_closed_safety_flags", row=row))
     else:
-        findings.append(diagnostic("missing_fail_closed_safety_flags", "row lacks fail-closed safety flags", article_ref=article_ref, variant_id=variant_id, source_role=source_role))
+        findings.append(
+            diagnostic(
+                "missing_fail_closed_safety_flags",
+                "row lacks fail-closed safety flags",
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        )
     context = row.get("safety_flag_context")
     if isinstance(context, dict):
         findings.extend(false_flag_diagnostics(context, where="safety_flag_context", row=row))
     else:
-        findings.append(diagnostic("missing_safety_flag_context", "row lacks safety flag context", article_ref=article_ref, variant_id=variant_id, source_role=source_role))
+        findings.append(
+            diagnostic(
+                "missing_safety_flag_context",
+                "row lacks safety flag context",
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        )
     if source_role in ARXIV_METADATA_ROLES and status != "blocked":
-        if row.get("parser_ready") is not False or status != "metadata_only" or code != "arxiv_abs_html_metadata_only" or row.get("fallback_reason") != "no_substantive_body":
-            findings.append(diagnostic("arxiv_abs_parser_ready_claim", "arXiv abs/navigation source must emit fallback_reason=no_substantive_body and remain metadata-only", article_ref=article_ref, variant_id=variant_id, source_role=source_role))
+        if (
+            row.get("parser_ready") is not False
+            or status != "metadata_only"
+            or code != "arxiv_abs_html_metadata_only"
+            or row.get("fallback_reason") != "no_substantive_body"
+        ):
+            findings.append(
+                diagnostic(
+                    "arxiv_abs_parser_ready_claim",
+                    "arXiv abs/navigation source must emit fallback_reason=no_substantive_body and remain metadata-only",
+                    article_ref=article_ref,
+                    variant_id=variant_id,
+                    source_role=source_role,
+                )
+            )
     if status in {"low_quality", "failed", "metadata_only"} and row.get("parser_ready") is True:
-        findings.append(diagnostic("low_quality_parser_ready_claim", "low-quality or metadata-only source cannot be parser-ready", article_ref=article_ref, variant_id=variant_id, source_role=source_role))
+        findings.append(
+            diagnostic(
+                "low_quality_parser_ready_claim",
+                "low-quality or metadata-only source cannot be parser-ready",
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        )
     quality = row.get("quality")
     if not isinstance(quality, dict) or not isinstance(quality.get("status"), str):
-        findings.append(diagnostic("missing_quality_diagnosis", "row lacks quality status diagnosis", article_ref=article_ref, variant_id=variant_id, source_role=source_role))
+        findings.append(
+            diagnostic(
+                "missing_quality_diagnosis",
+                "row lacks quality status diagnosis",
+                article_ref=article_ref,
+                variant_id=variant_id,
+                source_role=source_role,
+            )
+        )
     return findings
 
 
@@ -684,22 +1008,57 @@ def run_negative_cases(args: argparse.Namespace) -> list[dict[str, Any]]:
     findings: list[dict[str, Any]] = []
     rows = load_json(args.conversion_summary).get("results")
     if not isinstance(rows, list) or not rows:
-        return [diagnostic("negative_case_setup_missing", "negative cases require conversion result rows")]
-    parser_ready = next((row for row in rows if isinstance(row, dict) and row.get("parser_ready") is True), None)
+        return [
+            diagnostic(
+                "negative_case_setup_missing", "negative cases require conversion result rows"
+            )
+        ]
+    parser_ready = next(
+        (row for row in rows if isinstance(row, dict) and row.get("parser_ready") is True), None
+    )
     if not isinstance(parser_ready, dict):
-        return [diagnostic("negative_case_parser_ready_missing", "negative cases require at least one parser-ready row")]
+        return [
+            diagnostic(
+                "negative_case_parser_ready_missing",
+                "negative cases require at least one parser-ready row",
+            )
+        ]
     unsafe = dict(parser_ready)
     unsafe["converted_text_path"] = "../escape.txt"
-    if not any(item["diagnostic_code"].startswith("unsafe_converted_text_path") for item in validate_converted_text(unsafe, corpus_dir=args.corpus_dir)):
-        findings.append(diagnostic("negative_case_unsafe_path_not_detected", "unsafe converted_text_path was not detected"))
+    if not any(
+        item["diagnostic_code"].startswith("unsafe_converted_text_path")
+        for item in validate_converted_text(unsafe, corpus_dir=args.corpus_dir)
+    ):
+        findings.append(
+            diagnostic(
+                "negative_case_unsafe_path_not_detected",
+                "unsafe converted_text_path was not detected",
+            )
+        )
     stale = dict(parser_ready)
     stale["converted_text_sha256"] = "0" * 64
-    if not any(item["diagnostic_code"] == "converted_text_sha256_mismatch" for item in validate_converted_text(stale, corpus_dir=args.corpus_dir)):
-        findings.append(diagnostic("negative_case_converted_hash_not_detected", "stale converted hash was not detected"))
+    if not any(
+        item["diagnostic_code"] == "converted_text_sha256_mismatch"
+        for item in validate_converted_text(stale, corpus_dir=args.corpus_dir)
+    ):
+        findings.append(
+            diagnostic(
+                "negative_case_converted_hash_not_detected", "stale converted hash was not detected"
+            )
+        )
     unsafe_flags = dict(parser_ready)
-    unsafe_flags["fail_closed_safety_flags"] = dict(unsafe_flags.get("fail_closed_safety_flags", {}), graph_import_allowed=True)
-    if not any(item["diagnostic_code"] == "unsafe_safety_flag_true" for item in validate_row_semantics(unsafe_flags)):
-        findings.append(diagnostic("negative_case_unsafe_flag_not_detected", "unsafe safety flag was not detected"))
+    unsafe_flags["fail_closed_safety_flags"] = dict(
+        unsafe_flags.get("fail_closed_safety_flags", {}), graph_import_allowed=True
+    )
+    if not any(
+        item["diagnostic_code"] == "unsafe_safety_flag_true"
+        for item in validate_row_semantics(unsafe_flags)
+    ):
+        findings.append(
+            diagnostic(
+                "negative_case_unsafe_flag_not_detected", "unsafe safety flag was not detected"
+            )
+        )
     return findings
 
 
@@ -748,9 +1107,25 @@ def verify(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict[str, Any
     jsonl_rows = load_jsonl(args.conversion_diagnostics)
     report_text = args.conversion_report.read_text(encoding="utf-8")
 
-    diagnostics.extend(validate_no_payload_leakage(summary, serialized=json.dumps(summary, sort_keys=True), where=rel(args.conversion_summary)))
-    diagnostics.extend(validate_no_payload_leakage(jsonl_rows, serialized=json.dumps(jsonl_rows, sort_keys=True), where=rel(args.conversion_diagnostics)))
-    diagnostics.extend(validate_no_payload_leakage({"report": report_text}, serialized=report_text, where=rel(args.conversion_report)))
+    diagnostics.extend(
+        validate_no_payload_leakage(
+            summary,
+            serialized=json.dumps(summary, sort_keys=True),
+            where=rel(args.conversion_summary),
+        )
+    )
+    diagnostics.extend(
+        validate_no_payload_leakage(
+            jsonl_rows,
+            serialized=json.dumps(jsonl_rows, sort_keys=True),
+            where=rel(args.conversion_diagnostics),
+        )
+    )
+    diagnostics.extend(
+        validate_no_payload_leakage(
+            {"report": report_text}, serialized=report_text, where=rel(args.conversion_report)
+        )
+    )
 
     expected_top = {
         "schema_version": SCHEMA_VERSION,
@@ -765,53 +1140,154 @@ def verify(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict[str, Any
     }
     for key, expected in expected_top.items():
         if summary.get(key) != expected:
-            diagnostics.append(diagnostic("summary_contract_mismatch", f"summary {key} is {summary.get(key)!r}, expected {expected!r}", path=args.conversion_summary, json_path=f"$.{key}"))
+            diagnostics.append(
+                diagnostic(
+                    "summary_contract_mismatch",
+                    f"summary {key} is {summary.get(key)!r}, expected {expected!r}",
+                    path=args.conversion_summary,
+                    json_path=f"$.{key}",
+                )
+            )
     diagnostics.extend(false_flag_diagnostics(summary, where=rel(args.conversion_summary)))
     flags = summary.get("fail_closed_safety_flags")
     if isinstance(flags, dict):
         diagnostics.extend(false_flag_diagnostics(flags, where="$.fail_closed_safety_flags"))
     else:
-        diagnostics.append(diagnostic("missing_fail_closed_safety_flags", "summary lacks fail-closed safety flags", path=args.conversion_summary, json_path="$.fail_closed_safety_flags"))
+        diagnostics.append(
+            diagnostic(
+                "missing_fail_closed_safety_flags",
+                "summary lacks fail-closed safety flags",
+                path=args.conversion_summary,
+                json_path="$.fail_closed_safety_flags",
+            )
+        )
 
-    if source_summary.get("milestone_id") != MILESTONE_ID or source_summary.get("slice_id") != SOURCE_SLICE_ID:
-        diagnostics.append(diagnostic("source_summary_contract_mismatch", "S02 source summary has unexpected milestone or slice", path=args.source_summary))
+    if (
+        source_summary.get("milestone_id") != MILESTONE_ID
+        or source_summary.get("slice_id") != SOURCE_SLICE_ID
+    ):
+        diagnostics.append(
+            diagnostic(
+                "source_summary_contract_mismatch",
+                "S02 source summary has unexpected milestone or slice",
+                path=args.source_summary,
+            )
+        )
     if summary.get("source_summary_sha256") != sha256_file(args.source_summary):
-        diagnostics.append(diagnostic("source_summary_sha256_mismatch", "S03 summary source_summary_sha256 is stale", path=args.source_summary, json_path="$.source_summary_sha256"))
+        diagnostics.append(
+            diagnostic(
+                "source_summary_sha256_mismatch",
+                "S03 summary source_summary_sha256 is stale",
+                path=args.source_summary,
+                json_path="$.source_summary_sha256",
+            )
+        )
 
     rows = summary.get("results")
     if not isinstance(rows, list):
         rows = []
-        diagnostics.append(diagnostic("missing_conversion_results", "conversion summary is missing results list", path=args.conversion_summary, json_path="$.results"))
+        diagnostics.append(
+            diagnostic(
+                "missing_conversion_results",
+                "conversion summary is missing results list",
+                path=args.conversion_summary,
+                json_path="$.results",
+            )
+        )
     if len(rows) != len(jsonl_rows):
-        diagnostics.append(diagnostic("diagnostic_row_count_mismatch", "summary results and JSONL diagnostics have different row counts", path=args.conversion_diagnostics))
+        diagnostics.append(
+            diagnostic(
+                "diagnostic_row_count_mismatch",
+                "summary results and JSONL diagnostics have different row counts",
+                path=args.conversion_diagnostics,
+            )
+        )
     if json.dumps(rows, sort_keys=True) != json.dumps(jsonl_rows, sort_keys=True):
-        diagnostics.append(diagnostic("diagnostic_jsonl_summary_mismatch", "JSONL diagnostics differ from summary results", path=args.conversion_diagnostics))
+        diagnostics.append(
+            diagnostic(
+                "diagnostic_jsonl_summary_mismatch",
+                "JSONL diagnostics differ from summary results",
+                path=args.conversion_diagnostics,
+            )
+        )
 
-    expected_article_count = args.expected_article_count or selected_article_count(selection) or EXPECTED_ARTICLE_COUNT
-    expected_variant_count = args.expected_variant_count or source_summary.get("variant_count") or EXPECTED_VARIANT_COUNT
-    _article_refs = {str(row.get("article_ref")) for row in rows if isinstance(row, dict) and row.get("article_ref")}
+    expected_article_count = (
+        args.expected_article_count or selected_article_count(selection) or EXPECTED_ARTICLE_COUNT
+    )
+    expected_variant_count = (
+        args.expected_variant_count or source_summary.get("variant_count") or EXPECTED_VARIANT_COUNT
+    )
+    _article_refs = {
+        str(row.get("article_ref"))
+        for row in rows
+        if isinstance(row, dict) and row.get("article_ref")
+    }
     if summary.get("article_count") != expected_article_count:
-        diagnostics.append(diagnostic("article_count_mismatch", f"expected {expected_article_count} selected articles", path=args.conversion_summary, json_path="$.article_count"))
+        diagnostics.append(
+            diagnostic(
+                "article_count_mismatch",
+                f"expected {expected_article_count} selected articles",
+                path=args.conversion_summary,
+                json_path="$.article_count",
+            )
+        )
     if summary.get("variant_count") != len(rows) or len(rows) != expected_variant_count:
-        diagnostics.append(diagnostic("variant_count_mismatch", f"expected {expected_variant_count} source variants", path=args.conversion_summary, json_path="$.variant_count"))
+        diagnostics.append(
+            diagnostic(
+                "variant_count_mismatch",
+                f"expected {expected_variant_count} source variants",
+                path=args.conversion_summary,
+                json_path="$.variant_count",
+            )
+        )
     counts = Counter(str(row.get("status")) for row in rows if isinstance(row, dict))
     if dict(sorted(counts.items())) != summary.get("counts"):
-        diagnostics.append(diagnostic("status_counts_mismatch", "summary counts do not match conversion rows", path=args.conversion_summary, json_path="$.counts"))
-    parser_ready_count = sum(1 for row in rows if isinstance(row, dict) and row.get("parser_ready") is True)
+        diagnostics.append(
+            diagnostic(
+                "status_counts_mismatch",
+                "summary counts do not match conversion rows",
+                path=args.conversion_summary,
+                json_path="$.counts",
+            )
+        )
+    parser_ready_count = sum(
+        1 for row in rows if isinstance(row, dict) and row.get("parser_ready") is True
+    )
     if summary.get("parser_ready_count") != parser_ready_count:
-        diagnostics.append(diagnostic("parser_ready_count_mismatch", "summary parser_ready_count does not match conversion rows", path=args.conversion_summary, json_path="$.parser_ready_count"))
+        diagnostics.append(
+            diagnostic(
+                "parser_ready_count_mismatch",
+                "summary parser_ready_count does not match conversion rows",
+                path=args.conversion_summary,
+                json_path="$.parser_ready_count",
+            )
+        )
 
     source_index, source_findings = index_source_rows(source_summary)
     diagnostics.extend(source_findings)
     by_article: dict[str, set[str]] = defaultdict(set)
     for row in rows:
         if not isinstance(row, dict):
-            diagnostics.append(diagnostic("malformed_conversion_row", "conversion row is not an object", path=args.conversion_summary))
+            diagnostics.append(
+                diagnostic(
+                    "malformed_conversion_row",
+                    "conversion row is not an object",
+                    path=args.conversion_summary,
+                )
+            )
             continue
         key = (str(row.get("article_ref")), str(row.get("variant_id")), str(row.get("source_role")))
         source_row = source_index.get(key)
         if source_row is None:
-            diagnostics.append(diagnostic("source_row_missing_for_conversion", "S03 row has no matching S02 source row", article_ref=key[0], variant_id=key[1], source_role=key[2]))
+            diagnostics.append(
+                diagnostic(
+                    "source_row_missing_for_conversion",
+                    "S03 row has no matching S02 source row",
+                    article_ref=key[0],
+                    variant_id=key[1],
+                    source_role=key[2],
+                )
+            )
             continue
         if row.get("status") != "blocked" and key[0] not in {"", "None"}:
             by_article[key[0]].add(key[2])
@@ -821,18 +1297,50 @@ def verify(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict[str, Any
         diagnostics.extend(validate_converted_text(row, corpus_dir=args.corpus_dir))
 
     for article_ref, roles in sorted(by_article.items()):
-        if any(role in ARXIV_METADATA_ROLES for role in roles) and not any(role in ARXIV_FULL_TEXT_ROLES for role in roles):
-            diagnostics.append(diagnostic("missing_arxiv_parser_ready_fallback", "arXiv abstract capture lacks parser-ready HTML/PDF fallback variant", article_ref=article_ref))
-    if args.check_low_quality_sources and not any(isinstance(row, dict) and row.get("status") in {"low_quality", "metadata_only", "failed"} and row.get("parser_ready") is False for row in rows):
-        diagnostics.append(diagnostic("low_quality_source_case_missing", "conversion boundary lacks low-quality or metadata-only fail-closed rows"))
-    if args.require_no_substantive_body_diagnostic and not any(isinstance(row, dict) and row.get("fallback_reason") == "no_substantive_body" for row in rows):
-        diagnostics.append(diagnostic("no_substantive_body_diagnostic_missing", "fallback_reason=no_substantive_body was not emitted"))
+        if any(role in ARXIV_METADATA_ROLES for role in roles) and not any(
+            role in ARXIV_FULL_TEXT_ROLES for role in roles
+        ):
+            diagnostics.append(
+                diagnostic(
+                    "missing_arxiv_parser_ready_fallback",
+                    "arXiv abstract capture lacks parser-ready HTML/PDF fallback variant",
+                    article_ref=article_ref,
+                )
+            )
+    if args.check_low_quality_sources and not any(
+        isinstance(row, dict)
+        and row.get("status") in {"low_quality", "metadata_only", "failed"}
+        and row.get("parser_ready") is False
+        for row in rows
+    ):
+        diagnostics.append(
+            diagnostic(
+                "low_quality_source_case_missing",
+                "conversion boundary lacks low-quality or metadata-only fail-closed rows",
+            )
+        )
+    if args.require_no_substantive_body_diagnostic and not any(
+        isinstance(row, dict) and row.get("fallback_reason") == "no_substantive_body"
+        for row in rows
+    ):
+        diagnostics.append(
+            diagnostic(
+                "no_substantive_body_diagnostic_missing",
+                "fallback_reason=no_substantive_body was not emitted",
+            )
+        )
     if args.check_negative_cases:
         diagnostics.extend(run_negative_cases(args))
 
     for heading in ["Failure Modes", "Load Profile", "Negative Tests"]:
         if heading not in report_text:
-            diagnostics.append(diagnostic("report_section_missing", f"conversion report missing {heading} section", path=args.conversion_report))
+            diagnostics.append(
+                diagnostic(
+                    "report_section_missing",
+                    f"conversion report missing {heading} section",
+                    path=args.conversion_report,
+                )
+            )
 
     verifier_summary = {
         "schema_version": VERIFIER_SCHEMA_VERSION,
@@ -853,9 +1361,23 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--selection", type=Path, default=SELECTION_PATH)
     parser.add_argument("--source-summary", type=Path, default=SOURCE_SUMMARY_PATH)
-    parser.add_argument("--conversion-summary", "--summary", dest="conversion_summary", type=Path, default=SUMMARY_PATH)
-    parser.add_argument("--conversion-diagnostics", "--diagnostics", dest="conversion_diagnostics", type=Path, default=DIAGNOSTICS_PATH)
-    parser.add_argument("--conversion-report", "--report", dest="conversion_report", type=Path, default=REPORT_PATH)
+    parser.add_argument(
+        "--conversion-summary",
+        "--summary",
+        dest="conversion_summary",
+        type=Path,
+        default=SUMMARY_PATH,
+    )
+    parser.add_argument(
+        "--conversion-diagnostics",
+        "--diagnostics",
+        dest="conversion_diagnostics",
+        type=Path,
+        default=DIAGNOSTICS_PATH,
+    )
+    parser.add_argument(
+        "--conversion-report", "--report", dest="conversion_report", type=Path, default=REPORT_PATH
+    )
     parser.add_argument("--source-root", type=Path, default=SOURCE_ROOT)
     parser.add_argument("--corpus-dir", type=Path, default=CORPUS_DIR)
     parser.add_argument("--converted-text-dir", type=Path, default=CONVERTED_TEXT_DIR)
@@ -864,11 +1386,31 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--check-negative-cases", action="store_true")
     parser.add_argument("--check-low-quality-sources", action="store_true")
     parser.add_argument("--require-no-substantive-body-diagnostic", action="store_true")
-    parser.add_argument("--require-no-network", action="store_true", help="Compatibility flag; local-only/no-network is always enforced.")
-    parser.add_argument("--require-no-import-flags", action="store_true", help="Compatibility flag; fail-closed import flags are always checked.")
-    parser.add_argument("--reject-empty-semantic-body", action="store_true", help="Compatibility flag; empty/low-quality bodies are always rejected.")
-    parser.add_argument("--require-fallback-reasons", action="store_true", help="Compatibility flag; non-parser-ready rows are always required to carry fallback diagnostics.")
-    parser.add_argument("--check-parser-ready-gates", action="store_true", help="Compatibility flag; parser-ready gates are always checked.")
+    parser.add_argument(
+        "--require-no-network",
+        action="store_true",
+        help="Compatibility flag; local-only/no-network is always enforced.",
+    )
+    parser.add_argument(
+        "--require-no-import-flags",
+        action="store_true",
+        help="Compatibility flag; fail-closed import flags are always checked.",
+    )
+    parser.add_argument(
+        "--reject-empty-semantic-body",
+        action="store_true",
+        help="Compatibility flag; empty/low-quality bodies are always rejected.",
+    )
+    parser.add_argument(
+        "--require-fallback-reasons",
+        action="store_true",
+        help="Compatibility flag; non-parser-ready rows are always required to carry fallback diagnostics.",
+    )
+    parser.add_argument(
+        "--check-parser-ready-gates",
+        action="store_true",
+        help="Compatibility flag; parser-ready gates are always checked.",
+    )
     return parser.parse_args(argv[1:])
 
 
@@ -881,7 +1423,12 @@ def main(argv: list[str] | None = None) -> int:
         sys.stderr.write(f"M029 unified conversion quality verifier failed: {exc}\n")
         return 1
     if diagnostics:
-        sys.stderr.write(json.dumps({"summary": verifier_summary, "diagnostics": diagnostics}, indent=2, sort_keys=True) + "\n")
+        sys.stderr.write(
+            json.dumps(
+                {"summary": verifier_summary, "diagnostics": diagnostics}, indent=2, sort_keys=True
+            )
+            + "\n"
+        )
         return 1
     sys.stdout.write(json.dumps(verifier_summary, indent=2, sort_keys=True) + "\n")
     return 0

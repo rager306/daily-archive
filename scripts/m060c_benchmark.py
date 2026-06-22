@@ -108,7 +108,9 @@ def choose_path_pair(graph: nx.DiGraph) -> tuple[Any, Any]:
         raise ValueError("benchmark graph must contain at least one edge") from exc
 
 
-def build_graph_specs(manifest_path: Path, synthetic_edges: Sequence[int] = (10_000, 100_000)) -> list[GraphSpec]:
+def build_graph_specs(
+    manifest_path: Path, synthetic_edges: Sequence[int] = (10_000, 100_000)
+) -> list[GraphSpec]:
     """Prepare the real graph and synthetic graphs for benchmarking."""
 
     real_graph = load_manifest_graph(manifest_path)
@@ -143,7 +145,9 @@ def _networkx_adapter(spec: GraphSpec) -> LibraryAdapter:
     operations = {
         "bfs": lambda: list(nx.bfs_tree(graph, spec.source).nodes),
         "pagerank": lambda: nx.pagerank(graph, weight="weight", max_iter=100, tol=1.0e-6),
-        "shortest_path": lambda: nx.shortest_path(graph, source=spec.source, target=spec.target, weight="weight"),
+        "shortest_path": lambda: nx.shortest_path(
+            graph, source=spec.source, target=spec.target, weight="weight"
+        ),
         "connected_components": lambda: list(nx.weakly_connected_components(graph)),
     }
     return LibraryAdapter("networkx", "ok", graph, None, operations)
@@ -161,7 +165,9 @@ def _igraph_adapter(spec: GraphSpec) -> LibraryAdapter:
         operations = {
             "bfs": lambda: graph.bfs(source, mode="out"),
             "pagerank": lambda: graph.pagerank(weights="weight"),
-            "shortest_path": lambda: graph.get_shortest_paths(source, to=target, weights="weight", mode="out"),
+            "shortest_path": lambda: graph.get_shortest_paths(
+                source, to=target, weights="weight", mode="out"
+            ),
             "connected_components": lambda: graph.connected_components(mode="weak"),
         }
         return LibraryAdapter("igraph", "ok", graph, None, operations)
@@ -177,7 +183,9 @@ def _rustworkx_adapter(spec: GraphSpec) -> LibraryAdapter:
         graph = rustworkx.PyDiGraph()
         node_to_index = {node: graph.add_node(node) for node in spec.graph.nodes}
         for source, target, data in spec.graph.edges(data=True):
-            graph.add_edge(node_to_index[source], node_to_index[target], float(data.get("weight", 1.0)))
+            graph.add_edge(
+                node_to_index[source], node_to_index[target], float(data.get("weight", 1.0))
+            )
         source = node_to_index[spec.source]
         target = node_to_index[spec.target]
         operations = {
@@ -208,7 +216,9 @@ def build_adapter(library: str, spec: GraphSpec) -> LibraryAdapter:
     raise ValueError(f"unknown benchmark library: {library}")
 
 
-def benchmark_specs(specs: Iterable[GraphSpec], *, runs: int = RUNS_PER_OPERATION) -> dict[str, Any]:
+def benchmark_specs(
+    specs: Iterable[GraphSpec], *, runs: int = RUNS_PER_OPERATION
+) -> dict[str, Any]:
     """Run all benchmark cells and return a JSON-serializable report."""
 
     results: list[dict[str, Any]] = []
@@ -289,7 +299,9 @@ def comparison_table(results: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
                 "edges": result["edges"],
             },
         )
-        value: float | str | None = result["latency_ms"] if result["status"] == "ok" else result["status"]
+        value: float | str | None = (
+            result["latency_ms"] if result["status"] == "ok" else result["status"]
+        )
         row[result["algorithm"]] = value
     for graph_name in sorted({result["graph"] for result in results}):
         for library in LIBRARIES:

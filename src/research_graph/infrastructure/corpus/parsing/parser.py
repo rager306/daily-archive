@@ -45,7 +45,9 @@ def parse_article(ingestion: FullTextIngestionResult) -> ParsedArticle:
 
     for order, section in enumerate(sections):
         parent = _nearest_parent(stack, section.level)
-        element_id = _stable_element_id(ingestion.paper_id, section.title, used_ids, root=order == 0)
+        element_id = _stable_element_id(
+            ingestion.paper_id, section.title, used_ids, root=order == 0
+        )
         path = [element_id] if parent is None else [*parent.path, element_id]
         element = ParsedArticleElement(
             id=element_id,

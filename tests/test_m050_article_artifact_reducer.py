@@ -30,6 +30,7 @@ from research_graph.infrastructure.papers.artifacts.reducer import (
 
 # ---------- helpers ----------
 
+
 def _work_completed(
     work_id: str,
     binding_id: str = "article-artifact-classify",
@@ -62,6 +63,7 @@ def _work_completed(
 
 # ---------- 1-2: determinism ----------
 
+
 def test_merge_results_deterministic_byte_identical_output() -> None:
     results = [
         _work_completed("wid-001"),
@@ -89,6 +91,7 @@ def test_merge_results_sorts_by_work_id() -> None:
 
 # ---------- 3-4: dedup by work_id ----------
 
+
 def test_merge_dedups_by_work_id() -> None:
     results = [
         _work_completed("wid-001", transport="MockTransport"),
@@ -114,6 +117,7 @@ def test_merge_dedup_keeps_last_occurrence() -> None:
 
 # ---------- 5: empty ----------
 
+
 def test_merge_empty_list_returns_safe_aggregate() -> None:
     out = merge_article_artifact_results([])
     assert out["schema_version"] == REDUCER_SCHEMA_VERSION
@@ -129,6 +133,7 @@ def test_merge_empty_list_returns_safe_aggregate() -> None:
 
 
 # ---------- 6-7: aggregate from directory ----------
+
 
 def test_aggregate_directory_counts_per_binding_id(tmp_path: Path) -> None:
     work_dir = tmp_path / "work-requests"
@@ -178,6 +183,7 @@ def test_aggregate_directory_validation_status_counts(tmp_path: Path) -> None:
 
 # ---------- 8: safety defaults ----------
 
+
 def test_safety_defaults_all_false() -> None:
     defaults = _safety_defaults()
     assert defaults == {
@@ -205,6 +211,7 @@ def test_aggregate_emits_safety_defaults_in_output(tmp_path: Path) -> None:
 
 # ---------- 9: idempotency on directory ----------
 
+
 def test_aggregate_idempotent_byte_identical_output(tmp_path: Path) -> None:
     work_dir = tmp_path / "work-requests"
     work_dir.mkdir()
@@ -227,6 +234,7 @@ def test_aggregate_idempotent_byte_identical_output(tmp_path: Path) -> None:
 
 # ---------- 10: fail-soft on malformed JSON ----------
 
+
 def test_aggregate_fail_soft_on_malformed_json(tmp_path: Path) -> None:
     work_dir = tmp_path / "work-requests"
     work_dir.mkdir()
@@ -237,9 +245,7 @@ def test_aggregate_fail_soft_on_malformed_json(tmp_path: Path) -> None:
     # Malformed JSON.
     (work_dir / "wid-bad.json").write_text("{ this is not json", encoding="utf-8")
     # Missing required field.
-    (work_dir / "wid-empty.json").write_text(
-        json.dumps({"work_id": "wid-empty"}), encoding="utf-8"
-    )
+    (work_dir / "wid-empty.json").write_text(json.dumps({"work_id": "wid-empty"}), encoding="utf-8")
     # Wrong type (not a dict).
     (work_dir / "wid-list.json").write_text(json.dumps(["not", "a", "dict"]), encoding="utf-8")
 
@@ -264,19 +270,27 @@ def test_aggregate_on_missing_directory_is_fail_closed(tmp_path: Path) -> None:
 
 # ---------- extra: DEFAULT_VALIDATION_BUCKETS sanity ----------
 
+
 def test_validation_buckets_include_all_expected_statuses() -> None:
     assert "valid" in DEFAULT_VALIDATION_BUCKETS
     assert "invalid" in DEFAULT_VALIDATION_BUCKETS
     assert "skipped_no_structure" in DEFAULT_VALIDATION_BUCKETS
     assert "not_evaluated" in DEFAULT_VALIDATION_BUCKETS
 
+
 def test_article_artifact_reducer_old_module_is_archived_with_canonical_breadcrumb() -> None:
-    top_level_archive_path = Path("archive/package-layout-shims/wave-01/src/arxiv_archive/article_artifact_reducer.py")
-    package_archive_path = Path("archive/package-rename-waves/wave-01/src/arxiv_archive/artifacts/reducer.py")
+    top_level_archive_path = Path(
+        "archive/package-layout-shims/wave-01/src/arxiv_archive/article_artifact_reducer.py"
+    )
+    package_archive_path = Path(
+        "archive/package-rename-waves/wave-01/src/arxiv_archive/artifacts/reducer.py"
+    )
     canonical_path = Path("src/research_graph/papers/artifacts/reducer.py")
 
     assert top_level_archive_path.exists()
     assert package_archive_path.exists()
     assert not Path("src/arxiv_archive/article_artifact_reducer.py").exists()
     assert not Path("src/arxiv_archive/artifacts/reducer.py").exists()
-    assert "Formerly: src/arxiv_archive/artifacts/reducer.py" in canonical_path.read_text(encoding="utf-8")
+    assert "Formerly: src/arxiv_archive/artifacts/reducer.py" in canonical_path.read_text(
+        encoding="utf-8"
+    )

@@ -91,7 +91,9 @@ def _multipart_pdf_request(endpoint: str, pdf_path: Path) -> urllib.request.Requ
     return request
 
 
-def _probe_grobid_fulltext(pdf_path: Path, endpoint: str, timeout: int = DEFAULT_TIMEOUT_SECONDS) -> dict[str, Any]:
+def _probe_grobid_fulltext(
+    pdf_path: Path, endpoint: str, timeout: int = DEFAULT_TIMEOUT_SECONDS
+) -> dict[str, Any]:
     """POST one PDF to GROBID fulltext and return a fail-closed result dict."""
 
     started = time.monotonic()
@@ -175,19 +177,28 @@ def _extract_fulltext_metrics(tei_text: str) -> dict[str, Any]:
         return metrics
 
     refs = _iter_elements(root, "ref")
-    bibls = [element for element in root.iter() if _local_name(element.tag) in {"biblStruct", "bibl"}]
+    bibls = [
+        element for element in root.iter() if _local_name(element.tag) in {"biblStruct", "bibl"}
+    ]
     formulas = _iter_elements(root, "formula")
     figures = _iter_elements(root, "figure")
     titles = _iter_elements(root, "title")
     authors = _iter_elements(root, "author")
     abstracts = _iter_elements(root, "abstract")
     body = next((element for element in root.iter() if _local_name(element.tag) == "body"), None)
-    body_divs = [element for element in body.iter() if _local_name(element.tag) == "div"] if body is not None else []
+    body_divs = (
+        [element for element in body.iter() if _local_name(element.tag) == "div"]
+        if body is not None
+        else []
+    )
     section_divs = [
         element
         for element in body_divs
         if element.attrib.get("type") == "section"
-        or (element.attrib.get("type") in {None, ""} and any(_local_name(child.tag) == "head" for child in element))
+        or (
+            element.attrib.get("type") in {None, ""}
+            and any(_local_name(child.tag) == "head" for child in element)
+        )
     ]
 
     sections = []
@@ -199,7 +210,9 @@ def _extract_fulltext_metrics(tei_text: str) -> dict[str, Any]:
         {
             "ref_count": len(refs),
             "bibl_count": len(bibls),
-            "body_element_count": max(0, sum(1 for _ in body.iter()) - 1) if body is not None else 0,
+            "body_element_count": max(0, sum(1 for _ in body.iter()) - 1)
+            if body is not None
+            else 0,
             "equation_count": len(formulas),
             "figure_count": len(figures),
             "header_title_present": any(_text_present(title) for title in titles),
@@ -238,7 +251,11 @@ def _empty_packet_metrics() -> dict[str, Any]:
 
 
 def _packet_base(entry: dict[str, Any], *, grobid_url: str) -> dict[str, Any]:
-    arxiv_id = entry.get("arxiv_id") or entry.get("article_key") or Path(str(entry.get("path", "unknown"))).stem
+    arxiv_id = (
+        entry.get("arxiv_id")
+        or entry.get("article_key")
+        or Path(str(entry.get("path", "unknown"))).stem
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "generated_at": _utc_now(),
@@ -253,7 +270,9 @@ def _packet_base(entry: dict[str, Any], *, grobid_url: str) -> dict[str, Any]:
     }
 
 
-def _packet_for_missing_pdf(entry: dict[str, Any], *, grobid_url: str, pdf_path: Path) -> dict[str, Any]:
+def _packet_for_missing_pdf(
+    entry: dict[str, Any], *, grobid_url: str, pdf_path: Path
+) -> dict[str, Any]:
     packet = _packet_base(entry, grobid_url=grobid_url)
     packet.update(_empty_packet_metrics())
     packet.update(
@@ -274,7 +293,9 @@ def _packet_for_missing_pdf(entry: dict[str, Any], *, grobid_url: str, pdf_path:
     return packet
 
 
-def _write_low_level_outputs(output_dir: Path, arxiv_id: str, packet: dict[str, Any], tei_text: str) -> None:
+def _write_low_level_outputs(
+    output_dir: Path, arxiv_id: str, packet: dict[str, Any], tei_text: str
+) -> None:
     if tei_text:
         _atomic_write_bytes(output_dir / "tei" / f"{arxiv_id}.tei.xml", tei_text.encode("utf-8"))
     _atomic_write_json(output_dir / "per-pdf" / f"{arxiv_id}.json", packet)
@@ -288,7 +309,11 @@ def _probe_manifest_entry(
     max_retries: int,
     timeout: int,
 ) -> dict[str, Any]:
-    arxiv_id = str(entry.get("arxiv_id") or entry.get("article_key") or Path(str(entry.get("path", "unknown"))).stem)
+    arxiv_id = str(
+        entry.get("arxiv_id")
+        or entry.get("article_key")
+        or Path(str(entry.get("path", "unknown"))).stem
+    )
     pdf_path = Path(str(entry.get("path", "")))
     if not pdf_path.exists():
         packet = _packet_for_missing_pdf(entry, grobid_url=grobid_url, pdf_path=pdf_path)
@@ -298,18 +323,32 @@ def _probe_manifest_entry(
     endpoint = f"{_normalize_grobid_url(grobid_url)}/api/processFulltextDocument"
     attempts = 0
     total_duration_ms = 0
-    result: dict[str, Any] = {"tei_text": "", "http_status": None, "bytes": 0, "duration_ms": 0, "error": "not_attempted"}
+    result: dict[str, Any] = {
+        "tei_text": "",
+        "http_status": None,
+        "bytes": 0,
+        "duration_ms": 0,
+        "error": "not_attempted",
+    }
     for attempt in range(1, max(1, max_retries) + 1):
         attempts = attempt
         result = _probe_grobid_fulltext(pdf_path, endpoint, timeout=timeout)
         total_duration_ms += int(result.get("duration_ms") or 0)
-        if result.get("error") is None and result.get("http_status") == 200 and result.get("tei_text"):
+        if (
+            result.get("error") is None
+            and result.get("http_status") == 200
+            and result.get("tei_text")
+        ):
             break
 
     tei_text = str(result.get("tei_text") or "")
     metrics = _extract_fulltext_metrics(tei_text)
     low_quality = _low_quality_source_criteria(metrics)
-    blocked = bool(result.get("error")) or result.get("http_status") != 200 or bool(metrics.get("parse_error"))
+    blocked = (
+        bool(result.get("error"))
+        or result.get("http_status") != 200
+        or bool(metrics.get("parse_error"))
+    )
     status = "blocked" if blocked else "low_quality_source" if low_quality else "success"
     tei_path = output_dir / "tei" / f"{arxiv_id}.tei.xml"
     sha256_actual = _sha256_file(pdf_path)
@@ -357,16 +396,24 @@ def _build_summary(
         "success_count": counts.get("success", 0),
         "low_quality_source_count": counts.get("low_quality_source", 0),
         "blocked_count": counts.get("blocked", 0),
-        "body_positive_count": sum(1 for packet in packets if int(packet.get("body_element_count") or 0) > 0),
-        "section_positive_count": sum(1 for packet in packets if int(packet.get("section_count") or 0) > 0),
+        "body_positive_count": sum(
+            1 for packet in packets if int(packet.get("body_element_count") or 0) > 0
+        ),
+        "section_positive_count": sum(
+            1 for packet in packets if int(packet.get("section_count") or 0) > 0
+        ),
         "ref_positive_count": sum(1 for packet in packets if int(packet.get("ref_count") or 0) > 0),
         "total_ref_count": sum(int(packet.get("ref_count") or 0) for packet in packets),
         "total_bibl_count": sum(int(packet.get("bibl_count") or 0) for packet in packets),
-        "total_body_element_count": sum(int(packet.get("body_element_count") or 0) for packet in packets),
+        "total_body_element_count": sum(
+            int(packet.get("body_element_count") or 0) for packet in packets
+        ),
         "total_equation_count": sum(int(packet.get("equation_count") or 0) for packet in packets),
         "total_figure_count": sum(int(packet.get("figure_count") or 0) for packet in packets),
         "safety_defaults": _safety_defaults(),
-        "packets": [str(output_dir / "per-pdf" / f"{packet['arxiv_id']}.json") for packet in packets],
+        "packets": [
+            str(output_dir / "per-pdf" / f"{packet['arxiv_id']}.json") for packet in packets
+        ],
     }
 
 

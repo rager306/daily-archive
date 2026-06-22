@@ -131,7 +131,6 @@ def resolve_minimax_api_key(environ: dict[str, str]) -> MiniMaxApiKeyResolution:
     )
 
 
-
 def build_minimax_usage_requests(api_key: str) -> tuple[MiniMaxUsageRequest, ...]:
     """Build 9router-compatible global MiniMax usage/remains requests."""
 
@@ -147,7 +146,6 @@ def build_minimax_usage_requests(api_key: str) -> tuple[MiniMaxUsageRequest, ...
         )
         for endpoint in MINIMAX_GLOBAL_USAGE_ENDPOINTS
     )
-
 
 
 def _field(mapping: dict[str, Any], snake_key: str, camel_key: str) -> Any:

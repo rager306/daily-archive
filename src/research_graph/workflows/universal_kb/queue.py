@@ -365,7 +365,13 @@ class UniversalKBQueue:
                     job_id, depends_on_job_id, depends_on_artifact_ref, expected_hash, required_status
                 ) VALUES (?, ?, ?, ?, ?)
                 """,
-                (job_id, depends_on_job_id, depends_on_artifact_ref, expected_hash, required_status),
+                (
+                    job_id,
+                    depends_on_job_id,
+                    depends_on_artifact_ref,
+                    expected_hash,
+                    required_status,
+                ),
             )
             if row["status"] in {"pending", "ready"} and not self._dependencies_satisfied(job_id):
                 self.connection.execute(
@@ -411,7 +417,16 @@ class UniversalKBQueue:
                 """,
                 (worker_id, lease_until, now, now, row["job_id"]),
             )
-            self._insert_event(row["job_id"], "claim", row["status"], "running", "job claimed", worker_id, None, now)
+            self._insert_event(
+                row["job_id"],
+                "claim",
+                row["status"],
+                "running",
+                "job claimed",
+                worker_id,
+                None,
+                now,
+            )
             claimed = self._fetch_job(row["job_id"])
         return self._row_to_job(claimed)
 
@@ -424,11 +439,22 @@ class UniversalKBQueue:
                 "UPDATE jobs SET lease_until = ?, heartbeat_at = ?, updated_at = ? WHERE job_id = ?",
                 (lease_until, now, now, job_id),
             )
-            self._insert_event(job_id, "heartbeat", job["status"], job["status"], "lease heartbeat", worker_id, None, now)
+            self._insert_event(
+                job_id,
+                "heartbeat",
+                job["status"],
+                job["status"],
+                "lease heartbeat",
+                worker_id,
+                None,
+                now,
+            )
             row = self._fetch_job(job_id)
         return self._row_to_job(row)
 
-    def complete(self, job_id: str, *, worker_id: str, output_paths: Iterable[str]) -> dict[str, Any]:
+    def complete(
+        self, job_id: str, *, worker_id: str, output_paths: Iterable[str]
+    ) -> dict[str, Any]:
         job = self._require_running_owner(job_id, worker_id)
         now = self.clock()
         with self.connection:
@@ -441,7 +467,16 @@ class UniversalKBQueue:
                 """,
                 (_json_list(output_paths), now, job_id),
             )
-            self._insert_event(job_id, "complete", job["status"], "succeeded", "job completed", worker_id, None, now)
+            self._insert_event(
+                job_id,
+                "complete",
+                job["status"],
+                "succeeded",
+                "job completed",
+                worker_id,
+                None,
+                now,
+            )
             row = self._fetch_job(job_id)
         return self._row_to_job(row)
 
@@ -458,7 +493,11 @@ class UniversalKBQueue:
         self._require_metadata_code(error_code, "error_code")
         self._require_safe_diagnostic(redacted_message)
         now = self.clock()
-        status = "failed_terminal" if int(job["attempt_count"]) >= int(job["max_attempts"]) else "failed_retryable"
+        status = (
+            "failed_terminal"
+            if int(job["attempt_count"]) >= int(job["max_attempts"])
+            else "failed_retryable"
+        )
         event_type = "fail_terminal" if status == "failed_terminal" else "fail_retryable"
         with self.connection:
             self.connection.execute(
@@ -470,7 +509,16 @@ class UniversalKBQueue:
                 """,
                 (status, retry_after, error_code, redacted_message, now, job_id),
             )
-            self._insert_event(job_id, event_type, job["status"], status, redacted_message, worker_id, error_code, now)
+            self._insert_event(
+                job_id,
+                event_type,
+                job["status"],
+                status,
+                redacted_message,
+                worker_id,
+                error_code,
+                now,
+            )
             row = self._fetch_job(job_id)
         return self._row_to_job(row)
 
@@ -497,7 +545,14 @@ class UniversalKBQueue:
                 (error_code, redacted_message, now, job_id),
             )
             self._insert_event(
-                job_id, "fail_terminal", job["status"], "failed_terminal", redacted_message, worker_id, error_code, now
+                job_id,
+                "fail_terminal",
+                job["status"],
+                "failed_terminal",
+                redacted_message,
+                worker_id,
+                error_code,
+                now,
             )
             row = self._fetch_job(job_id)
         return self._row_to_job(row)
@@ -548,8 +603,12 @@ class UniversalKBQueue:
                     """,
                     (
                         next_status,
-                        "lease_expired" if next_status == "failed_terminal" else row["last_error_code"],
-                        "lease expired" if next_status == "failed_terminal" else row["last_error_message"],
+                        "lease_expired"
+                        if next_status == "failed_terminal"
+                        else row["last_error_code"],
+                        "lease expired"
+                        if next_status == "failed_terminal"
+                        else row["last_error_message"],
                         now,
                         row["job_id"],
                     ),
@@ -597,7 +656,9 @@ class UniversalKBQueue:
                 (input_hash, tool_version, contract_version, now, job_id),
             )
             for event_type, reason in stale_events:
-                self._insert_event(job_id, event_type, row["status"], "stale", reason, None, event_type, now)
+                self._insert_event(
+                    job_id, event_type, row["status"], "stale", reason, None, event_type, now
+                )
             updated = self._fetch_job(job_id)
         return self._row_to_job(updated)
 
@@ -632,8 +693,7 @@ class UniversalKBQueue:
 
     def _ensure_jobs_column(self, column_name: str, column_sql: str) -> None:
         columns = {
-            row["name"]
-            for row in self.connection.execute("PRAGMA table_info(jobs)").fetchall()
+            row["name"] for row in self.connection.execute("PRAGMA table_info(jobs)").fetchall()
         }
         if column_name not in columns:
             self.connection.execute(f"ALTER TABLE jobs ADD COLUMN {column_name} {column_sql}")
@@ -731,13 +791,17 @@ class UniversalKBQueue:
     @staticmethod
     def _require_safe_diagnostic(value: str) -> None:
         lowered = value.lower()
-        if any(forbidden in lowered for forbidden in FORBIDDEN_DIAGNOSTIC_KEYS) or SECRET_SHAPED_PATTERN.search(value):
+        if any(
+            forbidden in lowered for forbidden in FORBIDDEN_DIAGNOSTIC_KEYS
+        ) or SECRET_SHAPED_PATTERN.search(value):
             raise ValueError("diagnostic must be redacted and metadata-only")
 
     @staticmethod
     def _require_metadata_ref(value: str, field_name: str) -> None:
         lowered = value.lower()
-        if any(forbidden in lowered for forbidden in FORBIDDEN_DIAGNOSTIC_KEYS) or SECRET_SHAPED_PATTERN.search(value):
+        if any(
+            forbidden in lowered for forbidden in FORBIDDEN_DIAGNOSTIC_KEYS
+        ) or SECRET_SHAPED_PATTERN.search(value):
             raise ValueError(f"{field_name} must be redacted and metadata-only")
         if not METADATA_REF_PATTERN.fullmatch(value):
             raise ValueError(f"{field_name} must be a metadata reference")
@@ -745,7 +809,9 @@ class UniversalKBQueue:
     @staticmethod
     def _require_metadata_code(value: str, field_name: str) -> None:
         lowered = value.lower()
-        if any(forbidden in lowered for forbidden in FORBIDDEN_DIAGNOSTIC_KEYS) or SECRET_SHAPED_PATTERN.search(value):
+        if any(
+            forbidden in lowered for forbidden in FORBIDDEN_DIAGNOSTIC_KEYS
+        ) or SECRET_SHAPED_PATTERN.search(value):
             raise ValueError(f"{field_name} must be a metadata code")
         if not METADATA_CODE_PATTERN.fullmatch(value):
             raise ValueError(f"{field_name} must be a metadata code")
@@ -789,7 +855,17 @@ class UniversalKBQueue:
                 worker_id, error_code, created_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (event_id, job_id, event_type, old_status, new_status, reason, worker_id, error_code, created_at),
+            (
+                event_id,
+                job_id,
+                event_type,
+                old_status,
+                new_status,
+                reason,
+                worker_id,
+                error_code,
+                created_at,
+            ),
         )
 
     @staticmethod

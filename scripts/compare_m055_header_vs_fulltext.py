@@ -63,7 +63,8 @@ def compare_header_vs_fulltext(
             "fulltext_status": fulltext.get("status"),
             "header_body_element_count": _metric(header, "body_element_count"),
             "fulltext_body_element_count": _metric(fulltext, "body_element_count"),
-            "body_delta": _metric(fulltext, "body_element_count") - _metric(header, "body_element_count"),
+            "body_delta": _metric(fulltext, "body_element_count")
+            - _metric(header, "body_element_count"),
             "header_ref_count": _metric(header, "ref_count"),
             "fulltext_ref_count": _metric(fulltext, "ref_count"),
             "ref_delta": _metric(fulltext, "ref_count") - _metric(header, "ref_count"),
@@ -72,7 +73,8 @@ def compare_header_vs_fulltext(
             "bibl_delta": _metric(fulltext, "bibl_count") - _metric(header, "bibl_count"),
             "header_equation_count": _metric(header, "equation_count"),
             "fulltext_equation_count": _metric(fulltext, "equation_count"),
-            "equation_delta": _metric(fulltext, "equation_count") - _metric(header, "equation_count"),
+            "equation_delta": _metric(fulltext, "equation_count")
+            - _metric(header, "equation_count"),
             "header_figure_count": _metric(header, "figure_count"),
             "fulltext_figure_count": _metric(fulltext, "figure_count"),
             "figure_delta": _metric(fulltext, "figure_count") - _metric(header, "figure_count"),
@@ -81,7 +83,9 @@ def compare_header_vs_fulltext(
 
     aggregate = {
         "total_pdfs": len(per_pdf),
-        "fulltext_body_positive_count": sum(1 for row in per_pdf if row["fulltext_body_element_count"] > 0),
+        "fulltext_body_positive_count": sum(
+            1 for row in per_pdf if row["fulltext_body_element_count"] > 0
+        ),
         "body_delta_total": sum(row["body_delta"] for row in per_pdf),
         "ref_delta_total": sum(row["ref_delta"] for row in per_pdf),
         "bibl_delta_total": sum(row["bibl_delta"] for row in per_pdf),
