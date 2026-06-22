@@ -7,9 +7,9 @@ Scope: extraction and evaluation deterministic surface.
 | Old runtime path | Canonical runtime path | Archive path |
 |---|---|---|
 | `src/arxiv_archive/dspy_extraction.py` | `src/research_graph/infrastructure/evaluation/dspy_extraction.py` | `archive/package-rename-waves/wave-13/src/arxiv_archive/dspy_extraction.py` |
-| `src/arxiv_archive/extraction_benchmark.py` | `src/research_graph/infrastructure/evaluation/extraction_benchmark.py` | `archive/package-rename-waves/wave-13/src/arxiv_archive/extraction_benchmark.py` |
+| `src/arxiv_archive/extraction_benchmark.py` | `src/research_graph/application/extraction_benchmark.py` | `archive/package-rename-waves/wave-13/src/arxiv_archive/extraction_benchmark.py` |
 | `src/arxiv_archive/scientific_extraction.py` | `src/research_graph/infrastructure/evaluation/scientific_extraction.py` | `archive/package-rename-waves/wave-13/src/arxiv_archive/scientific_extraction.py` |
-| `src/arxiv_archive/evaluation.py` | `src/research_graph/infrastructure/evaluation/metrics.py` (renamed to avoid module/package shadowing) | `archive/package-rename-waves/wave-13/src/arxiv_archive/evaluation.py` |
+| `src/arxiv_archive/evaluation.py` | `src/research_graph/infrastructure/evaluation/evaluation_metrics.py` (renamed in M105 S06 — original `metrics.py` caused shadowing with package) | `archive/package-rename-waves/wave-13/src/arxiv_archive/evaluation.py` |
 
 ## Verification Notes
 

@@ -328,10 +328,10 @@ def test_wave_11_archives_quality_package_without_runtime_shims() -> None:
 
 def test_wave_13_archives_extraction_and_evaluation_without_runtime_shims() -> None:
     moves = {
-        "dspy_extraction.py": "src/research_graph.infrastructure.evaluation.dspy_extraction.py",
-        "extraction_benchmark.py": "src/research_graph.application.extraction_benchmark.py",
-        "scientific_extraction.py": "src/research_graph.infrastructure.evaluation.scientific_extraction.py",
-        "evaluation.py": "src/research_graph.infrastructure.evaluation.evaluation_metrics.py",
+        "dspy_extraction.py": "src/research_graph/infrastructure/evaluation/dspy_extraction.py",
+        "extraction_benchmark.py": "src/research_graph/application/extraction_benchmark.py",
+        "scientific_extraction.py": "src/research_graph/infrastructure/evaluation/scientific_extraction.py",
+        "evaluation.py": "src/research_graph/infrastructure/evaluation/evaluation_metrics.py",
     }
     manifest = Path("archive/package-rename-waves/wave-13/manifest.md").read_text(encoding="utf-8")
 
@@ -439,7 +439,9 @@ def test_wave_15_archives_external_clients_without_runtime_shims() -> None:
     assert importlib.import_module("research_graph.infrastructure.corpus.sources.arxiv_client")
     assert importlib.import_module("research_graph.infrastructure.corpus.sources.semantic_scholar")
     assert importlib.import_module("research_graph.infrastructure.graph.ladybug_client")
-    assert importlib.import_module("research_graph.infrastructure.ops.notifications.telegram_sender")
+    assert importlib.import_module(
+        "research_graph.infrastructure.ops.notifications.telegram_sender"
+    )
 
 
 def test_wave_16_archives_validation_batch_workflow_without_runtime_shims() -> None:
@@ -575,6 +577,10 @@ def test_wave_20_retires_src_arxiv_archive_completely() -> None:
     assert importlib.import_module("research_graph.infrastructure.evaluation.analytics")
     assert importlib.import_module("research_graph.infrastructure.repair.chunk_repair_contract")
     assert importlib.import_module("research_graph.infrastructure.repair.chunk_import_contract")
-    assert importlib.import_module("research_graph.infrastructure.repair.chunk_baseline_measurement")
+    assert importlib.import_module(
+        "research_graph.infrastructure.repair.chunk_baseline_measurement"
+    )
     assert importlib.import_module("research_graph.infrastructure.llm.models_registry")
-    assert importlib.import_module("research_graph.infrastructure.corpus.sources.thirty_paper_deviation_scan")
+    assert importlib.import_module(
+        "research_graph.infrastructure.corpus.sources.thirty_paper_deviation_scan"
+    )
