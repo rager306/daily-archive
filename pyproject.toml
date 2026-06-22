@@ -57,6 +57,29 @@ ignore = ["E501"]
 # The custom AST guard is the authoritative layer enforcer; TID stays selected
 # for its other tidy-import checks.
 
+[tool.pyrefly]
+# Pyrefly type checker (https://pyrefly.org/) configuration.
+# Dev dep: pyrefly>=0.1.0 (M107)
+# Baseline captured: see .gsd/milestones/M107-5vo7wx/
+
+project-includes = [
+    "src/research_graph/**/*.py",
+    "tests/**/*.py",
+    "scripts/**/*.py",
+]
+
+# Match project python version (per .python-version: 3.13)
+python-version = "3.13"
+
+# Project excludes: legacy archives, build artifacts, .venv, egg-info
+project-excludes = [
+    "archive/**",
+    "**/__pycache__/**",
+    "**/.venv/**",
+    "**/*.egg-info/**",
+    "src/arxiv_daily_archive.egg-info/**",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
