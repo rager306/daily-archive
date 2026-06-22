@@ -15,8 +15,8 @@ from dataclasses import asdict, replace
 from pathlib import Path
 from typing import Any
 
-from research_graph.corpus.ingestion.loader import load_article_source
-from research_graph.corpus.sources.thirty_paper_deviation_scan import (
+from research_graph.infrastructure.corpus.ingestion.loader import load_article_source
+from research_graph.infrastructure.corpus.sources.thirty_paper_deviation_scan import (
     build_thirty_paper_deviation_scan,
 )
 from research_graph.workflows.validation.batch_state import (

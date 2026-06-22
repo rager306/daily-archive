@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Annotated, Any
 
 import typer
 
-from research_graph.papers.artifacts.batch_validation import run_article_batch_validation_report
+from research_graph.infrastructure.papers.artifacts.batch_validation import (
+    run_article_batch_validation_report,
+)
 from research_graph.workflows.validation.batch_provenance import (
     build_artifact_freshness_report,
     read_validation_cli_provenance_log,

@@ -11,7 +11,7 @@ from adaptix import Retort
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from research_graph.papers.evidence import (
+from research_graph.infrastructure.papers.evidence import (
     ALLOWED_LOAD_OUTCOMES,
     ALLOWED_SUBTREE_STATUSES,
     ARTICLE_EVIDENCE_BUNDLE_SCHEMA_VERSION,
@@ -266,7 +266,7 @@ def test_placeholder_subtrees_and_metrics_survive_json_roundtrip(
 def test_retrieval_table_attachment_preserves_required_subtrees_and_aggregate_only_contract(
     bundle: ArticleEvidenceBundle, include_manifest_provenance: bool
 ) -> None:
-    from research_graph.papers.indexing.retrieval_tables import (
+    from research_graph.infrastructure.papers.indexing.retrieval_tables import (
         build_article_retrieval_table_manifest,
     )
 

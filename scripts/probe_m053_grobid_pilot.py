@@ -335,7 +335,7 @@ def build_summary(
     max_retries: int,
     timeout: int,
 ) -> dict[str, Any]:
-    counts: dict[str, int] = {status: 0 for status in sorted(VALID_STATUSES)}
+    counts: dict[str, int] = dict.fromkeys(sorted(VALID_STATUSES), 0)
     for packet in packets:
         status = str(packet.get("status", "network_error"))
         counts[status] = counts.get(status, 0) + 1

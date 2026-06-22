@@ -3,7 +3,6 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
-from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -170,7 +169,7 @@ def _evidence() -> dict[str, Any]:
             "vectors_included": False,
             "secrets_included": False,
         },
-        "safety_flags": {key: False for key in REQUIRED_FALSE_FLAGS},
+        "safety_flags": dict.fromkeys(REQUIRED_FALSE_FLAGS, False),
         "safe_closeout_wording": [
             "M029 validation is blocked pending M030 completion and M030-derived M029 replan proof.",
             "No requirement is validated by this remediation dossier.",

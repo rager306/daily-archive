@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
-from research_graph.corpus.sources.semantic_scholar import (
+from research_graph.infrastructure.corpus.sources.semantic_scholar import (
     SemanticScholarClient,
     SemanticScholarPaper,
 )

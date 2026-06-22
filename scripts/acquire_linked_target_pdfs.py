@@ -31,7 +31,6 @@ import argparse
 import datetime
 import hashlib
 import json
-import os
 import sys
 import time
 import urllib.error
@@ -257,7 +256,7 @@ def acquire_all(
     completed_at = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
 
     # Aggregate stats.
-    counts: dict[str, int] = {status: 0 for status in VALID_STATUSES}
+    counts: dict[str, int] = dict.fromkeys(VALID_STATUSES, 0)
     for entry in log_entries:
         counts[entry.get("status", "unknown")] = counts.get(entry.get("status", "unknown"), 0) + 1
 

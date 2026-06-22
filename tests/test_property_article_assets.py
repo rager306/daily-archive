@@ -9,7 +9,7 @@ from typing import Any
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from research_graph.papers.assets import (
+from research_graph.infrastructure.papers.assets import (
     ALLOWED_ASSET_TYPES,
     ARTICLE_ASSET_MANIFEST_SCHEMA_VERSION,
     build_article_asset_manifest,

@@ -1,4 +1,4 @@
-"""LadybugAdapter — wraps :mod:`research_graph.graph.ladybug_client` behind
+"""LadybugAdapter — wraps :mod:`research_graph.infrastructure.graph.ladybug_client` behind
 :class:`~research_graph.domain.ports.GraphDBPort` (D086).
 
 This is a THIN adapter (Ponytail): it owns the LadybugDB connection and
@@ -22,7 +22,7 @@ from typing import Any
 from research_graph.domain.navigation import PageIndexDocument
 from research_graph.domain.schema import ExtractionPatch
 from research_graph.domain.semantic_chunks import EvidencePath, SemanticChunk
-from research_graph.graph import ladybug_client
+from research_graph.infrastructure.graph import ladybug_client
 
 
 class LadybugAdapter:

@@ -4,8 +4,8 @@ import json
 from copy import deepcopy
 from pathlib import Path
 
-from research_graph.corpus.ingestion.loader import load_article_source
-from research_graph.papers.artifacts.models import (
+from research_graph.infrastructure.corpus.ingestion.loader import load_article_source
+from research_graph.infrastructure.papers.artifacts.models import (
     ARTICLE_ARTIFACT_DIAGNOSTICS_SCHEMA_VERSION,
     ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION,
     ARTICLE_ARTIFACT_SCHEMA_VERSION,

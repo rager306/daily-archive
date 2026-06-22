@@ -259,7 +259,7 @@ def test_article_artifacts_detect_does_not_require_adjacent_expected_manifest(
 
 
 def _helper_tool_response(tmp_path: Path) -> Path:
-    from research_graph.papers.artifacts.minimax_boundary import (
+    from research_graph.infrastructure.papers.artifacts.minimax_boundary import (
         build_article_artifact_minimax_request,
     )
 

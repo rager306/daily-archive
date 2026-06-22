@@ -1,0 +1,23 @@
+"""Structure-aware paper chunking package."""
+
+from research_graph.infrastructure.papers.chunking.chunker import (  # noqa: F401
+    ChunkAnnotationSidecar,
+    RouteEligibility,
+    SourceSpan,
+    StructuralElement,
+    StructureAwareChunk,
+    StructureAwareMeasurement,
+    StructureAwarePackage,
+    StructureAwareRunResult,
+    build_structure_aware_package_for_paper,
+    empty_structure_aware_package,
+    main,
+    measure_structure_aware_manifest,
+    parse_markdown_structure,
+    write_structure_aware_run,
+)
+from research_graph.infrastructure.papers.chunking.figure_units import (  # noqa: F401
+    is_equation_block,
+    is_figure_block,
+)
+from research_graph.infrastructure.papers.chunking.table_units import is_table_block  # noqa: F401

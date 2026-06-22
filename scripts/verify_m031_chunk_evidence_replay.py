@@ -19,8 +19,8 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from research_graph.graph.readiness.review import validate_review_artifacts
-from research_graph.repair.chunk_import_contract import (
+from research_graph.infrastructure.graph.readiness.review import validate_review_artifacts
+from research_graph.infrastructure.repair.chunk_import_contract import (
     validate_import_ready_package,
     validation_to_dict,
 )

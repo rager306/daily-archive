@@ -75,7 +75,7 @@ def load_packets(summary: dict[str, Any], per_pdf_dir: Path) -> list[dict[str, A
 
 
 def count_statuses(packets: list[dict[str, Any]]) -> dict[str, int]:
-    counts = {status: 0 for status in STATUS_ORDER}
+    counts = dict.fromkeys(STATUS_ORDER, 0)
     for packet in packets:
         status = str(packet.get("status", "unknown"))
         counts[status] = counts.get(status, 0) + 1

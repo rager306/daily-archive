@@ -10,8 +10,10 @@ from adaptix import Retort
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from research_graph.papers.artifacts.models import REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION
-from research_graph.papers.indexing.page_index import (
+from research_graph.infrastructure.papers.artifacts.models import (
+    REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION,
+)
+from research_graph.infrastructure.papers.indexing.page_index import (
     ALLOWED_PAGE_INDEX_COORDINATE_SPACES,
     ALLOWED_PAGE_INDEX_SECTION_TYPES,
     ARTICLE_PAGE_INDEX_SCHEMA_VERSION,

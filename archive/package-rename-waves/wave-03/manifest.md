@@ -6,9 +6,9 @@ Moved paper indexing/retrieval contract modules from top-level `arxiv_archive` i
 
 | Old runtime path | New canonical path |
 |---|---|
-| `src/arxiv_archive/article_links_dedup.py` | `src/research_graph/papers/indexing/links_dedup.py` |
-| `src/arxiv_archive/article_page_index.py` | `src/research_graph/papers/indexing/page_index.py` |
-| `src/arxiv_archive/article_retrieval_tables.py` | `src/research_graph/papers/indexing/retrieval_tables.py` |
+| `src/arxiv_archive/article_links_dedup.py` | `src/research_graph/infrastructure/papers/indexing/links_dedup.py` |
+| `src/arxiv_archive/article_page_index.py` | `src/research_graph/infrastructure/papers/indexing/page_index.py` |
+| `src/arxiv_archive/article_retrieval_tables.py` | `src/research_graph/infrastructure/papers/indexing/retrieval_tables.py` |
 
 ## Archive policy
 

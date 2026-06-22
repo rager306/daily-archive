@@ -9,7 +9,7 @@ from typing import Any
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from research_graph.papers.indexing.links_dedup import (
+from research_graph.infrastructure.papers.indexing.links_dedup import (
     ALLOWED_DEDUP_DECISIONS,
     ALLOWED_METADATA_SIGNAL_TYPES,
     ALLOWED_STRUCTURAL_RELATIONSHIPS,

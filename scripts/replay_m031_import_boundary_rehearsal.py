@@ -16,7 +16,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from research_graph.staging.import_boundary import (
+from research_graph.infrastructure.staging.import_boundary import (
     build_m031_import_boundary_rehearsal,
     validate_import_boundary_rehearsal,
 )

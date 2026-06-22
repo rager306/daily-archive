@@ -15,6 +15,7 @@ import hashlib
 import json
 import sys
 from collections.abc import Iterable, Mapping
+from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -459,7 +460,7 @@ def file_hashes(paths: Iterable[Path]) -> dict[str, str | None]:
 
 
 def build_provenance(args: argparse.Namespace, article_paths: list[tuple[str, Path]], *, exit_code: int, duration_ms: int) -> dict[str, Any]:
-    outputs = [args.summary, args.diagnostics, args.report]
+    _outputs = [args.summary, args.diagnostics, args.report]
     hashable_outputs = [args.diagnostics, args.report]
     return {
         "schema_version": SCHEMA_VERSION,

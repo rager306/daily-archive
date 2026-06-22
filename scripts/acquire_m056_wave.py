@@ -127,7 +127,7 @@ def _normalize_category(primary_category: str | None) -> str:
 
 def _fetch_arxiv_categories(arxiv_ids: list[str], *, timeout: int) -> dict[str, str]:
     """Best-effort arXiv API category lookup; failures fall back to mixed-source."""
-    categories = {arxiv_id: "mixed-source" for arxiv_id in arxiv_ids}
+    categories = dict.fromkeys(arxiv_ids, "mixed-source")
     if not arxiv_ids:
         return categories
     query = urllib.parse.urlencode({"id_list": ",".join(arxiv_ids), "max_results": str(len(arxiv_ids))})

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from research_graph.corpus.sources.thirty_paper_deviation_scan import (
+from research_graph.infrastructure.corpus.sources.thirty_paper_deviation_scan import (
     build_thirty_paper_deviation_scan,
     write_thirty_paper_deviation_run,
 )

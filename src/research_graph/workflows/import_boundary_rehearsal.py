@@ -2,13 +2,13 @@
 
 """Compatibility shim for negative import-boundary rehearsal helpers.
 
-Implementation ownership moved to :mod:`research_graph.staging.import_boundary`.
+Implementation ownership moved to :mod:`research_graph.infrastructure.staging.import_boundary`.
 Keep this module so existing public imports continue to work.
 """
 
 from __future__ import annotations
 
-from research_graph.staging.import_boundary import (
+from research_graph.infrastructure.staging.import_boundary import (
     FORBIDDEN_EMBEDDING_FIELDS,
     FORBIDDEN_OPTIMIZER_FIELDS,
     FORBIDDEN_RAW_FIELDS,

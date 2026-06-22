@@ -20,9 +20,9 @@ from typing import Any, cast
 import ladybug
 import pytest
 
-import research_graph.graph.ladybug_client as ladybug_client
+import research_graph.infrastructure.graph.ladybug_client as ladybug_client
 from research_graph.domain.semantic_chunks import EvidencePath
-from research_graph.graph.ladybug_client import evidence_path_id
+from research_graph.infrastructure.graph.ladybug_client import evidence_path_id
 from tests.test_ladybug_scientific_kg import build_fixture_patch
 from tests.test_rlm_workflow import build_valid_inputs
 
@@ -174,7 +174,9 @@ def test_public_contract_compares_rlm_graph_traversal_against_all_baselines(
     scattered_fixture: ScatteredFixture,
 ) -> None:
     """Facade returns typed RLM trajectory plus per-baseline ID-only metrics."""
-    from research_graph.retrieval.hybrid import InMemoryVectorCandidateIndex  # noqa: PLC0415
+    from research_graph.infrastructure.retrieval.hybrid import (
+        InMemoryVectorCandidateIndex,  # noqa: PLC0415
+    )
     from research_graph.workflows.rlm.graph_traversal import (  # noqa: PLC0415 - planned S10 API
         RLMGraphTraversalConfig,
         RLMGraphTraversalPolicy,
@@ -256,7 +258,9 @@ def test_public_contract_compares_rlm_graph_traversal_against_all_baselines(
 
 def test_diagnostics_and_reprs_are_text_safe(scattered_fixture: ScatteredFixture) -> None:
     """Diagnostics expose IDs/counts/statuses/scores but never text, vectors, or traces."""
-    from research_graph.retrieval.hybrid import InMemoryVectorCandidateIndex  # noqa: PLC0415
+    from research_graph.infrastructure.retrieval.hybrid import (
+        InMemoryVectorCandidateIndex,  # noqa: PLC0415
+    )
     from research_graph.workflows.rlm.graph_traversal import (  # noqa: PLC0415 - planned S10 API
         RLMGraphTraversalConfig,
         RLMGraphTraversalQuestion,
@@ -324,7 +328,9 @@ def test_diagnostics_and_reprs_are_text_safe(scattered_fixture: ScatteredFixture
 
 def test_empty_seeds_are_rejected_before_traversal(scattered_fixture: ScatteredFixture) -> None:
     """Traversal without seed chunks/evidence should fail closed with an ID-only error."""
-    from research_graph.retrieval.hybrid import InMemoryVectorCandidateIndex  # noqa: PLC0415
+    from research_graph.infrastructure.retrieval.hybrid import (
+        InMemoryVectorCandidateIndex,  # noqa: PLC0415
+    )
     from research_graph.workflows.rlm.graph_traversal import (  # noqa: PLC0415 - planned S10 API
         RLMGraphTraversalConfig,
         RLMGraphTraversalQuestion,
@@ -357,7 +363,9 @@ def test_zero_traversal_budget_returns_budget_exhaustion_diagnostic(
     scattered_fixture: ScatteredFixture,
 ) -> None:
     """A zero step budget should not silently masquerade as successful traversal."""
-    from research_graph.retrieval.hybrid import InMemoryVectorCandidateIndex  # noqa: PLC0415
+    from research_graph.infrastructure.retrieval.hybrid import (
+        InMemoryVectorCandidateIndex,  # noqa: PLC0415
+    )
     from research_graph.workflows.rlm.graph_traversal import (  # noqa: PLC0415 - planned S10 API
         RLMGraphTraversalConfig,
         RLMGraphTraversalQuestion,
@@ -395,7 +403,9 @@ def test_missing_expected_evidence_path_ids_are_reported_text_safely(
     scattered_fixture: ScatteredFixture,
 ) -> None:
     """Missing expected EvidencePath IDs should remain explicit metric diagnostics."""
-    from research_graph.retrieval.hybrid import InMemoryVectorCandidateIndex  # noqa: PLC0415
+    from research_graph.infrastructure.retrieval.hybrid import (
+        InMemoryVectorCandidateIndex,  # noqa: PLC0415
+    )
     from research_graph.workflows.rlm.graph_traversal import (  # noqa: PLC0415 - planned S10 API
         RLMGraphTraversalConfig,
         RLMGraphTraversalQuestion,
@@ -431,7 +441,9 @@ def test_duplicate_candidate_returns_are_deduplicated_and_diagnosed(
     scattered_fixture: ScatteredFixture,
 ) -> None:
     """Duplicate vector candidates must not inflate recall or evidence hit rate."""
-    from research_graph.retrieval.hybrid import InMemoryVectorCandidateIndex  # noqa: PLC0415
+    from research_graph.infrastructure.retrieval.hybrid import (
+        InMemoryVectorCandidateIndex,  # noqa: PLC0415
+    )
     from research_graph.workflows.rlm.graph_traversal import (  # noqa: PLC0415 - planned S10 API
         RLMGraphTraversalConfig,
         RLMGraphTraversalQuestion,
@@ -472,7 +484,9 @@ def test_no_neighborhood_graph_traversal_returns_empty_neighborhood_status(
     scattered_fixture: ScatteredFixture,
 ) -> None:
     """Seeds with no graph neighborhood should return a deterministic stop reason."""
-    from research_graph.retrieval.hybrid import InMemoryVectorCandidateIndex  # noqa: PLC0415
+    from research_graph.infrastructure.retrieval.hybrid import (
+        InMemoryVectorCandidateIndex,  # noqa: PLC0415
+    )
     from research_graph.workflows.rlm.graph_traversal import (  # noqa: PLC0415 - planned S10 API
         RLMGraphTraversalConfig,
         RLMGraphTraversalQuestion,
@@ -509,7 +523,9 @@ def test_comparison_is_read_only_and_makes_no_adoption_recommendation(
     scattered_fixture: ScatteredFixture,
 ) -> None:
     """The comparison facade reports fixture metrics only and does not mutate inputs."""
-    from research_graph.retrieval.hybrid import InMemoryVectorCandidateIndex  # noqa: PLC0415
+    from research_graph.infrastructure.retrieval.hybrid import (
+        InMemoryVectorCandidateIndex,  # noqa: PLC0415
+    )
     from research_graph.workflows.rlm.graph_traversal import (  # noqa: PLC0415 - planned S10 API
         RLMGraphTraversalConfig,
         RLMGraphTraversalQuestion,
@@ -564,7 +580,9 @@ def test_invalid_query_vector_and_empty_candidate_index_are_typed_diagnostics(
     scattered_fixture: ScatteredFixture,
 ) -> None:
     """Invalid vector dimensions should not hide graph/error diagnostics."""
-    from research_graph.retrieval.hybrid import InMemoryVectorCandidateIndex  # noqa: PLC0415
+    from research_graph.infrastructure.retrieval.hybrid import (
+        InMemoryVectorCandidateIndex,  # noqa: PLC0415
+    )
     from research_graph.workflows.rlm.graph_traversal import (  # noqa: PLC0415 - planned S10 API
         RLMGraphTraversalConfig,
         RLMGraphTraversalQuestion,

@@ -6,7 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from research_graph.repair.bounded_chunk_repair import build_bounded_chunk_repair_contract
+from research_graph.infrastructure.repair.bounded_chunk_repair import (
+    build_bounded_chunk_repair_contract,
+)
 from research_graph.workflows.review_packet_prototype import (
     build_reviewer_packet_prototype,
     render_reviewer_packet_markdown,

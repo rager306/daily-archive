@@ -5,9 +5,9 @@ application or infrastructure packages.
 The domain layer (``src/research_graph/domain/`` plus the pure typed-model
 packages it depends on) is the innermost onion ring. Per D086 / doc/onion-layers.md,
 it may import only the stdlib, ``research_graph.evaluation``,
-``research_graph.papers``, and ``research_graph.domain.*``. Any import of an
+``research_graph.infrastructure.papers``, and ``research_graph.domain.*``. Any import of an
 application (``research_graph.application``) or infrastructure
-(``research_graph.graph``/``corpus``/``llm``/``infrastructure``/...) package is a
+(``research_graph.infrastructure.graph``/``corpus``/``llm``/``infrastructure``/...) package is a
 layering violation.
 
 This guard AST-scans the domain directory and fails (exit 1) on the first
@@ -38,15 +38,15 @@ LAYER_ROOTS: dict[str, Path] = {
 # next ring out and may import domain but NOT infrastructure.
 INFRA_PREFIXES: tuple[str, ...] = (
     "research_graph.infrastructure",  # adapters
-    "research_graph.graph",  # drivers
-    "research_graph.corpus",  # sources / ingestion / parsing
+    "research_graph.infrastructure.graph",  # drivers
+    "research_graph.infrastructure.corpus",  # sources / ingestion / parsing
     "research_graph.infrastructure.llm",  # LLM drivers (moved M105 wave 1)
-    "research_graph.retrieval",  # embedder / keyword extractor
+    "research_graph.infrastructure.retrieval",  # embedder / keyword extractor
     "research_graph.infrastructure.identity",
     "research_graph.infrastructure.quality",
-    "research_graph.repair",
-    "research_graph.staging",
-    "research_graph.ops",
+    "research_graph.infrastructure.repair",
+    "research_graph.infrastructure.staging",
+    "research_graph.infrastructure.ops",
     "research_graph.workflows",  # entry / wiring
     "research_graph.cli",  # entry
 )

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from research_graph.papers.artifacts.minimax_boundary import (
+from research_graph.infrastructure.papers.artifacts.minimax_boundary import (
     MINIMAX_ARTIFACT_HELPER_SCHEMA_VERSION,
     MINIMAX_ARTIFACT_HELPER_TOOL_NAME,
     build_article_artifact_minimax_request,

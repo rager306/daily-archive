@@ -4,13 +4,13 @@ import json
 from pathlib import Path
 
 from research_graph.infrastructure.identity.canonicalization import canonical_source_id
-from research_graph.papers.chunking.chunker import parse_markdown_structure
-from research_graph.papers.source_assets.registry import (
+from research_graph.infrastructure.papers.chunking.chunker import parse_markdown_structure
+from research_graph.infrastructure.papers.source_assets.registry import (
     attach_annotation_asset_links,
     preserve_source_assets_for_paper,
     validate_source_asset_manifest,
 )
-from research_graph.staging.graph_candidates import (
+from research_graph.infrastructure.staging.graph_candidates import (
     DEFAULT_ROUTE_SPECS,
     LocatorSource,
     build_candidate_locator_artifact,

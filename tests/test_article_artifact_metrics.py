@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from research_graph.papers.artifacts.metrics import (
+from research_graph.infrastructure.papers.artifacts.metrics import (
     ARTICLE_ARTIFACT_BENCHMARK_REPORT_SCHEMA_VERSION,
     ARTICLE_ARTIFACT_METRICS_SCHEMA_VERSION,
     build_article_artifact_benchmark_report,
@@ -15,7 +15,7 @@ from research_graph.papers.artifacts.metrics import (
     render_article_artifact_benchmark_markdown,
     write_article_artifact_benchmark_report,
 )
-from research_graph.papers.artifacts.models import validate_article_artifact_manifest
+from research_graph.infrastructure.papers.artifacts.models import validate_article_artifact_manifest
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_artifacts"
 

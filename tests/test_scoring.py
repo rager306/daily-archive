@@ -2,9 +2,9 @@
 
 from datetime import date, timedelta
 
-from research_graph.corpus.sources.arxiv_client import ArxivPaper
-from research_graph.corpus.sources.semantic_scholar import SemanticScholarPaper
-from research_graph.evaluation.scoring import ScoredPaper, ScoringEngine
+from research_graph.infrastructure.corpus.sources.arxiv_client import ArxivPaper
+from research_graph.infrastructure.corpus.sources.semantic_scholar import SemanticScholarPaper
+from research_graph.infrastructure.evaluation.scoring import ScoredPaper, ScoringEngine
 
 
 class TestScoredPaperDataclass:

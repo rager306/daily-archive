@@ -10,10 +10,13 @@ from typing import Any
 
 import pytest
 
-from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
 from research_graph.domain.semantic_chunks import EvidencePath, SemanticChunk
-from research_graph.papers.indexing import PageIndexDocument, build_page_index
-from research_graph.papers.semantic_chunks import build_evidence_path, build_semantic_chunks
+from research_graph.infrastructure.corpus.ingestion import FullTextSource, ingest_full_text
+from research_graph.infrastructure.papers.indexing import PageIndexDocument, build_page_index
+from research_graph.infrastructure.papers.semantic_chunks import (
+    build_evidence_path,
+    build_semantic_chunks,
+)
 from research_graph.workflows.rlm.workflow import (
     REDUCER_SCHEMA_VERSION,
     WorkflowResult,

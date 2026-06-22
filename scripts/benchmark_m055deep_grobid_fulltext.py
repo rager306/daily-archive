@@ -13,7 +13,6 @@ import argparse
 import datetime as dt
 import hashlib
 import json
-import sys
 import time
 import urllib.error
 import urllib.request
@@ -343,7 +342,7 @@ def _build_summary(
     grobid_url: str,
     packets: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    counts = {status: 0 for status in AGGREGATE_STATUSES}
+    counts = dict.fromkeys(AGGREGATE_STATUSES, 0)
     for packet in packets:
         status = str(packet.get("status", "blocked"))
         counts[status] = counts.get(status, 0) + 1

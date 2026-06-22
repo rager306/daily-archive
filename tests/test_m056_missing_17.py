@@ -107,7 +107,7 @@ def test_opendataloader_17_packets() -> None:
         "opendataloader_unavailable": 0,
         "success": 17,
     }
-    assert statuses == {arxiv_id: "success" for arxiv_id in MISSING_IDS}
+    assert statuses == dict.fromkeys(MISSING_IDS, "success")
     assert summary["safety_defaults"] == SAFETY_DEFAULTS
 
     for arxiv_id in MISSING_IDS:

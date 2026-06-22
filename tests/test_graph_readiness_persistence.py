@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from research_graph.graph.readiness.persistence import (
+from research_graph.infrastructure.graph.readiness.persistence import (
     persist_validation_subset,
     select_trusted_candidate_claims,
     selection_to_dict,

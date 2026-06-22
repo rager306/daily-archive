@@ -26,29 +26,30 @@
     },
     "evidence": {
       "evidence": [
-        ".gsd/milestones/M062-b4porb/M062-b4porb-SUMMARY.md",
         ".gsd/milestones/M099-bpeq8b/M099-bpeq8b-SUMMARY.md",
-        ".gsd/milestones/M103-6tip5z/M103-6tip5z-SUMMARY.md"
+        ".gsd/milestones/M103-6tip5z/M103-6tip5z-SUMMARY.md",
+        ".gsd/milestones/M104-q9tft1/M104-q9tft1-SUMMARY.md"
       ],
       "flags": [],
       "status": "tracked"
     },
     "extraction_coverage": {
       "evidence": [
-        "Core-then-Modes pipeline designed (ADR-029)",
-        "No extraction runs yet"
+        "Core-then-Modes pipeline implemented (application/, ADR-029/033)",
+        "M103 S03 prototype: 40 TypedEntity + 6 TypedRelation via MiniMax (arXiv:2605.18747 chunks)",
+        "entity recall ~1.0; relation precision low (raw, pre-DSPy)"
       ],
       "flags": [],
-      "status": "not_started"
+      "status": "prototype_done"
     },
     "falkordb_migration": {
       "evidence": [
         "ADR-022 FalkorDB binding",
         "ADR-030 schema designed",
-        "LadybugDB still in use"
+        "GraphDBPort + LadybugAdapter ready (M104): FalkorDB = new Adapter, not rewrite"
       ],
       "flags": [],
-      "status": "not_started"
+      "status": "port_ready"
     },
     "functionality": {
       "evidence": [
@@ -70,7 +71,7 @@
     },
     "module_code": {
       "evidence": [
-        "git_changed_files=134"
+        "git_changed_files=229"
       ],
       "flags": [
         "uncommitted_changes_present"
@@ -101,8 +102,10 @@
         "src/research_graph/domain/ (rule: no_infra_import_in_domain, anchor: ADR-034 (Hexagonal/Onion overlay), D086)",
         "src/research_graph/application/ (rule: no_concrete_infra_import_in_application, anchor: ADR-034 (Hexagonal/Onion overlay), D086)"
       ],
-      "flags": [],
-      "status": "clear"
+      "flags": [
+        "no_anthropic_sdk_outside_llm"
+      ],
+      "status": "violations"
     },
     "safety": {
       "evidence": [
@@ -114,11 +117,12 @@
     "schema_readiness": {
       "evidence": [
         "ADR-028 typed schema",
+        "domain/schema.py canonical home (M104)",
         "27 relation types",
         "5 modules A-E"
       ],
       "flags": [],
-      "status": "design_accepted"
+      "status": "implemented"
     },
     "universal_sources": {
       "evidence": [
@@ -132,20 +136,26 @@
   },
   "drift_flags": [
     {
-      "evidence": "M103-6tip5z",
+      "evidence": "M104-q9tft1",
       "flag": "latest_milestone_missing_readme_reference",
       "severity": "medium"
     },
     {
-      "evidence": "134 files",
+      "evidence": "229 files",
       "flag": "uncommitted_changes_present",
       "severity": "info"
+    },
+    {
+      "evidence": "src/research_graph/infrastructure/llm/summarizer.py:9",
+      "flag": "reverse_adr_audit_no_anthropic_sdk_outside_llm",
+      "severity": "medium",
+      "snippet": ""
     }
   ],
   "graph_write_allowed": false,
   "import_eligible": false,
   "next_actions": [
-    "Update README with latest milestone M103-6tip5z interpretation.",
+    "Update README with latest milestone M104-q9tft1 interpretation.",
     "Run focused verification and commit or intentionally leave a handoff."
   ],
   "phase": "preflight",
@@ -204,20 +214,13 @@
       }
     },
     "latest_milestone": {
-      "id": "M103-6tip5z",
+      "id": "M104-q9tft1",
       "mentions_no_import": false,
-      "path": ".gsd/milestones/M103-6tip5z/M103-6tip5z-SUMMARY.md",
+      "path": ".gsd/milestones/M104-q9tft1/M104-q9tft1-SUMMARY.md",
       "status": "complete",
-      "title": "Typed schema and pipeline implementation"
+      "title": "Hexagonal Foundation"
     },
     "recent_milestones": [
-      {
-        "id": "M054-proc4f",
-        "mentions_no_import": false,
-        "path": ".gsd/milestones/M054-proc4f/M054-proc4f-SUMMARY.md",
-        "status": "complete",
-        "title": "M054 Parser Hybrid Benchmark on 5 M051 PDFs"
-      },
       {
         "id": "M055-kyxuqm",
         "mentions_no_import": false,
@@ -252,6 +255,13 @@
         "path": ".gsd/milestones/M103-6tip5z/M103-6tip5z-SUMMARY.md",
         "status": "complete",
         "title": "Typed schema and pipeline implementation"
+      },
+      {
+        "id": "M104-q9tft1",
+        "mentions_no_import": false,
+        "path": ".gsd/milestones/M104-q9tft1/M104-q9tft1-SUMMARY.md",
+        "status": "complete",
+        "title": "Hexagonal Foundation"
       }
     ],
     "requirements": {
@@ -420,8 +430,16 @@
       "src/research_graph/application/ (rule: no_concrete_infra_import_in_application, anchor: ADR-034 (Hexagonal/Onion overlay), D086)"
     ],
     "rule_count": 10,
-    "status": "clear",
-    "violations": []
+    "status": "violations",
+    "violations": [
+      {
+        "anchor": "M100 (summarizer moved to llm), ADR-025 (multi-provider)",
+        "file": "src/research_graph/infrastructure/llm/summarizer.py",
+        "line": "9",
+        "rule_id": "no_anthropic_sdk_outside_llm",
+        "snippet": ""
+      }
+    ]
   },
   "schema_version": "m101.project-trajectory.v2",
   "verdict": "drift_risk"

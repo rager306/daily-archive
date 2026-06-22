@@ -789,7 +789,7 @@ def verify(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict[str, Any
 
     expected_article_count = args.expected_article_count or selected_article_count(selection) or EXPECTED_ARTICLE_COUNT
     expected_variant_count = args.expected_variant_count or source_summary.get("variant_count") or EXPECTED_VARIANT_COUNT
-    article_refs = {str(row.get("article_ref")) for row in rows if isinstance(row, dict) and row.get("article_ref")}
+    _article_refs = {str(row.get("article_ref")) for row in rows if isinstance(row, dict) and row.get("article_ref")}
     if summary.get("article_count") != expected_article_count:
         diagnostics.append(diagnostic("article_count_mismatch", f"expected {expected_article_count} selected articles", path=args.conversion_summary, json_path="$.article_count"))
     if summary.get("variant_count") != len(rows) or len(rows) != expected_variant_count:

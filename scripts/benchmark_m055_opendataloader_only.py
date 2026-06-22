@@ -373,7 +373,7 @@ def probe_opendataloader_only(
     pdfs = _load_manifest(corpus_manifest_path)
     output_dir.mkdir(parents=True, exist_ok=True)
     per_pdf_dir = output_dir / "per-pdf"
-    aggregate_counts = {status: 0 for status in AGGREGATE_STATUSES}
+    aggregate_counts = dict.fromkeys(AGGREGATE_STATUSES, 0)
     packets: list[dict[str, Any]] = []
     retries = _bounded_retries(max_retries)
 

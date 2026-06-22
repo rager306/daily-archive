@@ -18,7 +18,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from verify_m025_article_catalog import diagnostic, parse_args, validate, write_json_atomic, write_jsonl_atomic
+from verify_m025_article_catalog import (
+    diagnostic,
+    parse_args,
+    validate,
+    write_json_atomic,
+    write_jsonl_atomic,
+)
 
 MILESTONE_ID = "M027-aakeky"
 SLICE_ID = "S01"

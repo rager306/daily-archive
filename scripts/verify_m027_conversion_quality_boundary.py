@@ -14,7 +14,7 @@ import hashlib
 import json
 import sys
 from collections import Counter, defaultdict
-from collections.abc import Iterable, Mapping
+from collections.abc import Mapping
 from pathlib import Path, PurePosixPath
 from typing import Any
 

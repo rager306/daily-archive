@@ -95,8 +95,6 @@ PARSER_EXPECTATIONS: list[dict[str, str]] = [
 ARXIV_ID_RE = re.compile(r"(?i)(?:arxiv\s*:\s*)?(\d{4}\.\d{4,5})(?:v\d+)?")
 TEI_NS = {"tei": "http://www.tei-c.org/ns/1.0"}
 EMPTY_SHA256 = hashlib.sha256(b"").hexdigest()
-
-
 @dataclass(frozen=True)
 class PipelinePaths:
     output_dir: Path
@@ -106,29 +104,19 @@ class PipelinePaths:
     graph_dir: Path
     paper_manifest_dir: Path
     parser_output_dir: Path
-
-
 def utc_now() -> str:
     return dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat()
-
-
 def read_json(path: Path) -> Any:
     return json.loads(path.read_text())
-
-
 def write_json(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
-
-
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
-
-
 def ensure_dirs(output_dir: Path) -> PipelinePaths:
     paths = PipelinePaths(
         output_dir=output_dir,
@@ -149,22 +137,16 @@ def ensure_dirs(output_dir: Path) -> PipelinePaths:
     ):
         directory.mkdir(parents=True, exist_ok=True)
     return paths
-
-
 def display_path(path: Path) -> str:
     try:
         return str(path.relative_to(ROOT))
     except ValueError:
         return str(path)
-
-
 def normalize_arxiv_id(value: str | None) -> str | None:
     if not value:
         return None
     match = ARXIV_ID_RE.search(value)
     return match.group(1) if match else None
-
-
 def index_tei_files(root: Path = M056_ROOT) -> dict[str, Path]:
     index: dict[str, Path] = {}
     for path in root.rglob("*.tei.xml"):
@@ -172,8 +154,6 @@ def index_tei_files(root: Path = M056_ROOT) -> dict[str, Path]:
         if normalize_arxiv_id(arxiv_id):
             index[arxiv_id] = path
     return index
-
-
 def index_grobid_json(root: Path = M056_ROOT) -> dict[str, Path]:
     index: dict[str, Path] = {}
     for path in root.rglob("grobid-fulltext/per-pdf/*.json"):
@@ -185,8 +165,6 @@ def index_grobid_json(root: Path = M056_ROOT) -> dict[str, Path]:
         if arxiv_id:
             index[arxiv_id] = path
     return index
-
-
 def extract_arxiv_refs_from_tei(tei_path: Path, source_arxiv_id: str) -> list[str]:
     root = ET.parse(tei_path).getroot()
     refs: set[str] = set()
@@ -201,8 +179,6 @@ def extract_arxiv_refs_from_tei(tei_path: Path, source_arxiv_id: str) -> list[st
                 if candidate != source_arxiv_id:
                     refs.add(candidate)
     return sorted(refs)
-
-
 def load_one_hop_refs(cumulative_corpus: dict[str, Any], anchor_arxiv_id: str) -> list[str]:
     pdfs = cumulative_corpus.get("pdfs", [])
     refs = sorted({item["arxiv_id"] for item in pdfs if item.get("arxiv_id") != anchor_arxiv_id})
@@ -210,8 +186,6 @@ def load_one_hop_refs(cumulative_corpus: dict[str, Any], anchor_arxiv_id: str) -
     if expected is not None and expected != len(refs):
         raise RuntimeError(f"M056 1-hop ref count mismatch: expected {expected}, got {len(refs)}")
     return refs
-
-
 def stage_1_anchor_acquisition(cumulative_corpus: dict[str, Any], anchor_arxiv_id: str) -> dict[str, Any]:
     anchor_pdf = next((item for item in cumulative_corpus.get("pdfs", []) if item.get("arxiv_id") == anchor_arxiv_id), None)
     verified = bool(anchor_pdf and (ROOT / anchor_pdf.get("path", "")).exists())
@@ -227,8 +201,6 @@ def stage_1_anchor_acquisition(cumulative_corpus: dict[str, Any], anchor_arxiv_i
         "external_network_override": SAFETY_OVERRIDE,
         "note": "Anchor PDF was reused from M056 corpus; S01 v2 additionally authorizes scoped real arXiv acquisition.",
     }
-
-
 def stage_2_one_hop_validation(
     cumulative_corpus: dict[str, Any], candidate_edges: dict[str, Any], one_hop_refs: list[str], anchor_arxiv_id: str
 ) -> dict[str, Any]:
@@ -250,8 +222,6 @@ def stage_2_one_hop_validation(
         "extra_candidate_edge_neighbors": sorted(edge_neighbors - corpus_refs)[:25],
         "safety_defaults": SAFETY_DEFAULTS,
     }
-
-
 def stage_3_two_hop_bfs(
     one_hop_refs: list[str], tei_index: dict[str, Path], anchor_arxiv_id: str
 ) -> tuple[dict[str, Any], list[dict[str, Any]], list[str]]:
@@ -297,8 +267,6 @@ def stage_3_two_hop_bfs(
         "safety_defaults": SAFETY_DEFAULTS,
     }
     return report, edges, new_2hop_ids
-
-
 def build_manifest_item(arxiv_id: str, pdf_path: Path | None) -> dict[str, Any]:
     if pdf_path and pdf_path.exists():
         rel_path = str(pdf_path.relative_to(ROOT)) if pdf_path.is_absolute() and pdf_path.is_relative_to(ROOT) else str(pdf_path)
@@ -319,8 +287,6 @@ def build_manifest_item(arxiv_id: str, pdf_path: Path | None) -> dict[str, Any]:
         "content_sha256": content_sha256,
         "expected_parsers": PARSER_EXPECTATIONS,
     }
-
-
 def find_existing_pdf_path(grobid_json_index: dict[str, Path], arxiv_id: str) -> Path | None:
     json_path = grobid_json_index.get(arxiv_id)
     if not json_path:
@@ -329,10 +295,6 @@ def find_existing_pdf_path(grobid_json_index: dict[str, Path], arxiv_id: str) ->
     pdf_path = payload.get("pdf_path")
     if not pdf_path:
         return None
-    candidate = ROOT / pdf_path
-    return candidate if candidate.exists() else None
-
-
 class ArxivRateLimitedClient:
     """Tiny stdlib arXiv client with explicit unauthenticated API pacing."""
 
@@ -419,8 +381,6 @@ class ArxivRateLimitedClient:
             metrics["pacing_delay_seconds_total"] / metrics["pacing_delay_count"] if metrics["pacing_delay_count"] else 0.0
         )
         return metrics
-
-
 def _parse_retry_after_seconds(value: str | None) -> float | None:
     if not value:
         return None
@@ -428,21 +388,15 @@ def _parse_retry_after_seconds(value: str | None) -> float | None:
         return max(0.0, float(value.strip()))
     except ValueError:
         return None
-
-
 def plausible_arxiv_id(arxiv_id: str) -> bool:
     match = ARXIV_ID_PLAUSIBLE_RE.match(arxiv_id)
     if not match:
         return False
     month = int(match.group(2))
     return 1 <= month <= 12
-
-
 def chunked(items: list[str], size: int) -> Iterable[list[str]]:
     for index in range(0, len(items), size):
         yield items[index : index + size]
-
-
 def fetch_arxiv_metadata(client: ArxivRateLimitedClient, arxiv_ids: list[str]) -> dict[str, dict[str, str]]:
     query = urllib.parse.urlencode({"id_list": ",".join(arxiv_ids), "max_results": str(len(arxiv_ids))})
     payload = client.get_api(f"{ARXIV_API_URL}?{query}")
@@ -457,8 +411,6 @@ def fetch_arxiv_metadata(client: ArxivRateLimitedClient, arxiv_ids: list[str]) -
         title = " ".join((entry.findtext("atom:title", default="", namespaces=atom) or "").split())
         metadata[arxiv_id] = {"title": title, "api_id": id_text}
     return metadata
-
-
 def download_arxiv_pdf(client: ArxivRateLimitedClient, arxiv_id: str, pdf_dir: Path) -> tuple[Path | None, str | None]:
     pdf_dir.mkdir(parents=True, exist_ok=True)
     pdf_path = pdf_dir / f"{arxiv_id}.pdf"
@@ -470,8 +422,6 @@ def download_arxiv_pdf(client: ArxivRateLimitedClient, arxiv_id: str, pdf_dir: P
         return None, "downloaded content is not a PDF"
     pdf_path.write_bytes(pdf_bytes)
     return pdf_path, None
-
-
 def download_arxiv_eprint(client: ArxivRateLimitedClient, arxiv_id: str, source_dir: Path) -> tuple[Path | None, str | None]:
     source_dir.mkdir(parents=True, exist_ok=True)
     source_path = source_dir / f"{arxiv_id}.eprint"
@@ -483,8 +433,6 @@ def download_arxiv_eprint(client: ArxivRateLimitedClient, arxiv_id: str, source_
         return None, "downloaded e-print source is empty"
     source_path.write_bytes(source_bytes)
     return source_path, None
-
-
 def _decode_latex_bytes(payload: bytes) -> str:
     for decoder in (
         lambda data: gzip.decompress(data),
@@ -495,8 +443,6 @@ def _decode_latex_bytes(payload: bytes) -> str:
         except (OSError, EOFError, UnicodeDecodeError):
             continue
     return payload.decode("utf-8", errors="replace")
-
-
 def extract_latex_text(source_path: Path) -> str:
     payload = source_path.read_bytes()
     try:
@@ -512,14 +458,10 @@ def extract_latex_text(source_path: Path) -> str:
     except tarfile.TarError:
         pass
     return _decode_latex_bytes(payload)
-
-
 def _clean_latex_caption(caption: str) -> str:
     cleaned = re.sub(r"\\[a-zA-Z]+\*?(?:\[[^\]]*\])?", " ", caption)
     cleaned = cleaned.replace("{", " ").replace("}", " ")
     return " ".join(cleaned.split())
-
-
 def extract_tex_figure_captions(arxiv_id: str, source_path: Path | None) -> dict[str, Any]:
     if not source_path or not source_path.exists():
         return {
@@ -534,7 +476,7 @@ def extract_tex_figure_captions(arxiv_id: str, source_path: Path | None) -> dict
     if not figure_blocks:
         figure_blocks = re.findall(r"\\caption(?:\[[^\]]*\])?\{(.{1,2000}?)\}", latex_text, flags=re.DOTALL)
     figures: list[dict[str, Any]] = []
-    for idx, block in enumerate(figure_blocks, start=1):
+    for _idx, block in enumerate(figure_blocks, start=1):
         caption_match = re.search(r"\\caption(?:\[[^\]]*\])?\{(.{1,2000}?)\}", block, flags=re.DOTALL)
         caption = caption_match.group(1) if caption_match else block
         label_match = re.search(r"\\label\{([^}]+)\}", block)
@@ -562,8 +504,6 @@ def extract_tex_figure_captions(arxiv_id: str, source_path: Path | None) -> dict
         "figure_count": len(figures),
         "source_path": display_path(source_path),
     }
-
-
 def stage_4_real_arxiv_acquisition(paths: PipelinePaths, candidate_ids: list[str], max_papers: int) -> tuple[dict[str, Any], list[str], dict[str, Path]]:
     client = ArxivRateLimitedClient()
     pdf_dir = paths.acquisition_dir / "pdfs"
@@ -632,8 +572,6 @@ def stage_4_real_arxiv_acquisition(paths: PipelinePaths, candidate_ids: list[str
         "safety_defaults": SAFETY_DEFAULTS,
     }
     return report, selected_ids, pdf_paths, eprint_paths
-
-
 def _multipart_pdf_request(endpoint: str, pdf_path: Path) -> urllib.request.Request:
     boundary = f"----daily-archive-m061-{uuid.uuid4().hex}"
     pdf_bytes = pdf_path.read_bytes()
@@ -653,8 +591,6 @@ def _multipart_pdf_request(endpoint: str, pdf_path: Path) -> urllib.request.Requ
     request.add_header("Content-Length", str(len(body)))
     request.add_header("User-Agent", ARXIV_USER_AGENT)
     return request
-
-
 def post_grobid_fulltext(pdf_path: Path) -> dict[str, Any]:
     started = time.perf_counter()
     try:
@@ -677,8 +613,6 @@ def post_grobid_fulltext(pdf_path: Path) -> dict[str, Any]:
             "tei_text": "",
             "error": f"{type(exc).__name__}:{exc}",
         }
-
-
 def grobid_payload_from_result(arxiv_id: str, pdf_path: Path | None, result: dict[str, Any], tei_path: Path) -> dict[str, Any]:
     tei_text = result.get("tei_text", "")
     if tei_text:
@@ -709,15 +643,10 @@ def grobid_payload_from_result(arxiv_id: str, pdf_path: Path | None, result: dic
         "duration_seconds": result.get("duration_seconds"),
         "error": result.get("error"),
     }
-    return candidate if candidate.exists() else None
-
-
 def validate_json(schema_path: Path, payload: dict[str, Any]) -> list[str]:
     schema = read_json(schema_path)
     validator = Draft7Validator(schema)
     return [error.message for error in sorted(validator.iter_errors(payload), key=lambda item: item.path)]
-
-
 def write_parser_wrappers(
     paths: PipelinePaths,
     arxiv_id: str,
@@ -822,8 +751,6 @@ def write_parser_wrappers(
         "validation_errors": validations,
         "validation_passed": all(not errors for errors in validations.values()),
     }
-
-
 def stage_4_to_8_per_paper(
     paths: PipelinePaths,
     selected_ids: list[str],
@@ -921,8 +848,6 @@ def stage_4_to_8_per_paper(
         "safety_defaults": SAFETY_DEFAULTS,
     }
     return report, papers
-
-
 def stage_7_m3_judge(paths: PipelinePaths) -> dict[str, Any]:
     comparison_path = M060G_ROOT / "comparison.json"
     comparison = read_json(comparison_path)
@@ -947,13 +872,9 @@ def stage_7_m3_judge(paths: PipelinePaths) -> dict[str, Any]:
     }
     write_json(paths.judgments_dir / "m3-judgments.json", report)
     return report
-
-
 def validate_layer_payload(schema_path: Path, payload_path: Path) -> list[str]:
     payload = read_json(payload_path)
     return validate_json(schema_path, payload)
-
-
 def stage_9_graph_manifest(
     paths: PipelinePaths,
     bfs_edges: list[dict[str, Any]],
@@ -1020,8 +941,6 @@ def stage_9_graph_manifest(
     }
     write_json(paths.graph_dir / "5-layer-graph-manifest.json", manifest)
     return manifest
-
-
 def build_decision(summary: dict[str, Any]) -> str:
     go_new_papers = summary["two_hop_new_arxiv_id_count"] >= 100
     go_m3 = summary["m3_judge_success_rate"] >= 0.80
@@ -1074,8 +993,6 @@ def build_decision(summary: dict[str, Any]) -> str:
         "",
     ]
     return "\n".join(lines)
-
-
 def run_pilot(output_dir: Path = DEFAULT_OUTPUT_DIR, anchor_arxiv_id: str = ANCHOR_ARXIV_ID, max_papers: int = 30) -> dict[str, Any]:
     started = time.perf_counter()
     stage_timings: dict[str, float] = {}
@@ -1180,22 +1097,16 @@ def run_pilot(output_dir: Path = DEFAULT_OUTPUT_DIR, anchor_arxiv_id: str = ANCH
     decision_path.parent.mkdir(parents=True, exist_ok=True)
     decision_path.write_text(decision)
     return summary
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run M061 S01 1-anchor 2-hop BFS pilot.")
     parser.add_argument("--anchor", default=ANCHOR_ARXIV_ID)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--max-papers", type=int, default=30)
     return parser.parse_args()
-
-
 def main() -> int:
     args = parse_args()
     summary = run_pilot(output_dir=args.output_dir, anchor_arxiv_id=args.anchor, max_papers=args.max_papers)
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

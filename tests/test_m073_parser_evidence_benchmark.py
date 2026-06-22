@@ -11,7 +11,8 @@ sys.path.insert(0, str(Path("scripts").resolve()))
 sys.path.insert(0, str(Path("src").resolve()))
 
 from augment_m073_evidence_paths import augment  # noqa: E402
-from research_graph.evaluation.extraction_benchmark import evaluate_files  # noqa: E402
+
+from research_graph.application.extraction_benchmark import evaluate_files  # noqa: E402
 
 ROOT = Path("artifacts/m073-parser-evidence-benchmark")
 M072_FIXTURES = Path("artifacts/m072-reviewed-extraction-benchmark/fixtures")

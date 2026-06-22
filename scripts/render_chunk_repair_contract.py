@@ -26,7 +26,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from research_graph.repair.chunk_repair_contract import (  # noqa: E402
+from research_graph.infrastructure.repair.chunk_repair_contract import (  # noqa: E402
     build_chunk_repair_contract_from_audit,
     expected_audit_from_contract,
     render_chunk_repair_contract_markdown,

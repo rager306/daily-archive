@@ -8,7 +8,7 @@ Statistical-first (ADR-024): every LLM-calling stage is preceded by a
 deterministic statistical pre-processor. In this foundation slice:
 
 * **CPU-lane stages are real and deterministic** — they use the existing
-  :class:`~research_graph.retrieval.keyword_extractor.KeywordExtractor` (YAKE)
+  :class:`~research_graph.infrastructure.retrieval.keyword_extractor.KeywordExtractor` (YAKE)
   and simple co-occurrence, with no network and no LLM.
 * **LLM-lane stages are stubbed** — they declare the LLM boundary (Adaptix
   :class:`~adaptix.Retort` factory + ``LLMEntityOutput`` / ``LLMRelationOutput``
@@ -50,7 +50,7 @@ LLMClient = Callable[[str, dict[str, Any]], dict[str, Any]]
 
 #: Keyword-extraction callable injected into :class:`StatisticalPreProcessor`.
 #: Takes ``(text_parts, top_k)`` and returns keyword strings (YAKE-style). The
-#: concrete :class:`~research_graph.retrieval.keyword_extractor.KeywordExtractor`
+#: concrete :class:`~research_graph.infrastructure.retrieval.keyword_extractor.KeywordExtractor`
 #: is infrastructure; the application stage depends only on this callable, so
 #: the application layer never imports infrastructure (D086 onion).
 KeywordExtractorFn = Callable[[Sequence[str], int], list[str]]

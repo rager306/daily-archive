@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from research_graph.corpus.ingestion import (
+from research_graph.infrastructure.corpus.ingestion import (
     FullTextSource,
     assess_full_text_quality,
     full_text_source_for_paper,
@@ -179,8 +179,10 @@ def test_rejects_unknown_source_type_before_parsing(tmp_path: Path) -> None:
 
 
 def test_legacy_full_text_module_delegates_to_ingestion_loader() -> None:
-    from research_graph.corpus.ingestion.loader import FullTextSource as IngestionFullTextSource
-    from research_graph.corpus.ingestion.loader import (
+    from research_graph.infrastructure.corpus.ingestion.loader import (
+        FullTextSource as IngestionFullTextSource,
+    )
+    from research_graph.infrastructure.corpus.ingestion.loader import (
         ingest_full_text as ingestion_ingest_full_text,
     )
 

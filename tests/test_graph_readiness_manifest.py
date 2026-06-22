@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from research_graph.graph.readiness.manifest import create_manifest, synthesize_manifest
+from research_graph.infrastructure.graph.readiness.manifest import (
+    create_manifest,
+    synthesize_manifest,
+)
 
 
 def _summary() -> dict[str, object]:

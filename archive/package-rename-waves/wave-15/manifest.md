@@ -6,10 +6,10 @@ Scope: external API boundary modules.
 
 | Old runtime path | Canonical runtime path | Archive path |
 |---|---|---|
-| `src/arxiv_archive/arxiv_client.py` | `src/research_graph/corpus/sources/arxiv_client.py` | `archive/package-rename-waves/wave-15/src/arxiv_archive/arxiv_client.py` |
-| `src/arxiv_archive/semantic_scholar.py` | `src/research_graph/corpus/sources/semantic_scholar.py` | `archive/package-rename-waves/wave-15/src/arxiv_archive/semantic_scholar.py` |
-| `src/arxiv_archive/ladybug_client.py` | `src/research_graph/graph/ladybug_client.py` | `archive/package-rename-waves/wave-15/src/arxiv_archive/ladybug_client.py` |
-| `src/arxiv_archive/telegram_sender.py` | `src/research_graph/ops/notifications/telegram_sender.py` | `archive/package-rename-waves/wave-15/src/arxiv_archive/telegram_sender.py` |
+| `src/arxiv_archive/arxiv_client.py` | `src/research_graph/infrastructure/corpus/sources/arxiv_client.py` | `archive/package-rename-waves/wave-15/src/arxiv_archive/arxiv_client.py` |
+| `src/arxiv_archive/semantic_scholar.py` | `src/research_graph/infrastructure/corpus/sources/semantic_scholar.py` | `archive/package-rename-waves/wave-15/src/arxiv_archive/semantic_scholar.py` |
+| `src/arxiv_archive/ladybug_client.py` | `src/research_graph/infrastructure/graph/ladybug_client.py` | `archive/package-rename-waves/wave-15/src/arxiv_archive/ladybug_client.py` |
+| `src/arxiv_archive/telegram_sender.py` | `src/research_graph/infrastructure/ops/notifications/telegram_sender.py` | `archive/package-rename-waves/wave-15/src/arxiv_archive/telegram_sender.py` |
 
 ## Verification Notes
 

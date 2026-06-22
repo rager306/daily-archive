@@ -866,7 +866,7 @@ def build_continuity_audit(
                 DEFAULT_REVIEW_BUNDLE.as_posix(),
             ],
             "verifiers": [
-                "research_graph.graph.readiness.review validate-only",
+                "research_graph.infrastructure.graph.readiness.review validate-only",
                 "scripts/verify_m031_process_continuity_audit.py",
             ],
             "failure_modes": [

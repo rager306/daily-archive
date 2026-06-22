@@ -7,9 +7,9 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from research_graph.cli import DailyAnalysis
-from research_graph.corpus.sources.arxiv_client import ArxivPaper
-from research_graph.evaluation.scoring import ScoredPaper
-from research_graph.graph.ladybug_client import init_db, upsert_daily_analysis
+from research_graph.infrastructure.corpus.sources.arxiv_client import ArxivPaper
+from research_graph.infrastructure.evaluation.scoring import ScoredPaper
+from research_graph.infrastructure.graph.ladybug_client import init_db, upsert_daily_analysis
 from tests.helpers.modular_fixtures import FIXTURE_PAPER_ID
 
 SAFE_TEXT = st.text(
@@ -195,7 +195,7 @@ def test_init_db_creates_schema_and_is_idempotent(tmp_path) -> None:
 
 def test_init_db_continues_when_algo_extension_fails(monkeypatch, tmp_path) -> None:
     """Algo extension loading is optional; schema creation should still proceed."""
-    import research_graph.graph.ladybug_client as module
+    import research_graph.infrastructure.graph.ladybug_client as module
 
     class FakeDatabase:
         def __init__(self, path: str) -> None:
@@ -232,7 +232,7 @@ def test_init_db_continues_when_algo_extension_fails(monkeypatch, tmp_path) -> N
 
 def test_init_db_raises_unexpected_schema_errors(monkeypatch, tmp_path) -> None:
     """Only already-exists schema errors are swallowed."""
-    import research_graph.graph.ladybug_client as module
+    import research_graph.infrastructure.graph.ladybug_client as module
 
     class FakeDatabase:
         def __init__(self, path: str) -> None:

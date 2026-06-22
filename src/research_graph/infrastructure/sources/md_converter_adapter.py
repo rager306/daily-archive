@@ -1,4 +1,4 @@
-"""MDConverterAdapter — wraps :class:`~research_graph.corpus.sources
+"""MDConverterAdapter — wraps :class:`~research_graph.infrastructure.corpus.sources
 .markdown_converter.MDConverter` behind
 :class:`~research_graph.domain.ports.FullTextProviderPort` (D088).
 
@@ -15,8 +15,8 @@ depend on the Port can swap in a :class:`FakeFullTextProvider` for tests.
 
 from __future__ import annotations
 
-from research_graph.corpus.sources.markdown_converter import MDConverter
 from research_graph.domain.ports import ConversionResult
+from research_graph.infrastructure.corpus.sources.markdown_converter import MDConverter
 
 
 class MDConverterAdapter:

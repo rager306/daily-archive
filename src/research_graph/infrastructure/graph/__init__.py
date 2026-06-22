@@ -11,3 +11,6 @@ from __future__ import annotations
 from research_graph.infrastructure.graph.ladybug_adapter import LadybugAdapter
 
 __all__ = ["LadybugAdapter"]
+
+# readiness (migrated from research_graph.graph)
+"""Graph-readiness, review, export, persistence, and traversal boundaries."""

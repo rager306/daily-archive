@@ -24,19 +24,19 @@ for import_path in (ROOT, SRC):
     if str(import_path) not in sys.path:
         sys.path.insert(0, str(import_path))
 
-from research_graph.papers.artifacts.metrics import (  # noqa: E402
+from research_graph.infrastructure.papers.artifacts.metrics import (  # noqa: E402
     ARTICLE_ARTIFACT_BENCHMARK_REPORT_SCHEMA_VERSION,
     build_article_artifact_benchmark_report,
     count_raw_leakage,
     count_unsafe_authorizations,
 )
-from research_graph.papers.artifacts.minimax_boundary import (  # noqa: E402
+from research_graph.infrastructure.papers.artifacts.minimax_boundary import (  # noqa: E402
     MINIMAX_ARTIFACT_HELPER_SCHEMA_VERSION,
     MINIMAX_ARTIFACT_HELPER_TOOL_NAME,
     build_article_artifact_minimax_request,
     validate_article_artifact_minimax_response,
 )
-from research_graph.papers.artifacts.models import (  # noqa: E402
+from research_graph.infrastructure.papers.artifacts.models import (  # noqa: E402
     ARTICLE_ARTIFACT_DIAGNOSTICS_SCHEMA_VERSION,
     ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION,
     ARTICLE_ARTIFACT_SCHEMA_VERSION,

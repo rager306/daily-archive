@@ -30,7 +30,11 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from research_graph.retrieval.embedder import CIRCUIT_CLOSED, CIRCUIT_OPEN, Embedder  # noqa: E402
+from research_graph.infrastructure.retrieval.embedder import (  # noqa: E402
+    CIRCUIT_CLOSED,
+    CIRCUIT_OPEN,
+    Embedder,
+)
 
 DEFAULT_TEI_URL = "http://127.0.0.1:8000"
 DEFAULT_ENDPOINT = f"{DEFAULT_TEI_URL}/v1/embeddings"
@@ -942,7 +946,7 @@ def write_reports(results: list[TestResult], artifact_dir: Path = ARTIFACT_DIR) 
             + " |"
         )
 
-    current_by_id = {result.test_id: result for result in results}
+    _current_by_id = {result.test_id: result for result in results}
     improved = [
         result for result in results
         if result.status == "PASS" and prior_statuses.get(result.test_id) not in (None, "PASS")

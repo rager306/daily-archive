@@ -15,7 +15,6 @@ import asyncio
 import gzip
 import json
 import os
-import statistics
 import sys
 import time
 from dataclasses import asdict, dataclass
@@ -29,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from research_graph.retrieval.embedder import SAFETY_DEFAULTS  # noqa: E402
+from research_graph.infrastructure.retrieval.embedder import SAFETY_DEFAULTS  # noqa: E402
 
 CORPUS_ROOT = ROOT / "artifacts" / "m061-2hop"
 OUTPUT_DIR = ROOT / "artifacts" / "m068-fd-v2-integration-test"

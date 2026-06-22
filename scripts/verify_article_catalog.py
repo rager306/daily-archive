@@ -25,7 +25,6 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from verify_m025_article_catalog import main
 
-
 ROOT = SCRIPT_DIR.parents[0]
 DEFAULT_CATALOG = ROOT / "data" / "article_catalog" / "catalog.json"
 DEFAULT_INDEX = ROOT / "data" / "article_catalog" / "article_catalog" / "index.json"

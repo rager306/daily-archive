@@ -4,8 +4,8 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from research_graph.corpus.sources.arxiv_client import ArxivPaper
-from research_graph.evaluation.scoring import ScoredPaper, ScoringEngine
+from research_graph.infrastructure.corpus.sources.arxiv_client import ArxivPaper
+from research_graph.infrastructure.evaluation.scoring import ScoredPaper, ScoringEngine
 from tests.helpers.modular_fixtures import FIXTURE_PAPER_ID, MODULAR_RETORT, adaptix_dump
 
 
@@ -50,7 +50,7 @@ def test_arxiv_paper_roundtrip() -> None:
 
 def test_scored_paper_roundtrip() -> None:
     """ScoredPaper serialized to dict and back must preserve score and breakdown."""
-    from research_graph.corpus.sources.semantic_scholar import SemanticScholarPaper
+    from research_graph.infrastructure.corpus.sources.semantic_scholar import SemanticScholarPaper
 
     paper = ArxivPaper(
         id=f"arxiv:{FIXTURE_PAPER_ID}",
@@ -173,7 +173,7 @@ def test_pipeline_score_preserves_order() -> None:
     s1 = engine.score(base_paper, None, [])
 
     # Score with 100 citations
-    from research_graph.corpus.sources.semantic_scholar import SemanticScholarPaper
+    from research_graph.infrastructure.corpus.sources.semantic_scholar import SemanticScholarPaper
     s2 = engine.score(
         base_paper,
         SemanticScholarPaper(

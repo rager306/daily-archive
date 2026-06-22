@@ -16,8 +16,8 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from research_graph.corpus.sources.arxiv_client import ArxivPaper
-from research_graph.evaluation.scoring import ScoredPaper
+from research_graph.infrastructure.corpus.sources.arxiv_client import ArxivPaper
+from research_graph.infrastructure.evaluation.scoring import ScoredPaper
 
 if TYPE_CHECKING:
     from research_graph.cli import DailyAnalysis
@@ -357,7 +357,7 @@ def test_cli_malformed_date_fails_typer_validation() -> None:
 def make_s03_done_analysis() -> DailyAnalysis:
     """Build a complete S03 DailyAnalysis fixture with scored and null-enriched papers."""
     import research_graph.cli as cli
-    from research_graph.corpus.sources.semantic_scholar import SemanticScholarPaper
+    from research_graph.infrastructure.corpus.sources.semantic_scholar import SemanticScholarPaper
 
     enriched = make_scored(make_paper(1), 9.5, keywords=["agent", "graph"])
     object.__setattr__(
@@ -400,7 +400,7 @@ def make_s03_empty_analysis() -> DailyAnalysis:
 def make_s04_scored_analysis() -> DailyAnalysis:
     """Build an S04 fixture with overlapping categories, keywords, and breakdown keys."""
     import research_graph.cli as cli
-    from research_graph.corpus.sources.semantic_scholar import SemanticScholarPaper
+    from research_graph.infrastructure.corpus.sources.semantic_scholar import SemanticScholarPaper
 
     graph_paper = replace(
         make_paper(1),
@@ -718,8 +718,8 @@ import os
 from datetime import UTC, date, datetime
 
 import research_graph.cli as cli
-from research_graph.corpus.sources.arxiv_client import ArxivPaper
-from research_graph.evaluation.scoring import ScoredPaper
+from research_graph.infrastructure.corpus.sources.arxiv_client import ArxivPaper
+from research_graph.infrastructure.evaluation.scoring import ScoredPaper
 
 RUN_DATE = date(2026, 5, 14)
 

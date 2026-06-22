@@ -12,7 +12,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from research_graph.corpus.ingestion.loader import (
+from research_graph.infrastructure.corpus.ingestion.loader import (
     ArticleLoadSource,
     classify_article_source,
     load_article_source,

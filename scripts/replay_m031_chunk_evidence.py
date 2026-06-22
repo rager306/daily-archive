@@ -25,13 +25,18 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from research_graph.graph.readiness.export import (
+from research_graph.infrastructure.graph.readiness.export import (
     CONTRACT_VERSION as GRAPH_READINESS_CONTRACT_VERSION,
 )
-from research_graph.graph.readiness.export import SCHEMA_VERSION as GRAPH_READINESS_SCHEMA_VERSION
-from research_graph.graph.readiness.review import generate_review_bundles, validate_review_artifacts
-from research_graph.papers.chunking.chunker import parse_markdown_structure
-from research_graph.repair.chunk_import_contract import (
+from research_graph.infrastructure.graph.readiness.export import (
+    SCHEMA_VERSION as GRAPH_READINESS_SCHEMA_VERSION,
+)
+from research_graph.infrastructure.graph.readiness.review import (
+    generate_review_bundles,
+    validate_review_artifacts,
+)
+from research_graph.infrastructure.papers.chunking.chunker import parse_markdown_structure
+from research_graph.infrastructure.repair.chunk_import_contract import (
     validate_import_ready_package,
     validation_to_dict,
 )

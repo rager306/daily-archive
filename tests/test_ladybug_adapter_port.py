@@ -20,8 +20,7 @@ from unittest.mock import patch
 import pytest
 
 from research_graph.domain.ports import GraphDBPort
-from research_graph.graph import ladybug_client
-from research_graph.infrastructure.graph import LadybugAdapter
+from research_graph.infrastructure.graph import LadybugAdapter, ladybug_client
 
 
 class FakeGraphDB:

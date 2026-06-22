@@ -28,24 +28,20 @@ import json
 from pathlib import Path
 from typing import Any
 
-import pytest
-
-from research_graph.papers.artifacts.minimax_boundary import (
+from research_graph.infrastructure.papers.artifacts.minimax_boundary import (
     ArticleArtifactWorkRequest,
     request_article_artifact_classification,
 )
-from research_graph.papers.artifacts.reducer import (
+from research_graph.infrastructure.papers.artifacts.reducer import (
     REDUCER_SCHEMA_VERSION,
     _safety_defaults,
     aggregate_article_artifact_log,
-    merge_article_artifact_results,
 )
-from research_graph.papers.artifacts.worker import (
+from research_graph.infrastructure.papers.artifacts.worker import (
     ArticleArtifactWorkCompleted,
     MockTransport,
     run_worker_pool,
 )
-
 
 # ---------- fixtures ----------
 
@@ -120,12 +116,12 @@ def test_e2e_safety_defaults_in_full_aggregate(tmp_path: Path) -> None:
 
     # Worker output must already carry the 5 safety defaults (per ADR-006).
     worker_event = completed[0].to_sanitized_dict()
-    for key, value in _safety_defaults().items():
+    for key, value in _safety_defaults().items():  # noqa: B007
         assert worker_event[key] is False
 
     # Reducer aggregate must also carry them.
     aggregate = aggregate_article_artifact_log(tmp_path)
-    for key, value in _safety_defaults().items():
+    for key, value in _safety_defaults().items():  # noqa: B007
         assert key in aggregate
         assert aggregate[key] is False
 
@@ -147,7 +143,7 @@ def test_e2e_artifact_files_present_in_storage_dir(tmp_path: Path) -> None:
     assert payload["binding_id"] == "article-artifact-classify"
     assert "result" in payload
     # 5 safety defaults carried in the artifact too.
-    for key, value in _safety_defaults().items():
+    for key, value in _safety_defaults().items():  # noqa: B007
         assert payload[key] is False
 
 
@@ -201,7 +197,8 @@ def test_e2e_no_safety_default_ever_flips_true(tmp_path: Path) -> None:
     structure = _synthetic_structure("e2e-paper-F")
     # 3 work requests, one each of valid/invalid/skipped_no_structure.
     requests = []
-    for i, status in enumerate(("valid", "invalid", "skipped_no_structure")):
+    # noqa: B007
+    for i, _status in  enumerate(("valid", "invalid", "skipped_no_structure")):
         # We can't directly set validation_status from the requester;
         # the worker records whatever the validator emits. For E2E,
         # we just want multiple work_ids in the aggregate. The
@@ -224,10 +221,10 @@ def test_e2e_no_safety_default_ever_flips_true(tmp_path: Path) -> None:
     # None of the worker events may carry a True safety default.
     for event in completed:
         sanitized = event.to_sanitized_dict()
-        for key, value in _safety_defaults().items():
+        for key, value in _safety_defaults().items():  # noqa: B007
             assert sanitized[key] is False, f"worker event flipped {key}"
 
     # Reducer aggregate must also keep them all False.
     aggregate = aggregate_article_artifact_log(tmp_path)
-    for key, value in _safety_defaults().items():
+    for key, value in _safety_defaults().items():  # noqa: B007
         assert aggregate[key] is False, f"reducer flipped {key}"

@@ -197,7 +197,7 @@ def build_audit(
         f"- Target subset SHA-256 prefix: `{target_digest}` "
         f"(see `artifacts/m054-pdf-acquisition/target-subset.json`)"
     )
-    parts.append(f"- Audit script: `scripts/audit_m054_pdf_acquisition.py`")
+    parts.append("- Audit script: `scripts/audit_m054_pdf_acquisition.py`")
     parts.append("")
     return "\n".join(parts)
 

@@ -3,7 +3,10 @@ from typing import cast
 import ladybug
 import pytest
 
-from research_graph.evaluation.analytics import compute_graph_metrics, recommend_papers
+from research_graph.infrastructure.evaluation.analytics import (
+    compute_graph_metrics,
+    recommend_papers,
+)
 
 
 @pytest.fixture

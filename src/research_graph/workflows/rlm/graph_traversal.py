@@ -15,11 +15,11 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any, cast
 
-from research_graph.evaluation.metrics import (
+from research_graph.infrastructure.evaluation.evaluation_metrics import (
     calculate_evidence_path_hit_rate,
     calculate_retrieval_recall,
 )
-from research_graph.retrieval.hybrid import (
+from research_graph.infrastructure.retrieval.hybrid import (
     HybridRetrievalMode,
     HybridRetrievalQuery,
     InMemoryVectorCandidateIndex,

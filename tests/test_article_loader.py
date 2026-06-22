@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from research_graph.corpus.ingestion import (
+from research_graph.infrastructure.corpus.ingestion import (
     ArticleLoadSource,
     FullTextSource,
     assess_full_text_quality,
@@ -459,7 +459,7 @@ def test_logging_contract_for_failures_contains_metadata_not_payloads(tmp_path: 
 def test_ingestion_loader_stack_exposes_checksum_fallback_and_failure_reason(
     tmp_path: Path,
 ) -> None:
-    from research_graph.corpus.ingestion.loader import (
+    from research_graph.infrastructure.corpus.ingestion.loader import (
         load_article_source as ingestion_load_article_source,
     )
 

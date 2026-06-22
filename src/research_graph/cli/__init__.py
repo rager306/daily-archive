@@ -25,22 +25,22 @@ if _env_path.exists():
             key, _, value = line.partition("=")
             os.environ.setdefault(key.strip(), value.strip())
 
-from research_graph.corpus.sources.arxiv_client import ArxivClient  # noqa: E402
-from research_graph.evaluation.scoring import ScoredPaper, ScoringEngine  # noqa: E402
-from research_graph.infrastructure.quality import (  # noqa: E402
-    build_maintainability_report,
-    maintainability_report_to_json,
-    write_maintainability_report,
+from research_graph.infrastructure.corpus.sources.arxiv_client import (
+    ArxivClient,  # noqa: E402  # noqa: F401
 )
-from research_graph.papers.artifacts.batch_validation import (
+from research_graph.infrastructure.evaluation.scoring import (  # noqa: E402  # noqa: F401
+    ScoredPaper,
+    ScoringEngine,
+)
+from research_graph.infrastructure.papers.artifacts.batch_validation import (  # noqa: F401
     run_article_batch_validation_report,  # noqa: E402
 )
-from research_graph.papers.artifacts.minimax_boundary import (  # noqa: E402
+from research_graph.infrastructure.papers.artifacts.minimax_boundary import (  # noqa: E402  # noqa: F401
     MINIMAX_ARTIFACT_HELPER_SCHEMA_VERSION,
     build_article_artifact_minimax_request,
     validate_article_artifact_minimax_response,
 )
-from research_graph.papers.artifacts.models import (  # noqa: E402
+from research_graph.infrastructure.papers.artifacts.models import (  # noqa: E402  # noqa: F401
     ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION,
     ARTICLE_ARTIFACT_SCHEMA_VERSION,
     ArticleArtifactRunSummary,
@@ -52,19 +52,26 @@ from research_graph.papers.artifacts.models import (  # noqa: E402
     to_json,
     validate_article_artifact_manifest,
 )
-from research_graph.retrieval.embedder import Embedder  # noqa: E402
-from research_graph.retrieval.keyword_extractor import KeywordExtractor  # noqa: E402
-from research_graph.workflows.validation.batch_provenance import (  # noqa: E402
+from research_graph.infrastructure.quality import (  # noqa: E402  # noqa: F401
+    build_maintainability_report,
+    maintainability_report_to_json,
+    write_maintainability_report,
+)
+from research_graph.infrastructure.retrieval.embedder import Embedder  # noqa: E402  # noqa: F401
+from research_graph.infrastructure.retrieval.keyword_extractor import (
+    KeywordExtractor,  # noqa: E402  # noqa: F401
+)
+from research_graph.workflows.validation.batch_provenance import (  # noqa: E402  # noqa: F401
     build_artifact_freshness_report,
     read_validation_cli_provenance_log,
     select_provenance_entry,
     write_artifact_freshness_report,
 )
-from research_graph.workflows.validation.batch_state import (  # noqa: E402
+from research_graph.workflows.validation.batch_state import (  # noqa: E402  # noqa: F401
     build_contract_response,
     read_batch_state,
 )
-from research_graph.workflows.validation.batch_workflow import (  # noqa: E402
+from research_graph.workflows.validation.batch_workflow import (  # noqa: E402  # noqa: F401
     initialize_validation_batch,
     preflight_validation_batch,
     run_validation_batch_scan,
@@ -138,7 +145,7 @@ app = typer.Typer(
 
 
 # Register subcommand modules
-from research_graph.cli.commands import article_artifacts, quality, validation_batch
+from research_graph.cli.commands import article_artifacts, quality, validation_batch  # noqa: F401
 
 article_artifacts.register(app)
 validation_batch.register(app)

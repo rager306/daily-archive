@@ -2,7 +2,7 @@
 
 * :class:`~research_graph.infrastructure.sources.md_converter_adapter
   .MDConverterAdapter` wraps
-  :class:`research_graph.corpus.sources.markdown_converter.MDConverter` behind
+  :class:`research_graph.infrastructure.corpus.sources.markdown_converter.MDConverter` behind
   :class:`research_graph.domain.ports.FullTextProviderPort`.
 """
 

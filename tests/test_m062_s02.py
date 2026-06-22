@@ -3,7 +3,11 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from research_graph.retrieval.embedder import DEFAULT_DIMENSIONS, DEFAULT_ENDPOINT, SAFETY_DEFAULTS
+from research_graph.infrastructure.retrieval.embedder import (
+    DEFAULT_DIMENSIONS,
+    DEFAULT_ENDPOINT,
+    SAFETY_DEFAULTS,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 ADR_PATH = ROOT / "doc/adr/ADR-019-fd-embedding-service-contract.md"

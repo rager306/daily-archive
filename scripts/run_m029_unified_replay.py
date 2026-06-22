@@ -379,7 +379,7 @@ def run(args: argparse.Namespace) -> int:
     evidence_dir = Path(args.evidence_dir)
     output_dir = Path(args.output_dir)
     corpus_dir = output_dir.parent
-    artifact_root = corpus_dir.parents[2] if len(corpus_dir.parents) >= 3 else ROOT
+    _artifact_root = corpus_dir.parents[2] if len(corpus_dir.parents) >= 3 else ROOT
     selection = load_json(selection_path)
     runtime_summary = load_json(runtime_summary_path)
     evidence_records = load_evidence_records(evidence_dir)

@@ -6,8 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from research_graph.repair.bounded_chunk_repair import build_bounded_chunk_repair_contract
-from research_graph.repair.chunk_repair_contract import MARKDOWN_FORBIDDEN_PATTERNS
+from research_graph.infrastructure.repair.bounded_chunk_repair import (
+    build_bounded_chunk_repair_contract,
+)
+from research_graph.infrastructure.repair.chunk_repair_contract import MARKDOWN_FORBIDDEN_PATTERNS
 from research_graph.workflows.review_packet_prototype import (
     ALLOWED_NON_IMPORTING_DECISIONS,
     REVIEWER_PACKET_ASSESSMENT_VERSION,

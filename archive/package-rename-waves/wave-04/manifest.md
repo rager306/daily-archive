@@ -6,13 +6,13 @@ Moved lower-level deterministic PageIndex construction internals from `arxiv_arc
 
 | Old runtime path | New canonical path |
 |---|---|
-| `src/arxiv_archive/indexing/navigation.py` | `src/research_graph/papers/indexing/navigation.py` |
-| `src/arxiv_archive/indexing/page_index.py` | `src/research_graph/papers/indexing/parsed_page_index.py` |
-| `src/arxiv_archive/indexing/__init__.py` | no runtime shim; public package exports now live in `src/research_graph/papers/indexing/__init__.py` |
+| `src/arxiv_archive/indexing/navigation.py` | `src/research_graph/infrastructure/papers/indexing/navigation.py` |
+| `src/arxiv_archive/indexing/page_index.py` | `src/research_graph/infrastructure/papers/indexing/parsed_page_index.py` |
+| `src/arxiv_archive/indexing/__init__.py` | no runtime shim; public package exports now live in `src/research_graph/infrastructure/papers/indexing/__init__.py` |
 
 ## Naming note
 
-`page_index.py` was not reused because wave-03 already made `src/research_graph/papers/indexing/page_index.py` canonical for the metadata-only article PageIndex manifest contract formerly at `src/arxiv_archive/article_page_index.py`. The parser-output builder moved to `parsed_page_index.py` to avoid conflating those two contracts.
+`page_index.py` was not reused because wave-03 already made `src/research_graph/infrastructure/papers/indexing/page_index.py` canonical for the metadata-only article PageIndex manifest contract formerly at `src/arxiv_archive/article_page_index.py`. The parser-output builder moved to `parsed_page_index.py` to avoid conflating those two contracts.
 
 ## Archive policy
 

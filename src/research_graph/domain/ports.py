@@ -101,7 +101,7 @@ class GraphDBPort(Protocol):
     ) -> None:
         """Persist one fixture scientific KG patch transactionally and idempotently.
 
-        Equivalent to :func:`research_graph.graph.ladybug_client
+        Equivalent to :func:`research_graph.infrastructure.graph.ladybug_client
         .upsert_scientific_kg` but with the connection owned by the Adapter.
         """
         ...
@@ -112,7 +112,7 @@ class FullTextProviderPort(Protocol):
     """Full-text provider boundary — arXiv id → markdown (D088 pivot).
 
     The real multi-backend seam lives in
-    :class:`research_graph.corpus.sources.markdown_converter.MDConverter`,
+    :class:`research_graph.infrastructure.corpus.sources.markdown_converter.MDConverter`,
     which routes among arxiv2md / marker / docling with fallback. This Port
     captures that contract so adapters (and fakes for the 4 MDConverter tests)
     are interchangeable. ``parse_article`` / ``build_page_index`` are NOT behind

@@ -10,23 +10,26 @@ from typing import Any
 
 import ladybug
 
-import research_graph.graph.ladybug_client as ladybug_client
-from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
+import research_graph.infrastructure.graph.ladybug_client as ladybug_client
 from research_graph.domain.semantic_chunks import EvidencePath
-from research_graph.evaluation.metrics import (
+from research_graph.infrastructure.corpus.ingestion import FullTextSource, ingest_full_text
+from research_graph.infrastructure.evaluation.evaluation_metrics import (
     calculate_evidence_path_hit_rate,
     calculate_retrieval_recall,
 )
-from research_graph.evaluation.scientific_extraction import (
+from research_graph.infrastructure.evaluation.scientific_extraction import (
     Claim,
     ExtractionPatch,
     ScientificEntity,
     ScientificRelation,
 )
-from research_graph.graph.ladybug_client import evidence_path_id
-from research_graph.papers.indexing import PageIndexDocument, build_page_index
-from research_graph.papers.semantic_chunks import build_evidence_path, build_semantic_chunks
-from research_graph.retrieval.hybrid import InMemoryVectorCandidateIndex
+from research_graph.infrastructure.graph.ladybug_client import evidence_path_id
+from research_graph.infrastructure.papers.indexing import PageIndexDocument, build_page_index
+from research_graph.infrastructure.papers.semantic_chunks import (
+    build_evidence_path,
+    build_semantic_chunks,
+)
+from research_graph.infrastructure.retrieval.hybrid import InMemoryVectorCandidateIndex
 from research_graph.workflows.rlm.graph_traversal import (
     ComparisonResult,
     RLMGraphTraversalConfig,

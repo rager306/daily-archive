@@ -16,21 +16,17 @@ idempotent, content-addressed merge) and M050 S02 plan:
 
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 from typing import Any
 
-import pytest
-
-from research_graph.papers.artifacts.reducer import (
+from research_graph.infrastructure.papers.artifacts.reducer import (
     DEFAULT_VALIDATION_BUCKETS,
     REDUCER_SCHEMA_VERSION,
     _safety_defaults,
     aggregate_article_artifact_log,
     merge_article_artifact_results,
 )
-
 
 # ---------- helpers ----------
 
@@ -128,7 +124,7 @@ def test_merge_empty_list_returns_safe_aggregate() -> None:
     assert out["binding_counts"] == {}
     assert out["validation_status_counts"] == {}
     # All 5 safety flags must be false.
-    for key, value in _safety_defaults().items():
+    for key, value in _safety_defaults().items():  # noqa: B007
         assert out[key] is False
 
 
@@ -202,7 +198,7 @@ def test_aggregate_emits_safety_defaults_in_output(tmp_path: Path) -> None:
         json.dumps(_work_completed("wid-001"), sort_keys=True), encoding="utf-8"
     )
     out = aggregate_article_artifact_log(work_dir)
-    for key, value in _safety_defaults().items():
+    for key, value in _safety_defaults().items():  # noqa: B007
         assert key in out
         assert out[key] is False
 
@@ -257,12 +253,12 @@ def test_aggregate_fail_soft_on_malformed_json(tmp_path: Path) -> None:
 
 def test_aggregate_on_missing_directory_is_fail_closed(tmp_path: Path) -> None:
     nonexistent = tmp_path / "does-not-exist"
-    out = aggregate_article_article_log = aggregate_article_artifact_log(nonexistent)
+    out = _unused = aggregate_article_artifact_log(nonexistent)
     assert out["directory_exists"] is False
     assert out["total_unique_work_ids"] == 0
     assert out["malformed_artifact_count"] == 0
     # Safety defaults still false.
-    for key, value in _safety_defaults().items():
+    for key, value in _safety_defaults().items():  # noqa: B007
         assert out[key] is False
 
 

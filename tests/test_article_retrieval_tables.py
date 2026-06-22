@@ -100,17 +100,17 @@ EXPECTED_VALID_STATUSES = {
 def retrieval_tables_contract():
     """Load the future S06 implementation without failing collection.
 
-    T01 is contract-first. Until ``research_graph.papers.indexing.retrieval_tables``
+    T01 is contract-first. Until ``research_graph.infrastructure.papers.indexing.retrieval_tables``
     exists, pytest reports these tests as expected failures rather than an
     import-time collection error. Once the module lands, the contract runs
     normally.
     """
 
     try:
-        return importlib.import_module("research_graph.papers.indexing.retrieval_tables")
+        return importlib.import_module("research_graph.infrastructure.papers.indexing.retrieval_tables")
     except ModuleNotFoundError as exc:
-        if exc.name == "research_graph.papers.indexing.retrieval_tables":
-            pytest.xfail("research_graph.papers.indexing.retrieval_tables is not implemented yet")
+        if exc.name == "research_graph.infrastructure.papers.indexing.retrieval_tables":
+            pytest.xfail("research_graph.infrastructure.papers.indexing.retrieval_tables is not implemented yet")
         raise
 
 

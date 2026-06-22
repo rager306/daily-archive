@@ -15,7 +15,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 
-from research_graph.repair.chunk_repair_contract import (
+from research_graph.infrastructure.repair.chunk_repair_contract import (
     EXCLUDED_USES,
     REQUIRED_FALSE_SAFETY_FIELDS,
     expected_audit_from_contract,

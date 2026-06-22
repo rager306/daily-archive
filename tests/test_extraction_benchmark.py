@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from research_graph.evaluation.extraction_benchmark import (
+from research_graph.application.extraction_benchmark import (
     evaluate_files,
     evaluate_records,
     load_jsonl,

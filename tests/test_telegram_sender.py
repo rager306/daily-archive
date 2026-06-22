@@ -2,11 +2,11 @@
 
 from datetime import date
 
-from research_graph.corpus.sources.arxiv_client import ArxivPaper
-from research_graph.corpus.sources.semantic_scholar import SemanticScholarPaper
-from research_graph.evaluation.scoring import ScoredPaper
+from research_graph.infrastructure.corpus.sources.arxiv_client import ArxivPaper
+from research_graph.infrastructure.corpus.sources.semantic_scholar import SemanticScholarPaper
+from research_graph.infrastructure.evaluation.scoring import ScoredPaper
 from research_graph.infrastructure.llm.summarizer import PaperSummary
-from research_graph.ops.notifications.telegram_sender import TelegramSender
+from research_graph.infrastructure.ops.notifications.telegram_sender import TelegramSender
 
 
 class TestTelegramSender:

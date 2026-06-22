@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from research_graph.corpus.ingestion.loader import load_article_source  # noqa: E402
+from research_graph.infrastructure.corpus.ingestion.loader import load_article_source  # noqa: E402
 
 MILESTONE_ID = "M029-eb0ljz"
 SLICE_ID = "S04"

@@ -5,7 +5,6 @@ from pathlib import Path
 
 from scripts import m061_ingest_to_canonical_catalog as ingest
 
-
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_PATH = ROOT / "artifacts" / "m061-2hop" / "s04-ingest-report.md"
 CATALOG_ARXIV_ROOT = ROOT / "data" / "article_catalog" / "article_catalog" / "arxiv"

@@ -32,10 +32,10 @@ def page_index_contract():
     """
 
     try:
-        return importlib.import_module("research_graph.papers.indexing.page_index")
+        return importlib.import_module("research_graph.infrastructure.papers.indexing.page_index")
     except ModuleNotFoundError as exc:
-        if exc.name == "research_graph.papers.indexing.page_index":
-            pytest.xfail("research_graph.papers.indexing.page_index is not implemented yet")
+        if exc.name == "research_graph.infrastructure.papers.indexing.page_index":
+            pytest.xfail("research_graph.infrastructure.papers.indexing.page_index is not implemented yet")
         raise
 
 FORBIDDEN_PAYLOAD_FRAGMENTS = (

@@ -19,7 +19,6 @@ from pathlib import Path
 from typing import Any
 
 import networkx as nx
-
 from m060b_graph_stats import (
     DEFAULT_MANIFEST,
     DEFAULT_OUTPUT_DIR,

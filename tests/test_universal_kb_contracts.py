@@ -4,10 +4,10 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from research_graph.papers.artifacts.models import (
+from research_graph.infrastructure.papers.artifacts.models import (
     default_safety_flags as article_default_safety_flags,
 )
-from research_graph.repair.chunk_import_contract import (
+from research_graph.infrastructure.repair.chunk_import_contract import (
     ContractValidationResult,
     validation_to_dict,
 )

@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import importlib
 import json
-from pathlib import Path
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 
@@ -48,10 +48,10 @@ def article_assets_contract():
     """Load the canonical article assets module."""
 
     try:
-        return importlib.import_module("research_graph.papers.assets")
+        return importlib.import_module("research_graph.infrastructure.papers.assets")
     except ModuleNotFoundError as exc:
-        if exc.name == "research_graph.papers.assets":
-            pytest.xfail("research_graph.papers.assets is not implemented yet")
+        if exc.name == "research_graph.infrastructure.papers.assets":
+            pytest.xfail("research_graph.infrastructure.papers.assets is not implemented yet")
         raise
 
 

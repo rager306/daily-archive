@@ -13,7 +13,6 @@ import base64
 import binascii
 import json
 import os
-import statistics
 import time
 import urllib.error
 import urllib.request

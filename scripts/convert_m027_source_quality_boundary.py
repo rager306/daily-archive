@@ -16,7 +16,7 @@ import json
 import re
 import sys
 import tempfile
-from collections import Counter, defaultdict
+from collections import Counter
 from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath

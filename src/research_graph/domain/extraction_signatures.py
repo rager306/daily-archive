@@ -1,7 +1,7 @@
 """DSPy-like extraction signatures (ADR-029, ADR-033 Step 7).
 
 Five typed signatures that frame the Core-then-Modes extraction pipeline. Like
-:mod:`research_graph.evaluation.dspy_extraction`, this module is **DSPy-like,
+:mod:`research_graph.infrastructure.evaluation.dspy_extraction`, this module is **DSPy-like,
 not DSPy-dependent**: each signature is a frozen dataclass describing the
 inputs/outputs of one extraction stage. No DSPy runtime import, no optimizer,
 no LLM call — just typed contracts that a future DSPy wiring (ADR-029 §3) or

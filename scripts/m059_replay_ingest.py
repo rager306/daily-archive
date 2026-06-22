@@ -20,7 +20,6 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from m059_validate_pdf_batch import (
-    DEFAULT_LOOPBACK_BASE_URL,
     SAFETY_DEFAULTS,
     ensure_safety_defaults,
     find_parser_expectation,

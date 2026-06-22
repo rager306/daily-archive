@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-from research_graph.repair.chunk_import_contract import (
+from research_graph.infrastructure.repair.chunk_import_contract import (
     validate_import_ready_package,
     validation_to_dict,
 )

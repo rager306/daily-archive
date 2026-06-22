@@ -8,10 +8,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
-from research_graph.corpus.parsing.parser import parse_article
-from research_graph.papers.indexing import build_page_index
-from research_graph.papers.indexing.parsed_page_index import build_page_index_from_parsed
+from research_graph.infrastructure.corpus.ingestion import FullTextSource, ingest_full_text
+from research_graph.infrastructure.corpus.parsing.parser import parse_article
+from research_graph.infrastructure.papers.indexing import build_page_index
+from research_graph.infrastructure.papers.indexing.parsed_page_index import (
+    build_page_index_from_parsed,
+)
 
 FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
 PAGE_INDEX_FIXTURES = Path(__file__).parent / "fixtures" / "page_index"

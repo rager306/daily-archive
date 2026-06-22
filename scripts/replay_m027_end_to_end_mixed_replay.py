@@ -28,17 +28,22 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from research_graph.corpus.ingestion import FullTextSource, ingest_full_text  # noqa: E402
-from research_graph.corpus.parsing.parser import parse_article  # noqa: E402
-from research_graph.papers.indexing.parsed_page_index import (
+from research_graph.infrastructure.corpus.ingestion import (  # noqa: E402
+    FullTextSource,
+    ingest_full_text,
+)
+from research_graph.infrastructure.corpus.parsing.parser import parse_article  # noqa: E402
+from research_graph.infrastructure.papers.indexing.parsed_page_index import (
     build_page_index_from_parsed,  # noqa: E402
 )
-from research_graph.papers.semantic_chunks import (  # noqa: E402
+from research_graph.infrastructure.papers.semantic_chunks import (  # noqa: E402
     build_evidence_paths,
     build_semantic_chunks,
 )
-from research_graph.repair.chunk_baseline_measurement import build_baseline_package  # noqa: E402
-from research_graph.repair.chunk_import_contract import (  # noqa: E402
+from research_graph.infrastructure.repair.chunk_baseline_measurement import (
+    build_baseline_package,  # noqa: E402
+)
+from research_graph.infrastructure.repair.chunk_import_contract import (  # noqa: E402
     validate_import_ready_package,
     validation_to_dict,
 )

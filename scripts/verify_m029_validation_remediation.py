@@ -291,7 +291,7 @@ def _validate_prerequisites_and_verdict(evidence: Mapping[str, Any]) -> list[dic
         "M029_REMEDIATION_MISSING_M029_REPLAN_PROOF": ("$.replan_audit.m030_derived_m029_replan_proof_present", replan.get("m030_derived_m029_replan_proof_present"), "$.replan_audit.candidate_replan_artifacts"),
     }
     prerequisites_missing = False
-    for code, (json_path, actual, artifact_path) in missing_flags.items():
+    for _code, (json_path, actual, artifact_path) in missing_flags.items():
         if actual is not False:
             diagnostics.append(_diagnostic("M029_REMEDIATION_PREREQUISITE_OVERCLAIM", f"missing prerequisite flag must remain false while proof is absent: {json_path}", json_path=json_path, path=str(artifact_path) if artifact_path is not None else None))
         else:

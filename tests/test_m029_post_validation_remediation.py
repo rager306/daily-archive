@@ -163,7 +163,7 @@ def _evidence() -> dict[str, Any]:
         "created_at": "2026-06-04T00:00:00Z",
         "verdict": "blocked_pending_m030_completion_and_replan",
         "verdict_reason": "M030/S02-S06 and M030-derived M029 replan proof are absent.",
-        "metadata_only_boundary": {"relative_paths_only": True, **{key: False for key in REQUIRED_FALSE_BOUNDARY_FLAGS}},
+        "metadata_only_boundary": {"relative_paths_only": True, **dict.fromkeys(REQUIRED_FALSE_BOUNDARY_FLAGS, False)},
         "source_artifact_paths": {
             "m029_roadmap": "fixtures/M029-ROADMAP.md",
             "m029_s07_summary": "fixtures/S07-SUMMARY.md",
@@ -213,7 +213,7 @@ def _evidence() -> dict[str, Any]:
         "bounded_ref_reconciliation": _bounded_rows(),
         "provisional_m029_readiness_counts": _readiness() | {"interpretation": "Local evidence only."},
         "requirement_scope": _requirement_scope(),
-        "safety_flags": {key: False for key in REQUIRED_FALSE_SAFETY_FLAGS},
+        "safety_flags": dict.fromkeys(REQUIRED_FALSE_SAFETY_FLAGS, False),
         "forbidden_claims": [
             "M029 validation passed.",
             "M029 is production ready.",

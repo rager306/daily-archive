@@ -96,3 +96,23 @@ and `research_graph.domain.*` itself.
 typed models the Core references; if a future change makes them carry driver
 code, they must be split (pure model stays in domain, driver moves to
 infrastructure) before this mapping is updated.
+
+## M105 S06 — evaluation package dissolved (2026-06-22)
+
+The `evaluation/` package was classified and dissolved across onion layers:
+
+- **domain/**: `extraction_signatures.py` (typed signatures)
+- **application/**: `extraction_benchmark.py` (benchmark orchestrator)
+- **infrastructure/evaluation/**: `scoring.py` (arxiv/semantic_scholar adapter), `analytics.py` (ladybug aggregation), `evaluation_metrics.py` (uses infrastructure.graph/retrieval), `scientific_extraction.py` (uses infrastructure.corpus.parsing), `dspy_extraction.py` (orchestrates LLM infra)
+
+The `evaluation/` package marker (`__init__.py`) is preserved for historical reference (S01 lesson) with a docstring describing the dissolution. All callers updated to canonical paths. Onion guard confirmed clean (domain=8, application=7 files, 0 forbidden imports).
+
+## M105 — Infrastructure packages physically moved to infrastructure/ (2026-06-22)
+
+All 10 infrastructure packages moved into `research_graph/infrastructure/` over 4 waves:
+- **W1**: llm, identity, quality (leaves)
+- **W2**: ops, staging (depend on W1 leaves)
+- **W3**: corpus, papers, repair (coordinated, cycle)
+- **W4**: graph, retrieval (depend on cycle), graph merged with ladybug_adapter
+
+All manifests (wave-03..wave-18) updated. Multi-layer AST guard enforces domain/application cannot import infrastructure.

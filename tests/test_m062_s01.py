@@ -6,12 +6,13 @@ import json
 import os
 from collections.abc import Awaitable, Callable
 from contextlib import contextmanager
+from typing import Any
 
 import httpx
 import pytest
 
-from research_graph.retrieval import embedder as embedder_module
-from research_graph.retrieval.embedder import (
+from research_graph.infrastructure.retrieval import embedder as embedder_module
+from research_graph.infrastructure.retrieval.embedder import (
     CIRCUIT_CLOSED,
     CIRCUIT_HALF_OPEN,
     CIRCUIT_OPEN,

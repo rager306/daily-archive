@@ -6,10 +6,10 @@ Scope: extraction and evaluation deterministic surface.
 
 | Old runtime path | Canonical runtime path | Archive path |
 |---|---|---|
-| `src/arxiv_archive/dspy_extraction.py` | `src/research_graph/evaluation/dspy_extraction.py` | `archive/package-rename-waves/wave-13/src/arxiv_archive/dspy_extraction.py` |
-| `src/arxiv_archive/extraction_benchmark.py` | `src/research_graph/evaluation/extraction_benchmark.py` | `archive/package-rename-waves/wave-13/src/arxiv_archive/extraction_benchmark.py` |
-| `src/arxiv_archive/scientific_extraction.py` | `src/research_graph/evaluation/scientific_extraction.py` | `archive/package-rename-waves/wave-13/src/arxiv_archive/scientific_extraction.py` |
-| `src/arxiv_archive/evaluation.py` | `src/research_graph/evaluation/metrics.py` (renamed to avoid module/package shadowing) | `archive/package-rename-waves/wave-13/src/arxiv_archive/evaluation.py` |
+| `src/arxiv_archive/dspy_extraction.py` | `src/research_graph/infrastructure/evaluation/dspy_extraction.py` | `archive/package-rename-waves/wave-13/src/arxiv_archive/dspy_extraction.py` |
+| `src/arxiv_archive/extraction_benchmark.py` | `src/research_graph/infrastructure/evaluation/extraction_benchmark.py` | `archive/package-rename-waves/wave-13/src/arxiv_archive/extraction_benchmark.py` |
+| `src/arxiv_archive/scientific_extraction.py` | `src/research_graph/infrastructure/evaluation/scientific_extraction.py` | `archive/package-rename-waves/wave-13/src/arxiv_archive/scientific_extraction.py` |
+| `src/arxiv_archive/evaluation.py` | `src/research_graph/infrastructure/evaluation/metrics.py` (renamed to avoid module/package shadowing) | `archive/package-rename-waves/wave-13/src/arxiv_archive/evaluation.py` |
 
 ## Verification Notes
 
@@ -17,3 +17,4 @@ Scope: extraction and evaluation deterministic surface.
 - No live MiniMax/GLM/DSPy provider calls are introduced by this wave.
 - Evaluation metrics remain fixture-level and deterministic; benchmarks do not call external models.
 - `src/arxiv_archive/scoring.py` (scoring.py) remains under the old package because it depends on `arxiv_client` and `semantic_scholar` (S07 dependency).
+- `scoring.py` → `src/research_graph/infrastructure/evaluation/scoring.py` (M105 S06 — moved to infrastructure/evaluation/)

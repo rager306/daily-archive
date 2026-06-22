@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from research_graph.papers.source_assets import (
+from research_graph.infrastructure.papers.source_assets import (
     AssetRecord,
     PreservedSourceFile,
     SourceAssetManifest,

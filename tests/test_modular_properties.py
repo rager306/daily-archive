@@ -11,27 +11,27 @@ from typing import Any
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from research_graph.corpus.ingestion.loader import (
+from research_graph.infrastructure.corpus.ingestion.loader import (
     ArticleLoadResult,
     ArticleLoadSource,
     FullTextIngestionResult,
     load_article_source,
 )
-from research_graph.corpus.parsing.parser import parse_article
+from research_graph.infrastructure.corpus.parsing.parser import parse_article
 from research_graph.infrastructure.identity.canonicalization import (
     canonical_source_id,
     stable_json_hash,
 )
-from research_graph.papers.artifacts.models import (
+from research_graph.infrastructure.papers.artifacts.models import (
     FORBIDDEN_PAYLOAD_KEYS,
     validate_article_artifact_manifest,
 )
-from research_graph.papers.chunking.chunker import parse_markdown_structure
-from research_graph.papers.source_assets.registry import (
+from research_graph.infrastructure.papers.chunking.chunker import parse_markdown_structure
+from research_graph.infrastructure.papers.source_assets.registry import (
     SourceAssetManifest,
     validate_source_asset_manifest,
 )
-from research_graph.staging.import_boundary import (
+from research_graph.infrastructure.staging.import_boundary import (
     ImportCandidate,
     validate_import_boundary_rehearsal,
 )
@@ -238,7 +238,7 @@ def test_article_artifact_structure_properties_fail_closed(extra_slug: str) -> N
         }
     ]
 
-    from research_graph.papers.artifacts.models import (
+    from research_graph.infrastructure.papers.artifacts.models import (
         build_article_artifact_manifest_from_structure,
     )
 
@@ -322,7 +322,9 @@ def test_negative_page_index_navigation_property_shrinks_boundary_mistakes(
     )
     parsed = parse_article(ingestion)
 
-    from research_graph.papers.indexing.parsed_page_index import build_page_index_from_parsed
+    from research_graph.infrastructure.papers.indexing.parsed_page_index import (
+        build_page_index_from_parsed,
+    )
 
     page_index = build_page_index_from_parsed(parsed)
     assert page_index.validate_navigation() == []

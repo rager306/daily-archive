@@ -3,7 +3,7 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from research_graph.retrieval.embedder import Embedder
+from research_graph.infrastructure.retrieval.embedder import Embedder
 
 FD_EMBEDDINGS_ENDPOINT = "http://127.0.0.1:8000/v1/embeddings"
 FD_BAD_ENDPOINT = "http://127.0.0.1:8000/v1/not-found-for-m062-s01"

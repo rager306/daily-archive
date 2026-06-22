@@ -6,9 +6,9 @@ Scope: repair-cluster modules whose callers fit inside `src/arxiv_archive` or ar
 
 | Old runtime path | Canonical runtime path | Archive path |
 |---|---|---|
-| `src/arxiv_archive/bounded_chunk_repair.py` | `src/research_graph/repair/bounded_chunk_repair.py` | `archive/package-rename-waves/wave-12/src/arxiv_archive/bounded_chunk_repair.py` |
-| `src/arxiv_archive/candidate_locators.py` | `src/research_graph/repair/candidate_locators.py` | `archive/package-rename-waves/wave-12/src/arxiv_archive/candidate_locators.py` |
-| `src/arxiv_archive/chunking_benchmark.py` | `src/research_graph/repair/chunking_benchmark.py` | `archive/package-rename-waves/wave-12/src/arxiv_archive/chunking_benchmark.py` |
+| `src/arxiv_archive/bounded_chunk_repair.py` | `src/research_graph/infrastructure/repair/bounded_chunk_repair.py` | `archive/package-rename-waves/wave-12/src/arxiv_archive/bounded_chunk_repair.py` |
+| `src/arxiv_archive/candidate_locators.py` | `src/research_graph/infrastructure/repair/candidate_locators.py` | `archive/package-rename-waves/wave-12/src/arxiv_archive/candidate_locators.py` |
+| `src/arxiv_archive/chunking_benchmark.py` | `src/research_graph/infrastructure/repair/chunking_benchmark.py` | `archive/package-rename-waves/wave-12/src/arxiv_archive/chunking_benchmark.py` |
 
 ## Verification Notes
 

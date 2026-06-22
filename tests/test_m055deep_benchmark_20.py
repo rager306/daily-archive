@@ -121,7 +121,7 @@ def test_idempotent_summary() -> None:
     opendataloader = read_json(OPENDATALOADER_DIR / "summary.json")
     opendataloader_packets = per_pdf_packets(OPENDATALOADER_DIR)
 
-    grobid_counts = Counter({status: 0 for status in grobid["aggregate_counts"]})
+    grobid_counts = Counter(dict.fromkeys(grobid["aggregate_counts"], 0))
     grobid_counts.update(packet["status"] for packet in grobid_packets)
     assert grobid["aggregate_counts"] == dict(grobid_counts)
     assert grobid["total_ref_count"] == sum(packet["ref_count"] for packet in grobid_packets)
@@ -130,7 +130,7 @@ def test_idempotent_summary() -> None:
     assert grobid["total_equation_count"] == sum(packet["equation_count"] for packet in grobid_packets)
     assert grobid["total_figure_count"] == sum(packet["figure_count"] for packet in grobid_packets)
 
-    opendataloader_counts = Counter({status: 0 for status in opendataloader["aggregate_counts"]})
+    opendataloader_counts = Counter(dict.fromkeys(opendataloader["aggregate_counts"], 0))
     opendataloader_counts.update(packet["status"] for packet in opendataloader_packets)
     assert opendataloader["aggregate_counts"] == dict(opendataloader_counts)
     assert opendataloader["total_markdown_size_bytes"] == sum(

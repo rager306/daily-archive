@@ -303,6 +303,7 @@ New contracts (Ports): `LLMClientPort.extract(prompt, kind, context)`, `GraphDBP
 - [x] M104 S02 — FullTextProviderPort pivot (D088) + MDConverterAdapter
 - [x] M104 S03 — physical onion refactor (models → domain, pipeline → application, KeywordExtractor injection)
 - [x] M104 S04 — this ADR + trajectory guardrail
+- [x] M105 — Onion completion: all 10 infrastructure packages physically moved into `research_graph/infrastructure/` (4 waves). Evaluation dissolved across layers. 7 slices, 14 tasks, 200+ callers updated, 9 manifests updated.
 - [ ] Phase 3 — `FalkorDBAdapter` implementing `GraphDBPort` (new Adapter, no caller changes)
 - [ ] Phase 4 — `QueueDispatch` activation (already implements `DispatchProtocol`)
 - [ ] Cleanup — remove back-compat shims after legacy imports migrate

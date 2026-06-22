@@ -1,6 +1,6 @@
 """Contract tests for metadata-only article link and dedup evidence bundles.
 
-S05 is intentionally test-first.  The future ``research_graph.papers.indexing.links_dedup``
+S05 is intentionally test-first.  The future ``research_graph.infrastructure.papers.indexing.links_dedup``
 module must expose deterministic, review-only link/dedup manifests that separate
 citation links, structural links, metadata signals, and preprint dedup candidates.
 The contract is metadata-only: diagnostics may identify unsafe paths, but redacted
@@ -97,10 +97,10 @@ def links_dedup_contract():
     """
 
     try:
-        return importlib.import_module("research_graph.papers.indexing.links_dedup")
+        return importlib.import_module("research_graph.infrastructure.papers.indexing.links_dedup")
     except ModuleNotFoundError as exc:
-        if exc.name == "research_graph.papers.indexing.links_dedup":
-            pytest.xfail("research_graph.papers.indexing.links_dedup is not implemented yet")
+        if exc.name == "research_graph.infrastructure.papers.indexing.links_dedup":
+            pytest.xfail("research_graph.infrastructure.papers.indexing.links_dedup is not implemented yet")
         raise
 
 

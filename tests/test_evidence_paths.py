@@ -8,15 +8,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
-from research_graph.corpus.parsing.parser import parse_article
 from research_graph.domain.semantic_chunks import EvidencePath, SemanticChunk
-from research_graph.papers.indexing import (
+from research_graph.infrastructure.corpus.ingestion import FullTextSource, ingest_full_text
+from research_graph.infrastructure.corpus.parsing.parser import parse_article
+from research_graph.infrastructure.papers.indexing import (
     PageIndexDocument,
     build_page_index,
     build_page_index_from_parsed,
 )
-from research_graph.papers.semantic_chunks import (
+from research_graph.infrastructure.papers.semantic_chunks import (
     build_evidence_path,
     build_evidence_paths,
     build_semantic_chunks,

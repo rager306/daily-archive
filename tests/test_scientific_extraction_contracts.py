@@ -10,9 +10,9 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 
-from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
 from research_graph.domain.semantic_chunks import EvidencePath
-from research_graph.evaluation.scientific_extraction import (
+from research_graph.infrastructure.corpus.ingestion import FullTextSource, ingest_full_text
+from research_graph.infrastructure.evaluation.scientific_extraction import (
     Claim,
     ExtractionPatch,
     ScientificEntity,
@@ -22,8 +22,11 @@ from research_graph.evaluation.scientific_extraction import (
     validate_claim,
     validate_extraction_patch,
 )
-from research_graph.papers.indexing import PageIndexDocument, build_page_index
-from research_graph.papers.semantic_chunks import build_evidence_path, build_semantic_chunks
+from research_graph.infrastructure.papers.indexing import PageIndexDocument, build_page_index
+from research_graph.infrastructure.papers.semantic_chunks import (
+    build_evidence_path,
+    build_semantic_chunks,
+)
 
 FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
 SCHEMA_VERSION = "typed.v1"

@@ -3,7 +3,7 @@
 from hypothesis import Verbosity, given, settings
 from hypothesis import strategies as st
 
-from research_graph.retrieval.keyword_extractor import KeywordExtractor
+from research_graph.infrastructure.retrieval.keyword_extractor import KeywordExtractor
 from tests.helpers.modular_fixtures import FIXTURE_MARKDOWN
 
 

@@ -197,8 +197,8 @@ def render_report(summary: dict[str, Any]) -> str:
 
     return f"""# M061 REPORT: 2-hop BFS evidence and M064 trigger evaluation
 
-Generated: {summary['generated_at']}  
-Scope: M064-wqfgfa S01-S03 evidence package for M061 2-hop BFS closeout.  
+Generated: {summary['generated_at']}
+Scope: M064-wqfgfa S01-S03 evidence package for M061 2-hop BFS closeout.
 Network host reference: `127.0.0.1`.
 
 ## 0. Резюме M061
@@ -297,12 +297,12 @@ def render_adr(summary: dict[str, Any]) -> str:
     graph = summary["graph"]
     return f"""# ADR-018: M061 2-hop Evidence and M064 Trigger Evaluation
 
-**Status:** Accepted (binding)  
-**Date:** 2026-06-13  
-**Deciders:** agent  
-**Milestone:** M064-wqfgfa S03  
-**Scope:** m061-2-hop-bfs / pipeline-queue-trigger / arxiv-rate-limit / m3-judge / graph-diagnostics  
-**Binding Level:** binding supplement to ADR-010, ADR-013, ADR-014, ADR-016, ADR-017  
+**Status:** Accepted (binding)
+**Date:** 2026-06-13
+**Deciders:** agent
+**Milestone:** M064-wqfgfa S03
+**Scope:** m061-2-hop-bfs / pipeline-queue-trigger / arxiv-rate-limit / m3-judge / graph-diagnostics
+**Binding Level:** binding supplement to ADR-010, ADR-013, ADR-014, ADR-016, ADR-017
 **Revisable:** yes, after M062 production hardening and M063 GraphDB selection are complete and fresh evidence shows synchronous execution is no longer sufficient
 
 ## 0. One-line Decision

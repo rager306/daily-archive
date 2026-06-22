@@ -15,12 +15,11 @@ from importlib import metadata
 from pathlib import Path
 from typing import Any
 
-from pypdf import PdfReader, PdfWriter
-
 from marker.config.parser import ConfigParser
 from marker.converters.pdf import PdfConverter
 from marker.models import create_model_dict
 from marker.output import text_from_rendered
+from pypdf import PdfReader, PdfWriter
 
 CORPUS_ROOT = Path("data/article_catalog/article_catalog/arxiv")
 OUTPUT_ROOT = Path("artifacts/m058-marker/pilot-5")

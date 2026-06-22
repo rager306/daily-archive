@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from research_graph.graph.readiness.extraction_gate import decide_extraction, run_extraction_gate
+from research_graph.infrastructure.graph.readiness.extraction_gate import (
+    decide_extraction,
+    run_extraction_gate,
+)
 
 
 def _manifest(entries: list[dict[str, object]]) -> dict[str, object]:

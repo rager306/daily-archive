@@ -6,7 +6,7 @@ Moved the bounded thirty-paper source acquisition/source-scan helper into the ca
 
 | Old runtime path | New canonical path |
 |---|---|
-| `src/arxiv_archive/thirty_paper_source_scan.py` | `src/research_graph/corpus/sources/thirty_paper_source_scan.py` |
+| `src/arxiv_archive/thirty_paper_source_scan.py` | `src/research_graph/corpus/sources/thirty_paper_source_scan.py` (historical) → `src/research_graph/infrastructure/corpus/sources/thirty_paper_source_scan.py` (current canonical) |
 
 ## Scope note
 
@@ -20,6 +20,6 @@ The old file is archived here for historical reference only. It is intentionally
 
 - Canonical module includes `Formerly:` breadcrumb.
 - Old `src/arxiv_archive/thirty_paper_source_scan.py` runtime file is absent.
-- Source, tests, and scripts import `research_graph.corpus.sources.thirty_paper_source_scan`.
+- Source, tests, and scripts import `research_graph.infrastructure.corpus.sources.thirty_paper_source_scan`.
 - Direct old import/string search is clean.
 - Targeted local tests, compile checks, import smoke, and GitNexus change detection must pass before closeout.

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from research_graph.repair.candidate_locators import (
+from research_graph.infrastructure.repair.candidate_locators import (
     CANDIDATE_LOCATOR_PROTOCOL_VERSION,
     DEFAULT_ROUTE_SPECS,
     LocatorSource,

@@ -16,15 +16,15 @@ from typing import Any, cast
 
 import pytest
 
-from research_graph.evaluation.dspy_extraction import (
+from research_graph.infrastructure.evaluation.dspy_extraction import (
     BaselineDspyExtractionModule,
     DspyExtractionInput,
 )
-from research_graph.graph.ladybug_client import evidence_path_id
+from research_graph.infrastructure.graph.ladybug_client import evidence_path_id
 
 RAW_FIXTURE_CLAIM_TEXT = "Local markdown is enough to build a deterministic PageIndex."
 S08_FILES = (
-    Path("src/research_graph/evaluation/dspy_extraction.py"),
+    Path("src/research_graph.infrastructure.evaluation.dspy_extraction.py"),
     Path("tests/test_dspy_extraction_boundary.py"),
 )
 FORBIDDEN_IMPORT_ROOTS = {

@@ -5,7 +5,10 @@ from typing import Any
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from research_graph.corpus.sources.markdown_converter import ConversionResult, MDConverter
+from research_graph.infrastructure.corpus.sources.markdown_converter import (
+    ConversionResult,
+    MDConverter,
+)
 from tests.helpers.modular_fixtures import FIXTURE_MARKDOWN, MODULAR_RETORT, adaptix_dump
 
 

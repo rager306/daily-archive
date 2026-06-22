@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from research_graph.papers.artifacts import batch_validation as batch
+from research_graph.infrastructure.papers.artifacts import batch_validation as batch
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_batch_validation"
 

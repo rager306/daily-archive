@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from research_graph.papers.chunking import (
+from research_graph.infrastructure.papers.chunking import (
     ChunkAnnotationSidecar,
     RouteEligibility,
     SourceSpan,
@@ -15,7 +15,7 @@ from research_graph.papers.chunking import (
     parse_markdown_structure,
     write_structure_aware_run,
 )
-from research_graph.repair.chunk_import_contract import validate_import_ready_package
+from research_graph.infrastructure.repair.chunk_import_contract import validate_import_ready_package
 
 
 def test_source_span_uses_normalized_markdown_coordinates() -> None:

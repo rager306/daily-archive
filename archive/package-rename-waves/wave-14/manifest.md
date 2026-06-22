@@ -6,10 +6,10 @@ Scope: retrieval/embedding utilities.
 
 | Old runtime path | Canonical runtime path | Archive path |
 |---|---|---|
-| `src/arxiv_archive/embedder.py` | `src/research_graph/retrieval/embedder.py` | `archive/package-rename-waves/wave-14/src/arxiv_archive/embedder.py` |
-| `src/arxiv_archive/hybrid_retrieval.py` | `src/research_graph/retrieval/hybrid.py` | `archive/package-rename-waves/wave-14/src/arxiv_archive/hybrid_retrieval.py` |
-| `src/arxiv_archive/keyword_extractor.py` | `src/research_graph/retrieval/keyword_extractor.py` | `archive/package-rename-waves/wave-14/src/arxiv_archive/keyword_extractor.py` |
-| `src/arxiv_archive/summarizer.py` | `src/research_graph/retrieval/summarizer.py` | `archive/package-rename-waves/wave-14/src/arxiv_archive/summarizer.py` |
+| `src/arxiv_archive/embedder.py` | `src/research_graph/infrastructure/retrieval/embedder.py` | `archive/package-rename-waves/wave-14/src/arxiv_archive/embedder.py` |
+| `src/arxiv_archive/hybrid_retrieval.py` | `src/research_graph/infrastructure/retrieval/hybrid.py` | `archive/package-rename-waves/wave-14/src/arxiv_archive/hybrid_retrieval.py` |
+| `src/arxiv_archive/keyword_extractor.py` | `src/research_graph/infrastructure/retrieval/keyword_extractor.py` | `archive/package-rename-waves/wave-14/src/arxiv_archive/keyword_extractor.py` |
+| `src/arxiv_archive/summarizer.py` | `src/research_graph/infrastructure/retrieval/summarizer.py` | `archive/package-rename-waves/wave-14/src/arxiv_archive/summarizer.py` |
 
 ## Verification Notes
 

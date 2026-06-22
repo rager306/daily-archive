@@ -24,7 +24,10 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from research_graph.corpus.ingestion.loader import ArticleLoadSource, load_article_source
+from research_graph.infrastructure.corpus.ingestion.loader import (
+    ArticleLoadSource,
+    load_article_source,
+)
 
 MILESTONE_ID = "M031-vwpd8e"
 SLICE_ID = "S02"

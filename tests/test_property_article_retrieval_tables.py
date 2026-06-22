@@ -16,7 +16,7 @@ from typing import Any
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from research_graph.papers.indexing.retrieval_tables import (
+from research_graph.infrastructure.papers.indexing.retrieval_tables import (
     ALLOWED_BENCHMARK_STATUSES,
     DIAGNOSTIC_COUNTER_KEYS,
     build_article_retrieval_table_manifest,

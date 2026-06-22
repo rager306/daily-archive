@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from research_graph.graph.readiness.core import (
+from research_graph.infrastructure.graph.readiness.core import (
     ChunkRoute,
     ChunkType,
     CoordinateSpace,

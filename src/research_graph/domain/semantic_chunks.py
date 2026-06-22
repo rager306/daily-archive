@@ -2,7 +2,7 @@
 
 Pure data contracts (frozen dataclasses) for the knowledge pipeline. The
 build/validate logic that produces these lives in
-:mod:`research_graph.papers.semantic_chunks` (infrastructure); only the model
+:mod:`research_graph.infrastructure.papers.semantic_chunks` (infrastructure); only the model
 types belong here so the domain Core and the application Ports can reference
 them without importing infrastructure.
 

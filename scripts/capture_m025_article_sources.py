@@ -135,7 +135,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--selection", required=True, type=Path)
     args = parser.parse_args(argv[1:])
 
-    catalog = load_json(args.catalog)
+    _catalog = load_json(args.catalog)
     index = load_json(args.index)
     selection = load_json(args.selection)
     catalog_root = args.catalog.parent.resolve()

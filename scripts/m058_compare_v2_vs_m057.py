@@ -132,7 +132,7 @@ def compare_v2_vs_m057(
             "m057": 0.0,
         },
     }
-    for name, item in metrics.items():
+    for _name, item in metrics.items():
         if "winner" not in item:
             item["winner"] = _winner(float(item["v2"]), float(item["m057"]))
 
