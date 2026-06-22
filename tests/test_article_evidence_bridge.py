@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from research_graph.corpus.ingestion import ArticleLoadSource, load_article_source
 from research_graph.papers.assets import build_article_asset_manifest
 from research_graph.papers.evidence import (
     ARTICLE_EVIDENCE_BUNDLE_SCHEMA_VERSION,
@@ -28,7 +29,6 @@ from research_graph.papers.evidence import (
     validate_article_evidence_bundle,
     validate_article_load_events,
 )
-from research_graph.corpus.ingestion import ArticleLoadSource, load_article_source
 from research_graph.papers.indexing.page_index import build_article_page_index_from_structure
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_loader"
@@ -88,7 +88,9 @@ def _mixed_loader_results(tmp_path: Path):
     paper_id = "2605.bridge"
     return [
         load_article_source(
-            ArticleLoadSource(FIXTURES_DIR / "structured_paper.md", paper_id=paper_id, source_type="markdown"),
+            ArticleLoadSource(
+                FIXTURES_DIR / "structured_paper.md", paper_id=paper_id, source_type="markdown"
+            ),
             log_path=tmp_path / "structured.jsonl",
         ),
         load_article_source(
@@ -96,14 +98,18 @@ def _mixed_loader_results(tmp_path: Path):
             log_path=tmp_path / "pdf.jsonl",
         ),
         load_article_source(
-            ArticleLoadSource(FIXTURES_DIR / "arxiv_landing_only.md", paper_id=paper_id, source_type="markdown"),
+            ArticleLoadSource(
+                FIXTURES_DIR / "arxiv_landing_only.md", paper_id=paper_id, source_type="markdown"
+            ),
             log_path=tmp_path / "landing.jsonl",
         ),
     ]
 
 
 def _read_jsonl(path: Path) -> list[dict[str, object]]:
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return [
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
 
 
 def _load_structure_fixture(path: Path) -> dict[str, object]:
@@ -117,7 +123,9 @@ def _basic_page_index() -> dict[str, object]:
 
 
 def _fallback_page_index() -> dict[str, object]:
-    structure = _load_structure_fixture(ARTICLE_STRUCTURE_FIXTURES_DIR / "basic_article_structure.json")
+    structure = _load_structure_fixture(
+        ARTICLE_STRUCTURE_FIXTURES_DIR / "basic_article_structure.json"
+    )
     structure["sections"] = []
     structure["artifact_placeholders"] = []
     structure["safe_spans"] = []
@@ -137,7 +145,9 @@ def _assert_no_forbidden_bridge_payload(payload: dict[str, object]) -> None:
     assert not (set(_walk_keys(payload)) & FORBIDDEN_EXACT_KEYS)
 
 
-def _page_index_attached_payload(tmp_path: Path, page_index: dict[str, object]) -> dict[str, object]:
+def _page_index_attached_payload(
+    tmp_path: Path, page_index: dict[str, object]
+) -> dict[str, object]:
     bundle = build_article_evidence_bundle(
         _mixed_loader_results(tmp_path),
         paper_id="2605.bridge",
@@ -151,7 +161,9 @@ def _page_index_attached_payload(tmp_path: Path, page_index: dict[str, object]) 
     )
 
 
-def _links_dedup_manifest_for_bridge(tmp_path: Path, *, unsafe: bool = False) -> tuple[dict[str, object], dict[str, object]]:
+def _links_dedup_manifest_for_bridge(
+    tmp_path: Path, *, unsafe: bool = False
+) -> tuple[dict[str, object], dict[str, object]]:
     from research_graph.papers.indexing.links_dedup import build_article_links_dedup_manifest
 
     bundle = build_article_evidence_bundle(
@@ -160,7 +172,9 @@ def _links_dedup_manifest_for_bridge(tmp_path: Path, *, unsafe: bool = False) ->
         run_id="m024-links-dedup-bridge-test",
     ).to_redacted_dict()
     source_ref = dict(bundle["source_refs"][0])
-    manifest = json.loads((LINKS_DEDUP_FIXTURES_DIR / "minimal_manifest.json").read_text(encoding="utf-8"))
+    manifest = json.loads(
+        (LINKS_DEDUP_FIXTURES_DIR / "minimal_manifest.json").read_text(encoding="utf-8")
+    )
     manifest["paper_id"] = "2605.bridge"
     manifest["run_id"] = "m024-links-dedup-bridge-test"
     manifest["source_refs"] = [source_ref]
@@ -187,7 +201,9 @@ def _links_dedup_manifest_for_bridge(tmp_path: Path, *, unsafe: bool = False) ->
     return bundle, build_article_links_dedup_manifest(manifest)
 
 
-def _asset_manifest_for_bridge(tmp_path: Path, *, unsafe: bool = False) -> tuple[dict[str, object], dict[str, object]]:
+def _asset_manifest_for_bridge(
+    tmp_path: Path, *, unsafe: bool = False
+) -> tuple[dict[str, object], dict[str, object]]:
     bundle = build_article_evidence_bundle(
         _mixed_loader_results(tmp_path),
         paper_id="2605.bridge",
@@ -247,7 +263,11 @@ def _asset_manifest_for_bridge(tmp_path: Path, *, unsafe: bool = False) -> tuple
                     "preservation_state": "source_linked",
                     "interpretation_status": "not_interpreted",
                     "source_span": span,
-                    **({"import_eligible": True, "caption_text": "FORBIDDEN_ASSET_CAPTION"} if unsafe else {}),
+                    **(
+                        {"import_eligible": True, "caption_text": "FORBIDDEN_ASSET_CAPTION"}
+                        if unsafe
+                        else {}
+                    ),
                 }
             ],
         }
@@ -260,7 +280,9 @@ def _combined_s01_log_events(tmp_path: Path):
     log_path = tmp_path / "s01-load-events.jsonl"
     results = [
         load_article_source(
-            ArticleLoadSource(FIXTURES_DIR / "structured_paper.md", paper_id=paper_id, source_type="markdown"),
+            ArticleLoadSource(
+                FIXTURES_DIR / "structured_paper.md", paper_id=paper_id, source_type="markdown"
+            ),
             log_path=log_path,
         ),
         load_article_source(
@@ -268,7 +290,9 @@ def _combined_s01_log_events(tmp_path: Path):
             log_path=log_path,
         ),
         load_article_source(
-            ArticleLoadSource(FIXTURES_DIR / "arxiv_landing_only.md", paper_id=paper_id, source_type="markdown"),
+            ArticleLoadSource(
+                FIXTURES_DIR / "arxiv_landing_only.md", paper_id=paper_id, source_type="markdown"
+            ),
             log_path=log_path,
         ),
     ]
@@ -306,7 +330,11 @@ def test_builds_valid_mixed_outcome_bundle_from_loader_metadata_only(tmp_path: P
     assert payload["bundle_id"].startswith("article-evidence-bundle:")
     assert payload["bundle_root"] == str(tmp_path / "bundle-root")
     assert payload["summary"]["source_count"] == 3
-    assert payload["summary"]["outcome_counts"] == {"failed": 1, "loaded": 1, "loaded_metadata_only": 1}
+    assert payload["summary"]["outcome_counts"] == {
+        "failed": 1,
+        "loaded": 1,
+        "loaded_metadata_only": 1,
+    }
     assert payload["summary"]["failure_counts"] == {"no_substantive_body": 1}
     assert payload["summary"]["checksum_count"] == 3
     assert payload["summary"]["checksum_coverage_rate"] == 1.0
@@ -315,7 +343,16 @@ def test_builds_valid_mixed_outcome_bundle_from_loader_metadata_only(tmp_path: P
     assert payload["summary"]["production_import_attempted"] is False
     assert payload["summary"]["ladybugdb_written"] is False
 
-    assert set(payload["subtrees"]) == {"raw", "normalized", "page_index", "assets", "links_dedup", "retrieval", "staging", "metrics"}
+    assert set(payload["subtrees"]) == {
+        "raw",
+        "normalized",
+        "page_index",
+        "assets",
+        "links_dedup",
+        "retrieval",
+        "staging",
+        "metrics",
+    }
     assert payload["subtrees"]["raw"]["status"] == "metadata_only"
     assert payload["subtrees"]["normalized"]["status"] == "review_only"
     assert payload["subtrees"]["page_index"]["status"] == "not_attempted"
@@ -352,7 +389,9 @@ def test_builds_valid_mixed_outcome_bundle_from_loader_metadata_only(tmp_path: P
     assert validate_article_evidence_bundle(bundle) == []
 
 
-def test_replays_s01_metadata_only_jsonl_events_into_equivalent_bridge_bundle(tmp_path: Path) -> None:
+def test_replays_s01_metadata_only_jsonl_events_into_equivalent_bridge_bundle(
+    tmp_path: Path,
+) -> None:
     results, events = _combined_s01_log_events(tmp_path)
 
     direct_payload = build_article_evidence_bundle(
@@ -386,7 +425,9 @@ def test_replays_s01_metadata_only_jsonl_events_into_equivalent_bridge_bundle(tm
     assert not (set(_walk_keys(replay_payload)) & FORBIDDEN_EXACT_KEYS)
 
 
-def test_replay_run_summary_records_redacted_input_fingerprints_and_no_import_claims(tmp_path: Path) -> None:
+def test_replay_run_summary_records_redacted_input_fingerprints_and_no_import_claims(
+    tmp_path: Path,
+) -> None:
     results, events = _combined_s01_log_events(tmp_path)
     bundle = build_article_evidence_bundle_from_load_events(
         events,
@@ -414,20 +455,29 @@ def test_replay_run_summary_records_redacted_input_fingerprints_and_no_import_cl
     assert run_summary["promoted_to_fact_count"] == 0
     assert run_summary["production_import_attempted"] is False
     assert run_summary["ladybugdb_written"] is False
-    assert run_summary["output_paths"] == {"bundle": "redacted-bundle.json", "summary": "run-summary.json"}
+    assert run_summary["output_paths"] == {
+        "bundle": "redacted-bundle.json",
+        "summary": "run-summary.json",
+    }
 
 
 def test_bundle_id_and_json_are_deterministic_for_reordered_loader_results(tmp_path: Path) -> None:
     results = _mixed_loader_results(tmp_path)
 
-    first = build_article_evidence_bundle(results, paper_id="2605.bridge", run_id="m024-s02-test-run")
-    second = build_article_evidence_bundle(list(reversed(results)), paper_id="2605.bridge", run_id="m024-s02-test-run")
+    first = build_article_evidence_bundle(
+        results, paper_id="2605.bridge", run_id="m024-s02-test-run"
+    )
+    second = build_article_evidence_bundle(
+        list(reversed(results)), paper_id="2605.bridge", run_id="m024-s02-test-run"
+    )
 
     assert first.bundle_id == second.bundle_id
     assert to_json(first) == to_json(second)
 
 
-def test_redacted_bundle_json_excludes_source_payloads_and_forbidden_payload_keys(tmp_path: Path) -> None:
+def test_redacted_bundle_json_excludes_source_payloads_and_forbidden_payload_keys(
+    tmp_path: Path,
+) -> None:
     secret_source = tmp_path / "secret-bearing.md"
     secret_source.write_text(
         "# Local fixture\n\n"
@@ -443,7 +493,9 @@ def test_redacted_bundle_json_excludes_source_payloads_and_forbidden_payload_key
     ]
     assert any(result.text and "OPENAI_API_KEY=sk-test-secret" in result.text for result in results)
 
-    payload = build_article_evidence_bundle(results, paper_id="2605.bridge", run_id="m024-redaction-test").to_redacted_dict()
+    payload = build_article_evidence_bundle(
+        results, paper_id="2605.bridge", run_id="m024-redaction-test"
+    ).to_redacted_dict()
     serialized = json.dumps(payload, sort_keys=True)
 
     for forbidden in FORBIDDEN_SNIPPETS:
@@ -452,12 +504,18 @@ def test_redacted_bundle_json_excludes_source_payloads_and_forbidden_payload_key
     assert validate_article_evidence_bundle(payload) == []
 
 
-def test_validation_reports_stable_diagnostics_for_unsafe_or_malformed_bundle(tmp_path: Path) -> None:
+def test_validation_reports_stable_diagnostics_for_unsafe_or_malformed_bundle(
+    tmp_path: Path,
+) -> None:
     result = load_article_source(
-        ArticleLoadSource(FIXTURES_DIR / "structured_paper.md", paper_id="2605.bridge", source_type="markdown"),
+        ArticleLoadSource(
+            FIXTURES_DIR / "structured_paper.md", paper_id="2605.bridge", source_type="markdown"
+        ),
         log_path=tmp_path / "structured.jsonl",
     )
-    payload = build_article_evidence_bundle([result], paper_id="2605.bridge", run_id="m024-negative-test").to_redacted_dict()
+    payload = build_article_evidence_bundle(
+        [result], paper_id="2605.bridge", run_id="m024-negative-test"
+    ).to_redacted_dict()
     payload["source_refs"][0]["load_outcome"] = "promoted"
     payload["source_refs"][0]["raw_text_embedded"] = True
     payload["summary"]["import_eligible_count"] = 1
@@ -483,7 +541,9 @@ def test_validation_reports_stable_diagnostics_for_unsafe_or_malformed_bundle(tm
     assert all(diagnostic["blocks_import"] is True for diagnostic in diagnostics)
 
 
-def test_page_index_summary_attaches_valid_manifest_as_metadata_only_subtree(tmp_path: Path) -> None:
+def test_page_index_summary_attaches_valid_manifest_as_metadata_only_subtree(
+    tmp_path: Path,
+) -> None:
     payload = _page_index_attached_payload(tmp_path, _basic_page_index())
     subtree = payload["subtrees"]["page_index"]
 
@@ -504,7 +564,11 @@ def test_page_index_summary_attaches_valid_manifest_as_metadata_only_subtree(tmp
         "paper_id": "fixture-paper-0001",
     }
     assert subtree["source_provenance"]["source_count"] == 3
-    assert subtree["source_provenance"]["outcome_counts"] == {"failed": 1, "loaded": 1, "loaded_metadata_only": 1}
+    assert subtree["source_provenance"]["outcome_counts"] == {
+        "failed": 1,
+        "loaded": 1,
+        "loaded_metadata_only": 1,
+    }
     assert subtree["source_provenance"]["failure_counts"] == {"no_substantive_body": 1}
     assert subtree["graph_import_claim"] is False
     assert subtree["trusted_kg_import_allowed"] is False
@@ -531,7 +595,9 @@ def test_page_index_summary_attaches_fallback_manifest_as_review_only(tmp_path: 
     _assert_no_forbidden_bridge_payload(payload)
 
 
-def test_page_index_summary_attaches_blocked_manifest_as_blocked_review_only(tmp_path: Path) -> None:
+def test_page_index_summary_attaches_blocked_manifest_as_blocked_review_only(
+    tmp_path: Path,
+) -> None:
     payload = _page_index_attached_payload(tmp_path, _blocked_page_index())
     subtree = payload["subtrees"]["page_index"]
 
@@ -562,13 +628,21 @@ def test_page_index_summary_forces_unsafe_import_mutation_fail_closed(tmp_path: 
     assert subtree["production_import_attempted"] is False
     assert subtree["trusted_kg_import_allowed"] is False
     assert subtree["diagnostic_counts_by_code"]["import_eligible_count_nonzero"] == 1
-    assert subtree["diagnostic_counts_by_code"]["unsafe_import_flag_true:production_import_attempted"] == 1
-    assert subtree["diagnostic_counts_by_code"]["unsafe_import_flag_true:trusted_kg_import_allowed"] == 1
+    assert (
+        subtree["diagnostic_counts_by_code"]["unsafe_import_flag_true:production_import_attempted"]
+        == 1
+    )
+    assert (
+        subtree["diagnostic_counts_by_code"]["unsafe_import_flag_true:trusted_kg_import_allowed"]
+        == 1
+    )
     assert validate_article_evidence_bundle(payload) == []
     _assert_no_forbidden_bridge_payload(payload)
 
 
-def test_page_index_summary_blocks_missing_source_path_or_hash_without_raw_payload(tmp_path: Path) -> None:
+def test_page_index_summary_blocks_missing_source_path_or_hash_without_raw_payload(
+    tmp_path: Path,
+) -> None:
     bundle = build_article_evidence_bundle(
         _mixed_loader_results(tmp_path),
         paper_id="2605.bridge",
@@ -670,8 +744,12 @@ def test_assets_summary_blocks_missing_manifest_provenance(tmp_path: Path) -> No
 def test_assets_summary_is_deterministic_and_aggregate_only(tmp_path: Path) -> None:
     bundle, manifest = _asset_manifest_for_bridge(tmp_path)
 
-    first = attach_assets_summary(bundle, manifest, "artifacts/article-assets-manifest.json", "b" * 64)
-    second = attach_assets_summary(bundle, manifest, "artifacts/article-assets-manifest.json", "b" * 64)
+    first = attach_assets_summary(
+        bundle, manifest, "artifacts/article-assets-manifest.json", "b" * 64
+    )
+    second = attach_assets_summary(
+        bundle, manifest, "artifacts/article-assets-manifest.json", "b" * 64
+    )
 
     assert first["subtrees"]["assets"] == second["subtrees"]["assets"]
     serialized = json.dumps(first["subtrees"]["assets"], sort_keys=True)
@@ -756,7 +834,9 @@ def test_links_dedup_summary_attaches_review_only_aggregate_counts(tmp_path: Pat
     _assert_no_forbidden_bridge_payload(payload)
 
 
-def test_links_dedup_summary_blocks_unsafe_or_mismatched_manifest_without_copying_payloads(tmp_path: Path) -> None:
+def test_links_dedup_summary_blocks_unsafe_or_mismatched_manifest_without_copying_payloads(
+    tmp_path: Path,
+) -> None:
     bundle, manifest = _links_dedup_manifest_for_bridge(tmp_path, unsafe=True)
 
     payload = attach_links_dedup_summary(
@@ -809,7 +889,9 @@ def test_links_dedup_payload_bearing_bridge_subtree_fails_bundle_validation(tmp_
     )
     payload["subtrees"]["links_dedup"]["raw_text"] = "raw link payload must not enter bridge"
     payload["subtrees"]["links_dedup"]["import_eligible_count"] = 1
-    payload["subtrees"]["links_dedup"]["source_provenance"]["manifest_source_ids"] = ["not-in-bundle"]
+    payload["subtrees"]["links_dedup"]["source_provenance"]["manifest_source_ids"] = [
+        "not-in-bundle"
+    ]
 
     diagnostics = validate_article_evidence_bundle(payload)
     codes = {diagnostic["code"] for diagnostic in diagnostics}
@@ -819,16 +901,21 @@ def test_links_dedup_payload_bearing_bridge_subtree_fails_bundle_validation(tmp_
     assert "links_dedup_source_ref_not_in_bundle" in codes
 
 
-
-def _retrieval_table_manifest_for_bridge(tmp_path: Path) -> tuple[dict[str, object], dict[str, object]]:
-    from research_graph.papers.indexing.retrieval_tables import build_article_retrieval_table_manifest
+def _retrieval_table_manifest_for_bridge(
+    tmp_path: Path,
+) -> tuple[dict[str, object], dict[str, object]]:
+    from research_graph.papers.indexing.retrieval_tables import (
+        build_article_retrieval_table_manifest,
+    )
 
     bundle = build_article_evidence_bundle(
         _mixed_loader_results(tmp_path),
         paper_id="2605.bridge",
         run_id="m024-retrieval-table-bridge-test",
     ).to_redacted_dict()
-    manifest = json.loads((RETRIEVAL_TABLES_FIXTURES_DIR / "minimal_manifest.json").read_text(encoding="utf-8"))
+    manifest = json.loads(
+        (RETRIEVAL_TABLES_FIXTURES_DIR / "minimal_manifest.json").read_text(encoding="utf-8")
+    )
     source_refs = [dict(bundle["source_refs"][0]), dict(bundle["source_refs"][1])]
     manifest["paper_id"] = "2605.bridge"
     manifest["run_id"] = "m024-retrieval-table-bridge-test"
@@ -854,7 +941,9 @@ def _retrieval_table_manifest_for_bridge(tmp_path: Path) -> tuple[dict[str, obje
     )
 
 
-def test_retrieval_table_benchmark_summary_attaches_review_only_aggregate_counts(tmp_path: Path) -> None:
+def test_retrieval_table_benchmark_summary_attaches_review_only_aggregate_counts(
+    tmp_path: Path,
+) -> None:
     bundle, manifest = _retrieval_table_manifest_for_bridge(tmp_path)
 
     payload = attach_retrieval_table_benchmark_summary(
@@ -912,13 +1001,17 @@ def test_retrieval_table_benchmark_summary_attaches_review_only_aggregate_counts
     _assert_no_forbidden_bridge_payload(payload)
 
 
-def test_retrieval_table_benchmark_summary_blocks_unsafe_manifest_without_copying_payloads(tmp_path: Path) -> None:
+def test_retrieval_table_benchmark_summary_blocks_unsafe_manifest_without_copying_payloads(
+    tmp_path: Path,
+) -> None:
     bundle = build_article_evidence_bundle(
         _mixed_loader_results(tmp_path),
         paper_id="2605.bridge",
         run_id="m024-retrieval-table-bridge-unsafe-test",
     ).to_redacted_dict()
-    manifest = json.loads((RETRIEVAL_TABLES_FIXTURES_DIR / "unsafe_manifest.json").read_text(encoding="utf-8"))
+    manifest = json.loads(
+        (RETRIEVAL_TABLES_FIXTURES_DIR / "unsafe_manifest.json").read_text(encoding="utf-8")
+    )
 
     payload = attach_retrieval_table_benchmark_summary(
         bundle,
@@ -953,7 +1046,9 @@ def test_retrieval_table_benchmark_summary_blocks_unsafe_manifest_without_copyin
     _assert_no_forbidden_bridge_payload(payload)
 
 
-def test_retrieval_table_benchmark_summary_blocks_missing_manifest_provenance(tmp_path: Path) -> None:
+def test_retrieval_table_benchmark_summary_blocks_missing_manifest_provenance(
+    tmp_path: Path,
+) -> None:
     bundle, manifest = _retrieval_table_manifest_for_bridge(tmp_path)
     manifest.pop("manifest_path")
     manifest.pop("manifest_sha256")
@@ -969,7 +1064,9 @@ def test_retrieval_table_benchmark_summary_blocks_missing_manifest_provenance(tm
     assert validate_article_evidence_bundle(payload) == []
 
 
-def test_retrieval_table_payload_bearing_bridge_subtree_fails_bundle_validation(tmp_path: Path) -> None:
+def test_retrieval_table_payload_bearing_bridge_subtree_fails_bundle_validation(
+    tmp_path: Path,
+) -> None:
     bundle, manifest = _retrieval_table_manifest_for_bridge(tmp_path)
     payload = attach_retrieval_table_benchmark_summary(
         bundle,
@@ -985,6 +1082,7 @@ def test_retrieval_table_payload_bearing_bridge_subtree_fails_bundle_validation(
 
     assert "forbidden_payload_key" in codes
     assert "subtree_import_eligible_count_nonzero" in codes
+
 
 def test_run_summary_preserves_fail_closed_counts_without_graph_claims(tmp_path: Path) -> None:
     bundle = build_article_evidence_bundle(
@@ -1017,22 +1115,35 @@ def test_run_summary_preserves_fail_closed_counts_without_graph_claims(tmp_path:
 @pytest.mark.parametrize(
     ("mutate", "expected_code"),
     [
-        (lambda events: events[0].__setitem__("event", "source.fetch_completed"), "unsupported_replay_event"),
+        (
+            lambda events: events[0].__setitem__("event", "source.fetch_completed"),
+            "unsupported_replay_event",
+        ),
         (lambda events: events[1].pop("source_path"), "missing_source_path"),
         (lambda events: events[1].__setitem__("sha256", "not-a-sha"), "invalid_sha256"),
         (lambda events: events.append(dict(events[1])), "duplicate_terminal_source_id"),
-        (lambda events: events[1].__setitem__("text", "raw article payload should be refused"), "forbidden_payload_key"),
-        (lambda events: events[1].__setitem__("outcome", "failed"), "terminal_event_outcome_mismatch"),
+        (
+            lambda events: events[1].__setitem__("text", "raw article payload should be refused"),
+            "forbidden_payload_key",
+        ),
+        (
+            lambda events: events[1].__setitem__("outcome", "failed"),
+            "terminal_event_outcome_mismatch",
+        ),
     ],
 )
-def test_replay_rejects_malformed_or_payload_bearing_s01_events(tmp_path: Path, mutate, expected_code: str) -> None:
+def test_replay_rejects_malformed_or_payload_bearing_s01_events(
+    tmp_path: Path, mutate, expected_code: str
+) -> None:
     _, events = _combined_s01_log_events(tmp_path)
     mutate(events)
 
     diagnostics = validate_article_load_events(events, paper_id="2605.bridge")
     assert expected_code in {diagnostic["code"] for diagnostic in diagnostics}
     assert all(diagnostic["json_path"].startswith("/events[") for diagnostic in diagnostics)
-    assert "Graph-Guided Retrieval for Scientific Agents" not in json.dumps(diagnostics, sort_keys=True)
+    assert "Graph-Guided Retrieval for Scientific Agents" not in json.dumps(
+        diagnostics, sort_keys=True
+    )
 
     with pytest.raises(ArticleEvidenceReplayError) as exc_info:
         build_article_evidence_bundle_from_load_events(
@@ -1047,33 +1158,57 @@ def test_replay_rejects_malformed_or_payload_bearing_s01_events(tmp_path: Path, 
     ("mutation", "expected_code"),
     [
         (lambda payload: payload.pop("source_refs"), "missing_source_refs"),
-        (lambda payload: payload["source_refs"][0].__setitem__("sha256", "not-a-sha"), "invalid_sha256"),
-        (lambda payload: payload["source_refs"][0].__setitem__("failure_reason", "unexpected"), "unexpected_failure_reason"),
-        (lambda payload: payload["safety_flags"].__setitem__("ladybugdb_written", True), "safety_flag_true:ladybugdb_written"),
+        (
+            lambda payload: payload["source_refs"][0].__setitem__("sha256", "not-a-sha"),
+            "invalid_sha256",
+        ),
+        (
+            lambda payload: payload["source_refs"][0].__setitem__("failure_reason", "unexpected"),
+            "unexpected_failure_reason",
+        ),
+        (
+            lambda payload: payload["safety_flags"].__setitem__("ladybugdb_written", True),
+            "safety_flag_true:ladybugdb_written",
+        ),
     ],
 )
-def test_negative_validation_boundaries_are_redacted_and_path_addressable(tmp_path: Path, mutation, expected_code: str) -> None:
+def test_negative_validation_boundaries_are_redacted_and_path_addressable(
+    tmp_path: Path, mutation, expected_code: str
+) -> None:
     result = load_article_source(
-        ArticleLoadSource(FIXTURES_DIR / "structured_paper.md", paper_id="2605.bridge", source_type="markdown"),
+        ArticleLoadSource(
+            FIXTURES_DIR / "structured_paper.md", paper_id="2605.bridge", source_type="markdown"
+        ),
         log_path=tmp_path / f"{expected_code}.jsonl",
     )
-    payload = build_article_evidence_bundle([result], paper_id="2605.bridge", run_id="m024-boundary-test").to_redacted_dict()
+    payload = build_article_evidence_bundle(
+        [result], paper_id="2605.bridge", run_id="m024-boundary-test"
+    ).to_redacted_dict()
 
     mutation(payload)
 
     diagnostics = validate_article_evidence_bundle(payload)
     assert expected_code in {diagnostic["code"] for diagnostic in diagnostics}
     assert all(diagnostic["json_path"].startswith("/") for diagnostic in diagnostics)
-    assert "Graph-Guided Retrieval for Scientific Agents" not in json.dumps(diagnostics, sort_keys=True)
+    assert "Graph-Guided Retrieval for Scientific Agents" not in json.dumps(
+        diagnostics, sort_keys=True
+    )
+
 
 def test_article_evidence_bridge_old_module_is_archived_with_canonical_breadcrumb() -> None:
-    top_level_archive_path = Path("archive/package-layout-shims/wave-01/src/arxiv_archive/article_evidence_bridge.py")
-    package_archive_path = Path("archive/package-rename-waves/wave-01/src/arxiv_archive/artifacts/evidence_bridge.py")
+    top_level_archive_path = Path(
+        "archive/package-layout-shims/wave-01/src/arxiv_archive/article_evidence_bridge.py"
+    )
+    package_archive_path = Path(
+        "archive/package-rename-waves/wave-01/src/arxiv_archive/artifacts/evidence_bridge.py"
+    )
     canonical_path = Path("src/research_graph/papers/evidence.py")
 
     assert top_level_archive_path.exists()
     assert package_archive_path.exists()
     assert not Path("src/arxiv_archive/article_evidence_bridge.py").exists()
     assert not Path("src/arxiv_archive/artifacts/evidence_bridge.py").exists()
-    assert "Formerly: src/arxiv_archive/artifacts/evidence_bridge.py" in canonical_path.read_text(encoding="utf-8")
+    assert "Formerly: src/arxiv_archive/artifacts/evidence_bridge.py" in canonical_path.read_text(
+        encoding="utf-8"
+    )
     assert ARTICLE_EVIDENCE_BUNDLE_SCHEMA_VERSION == "m024-article-evidence-bundle.v1"

@@ -18,10 +18,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from research_graph.repair.chunk_import_contract import validate_import_ready_package, validation_to_dict
-from research_graph.papers.semantic_chunks import build_evidence_path, build_semantic_chunks
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
 from research_graph.papers.indexing import PageIndexNode, build_page_index
+from research_graph.papers.semantic_chunks import build_evidence_path, build_semantic_chunks
+from research_graph.repair.chunk_import_contract import (
+    validate_import_ready_package,
+    validation_to_dict,
+)
 
 PACKAGE_SCHEMA_VERSION = "m005-import-ready-chunk-package.v1"
 CONTRACT_VERSION = "import-ready-chunk-contract.v1"
@@ -52,9 +55,13 @@ def build_baseline_package(paper: dict[str, Any], *, run_id: str) -> dict[str, A
     if source_path is None:
         return _missing_artifact_package(paper, run_id=run_id, reason="missing_full_text_artifact")
 
-    ingestion = ingest_full_text(FullTextSource(paper_id=paper_id, source_type="markdown", source_path=source_path))
+    ingestion = ingest_full_text(
+        FullTextSource(paper_id=paper_id, source_type="markdown", source_path=source_path)
+    )
     if ingestion.extraction_mode in {"missing_source", "empty_source", "low_quality_source"}:
-        return _missing_artifact_package(paper, run_id=run_id, reason=f"full_text_{ingestion.extraction_mode}")
+        return _missing_artifact_package(
+            paper, run_id=run_id, reason=f"full_text_{ingestion.extraction_mode}"
+        )
 
     document = build_page_index(ingestion)
     semantic_chunks = build_semantic_chunks(document)
@@ -100,8 +107,14 @@ def measure_manifest(manifest_path: Path) -> BaselineRunResult:
             continue
         package = build_baseline_package(paper, run_id=run_id)
         validation = validation_to_dict(validate_import_ready_package(package))
-        measurements.append(BaselineMeasurement(paper_id=str(package["paper_id"]), package=package, validation=validation))
-    return BaselineRunResult(measurements=measurements, summary=_summary_for_measurements(measurements))
+        measurements.append(
+            BaselineMeasurement(
+                paper_id=str(package["paper_id"]), package=package, validation=validation
+            )
+        )
+    return BaselineRunResult(
+        measurements=measurements, summary=_summary_for_measurements(measurements)
+    )
 
 
 def write_baseline_run(result: BaselineRunResult, output_dir: Path) -> None:
@@ -110,7 +123,10 @@ def write_baseline_run(result: BaselineRunResult, output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     diagnostics_path = output_dir / "baseline-package-diagnostics.jsonl"
     diagnostics_path.write_text(
-        "".join(json.dumps(_measurement_to_record(measurement), sort_keys=True) + "\n" for measurement in result.measurements),
+        "".join(
+            json.dumps(_measurement_to_record(measurement), sort_keys=True) + "\n"
+            for measurement in result.measurements
+        ),
         encoding="utf-8",
     )
     (output_dir / "baseline-summary.json").write_text(
@@ -119,10 +135,16 @@ def write_baseline_run(result: BaselineRunResult, output_dir: Path) -> None:
     )
 
 
-def write_review_samples(result: BaselineRunResult, manifest_path: Path, *, review_path: Path, index_path: Path) -> None:
+def write_review_samples(
+    result: BaselineRunResult, manifest_path: Path, *, review_path: Path, index_path: Path
+) -> None:
     """Write bounded human review samples plus a redacted machine index."""
     manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
-    papers_by_id = {str(paper["paper_id"]): paper for paper in manifest.get("papers", []) if isinstance(paper, dict)}
+    papers_by_id = {
+        str(paper["paper_id"]): paper
+        for paper in manifest.get("papers", [])
+        if isinstance(paper, dict)
+    }
     inner_review_ids = [str(paper_id) for paper_id in manifest.get("inner_review_minimum", [])]
     measurements_by_id = {measurement.paper_id: measurement for measurement in result.measurements}
     review_path = Path(review_path)
@@ -192,18 +214,30 @@ def _summary_for_measurements(measurements: list[BaselineMeasurement]) -> dict[s
     counts_by_chunk_type: dict[str, int] = {}
     for measurement in measurements:
         package_refusals = measurement.package["diagnostics"].get("refusal_counts", {})
-        for reason, count in _merged_refusal_counts(package_refusals, measurement.validation["refusal_counts"]).items():
+        for reason, count in _merged_refusal_counts(
+            package_refusals, measurement.validation["refusal_counts"]
+        ).items():
             refusal_counts[reason] = refusal_counts.get(reason, 0) + int(count)
-        _merge_counts(counts_by_state, measurement.package["diagnostics"].get("counts_by_state", {}))
-        _merge_counts(counts_by_route, measurement.package["diagnostics"].get("counts_by_route", {}))
-        _merge_counts(counts_by_chunk_type, measurement.package["diagnostics"].get("counts_by_chunk_type", {}))
+        _merge_counts(
+            counts_by_state, measurement.package["diagnostics"].get("counts_by_state", {})
+        )
+        _merge_counts(
+            counts_by_route, measurement.package["diagnostics"].get("counts_by_route", {})
+        )
+        _merge_counts(
+            counts_by_chunk_type, measurement.package["diagnostics"].get("counts_by_chunk_type", {})
+        )
     return {
         "schema_version": BASELINE_RUN_SCHEMA,
         "paper_count": len(measurements),
         "valid_package_count": sum(1 for item in measurements if item.validation["valid_package"]),
         "import_ready_count": sum(1 for item in measurements if item.validation["import_ready"]),
-        "import_eligible_chunk_count": sum(int(item.validation["import_eligible_chunk_count"]) for item in measurements),
-        "refused_chunk_count": sum(int(item.validation["refused_chunk_count"]) for item in measurements),
+        "import_eligible_chunk_count": sum(
+            int(item.validation["import_eligible_chunk_count"]) for item in measurements
+        ),
+        "refused_chunk_count": sum(
+            int(item.validation["refused_chunk_count"]) for item in measurements
+        ),
         "refusal_counts": dict(sorted(refusal_counts.items())),
         "counts_by_state": dict(sorted(counts_by_state.items())),
         "counts_by_route": dict(sorted(counts_by_route.items())),
@@ -220,16 +254,32 @@ def _summary_for_measurements(measurements: list[BaselineMeasurement]) -> dict[s
     }
 
 
-def _review_sample_for_paper(paper: dict[str, Any], measurement: BaselineMeasurement | None) -> dict[str, Any]:
+def _review_sample_for_paper(
+    paper: dict[str, Any], measurement: BaselineMeasurement | None
+) -> dict[str, Any]:
     paper_id = str(paper["paper_id"])
     title = str(paper.get("title") or "Untitled")
-    hard_case_tags = [str(tag) for tag in paper.get("hard_case_tags", [])] if isinstance(paper.get("hard_case_tags"), list) else []
-    markdown_lines = [f"## {paper_id} — {title}", "", f"Hard-case tags: {', '.join(hard_case_tags) or 'none'}", ""]
+    hard_case_tags = (
+        [str(tag) for tag in paper.get("hard_case_tags", [])]
+        if isinstance(paper.get("hard_case_tags"), list)
+        else []
+    )
+    markdown_lines = [
+        f"## {paper_id} — {title}",
+        "",
+        f"Hard-case tags: {', '.join(hard_case_tags) or 'none'}",
+        "",
+    ]
     if measurement is None:
         markdown_lines.extend(["Status: blocked — no baseline measurement record.", ""])
         return {
             "markdown_lines": markdown_lines,
-            "index_record": _review_index_record(paper_id=paper_id, status="blocked", sample_count=0, blocker_reason="missing_measurement"),
+            "index_record": _review_index_record(
+                paper_id=paper_id,
+                status="blocked",
+                sample_count=0,
+                blocker_reason="missing_measurement",
+            ),
         }
 
     package = measurement.package
@@ -248,17 +298,23 @@ def _review_sample_for_paper(paper: dict[str, Any], measurement: BaselineMeasure
         markdown_lines.extend([f"Status: blocked — `{blocker_reason}`.", ""])
         return {
             "markdown_lines": markdown_lines,
-            "index_record": _review_index_record(paper_id=paper_id, status="blocked", sample_count=0, blocker_reason=blocker_reason),
+            "index_record": _review_index_record(
+                paper_id=paper_id, status="blocked", sample_count=0, blocker_reason=blocker_reason
+            ),
         }
 
     source_path = _select_full_text_path(paper)
-    chunk_text_by_id = _sample_chunk_text_by_id(paper, max_samples=2) if source_path is not None else {}
+    chunk_text_by_id = (
+        _sample_chunk_text_by_id(paper, max_samples=2) if source_path is not None else {}
+    )
     markdown_lines.append("Sampled baseline chunks:")
     markdown_lines.append("")
     sample_count = 0
     for chunk in chunks[:2]:
         chunk_id = str(chunk["chunk_id"])
-        snippet = chunk_text_by_id.get(chunk_id, "[snippet unavailable from current source artifact]")
+        snippet = chunk_text_by_id.get(
+            chunk_id, "[snippet unavailable from current source artifact]"
+        )
         markdown_lines.extend(
             [
                 f"- Chunk: `{chunk_id}`",
@@ -272,7 +328,9 @@ def _review_sample_for_paper(paper: dict[str, Any], measurement: BaselineMeasure
         sample_count += 1
     return {
         "markdown_lines": markdown_lines,
-        "index_record": _review_index_record(paper_id=paper_id, status="sampled", sample_count=sample_count, blocker_reason=None),
+        "index_record": _review_index_record(
+            paper_id=paper_id, status="sampled", sample_count=sample_count, blocker_reason=None
+        ),
     }
 
 
@@ -281,7 +339,9 @@ def _sample_chunk_text_by_id(paper: dict[str, Any], *, max_samples: int) -> dict
     source_path = _select_full_text_path(paper)
     if source_path is None:
         return {}
-    ingestion = ingest_full_text(FullTextSource(paper_id=paper_id, source_type="markdown", source_path=source_path))
+    ingestion = ingest_full_text(
+        FullTextSource(paper_id=paper_id, source_type="markdown", source_path=source_path)
+    )
     if ingestion.extraction_mode in {"missing_source", "empty_source", "low_quality_source"}:
         return {}
     document = build_page_index(ingestion)
@@ -296,7 +356,9 @@ def _bounded_snippet(text: str, *, limit: int = 240) -> str:
     return f"{normalized[:limit].rstrip()}…"
 
 
-def _review_index_record(*, paper_id: str, status: str, sample_count: int, blocker_reason: str | None) -> dict[str, Any]:
+def _review_index_record(
+    *, paper_id: str, status: str, sample_count: int, blocker_reason: str | None
+) -> dict[str, Any]:
     return {
         "paper_id": paper_id,
         "status": status,
@@ -324,7 +386,11 @@ def _missing_artifact_package(paper: dict[str, Any], *, run_id: str, reason: str
             "converter_version": None,
             "source_artifact": _source_artifact_for_paper(paper, source_path=None),
             "quality_state": "reject",
-            "warnings": [_warning(code=reason, object_id=f"conversion:{paper_id}:missing", severity="blocker")],
+            "warnings": [
+                _warning(
+                    code=reason, object_id=f"conversion:{paper_id}:missing", severity="blocker"
+                )
+            ],
             "raw_text_included": False,
             "embeddings_included": False,
         },
@@ -341,8 +407,11 @@ def _paper_identity(paper: dict[str, Any]) -> dict[str, Any]:
     return {
         "paper_id": paper_id,
         "title": paper.get("title"),
-        "categories": list(paper.get("categories", [])) if isinstance(paper.get("categories"), list) else [],
-        "source_artifacts": list(paper.get("source_artifacts", [])) or [f"normalized_markdown:{paper_id}"],
+        "categories": list(paper.get("categories", []))
+        if isinstance(paper.get("categories"), list)
+        else [],
+        "source_artifacts": list(paper.get("source_artifacts", []))
+        or [f"normalized_markdown:{paper_id}"],
     }
 
 
@@ -371,7 +440,12 @@ def _chunk_from_semantic_chunk(chunk: Any) -> dict[str, Any]:
         "route": "retrieval_only",
         "state": "ok_for_retrieval_only",
         "allowed_uses": ["retrieval_diagnostics", "review_only"],
-        "excluded_uses": ["trusted_kg_import", "claim_extraction", "entity_extraction", "relation_extraction"],
+        "excluded_uses": [
+            "trusted_kg_import",
+            "claim_extraction",
+            "entity_extraction",
+            "relation_extraction",
+        ],
         "order_index": chunk.order,
         "source_span": {
             "coordinate_space": "semantic_chunk_text",
@@ -380,7 +454,9 @@ def _chunk_from_semantic_chunk(chunk: Any) -> dict[str, Any]:
             "page_start": None,
             "page_end": None,
         },
-        "source_artifact": str(chunk.provenance.get("source_path", f"normalized_markdown:{chunk.paper_id}")),
+        "source_artifact": str(
+            chunk.provenance.get("source_path", f"normalized_markdown:{chunk.paper_id}")
+        ),
         "evidence_path_id": None,
         "quality_warnings": [
             _warning(
@@ -407,7 +483,9 @@ def _evidence_path_to_contract(path: Any) -> dict[str, Any]:
         "paper_id": path.paper_id,
         "chunk_id": path.semantic_chunk_id,
         "source_element_ids": [path.page_index_node_id],
-        "source_artifact": str(path.provenance.get("source_path", f"normalized_markdown:{path.paper_id}")),
+        "source_artifact": str(
+            path.provenance.get("source_path", f"normalized_markdown:{path.paper_id}")
+        ),
         "source_span": {
             "coordinate_space": "semantic_chunk_text",
             "char_start": 0,
@@ -431,7 +509,9 @@ def _diagnostics_for_chunks(*, chunks: list[dict[str, Any]], package_state: str)
         "counts_by_state": counts_by_state,
         "counts_by_route": counts_by_route,
         "counts_by_chunk_type": counts_by_chunk_type,
-        "refusal_counts": {"baseline_retrieval_only_not_import_ready": len(chunks)} if chunks else {},
+        "refusal_counts": {"baseline_retrieval_only_not_import_ready": len(chunks)}
+        if chunks
+        else {},
         "source_span_coverage": 1.0 if chunks else 0.0,
         "parent_reference_resolution_rate": 1.0 if chunks else 0.0,
         "evidence_path_resolution_rate": 0.0,
@@ -508,7 +588,9 @@ def _now_iso() -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Measure current chunks against the M005 import-ready contract.")
+    parser = argparse.ArgumentParser(
+        description="Measure current chunks against the M005 import-ready contract."
+    )
     parser.add_argument("--manifest", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--review-output", required=False, type=Path)
@@ -519,7 +601,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.review_output is not None or args.review_index is not None:
         if args.review_output is None or args.review_index is None:
             parser.error("--review-output and --review-index must be provided together")
-        write_review_samples(result, args.manifest, review_path=args.review_output, index_path=args.review_index)
+        write_review_samples(
+            result, args.manifest, review_path=args.review_output, index_path=args.review_index
+        )
     sys.stdout.write(json.dumps(result.summary, indent=2, sort_keys=True))
     sys.stdout.write("\n")
     return 0

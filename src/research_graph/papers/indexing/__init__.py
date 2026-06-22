@@ -6,7 +6,10 @@ from research_graph.domain.navigation import (
     PageIndexNode,
     build_navigation_anchors,
 )
-from research_graph.papers.indexing.parsed_page_index import build_page_index, build_page_index_from_parsed
+from research_graph.papers.indexing.parsed_page_index import (
+    build_page_index,
+    build_page_index_from_parsed,
+)
 
 __all__ = [
     "NavigationAnchor",

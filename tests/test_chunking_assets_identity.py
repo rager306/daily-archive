@@ -3,13 +3,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from research_graph.infrastructure.identity.canonicalization import canonical_source_id
+from research_graph.papers.chunking.chunker import parse_markdown_structure
 from research_graph.papers.source_assets.registry import (
     attach_annotation_asset_links,
     preserve_source_assets_for_paper,
     validate_source_asset_manifest,
 )
-from research_graph.papers.chunking.chunker import parse_markdown_structure
-from research_graph.identity.canonicalization import canonical_source_id
 from research_graph.staging.graph_candidates import (
     DEFAULT_ROUTE_SPECS,
     LocatorSource,
@@ -80,9 +80,13 @@ def test_chunking_assets_identity_and_staging_boundaries_compose_on_fixture(tmp_
         workspace_root=tmp_path / "asset-workspace",
     ).to_contract()
     annotation_path = tmp_path / "annotation-diagnostics.jsonl"
-    annotation_path.write_text(json.dumps(_annotation_diagnostics_from_chunks(chunk_contract)) + "\n", encoding="utf-8")
+    annotation_path.write_text(
+        json.dumps(_annotation_diagnostics_from_chunks(chunk_contract)) + "\n", encoding="utf-8"
+    )
     structure_path = tmp_path / "structure-diagnostics.jsonl"
-    structure_path.write_text(json.dumps(_structure_diagnostics_from_chunks(chunk_contract)) + "\n", encoding="utf-8")
+    structure_path.write_text(
+        json.dumps(_structure_diagnostics_from_chunks(chunk_contract)) + "\n", encoding="utf-8"
+    )
 
     linked_manifest = attach_annotation_asset_links(
         (source_manifest,),
@@ -162,8 +166,12 @@ def test_boundary_smoke_negative_paths_stay_diagnostic_and_non_importable(tmp_pa
     assert missing_locator_artifact["source_ledger"][0]["conversion_status"] == "blocked"
     assert missing_locator_artifact["summary"]["missing_span_count"] == len(DEFAULT_ROUTE_SPECS)
     assert missing_locator_artifact["summary"]["import_eligible_count"] == 0
-    assert all(locator["state"] == "missing_span" for locator in missing_locator_artifact["locators"])
-    assert all(locator["import_eligible"] is False for locator in missing_locator_artifact["locators"])
+    assert all(
+        locator["state"] == "missing_span" for locator in missing_locator_artifact["locators"]
+    )
+    assert all(
+        locator["import_eligible"] is False for locator in missing_locator_artifact["locators"]
+    )
 
     markdown = FIXTURE_MARKDOWN.read_text(encoding="utf-8")
     chunk_contract = parse_markdown_structure(
@@ -177,13 +185,19 @@ def test_boundary_smoke_negative_paths_stay_diagnostic_and_non_importable(tmp_pa
         workspace_root=tmp_path / "asset-workspace",
     ).to_contract()
     annotation_path = tmp_path / "annotation-diagnostics.jsonl"
-    annotation_path.write_text(json.dumps(_annotation_diagnostics_from_chunks(chunk_contract)) + "\n", encoding="utf-8")
-    linked_manifest = attach_annotation_asset_links((source_manifest,), annotation_diagnostics_path=annotation_path)[0]
+    annotation_path.write_text(
+        json.dumps(_annotation_diagnostics_from_chunks(chunk_contract)) + "\n", encoding="utf-8"
+    )
+    linked_manifest = attach_annotation_asset_links(
+        (source_manifest,), annotation_diagnostics_path=annotation_path
+    )[0]
     linked_manifest["assets"][0]["allowed_uses"].append("trusted_kg_import")
 
     validation = validate_source_asset_manifest(linked_manifest)
 
     assert validation.valid_manifest is False
     assert validation.refusal_counts["asset_allows_trusted_import"] == 1
-    serialized_diagnostics = json.dumps([diagnostic.__dict__ for diagnostic in validation.diagnostics])
+    serialized_diagnostics = json.dumps(
+        [diagnostic.__dict__ for diagnostic in validation.diagnostics]
+    )
     assert "We claim that boundary smoke coverage" not in serialized_diagnostics

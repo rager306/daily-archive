@@ -128,7 +128,10 @@ def test_article_artifacts_detect_writes_redacted_manifest_and_summary(tmp_path:
     assert diagnostics["diagnostic_codes"] == []
     assert diagnostics["input_hashes"] == {"input_structure_sha256": expected_input_sha}
     assert diagnostics["output_paths"] == payload["output_paths"]
-    assert diagnostics["manifest_diagnostic_summaries"]["fixture-paper-0001"]["missing_span_count"] == 0
+    assert (
+        diagnostics["manifest_diagnostic_summaries"]["fixture-paper-0001"]["missing_span_count"]
+        == 0
+    )
     assert diagnostics["production_import_attempted"] is False
     assert diagnostics["ladybugdb_written"] is False
     assert diagnostics["trusted_kg_import_allowed"] is False
@@ -149,6 +152,8 @@ def test_article_artifacts_detect_writes_redacted_manifest_and_summary(tmp_path:
         '"model_outputs_included": true',
     ):
         assert forbidden_fragment not in serialized
+
+
 def test_article_artifacts_detect_persists_stable_diagnostics_artifact(tmp_path: Path) -> None:
     diagnostic_input = tmp_path / "diagnostic_structure.json"
     structure = json.loads(INPUT_STRUCTURE.read_text(encoding="utf-8"))
@@ -179,7 +184,6 @@ def test_article_artifacts_detect_persists_stable_diagnostics_artifact(tmp_path:
     assert diagnostics["trusted_kg_import_allowed"] is False
     assert diagnostics["safety_flags"]["raw_text_included"] is False
     assert "raw paper text" not in json.dumps(diagnostics)
-
 
     result = _run_cli(
         "article-artifacts",
@@ -212,9 +216,10 @@ def test_article_artifacts_detect_rejects_malformed_json(tmp_path: Path) -> None
     assert result.returncode != 0
     assert "input structure must be json" in result.stderr.lower()
 
-
     bad_input = tmp_path / "bad_structure.json"
-    bad_input.write_text(json.dumps({"schema_version": "wrong", "paper_id": "p1"}), encoding="utf-8")
+    bad_input.write_text(
+        json.dumps({"schema_version": "wrong", "paper_id": "p1"}), encoding="utf-8"
+    )
 
     result = _run_cli(
         "article-artifacts",
@@ -230,8 +235,9 @@ def test_article_artifacts_detect_rejects_malformed_json(tmp_path: Path) -> None
     assert "m023-redacted-article-structure.v1" in result.stderr
 
 
-
-def test_article_artifacts_detect_does_not_require_adjacent_expected_manifest(tmp_path: Path) -> None:
+def test_article_artifacts_detect_does_not_require_adjacent_expected_manifest(
+    tmp_path: Path,
+) -> None:
     standalone_input = tmp_path / "standalone_structure.json"
     standalone_input.write_text(INPUT_STRUCTURE.read_text(encoding="utf-8"), encoding="utf-8")
 
@@ -252,9 +258,10 @@ def test_article_artifacts_detect_does_not_require_adjacent_expected_manifest(tm
     assert Path(payload["manifest_path"]).exists()
 
 
-
 def _helper_tool_response(tmp_path: Path) -> Path:
-    from research_graph.papers.artifacts.minimax_boundary import build_article_artifact_minimax_request
+    from research_graph.papers.artifacts.minimax_boundary import (
+        build_article_artifact_minimax_request,
+    )
 
     structure = json.loads(INPUT_STRUCTURE.read_text(encoding="utf-8"))
     input_sha256 = build_article_artifact_minimax_request(structure).diagnostics["input_sha256"]
@@ -287,7 +294,9 @@ def _helper_tool_response(tmp_path: Path) -> Path:
                                         "target_ref": "fixture-paper-0001:artifact:figure:0001",
                                         "link_type": "supports",
                                         "review_state": "review_required",
-                                        "evidence_span_ids": ["fixture-paper-0001:span:section-methods"],
+                                        "evidence_span_ids": [
+                                            "fixture-paper-0001:span:section-methods"
+                                        ],
                                         "diagnostic_codes": ["suggested_candidate_link"],
                                         "promoted_to_fact": False,
                                         "import_eligible": False,
@@ -328,7 +337,9 @@ def test_article_artifacts_detect_default_mode_makes_no_minimax_request(tmp_path
     assert diagnostics["helper_diagnostics"]["helper_request_attempted"] is False
 
 
-def test_article_artifacts_detect_minimax_mock_merges_review_required_candidates(tmp_path: Path) -> None:
+def test_article_artifacts_detect_minimax_mock_merges_review_required_candidates(
+    tmp_path: Path,
+) -> None:
     helper_response = _helper_tool_response(tmp_path)
     result = _run_cli(
         "article-artifacts",
@@ -349,7 +360,11 @@ def test_article_artifacts_detect_minimax_mock_merges_review_required_candidates
     manifest = json.loads(Path(payload["manifest_path"]).read_text(encoding="utf-8"))
     diagnostics = json.loads(Path(payload["diagnostics_path"]).read_text(encoding="utf-8"))
     summary = json.loads(Path(payload["run_summary_path"]).read_text(encoding="utf-8"))
-    helper_artifacts = [artifact for artifact in manifest["artifacts"] if artifact["detector"] == "minimax_artifact_helper_review_only"]
+    helper_artifacts = [
+        artifact
+        for artifact in manifest["artifacts"]
+        if artifact["detector"] == "minimax_artifact_helper_review_only"
+    ]
 
     assert payload["helper_mode"] == "minimax-mock"
     assert payload["helper_validation_status"] == "valid"
@@ -369,7 +384,9 @@ def test_article_artifacts_detect_minimax_mock_merges_review_required_candidates
     assert '"trusted_kg_import_allowed": true' not in dumped
 
 
-def test_article_artifacts_detect_minimax_mock_rejects_malformed_helper_response(tmp_path: Path) -> None:
+def test_article_artifacts_detect_minimax_mock_rejects_malformed_helper_response(
+    tmp_path: Path,
+) -> None:
     bad_response = tmp_path / "bad_response.json"
     bad_response.write_text("{not json", encoding="utf-8")
 

@@ -8,13 +8,17 @@ from research_graph.corpus.sources.markdown_converter import ConversionResult, M
 
 @pytest.fixture
 def temp_cache(tmp_path, monkeypatch):
-    monkeypatch.setattr("research_graph.corpus.sources.markdown_converter.CACHE_DIR", tmp_path / ".arxiv_cache")
+    monkeypatch.setattr(
+        "research_graph.corpus.sources.markdown_converter.CACHE_DIR", tmp_path / ".arxiv_cache"
+    )
     return tmp_path / ".arxiv_cache"
+
 
 @pytest.fixture
 def home_dir(tmp_path, monkeypatch):
     monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
     return tmp_path
+
 
 @pytest.mark.asyncio
 async def test_cache_hit(temp_cache):
@@ -29,6 +33,7 @@ async def test_cache_hit(temp_cache):
     assert result.markdown == "# Cached content\n\nCached paper body"
     assert result.method == "arxiv2md"
 
+
 @pytest.mark.asyncio
 async def test_arxiv2md_success(temp_cache, monkeypatch):
     converter = MDConverter()
@@ -37,13 +42,14 @@ async def test_arxiv2md_success(temp_cache, monkeypatch):
         status_code = 200
         text = "# From API\n\nConverted paper body"
 
-
     class MockClient:
         async def get(self, url, params):
             assert url == "https://arxiv2md.org/api/markdown"
             assert params["url"] == "2101.12345"
             return MockResponse()
-        async def aclose(self): pass
+
+        async def aclose(self):
+            pass
 
     async def get_client():
         return MockClient()
@@ -69,7 +75,9 @@ async def test_arxiv2md_404(temp_cache, monkeypatch):
     class MockClient:
         async def get(self, url, params):
             return MockResponse()
-        async def aclose(self): pass
+
+        async def aclose(self):
+            pass
 
     async def get_client():
         return MockClient()
@@ -88,6 +96,7 @@ async def test_arxiv2md_404(temp_cache, monkeypatch):
     assert result.error is not None
     assert "not found" in result.error
 
+
 @pytest.mark.asyncio
 async def test_arxiv2md_timeout(temp_cache, monkeypatch):
     converter = MDConverter()
@@ -95,7 +104,9 @@ async def test_arxiv2md_timeout(temp_cache, monkeypatch):
     class MockClient:
         async def get(self, url, params):
             raise httpx.TimeoutException("Timeout")
-        async def aclose(self): pass
+
+        async def aclose(self):
+            pass
 
     async def get_client():
         return MockClient()
@@ -114,6 +125,7 @@ async def test_arxiv2md_timeout(temp_cache, monkeypatch):
     assert result.error is not None
     assert "timeout" in result.error
 
+
 @pytest.mark.asyncio
 async def test_arxiv2md_fails_and_fallback_to_marker(temp_cache, home_dir, monkeypatch):
     converter = MDConverter()
@@ -122,8 +134,11 @@ async def test_arxiv2md_fails_and_fallback_to_marker(temp_cache, home_dir, monke
         async def get(self, url, params):
             class MockResp:
                 status_code = 500
+
             return MockResp()
-        async def aclose(self): pass
+
+        async def aclose(self):
+            pass
 
     async def get_client():
         return MockClient()
@@ -139,14 +154,19 @@ async def test_arxiv2md_fails_and_fallback_to_marker(temp_cache, home_dir, monke
     # Needs fallback because of 500 error, mock subprocess
     class MockProcess:
         returncode = 0
+
         async def communicate(self):
             # Create the output md file
             out_dir = temp_cache / "marker_2101.12345"
             out_dir.mkdir(parents=True, exist_ok=True)
             (out_dir / "output.md").write_text("# From Marker")
             return b"stdout", b"stderr"
-        async def wait(self): pass
-        def kill(self): pass
+
+        async def wait(self):
+            pass
+
+        def kill(self):
+            pass
 
     async def mock_exec(*args, **kwargs):
         return MockProcess()
@@ -158,8 +178,11 @@ async def test_arxiv2md_fails_and_fallback_to_marker(temp_cache, home_dir, monke
     assert result.markdown == "# From Marker"
     assert result.method == "marker"
 
+
 @pytest.mark.asyncio
-async def test_arxiv2md_low_quality_markdown_falls_back_to_marker(temp_cache, home_dir, monkeypatch):
+async def test_arxiv2md_low_quality_markdown_falls_back_to_marker(
+    temp_cache, home_dir, monkeypatch
+):
     converter = MDConverter()
 
     class MockClient:
@@ -167,8 +190,11 @@ async def test_arxiv2md_low_quality_markdown_falls_back_to_marker(temp_cache, ho
             class MockResp:
                 status_code = 200
                 text = "# Title: navigation shell\n\n## Submission history\n\n## Access Paper:"
+
             return MockResp()
-        async def aclose(self): pass
+
+        async def aclose(self):
+            pass
 
     async def get_client():
         return MockClient()
@@ -181,13 +207,18 @@ async def test_arxiv2md_low_quality_markdown_falls_back_to_marker(temp_cache, ho
 
     class MockProcess:
         returncode = 0
+
         async def communicate(self):
             out_dir = temp_cache / "marker_2605.14259v1"
             out_dir.mkdir(parents=True, exist_ok=True)
             (out_dir / "output.md").write_text("# From Marker\n\nRecovered paper body")
             return b"stdout", b"stderr"
-        async def wait(self): pass
-        def kill(self): pass
+
+        async def wait(self):
+            pass
+
+        def kill(self):
+            pass
 
     async def mock_exec(*args, **kwargs):
         return MockProcess()
@@ -292,6 +323,7 @@ async def test_marker_cli_not_found_falls_back_to_docling(temp_cache, monkeypatc
     assert result.markdown == "# From Docling\n\nRecovered body"
     assert result.method == "docling"
 
+
 def test_convert_sync(monkeypatch):
     converter = MDConverter()
 
@@ -321,6 +353,7 @@ async def test_get_http_client():
     # Close again is safe
     await converter.close()
 
+
 @pytest.mark.asyncio
 async def test_arxiv2md_httperror(temp_cache, monkeypatch):
     converter = MDConverter()
@@ -328,7 +361,9 @@ async def test_arxiv2md_httperror(temp_cache, monkeypatch):
     class MockClient:
         async def get(self, url, params):
             raise httpx.RequestError("Request failed")
-        async def aclose(self): pass
+
+        async def aclose(self):
+            pass
 
     async def get_client():
         return MockClient()
@@ -347,6 +382,7 @@ async def test_arxiv2md_httperror(temp_cache, monkeypatch):
     assert result.error is not None
     assert "arxiv2md API error: Request failed" in result.error
 
+
 @pytest.mark.asyncio
 async def test_marker_timeout(temp_cache, monkeypatch):
     converter = MDConverter()
@@ -358,8 +394,12 @@ async def test_marker_timeout(temp_cache, monkeypatch):
     monkeypatch.setattr("shutil.which", lambda x: "/usr/bin/marker")
 
     class MockProcess:
-        def kill(self): pass
-        async def wait(self): pass
+        def kill(self):
+            pass
+
+        async def wait(self):
+            pass
+
         async def communicate(self):
             raise TimeoutError()
 
@@ -373,6 +413,7 @@ async def test_marker_timeout(temp_cache, monkeypatch):
     assert result.error is not None
     assert "Marker timed out" in result.error
 
+
 @pytest.mark.asyncio
 async def test_marker_failed_code(temp_cache, monkeypatch):
     converter = MDConverter()
@@ -385,6 +426,7 @@ async def test_marker_failed_code(temp_cache, monkeypatch):
 
     class MockProcess:
         returncode = 1
+
         async def communicate(self):
             return b"", b"Some error"
 
@@ -400,6 +442,7 @@ async def test_marker_failed_code(temp_cache, monkeypatch):
     assert result.error is not None
     assert "Some error" in result.error
 
+
 def test_cache_read_exception(temp_cache, monkeypatch):
     converter = MDConverter()
     temp_cache.mkdir(parents=True, exist_ok=True)
@@ -414,10 +457,12 @@ def test_cache_read_exception(temp_cache, monkeypatch):
         raise PermissionError("Access denied")
 
     import pathlib
+
     monkeypatch.setattr(pathlib.Path, "read_text", mock_read)
 
     # Should silently return None
     assert converter._get_cached("2101.12345") is None
+
 
 def test_cache_none_result(temp_cache):
     converter = MDConverter()
@@ -426,6 +471,7 @@ def test_cache_none_result(temp_cache):
 
     # Nothing written
     assert not (temp_cache / "2101.12345.md").exists()
+
 
 def test_convert_sync_in_async_loop(monkeypatch):
     converter = MDConverter()
@@ -437,6 +483,7 @@ def test_convert_sync_in_async_loop(monkeypatch):
     future = FakeFuture()
 
     import asyncio
+
     class FakeLoop:
         def run_until_complete(self, f):
             return f.result()
@@ -461,6 +508,7 @@ async def test_marker_no_markdown_output(temp_cache, monkeypatch):
 
     class MockProcess:
         returncode = 0
+
         async def communicate(self):
             return b"stdout", b"stderr"
 

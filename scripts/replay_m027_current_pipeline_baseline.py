@@ -29,7 +29,10 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from research_graph.repair.chunk_baseline_measurement import build_baseline_package  # noqa: E402
-from research_graph.repair.chunk_import_contract import validate_import_ready_package, validation_to_dict  # noqa: E402
+from research_graph.repair.chunk_import_contract import (  # noqa: E402
+    validate_import_ready_package,
+    validation_to_dict,
+)
 
 MILESTONE_ID = "M027-aakeky"
 SLICE_ID = "S04"
@@ -40,7 +43,15 @@ DIAGNOSTIC_SCHEMA_VERSION = "m027-current-pipeline-baseline-diagnostic.v1"
 ARTIFACT_SCHEMA_VERSION = "m027-current-pipeline-baseline-artifact.v1"
 CORPUS_DIR = ROOT / "data" / "article_corpora" / SELECTION_ID
 DEFAULT_CONVERSION_SUMMARY = CORPUS_DIR / "conversion-quality-summary.json"
-DEFAULT_S03_SUMMARY = ROOT / ".gsd" / "milestones" / MILESTONE_ID / "slices" / SOURCE_SLICE_ID / f"{SOURCE_SLICE_ID}-SUMMARY.md"
+DEFAULT_S03_SUMMARY = (
+    ROOT
+    / ".gsd"
+    / "milestones"
+    / MILESTONE_ID
+    / "slices"
+    / SOURCE_SLICE_ID
+    / f"{SOURCE_SLICE_ID}-SUMMARY.md"
+)
 DEFAULT_OUTPUT_SUMMARY = CORPUS_DIR / "current-pipeline-baseline-summary.json"
 DEFAULT_OUTPUT_DIAGNOSTICS = CORPUS_DIR / "current-pipeline-baseline-diagnostics.jsonl"
 DEFAULT_OUTPUT_REPORT = CORPUS_DIR / "current-pipeline-baseline-report.md"
@@ -70,7 +81,15 @@ FORBIDDEN_PAYLOAD_KEYS = {
     "content",
     "body",
 }
-FORBIDDEN_SNIPPETS = ("<html", "</html", "%PDF-", "base64,", "RAW_ARXIV_ABS_SECRET", "RAW_NATURE_BODY_SECRET", "RAW_PDF_SECRET")
+FORBIDDEN_SNIPPETS = (
+    "<html",
+    "</html",
+    "%PDF-",
+    "base64,",
+    "RAW_ARXIV_ABS_SECRET",
+    "RAW_NATURE_BODY_SECRET",
+    "RAW_PDF_SECRET",
+)
 
 
 class BaselineReplayError(RuntimeError):
@@ -100,7 +119,9 @@ def write_json(path: Path, payload: Mapping[str, Any]) -> None:
 
 def write_jsonl(path: Path, rows: Iterable[Mapping[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in rows), encoding="utf-8")
+    path.write_text(
+        "".join(json.dumps(row, sort_keys=True) + "\n" for row in rows), encoding="utf-8"
+    )
 
 
 def rel(path: Path, root: Path = ROOT) -> str:
@@ -124,7 +145,11 @@ def safe_relative_path(value: Any, *, label: str) -> PurePosixPath:
     if "://" in value:
         raise BaselineReplayError(f"url_not_allowed_as_{label}")
     normalized = PurePosixPath(value.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part == "" for part in normalized.parts):
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part == "" for part in normalized.parts)
+    ):
         raise BaselineReplayError(f"unsafe_{label}")
     return normalized
 
@@ -176,12 +201,19 @@ def diagnostic(
     }
 
 
-def validate_s03_linkage(conversion_summary: Mapping[str, Any], *, conversion_summary_path: Path, s03_summary_path: Path) -> list[dict[str, Any]]:
+def validate_s03_linkage(
+    conversion_summary: Mapping[str, Any], *, conversion_summary_path: Path, s03_summary_path: Path
+) -> list[dict[str, Any]]:
     diagnostics: list[dict[str, Any]] = []
-    if conversion_summary.get("milestone_id") != MILESTONE_ID or conversion_summary.get("slice_id") != SOURCE_SLICE_ID:
+    if (
+        conversion_summary.get("milestone_id") != MILESTONE_ID
+        or conversion_summary.get("slice_id") != SOURCE_SLICE_ID
+    ):
         raise BaselineReplayError("conversion summary is not the expected M027/S03 handoff")
     if conversion_summary.get("selection_id") != SELECTION_ID:
-        raise BaselineReplayError("conversion summary selection_id does not match M027 mixed-source corpus")
+        raise BaselineReplayError(
+            "conversion summary selection_id does not match M027 mixed-source corpus"
+        )
     if not s03_summary_path.exists():
         diagnostics.append(
             diagnostic(
@@ -194,7 +226,9 @@ def validate_s03_linkage(conversion_summary: Mapping[str, Any], *, conversion_su
                 output_path=rel(conversion_summary_path),
             )
         )
-    source_summary_path = safe_under_root(ROOT, conversion_summary.get("source_summary_path"), label="source_summary_path")
+    source_summary_path = safe_under_root(
+        ROOT, conversion_summary.get("source_summary_path"), label="source_summary_path"
+    )
     expected_source_sha = conversion_summary.get("source_summary_sha256")
     if not isinstance(expected_source_sha, str) or not expected_source_sha:
         raise BaselineReplayError("conversion summary is missing source_summary_sha256")
@@ -228,8 +262,12 @@ def conversion_rows(conversion_summary: Mapping[str, Any]) -> list[dict[str, Any
     for index, row in enumerate(rows):
         if not isinstance(row, dict):
             raise BaselineReplayError(f"conversion result at index {index} is not an object")
-        if not isinstance(row.get("article_ref"), str) or not isinstance(row.get("variant_id"), str):
-            raise BaselineReplayError(f"conversion result at index {index} is missing article_ref or variant_id")
+        if not isinstance(row.get("article_ref"), str) or not isinstance(
+            row.get("variant_id"), str
+        ):
+            raise BaselineReplayError(
+                f"conversion result at index {index} is missing article_ref or variant_id"
+            )
         typed_rows.append(row)
     return typed_rows
 
@@ -240,7 +278,9 @@ def validate_converted_payload(row: Mapping[str, Any]) -> tuple[Path | None, dic
     converted_path_value = row.get("converted_text_path")
     converted_path = safe_under_root(ROOT, converted_path_value, label="converted_text_path")
     if not converted_path.exists():
-        raise BaselineReplayError(f"converted payload is missing for {row.get('variant_id')}: {converted_path}")
+        raise BaselineReplayError(
+            f"converted payload is missing for {row.get('variant_id')}: {converted_path}"
+        )
     expected_sha = row.get("converted_text_sha256")
     expected_size = row.get("converted_text_byte_size")
     if not isinstance(expected_sha, str) or not expected_sha:
@@ -250,13 +290,24 @@ def validate_converted_payload(row: Mapping[str, Any]) -> tuple[Path | None, dic
     actual_sha = sha256_file(converted_path)
     actual_size = converted_path.stat().st_size
     if actual_sha != expected_sha:
-        raise BaselineReplayError(f"converted_text_sha256 mismatch for {row.get('variant_id')}: expected {expected_sha}, got {actual_sha}")
+        raise BaselineReplayError(
+            f"converted_text_sha256 mismatch for {row.get('variant_id')}: expected {expected_sha}, got {actual_sha}"
+        )
     if actual_size != expected_size:
-        raise BaselineReplayError(f"converted_text_byte_size mismatch for {row.get('variant_id')}: expected {expected_size}, got {actual_size}")
-    return converted_path, {"verified": True, "sha256": actual_sha, "byte_size": actual_size, "path": rel(converted_path)}
+        raise BaselineReplayError(
+            f"converted_text_byte_size mismatch for {row.get('variant_id')}: expected {expected_size}, got {actual_size}"
+        )
+    return converted_path, {
+        "verified": True,
+        "sha256": actual_sha,
+        "byte_size": actual_size,
+        "path": rel(converted_path),
+    }
 
 
-def redacted_package_metrics(package: Mapping[str, Any], validation: Mapping[str, Any]) -> dict[str, Any]:
+def redacted_package_metrics(
+    package: Mapping[str, Any], validation: Mapping[str, Any]
+) -> dict[str, Any]:
     diagnostics = package.get("diagnostics") if isinstance(package.get("diagnostics"), dict) else {}
     return {
         "package_state": diagnostics.get("package_state"),
@@ -264,9 +315,15 @@ def redacted_package_metrics(package: Mapping[str, Any], validation: Mapping[str
         "passed": validation.get("passed"),
         "import_ready": validation.get("import_ready"),
         "has_import_eligible_chunks": validation.get("has_import_eligible_chunks"),
-        "chunk_count": len(package.get("chunks", [])) if isinstance(package.get("chunks"), list) else 0,
-        "element_count": len(package.get("elements", [])) if isinstance(package.get("elements"), list) else 0,
-        "evidence_path_count": len(package.get("evidence_paths", [])) if isinstance(package.get("evidence_paths"), list) else 0,
+        "chunk_count": len(package.get("chunks", []))
+        if isinstance(package.get("chunks"), list)
+        else 0,
+        "element_count": len(package.get("elements", []))
+        if isinstance(package.get("elements"), list)
+        else 0,
+        "evidence_path_count": len(package.get("evidence_paths", []))
+        if isinstance(package.get("evidence_paths"), list)
+        else 0,
         "import_eligible_chunk_count": validation.get("import_eligible_chunk_count"),
         "refused_chunk_count": validation.get("refused_chunk_count"),
         "refusal_counts": validation.get("refusal_counts"),
@@ -281,7 +338,9 @@ def redacted_package_metrics(package: Mapping[str, Any], validation: Mapping[str
     }
 
 
-def run_current_pipeline(row: Mapping[str, Any], converted_path: Path, *, temp_root: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+def run_current_pipeline(
+    row: Mapping[str, Any], converted_path: Path, *, temp_root: Path
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     article_ref = str(row["article_ref"])
     variant_id = str(row["variant_id"])
     source_role = str(row.get("source_role") or "converted_text")
@@ -300,7 +359,11 @@ def run_current_pipeline(row: Mapping[str, Any], converted_path: Path, *, temp_r
     package = build_baseline_package(paper, run_id=f"m027-s04-current-baseline:{SELECTION_ID}")
     validation = validation_to_dict(validate_import_ready_package(package))
     metrics = redacted_package_metrics(package, validation)
-    code = "current_pipeline_retrieval_only_chunks" if int(metrics["chunk_count"] or 0) > 0 else "current_pipeline_zero_chunks"
+    code = (
+        "current_pipeline_retrieval_only_chunks"
+        if int(metrics["chunk_count"] or 0) > 0
+        else "current_pipeline_zero_chunks"
+    )
     status = "observed" if int(metrics["chunk_count"] or 0) > 0 else "current_failure_recorded"
     diagnostics = [
         diagnostic(
@@ -356,7 +419,12 @@ def metadata_only_metrics(row: Mapping[str, Any]) -> tuple[dict[str, Any], list[
     ]
 
 
-def article_record(row: Mapping[str, Any], metrics: Mapping[str, Any], payload_provenance: Mapping[str, Any], artifact_path: Path | None) -> dict[str, Any]:
+def article_record(
+    row: Mapping[str, Any],
+    metrics: Mapping[str, Any],
+    payload_provenance: Mapping[str, Any],
+    artifact_path: Path | None,
+) -> dict[str, Any]:
     return {
         "article_ref": row.get("article_ref"),
         "variant_id": row.get("variant_id"),
@@ -381,7 +449,9 @@ def assert_no_metadata_leakage(value: Any) -> None:
         if isinstance(node, dict):
             for key, item in node.items():
                 if key in FORBIDDEN_PAYLOAD_KEYS:
-                    raise BaselineReplayError(f"metadata payload key leakage detected at {path}.{key}")
+                    raise BaselineReplayError(
+                        f"metadata payload key leakage detected at {path}.{key}"
+                    )
                 walk(item, f"{path}.{key}")
         elif isinstance(node, list):
             for index, item in enumerate(node):
@@ -390,7 +460,9 @@ def assert_no_metadata_leakage(value: Any) -> None:
     walk(value, "$")
 
 
-def write_article_artifact(output_dir: Path, article_ref: str, records: list[dict[str, Any]]) -> Path:
+def write_article_artifact(
+    output_dir: Path, article_ref: str, records: list[dict[str, Any]]
+) -> Path:
     path = output_dir / article_slug(article_ref) / "baseline.json"
     payload = {
         "schema_version": ARTIFACT_SCHEMA_VERSION,
@@ -419,9 +491,16 @@ def replay_baseline(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
     conversion_summary_path = Path(args.conversion_summary)
     conversion_summary = load_json(conversion_summary_path)
     try:
-        diagnostics = validate_s03_linkage(conversion_summary, conversion_summary_path=conversion_summary_path, s03_summary_path=Path(args.s03_summary))
+        diagnostics = validate_s03_linkage(
+            conversion_summary,
+            conversion_summary_path=conversion_summary_path,
+            s03_summary_path=Path(args.s03_summary),
+        )
     except BaselineReplayError as exc:
-        if "stale S03 linkage" not in str(exc) or conversion_summary_path.resolve() != DEFAULT_CONVERSION_SUMMARY.resolve():
+        if (
+            "stale S03 linkage" not in str(exc)
+            or conversion_summary_path.resolve() != DEFAULT_CONVERSION_SUMMARY.resolve()
+        ):
             raise
         subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "convert_m027_source_quality_boundary.py")],
@@ -432,7 +511,11 @@ def replay_baseline(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
             text=True,
         )
         conversion_summary = load_json(conversion_summary_path)
-        diagnostics = validate_s03_linkage(conversion_summary, conversion_summary_path=conversion_summary_path, s03_summary_path=Path(args.s03_summary))
+        diagnostics = validate_s03_linkage(
+            conversion_summary,
+            conversion_summary_path=conversion_summary_path,
+            s03_summary_path=Path(args.s03_summary),
+        )
         diagnostics.append(
             diagnostic(
                 article_ref=None,
@@ -461,17 +544,29 @@ def replay_baseline(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
                     source_role=str(row.get("source_role") or "unknown"),
                     stage="converted_payload_validation",
                     status="passed" if converted_path is not None else "skipped",
-                    diagnostic_code="converted_payload_hash_verified" if converted_path is not None else "no_converted_payload_expected",
-                    message="Converted payload hash and byte size match S03 metadata." if converted_path is not None else "No converted payload is expected for this metadata-only variant.",
-                    input_sha256=str(row.get("converted_text_sha256")) if row.get("converted_text_sha256") else None,
-                    output_sha256=str(payload_provenance.get("sha256")) if payload_provenance.get("sha256") else None,
-                    output_path=str(payload_provenance.get("path")) if payload_provenance.get("path") else None,
+                    diagnostic_code="converted_payload_hash_verified"
+                    if converted_path is not None
+                    else "no_converted_payload_expected",
+                    message="Converted payload hash and byte size match S03 metadata."
+                    if converted_path is not None
+                    else "No converted payload is expected for this metadata-only variant.",
+                    input_sha256=str(row.get("converted_text_sha256"))
+                    if row.get("converted_text_sha256")
+                    else None,
+                    output_sha256=str(payload_provenance.get("sha256"))
+                    if payload_provenance.get("sha256")
+                    else None,
+                    output_path=str(payload_provenance.get("path"))
+                    if payload_provenance.get("path")
+                    else None,
                 )
             )
             if converted_path is None:
                 metrics, row_diagnostics = metadata_only_metrics(row)
             else:
-                metrics, row_diagnostics = run_current_pipeline(row, converted_path, temp_root=temp_root)
+                metrics, row_diagnostics = run_current_pipeline(
+                    row, converted_path, temp_root=temp_root
+                )
             diagnostics.extend(row_diagnostics)
             record = article_record(row, metrics, payload_provenance, artifact_path=None)
             records.append(record)
@@ -493,7 +588,10 @@ def replay_baseline(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
 
     status_counts = Counter(str(record["conversion_status"]) for record in records)
     parser_ready_records = [record for record in records if record["parser_ready"]]
-    chunk_counts = [int(record["current_pipeline_metrics"].get("chunk_count") or 0) for record in parser_ready_records]
+    chunk_counts = [
+        int(record["current_pipeline_metrics"].get("chunk_count") or 0)
+        for record in parser_ready_records
+    ]
     diagnostic_counts = Counter(str(row["diagnostic_code"]) for row in diagnostics)
     summary = {
         "schema_version": SCHEMA_VERSION,
@@ -515,12 +613,21 @@ def replay_baseline(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
         "metadata_only_variant_count": len(records) - len(parser_ready_records),
         "current_pipeline_chunk_count": sum(chunk_counts),
         "zero_chunk_parser_ready_variant_count": sum(1 for count in chunk_counts if count == 0),
-        "import_ready_count": sum(1 for record in records if record["current_pipeline_metrics"].get("import_ready") is True),
-        "import_eligible_chunk_count": sum(int(record["current_pipeline_metrics"].get("import_eligible_chunk_count") or 0) for record in records),
+        "import_ready_count": sum(
+            1
+            for record in records
+            if record["current_pipeline_metrics"].get("import_ready") is True
+        ),
+        "import_eligible_chunk_count": sum(
+            int(record["current_pipeline_metrics"].get("import_eligible_chunk_count") or 0)
+            for record in records
+        ),
         "conversion_status_counts": dict(sorted(status_counts.items())),
         "diagnostic_counts": dict(sorted(diagnostic_counts.items())),
         "article_results": records,
-        "artifact_paths": {article_ref: rel(path) for article_ref, path in sorted(artifact_paths.items())},
+        "artifact_paths": {
+            article_ref: rel(path) for article_ref, path in sorted(artifact_paths.items())
+        },
         "readiness": {
             "baseline_capture_completed": True,
             "current_behavior_accepted_for_capture": True,
@@ -547,11 +654,18 @@ def replay_baseline(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
 
 
 def write_report(path: Path, summary: Mapping[str, Any]) -> None:
-    rows = ["| Article | Variant | Parser-ready | Chunks | Import ready | Diagnostic artifact |", "|---|---|---:|---:|---:|---|"]
+    rows = [
+        "| Article | Variant | Parser-ready | Chunks | Import ready | Diagnostic artifact |",
+        "|---|---|---:|---:|---:|---|",
+    ]
     for record in summary.get("article_results", []):
         if not isinstance(record, dict):
             continue
-        metrics = record.get("current_pipeline_metrics") if isinstance(record.get("current_pipeline_metrics"), dict) else {}
+        metrics = (
+            record.get("current_pipeline_metrics")
+            if isinstance(record.get("current_pipeline_metrics"), dict)
+            else {}
+        )
         rows.append(
             "| {article} | {variant} | {ready} | {chunks} | {import_ready} | `{artifact}` |".format(
                 article=record.get("article_ref"),
@@ -566,7 +680,7 @@ def write_report(path: Path, summary: Mapping[str, Any]) -> None:
 
 ## Decision
 
-- Baseline capture completed: **{str(summary['readiness']['baseline_capture_completed']).lower()}**
+- Baseline capture completed: **{str(summary["readiness"]["baseline_capture_completed"]).lower()}**
 - Hardening applied: **false**
 - Graph readiness claim: **false**
 - Trusted fact claim: **false**
@@ -575,14 +689,14 @@ This report captures accepted current mixed-source pipeline behavior before S05 
 
 ## Aggregate Summary
 
-- Articles: {summary['article_count']}
-- Variants: {summary['variant_count']}
-- Parser-ready variants: {summary['parser_ready_variant_count']}
-- Metadata-only variants: {summary['metadata_only_variant_count']}
-- Current pipeline chunks observed: {summary['current_pipeline_chunk_count']}
-- Zero-chunk parser-ready variants: {summary['zero_chunk_parser_ready_variant_count']}
-- Import-ready records: {summary['import_ready_count']}
-- Import-eligible chunks: {summary['import_eligible_chunk_count']}
+- Articles: {summary["article_count"]}
+- Variants: {summary["variant_count"]}
+- Parser-ready variants: {summary["parser_ready_variant_count"]}
+- Metadata-only variants: {summary["metadata_only_variant_count"]}
+- Current pipeline chunks observed: {summary["current_pipeline_chunk_count"]}
+- Zero-chunk parser-ready variants: {summary["zero_chunk_parser_ready_variant_count"]}
+- Import-ready records: {summary["import_ready_count"]}
+- Import-eligible chunks: {summary["import_eligible_chunk_count"]}
 
 ## Article Results
 
@@ -590,14 +704,14 @@ This report captures accepted current mixed-source pipeline behavior before S05 
 
 ## Diagnostics
 
-`{json.dumps(summary['diagnostic_counts'], sort_keys=True)}`
+`{json.dumps(summary["diagnostic_counts"], sort_keys=True)}`
 
 ## Provenance
 
-- Conversion summary: `{summary['conversion_summary_path']}`
-- Conversion summary SHA-256: `{summary['conversion_summary_sha256']}`
-- Baseline diagnostics: `{summary['output_diagnostics_path']}`
-- Per-article baseline directory: `{summary['output_dir']}`
+- Conversion summary: `{summary["conversion_summary_path"]}`
+- Conversion summary SHA-256: `{summary["conversion_summary_sha256"]}`
+- Baseline diagnostics: `{summary["output_diagnostics_path"]}`
+- Per-article baseline directory: `{summary["output_dir"]}`
 
 ## Failure Modes
 

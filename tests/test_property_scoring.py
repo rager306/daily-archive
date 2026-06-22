@@ -6,8 +6,8 @@ from hypothesis import Verbosity, given, settings
 from hypothesis import strategies as st
 
 from research_graph.corpus.sources.arxiv_client import ArxivPaper
-from research_graph.evaluation.scoring import ScoringEngine
 from research_graph.corpus.sources.semantic_scholar import SemanticScholarPaper
+from research_graph.evaluation.scoring import ScoringEngine
 from tests.helpers.modular_fixtures import FIXTURE_PAPER_ID
 
 
@@ -102,8 +102,7 @@ def test_top10_sorting_always_correct(n_papers: int) -> None:
     engine = ScoringEngine()
 
     papers = [
-        make_arxiv_paper(arxiv_id=f"arxiv:2310.{i:05d}", days_ago=i % 30)
-        for i in range(n_papers)
+        make_arxiv_paper(arxiv_id=f"arxiv:2310.{i:05d}", days_ago=i % 30) for i in range(n_papers)
     ]
 
     scored = [
@@ -118,7 +117,7 @@ def test_top10_sorting_always_correct(n_papers: int) -> None:
     # Verify descending order
     for i in range(len(top10) - 1):
         assert top10[i].score >= top10[i + 1].score, (
-            f"Top-10 not sorted: score[{i}]={top10[i].score} < score[{i+1}]={top10[i+1].score}"
+            f"Top-10 not sorted: score[{i}]={top10[i].score} < score[{i + 1}]={top10[i + 1].score}"
         )
 
     # Verify all top-10 scores >= all non-top-10 scores (if n > 10)
@@ -144,11 +143,27 @@ def test_empty_keywords_handled(keyword_count: int) -> None:
 
 @settings(max_examples=100)
 @given(
-    category=st.sampled_from([
-        "cs.AI", "cs.LG", "cs.CL", "cs.CV", "cs.IR", "cs.KG", "cs.SI",
-        "cs.NE", "cs.DB", "cs.DS", "cs.DC", "cs.MA", "cs.ST", "cs.RO",
-        "unknown.cat", "", "cs.XY",
-    ])
+    category=st.sampled_from(
+        [
+            "cs.AI",
+            "cs.LG",
+            "cs.CL",
+            "cs.CV",
+            "cs.IR",
+            "cs.KG",
+            "cs.SI",
+            "cs.NE",
+            "cs.DB",
+            "cs.DS",
+            "cs.DC",
+            "cs.MA",
+            "cs.ST",
+            "cs.RO",
+            "unknown.cat",
+            "",
+            "cs.XY",
+        ]
+    )
 )
 def test_any_category_does_not_crash(category: str) -> None:
     """Any category string must not crash preference scoring."""

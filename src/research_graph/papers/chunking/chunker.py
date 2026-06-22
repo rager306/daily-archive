@@ -20,6 +20,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
+from research_graph.papers.chunking.figure_units import is_equation_block, is_figure_block
+from research_graph.papers.chunking.table_units import is_table_block
 from research_graph.repair.chunk_import_contract import (
     EXPECTED_CONTRACT_VERSION,
     EXPECTED_SCHEMA_VERSION,
@@ -27,8 +29,6 @@ from research_graph.repair.chunk_import_contract import (
     validate_import_ready_package,
     validation_to_dict,
 )
-from research_graph.papers.chunking.figure_units import is_equation_block, is_figure_block
-from research_graph.papers.chunking.table_units import is_table_block
 
 CoordinateSpace = Literal["normalized_markdown"]
 GraphReadinessState = Literal["ok_for_graph", "ok_for_retrieval_only", "repair_required", "reject"]
@@ -70,8 +70,12 @@ ConfidenceClass = Literal["deterministic", "heuristic", "requires_review"]
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 _TABLE_RE = re.compile(r"^\s*\|.*\|\s*$")
 _TABLE_SEPARATOR_RE = re.compile(r"^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$")
-_FIGURE_RE = re.compile(r"^\s*(?:!\[[^\]]*\]\([^)]*\)|(?:fig(?:ure)?\.?\s*\d*[:.]).*)", re.IGNORECASE)
-_EQUATION_RE = re.compile(r"^\s*(?:\$\$|\\\[|\\begin\{(?:equation|align|gather|multline)\}|[A-Za-z0-9_{}^\\]+\s*=\s*.+)")
+_FIGURE_RE = re.compile(
+    r"^\s*(?:!\[[^\]]*\]\([^)]*\)|(?:fig(?:ure)?\.?\s*\d*[:.]).*)", re.IGNORECASE
+)
+_EQUATION_RE = re.compile(
+    r"^\s*(?:\$\$|\\\[|\\begin\{(?:equation|align|gather|multline)\}|[A-Za-z0-9_{}^\\]+\s*=\s*.+)"
+)
 _REFERENCE_HEADING_RE = re.compile(r"^(references|bibliography|works cited)$", re.IGNORECASE)
 
 
@@ -138,7 +142,10 @@ class StructuralElement:
             "order_index": self.order_index,
             "source_span": self.source_span.to_contract(),
             "quality_state": self.quality_state,
-            "warnings": [_warning(code=code, object_id=self.element_id, severity="warn") for code in self.warning_codes],
+            "warnings": [
+                _warning(code=code, object_id=self.element_id, severity="warn")
+                for code in self.warning_codes
+            ],
         }
 
 
@@ -187,7 +194,10 @@ class StructureAwareChunk:
             "source_span": self.source_span.to_contract(),
             "source_artifact": self.source_artifact,
             "evidence_path_id": self.evidence_path_id,
-            "quality_warnings": [_warning(code=code, object_id=self.chunk_id, severity="warn") for code in self.warning_codes],
+            "quality_warnings": [
+                _warning(code=code, object_id=self.chunk_id, severity="warn")
+                for code in self.warning_codes
+            ],
             "redaction": {
                 "raw_text_included": False,
                 "chunk_text_included": False,
@@ -223,7 +233,10 @@ class ChunkAnnotationSidecar:
             "values": self.values,
             "confidence_class": self.confidence_class,
             "promoted_to_fact": False,
-            "warnings": [_warning(code=code, object_id=self.annotation_id, severity="warn") for code in self.warning_codes],
+            "warnings": [
+                _warning(code=code, object_id=self.annotation_id, severity="warn")
+                for code in self.warning_codes
+            ],
             "redaction": {
                 "raw_text_included": False,
                 "chunk_text_included": False,
@@ -253,7 +266,9 @@ class StructureAwarePackage:
         element_records = [element.to_contract() for element in self.elements]
         chunk_records = [chunk.to_contract() for chunk in self.chunks]
         annotation_records = [annotation.to_contract() for annotation in self.annotations]
-        diagnostics = _diagnostics_for_package(element_records=element_records, chunks=chunk_records, annotations=annotation_records)
+        diagnostics = _diagnostics_for_package(
+            element_records=element_records, chunks=chunk_records, annotations=annotation_records
+        )
         return {
             "schema_version": EXPECTED_SCHEMA_VERSION,
             "contract_version": EXPECTED_CONTRACT_VERSION,
@@ -321,7 +336,9 @@ def parse_markdown_structure(
                 parent_id = heading_stack[-1][1] if heading_stack else root.element_id
                 elements.append(
                     StructuralElement(
-                        element_id=_element_id(paper_id, order_index, "administrative", heading_text),
+                        element_id=_element_id(
+                            paper_id, order_index, "administrative", heading_text
+                        ),
                         paper_id=paper_id,
                         element_type="administrative",
                         parent_element_id=parent_id,
@@ -356,7 +373,12 @@ def parse_markdown_structure(
         element_type = _classify_block(block.text, section_path=section_path)
         elements.append(
             StructuralElement(
-                element_id=_element_id(paper_id, order_index, element_type, section_path[-1] if section_path else element_type),
+                element_id=_element_id(
+                    paper_id,
+                    order_index,
+                    element_type,
+                    section_path[-1] if section_path else element_type,
+                ),
                 paper_id=paper_id,
                 element_type=element_type,
                 parent_element_id=parent_id,
@@ -366,7 +388,11 @@ def parse_markdown_structure(
             )
         )
         order_index += 1
-    chunks = tuple(_chunk_from_element(element, source_artifact=source_artifact) for element in elements if element.element_type != "document")
+    chunks = tuple(
+        _chunk_from_element(element, source_artifact=source_artifact)
+        for element in elements
+        if element.element_type != "document"
+    )
     return StructureAwarePackage(
         paper_id=paper_id,
         title=title,
@@ -379,7 +405,9 @@ def parse_markdown_structure(
     )
 
 
-def _annotations_for_chunks(chunks: tuple[StructureAwareChunk, ...]) -> list[ChunkAnnotationSidecar]:
+def _annotations_for_chunks(
+    chunks: tuple[StructureAwareChunk, ...],
+) -> list[ChunkAnnotationSidecar]:
     annotations: list[ChunkAnnotationSidecar] = []
     for chunk in chunks:
         annotations.extend(_annotations_for_chunk(chunk))
@@ -433,7 +461,10 @@ def _annotations_for_chunk(chunk: StructureAwareChunk) -> list[ChunkAnnotationSi
                 chunk_id=chunk.chunk_id,
                 method=method,
                 annotation_type="review_blocker",
-                values={"reasons": list(chunk.route_eligibility.refusal_reasons), "blocks_trusted_import": True},
+                values={
+                    "reasons": list(chunk.route_eligibility.refusal_reasons),
+                    "blocks_trusted_import": True,
+                },
                 confidence_class="requires_review",
                 warning_codes=chunk.route_eligibility.refusal_reasons,
             )
@@ -446,7 +477,10 @@ def _annotations_for_chunk(chunk: StructureAwareChunk) -> list[ChunkAnnotationSi
                 chunk_id=chunk.chunk_id,
                 method=method,
                 annotation_type="asset_link_hint",
-                values={"asset_role": "table" if chunk.chunk_type == "table_context" else "figure", "requires_asset_manifest": True},
+                values={
+                    "asset_role": "table" if chunk.chunk_type == "table_context" else "figure",
+                    "requires_asset_manifest": True,
+                },
                 confidence_class="heuristic",
                 warning_codes=("asset_manifest_required",),
             )
@@ -476,7 +510,9 @@ def _section_role(section_path: tuple[str, ...]) -> str:
 def _chunk_from_element(element: StructuralElement, *, source_artifact: str) -> StructureAwareChunk:
     chunk_type, route, state, refusal_reason = _route_for_element(element)
     return StructureAwareChunk(
-        chunk_id=element.element_id.replace(":section:", ":chunk:").replace(":paragraph:", ":chunk:"),
+        chunk_id=element.element_id.replace(":section:", ":chunk:").replace(
+            ":paragraph:", ":chunk:"
+        ),
         paper_id=element.paper_id,
         chunk_type=chunk_type,
         parent_element_ids=(element.element_id,),
@@ -495,24 +531,63 @@ def _chunk_from_element(element: StructuralElement, *, source_artifact: str) -> 
     )
 
 
-def _route_for_element(element: StructuralElement) -> tuple[ChunkType, ChunkRoute, GraphReadinessState, str]:
+def _route_for_element(
+    element: StructuralElement,
+) -> tuple[ChunkType, ChunkRoute, GraphReadinessState, str]:
     element_type = element.element_type
     section_label = " ".join(element.section_path).lower()
     if element_type == "reference_entry":
-        return "reference_entry", "citation_graph", "repair_required", "citation_route_requires_review"
+        return (
+            "reference_entry",
+            "citation_graph",
+            "repair_required",
+            "citation_route_requires_review",
+        )
     if element_type == "table":
         return "table_context", "table_extraction", "repair_required", "table_route_requires_review"
     if element_type == "figure_caption":
-        return "figure_caption_context", "retrieval_only", "repair_required", "figure_route_not_import_ready"
+        return (
+            "figure_caption_context",
+            "retrieval_only",
+            "repair_required",
+            "figure_route_not_import_ready",
+        )
     if element_type == "equation":
-        return "equation_context", "retrieval_only", "repair_required", "equation_route_not_import_ready"
+        return (
+            "equation_context",
+            "retrieval_only",
+            "repair_required",
+            "equation_route_not_import_ready",
+        )
     if element_type == "administrative":
-        return "metadata", "metadata_graph", "repair_required", "administrative_metadata_requires_review"
+        return (
+            "metadata",
+            "metadata_graph",
+            "repair_required",
+            "administrative_metadata_requires_review",
+        )
     if "method" in section_label or "approach" in section_label:
-        return "method_candidate", "method_extraction", "repair_required", "method_route_requires_review"
-    if any(marker in section_label for marker in ("abstract", "result", "conclusion", "introduction")):
-        return "claim_candidate", "claim_extraction", "repair_required", "claim_route_requires_review"
-    return "retrieval_context", "retrieval_only", "ok_for_retrieval_only", "retrieval_only_not_import_ready"
+        return (
+            "method_candidate",
+            "method_extraction",
+            "repair_required",
+            "method_route_requires_review",
+        )
+    if any(
+        marker in section_label for marker in ("abstract", "result", "conclusion", "introduction")
+    ):
+        return (
+            "claim_candidate",
+            "claim_extraction",
+            "repair_required",
+            "claim_route_requires_review",
+        )
+    return (
+        "retrieval_context",
+        "retrieval_only",
+        "ok_for_retrieval_only",
+        "retrieval_only_not_import_ready",
+    )
 
 
 def empty_structure_aware_package(
@@ -556,16 +631,26 @@ def measure_structure_aware_manifest(manifest_path: Path) -> StructureAwareRunRe
             continue
         package = build_structure_aware_package_for_paper(paper, run_id=run_id).to_contract()
         validation = validation_to_dict(validate_import_ready_package(package))
-        measurements.append(StructureAwareMeasurement(paper_id=str(package["paper_id"]), package=package, validation=validation))
-    return StructureAwareRunResult(measurements=tuple(measurements), summary=_summary_for_measurements(measurements))
+        measurements.append(
+            StructureAwareMeasurement(
+                paper_id=str(package["paper_id"]), package=package, validation=validation
+            )
+        )
+    return StructureAwareRunResult(
+        measurements=tuple(measurements), summary=_summary_for_measurements(measurements)
+    )
 
 
-def build_structure_aware_package_for_paper(paper: dict[str, Any], *, run_id: str) -> StructureAwarePackage:
+def build_structure_aware_package_for_paper(
+    paper: dict[str, Any], *, run_id: str
+) -> StructureAwarePackage:
     """Build a structure-aware package for one manifest paper without leaking text."""
     paper_id = str(paper["paper_id"])
     source_path = _select_full_text_path(paper)
     source_artifact = _source_artifact_for_paper(paper, source_path=source_path)
-    categories = tuple(str(category) for category in paper.get("categories", []) if isinstance(category, str))
+    categories = tuple(
+        str(category) for category in paper.get("categories", []) if isinstance(category, str)
+    )
     if source_path is None:
         return empty_structure_aware_package(
             paper_id=paper_id,
@@ -595,7 +680,10 @@ def write_structure_aware_run(result: StructureAwareRunResult, output_dir: Path)
         encoding="utf-8",
     )
     (output_dir / "structure-aware-package-diagnostics.jsonl").write_text(
-        "".join(json.dumps(_measurement_to_record(measurement), sort_keys=True) + "\n" for measurement in result.measurements),
+        "".join(
+            json.dumps(_measurement_to_record(measurement), sort_keys=True) + "\n"
+            for measurement in result.measurements
+        ),
         encoding="utf-8",
     )
 
@@ -645,7 +733,11 @@ def _redacted_chunk_diagnostics(package: dict[str, Any]) -> list[dict[str, Any]]
                 "source_span": chunk.get("source_span"),
                 "parent_element_ids": list(chunk.get("parent_element_ids", [])),
                 "section_path": list(chunk.get("section_path", [])),
-                "refusal_reasons": [str(warning.get("code")) for warning in chunk.get("quality_warnings", []) if isinstance(warning, dict)],
+                "refusal_reasons": [
+                    str(warning.get("code"))
+                    for warning in chunk.get("quality_warnings", [])
+                    if isinstance(warning, dict)
+                ],
             }
         )
     return records
@@ -666,22 +758,35 @@ def _summary_for_measurements(measurements: list[StructureAwareMeasurement]) -> 
         _merge_counts(counts_by_chunk_type, diagnostics.get("counts_by_chunk_type", {}))
         _merge_counts(refusal_counts, diagnostics.get("refusal_counts", {}))
         _merge_counts(annotation_counts_by_type, diagnostics.get("annotation_counts_by_type", {}))
-        _merge_counts(annotation_counts_by_confidence, diagnostics.get("annotation_counts_by_confidence", {}))
+        _merge_counts(
+            annotation_counts_by_confidence, diagnostics.get("annotation_counts_by_confidence", {})
+        )
         _merge_counts(annotation_warning_counts, diagnostics.get("annotation_warning_counts", {}))
     return {
         "schema_version": "m005-structure-aware-run.v1",
         "paper_count": len(measurements),
-        "valid_package_count": sum(1 for measurement in measurements if measurement.validation["valid_package"]),
-        "import_ready_count": sum(1 for measurement in measurements if measurement.validation["import_ready"]),
-        "import_eligible_chunk_count": sum(int(measurement.validation["import_eligible_chunk_count"]) for measurement in measurements),
-        "refused_chunk_count": sum(int(measurement.validation["refused_chunk_count"]) for measurement in measurements),
+        "valid_package_count": sum(
+            1 for measurement in measurements if measurement.validation["valid_package"]
+        ),
+        "import_ready_count": sum(
+            1 for measurement in measurements if measurement.validation["import_ready"]
+        ),
+        "import_eligible_chunk_count": sum(
+            int(measurement.validation["import_eligible_chunk_count"])
+            for measurement in measurements
+        ),
+        "refused_chunk_count": sum(
+            int(measurement.validation["refused_chunk_count"]) for measurement in measurements
+        ),
         "element_count": sum(len(measurement.package["elements"]) for measurement in measurements),
         "chunk_count": sum(len(measurement.package["chunks"]) for measurement in measurements),
         "counts_by_state": dict(sorted(counts_by_state.items())),
         "counts_by_route": dict(sorted(counts_by_route.items())),
         "counts_by_chunk_type": dict(sorted(counts_by_chunk_type.items())),
         "refusal_counts": dict(sorted(refusal_counts.items())),
-        "annotation_count": sum(len(measurement.package["annotations"]) for measurement in measurements),
+        "annotation_count": sum(
+            len(measurement.package["annotations"]) for measurement in measurements
+        ),
         "annotation_counts_by_type": dict(sorted(annotation_counts_by_type.items())),
         "annotation_counts_by_confidence": dict(sorted(annotation_counts_by_confidence.items())),
         "annotation_warning_counts": dict(sorted(annotation_warning_counts.items())),
@@ -731,7 +836,9 @@ def _string_or_none(value: Any) -> str | None:
 
 def main(argv: list[str] | None = None) -> int:
     """CLI entry point for redacted structure-aware dry runs."""
-    parser = argparse.ArgumentParser(description="Validate structure-aware chunks against the M005 import-ready contract.")
+    parser = argparse.ArgumentParser(
+        description="Validate structure-aware chunks against the M005 import-ready contract."
+    )
     parser.add_argument("--manifest", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
     args = parser.parse_args(argv)
@@ -764,11 +871,15 @@ def _markdown_blocks(markdown: str) -> list[_MarkdownBlock]:
             block_lines.append(line)
             continue
         if block_start is not None:
-            blocks.append(_MarkdownBlock(text="".join(block_lines), start=block_start, end=line_start))
+            blocks.append(
+                _MarkdownBlock(text="".join(block_lines), start=block_start, end=line_start)
+            )
             block_start = None
             block_lines = []
     if block_start is not None:
-        blocks.append(_MarkdownBlock(text="".join(block_lines), start=block_start, end=len(markdown)))
+        blocks.append(
+            _MarkdownBlock(text="".join(block_lines), start=block_start, end=len(markdown))
+        )
     return blocks
 
 
@@ -790,7 +901,15 @@ def _classify_block(text: str, *, section_path: tuple[str, ...]) -> str:
 
 def _looks_administrative(text: str) -> bool:
     lowered = text.lower()
-    administrative_markers = ("orcid", "correspondence:", "submission history", "access paper", "bookmark", "bibtex", "computer science >")
+    administrative_markers = (
+        "orcid",
+        "correspondence:",
+        "submission history",
+        "access paper",
+        "bookmark",
+        "bibtex",
+        "computer science >",
+    )
     return any(marker in lowered for marker in administrative_markers)
 
 
@@ -809,14 +928,23 @@ def _diagnostics_for_package(
     chunks: list[dict[str, Any]],
     annotations: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    element_ids = {str(element.get("element_id")) for element in element_records if element.get("element_id") is not None}
+    element_ids = {
+        str(element.get("element_id"))
+        for element in element_records
+        if element.get("element_id") is not None
+    }
     source_span_count = sum(1 for chunk in chunks if _valid_source_span(chunk.get("source_span")))
     parent_resolved_count = sum(
         1
         for chunk in chunks
-        if chunk.get("parent_element_ids") and all(str(parent_id) in element_ids for parent_id in chunk.get("parent_element_ids", []))
+        if chunk.get("parent_element_ids")
+        and all(str(parent_id) in element_ids for parent_id in chunk.get("parent_element_ids", []))
     )
-    import_eligible_count = sum(1 for chunk in chunks if chunk["state"] == "ok_for_graph" and "trusted_kg_import" in chunk["allowed_uses"])
+    import_eligible_count = sum(
+        1
+        for chunk in chunks
+        if chunk["state"] == "ok_for_graph" and "trusted_kg_import" in chunk["allowed_uses"]
+    )
     refused_count = len(chunks) - import_eligible_count
     refusal_counts: dict[str, int] = {}
     for chunk in chunks:
@@ -837,8 +965,12 @@ def _diagnostics_for_package(
         "counts_by_route": _counts(chunk["route"] for chunk in chunks),
         "counts_by_chunk_type": _counts(chunk["chunk_type"] for chunk in chunks),
         "refusal_counts": dict(sorted(refusal_counts.items())),
-        "annotation_counts_by_type": _counts(annotation["annotation_type"] for annotation in annotations),
-        "annotation_counts_by_confidence": _counts(annotation["confidence_class"] for annotation in annotations),
+        "annotation_counts_by_type": _counts(
+            annotation["annotation_type"] for annotation in annotations
+        ),
+        "annotation_counts_by_confidence": _counts(
+            annotation["confidence_class"] for annotation in annotations
+        ),
         "annotation_warning_counts": dict(sorted(annotation_warning_counts.items())),
         "source_span_coverage": source_span_count / len(chunks) if chunks else 0.0,
         "parent_reference_resolution_rate": parent_resolved_count / len(chunks) if chunks else 0.0,
@@ -880,5 +1012,7 @@ def _counts(values: Any) -> dict[str, int]:
 
 def _now_iso() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat()
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

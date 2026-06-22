@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from research_graph.llm.minimax_structured import DEFAULT_MINIMAX_MODEL
+from research_graph.infrastructure.llm.minimax_structured import DEFAULT_MINIMAX_MODEL
 from research_graph.workflows.universal_kb.rehearsal import (
     RehearsalResult,
     run_universal_kb_no_write_rehearsal,

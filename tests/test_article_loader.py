@@ -16,13 +16,11 @@ import pytest
 
 from research_graph.corpus.ingestion import (
     ArticleLoadSource,
-    classify_article_source,
-    load_article_source,
-)
-from research_graph.corpus.ingestion import (
     FullTextSource,
     assess_full_text_quality,
+    classify_article_source,
     ingest_full_text,
+    load_article_source,
 )
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_loader"
@@ -59,7 +57,9 @@ def _read_events(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
 
 
-def _assert_common_metadata(record: object, source_path: Path, source_type: str, media_type: str) -> None:
+def _assert_common_metadata(
+    record: object, source_path: Path, source_type: str, media_type: str
+) -> None:
     assert record.source_path == source_path
     assert record.source_type == source_type
     assert record.media_type == media_type
@@ -78,7 +78,9 @@ def _assert_safe_event_payload(events: list[dict]) -> None:
     assert "binary_payload" not in serialized
 
 
-@pytest.mark.parametrize(("fixture_name", "source_type", "media_type", "parser_name"), TEXT_LIKE_CASES)
+@pytest.mark.parametrize(
+    ("fixture_name", "source_type", "media_type", "parser_name"), TEXT_LIKE_CASES
+)
 def test_classifies_text_like_article_sources_with_deterministic_metadata(
     fixture_name: str,
     source_type: str,
@@ -142,7 +144,9 @@ def test_loads_markdown_with_text_payload_provenance_and_completed_events(tmp_pa
     _assert_safe_event_payload(events)
 
 
-@pytest.mark.parametrize(("fixture_name", "source_type", "media_type", "parser_name"), TEXT_LIKE_CASES[1:])
+@pytest.mark.parametrize(
+    ("fixture_name", "source_type", "media_type", "parser_name"), TEXT_LIKE_CASES[1:]
+)
 def test_loads_html_and_ocr_text_as_text_like_sources(
     tmp_path: Path,
     fixture_name: str,
@@ -161,7 +165,9 @@ def test_loads_html_and_ocr_text_as_text_like_sources(
     assert len(result.text.strip()) > 40
 
 
-def test_pdf_fixture_is_classified_without_binary_text_payload_or_raw_log_bytes(tmp_path: Path) -> None:
+def test_pdf_fixture_is_classified_without_binary_text_payload_or_raw_log_bytes(
+    tmp_path: Path,
+) -> None:
     source_path = FIXTURES_DIR / "minimal.pdf"
     log_path = tmp_path / "pdf-load.jsonl"
 
@@ -263,9 +269,17 @@ def test_low_quality_markdown_reuses_full_text_quality_contract(tmp_path: Path) 
     assert expected_ingestion.extraction_mode == "low_quality_source"
     assert expected_quality.status == "no_substantive_body"
     assert result.outcome == "failed"
-    assert result.failure_reason == expected_quality.fallback_reason == expected_ingestion.fallback_reason
+    assert (
+        result.failure_reason
+        == expected_quality.fallback_reason
+        == expected_ingestion.fallback_reason
+    )
     assert result.quality.status == expected_ingestion.quality.status == expected_quality.status
-    assert result.quality.heading_count == expected_ingestion.quality.heading_count == expected_quality.heading_count
+    assert (
+        result.quality.heading_count
+        == expected_ingestion.quality.heading_count
+        == expected_quality.heading_count
+    )
     assert (
         result.quality.non_heading_nonempty_line_count
         == expected_ingestion.quality.non_heading_nonempty_line_count
@@ -304,7 +318,10 @@ def test_loader_text_quality_matches_full_text_ingestion_contract(
     assert result.quality is not None
     assert result.quality.status == ingestion.quality.status
     assert result.quality.heading_count == ingestion.quality.heading_count
-    assert result.quality.non_heading_nonempty_line_count == ingestion.quality.non_heading_nonempty_line_count
+    assert (
+        result.quality.non_heading_nonempty_line_count
+        == ingestion.quality.non_heading_nonempty_line_count
+    )
     assert result.quality.fallback_reason == ingestion.quality.fallback_reason
     assert result.warnings == ([] if result.outcome == "loaded" else ingestion.warnings)
     if ingestion.quality.status == "no_substantive_body":
@@ -343,9 +360,16 @@ def test_each_load_attempt_emits_exactly_one_terminal_event(tmp_path: Path) -> N
 
     assert by_source_id[successful.source_id] == ["source.load_started", "source.load_completed"]
     assert by_source_id[failed.source_id] == ["source.load_started", "source.load_failed"]
-    terminal_events = [event for event in events if event["event"] in {"source.load_completed", "source.load_failed"}]
+    terminal_events = [
+        event
+        for event in events
+        if event["event"] in {"source.load_completed", "source.load_failed"}
+    ]
     assert len(terminal_events) == 2
-    assert all(event["outcome"] in {"loaded", "loaded_metadata_only", "failed"} for event in terminal_events)
+    assert all(
+        event["outcome"] in {"loaded", "loaded_metadata_only", "failed"}
+        for event in terminal_events
+    )
     _assert_safe_event_payload(events)
 
 
@@ -386,7 +410,9 @@ def test_event_payloads_align_with_source_reference_provenance_fields(tmp_path: 
     _assert_safe_event_payload(events)
 
 
-def test_secret_like_source_text_is_available_to_result_but_redacted_from_logs(tmp_path: Path) -> None:
+def test_secret_like_source_text_is_available_to_result_but_redacted_from_logs(
+    tmp_path: Path,
+) -> None:
     source_path = tmp_path / "secret-bearing.md"
     source_path.write_text(
         "# Local fixture\n\n"
@@ -430,8 +456,12 @@ def test_logging_contract_for_failures_contains_metadata_not_payloads(tmp_path: 
     _assert_safe_event_payload(events)
 
 
-def test_ingestion_loader_stack_exposes_checksum_fallback_and_failure_reason(tmp_path: Path) -> None:
-    from research_graph.corpus.ingestion.loader import load_article_source as ingestion_load_article_source
+def test_ingestion_loader_stack_exposes_checksum_fallback_and_failure_reason(
+    tmp_path: Path,
+) -> None:
+    from research_graph.corpus.ingestion.loader import (
+        load_article_source as ingestion_load_article_source,
+    )
 
     source_path = tmp_path / "binary.html"
     source_path.write_bytes(b"\xff\xfe\x00<html>not utf-8</html>\x80")

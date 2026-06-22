@@ -11,12 +11,22 @@ from typing import Any
 import ladybug
 
 import research_graph.graph.ladybug_client as ladybug_client
-from research_graph.evaluation.metrics import calculate_evidence_path_hit_rate, calculate_retrieval_recall
-from research_graph.papers.semantic_chunks import EvidencePath, build_evidence_path, build_semantic_chunks
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
-from research_graph.retrieval.hybrid import InMemoryVectorCandidateIndex
+from research_graph.domain.semantic_chunks import EvidencePath
+from research_graph.evaluation.metrics import (
+    calculate_evidence_path_hit_rate,
+    calculate_retrieval_recall,
+)
+from research_graph.evaluation.scientific_extraction import (
+    Claim,
+    ExtractionPatch,
+    ScientificEntity,
+    ScientificRelation,
+)
 from research_graph.graph.ladybug_client import evidence_path_id
 from research_graph.papers.indexing import PageIndexDocument, build_page_index
+from research_graph.papers.semantic_chunks import build_evidence_path, build_semantic_chunks
+from research_graph.retrieval.hybrid import InMemoryVectorCandidateIndex
 from research_graph.workflows.rlm.graph_traversal import (
     ComparisonResult,
     RLMGraphTraversalConfig,
@@ -24,10 +34,11 @@ from research_graph.workflows.rlm.graph_traversal import (
     compare_rlm_graph_traversal,
 )
 from research_graph.workflows.rlm.workflow import run_document_workflow
-from research_graph.evaluation.scientific_extraction import Claim, ExtractionPatch, ScientificEntity, ScientificRelation
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-ARTICLE_STRUCTURE_PATH = REPO_ROOT / "tests" / "fixtures" / "article_artifacts" / "basic_article_structure.json"
+ARTICLE_STRUCTURE_PATH = (
+    REPO_ROOT / "tests" / "fixtures" / "article_artifacts" / "basic_article_structure.json"
+)
 FULL_TEXT_FIXTURE_PATH = REPO_ROOT / "tests" / "fixtures" / "full_text" / "structured_paper.md"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "artifacts" / "m052-rlm-e2e"
 SCHEMA_VERSION = "scientific_extraction.v1"
@@ -138,12 +149,18 @@ def build_graph_fixture() -> E2EGraphFixture:
     document = build_document()
     chunks = build_semantic_chunks(document)
     evidence_paths = [build_evidence_path(document, chunk) for chunk in chunks]
-    method_chunk = next(chunk for chunk in chunks if chunk.page_index_node_id == "2605.12345:method")
-    conclusion_chunk = next(chunk for chunk in chunks if chunk.page_index_node_id == "2605.12345:conclusion")
+    method_chunk = next(
+        chunk for chunk in chunks if chunk.page_index_node_id == "2605.12345:method"
+    )
+    conclusion_chunk = next(
+        chunk for chunk in chunks if chunk.page_index_node_id == "2605.12345:conclusion"
+    )
     method_evidence = _evidence_for_chunk(evidence_paths, method_chunk.id)
     conclusion_evidence = _evidence_for_chunk(evidence_paths, conclusion_chunk.id)
 
-    ladybug_client.upsert_scientific_kg(conn, document, chunks, evidence_paths, build_fixture_patch(method_evidence))
+    ladybug_client.upsert_scientific_kg(
+        conn, document, chunks, evidence_paths, build_fixture_patch(method_evidence)
+    )
 
     vector_index = InMemoryVectorCandidateIndex(
         {
@@ -155,7 +172,9 @@ def build_graph_fixture() -> E2EGraphFixture:
         conn=conn,
         document=document,
         expected_semantic_chunk_ids=frozenset({method_chunk.id, conclusion_chunk.id}),
-        expected_evidence_path_ids=frozenset({evidence_path_id(method_evidence), evidence_path_id(conclusion_evidence)}),
+        expected_evidence_path_ids=frozenset(
+            {evidence_path_id(method_evidence), evidence_path_id(conclusion_evidence)}
+        ),
         seed_semantic_chunk_ids=(method_chunk.id,),
         seed_evidence_path_ids=(evidence_path_id(method_evidence),),
         vector_index=vector_index,
@@ -284,7 +303,9 @@ def run_e2e(output_dir: Path = DEFAULT_OUTPUT_DIR) -> dict[str, Any]:
     output_dir.mkdir(parents=True, exist_ok=True)
     audit_json_path = output_dir / "audit.json"
     audit_md_path = output_dir / "audit.md"
-    audit_json_path.write_text(json.dumps(audit, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    audit_json_path.write_text(
+        json.dumps(audit, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     audit_md_path.write_text(_audit_markdown(audit), encoding="utf-8")
     return audit
 

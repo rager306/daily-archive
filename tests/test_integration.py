@@ -3,8 +3,8 @@
 from datetime import date
 
 from research_graph.corpus.sources.arxiv_client import ArxivPaper
-from research_graph.retrieval.keyword_extractor import KeywordExtractor
 from research_graph.evaluation.scoring import ScoredPaper, ScoringEngine
+from research_graph.retrieval.keyword_extractor import KeywordExtractor
 
 
 def sample_papers() -> list[ArxivPaper]:

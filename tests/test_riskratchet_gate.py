@@ -8,9 +8,12 @@ from pathlib import Path
 
 import pytest
 
-from research_graph.quality import build_maintainability_report, write_maintainability_report
-from research_graph.quality.baselines import baseline_delta, read_baseline
-from research_graph.quality.thresholds import MaintainabilityThresholds
+from research_graph.infrastructure.quality import (
+    build_maintainability_report,
+    write_maintainability_report,
+)
+from research_graph.infrastructure.quality.baselines import baseline_delta, read_baseline
+from research_graph.infrastructure.quality.thresholds import MaintainabilityThresholds
 from scripts import run_quality_gate as quality_gate_runner
 
 
@@ -24,7 +27,9 @@ def test_thresholds_classify_boundary_scores() -> None:
 
 
 def test_maintainability_report_is_diagnostic_only_for_real_source_file() -> None:
-    report = build_maintainability_report(paths=["src/research_graph/workflows/validation/logging.py"])
+    report = build_maintainability_report(
+        paths=["src/research_graph/workflows/validation/logging.py"]
+    )
 
     assert report["status"] == "diagnostic_complete"
     assert report["diagnostic_only"] is True
@@ -111,7 +116,9 @@ def test_write_report_creates_parent_directories(tmp_path: Path) -> None:
     assert json.loads(output_path.read_text(encoding="utf-8")) == report
 
 
-def test_quality_gate_runner_writes_json_and_human_reports(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_quality_gate_runner_writes_json_and_human_reports(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     def fake_report(*, paths, baseline_path=None):
         return {
             "schema_version": "test-report",
@@ -152,14 +159,18 @@ def test_quality_gate_runner_writes_json_and_human_reports(tmp_path: Path, monke
     assert report["blocking"] is False
     assert report["pass_fail_affected"] is False
     assert json_payload["quality_gate"]["diagnostic_only"] is True
-    assert json_payload["quality_gate"]["touched_modules"] == ["src/research_graph/quality/baselines.py"]
+    assert json_payload["quality_gate"]["touched_modules"] == [
+        "src/research_graph/quality/baselines.py"
+    ]
     assert json_payload["output_paths"] == {"json": str(json_path), "human": str(human_path)}
     assert "Diagnostic-only" in human_report
     assert "non-blocking" in human_report
     assert "Severity bands" in human_report
 
 
-def test_quality_gate_touched_module_discovery_filters_to_source_and_scripts(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_quality_gate_touched_module_discovery_filters_to_source_and_scripts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     completed = subprocess.CompletedProcess(
         args=["git"],
         returncode=0,
@@ -183,7 +194,9 @@ def test_quality_gate_touched_module_discovery_filters_to_source_and_scripts(mon
     )
 
 
-def test_quality_gate_touched_module_discovery_falls_back_when_git_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_quality_gate_touched_module_discovery_falls_back_when_git_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     def raise_os_error(*args, **kwargs):
         raise OSError("git unavailable")
 
@@ -194,7 +207,9 @@ def test_quality_gate_touched_module_discovery_falls_back_when_git_fails(monkeyp
     assert touched == quality_gate_runner.DEFAULT_DIAGNOSTIC_SCOPE
 
 
-def test_quality_gate_runner_is_non_blocking_for_critical_scores(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_quality_gate_runner_is_non_blocking_for_critical_scores(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     def critical_report(*, paths, baseline_path=None):
         return {
             "schema_version": "test-report",
@@ -226,7 +241,9 @@ def test_quality_gate_runner_is_non_blocking_for_critical_scores(tmp_path: Path,
         ["src/arxiv_archive/quality/riskratchet_adapter.py", "--output-dir", str(tmp_path)]
     )
 
-    payload = json.loads((tmp_path / quality_gate_runner.JSON_REPORT_NAME).read_text(encoding="utf-8"))
+    payload = json.loads(
+        (tmp_path / quality_gate_runner.JSON_REPORT_NAME).read_text(encoding="utf-8")
+    )
     assert exit_code == 0
     assert payload["blocking"] is False
     assert payload["quality_gate"]["blocking"] is False

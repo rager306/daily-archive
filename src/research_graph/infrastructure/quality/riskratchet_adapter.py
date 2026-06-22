@@ -9,7 +9,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from research_graph.quality.thresholds import DEFAULT_THRESHOLDS, MaintainabilityThresholds
+from research_graph.infrastructure.quality.thresholds import (
+    DEFAULT_THRESHOLDS,
+    MaintainabilityThresholds,
+)
 
 RISK_REPORT_SCHEMA_VERSION = "daily-archive-riskratchet-adapter.v1"
 
@@ -44,7 +47,9 @@ def run_riskratchet_scan(
     try:
         from riskratchet import analyze  # type: ignore[import-not-found]
     except ImportError as exc:
-        return RiskratchetDiagnostic(status="unavailable", report=_empty_report(paths, thresholds), error=str(exc))
+        return RiskratchetDiagnostic(
+            status="unavailable", report=_empty_report(paths, thresholds), error=str(exc)
+        )
 
     try:
         risk_report = analyze(
@@ -57,13 +62,21 @@ def run_riskratchet_scan(
             missing_coverage_policy="ignore",
         )
     except Exception as exc:  # pragma: no cover - exact third-party failures vary
-        return RiskratchetDiagnostic(status="error", report=_empty_report(paths, thresholds), error=str(exc))
+        return RiskratchetDiagnostic(
+            status="error", report=_empty_report(paths, thresholds), error=str(exc)
+        )
 
-    return RiskratchetDiagnostic(status="ok", report=_serialize_report(risk_report, paths, thresholds))
+    return RiskratchetDiagnostic(
+        status="ok", report=_serialize_report(risk_report, paths, thresholds)
+    )
 
 
-def _serialize_report(report: Any, paths: tuple[Path, ...], thresholds: MaintainabilityThresholds) -> dict[str, Any]:
-    functions = [_serialize_function(function, thresholds) for function in getattr(report, "functions", ())]
+def _serialize_report(
+    report: Any, paths: tuple[Path, ...], thresholds: MaintainabilityThresholds
+) -> dict[str, Any]:
+    functions = [
+        _serialize_function(function, thresholds) for function in getattr(report, "functions", ())
+    ]
     by_severity = {"low": 0, "medium": 0, "high": 0, "critical": 0}
     for function in functions:
         by_severity[function["severity"]] += 1
@@ -78,7 +91,9 @@ def _serialize_report(report: Any, paths: tuple[Path, ...], thresholds: Maintain
         "scope": [str(path) for path in paths],
         "thresholds": thresholds.as_dict(),
         "summary": {
-            "total_functions": int(getattr(report, "analyzed_functions", len(functions)) or len(functions)),
+            "total_functions": int(
+                getattr(report, "analyzed_functions", len(functions)) or len(functions)
+            ),
             "emitted_functions": len(functions),
             "total_files": len(getattr(report, "files", ()) or ()),
             "coverage_status": getattr(report, "coverage_status", None),
@@ -86,7 +101,9 @@ def _serialize_report(report: Any, paths: tuple[Path, ...], thresholds: Maintain
             "average_score": average_score,
             "by_severity": by_severity,
         },
-        "functions": sorted(functions, key=lambda item: (-float(item["score"]), item["path"], item["qualname"])),
+        "functions": sorted(
+            functions, key=lambda item: (-float(item["score"]), item["path"], item["qualname"])
+        ),
     }
 
 
@@ -137,4 +154,9 @@ def report_to_json(report: dict[str, Any]) -> str:
     return json.dumps(report, indent=2, sort_keys=True) + "\n"
 
 
-__all__ = ["RISK_REPORT_SCHEMA_VERSION", "RiskratchetDiagnostic", "report_to_json", "run_riskratchet_scan"]
+__all__ = [
+    "RISK_REPORT_SCHEMA_VERSION",
+    "RiskratchetDiagnostic",
+    "report_to_json",
+    "run_riskratchet_scan",
+]

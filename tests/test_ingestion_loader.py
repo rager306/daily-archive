@@ -12,7 +12,11 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from research_graph.corpus.ingestion.loader import ArticleLoadSource, classify_article_source, load_article_source
+from research_graph.corpus.ingestion.loader import (
+    ArticleLoadSource,
+    classify_article_source,
+    load_article_source,
+)
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "ingestion"
 FULL_TEXT_FIXTURES_DIR = Path(__file__).parent / "fixtures" / "full_text"
@@ -150,7 +154,9 @@ def test_fixture_sources_smoke_load_with_structured_provenance_events(
     _assert_logs_are_metadata_only(events)
 
 
-def test_real_arxiv_landing_smoke_fails_with_low_quality_fallback_and_failure_log(tmp_path: Path) -> None:
+def test_real_arxiv_landing_smoke_fails_with_low_quality_fallback_and_failure_log(
+    tmp_path: Path,
+) -> None:
     source_path = FULL_TEXT_FIXTURES_DIR / "arxiv_landing_only.md"
     log_path = tmp_path / "arxiv-landing.jsonl"
 
@@ -277,7 +283,16 @@ def test_source_identity_and_terminal_event_shape_are_stable_for_generated_local
         first_events = _read_events(first_log)
         second_events = _read_events(second_log)
         assert [event["event"] for event in first_events][0] == "source.load_started"
-        assert len([event for event in first_events if event["event"] in {"source.load_completed", "source.load_failed"}]) == 1
+        assert (
+            len(
+                [
+                    event
+                    for event in first_events
+                    if event["event"] in {"source.load_completed", "source.load_failed"}
+                ]
+            )
+            == 1
+        )
         assert first_events[-1]["event"] in {"source.load_completed", "source.load_failed"}
         assert second_events[-1]["source_id"] == first_events[-1]["source_id"] == first.source_id
         for event in first_events + second_events:

@@ -7,10 +7,10 @@ from pathlib import Path
 
 import pytest
 
-from research_graph.papers.artifacts.models import FORBIDDEN_PAYLOAD_KEYS
-from research_graph.domain.navigation import PageIndexDocument
 from research_graph.corpus.ingestion.loader import ArticleLoadResult
 from research_graph.corpus.parsing.structure import ParsedArticle
+from research_graph.domain.navigation import PageIndexDocument
+from research_graph.papers.artifacts.models import FORBIDDEN_PAYLOAD_KEYS
 from tests.helpers.modular_fixtures import (
     FIXTURE_PAPER_ID,
     MODULAR_FIXTURE_PATH,
@@ -49,7 +49,9 @@ def test_shared_adaptix_helpers_roundtrip_loader_parser_and_page_index() -> None
     ]
     assert restored_page_index.paper_id == FIXTURE_PAPER_ID
     assert restored_page_index.validate_navigation() == []
-    assert [node.id for node in restored_page_index.walk_next()] == [node.id for node in page_index.nodes]
+    assert [node.id for node in restored_page_index.walk_next()] == [
+        node.id for node in page_index.nodes
+    ]
 
 
 def test_canonical_contract_samples_cover_refactored_module_surfaces() -> None:
@@ -129,7 +131,9 @@ def test_negative_malformed_structure_fixture_bubbles_validation_error() -> None
     malformed = sample_redacted_article_structure()
     malformed["raw_text"] = "raw prose must never be present in this fixture family"
 
-    from research_graph.papers.artifacts.models import build_article_artifact_manifest_from_structure
+    from research_graph.papers.artifacts.models import (
+        build_article_artifact_manifest_from_structure,
+    )
 
     with pytest.raises(ValueError, match="forbidden raw payload keys"):
         build_article_artifact_manifest_from_structure(malformed)

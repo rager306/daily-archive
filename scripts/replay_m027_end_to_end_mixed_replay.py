@@ -28,12 +28,20 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from research_graph.repair.chunk_baseline_measurement import build_baseline_package  # noqa: E402
-from research_graph.repair.chunk_import_contract import validate_import_ready_package, validation_to_dict  # noqa: E402
-from research_graph.papers.semantic_chunks import build_evidence_paths, build_semantic_chunks  # noqa: E402
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text  # noqa: E402
-from research_graph.papers.indexing.parsed_page_index import build_page_index_from_parsed  # noqa: E402
 from research_graph.corpus.parsing.parser import parse_article  # noqa: E402
+from research_graph.papers.indexing.parsed_page_index import (
+    build_page_index_from_parsed,  # noqa: E402
+)
+from research_graph.papers.semantic_chunks import (  # noqa: E402
+    build_evidence_paths,
+    build_semantic_chunks,
+)
+from research_graph.repair.chunk_baseline_measurement import build_baseline_package  # noqa: E402
+from research_graph.repair.chunk_import_contract import (  # noqa: E402
+    validate_import_ready_package,
+    validation_to_dict,
+)
 
 MILESTONE_ID = "M027-aakeky"
 SLICE_ID = "S05"
@@ -46,7 +54,15 @@ ARTIFACT_SCHEMA_VERSION = "m027-end-to-end-mixed-replay-artifact.v1"
 DECISION_SCHEMA_VERSION = "m027-end-to-end-mixed-replay-readiness-decision.v1"
 CORPUS_DIR = ROOT / "data" / "article_corpora" / SELECTION_ID
 DEFAULT_CONVERSION_SUMMARY = CORPUS_DIR / "conversion-quality-summary.json"
-DEFAULT_S03_SUMMARY = ROOT / ".gsd" / "milestones" / MILESTONE_ID / "slices" / SOURCE_SLICE_ID / f"{SOURCE_SLICE_ID}-SUMMARY.md"
+DEFAULT_S03_SUMMARY = (
+    ROOT
+    / ".gsd"
+    / "milestones"
+    / MILESTONE_ID
+    / "slices"
+    / SOURCE_SLICE_ID
+    / f"{SOURCE_SLICE_ID}-SUMMARY.md"
+)
 DEFAULT_BASELINE_SUMMARY = CORPUS_DIR / "current-pipeline-baseline-summary.json"
 DEFAULT_BASELINE_DIAGNOSTICS = CORPUS_DIR / "current-pipeline-baseline-diagnostics.jsonl"
 DEFAULT_OUTPUT_SUMMARY = CORPUS_DIR / "end-to-end-mixed-replay-summary.json"
@@ -82,7 +98,15 @@ FORBIDDEN_PAYLOAD_KEYS = {
     "article_text",
     "paper_text",
 }
-FORBIDDEN_SNIPPETS = ("<html", "</html", "%PDF-", "base64,", "RAW_ARXIV_ABS_SECRET", "RAW_NATURE_BODY_SECRET", "RAW_PDF_SECRET")
+FORBIDDEN_SNIPPETS = (
+    "<html",
+    "</html",
+    "%PDF-",
+    "base64,",
+    "RAW_ARXIV_ABS_SECRET",
+    "RAW_NATURE_BODY_SECRET",
+    "RAW_PDF_SECRET",
+)
 
 
 class EndToEndReplayError(RuntimeError):
@@ -115,7 +139,9 @@ def write_jsonl(path: Path, rows: Iterable[Mapping[str, Any]]) -> None:
     materialized = list(rows)
     assert_no_metadata_leakage(materialized)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in materialized), encoding="utf-8")
+    path.write_text(
+        "".join(json.dumps(row, sort_keys=True) + "\n" for row in materialized), encoding="utf-8"
+    )
 
 
 def rel(path: Path, root: Path = ROOT) -> str:
@@ -139,7 +165,11 @@ def safe_relative_path(value: Any, *, label: str) -> PurePosixPath:
     if "://" in value:
         raise EndToEndReplayError(f"url_not_allowed_as_{label}")
     normalized = PurePosixPath(value.replace("\\", "/"))
-    if normalized.is_absolute() or ".." in normalized.parts or any(part == "" for part in normalized.parts):
+    if (
+        normalized.is_absolute()
+        or ".." in normalized.parts
+        or any(part == "" for part in normalized.parts)
+    ):
         raise EndToEndReplayError(f"unsafe_{label}")
     return normalized
 
@@ -228,12 +258,21 @@ def event(event_type: str, **fields: Any) -> dict[str, Any]:
     }
 
 
-def validate_s03_linkage(conversion_summary: Mapping[str, Any], *, conversion_summary_path: Path) -> list[dict[str, Any]]:
-    if conversion_summary.get("milestone_id") != MILESTONE_ID or conversion_summary.get("slice_id") != SOURCE_SLICE_ID:
+def validate_s03_linkage(
+    conversion_summary: Mapping[str, Any], *, conversion_summary_path: Path
+) -> list[dict[str, Any]]:
+    if (
+        conversion_summary.get("milestone_id") != MILESTONE_ID
+        or conversion_summary.get("slice_id") != SOURCE_SLICE_ID
+    ):
         raise EndToEndReplayError("conversion summary is not the expected M027/S03 handoff")
     if conversion_summary.get("selection_id") != SELECTION_ID:
-        raise EndToEndReplayError("conversion summary selection_id does not match M027 mixed-source corpus")
-    source_summary_path = safe_under_root(ROOT, conversion_summary.get("source_summary_path"), label="source_summary_path")
+        raise EndToEndReplayError(
+            "conversion summary selection_id does not match M027 mixed-source corpus"
+        )
+    source_summary_path = safe_under_root(
+        ROOT, conversion_summary.get("source_summary_path"), label="source_summary_path"
+    )
     expected_source_sha = conversion_summary.get("source_summary_sha256")
     if not isinstance(expected_source_sha, str) or not expected_source_sha:
         raise EndToEndReplayError("conversion summary is missing source_summary_sha256")
@@ -266,10 +305,16 @@ def conversion_rows(conversion_summary: Mapping[str, Any]) -> list[dict[str, Any
     for index, row in enumerate(rows):
         if not isinstance(row, dict):
             raise EndToEndReplayError(f"conversion result at index {index} is not an object")
-        if not isinstance(row.get("article_ref"), str) or not isinstance(row.get("variant_id"), str):
-            raise EndToEndReplayError(f"conversion result at index {index} is missing article_ref or variant_id")
+        if not isinstance(row.get("article_ref"), str) or not isinstance(
+            row.get("variant_id"), str
+        ):
+            raise EndToEndReplayError(
+                f"conversion result at index {index} is missing article_ref or variant_id"
+            )
         if row.get("parser_ready") is True and not row.get("converted_text_path"):
-            raise EndToEndReplayError(f"parser-ready conversion result is missing converted_text_path: {row.get('variant_id')}")
+            raise EndToEndReplayError(
+                f"parser-ready conversion result is missing converted_text_path: {row.get('variant_id')}"
+            )
         typed_rows.append(row)
     return typed_rows
 
@@ -277,9 +322,13 @@ def conversion_rows(conversion_summary: Mapping[str, Any]) -> list[dict[str, Any
 def validate_converted_payload(row: Mapping[str, Any]) -> tuple[Path | None, dict[str, Any]]:
     if row.get("parser_ready") is not True:
         return None, {"verified": False, "reason": "not_parser_ready"}
-    converted_path = safe_under_root(ROOT, row.get("converted_text_path"), label="converted_text_path")
+    converted_path = safe_under_root(
+        ROOT, row.get("converted_text_path"), label="converted_text_path"
+    )
     if not converted_path.exists():
-        raise EndToEndReplayError(f"converted payload is missing for {row.get('variant_id')}: {converted_path}")
+        raise EndToEndReplayError(
+            f"converted payload is missing for {row.get('variant_id')}: {converted_path}"
+        )
     expected_sha = row.get("converted_text_sha256")
     expected_size = row.get("converted_text_byte_size")
     if not isinstance(expected_sha, str) or not expected_sha:
@@ -289,13 +338,24 @@ def validate_converted_payload(row: Mapping[str, Any]) -> tuple[Path | None, dic
     actual_sha = sha256_file(converted_path)
     actual_size = converted_path.stat().st_size
     if actual_sha != expected_sha:
-        raise EndToEndReplayError(f"converted_text_sha256 mismatch for {row.get('variant_id')}: expected {expected_sha}, got {actual_sha}")
+        raise EndToEndReplayError(
+            f"converted_text_sha256 mismatch for {row.get('variant_id')}: expected {expected_sha}, got {actual_sha}"
+        )
     if actual_size != expected_size:
-        raise EndToEndReplayError(f"converted_text_byte_size mismatch for {row.get('variant_id')}: expected {expected_size}, got {actual_size}")
-    return converted_path, {"verified": True, "sha256": actual_sha, "byte_size": actual_size, "path": rel(converted_path)}
+        raise EndToEndReplayError(
+            f"converted_text_byte_size mismatch for {row.get('variant_id')}: expected {expected_size}, got {actual_size}"
+        )
+    return converted_path, {
+        "verified": True,
+        "sha256": actual_sha,
+        "byte_size": actual_size,
+        "path": rel(converted_path),
+    }
 
 
-def import_contract_metrics(package: Mapping[str, Any], validation: Mapping[str, Any]) -> dict[str, Any]:
+def import_contract_metrics(
+    package: Mapping[str, Any], validation: Mapping[str, Any]
+) -> dict[str, Any]:
     diagnostics = package.get("diagnostics") if isinstance(package.get("diagnostics"), dict) else {}
     return {
         "package_state": diagnostics.get("package_state"),
@@ -317,7 +377,9 @@ def import_contract_metrics(package: Mapping[str, Any], validation: Mapping[str,
     }
 
 
-def run_boundaries(row: Mapping[str, Any], converted_path: Path, *, temp_root: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+def run_boundaries(
+    row: Mapping[str, Any], converted_path: Path, *, temp_root: Path
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     article_ref = str(row["article_ref"])
     variant_id = str(row["variant_id"])
     source_role = str(row.get("source_role") or "converted_text")
@@ -327,7 +389,9 @@ def run_boundaries(row: Mapping[str, Any], converted_path: Path, *, temp_root: P
     shutil.copyfile(converted_path, full_text_path)
     paper_id = f"{article_ref}:{variant_id}"
 
-    ingestion = ingest_full_text(FullTextSource(paper_id=paper_id, source_type="markdown", source_path=full_text_path))
+    ingestion = ingest_full_text(
+        FullTextSource(paper_id=paper_id, source_type="markdown", source_path=full_text_path)
+    )
     loader = {
         "status": ingestion.extraction_mode,
         "source_type": ingestion.source_type,
@@ -383,7 +447,11 @@ def run_boundaries(row: Mapping[str, Any], converted_path: Path, *, temp_root: P
         "import_contract": contract,
         **FALSE_SAFETY_FLAGS,
     }
-    code = "parser_ready_zero_chunks_preserved" if len(chunks) == 0 else "end_to_end_boundaries_completed"
+    code = (
+        "parser_ready_zero_chunks_preserved"
+        if len(chunks) == 0
+        else "end_to_end_boundaries_completed"
+    )
     status = "current_failure_preserved" if len(chunks) == 0 else "passed"
     return metrics, [
         diagnostic(
@@ -405,10 +473,29 @@ def metadata_only_metrics(row: Mapping[str, Any]) -> tuple[dict[str, Any], list[
     source_role = str(row.get("source_role") or "unknown")
     metrics = {
         "loader": {"status": "skipped_metadata_only", "warning_count": 0},
-        "parser": {"status": "skipped_not_parser_ready", "element_count": 0, "warning_count": 0, "parse_fallback": False},
-        "page_index": {"status": "skipped_not_parser_ready", "node_count": 0, "navigation_anchor_count": 0, "warning_count": 0},
-        "chunking": {"status": "skipped_not_parser_ready", "chunk_count": 0, "strategy": None, "zero_chunk_parser_ready": False},
-        "evidence": {"status": "skipped_not_parser_ready", "evidence_path_count": 0, "warning_count": 0},
+        "parser": {
+            "status": "skipped_not_parser_ready",
+            "element_count": 0,
+            "warning_count": 0,
+            "parse_fallback": False,
+        },
+        "page_index": {
+            "status": "skipped_not_parser_ready",
+            "node_count": 0,
+            "navigation_anchor_count": 0,
+            "warning_count": 0,
+        },
+        "chunking": {
+            "status": "skipped_not_parser_ready",
+            "chunk_count": 0,
+            "strategy": None,
+            "zero_chunk_parser_ready": False,
+        },
+        "evidence": {
+            "status": "skipped_not_parser_ready",
+            "evidence_path_count": 0,
+            "warning_count": 0,
+        },
         "import_contract": {
             "package_state": "not_run_metadata_only",
             "valid_package": True,
@@ -443,18 +530,28 @@ def metadata_only_metrics(row: Mapping[str, Any]) -> tuple[dict[str, Any], list[
     ]
 
 
-def baseline_records_by_key(baseline_summary: Mapping[str, Any]) -> dict[tuple[str, str], dict[str, Any]]:
+def baseline_records_by_key(
+    baseline_summary: Mapping[str, Any],
+) -> dict[tuple[str, str], dict[str, Any]]:
     rows = baseline_summary.get("article_results")
     if not isinstance(rows, list):
         raise EndToEndReplayError("S04 baseline summary does not contain article_results")
     result: dict[tuple[str, str], dict[str, Any]] = {}
     for row in rows:
-        if isinstance(row, dict) and isinstance(row.get("article_ref"), str) and isinstance(row.get("variant_id"), str):
+        if (
+            isinstance(row, dict)
+            and isinstance(row.get("article_ref"), str)
+            and isinstance(row.get("variant_id"), str)
+        ):
             result[(str(row["article_ref"]), str(row["variant_id"]))] = row
     return result
 
 
-def compare_to_baseline(row: Mapping[str, Any], metrics: Mapping[str, Any], baseline_by_key: Mapping[tuple[str, str], dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any]]:
+def compare_to_baseline(
+    row: Mapping[str, Any],
+    metrics: Mapping[str, Any],
+    baseline_by_key: Mapping[tuple[str, str], dict[str, Any]],
+) -> tuple[dict[str, Any], dict[str, Any]]:
     article_ref = str(row["article_ref"])
     variant_id = str(row["variant_id"])
     baseline = baseline_by_key.get((article_ref, variant_id))
@@ -471,7 +568,11 @@ def compare_to_baseline(row: Mapping[str, Any], metrics: Mapping[str, Any], base
         code = "s04_baseline_row_missing"
         status = "blocked"
     else:
-        baseline_metrics = baseline.get("current_pipeline_metrics") if isinstance(baseline.get("current_pipeline_metrics"), dict) else {}
+        baseline_metrics = (
+            baseline.get("current_pipeline_metrics")
+            if isinstance(baseline.get("current_pipeline_metrics"), dict)
+            else {}
+        )
         baseline_chunk_count = int(baseline_metrics.get("chunk_count") or 0)
         baseline_import_ready = bool(baseline_metrics.get("import_ready"))
         deltas = {
@@ -486,7 +587,9 @@ def compare_to_baseline(row: Mapping[str, Any], metrics: Mapping[str, Any], base
             "metric_deltas": deltas,
             "baseline_artifact_path": baseline.get("baseline_artifact_path"),
         }
-        code = "s04_baseline_exact_match" if category == "exact_match" else "s04_baseline_metric_delta"
+        code = (
+            "s04_baseline_exact_match" if category == "exact_match" else "s04_baseline_metric_delta"
+        )
         status = "passed" if category == "exact_match" else "observed"
     return comparison, diagnostic(
         article_ref=article_ref,
@@ -499,7 +602,13 @@ def compare_to_baseline(row: Mapping[str, Any], metrics: Mapping[str, Any], base
     )
 
 
-def article_record(row: Mapping[str, Any], metrics: Mapping[str, Any], payload_provenance: Mapping[str, Any], baseline_comparison: Mapping[str, Any], artifact_path: Path | None) -> dict[str, Any]:
+def article_record(
+    row: Mapping[str, Any],
+    metrics: Mapping[str, Any],
+    payload_provenance: Mapping[str, Any],
+    baseline_comparison: Mapping[str, Any],
+    artifact_path: Path | None,
+) -> dict[str, Any]:
     return {
         "article_ref": row.get("article_ref"),
         "variant_id": row.get("variant_id"),
@@ -525,7 +634,9 @@ def assert_no_metadata_leakage(value: Any) -> None:
         if isinstance(node, dict):
             for key, item in node.items():
                 if key in FORBIDDEN_PAYLOAD_KEYS:
-                    raise EndToEndReplayError(f"metadata payload key leakage detected at {path}.{key}")
+                    raise EndToEndReplayError(
+                        f"metadata payload key leakage detected at {path}.{key}"
+                    )
                 walk(item, f"{path}.{key}")
         elif isinstance(node, list):
             for index, item in enumerate(node):
@@ -534,7 +645,9 @@ def assert_no_metadata_leakage(value: Any) -> None:
     walk(value, "$")
 
 
-def write_article_artifact(output_dir: Path, article_ref: str, records: list[dict[str, Any]]) -> Path:
+def write_article_artifact(
+    output_dir: Path, article_ref: str, records: list[dict[str, Any]]
+) -> Path:
     path = output_dir / article_slug(article_ref) / "replay.json"
     payload = {
         "schema_version": ARTIFACT_SCHEMA_VERSION,
@@ -585,7 +698,9 @@ def build_readiness_decision(summary: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def replay_end_to_end(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+def replay_end_to_end(
+    args: argparse.Namespace,
+) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
     if not getattr(args, "no_network", False):
         raise EndToEndReplayError("end-to-end mixed replay requires --no-network")
     output_dir = Path(args.output_dir)
@@ -598,7 +713,9 @@ def replay_end_to_end(args: argparse.Namespace) -> tuple[dict[str, Any], list[di
     baseline_diagnostics_path = Path(args.baseline_diagnostics)
     conversion_summary = load_json(conversion_summary_path)
     baseline_summary = load_json(baseline_summary_path)
-    diagnostics = validate_s03_linkage(conversion_summary, conversion_summary_path=conversion_summary_path)
+    diagnostics = validate_s03_linkage(
+        conversion_summary, conversion_summary_path=conversion_summary_path
+    )
     baseline_by_key = baseline_records_by_key(baseline_summary)
     diagnostics.append(
         diagnostic(
@@ -614,7 +731,14 @@ def replay_end_to_end(args: argparse.Namespace) -> tuple[dict[str, Any], list[di
     )
 
     records: list[dict[str, Any]] = []
-    events: list[dict[str, Any]] = [event("replay_started", command=" ".join(sys.argv), cwd=str(Path.cwd()), git_commit=git_commit_from_head(ROOT))]
+    events: list[dict[str, Any]] = [
+        event(
+            "replay_started",
+            command=" ".join(sys.argv),
+            cwd=str(Path.cwd()),
+            git_commit=git_commit_from_head(ROOT),
+        )
+    ]
     by_article: dict[str, list[dict[str, Any]]] = {}
     with tempfile.TemporaryDirectory(prefix="m027-end-to-end-replay-") as tmp_name:
         temp_root = Path(tmp_name)
@@ -629,11 +753,21 @@ def replay_end_to_end(args: argparse.Namespace) -> tuple[dict[str, Any], list[di
                     source_role=str(row.get("source_role") or "unknown"),
                     stage="converted_payload_validation",
                     status="passed" if converted_path is not None else "skipped",
-                    diagnostic_code="converted_payload_hash_verified" if converted_path is not None else "metadata_only_no_converted_payload_expected",
-                    message="Converted payload hash and byte size match S03 metadata." if converted_path is not None else "No converted payload is expected for this metadata-only variant.",
-                    input_sha256=str(row.get("converted_text_sha256")) if row.get("converted_text_sha256") else None,
-                    output_sha256=str(payload_provenance.get("sha256")) if payload_provenance.get("sha256") else None,
-                    output_path=str(payload_provenance.get("path")) if payload_provenance.get("path") else None,
+                    diagnostic_code="converted_payload_hash_verified"
+                    if converted_path is not None
+                    else "metadata_only_no_converted_payload_expected",
+                    message="Converted payload hash and byte size match S03 metadata."
+                    if converted_path is not None
+                    else "No converted payload is expected for this metadata-only variant.",
+                    input_sha256=str(row.get("converted_text_sha256"))
+                    if row.get("converted_text_sha256")
+                    else None,
+                    output_sha256=str(payload_provenance.get("sha256"))
+                    if payload_provenance.get("sha256")
+                    else None,
+                    output_path=str(payload_provenance.get("path"))
+                    if payload_provenance.get("path")
+                    else None,
                 )
             )
             if converted_path is None:
@@ -643,10 +777,20 @@ def replay_end_to_end(args: argparse.Namespace) -> tuple[dict[str, Any], list[di
             diagnostics.extend(row_diagnostics)
             comparison, comparison_diagnostic = compare_to_baseline(row, metrics, baseline_by_key)
             diagnostics.append(comparison_diagnostic)
-            record = article_record(row, metrics, payload_provenance, comparison, artifact_path=None)
+            record = article_record(
+                row, metrics, payload_provenance, comparison, artifact_path=None
+            )
             records.append(record)
             by_article.setdefault(article_ref, []).append(record)
-            events.append(event("variant_replayed", article_ref=article_ref, variant_id=variant_id, parser_ready=row.get("parser_ready") is True, diagnostic_code=row_diagnostics[-1]["diagnostic_code"]))
+            events.append(
+                event(
+                    "variant_replayed",
+                    article_ref=article_ref,
+                    variant_id=variant_id,
+                    parser_ready=row.get("parser_ready") is True,
+                    diagnostic_code=row_diagnostics[-1]["diagnostic_code"],
+                )
+            )
 
     artifact_paths: dict[str, Path] = {}
     for article_ref, article_records in sorted(by_article.items()):
@@ -661,9 +805,14 @@ def replay_end_to_end(args: argparse.Namespace) -> tuple[dict[str, Any], list[di
         write_json(path, payload)
 
     parser_ready_records = [record for record in records if record["parser_ready"]]
-    chunk_counts = [int(record["boundary_metrics"].get("chunking", {}).get("chunk_count") or 0) for record in parser_ready_records]
+    chunk_counts = [
+        int(record["boundary_metrics"].get("chunking", {}).get("chunk_count") or 0)
+        for record in parser_ready_records
+    ]
     diagnostic_counts = Counter(str(row["diagnostic_code"]) for row in diagnostics)
-    comparison_counts = Counter(str(record["baseline_comparison"].get("category")) for record in records)
+    comparison_counts = Counter(
+        str(record["baseline_comparison"].get("category")) for record in records
+    )
     summary = {
         "schema_version": SCHEMA_VERSION,
         "milestone_id": MILESTONE_ID,
@@ -693,7 +842,9 @@ def replay_end_to_end(args: argparse.Namespace) -> tuple[dict[str, Any], list[di
         "baseline_summary_path": rel(baseline_summary_path),
         "baseline_summary_sha256": sha256_file(baseline_summary_path),
         "baseline_diagnostics_path": rel(baseline_diagnostics_path),
-        "baseline_diagnostics_sha256": sha256_file(baseline_diagnostics_path) if baseline_diagnostics_path.exists() else None,
+        "baseline_diagnostics_sha256": sha256_file(baseline_diagnostics_path)
+        if baseline_diagnostics_path.exists()
+        else None,
         "output_summary_path": rel(Path(args.output_summary)),
         "output_diagnostics_path": rel(Path(args.output_diagnostics)),
         "output_events_path": rel(Path(args.output_events)),
@@ -705,15 +856,32 @@ def replay_end_to_end(args: argparse.Namespace) -> tuple[dict[str, Any], list[di
         "parser_ready_variant_count": len(parser_ready_records),
         "metadata_only_variant_count": len(records) - len(parser_ready_records),
         "chunk_count": sum(chunk_counts),
-        "evidence_path_count": sum(int(record["boundary_metrics"].get("evidence", {}).get("evidence_path_count") or 0) for record in records),
+        "evidence_path_count": sum(
+            int(record["boundary_metrics"].get("evidence", {}).get("evidence_path_count") or 0)
+            for record in records
+        ),
         "zero_chunk_parser_ready_variant_count": sum(1 for count in chunk_counts if count == 0),
-        "import_ready_count": sum(1 for record in records if record["boundary_metrics"].get("import_contract", {}).get("import_ready") is True),
-        "import_eligible_chunk_count": sum(int(record["boundary_metrics"].get("import_contract", {}).get("import_eligible_chunk_count") or 0) for record in records),
+        "import_ready_count": sum(
+            1
+            for record in records
+            if record["boundary_metrics"].get("import_contract", {}).get("import_ready") is True
+        ),
+        "import_eligible_chunk_count": sum(
+            int(
+                record["boundary_metrics"]
+                .get("import_contract", {})
+                .get("import_eligible_chunk_count")
+                or 0
+            )
+            for record in records
+        ),
         "baseline_comparison_counts": dict(sorted(comparison_counts.items())),
         "baseline_missing_count": comparison_counts.get("baseline_missing", 0),
         "diagnostic_counts": dict(sorted(diagnostic_counts.items())),
         "article_results": records,
-        "artifact_paths": {article_ref: rel(path) for article_ref, path in sorted(artifact_paths.items())},
+        "artifact_paths": {
+            article_ref: rel(path) for article_ref, path in sorted(artifact_paths.items())
+        },
         "readiness": {
             "end_to_end_replay_completed": True,
             "validate_only": True,
@@ -737,7 +905,13 @@ def replay_end_to_end(args: argparse.Namespace) -> tuple[dict[str, Any], list[di
         **FALSE_SAFETY_FLAGS,
     }
     decision = build_readiness_decision(summary)
-    events.append(event("replay_completed", variant_count=len(records), diagnostic_counts=dict(sorted(diagnostic_counts.items()))))
+    events.append(
+        event(
+            "replay_completed",
+            variant_count=len(records),
+            diagnostic_counts=dict(sorted(diagnostic_counts.items())),
+        )
+    )
     assert_no_metadata_leakage(summary)
     assert_no_metadata_leakage(decision)
     return summary, diagnostics, events, decision
@@ -761,14 +935,25 @@ def finalize_output_provenance(args: argparse.Namespace, summary: dict[str, Any]
 
 
 def write_report(path: Path, summary: Mapping[str, Any], decision: Mapping[str, Any]) -> None:
-    rows = ["| Article | Variant | Parser-ready | Chunks | Evidence paths | Baseline comparison | Replay artifact |", "|---|---|---:|---:|---:|---|---|"]
+    rows = [
+        "| Article | Variant | Parser-ready | Chunks | Evidence paths | Baseline comparison | Replay artifact |",
+        "|---|---|---:|---:|---:|---|---|",
+    ]
     for record in summary.get("article_results", []):
         if not isinstance(record, dict):
             continue
-        metrics = record.get("boundary_metrics") if isinstance(record.get("boundary_metrics"), dict) else {}
+        metrics = (
+            record.get("boundary_metrics")
+            if isinstance(record.get("boundary_metrics"), dict)
+            else {}
+        )
         chunking = metrics.get("chunking") if isinstance(metrics.get("chunking"), dict) else {}
         evidence = metrics.get("evidence") if isinstance(metrics.get("evidence"), dict) else {}
-        comparison = record.get("baseline_comparison") if isinstance(record.get("baseline_comparison"), dict) else {}
+        comparison = (
+            record.get("baseline_comparison")
+            if isinstance(record.get("baseline_comparison"), dict)
+            else {}
+        )
         rows.append(
             "| {article} | {variant} | {ready} | {chunks} | {evidence_paths} | {comparison} | `{artifact}` |".format(
                 article=record.get("article_ref"),
@@ -784,8 +969,8 @@ def write_report(path: Path, summary: Mapping[str, Any], decision: Mapping[str, 
 
 ## Decision
 
-- End-to-end replay completed: **{str(summary['readiness']['end_to_end_replay_completed']).lower()}**
-- Validate-only decision: **{decision['decision']}**
+- End-to-end replay completed: **{str(summary["readiness"]["end_to_end_replay_completed"]).lower()}**
+- Validate-only decision: **{decision["decision"]}**
 - Ready for import: **false**
 - Graph readiness claim: **false**
 - Trusted fact claim: **false**
@@ -794,16 +979,16 @@ This report records a local-only replay through loader, parser, PageIndex, chunk
 
 ## Aggregate Summary
 
-- Articles: {summary['article_count']}
-- Variants: {summary['variant_count']}
-- Parser-ready variants: {summary['parser_ready_variant_count']}
-- Metadata-only variants: {summary['metadata_only_variant_count']}
-- Chunks observed: {summary['chunk_count']}
-- Evidence paths observed: {summary['evidence_path_count']}
-- Zero-chunk parser-ready variants: {summary['zero_chunk_parser_ready_variant_count']}
-- Import-ready records: {summary['import_ready_count']}
-- Import-eligible chunks: {summary['import_eligible_chunk_count']}
-- Baseline comparison counts: `{json.dumps(summary['baseline_comparison_counts'], sort_keys=True)}`
+- Articles: {summary["article_count"]}
+- Variants: {summary["variant_count"]}
+- Parser-ready variants: {summary["parser_ready_variant_count"]}
+- Metadata-only variants: {summary["metadata_only_variant_count"]}
+- Chunks observed: {summary["chunk_count"]}
+- Evidence paths observed: {summary["evidence_path_count"]}
+- Zero-chunk parser-ready variants: {summary["zero_chunk_parser_ready_variant_count"]}
+- Import-ready records: {summary["import_ready_count"]}
+- Import-eligible chunks: {summary["import_eligible_chunk_count"]}
+- Baseline comparison counts: `{json.dumps(summary["baseline_comparison_counts"], sort_keys=True)}`
 
 ## Article Results
 
@@ -811,17 +996,17 @@ This report records a local-only replay through loader, parser, PageIndex, chunk
 
 ## Diagnostics
 
-`{json.dumps(summary['diagnostic_counts'], sort_keys=True)}`
+`{json.dumps(summary["diagnostic_counts"], sort_keys=True)}`
 
 ## Provenance
 
-- Command: `{summary['provenance']['command']}`
-- CWD: `{summary['provenance']['cwd']}`
-- Git commit: `{summary['provenance']['git_commit']}`
-- Conversion summary: `{summary['conversion_summary_path']}`
-- S04 baseline summary: `{summary['baseline_summary_path']}`
-- Replay diagnostics: `{summary['output_diagnostics_path']}`
-- Per-article replay directory: `{summary['output_dir']}`
+- Command: `{summary["provenance"]["command"]}`
+- CWD: `{summary["provenance"]["cwd"]}`
+- Git commit: `{summary["provenance"]["git_commit"]}`
+- Conversion summary: `{summary["conversion_summary_path"]}`
+- S04 baseline summary: `{summary["baseline_summary_path"]}`
+- Replay diagnostics: `{summary["output_diagnostics_path"]}`
+- Per-article replay directory: `{summary["output_dir"]}`
 
 ## Failure Modes
 

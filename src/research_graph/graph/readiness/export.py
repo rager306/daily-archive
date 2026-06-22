@@ -17,8 +17,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from research_graph.papers.semantic_chunks import build_semantic_chunks
-from research_graph.corpus.ingestion import FullTextIngestionResult, FullTextSource, ingest_full_text
+from research_graph.corpus.ingestion import (
+    FullTextIngestionResult,
+    FullTextSource,
+    ingest_full_text,
+)
 from research_graph.graph.readiness.core import (
     ChunkRoute,
     ChunkType,
@@ -37,6 +40,7 @@ from research_graph.graph.readiness.core import (
     validate_normalized_package,
 )
 from research_graph.papers.indexing import PageIndexDocument, PageIndexNode, build_page_index
+from research_graph.papers.semantic_chunks import build_semantic_chunks
 
 CONTRACT_VERSION = "graph-ready-data-contract.v1"
 SCHEMA_VERSION = "graph-readiness.schema.v1"
@@ -104,7 +108,9 @@ class SplitCandidate:
     split_kind: str = "prose"
 
 
-def export_corpus(corpus_path: Path, output_dir: Path, *, run_id: str | None = None) -> ExportResult:
+def export_corpus(
+    corpus_path: Path, output_dir: Path, *, run_id: str | None = None
+) -> ExportResult:
     """Export graph-readiness diagnostics for every document in a corpus manifest."""
     run_id = run_id or _default_run_id()
     output_dir = Path(output_dir)
@@ -134,8 +140,12 @@ def export_corpus(corpus_path: Path, output_dir: Path, *, run_id: str | None = N
             )
 
     summary = _summarize_packages(run_id, packages)
-    summary_path.write_text(json.dumps(to_redacted_dict(summary), indent=2, sort_keys=True), encoding="utf-8")
-    return ExportResult(packages=packages, events_path=events_path, summary_path=summary_path, summary=summary)
+    summary_path.write_text(
+        json.dumps(to_redacted_dict(summary), indent=2, sort_keys=True), encoding="utf-8"
+    )
+    return ExportResult(
+        packages=packages, events_path=events_path, summary_path=summary_path, summary=summary
+    )
 
 
 def build_package_from_manifest_document(
@@ -153,7 +163,9 @@ def build_package_from_manifest_document(
     source = FullTextSource(paper_id=paper_id, source_type="markdown", source_path=source_path)
     ingestion = ingest_full_text(source)
     conversion_method = _read_conversion_method(source_path)
-    conversion_id = f"{paper_id}:conversion:{conversion_method}:{stable_text_hash(str(source_path))[:12]}"
+    conversion_id = (
+        f"{paper_id}:conversion:{conversion_method}:{stable_text_hash(str(source_path))[:12]}"
+    )
     document_id = f"{paper_id}:normalized:{stable_text_hash(ingestion.text)[:12]}"
     created_at = created_at or datetime.now(UTC).isoformat()
 
@@ -198,7 +210,9 @@ def build_package_from_manifest_document(
         warnings=conversion_warnings,
     )
     validation = validate_normalized_package(package)
-    if validation.warnings == package.warnings and validation.ok == _state_allows_package(report.state):
+    if validation.warnings == package.warnings and validation.ok == _state_allows_package(
+        report.state
+    ):
         return package
 
     merged_warnings = [*package.warnings, *validation.warnings]
@@ -305,12 +319,18 @@ def _graph_ready_chunks(
                                 object_type="GraphReadyChunk",
                                 object_id=f"{semantic_chunk.id}:split-{split_candidate.order:04d}",
                                 route_impact=split_routes,
-                                evidence={"parent_chunk_id": semantic_chunk.id, "split_kind": split_candidate.split_kind},
+                                evidence={
+                                    "parent_chunk_id": semantic_chunk.id,
+                                    "split_kind": split_candidate.split_kind,
+                                },
                             ),
                             *split_warnings,
                             *candidate_warnings,
                         ],
-                        provenance={**dict(semantic_chunk.provenance), "split_from_chunk_id": semantic_chunk.id},
+                        provenance={
+                            **dict(semantic_chunk.provenance),
+                            "split_from_chunk_id": semantic_chunk.id,
+                        },
                         parent_chunk_id=semantic_chunk.id,
                     )
                 )
@@ -430,12 +450,19 @@ def _split_prose_candidates(
 ) -> list[SplitCandidate]:
     if ChunkRoute.CLAIM_EXTRACTION not in routes and ChunkRoute.METHOD_EXTRACTION not in routes:
         return []
-    if chunk_type in {ChunkType.METADATA, ChunkType.REFERENCE_ENTRY, ChunkType.TABLE_CONTEXT, ChunkType.FIGURE_CAPTION_CONTEXT}:
+    if chunk_type in {
+        ChunkType.METADATA,
+        ChunkType.REFERENCE_ENTRY,
+        ChunkType.TABLE_CONTEXT,
+        ChunkType.FIGURE_CAPTION_CONTEXT,
+    }:
         return []
     if not base_span.is_graph_traceable() or base_span.char_start is None:
         return []
 
-    atomic_candidates = _atomic_claim_candidates(ingestion=ingestion, node=node, base_span=base_span)
+    atomic_candidates = _atomic_claim_candidates(
+        ingestion=ingestion, node=node, base_span=base_span
+    )
     if len(atomic_candidates) > 1:
         return atomic_candidates
 
@@ -447,7 +474,10 @@ def _split_prose_candidates(
     search_start = base_span.char_start
     for paragraph in paragraphs:
         paragraph_token_count = len(paragraph.split())
-        if paragraph_token_count < MIN_SPLIT_TOKEN_COUNT or paragraph_token_count > MAX_SPLIT_TOKEN_COUNT:
+        if (
+            paragraph_token_count < MIN_SPLIT_TOKEN_COUNT
+            or paragraph_token_count > MAX_SPLIT_TOKEN_COUNT
+        ):
             continue
         char_start = ingestion.text.find(paragraph, search_start)
         if char_start < 0:
@@ -520,7 +550,11 @@ def _atomic_claim_candidates(
 
 
 def _atomic_claim_parts(text: str) -> list[str]:
-    bullet_parts = [line.strip().lstrip("-*• ").strip() for line in text.splitlines() if line.strip().startswith(("-", "*", "•"))]
+    bullet_parts = [
+        line.strip().lstrip("-*• ").strip()
+        for line in text.splitlines()
+        if line.strip().startswith(("-", "*", "•"))
+    ]
     if len(bullet_parts) > 1:
         return [part for part in bullet_parts if part]
 
@@ -621,7 +655,11 @@ def _route_for_node(node: PageIndexNode) -> tuple[ChunkType, list[ChunkRoute], l
         return (
             ChunkType.REFERENCE_ENTRY,
             [ChunkRoute.RETRIEVAL_ONLY],
-            [ChunkRoute.CITATION_GRAPH, ChunkRoute.CLAIM_EXTRACTION, ChunkRoute.RELATION_EXTRACTION],
+            [
+                ChunkRoute.CITATION_GRAPH,
+                ChunkRoute.CLAIM_EXTRACTION,
+                ChunkRoute.RELATION_EXTRACTION,
+            ],
         )
     if any(term in combined for term in METADATA_SIGNAL_TERMS) or any(
         term in title for term in ("competing", "availability", "acknowledg", "author")
@@ -673,7 +711,10 @@ def _repair_route_quality(
     warnings: list[QualityWarning] = []
     repaired_routes = list(routes)
     repaired_excluded = list(excluded_routes)
-    if ChunkRoute.CLAIM_EXTRACTION in repaired_routes and token_count > CLAIM_EXTRACTION_TOKEN_LIMIT:
+    if (
+        ChunkRoute.CLAIM_EXTRACTION in repaired_routes
+        and token_count > CLAIM_EXTRACTION_TOKEN_LIMIT
+    ):
         repaired_routes = [
             route
             for route in repaired_routes
@@ -807,7 +848,9 @@ def _apply_candidate_route_classification(
     ]
     if ChunkRoute.RETRIEVAL_ONLY not in repaired_routes:
         repaired_routes.append(ChunkRoute.RETRIEVAL_ONLY)
-    repaired_excluded = _dedupe_routes([*excluded_routes, ChunkRoute.CLAIM_EXTRACTION, ChunkRoute.RELATION_EXTRACTION])
+    repaired_excluded = _dedupe_routes(
+        [*excluded_routes, ChunkRoute.CLAIM_EXTRACTION, ChunkRoute.RELATION_EXTRACTION]
+    )
     return _dedupe_routes(repaired_routes), repaired_excluded
 
 
@@ -826,7 +869,10 @@ def _is_multi_claim_bundle(body: str) -> bool:
     if any(term in body for term in MULTI_CLAIM_SIGNAL_TERMS):
         return True
     bullet_markers = body.count("\n-") + body.count("\n*") + body.count("; ")
-    result_verbs = sum(body.count(term) for term in ("we show", "we prove", "we introduce", "we propose", "we demonstrate"))
+    result_verbs = sum(
+        body.count(term)
+        for term in ("we show", "we prove", "we introduce", "we propose", "we demonstrate")
+    )
     return bullet_markers >= 2 or result_verbs >= 2
 
 
@@ -839,7 +885,11 @@ def _chunk_quality_state(
     if not traceable:
         return GraphReadinessState.REPAIR_REQUIRED
     if any(warning.severity == WarningSeverity.REPAIR_REQUIRED for warning in route_warnings):
-        return GraphReadinessState.OK_FOR_RETRIEVAL_ONLY if routes == [ChunkRoute.RETRIEVAL_ONLY] else GraphReadinessState.REPAIR_REQUIRED
+        return (
+            GraphReadinessState.OK_FOR_RETRIEVAL_ONLY
+            if routes == [ChunkRoute.RETRIEVAL_ONLY]
+            else GraphReadinessState.REPAIR_REQUIRED
+        )
     if routes == [ChunkRoute.RETRIEVAL_ONLY]:
         return GraphReadinessState.OK_FOR_RETRIEVAL_ONLY
     return GraphReadinessState.OK_FOR_GRAPH
@@ -901,9 +951,11 @@ def _blocks_document(
     ingestion: FullTextIngestionResult,
     conversion_warnings: list[QualityWarning],
 ) -> bool:
-    return ingestion.extraction_mode in {"missing_source", "empty_source", "low_quality_source"} or any(
-        warning.severity == WarningSeverity.BLOCKER for warning in conversion_warnings
-    )
+    return ingestion.extraction_mode in {
+        "missing_source",
+        "empty_source",
+        "low_quality_source",
+    } or any(warning.severity == WarningSeverity.BLOCKER for warning in conversion_warnings)
 
 
 def _report(
@@ -918,20 +970,31 @@ def _report(
 ) -> GraphReadinessReport:
     warnings_by_severity: dict[str, int] = {}
     for warning in warnings:
-        warnings_by_severity[warning.severity.value] = warnings_by_severity.get(warning.severity.value, 0) + 1
+        warnings_by_severity[warning.severity.value] = (
+            warnings_by_severity.get(warning.severity.value, 0) + 1
+        )
     chunk_warnings = [warning for chunk in chunks for warning in chunk.validation_warnings]
     for warning in chunk_warnings:
-        warnings_by_severity[warning.severity.value] = warnings_by_severity.get(warning.severity.value, 0) + 1
+        warnings_by_severity[warning.severity.value] = (
+            warnings_by_severity.get(warning.severity.value, 0) + 1
+        )
     blockers = [warning for warning in warnings if warning.severity == WarningSeverity.BLOCKER]
-    repair_warnings = [warning for warning in warnings if warning.severity == WarningSeverity.REPAIR_REQUIRED]
-    chunk_blockers = [chunk for chunk in chunks if chunk.quality_state == GraphReadinessState.REJECT]
+    repair_warnings = [
+        warning for warning in warnings if warning.severity == WarningSeverity.REPAIR_REQUIRED
+    ]
+    chunk_blockers = [
+        chunk for chunk in chunks if chunk.quality_state == GraphReadinessState.REJECT
+    ]
     state = _aggregate_state(blockers=blockers, repairs=repair_warnings, chunks=chunks)
     trust_level = _trust_level_for_state(state)
     route_counts: dict[str, dict[str, int | str]] = {}
     for chunk in chunks:
         for route in chunk.routes:
             route_entry = route_counts.setdefault(route.value, {"eligible": 0, "blocked": 0})
-            if chunk.quality_state == GraphReadinessState.OK_FOR_GRAPH and route in EXTRACTION_ROUTES:
+            if (
+                chunk.quality_state == GraphReadinessState.OK_FOR_GRAPH
+                and route in EXTRACTION_ROUTES
+            ):
                 route_entry["eligible"] = int(route_entry["eligible"]) + 1
             elif route == ChunkRoute.RETRIEVAL_ONLY and chunk.quality_state in {
                 GraphReadinessState.OK_FOR_GRAPH,
@@ -973,7 +1036,9 @@ def _aggregate_state(
 ) -> GraphReadinessState:
     if blockers:
         return GraphReadinessState.REJECT
-    if repairs or any(chunk.quality_state == GraphReadinessState.REPAIR_REQUIRED for chunk in chunks):
+    if repairs or any(
+        chunk.quality_state == GraphReadinessState.REPAIR_REQUIRED for chunk in chunks
+    ):
         return GraphReadinessState.REPAIR_REQUIRED
     if not chunks:
         return GraphReadinessState.OK_FOR_RETRIEVAL_ONLY

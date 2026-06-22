@@ -14,8 +14,11 @@ import statistics
 from pathlib import Path
 from typing import Any
 
-from research_graph.repair.chunk_import_contract import validate_import_ready_package, validation_to_dict
 from research_graph.papers.chunking import build_structure_aware_package_for_paper
+from research_graph.repair.chunk_import_contract import (
+    validate_import_ready_package,
+    validation_to_dict,
+)
 
 SAFETY_FLAGS: dict[str, bool] = {
     "raw_text_included": False,
@@ -50,7 +53,14 @@ def build_thirty_paper_deviation_scan(
         source_path = _selected_source_path(normalized)
         package = build_structure_aware_package_for_paper(normalized, run_id=run_id).to_contract()
         validation = validation_to_dict(validate_import_ready_package(package))
-        records.append(_paper_diagnostic(package=package, validation=validation, manifest_paper=paper, source_path=source_path))
+        records.append(
+            _paper_diagnostic(
+                package=package,
+                validation=validation,
+                manifest_paper=paper,
+                source_path=source_path,
+            )
+        )
     return {
         "schema_version": "m006-thirty-paper-deviation-summary.v1",
         "milestone": "M006-638rza",
@@ -61,14 +71,18 @@ def build_thirty_paper_deviation_scan(
         "expansion_count": manifest.get("expansion_count"),
         "source_readiness": _source_readiness(source_summary),
         "aggregate": _aggregate(records),
-        "baseline_comparison": _baseline_comparison(records=records, baseline_summary=baseline_summary),
+        "baseline_comparison": _baseline_comparison(
+            records=records, baseline_summary=baseline_summary
+        ),
         "outliers": _outliers(records),
         "records": records,
         **SAFETY_FLAGS,
     }
 
 
-def write_thirty_paper_deviation_run(scan: dict[str, Any], output_dir: str | Path) -> dict[str, Path]:
+def write_thirty_paper_deviation_run(
+    scan: dict[str, Any], output_dir: str | Path
+) -> dict[str, Path]:
     """Write bounded summary JSON and per-paper diagnostics JSONL."""
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
@@ -90,7 +104,11 @@ def _paper_diagnostic(
     source_path: Path | None,
 ) -> dict[str, Any]:
     diagnostics = package.get("diagnostics", {})
-    markdown_char_count = source_path.stat().st_size if source_path is not None and source_path.exists() and source_path.is_file() else 0
+    markdown_char_count = (
+        source_path.stat().st_size
+        if source_path is not None and source_path.exists() and source_path.is_file()
+        else 0
+    )
     chunk_count = len(package.get("chunks", []))
     return {
         "schema_version": "m006-thirty-paper-deviation-diagnostic.v1",
@@ -107,7 +125,9 @@ def _paper_diagnostic(
         "element_count": len(package.get("elements", [])),
         "chunk_count": chunk_count,
         "annotation_count": len(package.get("annotations", [])),
-        "chunks_per_10k_bytes": round((chunk_count / markdown_char_count) * 10000, 4) if markdown_char_count else 0.0,
+        "chunks_per_10k_bytes": round((chunk_count / markdown_char_count) * 10000, 4)
+        if markdown_char_count
+        else 0.0,
         "counts_by_state": diagnostics.get("counts_by_state", {}),
         "counts_by_route": diagnostics.get("counts_by_route", {}),
         "counts_by_chunk_type": diagnostics.get("counts_by_chunk_type", {}),
@@ -127,7 +147,9 @@ def _aggregate(records: list[dict[str, Any]]) -> dict[str, Any]:
         "paper_count": len(records),
         "valid_package_count": sum(1 for record in records if record["valid_package"]),
         "import_ready_count": sum(1 for record in records if record["import_ready"]),
-        "import_eligible_chunk_count": sum(int(record["import_eligible_chunk_count"] or 0) for record in records),
+        "import_eligible_chunk_count": sum(
+            int(record["import_eligible_chunk_count"] or 0) for record in records
+        ),
         "refused_chunk_count": sum(int(record["refused_chunk_count"] or 0) for record in records),
         "element_count": sum(int(record["element_count"]) for record in records),
         "chunk_count": sum(chunk_counts),
@@ -144,13 +166,19 @@ def _aggregate(records: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def _baseline_comparison(*, records: list[dict[str, Any]], baseline_summary: dict[str, Any] | None) -> dict[str, Any]:
+def _baseline_comparison(
+    *, records: list[dict[str, Any]], baseline_summary: dict[str, Any] | None
+) -> dict[str, Any]:
     current = _aggregate(records)
     if not baseline_summary:
         return {"baseline_available": False, "current_chunk_count": current["chunk_count"]}
     baseline_aggregate = baseline_summary.get("aggregate", baseline_summary)
-    baseline_chunk_count = int(baseline_aggregate.get("total_chunk_count", baseline_aggregate.get("chunk_count", 0)) or 0)
-    baseline_paper_count = int(baseline_summary.get("paper_count", baseline_aggregate.get("paper_count", 0)) or 0)
+    baseline_chunk_count = int(
+        baseline_aggregate.get("total_chunk_count", baseline_aggregate.get("chunk_count", 0)) or 0
+    )
+    baseline_paper_count = int(
+        baseline_summary.get("paper_count", baseline_aggregate.get("paper_count", 0)) or 0
+    )
     return {
         "baseline_available": True,
         "baseline_paper_count": baseline_paper_count,
@@ -159,7 +187,11 @@ def _baseline_comparison(*, records: list[dict[str, Any]], baseline_summary: dic
         "current_chunk_count": current["chunk_count"],
         "chunk_count_delta": current["chunk_count"] - baseline_chunk_count,
         "baseline_import_eligible_chunk_count": int(
-            baseline_aggregate.get("total_import_eligible_chunk_count", baseline_aggregate.get("import_eligible_chunk_count", 0)) or 0
+            baseline_aggregate.get(
+                "total_import_eligible_chunk_count",
+                baseline_aggregate.get("import_eligible_chunk_count", 0),
+            )
+            or 0
         ),
         "current_import_eligible_chunk_count": current["import_eligible_chunk_count"],
     }
@@ -186,7 +218,9 @@ def _outliers(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if record.get("counts_by_route", {}).get("claim_extraction", 0) >= 25:
             flags.append("claim_candidate_heavy")
         if flags:
-            outliers.append({"paper_id": record["paper_id"], "flags": flags, "chunk_count": chunk_count})
+            outliers.append(
+                {"paper_id": record["paper_id"], "flags": flags, "chunk_count": chunk_count}
+            )
             record["outlier_flags"] = flags
     return outliers
 

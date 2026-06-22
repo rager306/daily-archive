@@ -8,10 +8,24 @@ import json
 from pathlib import Path
 from typing import Any
 
-from research_graph.quality.baselines import baseline_delta, baseline_from_summary, read_baseline
-from research_graph.quality.riskratchet_adapter import report_to_json, run_riskratchet_scan
-from research_graph.quality.scopes import DEFAULT_QUALITY_EXCLUDES, normalize_scope, scope_payload
-from research_graph.quality.thresholds import DEFAULT_THRESHOLDS, MaintainabilityThresholds
+from research_graph.infrastructure.quality.baselines import (
+    baseline_delta,
+    baseline_from_summary,
+    read_baseline,
+)
+from research_graph.infrastructure.quality.riskratchet_adapter import (
+    report_to_json,
+    run_riskratchet_scan,
+)
+from research_graph.infrastructure.quality.scopes import (
+    DEFAULT_QUALITY_EXCLUDES,
+    normalize_scope,
+    scope_payload,
+)
+from research_graph.infrastructure.quality.thresholds import (
+    DEFAULT_THRESHOLDS,
+    MaintainabilityThresholds,
+)
 
 MAINTAINABILITY_REPORT_SCHEMA_VERSION = "daily-archive-maintainability-report.v1"
 

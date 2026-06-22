@@ -19,9 +19,12 @@ from research_graph.corpus.ingestion import (
     FullTextSource,
     ingest_full_text,
 )
-from research_graph.papers.indexing.parsed_page_index import build_page_index, build_page_index_from_parsed
 from research_graph.corpus.parsing.parser import PARSER_VERSION, parse_article
 from research_graph.corpus.parsing.structure import ParsedArticle, ParsedArticleElement
+from research_graph.papers.indexing.parsed_page_index import (
+    build_page_index,
+    build_page_index_from_parsed,
+)
 
 FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
 PAGE_INDEX_FIXTURES = Path(__file__).parent / "fixtures" / "page_index"
@@ -36,7 +39,9 @@ BODY_TEXT = st.text(
 ).filter(lambda value: value.strip() != "")
 
 
-def _ingestion(paper_id: str, text: str, source_path: Path | None = None) -> FullTextIngestionResult:
+def _ingestion(
+    paper_id: str, text: str, source_path: Path | None = None
+) -> FullTextIngestionResult:
     stripped = text.strip()
     heading_count = sum(1 for line in stripped.splitlines() if line.startswith("#"))
     quality = FullTextQualityReport(
@@ -59,7 +64,10 @@ def _ingestion(paper_id: str, text: str, source_path: Path | None = None) -> Ful
         warnings=[],
         fallback_reason=None,
         quality=quality,
-        provenance={"paper_id": paper_id, "source_path": str(source_path or Path("inline/generated.md"))},
+        provenance={
+            "paper_id": paper_id,
+            "source_path": str(source_path or Path("inline/generated.md")),
+        },
     )
 
 
@@ -104,7 +112,9 @@ def test_real_article_fixture_matches_golden_page_index_summary() -> None:
 
     assert _summary(document) == expected_summary
     assert document.validate_navigation() == []
-    assert [anchor.node_id for anchor in document.navigation_anchors] == expected_summary["node_ids"]
+    assert [anchor.node_id for anchor in document.navigation_anchors] == expected_summary[
+        "node_ids"
+    ]
     assert [anchor.path for anchor in document.navigation_anchors] == expected_summary["paths"]
 
 

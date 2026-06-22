@@ -5,22 +5,23 @@ from pathlib import Path
 
 import pytest
 
-from research_graph.llm import provider_config as canonical_provider_config
-from research_graph.llm.provider_config import (
+from research_graph.infrastructure.llm import provider_config as canonical_provider_config
+from research_graph.infrastructure.llm.provider_config import (
     COMPRESSION_HEADROOM_CANDIDATE,
     COMPRESSION_NONE,
-    LLMProviderConfigError,
-    MissingProviderSecret,
     PROVIDER_GLM_ZAI,
     PROVIDER_MINIMAX,
+    LLMProviderConfigError,
+    MissingProviderSecret,
     load_provider_config,
 )
-
 
 SECRET_VALUE = "test-secret-value-should-not-appear-in-diagnostics"
 
 
-def test_glm_config_loads_namespaced_env_and_maps_to_anthropic_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_glm_config_loads_namespaced_env_and_maps_to_anthropic_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
     env = {
         "GLM_API_KEY": SECRET_VALUE,
@@ -57,14 +58,19 @@ def test_minimax_config_loads_namespaced_env_and_maps_to_anthropic_runtime() -> 
         "MINIMAX_API_TIMEOUT_MS": "300000",
     }
 
-    config = load_provider_config(PROVIDER_MINIMAX, env, compression_mode=COMPRESSION_HEADROOM_CANDIDATE)
+    config = load_provider_config(
+        PROVIDER_MINIMAX, env, compression_mode=COMPRESSION_HEADROOM_CANDIDATE
+    )
 
     assert config.provider == PROVIDER_MINIMAX
     assert config.api_key_env == "MINIMAX_API_KEY"
     assert config.openai_base_url == "https://api.minimax.io/v1"
     assert config.compression_mode == COMPRESSION_HEADROOM_CANDIDATE
     assert config.to_anthropic_runtime_env()["ANTHROPIC_AUTH_TOKEN"] == SECRET_VALUE
-    assert config.to_anthropic_runtime_env()["ANTHROPIC_BASE_URL"] == "https://api.minimax.io/anthropic/v1"
+    assert (
+        config.to_anthropic_runtime_env()["ANTHROPIC_BASE_URL"]
+        == "https://api.minimax.io/anthropic/v1"
+    )
 
 
 def test_sanitized_diagnostics_and_repr_do_not_contain_secret() -> None:
@@ -111,14 +117,21 @@ def test_defaults_are_provider_namespaced_not_generic_anthropic() -> None:
     assert config.api_timeout_ms_env == "GLM_API_TIMEOUT_MS"
     assert config.anthropic_base_url == "https://api.z.ai/api/anthropic"
 
+
 def test_llm_provider_config_old_module_is_archived_with_canonical_breadcrumb() -> None:
-    top_level_archive_path = Path("archive/package-layout-shims/wave-01/src/arxiv_archive/llm_provider_config.py")
-    package_archive_path = Path("archive/package-rename-waves/wave-01/src/arxiv_archive/llm/provider_config.py")
-    canonical_path = Path("src/research_graph/llm/provider_config.py")
+    top_level_archive_path = Path(
+        "archive/package-layout-shims/wave-01/src/arxiv_archive/llm_provider_config.py"
+    )
+    package_archive_path = Path(
+        "archive/package-rename-waves/wave-01/src/arxiv_archive/llm/provider_config.py"
+    )
+    canonical_path = Path("src/research_graph/infrastructure/llm/provider_config.py")
 
     assert top_level_archive_path.exists()
     assert package_archive_path.exists()
     assert not Path("src/arxiv_archive/llm_provider_config.py").exists()
     assert not Path("src/arxiv_archive/llm/provider_config.py").exists()
-    assert "Formerly: src/arxiv_archive/llm/provider_config.py" in canonical_path.read_text(encoding="utf-8")
+    assert "Formerly: src/arxiv_archive/llm/provider_config.py" in canonical_path.read_text(
+        encoding="utf-8"
+    )
     assert canonical_provider_config.PROVIDER_GLM_ZAI == PROVIDER_GLM_ZAI

@@ -3,9 +3,9 @@
 from datetime import date
 
 from research_graph.corpus.sources.arxiv_client import ArxivPaper
-from research_graph.evaluation.scoring import ScoredPaper
 from research_graph.corpus.sources.semantic_scholar import SemanticScholarPaper
-from research_graph.llm.summarizer import PaperSummary
+from research_graph.evaluation.scoring import ScoredPaper
+from research_graph.infrastructure.llm.summarizer import PaperSummary
 from research_graph.ops.notifications.telegram_sender import TelegramSender
 
 
@@ -60,7 +60,13 @@ class TestTelegramSender:
             semschol=semschol,
             keywords=["machine learning", "neural networks"],
             score=7.5,
-            breakdown={"citations": 4.2, "recency": 8.0, "novelty": 3.0, "preference": 1.2, "graph_bridge": 0.0},
+            breakdown={
+                "citations": 4.2,
+                "recency": 8.0,
+                "novelty": 3.0,
+                "preference": 1.2,
+                "graph_bridge": 0.0,
+            },
         )
 
         # Create mock PaperSummary

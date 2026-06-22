@@ -9,10 +9,10 @@ references that later claim/entity/relation and LadybugDB layers can validate.
 
 from __future__ import annotations
 
-from research_graph.domain.semantic_chunks import EvidencePath, SemanticChunk
-from research_graph.domain.navigation import PageIndexDocument
-from research_graph.papers.indexing.parsed_page_index import build_page_index_from_parsed
 from research_graph.corpus.parsing.structure import ParsedArticle
+from research_graph.domain.navigation import PageIndexDocument
+from research_graph.domain.semantic_chunks import EvidencePath, SemanticChunk
+from research_graph.papers.indexing.parsed_page_index import build_page_index_from_parsed
 
 DEFAULT_CHUNKING_STRATEGY = "section_text_v1"
 
@@ -82,7 +82,9 @@ def build_semantic_chunks(
     return chunks
 
 
-def build_evidence_paths(document: PageIndexDocument, chunks: list[SemanticChunk]) -> list[EvidencePath]:
+def build_evidence_paths(
+    document: PageIndexDocument, chunks: list[SemanticChunk]
+) -> list[EvidencePath]:
     """Build and validate EvidencePath records for a document's semantic chunks."""
     return [build_evidence_path(document, chunk) for chunk in chunks]
 
@@ -131,11 +133,15 @@ def validate_evidence_path(
 
     node = document.node_by_id(path.page_index_node_id)
     if node is None:
-        diagnostics.append(f"evidence path references missing PageIndexNode {path.page_index_node_id}")
+        diagnostics.append(
+            f"evidence path references missing PageIndexNode {path.page_index_node_id}"
+        )
 
     chunk = chunks_by_id.get(path.semantic_chunk_id)
     if chunk is None:
-        diagnostics.append(f"evidence path references missing SemanticChunk {path.semantic_chunk_id}")
+        diagnostics.append(
+            f"evidence path references missing SemanticChunk {path.semantic_chunk_id}"
+        )
     elif chunk.page_index_node_id != path.page_index_node_id:
         diagnostics.append(
             f"SemanticChunk {chunk.id} belongs to node {chunk.page_index_node_id}, "

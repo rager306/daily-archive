@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from dotenv import load_dotenv
 
-from research_graph.llm.summarizer import MiniMaxSummarizer, PaperSummary
+from research_graph.infrastructure.llm.summarizer import MiniMaxSummarizer, PaperSummary
 
 
 def load_project_env() -> None:
@@ -60,7 +60,10 @@ ANALOGY: Think of it like how a larger engine typically provides more power, but
     assert summary.why_it_matters == (
         "These findings help predict model performance and allocate compute resources efficiently."
     )
-    assert summary.analogy == "Think of it like how a larger engine typically provides more power, but with diminishing returns at some point."
+    assert (
+        summary.analogy
+        == "Think of it like how a larger engine typically provides more power, but with diminishing returns at some point."
+    )
 
 
 def test_summarize_parse_single_line_what_it_does() -> None:
@@ -93,7 +96,9 @@ def test_summarize_api_call() -> None:
         env_path = Path(__file__).parent.parent / ".env"
         if env_path.exists():
             for line in open(env_path):
-                if line.startswith("ANTHROPIC_API_KEY=") or line.startswith("ANTHROPIC_AUTH_TOKEN="):
+                if line.startswith("ANTHROPIC_API_KEY=") or line.startswith(
+                    "ANTHROPIC_AUTH_TOKEN="
+                ):
                     api_key = line.split("=", 1)[1].strip()
                     break
 

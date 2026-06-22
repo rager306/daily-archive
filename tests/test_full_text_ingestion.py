@@ -139,6 +139,7 @@ def test_assess_full_text_quality_accepts_structured_body() -> None:
     assert quality.non_heading_nonempty_line_count > 0
     assert quality.warnings == []
 
+
 def test_stored_paper_artifact_path_ingests_pageindex_ready_payload(tmp_path: Path) -> None:
     """Stored paper ids map to local full-text sources for S02 PageIndex consumers."""
     papers_dir = tmp_path / "papers"
@@ -179,7 +180,9 @@ def test_rejects_unknown_source_type_before_parsing(tmp_path: Path) -> None:
 
 def test_legacy_full_text_module_delegates_to_ingestion_loader() -> None:
     from research_graph.corpus.ingestion.loader import FullTextSource as IngestionFullTextSource
-    from research_graph.corpus.ingestion.loader import ingest_full_text as ingestion_ingest_full_text
+    from research_graph.corpus.ingestion.loader import (
+        ingest_full_text as ingestion_ingest_full_text,
+    )
 
     source_path = FIXTURES_DIR / "structured_paper.md"
     legacy_result = ingest_full_text(FullTextSource("2605.12345", "markdown", source_path))

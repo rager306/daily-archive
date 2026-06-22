@@ -14,8 +14,9 @@ Formerly: src/arxiv_archive/llm/provider_config.py
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Mapping, TypeAlias, get_args
+from typing import TypeAlias
 
 LLMProvider: TypeAlias = str
 CompressionMode: TypeAlias = str

@@ -3,7 +3,6 @@ from __future__ import annotations
 import importlib
 from pathlib import Path
 
-
 EXPECTED_PACKAGES = (
     "research_graph",
     "research_graph.corpus",
@@ -17,8 +16,8 @@ EXPECTED_PACKAGES = (
     "research_graph.papers.source_assets",
     "research_graph.graph",
     "research_graph.staging",
-    "research_graph.identity",
-    "research_graph.llm",
+    "research_graph.infrastructure.identity",
+    "research_graph.infrastructure.llm",
     "research_graph.evaluation",
     "research_graph.repair",
     "research_graph.workflows",
@@ -35,7 +34,17 @@ def test_research_graph_skeleton_matches_target_design() -> None:
     target_map = Path("artifacts/package-rename-design/target-map.md").read_text(encoding="utf-8")
 
     assert "src/research_graph/" in target_map
-    for context in ("corpus", "papers", "graph", "staging", "identity", "llm", "evaluation", "repair", "workflows"):
+    for context in (
+        "corpus",
+        "papers",
+        "graph",
+        "staging",
+        "identity",
+        "llm",
+        "evaluation",
+        "repair",
+        "workflows",
+    ):
         assert f"{context}/" in target_map
 
     for package in EXPECTED_PACKAGES:
@@ -92,17 +101,23 @@ def test_wave_04_archives_lower_level_indexing_package_without_runtime_shims() -
 
     old_runtime_py = sorted(Path("src/arxiv_archive/indexing").glob("*.py"))
     assert old_runtime_py == []
-    assert Path("archive/package-rename-waves/wave-04/src/arxiv_archive/indexing/__init__.py").exists()
+    assert Path(
+        "archive/package-rename-waves/wave-04/src/arxiv_archive/indexing/__init__.py"
+    ).exists()
     assert "no runtime shim" in manifest
     assert "parsed_page_index.py" in manifest
 
     for old_name, new_path in moves.items():
-        archived = Path("archive/package-rename-waves/wave-04/src/arxiv_archive/indexing") / old_name
+        archived = (
+            Path("archive/package-rename-waves/wave-04/src/arxiv_archive/indexing") / old_name
+        )
         canonical = Path(new_path)
 
         assert archived.exists()
         assert canonical.exists()
-        assert f"Formerly: src/arxiv_archive/indexing/{old_name}" in canonical.read_text(encoding="utf-8")
+        assert f"Formerly: src/arxiv_archive/indexing/{old_name}" in canonical.read_text(
+            encoding="utf-8"
+        )
         assert f"`src/arxiv_archive/indexing/{old_name}`" in manifest
         assert f"`{new_path}`" in manifest
 
@@ -148,7 +163,9 @@ def test_wave_06_archives_source_assets_and_chunking_without_runtime_shims() -> 
 
         assert archived.exists()
         assert canonical.exists()
-        assert f"Formerly: src/arxiv_archive/{old_relative}" in canonical.read_text(encoding="utf-8")
+        assert f"Formerly: src/arxiv_archive/{old_relative}" in canonical.read_text(
+            encoding="utf-8"
+        )
         assert f"`src/arxiv_archive/{old_relative}`" in manifest
         assert f"`{new_path}`" in manifest
 
@@ -180,8 +197,12 @@ def test_wave_07_archives_corpus_ingestion_and_parsing_without_runtime_shims() -
     assert not Path("src/arxiv_archive/full_text.py").exists()
     assert not Path("src/arxiv_archive/article_loader.py").exists()
     assert not Path("src/arxiv_archive/pdf_downloader.py").exists()
-    assert Path("archive/package-rename-waves/wave-07/src/arxiv_archive/ingestion/__init__.py").exists()
-    assert Path("archive/package-rename-waves/wave-07/src/arxiv_archive/parsing/__init__.py").exists()
+    assert Path(
+        "archive/package-rename-waves/wave-07/src/arxiv_archive/ingestion/__init__.py"
+    ).exists()
+    assert Path(
+        "archive/package-rename-waves/wave-07/src/arxiv_archive/parsing/__init__.py"
+    ).exists()
     assert "no compatibility shims" in manifest
     assert "research_graph.corpus.ingestion" in manifest
     assert "research_graph.corpus.parsing" in manifest
@@ -193,7 +214,9 @@ def test_wave_07_archives_corpus_ingestion_and_parsing_without_runtime_shims() -
 
         assert archived.exists()
         assert canonical.exists()
-        assert f"Formerly: src/arxiv_archive/{old_relative}" in canonical.read_text(encoding="utf-8")
+        assert f"Formerly: src/arxiv_archive/{old_relative}" in canonical.read_text(
+            encoding="utf-8"
+        )
         assert f"`src/arxiv_archive/{old_relative}`" in manifest
         assert f"`{new_path}`" in manifest
 
@@ -223,15 +246,21 @@ def test_wave_08_archives_markdown_converter_without_runtime_shim() -> None:
 
 def test_wave_09_archives_thirty_paper_source_scan_without_runtime_shim() -> None:
     old_runtime = Path("src/arxiv_archive/thirty_paper_source_scan.py")
-    archived = Path("archive/package-rename-waves/wave-09/src/arxiv_archive/thirty_paper_source_scan.py")
+    archived = Path(
+        "archive/package-rename-waves/wave-09/src/arxiv_archive/thirty_paper_source_scan.py"
+    )
     canonical = Path("src/research_graph/corpus/sources/thirty_paper_source_scan.py")
     manifest = Path("archive/package-rename-waves/wave-09/manifest.md").read_text(encoding="utf-8")
 
     assert not old_runtime.exists()
     assert archived.exists()
     assert canonical.exists()
-    assert "Formerly: src/arxiv_archive/thirty_paper_source_scan.py" in archived.read_text(encoding="utf-8")
-    assert "Formerly: src/arxiv_archive/thirty_paper_source_scan.py" in canonical.read_text(encoding="utf-8")
+    assert "Formerly: src/arxiv_archive/thirty_paper_source_scan.py" in archived.read_text(
+        encoding="utf-8"
+    )
+    assert "Formerly: src/arxiv_archive/thirty_paper_source_scan.py" in canonical.read_text(
+        encoding="utf-8"
+    )
     assert "`src/arxiv_archive/thirty_paper_source_scan.py`" in manifest
     assert "`src/research_graph/corpus/sources/thirty_paper_source_scan.py`" in manifest
     assert "no compatibility shim" in manifest
@@ -240,9 +269,9 @@ def test_wave_09_archives_thirty_paper_source_scan_without_runtime_shim() -> Non
 
 def test_wave_10_archives_identity_and_staging_without_runtime_shims() -> None:
     moves = {
-        "identity/__init__.py": "src/research_graph/identity/__init__.py",
-        "identity/canonicalization.py": "src/research_graph/identity/canonicalization.py",
-        "identity/dedup.py": "src/research_graph/identity/dedup.py",
+        "identity/__init__.py": "src/research_graph/infrastructure/identity/__init__.py",
+        "identity/canonicalization.py": "src/research_graph/infrastructure/identity/canonicalization.py",
+        "identity/dedup.py": "src/research_graph/infrastructure/identity/dedup.py",
         "staging/__init__.py": "src/research_graph/staging/__init__.py",
         "staging/graph_candidates.py": "src/research_graph/staging/graph_candidates.py",
         "staging/import_boundary.py": "src/research_graph/staging/import_boundary.py",
@@ -262,20 +291,20 @@ def test_wave_10_archives_identity_and_staging_without_runtime_shims() -> None:
         assert f"`src/arxiv_archive/{old_name}`" in manifest
         assert f"`{new_path}`" in manifest
 
-    assert importlib.import_module("research_graph.identity.canonicalization")
-    assert importlib.import_module("research_graph.identity.dedup")
+    assert importlib.import_module("research_graph.infrastructure.identity.canonicalization")
+    assert importlib.import_module("research_graph.infrastructure.identity.dedup")
     assert importlib.import_module("research_graph.staging.graph_candidates")
     assert importlib.import_module("research_graph.staging.import_boundary")
 
 
 def test_wave_11_archives_quality_package_without_runtime_shims() -> None:
     moves = {
-        "quality/__init__.py": "src/research_graph/quality/__init__.py",
-        "quality/baselines.py": "src/research_graph/quality/baselines.py",
-        "quality/maintainability_report.py": "src/research_graph/quality/maintainability_report.py",
-        "quality/riskratchet_adapter.py": "src/research_graph/quality/riskratchet_adapter.py",
-        "quality/scopes.py": "src/research_graph/quality/scopes.py",
-        "quality/thresholds.py": "src/research_graph/quality/thresholds.py",
+        "quality/__init__.py": "src/research_graph/infrastructure/quality/__init__.py",
+        "quality/baselines.py": "src/research_graph/infrastructure/quality/baselines.py",
+        "quality/maintainability_report.py": "src/research_graph/infrastructure/quality/maintainability_report.py",
+        "quality/riskratchet_adapter.py": "src/research_graph/infrastructure/quality/riskratchet_adapter.py",
+        "quality/scopes.py": "src/research_graph/infrastructure/quality/scopes.py",
+        "quality/thresholds.py": "src/research_graph/infrastructure/quality/thresholds.py",
     }
     manifest = Path("archive/package-rename-waves/wave-11/manifest.md").read_text(encoding="utf-8")
 
@@ -293,8 +322,8 @@ def test_wave_11_archives_quality_package_without_runtime_shims() -> None:
         assert f"`{new_path}`" in manifest
 
     assert "No compatibility shim" in manifest
-    assert importlib.import_module("research_graph.quality")
-    assert importlib.import_module("research_graph.quality.maintainability_report")
+    assert importlib.import_module("research_graph.infrastructure.quality")
+    assert importlib.import_module("research_graph.infrastructure.quality.maintainability_report")
 
 
 def test_wave_13_archives_extraction_and_evaluation_without_runtime_shims() -> None:
@@ -529,7 +558,9 @@ def test_wave_19_archives_rlm_without_runtime_shims() -> None:
 
 def test_wave_20_retires_src_arxiv_archive_completely() -> None:
     """Wave 20 completes the migration: src/arxiv_archive must be gone."""
-    assert not Path("src/arxiv_archive").exists(), "src/arxiv_archive directory must be completely removed"
+    assert not Path("src/arxiv_archive").exists(), (
+        "src/arxiv_archive directory must be completely removed"
+    )
 
     manifest = Path("archive/package-rename-waves/wave-20/manifest.md").read_text(encoding="utf-8")
     assert "cli.py" in manifest
@@ -545,6 +576,5 @@ def test_wave_20_retires_src_arxiv_archive_completely() -> None:
     assert importlib.import_module("research_graph.repair.chunk_repair_contract")
     assert importlib.import_module("research_graph.repair.chunk_import_contract")
     assert importlib.import_module("research_graph.repair.chunk_baseline_measurement")
-    assert importlib.import_module("research_graph.llm.models_registry")
+    assert importlib.import_module("research_graph.infrastructure.llm.models_registry")
     assert importlib.import_module("research_graph.corpus.sources.thirty_paper_deviation_scan")
-

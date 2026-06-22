@@ -16,6 +16,7 @@ import pytest
 
 import research_graph.graph.ladybug_client as ladybug_client
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
+from research_graph.domain.semantic_chunks import EvidencePath
 from research_graph.evaluation.scientific_extraction import (
     Claim,
     ExtractionPatch,
@@ -24,11 +25,7 @@ from research_graph.evaluation.scientific_extraction import (
 )
 from research_graph.graph.ladybug_client import init_db
 from research_graph.papers.indexing import PageIndexDocument, build_page_index
-from research_graph.papers.semantic_chunks import (
-    EvidencePath,
-    build_evidence_path,
-    build_semantic_chunks,
-)
+from research_graph.papers.semantic_chunks import build_evidence_path, build_semantic_chunks
 
 FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
 SCHEMA_VERSION = "typed.v1"
@@ -187,7 +184,9 @@ def test_upsert_scientific_kg_rejects_invalid_patch_before_transaction() -> None
         )
 
 
-def test_upsert_scientific_kg_rejects_patch_evidence_not_in_persisted_paths_before_transaction() -> None:
+def test_upsert_scientific_kg_rejects_patch_evidence_not_in_persisted_paths_before_transaction() -> (
+    None
+):
     """Draft evidence must be present in the persisted EvidencePath list."""
     document, chunks, _, patch = build_fixture_payload()
 

@@ -21,7 +21,7 @@ import ladybug
 import pytest
 
 import research_graph.graph.ladybug_client as ladybug_client
-from research_graph.papers.semantic_chunks import EvidencePath
+from research_graph.domain.semantic_chunks import EvidencePath
 from research_graph.graph.ladybug_client import evidence_path_id
 from tests.test_ladybug_scientific_kg import build_fixture_patch
 from tests.test_rlm_workflow import build_valid_inputs

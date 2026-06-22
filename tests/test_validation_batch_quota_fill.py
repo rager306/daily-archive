@@ -8,7 +8,10 @@ from research_graph.workflows.validation.batch_state import (
     SourceReadiness,
     ValidationBatchState,
 )
-from research_graph.workflows.validation.batch_workflow import build_quota_fill_report, write_quota_fill_run
+from research_graph.workflows.validation.batch_workflow import (
+    build_quota_fill_report,
+    write_quota_fill_run,
+)
 
 
 def test_build_quota_fill_report_allows_full_ready_quota() -> None:

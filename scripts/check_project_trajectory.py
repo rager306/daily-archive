@@ -582,25 +582,40 @@ def build_report(
         ),
         # Post-M101 architecture dimensions (ADR-023)
         "schema_readiness": dimension(
-            "design_accepted"
+            "implemented"
+            if paths.adr_dir.joinpath("ADR-028-typed-knowledge-schema.md").exists()
+            and (root / "src" / "research_graph" / "domain" / "schema.py").exists()
+            else "design_accepted"
             if paths.adr_dir.joinpath("ADR-028-typed-knowledge-schema.md").exists()
             else "missing",
-            ["ADR-028 typed schema", "27 relation types", "5 modules A-E"],
+            [
+                "ADR-028 typed schema",
+                "domain/schema.py canonical home (M104)",
+                "27 relation types",
+                "5 modules A-E",
+            ],
             [],
         ),
         "extraction_coverage": dimension(
-            "not_started",
-            ["Core-then-Modes pipeline designed (ADR-029)", "No extraction runs yet"],
+            "prototype_done",
+            [
+                "Core-then-Modes pipeline implemented (application/, ADR-029/033)",
+                "M103 S03 prototype: 40 TypedEntity + 6 TypedRelation via MiniMax (arXiv:2605.18747 chunks)",
+                "entity recall ~1.0; relation precision low (raw, pre-DSPy)",
+            ],
             [],
         ),
         "falkordb_migration": dimension(
-            "not_started"
-            if not any(
-                p.name == "falkordb_client.py"
-                for p in (root / "src" / "research_graph" / "graph").glob("*.py")
-            )
-            else "in_progress",
-            ["ADR-022 FalkorDB binding", "ADR-030 schema designed", "LadybugDB still in use"],
+            "port_ready"
+            if (
+                root / "src" / "research_graph" / "infrastructure" / "graph" / "ladybug_adapter.py"
+            ).exists()
+            else "not_started",
+            [
+                "ADR-022 FalkorDB binding",
+                "ADR-030 schema designed",
+                "GraphDBPort + LadybugAdapter ready (M104): FalkorDB = new Adapter, not rewrite",
+            ],
             [],
         ),
         "universal_sources": dimension(
@@ -718,7 +733,7 @@ def render_markdown(report: dict[str, Any]) -> str:
             "## How to create an ADR",
             "",
             "1. Use the canonical template: `doc/adr/ADR-TEMPLATE.md` (14 sections, Mermaid-assisted, LLM Reading Notes required).",
-            "2. Number sequentially after the highest existing ADR number (e.g., next is `ADR-017`).",
+            "2. Number sequentially after the highest existing ADR number (e.g., next is `ADR-035`).",
             "3. Filename pattern: `doc/adr/ADR-NNN-short-title.md` (use hyphens, no slashes).",
             "4. Update `doc/adr/ADR-INDEX.md` table with the new entry.",
             "5. After commit, run `uv run python scripts/sync_codebase_memory_governance.py` to mirror.",
@@ -735,14 +750,15 @@ def render_markdown(report: dict[str, Any]) -> str:
             "",
             "Verification: `uv run python scripts/verify_article_catalog.py` must pass after any ingestion step.",
             "",
-            "## Next gate (post-M101 architecture crystallization)",
+            "## Next gate (post-M104 hexagonal foundation)",
             "",
-            "Architecture is crystallized (32 ADRs, 6 design documents). Next phases:",
+            "Architecture is crystallized (34 ADRs incl. ADR-034 hexagonal/onion overlay). Hexagonal foundation (M104) complete: domain/application/infrastructure physical layers, 3 Ports (LLMClientPort/GraphDBPort/FullTextProviderPort), Ponytail Port rule, multi-layer AST guard + ruff TID.",
             "",
-            "- **Phase 2**: Typed schema code + extraction prototype (5 papers, DSPy, MiniMax)",
-            "- **Phase 3**: FalkorDB migration + graph operators O1-O6",
-            "- **Phase 4**: Staged validation (R024: 10→20→week corpus)",
-            "- **Phase 5**: Universal ingestion (GNN textbook, code repos, datasets)",
+            "- **Phase 2 ✅**: Typed schema + extraction prototype (M103 — pipeline + MiniMax prototype done)",
+            "- **Phase 2+ ✅**: Hexagonal Foundation (M104 — Ports/Adapters/onion, ADR-034 binding)",
+            "- **Phase 3 (next)**: FalkorDB migration = new FalkorDBAdapter behind GraphDBPort (no caller rewrite) + graph operators O1-O6",
+            "- **Phase 4**: Staged validation (R024: 10→20→week corpus) + QueueDispatch activation (DispatchProtocol seam ready)",
+            "- **Phase 5**: Universal ingestion (GNN textbook, code repos, datasets) + schema.v2 (hypergraph/temporal)",
             "- **Phase 6**: Agent integration (SymFSM) — REQUIRES FURTHER IDEA DEVELOPMENT",
             "",
             "## Future gate: FD v2 verification (post-fd-v2-deploy)",

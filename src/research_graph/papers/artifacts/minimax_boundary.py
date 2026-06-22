@@ -32,6 +32,17 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
+from research_graph.infrastructure.llm.minimax_structured import (
+    MiniMaxStructuredRequest,
+    build_minimax_structured_request,
+    validate_minimax_tool_response,
+)
+from research_graph.infrastructure.llm.models_registry import (
+    ModelsRegistry,
+    compute_work_id,
+    get_model_for_binding,
+    load_models_registry,
+)
 from research_graph.papers.artifacts.models import (
     ALLOWED_ARTIFACT_TYPES,
     ALLOWED_CANDIDATE_LINK_TYPES,
@@ -42,20 +53,6 @@ from research_graph.papers.artifacts.models import (
     REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION,
     TRUSTED_IMPORT_USE,
     build_article_artifact_manifest_from_structure,
-)
-from research_graph.llm.minimax_structured import (
-    MiniMaxStructuredRequest,
-    build_minimax_structured_request,
-    validate_minimax_tool_response,
-)
-from research_graph.llm.models_registry import (
-    BindingSpec,
-    ModelSpec,
-    ModelsRegistry,
-    compute_work_id,
-    get_model,
-    get_model_for_binding,
-    load_models_registry,
 )
 
 MINIMAX_ARTIFACT_HELPER_SCHEMA_VERSION = "m023-minimax-artifact-helper.v1"
@@ -220,7 +217,7 @@ def request_article_artifact_classification(
         input_sha256=inputsha256,
         max_candidates=max_candidates,
         helper_request=helper_request,
-        created_at=datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+        created_at=datetime.datetime.now(tz=datetime.UTC).isoformat(),
     )
 
 
@@ -323,7 +320,9 @@ def validate_article_artifact_minimax_response(
             ),
         )
 
-    candidates = tuple(_sanitize_candidate(candidate) for candidate in tool_input.get("artifact_hints", []))
+    candidates = tuple(
+        _sanitize_candidate(candidate) for candidate in tool_input.get("artifact_hints", [])
+    )
     diagnostics = _base_diagnostics(
         inputsha256=inputsha256,
         summarysha256=summarysha256,
@@ -349,8 +348,14 @@ def article_artifact_minimax_hint_schema(*, max_candidates: int = 24) -> dict[st
         "type": "object",
         "properties": {
             "schema_version": {"type": "string", "enum": [MINIMAX_ARTIFACT_HELPER_SCHEMA_VERSION]},
-            "source_schema_version": {"type": "string", "enum": [REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION]},
-            "manifest_schema_version": {"type": "string", "enum": [ARTICLE_ARTIFACT_SCHEMA_VERSION]},
+            "source_schema_version": {
+                "type": "string",
+                "enum": [REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION],
+            },
+            "manifest_schema_version": {
+                "type": "string",
+                "enum": [ARTICLE_ARTIFACT_SCHEMA_VERSION],
+            },
             "input_sha256": {"type": "string"},
             "artifact_hints": {
                 "type": "array",
@@ -374,10 +379,19 @@ def article_artifact_minimax_hint_schema(*, max_candidates: int = 24) -> dict[st
                                     "link_id": {"type": "string"},
                                     "source_artifact_id": {"type": "string"},
                                     "target_ref": {"type": "string"},
-                                    "link_type": {"type": "string", "enum": sorted(ALLOWED_CANDIDATE_LINK_TYPES)},
+                                    "link_type": {
+                                        "type": "string",
+                                        "enum": sorted(ALLOWED_CANDIDATE_LINK_TYPES),
+                                    },
                                     "review_state": {"type": "string", "enum": ["review_required"]},
-                                    "evidence_span_ids": {"type": "array", "items": {"type": "string"}},
-                                    "diagnostic_codes": {"type": "array", "items": {"type": "string"}},
+                                    "evidence_span_ids": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                    },
+                                    "diagnostic_codes": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                    },
                                     "promoted_to_fact": {"type": "boolean", "enum": [False]},
                                     "import_eligible": {"type": "boolean", "enum": [False]},
                                 },
@@ -440,7 +454,9 @@ def _build_prompt(summary: dict[str, Any], *, input_sha256: str, summary_sha256:
     return json.dumps(payload, sort_keys=True, separators=(",", ":"))
 
 
-def _summarize_redacted_structure(structure: dict[str, Any], *, max_candidates: int) -> dict[str, Any]:
+def _summarize_redacted_structure(
+    structure: dict[str, Any], *, max_candidates: int
+) -> dict[str, Any]:
     sections = _list_of_dicts(structure.get("sections"))
     placeholders = _list_of_dicts(structure.get("artifact_placeholders"))
     structured_markers = _list_of_dicts(structure.get("structured_markers"))
@@ -506,7 +522,10 @@ def _sanitize_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
         "review_state": "review_required",
         "confidence_label": str(candidate.get("confidence_label") or "unknown"),
         "evidence_span_ids": [str(value) for value in candidate.get("evidence_span_ids", [])],
-        "diagnostic_codes": ["minimax_helper_review_required", *[str(value) for value in candidate.get("diagnostic_codes", [])]],
+        "diagnostic_codes": [
+            "minimax_helper_review_required",
+            *[str(value) for value in candidate.get("diagnostic_codes", [])],
+        ],
         "detector": MINIMAX_ARTIFACT_HELPER_DETECTOR,
         "allowed_uses": ["artifact_review", "candidate_link_review", "provenance_diagnostics"],
         "excluded_uses": list(EXCLUDED_USES),
@@ -577,30 +596,46 @@ def _validate_tool_input_semantics(
             diagnostics.append(f"unsafe_artifact_id_collision:{path}.artifact_id")
         if TRUSTED_IMPORT_USE in _string_list(candidate.get("allowed_uses")):
             diagnostics.append(f"trusted_import_allowed:{path}.allowed_uses")
-        for key in ("kg_import_allowed", "trusted_kg_import_allowed", "production_import_attempted", "ladybugdb_written"):
+        for key in (
+            "kg_import_allowed",
+            "trusted_kg_import_allowed",
+            "production_import_attempted",
+            "ladybugdb_written",
+        ):
             if candidate.get(key) is True:
                 diagnostics.append(f"unsafe_helper_flag_true:{path}.{key}")
         for span_index, span_id in enumerate(_string_list(candidate.get("evidence_span_ids"))):
             if span_id not in safe_span_ids:
-                diagnostics.append(f"unknown_evidence_span_id:{path}.evidence_span_ids[{span_index}]")
+                diagnostics.append(
+                    f"unknown_evidence_span_id:{path}.evidence_span_ids[{span_index}]"
+                )
         for link_index, link in enumerate(_list_of_dicts(candidate.get("candidate_links"))):
             link_path = f"{path}.candidate_links[{link_index}]"
             source_artifact_id = _string_or_none(link.get("source_artifact_id"))
             if source_artifact_id != artifact_id:
                 diagnostics.append(f"invalid_candidate_link_source:{link_path}.source_artifact_id")
             target_ref = _string_or_none(link.get("target_ref"))
-            if target_ref is None or (target_ref not in helper_artifact_ids and target_ref not in existing_artifact_ids):
+            if target_ref is None or (
+                target_ref not in helper_artifact_ids and target_ref not in existing_artifact_ids
+            ):
                 diagnostics.append(f"invalid_candidate_link_target:{link_path}.target_ref")
             if link.get("link_type") not in ALLOWED_CANDIDATE_LINK_TYPES:
                 diagnostics.append(f"invalid_candidate_link_type:{link_path}.link_type")
             if link.get("review_state") != "review_required":
                 diagnostics.append(f"invalid_candidate_link_review_state:{link_path}.review_state")
-            for key in ("promoted_to_fact", "import_eligible", "kg_import_allowed", "trusted_kg_import_allowed"):
+            for key in (
+                "promoted_to_fact",
+                "import_eligible",
+                "kg_import_allowed",
+                "trusted_kg_import_allowed",
+            ):
                 if link.get(key) is True:
                     diagnostics.append(f"unsafe_candidate_link_flag_true:{link_path}.{key}")
             for span_index, span_id in enumerate(_string_list(link.get("evidence_span_ids"))):
                 if span_id not in safe_span_ids:
-                    diagnostics.append(f"unknown_candidate_link_span_id:{link_path}.evidence_span_ids[{span_index}]")
+                    diagnostics.append(
+                        f"unknown_candidate_link_span_id:{link_path}.evidence_span_ids[{span_index}]"
+                    )
     return tuple(diagnostics)
 
 
@@ -621,7 +656,13 @@ def _find_forbidden_tool_payload(value: Any, path: str = "$") -> list[str]:
             diagnostics.extend(_find_forbidden_tool_payload(child, f"{path}[{index}]"))
     elif isinstance(value, str):
         normalized_value = value.upper()
-        for marker in ("RAW PAPER TEXT", "RAW CHUNK TEXT", "FULL ARTICLE BODY", "BEGIN PDF", "BASE64"):
+        for marker in (
+            "RAW PAPER TEXT",
+            "RAW CHUNK TEXT",
+            "FULL ARTICLE BODY",
+            "BEGIN PDF",
+            "BASE64",
+        ):
             if marker in normalized_value:
                 diagnostics.append(f"raw_payload_marker:{path}")
                 break
@@ -639,7 +680,9 @@ def _structure_artifact_ids(structure: dict[str, Any]) -> set[str]:
         section_id = _string_or_none(section.get("section_id"))
         section_type = _string_or_none(section.get("section_type")) or "section"
         if section_id is not None:
-            artifact_ids.add(f"{structure.get('paper_id')}:artifact:{section_type}:{section_id.rsplit(':', 1)[-1]}")
+            artifact_ids.add(
+                f"{structure.get('paper_id')}:artifact:{section_type}:{section_id.rsplit(':', 1)[-1]}"
+            )
     return artifact_ids
 
 
@@ -695,7 +738,10 @@ def _base_diagnostics(
 
 def _first_tool_input(content_blocks: list[dict[str, Any]]) -> dict[str, Any]:
     for block in content_blocks:
-        if block.get("type") == "tool_use" and block.get("name") == MINIMAX_ARTIFACT_HELPER_TOOL_NAME:
+        if (
+            block.get("type") == "tool_use"
+            and block.get("name") == MINIMAX_ARTIFACT_HELPER_TOOL_NAME
+        ):
             tool_input = block.get("input")
             return tool_input if isinstance(tool_input, dict) else {}
     return {}

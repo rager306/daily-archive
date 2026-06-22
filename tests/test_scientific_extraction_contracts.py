@@ -11,6 +11,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
+from research_graph.domain.semantic_chunks import EvidencePath
 from research_graph.evaluation.scientific_extraction import (
     Claim,
     ExtractionPatch,
@@ -22,11 +23,7 @@ from research_graph.evaluation.scientific_extraction import (
     validate_extraction_patch,
 )
 from research_graph.papers.indexing import PageIndexDocument, build_page_index
-from research_graph.papers.semantic_chunks import (
-    EvidencePath,
-    build_evidence_path,
-    build_semantic_chunks,
-)
+from research_graph.papers.semantic_chunks import build_evidence_path, build_semantic_chunks
 
 FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
 SCHEMA_VERSION = "typed.v1"
@@ -190,7 +187,9 @@ def test_extraction_patch_groups_claims_entities_relations_with_versions() -> No
 def test_patch_validation_reports_invalid_relation_endpoint_and_paper_mismatch() -> None:
     evidence = method_evidence_path()
     claim = sample_claim(evidence, paper_id="2605.99999")
-    relation = sample_relation(claim, sample_entity(evidence), evidence, target_id="entity:2605.12345:missing")
+    relation = sample_relation(
+        claim, sample_entity(evidence), evidence, target_id="entity:2605.12345:missing"
+    )
     patch = sample_patch(claim=claim, entity=None, relation=relation)
     patch = replace(patch, entities=[])
 
@@ -220,11 +219,17 @@ def test_patch_validation_reports_unsupported_relation_type_and_duplicate_ids() 
         "Relation relation:2605.12345:claim-local-markdown-pageindex:entity-pageindex:INVALID_TYPE "
         "relation_type INVALID_TYPE is unsupported"
     ) in diagnostics
-    assert "ExtractionPatch 2605.12345 has duplicate draft id claim:2605.12345:method:chunk-0001:local-markdown-pageindex" in diagnostics
+    assert (
+        "ExtractionPatch 2605.12345 has duplicate draft id claim:2605.12345:method:chunk-0001:local-markdown-pageindex"
+        in diagnostics
+    )
 
 
 def test_patch_validation_reports_evidence_path_warnings() -> None:
-    evidence = replace(method_evidence_path(), validation_warnings=["evidence path references missing SemanticChunk missing"])
+    evidence = replace(
+        method_evidence_path(),
+        validation_warnings=["evidence path references missing SemanticChunk missing"],
+    )
     claim = sample_claim(evidence)
     entity = sample_entity(evidence)
     relation = sample_relation(claim, entity, evidence)

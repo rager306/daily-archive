@@ -19,10 +19,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from research_graph.domain.schema import ExtractionPatch
-from research_graph.graph import ladybug_client
 from research_graph.domain.navigation import PageIndexDocument
-from research_graph.papers.semantic_chunks import EvidencePath, SemanticChunk
+from research_graph.domain.schema import ExtractionPatch
+from research_graph.domain.semantic_chunks import EvidencePath, SemanticChunk
+from research_graph.graph import ladybug_client
 
 
 class LadybugAdapter:

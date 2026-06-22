@@ -8,9 +8,7 @@ submodules directly (e.g. ``research_graph.repair.bounded_chunk_repair``).
 
 from __future__ import annotations
 
-from research_graph.repair import bounded_chunk_repair
-from research_graph.repair import candidate_locators
-from research_graph.repair import chunking_benchmark
+from research_graph.repair import bounded_chunk_repair, candidate_locators, chunking_benchmark
 
 __all__ = [
     "bounded_chunk_repair",

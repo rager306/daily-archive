@@ -16,5 +16,8 @@ from research_graph.papers.chunking.chunker import (  # noqa: F401
     parse_markdown_structure,
     write_structure_aware_run,
 )
-from research_graph.papers.chunking.figure_units import is_equation_block, is_figure_block  # noqa: F401
+from research_graph.papers.chunking.figure_units import (  # noqa: F401
+    is_equation_block,
+    is_figure_block,
+)
 from research_graph.papers.chunking.table_units import is_table_block  # noqa: F401

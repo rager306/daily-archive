@@ -10,9 +10,10 @@ from typing import Any
 
 import pytest
 
-from research_graph.papers.semantic_chunks import EvidencePath, SemanticChunk, build_evidence_path, build_semantic_chunks
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
+from research_graph.domain.semantic_chunks import EvidencePath, SemanticChunk
 from research_graph.papers.indexing import PageIndexDocument, build_page_index
+from research_graph.papers.semantic_chunks import build_evidence_path, build_semantic_chunks
 from research_graph.workflows.rlm.workflow import (
     REDUCER_SCHEMA_VERSION,
     WorkflowResult,
@@ -20,7 +21,9 @@ from research_graph.workflows.rlm.workflow import (
     run_document_workflow,
 )
 
-_FIXTURE_STRUCTURE_PATH = Path(__file__).parent / "fixtures" / "article_artifacts" / "basic_article_structure.json"
+_FIXTURE_STRUCTURE_PATH = (
+    Path(__file__).parent / "fixtures" / "article_artifacts" / "basic_article_structure.json"
+)
 _FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
 _FIXTURE_STRUCTURE = json.loads(_FIXTURE_STRUCTURE_PATH.read_text(encoding="utf-8"))
 _RLM_WORKFLOW_MODULE = Path("src/research_graph/workflows/rlm/workflow.py")
@@ -128,11 +131,15 @@ def _minimal_structure(paper_id: str = "m052-rlm-workflow-minimal") -> dict[str,
     structure["structured_markers"] = []
     structure["scientific_markers"] = []
     structure["paragraphs"] = []
-    structure["safe_spans"] = [span for span in structure["safe_spans"] if span["span_id"] == root["span_id"]]
+    structure["safe_spans"] = [
+        span for span in structure["safe_spans"] if span["span_id"] == root["span_id"]
+    ]
     return structure
 
 
-def _run(structure: dict[str, Any] | None = None, *, run_id: str = "run-contract", max_steps: int = 16) -> WorkflowResult:
+def _run(
+    structure: dict[str, Any] | None = None, *, run_id: str = "run-contract", max_steps: int = 16
+) -> WorkflowResult:
     return run_document_workflow(
         _structure() if structure is None else structure,
         page_index={"pages": []},
@@ -193,7 +200,10 @@ def test_helper_invocation_returns_review_only_reducer_summary() -> None:
 def test_minimal_navigation_skips_helper_phase() -> None:
     result = _run(_minimal_structure(), run_id="run-minimal")
 
-    assert [step.step_type for step in result.trajectory.steps] == ["section_navigate", "span_visit"]
+    assert [step.step_type for step in result.trajectory.steps] == [
+        "section_navigate",
+        "span_visit",
+    ]
     assert result.trajectory.work_ids == ()
     assert result.aggregate_summary["total_unique_work_ids"] == 0
     assert result.safety_audit["all_reducer_safety_defaults_false"] is True
@@ -302,6 +312,6 @@ def test_result_trajectory_and_diagnostics_do_not_expose_network_or_graph_writes
 
     assert forbidden_loopback_hostname not in serialized
     assert "127.0.0.1" not in serialized
-    assert "graphdb_written\": true" not in serialized
-    assert "ladybugdb_written\": true" not in serialized
-    assert "production_import_attempted\": true" not in serialized
+    assert 'graphdb_written": true' not in serialized
+    assert 'ladybugdb_written": true' not in serialized
+    assert 'production_import_attempted": true' not in serialized

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from research_graph.llm.models_registry import (
+from research_graph.infrastructure.llm.models_registry import (
     ModelsRegistry,
     get_model,
     get_model_for_binding,

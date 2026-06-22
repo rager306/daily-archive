@@ -5,7 +5,11 @@ from pathlib import Path
 
 import pytest
 
-from research_graph.evaluation.extraction_benchmark import evaluate_files, evaluate_records, load_jsonl
+from research_graph.evaluation.extraction_benchmark import (
+    evaluate_files,
+    evaluate_records,
+    load_jsonl,
+)
 from research_graph.workflows.universal_kb.queue import UniversalKBQueue
 
 FIXTURE_DIR = Path("artifacts/m071-extraction-benchmark/fixtures")
@@ -56,11 +60,27 @@ def test_perfect_records_score_one() -> None:
             "paper_id": "arxiv:0000.00001v1",
             "source_artifact_refs": ["artifact:paper-one"],
             "entities": [
-                {"id": "entity:method:a", "type": "Method", "label": "Method A", "evidence_refs": ["evidence:one:method"]},
-                {"id": "entity:task:b", "type": "Task", "label": "Task B", "evidence_refs": ["evidence:one:task"]},
+                {
+                    "id": "entity:method:a",
+                    "type": "Method",
+                    "label": "Method A",
+                    "evidence_refs": ["evidence:one:method"],
+                },
+                {
+                    "id": "entity:task:b",
+                    "type": "Task",
+                    "label": "Task B",
+                    "evidence_refs": ["evidence:one:task"],
+                },
             ],
             "relations": [
-                {"id": "relation:a:b", "type": "APPLIED_TO", "source": "entity:method:a", "target": "entity:task:b", "evidence_refs": ["evidence:one:relation"]}
+                {
+                    "id": "relation:a:b",
+                    "type": "APPLIED_TO",
+                    "source": "entity:method:a",
+                    "target": "entity:task:b",
+                    "evidence_refs": ["evidence:one:relation"],
+                }
             ],
             "schema_valid": True,
             "json_valid": True,
@@ -73,11 +93,27 @@ def test_perfect_records_score_one() -> None:
             "paper_id": "arxiv:0000.00001v1",
             "source_artifact_refs": ["artifact:paper-one"],
             "entities": [
-                {"id": "pred:method:a", "type": "Method", "label": "method a", "evidence_refs": ["evidence:one:method"]},
-                {"id": "pred:task:b", "type": "Task", "label": "Task B", "evidence_refs": ["evidence:one:task"]},
+                {
+                    "id": "pred:method:a",
+                    "type": "Method",
+                    "label": "method a",
+                    "evidence_refs": ["evidence:one:method"],
+                },
+                {
+                    "id": "pred:task:b",
+                    "type": "Task",
+                    "label": "Task B",
+                    "evidence_refs": ["evidence:one:task"],
+                },
             ],
             "relations": [
-                {"id": "predrel:a:b", "type": "APPLIED_TO", "source": "pred:method:a", "target": "pred:task:b", "evidence_refs": ["evidence:one:relation"]}
+                {
+                    "id": "predrel:a:b",
+                    "type": "APPLIED_TO",
+                    "source": "pred:method:a",
+                    "target": "pred:task:b",
+                    "evidence_refs": ["evidence:one:relation"],
+                }
             ],
             "schema_valid": True,
             "json_valid": True,
@@ -101,10 +137,21 @@ def test_invalid_prediction_schema_reduces_validity_without_crashing() -> None:
             "paper_id": gold[0]["paper_id"],
             "source_artifact_refs": ["artifact:paper-2606.13669v1"],
             "entities": [
-                {"id": "pred:method:agents_k1", "type": "Method", "label": "Agents-K1", "evidence_refs": []}
+                {
+                    "id": "pred:method:agents_k1",
+                    "type": "Method",
+                    "label": "Agents-K1",
+                    "evidence_refs": [],
+                }
             ],
             "relations": [
-                {"id": "bad:relation", "type": "USES_COMPONENT", "source": "missing", "target": "pred:method:agents_k1", "evidence_refs": []}
+                {
+                    "id": "bad:relation",
+                    "type": "USES_COMPONENT",
+                    "source": "missing",
+                    "target": "pred:method:agents_k1",
+                    "evidence_refs": [],
+                }
             ],
             "schema_valid": True,
             "json_valid": True,

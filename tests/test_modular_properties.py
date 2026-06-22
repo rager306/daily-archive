@@ -11,13 +11,30 @@ from typing import Any
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from research_graph.papers.artifacts.models import FORBIDDEN_PAYLOAD_KEYS, validate_article_artifact_manifest
-from research_graph.papers.source_assets.registry import SourceAssetManifest, validate_source_asset_manifest
-from research_graph.papers.chunking.chunker import parse_markdown_structure
-from research_graph.identity.canonicalization import canonical_source_id, stable_json_hash
-from research_graph.corpus.ingestion.loader import ArticleLoadResult, ArticleLoadSource, FullTextIngestionResult, load_article_source
+from research_graph.corpus.ingestion.loader import (
+    ArticleLoadResult,
+    ArticleLoadSource,
+    FullTextIngestionResult,
+    load_article_source,
+)
 from research_graph.corpus.parsing.parser import parse_article
-from research_graph.staging.import_boundary import ImportCandidate, validate_import_boundary_rehearsal
+from research_graph.infrastructure.identity.canonicalization import (
+    canonical_source_id,
+    stable_json_hash,
+)
+from research_graph.papers.artifacts.models import (
+    FORBIDDEN_PAYLOAD_KEYS,
+    validate_article_artifact_manifest,
+)
+from research_graph.papers.chunking.chunker import parse_markdown_structure
+from research_graph.papers.source_assets.registry import (
+    SourceAssetManifest,
+    validate_source_asset_manifest,
+)
+from research_graph.staging.import_boundary import (
+    ImportCandidate,
+    validate_import_boundary_rehearsal,
+)
 from tests.helpers.modular_fixtures import (
     FIXTURE_PAPER_ID,
     adaptix_dump,
@@ -31,15 +48,23 @@ from tests.helpers.modular_fixtures import (
 SAFE_SLUG = st.from_regex(r"[a-z][a-z0-9]{2,12}", fullmatch=True)
 PAPER_IDS = st.from_regex(r"property-paper-[a-f0-9]{4,10}", fullmatch=True)
 SECTION_TITLES = st.lists(
-    st.text(alphabet=st.characters(whitelist_categories=("Ll", "Lu", "Nd"), whitelist_characters=" -"), min_size=3, max_size=24)
-    .map(lambda value: " ".join(value.split()).strip() or "Section"),
+    st.text(
+        alphabet=st.characters(whitelist_categories=("Ll", "Lu", "Nd"), whitelist_characters=" -"),
+        min_size=3,
+        max_size=24,
+    ).map(lambda value: " ".join(value.split()).strip() or "Section"),
     min_size=1,
     max_size=4,
     unique=True,
 )
 BODY_LINES = st.lists(
-    st.text(alphabet=st.characters(whitelist_categories=("Ll", "Lu", "Nd"), whitelist_characters=" .,;:-()"), min_size=8, max_size=80)
-    .map(lambda value: " ".join(value.split()).strip() or "deterministic boundary line"),
+    st.text(
+        alphabet=st.characters(
+            whitelist_categories=("Ll", "Lu", "Nd"), whitelist_characters=" .,;:-()"
+        ),
+        min_size=8,
+        max_size=80,
+    ).map(lambda value: " ".join(value.split()).strip() or "deterministic boundary line"),
     min_size=1,
     max_size=4,
 )
@@ -84,7 +109,11 @@ def _to_ingestion(result: ArticleLoadResult) -> FullTextIngestionResult:
         warnings=list(result.warnings),
         fallback_reason=result.failure_reason,
         quality=result.quality,
-        provenance={str(key): str(value) for key, value in (result.provenance or {}).items() if value is not None},
+        provenance={
+            str(key): str(value)
+            for key, value in (result.provenance or {}).items()
+            if value is not None
+        },
     )
 
 
@@ -99,8 +128,12 @@ def test_loader_provenance_and_parser_outputs_are_deterministic(
         markdown = _markdown("Property Fixture", section_titles, body_lines)
         source_path.write_text(markdown, encoding="utf-8")
 
-        first_load = load_article_source(ArticleLoadSource(source_path, paper_id=paper_id, source_type="markdown"))
-        second_load = load_article_source(ArticleLoadSource(source_path, paper_id=paper_id, source_type="markdown"))
+        first_load = load_article_source(
+            ArticleLoadSource(source_path, paper_id=paper_id, source_type="markdown")
+        )
+        second_load = load_article_source(
+            ArticleLoadSource(source_path, paper_id=paper_id, source_type="markdown")
+        )
 
     assert first_load.outcome == second_load.outcome == "loaded"
     assert first_load.failure_reason is None
@@ -116,13 +149,19 @@ def test_loader_provenance_and_parser_outputs_are_deterministic(
     second_parse = parse_article(_to_ingestion(second_load))
 
     assert adaptix_dump(first_parse) == adaptix_dump(second_parse)
-    assert [element.id for element in first_parse.elements] == [element.id for element in second_parse.elements]
-    assert [element.parent_id for element in first_parse.elements] == [element.parent_id for element in second_parse.elements]
+    assert [element.id for element in first_parse.elements] == [
+        element.id for element in second_parse.elements
+    ]
+    assert [element.parent_id for element in first_parse.elements] == [
+        element.parent_id for element in second_parse.elements
+    ]
 
 
 @PROPERTY_SETTINGS
 @given(section_titles=SECTION_TITLES, body_lines=BODY_LINES)
-def test_parser_page_index_and_identity_remain_canonical(section_titles: list[str], body_lines: list[str]) -> None:
+def test_parser_page_index_and_identity_remain_canonical(
+    section_titles: list[str], body_lines: list[str]
+) -> None:
     """Parsing and identity helpers should produce stable IDs independent of repeated calls."""
     markdown = _markdown("Identity Fixture", section_titles, body_lines)
     ingestion = _to_ingestion(sample_article_load_result())
@@ -142,9 +181,9 @@ def test_parser_page_index_and_identity_remain_canonical(section_titles: list[st
     second = parse_article(ingestion)
 
     assert adaptix_dump(first) == adaptix_dump(second)
-    assert stable_json_hash({"paper_id": FIXTURE_PAPER_ID, "sections": section_titles}) == stable_json_hash(
-        {"sections": section_titles, "paper_id": FIXTURE_PAPER_ID}
-    )
+    assert stable_json_hash(
+        {"paper_id": FIXTURE_PAPER_ID, "sections": section_titles}
+    ) == stable_json_hash({"sections": section_titles, "paper_id": FIXTURE_PAPER_ID})
     assert canonical_source_id(FIXTURE_PAPER_ID, "normalized-md") == canonical_source_id(
         FIXTURE_PAPER_ID, "normalized-md"
     )
@@ -199,9 +238,13 @@ def test_article_artifact_structure_properties_fail_closed(extra_slug: str) -> N
         }
     ]
 
-    from research_graph.papers.artifacts.models import build_article_artifact_manifest_from_structure
+    from research_graph.papers.artifacts.models import (
+        build_article_artifact_manifest_from_structure,
+    )
 
-    manifest = build_article_artifact_manifest_from_structure(structure, run_id="property-modular-boundary")
+    manifest = build_article_artifact_manifest_from_structure(
+        structure, run_id="property-modular-boundary"
+    )
 
     assert validate_article_artifact_manifest(manifest) == []
     assert manifest["import_eligible_count"] == 0
@@ -210,9 +253,13 @@ def test_article_artifact_structure_properties_fail_closed(extra_slug: str) -> N
     _assert_no_forbidden_review_payload(manifest)
 
     malformed = deepcopy(structure)
-    malformed["artifact_placeholders"][0]["caption_text"] = "raw caption should shrink to this field"
+    malformed["artifact_placeholders"][0]["caption_text"] = (
+        "raw caption should shrink to this field"
+    )
     try:
-        build_article_artifact_manifest_from_structure(malformed, run_id="property-modular-boundary")
+        build_article_artifact_manifest_from_structure(
+            malformed, run_id="property-modular-boundary"
+        )
     except ValueError as exc:
         assert "forbidden raw payload keys" in str(exc)
     else:  # pragma: no cover - property should never permit raw payloads
@@ -221,7 +268,9 @@ def test_article_artifact_structure_properties_fail_closed(extra_slug: str) -> N
 
 @PROPERTY_SETTINGS
 @given(import_eligible=st.booleans(), refusal_reasons=REFUSAL_REASONS)
-def test_staging_candidate_shape_matches_acceptance_invariant(import_eligible: bool, refusal_reasons: tuple[str, ...]) -> None:
+def test_staging_candidate_shape_matches_acceptance_invariant(
+    import_eligible: bool, refusal_reasons: tuple[str, ...]
+) -> None:
     """A staging candidate is accepted only when eligible and refusal-free; otherwise it remains rejected."""
     candidate = ImportCandidate(
         candidate_id="property:candidate:0001",
@@ -254,7 +303,9 @@ def test_staging_candidate_shape_matches_acceptance_invariant(import_eligible: b
 
 @PROPERTY_SETTINGS
 @given(section_titles=SECTION_TITLES)
-def test_negative_page_index_navigation_property_shrinks_boundary_mistakes(section_titles: list[str]) -> None:
+def test_negative_page_index_navigation_property_shrinks_boundary_mistakes(
+    section_titles: list[str],
+) -> None:
     """Broken PageIndex next pointers should produce deterministic, local diagnostics."""
     markdown = _markdown(section_titles[0], section_titles, ["navigation boundary line"])
     ingestion = _to_ingestion(sample_article_load_result())

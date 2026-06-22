@@ -133,7 +133,11 @@ def test_version_accepts_semver():
 
 
 def test_version_accepts_date():
-    model = {**VALID_REGISTRY["models"][0], "tool_version": "2026-05-15", "policy_version": "m049-v0.1"}
+    model = {
+        **VALID_REGISTRY["models"][0],
+        "tool_version": "2026-05-15",
+        "policy_version": "m049-v0.1",
+    }
     payload = {**VALID_REGISTRY, "models": [model]}
     errors = validate_models_yaml.validate_registry(payload)
     assert errors == []
@@ -142,7 +146,11 @@ def test_version_accepts_date():
 def test_version_accepts_yaml_date_object():
     import datetime
 
-    model = {**VALID_REGISTRY["models"][0], "tool_version": datetime.date(2026, 5, 15), "policy_version": "m049-v0.1"}
+    model = {
+        **VALID_REGISTRY["models"][0],
+        "tool_version": datetime.date(2026, 5, 15),
+        "policy_version": "m049-v0.1",
+    }
     payload = {**VALID_REGISTRY, "models": [model]}
     errors = validate_models_yaml.validate_registry(payload)
     assert errors == []
@@ -188,7 +196,8 @@ def test_validator_script_runs_clean_on_default_path():
 
 
 def test_load_models_registry_returns_models_and_bindings():
-    from research_graph.llm.models_registry import load_models_registry, reset_cache
+    from research_graph.infrastructure.llm.models_registry import load_models_registry, reset_cache
+
     reset_cache()
     registry = load_models_registry()
     assert len(registry.models) >= 2
@@ -199,7 +208,12 @@ def test_load_models_registry_returns_models_and_bindings():
 
 
 def test_get_model_raises_keyerror_on_unknown():
-    from research_graph.llm.models_registry import get_model, load_models_registry, reset_cache
+    from research_graph.infrastructure.llm.models_registry import (
+        get_model,
+        load_models_registry,
+        reset_cache,
+    )
+
     reset_cache()
     registry = load_models_registry()
     with pytest.raises(KeyError, match="nonexistent"):
@@ -207,7 +221,12 @@ def test_get_model_raises_keyerror_on_unknown():
 
 
 def test_get_model_for_binding_resolves_to_correct_model():
-    from research_graph.llm.models_registry import get_model_for_binding, load_models_registry, reset_cache
+    from research_graph.infrastructure.llm.models_registry import (
+        get_model_for_binding,
+        load_models_registry,
+        reset_cache,
+    )
+
     reset_cache()
     registry = load_models_registry()
     resolved = get_model_for_binding(registry, "article-artifact-classify")
@@ -217,7 +236,8 @@ def test_get_model_for_binding_resolves_to_correct_model():
 
 
 def test_compute_work_id_is_deterministic():
-    from research_graph.llm.models_registry import compute_work_id, reset_cache
+    from research_graph.infrastructure.llm.models_registry import compute_work_id, reset_cache
+
     reset_cache()
     args = dict(
         model_id="minimax-m3-512k-anthropic",
@@ -232,7 +252,8 @@ def test_compute_work_id_is_deterministic():
 
 
 def test_compute_work_id_changes_with_input():
-    from research_graph.llm.models_registry import compute_work_id, reset_cache
+    from research_graph.infrastructure.llm.models_registry import compute_work_id, reset_cache
+
     reset_cache()
     base = dict(
         model_id="minimax-m3-512k-anthropic",
@@ -246,7 +267,8 @@ def test_compute_work_id_changes_with_input():
 
 
 def test_compute_work_id_changes_with_prompt():
-    from research_graph.llm.models_registry import compute_work_id, reset_cache
+    from research_graph.infrastructure.llm.models_registry import compute_work_id, reset_cache
+
     reset_cache()
     base = dict(
         model_id="minimax-m3-512k-anthropic",
@@ -260,7 +282,8 @@ def test_compute_work_id_changes_with_prompt():
 
 
 def test_compute_work_id_changes_with_run_id():
-    from research_graph.llm.models_registry import compute_work_id, reset_cache
+    from research_graph.infrastructure.llm.models_registry import compute_work_id, reset_cache
+
     reset_cache()
     base = dict(
         model_id="minimax-m3-512k-anthropic",
@@ -274,7 +297,8 @@ def test_compute_work_id_changes_with_run_id():
 
 
 def test_compute_work_id_uses_registry_defaults_when_omitted():
-    from research_graph.llm.models_registry import compute_work_id, reset_cache
+    from research_graph.infrastructure.llm.models_registry import compute_work_id, reset_cache
+
     reset_cache()
     # Without tool_version/policy_version, should pull from registry
     w = compute_work_id(
@@ -295,8 +319,15 @@ def test_compute_work_id_uses_registry_defaults_when_omitted():
 
 
 def test_build_minimax_structured_request_uses_registry_by_default():
-    from research_graph.llm.minimax_structured import build_minimax_structured_request
-    from research_graph.llm.models_registry import get_model_for_binding, load_models_registry, reset_cache
+    from research_graph.infrastructure.llm.minimax_structured import (
+        build_minimax_structured_request,
+    )
+    from research_graph.infrastructure.llm.models_registry import (
+        get_model_for_binding,
+        load_models_registry,
+        reset_cache,
+    )
+
     reset_cache()
     registry = load_models_registry()
     expected = get_model_for_binding(registry, "article-artifact-classify")
@@ -315,7 +346,10 @@ def test_build_minimax_structured_request_uses_registry_by_default():
 
 
 def test_build_minimax_structured_request_explicit_model_bypasses_registry():
-    from research_graph.llm.minimax_structured import build_minimax_structured_request
+    from research_graph.infrastructure.llm.minimax_structured import (
+        build_minimax_structured_request,
+    )
+
     request = build_minimax_structured_request(
         prompt="test",
         tool_name="tool",

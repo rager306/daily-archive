@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-from research_graph.repair.chunk_import_contract import validate_import_ready_package, validation_to_dict
+from research_graph.repair.chunk_import_contract import (
+    validate_import_ready_package,
+    validation_to_dict,
+)
 
 
 def _source_span() -> dict[str, object]:
@@ -99,7 +102,11 @@ def _valid_package(**overrides: object) -> dict[str, object]:
                 "source_element_ids": ["element:p1:intro:paragraph-1"],
                 "source_artifact": "normalized_markdown:p1",
                 "source_span": _source_span(),
-                "provenance_chain": ["conversion:p1", "element:p1:intro:paragraph-1", "chunk:p1:intro:claim-1"],
+                "provenance_chain": [
+                    "conversion:p1",
+                    "element:p1:intro:paragraph-1",
+                    "chunk:p1:intro:claim-1",
+                ],
             }
         ],
         "diagnostics": {

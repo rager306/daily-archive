@@ -15,13 +15,6 @@ from typing import Any, TypeVar
 
 from adaptix import Retort
 
-from research_graph.papers.artifacts.models import build_article_artifact_manifest_from_structure
-from research_graph.papers.indexing.page_index import build_article_page_index_from_structure
-from research_graph.papers.source_assets.registry import AssetRecord, PreservedSourceFile, SourceSpan as AssetSourceSpan
-from research_graph.papers.chunking.chunker import StructureAwarePackage, parse_markdown_structure
-from research_graph.identity.canonicalization import canonical_source_id, stable_json_hash
-from research_graph.domain.navigation import PageIndexDocument
-from research_graph.papers.indexing.parsed_page_index import build_page_index_from_parsed
 from research_graph.corpus.ingestion.loader import (
     ArticleLoadResult,
     FullTextIngestionResult,
@@ -29,6 +22,22 @@ from research_graph.corpus.ingestion.loader import (
 )
 from research_graph.corpus.parsing.parser import parse_article
 from research_graph.corpus.parsing.structure import ParsedArticle
+from research_graph.domain.navigation import PageIndexDocument
+from research_graph.infrastructure.identity.canonicalization import (
+    canonical_source_id,
+    stable_json_hash,
+)
+from research_graph.papers.artifacts.models import build_article_artifact_manifest_from_structure
+from research_graph.papers.chunking.chunker import StructureAwarePackage, parse_markdown_structure
+from research_graph.papers.indexing.page_index import build_article_page_index_from_structure
+from research_graph.papers.indexing.parsed_page_index import build_page_index_from_parsed
+from research_graph.papers.source_assets.registry import (
+    AssetRecord,
+    PreservedSourceFile,
+)
+from research_graph.papers.source_assets.registry import (
+    SourceSpan as AssetSourceSpan,
+)
 from research_graph.staging.import_boundary import ImportBoundaryRehearsal, ImportCandidate
 
 T = TypeVar("T")
@@ -324,7 +333,9 @@ def canonical_contract_samples() -> dict[str, Any]:
 def write_canonical_contract_samples(path: Path = MODULAR_FIXTURE_PATH) -> Path:
     """Persist canonical JSON fixture samples with stable formatting."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(canonical_contract_samples(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(canonical_contract_samples(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     return path
 
 
@@ -340,7 +351,9 @@ def _safe_span(span_id: str, source_id: str, char_start: int, char_end: int) -> 
         "coordinate_space": "normalized_markdown_char",
         "char_start": char_start,
         "char_end": char_end,
-        "span_hash": stable_json_hash({"span_id": span_id, "char_start": char_start, "char_end": char_end}),
+        "span_hash": stable_json_hash(
+            {"span_id": span_id, "char_start": char_start, "char_end": char_end}
+        ),
         "raw_text_embedded": False,
     }
 

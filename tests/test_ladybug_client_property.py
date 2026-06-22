@@ -6,10 +6,10 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from research_graph.corpus.sources.arxiv_client import ArxivPaper
 from research_graph.cli import DailyAnalysis
-from research_graph.graph.ladybug_client import init_db, upsert_daily_analysis
+from research_graph.corpus.sources.arxiv_client import ArxivPaper
 from research_graph.evaluation.scoring import ScoredPaper
+from research_graph.graph.ladybug_client import init_db, upsert_daily_analysis
 from tests.helpers.modular_fixtures import FIXTURE_PAPER_ID
 
 SAFE_TEXT = st.text(
@@ -25,7 +25,9 @@ SAFE_TEXT = st.text(
 def make_conn() -> ladybug.Connection:
     db = ladybug.Database(":memory:")
     conn = ladybug.Connection(db)
-    conn.execute("CREATE NODE TABLE Paper(id STRING, title STRING, published DATE, emb FLOAT[512], score DOUBLE, PRIMARY KEY (id))")
+    conn.execute(
+        "CREATE NODE TABLE Paper(id STRING, title STRING, published DATE, emb FLOAT[512], score DOUBLE, PRIMARY KEY (id))"
+    )
     conn.execute("CREATE NODE TABLE Author(name STRING, PRIMARY KEY (name))")
     conn.execute("CREATE NODE TABLE Keyword(word STRING, PRIMARY KEY (word))")
     conn.execute("CREATE NODE TABLE Category(name STRING, PRIMARY KEY (name))")

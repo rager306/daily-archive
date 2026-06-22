@@ -2,13 +2,17 @@
 
 """Local non-blocking quality diagnostics."""
 
-from research_graph.quality.baselines import baseline_delta, baseline_from_summary, read_baseline
-from research_graph.quality.maintainability_report import (
+from research_graph.infrastructure.quality.baselines import (
+    baseline_delta,
+    baseline_from_summary,
+    read_baseline,
+)
+from research_graph.infrastructure.quality.maintainability_report import (
     build_maintainability_report,
     maintainability_report_to_json,
     write_maintainability_report,
 )
-from research_graph.quality.thresholds import (
+from research_graph.infrastructure.quality.thresholds import (
     DEFAULT_THRESHOLDS,
     MaintainabilityThresholds,
     severity_for_score,

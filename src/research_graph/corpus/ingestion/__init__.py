@@ -1,6 +1,10 @@
 """Corpus ingestion loader stack public API."""
 
-from research_graph.corpus.ingestion.fetchers import ARXIV_PDF_BASE_URL, PDFDownloader, arxiv_pdf_url
+from research_graph.corpus.ingestion.fetchers import (
+    ARXIV_PDF_BASE_URL,
+    PDFDownloader,
+    arxiv_pdf_url,
+)
 from research_graph.corpus.ingestion.loader import (
     ArticleLoadResult,
     ArticleLoadSource,

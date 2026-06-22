@@ -8,7 +8,6 @@ continue to work.
 
 from __future__ import annotations
 
-from research_graph.staging import graph_candidates as _graph_candidates
 from research_graph.staging.graph_candidates import (
     ALLOWED_CANDIDATE_TYPES,
     ALLOWED_COORDINATE_SPACES,

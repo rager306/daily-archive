@@ -8,13 +8,13 @@ from typing import TYPE_CHECKING
 
 import ladybug
 
+from research_graph.domain.semantic_chunks import EvidencePath, SemanticChunk
 from research_graph.evaluation.scientific_extraction import (
     ExtractionPatch,
     ScientificRelation,
     validate_extraction_patch,
 )
 from research_graph.papers.indexing import PageIndexDocument
-from research_graph.papers.semantic_chunks import EvidencePath, SemanticChunk
 
 if TYPE_CHECKING:
     from research_graph.cli import DailyAnalysis

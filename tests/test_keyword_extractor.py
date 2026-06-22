@@ -1,9 +1,9 @@
 from pathlib import Path
 
 from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
-from research_graph.retrieval.keyword_extractor import KeywordExtractor
-from research_graph.papers.indexing import build_page_index
 from research_graph.corpus.parsing.parser import parse_article
+from research_graph.papers.indexing import build_page_index
+from research_graph.retrieval.keyword_extractor import KeywordExtractor
 
 FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
 

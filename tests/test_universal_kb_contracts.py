@@ -4,7 +4,9 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from research_graph.papers.artifacts.models import default_safety_flags as article_default_safety_flags
+from research_graph.papers.artifacts.models import (
+    default_safety_flags as article_default_safety_flags,
+)
 from research_graph.repair.chunk_import_contract import (
     ContractValidationResult,
     validation_to_dict,
@@ -72,7 +74,9 @@ def test_candidate_packet_preserves_candidate_only_boundary() -> None:
 
 @pytest.mark.parametrize("review_state", ["approved", "ready", "import_eligible"])
 def test_candidate_packet_rejects_authoritative_review_states(review_state: str) -> None:
-    with pytest.raises(ValueError, match="candidate packet cannot carry authoritative review state"):
+    with pytest.raises(
+        ValueError, match="candidate packet cannot carry authoritative review state"
+    ):
         CandidatePacket(
             candidate_id="candidate-1",
             evidence_refs=("artifact:1",),

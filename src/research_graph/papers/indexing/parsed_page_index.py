@@ -10,13 +10,13 @@ Formerly: src/arxiv_archive/indexing/page_index.py"""
 from __future__ import annotations
 
 from research_graph.corpus.ingestion import FullTextIngestionResult
+from research_graph.corpus.parsing.parser import parse_article
+from research_graph.corpus.parsing.structure import ParsedArticle, ParsedArticleElement
 from research_graph.domain.navigation import (
     PageIndexDocument,
     PageIndexNode,
     build_navigation_anchors,
 )
-from research_graph.corpus.parsing.parser import parse_article
-from research_graph.corpus.parsing.structure import ParsedArticle, ParsedArticleElement
 
 
 def build_page_index(ingestion: FullTextIngestionResult) -> PageIndexDocument:

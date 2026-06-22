@@ -5,11 +5,11 @@ from typing import Any, cast
 
 import ladybug
 
-from research_graph.evaluation.analytics import compute_graph_metrics, recommend_papers
-from research_graph.corpus.sources.arxiv_client import ArxivPaper
 from research_graph.cli import DailyAnalysis
-from research_graph.graph.ladybug_client import upsert_daily_analysis
+from research_graph.corpus.sources.arxiv_client import ArxivPaper
+from research_graph.evaluation.analytics import compute_graph_metrics, recommend_papers
 from research_graph.evaluation.scoring import ScoredPaper
+from research_graph.graph.ladybug_client import upsert_daily_analysis
 
 
 def make_kg_conn() -> ladybug.Connection:

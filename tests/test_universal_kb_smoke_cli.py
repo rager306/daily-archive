@@ -3,7 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from research_graph.workflows.universal_kb.smoke import SmokePaths, run_all, run_verify, write_manifest
+from research_graph.workflows.universal_kb.smoke import (
+    SmokePaths,
+    run_all,
+    run_verify,
+    write_manifest,
+)
 
 
 def test_run_all_fast_profile_executes_selector_runner_and_audit(tmp_path: Path) -> None:

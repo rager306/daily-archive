@@ -3,8 +3,8 @@
 from datetime import date, timedelta
 
 from research_graph.corpus.sources.arxiv_client import ArxivPaper
-from research_graph.evaluation.scoring import ScoredPaper, ScoringEngine
 from research_graph.corpus.sources.semantic_scholar import SemanticScholarPaper
+from research_graph.evaluation.scoring import ScoredPaper, ScoringEngine
 
 
 class TestScoredPaperDataclass:
@@ -36,14 +36,26 @@ class TestScoredPaperDataclass:
             semschol=semschol,
             keywords=keywords,
             score=7.5,
-            breakdown={"citations": 4.2, "recency": 1.0, "novelty": 1.0, "preference": 1.2, "graph_bridge": 0.0},
+            breakdown={
+                "citations": 4.2,
+                "recency": 1.0,
+                "novelty": 1.0,
+                "preference": 1.2,
+                "graph_bridge": 0.0,
+            },
         )
 
         assert scored.paper == paper
         assert scored.semschol == semschol
         assert scored.keywords == keywords
         assert scored.score == 7.5
-        assert scored.breakdown == {"citations": 4.2, "recency": 1.0, "novelty": 1.0, "preference": 1.2, "graph_bridge": 0.0}
+        assert scored.breakdown == {
+            "citations": 4.2,
+            "recency": 1.0,
+            "novelty": 1.0,
+            "preference": 1.2,
+            "graph_bridge": 0.0,
+        }
 
 
 class TestScoringEngine:

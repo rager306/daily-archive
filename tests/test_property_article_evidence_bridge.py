@@ -57,15 +57,35 @@ FORBIDDEN_PAYLOAD_KEYS = st.sampled_from(
         "optimizer_trace",
     ]
 )
-REQUIRED_SUBTREES = ("raw", "normalized", "page_index", "assets", "links_dedup", "retrieval", "staging", "metrics")
+REQUIRED_SUBTREES = (
+    "raw",
+    "normalized",
+    "page_index",
+    "assets",
+    "links_dedup",
+    "retrieval",
+    "staging",
+    "metrics",
+)
 RETRIEVAL_TABLES_FIXTURES_DIR = Path(__file__).parent / "fixtures" / "article_retrieval_tables"
 
 
 def source_ref_strategy() -> st.SearchStrategy[ArticleEvidenceSourceReference]:
     """Generate metadata-only source references with outcome-compatible fields."""
 
-    def build_source(values: tuple[str, str, str, str, str | None, int, int, int]) -> ArticleEvidenceSourceReference:
-        paper_id, source_id, source_type, load_outcome, sha256, byte_size, warning_count, duration_ms = values
+    def build_source(
+        values: tuple[str, str, str, str, str | None, int, int, int],
+    ) -> ArticleEvidenceSourceReference:
+        (
+            paper_id,
+            source_id,
+            source_type,
+            load_outcome,
+            sha256,
+            byte_size,
+            warning_count,
+            duration_ms,
+        ) = values
         is_pdf = source_type == "pdf"
         failure_reason = "no_substantive_body" if load_outcome == "failed" else None
         checksum = sha256 if load_outcome != "failed" else None
@@ -146,7 +166,9 @@ def bundle_strategy(*, min_sources: int = 0) -> st.SearchStrategy[ArticleEvidenc
             summary=summarize_source_refs(source_dicts),
         )
 
-    return st.builds(build_bundle, PAPER_IDS, RUN_IDS, unique_source_refs_strategy(min_size=min_sources))
+    return st.builds(
+        build_bundle, PAPER_IDS, RUN_IDS, unique_source_refs_strategy(min_size=min_sources)
+    )
 
 
 def assert_redacted_bridge_payload(payload: dict[str, Any]) -> None:
@@ -171,15 +193,18 @@ def test_source_reference_adaptix_roundtrip_preserves_metadata_only_contract(
 
     assert restored == source
     assert restored.to_redacted_dict() == source.to_redacted_dict()
-    assert validate_article_evidence_bundle(
-        ArticleEvidenceBundle(
-            paper_id=source.paper_id,
-            run_id="m024-property-source",
-            bundle_id="article-evidence-bundle:property-source",
-            source_refs=(restored,),
-            summary=summarize_source_refs([restored.to_redacted_dict()]),
+    assert (
+        validate_article_evidence_bundle(
+            ArticleEvidenceBundle(
+                paper_id=source.paper_id,
+                run_id="m024-property-source",
+                bundle_id="article-evidence-bundle:property-source",
+                source_refs=(restored,),
+                summary=summarize_source_refs([restored.to_redacted_dict()]),
+            )
         )
-    ) == []
+        == []
+    )
 
 
 @settings(max_examples=80)
@@ -205,7 +230,9 @@ def test_diagnostic_adaptix_roundtrip_preserves_path_and_blocks_import(
 
 @settings(max_examples=80)
 @given(bundle=bundle_strategy())
-def test_bundle_to_json_and_adaptix_roundtrips_are_deterministic(bundle: ArticleEvidenceBundle) -> None:
+def test_bundle_to_json_and_adaptix_roundtrips_are_deterministic(
+    bundle: ArticleEvidenceBundle,
+) -> None:
     payload = bundle.to_redacted_dict()
     json_roundtrip = json.loads(to_json(bundle))
     adaptix_roundtrip = BRIDGE_RETORT.load(BRIDGE_RETORT.dump(bundle), ArticleEvidenceBundle)
@@ -219,7 +246,9 @@ def test_bundle_to_json_and_adaptix_roundtrips_are_deterministic(bundle: Article
 
 @settings(max_examples=80)
 @given(bundle=bundle_strategy())
-def test_placeholder_subtrees_and_metrics_survive_json_roundtrip(bundle: ArticleEvidenceBundle) -> None:
+def test_placeholder_subtrees_and_metrics_survive_json_roundtrip(
+    bundle: ArticleEvidenceBundle,
+) -> None:
     payload = bundle.to_redacted_dict()
     restored = json.loads(json.dumps(payload, sort_keys=True))
 
@@ -237,9 +266,13 @@ def test_placeholder_subtrees_and_metrics_survive_json_roundtrip(bundle: Article
 def test_retrieval_table_attachment_preserves_required_subtrees_and_aggregate_only_contract(
     bundle: ArticleEvidenceBundle, include_manifest_provenance: bool
 ) -> None:
-    from research_graph.papers.indexing.retrieval_tables import build_article_retrieval_table_manifest
+    from research_graph.papers.indexing.retrieval_tables import (
+        build_article_retrieval_table_manifest,
+    )
 
-    fixture = json.loads((RETRIEVAL_TABLES_FIXTURES_DIR / "minimal_manifest.json").read_text(encoding="utf-8"))
+    fixture = json.loads(
+        (RETRIEVAL_TABLES_FIXTURES_DIR / "minimal_manifest.json").read_text(encoding="utf-8")
+    )
     source_refs = [bundle.source_refs[0].to_redacted_dict()]
     source_id = source_refs[0]["source_id"]
     fixture["paper_id"] = bundle.paper_id
@@ -299,8 +332,13 @@ def test_retrieval_table_attachment_preserves_required_subtrees_and_aggregate_on
         assert retrieval["status"] == "blocked"
         assert metrics["status"] == "blocked"
         if not include_manifest_provenance:
-            assert retrieval["diagnostic_counts_by_code"]["retrieval_table_missing_manifest_path"] == 1
-            assert retrieval["diagnostic_counts_by_code"]["retrieval_table_missing_manifest_sha256"] == 1
+            assert (
+                retrieval["diagnostic_counts_by_code"]["retrieval_table_missing_manifest_path"] == 1
+            )
+            assert (
+                retrieval["diagnostic_counts_by_code"]["retrieval_table_missing_manifest_sha256"]
+                == 1
+            )
         assert validate_article_evidence_bundle(attached) == []
     assert_redacted_bridge_payload(attached)
 
@@ -321,11 +359,15 @@ def test_run_summary_to_redacted_dict_and_json_roundtrips(
         run_id=run_id,
         bundles=tuple(to_redacted_dict(bundle) for bundle in bundles),
         output_paths={"bundle_dir": "redacted-bundles"},
-        input_source_ids=tuple(sorted({source.source_id for bundle in bundles for source in bundle.source_refs})),
+        input_source_ids=tuple(
+            sorted({source.source_id for bundle in bundles for source in bundle.source_refs})
+        ),
         input_hashes=("source-load-event:" + "a" * 64,),
     )
 
-    restored_dataclass = BRIDGE_RETORT.load(BRIDGE_RETORT.dump(dataclass_summary), ArticleEvidenceRunSummary)
+    restored_dataclass = BRIDGE_RETORT.load(
+        BRIDGE_RETORT.dump(dataclass_summary), ArticleEvidenceRunSummary
+    )
     json_roundtrip = json.loads(json.dumps(run_summary, sort_keys=True))
 
     assert run_summary["schema_version"] == ARTICLE_EVIDENCE_RUN_SCHEMA_VERSION
@@ -488,7 +530,11 @@ def test_failed_low_quality_source_is_reviewable_but_non_importable() -> None:
 
 
 @settings(max_examples=80)
-@given(status=st.text(min_size=1, max_size=30).filter(lambda value: value not in ALLOWED_SUBTREE_STATUSES))
+@given(
+    status=st.text(min_size=1, max_size=30).filter(
+        lambda value: value not in ALLOWED_SUBTREE_STATUSES
+    )
+)
 def test_unsupported_subtree_vocabularies_are_diagnostics_not_silent(status: str) -> None:
     bundle = ArticleEvidenceBundle(
         paper_id="2605.00004",

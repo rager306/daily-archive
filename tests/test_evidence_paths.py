@@ -8,22 +8,21 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
+from research_graph.corpus.parsing.parser import parse_article
+from research_graph.domain.semantic_chunks import EvidencePath, SemanticChunk
+from research_graph.papers.indexing import (
+    PageIndexDocument,
+    build_page_index,
+    build_page_index_from_parsed,
+)
 from research_graph.papers.semantic_chunks import (
-    EvidencePath,
-    SemanticChunk,
     build_evidence_path,
     build_evidence_paths,
     build_semantic_chunks,
     build_semantic_chunks_from_parsed,
     validate_evidence_path,
 )
-from research_graph.corpus.ingestion import FullTextSource, ingest_full_text
-from research_graph.papers.indexing import (
-    PageIndexDocument,
-    build_page_index,
-    build_page_index_from_parsed,
-)
-from research_graph.corpus.parsing.parser import parse_article
 
 FULL_TEXT_FIXTURES = Path(__file__).parent / "fixtures" / "full_text"
 PAGE_INDEX_FIXTURES = Path(__file__).parent / "fixtures" / "page_index"
@@ -102,7 +101,10 @@ def test_builds_deterministic_semantic_chunks_for_pageindex_nodes() -> None:
 
     method = next(chunk for chunk in chunks if chunk.page_index_node_id == "2605.12345:method")
     assert method.paper_id == "2605.12345"
-    assert method.text == "The agent builds a PageIndex from deterministic local markdown before any network or PDF extraction is attempted."
+    assert (
+        method.text
+        == "The agent builds a PageIndex from deterministic local markdown before any network or PDF extraction is attempted."
+    )
     assert method.char_start == 0
     assert method.char_end == len(method.text)
     assert method.validation_warnings == []
@@ -145,7 +147,9 @@ def test_fallback_section_produces_traceable_chunk() -> None:
     assert fallback.page_index_node_id == "2605.noheadings:full-text"
     assert fallback.page_index_path == ["2605.noheadings:root", "2605.noheadings:full-text"]
     assert "paper-like fixture has no markdown headings" in fallback.text
-    assert fallback.provenance["page_index_path"] == "2605.noheadings:root/2605.noheadings:full-text"
+    assert (
+        fallback.provenance["page_index_path"] == "2605.noheadings:root/2605.noheadings:full-text"
+    )
 
 
 def test_builds_valid_evidence_path_from_chunk() -> None:

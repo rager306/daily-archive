@@ -40,10 +40,10 @@ INFRA_PREFIXES: tuple[str, ...] = (
     "research_graph.infrastructure",  # adapters
     "research_graph.graph",  # drivers
     "research_graph.corpus",  # sources / ingestion / parsing
-    "research_graph.llm",  # LLM drivers
+    "research_graph.infrastructure.llm",  # LLM drivers (moved M105 wave 1)
     "research_graph.retrieval",  # embedder / keyword extractor
-    "research_graph.identity",
-    "research_graph.quality",
+    "research_graph.infrastructure.identity",
+    "research_graph.infrastructure.quality",
     "research_graph.repair",
     "research_graph.staging",
     "research_graph.ops",

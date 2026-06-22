@@ -41,16 +41,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
-import yaml
-
 from research_graph.papers.artifacts.minimax_boundary import (
     ArticleArtifactWorkRequest,
     MiniMaxArtifactHelperResult,
     validate_article_artifact_minimax_response,
-)
-from research_graph.llm.models_registry import (
-    get_model,
-    load_models_registry,
 )
 
 # Default content-addressed artifact storage location.
@@ -110,7 +104,9 @@ class Transport(Protocol):
 class HttpTransport:
     """Real Anthropic-compatible MiniMax transport. Reads auth from env at call time."""
 
-    def __init__(self, *, timeout_seconds: int = 30, auth_env_var: str = "MINIMAX_ARTIFACT_API_KEY") -> None:
+    def __init__(
+        self, *, timeout_seconds: int = 30, auth_env_var: str = "MINIMAX_ARTIFACT_API_KEY"
+    ) -> None:
         self.timeout_seconds = timeout_seconds
         self.auth_env_var = auth_env_var
 
@@ -119,9 +115,7 @@ class HttpTransport:
 
         auth = os.environ.get(self.auth_env_var)
         if not auth:
-            raise RuntimeError(
-                f"{self.auth_env_var} not set; cannot perform live MiniMax call"
-            )
+            raise RuntimeError(f"{self.auth_env_var} not set; cannot perform live MiniMax call")
 
         endpoint = structured_request.endpoint
         body = json.dumps(structured_request.body).encode("utf-8")
@@ -154,11 +148,18 @@ class MockTransport:
         # Default to "mock-paper" if not parseable.
         try:
             prompt_obj = json.loads(paper_id)
-            paper_id = prompt_obj.get("redacted_structure_summary", {}).get("paper_id", "mock-paper")
+            paper_id = prompt_obj.get("redacted_structure_summary", {}).get(
+                "paper_id", "mock-paper"
+            )
         except (json.JSONDecodeError, TypeError):
             paper_id = "mock-paper"
 
-        helper_limit = structured_request.body.get("tools", [{}])[0].get("input_schema", {}).get("properties", {}).get("helper_limit", 24)
+        helper_limit = (
+            structured_request.body.get("tools", [{}])[0]
+            .get("input_schema", {})
+            .get("properties", {})
+            .get("helper_limit", 24)
+        )
         if not isinstance(helper_limit, int):
             helper_limit = 24
 
@@ -224,7 +225,7 @@ def process_work_request(
     if transport is None:
         transport = _resolve_default_transport()
 
-    started_at = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+    started_at = datetime.datetime.now(tz=datetime.UTC).isoformat()
 
     if structure is None:
         # Tests that don't pass structure fall back to using the helper_request
@@ -246,7 +247,7 @@ def process_work_request(
             max_candidates=work_request.max_candidates,
         )
 
-    completed_at = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+    completed_at = datetime.datetime.now(tz=datetime.UTC).isoformat()
 
     cache_hit = False  # future: M050 fingerprint cache lookup
     work_completed = ArticleArtifactWorkCompleted(
@@ -270,7 +271,9 @@ def process_work_request(
     target_path = target_dir / f"{work_request.work_id}.json"
     target_path.parent.mkdir(parents=True, exist_ok=True)
     target_path.write_text(
-        json.dumps(work_completed.to_sanitized_dict(), indent=2, sort_keys=True, ensure_ascii=False),
+        json.dumps(
+            work_completed.to_sanitized_dict(), indent=2, sort_keys=True, ensure_ascii=False
+        ),
         encoding="utf-8",
     )
 

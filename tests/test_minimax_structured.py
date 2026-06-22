@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from research_graph.llm.minimax_structured import (
+from research_graph.infrastructure.llm.minimax_structured import (
     build_minimax_structured_request,
     validate_minimax_tool_response,
 )

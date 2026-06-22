@@ -18,13 +18,18 @@ from pathlib import Path
 from shutil import copy2
 from typing import Any, Literal
 
-from research_graph.papers.source_assets.provenance import annotation_asset_link_provenance, source_preservation_provenance
+from research_graph.papers.source_assets.provenance import (
+    annotation_asset_link_provenance,
+    source_preservation_provenance,
+)
 
 SCHEMA_VERSION = "m005-source-asset-manifest.v1"
 TRUSTED_IMPORT_USE = "trusted_kg_import"
 
 SourceRole = Literal["original_pdf", "normalized_markdown", "derived_asset"]
-AssetType = Literal["source_pdf", "normalized_markdown", "figure", "table", "equation", "reference", "metadata"]
+AssetType = Literal[
+    "source_pdf", "normalized_markdown", "figure", "table", "equation", "reference", "metadata"
+]
 ExtractionState = Literal["preserved_source", "linked_not_extracted", "extracted", "missing_source"]
 
 FORBIDDEN_RAW_FIELDS = frozenset(
@@ -43,7 +48,9 @@ FORBIDDEN_RAW_FIELDS = frozenset(
 )
 FORBIDDEN_EMBEDDING_FIELDS = frozenset({"embedding", "embeddings"})
 FORBIDDEN_VECTOR_FIELDS = frozenset({"vector", "vectors"})
-FORBIDDEN_SECRET_FIELDS = frozenset({"secret", "secrets", "token", "tokens", "api_key", "credentials"})
+FORBIDDEN_SECRET_FIELDS = frozenset(
+    {"secret", "secrets", "token", "tokens", "api_key", "credentials"}
+)
 FORBIDDEN_OPTIMIZER_FIELDS = frozenset({"optimizer_trace", "optimizer_traces"})
 
 
@@ -219,7 +226,11 @@ class AssetRecord:
             ],
             "promoted_to_fact": False,
             "allowed_uses": ["source_review", "benchmark_diagnostics"],
-            "excluded_uses": [TRUSTED_IMPORT_USE, "production_ladybugdb_write", "embedding_generation"],
+            "excluded_uses": [
+                TRUSTED_IMPORT_USE,
+                "production_ladybugdb_write",
+                "embedding_generation",
+            ],
             "redaction": _redaction_flags(),
             "production_import_attempted": False,
             "ladybugdb_written": False,
@@ -295,7 +306,9 @@ def preserve_source_assets_for_paper(
             if candidate.missing_code is not None:
                 warnings.append(candidate.missing_code)
             continue
-        stable_name = _stable_source_name(source_role=candidate.source_role, source_path=candidate.path)
+        stable_name = _stable_source_name(
+            source_role=candidate.source_role, source_path=candidate.path
+        )
         workspace_path = source_workspace / stable_name
         copy2(candidate.path, workspace_path)
         preserved.append(
@@ -308,7 +321,9 @@ def preserve_source_assets_for_paper(
                 sha256=_sha256_file(workspace_path),
                 byte_size=workspace_path.stat().st_size,
                 media_type=_media_type_for_path(workspace_path),
-                provenance=source_preservation_provenance(original_reference=candidate.original_reference),
+                provenance=source_preservation_provenance(
+                    original_reference=candidate.original_reference
+                ),
             )
         )
     return SourceAssetManifest(
@@ -338,7 +353,10 @@ def build_source_asset_run(
             annotation_diagnostics_path=annotation_diagnostics_path,
             structure_diagnostics_path=structure_diagnostics_path,
         )
-    return SourceAssetRunResult(manifests=manifests, summary=_summary_for_manifests(manifests, source_manifest=manifest_path))
+    return SourceAssetRunResult(
+        manifests=manifests,
+        summary=_summary_for_manifests(manifests, source_manifest=manifest_path),
+    )
 
 
 def preserve_source_assets_manifest(
@@ -351,11 +369,16 @@ def preserve_source_assets_manifest(
     manifest = _load_json(manifest_path)
     output_dir = Path(output_dir)
     manifests = tuple(
-        preserve_source_assets_for_paper(paper, workspace_root=output_dir, run_id=run_id).to_contract()
+        preserve_source_assets_for_paper(
+            paper, workspace_root=output_dir, run_id=run_id
+        ).to_contract()
         for paper in manifest.get("papers", [])
         if isinstance(paper, dict)
     )
-    return SourceAssetRunResult(manifests=manifests, summary=_summary_for_manifests(manifests, source_manifest=manifest_path))
+    return SourceAssetRunResult(
+        manifests=manifests,
+        summary=_summary_for_manifests(manifests, source_manifest=manifest_path),
+    )
 
 
 def attach_annotation_asset_links(
@@ -366,7 +389,11 @@ def attach_annotation_asset_links(
 ) -> tuple[dict[str, Any], ...]:
     """Attach redacted asset-link records derived from S04 annotation diagnostics."""
     annotation_records = _load_jsonl(annotation_diagnostics_path)
-    structure_spans = _chunk_source_spans_by_paper(structure_diagnostics_path) if structure_diagnostics_path is not None else {}
+    structure_spans = (
+        _chunk_source_spans_by_paper(structure_diagnostics_path)
+        if structure_diagnostics_path is not None
+        else {}
+    )
     assets_by_paper = _asset_records_from_annotation_diagnostics(
         annotation_records=annotation_records,
         structure_spans=structure_spans,
@@ -375,10 +402,14 @@ def attach_annotation_asset_links(
     for manifest in manifests:
         paper_id = str(manifest["paper_id"])
         source_files = _list_of_dicts(manifest.get("source_files"))
-        source_file_by_role = {str(source_file.get("source_role")): source_file for source_file in source_files}
+        source_file_by_role = {
+            str(source_file.get("source_role")): source_file for source_file in source_files
+        }
         existing_assets = _list_of_dicts(manifest.get("assets"))
         generated_assets = [
-            _asset_record_with_source_file(asset, source_file_by_role=source_file_by_role).to_contract()
+            _asset_record_with_source_file(
+                asset, source_file_by_role=source_file_by_role
+            ).to_contract()
             for asset in assets_by_paper.get(paper_id, ())
         ]
         updated = dict(manifest)
@@ -386,7 +417,11 @@ def attach_annotation_asset_links(
         updated["diagnostics"] = _diagnostics_for_manifest(
             source_files=source_files,
             assets=updated["assets"],
-            manifest_warnings=tuple(str(warning.get("code")) for warning in manifest.get("warnings", []) if isinstance(warning, dict)),
+            manifest_warnings=tuple(
+                str(warning.get("code"))
+                for warning in manifest.get("warnings", [])
+                if isinstance(warning, dict)
+            ),
         )
         linked_manifests.append(updated)
     return tuple(linked_manifests)
@@ -405,22 +440,40 @@ def write_source_asset_run(result: SourceAssetRunResult, output_dir: Path) -> No
         encoding="utf-8",
     )
     (output_dir / "source-asset-package-diagnostics.jsonl").write_text(
-        "".join(json.dumps(_manifest_to_record(manifest), sort_keys=True) + "\n" for manifest in result.manifests),
+        "".join(
+            json.dumps(_manifest_to_record(manifest), sort_keys=True) + "\n"
+            for manifest in result.manifests
+        ),
         encoding="utf-8",
     )
     manifests_dir = output_dir / "manifests"
     manifests_dir.mkdir(parents=True, exist_ok=True)
     for manifest in result.manifests:
-        (manifests_dir / f"{manifest['paper_id']}-source-assets.json").write_text(_json_dumps(manifest), encoding="utf-8")
+        (manifests_dir / f"{manifest['paper_id']}-source-assets.json").write_text(
+            _json_dumps(manifest), encoding="utf-8"
+        )
 
 
 def validate_source_asset_manifest(manifest: dict[str, Any]) -> AssetValidationResult:
     """Validate a redacted source asset manifest without reading referenced files."""
     diagnostics: list[AssetDiagnostic] = []
-    diagnostics.extend(_validate_required_fields(manifest, fields=("schema_version", "paper_id", "source_files", "assets", "diagnostics"), object_id=None, object_type="manifest"))
-    diagnostics.extend(_validate_redaction(manifest, object_id=_string_or_none(manifest.get("paper_id")), object_type="manifest"))
+    diagnostics.extend(
+        _validate_required_fields(
+            manifest,
+            fields=("schema_version", "paper_id", "source_files", "assets", "diagnostics"),
+            object_id=None,
+            object_type="manifest",
+        )
+    )
+    diagnostics.extend(
+        _validate_redaction(
+            manifest, object_id=_string_or_none(manifest.get("paper_id")), object_type="manifest"
+        )
+    )
     if manifest.get("schema_version") != SCHEMA_VERSION:
-        diagnostics.append(AssetDiagnostic(reason="schema_version_mismatch", object_type="manifest"))
+        diagnostics.append(
+            AssetDiagnostic(reason="schema_version_mismatch", object_type="manifest")
+        )
     for field_name in (
         "raw_text_included",
         "chunk_text_included",
@@ -434,13 +487,25 @@ def validate_source_asset_manifest(manifest: dict[str, Any]) -> AssetValidationR
         "production_import_attempted",
     ):
         if manifest.get(field_name) is not False:
-            diagnostics.append(AssetDiagnostic(reason=f"unsafe_{field_name}", object_id=_string_or_none(manifest.get("paper_id")), object_type="manifest"))
+            diagnostics.append(
+                AssetDiagnostic(
+                    reason=f"unsafe_{field_name}",
+                    object_id=_string_or_none(manifest.get("paper_id")),
+                    object_type="manifest",
+                )
+            )
     source_files = _list_of_dicts(manifest.get("source_files"))
     assets = _list_of_dicts(manifest.get("assets"))
-    source_file_ids = {_string_or_none(source_file.get("source_file_id")) for source_file in source_files}
+    source_file_ids = {
+        _string_or_none(source_file.get("source_file_id")) for source_file in source_files
+    }
     source_file_ids.discard(None)
     for source_file in source_files:
-        diagnostics.extend(_validate_source_file(source_file, package_paper_id=_string_or_none(manifest.get("paper_id"))))
+        diagnostics.extend(
+            _validate_source_file(
+                source_file, package_paper_id=_string_or_none(manifest.get("paper_id"))
+            )
+        )
     for asset in assets:
         diagnostics.extend(
             _validate_asset_record(
@@ -449,56 +514,125 @@ def validate_source_asset_manifest(manifest: dict[str, Any]) -> AssetValidationR
                 source_file_ids=source_file_ids,
             )
         )
-    diagnostics.extend(_validate_manifest_diagnostics(manifest.get("diagnostics"), source_files=source_files, assets=assets))
+    diagnostics.extend(
+        _validate_manifest_diagnostics(
+            manifest.get("diagnostics"), source_files=source_files, assets=assets
+        )
+    )
     return AssetValidationResult(valid_manifest=not diagnostics, diagnostics=tuple(diagnostics))
 
 
-def _validate_source_file(source_file: dict[str, Any], *, package_paper_id: str | None) -> list[AssetDiagnostic]:
+def _validate_source_file(
+    source_file: dict[str, Any], *, package_paper_id: str | None
+) -> list[AssetDiagnostic]:
     source_file_id = _string_or_none(source_file.get("source_file_id"))
     diagnostics = _validate_required_fields(
         source_file,
-        fields=("source_file_id", "paper_id", "source_role", "workspace_path", "sha256", "byte_size", "media_type", "provenance", "redaction"),
+        fields=(
+            "source_file_id",
+            "paper_id",
+            "source_role",
+            "workspace_path",
+            "sha256",
+            "byte_size",
+            "media_type",
+            "provenance",
+            "redaction",
+        ),
         object_id=source_file_id,
         object_type="source_file",
     )
-    diagnostics.extend(_validate_redaction(source_file, object_id=source_file_id, object_type="source_file"))
+    diagnostics.extend(
+        _validate_redaction(source_file, object_id=source_file_id, object_type="source_file")
+    )
     if _string_or_none(source_file.get("paper_id")) != package_paper_id:
-        diagnostics.append(AssetDiagnostic(reason="paper_id_mismatch", object_id=source_file_id, object_type="source_file"))
-    if not isinstance(source_file.get("byte_size"), int) or int(source_file.get("byte_size", 0)) < 0:
-        diagnostics.append(AssetDiagnostic(reason="invalid_byte_size", object_id=source_file_id, object_type="source_file"))
+        diagnostics.append(
+            AssetDiagnostic(
+                reason="paper_id_mismatch", object_id=source_file_id, object_type="source_file"
+            )
+        )
+    if (
+        not isinstance(source_file.get("byte_size"), int)
+        or int(source_file.get("byte_size", 0)) < 0
+    ):
+        diagnostics.append(
+            AssetDiagnostic(
+                reason="invalid_byte_size", object_id=source_file_id, object_type="source_file"
+            )
+        )
     if source_file.get("sha256") is not None and not _valid_sha256(source_file.get("sha256")):
-        diagnostics.append(AssetDiagnostic(reason="invalid_sha256", object_id=source_file_id, object_type="source_file"))
+        diagnostics.append(
+            AssetDiagnostic(
+                reason="invalid_sha256", object_id=source_file_id, object_type="source_file"
+            )
+        )
     return diagnostics
 
 
-def _validate_asset_record(asset: dict[str, Any], *, package_paper_id: str | None, source_file_ids: set[str]) -> list[AssetDiagnostic]:
+def _validate_asset_record(
+    asset: dict[str, Any], *, package_paper_id: str | None, source_file_ids: set[str]
+) -> list[AssetDiagnostic]:
     asset_id = _string_or_none(asset.get("asset_id"))
     diagnostics = _validate_required_fields(
         asset,
-        fields=("asset_id", "paper_id", "asset_type", "extraction_state", "promoted_to_fact", "allowed_uses", "excluded_uses", "redaction", "warnings"),
+        fields=(
+            "asset_id",
+            "paper_id",
+            "asset_type",
+            "extraction_state",
+            "promoted_to_fact",
+            "allowed_uses",
+            "excluded_uses",
+            "redaction",
+            "warnings",
+        ),
         object_id=asset_id,
         object_type="asset",
     )
     diagnostics.extend(_validate_redaction(asset, object_id=asset_id, object_type="asset"))
     if _string_or_none(asset.get("paper_id")) != package_paper_id:
-        diagnostics.append(AssetDiagnostic(reason="paper_id_mismatch", object_id=asset_id, object_type="asset"))
+        diagnostics.append(
+            AssetDiagnostic(reason="paper_id_mismatch", object_id=asset_id, object_type="asset")
+        )
     source_file_id = _string_or_none(asset.get("source_file_id"))
     if source_file_id is not None and source_file_id not in source_file_ids:
-        diagnostics.append(AssetDiagnostic(reason="unresolved_source_file", object_id=asset_id, object_type="asset"))
+        diagnostics.append(
+            AssetDiagnostic(
+                reason="unresolved_source_file", object_id=asset_id, object_type="asset"
+            )
+        )
     if asset.get("promoted_to_fact") is not False:
-        diagnostics.append(AssetDiagnostic(reason="asset_promoted_to_fact", object_id=asset_id, object_type="asset"))
+        diagnostics.append(
+            AssetDiagnostic(
+                reason="asset_promoted_to_fact", object_id=asset_id, object_type="asset"
+            )
+        )
     if TRUSTED_IMPORT_USE in _string_list(asset.get("allowed_uses")):
-        diagnostics.append(AssetDiagnostic(reason="asset_allows_trusted_import", object_id=asset_id, object_type="asset"))
+        diagnostics.append(
+            AssetDiagnostic(
+                reason="asset_allows_trusted_import", object_id=asset_id, object_type="asset"
+            )
+        )
     if TRUSTED_IMPORT_USE not in _string_list(asset.get("excluded_uses")):
-        diagnostics.append(AssetDiagnostic(reason="asset_missing_import_exclusion", object_id=asset_id, object_type="asset"))
+        diagnostics.append(
+            AssetDiagnostic(
+                reason="asset_missing_import_exclusion", object_id=asset_id, object_type="asset"
+            )
+        )
     if asset.get("source_span") is not None and not _valid_source_span(asset.get("source_span")):
-        diagnostics.append(AssetDiagnostic(reason="invalid_source_span", object_id=asset_id, object_type="asset"))
+        diagnostics.append(
+            AssetDiagnostic(reason="invalid_source_span", object_id=asset_id, object_type="asset")
+        )
     if asset.get("sha256") is not None and not _valid_sha256(asset.get("sha256")):
-        diagnostics.append(AssetDiagnostic(reason="invalid_sha256", object_id=asset_id, object_type="asset"))
+        diagnostics.append(
+            AssetDiagnostic(reason="invalid_sha256", object_id=asset_id, object_type="asset")
+        )
     return diagnostics
 
 
-def _validate_manifest_diagnostics(value: Any, *, source_files: list[dict[str, Any]], assets: list[dict[str, Any]]) -> list[AssetDiagnostic]:
+def _validate_manifest_diagnostics(
+    value: Any, *, source_files: list[dict[str, Any]], assets: list[dict[str, Any]]
+) -> list[AssetDiagnostic]:
     if not isinstance(value, dict):
         return [AssetDiagnostic(reason="missing_diagnostics", object_type="diagnostics")]
     diagnostics = _validate_required_fields(
@@ -524,9 +658,13 @@ def _validate_manifest_diagnostics(value: Any, *, source_files: list[dict[str, A
     )
     diagnostics.extend(_validate_redaction(value, object_id=None, object_type="diagnostics"))
     if value.get("source_file_count") != len(source_files):
-        diagnostics.append(AssetDiagnostic(reason="source_file_count_mismatch", object_type="diagnostics"))
+        diagnostics.append(
+            AssetDiagnostic(reason="source_file_count_mismatch", object_type="diagnostics")
+        )
     if value.get("asset_count") != len(assets):
-        diagnostics.append(AssetDiagnostic(reason="asset_count_mismatch", object_type="diagnostics"))
+        diagnostics.append(
+            AssetDiagnostic(reason="asset_count_mismatch", object_type="diagnostics")
+        )
     for field_name in (
         "raw_text_included",
         "chunk_text_included",
@@ -539,7 +677,9 @@ def _validate_manifest_diagnostics(value: Any, *, source_files: list[dict[str, A
         "production_import_attempted",
     ):
         if value.get(field_name) is not False:
-            diagnostics.append(AssetDiagnostic(reason=f"unsafe_{field_name}", object_type="diagnostics"))
+            diagnostics.append(
+                AssetDiagnostic(reason=f"unsafe_{field_name}", object_type="diagnostics")
+            )
     return diagnostics
 
 
@@ -549,7 +689,9 @@ def _diagnostics_for_manifest(
     assets: list[dict[str, Any]],
     manifest_warnings: tuple[str, ...],
 ) -> dict[str, Any]:
-    hashed_source_count = sum(1 for source_file in source_files if _valid_sha256(source_file.get("sha256")))
+    hashed_source_count = sum(
+        1 for source_file in source_files if _valid_sha256(source_file.get("sha256"))
+    )
     return {
         "source_file_count": len(source_files),
         "asset_count": len(assets),
@@ -557,7 +699,9 @@ def _diagnostics_for_manifest(
         "asset_counts_by_type": _counts(asset.get("asset_type") for asset in assets),
         "extraction_state_counts": _counts(asset.get("extraction_state") for asset in assets),
         "warning_counts": _counts(manifest_warnings),
-        "promoted_to_fact_count": sum(1 for asset in assets if asset.get("promoted_to_fact") is True),
+        "promoted_to_fact_count": sum(
+            1 for asset in assets if asset.get("promoted_to_fact") is True
+        ),
         "raw_text_included": False,
         "chunk_text_included": False,
         "raw_binary_included": False,
@@ -601,7 +745,9 @@ def _asset_records_from_annotation_diagnostics(
                 continue
             chunk_id = str(chunk_record.get("chunk_id"))
             span_record = structure_spans.get(paper_id, {}).get(chunk_id)
-            warning_codes = {str(code) for code in chunk_record.get("warning_codes", []) if code is not None}
+            warning_codes = {
+                str(code) for code in chunk_record.get("warning_codes", []) if code is not None
+            }
             warning_codes.add("linked_not_extracted")
             if span_record is None:
                 warning_codes.add("missing_source_span")
@@ -633,8 +779,12 @@ def _asset_type_for_chunk(chunk_record: dict[str, Any]) -> AssetType | None:
     return None
 
 
-def _asset_record_with_source_file(asset: AssetRecord, *, source_file_by_role: dict[str, dict[str, Any]]) -> AssetRecord:
-    source_file = source_file_by_role.get("normalized_markdown") or source_file_by_role.get("original_pdf")
+def _asset_record_with_source_file(
+    asset: AssetRecord, *, source_file_by_role: dict[str, dict[str, Any]]
+) -> AssetRecord:
+    source_file = source_file_by_role.get("normalized_markdown") or source_file_by_role.get(
+        "original_pdf"
+    )
     warning_codes = set(asset.warning_codes)
     source_file_id = None
     source_artifact = asset.source_artifact
@@ -686,7 +836,9 @@ def _span_from_record(record: dict[str, Any]) -> SourceSpan:
         char_end=int(record["char_end"]),
         page_start=int(record["page_start"]) if record.get("page_start") is not None else None,
         page_end=int(record["page_end"]) if record.get("page_end") is not None else None,
-        bbox=tuple(float(value) for value in bbox) if isinstance(bbox, list) and len(bbox) == 4 else None,
+        bbox=tuple(float(value) for value in bbox)
+        if isinstance(bbox, list) and len(bbox) == 4
+        else None,
     )
 
 
@@ -698,23 +850,33 @@ def _source_candidates_for_paper(paper: dict[str, Any]) -> tuple[SourceArtifactC
             path if path.name in {"full_text.md", f"{paper_id}.md"} else path / "full_text.md"
             for path in explicit_paths
         ]
-        + [Path("/root/.research/papers") / paper_id / "full_text.md", Path("/root/.arxiv_cache") / f"{paper_id}.md"]
+        + [
+            Path("/root/.research/papers") / paper_id / "full_text.md",
+            Path("/root/.arxiv_cache") / f"{paper_id}.md",
+        ]
     )
     pdf_path = _first_existing(
-        [path if path.suffix.lower() == ".pdf" else path / f"{paper_id}.pdf" for path in explicit_paths]
+        [
+            path if path.suffix.lower() == ".pdf" else path / f"{paper_id}.pdf"
+            for path in explicit_paths
+        ]
         + [Path("/root/.arxiv_cache") / f"{paper_id}.pdf"]
     )
     return (
         SourceArtifactCandidate(
             source_role="normalized_markdown",
             path=markdown_path,
-            original_reference=str(markdown_path) if markdown_path is not None else f"normalized_markdown:{paper_id}",
+            original_reference=str(markdown_path)
+            if markdown_path is not None
+            else f"normalized_markdown:{paper_id}",
             missing_code=None if markdown_path is not None else "missing_normalized_markdown",
         ),
         SourceArtifactCandidate(
             source_role="original_pdf",
             path=pdf_path,
-            original_reference=str(pdf_path) if pdf_path is not None else f"original_pdf:{paper_id}",
+            original_reference=str(pdf_path)
+            if pdf_path is not None
+            else f"original_pdf:{paper_id}",
             missing_code=None if pdf_path is not None else "missing_original_pdf",
         ),
     )
@@ -755,7 +917,9 @@ def _media_type_for_path(path: Path) -> str:
     return "application/octet-stream"
 
 
-def _summary_for_manifests(manifests: tuple[dict[str, Any], ...], *, source_manifest: Path) -> dict[str, Any]:
+def _summary_for_manifests(
+    manifests: tuple[dict[str, Any], ...], *, source_manifest: Path
+) -> dict[str, Any]:
     source_file_count = sum(len(manifest.get("source_files", [])) for manifest in manifests)
     asset_count = sum(len(manifest.get("assets", [])) for manifest in manifests)
     missing_counts: dict[str, int] = {}
@@ -786,7 +950,9 @@ def _summary_for_manifests(manifests: tuple[dict[str, Any], ...], *, source_mani
         "schema_version": "m005-source-preservation-run.v1",
         "source_manifest": str(source_manifest),
         "paper_count": len(manifests),
-        "valid_manifest_count": sum(1 for manifest in manifests if validate_source_asset_manifest(manifest).valid_manifest),
+        "valid_manifest_count": sum(
+            1 for manifest in manifests if validate_source_asset_manifest(manifest).valid_manifest
+        ),
         "source_file_count": source_file_count,
         "asset_count": asset_count,
         "hash_coverage_rate": hash_count / source_file_count if source_file_count else 0.0,
@@ -860,11 +1026,17 @@ def _json_dumps(value: Any) -> str:
     return json.dumps(value, indent=2, sort_keys=True) + "\n"
 
 
-def _validate_redaction(payload: dict[str, Any], *, object_id: str | None, object_type: str) -> list[AssetDiagnostic]:
-    return _validate_nested_redaction(payload, object_id=object_id, object_type=object_type, path=())
+def _validate_redaction(
+    payload: dict[str, Any], *, object_id: str | None, object_type: str
+) -> list[AssetDiagnostic]:
+    return _validate_nested_redaction(
+        payload, object_id=object_id, object_type=object_type, path=()
+    )
 
 
-def _validate_nested_redaction(value: Any, *, object_id: str | None, object_type: str, path: tuple[str, ...]) -> list[AssetDiagnostic]:
+def _validate_nested_redaction(
+    value: Any, *, object_id: str | None, object_type: str, path: tuple[str, ...]
+) -> list[AssetDiagnostic]:
     diagnostics: list[AssetDiagnostic] = []
     if isinstance(value, dict):
         forbidden_fields = (
@@ -888,15 +1060,31 @@ def _validate_nested_redaction(value: Any, *, object_id: str | None, object_type
             diagnostics.append(
                 AssetDiagnostic(
                     reason=reason,
-                    object_id=_redaction_path(object_id=object_id, object_type=object_type, path=(*path, str(field_name))),
+                    object_id=_redaction_path(
+                        object_id=object_id, object_type=object_type, path=(*path, str(field_name))
+                    ),
                     object_type=object_type,
                 )
             )
         for key, nested_value in value.items():
-            diagnostics.extend(_validate_nested_redaction(nested_value, object_id=object_id, object_type=object_type, path=(*path, str(key))))
+            diagnostics.extend(
+                _validate_nested_redaction(
+                    nested_value,
+                    object_id=object_id,
+                    object_type=object_type,
+                    path=(*path, str(key)),
+                )
+            )
     elif isinstance(value, list):
         for index, nested_value in enumerate(value):
-            diagnostics.extend(_validate_nested_redaction(nested_value, object_id=object_id, object_type=object_type, path=(*path, str(index))))
+            diagnostics.extend(
+                _validate_nested_redaction(
+                    nested_value,
+                    object_id=object_id,
+                    object_type=object_type,
+                    path=(*path, str(index)),
+                )
+            )
     return diagnostics
 
 
@@ -910,7 +1098,11 @@ def _validate_required_fields(
     diagnostics: list[AssetDiagnostic] = []
     for field_name in fields:
         if field_name not in payload or payload.get(field_name) is None:
-            diagnostics.append(AssetDiagnostic(reason=f"missing_{field_name}", object_id=object_id, object_type=object_type))
+            diagnostics.append(
+                AssetDiagnostic(
+                    reason=f"missing_{field_name}", object_id=object_id, object_type=object_type
+                )
+            )
     return diagnostics
 
 
@@ -930,7 +1122,11 @@ def _valid_source_span(value: Any) -> bool:
 
 
 def _valid_sha256(value: Any) -> bool:
-    return isinstance(value, str) and len(value) == 64 and all(character in "0123456789abcdef" for character in value.lower())
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value.lower())
+    )
 
 
 def _list_of_dicts(value: Any) -> list[dict[str, Any]]:

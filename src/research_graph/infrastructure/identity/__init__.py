@@ -2,7 +2,7 @@
 
 """Canonical identity and deduplication helpers for research_graph."""
 
-from research_graph.identity.canonicalization import (
+from research_graph.infrastructure.identity.canonicalization import (
     artifact_record_hash,
     canonical_import_candidate_id,
     canonical_locator_id,
@@ -12,7 +12,11 @@ from research_graph.identity.canonicalization import (
     stable_json_hash,
     stable_span_hash,
 )
-from research_graph.identity.dedup import annotate_overlapping_signal_windows, append_unique, ranges_overlap
+from research_graph.infrastructure.identity.dedup import (
+    annotate_overlapping_signal_windows,
+    append_unique,
+    ranges_overlap,
+)
 
 __all__ = [
     "annotate_overlapping_signal_windows",

@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from research_graph.repair.chunk_import_contract import validate_import_ready_package
 from research_graph.papers.chunking import (
     ChunkAnnotationSidecar,
     RouteEligibility,
@@ -16,6 +15,7 @@ from research_graph.papers.chunking import (
     parse_markdown_structure,
     write_structure_aware_run,
 )
+from research_graph.repair.chunk_import_contract import validate_import_ready_package
 
 
 def test_source_span_uses_normalized_markdown_coordinates() -> None:
@@ -126,16 +126,22 @@ def test_parse_markdown_structure_preserves_absolute_spans_and_hierarchy() -> No
     )
     contract = package.to_contract()
     elements = contract["elements"]
-    method = next(element for element in elements if element["section_path"] == ["Title", "Method"] and element["element_type"] == "section")
+    method = next(
+        element
+        for element in elements
+        if element["section_path"] == ["Title", "Method"] and element["element_type"] == "section"
+    )
     paragraph = next(element for element in elements if element["element_type"] == "paragraph")
-    reference = next(element for element in elements if element["element_type"] == "reference_entry")
+    reference = next(
+        element for element in elements if element["element_type"] == "reference_entry"
+    )
 
     assert contract["paper"]["source_artifacts"] == ["normalized_markdown:p1"]
     assert method["parent_element_id"].startswith("p1:0001:section:title")
     assert paragraph["parent_element_id"] == method["element_id"]
-    assert markdown[paragraph["source_span"]["char_start"] : paragraph["source_span"]["char_end"]].strip() == (
-        "The method paragraph keeps provenance."
-    )
+    assert markdown[
+        paragraph["source_span"]["char_start"] : paragraph["source_span"]["char_end"]
+    ].strip() == ("The method paragraph keeps provenance.")
     assert reference["section_path"] == ["Title", "References"]
     assert reference["source_span"]["coordinate_space"] == "normalized_markdown"
     assert validate_import_ready_package(contract).valid_package is True
@@ -144,7 +150,9 @@ def test_parse_markdown_structure_preserves_absolute_spans_and_hierarchy() -> No
     assert "Example citation" not in serialized
 
 
-def test_parse_markdown_structure_detects_tables_figures_equations_and_administrative_blocks() -> None:
+def test_parse_markdown_structure_detects_tables_figures_equations_and_administrative_blocks() -> (
+    None
+):
     markdown = (
         "# Paper\n\n"
         "ORCID: 0000-0000-0000-0000\n\n"
@@ -186,7 +194,9 @@ def test_parse_landing_markdown_keeps_navigation_as_administrative_or_sections()
 
     assert elements[0]["element_type"] == "document"
     assert [element["element_type"] for element in elements].count("administrative") == 3
-    assert all(element["source_span"]["coordinate_space"] == "normalized_markdown" for element in elements)
+    assert all(
+        element["source_span"]["coordinate_space"] == "normalized_markdown" for element in elements
+    )
     assert all("Access Paper" not in element["section_path"] for element in elements)
 
 
@@ -210,9 +220,18 @@ def test_parse_markdown_structure_assigns_conservative_routes_states_and_refusal
     chunks = contract["chunks"]
     diagnostics = contract["diagnostics"]
 
-    assert any(chunk["route"] == "claim_extraction" and chunk["chunk_type"] == "claim_candidate" for chunk in chunks)
-    assert any(chunk["route"] == "method_extraction" and chunk["chunk_type"] == "method_candidate" for chunk in chunks)
-    assert any(chunk["route"] == "citation_graph" and chunk["chunk_type"] == "reference_entry" for chunk in chunks)
+    assert any(
+        chunk["route"] == "claim_extraction" and chunk["chunk_type"] == "claim_candidate"
+        for chunk in chunks
+    )
+    assert any(
+        chunk["route"] == "method_extraction" and chunk["chunk_type"] == "method_candidate"
+        for chunk in chunks
+    )
+    assert any(
+        chunk["route"] == "citation_graph" and chunk["chunk_type"] == "reference_entry"
+        for chunk in chunks
+    )
     assert all("trusted_kg_import" in chunk["excluded_uses"] for chunk in chunks)
     assert diagnostics["import_eligible_chunk_count"] == 0
     assert diagnostics["refused_chunk_count"] == len(chunks)
@@ -227,7 +246,9 @@ def test_parse_markdown_structure_assigns_conservative_routes_states_and_refusal
     assert validation.import_ready is False
 
 
-def test_parse_markdown_structure_routes_tables_and_administrative_metadata_without_import_permission() -> None:
+def test_parse_markdown_structure_routes_tables_and_administrative_metadata_without_import_permission() -> (
+    None
+):
     markdown = (
         "# Paper\n\n"
         "ORCID: 0000-0000-0000-0000\n\n"
@@ -243,8 +264,13 @@ def test_parse_markdown_structure_routes_tables_and_administrative_metadata_with
     ).to_contract()
     chunks = contract["chunks"]
 
-    assert any(chunk["route"] == "table_extraction" and chunk["chunk_type"] == "table_context" for chunk in chunks)
-    assert any(chunk["route"] == "metadata_graph" and chunk["chunk_type"] == "metadata" for chunk in chunks)
+    assert any(
+        chunk["route"] == "table_extraction" and chunk["chunk_type"] == "table_context"
+        for chunk in chunks
+    )
+    assert any(
+        chunk["route"] == "metadata_graph" and chunk["chunk_type"] == "metadata" for chunk in chunks
+    )
     assert all(chunk["state"] in {"repair_required", "ok_for_retrieval_only"} for chunk in chunks)
     assert all("trusted_kg_import" not in chunk["allowed_uses"] for chunk in chunks)
     assert contract["diagnostics"]["refusal_counts"]["table_route_requires_review"] == 1
@@ -252,10 +278,14 @@ def test_parse_markdown_structure_routes_tables_and_administrative_metadata_with
     assert validate_import_ready_package(contract).valid_package is True
 
 
-def test_measure_structure_aware_manifest_writes_redacted_summary_and_diagnostics(tmp_path: Path) -> None:
+def test_measure_structure_aware_manifest_writes_redacted_summary_and_diagnostics(
+    tmp_path: Path,
+) -> None:
     paper_dir = tmp_path / "p1"
     paper_dir.mkdir()
-    (paper_dir / "full_text.md").write_text("# Paper\n\n## Abstract\n\nClaim-like prose.\n", encoding="utf-8")
+    (paper_dir / "full_text.md").write_text(
+        "# Paper\n\n## Abstract\n\nClaim-like prose.\n", encoding="utf-8"
+    )
     manifest = tmp_path / "manifest.json"
     manifest.write_text(
         json.dumps(
@@ -281,7 +311,9 @@ def test_measure_structure_aware_manifest_writes_redacted_summary_and_diagnostic
     write_structure_aware_run(result, out)
 
     summary = json.loads((out / "structure-aware-summary.json").read_text(encoding="utf-8"))
-    records = (out / "structure-aware-package-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()
+    records = (
+        (out / "structure-aware-package-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()
+    )
     record = json.loads(records[0])
     assert summary["schema_version"] == "m005-structure-aware-run.v1"
     assert summary["paper_count"] == 1
@@ -297,10 +329,14 @@ def test_measure_structure_aware_manifest_writes_redacted_summary_and_diagnostic
     assert "Claim-like prose" not in json.dumps(record)
 
 
-def test_written_structure_aware_diagnostics_include_redacted_chunk_level_evidence(tmp_path: Path) -> None:
+def test_written_structure_aware_diagnostics_include_redacted_chunk_level_evidence(
+    tmp_path: Path,
+) -> None:
     paper_dir = tmp_path / "p2"
     paper_dir.mkdir()
-    (paper_dir / "full_text.md").write_text("# Paper\n\n## Method\n\nMethod prose.\n", encoding="utf-8")
+    (paper_dir / "full_text.md").write_text(
+        "# Paper\n\n## Method\n\nMethod prose.\n", encoding="utf-8"
+    )
     manifest = tmp_path / "manifest.json"
     manifest.write_text(
         json.dumps(
@@ -324,7 +360,11 @@ def test_written_structure_aware_diagnostics_include_redacted_chunk_level_eviden
 
     write_structure_aware_run(measure_structure_aware_manifest(manifest), out)
 
-    record = json.loads((out / "structure-aware-package-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()[0])
+    record = json.loads(
+        (out / "structure-aware-package-diagnostics.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()[0]
+    )
     chunk = record["chunk_diagnostics"][0]
     assert set(chunk) == {
         "chunk_id",
@@ -461,7 +501,9 @@ def test_parse_markdown_structure_generates_sidecars_from_chunk_metadata() -> No
     }
     assert diagnostics["annotation_counts_by_type"]["section_role"] == len(contract["chunks"])
     assert diagnostics["annotation_counts_by_type"]["route_hint"] == len(contract["chunks"])
-    assert diagnostics["annotation_counts_by_confidence"]["deterministic"] >= len(contract["chunks"])
+    assert diagnostics["annotation_counts_by_confidence"]["deterministic"] >= len(
+        contract["chunks"]
+    )
     assert diagnostics["annotation_warning_counts"]["asset_manifest_required"] == 2
     serialized = json.dumps(annotations)
     assert "Figure 1" not in serialized
@@ -471,7 +513,9 @@ def test_parse_markdown_structure_generates_sidecars_from_chunk_metadata() -> No
 def test_measurement_records_include_annotation_diagnostics(tmp_path: Path) -> None:
     paper_dir = tmp_path / "p3"
     paper_dir.mkdir()
-    (paper_dir / "full_text.md").write_text("# Paper\n\n## Abstract\n\nClaim-like prose.\n", encoding="utf-8")
+    (paper_dir / "full_text.md").write_text(
+        "# Paper\n\n## Abstract\n\nClaim-like prose.\n", encoding="utf-8"
+    )
     manifest = tmp_path / "manifest.json"
     manifest.write_text(
         json.dumps(
@@ -496,7 +540,11 @@ def test_measurement_records_include_annotation_diagnostics(tmp_path: Path) -> N
     write_structure_aware_run(measure_structure_aware_manifest(manifest), out)
 
     summary = json.loads((out / "structure-aware-summary.json").read_text(encoding="utf-8"))
-    record = json.loads((out / "structure-aware-package-diagnostics.jsonl").read_text(encoding="utf-8").splitlines()[0])
+    record = json.loads(
+        (out / "structure-aware-package-diagnostics.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()[0]
+    )
     assert summary["annotation_count"] == record["annotation_count"]
     assert record["annotation_counts_by_type"]["section_role"] >= 1
     assert record["annotation_counts_by_type"]["route_hint"] >= 1
@@ -554,7 +602,9 @@ def test_annotation_contract_rejects_nested_raw_text_leakage() -> None:
 
     assert validation.valid_package is False
     assert validation.refusal_counts["raw_text_leakage"] >= 1
-    serialized_diagnostics = json.dumps([diagnostic.__dict__ for diagnostic in validation.diagnostics])
+    serialized_diagnostics = json.dumps(
+        [diagnostic.__dict__ for diagnostic in validation.diagnostics]
+    )
     assert leaked_value not in serialized_diagnostics
 
 
