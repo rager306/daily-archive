@@ -1,0 +1,1966 @@
+NormCode: A Semi-Formal Language for Auditable AI Planning
+Xin Guan*1,2, Yunshan Li†3,1, Zekun Wu4,1 and Ruibo Zhang‡4,1
+1Psylens.AI
+2Center for Long-Term AI
+3Shenzhen University
+4University College London
+Abstract
+As AI systems move into high-stakes domains—
+legal reasoning, medical diagnosis, financial
+decision-making—regulators and practitioners
+demand auditability: the ability to trace exactly
+what each step in a multi-step workflow saw
+and did. Yet current LLM-based workflows are
+fundamentally opaque. Context pollution—the
+accumulation of information across reasoning
+steps—causes models to hallucinate and lose
+track of constraints, while implicit data flow
+makes it impossible to reconstruct what any
+given step actually received. We present Norm-
+Code, a semi-formal language that makes AI
+workflows auditable by construction. Each in-
+ference operates in enforced data isolation with
+only explicitly passed inputs, eliminating cross-
+step contamination and ensuring that every in-
+termediate state is inspectable. A strict sepa-
+ration between semantic operations (LLM rea-
+soning) and syntactic operations (deterministic
+data flow) enables auditors to distinguish prob-
+abilistic inference from mechanical restructur-
+ing. The multi-format ecosystem (.ncds, .ncd,
+.ncn, .ncdn) allows developers, domain ex-
+perts, and auditors to inspect the same plan in
+formats suited to their needs. A four-phase
+compilation pipeline transforms natural lan-
+guage intent into executable JSON repositories,
+while a visual Canvas App provides real-time
+graph visualization and breakpoint debugging.
+We validate the approach through 100% accu-
+racy on base-X addition and self-hosted execu-
+tion of NormCode’s own compiler, demonstrat-
+ing that structured intermediate representations
+can bridge human intuition and machine rigor
+while maintaining full transparency.
+1
+Introduction
+Large language models have enabled AI systems
+that reason, plan, and act across complex multi-step
+*Corresponding author: xin.guan@psylensai.com
+†2400101083@mails.szu.edu.cn
+‡ruibo.zhang.23@ucl.ac.uk
+workflows. Frameworks like LangChain, AutoGPT,
+and AutoGen demonstrate how agents can decom-
+pose problems and coordinate actions through se-
+quences of LLM calls. Yet as these systems move
+into high-stakes domains—legal analysis, medi-
+cal reasoning, financial decision-making—a fun-
+damental question emerges: can we audit what
+these systems actually did?
+1.1
+The Problem: Opaque Workflows and
+Unauditable Reasoning
+For AI systems operating in regulated or high-
+consequence domains, auditability is not optional.
+The EU AI Act mandates decision traceability for
+high-impact systems. Professional standards in
+medicine and law require that practitioners justify
+their reasoning. Financial regulations demand that
+algorithmic decisions be explainable (Sai, 2025).
+Yet current LLM-based workflows are fundamen-
+tally opaque: when step 7 of a 10-step chain pro-
+duces an unexpected result, developers cannot eas-
+ily determine what step 7 actually saw.
+This opacity stems from context pollution—the
+accumulation of information across reasoning steps
+that causes models to hallucinate, confuse interme-
+diate outputs with inputs, and lose track of original
+task constraints. Empirical studies show that LLMs
+“forget” earlier facts in long conversations, leading
+to contradictory decisions on lengthy tasks (Chang
+et al., 2025; Modarressi et al., 2024). The com-
+pounding error effect is severe: small mistakes in
+early steps propagate through sequential reasoning,
+making complex multi-step solutions exponentially
+more error-prone than simple ones (Research and
+Fatemi, 2025).
+Even state-of-the-art models like GPT-4 strug-
+gle to maintain global consistency on complicated
+plans, often abandoning earlier constraints as con-
+text grows. Simply expanding context windows
+does not solve the problem—research shows that
+very long prompts can confuse models or cause
+1
+arXiv:2512.10563v3  [cs.AI]  2 Jan 2026
+
+
+them to focus on irrelevant details, actually reduc-
+ing correctness despite larger windows (Breunig,
+2025).
+Current approaches offer no path to auditabil-
+ity.
+Direct prompting bundles everything into
+one context window, creating cognitive over-
+load with no separation of concerns. Chain-of-
+Thought (CoT) prompting extends interaction step-
+by-step but does not isolate context between steps—
+hallucinated thoughts in early reasoning leak for-
+ward into later prompts. Agent frameworks like
+LangChain and AutoGPT provide orchestration
+but leave data flow implicit (Winland and Noble,
+2025; Wang et al., 2024). As practitioners note,
+debugging such agents often happens “in the dark,”
+requiring reverse-engineering of hidden state to
+find root causes (Patel, 2025). If developers can-
+not reconstruct what happened, auditors certainly
+cannot.
+1.2
+The Solution: Auditability Through
+Enforced Data Isolation
+NormCode makes AI workflows auditable by con-
+struction. The key mechanism is explicit data iso-
+lation: rather than letting context bleed implicitly
+between steps, NormCode defines plans of infer-
+ences—structured decompositions where each step
+is a self-contained logical unit with access only
+to explicitly passed inputs. If an early step pro-
+cesses a raw document and later steps receive only
+a summarized excerpt, no subsequent inference can
+accidentally peek at the original—it simply is not
+in that step’s input by design.
+This architectural choice produces three forms
+of auditability. Input auditability: for any step,
+you can answer “what exactly did this step see?”
+by inspecting its explicitly declared inputs. Pro-
+cess auditability: the separation between semantic
+operations (LLM reasoning) and syntactic opera-
+tions (deterministic data flow) lets you trace exactly
+which steps involved probabilistic inference and
+which were mechanical restructuring. Output au-
+ditability: every intermediate result is stored and
+inspectable, creating a complete audit trail from
+inputs to conclusions.
+This approach aligns with emerging strategies in
+advanced agent design. Experts advocate isolating
+context into separate threads or sub-agents, each
+handling narrow subtasks with only relevant data,
+rather than one monolithic agent juggling a com-
+bined context (Ruan, 2024). Recent work on exe-
+cution isolation (e.g., IsolateGPT) proposes sand-
+boxing LLM-based applications to prevent unau-
+thorized data access (Wu et al., 2025). NormCode
+builds this isolation into the language itself—not
+as a guideline but as an enforced rule of the pro-
+gramming model, guaranteeing that every execu-
+tion produces a verifiable audit trail.
+1.3
+Contributions
+This paper presents NormCode, a semi-formal lan-
+guage and execution framework that makes AI plan-
+ning auditable by construction. Our contributions
+are as follows.
+First, we introduce an auditable intermediate
+representation for AI planning based on inference
+decomposition and explicit data flow. The represen-
+tation uses tensor-structured references with named
+axes to organize data flow precisely, ensuring that
+every step’s inputs and outputs are fully traceable.
+Second, we establish semantic/syntactic sep-
+aration as a clean architectural distinction be-
+tween LLM-driven operations (expensive, non-
+deterministic) and data-restructuring operations
+(free, deterministic). This separation enables au-
+ditors to distinguish probabilistic reasoning from
+mechanical data routing, supporting precise cost
+and reliability attribution.
+Third, we provide a multi-format ecosys-
+tem (.ncds for draft authoring, .ncd for for-
+mal execution, .ncn for natural language verifi-
+cation, .ncdn for hybrid editing) that enables dif-
+ferent stakeholders—developers, domain experts,
+auditors—to inspect the same underlying logic in
+formats suited to their needs.
+Fourth, we describe a four-phase compila-
+tion pipeline (Derivation, Formalization, Post-
+Formalization, Activation) that transforms natural
+language intent into executable JSON repositories
+through progressive refinement, with manual re-
+view opportunities at each phase.
+Fifth, we present a working implementation in-
+cluding an orchestrator with dependency-driven
+scheduling, SQLite-backed checkpointing, and
+loop management, as well as a visual Canvas App
+debugger built on React Flow and FastAPI provid-
+ing real-time graph visualization, breakpoint debug-
+ging, and multi-agent configuration—making the
+audit trail not just available but visually explorable.
+Sixth, we validate the approach through two
+demonstrations: (a) 100% accuracy on base-X
+addition tasks across arbitrary digit lengths, and
+(b) self-hosted execution of NormCode’s own com-
+piler pipeline, demonstrating both correctness and
+2
+
+
+expressive completeness.
+The rest of this paper is organized as follows:
+Section 2 reviews related work in AI planning,
+agent frameworks, and intermediate representa-
+tions. Sections 3-4 describe the NormCode lan-
+guage and reference system. Section 5 articulates
+the design philosophy. Sections 6-7 detail the ex-
+ecution model and compiler ecosystem. Section
+8 presents case study evaluations. Section 9 dis-
+cusses limitations and future work, and Section 10
+concludes.
+2
+Background and Related Work
+NormCode builds on three research traditions: clas-
+sical AI planning, modern LLM-based agents, and
+intermediate representations for structured reason-
+ing. This section positions NormCode within this
+landscape.
+2.1
+Classical Planning and Structured Task
+Decomposition
+NormCode inherits its hierarchical task decompo-
+sition from classical AI planning. The seminal
+STRIPS system introduced representing actions
+with preconditions and effects for goal-directed
+problem solving. The Planning Domain Definition
+Language (PDDL) emerged as a standardized for-
+malism for encoding planning domains—providing
+structured symbolic blueprints (predicates, actions,
+goals) that automated planners use to generate valid
+action sequences.
+Hierarchical Task Network (HTN) planning is
+particularly relevant to NormCode’s design (Erol
+et al., 1994). HTN represents tasks in a hierarchy
+where high-level goals are recursively decomposed
+into lower-level primitive actions. This decom-
+position mirrors NormCode’s approach of break-
+ing complex inferences into hierarchies of sub-
+inferences, each with explicit dependencies. How-
+ever, while HTN planning operates in fully sym-
+bolic domains with deterministic actions, Norm-
+Code extends this paradigm to handle probabilis-
+tic reasoning (via LLM calls) within a structured
+framework.
+2.2
+Modern LLM-Based Agent Frameworks
+Recent agent frameworks demonstrate how LLMs
+can plan and act through iterative reasoning. Re-
+Act (Yao et al., 2022) interleaves reasoning traces
+with action outputs, allowing models to “think
+aloud” while interfacing with tools.
+Reflex-
+ion (Shinn et al., 2023) extends this with self-
+evaluation: after each trial, the agent generates
+linguistic feedback stored as episodic memory, en-
+abling iterative self-correction without parameter
+updates.
+Frameworks like LangChain and AutoGPT
+provide orchestration for multi-step LLM work-
+flows (Winland and Noble, 2025).
+Lang-
+Graph (IBM, 2025) explicitly models agent work-
+flows as directed graphs of nodes (decisions, tool
+uses, conditionals), increasing transparency over
+linear chains. However, these frameworks leave
+data flow largely implicit—the system manages
+prompts and memory behind the scenes, making it
+difficult to audit what each step actually “sees.”
+NormCode differs in enforcing explicit data
+isolation. While LangGraph provides structural
+transparency (the graph topology is visible), Norm-
+Code provides data-flow transparency: every input
+to every step is explicitly declared. When debug-
+ging a failure at step 7, NormCode allows precise
+inspection of step 7’s inputs, not just its position in
+the workflow graph.
+2.3
+Intermediate Representations and
+Structured Reasoning
+The concept of an intermediate representation (IR)
+between high-level intent and low-level execution
+has deep roots in computer science (contributors).
+In compilers, an IR (e.g., LLVM IR) abstracts away
+machine details, enabling optimization passes inde-
+pendent of source language. A good IR is accurate
+(captures all essential information) and modular
+(supports transformation without loss of meaning).
+In LLM research, structured reasoning traces
+serve analogous purposes.
+Chain-of-Thought
+(CoT) prompting (Wei et al., 2022) encourages
+models to generate step-by-step reasoning, signifi-
+cantly improving complex problem-solving. Tree-
+of-Thought (ToT) (Yao et al., 2023) generalizes
+this by exploring branching paths and backtrack-
+ing. Graph-of-Thought (GoT) (Han and Zhao,
+2023) allows non-linear exploration of reasoning
+networks.
+NormCode can be viewed as an IR for AI plan-
+ning that combines these insights: it provides a
+structured “language of thought” that is simultane-
+ously human-authored (like natural CoT), machine-
+executable (like compiled code), and inspectable
+(like a computation graph).
+Recent work on
+“Abstractions-of-Thought” (DeLorenzo et al., 2025)
+and “Blueprint First” approaches (Qiu et al., 2025)
+3
+
+
+uses structured IRs to separate functional decompo-
+sition from syntax in LLM-based hardware design—
+a similar philosophy to NormCode’s separation of
+reasoning structure from execution details.
+Critically, NormCode’s IR supports progressive
+formalization: plans can start as rough sketches
+and be iteratively refined. This contrasts with tra-
+ditional IRs (which demand full formalization up-
+front) and free-form CoT (which lacks enforceable
+structure).
+2.4
+Semi-Formal Languages and the
+Formalization Spectrum
+NormCode occupies a deliberate position between
+natural language and formal specification. Pure
+natural language is expressive but ambiguous; fully
+formal languages (PDDL, code) are unambiguous
+but rigid. Semi-formal languages strike a balance,
+imposing structure to reduce ambiguity while re-
+maining accessible to humans (Silva, 2025).
+In requirements engineering, UML provides
+semi-formal diagrams that allow automated consis-
+tency checks while staying understandable to stake-
+holders. NormCode follows this philosophy for AI
+planning: the language is strict enough for reliable
+compilation and execution, but flexible enough that
+humans can author plans in near-natural language
+(.ncds format) and verify them as readable narra-
+tives (.ncn format).
+The name “NormCode” references normative
+reasoning—the study of obligations, permissions,
+and prohibitions in deontic logic (Stanford Ency-
+clopedia of Philosophy, 2021). While NormCode
+does not explicitly encode deontic modalities, the
+spirit of “norms” suggests rules that agents should
+follow. Recent work evaluates LLMs’ consistency
+in handling normative constraints (Sordoni et al.,
+2025), and NormCode’s design facilitates such eval-
+uation by making every reasoning step explicit and
+auditable.
+Why semi-formal for LLMs? Models excel
+at natural language but struggle with fully formal
+syntax—small errors break rigid parsers. A semi-
+formal format provides structural guidance (reduc-
+ing ambiguity) without unforgiving exactness, al-
+lowing LLMs to generate valid plans more reliably.
+This pragmatic balance enables the progressive for-
+malization lifecycle that NormCode supports.
+3
+The NormCode Language
+NormCode is designed around a single fundamen-
+tal unit: the inference. An inference is not merely a
+function call; it is a structured assertion: “Concept
+A is obtained by performing Operation B on Inputs
+C and D.” This structure enforces the data isolation
+required for reliable AI planning.
+3.1
+Core Syntax: The Inference Structure
+A NormCode plan is a hierarchy of inferences de-
+fined through three primary concept markers. The
+<= marker denotes a Functional Concept, which
+defines the operation (the “verb”) and triggers an
+agent sequence. The functional concept’s reference
+holds a norm—a paradigm or execution strategy
+that configures how the agent processes the oper-
+ation. The <- marker denotes a Value Concept,
+which defines the data (the “noun”) holding input
+or output state. The <* marker denotes a Context
+Concept, which provides in-loop state or carried
+data across iterations.
+A typical inference in the .ncds (NormCode
+Draft Straightforward) format appears as:
+<- summary
+<= summarize the text
+<- raw document
+This is read bottom-up: “The raw document
+is used to summarize the text, producing the
+summary.” The indentation defines the dependency:
+the parent (summary) cannot be resolved until its
+children are complete.
+3.2
+The Multi-Format Ecosystem
+NormCode acknowledges that humans, compilers,
+and reviewers have different needs. The language
+exists in multiple isomorphic formats that serve
+distinct purposes throughout the development life-
+cycle.
+The .ncds (Draft Straightforward) format
+serves as the human authoring format. It uses natu-
+ral language with minimal structural markers and
+prioritizes speed and readability. Authors start here
+when creating new plans, focusing on rough logic
+and concept structure without worrying about for-
+mal syntax details.
+The .ncd (Draft) format is the formal intermedi-
+ate representation generated by the compiler. It re-
+solves all ambiguities by assigning semantic types,
+fixing value orders with explicit bindings, and gen-
+erating unique flow indices for every step. This
+4
+
+
+machine-parsable format contains all technical de-
+tails required for direct execution by the orchestra-
+tor.
+The .ncn (Natural) format provides a compiler-
+generated narrative that translates the formal .ncd
+back into plain English. For example, an inference
+might render as “(OUTPUT) The summary (AC-
+TION) is obtained by summarizing the document
+(INPUT) using the raw document.” This format
+allows non-technical domain experts to verify the
+plan’s logic before execution without understand-
+ing the formal syntax.
+The .ncdn (Hybrid) format combines both .ncd
+and .ncn views in a single editor interface. This
+enables developers to see the formal syntax along-
+side its natural language interpretation, facilitating
+review and modification.
+Additionally, the .nci.json format provides a
+JSON representation of the inference structure,
+showing clear flow relationships between concepts.
+The final .concept.json and .inference.json for-
+mats constitute the executable repositories loaded
+by the orchestrator, containing separated concept
+definitions and inference working interpretations
+respectively.
+The typical workflow proceeds from authoring
+in .ncds, through compiler-driven formalization to
+.ncd with its .ncn companion, then to structured
+.nci.json, and finally to the separated executable
+repositories. The compiler handles most transfor-
+mations automatically, allowing users to focus on
+writing clear plans.
+3.3
+Semantic Concept Types
+NormCode types are semantic, not just structural.
+They tell the agent what the data represents in the
+world, and each concept type is backed by a Ref-
+erence—a multi-dimensional tensor that holds its
+content.
+Non-Functional Entities represent the “nouns”
+and “states” of reasoning.
+Objects ({}) repre-
+sent discrete items such as files, queries, or results.
+Propositions (<>) represent boolean states or facts
+that can be true or false, often extracted from declar-
+ative clauses or conditions. Relations ([]) repre-
+sent collections or mappings, typically extracted
+from plurals or groupings. Subjects (:S:) repre-
+sent active agents responsible for executing logic,
+holding a “Body” of tools and capabilities.
+Functional Operations represent the “verbs”
+that transform data or evaluate states. Their ref-
+erences hold a norm that specifies the paradigm
+or execution strategy, bridging the Subject (agent
+with tools) and Object (data). Imperatives (({})
+or ::()) represent commands that change state
+or produce new data, invoking the Imperative Se-
+quence. Judgements (<{}>) represent evaluations
+that return truth values, invoking the Judgement
+Sequence with an additional truth assertion step.
+The critical distinction is that only functional
+concepts (imperatives and judgements) invoke
+LLM calls. Everything else is data structure manip-
+ulation.
+3.4
+Syntactic Operators
+While semantic concepts invoke AI reasoning, syn-
+tactic operators manage the plan’s data flow de-
+terministically. These operators constitute a ten-
+sor algebra for AI planning, reshaping, combining,
+traversing, and gating references without examin-
+ing actual content. This makes them free (no LLM
+calls), deterministic (same input produces same
+output), and auditable (exact structural changes are
+traceable).
+The Assigning family ($) controls which data
+flows forward. The identity operator ($=) merges
+two concept names as aliases. The abstraction op-
+erator ($%) reifies a literal definition as data. The
+specification operator ($.) selects the first valid
+result from candidates. The continuation operator
+($+) appends data along a specified axis. The selec-
+tion operator ($-) extracts elements by index, key,
+or unpacking.
+The Grouping family (&) controls how multiple
+references combine. The group-in operator (&[{}])
+bundles inputs into a labeled dictionary-like struc-
+ture where items retain their names as keys. The
+group-across operator (&[#]) flattens inputs into a
+unified list where items lose their source identity.
+The Timing family (@) controls execution flow.
+The conditional operator (@:’) executes only if a
+condition is true. The negated conditional (@:!)
+executes only if a condition is false. The sequenc-
+ing operator (@.) ensures execution occurs after a
+dependency completes.
+The Looping family (*) controls iteration. The
+iterate operator (*.) traverses a collection element-
+by-element while carrying state forward across it-
+erations. Loop variables use version markers: *1
+for the current value in loop 1, *-1 for the previous
+iteration’s value, and *0 for the initial value before
+any iteration.
+All syntactic operators share a unified modifier
+system: %> indicates source (input), %< indicates
+5
+
+
+target (output), %: indicates axis (dimension), %ˆ
+indicates carry (state), %@ indicates index (position),
+and %+ indicates creation of a new axis.
+3.5
+Plan Addressability
+Every step in a NormCode plan is assigned a unique
+Flow Index (e.g., 1.2.3) based on its position in
+the hierarchical structure. Each number represents
+a level in the tree, with deeper nesting producing
+longer indices. This indexing system enables pre-
+cise debugging where errors can be localized to
+exact steps, targeted intervention where execution
+can be paused at specific points, auditing where
+inputs for any step can be inspected, and cross-
+referencing where steps can explicitly depend on
+others by index.
+Flow indices are generated during the Formaliza-
+tion phase and persist through execution, providing
+stable addresses that survive plan modifications and
+enabling checkpoint-based resumption.
+3.6
+Semi-Formality: Balancing Structure and
+Flexibility
+NormCode’s “semi-formal” nature operates in two
+complementary ways that address the fundamental
+tension between expressiveness and precision.
+First, NormCode supports Conceptual Preser-
+vation through Progressive Formalization. Natu-
+ral language content is allowed within formal struc-
+ture, enabling users to write ::(summarize the
+text) without immediately defining implementa-
+tion details. The structure formalizes how concepts
+relate to others (dependencies and data flow) while
+leaving content flexible until execution. Plans can
+start as rough sketches and be iteratively refined
+into rigorous logic, supporting exploration before
+commitment.
+Second, NormCode enforces Strictness Only
+Where Necessary. Syntax is strict precisely to
+the extent required for compilation: establishing
+unique concept identities, resolving data flow de-
+pendencies, and extracting working interpretations
+that determine which agent sequence to invoke.
+Beyond these requirements, semantic content
+can remain in natural language. This prevents the
+brittleness of traditional formal methods where a
+single syntax error invalidates an entire specifica-
+tion, while providing sufficient structure for reli-
+able orchestration. The name “NormCode” refer-
+ences normative reasoning—rules and norms that
+agents must follow. Each step follows the norm of
+“only see what you’re explicitly given,” and adher-
+ence to these norms is structurally verifiable.
+4
+The Reference System
+While concepts define the meaning of data, the Ref-
+erence System provides the machinery for storing
+and manipulating it. In NormCode, every piece
+of data—from a single file path to a collection of
+user queries—is encapsulated in a Reference, a
+structure inspired by multi-dimensional tensors.
+4.1
+References as Tensors with Named Axes
+Unlike standard lists or dictionaries, a Reference or-
+ganizes data along named axes (e.g., [’student’,
+’assignment’] rather than [0, 1]). This allows
+operations to be robust to changes in data shape.
+A collection of documents is not just a list; it
+is a tensor with a document axis. If we process
+each document to extract three features, the result
+is automatically a 2D tensor with [’document’,
+’feature’] axes. This explicit structure prevents
+the “shape mismatch” errors common in ad-hoc
+prompt chains.
+4.2
+Perceptual Signs: The “Lazy Evaluation”
+of AI
+Carrying large data payloads (e.g., full text of
+books) through every step of a plan is inefficient
+and creates context pollution. NormCode solves
+this with Perceptual Signs: lightweight pointers
+that represent data without loading it.
+A
+sign
+follows
+the
+format
+%{Norm}ID(Signifier). For example:
+%{file_location}a1b(data/contract.pdf)
+This tells the agent: “There is an object here
+(ID a1b). To perceive it, use your FileSystem
+faculty (the file_location norm) on the path
+data/contract.pdf.”
+The actual data is only
+loaded (“transmuted”) at the exact moment an infer-
+ence needs to operate on it (the MVP step). Until
+then, the system passes around the lightweight sign,
+ensuring efficiency.
+4.3
+Semantic vs. Syntactic Operations on
+References
+The distinction between semantic and syntactic
+operations is implemented at the Reference level
+through a layered algebra.
+1.
+Syntactic Operations (Data Plumbing):
+Operations like Reshaping (slice, append) and
+Combining (cross_product, join) manipulate
+6
+
+
+the structure of the tensor without looking at the
+content. They are instant, deterministic, and cost
+zero tokens.
+2. Semantic Operations (AI Reasoning): The
+Cross-Action (cross_action(functions_ref,
+values_ref)) is the bridge between structure and
+meaning, applying an LLM-prepared function to
+values element-by-element.
+By restricting LLMs to cross_action and han-
+dling all other data movement via syntactic op-
+erators, NormCode ensures that AI reasoning is
+applied only where strictly necessary.
+5
+Design Philosophy
+NormCode’s design is guided by three core prin-
+ciples that address a fundamental tension in AI
+systems: the need for human oversight in processes
+that are increasingly automated.
+5.1
+Dual-Readability: Bridging Human and
+Machine
+AI planning systems face a dilemma. Humans think
+in natural language; machines require unambigu-
+ous instructions. Most systems resolve this by forc-
+ing humans to write in a machine format (tedious,
+error-prone) or by letting machines interpret natural
+language (opaque, unauditable).
+NormCode sidesteps this dilemma through its
+multi-format ecosystem. The .ncds format en-
+ables fast, intuitive authoring in natural language
+for human authors. The .ncd format provides un-
+ambiguous, machine-executable representation for
+the compiler and orchestrator. The .ncn format
+offers a readable narrative for verification before
+execution by human reviewers. The .ncdn hybrid
+format combines both views for developers work-
+ing in the editor.
+The key insight is that these formats are not
+translations—they are the same plan at different
+levels of explicitness. An author writes .ncds, the
+compiler enriches it to .ncd (adding types, bind-
+ings, flow indices), and a reviewer reads .ncn to
+verify the logic. No information is lost; no ambi-
+guity is introduced. This allows domain experts
+who may not understand formal syntax to audit AI
+workflows before they run.
+5.2
+Progressive Formalization: From Sketch
+to Structure
+Traditional formal methods demand rigor upfront:
+you must specify everything before you can execute
+anything. This is impractical for AI workflows,
+where the “right” structure often emerges through
+experimentation.
+NormCode supports Progressive Formaliza-
+tion—a lifecycle where plans start loose and
+tighten over time. During the Exploration Phase,
+authors write rough .ncds sketches where concepts
+can be vague (“process the document somehow”)
+and structure captures dependencies without imple-
+mentation details. During the Refinement Phase,
+authors run the plan, observe failures, and tighten
+specific inferences by adding type constraints, fix-
+ing value orderings, and making concepts explicit.
+During the Production Phase, the plan is rigorous
+with every step auditable and checkpointing reli-
+able.
+This lifecycle is enabled by the semi-formal na-
+ture of NormCode: the formalism only demands
+what the compiler needs. Everything else can re-
+main flexible until you choose to lock it down.
+Intervenability is a key feature throughout this
+lifecycle. Because every step has a unique flow
+index, a user or automated system can pause exe-
+cution before a specific step, inspect the inputs a
+step will receive, modify a concept’s reference be-
+fore resuming, or fork a run to explore alternative
+branches. The Canvas App provides visual tools
+for all these interventions.
+5.3
+Semantic vs. Syntactic Separation: Cost
+and Reliability Tracing
+Perhaps the most practically important design deci-
+sion in NormCode is the clean separation between
+operations that invoke AI reasoning and operations
+that simply move data around.
+Semantic operations include imperatives and
+judgements, require LLM calls, consume tokens,
+and are non-deterministic. These operations create
+new information through reasoning, generation, or
+evaluation. Syntactic operations include grouping,
+assigning, timing, and looping, require no LLM
+calls, are free, and are fully deterministic. These
+operations reshape existing information through
+tensor algebra without examining content.
+In a typical NormCode plan, the majority of
+steps are syntactic.
+They collect inputs, select
+outputs, iterate over collections, and branch on
+conditions—all without any AI involvement. Only
+the “thinking” steps (imperatives and judgements)
+invoke an LLM.
+This separation provides three crucial capabil-
+ities. Cost Visibility means you know exactly
+7
+
+
+which steps burn tokens, allowing optimization ef-
+forts to focus on expensive operations. Reliability
+Mapping means syntactic steps never fail unex-
+pectedly, so if a plan fails, the cause is localized to
+a semantic step. Auditability means for any execu-
+tion, you can generate a report: “Steps 1.1, 1.3, 2.2
+called the LLM; all other steps were deterministic
+data routing.”
+For high-stakes domains (legal, medical, finan-
+cial), this transparency is often a regulatory require-
+ment. NormCode makes it structural rather than
+aspirational.
+5.4
+When to Use NormCode
+NormCode adds structure, and structure has costs.
+The framework is not appropriate for every use
+case.
+Strong fit scenarios include multi-step work-
+flows with five or more LLM calls where isolation
+and debuggability pay off, auditable AI applica-
+tions in legal, medical, or financial domains where
+you must prove what each step saw, long-running
+resumable workflows where built-in checkpoint-
+ing adds value, and human-AI collaboration where
+domain experts need to inspect and modify plans.
+Poor fit scenarios include quick prototypes with
+one or two LLM calls where overhead exceeds ben-
+efit, simple Q&A chatbots where direct prompting
+suffices, and real-time applications where orches-
+tration latency is unacceptable.
+The sweet spot is complex, multi-step workflows
+where you need to know exactly what happened at
+each step—and where a failure in step 7 should not
+corrupt the reasoning in step 12. This is precisely
+the scenario where context pollution in traditional
+approaches causes the most damage, and where
+NormCode’s enforced data isolation provides the
+most value.
+6
+The Execution Model
+While the NormCode language defines what a plan
+should do, the execution model defines how and
+when it happens. This section describes the Or-
+chestrator (the central execution engine), Agent
+Sequences (execution pipelines for each infer-
+ence type), Paradigms (declarative configuration
+of agent behavior), and the Canvas App (a visual
+debugging environment).
+6.1
+The Orchestrator
+The Orchestrator is the runtime engine of Norm-
+Code, managing plan execution through depen-
+dency tracking, inference scheduling, and state
+maintenance. Its architecture centers on three core
+components.
+The Waitlist maintains a prioritized queue of all
+inferences in the plan, sorted by flow index. This
+defines the structural order of execution and pro-
+vides a complete manifest of work to be performed.
+The Blackboard serves as a real-time state
+tracker where every concept and inference has a
+status: pending (not yet started), in_progress
+(currently executing), completed (finished success-
+fully), or skipped (bypassed due to timing condi-
+tions). The Blackboard is the single source of truth
+for execution state.
+The Repositories consist of the Concept Repos-
+itory (storing References for each concept) and
+the Inference Repository (storing configuration for
+each inference including which sequence to run
+and which paradigm to use).
+The Orchestrator operates in cycles. In each
+cycle, it scans the Waitlist for pending inferences
+whose dependencies are met (all input concepts are
+completed), executes ready inferences by invoking
+the appropriate Agent Sequence, and updates the
+Blackboard and Concept Repository with results.
+This dependency-driven scheduling ensures that
+inferences run only when their inputs are ready and
+that failures in one branch do not corrupt unrelated
+branches.
+6.2
+Persistence and Checkpointing
+For long-running or resumable workflows, the Or-
+chestrator provides a robust checkpointing system
+backed by SQLite. Each execution is assigned a
+unique Run ID, and the full state (Blackboard, Ref-
+erences, Workspace) is saved at the end of each
+cycle as a snapshot.
+The system supports multiple resume modes for
+handling runs that restart after code changes. The
+PATCH mode (default) performs a smart merge, re-
+running inferences whose definitions have changed
+while keeping valid cached states. The OVERWRITE
+mode trusts the checkpoint entirely without rec-
+onciliation. The FILL_GAPS mode only populates
+missing data from the current repository defaults.
+Fork functionality allows loading a past state
+while starting a new run history, useful for branch-
+ing experiments, retrying with modified logic, or
+A/B testing different configurations.
+8
+
+
+6.3
+Agents and the AgentFrame
+In NormCode, an Agent is represented by the Sub-
+ject Concept (:S:) and constitutes a concrete con-
+tainer of capability. When a functional concept
+executes, it does so within an Agent’s context, ac-
+cessing that agent’s specific tools and configura-
+tions.
+The AgentFrame class realizes agents in the
+implementation, containing three essential compo-
+nents. The Body provides the agent’s “toolbox”—
+a registry of available tools such as LLM clients,
+file system access, and Python executors. The Se-
+quences define the logic pipelines the agent can
+run, including imperative, judgement, grouping, as-
+signing, timing, and looping. The Mode specifies
+the interpretation style, such as composition mode
+for paradigm-driven execution.
+This design enables multi-agent planning where
+different Subjects (e.g., :coder_agent:
+and
+:reviewer_agent:) can have different tool bodies
+and capabilities even within the same plan. Infer-
+ences can be assigned to specific agents via pattern
+rules matching flow indices, concept names, or se-
+quence types, or through explicit assignment of
+specific inferences to agent identifiers.
+6.4
+Agent Sequences: The Execution Pipelines
+Each inference type triggers a specific Agent
+Sequence—a standardized pipeline of steps that
+follows a cognitive cycle of Perception, Actuation,
+and (for judgements) Assertion.
+Semantic Sequences invoke LLM calls to cre-
+ate new information. The Imperative Sequence
+follows seven steps: IWI (Input Working Interpre-
+tation) parses syntax and determines the paradigm;
+IR (Input Reference) retrieves references for all
+input concepts; MFP (Model Function Perception)
+transforms the functional definition into an exe-
+cutable function using paradigms; MVP (Memory
+Value Perception) retrieves and transmutes percep-
+tual signs into actual data; TVA (Tool Value Actu-
+ation) applies the prepared function to perceived
+values; OR (Output Reference) creates or updates
+the concept’s reference with results; and OWI (Out-
+put Working Interpretation) updates execution state
+and logs completion.
+The Judgement Sequence extends the impera-
+tive sequence with an additional step: TIA (Tool
+Inference Assertion) checks if TVA results satisfy
+truth conditions by applying a quantifier (all, any,
+exists) and evaluating a condition, collapsing the
+result into a boolean reference.
+Syntactic Sequences perform deterministic data
+manipulation without LLM involvement. The As-
+signing Sequence (steps IWI-IR-AR-OR-OWI)
+handles variable assignment and selection through
+specification (selecting first valid), continuation
+(appending along an axis), or derelation (struc-
+tural extraction). The Grouping Sequence (IWI-
+IR-GR-OR-OWI) collects and combines data us-
+ing and-in (labeled bundling) or or-across (flat
+concatenation). The Timing Sequence (IWI-T-
+OWI) controls conditional execution by checking
+progress conditions, if-conditions, or negated if-
+conditions against the Blackboard. The Looping
+Sequence (IWI-IR-GR-LR-OR-OWI) manages it-
+eration through retrieving next elements, storing
+iteration results in workspace, and combining all
+looped elements upon completion.
+These syntactic sequences are instant, free, and
+fully deterministic, handling all data plumbing so
+that semantic operations receive exactly what they
+need.
+6.5
+Paradigms: Configuring Agent Behavior
+A Paradigm is a declarative JSON specification
+that configures how an agent executes a semantic
+inference, bridging the gap between abstract intent
+(“summarize this document”) and concrete execu-
+tion (which prompt template, which LLM, which
+output format).
+Paradigms separate configuration into two
+phases following a vertical/horizontal split. Verti-
+cal Steps occur during the MFP phase at construc-
+tion time, resolving tool affordances and producing
+callable functions. These steps load LLM clients,
+configure model settings, and prepare generation
+functions from the agent’s body. Horizontal Steps
+occur during the TVA phase at runtime, passing
+actual data values through the pre-configured func-
+tions. These steps receive prompts from value con-
+cepts, execute LLM calls, extract results, and op-
+tionally save outputs.
+Paradigm files follow a self-documenting
+naming convention: h_ prefixes indicate horizontal
+inputs, v_ prefixes indicate vertical inputs, c_
+prefixes indicate composition steps,
+and o_
+prefixes indicate output formats.
+For example,
+h_PromptTemplate_SavePath-c_GenerateThinkJson-
+Extract-Save-o_FileLocation.json describes
+a paradigm that takes a prompt template and
+save path as horizontal inputs, composes LLM
+generation with JSON extraction and file saving,
+9
+
+
+and outputs a file location pointer.
+Mathematically, paradigm execution can be for-
+malized as: let S be the Agent’s state, Vspec be the
+vertical specification, Hplan be the horizontal plan,
+and V be runtime values. The output is computed
+as:
+O = [FC(FV (S, Vspec), Hplan)](V)
+(1)
+where FV is the vertical function (MFP phase)
+producing tool handles T , FC is the composition
+function compiling T and Hplan into function Φ,
+and Φ(V) is the horizontal execution (TVA phase)
+producing output O. This clean separation allows
+paradigms to be reused across different inferences
+and agents.
+6.6
+The Canvas App: Visual Debugging
+The NormCode Graph Canvas App provides a vi-
+sual, interactive environment for executing, debug-
+ging, and auditing NormCode plans. Built on React
+Flow for graph visualization and FastAPI for the
+backend, it transforms NormCode from “run and
+hope” to “observe and control.”
+The Canvas App enables users to visualize the
+entire inference graph before execution, with se-
+mantic functions shown in purple and semantic
+values in blue, while syntactic operations appear in
+gray. Users can watch execution progress in real-
+time through WebSocket-streamed events, with
+node status indicators showing pending (gray), run-
+ning (blue pulsing), completed (green), failed (red),
+or skipped (striped) states.
+The debugging capabilities include setting break-
+points on specific flow indices to pause execution
+at critical points, stepping through inferences one
+at a time, and inspecting tensor data at any node
+through a TensorInspector component that handles
+N-dimensional viewing with table, list, or JSON
+modes.
+The multi-agent configuration panel allows reg-
+istering multiple agents with different LLM models
+(such as qwen-plus, gpt-4o, or claude-3), tool set-
+tings, and paradigm directories. Inferences can be
+mapped to specific agents through pattern rules or
+explicit assignments, with a default agent handling
+unmatched inferences.
+Tool call monitoring captures all LLM calls
+with prompts and responses, file system operations,
+Python script executions, and user input requests in
+real-time. The checkpoint panel enables resuming
+from or forking past execution states.
+6.7
+Command-Line Interface
+For headless execution, the CLI orchestrator pro-
+vides essential commands: run starts a fresh execu-
+tion with specified concept and inference reposito-
+ries; resume continues from the latest checkpoint
+with an optional Run ID; fork branches from a past
+state with a new run ID; and list-runs shows all
+tracked executions in the database.
+7
+The Compiler Ecosystem
+The NormCode compiler transforms human-
+authored plans into executable artifacts through
+a multi-stage pipeline. Each stage progressively
+adds rigor while preserving opportunities for hu-
+man review, following a progressive formalization
+philosophy where each phase answers a specific
+question while preserving the semantic intent of
+previous phases.
+7.1
+The Four-Phase Pipeline
+The current implementation follows a four-phase
+pipeline that transforms natural language intent
+into executable JSON repositories. The compiler
+handles most transformations automatically, with
+optional manual review between phases.
+Phase 1: Derivation takes natural language in-
+put and produces .ncds (draft straightforward) out-
+put. This phase answers the question “WHAT are
+we trying to do?” by identifying concepts (data en-
+tities), identifying operations (actions to perform),
+extracting dependencies (which concepts feed into
+which operations), and creating hierarchical tree
+structure. The derivation phase may use LLM assis-
+tance for decomposing complex natural language
+instructions into structured concepts.
+Phase 2: Formalization takes .ncds input and
+produces .ncd (formal) with an .ncn compan-
+ion. This phase answers “IN WHAT ORDER and
+WHICH SEQUENCE?” by assigning unique flow
+indices (e.g., 1.2.3) to every step, determining se-
+quence types for each inference (semantic types
+like imperative and judgement, or syntactic types
+like assigning, grouping, timing, and looping), re-
+solving concept identity and value bindings using
+markers like <:{1}>, and adding metadata com-
+ments for sequence markers and flow indices.
+Phase 3: Post-Formalization takes the formal
+.ncd and produces an enriched .ncd with full an-
+notations. This phase answers “HOW and WITH
+WHAT RESOURCES?” through three sub-phases.
+The Re-composition sub-phase maps abstract intent
+10
+
+
+Figure 1: The NormCode Canvas App visual debugging environment. The graph visualization (center) shows the
+inference flow with semantic operations in purple/blue and syntactic operations in gray. The left panel provides
+agent configuration and tool call monitoring. The right panel displays node details with tensor inspection, reference
+data, and execution state. Progress indicators show real-time execution status with 18/20 nodes completed.
+to the normative context of execution by adding
+paradigm IDs, perception norms for vertical and
+horizontal inputs, body faculty specifications, and
+output structure hints. The Provision sub-phase fills
+in concrete resources by specifying file locations
+for ground data and paths to prompts or scripts.
+The Syntax Re-confirmation sub-phase confirms
+reference structure by declaring axis names, tensor
+shapes, element types, and filter documentation for
+tensor coherence.
+Phase 4: Activation takes the enriched .ncd
+and produces the executable .concept.json and
+.inference.json repositories.
+This phase an-
+swers “WHAT DOES THE ORCHESTRATOR
+NEED?” by extracting concept definitions with
+types, axes, and ground values; extracting in-
+ference definitions with function concepts, value
+concepts, and context concepts; and generating
+working_interpretation dictionaries contain-
+ing exactly what each sequence’s IWI step expects.
+Each phase includes an opportunity for manual
+review, enabling human intervention before the
+next stage proceeds. This supports progressive
+formalization where the plan tightens incremen-
+tally rather than requiring complete specification
+upfront.
+7.2
+Derivation: Natural Language to
+Structure
+The derivation phase transforms unstructured nat-
+ural language into hierarchical inference structure.
+For complex instructions, this may use a recursive
+decomposition algorithm where the entire instruc-
+tion is wrapped as a top-level concept with a source
+text annotation, un-decomposed concepts are iter-
+atively identified and questions formulated about
+their source text, question types are classified and
+mapped to appropriate NormCode operators, and
+decomposition continues until no source annota-
+tions remain.
+This process can be guided by a taxonomy of
+question types that map to specific NormCode
+structures. Methodology declarations produce func-
+tional concepts with action semantics. Conditional
+dependencies produce timing operators. Iterative
+requirements produce looping operators. Collec-
+tion requirements produce grouping operators.
+7.3
+Formalization: Adding Structural Rigor
+Once structure is established, formalization adds
+precision required for execution. Serialization re-
+frames each step as an output-effect relationship,
+making explicit that a concept is produced by apply-
+ing a function to inputs. Redirection links abstract
+references to concrete implementations through
+annotations specifying prompts, scripts, and file
+locations. Flow index generation assigns unique hi-
+erarchical addresses to every line, enabling precise
+identification and cross-referencing.
+The result is an .ncd file where every inference
+has explicit inputs, explicit outputs, and a unique
+identity. The companion .ncn file translates this
+11
+
+
+structure back into natural language for verification
+by domain experts who may not understand the
+formal syntax.
+7.4
+Post-Formalization: Enriching for
+Execution
+Post-formalization prepares the plan for execution
+by adding configuration and grounding that the
+orchestrator requires. This phase operates within
+a normative context defined by the agent’s Body
+(available tools), Paradigms (action norms stored
+in configuration files), and PerceptionRouter (per-
+ception norms for transmuting perceptual signs).
+Annotations added during post-formalization in-
+clude paradigm specifications (%{norm_input})
+identifying which paradigm file to load, perception
+norm specifications for vertical and horizontal in-
+puts, body faculty specifications identifying which
+tool to invoke, and reference structure declarations
+specifying axes, shapes, and element types.
+7.5
+Activation: Generating Executable
+Repositories
+The final compilation stage transforms the enriched
+.ncd into two JSON repositories that the Orches-
+trator can load and execute.
+The
+Concept
+Repository
+(concept_repo.json)
+stores
+static
+defini-
+tions of all data entities. Each entry contains the
+concept name with semantic type markers, the type
+indicator, flags for ground concepts (pre-initialized
+with data) and final concepts (root outputs), initial
+reference data as perceptual signs where applicable,
+and reference axis names defining tensor structure.
+The
+Inference
+Repository
+(inference_repo.json)
+stores
+operational
+definitions. Each entry contains flow information
+with the unique index, the inference sequence
+type determining which pipeline executes, the
+concept to infer identifying the output, the function
+concept defining the operation, value concepts
+listing inputs, context concepts listing loop state,
+and
+crucially
+the
+working_interpretation
+dictionary.
+The working_interpretation is the critical
+output of activation, containing exactly what each
+sequence’s IWI step expects.
+For imperative
+sequences, this includes paradigm identification,
+value ordering, and optional value selectors for
+decomposing grouped concepts. For judgement
+sequences, it adds assertion conditions with quan-
+tifiers and truth values. For assigning sequences,
+it specifies the marker type, source, destination,
+and any axis information. For grouping sequences,
+it specifies the grouping mode, axes to collapse,
+and any protected axes. For timing sequences, it
+specifies the condition type and referenced concept.
+For looping sequences, it specifies the loop base,
+current element, group base, in-loop concepts, and
+concepts to infer.
+7.6
+Translation: Generating
+Human-Readable Views
+For human verification, the system generates Nat-
+ural Language NormCode (.ncn) files that strip
+formal markers and present plans as readable prose.
+A formal inference such as:
+<- {Phase 1: Confirmation of Instruction}
+<= &[#] %>[{step 1.1}, {step 1.2}] %+(step)
+<- {step 1.1: Instruction Distillation}
+<- {step 1.2: Context Registration}
+translates to natural language as:
+(OUTPUT) Phase 1: Confirmation of Instruction
+(ACTION) is obtained by collecting
+the following steps together.
+(VALUE) The first step is Instruction
+Distillation.
+(VALUE) The second step is Context
+Registration.
+This enables domain experts to verify plan logic
+before execution without understanding formal syn-
+tax. The hybrid .ncdn format presents both views
+side-by-side for developers who need to see the
+mapping between formal and natural representa-
+tions.
+7.7
+Round-Trip Capability
+The compilation pipeline supports bidirectional
+transformation, enabling JSON repositories to be
+decompiled back to .ncd format. This round-trip
+capability supports debugging by inspecting com-
+piled output in readable format, version control by
+storing plans as text rather than JSON, and modifi-
+cation by editing compiled plans and re-activating
+them.
+7.8
+Compilation Guarantees and Limitations
+Compilation ensures syntactic validity (every .ncd
+is parseable), flow consistency (indices are unique
+and hierarchical), sequence completeness (every in-
+ference has a valid sequence type), reference struc-
+ture (all concepts have declared axes and types),
+resource grounding (all perceptual signs are linked),
+12
+
+
+and working interpretation completeness (every in-
+ference has full configuration).
+However, compilation does not ensure semantic
+correctness (the plan might not achieve intended
+goals), runtime success (LLM calls might fail or
+resources might be missing), logical soundness (de-
+pendency cycles are detected by the orchestrator,
+not the compiler), or optimal performance (some
+plans might be inefficient).
+The distinction is important: compilation vali-
+dates structure, not intent.
+8
+Evaluation
+We validate NormCode through two comple-
+mentary demonstrations: a self-hosted compiler
+pipeline demonstrating expressive completeness
+and a base-X addition algorithm demonstrating
+correctness and debuggability. Additionally, we de-
+scribe the working implementation of the Canvas
+App as evidence of practical viability.
+8.1
+Case Study 1: The Self-Hosted Compiler
+Pipeline
+The most significant validation of NormCode is
+that its own compiler pipeline can be expressed
+and executed as a NormCode plan.
+The task was to transform a high-level natu-
+ral language instruction into an executable Norm-
+Code plan, complete with context distribution and
+prompt generation. The plan consisted of approx-
+imately 50 inferences organized across the four
+compilation phases: Derivation to extract structure
+from natural language, Formalization to add flow
+indices and sequence types, Post-Formalization to
+enrich with paradigms and resources, and Activa-
+tion to generate executable JSON repositories.
+The orchestrator successfully executed this plan,
+producing the concept and inference repositories
+along with all intermediate artifacts. Checkpoint-
+ing allowed the compilation to be paused and
+resumed across multiple sessions, and the Can-
+vas App enabled visual inspection of intermediate
+states.
+This self-hosting demonstrates three key prop-
+erties. First, Expressive Completeness: Norm-
+Code can represent complex, multi-phase work-
+flows with loops, conditionals, and human-in-the-
+loop steps. Second, Practical Viability: The or-
+chestrator, checkpointing, paradigm systems, and
+visual debugger work together to execute real plans.
+Third, Recursive Validation: Any improvement
+to NormCode can be tested by re-running its own
+compilation pipeline.
+8.2
+Case Study 2: Base-X Addition Algorithm
+To
+validate
+the
+correctness
+of
+NormCode-
+orchestrated execution, we implemented a base-
+X addition algorithm. This serves as a controlled
+benchmark where correctness can be unambigu-
+ously verified against known mathematical results.
+The task was adding two arbitrary-base numbers
+(base-10, base-12, etc.) digit-by-digit, handling
+carry-over correctly across arbitrary digit lengths.
+The NormCode plan decomposed into approxi-
+mately 25 inferences organized around three nested
+loops: an outer loop over number pairs in the col-
+lection, an inner loop extracting unit-place digits
+from each number, and a parallel loop generating
+the shifted number pairs for the next iteration.
+The Concept Repository contained over 50 con-
+cepts covering ground data such as the initial num-
+ber pairs, intermediate states such as digit sums
+and carry-over numbers and remainders, and con-
+trol predicates such as whether all numbers are zero
+and whether the carry-over is zero.
+Key mechanisms demonstrated include Loop
+Quantification where the outer loop iterates un-
+til termination while carrying carry-over state be-
+tween iterations; Conditional Branching with
+nested timing operators controlling when to stop ap-
+pending based on whether numbers are exhausted
+and no carry remains; Grouping where digits from
+both numbers are collected into a single collection
+for summation; and Timing Dependencies ensur-
+ing quotient and remainder are computed only after
+the digit sum is available.
+The orchestrator achieved 100% accuracy on
+the addition task across test suites of varying digit
+lengths, validated up to 150-digit numbers. Be-
+cause NormCode ultimately generates determin-
+istic code via paradigms that invoke Python exe-
+cution, the final output is deterministic. The role
+of NormCode is to structure the derivation of that
+code, ensuring each step receives exactly the cor-
+rect context and the overall logic remains auditable.
+8.3
+Implementation Evidence: The Canvas
+App
+Beyond the case studies, the working Canvas App
+implementation provides evidence of practical via-
+bility. The application was developed using React
+18 with TypeScript for the frontend, Vite as the
+build tool, React Flow for graph visualization, Zu-
+13
+
+
+stand for state management, and TailwindCSS for
+styling. The backend uses FastAPI with Python
+3.11, WebSockets for real-time event streaming,
+and Pydantic for data validation.
+The Canvas App successfully demonstrates real-
+time graph visualization where inference graphs
+are rendered with appropriate node types and sta-
+tus indicators; WebSocket event streaming where
+execution events flow in real-time from backend to
+frontend; breakpoint debugging where execution
+pauses at specified flow indices; tensor inspection
+where N-dimensional reference data is viewable
+through multiple modes; multi-agent configuration
+where different agents can be registered with dif-
+ferent LLM models and tool configurations; and
+checkpoint management where past states can be
+resumed or forked.
+8.4
+Qualitative Observations
+While formal experiments with statistical analysis
+are planned for future work, qualitative observa-
+tions from using NormCode in practice support
+several claims.
+Regarding Debuggability, flow indices enable
+precise localization of failures. When an inference
+fails, the log identifies exactly which step (e.g.,
+“Step 1.3.2”) failed and what inputs it received. The
+Canvas App makes this visual, showing the failed
+node in red with its input connections highlighted.
+Regarding Token Efficiency, perceptual signs
+reduce token cost by passing lightweight pointers
+instead of full data. Only during the MVP step,
+when an inference actually needs to operate on
+data, are the signs transmuted into actual content.
+Syntactic operations are completely free, incurring
+no LLM costs regardless of the data volume they
+manipulate.
+Regarding Resumability, SQLite-backed check-
+pointing allows runs to be paused and resumed
+without loss of state. This is particularly valuable
+for long-running compilations or iterative develop-
+ment where you want to inspect intermediate states
+before continuing.
+Regarding Auditability, every inference’s in-
+puts and outputs are logged with their full tensor
+structure. Post-hoc analysis can reconstruct exactly
+what data each step saw and produced, enabling
+compliance reporting and debugging of unexpected
+results.
+Comparative evaluation against direct prompt-
+ing, LangChain, and other frameworks on estab-
+lished benchmarks is planned for future work.
+9
+Discussion
+9.1
+When to Use NormCode
+NormCode is designed for scenarios where explicit
+auditability and data isolation justify the overhead
+of structured planning. The framework provides
+strong value in several contexts.
+For high-stakes decisions in legal reasoning,
+medical diagnosis, and financial analysis, traceabil-
+ity is often required by regulation or professional
+standards. NormCode’s audit trail satisfies require-
+ments like those in the EU AI Act for documenting
+how AI systems reach conclusions.
+For complex multi-step reasoning involving
+five or more LLM calls, debugging implicit data
+flow becomes prohibitive. When a failure occurs at
+step 7, knowing exactly what step 7 received—not
+just its position in the workflow—is essential for
+diagnosis.
+For long-running workflows that span hours or
+days, checkpointing and resumption prevent loss
+of progress. The ability to fork from checkpoints
+enables experimentation without risking the main
+execution path.
+For human-AI collaboration where domain ex-
+perts need to understand and approve AI plans be-
+fore execution, the multi-format ecosystem allows
+technical teams to work in .ncd while domain ex-
+perts review .ncn narratives.
+The framework provides poor fit for simple Q&A
+applications with one or two LLM calls where
+direct prompting suffices, for rapid prototyping
+where formalization overhead exceeds exploration
+value, and for real-time applications where orches-
+tration latency is unacceptable.
+The sweet spot is workflows where reliability
+and transparency outweigh the cost of explicit
+structure—precisely the scenarios where context
+pollution in traditional approaches causes failures
+that are difficult to diagnose.
+9.2
+Limitations and Tradeoffs
+Syntax density. The .ncd format’s markers (<=,
+<-, <$({...})%>, <:{1}>) create visual clutter
+that can be challenging to parse. While the .ncds
+format mitigates this for authoring and the .ncn for-
+mat provides readable output, debugging compiled
+plans requires familiarity with dense notation. The
+Canvas App’s visual representation helps by show-
+ing structure graphically rather than textually, but
+IDE plugins with syntax highlighting and folding
+would further improve usability.
+14
+
+
+Verbosity. Simple operations expand to multiple
+lines. A three-step workflow that could be a 10-
+line Python script becomes a 30-line NormCode
+plan with explicit concept markers, flow indices,
+and sequence annotations. This verbosity is the
+price of explicit data flow. However, for complex
+workflows, the marginal cost decreases—a 20-step
+workflow is not 10 times more verbose than a 2-step
+workflow, and the debugging benefits compound
+with complexity.
+Brittleness of manual editing. The .ncd format
+is indentation-sensitive and tightly coupled to flow
+indices. Manual edits risk breaking dependencies
+in ways that are difficult to diagnose. The compiler
+should be the primary way to modify plans, but this
+creates a barrier for quick fixes. The .ncdn editor
+format and the Canvas App’s editing capabilities
+partially address this by validating changes in real-
+time.
+Tooling dependency. NormCode requires the
+orchestrator, compiler, reference system, and ide-
+ally the Canvas App for effective use. This “batter-
+ies included” approach limits portability compared
+to plain Python or LangChain code that can run
+anywhere with the base libraries installed. How-
+ever, the integrated toolchain is necessary for the
+guarantees NormCode provides—isolation, check-
+pointing, and auditability cannot be retrofitted onto
+simpler frameworks.
+Compiler maturity. The natural language to
+.ncd derivation phase relies on carefully designed
+prompts and is sensitive to instruction complexity.
+Robust error recovery, automated prompt genera-
+tion, and handling of edge cases remain open chal-
+lenges. The formalization, post-formalization, and
+activation phases are more stable since they operate
+on structured input.
+9.3
+Broader Implications
+NormCode demonstrates that structured interme-
+diate representations can bridge human intu-
+ition and machine rigor in AI workflows. The
+multi-format ecosystem (author in .ncds, execute
+via .ncd, verify in .ncn) suggests a general pattern
+for transparent AI systems: provide multiple views
+of the same underlying logic, each optimized for a
+different stakeholder.
+The semantic/syntactic separation has implica-
+tions beyond NormCode. As LLM-based systems
+move into production, operators will need precise
+cost attribution (“which steps burned tokens?”) and
+reliability mapping (“which failures were proba-
+bilistic vs. deterministic?”). NormCode’s architec-
+tural separation makes these questions answerable
+by construction rather than requiring post-hoc log
+analysis.
+The Canvas App demonstrates that visual de-
+bugging tools for AI workflows are feasible and
+valuable. Real-time graph visualization, breakpoint
+debugging, and tensor inspection are capabilities
+that other frameworks could adopt. The separation
+between execution logic (orchestrator) and visual-
+ization (Canvas App) shows how these concerns
+can be decoupled.
+The checkpoint and fork capabilities point to-
+ward a broader vision of AI workflow development
+as an iterative, experimental process. Rather than
+writing a plan and hoping it works, developers can
+run partially, inspect state, fork to try alternatives,
+and merge successful branches—a workflow more
+similar to software development with version con-
+trol than traditional scripting.
+10
+Future Work
+While NormCode provides a working implemen-
+tation with visual debugging, checkpointing, and
+multi-agent support, several directions remain for
+future development.
+Compiler robustness. The natural language
+to .ncd derivation phase remains the most fragile
+component, relying on carefully designed prompts
+that are sensitive to instruction complexity. Future
+work should explore fine-tuned models specifically
+trained on NormCode generation using human-
+authored plans as training data, iterative refinement
+loops with automated validation that detect and
+correct common decomposition errors, and hybrid
+approaches where humans sketch high-level struc-
+ture and LLMs fill in detailed specifications.
+Multi-agent coordination. The current imple-
+mentation supports multiple Subjects with different
+tool bodies and allows mapping inferences to spe-
+cific agents, but real multi-agent coordination re-
+mains unexplored. Future work could address nego-
+tiation protocols where agents with different capa-
+bilities agree on task allocation, delegation mecha-
+nisms where agents can assign sub-tasks to special-
+ized agents, and conflict resolution when multiple
+agents produce contradictory results. NormCode’s
+isolation guarantees provide a foundation for safe
+agent-to-agent communication since each agent’s
+view is explicitly defined.
+Domain-specific extensions. High-stakes do-
+15
+
+
+mains may require specialized semantic types
+such as {legal precedent}, {patient record},
+or {financial instrument} that carry domain-
+specific validation rules and constraints. Domain-
+specific verification could enforce rules like “all
+medical diagnoses must cite evidence” or “all fi-
+nancial recommendations must include risk disclo-
+sures.” Compliance reporting could automatically
+generate audit trails formatted for regulatory re-
+quirements such as EU AI Act documentation.
+Empirical evaluation.
+Rigorous compara-
+tive studies would strengthen NormCode’s claims.
+Benchmarking against baseline approaches includ-
+ing direct prompting, LangChain pipelines, and
+AutoGPT on established datasets like HumanEval
+or GAIA would quantify cost-accuracy tradeoffs.
+User studies with domain experts (lawyers, clini-
+cians, analysts) would assess the practical value of
+the multi-format ecosystem and visual debugging.
+Longitudinal studies of production deployments
+would reveal real-world failure modes and opti-
+mization opportunities.
+Performance optimization. While syntactic op-
+erations are free, semantic operations incur token
+costs and latency. Future work could explore batch-
+ing similar LLM calls within loops to reduce API
+overhead, caching and memoization of paradigm
+outputs for repeated patterns, and parallel execution
+of independent semantic operations when depen-
+dency analysis permits.
+Integration with external systems. Produc-
+tion deployments require integration with existing
+infrastructure. This includes connecting to enter-
+prise LLM endpoints with authentication and rate
+limiting, integrating with logging and monitoring
+systems for observability, and supporting deploy-
+ment patterns like containerization and serverless
+execution.
+11
+Conclusion
+As large language models enable increasingly so-
+phisticated multi-step reasoning, the problem of
+context pollution threatens to undermine their reli-
+ability. When information accumulates implicitly
+across reasoning steps, models hallucinate, confuse
+intermediate outputs, and lose track of constraints—
+making complex workflows paradoxically more
+brittle than simple ones.
+NormCode addresses this through enforced data
+isolation: each inference operates in a sealed en-
+vironment with only explicitly passed inputs. This
+is not a convention but a language-level constraint
+that the compiler and orchestrator enforce. Com-
+bined with a clean semantic/syntactic separation
+(probabilistic LLM reasoning vs. deterministic data
+flow), NormCode makes AI workflows auditable
+by construction.
+The multi-format ecosystem (.ncds for author-
+ing, .ncd for execution, .ncn for verification,
+.ncdn for hybrid editing) embodies a broader prin-
+ciple: transparent AI systems should provide multi-
+ple views of the same underlying logic, each opti-
+mized for different stakeholders. Domain experts
+can verify plans in natural language; developers
+can debug in formal syntax; auditors can trace de-
+cisions with precision; and the orchestrator can
+execute with formal rigor.
+The four-phase compilation pipeline (Derivation,
+Formalization, Post-Formalization, Activation) en-
+ables progressive formalization where plans tighten
+incrementally from rough sketches to production-
+ready specifications. Each phase answers specific
+questions while preserving semantic intent, and
+manual review opportunities allow human interven-
+tion at critical junctures.
+The Canvas App provides visual debugging ca-
+pabilities that transform NormCode from “run and
+hope” to “observe and control.” Real-time graph
+visualization, breakpoint debugging, tensor inspec-
+tion, and multi-agent configuration make the exe-
+cution process transparent and manipulable.
+We validate the approach through self-hosted
+execution (NormCode’s compiler runs as a Norm-
+Code plan) and algorithmic correctness (100% ac-
+curacy on base-X addition).
+These demonstra-
+tions confirm that structured intermediate repre-
+sentations can bridge human intuition and machine
+execution without sacrificing either.
+NormCode is not appropriate for every use case—
+simple tasks do not justify the overhead, and real-
+time applications may not tolerate orchestration
+latency. But for high-stakes domains where fail-
+ures have consequences (legal, medical, financial),
+the ability to answer “What did step 7 actually see?”
+is not optional. By making context isolation struc-
+tural rather than aspirational, NormCode provides
+a foundation for AI systems that are reliable, trans-
+parent, and auditable—requirements that will only
+intensify as LLMs move from research prototypes
+into production systems.
+16
+
+
+References
+D. Breunig. 2025.
+How long contexts fail.
+dbre-
+unig.com Blog. Accessed: 2025.
+E. Chang et al. 2025. SagaLLM: Context management,
+validation, and transaction guarantees for multi-agent
+LLM planning. Technical report, Stanford Univer-
+sity.
+Wikipedia contributors. Intermediate representation.
+Wikipedia. Accessed: 2025.
+M. DeLorenzo et al. 2025. Abstractions-of-thought:
+Intermediate representations for LLM reasoning in
+hardware design. arXiv preprint arXiv:2505.15873.
+K. Erol, J. Hendler, and D. S. Nau. 1994. HTN planning:
+Complexity and expressivity. In Proceedings of the
+12th National Conference on Artificial Intelligence
+(AAAI-94), pages 1123–1128.
+X. Han and D. Zhao. 2023. Beyond chain-of-thought:
+Effective graph-of-thought reasoning in language
+models. arXiv preprint arXiv:2305.16582.
+IBM. 2025. What is LangGraph?
+IBM Think. Re-
+trieved December 2025.
+A. Modarressi, G. Xiao, et al. 2024. SagaLLM refer-
+ence. Cited in Chang (2025).
+M. Patel. 2025. Why LangChain fails in production: 7
+hidden problems. LinkedIn post. Accessed: 2025.
+L. Qiu et al. 2025. Blueprint first, model second: A
+framework for deterministic LLM workflow. arXiv
+preprint arXiv:2508.02721.
+Wand AI Research and M. Fatemi. 2025. Compounding
+error effect in large language models: A growing
+challenge. Wand AI Blog. Accessed: 2025.
+J. Ruan. 2024.
+Context engineering in LLM-based
+agents. Medium. Accessed: 2025.
+P. Sai. 2025. Evaluating AI transparency: What do
+users really need to understand?
+AI/UI Medium
+Publication. Accessed: 2025.
+N. Shinn, A. Labash, E. Liu, B. Prystawski, C. H. Park,
+and C. Raffel. 2023. Reflexion: Language agents
+with verbal reinforcement learning. arXiv preprint
+arXiv:2303.11366.
+A. R. Silva. 2025. A sea of description languages. In
+Software Engineering Companion: Requirements En-
+gineering. Accessed: 2025.
+A. Sordoni, J. Proulx, M. Gupta, J. Maillard, and
+J. Pineau. 2025. Are language models deontolog-
+ically aligned? In ACL 2025.
+Stanford Encyclopedia of Philosophy. 2021. Deontic
+logic. In E. N. Zalta, editor, The Stanford Encyclope-
+dia of Philosophy, fall 2021 edition.
+P. Wang et al. 2024. AutoGen: Enabling next-gen LLM
+applications via multi-agent conversation. In COL-
+ING 2024.
+J. Wei, X. Wang, D. Schuurmans, M. Bosma, B. Ichter,
+F. Xia, others, and Q. Le. 2022. Chain-of-thought
+prompting elicits reasoning in large language models.
+In ICLR 2023.
+V. Winland and J. Noble. 2025. What is LLM orches-
+tration? IBM Think Blog. Accessed: 2025.
+Y. Wu et al. 2025. IsolateGPT: An execution isola-
+tion architecture for LLM-based agentic systems. In
+NDSS Symposium 2025.
+S. Yao, J. Zhao, D. Yu, K. Narasimhan, D. Zhao,
+and Y. Cao. 2022.
+ReAct: Synergizing reason-
+ing and acting in language models. arXiv preprint
+arXiv:2210.03629.
+S. Yao, J. Zhao, D. Yu, K. Narasimhan, D. Zhao, and
+Y. Cao. 2023. Tree of thoughts: Deliberate problem
+solving with large language models. arXiv preprint
+arXiv:2305.10601.
+17
+
+
+A
+Appendix A: Base-X Addition Repository
+This appendix provides the complete NormCode repository for the base-X addition case study described
+in Section 8.
+A.1
+Input Specification
+The input to the addition plan is a simple JSON structure specifying number pairs with their tensor axes:
+{
+"{number pair}": {
+"data": [["%(123)", "%(98)"]],
+"axes": ["number pair", "number"]
+}
+}
+The %() syntax wraps raw values as perceptual signs, deferring their interpretation until the MVP step
+when an inference actually needs to operate on the data.
+A.2
+NormCode Plan
+A.2.1
+Natural Language Translation (.ncn Format)
+For verification by domain experts, the plan translates to a readable narrative. The notation uses (OUTPUT)
+to indicate what each step produces, (ACTION) to describe how production occurs, (INPUT) to identify
+data flowing in, (YIELDS) to specify extracted results, (TIMING) to indicate dependencies on prior
+steps, (CONDITION) to specify when actions execute, and bracketed numbers like [1.2.3] to provide flow
+indices serving as unique addresses for debugging.
+[1] (OUTPUT) The new number pair
+(ACTION) is obtained by iterating through every number pair in the collection.
+(MECHANISM) Each iteration carries forward the current carry-over number.
+[1.1] (OUTPUT) The result of each iteration
+(ACTION) is assigned from the remainder.
+[1.1.2] (OUTPUT) The digit sum
+(ACTION) is computed by summing the unit place values of all numbers
+together with the current carry-over number.
+(INPUT 1) All unit place values of the numbers in the current pair.
+(INPUT 2) The current carry-over number (initially 0).
+(YIELDS) The sum.
+[1.1.2.4] (OUTPUT) All unit place values of numbers
+(ACTION) is collected by grouping across the current number pair.
+[1.1.2.4.2] (OUTPUT) Each unit place value
+(ACTION) is obtained by iterating through each number
+in the current pair.
+[1.1.2.4.2.1] (OUTPUT) The loop result
+(ACTION) is assigned from the single unit place value.
+[1.1.2.4.2.1.2] (OUTPUT) The single unit place value
+(ACTION) is extracted by getting the unit place
+digit of the number.
+(INPUT) The current number from the pair.
+18
+
+
+(YIELDS) The extracted digit.
+[1.1.3] (OUTPUT) The number pair collection
+(ACTION) is updated by appending a new number pair.
+(CONDITION) This append happens ONLY IF NOT all numbers are zero,
+AND IF the carry-over number is zero.
+[1.1.3.2] (OUTPUT) The number pair to append
+(ACTION) is constructed by iterating through each number
+in the current pair.
+[1.1.3.2.1] (OUTPUT) The loop result
+(ACTION) is assigned from the number with last digit removed.
+[1.1.3.2.1.2] (OUTPUT) The number with last digit removed
+(ACTION) is computed by: if the number is less than 10,
+output 0; otherwise, remove the unit place digit.
+(INPUT) The current number.
+(YIELDS) The shifted number.
+[1.1.3.3] (OUTPUT) The proposition "all numbers are 0"
+(ACTION) is evaluated by checking if each number in the pair
+to append is 0.
+(TIMING) This check occurs after the number pair to append is ready.
+(CONDITION) True if ALL numbers satisfy: the number is 0.
+[1.1.3.4] (OUTPUT) The proposition "carry-over number is 0"
+(ACTION) is evaluated by checking if the carry-over number is 0.
+(TIMING) This check occurs after the number pair to append is ready.
+[1.1.3.4.2] (OUTPUT) The updated carry-over number
+(ACTION) is computed from the previous carry-over and new quotient.
+[1.1.3.4.2.2] (OUTPUT) The new carry-over value
+(ACTION) is found by computing the quotient of the digit
+sum divided by 10.
+(TIMING) This occurs after the digit sum is available.
+(INPUT) The digit sum.
+(YIELDS) The quotient (new carry).
+[1.1.4] (OUTPUT) The remainder
+(ACTION) is computed by getting the remainder of the digit sum
+divided by 10.
+(TIMING) This occurs after the digit sum is available.
+(INPUT) The digit sum.
+(YIELDS) The remainder (the digit to output).
+(INPUT) The initial number pair collection.
+A.2.2
+Formal Syntax (.ncd Format)
+The formal NormCode syntax uses structured markers for precise machine interpretation:
+{new number pair} | 1. quantifying
+19
+
+
+<= *every({number pair})%:[{number pair}]@(1)^[{carry-over number}<*1>]
+| 1.1. assigning
+<= $.({remainder})
+<- {digit sum} | 1.1.2. imperative
+<= ::(sum {1}<$([all {unit place value} of numbers])%_>
+and {2}<$({carry-over number}*1)%_>
+to get {3}?<$({sum})%_>)
+<- {sum}?<:{3}>
+<- {carry-over number}*1<:{2}>
+<- [all {unit place value} of numbers]<:{1}> | 1.1.2.4. grouping
+<= &across({unit place value}:{number pair}*1)
+<- {unit place value} | 1.1.2.4.2. quantifying
+<= *every({number pair}*1)%:[{number}]@(2)
+| 1.1.2.4.2.1. assigning
+<= $.({single unit place value})
+<- {single unit place value} | 1.1.2.4.2.1.2. imperative
+<= ::(get {2}?<$({unit place value})%_>
+of {1}<$({number})%_>)
+<- {unit place digit}?<:{2}>
+<- {number pair}*1*2
+<- {number pair}*1
+<- {number pair}<$={1}> | 1.1.3. assigning
+<= $+({number pair to append}:{number pair})%:[{number pair}]
+| 1.1.3.1. timing
+<= @if!(<all number is 0>) | 1.1.3.1.1. timing
+<= @if(<carry-over number is 0>)
+<- {number pair to append}<$={1}> | 1.1.3.2. quantifying
+<= *every({number pair}*1)%:[{number}]@(3)
+| 1.1.3.2.1. assigning
+<= $.({number with last digit removed})
+<- {number with last digit removed}
+| 1.1.3.2.1.2. imperative
+<= ::(output 0 if {1}<$({number})%_> is less than 10,
+otherwise remove {2}?<$({unit place digit})%_>
+from {1}<$({number})%_>)
+<- {unit place digit}?<:{2}>
+<- {number pair}*1*3<:{1}>
+<- {number pair}*1
+<- <all number is 0> | 1.1.3.3. judgement
+<= :%(True):<{1}<$({number})%_> is 0> | 1.1.3.3.1. timing
+<= @after({number pair to append}<$={1}>)
+<- {number pair to append}<$={1}><:{1}>
+<- <carry-over number is 0> | 1.1.3.4. judgement
+<= :%(True):<{1}<$({carry-over number})%_> is 0>
+| 1.1.3.4.1. timing
+<= @after({number pair to append}<$={1}>)
+<- {carry-over number}*1 | 1.1.3.4.2. grouping
+20
+
+
+<= &across({carry-over number}*1:
+{carry-over number}*1<--<!_>>)
+<- {carry-over number}*1 | 1.1.3.4.2.2. imperative
+<= ::(find the {1}?<$({quotient})%_>
+of {2}<$({digit sum})%_> divided by 10)
+| 1.1.3.4.2.2.1. timing
+<= @after({digit sum})
+<- {quotient}?<:{1}>
+<- {digit sum}<:{2}>
+<- {remainder} | 1.1.4. imperative
+<= ::(get the {1}?<$({remainder})%_>
+of {2}<$({digit sum})%_> divided by 10)
+| 1.1.4.1. timing
+<= @after({digit sum})
+<- {remainder}?<:{1}>
+<- {digit sum}<:{2}>
+<- {number pair}<$={1}>
+A.3
+Concept Repository
+The concept repository defines over 50 concepts. Ground concepts with pre-populated references include
+{number pair} of type {} with reference data [["%(123)", "%(98)"]], representing the input number
+pairs; {carry-over number}*1 of type {} with reference data ["%(0)"], representing the initial carry-
+over state; and {unit place digit}? of type {} with reference data describing “1 digit counting from
+the right,” representing a semantic specification for extraction.
+Functional concepts define the operations. The outer loop *every({number pair})%:[{number
+pair}]@(1)ˆ[{carry-over number}<*1>] is of type *every and iterates with carry state. The grouping
+operation &across({unit place value}:{number pair}*1) is of type &across and collects digits
+across numbers. The imperative ::(sum {1}<...> and {2}<...> to get {3}?<...>) is of type
+::({}) and performs digit summation. The judgement :%(True):<{1}<$({number})%_> is 0> is of
+type <{}> and checks if a value is zero.
+A.4
+Inference Repository
+The inference repository contains 23 inference entries with their working interpretations.
+The outer loop inference at flow index 1 has sequence type “quantifying,” infers concept {new number
+pair}, uses the function concept *every({number pair})..., takes value concepts [{number pair}],
+and context concepts [{number pair}*1, {carry-over number}*1]. Its working interpretation
+specifies the “every” marker with quantifier index 1, loop base concept, current loop base concept with
+the *1 marker, group base name, in-loop concept mapping, and concepts to infer.
+The digit summation inference at flow index 1.1.2 has sequence type “imperative_python,” infers
+concept {digit sum}, and takes three value concepts. Its working interpretation specifies value ordering
+(positions 1, 2, 3 for the inputs), enables thinking mode, and indicates non-relation output.
+The conditional termination inference at flow index 1.1.3.1.1 has sequence type “timing,” infers concept
+@if!(<all number is 0>), and uses the function concept @if(<carry-over number is 0>). Its
+working interpretation specifies the “if” marker and the condition to check.
+A.5
+Repository Files
+The complete repository files are available in the codebase at infra/examples/add_examples/repo/.
+The
+addition_concepts.json
+file
+contains
+935
+lines
+defining
+all
+concepts.
+The
+addition_inferences.json file contains 656 lines defining all inferences with their working
+21
+
+
+interpretations. The addition_inputs.json file contains 12 lines specifying input data. The Python
+runner ex_add_complete_12_base.py provides validation and execution harness.
+22

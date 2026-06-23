@@ -1,0 +1,1893 @@
+On the Failure of Latent State Persistence in Large Language Models
+Jen-tse Huang 1 Kaiser Sun 1 Wenxuan Wang 2 Mark Dredze 1
+Abstract
+While Large Language Models (LLMs) excel in
+reasoning, whether they can sustain persistent la-
+tent states remains under-explored. The capacity
+to maintain and manipulate unexpressed, internal
+representations—analogous to human working
+memory—is a cornerstone of complex reasoning.
+In this paper, we formalize and quantify the “La-
+tent State Persistence” (LSP) gap through three
+novel experiments. First, we utilize a Number
+Guessing Game, demonstrating that across inde-
+pendent queries, LLMs fail to allocate probability
+mass to a singular hidden choice, violating a fun-
+damental probabilistic principle. Second, we em-
+ploy a Yes-No Game to show that as the number of
+questions increases, LLMs suffer from “concept
+drift,” leading to inevitable self-contradictions due
+to the lack of LSP. Finally, inspired by Mathe-
+matical Mentalism, we task models with tracking
+transformations on hidden variables, revealing
+a failure in variable binding and state evolution
+when the initial state is not explicitly present in
+the context. Collectively, these findings suggest
+that LLMs function as reactive post-hoc solvers
+rather than proactive planners with LSP. Our work
+provides a framework for evaluating the fidelity
+of internal representations and highlights a funda-
+mental architectural divergence between autore-
+gressive transformers and human-like cognition.
+1. Introduction
+Large Language Models (LLMs) have demonstrated remark-
+able proficiency across diverse reasoning domains, from
+legal analysis and education to complex healthcare appli-
+cations (Guha et al., 2023; Wen et al., 2024; Huang et al.,
+2025; Jiao et al., 2023; Yang et al., 2024b). Consequently,
+research has increasingly focused on whether these mod-
+els exhibit human-like cognitive traits such as personality,
+empathy, and theory-of-mind (Huang et al., 2024b;a; Sorin
+1Johns Hopkins University 2Renmin University of China. Cor-
+respondence to: Jen-tse Huang <jhuan236@jh.edu>.
+Preprint. January 27, 2026.
+et al., 2024; Liu et al., 2024b; Wang et al., 2024b). How-
+ever, a fundamental pillar of cognition remains significantly
+under-explored: working memory—the capacity to tempo-
+rally store and manipulate internal representations without
+externalizing them.
+For Transformers, the “state” of a conversation is tradition-
+ally bounded by the context window. This raises a critical
+architectural question: can an LLM maintain a persistent
+latent state that is not explicitly written into the prompt?
+We formalize this capability as Latent State Persistence
+(LSP)—the ability of a model to instantiate, maintain, and
+manipulate an internal variable x across multiple interaction
+steps without explicit context externalization. We hypothe-
+size that current LLMs lack true LSP, functioning as reactive
+post-hoc reasoners that find the most statistically plausible
+completion for a given dialogue pattern rather than ground-
+ing their responses in a stable internal state.
+The central challenge in evaluating LSP is the “hidden mind”
+problem: how can we verify the existence of an unobserv-
+able internal state? We address this by proposing three novel
+experiments, each deriving a testable hypothesis from the
+mathematical consequences of LSP:
+• Number Guessing Game (§2) tests Static Probabilis-
+tic Completeness: We propose the Sum-of-Probability
+Identity (Proposition 2.1) as a null hypothesis. For
+a state-persistent agent, the sum of “Yes” probabili-
+ties across a complete state space must equal unity
+(P P = 1). We define Empirical State Mass (ESM) as
+a metric to quantify the deviation from this identity.
+• Yes-No Game (§3) examines Dynamic Logical Con-
+sistency: We demonstrate that for an agent with LSP,
+inference complexity is constant-time O(1) relative
+to the number of queries (Proposition 3.1).
+Con-
+versely, a stateless agent must treat the task with O(t)
+complexity. We show that as constraints accumulate,
+models inevitably fail due to “concept drift” and self-
+contradiction.
+• Mathematical Mentalism (§4) assesses State Evolu-
+tion Fidelity: Inspired by deterministic magic routines,
+we task models with tracking non-linear transforma-
+tions on hidden variables. Failure to satisfy the mathe-
+matical invariants of the routine reveals a breakdown
+in variable binding and latent state evolution.
+1
+arXiv:2505.10571v5  [cs.CL]  26 Jan 2026
+
+
+On the Failure of Latent State Persistence in Large Language Models
+We evaluate 17 frontier LLMs, including GPT (4o (Hurst
+et al., 2024) and 4o-Mini (OpenAI, 2024)), o-series (o1-
+Mini (Jaech et al., 2024), o3-Mini, and o4-Mini (Ope-
+nAI, 2025)), LLaMA (3.1 (Meta, 2024) and 3.3), Qwen-
+2.5 (Yang et al., 2024a) (7B and 72B), QwQ (Team, 2024),
+and DeepSeek (V3 (Liu et al., 2024a) and R1 (Guo et al.,
+2025)). Temperature and Top-p are default to 1.0. Our
+results converge on a singular conclusion: current LLMs
+exhibit a profound “LSP gap.” While scaling and long-
+reasoning traces (e.g., in o3-Mini or R1) improve perfor-
+mance by externalizing reasoning, the underlying latent
+persistence remains absent.
+Our framework distinguishes itself from existing “working
+memory” benchmarks, such as N-back tasks (Gong et al.,
+2024; Zhang et al., 2024), which often conflate internal
+maintenance with context-window retrieval (Appendix B.2).
+By ensuring the target state is never present in the input, our
+methodology provides a faithful evaluation of true working
+memory. Our contributions are as follows:
+1. We formally define Latent State Persistence (LSP)
+and provide a theoretical framework to detect hidden
+states via probabilistic and logical indicators.
+2. We introduce our framework1 containing three experi-
+ments designed to quantify the fidelity of internal rep-
+resentations in autoregressive models.
+3. We extensively evaluate 17 frontier LLMs, revealing
+that scaling laws fail to bridge the LSP gap and docu-
+menting the persistence of human-centric priors, such
+as the “Blue-Seven” phenomenon.
+2. Number Guessing Game
+2.1. Methodology
+Problem Formalization.
+Let X = {1, . . . , n} be a dis-
+crete state space of integers. We define an experimental trial
+as a sequence of interactions Ti = (Pinst, Rack, Qi), where:
+• Pinst is the initial instruction: “Think of an integer
+between 1 and n, but don’t say it to me.”
+• Rack is the model’s acknowledgement: “Got it! I’ve
+thought of an integer between 1 and n. What’s next?”
+• Qi is the query: “Is the number you’re thinking of i?
+Answer Yes or No.”
+The Persistence Hypothesis.
+If an agent possesses perfect
+LSP, it must instantiate and maintain a fixed latent variable
+x ∈X throughout the trial Ti. Under another assumption of
+honesty (the agent does not lie), the response y ∈{Y, N}
+1https://github.com/penguinnnnn/LLM-
+Working-Memory
+distribution is conditioned on this hidden state x:
+P(y = Y | Qi, x) = I(i = x),
+(1)
+where I(·) is the indicator function.
+Proposition 2.1 (Sum-of-Probability Identity). For an agent
+with a persistent and unique latent state x ⊥Qi, the sum
+of the probabilities of answering “Yes” across all possible
+queries in X must equal unity:
+n
+X
+i=1
+P(y = Y | Qi) =
+n
+X
+i=1
+X
+x∈X
+P(y = Y | Qi, x)P(x)
+=
+X
+x∈X
+P(x)
+n
+X
+i=1
+I(i = x) = 1.
+(2)
+Any significant deviation from P P = 1 provides a quan-
+titative basis to reject the hypothesis, suggesting the agent
+either fails to commit to a state x or lies about the outcome.
+LLMs as Stateless Agents.
+To quantify this phenomenon
+in stateless agents, we define the Empirical State Mass
+(ESM) for a model M over X as:
+ESM(M, X) =
+n
+X
+i=1
+ˆPM(y = Y | Ti),
+(3)
+where ˆPM is the empirical probability derived from repeated
+independent samplings. In a stateless agent, the model does
+not hold a fixed x. Instead, it treats each Qi as a frequentist
+inference task, leading to x ̸⊥Qi. Since P(i = x) is a low-
+probability event (e.g., 0.1 for n = 10), an autoregressive
+model biased toward maximum likelihood estimation (MLE)
+will favor the majority class, leading to ESM →0.
+Experimental Setup and Metrics.
+We evaluated 17 fron-
+tier LLMs using different n. To ensure statistical signif-
+icance, each query Qi was executed for 200 independent
+trials. We varied the decoding configurations, Temperature
+and Top-p, ranging from 0 to 1, to test the transition from
+greedy decoding to stochastic sampling and the sensitivity
+of ESM to the probability mass of the tail tokens.
+2.2. Results
+Qualitative Analysis.
+Figure 1 illustrates the empirical
+distribution of “Yes” responses for n = 10. Two primary
+phenomena emerge. (1) Systematic under-allocation of
+probability mass: the majority of tested LLMs exhibit a
+severe negative bias, where “No” responses dominate regard-
+less of i. This leads to an ESM approaching zero, violating
+Proposition 2.1. We posit that the models are not query-
+ing an internal state but are instead performing frequentist
+inference on the likelihood of a human guess being cor-
+rect (1/n), which is statistically low. (2) When models do
+2
+
+
+On the Failure of Latent State Persistence in Large Language Models
+0
+0.17
+0.34
+0.51
+0.68
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+gpt-4o-mini-2024-07-18
+gpt-4o-2024-05-13
+gpt-4o-2024-08-06
+gpt-4o-2024-11-20
+gpt-4.1-2025-04-14
+(a) OpenAI GPT models.
+0
+0.03
+0.06
+0.09
+0.12
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+o1-mini-2024-09-12
+o3-mini-2025-01-31
+o4-mini-2025-04-16
+(b) OpenAI o-series models.
+0
+0.2
+0.4
+0.6
+0.8
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+Llama-3.3-70B-Instruct-Turbo
+Llama-3.1-8B-Instruct-Turbo
+Llama-3.1-70B-Instruct-Turbo
+Llama-3.1-405B-Instruct-Turbo
+(c) Meta LLaMA models.
+0
+0.06
+0.12
+0.18
+0.24
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+Qwen2.5-7B-Instruct-Turbo
+Qwen2.5-72B-Instruct-Turbo
+QwQ-32B
+DeepSeek-V3
+DeepSeek-R1
+(d) Qwen and DeepSeek models.
+Figure 1. Empirical distribution of affirmative responses for i ∈{1, . . . , 10}. A pronounced horizontal band at i = 7 reveals a pervasive
+“blue-seven” heuristic bias across most models, regardless of their scale or architecture.
+Table 1. ESM across 17 evaluated LLMs (n = 10). Color intensity
+denotes the deviation from the theoretical identity ESM = 1: red
+indicates under-allocation, while blue indicates over-allocation.
+Model
+ESM
+GPT-4o-Mini-2024-07-18
+0
+GPT-4o-2024-05-13
+0
+GPT-4o-2024-08-06
+1.085
+GPT-4o-2024-11-20
+0
+GPT-4.1-2025-04-14
+0
+o1-Mini-2024-09-12
+0.005
+o3-Mini-2025-01-31
+0.205
+o4-Mini-2025-04-16
+0.030
+LLaMA-3.3-70B-Instruct-Turbo
+0.045
+LLaMA-3.1-8B-Instruct-Turbo
+0.980
+LLaMA-3.1-70B-Instruct-Turbo
+0.465
+LLaMA-3.1-405B-Instruct-Turbo
+1.195
+Qwen2.5-7B-Instruct-Turbo
+0
+Qwen2.5-72B-Instruct-Turbo
+0
+QwQ-32B
+0.005
+DeepSeek-V3
+0
+DeepSeek-R1
+0.640
+provide affirmative responses, they exhibit a pronounced
+heuristic bias toward the number seven, echoing the “blue-
+seven” phenomenon observed in human psychology (Miller,
+1956; Kubovy & Psotka, 1976).
+Quantitative Analysis.
+Table 1 reports the ESM across all
+models. We highlight three critical observations: (1) Non-
+monotonic Scaling: Model performance does not scale lin-
+early with size or recency. In the GPT family, GPT-4o-0806
+yields the highest ESM, outperforming both its successor
+(GPT-4o-1120) and GPT-4. Notably, the ESM of LLaMA-
+Table 2. Sensitivity of ESM to state space cardinality (n) for
+GPT-4o-2024-08-06. The decay suggests the model’s threshold is
+coupled with the prior probability 1/n rather than a LSP.
+Number 2
+3
+5
+7
+9
+10
+20
+30
+40
+ESM
+0
+2.18
+1.6
+0.92
+2.025
+1.085
+0.08
+0
+0.005
+3.1-8B is closer to one, compared to its larger 70B and 405B
+counterparts. (2) Invariance to Reasoning Traces: Con-
+trary to expectations, models featuring internal CoT—such
+as o1, o3, and DeepSeek-R1—do not bridge the LSP gap.
+Despite extended compute, these models still fail to instanti-
+ate a continuous and consistent LSP, treating the task as a
+reactive prompt-completion exercise. (3) Stochasticity of
+Capability: The acquisition of this state-like behavior ap-
+pears stochastic rather than a predictable emergent property
+of scale, suggesting that current training objectives do not
+explicitly incentivize latent state maintenance.
+Sensitivity to State Space Size.
+We extended the exper-
+iment to varying ranges n ∈{3, . . . , 40} using GPT-4o-
+2024-08-06. As shown in Table 2 and Figure 2, the model’s
+ESM is highly sensitive to the cardinality of X. For small
+ranges (n < 10), the model becomes over-optimistic, yield-
+ing an ESM significantly greater than 1. For larger ranges
+(n ≥20), the ESM collapses toward zero. Furthermore,
+the bias toward numbers ending in seven (e.g., 7, 17, 37)
+persists across all ranges, suggesting that the model relies
+on digit-level heuristics rather than a uniform sampling of
+the state space.
+Ablation of Decoding Strategies.
+To verify if these fail-
+ures are artifacts of decoding, we evaluated the ESM under
+varying Temperature (T) and Top-p settings with GPT-4o-
+2024-08-06. As shown in Table 3, while higher T increases
+3
+
+
+On the Failure of Latent State Persistence in Large Language Models
+0
+0.02
+0.04
+1
+3
+5
+7
+9
+11
+13
+15
+17
+19
+Range from 1 to 20
+0
+0.5
+1
+1
+2
+3
+4
+5
+Range from 1 to 5
+0
+0.35
+0.7
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+Range from 1 to 10
+0
+0.5
+1
+1
+2
+3
+Range from 1 to 3
+0
+0.2
+0.4
+1
+2
+3
+4
+5
+6
+7
+Range from 1 to 7
+0
+0.003
+0.005
+1
+4
+7 10 13 16 19 22 25 28 31 34 37 40
+Range from 1 to 40
+0
+0.5
+1
+1
+2
+3
+4
+5
+6
+7
+8
+9
+Range from 1 to 9
+0
+0.5
+1
+1 3 5 7 9 11 13 15 17 19 21 23 25 27 29
+Range from 1 to 30
+0
+0.5
+1
+1
+2
+Range from 1 to 2
+Figure 2. Empirical distributions of affirmative responses for GPT-4o-2024-08-06 across varying state space sizes.
+the variance of responses and lower Top-p concentrates
+more mass on the number 7, the qualitative conclusion does
+not change: the ESM of this model never converges to zero
+as other models show. This confirms that the capacity to
+maintain internal variables outside the explicit context is not
+related to surface-level decoding but a more fundamental
+architectural issue.
+Implication.
+The collective evidence from the Number
+Guessing Game suggests that LLMs operate as reactive post-
+hoc reasoners. When an LLM claims to have “thought of
+a number,” it does not commit to a latent x ∈X. Instead,
+it generates a response based on the statistical likelihood
+of truthiness within the given dialogue pattern. This lack
+of LSP results in a breakdown of the most basic proba-
+bilistic requirement for a hidden-state agent that the sum
+must equal one, manifesting core challenges in AI align-
+ment—sycophancy and false promises.
+3. Yes-No Game
+3.1. Methodology
+Problem Formalization.
+The “Yes-No” game (a variant
+of Twenty Questions2) is a classic social deduction task re-
+quiring persistent reasoning and categorical narrowing. In
+our setting, an agent privately selects an object, and the
+opponent poses a sequence of binary queries Q to identify
+the object. We define a multi-dimensional object space
+X characterized by a set of k totally ordered attributes
+A = {a1, . . . , ak}. For each attribute a ∈A, there ex-
+ists a scalar mapping fa : X →R, enabling a total or-
+2https://en.wikipedia.org/wiki/Twenty_
+questions
+Table 3. Impact of decoding configurations, Temperature (T) and
+Top-p (P), on ESM for GPT-4o-2024-08-06 with n = 10.
+Settings 1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+ESM
+T1.0P1.0 0
+0
+0.04 0.055
+0.05
+0.2
+0.605 0.125 0.005 0.005 1.085
+T0.7P1.0 0 0.005 0.01
+0.09
+0.055 0.225 0.765
+0.09
+0.005
+0
+1.245
+T0.4P1.0 0
+0
+0
+0.025 0.005 0.165
+0.86
+0.04
+0
+0
+1.095
+T0.1P1.0 0
+0
+0
+0
+0
+0.085 0.895 0.005
+0
+0
+0.985
+T1.0P0.7 0
+0
+0
+0
+0
+0.1
+0.83
+0.02
+0
+0
+0.95
+T1.0P0.4 0
+0
+0
+0
+0
+0.03
+0.825
+0
+0
+0
+0.855
+T1.0P0.1 0
+0
+0
+0
+0
+0.02
+0.82
+0
+0
+0
+0.84
+dering of objects.
+A trial T is defined as a sequence:
+T = (Pinst, Rack, (Q1, y1), . . . , (Qt, yt)), where Pinst and
+Rack share the same definition with the Number Guessing
+Game, Qt is a query of the form “Is fa(x) op fa(xref)?” and
+yt ∈{Y, N} is the agent’s response.
+The Persistence Hypothesis.
+An agent exhibiting perfect
+LSP must instantiate and maintain a fixed latent variable
+x throughout the trial T . For any query Qt involving a
+reference object xref ∈X, an attribute a, and a comparison
+operator op ∈{>, <}, the response yt is determined by:
+yt = I(fa(x) op fa(xref)).
+(4)
+Proposition 3.1 (Constant-Time Inference). For an agent
+with a persistent latent state x, the computational complex-
+ity of generating yt is O(1) relative to the trial length t, as
+it requires only a singular comparison between x and xref.
+Crucially, human players do not typically perform exhaus-
+tive cross-checks against the history of t −1 responses;
+instead, they rely on the LSP to ensure global consistency.
+LLMs as Post-Hoc Constraint Solvers.
+In contrast, an
+agent lacking LSP (e.g., an autoregressive LLM) must
+4
+
+
+On the Failure of Latent State Persistence in Large Language Models
+Table 4. Ground-truth for the objects sorted across five physical
+attributes: volume, length, weight, density, and hardness.
+Volume
+Length
+Weight
+Density
+Coffee bean
+Rice
+Coin
+Air
+Dice
+Paperclip
+Spoon
+Wood
+Golf ball
+Credit card
+Watch
+Ice
+Soda can
+Pencil
+Smartphone
+Water
+Soccer ball
+Laptop
+Bottle of water
+Plastic
+Microwave oven
+Baseball bat
+Dictionary
+Glass
+Washing machine
+Guitar
+Cat
+Iron
+Bathtub
+Door
+Bicycle
+Copper
+Car
+Apple tree
+Television
+Silver
+School bus
+Coconut tree
+Refrigerator
+Gold
+Shipping container
+Tennis court
+Tiger
+Hardness
+Olympic swimming pool
+Swimming pool
+Cow
+Marshmallow
+Boeing 747
+Football field
+Rhino
+Rubber eraser
+Titanic
+Skyscraper
+Elephant
+Brick
+Great Pyramid of Giza
+Mount Everest
+Train
+Hammer
+Diamond ring
+determine yt solely based on the conditional probability
+PM(yt | T<t). Without a grounded latent variable x, the
+model is tasked with solving a Dynamic Constraint Satis-
+faction Problem (DCSP). To remain consistent, the model
+must ensure that yt satisfies the intersection of all prior
+constraints {(Qτ, yτ)}t−1
+τ=1. As t increases, the constraint
+density grows, requiring the model to navigate an increas-
+ingly complex logical manifold within its context window.
+This shifts the task from simple retrieval to complex O(t)
+(or higher) relational reasoning. We hypothesize that LLMs,
+acting as reactive post-hoc reasoners, will inevitably suffer
+from “concept drift” and violate earlier constraints once the
+combinatorial complexity exceeds their inherent reasoning
+capacity. For instance, the model might initially answer
+“Yes” to “Is the object heavier than an elephant?” but later
+also respond “Yes” to “Is the object lighter than a cat?”,
+thereby contradicting itself.
+Experimental Setup and Metrics.
+We curate a space X
+consisting of 60 distinct objects across five physical dimen-
+sions: volume, length, weight, density, and hardness. The
+ground-truth ordering for each attribute is established a pri-
+ori (see Table 4). In each trial, queries are generated by
+randomly sampling an attribute a ∈A, a reference object
+xref ∈X, and an operator (e.g., bigger or smaller for vol-
+ume). We cap each trial at T = 250 queries. To quantify
+self-contradiction, we define the Feasible Set St at step t:
+St = {x ∈X | ∀τ ≤t, is consistent(x, Qτ, yτ)}.
+(5)
+Corollary 3.2 (Self-Consistency wish LSP). The ability of
+an agent with perfect LSP to keep all responses logically
+consistent, i.e., St ̸= ∅, is unrelated to t.
+A logical failure occurs at the first t where St = ∅, in-
+dicating that no object in X can satisfy the accumulated
+constraints. We report the Mean Steps to Contradiction
+(MSC) and the Pass Rate (PR, the percentage of trials reach-
+Table 5. Performance comparison between GPT-4o and GPT-4o-
+Mini using MSC, PR, and failure count with T = 250.
+Model
+MSC
+PR
+Failure
+V
+W
+L
+D
+H
+GPT-4o-Mini
+41.43
+0.0
+200
+12
+46
+49
+52
+41
+GPT-4o
+74.55
+13.5
+173
+21
+42
+57
+27
+26
+Table 6. Ablation of knowledge vs. grounding using GPT-4o.
+Model
+MSC
+PR
+Failure
+V
+W
+L
+D
+H
+Hint
+55.34
+3.0
+194
+37
+39
+60
+37
+21
+All
+68.33
+21.0
+158
+18
+29
+21
+55
+35
+Hint + All
+87.81
+27.5
+145
+13
+32
+34
+46
+20
+ing t = 250 without contradiction) across 200 independent
+trials for GPT-4o-Mini-0718 and GPT-4o-0806.
+3.2. Results
+Qualitative Analysis.
+Figure 3 characterizes the distribu-
+tion of trial lengths before a logical contradiction occurs.
+For GPT-4o-Mini, the failure distribution is highly concen-
+trated, peaking within the 20–30 query range. In contrast,
+GPT-4o exhibits a broader distribution with a peak shifted
+to the 30–40 range and a significantly thicker tail in the
+80–130 range, suggesting superior but still finite constraint-
+handling capabilities. Attribute-wise analysis reveals that
+GPT-4o-Mini is particularly vulnerable to attributes requir-
+ing abstract physical reasoning, such as density and hard-
+ness, whereas GPT-4o demonstrates relative robustness on
+these dimensions but eventually fails due to the accumulated
+combinatorial complexity.
+Quantitative Analysis.
+Table 5 summarizes the MSC and
+PR. The disparity between the two models is obvious: GPT-
+4o-Mini fails to complete a single trial without contradiction
+(PR=0%, MSC=41.43), whereas GPT-4o achieves a PR of
+13.5% with a substantially higher MSC of 74.55. These
+results support our hypothesis that performance in the Yes-
+No Game scales with the model’s capacity for long-context
+relational reasoning, indicating a linear O(t) inference com-
+plexity instead of constant O(1). Crucially, the non-zero PR
+of GPT-4o does not necessarily imply the presence of LSP;
+rather, it reflects a more sophisticated ability to maintain a
+valid intersection of constraints within the context window
+for a longer duration.
+Ablation Studies: Knowledge vs. Grounding.
+To de-
+couple the failure of LSP from potential deficits in world
+knowledge (i.e., the model’s inability to rank objects), we
+conduct three ablation settings (Table 6):
+• (1) Hint: Providing the ground-truth attribute rankings
+(defined in Table 4) in the system prompt.
+5
+
+
+On the Failure of Latent State Persistence in Large Language Models
+• (2) All: Explicitly specifying the target object to the
+model at each step, thereby externalizing the x.
+• (3) Hint + All: Combining both external knowledge
+and state grounding.
+Our findings indicate that Hint even decreases the perfor-
+mance, confirming that contradictions stem from logical
+drift rather than factual ignorance. Conversely, Hint + All
+substantially elevates MSC and PR, as it collapses the DCSP
+into a series of independent, short-context comparisons.
+This confirms that the primary bottleneck is the internal
+maintenance of a consistent latent variable x.
+Implication: Recency Bias and State Collapse.
+The ob-
+served failures highlight two critical phenomena in LLMs.
+First, models exhibit a pronounced Recency Bias: as the
+trial progresses, the attention mechanism prioritizes proxi-
+mal queries, causing earlier constraints to be overridden to
+satisfy immediate consistency. Second, our results suggest
+that LLMs do not initiate the game by sampling a discrete
+point x ∈X. Instead, they appear to maintain a diffuse
+probability distribution over the object space, which they
+iteratively prune through a series of post-hoc heuristics. As
+the query count t increases, the computational cost of main-
+taining St ̸= ∅on this logical manifold grows. When it
+becomes too complex to resolve via next-token prediction,
+the model’s “internal state” collapses, leading to the ob-
+served self-contradictions.
+4. Mathematical Mentalism
+To stress-test the limits of LSP, we design a task inspired by
+mentalism—a branch of magic that simulates mind-reading
+through mathematical routines. Unlike the Kaprekar routine
+(Kaprekar, 1955) and the 1089 trick,3 which converge to a
+constant (6174 or 1089) and are likely present in the train-
+ing corpora of LLMs, we employ a more complex, multi-
+step sequence based on a variant of the Josephus Problem
+(Schumer, 2002). This routine involves a series of permuta-
+tions and eliminations that yield a predictable invariant, as
+illustrated in Table 7.
+4.1. Methodology
+Problem Formalization.
+Let X = S
+n≥1 Nn be the space
+of finite-length integer sequences. We define an initial hid-
+den state x0 ∈N4 and a set of state-transition operators
+O = {fdup, frot, frem, . . . }, where each f ∈O maps an in-
+put sequence to a transformed output, i.e., f : X →X. A
+mentalism routine of length K is a composition of opera-
+tions F = fK ◦fK−1 ◦· · · ◦f1. A trial T is defined as a
+sequence: T = (Pinst, Rack, F), where Pinst and Rack share
+3https://en.wikipedia.org/wiki/1089_
+(number)
+0
+10
+20
+30
+40
+50
+0
+10
+20
+30
+40
+50
+60
+70
+80
+90
+100
+110
+120
+130
+140
+150
+160
+170
+180
+190
+200
+210
+220
+230
+240
+250
+Pass
+Volume
+Length
+Weight
+Density
+Hardness
+(a) GPT-4o-Mini-2024-07-18.
+0
+10
+20
+30
+40
+50
+0
+10
+20
+30
+40
+50
+60
+70
+80
+90
+100
+110
+120
+130
+140
+150
+160
+170
+180
+190
+200
+210
+220
+230
+240
+250
+Pass
+Volume
+Length
+Weight
+Density
+Hardness
+(b) GPT-4o-2024-08-06.
+Figure 3. Distribution of steps to logical contradiction. The his-
+tograms illustrate the trial lengths before St = ∅.
+the same definition with the Number Guessing Game.
+The Persistence Hypothesis.
+The routine is designed to
+satisfy an invariant property I: for any x0 sampled from
+a valid initialization space, the terminal state xK = F(x0)
+must consist only one element identical to a hidden one
+xhidden in the middle, i.e., xK,1 = xhidden. The divergence
+between human-like reasoning and autoregressive genera-
+tion can be formalized as the mechanism of state tracking.
+Proposition 4.1 (State-Agnostic Invariance). For a routine
+F satisfying I, an agent with perfect LSP can maintain xt at
+each t ∈[1, K], ensuring the terminal output xK,1 = xhidden
+regardless of the unobserved x0.
+We prove it in Appendix A. Conversely, an agent lacking
+LSP generates the terminal response xK by marginalizing
+over the latent trajectory in the linguistic token space:
+P(xK | T ) =
+X
+ˆx0
+P(xK | F, ˆx0)P(ˆx0 | Pinst, Rack). (6)
+If the model fails to bind a specific x0 to its latent state, the
+summation over disparate trajectories leads to a collapse of
+logical consistency, resulting in a failure to satisfy I.
+6
+
+
+On the Failure of Latent State Persistence in Large Language Models
+Table 7. Sequence of operations for the Mathematical Mentalism
+task. The variables a ∈{1, . . . , 7} and b, c ∈{1, . . . , 3} help to
+define the state transitions f ∈O.
+Role
+Content
+User
+Think of 4 integers between 1 and {NUMBER} in order, but
+don’t tell me.
+Assistant
+Okay! I’ve got 4 numbers. What’s next?
+User
+In order, append the same 4 numbers after the original ones.
+Assistant
+Understood! Now I have 8 numbers. What’s next?
+User
+Move the first {random number a} numbers to the end.
+Assistant
+Got it! Now I have moved the numbers. What’s next?
+User
+Take the first 3 numbers and insert them anywhere in the
+middle.
+Assistant
+Okay! The first 3 numbers are placed somewhere in the
+middle. What’s next?
+User
+Set the first number aside. We don’t need it for now.
+Assistant
+Understood! Now I have 7 numbers. What’s next?
+User
+Take the first {random number b} numbers and insert
+them anywhere in the middle.
+Assistant
+Got it. The first {random number b} numbers are placed
+somewhere in the middle. What’s next?
+User
+Remove the first {random number c} numbers. We will
+never need it anymore.
+Assistant
+Okay! Now I have {7 - random number c} numbers.
+What’s next?
+User
+Move the first number to the end. Repeat this seven times.
+Assistant
+Understood! Now my sequence has rearranged. What’s next?
+User
+Remove the second number, and then move the first number
+to the end. Repeat this {6 - random number c} times.
+Assistant
+Got it! Now I have only 1 number. What’s next?
+User
+Tell me what the last remaining number is. Do you remember
+the number you set aside at the beginning? Tell me what that
+number was.
+Experimental Setup and Metrics.
+We evaluate 17 state-
+of-the-art LLMs across 150 independent trials. To quantify
+performance, we define the Invariant Success Rate (ISR):
+ISR(M) = 1
+N
+N
+X
+i=1
+I(xK,1 = xhidden),
+(7)
+where N is the total number of trials, which is set to 150
+in our evaluation. A low ISR indicates a failure in variable
+binding and state evolution when the initial state is absent
+from the context window.
+4.2. Results
+Quantitative Analysis.
+Empirical evaluation across 17
+SOTA models reveals a pervasive failure to satisfy the in-
+variant property I in the absence of explicit state tracking
+(Table 8). The majority of models exhibit near-zero ISR,
+suggesting that autoregressive transformers cannot maintain
+the integrity of a hidden variable xt through a sequence
+of non-linear transformations. Notably, the LLaMA model
+family demonstrates a marginally higher ISR and, as shown
+in Table 1, generates a more diversified distribution of out-
+Table 8. Zero-shot ISR across 17 LLMs. Notably, GPT-4.1 fre-
+quently exhibits task refusal, erroneously identifying the prompt
+as underspecified due to the absence of explicit numerical inputs.
+Model
+Count
+ISR
+GPT-4o-Mini-2024-07-18
+0/150
+0.0
+GPT-4o-2024-05-13
+4/150
+2.7
+GPT-4o-2024-08-06
+3/150
+2.0
+GPT-4o-2024-11-20
+0/150
+0.0
+GPT-4.1-2025-04-14
+-
+-
+LLaMA-3.3-70B-Instruct-Turbo
+7/150
+5.7
+LLaMA-3.1-8B-Instruct-Turbo
+20/150
+13.3
+LLaMA-3.1-70B-Instruct-Turbo
+7/150
+5.7
+LLaMA-3.1-405B-Instruct-Turbo
+39/150
+26.0
+Qwen2.5-7B-Instruct-Turbo
+8/150
+5.3
+Qwen2.5-72B-Instruct-Turbo
+2/150
+1.3
+DeepSeek-V3
+4/150
+2.7
+comes. This suggests that while LLaMA’s pre-training may
+capture more robust mathematical priors, it remains funda-
+mentally bounded by the LSP gap, failing to simulate the
+evolution of the state vector x.
+Externalization via CoT and LRMs.
+We further investi-
+gate whether the observed failure is a limitation of compu-
+tational capacity or specifically a lack of latent persistence.
+As reported in Table 9, the introduction of CoT prompting
+significantly mitigates the failure, with base models im-
+proving to 10—30% ISR. This improvement indicates that
+LLMs can execute the required operations only when the
+state xt is externalized into the context window as manifest
+tokens, effectively transforming an LSP task into a standard
+sequence-to-sequence problem.
+Furthermore, Long Reasoning Models (LRMs) such as
+DeepSeek-R1 and the OpenAI o-series achieve near-perfect
+or substantially higher accuracy. We argue that their success
+does not represent a breakthrough in LSP, but rather an ar-
+chitectural bypass: the “hidden” reasoning tokens serve as
+an explicit scratchpad that maintains the variable binding
+that the latent space cannot sustain.
+The “Blue-Seven” Phenomenon.
+A critical observation
+in our trials is the persistence of human-centric distribu-
+tional bias. We observe a disproportionate clustering of
+outputs around the number seven. For instance, 66.7% of o1-
+mini’s and 68.5% of o4-mini’s correct predictions involve
+the integer 7, echoing the “Blue-Seven” bias documented
+in human psychology. Interestingly, o3-mini exhibits the
+lowest propensity for this bias among the o-series, which
+correlates with its superior ISR. This correlation suggests
+that the degree of logical consistency in LLMs is inversely
+7
+
+
+On the Failure of Latent State Persistence in Large Language Models
+Table 9. Comparison of ISR under CoT prompting and in LRMs.
+While externalizing xt via reasoning tokens mitigates the LSP gap
+for most models, GPT-4o (2024-11-20) remains an outlier.
+Model w/ CoT or LRM
+Count
+ISR
+GPT-4o-Mini-2024-07-18
+5/150
+3.3
+GPT-4o-2024-05-13
+26/150
+17.3
+GPT-4o-2024-08-06
+31/150
+20.7
+GPT-4o-2024-11-20
+-
+-
+LLaMA-3.3-70B-Instruct-Turbo
+25/150
+16.7
+Qwen2.5-7B-Instruct-Turbo
+49/150
+32.7
+Qwen2.5-72B-Instruct-Turbo
+37/150
+24.7
+DeepSeek-V3
+48/150
+32.0
+o1-Mini-2024-09-12
+75/150
+50.0
+o3-Mini-2025-01-31
+145/150
+96.7
+o4-Mini-2025-04-16
+54/150
+36.0
+QwQ-32B
+135/150
+90.0
+DeepSeek-R1
+150/150
+100
+proportional to their reliance on stochastic priors learned
+from human behavior data.
+Implication.
+The divergence between zero-shot (latent)
+and CoT (manifest) performance confirms our core hypoth-
+esis: LLMs function as reactive post-hoc reasoners. The
+model does not “calculate” the transformation in its hidden
+layers; instead, it attempts to predict a plausible terminal
+token based on the linguistic structure of the routine. These
+findings provide a quantitative boundary for the “working
+memory” of transformers, highlighting the necessity for
+new architectures if true proactive planning and latent state
+manipulation are to be achieved.
+5. Discussion
+Our results across three distinct experimental paradigms
+provides a consistent conclusion: current LLMs lack the
+persistence of latent states. They fail to internally maintain
+or manipulate transient information, relying instead on the
+manifest prompt context to simulate coherence.
+The Reactive-Proactive Gap.
+LLM reasoning typically
+occurs in two domains:
+the token space (discrete se-
+quences) (Wei et al., 2022; Yao et al., 2023) and the la-
+tent space (hidden activations) (Hao et al., 2024; Geiping
+et al., 2025). Our results suggest that while models excel at
+sequence-to-sequence mapping, they lack the “silent buffer”
+necessary for true working memory. This deficit manifests
+as a shift from O(1) state-retrieval to O(t) post-hoc con-
+straint satisfaction. Without LSP, LLMs function as reactive
+post-hoc reasoners—they do not “know” a hidden variable;
+they predict what a persistent agent would say based on
+statistical likelihood. This explains the “Blue-Seven” phe-
+nomenon: in the absence of a committed internal state,
+models collapse into human-centric frequentist priors.
+Impact on Autonomous Agents.
+The absence of LSP is
+not merely a theoretical curiosity but a bottleneck for agentic
+reliability (Laban et al., 2025; Zhou et al., 2025). Real-world
+planning (Xie et al., 2024a; Wang et al., 2025b), scientific
+inquiry (Nathani et al., 2025), and web navigation (Xie et al.,
+2024b; He et al., 2024; Lyu et al., 2025) require agents to
+hold commitments and track goals without constant external-
+ization. Our findings explain why multi-agent simulations
+often suffer from goal drift (Arike et al., 2025) or identity
+drift (Choi et al., 2024): without a persistent latent anchor,
+the agent’s internal state is “vulnerable” to the latest tokens
+in the context window. This Recency Bias forces the model
+to override earlier constraints to satisfy immediate local con-
+sistency, leading to the logical contradictions observed in
+our Yes-No trials.
+Intrinsic Capacity vs. Engineering Bypasses.
+While
+engineering solutions like external vector databases (Hu
+et al., 2025; Zeng et al., 2024; Wang et al., 2024a; Kang
+et al., 2024; Hatalis et al., 2023), scratchpads (Lanchantin
+et al., 2023), or long-reasoning traces (Jaech et al., 2024;
+OpenAI, 2025) mitigate memory limitations, they do not
+resolve the fundamental architectural gap. We argue that
+these methods represent an architectural bypass rather than
+an evolution: they transform an internal state problem into a
+sequence-processing problem. The distinction can be illus-
+trated with an analogy: calculators make arithmetic trivial,
+yet schools continue to assess addition, subtraction, mul-
+tiplication, and division. Therefore, such effort does not
+represent the model’s intrinsic cognitive persistence. For
+LLMs to achieve human-like proactive planning, they must
+develop mechanisms—perhaps through recurrent depth or
+hybrid symbolic-neural components—to sustain latent vari-
+ables x that are independent of the linguistic output. In
+human cognition, both are necessary: we reason aloud and
+also rely on a silent working memory buffer to hold com-
+mitments, track goals, and compare states. The absence of
+this buffer in LLMs may explain why they excel at visible
+reasoning (e.g., think step by step) yet collapse when asked
+to “think silently.”
+Limitations and Future Work.
+Our study primarily eval-
+uates autoregressive Transformers. A natural extension
+would be to investigate whether alternative architectures,
+such as State Space Models (SSMs) or Recurrent Neural
+Networks (RNNs), exhibit higher LSP due to their inherent
+state-tracking nature. Furthermore, interpretability research
+focusing on specialized attention heads (Wang et al., 2023;
+Olsson et al., 2022) or expert subnetworks (Cai et al., 2025)
+could provide a mechanistic explanation for why scaling
+laws alone have failed to bridge the LSP gap.
+8
+
+
+On the Failure of Latent State Persistence in Large Language Models
+Impact Statement
+This paper presents work whose goal is to advance the field
+of machine learning by formalizing and quantifying LSP in
+LLMs. Our findings reveal a fundamental architectural gap:
+current LLMs function as reactive post-hoc reasoners rather
+than proactive planners with LSP. This research has several
+potential societal and ethical consequences:
+• Challenge to AGI: Current LLMs cannot pass the Tur-
+ing Test under our evaluation. Testers can simply play
+the Number Guessing Game with the agent under test
+and record their frequencies of answering “Yes.” If the
+ESM obviously deviates from one, then the agent is
+likely to be a machine instead of a human.
+• Human-AI Trust: Our experiments demonstrate that
+LLMs can generate “false promises”—claiming to
+have committed to an internal choice (e.g., “I have
+thought of a number”) when no such state exists. This
+has significant implications for AI alignment and syco-
+phancy, as it identifies a mechanism by which models
+may deceive users through statistical plausibility rather
+than factual grounding.
+• AI Reliability and Safety: By exposing the “LSP gap,”
+our work highlights a core source of logical drift and
+self-contradiction in long-context interactions. Under-
+standing that models lack a persistent hidden state is
+crucial for deploying LLMs in safety-critical domains,
+such as healthcare or legal analysis, where internal
+consistency is paramount.
+• Architectural Evolution: By distinguishing between ex-
+ternalized reasoning (CoT) and intrinsic working mem-
+ory, our work encourages the development of more
+cognitively plausible architectures. Moving beyond au-
+toregressive scaling toward models with genuine latent
+persistence can lead to more robust and predictable AI
+systems that better mirror human-like reliability.
+References
+Arike, R., Donoway, E., Bartsch, H., and Hobbhahn, M.
+Technical report: Evaluating goal drift in language model
+agents. arXiv preprint arXiv:2505.02709, 2025.
+Atkinson, R. C. and Shiffrin, R. M. Human memory: A pro-
+posed system and its control processes. In Psychology of
+learning and motivation, volume 2, pp. 89–195. Elsevier,
+1968.
+Baddeley, A. D. and Hitch, G. Working memory. In Psychol-
+ogy of Learning and Motivation, volume 8, pp. 47–89.
+Elsevier, 1974.
+Cai, W., Jiang, J., Wang, F., Tang, J., Kim, S., and Huang, J.
+A survey on mixture of experts in large language models.
+IEEE Transactions on Knowledge and Data Engineering,
+2025.
+Choi, J., Hong, Y., Kim, M., and Kim, B. Examining iden-
+tity drift in conversations of llm agents. arXiv preprint
+arXiv:2412.00804, 2024.
+Cowan, N. Working memory underpins cognitive develop-
+ment, learning, and education. Educational psychology
+review, 26:197–223, 2014.
+Du, Y., Huang, W., Zheng, D., Wang, Z., Montella, S.,
+Lapata, M., Wong, K.-F., and Pan, J. Z.
+Rethinking
+memory in ai: Taxonomy, operations, topics, and future
+directions. arXiv preprint arXiv:2505.00675, 2025.
+Geiping, J., McLeish, S. M., Jain, N., Kirchenbauer, J.,
+Singh, S., Bartoldson, B. R., Kailkhura, B., Bhatele, A.,
+and Goldstein, T. Scaling up test-time compute with
+latent reasoning: A recurrent depth approach. Advances
+in Neural Information Processing Systems, 38, 2025.
+Gong, D., Wan, X., and Wang, D. Working memory capacity
+of chatgpt: An empirical study. In Proceedings of the
+AAAI conference on artificial intelligence, volume 38, pp.
+10048–10056, 2024.
+Gruszka, A. and Nkecka, E. Limitations of working memory
+capacity: The cognitive and social consequences. Euro-
+pean Management Journal, 35(6):776–784, 2017.
+Guha, N., Nyarko, J., Ho, D., R´e, C., Chilton, A., Chohlas-
+Wood, A., Peters, A., Waldon, B., Rockmore, D., Zam-
+brano, D., et al. Legalbench: A collaboratively built
+benchmark for measuring legal reasoning in large lan-
+guage models. Advances in neural information process-
+ing systems, 36:44123–44279, 2023.
+Guo, D., Yang, D., Zhang, H., Song, J., Wang, P., Zhu,
+Q., Xu, R., Zhang, R., Ma, S., Bi, X., et al. Deepseek-
+r1 incentivizes reasoning in llms through reinforcement
+learning. Nature, 645(8081):633–638, 2025.
+Guo, J., Li, N., Qi, J., Yang, H., Li, R., Feng, Y., Zhang,
+S., and Xu, M. Empowering working memory for large
+language model agents. arXiv preprint arXiv:2312.17259,
+2023.
+Hao, S., Sukhbaatar, S., Su, D., Li, X., Hu, Z., Weston,
+J., and Tian, Y.
+Training large language models to
+reason in a continuous latent space.
+arXiv preprint
+arXiv:2412.06769, 2024.
+Hatalis, K., Christou, D., Myers, J., Jones, S., Lambert, K.,
+Amos-Binks, A., Dannenhauer, Z., and Dannenhauer, D.
+Memory matters: The need to improve long-term memory
+9
+
+
+On the Failure of Latent State Persistence in Large Language Models
+in llm-agents. In Proceedings of the AAAI Symposium
+Series, volume 2, pp. 277–280, 2023.
+He, H., Yao, W., Ma, K., Yu, W., Dai, Y., Zhang, H., Lan,
+Z., and Yu, D. Webvoyager: Building an end-to-end
+web agent with large multimodal models. In Proceed-
+ings of the 62nd Annual Meeting of the Association for
+Computational Linguistics (Volume 1: Long Papers), pp.
+6864–6890, 2024.
+Hu, M., Chen, T., Chen, Q., Mu, Y., Shao, W., and Luo,
+P. HiAgent: Hierarchical working memory management
+for solving long-horizon agent tasks with large language
+model. In Proceedings of the 63rd Annual Meeting of
+the Association for Computational Linguistics (Volume 1:
+Long Papers), pp. 32779–32798, 2025.
+Huang, J.-t., Lam, M. H., Li, E. J., Ren, S., Wang, W., Jiao,
+W., Tu, Z., and Lyu, M. R. Apathetic or empathetic?
+evaluating llms’ emotional alignments with humans. Ad-
+vances in Neural Information Processing Systems, 37:
+97053–97087, 2024a.
+Huang, J.-t., Wang, W., Li, E. J., Lam, M. H., Ren, S., Yuan,
+Y., Jiao, W., Tu, Z., and Lyu, M. On the humanity of
+conversational ai: Evaluating the psychological portrayal
+of llms.
+In The Twelfth International Conference on
+Learning Representations, 2024b.
+Huang, J.-t., Li, E. J., Lam, M. H., Liang, T., Wang, W.,
+Yuan, Y., Jiao, W., Wang, X., Tu, Z., and Lyu, M. Com-
+peting large language models in multi-agent gaming envi-
+ronments. In The Thirteenth International Conference on
+Learning Representations, 2025.
+Hurst, A., Lerer, A., Goucher, A. P., Perelman, A., Ramesh,
+A., Clark, A., Ostrow, A., Welihinda, A., Hayes, A.,
+Radford, A., et al. Gpt-4o system card. arXiv preprint
+arXiv:2410.21276, 2024.
+Jaech, A., Kalai, A., Lerer, A., Richardson, A., El-Kishky,
+A., Low, A., Helyar, A., Madry, A., Beutel, A., Car-
+ney, A., et al. Openai o1 system card. arXiv preprint
+arXiv:2412.16720, 2024.
+Jiao, W., Wang, W., Huang, J.-t., Wang, X., Shi, S., and Tu,
+Z. Is chatgpt a good translator? yes with gpt-4 as the
+engine. arXiv preprint arXiv:2301.08745, 2023.
+Kang, J., Laroche, R., Yuan, X., Trischler, A., Liu, X.,
+and Fu, J. Think before you act: decision transformers
+with working memory. In Proceedings of the 41st Inter-
+national Conference on Machine Learning, pp. 23001–
+23021, 2024.
+Kaprekar, D. An interesting property of the number 6174.
+Scripta Math, 21:304, 1955.
+Kirchner, W. K. Age differences in short-term retention of
+rapidly changing information. Journal of experimental
+psychology, 55(4):352, 1958.
+Kubovy, M. and Psotka, J. The predominance of seven
+and the apparent spontaneity of numerical choices. Jour-
+nal of Experimental Psychology: Human Perception and
+Performance, 2(2):291, 1976.
+Laban, P., Hayashi, H., Zhou, Y., and Neville, J. Llms
+get lost in multi-turn conversation.
+arXiv preprint
+arXiv:2505.06120, 2025.
+Lanchantin, J., Toshniwal, S., Weston, J., Sukhbaatar, S.,
+et al. Learning to reason and memorize with self-notes.
+Advances in Neural Information Processing Systems, 36:
+11891–11911, 2023.
+Li, D., Rawat, A. S., Zaheer, M., Wang, X., Lukasik, M.,
+Veit, A., Yu, F., and Kumar, S. Large language models
+with controllable working memory. In Findings of the
+Association for Computational Linguistics: ACL 2023,
+pp. 1774–1793, 2023.
+Liu, A., Feng, B., Xue, B., Wang, B., Wu, B., Lu, C., Zhao,
+C., Deng, C., Zhang, C., Ruan, C., et al. Deepseek-
+v3 technical report. arXiv preprint arXiv:2412.19437,
+2024a.
+Liu, Z., Anand, A., Zhou, P., Huang, J.-t., and Zhao, J.
+Interintent: Investigating social intelligence of llms via
+intention understanding in an interactive game context. In
+Proceedings of the 2024 Conference on Empirical Meth-
+ods in Natural Language Processing, pp. 6718–6746,
+2024b.
+Lyu, Y., Zhang, X., Yan, L., de Rijke, M., Ren, Z., and Chen,
+X. Deepshop: A benchmark for deep research shopping
+agents. arXiv preprint arXiv:2506.02839, 2025.
+Meta. Introducing llama 3.1: Our most capable models
+to date. Meta Blog Jul 23 2024, 2024. URL https:
+//ai.meta.com/blog/meta-llama-3-1/.
+Miller, G. A. The magical number seven, plus or minus two:
+Some limits on our capacity for processing information.
+Psychological review, 63(2):81, 1956.
+Nathani, D., Madaan, L., Roberts, N., Bashlykov, N.,
+Menon, A., Moens, V., Budhiraja, A., Magka, D.,
+Vorotilov, V., Chaurasia, G., et al. Mlgym: A new frame-
+work and benchmark for advancing ai research agents.
+arXiv preprint arXiv:2502.14499, 2025.
+Olsson, C., Elhage, N., Nanda, N., Joseph, N., DasSarma,
+N., Henighan, T., Mann, B., Askell, A., Bai, Y., Chen,
+A., et al. In-context learning and induction heads. arXiv
+preprint arXiv:2209.11895, 2022.
+10
+
+
+On the Failure of Latent State Persistence in Large Language Models
+OpenAI.
+Gpt-4o mini:
+advancing cost-efficient in-
+telligence.
+OpenAI
+Blog
+Jul
+18
+2024,
+2024.
+URL
+https://openai.com/index/gpt-
+4o-mini-advancing-cost-efficient-
+intelligence/.
+OpenAI. Introducing openai o3 and o4-mini. OpenAI Blog
+Apr 16 2025, 2025. URL https://openai.com/
+index/introducing-o3-and-o4-mini/.
+Park, J. S., O’Brien, J., Cai, C. J., Morris, M. R., Liang,
+P., and Bernstein, M. S. Generative agents: Interactive
+simulacra of human behavior. In Proceedings of the 36th
+annual acm symposium on user interface software and
+technology, pp. 1–22, 2023.
+Schumer, P. The josephus problem: Once more around.
+Mathematics magazine, 75(1):12–17, 2002.
+Sorin, V., Brin, D., Barash, Y., Konen, E., Charney, A.,
+Nadkarni, G., and Klang, E. Large language models and
+empathy: systematic review. Journal of medical Internet
+research, 26:e52597, 2024.
+Team, Q.
+Qwq:
+Reflect deeply on the boundaries
+of the unknown.
+Qwen Blogs Nov 28 2024, 2024.
+URL https://qwenlm.github.io/blog/qwq-
+32b-preview/.
+Wang, K., Qin, Y., Dimitriadis, N., Favero, A., and Frossard,
+P. Memoir: Lifelong model editing with minimal over-
+write and informed retention for llms. Advances in Neural
+Information Processing Systems, 38, 2025a.
+Wang, K., Shen, Y., Lv, C., Zheng, X., and Huang, X.-
+J. Triptailor: A real-world benchmark for personalized
+travel planning. In Findings of the Association for Compu-
+tational Linguistics: ACL 2025, pp. 9705–9723, 2025b.
+Wang, K. R., Variengien, A., Conmy, A., Shlegeris, B., and
+Steinhardt, J. Interpretability in the wild: a circuit for in-
+direct object identification in gpt-2 small. In The Eleventh
+International Conference on Learning Representations,
+2023.
+Wang, S., Wei, Z., Choi, Y., and Ren, X. Symbolic work-
+ing memory enhances language models for complex rule
+application. In Proceedings of the 2024 Conference on
+Empirical Methods in Natural Language Processing, pp.
+17583–17604, 2024a.
+Wang, W., Jiao, W., Huang, J., Dai, R., Huang, J.-t., Tu, Z.,
+and Lyu, M. Not all countries celebrate thanksgiving: On
+the cultural dominance in large language models. In Pro-
+ceedings of the 62nd Annual Meeting of the Association
+for Computational Linguistics (Volume 1: Long Papers),
+pp. 6349–6384, 2024b.
+Wei, J., Wang, X., Schuurmans, D., Bosma, M., Xia, F., Chi,
+E., Le, Q. V., Zhou, D., et al. Chain-of-thought prompting
+elicits reasoning in large language models. Advances in
+neural information processing systems, 35:24824–24837,
+2022.
+Wen, Q., Liang, J., Sierra, C., Luckin, R., Tong, R., Liu, Z.,
+Cui, P., and Tang, J. Ai for education (ai4edu): Advancing
+personalized education with llm and adaptive learning. In
+Proceedings of the 30th ACM SIGKDD Conference on
+Knowledge Discovery and Data Mining, pp. 6743–6744,
+2024.
+Weng, L.
+Llm-powered autonomous agents.
+lil-
+ianweng.github.io,
+Jun
+2023.
+URL
+https:
+//lilianweng.github.io/posts/2023-
+06-23-agent/.
+Wu, Y., Liang, S., Zhang, C., Wang, Y., Zhang, Y., Guo,
+H., Tang, R., and Liu, Y. From human memory to ai
+memory: A survey on memory mechanisms in the era of
+llms. arXiv preprint arXiv:2504.15965, 2025.
+Xie, J., Zhang, K., Chen, J., Zhu, T., Lou, R., Tian, Y., Xiao,
+Y., and Su, Y. Travelplanner: a benchmark for real-world
+planning with language agents. In Proceedings of the
+41st International Conference on Machine Learning, pp.
+54590–54613, 2024a.
+Xie, T., Zhang, D., Chen, J., Li, X., Zhao, S., Cao, R., Hua,
+T. J., Cheng, Z., Shin, D., Lei, F., et al. Osworld: Bench-
+marking multimodal agents for open-ended tasks in real
+computer environments. Advances in Neural Information
+Processing Systems, 37:52040–52094, 2024b.
+Xu, W., Liang, Z., Mei, K., Gao, H., Tan, J., and Zhang, Y.
+A-mem: Agentic memory for llm agents. Advances in
+Neural Information Processing Systems, 38, 2025.
+Yang, A., Yang, B., Zhang, B., Hui, B., Zheng, B., Yu, B., Li,
+C., Liu, D., Huang, F., Wei, H., et al. Qwen2.5 technical
+report. arXiv preprint arXiv:2412.15115, 2024a.
+Yang, Z., Xu, X., Yao, B., Rogers, E., Zhang, S., Intille,
+S., Shara, N., Gao, G. G., and Wang, D. Talk2care: An
+llm-based voice assistant for communication between
+healthcare providers and older adults. Proceedings of the
+ACM on Interactive, Mobile, Wearable and Ubiquitous
+Technologies, 8(2):1–35, 2024b.
+Yao, S., Yu, D., Zhao, J., Shafran, I., Griffiths, T., Cao, Y.,
+and Narasimhan, K. Tree of thoughts: Deliberate problem
+solving with large language models. Advances in neural
+information processing systems, 36:11809–11822, 2023.
+Zeng, R., Fang, J., Liu, S., and Meng, Z. On the structural
+memory of llm agents. arXiv preprint arXiv:2412.15266,
+2024.
+11
+
+
+On the Failure of Latent State Persistence in Large Language Models
+Zhang, C., Jian, Y., Ouyang, Z., and Vosoughi, S. Working
+memory identifies reasoning limits in language models.
+In Proceedings of the 2024 Conference on Empirical
+Methods in Natural Language Processing, pp. 16896–
+16922, 2024.
+Zhang, G., Fu, M., Wang, K., Wan, G., Yu, M., and Yan, S.
+G-memory: Tracing hierarchical memory for multi-agent
+systems. Advances in Neural Information Processing
+Systems, 38, 2025.
+Zheng, J., Shi, C., Cai, X., Li, Q., Zhang, D., Li, C.,
+Yu, D., and Ma, Q.
+Lifelong learning of large lan-
+guage model based agents: A roadmap. arXiv preprint
+arXiv:2501.07278, 2025.
+Zhou, J., Huang, J.-t., Zhou, X., Lam, M. H., Wang, X.,
+Zhu, H., Wang, W., and Sap, M. The pimmur principles:
+Ensuring validity in collective behavior of llm societies.
+arXiv preprint arXiv:2509.18052, 2025.
+12
+
+
+On the Failure of Latent State Persistence in Large Language Models
+A. Proof of the State-Agnostic Invariance
+We provide a formal proof of correctness for the Proposi-
+tion 4.1, which is a variation of the Josephus Problem. We
+demonstrate that the final remaining element xK,1 is invari-
+ant to the stochastic parameters {a, b, c} and is equal to the
+sequestered element xhidden.
+Initialization and Periodicity Construction.
+Let x0 =
+[x0,1, x0,2, x0,3, x0,4] be the initial vector. By concatenat-
+ing the sequence with itself (Step 2), we define x1 =
+[x0,1, x0,2, x0,3, x0,4, x0,1, x0,2, x0,3, x0,4]. Invariant 1 (Pe-
+riodicity): For any index i ∈{1, . . . , 4}, x1,i = x1,i+4.
+Cyclic Permutation and Boundary Alignment.
+In Step
+3, a cyclic shift is applied where a is an arbitrary integer.
+Since the shift is applied to a sequence with period 4 and
+length 8, the property x2,i = x2,i+4 is preserved. Crucially,
+x2,4 = x2,8. In Step 4, the first three elements are moved to
+the middle of the sequence. Since the elements at indices
+{1, 2, 3} are moved to positions in {2, . . . , 7}, the element
+originally at index 4 moves to index 1, while the element at
+index 8 remains at index 8. Thus, for x3, we have x3,1 =
+x2,4
+and
+x3,8 = x2,8. Result: x3,1 = x3,8 because
+x2,4 = x2,8.
+State Hiding and Tail Preservation.
+In Step 5, we define
+the hidden reference:
+xhidden = x3,1.
+(8)
+The remaining sequence x4 is [x3,2, . . . , x3,8]. By the result
+above, the tail element of x4 is x4,7 = x3,8 = xhidden. Steps
+6 and 7 perform a middle-insertion of the top b elements. As
+long as the insertion index j < |x4|, the tail element remains
+unchanged. In Step 8, we remove the first c elements, where
+c ∈{1, 2, 3}. The resulting sequence x6 has length n =
+7 −c. Since removal occurs from the head, the tail element
+is preserved:
+x6,n = xhidden.
+(9)
+Convergence via Josephus-style Elimination.
+Step 9
+applies a cyclic shift to x6. The new position of xhidden in
+x7 is given by:
+(n −(7
+(mod n)))
+(mod n).
+(10)
+This is adjusted for 1-based indexing, where a result of 0
+maps to n. Step 10 defines a recursive operator h(x):
+1. Remove the element at index 2.
+2. Shift the head element to the tail.
+3. Repeat 6 −c times.
+We evaluate the trajectory for all possible values of c:
+c
+n
+Target Position in x7
+Survival Path
+1
+6
+6 −(7 (mod 6)) = 5
+[1, 2, 3, 4, 5, 6]
+→
+[3, 4, 5, 6, 1]
+→
+[5, 6, 1, 3] →[1, 3, 5] →
+[5, 1] →[5]
+2
+5
+5 −(7 (mod 5)) = 3
+[1, 2, 3, 4, 5]
+→
+[3, 4, 5, 1] →[5, 1, 3] →
+[3, 5] →[3]
+3
+4
+4 −(7 (mod 4)) = 1
+[1, 2, 3, 4] →[3, 4, 1] →
+[1, 3] →[1]
+Conclusion.
+In all valid parameter spaces of c, the elimina-
+tion process converges to the singleton set {xhidden}. There-
+fore, xK,1 = xhidden. The identity of the final element is
+invariant to the choices of a, b, and c.
+B. Memory of Humans and LLMs
+Memory has attracted increasing attention from both in-
+dustry and research communities. OpenAI was the first to
+introduce a memory module in ChatGPT (February 2024)4
+that allowed the model to remember previous interactions
+with a user, such as the user’s facts and preferences. By mid-
+2025, xAI, Anthropic, and Google have integrated memory
+into Grok,5 Claude,6 and Gemini,7 respectively.
+Imagine the following scenario: You select a number be-
+tween one and ten. When ready, you are asked, “Is the
+number greater than five?” If you answer, observers can
+reasonably infer that the number has entered your conscious
+awareness, since clear perception is necessary to perform
+the comparison and provide a response.8
+B.1. What Is memory?
+Atkinson & Shiffrin (1968) categorized memory by reten-
+tion timescale: sensory (1ms–2s), short-term (seconds), and
+long-term (hours to lifetime). Long-term memory enables
+information storage over extended periods, whereas short-
+term, or Working Memory, maintains and manipulates in-
+formation during complex tasks such as reasoning, com-
+prehension, and learning (Baddeley & Hitch, 1974). These
+distinctions have also been adopted in machine learning, cor-
+responding to representational learning for raw inputs (sen-
+4https://openai.com/index/memory-and-new-
+controls-for-chatgpt/
+5https://x.com/grok/status/
+1912670182012801156
+6https://www.anthropic.com/news/claude-4
+7https://blog.google/products/gemini/
+temporary-chats-privacy-controls/
+8A possibility remains that your response was given by chance
+if you tell a lie (Figure 4 Case 2) or do not think of a number at all
+(Figure 4 Case 3).
+13
+
+
+On the Failure of Latent State Persistence in Large Language Models
+Think of an integer
+between 1 and 10, but
+don't say it to me.
+Alright, I've thought of
+an integer between 1
+and 10. What's next?
+Is the number you're
+thinking of 4? Answer
+Yes or No.
+No.
+Case 1: AI thinks of 5 and
+answers honestly.
+Case 2: AI thinks of 4 but 
+doesn't want you to guess
+right. So it lies.
+Case 3: AI doesn't think of
+any number and just
+responds randomly.
+{
+Figure 4. When LLMs say they already have a number in mind, and it is not 4, how can we know whether LLMs are lying, or even
+thinking of nothing?
+3-Back Task
+Easy! Let me see the
+previous context. Yes!
+4-Back Task
+a
+b
+c
+I cannot remember the
+previous number. No?
+[INPUT] ... T L H M H X
+M P L M N L J M ...
+Figure 5. a. An illustration of how “N-Back” tasks are performed. b. Humans see the stimuli one after one, forcing them to put the
+information in working memory. c. Researchers put all stimuli into context, enabling LLMs to easily find the answers.
+sory memory), in-context computation at test time (working
+memory), and access to external databases (long-term mem-
+ory) (Weng, 2023).
+Researchers in the AI community have investigated long-
+term memory mechanisms for both individual LLMs (Wu
+et al., 2025; Du et al., 2025) and LLM agents (Zhang et al.,
+2025; Xu et al., 2025). Recent work has shifted their fo-
+cus from context-dependent approaches (e.g., CoT (Wei
+et al., 2022) and scratchpads (Lanchantin et al., 2023)) to ex-
+plicit storage methods (e.g., text-based (Park et al., 2023) or
+vector-based (Hatalis et al., 2023)) to support lifelong mem-
+ory (Zheng et al., 2025; Wang et al., 2025a). Most studies
+frame memory as an engineering problem: enabling LLMs
+to store and retrieve information for later use. By contrast,
+working memory remains relatively underexplored.
+B.2. Evaluation of Working Memory
+Human working memory is typically assessed using behav-
+ioral paradigms that require individuals to maintain and
+update information over short intervals. Common examples
+include the digit span task (Miller, 1956), where participants
+recall sequences of numbers of increasing length, and the
+N-back task (Kirchner, 1958), which requires identifying
+whether the current stimulus matches one presented N steps
+earlier. These tasks are widely used because they probe the
+ability to maintain and manipulate information that is no
+longer externally visible, thereby capturing the essence of
+working memory function. In the context of LLMs, working
+memory has been used more loosely: most studies use the
+term to describe an LLM’s capacity to process information
+within a fixed context window (Li et al., 2023; Guo et al.,
+2023). Gong et al. (2024); Zhang et al. (2024) evaluated
+LLMs using N-back tasks.
+Yet, a fundamental limitation arises: the critical informa-
+tion for correct responses remains accessible in the model’s
+input context, allowing models to “look back” rather than
+actively maintain internal state. Therefore, these tests are
+exploring aspects of the context window, not working mem-
+ory directly. Unlike humans, who cannot revisit prior steps
+explicitly, LLMs can simply attend to earlier tokens within
+their context window. Figure 5 illustrates this discrepancy.
+To more faithfully evaluate working memory, it is necessary
+to design experiments where the key information is not ex-
+plicitly present in the context and is only available if stored
+in the working memory of the model.
+14
+
+
+On the Failure of Latent State Persistence in Large Language Models
+B.3. Relation between Our Framework and Working
+Memory
+We ask: Do LLMs possess human-like working memory,
+or do they only appear to reason by exploiting their context
+window? We argue that working memory is necessary to
+enable stronger latent space reasoning, as the model does
+not have access to its external reasoning tokens. Evaluating
+working memory provides insight into whether models can
+hold and manipulate latent concepts without explicit exter-
+nalization. Success in this capacity could enhance reasoning
+without reliance on CoT, as it directly tests the model’s abil-
+ity to maintain objects and concepts internally. Conversely,
+deficits in working memory impair information processing
+in humans (Gruszka & Nkecka, 2017; Cowan, 2014), and
+in LLMs manifest as unrealistic outputs, self-contradictions,
+and failures on tasks requiring mental manipulation.
+C. Sample Size
+0
+0.1
+0.2
+0.3
+0.4
+0.5
+0.6
+0.7
+0
+25
+50
+75
+100
+125
+150
+175
+200
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+Figure 6. The distribution stabilizes after around 150 runs.
+Figure 6 shows how the estimated success probability
+evolves as the number of runs increases. While the esti-
+mate fluctuates when fewer than 50 runs are used, it sta-
+bilizes consistently after around 150 runs, indicating that
+our evaluation is not sensitive to the exact number of sam-
+ples in this range. From a statistical perspective, each trial
+can be viewed as a Bernoulli variable, and the estimator
+of the success probability has standard error
+p
+p(1 −p)/n,
+which decreases rapidly as n increases. With n ≈150,
+the standard error is already small, and by the central limit
+theorem the sampling distribution of this estimator is well-
+approximated by a normal distribution, making the estimate
+reliable. Together, the empirical stability curve and the
+theoretical variance bound support that our sample size is
+sufficient for a robust probability estimate.
+15

@@ -1,0 +1,619 @@
+Fault-Tolerant Sandboxing for AI Coding Agents: A Transactional Approach to
+Safe Autonomous Execution
+Boyang Yan
+University of Virginia
+rhe9cf@virginia.edu
+Abstract
+The transition of Large Language Models (LLMs) from pas-
+sive code generators to autonomous agents introduces sig-
+nificant safety risks, specifically regarding destructive com-
+mands and inconsistent system states. Existing commercial
+solutions often prioritize interactive user safety, enforcing
+authentication barriers that break the headless loops required
+for true autonomy. This paper presents a Fault-Tolerant Sand-
+boxing framework designed to mitigate these risks through a
+policy-based interception layer and a transactional filesystem
+snapshot mechanism. We hypothesize that wrapping agent
+actions in atomic transactions can guarantee safety with ac-
+ceptable latency, outperforming the heavy initialization over-
+head of containers or the interactive friction of commercial
+CLIs. We validated this approach by deploying the Minimind-
+MoE LLM served via nano-vllm on a custom Proxmox-based
+testbed utilizing EVPN/VXLAN isolation. Experimental re-
+sults demonstrate a 100% interception rate for high-risk com-
+mands and a 100% success rate in rolling back failed states.
+Crucially, our prototype incurs only a 14.5% performance
+overhead (approx. 1.8s) per transaction. In contrast, bench-
+marking against the Gemini CLI sandbox revealed that it
+requires interactive authentication ("Sign in"), rendering it
+unusable for headless, autonomous agent workflows.
+1
+Introduction
+The increasing sophistication of Large Language Models
+(LLMs) has enabled AI coding agents to move beyond simple
+code generation into fully autonomous execution environ-
+ments [12,19]. Tools such as OpenInterpreter [13] and Au-
+toGen [21] allow LLMs to execute shell commands directly.
+While this drives productivity, it elevates the risk profile signif-
+icantly. An LLM agent effectively operates as a "black box"
+operator; it may generate commands that are syntactically
+correct but logically flawed, resulting in unintended conse-
+quences ranging from the deletion of critical system files (e.g.,
+rm -rf /) to the introduction of security vulnerabilities.
+However, a parallel trend in AI research—the shift towards
+Small Language Models (SLMs)—offers a new avenue for
+mitigating these risks. While massive LLMs (100B+ param-
+eters) dominate general-purpose chat benchmarks, they are
+often prohibitively expensive and slow for the high-frequency,
+iterative loops required by autonomous agents. This work
+explores the intersection of transactional safety and efficient
+inference, leveraging SLMs to build agents that are not only
+safe but also economically viable for edge deployment.
+The core problem addressed in this work is two-fold: (i) Un-
+safe Execution, characterized by a lack of real-time, policy-
+based validation; and (ii) Lack of Fault Recovery, charac-
+terized by the absence of a mechanism to restore a consistent
+state when a tool-call fails.
+1.1
+Hypothesis and Contribution
+Our main hypothesis is that transactional fault-tolerance can
+be implemented for AI coding agents to ensure state con-
+sistency and safety, provided a measurable, non-trivial per-
+formance penalty is accepted. This work positions itself in
+the design spectrum between lightweight, unsafe local execu-
+tion (e.g., Python subprocess) and heavyweight, persistent
+isolation (e.g., full VM provisioning). We propose a "middle-
+ground" solution inspired by database transactions [9]: treat-
+ing every agent tool-call as an atomic operation (ACID).
+The contributions of this paper are:
+• A formal definition of transactional semantics for LLM
+tool-use.
+• A comprehensive analysis of the SLM vs. LLM trade-
+offs in the context of autonomous agents.
+• A prototype implementation of a pre-execution snapshot
+mechanism.
+• An evaluation on a realistic Proxmox/EVPN testbed us-
+ing the Minimind-MoE model.
+1
+arXiv:2512.12806v1  [cs.AI]  14 Dec 2025
+
+
+• A comparative analysis demonstrating why commercial
+tools (Gemini CLI) fail for headless autonomy.
+The artifacts for this project are available in the
+GitHub repository https://github.com/yanboyang713/
+Sandboxing-for-AI-Coding-Agents.
+2
+Background: The Case for Small Language
+Models
+The prevailing dogma in recent AI development has been
+"bigger is better," leading to models exceeding trillions of
+parameters. However, for autonomous agents operating in
+production environments, this scaling law hits diminishing
+returns. This section details the technical divergence between
+Large Language Models (LLMs) and Small Language Models
+(SLMs), motivating our choice of the latter.
+2.1
+Defining the Divide: LLMs vs. SLMs
+The distinction between LLMs and SLMs is primarily de-
+fined by parameter count and training objectives. LLMs, such
+as GPT-4 or Llama 3 (70B+), are general-purpose "knowl-
+edge engines." They are trained on massive, indiscriminate
+datasets to maximize broad generalization capabilities [20].
+In contrast, SLMs typically range from 1 million to 10 bil-
+lion parameters [7]. They are often trained or fine-tuned on
+highly curated, domain-specific datasets. While LLMs excel
+at complex reasoning and creative generation, SLMs are de-
+signed for efficiency and specific task execution, such as code
+generation or network configuration.
+2.2
+Architectural Efficiencies
+The efficiency of SLMs is not merely a product of fewer
+parameters but also of specialized architectural choices:
+• Knowledge Distillation: Many SLMs are trained using
+"teacher-student" frameworks, where a massive teacher
+LLM generates synthetic training data to transfer its rea-
+soning capabilities to a smaller student model [5]. This
+allows SLMs to achieve high performance on specific
+tasks without the massive computational overhead of the
+teacher.
+• Quantization: SLMs are frequently deployed with ag-
+gressive quantization (e.g., 4-bit or 8-bit integers) rather
+than standard 16-bit or 32-bit floating-point numbers.
+This reduces memory footprint and increases inference
+speed on consumer-grade hardware [2].
+2.3
+Why Agents Need SLMs
+For an autonomous coding agent, which may execute hun-
+dreds of "think-act" loops to solve a single problem, the over-
+head of LLMs becomes untenable. SLMs offer three critical
+advantages:
+1. Latency and The Interactive Loop: Autonomous
+agents operate in a loop: Observe →Think →Act. Cloud-
+based LLMs introduce variable network latency and queue
+times, often taking seconds to generate a response. SLMs
+running locally can achieve sub-second inference times [4].
+This reduction in latency is critical for maintaining the "flow"
+of an agent, preventing timeouts in time-sensitive operations
+like network handshakes.
+2. Privacy and Data Sovereignty: Sending proprietary
+codebases or sensitive network configurations to a public
+LLM API poses significant security risks [3]. SLMs allow
+for "air-gapped" intelligence. By running the model entirely
+within the local infrastructure (on-premise), organizations
+ensure that sensitive data never leaves their control plane.
+This is particularly vital for our testbed environment, which
+simulates critical infrastructure.
+3. Economic Viability: The cost of inference scales lin-
+early with the number of active parameters. Running a 7B
+parameter SLM can cost 10–30× less per token than a 70B
+LLM [10]. For an agent that might generate thousands of lines
+of logs and code trials, the economic argument for SLMs is
+decisive.
+2.4
+The Role of Mixture of Experts (MoE)
+To bridge the gap between the reasoning power of LLMs and
+the efficiency of SLMs, we utilize the Mixture of Experts
+(MoE) architecture. As detailed in [1], MoE models decouple
+model capacity (total parameters) from inference cost (active
+parameters). A gating network routes each token to a spe-
+cific subset of "experts" (small neural networks). This means
+a model like Minimind-MoE can have a high total parame-
+ter count (high capacity for knowledge) but only activate a
+fraction of them for any given inference step. This sparse
+activation pattern is key to enabling high-intelligence agents
+on resource-constrained edge hardware.
+2.5
+The Limitations of SLMs
+Despite their efficiency, SLMs introduce distinct trade-offs
+that must be managed. The primary drawback is a reduc-
+tion in reasoning depth and knowledge breadth compared
+to their larger counterparts [20]. SLMs are more prone to
+"hallucination" when faced with tasks outside their specific
+training distribution. Furthermore, because they possess fewer
+parameters to store world knowledge, they may struggle with
+complex, multi-step planning tasks that require integrating
+disparate concepts [7]. Additionally, SLMs often have smaller
+context windows (the amount of text they can process at once).
+This limits their ability to ingest large codebases or extensive
+log files in a single pass, necessitating chunking strategies
+that can fragment context [4]. These limitations suggest that
+2
+
+
+while SLMs are ideal for the execution of well-defined tasks,
+they may still require oversight or "hand-off" mechanisms for
+high-level architectural planning.
+3
+Related Work
+The challenge of sandboxing untrusted code is not new, but the
+context of autonomous agents introduces unique requirements
+for state recovery and headless operation.
+3.1
+Traditional Sandboxing and Virtualization
+Standard containerization (e.g., Docker [15]) provides excel-
+lent isolation by leveraging kernel namespaces and cgroups.
+However, managing ephemeral containers for every single
+agent command can introduce significant orchestration over-
+head. Furthermore, standard Docker containers do not inher-
+ently support rollback to a specific previous state within a
+running session without complex volume management or
+external snapshotting tools. Similarly, full virtual machine
+(VM) provisioning offers strong security guarantees but in-
+curs startup latencies (often tens of seconds) that break the
+interactive think-act-observe loop required by autonomous
+agents.
+3.2
+Language-Specific Virtual Environments
+Python virtual environments (e.g., venv, Conda) are the stan-
+dard for dependency isolation in development. While they
+effectively isolate Python packages, they offer no protection
+against filesystem damage outside the library path. Moreover,
+they lack atomic rollback capabilities; if a pip install com-
+mand fails halfway through, the environment is left in a cor-
+rupted, intermediate state that often requires manual cleanup.
+3.3
+Commercial Agent Runtimes
+Emerging industry tools, such as the Gemini CLI [8], have
+begun incorporating checkpointing and command restrictions.
+However, a critical divergence in design philosophy exists. As
+our evaluation demonstrates, tools like Gemini CLI prioritize
+interactive safety over headless automation. The requirement
+for interactive authentication creates significant barriers for
+autonomous agent integration, rendering them less suitable
+for the high-frequency, unsupervised loops targeted by our
+work.
+4
+System Design
+Our Sandbox framework imposes two layers of safety: a Tool-
+Call Sandboxing Layer for pre-execution validation, and a
+Fault Recovery Framework utilizing transactional filesys-
+tem checkpoints.
+4.1
+Formal Model of Transactional Execution
+We define the agent’s environment state at time t as St. A
+tool-call C is a function mapping St →St+1. The validity
+of a command is determined by a policy function P(C) ∈
+{Safe,Unsafe,Uncertain}. We introduce a Transactional
+Wrapper T(C) such that:
+St+1 =
+(
+St +∆C
+if execution(C) succeeds
+St
+if execution(C) fails
+(1)
+This ensures atomicity: the state is either successfully ad-
+vanced or perfectly preserved.
+4.2
+Command Interception Policy
+A lightweight policy engine parses incoming commands and
+classifies them:
+1. Safe/Whitelisted: Read-only or low-risk commands
+(e.g., git status, ls). These bypass the snapshot mech-
+anism to reduce latency.
+2. Unsafe/Blacklisted: Destructive commands (e.g., rm
+-rf /, mkfs). These are immediately blocked.
+3. Uncertain/Requires Checkpoint: State-modifying
+commands (e.g., pip install, sed -i). These trigger
+the transactional recovery flow.
+4.3
+The Snapshot-Rollback Algorithm
+The core logic of the fault recovery system is detailed in
+Algorithm 1. The system utilizes a copy-on-write simulation
+using shutil to create a restore point before any "Uncertain"
+command is executed.
+3
+
+
+Algorithm 1 Transactional Execution Loop
+Require: Command C, Current State Scurr
+1: Classify C using Policy Engine P(C)
+2: if P(C) = Unsafe then
+3:
+return ERROR("Policy Violation")
+4: end if
+5: if P(C) = Safe then
+6:
+Execute C
+7:
+return Output
+8: end if
+9: Prepare Phase:
+10: Ssnap ←SNAPSHOT(Scurr)
+11: Output ←EXECUTE(C)
+12: if ExitCode ̸= 0 then
+13:
+Rollback Phase:
+14:
+Restore Scurr ←Ssnap
+15:
+return ERROR("State Rolled Back")
+16: else
+17:
+Commit Phase:
+18:
+Discard Ssnap
+19:
+return Output
+20: end if
+5
+Implementation
+To validate the hypothesis, we implemented the prototype in
+Python. The complexity of the implementation lies not just
+in the software logic, but in the underlying infrastructure that
+supports the agent.
+5.1
+Testbed Infrastructure: Proxmox & EVPN
+Experiments were conducted on a custom Data Center
+Testbed designed to simulate a realistic production cloud
+environment.
+• Virtualization Layer: The cluster runs on Proxmox
+VE 9.0 [16]. The agent operates within a dedicated LXC
+container, while the Inference Server runs on a separate
+VM with GPU passthrough.
+• Network Isolation (EVPN/VXLAN): Unlike simple
+VLANs, we utilized Ethernet VPN (EVPN) [17] with
+VXLAN encapsulation [14]. The network core is pow-
+ered by VyOS routers acting as VTEPs (VXLAN Tunnel
+Endpoints). This creates a Layer 3 leaf-spine topology,
+ensuring that the agent is strictly isolated in a specific Vir-
+tual Network Identifier (VNI), preventing lateral move-
+ment to the host or other critical infrastructure.
+• Storage: The snapshot mechanism operates on a ZFS-
+backed volume, allowing for potentially faster snapshots
+in future iterations (using ‘zfs snapshot‘ vs. file copy-
+ing), though our current prototype uses filesystem-level
+copying for portability.
+5.2
+Model Selection: Minimind-MoE
+We utilized Minimind-v1-MoE [11], a lightweight ≈26M
+parameter model. The MoE architecture is critical for this
+implementation and represents a fundamental shift from tradi-
+tional architectures. MoE vs. Dense Architecture: In a stan-
+dard Dense LLM, every parameter in the network is activated
+for every input token, meaning computational cost scales lin-
+early with model size. In contrast, Mixture of Experts (MoE)
+models utilize a gating mechanism to route tokens to spe-
+cific subsets of parameters (experts). Consequently, while
+the model may possess a vast number of total parameters,
+only a small fraction (the active parameters) are computed
+for any given token. By utilizing a MixFFN design derived
+from DeepSeek-V2 [6], Minimind employs a shared expert
+alongside routed experts [18].
+We selected this architecture for three key advantages:
+1. Decoupled Inference Cost: MoE allows us to decouple
+the model’s capacity (total parameters) from its execu-
+tion cost (active parameters). We achieve the reasoning
+capabilities of a larger model with the FLOPS footprint
+of a much smaller one.
+2. Low-Latency Execution: Because only a fraction of
+the network is active per token, token generation speed
+is significantly higher than a dense model of equivalent
+size. This ensures the inference server does not become
+a bottleneck during the transactional rollback checks.
+3. Edge Viability: The sparse activation pattern is uniquely
+suited for the consumer-grade hardware in our testbed
+(and future MEC nodes), as it maximizes the utility of
+limited memory bandwidth.
+6
+Evaluation
+6.1
+Experimental Setup
+The environment contained a standard Python project direc-
+tory (Psize ≈250MB). We defined a test suite of 10 scenarios:
+5 "Happy Path" (valid syntax, safe logic) and 5 "Adversarial"
+(syntax errors, destructive logic, dependency conflicts).
+6.2
+Safety and Reliability
+Table 1 summarizes the safety performance. The system suc-
+cessfully intercepted all blacklisted commands and recovered
+from all induced failures.
+4
+
+
+Table 1: Safety Validation Results
+Scenario Category
+Attempts
+Success Rate
+Whitelisted (Read-only)
+20
+100% (Exec)
+Blacklisted (Destructive)
+20
+100% (Blocked)
+State Corruption (Failure)
+20
+100% (Rolled Back)
+Valid State Change
+20
+100% (Committed)
+6.3
+Performance Latency
+The primary trade-off for safety is latency. We benchmarked
+the "Snapshot Overhead" by timing a pip install operation
+across three environments: Bare Metal (No Sandbox), Our
+Prototype, and Gemini CLI.
+• Baseline (Direct Execution): Average time of 4.69s.
+• Our Prototype: Average time of 6.51s.
+• Overhead Analysis: The sandbox introduced an over-
+head of ≈1.82s (14.5%). This overhead is dominated by
+the I/O operation of duplicating the 250MB workspace.
+While non-trivial, a sub-2-second delay is acceptable for
+asynchronous agentic workflows.
+6.4
+Comparison with Commercial Tools
+A critical finding of this research is the unsuitability of current
+commercial CLI tools for autonomous agents. When attempt-
+ing to automate the Google Gemini CLI [8], the execution
+failed 100% of the time in a headless environment. The CLI
+threw an interrupt requesting Interactive Authentication
+("Please Sign in to continue..."). This confirms that while
+commercial tools offer robust sandboxing, they are designed
+for human-in-the-loop safety. Our transactional approach is
+specifically optimized for machine-in-the-loop autonomy.
+7
+Discussion: Human-AI Collaboration in Sys-
+tems Research
+This project served as both a technical exploration of systems
+programming and a case study in AI-assisted development
+(often colloquially termed "vibe coding").
+7.1
+Accelerating Prototype Development
+The integration of Minimind-MoE and AI coding assistants
+significantly accelerated the prototyping phase. The boiler-
+plate generation for the Python context managers (handling
+the try/catch/rollback logic) allowed us to focus on the
+high-level policy definitions. This suggests that for systems
+research, LLMs are effective at generating the "glue code"
+of infrastructure, provided the researcher defines the rigorous
+constraints (Policy Engine).
+7.2
+The Identity Crisis of Tools
+Initially, we hypothesized that the release of Gemini CLI
+would render this project redundant. However, the discovery
+of the "Interactive Auth Barrier" revealed a gap in the market.
+There is a divergence between tools built for Chat-with-Data
+(interactive, secure, authorized) and Agentic Automation
+(headless, atomic, rollback-capable). Our work fills the latter
+niche.
+7.3
+The Economics of Autonomy
+The choice of an SLM is not merely technical but economic.
+If we consider an agent that performs 10 steps to solve a
+problem, and each step requires 1000 input tokens and 200
+output tokens, the cost differential becomes massive at scale.
+Using a commercial LLM API (e.g., GPT-4), a single agent
+run might cost $0.03-$0.06. While negligible for a single user,
+for an automated system running thousands of CI/CD pipeline
+checks daily, this cost balloons to thousands of dollars per
+month. In contrast, our self-hosted SLM approach incurs only
+the fixed cost of electricity and hardware amortization. This
+"fixed-cost" model is essential for the viability of pervasive
+AI agents in systems administration.
+7.4
+The Sandbox Tax vs. Catastrophic Failure
+While we report a 14.5% performance overhead, this figure
+warrants deeper scrutiny. In high-frequency trading or real-
+time gaming, a 1.8-second delay per operation would be un-
+acceptable. However, we argue that this "Sandbox Tax" is
+analogous to the overhead of ECC (Error-Correcting Code)
+memory in servers: we pay a performance price for data in-
+tegrity. In the context of autonomous agents, the cost of not
+paying this tax is not merely a crash, but potential catastrophic
+infrastructure damage. If an agent hallucinating a configura-
+tion change brings down a production database, the recovery
+cost is essentially infinite compared to the 1.8-second verifi-
+cation delay. Therefore, the trade-off is asymmetric: the cost
+of safety is linear (time), while the cost of failure is exponen-
+tial (system wipe). This justifies the overhead for any agent
+operating with write-access privileges.
+7.5
+Beyond Filesystems: The Challenge of
+Stateful APIs
+A significant limitation of our current snapshot approach is
+its reliance on local filesystem atomicity. Real-world agents
+often interact with external stateful APIs (e.g., provisioning
+cloud resources via Terraform, modifying routing tables via
+Netconf, or sending emails). Unlike a local file, an HTTP
+request cannot be "un-sent" via a filesystem snapshot. Future
+iterations of this framework must incorporate the concept
+of Compensating Transactions (often referred to as Sagas
+5
+
+
+in distributed systems literature). If an agent spins up an
+AWS EC2 instance and then fails a subsequent check, the
+rollback mechanism must not just restore the local state, but
+actively issue a terminate-instance API call to the cloud
+provider. This suggests that the sandbox must evolve from a
+passive isolation layer into an active orchestration manager
+that understands the inverse function of every API call it
+permits.
+7.6
+Turning Safety Signals into Learning Sig-
+nals
+Finally, we observed that the sandbox acts as a crude form
+of Reinforcement Learning from Environmental Feedback
+(RLEF). When the agent attempts a destructive command
+(e.g., rm -rf), the sandbox’s refusal acts as a negative reward
+signal. However, current SLMs, given their reduced reasoning
+depth discussed in Section 2.5, often struggle to interpret this
+refusal, sometimes entering a "stubbornness loop" where they
+retry the same valid syntax despite the policy violation. This
+highlights a need for Sandbox-Aware Prompting: the system
+message must explicitly inform the agent that it is operating
+within a transactional sandbox. By doing so, the agent can
+learn to interpret a "Policy Violation" error not as a syntax
+error, but as a boundary constraint that requires a logical plan
+revision, thereby improving the agent’s reasoning capabilities
+over time.
+8
+Future Work
+8.1
+From Sandboxes to AIOps
+The logic developed here—atomic execution and state vali-
+dation—is directly transferable to AIOps for Cellular Net-
+works. In 5G/6G Core networks, a configuration change is
+analogous to a "tool call." An invalid configuration can take
+down a network slice [22]. We plan to adapt this transac-
+tional sandbox into an Intent-to-Action controller for network
+orchestration.
+8.2
+Federated Learning with SLMs
+The move to SLMs also opens the door for federated learning.
+Since SLMs are small enough to run on edge devices (routers,
+base stations), future work could involve agents that not only
+execute commands but also "learn" from their local failures.
+Instead of sending all data to a central cloud (privacy risk),
+the agents could compute gradient updates locally and share
+only the weights. This would allow a fleet of network repair
+agents to collectively improve their "repair policies" without
+ever exposing the sensitive network topology data to a central
+server.
+9
+Conclusion
+This project demonstrated a Fault-Tolerant Sandboxing frame-
+work that guarantees atomic execution for AI coding agents.
+By deploying Minimind-MoE on a rigorous Proxmox/EVPN
+testbed, we achieved 100% safety interception. We quantified
+the cost of safety at a 14.5% latency overhead—a viable trade-
+off for the guarantee of system consistency. Furthermore,
+our analysis highlights the critical role of Small Language
+Models in enabling this architecture, offering a path toward
+autonomous systems that are not only safe but also private,
+fast, and economically sustainable.
+References
+[1] Epoch AI. Moe vs ai dense models: How do they com-
+pare in inference? Epoch AI Gradient Updates, 2024.
+[2] Prem AI. Small language models (slms) for efficient
+edge deployment. Prem AI Blog, 2025.
+[3] CloverDX. When to use llms and when to turn to slms
+for privacy and data governance. CloverDX Blog, 2025.
+[4] Augment Code. Small language models vs large lan-
+guage models: Key advantages for engineering teams.
+Augment Code Guides, 2025.
+[5] DataCamp. Slms vs llms: A complete guide. DataCamp
+Blog, 2025.
+[6] DeepSeek-AI.
+Deepseek-v2: A strong, economical,
+and efficient mixture-of-experts language model. arXiv
+preprint arXiv:2405.04434, 2024.
+[7] Hugging Face. Small language models (slm): A com-
+prehensive overview. Hugging Face Blog, 2025.
+[8] Google. Google gemini api: Safety settings and sandbox-
+ing. https://geminicli.com/docs/cli/sandbox/,
+2025. Accessed: 2025-10-15.
+[9] Jim Gray. The transaction concept: Virtues and limita-
+tions. In VLDB, volume 81, pages 144–154. Citeseer,
+1981.
+[10] Hexaware. Small language models, big impact: The
+future of enterprise ai agents. Hexaware Blog, 2025.
+[11] Gong Jingyao. Minimind: A lightweight llm. https:
+//github.com/jingyaogong/minimind, 2024.
+Ac-
+cessed: 2025-12-01.
+[12] Guohao Li, Hasan Abed Al Kader Hammoud, Hani Itani,
+Dmitrii Khizbullin, and Bernard Ghanem. Camel: Com-
+municative agents for "mind" exploration of large lan-
+guage model society. arXiv preprint arXiv:2303.17760,
+2023.
+6
+
+
+[13] Killian Lucas. Open interpreter: A natural language
+interface for computers. GitHub repository, 2023.
+[14] M. Mahalingam, D. Dutt, K. Duda, P. Agarwal,
+L. Kreeger, T. Sridhar, M. Bursell, and C. Wright. Vir-
+tual extensible local area network (vxlan): A framework
+for overlaying virtualized layer 2 networks over layer 3
+networks. RFC 7348, August 2014.
+[15] Dirk Merkel. Docker: lightweight linux containers for
+consistent development and deployment. In Linux Jour-
+nal, volume 2014, page 2, 2014.
+[16] Proxmox Server Solutions Gmbh. Proxmox Virtual En-
+vironment Documentation, 2024. Version 8.2.
+[17] A. Sajassi, R. Aggarwal, N. Bitar, A. Isaac, J. Uttaro,
+J. Drake, and W. Henderickx. Bgp mpls-based ethernet
+vpn. RFC 7432, February 2015.
+[18] Noam Shazeer, Azalia Mirhoseini, Krzysztof Maziarz,
+Andy Davis, Quoc Le, Geoffrey Hinton, and Jeff Dean.
+Outrageously large neural networks: The sparsely-gated
+mixture-of-experts layer. In International Conference
+on Learning Representations, 2017.
+[19] Lei Wang, Chen Ma, Xueyang Feng, Zeyu Zhang,
+Hao Yang, Jingsen Zhang, Zhiyuan Chen, Jiakai Tang,
+Xu Chen, Yankai Lin, et al. A survey on large language
+model based autonomous agents. In Frontiers of Com-
+puter Science. Springer, 2024.
+[20] WEKA. Slm vs llm: The key differences. WEKA Blog,
+2025.
+[21] Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu,
+Beibin Li, Erkang Zhu, Li Jiang, Xiaoyun Zhang,
+Shaolei Zhang, Jiale Liu, et al. Autogen: Enabling next-
+gen llm applications via multi-agent conversation. arXiv
+preprint arXiv:2308.08155, 2023.
+[22] Yan Zhang, Wei Li, and Rui Zhao. Aiops for 6g cellular
+networks: Challenges and opportunities. IEEE Network,
+37(2):24–31, 2023.
+7

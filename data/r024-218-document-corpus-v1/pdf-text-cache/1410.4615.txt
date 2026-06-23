@@ -1,0 +1,1637 @@
+Under review as a conference paper at ICLR 2015
+LEARNING TO EXECUTE
+Wojciech Zaremba∗
+New York University
+woj.zaremba@gmail.com
+Ilya Sutskever
+Google
+ilyasu@google.com
+ABSTRACT
+Recurrent Neural Networks (RNNs) with Long Short-Term Memory units
+(LSTM) are widely used because they are expressive and are easy to train. Our
+interest lies in empirically evaluating the expressiveness and the learnability of
+LSTMs in the sequence-to-sequence regime by training them to evaluate short
+computer programs, a domain that has traditionally been seen as too complex for
+neural networks. We consider a simple class of programs that can be evaluated
+with a single left-to-right pass using constant memory. Our main result is that
+LSTMs can learn to map the character-level representations of such programs to
+their correct outputs. Notably, it was necessary to use curriculum learning, and
+while conventional curriculum learning proved ineffective, we developed a new
+variant of curriculum learning that improved our networks’ performance in all
+experimental conditions. The improved curriculum had a dramatic impact on an
+addition problem, making it possible to train an LSTM to add two 9-digit numbers
+with 99% accuracy.
+∗
+1
+INTRODUCTION
+Execution of computer programs requires dealing with a number of nontrivial concepts. To execute
+a program, a system has to understand numerical operations, if-statements, variable assignments,
+the compositionality of operations, and many more.
+We show that Recurrent Neural Networks (RNN) with Long Short-Term Memory (LSTM) units
+can accurately evaluate short simple programs in the sequence-to-sequence framework of Sutskever
+et al. (2014). The LSTM reads the program character-by-character and computes the program’s
+output. We consider a constrained set of computer programs that can be evaluated in linear time
+and constant memory, because the LSTM reads the program only once and its memory capacity is
+limited (Section 3).
+We found it difﬁcult to train LSTMs to execute computer programs, so we used curriculum learn-
+ing to simplify the learning problem. We design a curriculum procedure which outperforms both
+conventional training that uses no curriculum learning (baseline) as well as the naive curriculum
+learning of strategy of Bengio et al. (2009) (Section 4). We provide a plausible explanation for the
+effectiveness of our procedure relative to naive curriculum learning (Section 7).
+Finally, in addition to curriculum learning strategies, we examine two simple input transformations
+that further simplify the sequence-to-sequence learning problem. We show that, in many cases,
+reversing the input sequence (Sutskever et al., 2014) and replicating the input sequence improves
+the LSTM’s performance on a memorization task (Section 3.2).
+The code for replicating most of the experiments in this work can be found in https://github.
+com/wojciechz/learning_to_execute.
+∗Work done while the author was in Google Brain.
+1
+arXiv:1410.4615v3  [cs.NE]  19 Feb 2015
+
+
+Under review as a conference paper at ICLR 2015
+Input:
+j=8584
+for x in range(8):
+j+=920
+b=(1500+j)
+print((b+7567))
+Target: 25011.
+Input:
+i=8827
+c=(i-5347)
+print((c+8704) if 2641<8500 else 5308)
+Target: 12184.
+Figure 1: Example programs on which we train the LSTM. The output of each program is a single
+integer. A “dot” symbol indicates the end of the integer, which has to be predicted by the LSTM.
+2
+RELATED WORK
+There has been related research that used Tree Neural Networks (also known as Recursive Neu-
+ral Networks) to evaluate symbolic mathematical expressions and logical formulas (Zaremba et al.,
+2014a; Bowman et al., 2014; Bowman, 2013), which is close in spirit to our work. Computer pro-
+grams are more complex than mathematical or logical expressions because it is possible to simulate
+either with an appropriate computer program.
+From a methodological perspective, we formulate the program evaluation task as a sequence-
+to-sequence learning problem with a recurrent neural network (Sutskever et al., 2014) (see also
+(Mikolov, 2012; Sutskever, 2013; Pascanu et al., 2013)). Other interesting applications of recurrent
+neural networks include speech recognition (Robinson et al., 1996; Graves et al., 2013), machine
+translation (Cho et al., 2014; Sutskever et al., 2014), handwriting recognition (Pham et al., 2013;
+Zaremba et al., 2014b), and many more.
+Maddison & Tarlow (2014) trained a language model of program text, and Mou et al. (2014) used a
+neural network to determine whether two programs are equivalent. Both of these approaches require
+the parse trees of programs, while the input to our model is a string of character representing our
+program.
+Predicting program output requires that the model deals with long term dependencies that arise
+from variable assignment. For this reason, we chose to use the Long Short-Term Memory model
+(Hochreiter & Schmidhuber, 1997), although there are many other RNN variants that perform well
+on tasks with long term dependencies (Cho et al., 2014; Jaeger et al., 2007; Koutn´ık et al., 2014;
+Martens, 2010; Bengio et al., 2013).
+Initially, we found it difﬁcult to train LSTMs to accurately evaluate programs. The compositional
+nature of computer programs suggests that the LSTM would learn faster if we ﬁrst taught it about the
+individual operators and how to combine them. This approach can be implemented with curriculum
+learning (Bengio et al., 2009; Kumar et al., 2010; Lee & Grauman, 2011), which prescribes to grad-
+ually increase the “difﬁculty level” of the examples presented to the LSTM. It is partially motivated
+by fact that humans and animals learn much faster when they are given hard but manageable tasks.
+Unfortunately, we found the naive curriculum learning strategy of Bengio et al. (2009) to sometimes
+be harmful. One of our key contributions is the formulation of a new curriculum learning strategy
+that substantially improves the speed and the quality of training in every experimental setting that
+we considered.
+3
+PROGRAM SUBCLASS
+We train RNNs on the class of short programs that can be evaluated in O (n) time and constant
+memory. This restriction is dictated by the computational structure of the RNN itself, as it can only
+2
+
+
+Under review as a conference paper at ICLR 2015
+Input:
+vqppkn
+sqdvfljmnc
+y2vxdddsepnimcbvubkomhrpliibtwztbljipcc
+Target: hkhpg
+Figure 2: A sample program with its outputs when the characters are scrambled. It helps illustrate
+the difﬁculty faced by our neural network.
+perform a single pass over the program and its memory is limited. Our programs use the Python
+syntax and are constructed from a small number of operations and their compositions (nesting).
+We allow the following operations: addition, subtraction, multiplication, variable assignments, if-
+statements, and for-loops, but we forbid double loops. Every program ends with a single “print”
+statement whose output is an integer. Two example programs are shown in Figure 1.
+We select our programs from a family of distributions parametrized by their length and nesting. The
+length parameter is the number of digits in the integers that appear in the programs (so the integers
+are chosen uniformly from [1, 10length]). The appendix presents the pseudocode 1 of the algorithm
+used to generate our programs. For example, two programs that are generated with length = 4 and
+nesting = 3 are shown in Figure 1.
+We impose restrictions on the operands of multiplication and on the ranges of for-loop, since they
+pose a greater difﬁculty to our model. We constrain one of the arguments of multiplication and the
+range of for-loops to be chosen uniformly from the much smaller range [1, 4· length]. We do so since
+our models are able to perform linear-time computation while generic integer multiplication requires
+superlinear time. Similar considerations apply to for-loops, since nested for-loops can implement
+integer multiplication.
+The nesting parameter is the number of times we are allowed to combine the operations with each
+other. Higher values of nesting yield programs with deeper parse trees. Nesting makes the task much
+harder for the LSTMs, because they do not have a natural way of dealing with compositionality,
+unlike Tree Neural Networks. It is surprising that the LSTMs can handle nested expressions at all.
+The programs also do not receive an external input.
+It is important to emphasize that the LSTM reads the entire input one character at a time and pro-
+duces the output one character at a time. The characters are initially meaningless from the model’s
+perspective; for instance, the model does not know that “+” means addition or that 6 is followed
+by 7. In fact, scrambling the input characters (e.g., replacing “a” with “q”, “b” with “w”, etc.,) has
+no effect on the model’s ability to solve this problem. We demonstrate the difﬁculty of the task by
+presenting an input-output example with scrambled characters in Figure 2.
+Finally, we wanted to verify that our program are not trivial to evaluate, by ensuring that the bias
+coming from Benford’s law (Hill, 1995) is not too strong. Our setup has 12 possible output char-
+acters, that is 10 digits, the end of sequence character, and minus. Their output distribution is not
+uniform, which can be seen by noticing that the minus sign and the dot do not occur with the same
+frequency as the other digits. If we assume that the output characters are independent, the probabil-
+ity of guessing the correct character is ∼8.3%. The most common character is 1 which occurs with
+probability 12.7% over the entire output.
+However, there is a bias in the distribution of the ﬁrst character. There are 11 possible choices, which
+can be randomly guessed with a probability of 9%. The most common character is 1, and it occurs
+with a probability 20.3% in its ﬁrst position, indicating a strong bias. Still, this value is far below
+our model prediction accuracy. Moreover, the most probable second character in the ﬁrst position of
+the output occurs with probability 12.6%, which is indistinguishable from probability distribution
+of digits in the other positions. The last character is always the end of sequence. The most common
+digit prior to the last character is 4, and it occures with probability 10.3%. These statistics are
+computed with 10000 randomly generated programs with length = 4 and nesting = 1. The
+absence of a strong bias for this conﬁguration suggests that there will be even less bias in with
+greater nesting and longer digits, which we have also conﬁrmed numerically.
+3
+
+
+Under review as a conference paper at ICLR 2015
+Input:
+print(398345+425098)
+Target: 823443
+Figure 3: A typical data sample for the addition task.
+3.1
+ADDITION TASK
+It is difﬁcult to intuitively assess the accuracy of an LSTM on a program evaluation task. For
+example, it is not clear whether an accuracy of 50% is impressive. Thus, we also evaluate our models
+on a more familiar addition task, where the difﬁculty is measured by the length of the inputs. We
+consider the addition of only two numbers of the same length (Figure 3) that are chosen uniformly
+from [1, 10length]. Adding two number of the same length is simpler than adding variable length
+numbers. Model doesn’t need to align them.
+3.2
+MEMORIZATION TASK
+In addition to program evaluation and addition, we also investigate the task of memorizing a random
+sequence of numbers. Given an example input 123456789, the LSTM reads it one character at a
+time, stores it in memory, and then outputs 123456789 one character at a time. We present and
+explore two simple performance enhancing techniques: input reversing Sutskever et al. (2014) and
+input doubling.
+The idea of input reversing is to reverse the order of the input (987654321) while keeping the de-
+sired output unchanged (123456789). It may appear to be a neutral operation because the average
+distance between each input and its corresponding target does not change. However, input reversing
+introduces many short term dependencies that make it easier for the LSTM to learn to make correct
+predictions. This strategy was ﬁrst introduced by Sutskever et al. (2014).
+The second performance enhancing technique is input doubling, where we present the input se-
+quence twice (so the example input becomes 123456789; 123456789), while the output remains
+unchanged (123456789). This method is meaningless from a probabilistic perspective as RNNs ap-
+proximate the conditional distribution p(y|x), yet here we attempt to learn p(y|x, x). Still, it gives
+noticeable performance improvements. By processing the input several times before producing the
+output, the LSTM is given the opportunity to correct any mistakes or omissions it made before.
+4
+CURRICULUM LEARNING
+Our program generation procedure is parametrized by length and nesting. These two parameters
+allow us control the complexity of the program. When length and nesting are large enough, the
+learning problem becomes nearly intractable. This indicates that in order to learn to evaluate pro-
+grams of a given length = a and nesting = b, it may help to ﬁrst learn to evaluate programs with
+length ≪a and nesting ≪b. We evaluate the following curriculum learning strategies:
+No curriculum learning (baseline) The baseline approach does not use curriculum learning. This
+means that we generate all the training samples with length = a and nesting = b. This strategy is the
+most “sound” from statistical perspective, since it is generally recommended to make the training
+distribution identical to test distribution.
+Naive curriculum strategy (naive) We begin with length = 1 and nesting = 1. Once learning
+stops making progress on the validation set, we increase length by 1. We repeat this process until
+its length reaches a, in which case we increase nesting by one and reset length to 1. We can also
+choose to ﬁrst increase nesting and then length. However, it does not make a noticeable difference in
+performance. We skip this option in the rest of paper, and increase length ﬁrst in all our experiments.
+This strategy is has been examined in previous work on curriculum learning (Bengio et al., 2009).
+However, we show that sometimes it gives even worse performance than baseline.
+Mixed strategy (mix) To generate a random sample, we ﬁrst pick a random length from [1, a] and
+a random nesting from [1, b] independently for every sample. The Mixed strategy uses a balanced
+4
+
+
+Under review as a conference paper at ICLR 2015
+mixture of easy and difﬁcult examples, so at every point during training, a sizable fraction of the
+training samples will have the appropriate difﬁculty for the LSTM.
+Combining the mixed strategy with naive curriculum strategy (combined) This strategy com-
+bines the mix strategy with the naive strategy. In this approach, every training case is obtained either
+by the naive strategy or by the mix strategy. As a result, the combined strategy always exposes the
+network at least to some difﬁcult examples, which is the key way in which it differs from the naive
+curriculum strategy. We noticed that it always outperformed the naive strategy and would generally
+(but not always) outperform the mix strategy. We explain why our new curriculum learning strategies
+outperform the naive curriculum strategy in Section 7.
+We evaluate these four strategies on the program evaluation task (Section 6.1) and on the memoriza-
+tion task (Section 6.3).
+5
+LSTM
+In this section we brieﬂy describe the deep LSTM (Section 5). All vectors are n-dimensional unless
+explicitly stated otherwise. Let hl
+t ∈Rn be a hidden state in layer l in timestep t. Let Tn,m : Rn →
+Rm be a biased linear mapping (x →Wx + b for some W and b). We let ⊙be element-wise
+multiplication and let h0
+t be the input to the deep LSTM at timestep t. We use the activations at the
+top layer L (namely hL
+t ) to predict yt where L is the depth of our LSTM.
+The structure of the LSTM allows it to train on problems with long term dependencies relatively
+easily. The “long term” memory is stored in a vector of memory cells cl
+t ∈Rn. Although many
+LSTM architectures differ slightly in their connectivity structure and activation functions, all LSTM
+architectures have additive memory cells that make it easy to learn to store information for long
+periods of time. We used an LSTM described by the following equations (from Graves et al. (2013)):
+LSTM : hl−1
+t
+, hl
+t−1, cl
+t−1 →hl
+t, cl
+t
+
+
+
+i
+f
+o
+g
+
+
+=
+
+
+
+sigm
+sigm
+sigm
+tanh
+
+
+T2n,4n
+
+hl−1
+t
+hl
+t−1
+
+cl
+t = f ⊙cl
+t−1 + i ⊙g
+hl
+t = o ⊙tanh(cl
+t)
+6
+EXPERIMENTS
+In this section, we report the results of our curriculum learning strategies on the program evaluation
+and memorization tasks. In both experiments, we used the same LSTM architecture.
+Our LSTM has two layers and is unrolled for 50 steps in both experiments. It has 400 cells per layer
+and its parameters are initialized uniformly in [−0.08, 0.08]. This gives total ∼2.5M parameters.
+We initialize the hidden states to zero. We then use the ﬁnal hidden states of the current minibatch
+as the initial hidden state of the subsequent minibatch. Thus it is possible that a program and its
+output could be separated across different minibatches. The size of minibatch is 100. We constrain
+the norm of the gradients (normalized by minibatch size) to be no greater than 5 (Mikolov et al.,
+2010). We keep the learning rate equal to 0.5 until we reach the target length and nesting (we only
+vary the length, i.e., the number of digits, in the memorization task).
+After reaching the target accuracy (95%) we decrease the learning rate by 0.8. We keep the learning
+rate on the same level until there is no improvement on the training set. We decrease it again, when
+there is no improvement on training set. The only difference between experiments is the termination
+criteria. For the program output prediction, we stop when learning rate becomes smaller than 0.001.
+For copying task, we stop training after 20 epochs, where each epoch has 0.5M samples.
+We begin training with length = 1 and nesting = 1 (or length=1 for the memorization task). We
+ensure that the training, validation, and test sets are disjoint. It is achieved computing the hash value
+of each sample and taking it modulo 3.
+Important note on error rates: We use teacher forcing when we compute the accuracy of our
+LSTMs. That is, when predicting the i-th digit of the target, the LSTM is provided with the correct
+5
+
+
+Under review as a conference paper at ICLR 2015
+ﬁrst i −1 digits of the target. This is different from using the LSTM to generate the entire output
+on its own, as done by Sutskever et al. (2014), which would almost surely result in lower numerical
+accuracies. To help make intuitive sense of our results, we present a large number of test cases and
+the outputs computed by the LSTM, albeit with teacher forcing.
+6.1
+RESULTS ON PROGRAM EVALUATION
+We train our LSTMs using the four strategies described in Section 4:
+• No curriculum learning (baseline),
+• Naive curriculum strategy (naive)
+• Mixed strategy (mix), and
+• Combined strategy (combined).
+Figure 4 shows the absolute performance of the baseline strategy (training on the original target
+distribution), and of the best performing strategy, combined. Moreover, Figure 5 shows the perfor-
+mance of the three curriculum strategies relative to baseline. Finally, we provide several example
+predictions on test data in the supplementary materials. The accuracy of a random predictor would
+be ∼8.3%, since there are 12 possible output symbols.
+Figure 4: Absolute prediction accuracy of the baseline strategy and of the combined strategy (see
+Section 4) on the program evaluation task. Deeper nesting and longer integers make the task more
+difﬁcult. Overall, the combined strategy outperformed the baseline strategy in every setting.
+Figure 5: Relative prediction accuracy of the different strategies with respect to the baseline strategy.
+The Naive curriculum strategy was found to sometime perform worse than baseline. A possible
+explanation is provided in Section 7. The combined strategy outperforms all other strategies in
+every conﬁguration on program evaluation.
+6.2
+RESULTS ON THE ADDITION TASK
+Figure 6 presents the accuracy achieved by the LSTM with the various curriculum strategies on
+the addition task. Remarkably, the combined curriculum strategy resulted in 99% accuracy on the
+addition of 9-digit long numbers, which is a massive improvement over the naive curriculum.
+6.3
+RESULTS ON THE MEMORIZATION TASK
+Recall that the goal of the memorization task is to read a sequence of digits into the hidden state and
+then to reconstruct it from the hidden state. Namely, given an input such as 123456789, the goal is
+6
+
+
+Under review as a conference paper at ICLR 2015
+Figure 6: The effect of curriculum strategies on the addition task.
+Figure 7: Prediction accuracy on the memorization task for the four curriculum strategies. The input
+length ranges from 5 to 65 digits. Every strategy is evaluated with the following 4 input modiﬁcation
+schemes: no modiﬁcation; input inversion; input doubling; and input doubling and inversion. The
+training time was not limited; the network was trained till convergence.
+to produce the output 123456789. The model processes the input one input character at the time and
+has to reconstruct the output only after loading the entire input into its memory. This task provides
+insight into the LSTM’s ability to learn to remember. We have evaluated our model on sequences
+of lengths ranging from 5 to 65. We use the four curriculum strategies of Section 4. In addition, we
+investigate two strategies to modify the input which increase performance:
+• Inverting input (Sutskever et al., 2014)
+• Doubling Input
+Both strategies are described in Section 3.2. Figure 7 shows the absolute performance of the baseline
+strategy and of the combined strategy. This Figure shows the performance at convergence. We
+further present in Supplementary material (Section 9) results after 20 epochs (Figure 8).
+For this task, the combined strategy no longer outperforms the mixed strategy in every experimental
+setting, although both strategies are always better than using no curriculum and the naive curriculum
+strategy. Each graph contains 4 settings, which correspond to the possible combinations of input in-
+version and input doubling. The result clearly shows that the simultaneously doubling and reversing
+the input achieves the best results. Random guessing would achieve an accuracy of ∼9%, since
+there are 11 possible output symbols.
+7
+HIDDEN STATE ALLOCATION HYPOTHESIS
+Our experimental results suggest that a proper curriculum learning strategy is critical for achieving
+good performance on very hard problems where conventional stochastic gradient descent (SGD)
+7
+
+
+Under review as a conference paper at ICLR 2015
+performs poorly. The results on both of our problems (Sections 6.3 and 6.1) show that the combined
+strategy is better than all other curriculum strategies, including both naive curriculum learning, and
+training on the target distribution. We have a plausible explanation for why this is the case.
+It seems natural to train models with examples of increasing difﬁculty. This way the models have
+a chance to learn the correct intermediate concepts, and then utilize them for the more difﬁcult
+problem instances. Otherwise, learning the full task might be just too difﬁcult for SGD from a
+random initialization. This explanation has been proposed in previous work on curriculum learning
+Bengio et al. (2009). However, based the on empirical results, the naive strategy of curriculum
+learning can sometimes be worse than learning with the target distribution.
+In our tasks, the neural network has to perform a lot of memorization. The easier examples usually
+require less memorization than the hard examples. For instance, in order to add two 5-digit numbers,
+one has to remember at least 5 digits before producing any output. The best way to accurately
+memorize 5 numbers could be to spread them over the entire hidden state / memory cell (i.e., use
+a distributed representation). Indeed, the network has no incentive to utilize only a fraction of
+its state, and it is always better to make use of its entire memory capacity. This implies that the
+harder examples would require a restructuring of its memory patterns. It would need to contract its
+representations of 5 digit numbers in order to free space for the 6-th number. This process of memory
+pattern restructuring might be difﬁcult to implement, so it could be the reason for the sometimes poor
+performance of the naive curriculum learning strategy relative to baseline.
+The combined strategy reduces the need to restructure the memory patterns. The combined strategy
+is a combination of the naive curriculum strategy and of the mix strategy, which is a mixture of ex-
+amples of all difﬁculties. The examples produced by the naive curriculum strategy help to learn the
+intermediate input-output mapping, which is useful for solving the target task, while the extra sam-
+ples from the mix strategy prevent the network from utilizing all the memory on the easy examples,
+thus eliminating the need to restructure its memory patterns.
+8
+CRITIQUE
+Perfect prediction of program output requires a complete understanding of all operands and con-
+cepts, and of the precise way in which they are combined. However, imperfect prediction might be
+achieved in a multitude of ways, and could heavily rely on memorization, without a genuine un-
+derstanding of the underlying concepts. For instance, perfect addition is relatively intricate, as the
+LSTM needs to know the order of numbers and to correctly compute the carry.
+There are many alternatives to the addition algorithm if perfect output is not required. For instance,
+one can perform element-wise addition, and as long as there is no carry then the output would be
+perfectly correct. Another alternative, which requires more memory, but is also more simpler, is to
+memorize all results of addition for 2 digit numbers. Then multi-digit addition can be broken down
+to multiple 2-digits additions element-wise. Once again, such an algorithm would have a reasonably
+high prediction accuracy, although it would be far from correct.
+We do not know how heavily our model relies on memorization and how far the learned algorithm
+is from the actual, correct algorithm. This could be tested by creating a big discrepancy between the
+training and test data, but in this work, the training and the test distributions are the same. We plan
+to examine how well our models would generalize on very different new examples in future work.
+9
+DISCUSSION
+We have shown that it is possible to learn to evaluate programs with limited prior knowledge. This
+work demonstrate the power and expressiveness of sequence-to-sequence LSTMs. We also showed
+that correct curriculum learning is crucial for achieving good results on very difﬁcult tasks that
+cannot be optimized with standard SGD. We also found that the general method of doubling the
+input reliably improves the performance of sequence-to-sequence LSTMs.
+Our results are encouraging but they leave many questions open. For example, we are not able to
+evaluate arbitrary programs (e.g., ones that run in more than O (n) time). This cannot be achieved
+with conventional RNNs or LSTMs due to their runtime restrictions. We also do not know the
+8
+
+
+Under review as a conference paper at ICLR 2015
+optimal curriculum learning strategy. To understand it, it may be necessary to identify the training
+samples that are most beneﬁcial to the model.
+10
+ACKNOWLEDGMENTS
+We wish to thank Oriol Vinyals for useful discussions, and to Koray Kavukcuoglu for help during code develop-
+ment. Moreover, we wish to acknowledge Marc’Aurelio Ranzato for useful comments on the ﬁrst version of the
+paper. Some chunks of our code origin from Google Deepmind repository. We thank to unknown developers
+of LSTM function, and auxiliary functions.
+REFERENCES
+Bengio, Yoshua, Louradour, J´erˆome, Collobert, Ronan, and Weston, Jason. Curriculum learning. In Proceed-
+ings of the 26th annual international conference on machine learning, pp. 41–48. ACM, 2009.
+Bengio, Yoshua, Boulanger-Lewandowski, Nicolas, and Pascanu, Razvan. Advances in optimizing recurrent
+networks. In Acoustics, Speech and Signal Processing (ICASSP), 2013 IEEE International Conference on,
+pp. 8624–8628. IEEE, 2013.
+Bowman, Samuel R.
+Can recursive neural tensor networks learn logical reasoning?
+arXiv preprint
+arXiv:1312.6192, 2013.
+Bowman, Samuel R, Potts, Christopher, and Manning, Christopher D. Recursive neural networks for learning
+logical semantics. arXiv preprint arXiv:1406.1827, 2014.
+Cho, Kyunghyun, van Merrienboer, Bart, Gulcehre, Caglar, Bougares, Fethi, Schwenk, Holger, and Bengio,
+Yoshua. Learning phrase representations using rnn encoder-decoder for statistical machine translation. arXiv
+preprint arXiv:1406.1078, 2014.
+Graves, Alex, Mohamed, Abdel-rahman, and Hinton, Geoffrey. Speech recognition with deep recurrent neural
+networks. In Acoustics, Speech and Signal Processing (ICASSP), 2013 IEEE International Conference on,
+pp. 6645–6649. IEEE, 2013.
+Hill, Theodore P. A statistical derivation of the signiﬁcant-digit law. Statistical Science, pp. 354–363, 1995.
+Hochreiter, Sepp and Schmidhuber, J¨urgen. Long short-term memory. Neural computation, 9(8):1735–1780,
+1997.
+Jaeger, Herbert, Lukoˇseviˇcius, Mantas, Popovici, Dan, and Siewert, Udo. Optimization and applications of
+echo state networks with leaky-integrator neurons. Neural Networks, 20(3):335–352, 2007.
+Koutn´ık, Jan, Greff, Klaus, Gomez, Faustino, and Schmidhuber, J¨urgen. A clockwork rnn. arXiv preprint
+arXiv:1402.3511, 2014.
+Kumar, M Pawan, Packer, Benjamin, and Koller, Daphne. Self-paced learning for latent variable models. In
+Advances in Neural Information Processing Systems, pp. 1189–1197, 2010.
+Lee, Yong Jae and Grauman, Kristen. Learning the easy things ﬁrst: Self-paced visual category discovery. In
+Computer Vision and Pattern Recognition (CVPR), 2011 IEEE Conference on, pp. 1721–1728. IEEE, 2011.
+Maddison, Chris J and Tarlow, Daniel. Structured generative models of natural source code. arXiv preprint
+arXiv:1401.0514, 2014.
+Martens, James. Deep learning via hessian-free optimization. In Proceedings of the 27th International Confer-
+ence on Machine Learning (ICML-10), pp. 735–742, 2010.
+Mikolov, Tom´aˇs. Statistical language models based on neural networks. PhD thesis, Ph. D. thesis, Brno
+University of Technology, 2012.
+Mikolov, Tomas, Karaﬁ´at, Martin, Burget, Lukas, Cernock`y, Jan, and Khudanpur, Sanjeev. Recurrent neural
+network based language model. In INTERSPEECH, pp. 1045–1048, 2010.
+Mou, Lili, Li, Ge, Liu, Yuxuan, Peng, Hao, Jin, Zhi, Xu, Yan, and Zhang, Lu. Building program vector
+representations for deep learning. arXiv preprint arXiv:1409.3358, 2014.
+Pascanu, Razvan, Gulcehre, Caglar, Cho, Kyunghyun, and Bengio, Yoshua. How to construct deep recurrent
+neural networks. arXiv preprint arXiv:1312.6026, 2013.
+Pham, Vu, Kermorvant, Christopher, and Louradour, J´erˆome. Dropout improves recurrent neural networks for
+handwriting recognition. arXiv preprint arXiv:1312.4569, 2013.
+Robinson, Tony, Hochberg, Mike, and Renals, Steve. The use of recurrent neural networks in continuous speech
+recognition. In Automatic speech and speaker recognition, pp. 233–258. Springer, 1996.
+Sutskever, Ilya. Training Recurrent Neural Networks. PhD thesis, University of Toronto, 2013.
+Sutskever, Ilya, Vinyals, Oriol, and Le, Quoc V. Sequence to sequence learning with neural networks. arXiv
+preprint arXiv:1409.3215, 2014.
+Zaremba, Wojciech, Kurach, Karol, and Fergus, Rob. Learning to discover efﬁcient mathematical identities.
+arXiv preprint arXiv:1406.1584, 2014a.
+Zaremba, Wojciech, Sutskever, Ilya, and Vinyals, Oriol.
+Recurrent neural network regularization.
+arXiv
+preprint arXiv:1409.2329, 2014b.
+9
+
+
+Under review as a conference paper at ICLR 2015
+SUPPLEMENTARY MATERIAL
+Input:
+length, nesting
+stack = EmptyStack()
+Operations = Addition, Subtraction, Multiplication, If-Statement,
+For-Loop, Variable Assignment
+for i = 1 to nesting do
+Operation = a random operation from Operations
+Values = List
+Code = List
+for params in Operation.params do
+if not empty stack and Uniform(1) > 0.5 then
+value, code = stack.pop()
+else
+value = random.int(10length)
+code = toString(value)
+end if
+values.append(value)
+code.append(code)
+end for
+new value= Operation.evaluate(values)
+new code = Operation.generate code(codes)
+stack.push((new value, new code))
+end for
+final value, final code = stack.pop()
+datasets = training, validation, testing
+idx = hash(final code) modulo 3
+datasets[idx].add((final value, final code))
+Algorithm 1: Pseudocode of the algorithm used to generate the distribution over the python pro-
+gram. Programs produced by this algorithm are guaranteed to never have dead code. The type of the
+sample (train, test, or validation) is determined by its hash modulo 3.
+11
+ADDITIONAL RESULTS ON THE MEMORIZATION PROBLEM
+We present the algorithm for generating the training cases, and present an extensive qualitative evaluation of
+the samples and the kinds of predictions made by the trained LSTMs.
+We emphasize that these predictions rely on teacher forcing. That is, even if the LSTM made an incorrect
+prediction in the i-th output digit, the LSTM will be provided as input the correct i-th output digit for predicting
+the i + 1-th digit. While teacher forcing has no effect whenever the LSTM makes no errors at all, a sample that
+makes an early error and gets the remainder of the digits correctly needs to be interpreted with care.
+12
+QUALITATIVE EVALUATION OF THE CURRICULUM STRATEGIES
+12.1
+EXAMPLES OF PROGRAM EVALUATION PREDICTION. LENGTH = 4, NESTING = 1
+Input:
+print(6652).
+Target:
+6652.
+”Baseline” prediction:
+6652.
+”Naive” prediction:
+6652.
+”Mix” prediction:
+6652.
+”Combined” prediction:
+6652.
+Input:
+10
+
+
+Under review as a conference paper at ICLR 2015
+Figure 8: Prediction accuracy on the memorization task for the four curriculum strategies. The input
+length ranges from 5 to 65 digits. Every strategy is evaluated with the following 4 input modiﬁcation
+schemes: no modiﬁcation; input inversion; input doubling; and input doubling and inversion. The
+training time is limited to 20 epochs.
+print((5997-738)).
+Target:
+5259.
+”Baseline” prediction:
+5101.
+”Naive” prediction:
+5101.
+”Mix” prediction:
+5249.
+”Combined” prediction:
+5229.
+Input:
+print((16*3071)).
+Target:
+49136.
+”Baseline” prediction:
+49336.
+”Naive” prediction:
+48676.
+”Mix” prediction:
+57026.
+”Combined” prediction:
+49626.
+Input:
+c=2060;
+print((c-4387)).
+Target:
+-2327.
+”Baseline” prediction:
+-2320.
+”Naive” prediction:
+-2201.
+”Mix” prediction:
+-2377.
+”Combined” prediction:
+-2317.
+Input:
+print((2*5172)).
+11
+
+
+Under review as a conference paper at ICLR 2015
+Target:
+10344.
+”Baseline” prediction:
+10344.
+”Naive” prediction:
+10324.
+”Mix” prediction:
+10344.
+”Combined” prediction:
+10344.
+Input:
+print((9891-4715)).
+Target:
+5176.
+”Baseline” prediction:
+5196.
+”Naive” prediction:
+5104.
+”Mix” prediction:
+4246.
+”Combined” prediction:
+5196.
+Input:
+print(4849).
+Target:
+4849.
+”Baseline” prediction:
+4849.
+”Naive” prediction:
+4849.
+”Mix” prediction:
+4849.
+”Combined” prediction:
+4849.
+Input:
+print((4*7054)).
+Target:
+28216.
+”Baseline” prediction:
+28216.
+”Naive” prediction:
+28116.
+”Mix” prediction:
+28216.
+”Combined” prediction:
+28216.
+Input:
+print((4635-5257)).
+Target:
+-622.
+”Baseline” prediction:
+-688.
+”Naive” prediction:
+-628.
+”Mix” prediction:
+-692.
+”Combined” prediction:
+-632.
+Input:
+e=1079
+for x in range(10):e+=4729
+print(e).
+Target:
+48369.
+”Baseline” prediction:
+48017.
+”Naive” prediction:
+48011.
+”Mix” prediction:
+48101.
+”Combined” prediction:
+48009.
+12.2
+EXAMPLES OF PROGRAM EVALUATION PREDICTION. LENGTH = 4, NESTING = 2
+Input:
+12
+
+
+Under review as a conference paper at ICLR 2015
+e=6653
+for x in range(14):e+=6311
+print(e).
+Target:
+95007.
+”Baseline” prediction:
+94093.
+”Naive” prediction:
+90013.
+”Mix” prediction:
+95015.
+”Combined” prediction:
+94103.
+Input:
+i=6404;
+print((i+8074)).
+Target:
+14478.
+”Baseline” prediction:
+14498.
+”Naive” prediction:
+14444.
+”Mix” prediction:
+14482.
+”Combined” prediction:
+14478.
+Input:
+print((8*(5051-648))).
+Target:
+35224.
+”Baseline” prediction:
+34044.
+”Naive” prediction:
+32180.
+”Mix” prediction:
+33284.
+”Combined” prediction:
+33004.
+Input:
+h=(3681 if 9279<3033 else 6191)
+for x in range(7):h-=9910
+print(h).
+Target:
+-63179.
+”Baseline” prediction:
+-62049.
+”Naive” prediction:
+-63117.
+”Mix” prediction:
+-62013.
+”Combined” prediction:
+-62009.
+Input:
+print(((3210+2472)+1477)).
+Target:
+7159.
+”Baseline” prediction:
+7009.
+”Naive” prediction:
+7019.
+”Mix” prediction:
+7995.
+”Combined” prediction:
+7079.
+Input:
+b=8494
+for x in range(2):b+=7484
+print((b*14)).
+Target:
+328468.
+”Baseline” prediction:
+318004.
+”Naive” prediction:
+338088.
+”Mix” prediction:
+329220.
+”Combined” prediction:
+338080.
+13
+
+
+Under review as a conference paper at ICLR 2015
+Input:
+j=6447;
+print((12*(j-4689))).
+Target:
+21096.
+”Baseline” prediction:
+21266.
+”Naive” prediction:
+10046.
+”Mix” prediction:
+10606.
+”Combined” prediction:
+20402.
+Input:
+print((13*9201)).
+Target:
+119613.
+”Baseline” prediction:
+118313.
+”Naive” prediction:
+118011.
+”Mix” prediction:
+117669.
+”Combined” prediction:
+119533.
+Input:
+g=1054;
+print((6028+(g-1953))).
+Target:
+5129.
+”Baseline” prediction:
+4013.
+”Naive” prediction:
+5035.
+”Mix” prediction:
+4015.
+”Combined” prediction:
+4009.
+Input:
+d=6817
+for x in range(7):d-=(4581-2186)
+print(d).
+Target:
+-9948.
+”Baseline” prediction:
+-1996.
+”Naive” prediction:
+-1610.
+”Mix” prediction:
+-1882.
+”Combined” prediction:
+-1980.
+12.3
+EXAMPLES OF PROGRAM EVALUATION PREDICTION. LENGTH = 4, NESTING = 3
+Input:
+f=4692
+for x in range(4):f-=1664
+j=1443
+for x in range(8):j+=f
+d=j
+for x in range(11):d-=4699
+print(d).
+Target:
+-65958.
+”Baseline” prediction:
+-13262.
+”Naive” prediction:
+-73194.
+”Mix” prediction:
+-40188.
+”Combined” prediction:
+-12004.
+14
+
+
+Under review as a conference paper at ICLR 2015
+Input:
+b=9930
+for x in range(11):b-=4369
+g=b;
+print(((g-8043)+9955)).
+Target:
+-36217.
+”Baseline” prediction:
+-37515.
+”Naive” prediction:
+-38609.
+”Mix” prediction:
+-35893.
+”Combined” prediction:
+-35055.
+Input:
+d=5446
+for x in range(8):d+=(2678 if 4803<2829 else 9848)
+print((d if 5935<4845 else 3043)).
+Target:
+3043.
+”Baseline” prediction:
+3043.
+”Naive” prediction:
+3043.
+”Mix” prediction:
+3043.
+”Combined” prediction:
+3043.
+Input:
+print((((2578 if 7750<1768 else 8639)-2590)+342)).
+Target:
+6391.
+”Baseline” prediction:
+-555.
+”Naive” prediction:
+6329.
+”Mix” prediction:
+6461.
+”Combined” prediction:
+6105.
+Input:
+print((((841 if 2076<7326 else 1869)*10) if 7827<317 else 7192)).
+Target:
+7192.
+”Baseline” prediction:
+7192.
+”Naive” prediction:
+7192.
+”Mix” prediction:
+7192.
+”Combined” prediction:
+7192.
+Input:
+d=8640;
+print((7135 if 6710>((d+7080)*14) else 7200)).
+Target:
+7200.
+”Baseline” prediction:
+7200.
+”Naive” prediction:
+7200.
+”Mix” prediction:
+7200.
+”Combined” prediction:
+7200.
+Input:
+b=6968
+for x in range(10):b-=(299 if 3389<9977 else 203)
+print((12*b)).
+15
+
+
+Under review as a conference paper at ICLR 2015
+Target:
+47736.
+”Baseline” prediction:
+-0666.
+”Naive” prediction:
+11262.
+”Mix” prediction:
+48666.
+”Combined” prediction:
+48766.
+Input:
+j=(1*5057);
+print(((j+1215)+6931)).
+Target:
+13203.
+”Baseline” prediction:
+13015.
+”Naive” prediction:
+12007.
+”Mix” prediction:
+13379.
+”Combined” prediction:
+13205.
+Input:
+print(((1090-3305)+9466)).
+Target:
+7251.
+”Baseline” prediction:
+7111.
+”Naive” prediction:
+7099.
+”Mix” prediction:
+7595.
+”Combined” prediction:
+7699.
+Input:
+a=8331;
+print((a-(15*7082))).
+Target:
+-97899.
+”Baseline” prediction:
+-96991.
+”Naive” prediction:
+-19959.
+”Mix” prediction:
+-95551.
+”Combined” prediction:
+-96397.
+12.4
+EXAMPLES OF PROGRAM EVALUATION PREDICTION. LENGTH = 6, NESTING = 1
+Input:
+print((71647-548966)).
+Target:
+-477319.
+”Baseline” prediction:
+-472122.
+”Naive” prediction:
+-477591.
+”Mix” prediction:
+-479705.
+”Combined” prediction:
+-475009.
+Input:
+print(1508).
+Target:
+1508.
+”Baseline” prediction:
+1508.
+”Naive” prediction:
+1508.
+”Mix” prediction:
+1508.
+”Combined” prediction:
+1508.
+Input:
+16
+
+
+Under review as a conference paper at ICLR 2015
+j=611989;
+print((j+763864)).
+Target:
+1375853.
+”Baseline” prediction:
+1379920.
+”Naive” prediction:
+1378991.
+”Mix” prediction:
+1375119.
+”Combined” prediction:
+1375173.
+Input:
+print((151108 if 289653>33296 else 564130)).
+Target:
+151108.
+”Baseline” prediction:
+154973.
+”Naive” prediction:
+151108.
+”Mix” prediction:
+151108.
+”Combined” prediction:
+151108.
+Input:
+c=142012
+for x in range(12):c-=166776
+print(c).
+Target:
+-1859300.
+”Baseline” prediction:
+-1840831.
+”Naive” prediction:
+-1840000.
+”Mix” prediction:
+-1979720.
+”Combined” prediction:
+-1820700.
+Input:
+print((678740+203140)).
+Target:
+881880.
+”Baseline” prediction:
+880475.
+”Naive” prediction:
+881666.
+”Mix” prediction:
+880190.
+”Combined” prediction:
+885920.
+Input:
+print((929067-75246)).
+Target:
+853821.
+”Baseline” prediction:
+851233.
+”Naive” prediction:
+867113.
+”Mix” prediction:
+855615.
+”Combined” prediction:
+853009.
+Input:
+d=960350
+for x in range(24):d-=187946
+print(d).
+Target:
+-3550354.
+”Baseline” prediction:
+-3571998.
+”Naive” prediction:
+-3699993.
+”Mix” prediction:
+-3899220.
+”Combined” prediction:
+-3507790.
+17
+
+
+Under review as a conference paper at ICLR 2015
+Input:
+print((8*786463)).
+Target:
+6291704.
+”Baseline” prediction:
+6270804.
+”Naive” prediction:
+6271904.
+”Mix” prediction:
+6297644.
+”Combined” prediction:
+6270004.
+Input:
+print((498592-570324)).
+Target:
+-71732.
+”Baseline” prediction:
+-61086.
+”Naive” prediction:
+-73582.
+”Mix” prediction:
+-19000.
+”Combined” prediction:
+-72842.
+12.5
+EXAMPLES OF PROGRAM EVALUATION PREDICTION. LENGTH = 6, NESTING = 2
+Input:
+print((39007+416968)).
+Target:
+455975.
+”Baseline” prediction:
+559917.
+”Naive” prediction:
+438887.
+”Mix” prediction:
+458993.
+”Combined” prediction:
+450031.
+Input:
+print((586051+664462)).
+Target:
+1250513.
+”Baseline” prediction:
+1250939.
+”Naive” prediction:
+1240719.
+”Mix” prediction:
+1230881.
+”Combined” prediction:
+1240551.
+Input:
+print(948950).
+Target:
+948950.
+”Baseline” prediction:
+948950.
+”Naive” prediction:
+948950.
+”Mix” prediction:
+948950.
+”Combined” prediction:
+948950.
+Input:
+i=849846
+for x in range(15):i-=557574
+print((362961 if 881013<597832 else i)).
+18
+
+
+Under review as a conference paper at ICLR 2015
+Target:
+-7513764.
+”Baseline” prediction:
+-7422756.
+”Naive” prediction:
+-7011048.
+”Mix” prediction:
+-2617777.
+”Combined” prediction:
+-7101146.
+Input:
+g=977055;
+print((g-(592222+268807))).
+Target:
+116026.
+”Baseline” prediction:
+132440.
+”Naive” prediction:
+101488.
+”Mix” prediction:
+114988.
+”Combined” prediction:
+125682.
+Input:
+print(((17*711621) if 224989>711768 else 267900)).
+Target:
+267900.
+”Baseline” prediction:
+267900.
+”Naive” prediction:
+267900.
+”Mix” prediction:
+267900.
+”Combined” prediction:
+267900.
+Input:
+j=114940;
+print((j+482118)).
+Target:
+597058.
+”Baseline” prediction:
+590006.
+”Naive” prediction:
+690004.
+”Mix” prediction:
+599816.
+”Combined” prediction:
+599990.
+Input:
+print((171932*19)).
+Target:
+3266708.
+”Baseline” prediction:
+3249998.
+”Naive” prediction:
+3131798.
+”Mix” prediction:
+3390158.
+”Combined” prediction:
+3100388.
+Input:
+h=411671;
+print((242648 if (h+31605)>679390 else 449699)).
+Target:
+449699.
+”Baseline” prediction:
+449699.
+”Naive” prediction:
+449699.
+”Mix” prediction:
+449699.
+”Combined” prediction:
+449699.
+Input:
+print(11332).
+19
+
+
+Under review as a conference paper at ICLR 2015
+Target:
+11332.
+”Baseline” prediction:
+11332.
+”Naive” prediction:
+11332.
+”Mix” prediction:
+11332.
+”Combined” prediction:
+11332.
+12.6
+EXAMPLES OF PROGRAM EVALUATION PREDICTION. LENGTH = 6, NESTING = 3
+Input:
+c=335973;
+b=(c+756088);
+print((6*(b+66858))).
+Target:
+6953514.
+”Baseline” prediction:
+1099522.
+”Naive” prediction:
+7773362.
+”Mix” prediction:
+6993124.
+”Combined” prediction:
+1044444.
+Input:
+c=935280;
+print((765618 if 409621<(c-(329375 if 806201<240281 else 81797)) else
+805944)).
+Target:
+765618.
+”Baseline” prediction:
+800988.
+”Naive” prediction:
+765644.
+”Mix” prediction:
+765616.
+”Combined” prediction:
+865618.
+Input:
+print(((670421 if 144271>805597 else 364643)*20)).
+Target:
+7292860.
+”Baseline” prediction:
+1774640.
+”Naive” prediction:
+7134660.
+”Mix” prediction:
+7292860.
+”Combined” prediction:
+7292860.
+Input:
+print((108196 if 714126>847153 else (888873-(381812*13)))).
+Target:
+-4074683.
+”Baseline” prediction:
+13205544.
+”Naive” prediction:
+-4011899.
+”Mix” prediction:
+-4422909.
+”Combined” prediction:
+-4048381.
+Input:
+j=(181489 if 467875>46774 else (127738 if 866523<633391 else 592486))
+;
+print((j-627483)).
+20
+
+
+Under review as a conference paper at ICLR 2015
+Target:
+-445994.
+”Baseline” prediction:
+-333153.
+”Naive” prediction:
+-488724.
+”Mix” prediction:
+-440880.
+”Combined” prediction:
+-447944.
+Input:
+f=483654
+for x in range(9):f-=913681
+a=f
+for x in range(12):a-=926785
+print((124798 if a>326533 else 576599)).
+Target:
+576599.
+”Baseline” prediction:
+176599.
+”Naive” prediction:
+576599.
+”Mix” prediction:
+576599.
+”Combined” prediction:
+576599.
+Input:
+f=136315;
+h=(f+37592);
+g=418652;
+print((g-(h+234728))).
+Target:
+10017.
+”Baseline” prediction:
+12115.
+”Naive” prediction:
+-1123.
+”Mix” prediction:
+-000..
+”Combined” prediction:
+-0033.
+Input:
+a=768606
+for x in range(11):a+=454841
+f=a
+for x in range(3):f-=696226
+print((340434 if f<287035 else 523084)).
+Target:
+523084.
+”Baseline” prediction:
+523084.
+”Naive” prediction:
+523084.
+”Mix” prediction:
+523084.
+”Combined” prediction:
+523084.
+Input:
+b=468503;
+print((b-(326264+406077))).
+Target:
+-263838.
+”Baseline” prediction:
+-278797.
+”Naive” prediction:
+-241144.
+”Mix” prediction:
+-252080.
+”Combined” prediction:
+-277882.
+Input:
+g=801925;
+print((58095+(g+(824920 if 842317>176260 else 570318)))).
+21
+
+
+Under review as a conference paper at ICLR 2015
+Target:
+1684940.
+”Baseline” prediction:
+1602221.
+”Naive” prediction:
+1799892.
+”Mix” prediction:
+1677788.
+”Combined” prediction:
+1611888.
+12.7
+EXAMPLES OF PREDICTING RESULT OF ADDITION.
+LENGTH = 6
+Input:
+print(284993+281178).
+Target:
+566171.
+”Baseline” prediction:
+566199.
+”Naive” prediction:
+566151.
+”Mix” prediction:
+566171.
+”Combined” prediction:
+566171.
+Input:
+print(616216+423489).
+Target:
+1039705.
+”Baseline” prediction:
+1039712.
+”Naive” prediction:
+1039605.
+”Mix” prediction:
+1039605.
+”Combined” prediction:
+1039705.
+Input:
+print(559794+837898).
+Target:
+1397692.
+”Baseline” prediction:
+1397694.
+”Naive” prediction:
+1397662.
+”Mix” prediction:
+1397792.
+”Combined” prediction:
+1397692.
+Input:
+print(830194+551314).
+Target:
+1381508.
+”Baseline” prediction:
+1381401.
+”Naive” prediction:
+1381518.
+”Mix” prediction:
+1381508.
+”Combined” prediction:
+1381508.
+Input:
+print(252849+873177).
+Target:
+1126026.
+”Baseline” prediction:
+1126020.
+”Naive” prediction:
+1126006.
+”Mix” prediction:
+1125026.
+”Combined” prediction:
+1126026.
+Input:
+print(17513+163744).
+22
+
+
+Under review as a conference paper at ICLR 2015
+Target:
+181257.
+”Baseline” prediction:
+181398.
+”Naive” prediction:
+181287.
+”Mix” prediction:
+181257.
+”Combined” prediction:
+181257.
+Input:
+print(530590+569236).
+Target:
+1099826.
+”Baseline” prediction:
+1099708.
+”Naive” prediction:
+1099826.
+”Mix” prediction:
+1099826.
+”Combined” prediction:
+1099826.
+Input:
+print(856484+436077).
+Target:
+1292561.
+”Baseline” prediction:
+1292589.
+”Naive” prediction:
+1292571.
+”Mix” prediction:
+1292561.
+”Combined” prediction:
+1292561.
+Input:
+print(731632+833163).
+Target:
+1564795.
+”Baseline” prediction:
+1564769.
+”Naive” prediction:
+1564775.
+”Mix” prediction:
+1564795.
+”Combined” prediction:
+1564795.
+Input:
+print(738532+444531).
+Target:
+1183063.
+”Baseline” prediction:
+1183000.
+”Naive” prediction:
+1183063.
+”Mix” prediction:
+1183063.
+”Combined” prediction:
+1183063.
+12.8
+EXAMPLES OF PREDICTING RESULT OF ADDITION.
+LENGTH = 8
+Input:
+print(32847917+95908452).
+Target:
+128756369.
+”Baseline” prediction:
+128899997.
+”Naive” prediction:
+128756669.
+”Mix” prediction:
+128756369.
+”Combined” prediction:
+128756369.
+Input:
+print(49173072+46963478).
+23
+
+
+Under review as a conference paper at ICLR 2015
+Target:
+96136550.
+”Baseline” prediction:
+96129999.
+”Naive” prediction:
+96136050.
+”Mix” prediction:
+96136550.
+”Combined” prediction:
+96136550.
+Input:
+print(79385668+60159139).
+Target:
+139544807.
+”Baseline” prediction:
+139679090.
+”Naive” prediction:
+139544707.
+”Mix” prediction:
+139544807.
+”Combined” prediction:
+139544807.
+Input:
+print(16183468+42542767).
+Target:
+58726235.
+”Baseline” prediction:
+58798523.
+”Naive” prediction:
+58726035.
+”Mix” prediction:
+58726235.
+”Combined” prediction:
+58726235.
+Input:
+print(15982788+54043908).
+Target:
+70026696.
+”Baseline” prediction:
+60014022.
+”Naive” prediction:
+70026496.
+”Mix” prediction:
+60026696.
+”Combined” prediction:
+70026696.
+Input:
+print(45356253+31242293).
+Target:
+76598546.
+”Baseline” prediction:
+76699777.
+”Naive” prediction:
+76598246.
+”Mix” prediction:
+76598546.
+”Combined” prediction:
+76598546.
+Input:
+print(93230501+12607891).
+Target:
+105838392.
+”Baseline” prediction:
+105999882.
+”Naive” prediction:
+105838292.
+”Mix” prediction:
+105838392.
+”Combined” prediction:
+105838392.
+Input:
+print(2487336+40625181).
+24
+
+
+Under review as a conference paper at ICLR 2015
+Target:
+43112517.
+”Baseline” prediction:
+43178441.
+”Naive” prediction:
+43112917.
+”Mix” prediction:
+43112517.
+”Combined” prediction:
+43112517.
+Input:
+print(61854571+75028157).
+Target:
+136882728.
+”Baseline” prediction:
+136860087.
+”Naive” prediction:
+136883928.
+”Mix” prediction:
+136882728.
+”Combined” prediction:
+136882728.
+Input:
+print(13828700+10188872).
+Target:
+24017572.
+”Baseline” prediction:
+24000349.
+”Naive” prediction:
+24018872.
+”Mix” prediction:
+23017572.
+”Combined” prediction:
+24017572.
+25

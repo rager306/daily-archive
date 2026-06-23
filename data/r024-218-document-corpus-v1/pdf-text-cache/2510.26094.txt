@@ -1,0 +1,1446 @@
+Preprint, under review
+LEAN4PHYSICS:
+COMPREHENSIVE
+REASONING
+FRAMEWORK
+FOR
+COLLEGE-LEVEL
+PHYSICS
+IN
+LEAN4
+Yuxin Li1∗, Minghao Liu1∗, Ruida Wang2∗, Wenzhao Ji1, Zhitao He1, Rui Pan2,
+Junming Huang3, Tong Zhang2, Yi R. (May) Fung1
+1Hong Kong University of Science and Technology,
+2University of Illinois Urbana-Champaign,
+3Princeton University
+{ylinq,mliuby,wjiab,zhebu}@connect.ust.hk
+{ruidaw,ruip4}@illinois.edu
+junminghuang@princeton.edu
+tongzhang@tongzhang-ml.org
+yrfung@ust.hk
+ABSTRACT
+We present Lean4PHYS, a comprehensive reasoning framework for college-level
+physics problems in Lean4. Lean4PHYS includes LeanPhysBench, a college-
+level benchmark for formal physics reasoning in Lean4, which contains 200
+hand-crafted and peer-reviewed statements derived from university textbooks and
+physics competition problems. To establish a solid foundation for formal reason-
+ing in physics, we also introduce PhysLib, a community-driven repository contain-
+ing fundamental unit systems and theorems essential for formal physics reasoning.
+Based on the benchmark and Lean4 repository we composed in Lean4PHYS, we
+report baseline results using major expert Math Lean4 provers and state-of-the-
+art closed-source models, with the best performance of DeepSeek-Prover-V2-7B
+achieving only 16% and Claude-Sonnet-4 achieving 35%. We also conduct a de-
+tailed analysis showing that our PhysLib can achieve an average improvement of
+11.75% in model performance. This demonstrates the challenging nature of our
+LeanPhysBench and the effectiveness of PhysLib. To the best of our knowledge,
+this is the first study to provide a physics benchmark in Lean4.1
+1
+INTRODUCTION
+Formal thinking capability has long been considered a cornerstone of human intelligence and a key
+objective of machine learning. With the emergence of Large Language Models (LLMs), many stud-
+ies explore diverse ways to apply LLMs to perform various reasoning tasks. These efforts span
+general reasoning (Wang et al., 2024b; Suzgun et al., 2022; Talmor et al., 2018), mathematical
+reasoning (Hendrycks et al., 2021; Cobbe et al., 2021; Guo et al., 2025), natural science reason-
+ing (Saikh et al., 2022; Edwards et al., 2025), and various other domains (He et al., 2025a; Su et al.,
+2025). However, most works treat reasoning as a purely Natural Language (NL) task, relying on
+answer checking to evaluate correctness. This approach often fails to verify the intermediate steps
+of the reasoning process.
+To make the reasoning process verifiable, researchers ground the reasoning procedure in formal
+logical systems, enabling the automatic verification of both the reasoning steps and final results
+through Formal Languages (FLs).
+Based on this approach, several FLs are developed, includ-
+ing Lean (De Moura et al., 2015; Moura & Ullrich, 2021), Coq (Coq, 1996), Isabelle (Paulson,
+1994), and HOL (Harrison, 2009). Among these, Lean4 has received significant attention from both
+academia and industry, making it one of the most well-studied FLs in recent years. Numerous works
+∗First Authors
+1Our code and dataset will be released at https://github.com/ShirleyLIYuxin/Lean4PHYS.
+1
+arXiv:2510.26094v1  [cs.AI]  30 Oct 2025
+
+
+Preprint, under review
+Electromagnetism
+Thermodynamics
+Modern Physics
+Mechanics
+Waves
+Optics
+NL to FL translation with PhysLib
+Proof 2
+NL Statement 
+FL Statement 
+Mixed Statement 3
+Mixed Statement 1
+Test LLMs on LeanPhysBench with and without PhysLib in Prompt
+Proof 1
+Proof 3
+LeanPhysBench
+… (h_fric_min : f = μ • N ) :
+μ = (Real.cos θ • (g - Real.sin θ • R * ω ** 
+2/1)).val / (Real.sin θ • g /1 + (Real.cos θ) ^ 2 • R 
+* ω ** 2).val := by …
+... What is the minimum coefficient of friction
+required to keep the block in circular motion? …
+Mixed Statement 2
+Evaluation Results
+Natural Language Statement 
+Condition
+Question
+Steps
+Answer
+What is the minimum coefficient of friction
+required to keep the block in circular motion?
+A hollow spherical shell of radius 𝑅rotates with 
+angular velocity 𝜔. A small block is located 
+inside the shell at height ℎ= 𝑅/2, with static 
+friction coefficient 𝜇 between the block and the 
+shell. Let 𝜃be the angle between the vertical and 
+the line from the shell’s center to the block, and 
+let 𝑟= 𝑅sin 𝜃.
+Formal Language Statement 
+Hypothesis
+Goal
+μ = (Real.cos θ • (g - Real.sin θ • R * ω ** 2/1)).val 
+(Real.sin θ • g /1 + (Real.cos θ) ^ 2 • R * ω ** 
+2).val := by sorry
+theorem Ch2_Q5
+ (m : Mass) (R h : Length) (θ : ℝ)
+ (ω : Scalar (-time_unit)) 
+ (N f : Force) (r : Length) (μ : ℝ)
+ (hθ_range : 0 < θ ∧θ < Real.pi / 2)
+ (h_pos : 0 < m.val ∧ 0 < R.val ∧ 0 < ω.val ∧ 0 < g)
+ (h_radius : r = Real.cos θ • R)
+ (h_vert  : Real.sin θ • N + Real.cos θ • f = m * g)
+ (h_horiz : Real.cos θ • N - Real.sin θ • f 
+ 
+     = m * ω ** 2 * r)
+ (h_fric_min : f = μ • N ):
+We have r = R cos θ. Consider forces parallel 
+and horizontal to the surfaces, we get: 
+sin θ · N + cos θ · f = mg 
+ 
+ 
+(1) 
+cos θ · N − sin θ · f = mω2r 
+ 
+ 
+(2) 
+Solve the above equations to get: 
+N = m(g sin θ + cos2 θω2R) 
+ 
+ 
+(3) 
+f = m cos θ(g − sin θω2R) 
+ 
+ 
+(4)
+Substitute f, N in µ = f/N and simplify.
+theorem linear_sol{a b x y a1 b1:ℝ}
+(h1:a*x+b*y=a1)(h2:b*x-a*y=b1)(h3:a^2+b^2=1):
+  x=(a*a1+b*b1)∧(y=-a*b1+b*a1):=by
+  split_ands
+  rw[← h1,← h2]
+  have h4:a * (a * x + b * y) + b * (b * x - a * y)
+ 
+=(a^2+b^2)*x:=by ring_nf
+  rw[h4,h3,one_mul]
+  rw[← h1,← h2]
+  have h4: -a * (b * x - a * y) + b * (a * x + b * y)
+ 
+=(a^2+b^2)*y:=by ring_nf
+  rw[h4,h3,one_mul]
+have hvert1:=h_vert
+  apply Scalar.ext_iff.mp at h_vert
+  simp at h_vert
+  apply Scalar.ext_iff.mp at h_horiz
+  simp at h_horiz
+  simp
+  apply linear_sol at h_vert
+  apply h_vert at h_horiz
+  simp at h_horiz
+  have hnz:N.val≠0:=by … 
+  have hmu1:μ=f.val/N.val:=by … 
+rw[hmu1]
+  refine (div_eq_div_iff ?_ ?_).mpr ?_
+  exact hnz
+  refine Ne.symm (_root_.ne_of_lt ?_)
+  refine Right.add_pos' ?_ ?_
+  refine Left.mul_pos ?_ ?_
+  exact sin_pos θ hθ_range
+  norm_num
+  refine Left.mul_pos ?_ ?_
+  refine Left.mul_pos ?_ ?_
+  refine sq_pos_of_pos ?_ … 
+(a) Formal Data Construction
+(b) LLM Performance Evaluation
+Formal 
+Verification
+Physics Laws
+Newton’s Second Law (Rotating Frame): 𝐹/0123456578 = 𝑚∗𝑎 …
+Prove that the minimum coefficient of friction required to keep the block in circular motion is
+Proving Target Extraction
+Condition Extraction
+Object Data
+Position: ℎ= 𝑅/2 ; Normal force: 𝑁9 = 𝑚𝑔∗𝑐𝑜𝑠𝜃9 + . . .
+Figure 1: Overview of the Lean4PHYS framework: (a) Benchmark and Library Construction:
+The benchmark and library are developed using a bottom-up principle. We first establish the founda-
+tional units and SI system of PhysLib, then compose the calculation support, and finally construct the
+field-related theorems. For the benchmark, NL questions are transformed from a question-answering
+format to proof problems and subsequently formalized into Lean4 statements. (b) LLM Performance
+Evaluation: We evaluate the formal physics reasoning capabilities of major open and closed-source
+LLMs on LeanPhysBench, both with and without PhysLib. After inference is completed, Lean4
+auto-verification evaluates model performance and highlights the utility of PhysLib.
+have been proposed to advance Lean4 research, including test benchmarks (Zheng et al., 2021; Gu-
+lati et al., 2024; Azerbayev et al., 2023), training dataset (Dong & Ma, 2025; Wang et al., 2024a;
+Ying et al., 2024), and provers (Polu et al., 2022; Wang et al., 2024a; Xin et al., 2024; Wang et al.,
+2025c; Lin et al., 2025b; Dong & Ma, 2025; Xin et al., 2025; Ren et al., 2025).
+However, current studies in formal reasoning primarily focus on the math domain, leaving other
+fields with solid foundations that can be formalized, such as physics, largely understudied. This
+raises two critical challenges for Lean4 physics reasoning. Firstly, there is a lack of a comprehensive
+foundational repository to support physics formalization. Unlike mathematics, which benefits from
+extensive libraries like Mathlib, physics reasoning requires specialized infrastructure, such as unit
+systems and domain-specific theorems. Such a foundation is absent or fragmented. Secondly, there
+is no thorough evaluation of the models’ capabilities in formal physics reasoning. While state-of-
+the-art expert provers demonstrate their superior performance on Lean4 Math benchmarks such as
+MiniF2F (Zheng et al., 2021) and PutnamBench (Gulati et al., 2024), it remains unclear whether
+their formal reasoning capabilities also apply to physics problems. Or these models have overfit to
+math reasoning patterns despite using similar Lean4 syntax.
+To solve the problem above, we propose Lean4PHYS, a comprehensive reasoning framework for
+college-level general-domain physics problems in Lean4. It aims to provide a foundation for LLM-
+based formal physics reasoning. Lean4PHYS launches PhysLib, a foundation repository that sup-
+ports Lean4 physics reasoning. The PhysLib builds upon the dedicated UnitSystem in Tao (2025).
+We implement the basic mathematical structure, calculus, and algebraic operations, transfer be-
+tween physics and math units, dimension transformation, and a growing collection of extendable
+formalized physics theorems. To provide a baseline verifying LLMs’ formal reasoning capability,
+we develop LeanPhysBench based on PhysLib that contains 200 manually crafted and peer-reviewed
+Lean4 theorems. LeanPhysBench targets college-level knowledge, spanning Olympiad-style com-
+2
+
+
+Preprint, under review
+petition problems and college textbook-level physics problems formalized in Lean4. Such a bench-
+mark is composed by systematically transforming natural-language problems into Lean4 theorems:
+extracting key conditions and relevant physical laws, defining explicit proving targets, restating the
+problems in logical form, and integrating them into verifiable Lean4 statements. To the best of
+our knowledge, LeanPhysBench is the first benchmark to evaluate LLMs’ formal physics reasoning
+capabilities.
+We summarize our contributions as follows:
+1. We introduce Lean4PHYS, a comprehensive Lean4-based framework for formal physics
+reasoning. It contains PhysLib and LeanPhysBench, where PhysLib aims to solve the prob-
+lem that the current Lean4 physics reasoning field lacks foundational support. The Lean-
+PhysBench, on the other hand, serves as an evaluation method of LLMs’ formal physics
+reasoning capabilities.
+2. Our framework innovates by bridging natural-language physics problems with formal
+Lean4 representations, enabling LLMs to learn domain-specific laws and reasoning pat-
+terns beyond standard math-oriented theorem provers.
+3. We perform extensive experiments by applying leading models to LeanPhysBench. The
+experiments suggest that all current expert math provers and general models, regardless
+of their size, achieve suboptimal performance. The best expert prover achieves 15.00%
+and the large general model achieves 39.50%. Furthermore, we demonstrate that after
+integrating PhysLib, the model exhibits a consistent performance improvement of 11.75%.
+This suggests that LeanPhysBench successfully models the limitations of formal physics
+and the effectiveness of PhysLib.
+Moreover, to the best of our knowledge, Lean4PHYS is the first work that attempts to extend the
+LLM-based formal reasoning from math to a more general domain, which offers a new direction that
+seeks to formalize progressively more subjects. We will open-source PhysLib and LeanPhysBench
+in https://github.com/ShirleyLIYuxin/Lean4PHYS.
+2
+THE LEAN4PHYS FRAMEWORK
+In this section, we introduce the design and implementation of the Lean4PHYS framework in
+detail. The core idea of our framework is to provide a foundation and then evaluate the LLMs’
+formal physics reasoning capabilities. We describe the basic structure of PhysLib in Section 2.1 and
+then present the details of how we construct LeanPhysBench in Section 2.2.
+2.1
+PHYSLIB
+In this paper, we introduce PhysLib, a community-driven repository designed to support rigorous
+and machine-verifiable Lean4 formal physics reasoning. We build the library bottom-up at both the
+conceptual and technical levels. The current version of PhysLib contains the foundations of unit
+systems in physics (Section 2.1.1), practical theorems for proving (Section 2.1.2), and a guideline
+for community development and extension (Section 2.1.3).
+2.1.1
+FOUNDATION OF PHYSICS: UNIT SYSTEM
+The central challenge of formalizing physics from scratch is to abstract the kernel that supports all
+reasoning in the field. Unlike mathematics, where the basic building blocks are defined by pure
+definition, physics and other natural sciences are primarily supported by empirical rules derived
+from experiments and lack explicit definitions. For physics, we lay the foundation of reasoning by
+establishing the unit system.
+From an implementation perspective, we build the unit system by extending Mathlib4 (mathlib Com-
+munity, 2020) and the Lean4 UnitSystem kernel (Tao, 2025). The unit system contains seven ba-
+sic units, including time, length, mass, electric current, temperature, amount
+of substance, and unit of luminous intensity. We define basic Normed Space,
+algebraic computation, and derivative for the physics unit system in Lean4, which are
+vital for both problem construction and proof. Additionally, we prove the interchangeability
+3
+
+
+Preprint, under review
+between physics quantities and mathematical quantities. Besides, we also define the physics
+dimension cast and prove that such a cast does not affect the mathematical propriety of such a
+unit.
+2.1.2
+TOPIC-BASED THEOREM DEVELOPMENT
+Building on the cross-topic kernel foundation system of units, we introduce topic-based theorem
+systems tailored to different needs in specific problem types. Specifically, the current version of
+PhysLib splits problems into six major topics, namely: mechanics, waves & acoustics,
+thermodynamics, electromagnetism, optics, and modern physics. The topic split
+is inspired by Young & Freedman (2019). Our implementation principle for this section of PhysLib
+is to first create different namespaces and independent Lean files for each topic. Subsequently,
+we add topic-specific unit types and constants in the topic namespace. Then, we implement basic
+physics rules summarized from experiments as definitions. Finally, we implement theorems with
+their proofs, which are relevant to the topic, as the final layer. We implement the mechanics field in
+detail as an example and set a basic foundation for other topics. We present the design process to
+the community and launch this project for collaborative development of the field.
+2.1.3
+COMMUNITY-DRIVEN AND EXTENSIBILITY
+As mentioned above, PhysLib is designed to be a community-driven, collaborative work like Math-
+lib (mathlib Community, 2020), and we make our best effort to ensure that other researchers can
+easily read and extend the system while maintaining consistency. In general, we organize Phys-
+Lib in a three-layer hierarchy: (1) Foundation unit system, which should be consistent with only
+the necessary changes. (2) Topic-specific unit system, which should be added when formalizing
+theorem statements if current units are unable to support the construction. (3) Topic-specific theo-
+rems, which include most of the practical theorems to support proof implementation and should be
+regularly updated.
+The current version contains a relatively comprehensive implementation of the repository in me-
+chanics, serving as an example for the community. PhysLib inherits components from Tao (2025),
+which are distributed under the Apache-2.0 license, and the same license applies to newly added con-
+tent. We will actively encourage contributions of new statements and proofs, and will continuously
+maintain the repository in the future.
+Beyond the current repository we are implementing, such a layered design applies to the formaliza-
+tion of other domains, such as other natural and social sciences, and can be alternatively extended to
+general proving systems based on the same logic.
+2.2
+LEANPHYSBENCH
+Given the current trend of using LLMs for formal reasoning, it is crucial to evaluate their ability to
+perform formal physics reasoning. However, to the best of our knowledge, there is no benchmark
+dataset for evaluating LLMs’ Lean4 physics reasoning capabilities. Thus, we propose (to the best
+of our knowledge) the first benchmark for Lean4 physics reasoning. In this section, we detail the
+process of creating this benchmark. We firstly present the data collection process in Section 2.2.1,
+then detail how we created the benchmark in Section 2.2.2, and report the benchmark statistics in
+Section 2.2.3.
+2.2.1
+DATA COLLECTION & PREPROCESSING
+Following the bottom-up principle, we build the LeanPhysBench from the basics to the advanced.
+The LeanPhysBench primarily consists of two levels of data: the high school Olympiad competition
+and the college textbook. The Olympiad data are collected from competition-related exercise books,
+which cover introductory college-level knowledge with more tedious tricks. It focuses on testing
+the model’s capability to perform multi-step reasoning within a specific field of knowledge. On
+the other hand, the college textbook problems are selected to cover a wider range of concepts with
+relatively easier reasoning, which focus on testing the LLM’s capability to reason across multiple
+physics models. For questions accompanied by figures, we manually convert this information into
+4
+
+
+Preprint, under review
+College Level
+theorem University_Mechanics_3
+(x_0 x_1 : Length)
+(t_0 t_1 dt t : Time)
+(v_0 v_1 : Speed)
+(a: Acceleration)
+(xf xf1: Time →Length)(vf : Time →Speed)
+(ht0 : t_0 = 0 · second)
+(ht1 : t_1 = 4 · second)
+(ht : dt = t_1 −t_0)
+(ha : a = (v_1 −v_0)/dt)
+(hv : ∀t, vf t = v_0 + a * t/1)
+(hv1: v_1 = vf dt)
+(hx: ∀t, xf t = (a * t**2)/2 + v_0 * t)
+(hxx: ∀t, xf1 t = (3 · meter / second**2)* t**2 −
+2 · meter / second * t)
+(hxxx: xf = xf1):
+(a = 6 · meter / second**2 ∧
+v_0 = −2 · meter / second)
+:= by sorry
+Competition Level
+theorem competition_mechanics_Ch2_Q32
+(m : Mass) (R : Length) (θ : R) (v : Speed) (µ : R) (N f : Force)
+(h_pos : 0 < m.val ∧0 < µ ∧0 < g.val)
+(h_sin_cos : Real.sin θ ̸= 0 ∧Real.cos θ ̸= 0)
+(r_def : r = Real.sin θ · R)
+(h_horiz : Real.sin θ · N −Real.cos θ · f =
+m * v**2 / r)
+(h_vert : Real.cos θ · N + Real.sin θ · f = m * g)
+(f_def : f = m * (Real.sin θ · g −
+Real.cos θ · v**2 / r / 1))
+(N_def : N = m * (Real.cos θ · g +
+Real.sin θ · v**2 / r / 1))
+(fric_bound : ∥f.val∥≤µ * ∥N.val∥) :
+∀(ε : Z), (ε = 1 ∨ε = −1) →(
+f = (ε : R) · µ · N →v**2 =
+((Real.sin θ −(ε : R) * µ * Real.cos θ) · g *
+(Real.sin θ · R)/
+(Real.cos θ + (ε : R) * µ * Real.sin θ)))
+:= by sorry
+Figure 2: Two examples from LeanPhysBench demonstrating different difficulty levels.
+Natural Language (NL) and add it as the context to the problems. Detailed data sources are provided
+in Appendix A.
+Following PhysLib’s design, we further divided the topic of the LeanPhysBench into mechanics,
+waves & acoustics, thermodynamics, electromagnetism, optics, and modern physics. After data
+collection, we have the base NL statement for formulating LeanPhysBench.
+2.2.2
+FORMALIZATION PIPELINE
+After collecting and preprocessing the NL problems, we apply a strict pipeline to transform them
+into verifiable Lean4 theorems. The overview of the formalization pipeline is shown in Figure ??.
+Formally, if we denote a physics problem we want to formalize by P, the original problem we have
+is Poriginal, the target is to obtain the Lean4 version of the problem PLean. The formalization
+process is as follows:
+NL Format Alignment
+According to previous work in formalizing mathematical state-
+ments (Wang et al., 2025b; Zheng et al., 2021), there is a significant representation gap between
+Lean4 statements and their corresponding NL problems in the original datasets. Specifically, in NL
+problems, it is typical for them to be in Question-Answering (QA) format, where the goal is to find a
+specific numerical or formulaic answer. However, in Lean4, the problem type is a closed-end proof
+rather than a specific answer, which creates a gap in the statement. Inspired by Wang et al. (2025b),
+we perform a format alignment to transform the QA style physics problem into a proof statement.
+We first transform the NL problem into a proof format. Specifically, we transform the question part
+of “Finding the answer to ...” into “Prove that the answer is ...” following Zheng et al. (2021).
+Subsequently, to better model the physical process and relations, we require the LLM to write a
+step-by-step solution to the QA problem. Based on the solution, we extract the physical laws used
+in the problems and all the initial conditions to compose statements. Finally, we define the proving
+target for the problem. We split the target of proof into three categories — numerical value, physical
+expression, or logical formula describing a physical state — and use these targets to assist the process
+of Lean4 code writing. After this step, we align the NL question-answering problem with a provable
+question using extracted physics laws, initial conditions, and a proving target.
+Lean4 code writing & Verification
+After we obtain aligned NL problems, the Lean code writing
+is split into the formalization of conditions and goals. If we find any laws missing from PhysLib that
+are necessary for us to write the problem, we implement such laws in PhysLib and represent them
+correspondingly in our problem. In formalizing goals, we write the corresponding Lean4 expression
+of the proving targets as goals for the Lean4 proof. After we obtain the Lean4 code, we submit it to
+the verifier to check whether it compiles successfully. Additionally, we ask experts in physics and
+Lean to check the completeness of the theorem. Each statement requires one expert to formalize and
+at least two experts to verify.
+5
+
+
+Preprint, under review
+Table 1: Pass@16 results of LeanPhysBench on 8 LLMs in with (✓) and without (✗) PhysLib mode
+across different difficulty levels, including College, Competition-Easy (Comp-Easy), and Comp-
+Hard. The best result is bolded and the second-best result is underlined.
+Method
+PhysLib
+College
+Comp-Easy
+Comp-Hard
+Overall
+Open-source models
+DeepSeek-R1-8B (Guo et al., 2025)
+✓
+6.73%
+9.68%
+0.00%
+6.50%
+✗
+0.00%
+4.84%
+2.94%
+2.00%
+Qwen3-8B (Team, 2025)
+✓
+7.69%
+8.06%
+0.00%
+2.00%
+✗
+1.92%
+3.23%
+0.00%
+6.50%
+Kimina-Prover-8B (Wang et al., 2025a)
+✓
+8.65%
+20.97%
+8.82%
+12.50%
+✗
+5.77%
+16.13%
+5.88%
+9.00%
+Goedel-Prover-V2-8B (Lin et al., 2025a)
+✓
+8.65%
+24.19%
+2.94%
+13.00%
+✗
+6.73%
+19.35%
+5.88%
+10.00%
+DeepSeek-Prover-V2-7B (Ren et al., 2025)
+✓
+8.65%
+29.03%
+5.88%
+14.50%
+✗
+6.73%
+22.58%
+5.88%
+11.50%
+Closed-source models
+GPT-4o (OpenAI et al., 2024)
+✓
+6.73%
+30.65%
+0.00%
+13.00%
+✗
+2.88%
+1.61%
+0.00%
+2.00%
+Claude-Sonnet-4 (Anthropic, 2025)
+✓
+28.85%
+62.90%
+0.00%
+34.50%
+✗
+0.96%
+4.84%
+0.00%
+2.00%
+Gemini-2.5-pro (Comanici et al., 2025)
+✓
+31.73%
+74.19%
+0.00%
+39.50%
+✗
+6.73%
+12.90%
+0.00%
+7.50%
+The above pipeline ensures that the problems in LeanPhysBench accurately capture the underlying
+physics semantics from NL descriptions. We present two examples of Lean4 statements we for-
+malized in Figure 2. In the examples, we can clearly see that the college-level problems focus on
+relatively simple operations in a broader range of topics. Competition-level statements emphasize
+derivations of formulas using more advanced math tools in a more concentrated field of physics.
+Additionally, during our formalization, based on the number of newly crafted theorems used in
+the statement, we further divide the competition level problem into easy and hard sub-levels. The
+easy-level problems use less content from PhysLib and more from Mathlib4, and are more focused
+on deriving mathematical formulas with looser conditions. On the other hand, hard-level problems
+require many theorems and definitions in PhysLib to answer with tighter conditions. This split aims
+to evaluate the model’s ability to use the OOD theorems provided in the context.
+2.2.3
+BENCHMARK STATISTICS
+Electromagnetism
+15%
+Mechanics
+50%
+Modern 
+Physics
+5%
+Optics
+5%
+Thermodynamics
+19%
+Waves
+6%
+College
+52%
+Competition-Easy
+31%
+Competition-Hard
+17%
+Figure 3: Statistics of LeanPhysBench: The distri-
+bution of 200 Lean4 physics statements across dif-
+ficulty levels (on the left) and topics (on the right).
+Detailed statistics for the LeanPhysBench are
+presented in Figure 3. In total, LeanPhysBench
+contains 200 physics statements formalized in
+Lean4.
+Among them, 104 statements are at
+the college-level and 96 are at the competition
+level. The competition level is further divided
+into 62 easy problems and 34 hard problems.
+3
+EXPERIMENT
+We conduct comprehensive experiments on
+Lean4PHYS to demonstrate the significance
+of our proposed LeanPhysBench and the effectiveness of PhysLib. In particular, we present the
+performance of major expert Lean provers and general models on LeanPhysBench and prove the
+effectiveness of PhysLib in Section 3.2. We study the problem format of LeanPhysBench in Sec-
+tion 3.3, and in Section 3.4 we perform case studies to address critical concerns raised by main
+results.
+6
+
+
+Preprint, under review
+3.1
+EXPERIMENT SETUP
+We evaluate the LLMs’ physics-reasoning capabilities in Lean4 by applying them to write proofs
+for the LeanPhysBench. Specifically, the task for the LLM is to write Lean4 proofs with NL state-
+ments and Lean4 statements of the physics problems in the prompt. Following the standard in Xin
+et al. (2024); Wang et al. (2024a), we manually configure all the imports and namespaces. Further-
+more, unless otherwise specified, we allow the LLM to perform Long Chain-of-Thought thinking to
+perform deeper reasoning.
+To better demonstrate current LLMs’ formal physical reasoning capability, we select the most rep-
+resentative closed-source and open-source models to evaluate. Namely, for closed-source general
+LLMs, we select GPT-4o (OpenAI et al., 2024), Claude-Sonnet-4 (Anthropic, 2025), and Gemini-
+2.5-Pro (Comanici et al., 2025) as baselines. For open-source models, we present results from
+general-purpose models, including DeepSeek-R1-0528 (Guo et al., 2025) and Qwen3-8B (Team,
+2025), as well as expert Lean4 provers such as Goedel-Prover-V2-8B (Lin et al., 2025b), Kimina-
+Prover (Wang et al., 2025a), and DeepSeek-Prover-V2 (Ren et al., 2025).
+Furthermore, to demonstrate the effectiveness of PhysLib, we test the LLM’s capability under modes
+that have or do not have PhysLib in the generated context. In summary, we test the LeanPhysBench
+on eight major LLMs under two modes. The implementation details of our experiments can be found
+in Appendix B.
+3.2
+MAIN RESULT
+The main experiment results are demonstrated in Table 1. From the table, we can see that all models
+suffer from suboptimal overall performance, with the leading open-source models achieving at most
+14.50%, while large general models achieve a high accuracy of 40.50% across the entire dataset,
+which is also relatively lower than their performance in NL math tasks of a similar difficulty level.
+Furthermore, in the context of PhysLib, Gemini achieves higher accuracy across the entire dataset,
+while the performance enhancement for smaller models is less significant. It indicates the effective-
+ness of our PhysLib in assessing the LLMs’ formal physics reasoning.
+Upon closer examination, we can observe that Lean experts, which significantly outperform closed-
+source general LLMs in the math domain, lack the strong formal physics capabilities of these mod-
+els. This reveals that the Lean expert provers’ capabilities are limited to the math domain and hard
+to transfer to physics. Especially when these domains apply a new definition (such as unit sys-
+tem in Lean4PHYS). Moreover, we found that the performance difference between expert provers
+is relatively marginal, indicating that significant improvement in mathematics does not necessarily
+translate into a large improvement in physics reasoning.
+When analyzing results across different levels of difficulty, we find that the models generally per-
+form well on easy competition problems, which are the most closely aligned with mathematical
+representations. However, expert models still do not outperform larger, closed-source models, in-
+dicating their limited ability to transfer mathematical knowledge into physics theorem proofs. This
+finding also holds for college-level problems, where the expert model’s performance is generally
+lower. However, on the competition-hard level of problems, the expert provers perform better than
+the closed-source models, which achieve zero performance. This is because the expert models have
+a stronger capability to perform extremely long and complex deductions, whereas large models do
+not.
+Furthermore, adding PhysLib to the context will significantly improve the LLMs’ performance in
+almost all cases. We conclude that this improvement stems from the better in-context understanding
+of the unit system and the more accurate selection of relevant theorems. In contrast, without the
+PhysLib, the model can only perform basic simplification tactics like: constructor, rw, abel,
+exact, aesop. By adding the PhysLib, the model can learn to perform more advanced tactics,
+such as simp and norm num.
+3.3
+PROBLEM FORMAT STUDY
+This section presents a more detailed study of the problem format. Due to the space limit, we place
+the example in Figure 4 in the Appendix and only provide the analysis result here.
+7
+
+
+Preprint, under review
+From the example of problem format, we observe that college-level statements primarily involve nu-
+meric computations with a relatively wide range of physical quantities with units. These problems
+rarely require multi-step formula derivations, but heavily depend on the unit system in PhysLib to
+ensure dimensional consistency. Thus, the models with weaker in-context learning perform rela-
+tively poorly on this level of problems. This is because they cannot infer the new out-of-distribution
+syntax or unit-handling rules from context.
+The easy-level competition questions are closer to traditional math problems in Lean, such as
+MiniF2F (Zheng et al., 2021). They involve relatively simple formula derivations, typically within
+two steps and often only tactics from Mathlib. Therefore, the models that are more familiar with the
+Lean mathematics and good at using tactics perform better than closed-source large models on these
+kinds of problems even without PhysLib.
+On the other hand, the hard level of competition problems demands complex symbolic reasoning,
+handling quantifiers, and difficult functional reasoning. For instance, this includes proving the exis-
+tence of a number, holding an inequality, or deriving a functional relation. These problems combine
+unit casts with symbolic manipulation, further increasing the difficulty. Solving this level of problem
+requires careful decomposition of the problem, proving new lemmas, and multiple proof strategies
+with creativity. Moreover, many problems of this level require calculus concepts such as limits and
+continuity. All of the above factors combined cause the low pass rate at this level.
+3.4
+CASE STUDY
+We present the case analysis in this section to provide a more detailed examination of the key find-
+ings from our main experiment. Due to the space limit, for a detailed example, please refer to
+Appendix D.2.
+Behavior of the same theorem with and without PhysLib
+Figure 5 demonstrates a theorem at the
+college level, which Gemini can do both with and without PhysLib in context. From the comparison,
+we find that without the library, the proof is based solely on Mathlib. When the PhysLib is in the
+context, the proof tends to use the operations in the library and include explanatory comments. It
+indicates PhysLib can assist LLM’s reasoning by providing a wider toolbox.
+Transfer tricks in mathematics
+Figure 8 demonstrate a problem only solved by Goedel-Prover-
+V2-8B in our entire cycle of experiment. We conclude that this is a good transfer of following the
+NL intermediate steps and performing multiple trials learned in the math Lean training. From the
+NL statement demonstrated in Figure 7, we observe that most steps are presented in the statement.
+Following these NL hints and many trials using try tactics, the Goedel-Provers can successfully
+solve the problem. It indicates that, although limited, some of the expert prover’s capability of Lean
+math reasoning can be applied to formal physics reasoning.
+Why the general model performs better
+To answer this question, we further analyze different
+topics solved by LLMs and find that general LLMs are typically better in thermo-dynamics. The
+Gemini successfully proved 22 theorems in the field, but DeepSeek-Prover-V2 only finished six
+theorems. We present one theorem that is proved by both Gemini-2.5 and DeepSeek-Prover-V2 to
+study the different behavior of their proof in Figure 6. We observe that the expert prover’s proof is
+more complex and tedious, whereas Gemini’s is cleaner and more straightforward. Such a differ-
+ence in proving consistently shows between the expert prover and general models. It suggests that
+in fields underrepresented in training, the prolonged deliberation of expert models may lead to over-
+thinking and result in suboptimal results, a problem that may be addressed by adaptive reasoning
+techniques (Huang et al., 2025) that dynamically adjust the LLM reasoning strategy.
+4
+RELATED WORK
+4.1
+FORMAL REASONING
+Formal Language (FL) reasoning involves expressing mathematical statements in a computer-
+verifiable manner. This approach mitigates ambiguity and provides a solid foundation for the rea-
+soning process. Researchers have developed many FLs in the last decades, such as Isabelle (Paul-
+8
+
+
+Preprint, under review
+son, 1994), CoQ (Coq, 1996), Metamath (Megill & Wheeler, 2019), and Lean (De Moura et al.,
+2015).
+Among these, Lean4 (Moura & Ullrich, 2021) receives significant attention from the
+field due to its extensive foundation library of Mathlib (mathlib Community, 2020). A series of
+datasets and benchmarks has been developed to advance LLM Lean4 reasoning. For example,
+MiniF2F (Zheng et al., 2021) formalized competition-level math problems across multiple proof lan-
+guages, ProofNet (Azerbayev et al., 2023) increases the level of difficulty to college-level, and Put-
+namBench (Gulati et al., 2024) serves as college-level competition problems, with MATPBench (He
+et al., 2025b) taking a step further by extending formal proof into multi-modal reasoning. Mean-
+while, large-scale datasets have also been proposed to support LLM training, pushing the training
+data from 100k level (Wang et al., 2024a) to millions level (Lin et al., 2025a; Dong & Ma, 2025).
+At the same time, a series of Lean expert models are developed to perform formal math reasoning,
+representing works like DeepSeek-Prover Family (Xin et al., 2024; Ren et al., 2025), Goedel-Prover
+Family (Lin et al., 2025a;b), LoT-Solver (Wang et al., 2025c), Kimina-Prover (Wang et al., 2025a),
+BFS-Prover (Xin et al., 2025), and TheoremLlama (Wang et al., 2024a).
+4.2
+LEAN IN SUBJECTS BEYOND MATHEMATICS
+The application of Lean is gradually expanding from mathematics to a wider range of scientific
+fields, including chemical physics (Bobbin et al., 2024), molecular simulation (Ugwuanyi et al.,
+2025), and electrical engineering (blacksph3re, 2025). Some projects, such as Tooby-Smith (2025),
+attempt to formalize mechanics and high-energy physics using tools such as tensors and index nota-
+tion. However, most of these studies are still limited to a small-scale, non-modular level for specific
+theorems, and lack a standardized evaluation system. Although the Lean expert provers perform
+well on mathematical benchmarks, their ability to transfer their reasoning skills to other fields, such
+as physics, remains to be examined.
+4.3
+PHYSICS DATASETS
+In the field of physical reasoning research, the construction of data sets has long been a core is-
+sue. Physical problems have been extensively studied in the fields of natural language (NL) and
+machine learning, giving rise to several benchmarks that focus on physical understanding and rea-
+soning. For instance, PhysBench (Chow et al., 2025) and PHYBench (Qiu et al., 2025) evaluate
+the physical reasoning ability of models; at the course level, UG-Physics (Xu et al., 2025) and
+the PHYSICS dataset (Zheng et al., 2025) provide thousands of textbook-style questions; at the
+competition level, OlympiadBench (He et al., 2024) includes 8,476 bilingual physics competition
+questions, HiPhO (Yu et al., 2025) covers the recent international physics olympiad questions, and
+PhysReason (Zhang et al., 2025) emphasizes the combination of multi-step reasoning and image
+understanding. Furthermore, CAMEL-Physics (Li et al., 2023) expanded the scale to tens of thou-
+sands of questions through automatic generation technology, providing a broader resource for model
+evaluation and training. Overall, these multi-level physical datasets laid the foundation for testing
+the physical reasoning ability of large language models under natural language conditions.
+5
+CONCLUSION
+This paper presents Lean4PHYS, a comprehensive framework to support Lean4 physics reasoning.
+The framework includes PhysLib, an extensible, community-driven foundation library that sets the
+cornerstone for units, fields, and theorems for formal physics reasoning. To evaluate LLMs’ per-
+formance on formal physics reasoning, we propose LeanPhysBench, which is, to the best of our
+knowledge, the first benchmark for Lean4-based physics reasoning. Based on the Lean4PHYS,
+we conduct extensive experiments to provide an overview of LLMs’ performance on such tasks and
+the effectiveness of our PhysLib. This reveals that current models exhibit suboptimal performance
+in Lean4 physics reasoning, whereas open-source expert provers do not outperform closed-source
+general models in formal physics reasoning. This indicates limited transfer capability from mathe-
+matical reasoning, despite the fact that they are all Lean4-based. Furthermore, the experiment shows
+that with PhysLib in the context, LLMs’ performance on LeanPhysBench increases by 11.75% on
+average. Our work establishes a general principle for extending the formalization of physics and
+other natural sciences beyond mathematics into a verifiable system.
+9
+
+
+Preprint, under review
+ACKNOWLEDGMENTS
+We would like to express our gratitude to Yifei Xia for her valuable assistance in figure plotting
+and helpful comments during the paper writing process. We thank Wenyuan Wang for sharing his
+precious experience in the engineering aspects of formal verification. We also thank Peng Chen for
+generously providing original collections of high school physics problems, which served as valuable
+references during the design phase of Lean4PHYS.
+REFERENCES
+Anthropic. Claude sonnet 4, 2025. URL https://www.anthropic.com/claude/sonnet.
+Accessed: 2025-09-23.
+Zhangir Azerbayev, Bartosz Piotrowski, Hailey Schoelkopf, Edward W Ayers, Dragomir Radev, and
+Jeremy Avigad. Proofnet: Autoformalizing and formally proving undergraduate-level mathemat-
+ics. arXiv preprint arXiv:2302.12433, 2023.
+blacksph3re. distribution factors: An attempt to formalize dc loadflow equations and distribution
+factors in lean, 2025.
+URL https://github.com/blacksph3re/distribution_
+factors. Accessed: 2025-09-25.
+Maxwell P Bobbin, Samiha Sharlin, Parivash Feyzishendi, An Hong Dang, Catherine M Wraback,
+and Tyler R Josephson. Formalizing chemical physics using the lean theorem prover. Digital
+Discovery, 3(2):264–280, 2024.
+Wei Chow, Jiageng Mao, Boyi Li, Daniel Seita, Vitor Guizilini, and Yue Wang. Physbench: Bench-
+marking and enhancing vision-language models for physical world understanding, 2025. URL
+https://arxiv.org/abs/2501.16411.
+Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser,
+Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, Christopher Hesse, and John
+Schulman. Training verifiers to solve math word problems. arXiv preprint arXiv:2110.14168,
+2021.
+Gheorghe Comanici, Eric Bieber, Mike Schaekermann, Ice Pasupat, Noveen Sachdeva, Inderjit
+Dhillon, Marcel Blistein, Ori Ram, Dan Zhang, Evan Rosen, et al. Gemini 2.5: Pushing the
+frontier with advanced reasoning, multimodality, long context, and next generation agentic capa-
+bilities. arXiv preprint arXiv:2507.06261, 2025.
+Projet Coq. The coq proof assistant-reference manual. INRIA Rocquencourt and ENS Lyon, version,
+5, 1996.
+Leonardo De Moura, Soonho Kong, Jeremy Avigad, Floris Van Doorn, and Jakob von Raumer. The
+lean theorem prover (system description). In Automated Deduction-CADE-25: 25th International
+Conference on Automated Deduction, Berlin, Germany, August 1-7, 2015, Proceedings 25, pp.
+378–388. Springer, 2015.
+Kefan Dong and Tengyu Ma. Stp: Self-play llm theorem provers with iterative conjecturing and
+proving, 2025. URL https://arxiv.org/abs/2502.00212.
+Carl Edwards, Chi Han, Gawon Lee, Thao Nguyen, Bowen Jin, Chetan Kumar Prasad, Sara
+Szymku´c, Bartosz A Grzybowski, Ying Diao, Jiawei Han, et al. mclm: A function-infused and
+synthesis-friendly modular chemical language model. arXiv preprint arXiv:2505.12565, 2025.
+Aryan Gulati, Brando Miranda, Eric Chen, Emily Xia, Kai Fronsdal, Bruno de Moraes Dumont,
+and Sanmi Koyejo. Putnam-axiom: A functional and static benchmark for measuring higher level
+mathematical reasoning. In The 4th Workshop on Mathematical Reasoning and AI at NeurIPS’24,
+2024.
+Daya Guo, Dejian Yang, Haowei Zhang, Junxiao Song, Ruoyu Zhang, Runxin Xu, Qihao Zhu,
+Shirong Ma, Peiyi Wang, Xiao Bi, et al. Deepseek-r1: Incentivizing reasoning capability in llms
+via reinforcement learning. arXiv preprint arXiv:2501.12948, 2025.
+10
+
+
+Preprint, under review
+John Harrison. Hol light: An overview. In International Conference on Theorem Proving in Higher
+Order Logics, pp. 60–66. Springer, 2009.
+Chaoqun He, Renjie Luo, Yuzhuo Bai, Shengding Hu, Zhen Leng Thai, Junhao Shen, Jinyi Hu,
+Xu Han, Yujie Huang, Yuxiang Zhang, et al. Olympiadbench: A challenging benchmark for
+promoting agi with olympiad-level bilingual multimodal scientific problems.
+arXiv preprint
+arXiv:2402.14008, 2024.
+Qi He, Cheng Qian, Xiusi Chen, Bingxiang He, Yi R. Fung, and Heng Ji. Veri-r1: Toward pre-
+cise and faithful claim verification via online reinforcement learning, 2025a.
+URL https:
+//arxiv.org/abs/2510.01932.
+Zhitao He, Zongwei Lyu, Dazhong Chen, Dadi Guo, and Yi R Fung. Matp-bench: Can mllm be
+a good automated theorem prover for multimodal problems? arXiv preprint arXiv:2506.06034,
+2025b.
+Dan Hendrycks, Collin Burns, Saurav Kadavath, Akul Arora, Steven Basart, Eric Tang, Dawn Song,
+and Jacob Steinhardt. Measuring mathematical problem solving with the math dataset. arXiv
+preprint arXiv:2103.03874, 2021.
+Shijue Huang, Hongru Wang, Wanjun Zhong, Zhaochen Su, Jiazhan Feng, Bowen Cao, and Yi R
+Fung. Adactrl: Towards adaptive and controllable reasoning via difficulty-aware budgeting. arXiv
+preprint arXiv:2505.18822, 2025.
+Guohao Li, Hasan Abed Al Kader Hammoud, Hani Itani, Dmitrii Khizbullin, and Bernard Ghanem.
+Camel: Communicative agents for ”mind” exploration of large scale language model society,
+2023.
+Yong Lin, Shange Tang, Bohan Lyu, Jiayun Wu, Hongzhou Lin, Kaiyu Yang, Jia Li, Mengzhou
+Xia, Danqi Chen, Sanjeev Arora, and Chi Jin. Goedel-prover: A frontier model for open-source
+automated theorem proving, 2025a. URL https://arxiv.org/abs/2502.07640.
+Yong Lin, Shange Tang, Bohan Lyu, Ziran Yang, Jui-Hui Chung, Haoyu Zhao, Lai Jiang, Yihan
+Geng, Jiawei Ge, Jingruo Sun, et al. Goedel-prover-v2: Scaling formal theorem proving with
+scaffolded data synthesis and self-correction. arXiv preprint arXiv:2508.03613, 2025b.
+The mathlib Community. The lean mathematical library. In Proceedings of the 9th ACM SIGPLAN
+International Conference on Certified Programs and Proofs, CPP 2020, pp. 367–381, New York,
+NY, USA, 2020. Association for Computing Machinery. ISBN 9781450370974. doi: 10.1145/
+3372885.3373824. URL https://doi.org/10.1145/3372885.3373824.
+Norman Megill and David A Wheeler. Metamath: a computer language for mathematical proofs.
+Lulu. com, 2019.
+Leonardo de Moura and Sebastian Ullrich. The lean 4 theorem prover and programming language.
+In Automated Deduction–CADE 28: 28th International Conference on Automated Deduction,
+Virtual Event, July 12–15, 2021, Proceedings 28, pp. 625–635. Springer, 2021.
+Aaron Hurst OpenAI, Adam Lerer, Adam P Goucher, Adam Perelman, Aditya Ramesh, Aidan
+Clark, AJ Ostrow, Akila Welihinda, Alan Hayes, Alec Radford, et al. Gpt-4o system card. arXiv
+preprint arXiv:2410.21276, 1(2):3, 2024.
+Lawrence C Paulson. Isabelle: A generic theorem prover. Springer, 1994.
+Stanislas Polu, Jesse Michael Han, Kunhao Zheng, Mantas Baksys, Igor Babuschkin, and Ilya
+Sutskever. Formal mathematics statement curriculum learning. arXiv preprint arXiv:2202.01344,
+2022.
+Shi Qiu, Shaoyang Guo, Zhuo-Yang Song, Yunbo Sun, Zeyu Cai, Jiashen Wei, Tianyu Luo, Yix-
+uan Yin, Haoxu Zhang, Yi Hu, Chenyang Wang, Chencheng Tang, Haoling Chang, Qi Liu,
+Ziheng Zhou, Tianyu Zhang, Jingtian Zhang, Zhangyi Liu, Minghao Li, Yuku Zhang, Boxuan
+Jing, Xianqi Yin, Yutong Ren, Zizhuo Fu, Jiaming Ji, Weike Wang, Xudong Tian, Anqi Lv,
+11
+
+
+Preprint, under review
+Laifu Man, Jianxiang Li, Feiyu Tao, Qihua Sun, Zhou Liang, Yushu Mu, Zhongxuan Li, Jing-
+Jun Zhang, Shutao Zhang, Xiaotian Li, Xingqi Xia, Jiawei Lin, Zheyu Shen, Jiahang Chen, Qi-
+uhao Xiong, Binran Wang, Fengyuan Wang, Ziyang Ni, Bohan Zhang, Fan Cui, Changkun Shao,
+Qing-Hong Cao, Ming xing Luo, Yaodong Yang, Muhan Zhang, and Hua Xing Zhu. Phybench:
+Holistic evaluation of physical perception and reasoning in large language models, 2025. URL
+https://arxiv.org/abs/2504.16074.
+ZZ Ren, Zhihong Shao, Junxiao Song, Huajian Xin, Haocheng Wang, Wanjia Zhao, Liyue Zhang,
+Zhe Fu, Qihao Zhu, Dejian Yang, et al. Deepseek-prover-v2: Advancing formal mathematical rea-
+soning via reinforcement learning for subgoal decomposition. arXiv preprint arXiv:2504.21801,
+2025.
+Tanik Saikh, Tirthankar Ghosal, Amish Mittal, Asif Ekbal, and Pushpak Bhattacharyya. Scienceqa:
+A novel resource for question answering on scholarly articles. International Journal on Digital
+Libraries, 23(3):289–301, 2022.
+Yousheng Shu, Wangyu Hu, and Bingqian Chen. Selected Advanced Physics Problems, Volume II.
+Science Press, Beijing, 2008. ISBN 9787030193563.
+Zhaochen Su, Peng Xia, Hangyu Guo, Zhenhua Liu, Yan Ma, Xiaoye Qu, Jiaqi Liu, Yanshu Li,
+Kaide Zeng, Zhengyuan Yang, Linjie Li, Yu Cheng, Heng Ji, Junxian He, and Yi R. Fung. Think-
+ing with images for multimodal reasoning: Foundations, methods, and future frontiers, 2025.
+URL https://arxiv.org/abs/2506.23918.
+Mirac Suzgun, Nathan Scales, Nathanael Sch¨arli, Sebastian Gehrmann, Yi Tay, Hyung Won Chung,
+Aakanksha Chowdhery, Quoc V Le, Ed H Chi, Denny Zhou, et al. Challenging big-bench tasks
+and whether chain-of-thought can solve them. arXiv preprint arXiv:2210.09261, 2022.
+Alon Talmor, Jonathan Herzig, Nicholas Lourie, and Jonathan Berant. Commonsenseqa: A question
+answering challenge targeting commonsense knowledge. arXiv preprint arXiv:1811.00937, 2018.
+Terence Tao. A lean companion to analysis i. https://github.com/teorth/analysis,
+2025.
+URL https://github.com/teorth/analysis.
+GitHub repository, accessed:
+2025-08-31.
+Qwen Team. Qwen3, April 2025. URL https://qwenlm.github.io/blog/qwen3/.
+Joseph Tooby-Smith. Heplean: Digitalising high energy physics. Computer Physics Communica-
+tions, 308:109457, 2025.
+Ejike D Ugwuanyi, Colin T Jones, John Velkey, and Tyler R Josephson. Benchmarking energy
+calculations using formal proofs. Molecular Physics, pp. e2539421, 2025.
+Haiming Wang, Mert Unsal, Xiaohan Lin, Mantas Baksys, Junqi Liu, Marco Dos Santos, Flood
+Sung, Marina Vinyes, Zhenzhe Ying, Zekai Zhu, et al. Kimina-prover preview: Towards large
+formal reasoning models with reinforcement learning. arXiv preprint arXiv:2504.11354, 2025a.
+Ruida Wang, Jipeng Zhang, Yizhen Jia, Rui Pan, Shizhe Diao, Renjie Pi, and Tong Zhang. Theorem-
+llama: Transforming general-purpose llms into lean4 experts. arXiv preprint arXiv:2407.03203,
+2024a.
+Ruida Wang, Yuxin Li, Yi R Fung, and Tong Zhang. Let’s reason formally: Natural-formal hybrid
+reasoning enhances llm’s math capability. arXiv preprint arXiv:2505.23703, 2025b.
+Ruida Wang, Rui Pan, Yuxin Li, Jipeng Zhang, Yizhen Jia, Shizhe Diao, Renjie Pi, Junjie Hu, and
+Tong Zhang. Ma-lot: Model-collaboration lean-based long chain-of-thought reasoning enhances
+formal theorem proving. arXiv preprint arXiv:2503.03205, 2025c.
+Yubo Wang, Xueguang Ma, Ge Zhang, Yuansheng Ni, Abhranil Chandra, Shiguang Guo, Weiming
+Ren, Aaran Arulraj, Xuan He, Ziyan Jiang, et al. Mmlu-pro: A more robust and challenging multi-
+task language understanding benchmark. Advances in Neural Information Processing Systems,
+37:95266–95290, 2024b.
+12
+
+
+Preprint, under review
+Huajian Xin, ZZ Ren, Junxiao Song, Zhihong Shao, Wanjia Zhao, Haocheng Wang, Bo Liu, Liyue
+Zhang, Xuan Lu, Qiushi Du, et al. Deepseek-prover-v1. 5: Harnessing proof assistant feedback
+for reinforcement learning and monte-carlo tree search. arXiv preprint arXiv:2408.08152, 2024.
+Ran Xin, Chenguang Xi, Jie Yang, Feng Chen, Hang Wu, Xia Xiao, Yifan Sun, Shen Zheng, and
+Kai Shen. Bfs-prover: Scalable best-first tree search for llm-based automatic theorem proving.
+arXiv preprint arXiv:2502.03438, 2025.
+Xin Xu, Qiyun Xu, Tong Xiao, Tianhao Chen, Yuchen Yan, Jiaxin Zhang, Shizhe Diao, Can Yang,
+and Yang Wang. Ugphysics: A comprehensive benchmark for undergraduate physics reasoning
+with large language models. arXiv preprint arXiv:2502.00334, 2025.
+Huaiyuan Ying, Zijian Wu, Yihan Geng, Jiayu Wang, Dahua Lin, and Kai Chen. Lean workbook:
+A large-scale lean problem set formalized from natural language math problems. arXiv preprint
+arXiv:2406.03847, 2024.
+Hugh D. Young and Roger A. Freedman. University Physics with Modern Physics, Global Edition.
+Pearson Education, 15th edition, 2019. ISBN 9781292314815.
+Fangchen Yu, Haiyuan Wan, Qianjia Cheng, Yuchen Zhang, Jiacheng Chen, Fujun Han, Yulun Wu,
+Junchi Yao, Ruilizhen Hu, Ning Ding, et al. Hipho: How far are (m) llms from humans in the
+latest high school physics olympiad benchmark? arXiv preprint arXiv:2509.07894, 2025.
+Xinyu Zhang, Yuxuan Dong, Yanrui Wu, Jiaxing Huang, Chengyou Jia, Basura Fernando,
+Mike Zheng Shou, Lingling Zhang, and Jun Liu.
+Physreason: A comprehensive benchmark
+towards physics-based reasoning, 2025. URL https://arxiv.org/abs/2502.12054.
+Kunhao Zheng, Jesse Michael Han, and Stanislas Polu. Minif2f: a cross-system benchmark for
+formal olympiad-level mathematics. arXiv preprint arXiv:2109.00110, 2021.
+Shenghe Zheng, Qianjia Cheng, Junchi Yao, Mengsong Wu, Haonan He, Ning Ding, Yu Cheng,
+Shuyue Hu, Lei Bai, Dongzhan Zhou, et al. Scaling physical reasoning with the physics dataset.
+arXiv preprint arXiv:2506.00022, 2025.
+13
+
+
+Preprint, under review
+A
+DATA SOURCES
+The textbook-level questions are adapted from the concepts presented in the university text-
+book (Young & Freedman, 2019) and UGPhysics (Xu et al., 2025). The Olympiad-Easy questions
+are derived from the intermediate solution steps of the competition questions, while the Olympiad-
+Hard questions are based on the problem-solving ideas in the physics Olympiad practice book (Shu
+et al., 2008). The UGPhysics dataset is released under the CC BY-NC-SA 4.0 license. For the
+textbooks published by Pearson (Young & Freedman, 2019) and Science Press (Shu et al., 2008),
+we strictly abide by their copyrights: the questions are not verbatim copies, but are rephrased and
+rewritten based on their physical concepts.
+B
+IMPLEMENTATION DETAIL
+The generation configuration for the LLM roll-out of the experiment is as follows:
+• Top-p: 0.95
+• Temperature: 0.8
+• Maximum tokens per generation: 16,384
+• Repetition penalty: 1.0
+Open-source models are tested under a 4-card H20 server. The entire open-source LLM roll-out
+process costs about 2 days.
+14
+
+
+Preprint, under review
+C
+LLM PROMPT TEMPLATES
+We provide the prompt templates used to guide LLMs in generating Lean4 proofs.
+With PhysLib:
+Please first learn the new library besides mathlib and usage
+examples before answering the question. You should refer to
+the new unit system.
+,→
+,→
+{PhysLib}
+Complete the following Lean 4 code.
+Provide your response in two parts, each enclosed in separate
+markdown code blocks:
+,→
+```plan
+# Proof Plan
+- Outline the main proof steps and strategies.
+- Highlight key intermediate lemmas and structures.
+- Describe how to connect them to form the final proof.
+```
+```lean4
+{Lean4_header}
+/-- {NL_statement} -/
+{Lean4_statement}
+```
+Without PhysLib:
+Complete the following Lean 4 code.
+Provide your response in two parts, each enclosed in separate
+markdown code blocks:
+,→
+```plan
+# Proof Plan
+- Outline the main proof steps and strategies.
+- Highlight key intermediate lemmas and structures.
+- Describe how to connect them to form the final proof.
+```
+```lean4
+{Lean4_header}
+/-- {NL_statement} -/
+{Lean4_statement}
+```
+15
+
+
+Preprint, under review
+D
+EXPERIMENT
+D.1
+FORMAT STUDY
+This appendix, based on the example shown in Figure 4, conducts a more detailed analysis of the
+problem format mentioned in Section3.3 with a particular focus on the characteristics of the ques-
+tions themselves.
+Taking a college-level problem as an example, the upper left part of Figure 4 shows a force calcu-
+lation problem involving two point charges on the x-axis. This problem involves various physical
+quantities, including charges, distances, and forces, and explicitly uses SI units such as nC and m.
+The problem mainly relies on numerical calculations, and the magnitude of the force can be directly
+applied using Coulomb’s law formula, with almost no need for multiple-step formula derivations.
+However, due to the possible introduction of dimensional issues when combining different physical
+quantities for calculation, the solution to this problem needs to maintain consistency in units, which
+precisely demonstrates the importance of the unit system in PhysLib in formal calculations. Such
+problems are typical of the ”formula application type” and are suitable for verifying the model’s
+ability in basic numerical reasoning and unit handling.
+For the simple problem of the competition (Competition-Easy), the problem of the parallel plate
+capacitor shown in the lower left corner of Figure 4 is a typical example. The core formula of the
+problem is C = q/V , and only one or two steps of substitution are required for the calculation.
+The problem provides values such as charge, voltage, and plate spacing, and requires sequential
+substitution into the formula to complete the solution. Therefore, it involves the combination of
+numbers and symbols. This type of problem belongs to the ”transitional derivation problem”, similar
+to the intermediate math problems in Lean’s MiniF2F, mainly testing the algebraic operation ability
+of the model and the ability to substitute formulas. Compared to college-level problems, it has
+slightly increased logical reasoning requirements.
+And the competition-hard problems (Competition-Hard), such as the pulley law problem shown in
+the right column of Figure 4, significantly increase the difficulty. The problem involves a contin-
+uous function of tension varying with angle and requires the derivation of the final result through
+integration or logarithmic relationships. Besides the multi-step formula derivation, the problem also
+includes the relationships and function expressions among multiple physical quantities, requiring an
+understanding of the dependencies and combination rules between the symbols in the model. Solv-
+ing such problems not only requires multi-step logical analysis but also involves function operations
+and symbolic reasoning, typically belonging to highly difficult symbolic reasoning problems, and
+testing the advanced physical reasoning ability of the model.
+16
+
+
+Preprint, under review
+College
+Two point charges are located on the x-axis
+of a coordinate system: q1 = 1.0 nC is
+at x = +2.0 cm, and q2 = -3.0 nC is at
+x = +4.0 cm. What is the total
+electric force exerted by q1 and q2 on
+a charge q3 = 5.0 nC at x = 0?
+theorem Electromagnetism_3_University
+(q1 q2 q3 : Charge) (x1 x2 x3 : Length)
+(hq1 : q1 = SI.nano (1
+· coulomb))
+(hq2 : q2 = SI.nano (-3 · coulomb))
+(hq3 : q3 = SI.nano (5
+· coulomb))
+(hx1 : x1 = ((0.02:R) · meter))
+(hx2 : x2 = ((0.04:R) · meter))
+(hx3 : x3 = 0)(F
+: Force)
+(hF : F = K * q3 * (q1 / (x1 - x3)ˆ2 +
+q2 / (x2 - x3)ˆ2)):
+F = ((9:R)*(10:R)ˆ(-22:Q)/32) · newton
+:= by
+simp [←Scalar.val_inj, hF, hq1, hq2,
+hq3, hx1, hx2, hx3, K, SI.nano,
+coulomb, meter, newton]
+norm_num
+Competition-Easy
+The plates of a parallel-plate capacitor
+are 2.50 mm apart, and each carries a
+charge of magnitude 80.0 nC. The
+plates are in vacuum. The electric
+field between the plates has a
+magnitude of \(4.00 \times
+10ˆ{6}\,\text{V/m}\). What is the
+capacitance?
+theorem Ch13_electro_question_8
+(V:Voltage)(C:Scalar
+capacitance_unit)(q:Charge)
+(E:Scalar
+(force_unit-charge_unit))(d:Length)
+(h: capacitance_unit=charge_unit -
+voltage_unit)
+(hC:C=(q/V).cast h)(hq:q=SI.nano (80 ·
+coulomb))
+(hV:V=E*d)(hE:E=(4e6:R) · StandardUnit
+_)
+(hd:d=SI.milli ((2.5:R)· meter)):
+C=(1 / 125000000000:Q) · StandardUnit _
+:= by
+have hC_expanded : C = (q/(E*d)).cast h :=
+by rw [hC, hV]
+rw [hC_expanded, hq, hE, hd]
+simp [nano, milli, coulomb, meter, ←
+Scalar.val_inj]
+norm_num
+Competition-Hard
+Capstan law: If a rope of coefficient of
+friction µ wraps n turns (θ_total =
+2πn) around a post, the tension ratio
+between the heavy side M and the light
+side m satisfies n = (1 / (2πµ)) *
+log(M / m) assuming M > m > 0 and µ >
+0.
+theorem Ch2_Q1
+(M m : Mass)
+(µ : R)
+(n : R)
+(θ_total : R := 2 * Real.pi * n)
+(T : R →Force)
+(h_pos : 0 < M.val ∧0 < m.val ∧0 < µ)
+(hM_gt_m : M.val > m.val)
+(T_light_def : T 0 = m * g)
+(T_heavy_def : T θ_total = M * g)
+(capstan_differential : ∀θ : R, deriv
+(fun θ' => (T θ').val) θ = µ * (T θ
+).val)
+(capstan_integral : Real.log ((T θ
+_total).val / (T 0).val) = µ * θ_total)
+(theta_def : θ_total = 2 * Real.pi * n) :
+n = (1 / (2 * Real.pi * µ)) * Real.log
+(M.val / m.val) := by
+rcases h_pos with ⟨hM, hm, hmu⟩
+have h1 : Real.log ((T θ_total).val / (T
+0).val) =
+Real.log ((M * g).val / (m *
+g).val) := by rw [T_heavy_def,
+T_light_def]
+have h2 : Real.log ((M * g).val / (m *
+g).val) = Real.log (M.val / m.val) :=
+by
+have h3 : (M * g).val / (m * g).val =
+M.val / m.val := by
+field_simp; ring_nf; simp; ring
+rw [h3]
+have h3 : Real.log (M.val / m.val) = µ * θ
+_total := by linarith
+[capstan_integral, h1, h2]
+have h4 : Real.log (M.val / m.val) = µ *
+(2 * Real.pi * n) := by rw [theta_def]
+at h3; linarith
+have h5 : µ ̸= 0 := by linarith
+have h6 : Real.pi ̸= 0 := Real.pi_ne_zero
+have h7 : Real.log (M.val / m.val) = 2 *
+Real.pi * µ * n := by linarith [h4]
+have h8 : n = (Real.log (M.val / m.val))
+/ (2 * Real.pi * µ) := by field_simp;
+linarith
+rw [h8]; field_simp; ring_nf; field_simp;
+ring
+Figure 4: Three sampled physics questions from College Textbook, Olympics-Easy, Olympics-Hard
+problems. Each example shows the natural language problem statement followed by its correspond-
+ing Lean formalization with a verified proof.
+17
+
+
+Preprint, under review
+D.2
+CASE STUDY
+Behavior of the same theorem with and without PhysLib
+Figure 5 illustrates the different proof
+strategies employed by Gemini-2.5-pro when solving the same college-level mechanics problem,
+with and without PhysLib. Without PhysLib, the proof is relatively concise and almost entirely re-
+lies on the assumptions ha and hT. For the acceleration a, the proof is completed by substituting the
+assumption into rw [ha] and then using basic simplification and multiplication/division commuta-
+tive laws (simp and mul div right comm) to transform the algebraic expression. This indicates
+that in the absence of domain-specific libraries, LLM relies on the general tactics of Mathlib to gen-
+erate proofs, which are rather mechanical but can still accomplish the task correctly. When PhysLib
+is introduced, the proof becomes more structured and systematic. After substituting the assump-
+tion a, the proof utilizes the Scalar.val inj lemma from PhysLib to transform the goal into an
+equation in the underlying real numbers, enabling LLM to handle algebraic operations of physical
+quantities more directly. Subsequently, the proof is completed by applying simplification (simp)
+and ring tactics to prove the algebraic identity. Overall, the proof with PhysLib demonstrates a
+richer use of tools and a more robust reasoning path.
+Transfer tricks in mathematics
+During the process of solving the problem depicted in Figure 7
+and Figure 8, Goedel-Prover demonstrated a variety of systematic proof strategies, which originated
+from its accumulated experience in mathematical Lean problems and were successfully transferred
+to formal proofs in physics. Firstly, the Prover would break down the overall proof goal into multiple
+sub-goals, such as proving µs = 0.46 first, then proving µk = 0.40, and finally combining them into
+a logical conjunction (µs = 0.46) ∧(µk = 0.40). This sub-goal decomposition strategy enables the
+Prover to handle complex problems step by step, with each sub-goal being independently verifiable
+and provable, thereby enhancing the reliability and success rate of automated proofs. This strategy
+is directly borrowed from the experience of handling complex theorems in mathematical Lean.
+Within each sub-goal, the Prover will conduct a step-by-step verification of intermediate arith-
+metic or type values. For instance, it will first verify that Scalar.val f s max = 230, then
+Scalar.val n = 500, and subsequently calculate (µs : R) = 0.46 based on these intermedi-
+ate results. This step-by-step verification method ensures that each stage is correct and error-free,
+preventing error accumulation and forming a reliable proof chain, which is exactly the same as
+the step-by-step verification of sub-conclusions in the Lean mathematical problems. When dealing
+with auxiliary steps such as type conversion or arithmetic simplification, Prover employs a multiple
+attempts strategy, such as using try field simp at * or try norm cast at *. These
+lightweight strategies enable Prover to automatically handle potential obstacles without requiring
+in-depth domain knowledge. The effectiveness of this strategy also stems from the experience of
+handling auxiliary steps through different tactics in Lean problems, achieving cross-domain trans-
+fer.
+Finally, after completing the proofs of each sub-goal, the Prover uses the logical constructor to inte-
+grate the results, such as exact 〈h4, h7〉, combining the proofs of each sub-goal into an overall
+theorem. This method is a typical approach in mathematical Lean proofs and is also applicable in
+physical formalization problems, demonstrating the universality of the proof strategy and its ability
+for cross-disciplinary transfer.
+Why the general model performs better
+We analyzed the proof style depicted in Figure 6 to ex-
+plain why general-purpose models (such as Gemini-2.5-pro) can outperform expert theorem provers
+in under-trained domains. The theorem Ch10 question 4 discussed involves calculating the
+thermodynamic index k based on the known pressures P1, P2, volumes V1, V2, and temperatures
+T1, T2. Although both DeepSeek-Prover-V2 and Gemini-2.5-pro can complete the proof, their proof
+methods differ significantly. DeepSeek-Prover-V2 generates a highly step-by-step proof, gradually
+substituting and simplifying, explicitly introducing auxiliary steps such as h1 and h2, and repeat-
+edly invoking simplification strategies for intermediate calculations; while Gemini-2.5-pro generates
+a concise proof by directly using all the assumptions at once and leveraging advanced simplification
+strategies to directly reduce the target to a numerical equation, omitting the lengthy intermediate
+steps.
+From the perspective of the complexity of the steps, the proof of DeepSeek-Prover-V2 involves
+over twenty nested operations, while Gemini-2.5-pro can complete the proof through only two main
+18
+
+
+Preprint, under review
+Gemini-2.5-pro without PhysLib
+theorem Mechanics_73_University
+(T : Force)(m_1 m_2 : Mass)(a : Acceleration)
+(ha : a = m_2 * g / (m_1 + m_2))
+(hT : T = (m_1 * m_2) / (m_1 + m_2) * g):
+(a = (m_2 / (m_1 + m_2)) * g ∧T = (m_1 * m_2) / (m_1 + m_2) * g) :=
+by
+constructor
+· rw [ha]
+ext
+simp
+rw [mul_div_right_comm]
+· exact hT
+Gemini-2.5-pro with PhysLib
+theorem Mechanics_73_University
+(T : Force)(m_1 m_2 : Mass)(a : Acceleration)
+(ha : a = m_2 * g / (m_1 + m_2))
+(hT : T = (m_1 * m_2) / (m_1 + m_2) * g):
+(a = (m_2 / (m_1 + m_2)) * g ∧T = (m_1 * m_2) / (m_1 + m_2) * g) :=
+by
+constructor
+. -- The first goal is to prove the rearranged expression for
+acceleration `a`.
+-- We start by substituting `a` with its given definition from
+hypothesis `ha`.
+rw [ha]
+-- The goal is now to prove an algebraic equivalence between two
+`Scalar` expressions.
+-- We use the `Scalar.val_inj` lemma to transform this into an
+equality of their
+-- underlying real values. This is a standard technique in the
+PhysLib library.
+simp only [←Scalar.val_inj]
+-- Now, with the goal being an equality of real numbers, we can
+use `simp` to apply
+-- the library's rules for how `.val` distributes over arithmetic
+operations.
+simp
+-- The resulting goal is `m_2.val * g.val / (m_1.val + m_2.val) =
+m_2.val / (m_1.val + m_2.val) * g.val`.
+-- This is a standard algebraic identity which the `ring` tactic
+can solve.
+ring
+. -- The second goal is to prove the expression for tension `T`,
+which is identical
+-- to the hypothesis `hT`.
+exact hT
+Figure 5: Two examples from LeanPhysBench demonstrating different proofs of the same college-
+level problem, generated by Gemini-2.5-pro with and without PhysLib.
+strategies. This indicates that although expert proofers can ensure the rigor of the form, in this type
+of domain that mainly relies on numerical calculations and has less symbolic reasoning, their step-
+by-step operations appear cumbersome and lengthy. Further analysis reveals that DeepSeek-Prover-
+V2 adopts a fine-grained approach, explicitly handling each substitution and simplification, while
+Gemini-2.5-pro conducts reasoning at a higher abstract level and uses the built-in simplification rules
+in the system to quickly complete the proof. In thermodynamic problems, higher-level abstraction
+can reduce unnecessary complex calculations and improve efficiency.
+19
+
+
+Preprint, under review
+Furthermore, the expert proofer mainly focuses on pure mathematical theorems during training.
+Therefore, in application fields such as thermodynamics, it is prone to introduce additional interme-
+diate steps. This “overthinking” ensures rigor but may result in lengthy proofs and even increase
+the risk of errors in complex substitutions. In contrast, general large models possess flexible reason-
+ing capabilities and can efficiently combine simplification rules with numerical calculations. In this
+case, Gemini-2.5-pro successfully mapped all hypotheses to numerical verification through a single
+simp call, demonstrating its adaptability to training deficiencies.
+20
+
+
+Preprint, under review
+DeepSeek-Prover-V2
+theorem Ch10_question_4
+(P1 P2:Pressure) (V1 V2:Volume) (T1 T2:Temperature) (k:R)
+(hV1:V1= 13· StandardUnit _)
+(hT1:T1=((1.8*15+273.15):R) · kelvin)
+(hT2:T2=((-44.5*1.8+273.15):R) · kelvin)
+(hP1:P1=((1.01*10ˆ5):R) · pascal)
+(hP2:P2= 868 · pascal)
+(hV2:V2=V1*T2*P1/(T1*P2))
+(hk:k=Real.rpow (V2/V1).val ((1/3):R)):
+k=Real.rpow (10832250 / 144739) (1 / 3) := by
+have h_main : k = Real.rpow (10832250 / 144739) (1 / 3) := by
+have h1 : k = Real.rpow (V2 / V1).val ((1 / 3 : R)) := by rw [hk]
+rw [h1]
+have h2 : (V2 / V1).val = (10832250 / 144739 : R) := by
+-- Simplify the expression for V2 / V1
+simp_all [Pressure, Volume, Temperature, add_assoc, add_comm,
+add_left_comm, mul_assoc, mul_comm, mul_left_comm,
+div_eq_mul_inv, mul_inv_cancel_left]
+<;> ring_nf at *
+<;> norm_num at *
+<;> field_simp [StandardUnit, mul_assoc, mul_comm,
+mul_left_comm] at *
+<;> ring_nf at *
+<;> norm_num at *
+<;> nlinarith
+rw [h2]
+<;> simp [Real.rpow_def_of_pos]
+<;> norm_num
+<;> ring_nf
+<;> norm_num
+<;> field_simp
+<;> ring_nf
+<;> norm_num
+<;> nlinarith
+exact h_main
+Gemini-2.5-pro
+theorem Ch10_question_4
+(P1 P2:Pressure)(V1 V2:Volume)(T1 T2:Temperature)(k:R)
+(hV1:V1= 13· StandardUnit _)
+(hT1:T1=((1.8*15+273.15):R) · kelvin)
+(hT2:T2=((-44.5*1.8+273.15):R) · kelvin)
+(hP1:P1=((1.01*10ˆ5):R) · pascal)
+(hP2:P2= 868 · pascal)
+(hV2:V2=V1*T2*P1/(T1*P2))
+(hk:k=Real.rpow (V2/V1).val ((1/3):R)):
+k=Real.rpow (10832250 / 144739) (1 / 3) := by
+-- Use all hypotheses to substitute the variables and simplify the
+expression.
+-- `simp` will use `hk` to substitute `k`, `hV2` to substitute `V2`,
+-- and the other hypotheses to substitute the numerical values.
+-- The `@[simp]` lemmas in the UnitsSystem library will handle the
+`.val` operations.
+simp [hk, hV2, hV1, hT1, hT2, hP1, hP2]
+-- The goal is now a purely numerical equality. Use `norm_num` to
+verify it.
+norm_num
+Figure 6: Comparison of Proof Styles by DeepSeek-Prover-V2 and Gemini-2.5-pro.
+21
+
+
+Preprint, under review
+Goedel-Prover with PhysLib (nature statement)
+Question 74: You want to move a 500 N crate across a level floor. To start the crate moving,
+you have to pull with a 230 N horizontal force. Once the crate starts to move, you can keep
+it moving at constant velocity with only 200 N. What are the coefficients of static and kinetic
+friction? Follow the process: Just before the crate starts to move, we have:
+X
+Fx = T +
+ −(fs)max
+
+= 0
+so
+(fs)max = T = 230 N
+X
+Fy = n + (−w) = 0
+so
+n = w = 500 N
+Now we solve (fs)max = µsn, for the value of µs:
+µs = (fs)max
+n
+= 230 N
+500 N = 0.46
+After the crate starts to move, we have:
+X
+Fx = T +
+ −fk
+
+= 0
+so
+fk = T = 200 N
+X
+Fy = n + (−w) = 0
+so
+n = w = 500 N
+Using fk = µkn, we find:
+µk = fk
+n = 200 N
+500 N = 0.40
+show that the coefficients of static is µs = 0.4 and kinetic friction is µk = 0.40.
+Figure 7: Natural Language Statement of a Problem Solved Exclusively by Goedel-Prover.
+22
+
+
+Preprint, under review
+Goedel-Prover with PhysLib (Lean4 statement)
+theorem Mechanics_74_University_0
+(f_s_max f_k n w : Force)(µ_s µ_k : Q)
+(hw : w = 500 · newton)
+(hn : n = w)
+(hf_s_max : f_s_max = 230 · newton)
+(hf_k : f_k = 200 · newton)
+(hµ_s : µ_s = Scalar.val f_s_max / Scalar.val n)
+(hµ_k : µ_k = Scalar.val f_k / Scalar.val n):
+(µ_s = (0.46 : Q) ∧µ_k = (0.40 : Q)) := by
+have h1 : Scalar.val f_s_max = 230 := by
+rw [hf_s_max]
+simp [Scalar.val_smul, newton]
+have h2 : Scalar.val n = 500 := by
+have h21 : n = 500 · newton := by
+rw [hn, hw]
+rw [h21]
+simp [Scalar.val_smul, newton]
+have h3 : (µ_s : R) = (0.46 : R) := by
+have h31 : (µ_s : R) = Scalar.val f_s_max / Scalar.val n := by
+norm_cast at hµ_s ⊢
+rw [h31]
+rw [h1, h2]
+norm_num
+have h4 : µ_s = (0.46 : Q) := by
+have h41 : (µ_s : R) = (0.46 : R) := h3
+norm_num at h41 ⊢
+norm_num
+(try field_simp at *)
+(try norm_cast at *)
+have h5 : Scalar.val f_k = 200 := by
+rw [hf_k]
+simp [Scalar.val_smul, newton]
+have h6 : (µ_k : R) = (0.40 : R) := by
+have h61 : (µ_k : R) = Scalar.val f_k / Scalar.val n := by
+norm_cast at hµ_k ⊢
+rw [h61]
+rw [h5, h2]
+norm_num
+have h7 : µ_k = (0.40 : Q) := by
+have h71 : (µ_k : R) = (0.40 : R) := h6
+norm_num at h71 ⊢
+(try field_simp at *)
+(try norm_cast at *)
+have h8 : (µ_s = (0.46 : Q) ∧µ_k = (0.40 : Q)) := by
+exact ⟨h4, h7⟩
+exact h8
+end Mechanics
+Figure 8: Lean4 Formalization and Proof of the Problem Shown in Figure 7 by Goedel-Prover.
+23

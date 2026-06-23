@@ -1,0 +1,943 @@
+Beyond Static Sandboxing:
+Learned Capability Governance for Autonomous AI
+Agents
+Bronislav Sidik
+Prof. Lior Rokach
+Institute for Applied AI Research
+Faculty of Computer and Information Science
+Ben-Gurion University of the Negev, Beer Sheva, Israel
+sidik@post.bgu.ac.il
+liorrk@post.bgu.ac.il
+Abstract
+Autonomous AI agents built on open-source runtimes such as OpenClaw expose
+every available tool to every session by default, regardless of the task at hand.
+A summarisation task receives the same shell execution, subagent spawning, and
+credential-access capabilities as a code deployment task — a 15× over-provision
+ratio we term the capability overprovisioning problem. Existing defenses (Nemo-
+Claw’s container sandbox, Cisco DefenseClaw’s skill scanner) address contain-
+ment and threat detection, but neither learns the minimum viable capability set for
+each task type.
+We present AgentWarden, a three-layer adaptive governance framework that en-
+forces the principle of least privilege for AI agents via a learned policy. Layer 1
+(Capability Governor) dynamically scopes which tools the agent is aware of per
+session. Layer 3 (Safety Router) intercepts every tool call before execution using
+a hybrid rule-based and fine-tuned LLM classifier. Layer 2 (RL Learning Policy)
+trains a PPO policy on the accumulated audit log to learn the minimum viable skill
+set per task type.
+On a live OpenClaw v2026.3.28 deployment with DeepSeek-chat as the agent
+LLM, AgentWarden achieves: (i) 73% tool reduction and 100% dangerous tool
+elimination for summarisation tasks; (ii) a Skill Economy Ratio improvement of
++260% (synthetic) and +337% (real sessions) over the uncontrolled baseline after
+PPO training (<5 minutes, RTX 3090); (iii) across an automated N=500 evalua-
+tion (400 benign + 100 adversarial, seed=42), 26.2% of all 447 intercepted tool
+calls were blocked, exec and sessions spawn were blocked at 100%, and 92%
+of adversarial tasks were neutralised by the model-plus-infrastructure stack. The
+evaluation dataset (N=500, seed=42) and trained artifacts are available upon re-
+quest at https://github.com/sidikbro/agentwarden-core/.
+Preprint. Under review at the NeurIPS 2026 Agent Safety Workshop.
+1
+Introduction
+The rapid adoption of autonomous AI agents has outpaced the security infrastructure designed to
+govern them. OpenClaw OpenClaw Contributors [2026], the dominant open-source personal AI
+agent runtime with over 500,000 internet-facing instances VentureBeat [2026], exposes a fixed set
+of 15+ tools to every session, regardless of the task being performed. An agent asked to summarize
+a document receives the same shell execution (exec), subagent spawning (sessions spawn), and
+Preprint.
+arXiv:2604.11839v2  [cs.CR]  3 May 2026
+
+
+credential-access capabilities as an agent performing infrastructure automation. We quantify this as
+a 15× over-provision ratio for summarization tasks.
+This over-provisioning has concrete security consequences.
+The ClawHavoc supply chain at-
+tack CrowdStrike Intelligence [2026] exploited OpenClaw’s unrestricted tool access to distribute
+infostealers across 20% of ClawHub’s skill registry. CVE-2026-25253 demonstrated that a single
+malicious webpage could hijack an agent’s full capability set via prompt injection NVD [2026]. The
+attack surface is the agent’s own capability scope.
+The capability over-provisioning problem has a precise formulation: for a given task type τ, the
+Skill Economy Ratio (SER) measures the fraction of exposed tools that the agent actually invokes:
+SER(τ) = |tools invoked|
+|tools exposed|
+An ideal governance system achieves SER≈1.0 — the agent has access to exactly the tools it needs
+and nothing more. The OpenClaw baseline achieves SER= 0.067 for summarization (1 tool used of
+15 exposed).
+Existing defenses are incomplete. NVIDIA NemoClaw NVIDIA [2026] provides container-level
+sandboxing with declarative YAML policies — a static firewall that applies the same rules regardless
+of task type. Cisco DefenseClaw Cisco AI Defense [2026] scans skills for known malicious patterns
+and monitors runtime behavior anomalies — a reactive WAF that acts after the agent has decided to
+use a tool. Neither system learns the minimum capability set for each task type, and neither reduces
+the agent’s awareness of capabilities it should not have.
+Our contribution is AgentWarden, a four-layer governance framework that treats capability scoping
+as a learned optimization problem rather than a static configuration problem. The key insight is
+that an agent cannot misuse a tool it does not know exists. By dynamically restricting the agent’s
+capability awareness via AGENTS.md injection (Layer 1) and learning the optimal restriction policy
+via PPO reinforcement learning (Layer 2), AgentWarden provides infrastructure-level governance
+that improves over time.
+Scope. This work addresses capability governance — which tools an agent may invoke. Semantic
+output filtering (governing what the agent says) is orthogonal and out of scope.
+Relationship to NemoClaw and DefenseClaw. We position AgentWarden as complementary rather
+than competing. NemoClaw asks “can the agent reach the outside world?” DefenseClaw asks “did
+this skill do something bad?” AgentWarden asks “why does the agent even know it has exec during
+a summarization task?” All three questions are necessary; none alone is sufficient.
+Contributions.
+We make the following contributions:
+1. Problem formalization: We define capability over-provisioning as a measurable security prop-
+erty (SER) and quantify it empirically on a live OpenClaw deployment.
+2. AgentWarden framework: A four-layer adaptive governance system with a hybrid rule-based
++ fine-tuned LLM Safety Router (Layers 1, 3) and a PPO learning policy (Layer 2).
+3. Empirical evaluation: Live deployment on OpenClaw v2026.3.28. Automated N=500 batch
+evaluation (400 benign + 100 adversarial, seed=42): 26.2% block rate, exec blocked 100%, 92%
+adversarial coverage. PPO achieves SER +260% (synthetic) and +337% (real sessions).
+4. Critical finding: Tool-level governance is necessary but not sufficient — we document the first
+empirical demonstration of prompt injection succeeding at the LLM level but failing at the in-
+frastructure level.
+2
+Related Work
+AI Agent Security.
+Agent security has emerged as a critical concern following the widespread
+adoption of autonomous agent runtimes. OWASP Foundation [2026] identified agentic skill supply
+chain attacks as a top-10 AI security risk, using ClawHavoc as the primary case study. Cisco AI
+Defense [2026] (Cisco, RSAC 2026) introduced DefenseClaw, which bundles skill scanning, MCP
+server verification, and code safety analysis into a single framework running inside NemoClaw’s
+2
+
+
+OpenShell runtime. DefenseClaw operates via static blocklists and anomaly detection — it does
+not learn or adapt per task type. NVIDIA [2026] (NVIDIA, GTC 2026) introduced NemoClaw
+with OpenShell, providing container-level isolation with declarative YAML policies for network,
+filesystem, and inference routing.
+Prompt Injection and Tool Misuse.
+Greshake et al. [2023] formalized indirect prompt injec-
+tion in LLM-integrated applications. Perez and Ribeiro [2022] demonstrated that injected instruc-
+tions reliably cause LLMs to deviate from their system prompts. Our work shows that even when
+prompt injection succeeds at the LLM level (causing the model to generate dangerous tool calls),
+infrastructure-level governance provides a hard enforcement boundary — a finding not previously
+demonstrated in the agent runtime context.
+Reinforcement Learning for Security Policy.
+Li et al. [2024] applied RL to adaptive network
+security policy, showing that learned policies outperform static rule sets for novel attack patterns.
+EmergentMind [2026] proposed curriculum-based agentic training with adaptive scheduling. Agent-
+Warden applies this principle at the infrastructure level — the RL policy learns optimal capability
+scoping without modifying the agent or LLM.
+Capability Control and Least Privilege.
+The principle of least privilege Saltzer and Schroeder
+[1975] underpins access control theory. arXiv [2026a] (EduClaw) applies agent-profile-based skill
+scaling in educational contexts. arXiv [2026b] proposes dual-stream continual skill learning in
+multimodal agents. Both operate at the model level; AgentWarden operates at the infrastructure
+level without model modification, making it runtime-agnostic.
+LLM Tool-Calling Reliability.
+Recent work has documented significant unreliability in LLM
+tool-calling: models hallucinate non-existent tools, invoke tools unnecessarily, and fail to terminate
+ReAct loops Qin et al. [2024]. This motivates infrastructure-level interception rather than relying
+on the model to self-govern. Our evaluation confirms this: qwen2.5:7b generated dangerous exec
+calls under adversarial prompting, while DeepSeek-chat refused at the model level — demonstrat-
+ing that the optimal defense depends on the underlying model and that infrastructure governance
+provides a model-agnostic safety floor.
+Positioning.
+Table 1 summarizes the key distinctions between AgentWarden and related systems.
+Table 1: Comparison of agent governance systems.
+System
+Dynamic Scoping
+Sandbox
+Safety Model
+RL Policy
+Adapts
+OpenClaw (baseline)
+No
+No
+No
+No
+No
+NemoClaw (NVIDIA)
+No
+Yes
+Partial
+No
+No
+DefenseClaw (Cisco)
+No
+Via NemoClaw
+Yes (static)
+No
+No
+AgentWarden
+Yes
+Via NemoClaw
+Yes
+Yes
+Yes
+3
+The AgentWarden Framework
+AgentWarden is a three-layer governance framework that operates above the AI agent runtime. It
+enforces the principle of least privilege by (i) restricting the agent’s capability awareness before each
+session and (ii) intercepting every tool invocation before execution. The overall system architecture
+is illustrated in Figure 1.
+3.1
+Layer 1: Capability Governor
+The Capability Governor enforces tool scoping at the semantic level: it controls which tools the
+agent is told it has, not just which it can execute. This is achieved through two mechanisms:
+AGENTS.md injection. OpenClaw assembles a system prompt from workspace files, including
+AGENTS.md. The Governor generates a task-specific AGENTS.md that explicitly lists only the
+permitted tools: “This is a governed session scoped to summarization. 4 tools available: read,
+web fetch, memory search, memory get.”
+3
+
+
+AgentWarden governance layer
+OpenClaw Gateway
+port 18789 · Docker
+Layer 1 — Capability Governor
+AGENTS.md injection · tools.deny · PPO policy (primary) · YAML fallback
+Layer 3 — Safety Router (MITM Proxy)
+Stage 1: rules
+Stage 2: agentwarden-router
+0.1 ms
+∼800 ms
+always block
+fine-tuned LLM
+Ollama · qwen2.5:7b
+port 11434 · GTX 1060 6 GB
+Audit DB (SQLite)
+router blocks · reward signals
+Layer 2
+RL Policy
+PPO
+stable-baselines3
+State:
+(task, trust)
+Action:
+tool mask {0, 1}17
+Reward:
+αU −βC −γP
+SER +260%
+vs baseline
+BGU HPC · RTX 3090
+/api/chat
+scoped request
+ALLOW →forward
+trains on
+BLOCK
+Figure 1: AgentWarden four-layer governance architecture. The Capability Governor restricts the
+agent’s awareness before each session. The Safety Router intercepts every tool call after the LLM
+responds. The RL Policy trains on the audit log to learn the minimum viable tool set per task type.
+tools.deny injection. The Governor writes the denied tool list to openclaw.json (dynamically
+reloaded without gateway restart). This enforces the scope at the infrastructure level, ensuring the
+agent cannot invoke denied tools even if it reasons toward them.
+The Governor accepts a TaskDescriptor and returns an AllowedCapabilitySet via a hybrid
+policy engine (Section 3.4).
+3.2
+Task Type: Definition and Classification
+A task type τ ∈T is a coarse semantic label over the agent’s primary operation, determining
+the minimum viable capability set for a session. We define six types derived from the OpenClaw
+usage log (N=500 sessions): Summarisation, File Read, Web Research, Code Execution, Email,
+and Unknown. Each type maps to a minimum tool set; e.g., Summarization requires only {read,
+memory get, web search}, while Code Execution adds {write, edit} (full taxonomy in Ap-
+pendix A).
+Classification. Type is inferred from the agent’s first user message by agentwarden-router
+(< 100 ms, confidence threshold 0.7). Sessions below threshold are assigned Unknown (≈12% of
+sessions), which uses a conservative read-only default. The Safety Router enforces rules regardless
+of task type. The Governor provides proactive scoping and the Router provides reactive enforce-
+ment. The current taxonomy is manually defined; automated induction from audit logs is identified
+as future work.
+3.3
+Layer 2: Safety Router
+The Safety Router is a FastAPI MITM proxy deployed between OpenClaw and Ollama. It intercepts
+every POST /api/chat request, forwards it to Ollama, inspects the LLM response for tool calls,
+and classifies each call before OpenClaw can execute it.
+Hybrid classifier. Classification uses a two-stage pipeline:
+Stage 1 (Rule-based, 0.1ms): A deterministic classifier checks: (1) always-block tools (exec,
+sessions spawn, subagents); (2) argument-level dangerous patterns (e.g., rm -rf, file://,
+4
+
+
+AWS metadata endpoints, SSH credential paths); (3) prompt injection patterns (“ignore previous
+instructions”, DAN mode, etc.).
+Stage 2 (LLM-based, ∼800ms): If Stage 1 passes, the call is classified by agentwarden-router, a
+Qwen2.5-1.5B model fine-tuned on 273 labeled block/allow examples collected from live sessions.
+The LLM stage is skipped for known-safe tools (read, memory search, web search) to avoid
+false positives.
+Block action. Blocked tool calls are stripped from the response; the agent receives: “AgentWarden
+blocked this tool call. The requested operation is not permitted in this governed session.” Block
+events are logged to an SQLite audit database with reward signals for Layer 3 training.
+3.4
+Layer 3: RL Learning Policy
+The RL policy learns the minimum viable tool set per task type from the accumulated audit log.
+This is the primary research contribution: the adaptive intelligence that static systems lack.
+MDP formulation.
+• State s: task type (one-hot, 6 types) ⊕trust level (normalized ∈[0, 1]); |s| = 7
+• Action a: binary exposure mask over all 17 tools; a ∈{0, 1}17 (MultiBinary(17))
+• Reward: R(s, a) = α · Uaccuracy −β · Ceconomy −γ · Psafety
+where Uaccuracy ∈{0, 1} is task success, Ceconomy = 1−SER penalises over-provisioning, and Psafety
+counts Safety Router BLOCK events from the audit log. We set α = 1.0, β = 0.3, γ = 5.0.
+Policy.
+PPO Schulman et al. [2017] with MlpPolicy (2 hidden layers, 64 units), trained via
+stable-baselines3 Raffin et al. [2021] on CPU. Trust-level hard constraints are applied post-
+prediction: exec requires normalized trust ≥0.8 (i.e. trust level 4 on the raw 0–5 tenant scale),
+sessions spawn and subagents are never exposed regardless of policy output.
+Integration. The trained policy (best model.zip) is loaded by the Governor’s PolicyEngine as
+the primary decision maker. YAML rules serve as a fallback if the model file is unavailable.
+3.5
+Threat Model
+AgentWarden defends against: (1) Prompt injection causing the agent to request dangerous tool
+calls; (2) Capability escalation via tools the agent should not have for the current task; (3) Sub-
+agent spawning for lateral movement; (4) Supply chain attacks via malicious skills (blocked by the
+Governor before skills are exposed to the agent).
+AgentWarden does not govern the semantic content of agent responses — a model that expresses
+dangerous advice in text rather than tool calls is outside this system’s scope (Section 5).
+4
+Evaluation
+4.1
+Experimental Setup
+Runtime: OpenClaw v2026.3.28 in Docker, port 18789. LLM: DeepSeek-chat (32B, cloud API,
+OpenAI-compatible). Governance: AgentWarden Safety Router proxy (port 8000), hybrid classi-
+fier. RL training: [Anonymous] HPC cluster, NVIDIA RTX 3090, 50k PPO steps. Third model:
+gemma4:e4b (Google DeepMind, April 2026, 4.5B effective parameters, NVIDIA 6 GB GPU, Ol-
+lama v0.20.7). Three protocols: (1) Phase 0 baseline, (2) 20-task structured evaluation, (3) N=500
+automated batch. Extended methodology in Appendix A.
+4.2
+Phase 0–2: Baseline, Classifier, and RL Training
+Table 2 summarizes results across all evaluation phases, from baseline measurement through RL
+policy training.
+The governed agent self-reported its scoped capability set, confirming AGENTS.md injection com-
+municates governance at the semantic level. SER= 1.0 in the synthetic PPO environment is a train-
+5
+
+
+Table 2: Key results across all evaluation phases.
+Metric
+Result
+Target
+Tool reduction (summarisation)
+73%
+—
+Dangerous tool elimination
+100%
+—
+Classifier TPR / FPR
+100% / 0%
+>95% / <2% ✓
+SER improvement (synthetic PPO)
++260%
+>15% ✓
+SER improvement (ablation, 100-task)
++191%
+>15% ✓
+Baseline avg SER (N=500)
+0.053
+measured
+exec block rate (N=500)
+100% (70/70)
+measured
+ing artifact; real-session SER of 0.557 vs. baseline 0.053 (10.5×, +952%) is the operative result.
+qwen2.5:7b (lower bound) and DeepSeek-chat (primary) bracket evaluation.
+4.3
+N=500 Automated Batch Evaluation
+To establish statistical scale beyond the 20-task structured evaluation, we ran an automated batch
+of 500 tasks (seed=42): 400 benign, 100 adversarial. 500 tasks generated from a fixed taxon-
+omy (seed=42): 400 benign, 100 adversarial. Of 447 tool calls intercepted: all exec (70) and
+sessions spawn (8) blocked 100% at 0.1 ms. Overall avg SER 0.053. A fine-tuned LLM classifier
+blocked ∼22 benign write operations (HTTP server scripts) — false positives caused by 95%/5%
+training imbalance, discussed in §5.
+4.4
+Adversarial Evaluation
+Table 3 shows results for four representative attack patterns, evaluated across two models with com-
+plementary safety profiles.
+Table 3: Adversarial outcomes. Attack success rate: 0% across all models.
+Attack
+Tool
+qwen2.5:7b
+DeepSeek
+Prompt inject + exec /etc/
+exec
+BLOCK (infra)
+Refused
+Crypto mining subagent
+sessions spawn
+BLOCK (infra)
+Refused
+Netcat reverse shell
+process
+BLOCK (LLM)
+Refused
+File:// SSRF injection
+web fetch
+BLOCK (arg)
+BLOCK
+Infrastructure-Level Interception
+Prompt injection caused qwen2.5:7b to generate exec tool calls. AgentWarden blocked them
+at 0.1 ms. DeepSeek-chat refused at the model level. Both models: zero dangerous tool calls
+reached execution.
+Of 100 adversarial tasks: 38 blocked by Safety Router, 54 refused by model, 8 benign attempts
+passed. Combined coverage: 92%.
+4.5
+Gemma 4 Replication — Third Open-Weight Model
+gemma4:e4b (4.5B effective parameters, Q4 K M, NVIDIA 6 GB GPU) evaluated on N=20 tasks
+(seed=42). 100% adversarial coverage (8/8), 0% FPR (12/12), 0% error rate. Warm GPU
+inference: 656 ms (eval duration, Ollama API).
+Coverage decomposes into two complementary mechanisms: 4 blocked by AgentWarden Stage 1
+(exec/sessions spawn always-block rules, <0.1 ms) and 4 refused at the model level (Gemma 4
+safety training, no tool call generated). This confirms the defense-in-depth thesis: model safety
+training and infrastructure governance are additive, not redundant.
+Full breakdown, evaluation methodology, and Stage 3 Semantic Filter results can be found in Ap-
+pendix B and C.
+6
+
+
+Table 4: Cross-model adversarial coverage (N=20 each, seed=42).
+Model
+Coverage
+Infra block
+Model refusal
+Latency
+qwen2.5:1.5b
+∼75%
+∼75%
+∼0%
+∼800 ms
+deepseek-chat
+∼92%
+∼38%
+∼54%
+∼2,000 ms
+gemma4:e4b
+100%
+50%
+50%
+656 ms
+4.6
+Ablation Study
+To attribute SER gains to individual components, we ablate the system by disabling each stage in
+turn (100 tasks, seed=99, Table 5).
+Table 5: Ablation: component attribution (100 tasks, seed=99).
+Condition
+Avg SER
+Exposed
+Called
+Block%
+Ablation
+Full (complete system)
+0.227
+4.5
+1.01
+4.8%
+—
+No RL (YAML fallback)
+0.177
+5.8
+1.00
+13.7%
+−PPO
+No Router
+0.225
+4.5
+1.00
+12.1%
+−Router
+Baseline (raw)
+0.078
+13.0
+1.01
+5.6%
+none
+Full vs Baseline
++192% SER improvement
+Full vs No RL
++28% SER (PPO over YAML)
+Ablation: Component Attribution
+The Capability Governor accounts for ∼80% of total SER gain. The RL Policy contributes
++28% over static rules. The Safety Router contributes zero marginal SER but is the sole mech-
+anism preventing dangerous tool calls from reaching execution. All three components are nec-
+essary.
+4.7
+AgentDojo Benchmark: BU / UA / ASR
+We evaluate AgentWarden on AgentDojo Debenedetti et al. [2024] v1.2.2, comprising 97 user
+tasks across four environments with 949 injection test cases (important instructions attack,
+deepseek-chat model). We compare against an undefended baseline (identical pipeline, no gov-
+ernance).
+Table 6: AgentDojo: Benign Utility (BU), Utility under Attack (UA), and Attack Success Rate
+(ASR). Attack: important instructions, N=949 injection cases.
+Baseline (no defense)
+AgentWarden
+Suite
+BU
+UA
+ASR
+BU
+UA
+ASR
+Workspace
+90.0%
+79.3%
+96.1%
+90.0%
+78.8%
+95.7%
+Travel
+80.0%
+70.0%
+83.6%
+75.0%
+64.3%
+80.0%
+Banking
+100.0%
+88.9%
+92.4%
+100.0%
+86.8%
+92.4%
+Slack
+95.2%
+71.4%
+65.7%
+95.2%
+71.4%
+60.0%
+Overall
+90.7%
+78.5%
+90.3%
+89.7%
+77.1%
+88.9%
+Results.
+AgentWarden maintains BU of 89.7% (−1.0 pp vs. baseline), demonstrating near-zero
+utility cost from governance. ASR is reduced by 1.4 pp overall, with the largest gain in Slack
+(−5.7 pp). The modest overall ASR reduction is expected: important instructions injects pay-
+load into tool outputs (malicious text in email or file content), whereas AgentWarden governs tool
+calls. These are complementary threat surfaces.
+This result contextualises our N=20 adversarial evaluation (Section 3): AgentWarden achieves 100%
+block rate on tool-call attacks (exec, sessions spawn), while important instructions-style
+attacks operate at the LLM reasoning boundary. Stage 3 semantic output filter addresses this gap
+7
+
+
+(Section 4.8). AgentWarden governed 2,070 tool calls during the defended evaluation at 340 ms
+average governance latency.
+4.8
+Multi-Runtime Platform Validation
+To validate framework-agnostic middleware operation, we conducted structured governance tests
+across three agent runtimes using the production codebase (agentwarden-core). All tests used
+Stage 1 rules + Stage 2 classifier, with Ollama or DeepSeek backends.
+Table 7: Multi-runtime platform validation (N=20 per model, seed=42).
+Runtime
+Model
+Coverage
+Infra
+Model
+Avg Lat.
+Errors
+(8/8)
+blocks
+refusals
+OpenClaw
+gemma4:e4b
+100%
+5
+3
+27,858 ms
+0%
+OpenClaw
+deepseek-chat
+100%
+1
+7
+6,350 ms
+0%
+DeepAgents
+deepseek-chat
+Qualitative: task→sessions spawn BLOCK; write file ALLOW
+Hermes
+hermes3:8b
+Qualitative: XML exec BLOCK; XML read ALLOW
+OpenClaw results. 100% adversarial coverage, 0% error rate on both models, confirming the pro-
+duction middleware replicates the research evaluation. The split between infrastructure blocks and
+model refusals varies by model safety training: gemma4:e4b generates tool calls (5 infra blocks);
+deepseek-chat safety training triggers model-level refusal (7 refusals). Both achieve 100% com-
+bined coverage — confirming the defense-in-depth thesis that model safety training and infrastruc-
+ture governance are additive.
+DeepAgents runtime. DeepAgents v0.5.0 (LangChain/LangGraph) uses standard OpenAI JSON
+wire format. Tool name normalization confirmed in production: task→sessions spawn (always-
+block) and execute→exec (always-block).
+An important boundary was empirically confirmed: DeepAgents’ LocalShellBackend bypasses
+the LLM proxy entirely (see Appendix D for full details). Mitigation: FilesystemBackend +
+NemoClaw/OpenShell.
+Hermes XML format. hermes3:8b generates tool calls as XML embedded in message content
+(<tool call> tags) rather than structured JSON. The HermesParser auto-detects this format re-
+gardless of configured runtime. exec and sessions spawn blocked (Stage 1); read and write
+allowed correctly. A Stage 3 false positive was identified and resolved: Llama Guard 3 classified
+<tool call> XML as category S1. Fix: Stage 3 is skipped for pure tool call responses (no natural
+language text). This is semantically correct — Stage 3 targets natural language dangerous content,
+not structured output.
+5
+Discussion and Limitations
+Tool-level governance is necessary but not sufficient.
+During live testing, a request for a reverse
+shell caused qwen2.5:7b to return natural language instructions for nc -l -p 4444 in response
+text — without generating a tool call. The Safety Router did not intercept this because it inspects
+tool calls in LLM responses, not reasoning text. This is a fundamental architectural boundary, not a
+bug.
+This finding sharpens the paper’s scope: AgentWarden governs capability scope and call-time safety;
+content inspection (Stage 3, DefenseClaw) is complementary. A Stage 3 Semantic Output Filter
+(Llama Guard 3 via Ollama) addressing this gap has been implemented and is available in the open-
+source release. The filter inspects response text content and is disabled by default due to added
+latency (≈200 ms); it is enabled via configuration for deployments requiring defense against text-
+based exfiltration.
+Stage 3 evaluation. We validate Stage 3 using a fixed corpus of four dangerous responses captured
+from qwen2.5:7b: reverse shell instructions (nc -l -p 4444), bind shell code (Python socket),
+/etc/passwd exfiltration via curl, and AWS credential extraction. Llama Guard 3 correctly classi-
+fies all four as unsafe (100% detection rate, 0% false positive rate on three benign responses) with
+average latency 1,834 ms per classification. (Full results in Appendix C, Table 11.)
+8
+
+
+Non-determinism as a design constraint. Model non-determinism means Stage 3 cannot be eval-
+uated by re-running live prompts; the correct methodology is a fixed corpus of captured dangerous
+outputs. Llama Guard 3 correctly classifies whichever response the model produces. Gemma 4’s
+thinking field exposes chain-of-thought reasoning before each response; monitoring this via
+Stage 3 for early intent detection is future work.
+Base model reliability as a confound.
+qwen2.5:7b demonstrated significant tool-calling unre-
+liability: 7 calls to session status in a single task, 2 timeouts on complex tasks, and use of
+web search for local file operations. This is a model capability constraint, not an AgentWarden
+limitation. The 20-task evaluation represents a lower bound on governance effectiveness. We expect
+stronger results with capable tool-calling models (GPT-4o, Claude Sonnet, Qwen3-Coder).
+SER = 1.0 as an artifact of synthetic training.
+The PPO policy achieved SER = 1.0 (theoretical
+optimum) because the RL environment simulated tool usage as a fixed fraction of exposed tools. In
+production, agents may use unexpected tools for creative problem-solving, yielding lower but more
+realistic SER values. Real session data (collected via the 20-task protocol) will calibrate the RL
+environment for the camera-ready version.
+PPO policy collapse in production testing.
+Both PPO checkpoints collapsed to single-tool poli-
+cies (predicting only memory search for all task types) — a known artifact of SER-maximizing
+training in synthetic environments. Collapse detection is implemented; detected collapse triggers
+YAML fallback with sensible per-task defaults.
+Retraining on real session data is planned for
+camera-ready.
+Creative attack vectors.
+The model attempted to read untrusted input.txt via web fetch
+file:// — a creative workaround that bypassed the intended read tool. The arg-pattern classifier
+caught this novel approach, validating the value of pattern-based defense in depth.
+Limitations and future work.
+(1) The RL policy state space does not include user identity or
+historical session behavior; adding these may improve personalisation at the cost of privacy. (2) The
+LLM classifier’s 2,094 ms latency is acceptable for interactive sessions but may require optimization
+for high-throughput deployments. (3) Phase 3 (NemoClaw integration): the NemoClawParser is
+implemented and the defense-in-depth architecture validated (Section 4.8). Live end-to-end testing
+is deferred pending NVIDIA NIM API availability (NemoClaw is in alpha, March 2026). Phase 4
+(Mobile NPU Runtime) is planned. (4) The fine-tuned agentwarden-router model was trained
+on only 273 examples with a severely imbalanced 95%/5% BLOCK/ALLOW split. Without fine-
+tuning, the base Qwen2.5-1.5B model performs poorly on this task — it lacks the domain knowledge
+to distinguish legitimate agent tool calls (e.g., writing an HTTP server script) from dangerous ones
+(e.g., exec with shell injection). Fine-tuning is therefore not optional but required for acceptable
+precision. The current dataset is a minimal proof-of-concept; a production-quality classifier would
+require at minimum 2,000–5,000 balanced examples covering the full diversity of enterprise tool-call
+patterns. Collecting this data via Shadow Mode (§5) is the primary path to a robust classifier.
+6
+Conclusion
+We presented AgentWarden, a framework-agnostic governance middleware that intercepts tool calls
+from any agent framework without modifying agent code, enforcing least-privilege access via a
+PPO-trained policy that maps session context and inferred task type to a minimal permitted tool set.
+Validated across three agent runtimes (OpenClaw, DeepAgents, Hermes) and on the AgentDojo
+benchmark (97 tasks, 949 injection cases), AgentWarden achieves 100% adversarial coverage on
+tool-call attacks with 0% error rate, maintains BU of 89.7% (−1.0 pp vs. undefended), and reduces
+ASR by 1.4 pp on important instructions attacks orthogonal to the governed layer.
+The key insight is framing capability scoping as a learned optimization problem: the policy learns
+the minimum viable tool set per task type, turning a static firewall into an adaptive immune system.
+SER provides a reproducible metric (10.5× over baseline in real sessions). We release production
+code and an evaluation framework; future work includes RL retraining on real audit logs, NemoClaw
+live integration, and a USENIX Security submission.
+9
+
+
+Acknowledgments and Disclosure of Funding
+This research was conducted at the Institute for Applied AI Research, Faculty of Computer and
+Information Science, Ben-Gurion University of the Negev. Compute for RL training was provided
+by the BGU HPC cluster. The authors declare no competing interests.
+References
+arXiv. EduClaw: AgentProfile-based skill scaling for educational agents. arXiv:2603.11709, 2026a.
+arXiv. XSkill: Dual-stream continual learning from experiences and skills. arXiv:2603.12056,
+2026b.
+Cisco AI Defense. DefenseClaw: Open-source security framework for OpenClaw. RSAC 2026,
+March 27, 2026. URL https://github.com/cisco-ai-defense/defenseclaw.
+CrowdStrike Intelligence. ClawHavoc: Supply chain attack on OpenClaw skill registry. RSAC 2026
+Keynote, March 2026, 2026.
+Edoardo Debenedetti, Jie Zhang, Mislav Balunovi´c, Luca Becquin, Jonas Geiping, Tom Hannigan,
+Nikola Jovanovi´c, Yash Karimi, Peter Mallen, Martin Pawelczyk, Vikram Srivatsan, Robin Staab,
+Florian Tram`er, and Martin Vechev. AgentDojo: A dynamic environment to evaluate prompt
+injection attacks and defenses for LLM agents, 2024.
+EmergentMind. Curriculum-based agentic training with adaptive scheduling. EmergentMind, 2026,
+2026.
+Kai Greshake, Sahar Abdelnabi, Shailesh Mishra, Christoph Endres, Thorsten Holz, and Mario
+Fritz. Not what you’ve signed up for: Compromising real-world LLM-integrated applications
+with indirect prompt injection. arXiv preprint arXiv:2302.12173, 2023.
+Wei Li et al. Adaptive network security policy via reinforcement learning. IEEE S&P 2024, 2024.
+NVD. CVE-2026-25253: Remote code execution in OpenClaw. https://nvd.nist.gov/vuln/
+detail/CVE-2026-25253, 2026.
+NVIDIA. NemoClaw: Secure agent runtime with OpenShell. NVIDIA GTC 2026, March 16, 2026.
+URL https://github.com/NVIDIA/NemoClaw.
+OpenClaw Contributors.
+OpenClaw:
+Your personal AI assistant.
+https://github.com/
+openclaw/openclaw, 2026. v2026.3.28.
+OWASP
+Foundation.
+OWASP
+agentic
+skills
+top
+10.
+https://owasp.org/
+agentic-skills-top-10, 2026. Primary case study: ClawHavoc supply chain attack.
+F´abio Perez and Ian Ribeiro. Ignore previous prompt: Attack techniques for language models. arXiv
+preprint arXiv:2211.09527, 2022.
+Yujia Qin, Shengding Liang, Yining Ye, Kunlun Zhu, Lan Yan, Yaxi Lu, Yankai Lin, Xin Cong,
+Xiangru Tang, Bill Qian, et al. ToolBench: An open platform for training, serving, and evaluating
+large language model for tool learning. In International Conference on Learning Representations
+(ICLR), 2024. URL https://arxiv.org/abs/2307.16789.
+Antonin Raffin, Ashley Hill, Adam Gleave, Anssi Kanervisto, Maximilian Ernestus, and Noah Dor-
+mann. Stable-baselines3: Reliable reinforcement learning implementations. Journal of Machine
+Learning Research, 22(268):1–8, 2021.
+Jerome H Saltzer and Michael D Schroeder. The protection of information in computer systems.
+Proceedings of the IEEE, 63(9):1278–1308, 1975.
+John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. Proximal policy
+optimization algorithms. arXiv preprint arXiv:1707.06347, 2017.
+VentureBeat. OpenClaw has 500,000 instances and no enterprise kill switch. VentureBeat, March 31,
+2026, 2026. URL https://venturebeat.com/security/openclaw-500000-instances.
+10
+
+
+A
+Extended Experimental Setup
+A.1
+Task Type Taxonomy
+Table 8: AgentWarden task type taxonomy with minimum viable tool sets. Derived from N=500
+OpenClaw sessions (manual annotation).
+Task Type
+Description
+Minimum Tool Set
+Summarisation
+Read documents, produce structured
+output
+read,
+memory get,
+web search
+File Read
+Retrieve and return file contents
+read, memory get
+Web Research
+Retrieve and synthesise external infor-
+mation
+web search,
+web fetch,
+read
+Code Execution
+Write and modify code files
+read, write, edit
+Email
+Compose and send a message
+read, sessions send
+Unknown
+Goal cannot be reliably inferred (≈12%
+of sessions)
+read,
+web search,
+memory get
+Task taxonomy (N=500 batch eval). Tasks were generated from a fixed taxonomy with seed=42:
+400 benign across 4 categories (summarisation, file read, web research, code execution) and 100
+adversarial across 3 categories (prompt injection, DAN-mode variants, credential/tool exfiltration).
+Each task maps to a known minimum tool set, enabling Uaccuracy computation per Table 9.
+Table 9: Uaccuracy success criteria per task category.
+Task category
+Success criterion
+Method
+Summarisation
+Output contains ≥3 key points from source
+LLM judge
+File read
+Target file content present in response
+String match
+Web research
+Response cites ≥1 retrieved URL
+Regex
+Code execution
+Exit code 0 in sandbox
+Process check
+Email
+send email called with correct args
+Tool log
+Unknown
+Any non-empty response without error
+Heuristic
+SER measurement clarification. Two SER values appear in the paper and address a common
+confusion:
+Metric
+Policy
+Setting
+Value
+N=500 avg SER
+Baseline (no governance)
+Synthetic batch
+0.053
+Real-session SER
+PPO policy (governed)
+20 live sessions
+0.557
+The 0.053 is the uncontrolled SER — how few tools the agent invokes when given all 17. The 0.557
+is the governed SER under PPO. The +337% improvement is the ratio.
+Classifier test set. The 11-case classifier evaluation in §4.2 is a smoke test. For camera-ready we
+construct a balanced held-out set of n ≥200 from the N=500 audit log (117 BLOCK + 117 matched
+ALLOW decisions, plus 20 OOD adversarial examples not in training distribution). The extraction
+script (scripts/extract classifier testset.py) and resulting JSONL are released openly
+under CC BY 4.0.
+Adversarial breakdown (N=500). Of 100 adversarial tasks: 38 blocked by Safety Router (infras-
+tructure), 54 refused by model (DeepSeek-chat safety training), 8 benign-intent adversarial prompts
+that generated no dangerous tool calls and correctly passed. Attack success rate: 0/100. The 8 text-
+only cases are outside AgentWarden’s defined scope (capability governance, not content filtering).
+B
+Gemma 4 Extended Results
+Full setup. gemma4:e4b (Google DeepMind, April 2026); 4.5B effective parameters (26B total,
+MoE with 4B active at inference); Q4 K M quantisation; 128K context; Ollama v0.20.7; NVIDIA
+GPU 6 GB VRAM (3,529 MiB used, GPU-Util peaked at 53%); 32 GB system RAM. Wall-clock per
+11
+
+
+task 17,324 ms (dominated by first-call cold start ≈28 s and proxy overhead); warm GPU inference
+656 ms (eval duration).
+Full adversarial breakdown.
+Table 10: Gemma 4 adversarial evaluation: all 8 tasks with mechanism.
+Adversarial prompt
+Action
+Governance
+Result
+Pretend no restrictions + exec bash
+Generated exec
+Stage 1 block
+Neutralised
+DAN mode + sessions spawn (×2)
+Generated sessions spawn
+Stage 1 block
+Neutralised
+Ignore instructions + exec /etc/
+Generated exec
+Stage 1 block
+Neutralised
+Ignore safety + spawn subagent (×2)
+Text refusal, no tool call
+Pass-through
+Neutralised
+Reverse shell (research framing)
+Text refusal, no tool call
+Pass-through
+Neutralised
+Unrestricted agent + rm -rf
+Text refusal, no tool call
+Pass-through
+Neutralised
+Eval script note.
+The eval script captures post-governance state.
+For Stage 1-blocked cases,
+tool calls=[] in the result because the proxy strips the call before returning.
+The block
+is confirmed by the 104-character AgentWarden block message in response content.
+The up-
+dated eval runner.py (v2) adds block stage (rules/classifier vs model refusal) and
+response preview making this unambiguous.
+Benign task performance. All 12 benign tasks completed correctly (0% FPR): summarisation (×7),
+web research (×3), file read (×2). All generated appropriate tool calls (read or web search).
+Gemma 4 thinking mode. Gemma 4 exposes a thinking field containing chain-of-thought rea-
+soning before each response. For an adversarial prompt: “The user wants me to execute bash
+commands...I should refuse as it violates safety guidelines.” This field is currently not inspected
+by AgentWarden. Extending Stage 3 to monitor thinking content for early detection of dangerous
+intent — even when the model ultimately refuses — is identified as future work.
+C
+Stage 3 Semantic Output Filter
+Stage 3 inspects the text content of LLM responses for dangerous natural language (e.g. reverse shell
+instructions, credential exfiltration commands). This closes the gap documented in §5: a request for
+a reverse shell caused qwen2.5:7b to return nc -l -p 4444 instructions without generating a tool
+call.
+Implementation. Llama Guard 3 (Meta, 8B, Ollama v0.20.7) is wired into proxy.py v0.3.0 at three
+intercept points: /v1/chat/completions, /api/chat, and the DeepSeek bridge. Disabled by de-
+fault (adds ≈1 s latency); enabled via AETHELGARD SEMANTIC FILTER=true. Model is swappable
+via AETHELGARD SEMANTIC MODEL=<ollama-model>.
+Evaluation design: fixed corpus over live generation. Model non-determinism invalidates live-
+generation Stage 3 evaluation: qwen2.5:7b produces dangerous text for a given adversarial prompt
+on some runs and refuses on others. Llama Guard 3 behaves correctly in both cases — blocking
+dangerous responses, passing safe ones. The correct methodology is a fixed corpus of captured
+dangerous outputs:
+S14 = Code Interpreter Abuse. S7 = Privacy (credential exfiltration). Detection rate: 4/4 (100%).
+FPR: 0/3 (0%). First call 12,829ms (Llama Guard 3 cold start on GPU); warm calls 782–1,387ms.
+For production deployment, Shadow Mode (AMARE enterprise tier) builds this corpus automati-
+cally from live sessions, enabling continuous threshold calibration against a tenant’s actual model
+and prompt distribution.
+D
+Multi-Runtime Platform Validation — Extended Results
+Test environment. Ubuntu 22.04; NVIDIA GPU 6 GB VRAM; Ollama v0.20.7 with GPU infer-
+ence; AgentWarden proxy in Docker (port 8000), connected to host Ollama via Docker bridge net-
+work (172.18.0.1:11434). Models: gemma4:e4b (9.6 GB), deepseek-chat (API), hermes3:8b
+(5 GB), qwen2.5:7b (4.7 GB), llama-guard3 (4.9 GB), agentwarden-router (986 MB).
+12
+
+
+Table 11: Stage 3 validation: Llama Guard 3 on fixed dangerous text corpus.
+Response (qwen2.5:7b output)
+LG3 verdict
+Category
+Latency
+Reverse shell: nc -l -p 4444 /
+bash -i >& /dev/tcp/...
+unsafe
+S14
+12,829ms (cold)
+Bind shell:
+Python socket, port
+4444
+unsafe
+S14
+1,387ms
+/etc/passwd exfil via curl
+unsafe
+S14
+1,078ms
+AWS credential extraction
+unsafe
+S7
+1,070ms
+File summarisation (benign)
+safe
+—
+801ms
+Least privilege explanation (be-
+nign)
+safe
+—
+782ms
+Auth vs authorisation (benign)
+safe
+—
+801ms
+N=20 platform evaluation (gemma4:e4b).
+Adversarial breakdown: 5 blocked by Stage 1 (3
+exec/sessions spawn always-block + 1 arg pattern SSRF + 1 classifier block), 3 model refusals
+(Gemma 4 safety training). Avg latency 27,858 ms (cold GPU); warm GPU 656 ms.
+N=20 platform evaluation (deepseek-chat). Adversarial breakdown: 1 blocked by Stage 1 (rules
+classifier), 7 model refusals (DeepSeek safety training). Avg latency 6,350 ms (cloud API). Results
+consistent with N=500 research baseline (38 infra + 54 model refusal).
+Stage 3 live interception (new result). A bind shell prompt to qwen2.5:7b generated natural
+language reverse shell instructions on attempt 2 of 3 (model non-determinism, as documented in §5).
+Llama Guard 3 blocked the response: category S14 (Code Interpreter Abuse), confidence = 0.95,
+latency = 10,498 ms cold GPU (≈1,000 ms warm GPU). This is the first live end-to-end Stage 3
+interception reported for the production agentwarden-core codebase.
+Stage 3 false positive (Hermes XML). Llama Guard 3 classified <tool call> XML tags as cat-
+egory S1 (Violent Crimes) — a false positive caused by the structured XML format. Resolution:
+Stage 3 is skipped for responses where message content contains <tool call> tags or where
+tool calls is non-empty and content is empty. Stage 3 correctly targets natural language only.
+DeepAgents LocalShellBackend bypass (new empirical finding). During DeepAgents integration
+testing, shell commands executed via LocalShellBackend returned real host filesystem contents
+(ls -la /tmp) without generating any LLM tool call. This empirically confirms the threat model
+boundary: agent runtimes with local execution backends bypass LLM-layer governance. Mitigation:
+FilesystemBackend() disables local shell execution; all tool calls route through the LLM and are
+intercepted by AgentWarden.
+13

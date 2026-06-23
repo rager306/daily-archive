@@ -1,0 +1,1181 @@
+TALM: Dynamic Tree-Structured Multi-Agent Framework with
+Long-Term Memory for Scalable Code Generation
+Ming-Tung Shen
+Yuh-Jzer Joung
+r12725051@ntu.edu.tw
+joung@ntu.edu.tw
+Dept. of Information Management, National Taiwan University
+Taipei, Taiwan
+Abstract
+Agentic code generation requires large language models (LLMs)
+capable of complex context management and multi-step reasoning.
+Prior multi-agent frameworks attempt to address these challenges
+through collaboration, yet they often suffer from rigid workflows
+and high reasoning recovery costs. To overcome these limitations,
+we propose TALM (Tree-Structured Multi-Agent Framework with
+Long-Term Memory), a dynamic framework that integrates struc-
+tured task decomposition, localized re-reasoning, and long-term
+memory mechanisms. TALM employs an extensible tree-based col-
+laboration structure. The parent–child relationships, when com-
+bined with a divide-and-conquer strategy, enhance reasoning flexi-
+bility and enable efficient error correction across diverse task scopes.
+Furthermore, a long-term memory module enables semantic query-
+ing and integration of prior knowledge, supporting implicit self-
+improvement through experience reuse. Experimental results on
+HumanEval, BigCodeBench, and ClassEval benchmarks demon-
+strate that TALM consistently delivers strong reasoning perfor-
+mance and high token efficiency, highlighting its robustness and
+practical utility in complex code generation tasks.
+CCS Concepts
+• Computing methodologies →Multi-agent systems.
+Keywords
+Large Language Model, AI Agent, Multi-Agent Framework, Code
+Generation, Tree-Structured Collaboration
+ACM Reference Format:
+Ming-Tung Shen and Yuh-Jzer Joung. 2026. TALM: Dynamic Tree-Structured
+Multi-Agent Framework with Long-Term Memory for Scalable Code Gen-
+eration. In Proceedings of International Workshop on Agentic Engineering
+(AGENT 2026). ACM, New York, NY, USA, 10 pages. https://doi.org/10.1145/
+nnnnnnn.nnnnnnn
+Permission to make digital or hard copies of all or part of this work for personal or
+classroom use is granted without fee provided that copies are not made or distributed
+for profit or commercial advantage and that copies bear this notice and the full citation
+on the first page. Copyrights for components of this work owned by others than the
+author(s) must be honored. Abstracting with credit is permitted. To copy otherwise, or
+republish, to post on servers or to redistribute to lists, requires prior specific permission
+and/or a fee. Request permissions from permissions@acm.org.
+AGENT 2026, Rio de Janeiro, Brazil
+© 2026 Copyright held by the owner/author(s). Publication rights licensed to ACM.
+ACM ISBN 978-x-xxxx-xxxx-x/YYYY/MM
+https://doi.org/10.1145/nnnnnnn.nnnnnnn
+1
+Introduction
+Large Language Models (LLMs) have demonstrated strong capabili-
+ties in natural language processing and, in particular, code genera-
+tion, where both pre-trained and fine-tuned models can efficiently
+produce accurate code [12, 13, 16]. Recent efforts have sought to fur-
+ther improve performance through prompting frameworks, such as
+chain-of-thought [18] or self-planning reasoning [8], which guide
+LLMs to follow predefined reasoning path. While effective for short
+functions and modular tasks, these approaches rely on a single
+reasoning path and struggle when requirements become complex
+or context exceeds the model’s window size [9, 11].
+To address longer and more ambiguous tasks, multi-agent frame-
+works have emerged, leveraging role-playing and workflow decom-
+position to mimic software development life cycle [5, 14]. However,
+most prior multi-agent systems still adopt rigid pipelines, which
+makes them difficult to adapt to varying software requirements.
+Moreover, due to the hallucination problem [7] inherent in LLMs,
+the reasoning process cannot always be considered reliable. An
+effective re-reasoning mechanism is thus essential for ensuring
+robust performance. However, existing multi-agent frameworks
+either do not explicitly check for reasoning flaws, allowing errors
+to propagate downstream [6], or they resort to restarting the en-
+tire process when mistakes are detected, leading to unnecessary
+resource consumption [17]. In our view, localized error correction
+is more appropriate for code generation tasks, since code defects
+typically stem from partial solutions rather than a complete misdi-
+rection.
+To overcome these limitations, we propose TALM (Tree-structured
+multi-Agent framework with Long-term Memory). TALM orga-
+nizes agents in a tree structure to enable flexible divide-and-conquer
+task decomposition and supports localized re-reasoning for efficient
+error correction. When the system receives a user’s task prompt,
+the task is decomposed into multiple subtasks, and the dependen-
+cies among these subtasks are represented as a tree structure. This
+design allows TALM to handle tasks of different granularity. Fur-
+thermore, the tree structure enables TALM to perform re-reasoning
+within a specific subtree when flaws are detected.
+In addition, to achieve lifelong learning similar to humans, TALM
+integrates a long-term memory module that stores prior experiences
+and retrieves relevant knowledge during solving new tasks, en-
+abling implicit self-improvement. By leveraging past successes and
+avoiding previously observed mistakes, TALM gradually evolves
+over time without additional retraining.
+We evaluate TALM on HumanEval [2], BigCodeBench [23], and
+ClassEval [3] benchmarks. Results show that TALM outperforms
+arXiv:2510.23010v2  [cs.SE]  12 Jan 2026
+
+
+AGENT 2026, Apr. 14, 2026, Rio de Janeiro, Brazil
+Ming-Tung Shen and Yuh-Jzer Joung
+existing approaches while maintaining high token efficiency. Be-
+yond benchmark results, TALM provides a general paradigm for
+integrating structured reasoning with long-term memory, suggest-
+ing a path forward for scalable, reliable and self-improving code
+generation agents.
+2
+Related Work
+Recent advances in prompting have enhanced the reasoning ability
+of LLMs without requiring model retraining. Basic strategies include
+zero-shot prompting, where models are asked to directly produce
+outputs from task descriptions, and few-shot prompting, where
+a small set of exemplars helps align input-output mappings [1].
+Building on this, chain-of-thought prompting [18] and self-planning
+prompting [8] encourage models to externalize intermediate reason-
+ing steps, improving performance on multi-step problems. ReAct
+[22] further integrates reasoning and acting by allowing LLMs to
+decide when to deliberate internally and when to invoke external
+tools, thereby improving tool usage in complex tasks. More recently,
+Reflexion [15] introduces a self-reflective loop that enables models
+to critique and revise their own outputs, while tree-of-thought [21]
+organizes reasoning as a search process over a tree structure, en-
+abling exploration of multiple reasoning paths. These approaches
+have proven cost-efficient compared to fine-tuning, and they extend
+LLM capabilities to increasingly complex reasoning tasks.
+Multi-agent frameworks have recently emerged as a promising
+direction for enhancing LLM-based reasoning and task execution.
+By decomposing tasks into subtasks and assigning them to role-
+specific agents, these frameworks emulate the division of labor in
+human teams and provide a way to overcome the context-window
+limitations of single-agent approaches.
+AutoGen [19] provides a general multi-agent platform where a
+centralized planner coordinates multiple specialized agents through
+role-playing and structured dialogues. This design improves modu-
+larity and allows flexible integration of external tools. TDAG [17] dy-
+namically decomposes tasks into executable steps and instantiates
+specialized sub-agents as needed. Its reflection mechanism enables
+feedback and backtracking, enhancing robustness and recovery.
+AgentNet [20] employs a dynamically evolving DAG communica-
+tion topology, allowing agents to adapt roles and strategies through
+an evolution phase that fosters specialization and autonomous task
+allocation. In contrast, ChatDev [14] focuses on simulating the
+software development life cycle by assigning agents to roles such
+as analyst, designer, coder, and tester, with dedicated mechanisms
+for cross-stage context menagement. MetaGPT [5] emphasizes re-
+sponsibility separation: each agent operates within well-defined
+input–output boundaries, and communication is achieved through
+a subscription-based messaging mechanism.
+Beyond workflow simulation, MapCoder [6] introduces a re-
+trieval agent that augments code generation with relevant exemples.
+By dynamically retrieving semantically similar problem–solution
+pairs from past knowledge, MapCoder enhances few-shot prompt-
+ing and improves performance.
+Despite advances in multi-agent frameworks for code genera-
+tion, challenges remain—namely rigid workflows, high reasoning
+correction costs, and the absence of cumulative memory. TALM is
+proposed to address these limitations.
+3
+TALM Framework
+TALM is designed to enhance code generation through a dynami-
+cally growing tree structure, localized error correction, and knowl-
+edge reuse. The framework consists of three main components:
+(1) a tree-structured collaboration mechanism, (2) a localized re-
+reasoning process, and (3) a long-term memory module. Together,
+these components enable agents to coordinate flexibly, correct rea-
+soning errors efficiently, and accumulate experience for future tasks.
+Figure 1 illustrates the overall workflow. A user’s task is recur-
+sively decomposed into subtasks handled by specialized code agents.
+Each agent attempts to solve its assigned subtask based on the given
+context and then returns the result to its parent. Before returning,
+the output is checked by the validation agent, which generates
+test cases and executes them in a sandbox environment. During
+processing, agents can also query the long-term memory module to
+retrieve past experiences as external knowledge. In this way, TALM
+decomposes the original task into finer-grained subtasks, ensures
+that each agent has a clear and focused context, and produces the
+final output through a bottom-up merging process along the tree.
+3.1
+Tree-Structured Collaboration
+In TALM, agents are organized as nodes in a tree that mirrors
+the decomposition of the original task. Higher-level nodes over-
+see broader objectives, while lower-level nodes are responsible for
+finer-grained subtasks. Each agent can either (i) attempt to com-
+plete its subtask independently or (ii) delegate part of the work by
+spawning child agents. The results returned by children are always
+passed through the validation agent, which generates test cases
+and executes them in a sandbox environment to ensure reliability,
+before being integrated by the parent. Verified outputs may serve
+as helper functions or partial solutions that support the parent’s
+own task. The final solution emerges through a bottom-up merging
+process, closely resembling a divide-and-conquer strategy.
+More specifically, each code agent in the tree proceeds through
+the following process:
+• Planning Phase: The code agent formulates a plan for solving
+the assigned task, drawing on the task description and relevant
+knowledge retrieved from long-term memory. The output of this
+phase is a step-by-step plan to guide subsequent stages.
+• Delegation Phase: If the plan indicates that the solution requires
+multiple modules or distinct functions, the code agent designs
+subtask descriptions, spawns child agents, and integrates their
+returned solutions into its context. If delegation is unnecessary,
+this phase is skipped.
+• Implementation Phase: The code agent implements the solu-
+tion code using the accumulated context.
+• Validation Phase: The generated code is passed to the validation
+agent, which ensures executability and correctness by running
+test cases in a sandbox environment. If errors are detected, the
+validation agent attempts debugging for up to 𝑟iterations.
+• Return Phase: The code agent updates the long-term memory
+with its current experience and returns the verified solution code
+to its parent.
+Details regarding the interaction with long-term memory are dis-
+cussed in Section 3.3, and the overall workflow is summarized in
+Algorithm 1.
+
+
+TALM: Dynamic Tree-Structured Multi-Agent Framework
+AGENT 2026, Apr. 14, 2026, Rio de Janeiro, Brazil
+Code
+Agent
+User Task
+Code
+Agent
+Code
+Agent
+1. Planning
+2. Delegate
+3. Impl
+5. Return
+Thought of solving
+current task
+I need to create 2
+children...
+def function1(x):
+    # code snipple
+4. Validate
+Wait for validation
+agent...
+1. Update long-term
+memory
+2. Return solution
+Validation
+Agent
+Long-term Memory
+Sandbox env.
+Solution
+Code
+(Not validated yet)
+Task
+.
+.
+.
+.
+.
+.
+Figure 1: TALM workflow overview. The root agent decomposes the task into a tree of subtasks; child agents solve localized
+steps and return results upward.
+Parent Code Agent
+Child Code Agent
+1. Parent pass a subtask to child
+2. The child agent reflects on the task instruction
+Sales data structure:
+    {  "amount": float,
+"category": string,
+        "timestamp": string
+     }
+Clarification
+Generate and draw a sales
+trend for different
+categories.
+Task
+ What is the structure of the sales data?
+ What is the structure
+of each  sales record?
+Ask
+3. Parent re-reasoning to give
+child more details. 
+(a) Child-Agent Clarification (bottom-up).
+Parent Code Agent
+Task
+Child Code Agent
+Code
+1. Parent agent receive wrong code
+and try to create new subtree
+2. Replace old subtree
+Wrong
+Subtask
+Subtask
+Child Code Agent
+Trigger Re-Reasoning
+Wrong
+Code
+New
+Subtask 1
+New
+Subtask 2
+Child Code Agent
+Child Code Agent
+(b) Structure Correction (top-down).
+Figure 2: Localized re-reasoning in TALM. Left: child-to-parent clarification when task specs are underspecified; Right: parent-
+initiated structure correction when decomposition is flawed.
+To prevent uncontrolled tree growth, TALM introduces three
+hyperparameters: the maximum depth 𝑚, the initial branching
+factor 𝑛, and the decay rate 𝑘(𝑚,𝑛,𝑘∈Z+). A node may create
+children only if its depth is less than𝑚, ensuring that nodes at depth
+𝑚are leaves. The number of children a node may spawn begins at 𝑛
+and decreases by 𝑘at each subsequent level, producing a narrowing
+tree shape. This decay mechanism encourages deeper nodes to
+concentrate on highly specific subtasks, while also constraining
+overall complexity. Together, these parameters regulate the height
+and width of the collaboration tree, striking a balance between
+flexibility, resource efficiency, and structural controllability.1
+1The decay mechanism is designed under the assumption that task decomposition
+progressively reduces problem complexity. In the rare cases where a subtask does
+not become simpler or may even increase in difficulty during decomposition, the
+framework still allows the subtask to be handled by a single agent without further
+branching, relying on the agent’s standalone problem-solving capability.
+
+
+AGENT 2026, Apr. 14, 2026, Rio de Janeiro, Brazil
+Ming-Tung Shen and Yuh-Jzer Joung
+Algorithm 1 TALM Workflow
+// Initialize global control parameters
+// These values can be configured as hyperparameters
+// m: maximum tree height
+// n: initial tree branching degree
+// k: decay rate for degree as depth increases
+// r: maximum number of verification retries
+1: 𝑚←3
+2: 𝑛←3
+3: 𝑘←1
+4: 𝑟←3
+5: procedure ExecuteWorkflow(𝑢𝑠𝑒𝑟_𝑖𝑛𝑠𝑡𝑟𝑢𝑐𝑡𝑖𝑜𝑛)
+// Create root code agent
+6:
+𝑓𝑖𝑛𝑎𝑙𝐶𝑜𝑑𝑒←ExecuteCodeAgent(𝑢𝑠𝑒𝑟_𝑖𝑛𝑠𝑡𝑟𝑢𝑐𝑡𝑖𝑜𝑛, 1, 𝑛)
+7:
+return 𝑓𝑖𝑛𝑎𝑙𝐶𝑜𝑑𝑒
+8: end procedure
+9: procedure ExecuteCodeAgent(𝑡𝑎𝑠𝑘, ℎ𝑒𝑖𝑔ℎ𝑡, 𝑑𝑒𝑔𝑟𝑒𝑒)
+10:
+𝑝𝑙𝑎𝑛←Analyze(𝑡𝑎𝑠𝑘)
+11:
+if ℎ𝑒𝑖𝑔ℎ𝑡< 𝑚then
+// Make sure |𝑆𝑢𝑏𝑡𝑎𝑠𝑘𝑠| ≤𝑑𝑒𝑔𝑟𝑒𝑒
+12:
+𝑠𝑢𝑏𝑡𝑎𝑠𝑘𝑠←Decompose(𝑝𝑙𝑎𝑛, 𝑑𝑒𝑔𝑟𝑒𝑒)
+13:
+else
+14:
+𝑠𝑢𝑏𝑡𝑎𝑠𝑘𝑠←∅
+15:
+end if
+16:
+𝑐ℎ𝑖𝑙𝑑_𝑟𝑒𝑠𝑢𝑙𝑡𝑠←[ ]
+17:
+for all 𝑠𝑢𝑏𝑡𝑎𝑠𝑘in 𝑠𝑢𝑏𝑡𝑎𝑠𝑘𝑠do
+// Create child code agent
+18:
+𝑟𝑒𝑠𝑢𝑙𝑡←ExecuteCodeAgent(𝑠𝑢𝑏𝑡𝑎𝑠𝑘, ℎ𝑒𝑖𝑔ℎ𝑡+ 1, 𝑑𝑒𝑔𝑟𝑒𝑒−
+𝑘)
+19:
+Append(𝑐ℎ𝑖𝑙𝑑_𝑟𝑒𝑠𝑢𝑙𝑡𝑠, 𝑟𝑒𝑠𝑢𝑙𝑡)
+20:
+end for
+21:
+𝑐𝑜𝑑𝑒←Implement(𝑝𝑙𝑎𝑛, 𝑐ℎ𝑖𝑙𝑑_𝑟𝑒𝑠𝑢𝑙𝑡𝑠)
+22:
+𝑣𝑒𝑟𝑖𝑓𝑖𝑒𝑑𝐶𝑜𝑑𝑒←ExecuteVerificationAgent(𝑐𝑜𝑑𝑒)
+23:
+return 𝑣𝑒𝑟𝑖𝑓𝑖𝑒𝑑𝐶𝑜𝑑𝑒
+24: end procedure
+25: procedure ExecuteVerificationAgent(𝑐𝑜𝑑𝑒)
+26:
+𝑟𝑒𝑡𝑟𝑦←0
+27:
+repeat
+28:
+𝑡𝑒𝑠𝑡𝑅𝑒𝑠𝑢𝑙𝑡←RunTests(𝑐𝑜𝑑𝑒)
+29:
+if 𝑡𝑒𝑠𝑡𝑅𝑒𝑠𝑢𝑙𝑡≠Pass then
+30:
+𝑐𝑜𝑑𝑒←FixErrors(𝑐𝑜𝑑𝑒, 𝑡𝑒𝑠𝑡𝑅𝑒𝑠𝑢𝑙𝑡)
+31:
+𝑟𝑒𝑡𝑟𝑦←𝑟𝑒𝑡𝑟𝑦+ 1
+32:
+end if
+33:
+until 𝑡𝑒𝑠𝑡𝑅𝑒𝑠𝑢𝑙𝑡= Pass or 𝑟𝑒𝑡𝑟𝑦= 𝑟
+34:
+return 𝑐𝑜𝑑𝑒
+35: end procedure
+3.2
+Localized Re-Reasoning
+Traditional frameworks often re-execute the entire workflow when
+reasoning errors are detected, leading to substantial correction costs
+and unnecessary recomputation. TALM instead supports localized
+re-reasoning: only the agents within the affected subtree are recom-
+puted, while the rest of the tree remains intact. This strategy reduces
+redundant computation, preserves verified reasoning chains, and
+enhances overall efficiency. By leveraging the hierarchical struc-
+ture, TALM introduces localized error recovery mechanisms that
+improve robustness without sacrificing scalability.
+Localized re-reasoning in TALM is realized through two comple-
+mentary modes: clarification-based and structure-correction (Fig-
+ure 2). These two modes address errors that arise at different stages
+of the task execution process and together provide a systematic
+error-handling capability.
+Child-Agent Clarification (bottom-up). Clarification-based re-reasoning
+is triggered when a child agent detects that the instructions it re-
+ceived from its parent are underspecified, ambiguous, or incomplete.
+In such cases, instead of proceeding with insufficient context, the
+child agent actively requests clarification from its parent. The parent
+then reflects on its own reasoning trace and provides refined speci-
+fications. This feedback loop occurs early in the reasoning pipeline,
+preventing small ambiguities from propagating downstream.
+Structure-Correction (top-down). Structure-correction re-reasoning
+occurs later in the process, after a parent agent has collected and
+reviewed the outputs of its children. If the parent determines that
+its initial task decomposition was flawed—such as assigning irrele-
+vant subtasks or overlooking critical dependencies—it revises its
+plan and replaces the entire subtree rooted at self with a new set
+of children and subtasks. The previous results are discarded, and
+the regenerated subtree reflects a more task-aligned decomposition.
+This mechanism allows TALM to recover from structural misjudg-
+ments in the decomposition process while minimizing wasted effort
+and avoiding a full workflow restart.
+3.3
+Long-Term Memory
+Most existing multi-agent frameworks are stateless, meaning that
+agents operate on a one-off basis without retaining knowledge
+from past experiences. As a result, similar tasks must be repeatedly
+solved from scratch. To address this limitation, TALM incorporates
+a long-term memory module that allows agents to store, retrieve,
+and reuse knowledge across tasks, enabling cumulative learning
+and improved efficiency over time.
+The memory module is built on a vector-based storage system
+that records task histories, including problem descriptions, rea-
+soning traces, generated code, and structural metadata such as
+the agent’s tree depth. During new task execution for each code
+agent, the knowledge retrieval mechanism encodes the incoming
+task description into a semantic vector representation and performs
+approximate nearest-neighbor search against the stored task vec-
+tors in the database. Candidate results are then filtered based on
+metadata such as tree depth to ensure comparable granularity with
+the querying agent. This retrieval process provides contextual ref-
+erences that can be incorporated into the current reasoning context.
+This process is illustrated in the top part of Figure 3.
+After the code agent completes its subtask and the output passes
+validation, the memory update mechanism is triggered. The verified
+code, together with the associated problem description, reasoning
+process, and metadata, is encoded and stored back into the vector
+database. Unlike standard retrieval-augmented generation (RAG)
+approaches [4, 10] that treat the memory as a static repository for
+query-time retrieval only, TALM actively maintains and refines its
+long-term memory through consolidation.
+Specifically, the newly encoded entry is compared against ex-
+isting memory records using vector similarity search. Past entries
+
+
+TALM: Dynamic Tree-Structured Multi-Agent Framework
+AGENT 2026, Apr. 14, 2026, Rio de Janeiro, Brazil
+User Task
+Vector Database
+Code
+Agent
+Related memory 2
+Code 2
+Task Desc. 2
+Code
+Current Experience
+Task Desc.
+Code
+Agent
+Related memory 1
+Code 1
+Task Desc. 1
+Vector Database
+Find similar memory
+Vector Database
+If similar memory
+is not found
+If similar memory
+is found
+Merge Knowledge
++
+=
+Vector Database
+memory
+update
+Knowledge
+Retrival
+Figure 3: Long-term memory mechanisms in TALM. The top part illustrates knowledge retrieval, where a new task is encoded
+and matched with similar past experiences in the vector database. The bottom part illustrates memory update, where validated
+outputs are stored and merged with existing records when overlap is detected.
+whose similarity exceeds a predefined threshold (0.95 in our imple-
+mentation) are retrieved and jointly considered with the new entry.
+These highly similar records are then provided to LLM, which syn-
+thesizes them into a single representative memory entry that unifies
+their shared knowledge. This synthesis produces updated versions
+of the problem description, reasoning process, and generated code,
+capturing the common structure and solution patterns across ex-
+periences. The consolidated entry is stored back into the memory,
+while the original overlapping records are removed. This process
+prevents uncontrolled memory growth, reduces redundancy, and
+mitigates context contamination, thereby keeping the memory com-
+pact, coherent, and efficient for sustained multi-task reasoning. This
+update process is illustrated in the bottom part of Figure 3.
+By integrating tree-structured collaboration, localized re-reasoning,
+and long-term memory, TALM balances flexibility, efficiency, and
+continual improvement, positioning it as a robust framework for
+complex code generation. A representative code generation exam-
+ple produced by TALM is provided in Appendix A.
+4
+Experimental Results
+4.1
+Experimental Settings
+4.1.1
+Datasets. To evaluate TALM across tasks of varying scope
+and complexity, we adopt three representative datasets: HumanEval
+[2], BigCodeBench [23], and ClassEval [3]. HumanEval contains
+164 programming problems focused primarily on single-function
+code generation and serves as a classic benchmark for code syn-
+thesis. BigCodeBench includes 1,140 function-level problems with
+substantially higher difficulty, reflecting more realistic engineering
+challenges such as data analysis, operating system interaction, and
+protocol parsing that often require external library usage. ClassE-
+val consists of 100 class-level tasks designed to test object-oriented
+programming. It emphasizes structural consistency and logical co-
+herence across multiple methods, presenting greater demands on
+context handling and long-horizon reasoning.
+4.1.2
+Baselines. We compare TALM against a range of strong base-
+lines and representative approaches spanning prompting methods,
+reasoning strategies, and multi-agent frameworks. Direct Prompt-
+ing serves as the simplest baseline, where task descriptions are
+directly fed into the model without additional structure, equiva-
+lent to a zero-shot setting. Chain-of-Thought Prompting (CoT)
+[18] enhances reasoning by encouraging step-by-step explanations
+before code generation. Self-Planning Prompting [8] separates
+problem solving into planning and implementation phases, allowing
+the model to first determine an overall strategy before synthesizing
+code. Reflexion [15] introduces an iterative process where initial
+outputs are critiqued and corrected based on test feedback, simu-
+lating human-like debugging. Finally, MapCoder [6] represents a
+multi-agent collaboration approach. It augments code generation
+with a retrieval agent that provides few-shot exemplars, which are
+then processed by role-specific agents in multiple stages.
+Together, these baselines cover different paradigms—from di-
+rect prompting to advanced reasoning and multi-agent collabora-
+tion—providing a comprehensive comparison to highlight TALM’s
+contributions.2
+4.1.3
+Foundation Models, Evaluation Metric, & Hyperparameters.
+For the main results reported in Section 4.2, we conduct exper-
+iments with both GPT-4o-mini and GPT-4o to ensure a compre-
+hensive comparison across methods. For the ablation studies in
+Section 4.3, we use GPT-4o-mini only, due to cost considerations.
+2We note that some well-known multi-agent frameworks, such as MetaGPT and
+AgentNet, are not included as baselines. MetaGPT is excluded because its outputs
+are difficult to evaluate automatically in our experimental setup, while AgentNet was
+released after the experiments in this paper were conducted.
+
+
+AGENT 2026, Apr. 14, 2026, Rio de Janeiro, Brazil
+Ming-Tung Shen and Yuh-Jzer Joung
+In all experiments, the temperature is fixed at 0 to maintain deter-
+minism. Also, for all baseline approaches, we re-implement and
+evaluate them using the same foundation models (GPT-4o-mini and
+GPT-4o), rather than directly adopting results from prior work, to
+ensure a fair comparison.
+Due to budget constraints, we limit our experiments to these two
+models. Under a fixed budget, we argue that comparing methods
+across different capability tiers of the same model family provides
+a clearer assessment of generalization, compared to a horizontal
+comparison across models from different providers (e.g., OpenAI vs.
+Anthropic) or across open-source and closed-source models, where
+architectural and training differences may introduce additional
+confounding factors.
+For TALM’s tree-structured collaboration, we set the maximum
+depth to 𝑚= 3, the initial branching factor to 𝑛= 3, and the decay
+rate to 𝑘= 1. The validation agent is allowed up to 𝑟= 3 correction
+attempts. In the long-term memory module, the similarity threshold
+for new entries is set to 0.75, and up to 3 relevant past records are
+retrieved during reasoning. A memory merge strategy is applied to
+consolidate redundant entries when overlap is detected.
+For MapCoder, we follow the authors’ original hyperparameter
+settings: retrieval size and retry count are set to 5 for HumanEval
+and 3 for the other datasets.
+As the evaluation metric, we adopt Pass@1, which considers
+a task solved if any of the top-1 generated outputs is correct. For
+fairness, TALM’s memory is cleared at the beginning of each ex-
+perimental round, and dataset orders are randomized to avoid bias
+from fixed learning trajectories.
+4.2
+Main Results
+4.2.1
+Performance on Code Generation. Table 1 reports Pass@1
+performance across HumanEval, BigCodeBench, and ClassEval.
+Overall, TALM consistently outperforms baseline prompting meth-
+ods and the multi-agent framework MapCoder.
+On the relatively simple HumanEval benchmark, all methods
+achieve strong accuracy, reflecting the limited challenge of single-
+function synthesis. Nevertheless, TALM delivers a modest but con-
+sistent improvement over direct prompting and CoT, demonstrating
+that even for short-context tasks, structured decomposition and
+validation provide benefits.
+For BigCodeBench, which requires handling long contexts and
+realistic engineering subtasks, most prompting-based methods ex-
+hibit limited gains and in some cases degrade performance. TALM,
+by contrast, achieves an improvement of roughly 2-3% over the
+direct prompting baseline, highlighting its robustness under more
+demanding conditions.
+ClassEval presents the most challenging setting, requiring coher-
+ent class-level generation across multiple methods. At the testcase
+level, TALM improves by over 6% compared to direct prompting,
+and by 2–3% relative to the next-best baseline. At the class level,
+where structural consistency is critical, TALM achieves the highest
+score, outperforming other methods by around three percentage
+points. These results confirm that TALM’s tree-structured decompo-
+sition and localized correction mechanisms are particularly effective
+when tasks demand both modularity and long-horizon reasoning.
+Figure 4: Comparison of token consumption between TALM
+and MapCoder.
+4.2.2
+Token Usage Efficiency. Beyond accuracy, we also measure
+efficiency by tracking token consumption. Figure 4 compares TALM
+with MapCoder, the other multi-agent framework baseline. TALM
+exhibits significantly lower token usage, both in input and output.
+This advantage stems from two design choices: (i) TALM’s simpli-
+fied agent roles and hierarchical collaboration reduce the need to
+repeatedly pass large contexts across agents, and (ii) its long-term
+memory module retrieves past experiences directly from a vector
+store rather than generating long reference outputs during runtime.
+We further compare TALM with and without the long-term
+memory module. Results show only a marginal increase in token
+usage when memory is enabled, since retrieval and storage are
+handled externally by the vector database rather than the LLM
+itself. This indicates that TALM achieves accuracy gains with few
+additional token cost, making it well suited for large-scale, multi-
+round program synthesis tasks.
+4.3
+Ablation Studies and Analyses
+4.3.1
+Impact of Long-Term Memory. We first examine the contri-
+bution of the long-term memory module from Table 1. While the
+overall Pass@1 improvement is modest on HumanEval, the gains
+are more pronounced on BigCodeBench and ClassEval, where tasks
+are longer and structurally more complex. This suggests that mem-
+ory provides greater benefits in settings where knowledge reuse
+across tasks is meaningful.
+Figure 5 further illustrates performance progression on ClassE-
+val over the task sequence. During early problems, the memory
+store is still sparse, and performance remains close to baseline. As
+tasks progress, accumulated knowledge begins to provide tangible
+benefits, leading to a stable improvement in later segments. This re-
+sult highlights the potential of the TALM framework for long-chain
+and structurally complex applications.
+
+
+TALM: Dynamic Tree-Structured Multi-Agent Framework
+AGENT 2026, Apr. 14, 2026, Rio de Janeiro, Brazil
+Approach \ Benchmark
+HumanEval
+BigCodeBench
+ClassEval
+(testcase level)
+ClassEval
+(class level)
+GPT-4o-mini
+Direct
+87.20%
+45.20%
+74.40%
+33.00%
+CoT
+88.45%
+45.80%
+76.16%
+32.00%
+Self-Planning
+87.07%
+46.27%
+75.38%
+33.00%
+Reflexion
+86.92%
+44.43%
+78.21%
+31.00%
+MapCoder
+85.37%
+41.40%
+77.22%
+34.50%
+TALM (without memory)
+90.59%
+46.32%
+77.85%
+36.00%
+TALM (with memory)
+89.13%
+47.10%
+80.72%
+36.50%
+GPT-4o
+Direct
+89.10%
+50.10%
+80.13%
+33.00%
+CoT
+90.93%
+49.33%
+81.91%
+33.00%
+Self-Planning
+91.34%
+51.47%
+82.66%
+35.00%
+Reflexion
+91.70%
+52.06%
+84.78%
+36.00%
+MapCoder
+93.92%
+52.32%
+84.19%
+36.00%
+TALM (without memory)
+94.48%
+52.28%
+84.65%
+36.00%
+TALM (with memory)
+92.55%
+53.27%
+86.79%
+38.00%
+Table 1: Overall Pass@1 results. Light yellow cells mark the best score within each foundation model.
+Figure 5: Effect of the long-term memory module over task
+sequence on ClassEval.
+4.3.2
+Impact of Localized Re-Reasoning. Table 2 reports results
+when disabling the re-reasoning mechanism. Across all datasets,
+removing localized re-reasoning leads to consistent performance
+drops, regardless of whether long-term memory is enabled. The ef-
+fect is particularly notable on BigCodeBench and ClassEval, where
+error propagation is more common due to task complexity. These
+findings highlight the importance of localized re-reasoning: it al-
+lows TALM to correct reasoning flaws at the subtree level, avoiding
+costly restarts while preserving verified outputs.
+4.3.3
+Impact of Tree Height. We next analyze the effect of varying
+the maximum tree height 𝑚(Table 3). Results indicate that per-
+formance improves as 𝑚increases up to an optimal level, beyond
+which it declines. For HumanEval, the best result occurs at 𝑚= 2,
+while for the more complex BigCodeBench and ClassEval datasets,
+𝑚= 3 is optimal. Further increases in𝑚lead to over-decomposition:
+agents tend to split tasks excessively, consuming resources and in-
+troducing unnecessary reasoning steps. This confirms that tree
+HumanEval
+BigCodeBench
+ClassEval
+TALM (without memory)
+89.34%
+(-1.25%)
+45.11%
+(-1.21%)
+75.19%
+(-2.66%)
+TALM (with memory)
+86.42%
+(-1.51%)
+44.92%
+(-2.18%)
+78.44%
+(-2.28%)
+Table 2: Ablation on localized re-reasoning. Numbers in
+parentheses indicate performance drop compared to full
+TALM.
+height is a critical hyperparameter balancing task granularity and
+reasoning efficiency.
+Tree Height / Benchmark
+HumanEval
+BigCodeBench
+ClassEval
+𝑚= 1
+87.13%
+45.55%
+78.33%
+𝑚= 2
+89.13%
+46.19%
+78.62%
+𝑚= 3
+87.93%
+47.10%
+80.72%
+𝑚= 4
+83.98%
+45.65%
+80.31%
+𝑚= 5
+81.32%
+42.69%
+76.95%
+Table 3: Effect of maximum tree height 𝑚on TALM perfor-
+mance.
+4.3.4
+Impact of Branching Factor. Finally, we vary the maximum
+branching factor 𝑛(Table 4). Unlike tree height, increasing 𝑛does
+not significantly degrade performance, as agents dynamically de-
+cide whether to spawn child agents. However, when 𝑛is too small,
+complex tasks may lack sufficient decomposition flexibility, leading
+to performance drops. On HumanEval, a small branching factor
+(𝑛= 1) is sufficient, whereas on BigCodeBench and ClassEval, larger
+values (around 𝑛= 3) yield the best results. These findings sug-
+gest that 𝑛should be tuned according to task complexity—minimal
+branching for simple problems and broader branching for complex
+reasoning.
+
+
+AGENT 2026, Apr. 14, 2026, Rio de Janeiro, Brazil
+Ming-Tung Shen and Yuh-Jzer Joung
+Degree of Tree / Benchmark
+HumanEval
+BigCodeBench
+ClassEval
+𝑛= 1
+88.22%
+46.66%
+79.33%
+𝑛= 2
+88.09%
+46.11%
+78.34%
+𝑛= 3
+87.93%
+47.10%
+80.72%
+𝑛= 4
+87.88%
+47.05%
+80.31%
+𝑛= 5
+87.90%
+47.08%
+80.11%
+Table 4: Effect of maximum branching factor 𝑛on TALM
+performance.
+5
+Conclusions and Future Work
+This work introduced TALM (Tree-Structured Multi-Agent Frame-
+work with Long-Term Memory), a code generation framework de-
+signed to address the limitations of existing multi-agent collabo-
+ration systems in task flexibility, error correction, and knowledge
+retention. TALM advances the state of the art in three ways. First,
+it organizes agents into a dynamically expandable tree structure,
+allowing tasks to be decomposed and delegated without relying on
+rigid, pre-defined workflows. This enables the framework to adapt
+naturally to tasks of varying scale and complexity. Second, TALM
+introduces a localized re-reasoning mechanism, which confines
+error correction to the affected subtree rather than restarting the
+entire workflow. This significantly reduces computation overhead
+and enhances fault tolerance. Finally, TALM integrates a long-term
+memory module that stores prior problem–solution traces in a
+vector database, enabling retrieval of similar past experiences for
+future tasks and paving the way toward continual learning and
+implicit self-improvement.
+We evaluated TALM on HumanEval, BigCodeBench, and Clas-
+sEval, comparing against both prompting-based baselines and the
+multi-agent framework MapCoder. Experimental results show that
+TALM consistently outperforms alternatives, particularly in com-
+plex and long-context settings. Ablation studies further confirmed
+the importance of localized re-reasoning and long-term memory,
+as well as the impact of tree parameters such as maximum depth
+and branching factor. Together, these findings highlight TALM’s
+robustness, efficiency, and alignment with real-world software en-
+gineering needs.
+Our results also reveal a trade-off introduced by task decompo-
+sition. For relatively simple tasks, decomposition may introduce
+additional overhead or occasional failures due to increased token
+usage and compounding reasoning errors. In contrast, for more chal-
+lenging problems, decomposition substantially improves solvability
+by breaking down complexity, effectively lowering the performance
+floor while raising the ceiling—an effect we consider more impactful
+in realistic software engineering scenarios.
+Looking ahead, several promising directions emerge. First, TALM
+currently relies on fixed hyperparameters to constrain its tree struc-
+ture. Future work may explore dynamic adjustment mechanisms,
+enabling agents to adaptively tune tree height and branching dur-
+ing runtime. Second, while the memory module is fully automated,
+its quality could be further enhanced by incorporating human feed-
+back or lightweight verification before updating the knowledge
+base. Third, TALM has thus far been evaluated only on natural-
+language-to-code tasks. Extending it to other software engineer-
+ing activities—such as code completion, refactoring, and debug-
+ging—could broaden its applicability and strengthen its utility as a
+general-purpose intelligent assistant.
+6
+Limitations
+Despite its promising results, TALM has several limitations that
+should be acknowledged. First, the datasets used in this study are
+relatively modest in scale. HumanEval and ClassEval contain fewer
+than two hundred problems each, and even BigCodeBench con-
+sists of only 1,140 problems. This restricts TALM’s ability to fully
+demonstrate the long-term benefits of its memory module. More-
+over, to ensure fairness, the memory was reset at the start of each
+experimental round, which further underrepresents its potential in
+real-world deployments where memory would accumulate contin-
+uously.
+Second, while ClassEval poses greater contextual and structural
+challenges than HumanEval or BigCodeBench, it remains limited
+to class-level tasks. In practice, software engineering often involves
+system-level projects spanning multiple classes, modules, or pack-
+ages. Such large-scale contexts were not available in existing bench-
+marks, leaving open the question of how TALM would perform on
+truly large and interconnected codebases.
+In summary, TALM demonstrates notable improvements in flex-
+ibility, error recovery, and knowledge reuse compared to prior
+MAC frameworks. However, its evaluation has been constrained
+by dataset scale and scope. Overcoming these limitations will be
+critical to realizing TALM’s full potential and advancing toward
+autonomous, self-improving agents for software development.
+References
+[1] Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan,
+Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda
+Askell, et al. 2020. Language models are few-shot learners. Advances in neural
+information processing systems 33 (2020), 1877–1901.
+[2] Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde
+De Oliveira Pinto, Jared Kaplan, et al. 2021. Evaluating large language mod-
+els trained on code. arXiv:2107.03374
+[3] Xueying Du, Mingwei Liu, Kaixin Wang, Hanlin Wang, Junwei Liu, Yixuan
+Chen, Jiayi Feng, Chaofeng Sha, Xin Peng, and Yiling Lou. 2023. ClassEval: A
+Manually-Crafted Benchmark for Evaluating LLMs on Class-level Code Genera-
+tion. arXiv:2308.01861
+[4] Yunfan Gao, Yun Xiong, Xinyu Gao, Kangxiang Jia, Jinliu Pan, Yuxi Bi, Yi Dai, Ji-
+awei Sun, Meng Wang, and Haofen Wang. 2024. Retrieval-Augmented Generation
+for Large Language Models: A Survey. arXiv:2312.10997
+[5] Sirui Hong, Mingchen Zhuge, Jonathan Chen, Xiawu Zheng, Yuheng Cheng,
+Jinlin Wang, Ceyao Zhang, Zili Wang, Steven Ka Shing Yau, Zijuan Lin, Liyang
+Zhou, Chenyu Ran, Lingfeng Xiao, Chenglin Wu, and Jürgen Schmidhuber. 2024.
+MetaGPT: Meta Programming for A Multi-Agent Collaborative Framework. In
+The Twelfth International Conference on Learning Representations.
+[6] Md. Ashraful Islam, Mohammed Eunus Ali, and Md Rizwan Parvez. 2024. Map-
+Coder: Multi-Agent Code Generation for Competitive Problem Solving. In Pro-
+ceedings of the 62nd Annual Meeting of the Association for Computational Linguis-
+tics (Volume 1: Long Papers). Association for Computational Linguistics, Bangkok,
+Thailand, 4912–4944. doi:10.18653/v1/2024.acl-long.269
+[7] Ziwei Ji, Nayeon Lee, Rita Frieske, Tiezheng Yu, Dan Su, Yan Xu, Etsuko Ishii,
+Ye Jin Bang, Andrea Madotto, and Pascale Fung. 2023. Survey of Hallucination
+in Natural Language Generation. ACM Comput. Surv. 55, 12, Article 248 (March
+2023), 38 pages.
+[8] Xue Jiang, Yihong Dong, Lecheng Wang, Zheng Fang, Qiwei Shang, Ge Li, Zhi
+Jin, and Wenpin Jiao. 2024. Self-planning code generation with large language
+models. ACM Transactions on Software Engineering and Methodology 33, 7 (2024),
+1–30.
+
+
+TALM: Dynamic Tree-Structured Multi-Agent Framework
+AGENT 2026, Apr. 14, 2026, Rio de Janeiro, Brazil
+[9] Mosh Levy, Alon Jacoby, and Yoav Goldberg. 2024. Same Task, More Tokens: the
+Impact of Input Length on the Reasoning Performance of Large Language Models.
+In Proceedings of the 62nd Annual Meeting of the Association for Computational
+Linguistics (Volume 1: Long Papers). Association for Computational Linguistics,
+Bangkok, Thailand, 15339–15353.
+[10] Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin,
+Naman Goyal, Heinrich Küttler, Mike Lewis, Wen-tau Yih, Tim Rocktäschel,
+Sebastian Riedel, and Douwe Kiela. 2020. Retrieval-Augmented Generation for
+Knowledge-Intensive NLP Tasks. In Advances in Neural Information Processing
+Systems, H. Larochelle, M. Ranzato, R. Hadsell, M.F. Balcan, and H. Lin (Eds.),
+Vol. 33. Curran Associates, Inc., 9459–9474.
+[11] Jiaqi Li, Mengmeng Wang, Zilong Zheng, and Muhan Zhang. 2024. LooGLE: Can
+Long-Context Language Models Understand Long Contexts?. In Proceedings of
+the 62nd Annual Meeting of the Association for Computational Linguistics (Volume
+1: Long Papers). Association for Computational Linguistics, Bangkok, Thailand,
+16304–16333.
+[12] Raymond Li, Loubna Ben Allal, Yangtian Zi, Niklas Muennighoff, Denis Kocetkov,
+Chenghao Mou, Marc Marone, Christopher Akiki, Jia Li, Jenny Chim, et al. 2023.
+Starcoder: may the source be with you! Transactions on Machine Learning Research
+(2023).
+[13] Ziyang Luo, Can Xu, Pu Zhao, Qingfeng Sun, Xiubo Geng, Wenxiang Hu,
+Chongyang Tao, Jing Ma, Qingwei Lin, and Daxin Jiang. 2024. WizardCoder:
+Empowering Code Large Language Models with Evol-Instruct. In The Twelfth
+International Conference on Learning Representations.
+[14] Chen Qian, Wei Liu, Hongzhang Liu, Nuo Chen, Yufan Dang, Jiahao Li, Cheng
+Yang, Weize Chen, Yusheng Su, Xin Cong, et al. 2024. Chatdev: Communicative
+agents for software development. In Proceedings of the 62nd Annual Meeting of the
+Association for Computational Linguistics (Volume 1: Long Papers). 15174–15186.
+[15] Noah Shinn, Federico Cassano, Ashwin Gopinath, Karthik Narasimhan, and
+Shunyu Yao. 2023. Reflexion: Language agents with verbal reinforcement learning.
+Advances in Neural Information Processing Systems 36 (2023), 8634–8652.
+[16] Yue Wang, Weishi Wang, Shafiq Joty, and Steven C.H. Hoi. 2021.
+CodeT5:
+Identifier-aware Unified Pre-trained Encoder-Decoder Models for Code Under-
+standing and Generation. In Proceedings of the 2021 Conference on Empirical
+Methods in Natural Language Processing. Association for Computational Linguis-
+tics, 8696–8708.
+[17] Yaoxiang Wang, Zhiyong Wu, Junfeng Yao, and Jinsong Su. 2025. TDAG: A multi-
+agent framework based on dynamic task decomposition and agent generation.
+Neural Networks (2025), 107200.
+[18] Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Fei Xia, Ed Chi,
+Quoc V Le, Denny Zhou, et al. 2022. Chain-of-thought prompting elicits reasoning
+in large language models. Advances in neural information processing systems 35
+(2022), 24824–24837.
+[19] Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, Beibin Li, Erkang Zhu, et al.
+2023. AutoGen: Enabling next-gen llm applications via multi-agent conversation.
+arXiv:2308.08155
+[20] Yingxuan Yang, Huacan Chai, Shuai Shao, Yuanyi Song, Siyuan Qi, Renting Rui,
+and Weinan Zhang. 2025. AgentNet: Decentralized Evolutionary Coordination
+for LLM-based Multi-Agent Systems. arXiv:2504.00587
+[21] Shunyu Yao, Dian Yu, Jeffrey Zhao, Izhak Shafran, Tom Griffiths, Yuan Cao, and
+Karthik Narasimhan. 2023. Tree of thoughts: Deliberate problem solving with
+large language models. Advances in neural information processing systems 36
+(2023), 11809–11822.
+[22] Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan,
+and Yuan Cao. 2023. React: Synergizing reasoning and acting in language models.
+In International Conference on Learning Representations (ICLR).
+[23] Terry Yue Zhuo, Minh Chien Vu, Jenny Chim, Han Hu, et al. 2025. BigCodeBench:
+Benchmarking Code Generation with Diverse Function Calls and Complex In-
+structions. In ICLR.
+A
+Code Generation Sample by TALM
+Here we provide a representative code sample generated by TALM
+while handling a task from BigCodeBench. The example demon-
+strates TALM’s ability to decompose problems and generate struc-
+tured, executable code, offering qualitative insight beyond the quan-
+titative evaluation reported in the main paper.
+\begin{small }{
+import cgi
+import http.server
+import smtplib
+from email.mime.text import MIMEText
+import json
+def task_func(smtp_server , smtp_port ,
+smtp_username , smtp_password):
+REQUIRED_KEYS = ("subject", "message", "to")
+class EmailRequestHandler(http.server.
+BaseHTTPRequestHandler):
+server_version = "EmailHTTP /1.0"
+sys_version = ""
+def do_POST(self):
+try:
+content_type = self.
+_require_json_content_type ()
+body_bytes = self.
+_read_request_body ()
+email_data = self._parse_json(
+body_bytes)
+self._validate_email_data(
+email_data)
+msg = self._build_mime_message(
+email_data)
+self._send_email(msg , email_data["
+to"])
+self._send_ok ()
+except json.JSONDecodeError:
+self._send_error_response (400, "
+Bad Request: invalid JSON")
+except ValueError as e:
+self._send_error_response (400, f"
+Bad Request: {e}")
+except smtplib.SMTPAuthenticationError
+:
+self._send_error_response (535, "
+Authentication Failed")
+except Exception:
+self._send_error_response (500, "
+Internal Server Error")
+def _require_json_content_type(self) ->
+str:
+raw = self.headers.get("content -type")
+if not raw:
+raise ValueError("Missing Content -
+Type header")
+ctype , _pdict = cgi.parse_header(raw)
+if ctype.lower () != "application/json"
+:
+raise ValueError("Content -Type
+must be application/json")
+return ctype
+def _read_request_body(self) -> bytes:
+raw_len = self.headers.get("content -
+length")
+if raw_len is None:
+raise ValueError("Missing Content -
+Length header")
+
+
+AGENT 2026, Apr. 14, 2026, Rio de Janeiro, Brazil
+Ming-Tung Shen and Yuh-Jzer Joung
+try:
+length = int(raw_len)
+except ValueError:
+raise ValueError("Invalid Content -
+Length header")
+if length < 0:
+raise ValueError("Invalid Content -
+Length header")
+return self.rfile.read(length)
+def _parse_json(self , body: bytes) -> dict
+:
+text = body.decode("utf -8")
+data = json.loads(text)
+if not isinstance(data , dict):
+raise ValueError("JSON body must
+be an object")
+return data
+def _validate_email_data(self , data: dict)
+-> None:
+missing = [k for k in REQUIRED_KEYS if
+k not in data]
+if missing:
+raise ValueError(f"Missing
+required key(s): {', '.join(
+missing)}")
+if not isinstance(data["subject"], str
+) or not data["subject"].strip ():
+raise ValueError("'subject ' must
+be a non -empty string")
+if not isinstance(data["message"], str
+):
+raise ValueError("'message ' must
+be a string")
+if not isinstance(data["to"], str) or
+"@" not in data["to"]:
+# Not full RFC validation; avoids
+obvious garbage
+raise ValueError("'to' must be a
+valid email -like string")
+def _build_mime_message(self , data: dict)
+-> MIMEText:
+msg = MIMEText(data["message"],
+_subtype="plain", _charset="utf -8"
+)
+msg["Subject"] = data["subject"]
+msg["From"] = smtp_username
+msg["To"] = data["to"]
+return msg
+def _send_email(self , msg: MIMEText ,
+recipient: str) -> None:
+with smtplib.SMTP(smtp_server ,
+smtp_port , timeout =20) as server:
+server.ehlo()
+try:
+server.starttls ()
+server.ehlo()
+except smtplib.SMTPException:
+pass
+server.login(smtp_username ,
+smtp_password)
+# may raise
+SMTPAuthenticationError
+server.sendmail(smtp_username , [
+recipient], msg.as_string ())
+def _send_ok(self) -> None:
+body = b"OK"
+self.send_response (200)
+self.send_header("Content -Type", "text
+/plain; charset=utf -8")
+self.send_header("Content -Length", str
+(len(body)))
+self.end_headers ()
+self.wfile.write(body)
+def _send_error_response(self , code: int ,
+message: str) -> None:
+body = message.encode("utf -8")
+self.send_response(code)
+self.send_header("Content -Type", "text
+/plain; charset=utf -8")
+self.send_header("Content -Length", str
+(len(body)))
+self.end_headers ()
+self.wfile.write(body)
+def log_message(self , fmt , *args):
+return
+return EmailRequestHandler
+}\end{small}

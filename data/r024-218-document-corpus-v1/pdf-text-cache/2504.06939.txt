@@ -1,0 +1,1811 @@
+FeedbackEval: A Benchmark for Evaluating Large Language
+Models in Feedback-Driven Code Repair Tasks
+DEKUN DAI, School of Software Engineering
+Sun Yat-sen University, China
+MINGWEI LIU∗, School of Software Engineering
+Sun Yat-sen University, China
+ANJI LI, School of Software Engineering
+Sun Yat-sen University, China
+JIALUN CAO, The Hong Kong University of Science and Technology, China
+YANLIN WANG, School of Software Engineering
+Sun Yat-sen University, China
+CHONG WANG, School of Computer Science and Engineering
+Nanyang Technological University, Singapore
+XIN PENG, School of Computer Science
+Fudan University, China
+ZIBIN ZHENG, School of Software Engineering
+Sun Yat-sen University, China
+Code repair is a fundamental task in software development, facilitating efficient bug resolution and software
+maintenance. Although large language models (LLMs) have demonstrated considerable potential in automated
+code repair, their ability to comprehend and leverage diverse types of feedback, which is crucial for iterative
+self-correction in authentic debugging scenarios, remains insufficiently understood.
+To bridge this gap, we introduce FeedbackEval, a systematic benchmark constructed from three heteroge-
+neous sources (HumanEval, CoderEval, and SWE-Bench-verified), to evaluate LLMs’ feedback comprehension
+and code repair performance. We conduct a comprehensive empirical study on five state-of-the-art LLMs,
+including GPT-4o, Claude-3.5, Deepseek-R1, GLM-4, and Qwen2.5, to evaluate their behavior under both
+single-iteration and iterative code repair settings. Our results show that mixed feedback yields the highest
+repair success (63.6%), with LLM-Expert and test feedback providing strong targeted gains (62.9% and 57.9%,
+respectively), while minimal (53.1%) and compiler feedback (49.2%) offer moderate benefits and LLM-Skilled
+proves least effective (48.8%). Iterative feedback further enhances repair performance, though the marginal
+Authors’ Contact Information: Dekun Dai , School of Software Engineering
+Sun Yat-sen University, Zhuhai, China, daidk@mail2.sysu.edu.cn; MingWei Liu∗, School of Software Engineering
+Sun Yat-sen University, Zhuhai, China, liumw26@mail.sysu.edu.cn; Anji Li, School of Software Engineering
+Sun Yat-sen University, Zhuhai, China, lianj8@mail2.sysu.edu.cn; Jialun Cao, The Hong Kong University of Science and
+Technology, Hong Kong, China, jcaoap@cse.ust.hk; Yanlin Wang, School of Software Engineering
+Sun Yat-sen University, Zhuhai, China, wangylin36@mail.sysu.edu.cn; Chong Wang, School of Computer Science and
+Engineering
+Nanyang Technological University, Singapore, chong.wang@ntu.edu.sg; Xin Peng, School of Computer Science
+Fudan University, Shanghai, China, pengxin@fudan.edu.cn; Zibin Zheng, School of Software Engineering
+Sun Yat-sen University, Zhuhai, China, zhzibin@mail.sysu.edu.cn.
+Permission to make digital or hard copies of all or part of this work for personal or classroom use is granted without fee
+provided that copies are not made or distributed for profit or commercial advantage and that copies bear this notice and the
+full citation on the first page. Copyrights for components of this work owned by others than the author(s) must be honored.
+Abstracting with credit is permitted. To copy otherwise, or republish, to post on servers or to redistribute to lists, requires
+prior specific permission and/or a fee. Request permissions from permissions@acm.org.
+© 2026 Copyright held by the owner/author(s). Publication rights licensed to ACM.
+ACM XXXX-XXXX/2026/2-ART
+https://doi.org/10.1145/nnnnnnn.nnnnnnn
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+arXiv:2504.06939v2  [cs.SE]  26 Feb 2026
+
+
+2
+Dekun Dai, MingWei Liu∗, Anji Li, Jialun Cao, Yanlin Wang, Chong Wang, Xin Peng, and Zibin Zheng
+benefit diminishes after two or three iterations. Moreover, prompt structure is shown to be critical: Structured
+reasoning (RR, CoT) and dynamic example selection deliver notable improvements, whereas removing seman-
+tic cues such as docstrings or role-play causes severe degradation. This work introduces a robust benchmark
+and delivers practical insights to advance the understanding and development of feedback-driven code repair
+using LLMs.
+CCS Concepts: • Software and its engineering;
+Additional Key Words and Phrases: Feedback-driven Code Repair, Large Language Models, Benchmark
+ACM Reference Format:
+Dekun Dai, MingWei Liu∗, Anji Li, Jialun Cao, Yanlin Wang, Chong Wang, Xin Peng, and Zibin Zheng. 2026.
+FeedbackEval: A Benchmark for Evaluating Large Language Models in Feedback-Driven Code Repair Tasks.
+1, 1 (February 2026), 22 pages. https://doi.org/10.1145/nnnnnnn.nnnnnnn
+1
+Introduction
+Code repair is a fundamental task in software development, enabling developers to efficiently iden-
+tify and resolve errors [16, 22, 45]. With the rise of large language models (LLMs), there is increasing
+interest in leveraging their capabilities for automated code repair by incorporating test feedback
+and compiler diagnostics [30, 34]. While LLMs have demonstrated promising performance in code
+generation [37, 40, 51, 59] and correction [16, 22, 45], their ability to interpret and effectively utilize
+feedback, ranging from pre-repair diagnostics to post-patch evaluations, remains insufficiently
+explored, particularly in complex repair scenarios.
+In practical software development, feedback-driven repair [15, 36, 38, 54] is indispensable. Devel-
+opers iteratively repair their code based on test failures, compiler diagnostics, and human reviews.
+Beyond individual repair tasks, feedback comprehension constitutes a foundational capability
+for autonomous multi-agent systems, such as SWE-agent [48] and Openhands [43], that address
+repository-scale programming tasks through iterative self-correction and tool use. While these
+systems demonstrate strong end-to-end performance, their success fundamentally relies on the
+model’s ability to internalize environmental and self-generated feedback. However, this capability
+is typically evaluated only implicitly at the system level rather than being examined as an inde-
+pendent competency. Consequently, the fine-grained mechanisms by which LLMs leverage
+multi-modal feedback remain insufficiently understood, limiting our insight into their
+robustness in real-world workflows.
+Existing research on LLM-based code repair primarily evaluates repair accuracy or examines per-
+formance under narrow feedback conditions, such as test failures or compiler errors [3, 12, 49]. While
+some studies explore feedback-driven generation, they often restrict themselves to single-iteration
+corrections and lack systematic comparisons across diverse feedback modalities [7, 31, 44, 56].
+Furthermore, although prompt engineering has been shown to enhance LLM performance in
+many tasks, its role in improving feedback comprehension during code repair remains underex-
+plored [24, 26, 27]. This leaves a critical gap: we lack a systematic, extensible benchmark for
+assessing LLMs’ ability to (1) process structured vs. unstructured feedback, (2) adapt across
+iterative repair settings, and (3) leverage different prompting strategies for improved
+repair success.
+FeedbackSynth and FeedbackEval. To address this gap, we introduce FeedbackSynth, an
+automated pipeline for constructing feedback-driven code repair benchmarks, and present
+FeedbackEval, the first large-scale dataset systematically designed for this purpose. Starting
+from diverse programming tasks with reference implementations and tests, we generate erroneous
+code through rule-based mutations, LLM-induced perturbations, and naturally incorrect LLM
+outputs. For each error instance, we provide six feedback modalities: structured signals (e.g., static
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+FeedbackEval: A Benchmark for Evaluating Large Language Models in Feedback-Driven Code Repair Tasks
+3
+analysis and test results), unstructured human-like guidance simulated by LLMs, and composite
+forms that mirror real-world debugging environments. This automated, extensible design enables
+reproducible, large-scale evaluation of how LLMs interpret, prioritize, and act upon heterogeneous
+feedback. By filling a key gap in systematic benchmarking, FeedbackEval enables fine-grained
+analysis of feedback comprehension and supports the design of more effective feedback-driven
+repair strategies for agentic systems.
+Empirical Study. Using FeedbackEval, we conduct an empirical study of five state-of-the-art
+(SOTA) LLMs (GPT-4o [1], Claude-3.5 [2], Deepseek-R1 [9], GLM-4 [57], and Qwen2.5 [8]) to
+understand how these LLMs process and utilize feedback in code repair. Specifically, we address
+the following research questions:
+• RQ1: How do different LLMs perform in single-iteration repair tasks utilizing feedback?
+This question establishes a baseline for evaluating how well LLMs can resolve errors with a
+single feedback.
+• RQ2: How do different types of feedback affect LLMs’ performance in code repairs? We
+analyze the effectiveness of different feedback types (e.g., compiler error message, LLM-generated
+review comments) and their influence on LLM repair.
+• RQ3: How does the effectiveness of feedback evolve over multiple repair iterations for
+different LLMs? This question investigates the iterative repair capabilities of LLMs, emphasizing
+their adaptability across multiple iterations of feedback.
+• RQ4: To what extent do different prompting techniques impact the performance of
+LLMs in code repairs using feedback? We explore how prompt engineering strategies affect
+feedback comprehension and repair success, evaluating techniques such as chain-of-thought
+reasoning, few-shot learning, and the inclusion of contextual information.
+Main Findings. Based on our results, we summarize the following main findings: 1 We
+observe that different LLMs exhibit significant performance gaps in feedback-driven code repair,
+with Deepseek-R1 achieving an average repair accuracy of 63.4% and Claude-3.5 reaching 59.2%,
+outperforming GPT-4o (54.5%), Qwen2.5 (51.4%), and GLM-4 (51.1%). 2 Mixed feedback achieves
+the highest repair success by integrating complementary signals, while LLM-Expert and test
+feedback provide strong targeted improvements. Compiler and minimal feedback yield moderate
+benefits, whereas LLM-Skilled performs worst, illustrating the risks of low-quality guidance. 3
+Iterative feedback improves LLM performance, with test and LLM feedback demonstrating the
+most significant gains. However, performance improvements diminish over successive iterations,
+typically stabilizing after two to three repair cycles, indicating that extended iterations yield
+diminishing returns. 4 Structured reasoning techniques (RR, CoT) deliver the largest performance
+gains, while dynamic example selection (ES-Shot) outperforms traditional few-shot learning. In
+contrast, removing docstrings or role-play causes the sharpest degradation, highlighting that
+semantic understanding of intended functionality is more critical than environmental context.
+In summary, this paper makes the following contributions:
+• A comprehensive benchmark for evaluating LLMs in feedback-driven code repair, covering
+diverse error types and feedback scenarios.
+• A systematic empirical evaluation of state-of-the-art LLMs, providing insights into their
+strengths, limitations, and adaptability in iterative repair tasks.
+• Actionable recommendations for improving LLMs’ feedback comprehension and repair effec-
+tiveness, highlighting the role of structured feedback and optimized prompting techniques.
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+4
+Dekun Dai, MingWei Liu∗, Anji Li, Jialun Cao, Yanlin Wang, Chong Wang, Xin Peng, and Zibin Zheng
+def verify_relayable_signature(public_key, doc, signature):
+  sig_hash = _create_signature_hash(doc, 15)
+  cipher = PKCS1_v1_5.new(RSA.importKey(), 28)                                                                             Erroneous Code
+  return cipher.verify(sig_hash)
+Traceback (most recent call last):
+  …, line 79, in <module>
+    assert verify_relayable_signature(PUBKEY, doc, SIGNATURE)
+  …, line 35, in verify_relayable_signature
+    sig_hash = _create_signature_hash(doc, 15)
+TypeError: _create_signature_hash() takes 1 positional argument but 2 were given
+In line: def verify_relayable_signature(public_key, doc, signature): . Unused argument 'public_key’, 
+In line: def verify_relayable_signature(public_key, doc, signature): . Unused argument 'signature‘
+Compiler Feedback
+The existing code contains a reference to `RSA.importKey()` without passing the `public_key` argument, which may 
+lead to an error or unintended behavior since it currently lacks the required input for importing the public key. 
+Additionally, you should ensure that the `_create_signature_hash` function is returning a hash compatible with the 
+verification method used, and consider verifying if the signature verification process includes necessary exceptions 
+handling for robustness. Lastly, it would be beneficial to confirm that `verify()` properly checks against the expected 
+signature format and value, enhancing the reliability of your verification process.
+                                                                                                      LLM-Skilled Feedback
+Verify the signed XML elements to have confidence that the claimed
+author did actually generate this message.                                                                                   
+Docstring
+{ "apis" : "['b64decode', '_create_signature_hash', 'verify', 'new', 'importKey']", 
+"classes" : "['PKCS1_v1_5']",                                                                                                
+Context
+"vars" : "[]" }
+Test Feedback
+The code is wrong. Please fix it.                                                                                            
+Minimal Feedback
+Firstly, it does not utilize the `public_key` parameter when importing the RSA key, which is essential for signature 
+verification. Additionally, the signature is not being decoded from its base64 format before verification, which is 
+necessary to ensure that the verification process is accurate. To improve the code, ensure that the public key is 
+correctly passed to `importKey` and that the signature is decoded using `b64decode` before calling the `verify` method.
+                                                                                                                             
+LLM-Expert Feedback
+A composite feedback modality that combines structured signals (e.g., Test, Compiler) with unstructured guidance 
+(e.g., Minimal, LLM-Expert).                                                                                                    
+Mixed Feedback
+Fig. 1. An example of code repair task in FeedbackEval.
+You are an AI code editor and generator. Your goal is to analyze 
+the @@Existing Code and generate mutants in it.
+You can generate one mutant by introducing a single, subtle 
+alteration to the logic, structure, or syntax of the code.
+The mutation should impact the functionality in a meaningful 
+way without completely changing the intent or purpose of the 
+original code.
+@@Existing Code {}
+#Requirement: 
+1. Provide generated mutants directly.
+2. Prohibit generating the exact same mutants.
+3. Do not explain how the mutant was generated, only output 
+the mutated code. 
+4. The output must be in the following format:
+```python
+# Your codes here
+```
+Prompt for LLM-Driven Error Injection
+(a) Prompt for LLM-driven error injection
+You are a highly skilled and thoughtful programming assistant tasked with guiding a 
+programmer to improve the code. 
+Your primary goal is to analyze the @@Existing Code based on the provided 
+@@Docstring, @@Context and @@Correct Code to identify 
+potential issues and offer suggestions for improvement.
+Carefully review the @@Existing Code and understand its structure, logic, and 
+functionality.
+Compare the code against the @@Docstring to ensure it adheres to the described 
+purpose, inputs, outputs, and behavior.
+Use the @@Context to ensure the code correctly interacts with external elements, 
+such as types, APIs, variables, 
+or constants, and adheres to the dependencies and integration requirements within 
+the broader environment.
+Then, compare 
+the @@Existing Code against the @@Correct Code to highlight deviations, 
+misunderstandings, or missed optimizations.
+#Requirement: 
+1. Offer guidance in a clear and understandable manner, explaining the rationale 
+behind each suggestion.
+2. Refrain from providing actual code solutions, but instead focus on conceptual 
+modifications or strategies.
+3. Please respond in no more than three sentences.
+@@Existing Code {}
+@@Docstring {}
+@@Context {}
+Prompt for LLM-Skilled and LLM-Expert Feedback
+(b) Prompt for LLM-Skilled and LLM-Expert feedback
+Fig. 2. Prompt for Benchmark Construction
+2
+Benchmark Construction
+In this section, we introduce our new benchmark FeedbackEval for feedback-driven code repair.
+We present the benchmark format (Section 2.1), the construction procedure (Section 2.2), and the
+resulting benchmark (Section 2.3).
+2.1
+Benchmark Format
+Each benchmark task consists of two main components: (i) a core program repair instance and (ii)
+a full set of feedback types. This separation allows evaluation of LLMs’ ability to understand the
+repair context and leverage diverse guidance signals independently.
+Core Components. As illustrated in Figure 1, each task includes the following essential elements:
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+FeedbackEval: A Benchmark for Evaluating Large Language Models in Feedback-Driven Code Repair Tasks
+5
+• Erroneous Code: A faulty function or code snippet that represents the initial state for the repair
+task.
+• Docstring: A high-level description of the intended functionality, providing semantic guidance
+to help the LLM understand the repair objective.
+• Context: Supplementary information about the surrounding project or code environment, such
+as related APIs, class definitions, or global variables, situating the code within a broader system.
+• Reference Implementation: The correct solution corresponding to the task, serving as ground
+truth for evaluating the functional correctness of LLM-generated repairs.
+• Test Cases: Predefined, executable test suites associated with the task, used to validate repaired
+code and serve as structured feedback signals.
+Feedback Types.
+Table 1. Comparison of Feedback Types in FeedbackEval
+Type
+Source
+Form
+Acquisition Difficulty
+Level
+Compiler
+Tool
+Structured
+Low
+Beginner
+Test
+Tool
+Structured
+Medium
+Beginner
+Minimal
+Template
+Non-Structured
+Very Low
+Beginner
+LLM-Skilled
+LLM
+Non-Structured
+Medium
+Intermediate
+LLM-Expert
+LLM
+Non-Structured
+High
+Expert
+Mixed
+Composite sources
+Mixed
+Very High
+Real-world
+To simulate the diversity of guidance encountered in real-world software development, our
+benchmark provides multiple feedback modalities for each task. Table 1 summarizes the main types,
+their characteristics, and intended level of expertise.
+• Compiler Feedback: Structured, technical signals indicating syntax errors, style violations, and
+potential bugs. Offers concrete insights into code correctness and quality, analogous to tool-based
+static analysis.
+• Test Feedback: Structured information derived from the task’s test cases, clearly identifying fail-
+ing tests and expected outcomes. Provides precise, actionable guidance similar to what developers
+receive from automated test results.
+• Minimal Feedback: A fixed, concise message providing no detailed guidance (e.g., “The code
+is wrong. Please fix it.”). Simulates input from a non-expert or inexperienced developer, testing
+whether LLMs can initiate meaningful repairs with minimal information.
+• LLM-Skilled Feedback: Unstructured, natural-language suggestions resembling advice from a
+competent but non-expert developer. These feedback messages are informative but may be noisy
+or contain inaccuracies, reflecting real-world human-like guidance.
+• LLM-Expert Feedback: Unstructured, natural-language suggestions resembling expert re-
+viewers. Feedback is precise, targeted, and closely aligned with the correct solution, providing
+high-quality guidance for repair.
+• Mixed Feedback: A composite form that integrates multiple sources, such as structured (Test,
+Compiler) and unstructured (Minimal, LLM-Expert) feedback. This setting emulates realistic
+debugging environments with heterogeneous guidance, evaluating the LLM’s ability to synthesize
+and prioritize diverse signals.
+By combining structured feedback (Test and Compiler) with unstructured, human-like guidance
+(Minimal, LLM-Skilled, LLM-Expert), our benchmark supports controlled, reproducible evaluation
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+6
+Dekun Dai, MingWei Liu∗, Anji Li, Jialun Cao, Yanlin Wang, Chong Wang, Xin Peng, and Zibin Zheng
+Dataset/ 
+Repositories
+code generation
+tasks
+Code Generation
+Task Collection
+erroneous
+instances
+Erroneous Code Generation
+FeedbackEval
+Dataset
+Rule-Based
+Error Injection
+LLM-Driven
+Error Injection
+LLM-Generated
+Incorrect Code
++
++
+feedback
+Automated Feedback Generation
+Template
+Generation
+LLM
+Generation
+Mixed
+Feedback
++
++
+Static
+Analysis
+Test
+Execution
++
++
+Fig. 3. Overview of FeedbackSynth
+while reflecting the variety of feedback encountered in practical software development. The frame-
+work is extensible, allowing future integration of additional feedback modalities without modifying
+the core benchmark structure.
+2.2
+Pipeline Construction
+To efficiently build FeedbackEval, we design an automated pipeline, FeedbackSynth, as illustrated
+in Figure 3. The pipeline consists of three main steps: Code Generation Task Collection, Erroneous
+Code Generation, and Automated Feedback Generation. This design enables rapid, reproducible,
+and extensible benchmark construction, supporting systematic evaluation of LLMs in feedback-
+driven code repair, and can also serve as a source of training data for model fine-tuning or other
+learning-based applications.
+2.2.1
+Code Generation Task Collection. The first step is to collect high-quality code generation
+tasks, where each task contains (i) a natural language description (e.g., a docstring), (ii) a reference
+implementation, and (iii) corresponding unit tests. These elements together ensure that the task is
+both well-defined and automatically verifiable.
+In our implementation, we construct a comprehensive evaluation suite by integrating tasks from
+three complementary sources:HumanEval [6], CoderEval [50] and SWE-Bench-verified [20].
+This selection ensures that our benchmark spans a broad spectrum of difficulty. HumanEval
+covers fundamental algorithmic problems, whereas CoderEval introduces project-level complexity
+through custom types and cross-procedural dependencies. To evaluate LLMs in realistic settings,
+we incorporate a curated subset of 178 instances from SWE-Bench-verified. This subset preserves
+the realism of large-scale repositories, with rich contextual information and test-driven validation,
+and is carefully filtered so that fixes are localizable to a single function, aligning with our repair
+framework. Note that any collection of tasks with reference implementations and test cases (e.g.,
+other public datasets, private repositories, or company-internal projects) can be plugged into the
+pipeline. This makes the benchmark construction procedure broadly reusable and extensible beyond
+our current Python-focused study.
+2.2.2
+Erroneous Code Generation. Based on the collected tasks, we automatically generate faulty
+code to simulate realistic programming errors, except for SWE-Bench-verified, which already
+contains real-world code repair instances. Each erroneous instance is paired with its original task
+description, reference implementation, and test cases, ensuring reproducibility and clear ground
+truth. To maximize coverage and realism, we employ three complementary methods:
+Rule-Based Error Injection. Building on mutation testing research [23, 28, 32], seven operator
+types are used to ensure coverage: Arithmetic, Relational, and Logical Operator Replacement; Literal
+Value and Constant Type Replacement; Loop Operator Replacement; and Method Call Replacement.
+This produces well-structured error categories for controlled experimentation.
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+FeedbackEval: A Benchmark for Evaluating Large Language Models in Feedback-Driven Code Repair Tasks
+7
+LLM-Driven Error Injection. Inspired by recent work [39, 41], we prompt a LLM to mutate
+correct solutions with subtle, realistic mistakes (Figure 2a). Unlike rule-based methods, this captures
+nuanced, context-sensitive bugs that are more representative of real-world programming errors.
+LLM-Generated Incorrect Code. We further collect naturally occurring errors by sampling
+multiple candidate solutions (e.g., pass@10) from an LLM on the collected tasks, and filtering out
+implementations that fail provided tests. This approach reflects authentic error patterns frequently
+observed in LLM-based code generation.
+By integrating these three methods, we obtain a large and diverse set of erroneous code covering
+syntactic, semantic, and logical faults. The process is fully automated, cost-effective, and extensible
+to additional error types or new programming contexts. In our implementation, we adopt GPT-4o-
+mini as the underlying LLM due to its favorable balance between cost and performance, though
+other models can be seamlessly substituted.
+2.2.3
+Automated Feedback Generation. For each erroneous instance, we automatically generate
+six types of feedback to emulate diverse debugging scenarios. This includes structured signals
+from development tools, non-structured natural language suggestions simulated by LLMs, and a
+composite form combining multiple sources. All feedback is generated in a fully automated manner
+to ensure scalability, reproducibility, and extensibility.
+Structured Feedback. Structured feedback is produced by executing erroneous code within a
+controlled environment and applying static analysis tools. For each task, we configure the execution
+context (e.g., dependencies, runtime settings, and test harness) so that the faulty implementation
+can be systematically tested and analyzed. The resulting diagnostic signals are then collected as
+structured feedback:
+• Compiler Feedback: Collected from static analyzers (e.g., pylint) that detect syntax errors,
+code style violations, and potential bugs.
+• Test Feedback: Collected from executing the provided test cases, which capture failing inputs,
+error traces, and expected outputs.
+These signals are precise, reproducible, and directly tied to program behavior or structure. Impor-
+tantly, the benchmark also preserves the full execution environment and test suite, allowing future
+users to re-run feedback generation or validate repaired code in a consistent way.
+Non-Structured Feedback. Non-structured feedback is automatically simulated using LLMs (e.g.,
+GPT-4o-mini) to approximate human-like reviews. Three forms are generated:
+• Minimal Feedback: A fixed, template-based message (e.g., “The code is incorrect. Please fix it.”).
+• LLM-Skilled Feedback: Generated by prompting an LLM without access to the ground-truth
+implementation, resembling suggestions from a competent but non-expert reviewer.
+• LLM-Expert Feedback: Generated by prompting an LLM with access to both the faulty and
+reference implementations, enabling highly targeted and reliable guidance.
+The prompt for LLM-Skilled and LLM-Expert feedback is illustrated in Figure 2b. This design pro-
+vides natural-language signals of varying specificity without requiring costly human annotations.
+Mixed Feedback. Finally, we construct a composite form by concatenating Test, Compiler, Minimal,
+and LLM-Expert feedback into a single structured string, in which clear delimiters to distinguish
+the source and type of each feedback segment. This holistic setting simulates complex debugging
+environments where heterogeneous signals interact, offering a challenging benchmark for feedback
+integration.
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+8
+Dekun Dai, MingWei Liu∗, Anji Li, Jialun Cao, Yanlin Wang, Chong Wang, Xin Peng, and Zibin Zheng
+2.3
+Resulting Benchmark
+Following the FeedbackSynth pipeline, we construct FeedbackEval, a benchmark for systematically
+evaluating LLMs’ ability to interpret and leverage diverse feedback in code repair. It is characterized
+by the following key properties:
+Scale. FeedbackEval includes 572 coding tasks across varied programming scenarios. In total,
+it contains 3,914 erroneous code instances, each paired with multiple feedback types, enabling
+large-scale and reproducible evaluation.
+Feedback Diversity. In contrast to prior benchmarks that mainly rely on compiler diagnostics
+or test-based verification, FeedbackEval integrates both structured (e.g., compiler messages, test
+failures) and non-structured (e.g., LLM-generated reviews, minimal guidance) feedback. This enables
+fine-grained analysis of how LLMs interpret, prioritize, and act on heterogeneous feedback sources,
+supporting research on iterative repair and feedback-driven model enhancement.
+Bug Diversity. The benchmark spans a broad spectrum of error types frequently seen in software
+development. These include logic errors (e.g., AssertionError), type issues (e.g., TypeError), vari-
+able scope and naming problems (e.g., NameError), object-oriented issues (e.g., AttributeError),
+and system-level faults (e.g., ModuleNotFoundError, FileNotFoundError). It also incorporates
+common runtime and syntax errors such as ValueError, IndexError, KeyError, SyntaxError,
+and RuntimeError. This wide coverage ensures that FeedbackEval reflects both simple syntax
+mistakes and complex, context-dependent runtime failures.
+Overall, FeedbackEval combines scale, feedback diversity, and bug diversity to closely simulate
+real-world debugging scenarios. Its automated and extensible design allows expansion to new
+languages, tasks, error categories, and feedback modalities, ensuring long-term utility for evaluating
+and improving LLMs in feedback-driven code repair. The FeedbackSynth pipeline further guarantees
+rapid, reproducible construction of such benchmarks and supports their use not only for evaluation
+but also as training resources.
+3
+Experimental Setup
+To answer the RQs, we conduct a study based on FeedbackEval. This section details the experimental
+setup, including LLM selection and implementation procedures.
+LLM Selection. We evaluate five state-of-the-art LLMs covering both open- and closed-source mod-
+els: GPT-4o (GPT-4o-2024-11-20) [1], Claude-3.5 (Claude-3-5-Sonnet-20241022) [2], Deepseek-R1
+(Deepseek-R1-0528, 2025-05-28) [9], GLM-4 (GLM-4-Plus, 2024-08-29) [57], and Qwen2.5 (Qwen2.5-
+72B-Instruct, 2024-09-19) [8]. These models are representative for their strengths in code under-
+standing, generation, and feedback-driven refinement. We also include Deepseek-R1, a reasoning-
+enhanced model with explicit reasoning chains, to examine how structured reasoning affects
+feedback comprehension and repair quality.
+Implementation Procedure. For the experiments, we utilized a subset of FeedbackEval due to
+computational constraints and the need for focused analysis within a feasible runtime. We randomly
+selected one erroneous code instance per task, resulting a subset of 572 erroneous code instances,
+each paired with six distinct feedback types.
+To ensure consistency and fairness in our evaluation, we apply the same experimental settings
+and evaluation metrics across all LLMs. Each LLM was evaluated using the same random sampling
+strategy with a temperature parameter set to 0.3, and all LLMs were accessed via their respective
+APIs. To measure performance, we introduced a new metric, Repair@k, which evaluates the pass
+rate of code after k rounds of iterative repair. This metric assesses the LLMs’ ability to refine code
+based on feedback over multiple iterations, providing insights into their adaptability and robustness
+in feedback-driven scenarios.
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+FeedbackEval: A Benchmark for Evaluating Large Language Models in Feedback-Driven Code Repair Tasks
+9
+Prompt for Code Repair Utilizing Feedback
+You are a professional code repair assistant skilled at fixing code errors based on the 
+@@Feedback.                                                                                                               Persona
+Your task is to correct the given erroneous code @@Existing Code.                     Task
+@@Feedback includes error messages, descriptions of logical issues, or deviations 
+from expected functionality.
+@@Docstring provides a description of the function, its purpose, and details of its 
+input and output parameters.
+@@Context refers to code elements such as types, APIs, variables, and consts defined 
+outside the function under generation but within the dependent third-party libraries, 
+current class, file, or project.                                                                           Description
+@@Existing Code {}
+@@Docstring {}
+Information
+@@Context {}
+@@Feedback {}
+Based on the provided information, fix the erroneous code and ensure the following:
+1.Resolve all errors to make the code functional.
+2.Address the improvement points mentioned in the feedback.
+3.Only need to fix the code; do not modify the function signature.
+4.Please return the corrected code in the following format:
+```python
+# Your codes here                                                                                                    Guideline
+```
+Fig. 4. Prompt for Single-Iteration Code Repair Using Feedback
+4
+RQ1: Single-Iteration Code Repair
+To understand how different LLMs handle code repair based on feedback, we evaluate their perfor-
+mance in single-iteration repair tasks.
+4.1
+Design
+We design an experiment to evaluate the performance of five selected LLMs in single-iteration
+code repair tasks using feedback. For each of the 572 tasks in FeedbackEval, we randomly select
+an erroneous code segment and task the LLMs with repairing it in a single iteration based on one
+of six feedback types. To ensure a fair comparison, the same prompt templates are used across all
+LLMs and feedback types, as illustrated in Figure 4, adapted from prior studies [56]. The repair
+prompt in Figure 4 instructs the LLM to fix the given erroneous code based on specific feedback
+(e.g., compiler feedback, test feedback). Also, supplementary information, such as docstrings and
+contextual details, is provided to help the LLM better understand the task and the broader context
+of the code.
+Performance is measured using the Repair@1 metric, which quantifies the pass rate of repaired
+code after one feedback iteration. To mitigate randomness and enhance result reliability, each
+experiment is conducted twice under identical conditions, with the average performance reported
+as the final result. This setup systematically evaluates LLMs’ ability to leverage feedback for code
+repair.
+4.2
+Results
+Overall Performance. Table 2 presents the average performance of different LLMs in single-
+iteration feedback-driven code repair on FeedbackEval across all feedback types. Deepseek-R1, as a
+reasoning-enhanced model, achieves the highest overall score (63.4%) and consistently outperforms
+all other LLMs, with advantages ranging from 4.2 to 12.3 percentage points. Claude-3.5 follows with
+59.2%, demonstrating strong repair ability but trailing Deepseek-R1, particularly in interpreting
+structured test feedback. GPT-4o (54.5%) shows moderate performance, while Qwen2.5 (51.4%) and
+GLM-4 (51.1%) rank lower across all feedback types. These results highlight that explicit reasoning
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+10
+Dekun Dai, MingWei Liu∗, Anji Li, Jialun Cao, Yanlin Wang, Chong Wang, Xin Peng, and Zibin Zheng
+Table 2. Average Repair@1 on FeedbackEval for Selected LLMs
+Feedback
+GPT-4o
+Claude-3.5
+Deepseek-R1
+GLM-4
+Qwen2.5
+Average
+Compiler
+47.7
+51.6
+56.0
+45.8
+44.7
+49.2
+Test
+55.8
+61.8
+66.9
+52.3
+52.9
+57.9
+Minimal
+52.4
+57.6
+60.2
+46.4
+48.7
+53.1
+LLM-Skilled
+47.3
+53.0
+57.3
+42.5
+43.8
+48.8
+LLM-Expert
+62.2
+64.7
+68.7
+58.9
+59.8
+62.9
+Mixed
+61.8
+66.3
+71.4
+60.4
+58.3
+63.6
+Average
+54.5
+59.2
+63.4
+51.1
+51.4
+Deepseek-R1
+Claude-3.5
+GPT-4o
+Qwen2.5
+GLM-4
+0
+20
+40
+60
+80
+100
+Repair@1 (%)
+86.2
+84.6
+83.4
+82.2
+79.2
+44.8
+40.0
+35.7
+34.0
+31.7
+59.2
+52.8
+44.6
+37.9
+42.2
+HumanEval
+CoderEval
+SWE-bench-verified
+(a) LLMs
+Mixed
+LLM-Expert
+Test
+Compiler
+Minimal
+LLM-Skilled
+0
+20
+40
+60
+80
+100
+Repair@1 (%)
+90.7
+89.0
+85.9
+81.4
+79.6
+72.1
+43.7
+41.1
+40.4
+31.2
+36.1
+30.9
+56.4
+58.4
+47.6
+34.9
+43.5
+43.4
+HumanEval
+CoderEval
+SWE-bench-verified
+(b) Feedback Types
+Fig. 5. Repair@1 Results of Different LLMs and feedback across Two Datasets
+materially improves an LLM’s capability to process diverse feedback and perform accurate code
+repairs.
+Performance Across Task Sets. Figure 5 compares Repair@1 across three datasets. On Hu-
+manEval, composed of relatively simple, function-level tasks, all LLMs achieve high performance:
+Deepseek-R1 leads with 86.2%, followed by Claude-3.5 (84.6%), GPT-4o (83.4%), Qwen2.5 (82.2%), and
+GLM-4 (79.2%). In contrast, CoderEval contains more complex, repository-level tasks with broader
+context and domain-specific logic, exposing errors such as incorrect API usage or hallucinated
+method calls. As a result, all LLMs experience substantial performance drops compared to their
+HumanEval scores, ranging from 48.2 to 41.4 percentage points, though relative rankings remain
+consistent. Deepseek-R1 achieves 44.8%, demonstrating the strongest adaptability to complex,
+context-dependent repairs, followed by Claude-3.5, GPT-4o, Qwen2.5, and GLM-4 (31.7%–40.0%).
+Our SWE-Bench-verified subset comprises 178 single-function repair instances derived from real-
+world GitHub issues, combining authentic development workflows with a function-level scope.
+Compared to HumanEval, performance decreases by 27.0 to 44.3 percentage points across models.
+Deepseek-R1 achieves the highest accuracy at 59.2%, followed by Claude-3.5 (52.8%), GPT-4o (44.6%),
+GLM-4 (42.2%), and Qwen2.5 (37.9%). Notably, Deepseek-R1 exhibits the smallest performance
+degradation, indicating greater robustness to increasing task complexity. The contrast between the
+three datasets underscores that task complexity amplifies the advantage of reasoning capabilities
+in processing multi-source feedback and making informed repair decisions.
+Finding 1: Deepseek-R1 consistently outperforms other LLMs (+4.2–12.3pp), demonstrating
+that explicit reasoning enhances feedback-driven repair. However, all models exhibit substantial
+performance degradation on complex tasks: from 79.2%–86.2% (HumanEval) to 31.7%–44.8%
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+FeedbackEval: A Benchmark for Evaluating Large Language Models in Feedback-Driven Code Repair Tasks
+11
+(CoderEval) and 37.9%–59.2% (SWE-Bench-Verified), highlighting challenges in realistic, large-
+scale repair scenarios.
+5
+RQ2: Impact of Feedback Types
+To understand how feedback type influences LLM-based code repair, we investigate the effectiveness
+of different feedback modalities in guiding repair performance. This analysis aims to identify which
+types of guidance most substantially improve repair accuracy across models and tasks.
+5.1
+Design
+Building on RQ1, we evaluate repair@1 across all LLMs for each feedback type. We further examine
+how task complexity interacts with feedback utility, assessing whether complex, context-dependent
+errors benefit more from structured, unstructured, or mixed feedback. This allows us to quantify
+the relative contribution of each feedback modality to successful code repair in realistic scenarios.
+5.2
+Results
+Table 3. Repair@1 Results of Different LLMs with Various Feedback Types. HE: HumanEval, CE: CoderEval,
+SWE: SWE-Bench-verified
+Feedback
+GPT
+Claude
+DeepSeek
+GLM
+Qwen
+HE
+CE
+SWE
+HE
+CE
+SWE
+HE
+CE
+SWE
+HE
+CE
+SWE
+HE
+CE
+SWE
+Compiler
+81.7
+29.5
+32.0
+83.1
+32.3
+39.3
+80.5
+38.8
+48.6
+80.7
+25.8
+30.9
+80.8
+29.8
+23.6
+Test
+85.6
+38.6
+43.3
+84.2
+45.0
+56.2
+92.7
+47.8
+60.2
+83.2
+33.1
+40.5
+83.8
+37.4
+37.6
+Minimal
+80.5
+35.2
+41.6
+83.2
+38.9
+50.6
+81.4
+42.5
+56.7
+73.5
+31.5
+34.3
+79.3
+32.6
+34.3
+LLM-Skilled
+71.7
+28.6
+41.6
+76.2
+33.4
+49.4
+77.4
+39.3
+55.2
+63.7
+26.2
+37.6
+71.3
+27.0
+33.2
+LLM-Expert
+90.2
+40.1
+56.2
+89.6
+43.2
+61.2
+91.5
+47.3
+67.2
+85.3
+35.8
+55.6
+88.6
+39.2
+51.7
+Mixed
+90.5
+42.1
+52.8
+91.4
+47.3
+60.1
+93.6
+53.2
+67.5
+88.6
+38.0
+54.5
+89.6
+38.1
+47.2
+Average
+83.4
+35.7
+44.6
+84.6
+40.0
+52.8
+86.2
+44.8
+59.2
+79.2
+31.7
+42.2
+82.2
+34.0
+37.9
+Overall Impact. Table 2 reports average Repair@1 across feedback types on FeedbackEval. Mixed
+feedback achieves the highest success rate (63.6%), followed by LLM-Expert (62.9%) and test feedback
+(57.9%).
+The strong performance of mixed feedback indicates that combining multiple feedback types
+provides complementary guidance that enhances repair effectiveness. A practical insight is that,
+when the model’s context window allows, providing diverse feedback simultaneously can further
+improve outcomes.
+LLM-Expert feedback, simulating guidance from an experienced developer with access to the
+correct solution, consistently ranks second, demonstrating that targeted, high-quality guidance
+substantially boosts repair performance and highlights the value of human-in-the-loop or assisted
+approaches.
+Test feedback is also highly effective due to its structured, explicit nature, directly pinpointing
+failing cases and expected outcomes, which is especially helpful for semantic or requirement-driven
+errors.
+Minimal feedback achieves a respectable success rate (53.1%), showing that modern LLMs can
+infer repair strategies from sparse, high-level guidance.
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+12
+Dekun Dai, MingWei Liu∗, Anji Li, Jialun Cao, Yanlin Wang, Chong Wang, Xin Peng, and Zibin Zheng
+def verify_relayable_signature(public_key, doc, signature):
+  sig_hash = _create_signature_hash(doc, 15)      error: Excessive function argument
+  cipher = PKCS1_v1_5.new(RSA.importKey(), 28)
+  return cipher.verify(sig_hash)
+Erroneous 
+Code
+Traceback (most recent call last):
+    ……
+    sig_hash = 
+_create_signature_hash(doc, 15)
+TypeError: 
+_create_signature_hash() takes 1 
+positional argument but 2 were 
+given
+Test Feedback
+The existing code has a minor 
+discrepancy in the 
+`_create_signature_hash` function call, 
+where it incorrectly passes a second 
+argument (15). Additionally, it does 
+not utilize the `public_key` parameter 
+when importing the RSA key. Finally, 
+the signature is not being decoded 
+from its base64 format before 
+verification. 
+LLM-Expert Feedback
+def 
+verify_relayable_signature(public_
+key, doc, signature):
+  sig_hash = 
+_create_signature_hash(doc)
+  cipher = 
+PKCS1_v1_5.new(RSA.importKey(p
+ublic_key))
+  return cipher.verify(sig_hash, 
+b64decode(signature))
+def 
+verify_relayable_signature(public_ke
+y, doc, signature):
+  decoded_signature = 
+b64decode(signature)
+  rsa_key = 
+RSA.importKey(public_key)
+  cipher = PKCS1_v1_5.new(rsa_key)
+  sig_hash = 
+_create_signature_hash(doc)
+  return cipher.verify(sig_hash, 
+decoded_signature)
+Fixed 
+Code
+Pass 
+In line: def 
+verify_relayable_signature(public_k
+ey, doc, signature): . Unused 
+argument 'public_key’, 
+In line: def 
+verify_relayable_signature(public_k
+ey, doc, signature): . Unused 
+argument 'signature'
+Compiler Feedback
+def 
+verify_relayable_signature(public_k
+ey, doc, signature):
+  sig_hash = 
+_create_signature_hash(doc, 15)
+  cipher = 
+PKCS1_v1_5.new(RSA.importKey(p
+ublic_key))
+  return cipher.verify(sig_hash, 
+b64decode(signature))
+Error: The function 
+_create_signature_hash accepts 
+excessive arguments
+The existing code contains a 
+reference to `RSA.importKey()` 
+without passing the `public_key` 
+argument. Additionally, you should 
+ensure that the 
+`_create_signature_hash` function is 
+returning a hash compatible with the 
+verification method used. Lastly, it 
+would be beneficial to confirm that 
+`verify()` properly checks against the 
+expected signature format and value.
+LLM-Skilled Feedback
+def verify_relayable_signature(public_key, 
+doc, signature):
+  try:
+      sig_hash = 
+_create_signature_hash(doc, 15)
+      cipher = 
+PKCS1_v1_5.new(RSA.importKey(public_k
+ey))
+      return cipher.verify(sig_hash, 
+b64decode(signature))
+  except Exception as e:
+      return False
+Error: The function 
+_create_signature_hash accepts 
+excessive arguments
+The code is wrong. Please fix it.
+Minimal Feedback
+def 
+verify_relayable_signature(public_
+key, signature, doc):
+  sig_hash = 
+_create_signature_hash(doc, 
+signature)
+  key = RSA.importKey(public_key)
+  cipher = PKCS1_v1_5.new(key)
+  return cipher.verify(sig_hash, 
+b64decode(signature))
+Error: The function 
+_create_signature_hash accepts 
+excessive arguments
+Pass 
+Fig. 6. Example of Code Repair Task with Different Feedback
+Compiler feedback provides moderate gains (49.2%), limited by the need to interpret technical
+syntactic and semantic messages.
+In contrast, LLM-Skilled feedback is the least effective (48.8%), as relying solely on a model’s
+own inferences without objective guidance can produce noisy or misdirected suggestions—sometimes
+even less helpful than minimal feedback. This underscores the potential pitfalls of fully autonomous
+LLM-driven repair in complex agent systems, where errors can accumulate without external
+correction.
+Case Study: Impact of Different Feedback Types. Figure 6 shows an example of a code re-
+pair task with different feedback. The initial erroneous code fails due to excessive arguments
+in the _create_signature_hash function. Each feedback type yields a distinct repair outcome.
+Test feedback provides a traceback identifying the argument mismatch, effectively guiding the
+LLM to remove the redundant argument, resulting in a successful fix. Compiler feedback detects
+unused arguments but lacks deeper reasoning, leading to a partial correction that retains the
+original argument error, ultimately failing the test suite. Minimal feedback offers only a vague
+directive, resulting in a superficial modification that fails due to the unresolved argument error.
+LLM-Skilled feedback offers detailed, structured suggestions, addressing multiple aspects such as
+RSA.importKey() usage and hash compatibility. However, LLMs misinterpret parts of the feedback,
+producing an overly complex revision that introduces exception handling but fails to resolve the
+core argument issue, leading to an unsuccessful repair. In contrast, LLM-Expert feedback exhibits
+superior technical precision by pinpointing the exact discrepancy in _create_signature_hash
+function calls. It highlights improper RSA key handling, noting that importKey() is incorrectly
+invoked with a second argument, and emphasizes that the signature verification method must
+correctly utilize the public_key parameter. This expert-level guidance directs the model toward
+a targeted fix that resolves both the argument mismatch and the cryptographic implementation,
+ultimately enabling a successful repair.
+Overall, feedback that combines multiple perspectives (Mixed) or leverages expert-level guidance
+with ground-truth knowledge (LLM-Expert) offers the most reliable foundation for automated code
+repair, while simpler approaches still benefit from the strong inferential capabilities inherent in
+modern LLMs.
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+FeedbackEval: A Benchmark for Evaluating Large Language Models in Feedback-Driven Code Repair Tasks
+13
+Performance Across Datasets. Table 3 and Figure 5b compare the effectiveness of different
+feedback types on repair tasks from HumanEval, CoderEval and SWE-Bench-verified subset.
+Test feedback performs strongly on HumanEval (85.9% on average) by providing explicit
+input–output mappings that align well with LLMs’ pattern-matching capabilities. Performance
+drops to 40.4% on CoderEval and partially recovers to 47.6% on the SWE-bench-Verified subset,
+indicating that test-based guidance is most effective for isolated function-level debugging but less
+robust for repository-level tasks requiring broader contextual understanding. The intermediate
+results on SWE-bench-Verified reflect its single-function focus within realistic codebases.
+Compiler feedback achieves competitive results in HumanEval (81.4%) but falls sharply to
+31.2% in CoderEval and 34.9% in SWE-Bench-verified. While compiler messages are precise in
+flagging localized issues such as syntax errors or type mismatches, LLMs often fail to translate
+these diagnostics into semantically meaningful repairs. Complex repository-level tasks demand
+reasoning about program intent and module interactions, factors not captured by compiler-level
+signals.
+LLM-Expert feedback consistently outperforms LLM-Skilled feedback (89.0% vs. 72.1% on
+HumanEval; 41.1% vs. 30.9% on CoderEval; 58.4% vs. 43.4% on SWE-Bench-verified subset). This
+11%–17% advantage underscores the value of solution knowledge: targeted, high-quality guidance
+anchors the repair process and reduces uncertainty, highlighting the importance of human-in-
+the-loop or assisted approaches. Notably, LLM-Expert feedback achieves the best performance on
+SWE-Bench-verified (58.4%), underscoring its effectiveness in realistic debugging scenarios that
+require deep semantic understanding.
+LLM-Skilled feedback shows varied performance across datasets, ranking lowest on Hu-
+manEval and CoderEval but achieving competitive results on SWE-Bench-verified (43.4%, compara-
+ble to Minimal’s 43.5%), as natural language suggestions without solution context often introduce
+ambiguity, especially in complex tasks. While it may identify logical flaws, it frequently fails to
+provide actionable correction paths, as seen in GLM-4 ’s steep decline from 63.7% on HumanEval
+to 26.2% on CoderEval.
+Minimal feedback achieves solid performance (79.6% on HumanEval, 36.1% on CoderEval, 43.5%
+on SWE-Bench-verified), consistently outperforming LLM-Skilled feedback. This suggests that
+concise but clear directives can activate LLMs’ intrinsic debugging capabilities, whereas verbose
+yet potentially misleading instructions may hinder repair.
+Mixed feedback achieves the best performance overall (90.7% on HumanEval, 43.7% on CoderEval,
+56.4on SWE-Bench-verified). By combining structured diagnostics (test + compiler) with semantic
+guidance (LLM-Expert + minimal), it offers complementary perspectives that collectively support
+execution verification, structural analysis, and repair direction. However, it is slightly outperformed
+by LLM-Expert on SWE-Bench-Verified (56.4% vs. 58.4%), suggesting that in realistic projects, long
+and heterogeneous feedback may dilute critical information, whereas concise expert guidance
+better maintains model focus.
+Finding 2: Mixed (63.6%) and LLM-Expert (62.9%) feedback dominate performance, with
+the latter excelling in real-world settings. Test feedback (57.9%) provides strong guidance,
+significantly outperforming Compiler (49.2%) and LLM-Skilled (48.8%). Although LLM-Skilled
+lags in aggregate metrics, its semantic insights remain valuable for authentic repair tasks.
+6
+RQ3: Multiple-Iteration Repair
+In this RQ, we investigate the effectiveness of feedback-driven code repair with iterative feedback,
+evaluating how LLMs adapt and improve their performance across multiple iterations of feedback.
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+14
+Dekun Dai, MingWei Liu∗, Anji Li, Jialun Cao, Yanlin Wang, Chong Wang, Xin Peng, and Zibin Zheng
+6.1
+Design
+We design an experiment to evaluate the performance of five selected LLMs in multi-iteration code
+repair tasks using feedback. For each of the 572 tasks in FeedbackEval, an erroneous code segment
+was selected, ensuring diversity in error types and repair challenges. To maintain consistency,
+all LLMs were evaluated on the same erroneous code set, with each task paired with one of six
+feedback types.
+For each task, the LLMs were provided with the initial erroneous code and corresponding
+feedback, after which they performed a repair iteration. The repaired code was subsequently re-
+evaluated, and new feedback (of the same type) was generated based on any remaining errors or
+issues. This iterative repair process continued for three iterations, allowing the LLMs to progres-
+sively refine the code based on feedback. To assess performance, we introduced the Repair@k
+metric, which measures the pass rate of the code after 𝑘repair iterations (where 𝑘=3 in this study).
+6.2
+Results
+Table 4. Repair@3 results of different LLMs using various feedback. HE: HumanEval, CE: CoderEval, SWE:
+SWE-Bench-verified
+Feedback
+GPT-4o
+Claude-3.5
+Deepseek-R1
+GLM-4
+Qwen2.5
+HE
+CE
+SWE
+HE
+CE
+SWE
+HE
+CE
+SWE
+HE
+CE
+SWE
+HE
+CE
+SWE
+Compiler
+79.4
+30.3
+36.2
+83.1
+33.8
+44.6
+86.6
+41.3
+51.7
+74.4
+28.1
+29.8
+78.7
+30.0
+26.1
+80.0 ↑34.8 ↑40.2 ↑85.6 ↑37.9 ↑48.6 ↑88.7 ↑42.4 ↑56.3 ↑76.8 ↑30.8 ↑31.6 ↑81.1 ↑32.7 ↑29.0 ↑
+80.6 ↑35.6 ↑
+40.2
+85.6
+37.9
+50.3 ↑89.4 ↑43.9 ↑57.5 ↑78.1 ↑
+30.8
+31.6
+82.3 ↑
+32.7
+29.0
+Test
+86.6
+40.0
+45.6
+82.3
+44.6
+59.4
+95.5
+50.3
+68.2
+82.3
+35.8
+41.9
+82.9
+36.4
+36.6
+92.1 ↑42.7 ↑51.5 ↑86.6 ↑52.3 ↑66.3 ↑98.1 ↑58.7 ↑73.4 ↑87.8 ↑39.4 ↑44.2 ↑87.2 ↑41.8 ↑40.6 ↑
+93.9 ↑45.0 ↑53.2 ↑88.4 ↑53.2 ↑68.6 ↑
+98.1
+59.8 ↑75.7 ↑88.1 ↑40.3 ↑44.8 ↑
+87.2
+47.3 ↑41.7 ↑
+Minimal
+84.0
+35.5
+41.0
+85.9
+38.1
+52.5
+91.6
+42.8
+59.4
+73.2
+31.5
+35.9
+79.9
+32.6
+35.0
+85.2 ↑37.3 ↑45.1 ↑88.5 ↑41.3 ↑56.5 ↑92.3 ↑48.9 ↑62.9 ↑76.2 ↑33.8 ↑37.6 ↑82.3 ↑34.4 ↑36.7 ↑
+85.2
+39.1 ↑48.0 ↑89.1 ↑42.7 ↑57.6 ↑93.0 ↑50.6 ↑65.7 ↑
+76.2
+34.7 ↑38.2 ↑
+82.3
+34.8 ↑37.3 ↑
+LLM-Skilled
+73.2
+28.8
+31.0
+81.5
+34.8
+41.2
+84.6
+37.8
+58.9
+64.6
+27.2
+33.3
+71.3
+29.1
+33.3
+76.2 ↑31.1 ↑34.5 ↑82.8 ↑36.2 ↑45.8 ↑86.6 ↑40.0 ↑60.6 ↑68.9 ↑29.9 ↑35.7 ↑72.6 ↑30.5 ↑33.9 ↑
+76.2
+32.4 ↑
+34.5
+82.8
+37.1 ↑46.9 ↑
+86.6
+40.5 ↑64.6 ↑72.0 ↑30.3 ↑36.8 ↑75.0 ↑32.3 ↑34.4 ↑
+LLM-Expert
+90.1
+38.9
+58.4
+89.6
+42.5
+62.1
+96.8
+48.7
+70.9
+85.4
+35.8
+63.2
+87.8
+39.1
+48.0
+95.1 ↑48.9 ↑64.2 ↑92.1 ↑50.2 ↑67.2 ↑97.4 ↑55.6 ↑77.1 ↑92.7 ↑44.3 ↑69.6 ↑92.7 ↑41.8 ↑53.1 ↑
+95.7 ↑51.6 ↑65.9 ↑93.3 ↑52.0 ↑68.4 ↑99.4 ↑57.7 ↑77.7 ↑93.9 ↑47.5 ↑70.8 ↑94.5 ↑47.3 ↑54.8 ↑
+Mixed
+90.2
+41.6
+50.9
+91.5
+47.1
+61.9
+98.7
+55.9
+72.6
+87.8
+37.7
+55.6
+89.6
+38.0
+46.3
+95.1 ↑50.7 ↑59.5 ↑95.7 ↑53.4 ↑67.6 ↑99.3 ↑66.0 ↑77.7 ↑92.7 ↑46.8 ↑64.3 ↑93.3 ↑43.4 ↑51.4 ↑
+95.7 ↑52.5 ↑62.4 ↑
+95.7
+57.5 ↑70.5 ↑100 ↑67.0 ↑80.6 ↑95.1 ↑50.5 ↑67.3 ↑94.5 ↑48.0 ↑53.1 ↑
+Table 4 presents a comprehensive analysis of how different LLMs respond to various types of
+feedback over multiple repair iterations.
+Cross-LLM Performance Comparison. Table 4 summarizes how different LLMs respond to
+feedback over multiple repair iterations. Deepseek-R1 dominates across all scenarios, achieving
+the highest scores and even perfect performance with Mixed feedback on HumanEval (100.0% at
+repair@3), consistent with its leading results in RQ1. Claude-3.5 ranks second, excelling particularly
+with test feedback on CoderEval (53.2%), while maintaining strong performance overall. GPT-4o
+shows balanced results, highlighted by its strength with test feedback on HumanEval (93.9%).
+Divergent trends emerge between GLM-4 and Qwen2.5 when transitioning to real-world tasks.
+Despite underperforming on HumanEval and CoderEval, GLM-4 consistently surpasses Qwen2.5 on
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+FeedbackEval: A Benchmark for Evaluating Large Language Models in Feedback-Driven Code Repair Tasks
+15
+k=1
+k=2
+k=3
+60
+65
+70
+75
+80
+85
+90
+95
+100
+Repair@k (%)
+Model
+GPT-4o
+Claude-3.5
+Deepseek-R1
+GLM-4
+Qwen2.5
+Feedback
+Compiler
+Test
+Minimal
+LLM-Skilled
+LLM-Expert
+Mixed
+(a) HumanEval
+k=1
+k=2
+k=3
+25
+30
+35
+40
+45
+50
+55
+60
+65
+70
+Repair@k (%)
+Model
+GPT-4o
+Claude-3.5
+Deepseek-R1
+GLM-4
+Qwen2.5
+Feedback
+Compiler
+Test
+Minimal
+LLM-Skilled
+LLM-Expert
+Mixed
+(b) CoderEval
+k=1
+k=2
+k=3
+30
+40
+50
+60
+70
+80
+Repair@k (%)
+Model
+GPT-4o
+Claude-3.5
+Deepseek-R1
+GLM-4
+Qwen2.5
+Feedback
+Compiler
+Test
+Minimal
+LLM-Skilled
+LLM-Expert
+Mixed
+(c) SWE-Bench-verified
+Fig. 7. Performance changes across repair iterations
+SWE-Bench-verified, peaking at 70.8% under expert guidance. This suggests that GLM-4 possesses
+superior robustness to production-grade codebase complexities, whereas Qwen2.5 ’s lower peak
+(54.8%) indicates limited adaptability in authentic repair scenarios.
+Comparative Effectiveness of Feedback Types. Mixed feedback generally delivers the highest
+success rates, particularly for stronger models like Deepseek-R1 and Claude-3.5. However, its
+advantage over LLM-Expert feedback diminishes or even reverses for weaker models on SWE-
+Bench-verified tasks. This suggests that effectively utilizing mixed feedback’s longer, more complex
+signals requires stronger reasoning capabilities, reflecting the cognitive demands of real-world
+debugging where developers must synthesize multiple information sources.
+Among structured types, test feedback consistently outperforms compiler feedback, with ad-
+vantages of 2.8–13.3 points on HumanEval, 9.5–15.9 on CoderEval and and 9.4–18.9 on SWE-
+Bench-verified. This gap widens as task complexity grows, underscoring the greater utility of
+execution-based validation in repository-level repairs compared to static error diagnostics.
+For unstructured types, LLM-Expert feedback proves highly effective, nearly matching mixed
+feedback (93–99% on HumanEval, 47–57% on CoderEval, 55-78% on SWE-Bench-verified). In
+contrast, LLM-Skilled feedback performs worst (72–86% on HumanEval, 30–40% on CoderEval,
+34-65% on SWE-Bench-verified), as its inferences often contain inaccuracies that hinder repair
+more than minimal feedback. Minimal feedback nonetheless achieves respectable results, showing
+that modern LLMs can leverage intrinsic reasoning even with sparse guidance.
+Performance Evolution Across Iterations. As shown in Figure 7, iterative feedback yields two
+consistent patterns. First, most models, especially Deepseek-R1 and Claude-3.5, show sharp gains
+between repair@1 and repair@2, with mixed feedback driving the largest improvements. Second,
+performance tends to plateau by repair@3, particularly under compiler, LLM-Skilled, and minimal
+feedback. Finally, high-quality guidance (mixed, LLM-Expert) sustains the most substantial iterative
+improvements, especially on CoderEval and SWE-Bench-verified, where progressive refinement is
+critical for handling complex dependencies.
+Finding 3: Iterative feedback enhances LLM code repair, with mixed and LLM-Expert feedback
+yielding the largest gains. However, performance gains diminish over iterations, typically
+stabilizing after two to three iterations of repair.
+7
+RQ4: Prompting Techniques Impact
+To investigate the impact of different prompting techniques on feedback-driven code repair, we
+evaluate how various prompting strategies affect LLMs’ ability to interpret and apply feedback
+effectively during the code repair process.
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+16
+Dekun Dai, MingWei Liu∗, Anji Li, Jialun Cao, Yanlin Wang, Chong Wang, Xin Peng, and Zibin Zheng
+7.1
+Design
+In this section, we systematically examine the impact of advanced prompting techniques on
+feedback-driven code repair. Our design explores both prompt enhancement (adding new elements)
+and prompt ablation (removing existing components) to isolate the contribution of individual
+strategies.
+Experimental Framework. We select Claude-3.5 as the base model due to its strong perfor-
+mance in prior experiments, as reasoning models such as Deepseek-R1 often exhibit diminishing
+returns from external prompting because of their intrinsic chain-of-thought capabilities [42]. All
+evaluations are conducted on the CoderEval dataset using 100 randomly sampled erroneous code
+segments under a single-iteration repair setting. The baseline prompt from RQ1 (Figure 4) serves
+as the reference for both enhancement and ablation studies. To ensure rigor and computational
+feasibility, each prompting technique is evaluated independently rather than in combination. This
+design enables precise attribution of performance effects to individual strategies while avoiding
+the prohibitive cost of exhaustive combinatorial testing.
+Prompt Enhancement Techniques. We investigate seven prompting strategies by augmenting
+the baseline prompt with targeted elements:
+• Chain-of-Thought Reasoning (CoT) [53]: Incorporates explicit reasoning steps to guide
+systematic analysis before repair generation.
+• Few-shot Learning [4]: Adds a fixed repair example to illustrate successful code repair patterns,
+clarifying output expectations for both format and quality.
+• Example Selection Shot (ES-shot): Employs retrieval-based few-shot prompting with BM25 [35]
+similarity. For each task, the most relevant example (k=1) is retrieved and included as contextual
+guidance.
+• Self-Ask Prompting (SA) [33]: Instructs the model to generate clarifying questions before
+repair, promoting problem decomposition and identification of ambiguities.
+• Self-Generated In-Context Learning (SG-ICL) [25]: Directs the model to generate its own
+contextual examples tailored to the repair task, reducing dependence on external repositories.
+• Step-Back Prompting (SBP) [55]: Requires identification of high-level principles before specific
+fixes, encouraging strategic reasoning and avoiding premature focus on details.
+• Rephrase and Respond (RR) [10]: Mandates restatement of the problem in the model’s own
+words, ensuring comprehensive understanding before solution generation.
+Prompt Ablation Analysis. To evaluate the contribution of individual baseline components,
+we systematically ablate key elements:
+• Role-Playing: Removes explicit instructions framing the model as an expert repair assistant.
+• Guidelines: Excludes coding best practices and repair guidelines.
+• Docstring: Removes function/class docstrings to assess their contribution to semantic under-
+standing.
+• Context: Eliminates project-level context to test the effect of broader environmental awareness.
+7.2
+Results
+Figure 8 illustrates the impact of different prompting techniques on the performance of Claude-3.5
+in single-iteration code repair tasks.
+Prompt Enhancement Analysis. Under the baseline configuration, Claude-3.5 achieves a 49.5%
+repair success rate. Among enhancement techniques, Rephrase and Respond (RR) and Chain-of-
+Thought (CoT) yield the most substantial gains, both reaching 3.1% improvement over baseline.
+Example Selection Shot (ES-shot) also delivers meaningful improvements (51.6%), highlighting the
+importance of contextually relevant examples over static demonstrations. By contrast, traditional
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+FeedbackEval: A Benchmark for Evaluating Large Language Models in Feedback-Driven Code Repair Tasks
+17
+baseline
+guideline
+context
+docstring
+role-play
+0
+10
+20
+30
+40
+50
+60
+Repair@1 (%)
+49.5
+48.5
+48.5
+47.4
+47.4
+(a) Prompt Ablation Analysis.
+RR
+COT
+ES-Shot
+few-shot
+baseline
+SBP
+SA
+SG_ICL
+0
+10
+20
+30
+40
+50
+60
+Repair@1 (%)
+52.6
+52.6
+51.6
+50.5
+49.5
+48.5
+48.5
+46.4
+(b) Prompt Enhancement Techniques.
+Fig. 8. Performances of Different Prompt Techniques.
+few-shot learning provides only marginal gains (50.5%), while Step-Back Prompting (SBP) and Self-
+Ask (SA) fail to exceed baseline (48.5%). The poorest performance is observed with Self-Generated
+In-Context Learning (SG-ICL) (46.4%), suggesting that automatically generated examples may
+introduce noise that undermines repair accuracy.
+These findings underscore two principles: (1) structured reasoning processes significantly im-
+prove comprehension of repair requirements, enabling more accurate error diagnosis and correction,
+and (2) example quality and contextual relevance matter more than quantity. Conversely, the nega-
+tive impact of SBP, SA, and SG-ICL highlights that not all reasoning-oriented strategies generalize
+effectively to code repair, reinforcing the need for task-specific evaluation.
+Ablation Study Insights. Role-play removal causes the largest drop (47.4%), suggesting that
+persona instructions meaningfully frame the repair task and guide appropriate responses. Docstring
+removal also produces the steepest performance decline to 47.4%, highlighting the critical role of
+high-level functional descriptions. Without docstrings, the model loses semantic guidance about
+intended functionality and often defaults to surface-level syntactic fixes while neglecting broader
+repair objectives. In comparison, context removal reduces performance more moderately to 48.5%,
+showing that supplementary project information such as related APIs, class definitions, and global
+variables helps the model make more informed repair decisions that account for dependencies and
+system-level constraints. Guidelines removal has the smallest impact (48.5%), implying that the
+model’s inherent grasp of repair principles may suffice for basic corrections, even without explicit
+best-practice instructions.
+Overall, performance consistently declines under ablation (47.4–48.5% vs. 49.5% baseline), in-
+dicating that collectively these contextual elements enhance repair effectiveness. This suggests
+that robust prompt design benefits from multiple complementary information sources rather than
+reliance on any one element.
+Finding 4: Structured reasoning techniques (RR and CoT) yield the most substantial perfor-
+mance improvements, while dynamic example selection (ES-Shot) surpasses traditional few-shot
+learning. docstring and role-play removal produce the most severe performance degradation,
+underscoring that semantic understanding of intended functionality is more essential than
+environmental context, guidelines for achieving accurate code repairs.
+8
+Threats to validity
+We discuss potential threats to the validity of our study and corresponding mitigations.
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+18
+Dekun Dai, MingWei Liu∗, Anji Li, Jialun Cao, Yanlin Wang, Chong Wang, Xin Peng, and Zibin Zheng
+Threats in Benchmark Construction. Our benchmark currently focuses on Python and
+tasks drawn from HumanEval, CoderEval and SWE-Bench-verified. This may restrict the
+generalizability of our findings to other programming languages or more diverse coding scenarios.
+However, Python is widely studied in program synthesis and repair, ensuring comparability with
+prior work. More importantly, our construction pipeline FeedbackSynth is language-agnostic: the
+design of tasks, error generation, and feedback integration does not depend on Python-specific
+features, making it straightforward to extend the benchmark to additional languages, tasks, and
+error types. We plan to expand in this direction in future work.
+Threats in Erroneous Code. Another potential threat concerns the realism of erroneous
+code segments. To mitigate this, we employ three complementary strategies for generating errors:
+rule-based mutations, LLM-induced perturbations, and naturally incorrect LLM outputs. This
+combination ensures coverage of both systematic mistakes and authentic failure cases commonly
+observed in practice, supporting robust evaluation of repair effectiveness.
+Threats in Feedback Types. Our benchmark incorporates six distinct feedback types, spanning
+structured tool-based signals and unstructured human-like guidance. While this covers many
+scenarios encountered in real-world debugging, other feedback forms (e.g., interactive dialogue
+with reviewers or domain-specific logging information) are not yet included. Furthermore, some
+feedback is simulated by LLMs rather than collected from humans, which may raise concerns about
+fidelity. We note, however, that noisy or imperfect feedback naturally occurs in practice.
+Threats in Empirical Study. Randomness in LLM outputs poses another threat to validity. Due
+to computational constraints, multi-iteration repair experiments were run only once per setting,
+which may introduce variability. To reduce this risk, experiments in RQ1 were repeated twice, and
+consistent trends were observed. Moreover, we use identical prompts and hyperparameters across
+models to ensure fair comparison. Finally, we acknowledge the possibility of training data leakage,
+as model training corpora are not fully transparent. Our study does not aim to measure absolute
+repair success rates, but rather to systematically compare how different types of feedback influence
+repair outcomes. Thus, our key findings, such as the strong effectiveness of structured feedback
+versus the limited utility of unstructured signals, remain robust even under potential overlap in
+training data.
+9
+Related Work
+In this section, we mainly introduce related work on LLM-based code repair and code benchmark.
+9.1
+LLM-based Code Repair
+Recent research explores LLMs for Automated Program Repair (APR). AlphaRepair [45] pioneers
+a cloze-style approach, replacing buggy lines with masked tokens for LLMs to fill in. Alternative
+approaches typically focus on locating the fault and supplying the model with the buggy code
+along with its context, enabling it to generate suitable patches. For example, InferFix [22] combines
+static analysis with retrieval-augmented LLMs, using historical bug-fix pairs for patch generation.
+VulRepair [16] integrates CodeT5 with BPE tokenization and a T5 architecture, improving vul-
+nerability repair accuracy. Further advancements include NTR [19], a two-stage template-guided
+framework enhancing LLM fine-tuning, and ChatRepair [46], a conversation-driven approach that
+iteratively refines patches, resolving 162 of 337 bugs cost-effectively.
+9.2
+Code Benchmark for LLMs
+Researchers have introduced several high-quality code benchmarks to evaluate the performance
+of Code LLMs on code-related tasks. These benchmarks cover a wide range of tasks, including
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+FeedbackEval: A Benchmark for Evaluating Large Language Models in Feedback-Driven Code Repair Tasks
+19
+code generation [5, 13, 17], program translation [47, 58], code summarization [18, 29], code com-
+pletion [11, 14, 27], etc. Some benchmarks focus on the code repair task, such as CoderUJB [52]
+constructed Zeng et al. which evaluate LLMs across diverse Java programming tasks, including
+test generation and defect detection. Ouyang et al. [32] presented MuBench. This dataset includes
+1,700 artificial bugs generated by various mutators to evaluate the capability of automated program
+repair (APR) for LLMs. SWE-Bench [21] is a large-scale benchmark derived from real-world GitHub
+commits, focusing on bug-fixing tasks in Python projects. It includes linked issue descriptions,
+failing test cases, and ground-truth patches, enabling evaluation of LLMs in realistic software
+engineering scenarios. However, existing benchmarks mainly focus on single-iteration repairs with
+limited feedback types, overlooking the iterative, multi-feedback nature of real-world code repair.
+To address this, FeedbackEval introduces diverse error types, supports six feedback modalities,
+and evaluates iterative repair performance, enabling a more comprehensive assessment of LLMs’
+feedback comprehension and adaptability.
+10
+Conclusion
+In this paper, we construct a comprehensive benchmark, FeedbackEval, to systematically evaluate
+LLMs’ performance in feedback-driven code repair task. Our results show that mixed feedback con-
+sistently delivers the highest repair success by combining complementary signals, while LLM-Expert
+and test feedback provide strong targeted guidance. Compiler and minimal feedback offer moderate
+gains, whereas LLM-Skilled feedback proves least effective, highlighting the risks of ungrounded
+suggestions. Task complexity further magnifies these differences, especially in repository-level sce-
+narios. Iterative feedback improves performance, though gains plateau after two to three iterations.
+Additionally, Structured reasoning techniques (RR and CoT) yield the most substantial performance
+improvements, while dynamic example selection (ES-Shot) surpasses traditional few-shot learning.
+Docstring and role-play removal produce the most severe performance degradation, underscoring
+that semantic understanding of intended functionality is more essential than environmental con-
+text. FeedbackEval advances the field by integrating diverse error types and feedback modalities,
+providing actionable insights for optimizing feedback utilization. In future work, we plan to explore
+hybrid feedback strategies and extend the benchmark to other programming languages and broader
+error categories.
+11
+Data Availability
+To facilitate the replication study, we have released our data and code at : https://anonymous.4open.
+science/r/FeedbackEval-EDC1.
+References
+[1] Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ahmad, Ilge Akkaya, Florencia Leoni Aleman, Diogo Almeida,
+Janko Altenschmidt, Sam Altman, Shyamal Anadkat, et al. 2023. Gpt-4 technical report. arXiv preprint arXiv:2303.08774
+(2023).
+[2] Anthropic. 2024. Claude-3.5-Sonnet. https://www.anthropic.com/news/claude-3-5-sonnet
+[3] Zhangqian Bi, Yao Wan, Zheng Wang, Hongyu Zhang, Batu Guan, Fangxin Lu, Zili Zhang, Yulei Sui, Hai Jin, and
+Xuanhua Shi. 2024. Iterative refinement of project-level code context for precise code generation with compiler
+feedback. arXiv preprint arXiv:2403.16792 (2024).
+[4] Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan,
+Pranav Shyam, Girish Sastry, Amanda Askell, et al. 2020. Language models are few-shot learners. Advances in neural
+information processing systems 33 (2020), 1877–1901.
+[5] Jialun Cao, Zhiyong Chen, Jiarong Wu, Shing-Chi Cheung, and Chang Xu. 2024. JavaBench: A Benchmark of
+Object-Oriented Code Generation for Evaluating Large Language Models. In Proceedings of the 39th IEEE/ACM
+International Conference on Automated Software Engineering (ASE ’24). Association for Computing Machinery, 870–882.
+https://doi.org/10.1145/3691620.3695470
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+20
+Dekun Dai, MingWei Liu∗, Anji Li, Jialun Cao, Yanlin Wang, Chong Wang, Xin Peng, and Zibin Zheng
+[6] Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared Kaplan, Harri Edwards,
+Yuri Burda, Nicholas Joseph, Greg Brockman, et al. 2021. Evaluating large language models trained on code. arXiv
+preprint arXiv:2107.03374 (2021).
+[7] Xinyun Chen, Maxwell Lin, Nathanael Schärli, and Denny Zhou. 2023. Teaching large language models to self-debug.
+arXiv preprint arXiv:2304.05128 (2023).
+[8] Alibaba Cloud. 2024. Qwen 2.5. https://github.com/QwenLM/Qwen.
+[9] Deepseek. 2025. Deepseek-R1. https://huggingface.co/deepseek-ai/DeepSeek-R1
+[10] Yihe Deng, Weitong Zhang, Zixiang Chen, and Quanquan Gu. 2023. Rephrase and respond: Let large language models
+ask better questions for themselves. arXiv preprint arXiv:2311.04205 (2023).
+[11] Yangruibo Ding, Zijian Wang, Wasi Ahmad, Hantian Ding, Ming Tan, Nihal Jain, Murali Krishna Ramanathan, Ramesh
+Nallapati, Parminder Bhatia, Dan Roth, et al. 2024. Crosscodeeval: A diverse and multilingual benchmark for cross-file
+code completion. Advances in Neural Information Processing Systems 36 (2024).
+[12] Shihan Dou, Yan Liu, Haoxiang Jia, Limao Xiong, Enyu Zhou, Wei Shen, Junjie Shan, Caishuang Huang, Xiao Wang,
+Xiaoran Fan, et al. 2024. Stepcoder: Improve code generation with reinforcement learning from compiler feedback.
+arXiv preprint arXiv:2402.01391 (2024).
+[13] Xueying Du, Mingwei Liu, Kaixin Wang, Hanlin Wang, Junwei Liu, Yixuan Chen, Jiayi Feng, Chaofeng Sha, Xin Peng,
+and Yiling Lou. 2023. Classeval: A manually-crafted benchmark for evaluating llms on class-level code generation.
+arXiv preprint arXiv:2308.01861 (2023).
+[14] Jia Feng, Jiachen Liu, Cuiyun Gao, Chun Yong Chong, Chaozheng Wang, Shan Gao, and Xin Xia. 2024. ComplexCodeEval:
+A Benchmark for Evaluating Large Code Models on More Complex Code. In Proceedings of the 39th IEEE/ACM
+International Conference on Automated Software Engineering (ASE ’24). Association for Computing Machinery, 1895–1906.
+https://doi.org/10.1145/3691620.3695552
+[15] Patrick Fernandes, Aman Madaan, Emmy Liu, António Farinhas, Pedro Henrique Martins, Amanda Bertsch, José GC
+de Souza, Shuyan Zhou, Tongshuang Wu, Graham Neubig, et al. 2023. Bridging the gap: A survey on integrating
+(human) feedback for natural language generation. Transactions of the Association for Computational Linguistics 11
+(2023), 1643–1668.
+[16] Michael Fu, Chakkrit Tantithamthavorn, Trung Le, Van Nguyen, and Dinh Phung. 2022. VulRepair: a T5-based
+automated software vulnerability repair. In Proceedings of the 30th ACM Joint European Software Engineering Conference
+and Symposium on the Foundations of Software Engineering (ESEC/FSE 2022). Association for Computing Machinery,
+935–947. https://doi.org/10.1145/3540250.3549098
+[17] Dan Hendrycks, Steven Basart, Saurav Kadavath, Mantas Mazeika, Akul Arora, Ethan Guo, Collin Burns, Samir
+Puranik, Horace He, Dawn Song, and Jacob Steinhardt. 2021. Measuring Coding Challenge Competence With APPS.
+In Proceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks 1, NeurIPS Datasets
+and Benchmarks 2021, December 2021, virtual. https://datasets-benchmarks-proceedings.neurips.cc/paper/2021/hash/
+c24cd76e1ce41366a4bbe8a49b02a028-Abstract-round2.html
+[18] Chao Hu, Yitian Chai, Hao Zhou, Fandong Meng, Jie Zhou, and Xiaodong Gu. 2024. How Effectively Do Code Language
+Models Understand Poor-Readability Code?. In Proceedings of the 39th IEEE/ACM International Conference on Automated
+Software Engineering (ASE ’24). Association for Computing Machinery, 795–806.
+https://doi.org/10.1145/3691620.
+3695072
+[19] Kai Huang, Jian Zhang, Xiangxin Meng, and Yang Liu. 2025. Template-Guided Program Repair in the Era of Large
+Language Models. In 2025 IEEE/ACM 47th International Conference on Software Engineering (ICSE). IEEE Computer
+Society, 367–379. https://doi.org/10.1109/ICSE55347.2025.00030
+[20] Carlos E Jimenez, John Yang, Alexander Wettig, Shunyu Yao, Kexin Pei, Ofir Press, and Karthik Narasimhan. 2023.
+Swe-bench: Can language models resolve real-world github issues? arXiv preprint arXiv:2310.06770 (2023).
+[21] Carlos E. Jimenez, John Yang, Alexander Wettig, Shunyu Yao, Kexin Pei, Ofir Press, and Karthik R. Narasimhan. 2024.
+SWE-bench: Can Language Models Resolve Real-world Github Issues?. In The Twelfth International Conference on
+Learning Representations, ICLR 2024, Vienna, Austria, May 7-11, 2024. OpenReview.net. https://openreview.net/forum?
+id=VTF8yNQM66
+[22] Matthew Jin, Syed Shahriar, Michele Tufano, Xin Shi, Shuai Lu, Neel Sundaresan, and Alexey Svyatkovskiy. 2023.
+InferFix: End-to-End Program Repair with LLMs. In Proceedings of the 31st ACM Joint European Software Engineering
+Conference and Symposium on the Foundations of Software Engineering (ESEC/FSE 2023). Association for Computing
+Machinery, 1646–1656. https://doi.org/10.1145/3611643.3613892
+[23] Ahmed Khanfir, Anil Koyuncu, Mike Papadakis, Maxime Cordy, Tegawendé F Bissyandé, Jacques Klein, and Yves
+Le Traon. 2023. IBiR: Bug-report-driven fault injection. ACM Transactions on Software Engineering and Methodology
+32, 2 (2023), 1–31.
+[24] Ranim Khojah, Francisco Gomes de Oliveira Neto, Mazen Mohamad, and Philipp Leitner. 2024. The Impact of Prompt
+Programming on Function-Level Code Generation. arXiv preprint arXiv:2412.20545 (2024).
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+FeedbackEval: A Benchmark for Evaluating Large Language Models in Feedback-Driven Code Repair Tasks
+21
+[25] Hyuhng Joon Kim, Hyunsoo Cho, Junyeob Kim, Taeuk Kim, Kang Min Yoo, and Sang-goo Lee. 2022. Self-generated
+in-context learning: Leveraging auto-regressive language models as a demonstration generator. arXiv preprint
+arXiv:2206.08082 (2022).
+[26] Jia Li, Ge Li, Yongmin Li, and Zhi Jin. 2025. Structured chain-of-thought prompting for code generation. ACM
+Transactions on Software Engineering and Methodology 34, 2 (2025), 1–23.
+[27] Xueyang Li, Guozhu Meng, Shangqing Liu, Lu Xiang, Kun Sun, Kai Chen, Xiapu Luo, and Yang Liu. 2024. Attribution-
+guided Adversarial Code Prompt Generation for Code Completion Models. In Proceedings of the 39th IEEE/ACM
+International Conference on Automated Software Engineering (ASE ’24). Association for Computing Machinery, 1460–1471.
+https://doi.org/10.1145/3691620.3695517
+[28] Ziyu Li and Donghwan Shin. 2024. Mutation-based consistency testing for evaluating the code understanding capability
+of llms. In Proceedings of the IEEE/ACM 3rd International Conference on AI Engineering-Software Engineering for AI.
+150–159.
+[29] Shuai Lu, Daya Guo, Shuo Ren, Junjie Huang, Alexey Svyatkovskiy, Ambrosio Blanco, Colin Clement, Dawn Drain,
+Daxin Jiang, Duyu Tang, Ge Li, Lidong Zhou, Linjun Shou, Long Zhou, Michele Tufano, Ming Gong, Ming Zhou,
+Nan Duan, Neel Sundaresan, Shao Kun Deng, Shengyu Fu, and Shujie Liu. 2021. CodeXGLUE: A Machine Learning
+Benchmark Dataset for Code Understanding and Generation. In Proceedings of the Neural Information Processing Systems
+Track on Datasets and Benchmarks 1, NeurIPS Datasets and Benchmarks 2021, December 2021, virtual. https://datasets-
+benchmarks-proceedings.neurips.cc/paper/2021/hash/c16a5320fa475530d9583c34fd356ef5-Abstract-round1.html
+[30] Aman Madaan, Niket Tandon, Prakhar Gupta, Skyler Hallinan, Luyu Gao, Sarah Wiegreffe, Uri Alon, Nouha Dziri,
+Shrimai Prabhumoye, Yiming Yang, et al. 2023. Self-refine: Iterative refinement with self-feedback. Advances in Neural
+Information Processing Systems 36 (2023), 46534–46594.
+[31] Theo X Olausson, Jeevana Priya Inala, Chenglong Wang, Jianfeng Gao, and Armando Solar-Lezama. 2023. Is self-repair
+a silver bullet for code generation? arXiv preprint arXiv:2306.09896 (2023).
+[32] Yicheng Ouyang, Jun Yang, and Lingming Zhang. 2024. Benchmarking Automated Program Repair: An Extensive
+Study on Both Real-World and Artificial Bugs. In Proceedings of the 33rd ACM SIGSOFT International Symposium on
+Software Testing and Analysis (ISSTA 2024). Association for Computing Machinery, 440–452. https://doi.org/10.1145/
+3650212.3652140
+[33] Ofir Press, Muru Zhang, Sewon Min, Ludwig Schmidt, Noah A Smith, and Mike Lewis. 2022. Measuring and narrowing
+the compositionality gap in language models. arXiv preprint arXiv:2210.03350 (2022).
+[34] Tal Ridnik, Dedy Kredo, and Itamar Friedman. 2024. Code generation with alphacodium: From prompt engineering to
+flow engineering. arXiv preprint arXiv:2401.08500 (2024).
+[35] Stephen Robertson and Hugo Zaragoza. 2009. The Probabilistic Relevance Framework: BM25 and Beyond. Found.
+Trends Inf. Retr. 3, 4 (April 2009), 333–389. https://doi.org/10.1561/1500000019
+[36] William Saunders, Catherine Yeh, Jeff Wu, Steven Bills, Long Ouyang, Jonathan Ward, and Jan Leike. 2022. Self-
+critiquing models for assisting human evaluators. arXiv preprint arXiv:2206.05802 (2022).
+[37] Zhihong Sun, Chen Lyu, Bolun Li, Yao Wan, Hongyu Zhang, Ge Li, and Zhi Jin. 2024. Enhancing Code Generation
+Performance of Smaller Models by Distilling the Reasoning Ability of LLMs. arXiv preprint arXiv:2403.13271 (2024).
+[38] Runchu Tian, Yining Ye, Yujia Qin, Xin Cong, Yankai Lin, Yinxu Pan, Yesai Wu, Haotian Hui, Weichuan Liu, Zhiyuan
+Liu, et al. 2024. Debugbench: Evaluating debugging capability of large language models. arXiv preprint arXiv:2401.04621
+(2024).
+[39] Frank Tip, Jonathan Bell, and Max Schäfer. 2024. Llmorpheus: Mutation testing using large language models. arXiv
+preprint arXiv:2404.09952 (2024).
+[40] Shubham Ugare, Tarun Suresh, Hangoo Kang, Sasa Misailovic, and Gagandeep Singh. 2024. Improving llm code
+generation with grammar augmentation. arXiv preprint arXiv:2403.01632 (2024).
+[41] Bo Wang, Mingda Chen, Youfang Lin, Mike Papadakis, and Jie M Zhang. 2024. An exploratory study on using large
+language models for mutation testing. arXiv preprint arXiv:2406.09843 (2024).
+[42] Guoqing Wang, Zeyu Sun, Sixiang Ye, Zhihao Gong, Yizhou Chen, Yifan Zhao, Qingyuan Liang, and Dan Hao. 2024.
+Do advanced language models eliminate the need for prompt engineering in software engineering? ACM Transactions
+on Software Engineering and Methodology (2024).
+[43] Xingyao Wang, Boxuan Li, Yufan Song, Frank F Xu, Xiangru Tang, Mingchen Zhuge, Jiayi Pan, Yueqi Song, Bowen Li,
+Jaskirat Singh, et al. 2024. Opendevin: An open platform for ai software developers as generalist agents. arXiv preprint
+arXiv:2407.16741 3 (2024).
+[44] Xingyao Wang, Zihan Wang, Jiateng Liu, Yangyi Chen, Lifan Yuan, Hao Peng, and Heng Ji. 2023. Mint: Evaluating
+llms in multi-turn interaction with tools and language feedback. arXiv preprint arXiv:2309.10691 (2023).
+[45] Chunqiu Steven Xia and Lingming Zhang. 2022. Less training, more repairing please: revisiting automated program
+repair via zero-shot learning. In Proceedings of the 30th ACM Joint European Software Engineering Conference and
+Symposium on the Foundations of Software Engineering (ESEC/FSE 2022). Association for Computing Machinery, 959–971.
+, Vol. 1, No. 1, Article . Publication date: February 2026.
+
+
+22
+Dekun Dai, MingWei Liu∗, Anji Li, Jialun Cao, Yanlin Wang, Chong Wang, Xin Peng, and Zibin Zheng
+https://doi.org/10.1145/3540250.3549101
+[46] Chunqiu Steven Xia and Lingming Zhang. 2024. Automated Program Repair via Conversation: Fixing 162 out of 337
+Bugs for $0.42 Each using ChatGPT. In Proceedings of the 33rd ACM SIGSOFT International Symposium on Software Testing
+and Analysis (ISSTA 2024). Association for Computing Machinery, 819–831. https://doi.org/10.1145/3650212.3680323
+[47] Weixiang Yan, Haitian Liu, Yunkun Wang, Yunzhe Li, Qian Chen, Wen Wang, Tingyu Lin, Weishan Zhao, Li Zhu, Hari
+Sundaram, and Shuiguang Deng. 2024. CodeScope: An Execution-based Multilingual Multitask Multidimensional
+Benchmark for Evaluating LLMs on Code Understanding and Generation. In Proceedings of the 62nd Annual Meeting
+of the Association for Computational Linguistics (Volume 1: Long Papers). Association for Computational Linguistics,
+5511–5558. https://doi.org/10.18653/v1/2024.acl-long.301
+[48] John Yang, Carlos E Jimenez, Alexander Wettig, Kilian Lieret, Shunyu Yao, Karthik Narasimhan, and Ofir Press. 2024.
+Swe-agent: Agent-computer interfaces enable automated software engineering. Advances in Neural Information
+Processing Systems 37 (2024), 50528–50652.
+[49] John Yang, Akshara Prabhakar, Karthik Narasimhan, and Shunyu Yao. 2023. Intercode: Standardizing and benchmarking
+interactive coding with execution feedback. Advances in Neural Information Processing Systems 36 (2023), 23826–23854.
+[50] Hao Yu, Bo Shen, Dezhi Ran, Jiaxin Zhang, Qi Zhang, Yuchi Ma, Guangtai Liang, Ying Li, Qianxiang Wang, and Tao
+Xie. 2024. Codereval: A benchmark of pragmatic code generation with generative pre-trained models. In Proceedings
+of the 46th IEEE/ACM International Conference on Software Engineering. 1–12.
+[51] Zhiqiang Yuan, Junwei Liu, Qiancheng Zi, Mingwei Liu, Xin Peng, and Yiling Lou. 2023. Evaluating instruction-tuned
+large language models on code comprehension and generation. arXiv preprint arXiv:2308.01240 (2023).
+[52] Zhengran Zeng, Yidong Wang, Rui Xie, Wei Ye, and Shikun Zhang. 2024. CoderUJB: An Executable and Unified Java
+Benchmark for Practical Programming Scenarios. In Proceedings of the 33rd ACM SIGSOFT International Symposium on
+Software Testing and Analysis (ISSTA 2024). Association for Computing Machinery, 124–136. https://doi.org/10.1145/
+3650212.3652115
+[53] Zhuosheng Zhang, Aston Zhang, Mu Li, and Alex Smola. 2022. Automatic chain of thought prompting in large
+language models. arXiv preprint arXiv:2210.03493 (2022).
+[54] Yuze Zhao, Zhenya Huang, Yixiao Ma, Rui Li, Kai Zhang, Hao Jiang, Qi Liu, Linbo Zhu, and Yu Su. 2024. Repair:
+Automated program repair with process-based feedback. arXiv preprint arXiv:2408.11296 (2024).
+[55] Huaixiu Steven Zheng, Swaroop Mishra, Xinyun Chen, Heng-Tze Cheng, Ed H Chi, Quoc V Le, and Denny Zhou. 2023.
+Take a step back: Evoking reasoning via abstraction in large language models. arXiv preprint arXiv:2310.06117 (2023).
+[56] Tianyu Zheng, Ge Zhang, Tianhao Shen, Xueling Liu, Bill Yuchen Lin, Jie Fu, Wenhu Chen, and Xiang Yue. 2024.
+OpenCodeInterpreter: Integrating Code Generation with Execution and Refinement. In Findings of the Association
+for Computational Linguistics: ACL 2024, Lun-Wei Ku, Andre Martins, and Vivek Srikumar (Eds.). Association for
+Computational Linguistics, Bangkok, Thailand, 12834–12859. https://doi.org/10.18653/v1/2024.findings-acl.762
+[57] zhipuAI. 2024. GLM-4-Plus. https://www.zhipu.ai/glm-4-plus
+[58] Ming Zhu, Karthik Suresh, and Chandan K. Reddy. 2022. Multilingual Code Snippets Training for Program Translation.
+(2022), 11783–11790. https://doi.org/10.1609/AAAI.V36I10.21434
+[59] Terry Yue Zhuo, Minh Chien Vu, Jenny Chim, Han Hu, Wenhao Yu, Ratnadira Widyasari, Imam Nur Bani Yusuf,
+Haolan Zhan, Junda He, Indraneil Paul, Simon Brunner, Chen Gong, Thong Hoang, Armel Randy Zebaze, Xiaoheng
+Hong, Wen-Ding Li, Jean Kaddour, Ming Xu, Zhihan Zhang, Prateek Yadav, Naman Jain, Alex Gu, Zhoujun Cheng,
+Jiawei Liu, Qian Liu, Zijian Wang, David Lo, Binyuan Hui, Niklas Muennighoff, Daniel Fried, Xiaoning Du, Harm de
+Vries, and Leandro Von Werra. 2024. BigCodeBench: Benchmarking Code Generation with Diverse Function Calls and
+Complex Instructions. arXiv:2406.15877 [cs.SE] https://arxiv.org/abs/2406.15877
+, Vol. 1, No. 1, Article . Publication date: February 2026.

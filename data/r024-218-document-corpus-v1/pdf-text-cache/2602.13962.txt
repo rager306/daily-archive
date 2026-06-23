@@ -1,0 +1,1866 @@
+CodeGlance: Understanding Code Reasoning Challenges in LLMs
+through Multi-Dimensional Feature Analysis
+Yunkun Wang∗
+Zhejiang University
+Hangzhou, China
+wangykun@zju.edu.cn
+Xuanhe Zhang∗
+Zhejiang University
+Hangzhou, China
+22560080@zju.edu.cn
+Junxiao Han
+Hangzhou City University
+Hangzhou, China
+hanjx@hzcu.edu.cn
+Chen Zhi†
+Zhejiang University
+Hangzhou, China
+zjuzhichen@zju.edu.cn
+Shuiguang Deng†
+Zhejiang University
+Hangzhou, China
+dengsg@zju.edu.cn
+Abstract
+In modern software development, developers frequently need to
+understand code behavior at a glance—whether reviewing pull re-
+quests, debugging issues, or navigating unfamiliar codebases. This
+ability to reason about dynamic program behavior is fundamen-
+tal to effective software engineering and increasingly supported
+by Large Language Models (LLMs). However, existing studies on
+code reasoning focus primarily on isolated code snippets, over-
+looking the complexity of real-world scenarios involving external
+API interactions and unfamiliar functions. This gap hinders our
+understanding of what truly makes code reasoning challenging for
+LLMs across diverse programming contexts.
+We present CodeGlance, a multi-dimensional benchmark investi-
+gating code reasoning challenges across three realistic scenarios:
+intrinsic logic reasoning, API interaction reasoning, and unseen
+function reasoning. Through systematic evaluation of 7 state-of-
+the-art LLMs, we reveal that unseen function reasoning poses sig-
+nificant challenges especially for smaller models, with Qwen2.5-
+3b achieving only 6.0% accuracy on unseen functions compared
+to 37.5% on familiar APIs. We identify critical code complexity
+features—including execution trace length, API invocation count,
+and control flow complexity—that significantly impact code reason-
+ing difficulty across scenarios. We further investigate how common
+augmentation strategies, including CoT, document retrieval, and
+code search, can improve reasoning performance, finding that their
+effectiveness varies substantially depending on whether challenges
+stem from logical complexity or knowledge gaps. These findings
+provide actionable guidance for developing more capable code rea-
+soning systems and deploying LLM-based programming assistants
+in real-world software development.
+CCS Concepts
+• Software and its engineering →Automatic programming.
+Keywords
+Code Reasoning, Program Behavior, Evaluation
+∗Both authors contributed equally to this research.
+†Corresponding author
+Conference’17, Washington, DC, USA
+2026. ACM ISBN 978-x-xxxx-xxxx-x/YYYY/MM
+https://doi.org/10.1145/nnnnnnn.nnnnnnn
+ACM Reference Format:
+Yunkun Wang, Xuanhe Zhang, Junxiao Han, Chen Zhi, and Shuiguang
+Deng. 2026. CodeGlance: Understanding Code Reasoning Challenges in
+LLMs through Multi-Dimensional Feature Analysis. In . ACM, New York,
+NY, USA, 13 pages. https://doi.org/10.1145/nnnnnnn.nnnnnnn
+1
+Introduction
+In modern software development, developers frequently need to
+quickly understand code behavior at a glance—whether reviewing
+pull requests, localizing bugs, detecting vulnerabilities, or refactor-
+ing legacy systems. Accurate code comprehension serves as the
+foundation for these critical downstream tasks. Consider a devel-
+oper examining a function snippet in an unfamiliar repository: they
+must not only parse the syntax but also reason about the dynamic
+behavior—what values intermediate variables will hold, what the
+function will return given specific inputs, and how external de-
+pendencies will affect execution. This ability to reason about code
+behavior is fundamental to effective software engineering.
+Large Language Models (LLMs) have demonstrated remarkable
+capabilities in code understanding and are now widely deployed
+in AI-assisted development tools such as GitHub Copilot [14], Cur-
+sor [9], and various code intelligence platforms. Models like Qwen-
+Coder [39], ChatGPT [1], and DeepSeek [10] have shown impressive
+performance on tasks ranging from program completion [42, 49] to
+bug repair [33, 41]. However, a critical question remains: Can LLMs
+truly understand code behavior across diverse and realistic coding
+scenarios?
+While substantial research has explored LLMs’ capabilities in
+static code understanding [17, 28, 31, 34, 45]—such as code sum-
+marization, documentation generation, and syntax analysis—their
+ability to reason about dynamic program behavior remains underex-
+plored. Code behavior reasoning differs fundamentally from static
+explanation: it requires models to simulate program execution, track
+variable states, understand control flow, and predict concrete out-
+puts given specific inputs. More recently, researchers have begun
+constructing code reasoning benchmarks to evaluate this capability.
+For example, CruxEval [15] assesses LLMs’ performance on the task
+of input-output prediction for a LLM-generated self-contained func-
+tion. REval [19] evaluated LLM’s undertanding for intermediate
+code behavior such as branch prediction tasks using ClassEval [12]
+and HumanEval [6]. CodeMind [26] proposed output prediction
+tasks on existing self-contained code benchmarks. CodeSense [35]
+arXiv:2602.13962v1  [cs.SE]  15 Feb 2026
+
+
+Conference’17, July 2017, Washington, DC, USA
+Wang et al.
+Table 1: Comparison of code understanding benchmarks. Std.
+libs, single: Simple Python standard libraries (e.g., os, time)
+with single API call; 3rd-party, multi: Third-party developed
+libraries (e.g., Pandas, scipy) with multiple API interactions.
+Benchmark
+Dynamic
+Behavior
+Feature
+Analysis
+External API
+Dependency
+Custom Func
+Interaction
+CodeXGlue [28]
+✗
+✗
+✗
+✗
+CruxEval [15]
+✓
+✗
+✗
+✗
+REval [19]
+✓
+✗
+✗
+✗
+CodeMind [26]
+✓
+2 features
+✗
+✗
+CodeSense [35]
+✓
+✗
+Std. libs, single
+✗
+CodeGlance
+✓
+9 features
+3rd-party, multi
+✓
+collects real world code snippet and evaluate LLM’s behavioral
+understandings. Despite these efforts, existing benchmarks exhibit
+two critical limitations. First, most focus primarily on simple, self-
+contained code snippets that operate in isolation from third-party
+code libraries, overlooking the complexity inherent in real-world
+scenarios such as external API interactions—where code behav-
+ior emerges from compositional API logic interactions—and cus-
+tom function references—where critical logic is hidden in unseen
+functions defined elsewhere in the codebase. Second, existing work
+provides limited insight into how various scenario-specific com-
+plexity features impact LLM reasoning performance, lacking
+systematic analysis on the challenges posed by expanding factors
+like execution trace length (whether encapsulated or not), API invo-
+cation count, or knowledge requirements across different scenarios.
+To address these gaps, we present CodeGlance, a comprehensive
+benchmark designed to evaluate LLMs’ code behavior reasoning
+capabilities across multi-dimensional coding scenarios. CodeGlance
+is built on three orthogonal difficulty dimensions that mirror real-
+world development complexity: (1) Intrinsic Logic Reasoning, with
+800 self-contained function snippets from CRUXEval [15], testing
+models’ ability to reason about core programming logic without
+external dependencies; (2) Common API Behavior Reasoning, with
+1,000+ snippets from DS1000 [22] that depend on popular external
+libraries (e.g., NumPy, Pandas, PyTorch), evaluating models’ un-
+derstanding of widely-used API semantics within compositional
+interactions; and (3) Unseen Function Behavior Reasoning, with 100
+snippets from PanNumEval [48] and MonkBeatEval [42], where
+we compare performance on familiar APIs versus novel custom
+functions to isolate the impact of knowledge distribution shift.
+We demonstrate the novelty of CodeGlance in Table 1. Using
+CodeGlance, we conduct an in-depth empirical study on 7 state-
+of-the-art LLMs, guided by three core research questions: RQ1:
+How do LLMs perform on code behavior reasoning across different
+programming scenarios? RQ2: How do different code features im-
+pact LLMs’ reasoning performance? RQ3: How effective are common
+enhancement strategies across different code reasoning scenarios?
+Our evaluation reveals that unseen function reasoning poses the
+greatest challenge, particularly for smaller models, dynamic execu-
+tion features consistently impact reasoning more than static code
+structure, and enhancement strategies show scenario-dependent
+effectiveness—CoT excels when knowledge suffices but logic is
+complex, while knowledge augmentation proves more effective for
+larger models with genuine knowledge gaps.
+In summary, this work makes the following contributions:
+• A comprehensive multi-dimensional benchmark. We
+introduce CodeGlance [40], a novel benchmark spanning
+three orthogonal difficulty levels—intrinsic logic, API inter-
+actions, and unknown functions—providing more realistic
+evaluation than existing single-scenario benchmarks.
+• Systematic feature impact analysis. Through analyzing 9
+inherent characteristics in code, we identify which features
+pose the greatest challenges in different scenarios, offering
+actionable insights for model improvement.
+• Validated augmentation strategies. We evaluate three
+optimization approaches (chain-of-thought reasoning, docu-
+ment retrieval, code search) across all scenarios, demonstrat-
+ing their differential effectiveness and providing practical
+guidelines for real-world deployment.
+• Design implications for code intelligence tools. Our
+findings reveal where current LLMs excel and struggle, of-
+fering actionable insights for improving AI-integrated pro-
+gramming systems.
+2
+Benchmark Construction
+2.1
+Task Definition
+In alignment with prior work on code reasoning [16, 22, 27], we
+formalize the code behavior reasoning task as follows: Given a code
+snippet 𝐶, a test input 𝐼, and an expression 𝐸that captures the
+program’s execution result, the goal is to predict the value of 𝐸
+after executing 𝐶with input 𝐼.
+Formally, let C denote the space of all possible code snippets, I
+denote the space of test inputs, and V denote the space of possible
+output values. The code behavior reasoning task can be defined as:
+𝑓: (C, I, E) →V
+(1)
+where 𝑓represents the reasoning LLM that maps a tuple of code
+snippet 𝐶∈C, test input 𝐼∈I, and expression 𝐸∈E to the
+predicted output value 𝑣∈V. The expression 𝐸typically takes
+the form of an assertion statement such as assert E(x, y) ==
+<predict>, where the model must determine the concrete value
+that makes the assertion true.
+2.2
+Identifying a Spectrum of Practical Code
+Reasoning Scenarios
+To comprehensively evaluate LLMs’ code behavior reasoning capa-
+bilities and investigate which intrinsic code characteristics hinder
+their performance, we first identify and define three realistic pro-
+gramming scenarios that developers frequently encounter: Intrinsic
+Logic Reasoning, API Interaction Reasoning, and Unseen Function
+Reasoning. For each scenario, we carefully select appropriate data
+sources that authentically represent the corresponding challenges.
+Intrinsic Logic Reasoning. In everyday software development,
+developers routinely examine compact code snippets to under-
+stand their behavior—whether during code review, debugging, or
+refactoring. This scenario represents the fundamental challenge of
+reasoning about program logic without external dependencies. We
+aim to evaluate LLMs’ ability to reason about program behavior
+within concentrated code logic with varying degrees of complex-
+ity. To isolate the impact of external API interactions, we focus on
+
+
+CodeGlance: Understanding Code Reasoning Challenges in LLMs through Multi-Dimensional Feature Analysis
+Conference’17, July 2017, Washington, DC, USA
+Intrinsic Logic
+ Reasoning (ILR)
+Code Lines
+Execution   
+ Trace Length
+Cyclomatic
+Complexity
+Common API
+Count
+Total API
+Parameters
+Specified API
+Parameters
+Encapsulated
+Code Lines
+Encapsulated
+Trace Length
+Unseen Function
+Count
+Multi-Dimentional Code
+Reasoning Scenarios
+Collecting Complexity Feature Metrics in Each Scenario
+Empirical Study
+RQ1: What's LLM performances
+on code behavior reasoning
+across different programming
+scenarios?
+RQ2: How does each complexity
+feature impact LLMs' code
+reasoning performance?
+  RQ3:   How effective are those 
+generation-augmentation
+strategies on reasoning
+scenarios?
+Code Reasoning 
+Data Curation
+CruxEval
+DS1000
+TorchdataCode
+MonkBeatEval
+Data Source
+ Task Desiging,
+ Format Alignment
+Manual Inspection,
+curation, filtering
+LLM Curation
+Human Curation
+Unseen Function
+ Reasoning (UFR)
+API Interaction
+ Reasoning  (AIR)
+Figure 1: Pipeline of CodeGlance Benchmark Construction and Framework for Empirical Study.
+self-contained code snippets that encapsulate all necessary logic
+internally. CRUXEval [15] is a well-established code reasoning
+benchmark containing 800 problems with code snippets ranging
+from 3-13 lines and cyclomatic complexity from 1-5, making it
+ideal for studying how intrinsic code complexity affects reasoning
+performance.
+API Interaction Reasoning. Modern software development
+heavily relies on invoking well-established APIs from popular li-
+braries to accomplish programming tasks efficiently. However, un-
+like intrinsic logic reasoning where all code is visible, API inter-
+action scenarios present a unique challenge: part of the program
+logic is encapsulated within the invoked APIs, making it invisible
+at a glance. The complexity escalates when a code snippet invokes
+multiple APIs, each configured with specific parameters—the co-
+ordinated behavior of these API interactions can make the overall
+program behavior difficult to comprehend without deep knowl-
+edge of each API’s semantics. We aim to evaluate LLMs’ ability
+to precisely understand the semantics of common APIs and their
+parameters, and to reason about the interactive behavior of multiple
+APIs working in concert. We adapt two prominent code generation
+benchmarks into code reasoning datasets: DS-1000 [22] contains
+1,000 data science problems spanning seven mainstream Python
+libraries, making it ideal for studying common API reasoning with
+familiar libraries; TorchdataCode [30] includes 50 problems involv-
+ing the relatively new Torchdata library with 3-8 API invocations
+per problem, allowing us to examine how API familiarity affects
+reasoning performance.
+Unseen Function Reasoning. In real-world development, pro-
+grammers frequently invoke custom functions defined within their
+own repositories or utilize APIs from newly released libraries that
+were unavailable during LLM pre-training. This scenario extends
+beyond API interaction reasoning by introducing the challenge
+of reasoning about functions that lie outside the distribution of
+the model’s training data. Developers must infer function behavior
+from contextual clues such as function names, parameter types, and
+surrounding code patterns. We aim to evaluate LLMs’ ability to rea-
+son about out-of-distribution code knowledge by inferring function
+behavior from context when explicit API documentation or prior ex-
+posure is unavailable. To systematically investigate this capability,
+we leverage two complementary datasets: PanNumEval [48] and
+MonkBeatEval [42]. PanNumEval is a code generation benchmark
+containing 50 multi-API problems using extensively-trained Pan-
+das and NumPy libraries, serving as our baseline for familiar API
+reasoning. MonkBeatEval, developed by [42], systematically trans-
+forms all API calls in PanNumEval into privately maintained custom
+functions (Monkey and BeatNum modules) through bidirectional se-
+mantic mappings (e.g., pandas.iterrows →monkey.traversal),
+ensuring functional equivalence while guaranteeing novelty to
+LLMs. This controlled transformation enables us to isolate the im-
+pact of function familiarity: by comparing LLM performance on
+PanNumEval-R (familiar APIs) versus MonkBeatEval-R (unseen
+functions), we can precisely measure how knowledge distribution
+
+
+Conference’17, July 2017, Washington, DC, USA
+Wang et al.
+shift affects reasoning performance when all other complexity fac-
+tors remain constant. We adapt both datasets into code reasoning
+tasks through our curation pipeline (detailed in Section 2.3).
+2.3
+Code Reasoning Task Construction
+While CRUXEval already provides data in the code reasoning for-
+mat, the code generation benchmarks (DS-1000, TorchdataEval,
+PanNumEval, and MonkBeatEval) require adaptation. Each code
+generation problem consists of a task description, reference code so-
+lution, and test cases. Our intuitive approach is to leverage the test
+inputs and reference code to construct reasoning problems where
+models predict the return value: reference_code(test_input)
+== ?
+However, this straightforward conversion faces several chal-
+lenges: (1) Complex return types: Functions may return nested
+complex objects (e.g., matplotlib plot objects) that LLMs cannot de-
+scribe textually, making verification impossible; (2) Non-deterministic
+behavior: Functions depending on random numbers or system in-
+formation produce unpredictable results; (3) Numerical complex-
+ity: Functions involving intricate numerical computations exceed
+LLMs’ arithmetic capabilities. To address these challenges, we em-
+ploy a multi-stage construction pipeline combining LLM-based
+generation with human verification.
+Stage 1: LLM-Assisted Problem Generation. We prompt an LLM
+to generate semantically meaningful assertion statements from the
+reference code and test inputs. Specifically, we instruct the LLM to
+create assertions that: (1) invoke the reference function with test
+inputs, (2) extract simple, verifiable properties (strings or integers)
+from the return value, and (3) ensure semantic meaningfulness to
+align with realistic code reasoning scenarios. For example, instead of
+directly comparing complex objects, the LLM generates assertions
+like assert len(result) == ? or assert result[’key’] == ?.
+We then execute each generated assertion to collect ground-truth
+values. Assertions that fail execution are immediately discarded,
+filtering out malformed or incompatible expressions.
+Stage 2: Format Standardization. The second LLM pass standard-
+izes the generated problems into a consistent format. Each problem
+is decomposed into two components: (1) the code snippet contain-
+ing necessary context and function definitions, and (2) the test input
+and assertion statement. When multiple test inputs or assertions
+exist for a single reference solution, we split them into separate
+problems, ensuring each problem has exactly one input-assertion
+pair. This standardization facilitates uniform evaluation across all
+scenarios.
+Stage 3: Human Verification. Human annotators perform final
+quality control to ensure dataset reliability. We discard problems
+that: (1) still produce non-deterministic results despite filtering (e.g.,
+due to implicit randomness), (2) fail to execute correctly and cannot
+be manually repaired, or (3) involve complex numerical compu-
+tations or large numbers that would unfairly penalize LLMs due
+to their known arithmetic limitations rather than code reasoning
+deficiencies. This step ensures that evaluation focuses purely on
+code behavior understanding rather than numerical precision.
+Through this rigorous pipeline, we construct the CodeGlance
+benchmark, integrating 1,969 high-quality code reasoning problems
+across three realistic scenarios. Table 2 presents detailed statistics
+for each constituent dataset, showing the distribution of code com-
+plexity metrics including average code lines, cyclomatic complexity,
+external API usage, and unseen function counts.
+2.4
+Code Complexity Feature Selection
+To systematically investigate what makes code reasoning challeng-
+ing for LLMs across different scenarios, we extract scenario-specific
+features that capture the unique complexity dimensions of each pro-
+gramming context. These features enable fine-grained analysis of
+how different code characteristics impact reasoning performance.
+Intrinsic Logic Features. In the intrinsic logic reasoning scenario,
+the primary challenge lies in understanding and mentally simulat-
+ing complex control flow and data transformations within self-
+contained code. We extract three key features to quantify this
+complexity: (1) Code Lines: the total number of lines in the code
+snippet, reflecting the amount of logic to comprehend; (2) Cyclo-
+matic Complexity: the number of independent execution paths
+through the code, measuring control flow complexity from condi-
+tional branches and loops; (3) Execution Lines: the actual number
+of lines executed during program runtime with given inputs, cap-
+turing the dynamic complexity of the execution path. While code
+lines measure static size, execution trace length reveals the true
+computational steps LLMs must mentally simulate.
+API Interaction Features. In the API interaction reasoning sce-
+nario, the core difficulty stems from understanding how multiple
+APIs coordinate and how their encapsulated logic affects overall
+program behavior. We extract five features to characterize this
+interaction complexity: (1) API Count: the number of external
+API invocations in the code, indicating the breadth of external
+dependencies; (2) Total API Parameters: the sum of all param-
+eters across all API calls, reflecting the configuration complexity;
+(3) Specified API Parameters: the number of explicitly provided
+(non-default) parameters, measuring how much customization is
+applied to API behavior; (4) Encapsulated Code Lines: the esti-
+mated total lines of code hidden within invoked APIs, quantifying
+the invisible logic; (5) Encapsulated Execution Lines: the esti-
+mated execution lines within API implementations, capturing the
+hidden dynamic complexity. These features help us understand
+whether reasoning difficulty arises from API quantity, parameter
+complexity, or the depth of hidden logic.
+Knowledge Features. In the unseen function reasoning scenario,
+the fundamental challenge is inferring behavior of functions outside
+the model’s training distribution. We extract one critical feature:
+Unseen Function Count, which measures the number of novel
+function invocations that LLMs have not encountered during pre-
+training. This feature directly quantifies the degree of knowledge
+distribution shift, allowing us to assess how well LLMs can gen-
+eralize their reasoning capabilities to unfamiliar code constructs
+through contextual inference alone.
+
+
+CodeGlance: Understanding Code Reasoning Challenges in LLMs through Multi-Dimensional Feature Analysis
+Conference’17, July 2017, Washington, DC, USA
+Table 2: Statistics of CodeGlance benchmark datasets.
+Dataset
+# Data
+Avg. Code
+Avg. Cyclomatic
+Avg. External
+Avg. Unseen
+Sample
+Line
+Complexity
+Function
+Knowledge
+CRUXEval
+800
+5.47
+2.14
+0
+0
+DS-1000-R
+1019
+5.61
+1.33
+3.12
+0
+TorchdataCode-R
+50
+9.56
+1.82
+5.12
+0
+PanNumEval-R
+50
+5.7
+1.02
+4.18
+0
+MonkBeatEval-R
+50
+5.7
+1.02
+4.18
+4.18
+overall
+1969
+5.81
+1.67
+2.52
+0.47
+Table 3: Performance of LLMs on CodeGlance benchmark across different coding scenarios. Pass@1 and Pass@3 represent the
+percentage of problems solved with 1 and 3 attempts respectively. We split the CodeGlance benchmark into three scenarios:
+ILR: Intrinsic Logic Reasoning; AIR: API Interaction Reasoning; UFR: Unseen Function Reasoning, featuring 4 datasets: CX:
+CRUXEval; DS: DS-1000-R; TD: TorchdataCode-R; MB: MonkBeatEval-R.
+Model
+ILR-CX
+AIR-DS
+AIR-TD
+UFR-MB
+pass@1
+pass@3
+pass@1
+pass@3
+pass@1
+pass@3
+pass@1
+pass@3
+Qwen2.5-3b
+21.5%
+38.3%
+37.5%
+54.7%
+45.0%
+60.5%
+6.0%
+14.5%
+Qwen2.5-7b
+46.2%
+56.8%
+49.9%
+63.0%
+65.0%
+76.5%
+40.5%
+57.5%
+Qwen2.5-14b
+58.4%
+59.0%
+62.0%
+63.0%
+68.0%
+68.0%
+49.5%
+50.0%
+Qwen2.5-32b
+65.3%
+68.5%
+66.2%
+69.7%
+68.5%
+71.5%
+64.0%
+79.5%
+DeepSeek-Coder-6.7b
+40.4%
+49.0%
+44.8%
+56.4%
+56.0%
+60.2%
+36.2%
+50.3%
+DeepSeek-Coder-7b
+42.5%
+51.1%
+47.9%
+60.2%
+37.4%
+60.5%
+44.8%
+59.3%
+GPT-4o-mini
+56.6%
+59.9%
+61.1%
+66.9%
+66.2%
+68.0%
+52.2%
+58.2%
+GPT-4o
+64.2%
+73.5%
+73.2%
+77.7%
+64.8%
+69.6%
+56.0%
+66.3%
+3
+Evaluation
+3.1
+Experimental Setup
+Research Questions. Our empirical study is guided by three re-
+search questions:
+• RQ1: How do LLMs perform on code behavior reasoning across
+different programming scenarios (intrinsic logic, API interaction,
+and unseen function reasoning)?
+• RQ2: How do different code features (logic complexity, API char-
+acteristics, knowledge requirements) impact LLMs’ reasoning
+performance?
+• RQ3: How effective are common enhancement strategies (CoT,
+RAG, code search) across scenarios with varying complexity and
+knowledge demands?
+Evaluated Models. We evaluate 7 state-of-the-art LLMs represent-
+ing diverse model families and scales: Qwen2.5-Coder [39] (3B, 7B,
+14B, 32B-Instruct), a family of code-specialized models enabling sys-
+tematic study of scale effects; GPT-4o [1], a leading closed-source
+model with strong general-purpose capabilities; DeepSeek-Coder-
+7B-Instruct-v2 [10], a competitive open-source code model; and
+Qwen2.5-32B-Instruct, a general-purpose model for comparison
+with its code-specialized counterpart. All models are evaluated in
+their instruction-tuned variants to ensure fair comparison under
+the same prompting paradigm.
+Benchmark and Metrics. Our evaluation leverages CodeGlance,
+comprising 1,969 code reasoning problems across three scenar-
+ios: 800 problems from CRUXEval [15] for intrinsic logic reason-
+ing, 1,019 problems from DS-1000 [22] and 50 from Torchdata-
+Code [30] for API interaction reasoning, and 100 problems from
+PanNumEval/MonkBeatEval [42] for unseen function reasoning.
+We report pass@1 (percentage of problems solved with a single at-
+tempt) as the primary metric for measuring reasoning accuracy, and
+pass@3 (success rate with three attempts) to assess models’ ability
+to explore multiple reasoning paths. For feature impact analysis
+(RQ2), we compute Pearson correlation coefficients and visualize
+performance trends across feature value ranges. For enhancement
+strategy evaluation (RQ3), we measure absolute performance im-
+provements relative to direct prompting baselines.
+Implementation Details. All experiments use greedy decoding
+(temperature=0) for pass@1 evaluation to ensure reproducibility,
+and sampling with temperature=0.8 for pass@3 evaluation to en-
+courage diversity. We set max output tokens to 2048 and use a
+unified prompt template across all models, providing the code snip-
+pet and test input while asking models to predict the assertion
+
+
+Conference’17, July 2017, Washington, DC, USA
+Wang et al.
+result. For CoT experiments, we prepend "Let’s think step by step"
+(zero-shot) or provide 2-3 worked examples (few-shot). For RAG
+experiments, we retrieve relevant API documentation or function
+source code and include them in the prompt context. All evaluations
+are conducted on the same hardware configuration, and results are
+averaged over the complete test set without data filtering.
+This section presents the experimental results and analysis for
+each research question.
+3.2
+RQ1: How do LLMs perform on code
+behavior reasoning across different
+programming scenarios?
+We evaluate 7 state-of-the-art LLMs across CodeGlance’s three or-
+thogonal difficulty scenarios: Intrinsic Logic Reasoning (ILR-CX),
+API Interaction Reasoning (AIR-DS and AIR-TD), and Unseen Func-
+tion Reasoning (UFR-MB). Table 3 presents the pass@1 and pass@3
+performance across all models and scenarios.
+Model Parameter Scaling Effects. Model size strongly correlates
+with reasoning performance across all scenarios, showing an av-
+erage 3× improvement from 3B to 32B parameters within the
+Qwen2.5-Coder family, though the magnitude of improvement
+varies substantially. For intrinsic logic reasoning and API inter-
+action reasoning, we observe a 3.0× and 1.4× gains; and for unseen
+function reasoning, the improvement is a striking 10.7×. The dispro-
+portionate benefit for out-of-distribution reasoning is noteworthy:
+while the 3B model nearly collapses on unseen functions (6.0%),
+the 32B model achieves performance comparable to familiar sce-
+narios (64.0% vs 65.3% for ILR, 66.2% for AIR). This suggests it has
+developed stronger capabilities to reason about unknown function
+behavior from surrounding code context, function naming conven-
+tions, and parameter usage patterns.
+Performance Patterns Across Scenarios. A clear difficulty gradi-
+ent emerges in smaller models: narrow-domain API reasoning
+(TorchdataCode) outperforms diverse API composition (DS-1000)
+and intrinsic logic (CRUXEval), while unseen function reasoning
+(MonkBeatEval) consistently yields the lowest performance. De-
+spite these differences, pass@1 across all scenarios converges to a
+performance plateaus of 64.0-68.5% at 32B scale. This convergence
+is particularly notable when contrasted with the substantial per-
+formance disparities observed at smaller scales. This may suggest
+that smaller models struggle with scenario-specific challenges—
+understanding API semantics, inferring novel functions, tracking
+control flow—creating large cross-scenario variation. As model ca-
+pacity increases, these barriers could be progressively overcome,
+with the gap narrowing from 39 to 4.5 percentage.
+Model-Specific Strengths. Different models exhibit distinct ca-
+pabilities: GPT-4o excels in multi-API scenarios (DS-1000: 73.2%)
+but underperforms in unseen functions compared to Qwen2.5-32B
+(56.0% vs. 64.0%); DeepSeek-Coder variants also show different rela-
+tive strengths across API domains. These patterns suggest no single
+model consistently outperforms across all scenarios, with relative
+strengths varying by pretraining data and code characteristics. This
+motivates ensemble approaches or model routing strategies that
+select specialized models based on scenario requirements.
+Answer to RQ1: LLMs perform well on intrinsic logic and di-
+verse API reasoning but struggle with unseen functions on smaller
+models, exposing critical capability gaps in out-of-distribution
+scenarios. Scaling model parameters substantially improves per-
+formance on unseen function reasoning tasks. However, a shared
+performance ceiling around 65% indicates persistent difficulties
+in fundamental code reasoning.
+3.3
+RQ2: How do different code features impact
+LLMs’ reasoning performance?
+Having established the overall performance landscape in RQ1, we
+now investigate the underlying factors that drive these results.
+We systematically analyze 9 code characteristics across three fea-
+ture categories: (1) logic features (code lines, cyclomatic complexity,
+execution trace length) that capture intrinsic computational com-
+plexity; (2) API features (API count, parameter count) that quantify
+external dependency complexity; and (3) knowledge features (un-
+seen function count) that measure distribution shift from training
+data. By examining how these features correlate with reasoning
+performance across different scenarios, we aim to identify which
+code properties pose the greatest challenges for LLMs and why.
+3.3.1
+Scenario 1: Intrinsic logic reasoning. We analyze three key
+features on CRUXEval to understand what makes intrinsic logic
+reasoning challenging: code lines, cyclomatic complexity, and exe-
+cution trace length (Figures 2-4). The bar chart shows the distribu-
+tion of features in dataset samples. Each blue point in the scatter
+plot represents a evaluated code sample, with the x-axis indicating
+the feature value and the y-axis showing the model’s normalized
+pass@1 within 10 tries on that sample. The blue fitting curve in-
+dicates the trend of model’s code reasoning performance as the
+feature value increases.
+Figure 2: Code lines analysis in CRUXEval.
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+Code Line
+0
+20
+40
+60
+80
+100
+120
+140
+160
+Samples
+(a) Distribution
+2
+4
+6
+8
+10
+12
+Code Line
+0
+20
+40
+60
+80
+100
+Pass@1
+(b) Performance impact
+Among the three features, execution trace length emerges as
+the dominant factor. Performance drops sharply for 30+% within
+20 steps, then continues this degration for longer executions Code
+length shows a more gradual decline: performance remains stable
+for short snippets (2-5 lines) before degrading to approximately 27%
+for longer code (12+ lines), indicating that while more static code
+line does increase difficulty, the effect is less pronounced than the
+actual executed lines. In contrast, cyclomatic complexity exhibits
+minimal impact—the fitting curve remains relatively flat across all
+
+
+CodeGlance: Understanding Code Reasoning Challenges in LLMs through Multi-Dimensional Feature Analysis
+Conference’17, July 2017, Washington, DC, USA
+Figure 3: Cyclomatic complexity analysis in CRUXEval.
+1
+2
+3
+4
+5
+Cyclomatic Complexity
+0
+50
+100
+150
+200
+250
+300
+Samples
+(a) Distribution
+1
+2
+3
+4
+5
+Cyclomatic Complexity
+0
+20
+40
+60
+80
+100
+Pass@1
+(b) Performance impact
+Figure 4: Execution trace length analysis in CRUXEval.
+0
+20
+40
+60
+80
+100
+Execution Trace Length
+0
+20
+40
+60
+80
+100
+120
+140
+Samples
+(a) Distribution
+0
+20
+40
+60
+80
+100
+Execution Trace Length
+0
+20
+40
+60
+80
+100
+Pass@1
+(b) Performance impact
+complexity levels (1-5), suggesting that the number of control flow
+branches alone does not substantially affect reasoning difficulty.
+This pattern indicates that LLMs can handle branching logic rea-
+sonably well when each path remains short; the challenge arises
+not from branch count but from the cumulative execution steps re-
+quired to trace through those branches. Collectively, these findings
+suggest that augmentation strategies should prioritize decomposing
+long execution sequences into manageable steps (e.g., intermediate
+state tracking, step-by-step CoT) rather than simplifying static code
+structure.
+3.3.2
+Scenario 2: Common API Interaction reasoning. We analyze
+six features on DS-1000 to understand API reasoning challenges,
+grouping them by: static composition features (API count, code
+lines), parameter complexity (defined and specified parameters),
+and dynamic execution features (execution trace length) as shown
+in Figures 5-9.
+API composition complexity exhibits a generally declining
+trend with increasing API count. Performance decreases steadily
+from single-API snippets ( 70%) to those with 4–5 APIs ( 40%), after
+which it largely stabilizes. This suggests that the marginal diffi-
+culty of adding APIs diminishes once the composition reaches a
+certain level of complexity, possibly because highly complex snip-
+pets follow more formulaic API chaining patterns. Code lines show
+a weaker impact compared to CRUXEval, with performance remain-
+ing relatively stable for snippets under 10 lines before declining
+more noticeably for longer code, confirming that high-level API ab-
+stractions shift the primary burden from syntax parsing to semantic
+understanding.
+Figure 5: API count analysis in DS-1000.
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+API Count
+0
+50
+100
+150
+200
+250
+300
+Samples
+(a) Distribution
+2
+4
+6
+8
+10
+API Count
+0
+20
+40
+60
+80
+100
+Pass@1
+(b) Performance impact
+Figure 6: Code lines analysis in DS-1000.
+0
+10
+20
+30
+40
+Code Line
+0
+25
+50
+75
+100
+125
+150
+175
+200
+Samples
+(a) Distribution
+0
+10
+20
+30
+40
+Code Line
+0
+20
+40
+60
+80
+100
+Pass@1
+(b) Performance impact
+Figure 7: Defined parameters analysis in DS-1000.
+0
+10
+20
+30
+40
+50
+60
+Defined Parameter
+0
+20
+40
+60
+80
+100
+120
+140
+Samples
+(a) Distribution
+0
+10
+20
+30
+40
+50
+60
+Defined Parameter
+0
+20
+40
+60
+80
+100
+Pass@1
+(b) Performance impact
+Figure 8: Specified parameters analysis in DS-1000.
+0 1 2 3 4 5 6 7 8 9 1011121314
+16
+18
+21
+Specified Parameter
+0
+50
+100
+150
+200
+250
+Samples
+(a) Distribution
+0
+5
+10
+15
+20
+Specified Parameter
+0
+20
+40
+60
+80
+100
+Pass@1
+(b) Performance impact
+
+
+Conference’17, July 2017, Washington, DC, USA
+Wang et al.
+Figure 9: Execution trace length analysis in DS-1000.
+0
+20
+40
+60
+80
+100
+Execution Trace Length
+0
+25
+50
+75
+100
+125
+150
+175
+Samples
+(a) Distribution
+0
+20
+40
+60
+80
+100
+Execution Trace Length
+0
+20
+40
+60
+80
+100
+Pass@1
+(b) Performance impact
+Parameter complexity emerges as a notable challenge in API
+scenarios. Defined parameters (total parameters across API signa-
+tures) show a sharp initial decline—from approximately 80% pass@1
+at low counts to around 50% at moderate values—though the rela-
+tionship becomes noisier at higher counts where data is sparser.
+Specified parameters (explicitly provided non-default arguments)
+exhibit a more consistent and pronounced negative correlation,
+with performance declining steadily from 78% to below 30% as the
+number of specified parameters increases. This contrast suggests
+that explicitly configured parameters, which require understanding
+of how specific argument values alter API behavior, pose a greater
+reasoning challenge than merely recognizing API signatures with
+their default configurations.
+Execution trace length again shows a clear negative associa-
+tion with performance, though the trend is less uniform than in the
+intrinsic logic scenario. Despite shorter visible code, DS-1000 snip-
+pets contain substantial execution traces due to complex API inter-
+nal operations. However, the relationship exhibits more variability
+in the mid-range, possibly reflecting the heterogeneous nature of
+API execution patterns across different libraries. This highlights
+that even with high-level abstractions, the underlying execution
+complexity—hidden within API implementations—remains an im-
+portant factor in code reasoning difficulty.
+These findings point to several practical considerations. The
+steady decline in performance with API count, suggests that com-
+positional reasoning strategies could benefit from hierarchically
+decomposing multi-API interactions into smaller reasoning units.
+The particularly strong impact of specified parameters indicates
+that parameter-level semantics—how specific argument configura-
+tions affect API behavior—represent a distinct and underexplored
+dimension of reasoning difficulty beyond function-level understand-
+ing. More broadly, the interplay between visible code structure and
+hidden execution complexity underscores the need for augmenta-
+tion approaches that help models reason about encapsulated API
+logic, not just the surface-level code they can observe.
+3.3.3
+Scenario 3: Unseen Function usage reasoning. We analyze un-
+seen API count on MonkBeatEval, which contains novel functions
+outside the model’s training distribution (Figure 10).
+The unseen function scenario reveals a distinctive pattern com-
+pared to familiar API reasoning. Beyond 3 unseen APIs, perfor-
+mance generally declines from a peak of approximately 55% to
+35–40% in higher counts, suggesting that the cumulative uncer-
+tainty from multiple unknown functions increasingly challenges
+Figure 10: Unseen API count analysis in MonkBeatEval.
+1
+3
+4
+5
+6
+7
+8
+API Count
+0
+2
+4
+6
+8
+10
+12
+Samples
+(a) Distribution
+1
+2
+3
+4
+5
+6
+7
+8
+API Count
+0
+20
+40
+60
+80
+100
+Pass@1
+(b) Performance impact
+models as they must simultaneously infer each function’s seman-
+tics while tracking their compositional interactions. Interestingly,
+performance at the lowest API count (1 unseen API) is also rel-
+atively low ( 20%), resulting in a non-monotonic overall pattern.
+One possible explanation is that snippets involving multiple unseen
+APIs provide richer contextual signals—such as coordinated vari-
+able naming, data flow patterns—that help models infer function
+behavior through mutual context, whereas single-API snippets of-
+fer fewer surrounding cues. Given the relatively small dataset size
+(50 samples). Compared with the familiar API scenario in DS-1000,
+where performance declines steadily from single-API snippets on-
+ward, this pattern highlights a qualitative difference: for known
+APIs, each additional call purely adds compositional complexity,
+whereas for unseen functions, additional calls simultaneously intro-
+duce uncertainty and provide inferential context—two competing
+forces whose balance shifts as the number of unknown functions
+grows.
+Cross-Scenario Synthesis. Comparing feature impacts across the
+three scenarios reveals several recurring patterns. First, dynamic
+execution features—including execution trace length and runtime
+parameters—consistently show stronger associations with perfor-
+mance degradation than static features such as code lines and
+cyclomatic complexity. In both the intrinsic logic and API interac-
+tion scenarios, execution trace length emerges as a key difficulty
+driver, indicating that simulating multi-step runtime behavior poses
+a more fundamental challenge for current LLMs than parsing static
+code structure. Second, API composition complexity shows de-
+clining performance trends as the number of interacting compo-
+nents increases, though the specific patterns differ by context: a
+steady decline for familiar APIs in DS-1000 and a non-monotonic
+pattern for unseen functions in MonkBeatEval, where a moderate
+number of co-occurring unknown function calls may provide mu-
+tual context for reasoning. Third, the parameter-level analysis in
+DS-1000 reveals that specified parameters have a particularly
+pronounced impact, suggesting that understanding how specific
+argument values alter API behavior represents a distinct reasoning
+challenge beyond recognizing API signatures. These findings col-
+lectively suggest that advancing code reasoning capabilities may
+benefit more from improving models’ ability to simulate execution
+dynamics and reason about runtime behavior than from enhancing
+static code comprehension alone.
+
+
+CodeGlance: Understanding Code Reasoning Challenges in LLMs through Multi-Dimensional Feature Analysis
+Conference’17, July 2017, Washington, DC, USA
+Table 4: Impact of reasoning strategies on CRUXEval.
+Model
+Method
+CRUXEval
+pass@1
+pass@3
+Qwen2.5-3b
+Direct
+21.5%
+38.3%
+CoT fewshot
+46.1%
+63.8%
+Qwen2.5-7b
+Direct
+46.2%
+56.8%
+CoT fewshot
+56.2%
+72.2%
+Qwen2.5-14b
+Direct
+58.4%
+59.0%
+CoT fewshot
+74.8%
+78.3%
+Qwen2.5-32b
+Direct
+65.3%
+68.5%
+CoT fewshot
+77.9%
+85.1%
+Answer to RQ2: Dynamic execution features consistently impact
+reasoning more than static code structure across scenarios. API
+composition complexity and parameter-level semantics emerge as
+key difficulty drivers, with specified parameters showing particu-
+larly pronounced effects. For unseen functions, the relationship
+between API count and performance differs qualitatively from
+familiar API scenarios, reflecting the tension between contextual
+inference and compounding uncertainty. These findings suggest
+that advancing code reasoning may benefit more from improving
+execution simulation and runtime semantic understanding than
+from enhancing static code comprehension alone.
+3.4
+RQ3: How effective are common reasoning
+strategies across different code reasoning
+scenarios?
+Enhancing LLMs’ code understanding capabilities has been a cen-
+tral focus in software engineering research. Two prominent ap-
+proaches have emerged: Chain-of-Thought (CoT) prompting,
+which elicits step-by-step reasoning to decompose complex prob-
+lems [43], and Retrieval-Augmented Generation (RAG), which
+augments LLM knowledge by retrieving relevant external infor-
+mation [24]. While these strategies have demonstrated substantial
+improvements in code generation tasks, their effectiveness for code
+reasoning—particularly across scenarios with varying knowledge
+requirements—remains underexplored.
+Note that we focus on these lightweight augmentation strate-
+gies rather than agentic workflows (e.g., ReAct loops [47]), since
+CodeGlance targets efficient code comprehension scenarios where
+developers need immediate understanding at a glance, and iterative
+multi-turn approaches incur prohibitive latency overhead for such
+real-time assistance. In this RQ, we systematically evaluate how
+CoT and RAG impact code reasoning performance across our three
+scenarios, providing actionable insights for practitioners.
+3.4.1
+Scenario 1: Intrinsic Logic Reasoning. For intrinsic logic rea-
+soning on CRUXEval (Table 4), CoT few-shot prompting yields
+consistent improvements across all model scales, with gains in-
+versely related to model size: +24.6% for the 3B model (21.5% →
+46.1%) compared to +12.6% for the 32B model (65.3% →77.9%). No-
+tably, the 3B model with CoT few-shot nearly matches the 7B direct
+Table 5: Impact of reasoning strategies on DS1000-R.
+Model
+Method
+DS1000-R
+pass@1
+pass@3
+Qwen2.5-3b
+Direct
+37.5%
+54.7%
+CoT zeroshot
+29.8%
+51.7%
+CoT fewshot
+37.9%
+62.1%
+RAG (API doc)
+18.0%
+37.2%
+Qwen2.5-7b
+Direct
+49.9%
+63.0%
+CoT zeroshot
+50.0%
+63.8%
+CoT fewshot
+58.7%
+77.1%
+RAG (API doc)
+50.5%
+64.2%
+Qwen2.5-14b
+Direct
+62.0%
+63.0%
+CoT zeroshot
+61.1%
+61.6%
+CoT fewshot
+63.5%
+75.6%
+RAG (API doc)
+62.4%
+63.1%
+Qwen2.5-32b
+Direct
+66.2%
+69.7%
+CoT zeroshot
+61.6%
+78.1%
+CoT fewshot
+68.0%
+82.2%
+RAG (API doc)
+67.7%
+80.5%
+baseline (46.1% vs. 46.2%), suggesting that enforced step-by-step
+reasoning can substantially compensate for limited model capacity
+in logic-intensive tasks.
+3.4.2
+Scenario 2: API Interaction Reasoning. For API interaction
+reasoning on DS-1000 (Table 5), CoT few-shot consistently out-
+performs other strategies, improving pass@1 by up to +8.8% for
+7B models and pass@3 by +12.5% for 32B models. CoT zero-shot
+shows more mixed results: it degrades pass@1 for both the 3B
+model (37.5%→29.8%) and the 32B model (66.2%→61.6%), yet im-
+proves pass@3 for the 32B model (69.7%→78.1%), suggesting that
+without structured examples, self-guided reasoning introduces vari-
+ability that only benefits larger models when multiple attempts are
+allowed.
+RAG with API documentation shows a striking capacity depen-
+dence: it severely degrades the 3B model (37.5%→18.0% pass@1),
+while providing modest gains for the 32B model (pass@3: 69.7%→80.5%).
+This suggests that when LLMs already possess substantial API
+knowledge from pretraining, smaller models lack the capacity to
+effectively filter and leverage redundant documentation, whereas
+larger models can selectively extract useful information from the
+augmented context.
+3.4.3
+Scenario 3: Unseen Function Reasoning. The unseen func-
+tion scenario (Table 6) evaluates whether common enhancement
+strategies can help LLMs reason about novel functions outside their
+training distribution. Since MonkBeatEval is derived from PanNu-
+mEval by systematically replacing familiar Pandas/NumPy APIs
+with equivalent but unseen functions imported from Monkey/Beat-
+Num modules, comparing strategy effectiveness across the two
+datasets allows us to isolate the impact of knowledge gaps from
+other confounding factors.
+CoT few-shot yields substantial improvements on both datasets,
+with smaller models benefiting most (3B on MonkBeat: 6.0%→26.0%;
+
+
+Conference’17, July 2017, Washington, DC, USA
+Wang et al.
+Table 6: Impact of reasoning strategies on PanNumEval-
+R/MonkBeatEval-R.
+Model
+Method
+PanNumEval-R
+MonkBeatEval-R
+pass@1
+pass@3
+pass@1
+pass@3
+Qwen2.5-3b
+Direct
+15.0%
+33.0%
+6.0%
+14.5%
+CoT fewshot
+34.0%
+60.0%
+26.0%
+48.5%
+RAG (API doc)
+19.5%
+39.5%
+10.0%
+22.0%
+Code Search
+19.0%
+40.0%
+14.0%
+32.5%
+Qwen2.5-7b
+Direct
+52.0%
+63.0%
+40.5%
+57.5%
+CoT fewshot
+54.5%
+82.0%
+43.5%
+64.0%
+RAG (API doc)
+54.0%
+68.0%
+42.0%
+61.0%
+Code Search
+49.0%
+63.5%
+35.0%
+55.5%
+Qwen2.5-14b
+Direct
+56.0%
+56.0%
+49.5%
+50.0%
+CoT fewshot
+77.5%
+83.5%
+71.0%
+77.0%
+RAG (API doc)
+57.5%
+58.0%
+51.5%
+53.5%
+Code Search
+55.5%
+56.0%
+58.0%
+58.0%
+Qwen2.5-32b
+Direct
+67.0%
+73.0%
+64.0%
+79.5%
+CoT fewshot
+74.0%
+89.5%
+61.0%
+80.5%
+RAG (API doc)
+73.5%
+85.5%
+71.0%
+87.0%
+Code Search
+61.5%
+82.0%
+64.5%
+85.5%
+3B on PanNum: 15.0%→34.0%). Yet even with CoT, models consis-
+tently score lower on MonkBeatEval than on PanNumEval at the
+same scale (e.g., 14B: 71.0% vs. 77.5%), indicating that step-by-step
+reasoning alone cannot fully compensate for missing API knowl-
+edge.
+RAG with API documentation provides moderate improvements
+for unseen function reasoning, though its effectiveness depends
+heavily on model capacity. Smaller models gain little from re-
+trieved documentation (7B: +1.5%; 14B: +2.0%), while the 32B model
+achieves more substantial improvements (+7.0% pass@1, +7.5%
+pass@3), suggesting that effectively leveraging external documen-
+tation during reasoning requires sufficient model capacity to fil-
+ter and integrate the additional context. Notably, even with RAG
+augmentation, the performance gap between MonkBeatEval and
+PanNumEval persists across all scales, indicating that retrieved
+documentation helps but cannot fully close the disadvantage intro-
+duced by unseen functions.
+Code search, which retrieves raw source code of unseen func-
+tions, shows limited effectiveness compared to API documentation.
+Natural language documentation consistently outperforms source
+code retrieval (e.g., 7B on MonkBeat: 42.0% vs. 35.0%), suggesting
+that concise semantic descriptions are more readily integrated into
+the reasoning process than source code, which effectively requires
+nested code comprehension as a prerequisite.
+Cross-Scenario Synthesis. Three observations emerge from com-
+paring strategy effectiveness across scenarios: (1) CoT consistently
+improves reasoning where knowledge is sufficient—it yields
+substantial gains in ILR and AIR scenarios and remains the most
+effective single strategy across all settings, with smaller models
+benefiting disproportionately; (2) RAG effectiveness depends
+on both knowledge availability and model capacity—it pro-
+vides moderate gains for unseen function reasoning but requires
+sufficient model scale to be leveraged effectively; (3) Strategy se-
+lection should match the performance bottleneck—reasoning
+augmentation for logical complexity, knowledge augmentation for
+genuine knowledge gaps, with model capacity as a prerequisite for
+both.
+Answer to RQ3: CoT few-shot is the most broadly effective strat-
+egy, improving reasoning across all scenarios with smaller models
+benefiting disproportionately. RAG with API documentation pro-
+vides moderate gains for unseen function reasoning but depends
+heavily on model capacity, and cannot fully bridge the perfor-
+mance gap caused by knowledge deficits. Strategy effectiveness
+depends critically on matching the bottleneck: reasoning aug-
+mentation for logical complexity, knowledge augmentation for
+novelty—with sufficient model capacity as a prerequisite for lever-
+aging either effectively.
+4
+Discussion and Threats to Validity
+Benchmark Representativeness. Our benchmark focuses on three
+specific scenarios (intrinsic logic, API interaction, and unseen func-
+tions) which may not capture all real-world code reasoning contexts.
+To ensure representativeness, we deliberately selected scenarios
+based on systematic analysis of common developer workflows—
+code review (understanding unfamiliar logic), API integration (com-
+posing library functions), and repository navigation (reasoning
+about custom utilities). We leveraged established datasets (CRUX-
+Eval, DS-1000, TorchdataCode) that have been validated in prior
+work and constructed MonkBeatEval following rigorous benchmark
+design principles. The diversity of our three scenarios, spanning
+different reasoning challenges and knowledge requirements, pro-
+vides comprehensive coverage of core code understanding tasks
+encountered in practice.
+Model Selection and Generalizability. Our evaluation covers 7
+state-of-the-art LLMs, which may not represent all available models.
+However, we strategically selected models spanning different ar-
+chitectures (GPT-4o, Qwen2.5-Coder, DeepSeek-Coder), scales (3B-
+32B parameters for open-source models), and training paradigms
+(closed-source vs. open-source, general-purpose vs. code-specialized).
+This diversity ensures our findings reflect broader trends rather than
+model-specific artifacts. The consistent patterns observed across
+different model families (e.g., dynamic features outweighing static
+features) strengthen the generalizability of our conclusions. While
+future models may exhibit different absolute performance levels,
+the relative challenges and reasoning patterns we identify are likely
+to persist.
+Feature Coverage. We analyze 9 code complexity features across
+three categories (logic, API, knowledge), which may not exhaus-
+tively capture all factors affecting code reasoning. Our feature se-
+lection was guided by both theoretical considerations (prior work
+on code complexity metrics) and practical relevance (features de-
+velopers commonly encounter). We prioritize features with clear
+operational definitions and reliable automatic extraction to en-
+sure reproducibility. The strong correlations observed between
+our selected features and reasoning performance (particularly dy-
+namic execution features) validate their relevance. While additional
+features (e.g., variable naming quality, comment density) could
+
+
+CodeGlance: Understanding Code Reasoning Challenges in LLMs through Multi-Dimensional Feature Analysis
+Conference’17, July 2017, Washington, DC, USA
+provide further insights, our current feature set identifies the pri-
+mary bottlenecks—dynamic execution simulation and composi-
+tional complexity—that should be prioritized for improving code
+reasoning systems.
+5
+Related Work
+Code Understanding Benchmarks. Evaluating LLMs on code has
+evolved from basic generation tasks—HumanEval [6], MBPP [2],
+CodeSearchNet [17], CodeXGLUE [28]—to complex reasoning sce-
+narios including translation [37], synthesis [7], bug detection [38],
+and class-level generation [12]. Recent benchmarks emphasize holis-
+tic evaluation: LiveCodeBench [18] addresses contamination with
+time-evolving problems, BigCodeBench [54] evaluates diverse func-
+tion calls across 43 languages, CodeScope [45] assesses multilingual
+multitask performance, and SWE-bench [20] tests real-world issue
+resolution. For code reasoning specifically, CRUXEval [15] intro-
+duced input-output prediction, DS-1000 [22] focused on data science
+APIs, CodeMind [27] challenged reasoning robustness, NExT [32]
+taught execution reasoning, and CodeReason [5] examined run-
+time behavior understanding. However, existing benchmarks eval-
+uate isolated scenarios without systematically investigating how
+code characteristics (execution complexity, API composition, knowl-
+edge familiarity) affect reasoning. CodeGlance addresses this gap
+through three orthogonal scenarios with targeted feature analysis,
+revealing what fundamentally challenges LLM code reasoning.
+LLM Code Understanding and Enhancement Strategies. Code-
+specialized LLMs—Codex [7], CodeLlama [36], StarCoder [25], DeepSeek-
+Coder [10], Qwen-Coder [39]—have achieved remarkable perfor-
+mance through targeted pre-training. Enhancement strategies fall
+into three categories. Reasoning augmentation employs Chain-of-
+Thought prompting [43] for step-by-step decomposition in genera-
+tion [11] and repair [8, 44, 50], ReAct [47] for iterative reasoning-
+action cycles, and process-based feedback [52] for execution-aware
+refinement. Knowledge augmentation leverages Retrieval-Augmented
+Generation [24, 49] for API documentation [13, 30, 42], code search
+for contextual suggestions [4], and repository-level context [51].
+Debugging and repair systems integrate dynamic analysis [21, 53]
+with agentic workflows [3, 23, 29, 46] for autonomous program
+improvement. Despite these advances, their effectiveness across
+reasoning scenarios with varying execution complexity and knowl-
+edge requirements remains unclear. Our systematic evaluation re-
+veals scenario-specific strategy efficacy: CoT consistently improves
+reasoning across scenarios, RAG provides capacity-dependent gains
+primarily for knowledge-gap scenarios, yet neither fully bridges
+the gap for unseen functions, exposing fundamental limitations in
+compositional generalization.
+6
+Conclusion
+We present CodeGlance, a multi-dimensional benchmark evalu-
+ating LLMs’ code reasoning across three realistic scenarios. Our
+evaluation of 7 LLMs reveals that unseen functions pose significant
+challenge, dynamic features outweigh static structure, and augmen-
+tation strategies must match challenge types. These findings guide
+development of more capable code reasoning systems.
+References
+[1] Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ahmad, Ilge Akkaya, Floren-
+cia Leoni Aleman, Diogo Almeida, Janko Altenschmidt, Sam Altman, Shyamal
+Anadkat, et al. 2023. Gpt-4 technical report. arXiv preprint arXiv:2303.08774
+(2023).
+[2] Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk
+Michalewski, David Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le,
+et al. 2021. Program synthesis with large language models. arXiv preprint
+arXiv:2108.07732 (2021).
+[3] Islem Bouzenia, Premkumar T. Devanbu, and Michael Pradel. 2025. RepairAgent:
+An Autonomous, LLM-Based Agent for Program Repair. In 47th IEEE/ACM In-
+ternational Conference on Software Engineering, ICSE 2025, Ottawa, ON, Canada,
+April 26 - May 6, 2025. IEEE, 2188–2200. doi:10.1109/ICSE55347.2025.00157
+[4] Junkai Chen, Xing Hu, Zhenhao Li, Cuiyun Gao, Xin Xia, and David Lo. 2024.
+Code Search is All You Need? Improving Code Suggestions with Code Search. In
+Proceedings of the 46th IEEE/ACM International Conference on Software Engineering,
+ICSE 2024, Lisbon, Portugal, April 14-20, 2024. ACM, 73:1–73:13. doi:10.1145/
+3597503.3639085
+[5] Junkai Chen, Zhiyuan Pan, Xing Hu, Zhenhao Li, Ge Li, and Xin Xia. 2025.
+Reasoning Runtime Behavior of a Program with LLM: How Far are We?. In 47th
+IEEE/ACM International Conference on Software Engineering, ICSE 2025, Ottawa,
+ON, Canada, April 26 - May 6, 2025. IEEE, 1869–1881. doi:10.1109/ICSE55347.2025.
+00012
+[6] Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de
+Oliveira Pinto, Jared Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph, Greg
+Brockman, Alex Ray, Raul Puri, Gretchen Krueger, Michael Petrov, Heidy Khlaaf,
+Girish Sastry, Pamela Mishkin, Brooke Chan, Scott Gray, Nick Ryder, Mikhail
+Pavlov, Alethea Power, Lukasz Kaiser, Mohammad Bavarian, Clemens Winter,
+Philippe Tillet, Felipe Petroski Such, Dave Cummings, Matthias Plappert, Fo-
+tios Chantzis, Elizabeth Barnes, Ariel Herbert-Voss, William Hebgen Guss, Alex
+Nichol, Alex Paino, Nikolas Tezak, Jie Tang, Igor Babuschkin, Suchir Balaji, Shan-
+tanu Jain, William Saunders, Christopher Hesse, Andrew N. Carr, Jan Leike, Josh
+Achiam, Vedant Misra, Evan Morikawa, Alec Radford, Matthew Knight, Miles
+Brundage, Mira Murati, Katie Mayer, Peter Welinder, Bob McGrew, Dario Amodei,
+Sam McCandlish, Ilya Sutskever, and Wojciech Zaremba. 2021. Evaluating Large
+Language Models Trained on Code. (2021). arXiv:2107.03374 [cs.LG]
+[7] Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira
+Pinto, Jared Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman,
+et al. 2021. Evaluating large language models trained on code. arXiv preprint
+arXiv:2107.03374 (2021).
+[8] Xinyun Chen, Maxwell Lin, Nathanael Schärli, and Denny Zhou. 2024. Teaching
+Large Language Models to Self-Debug. In The Twelfth International Conference
+on Learning Representations, ICLR 2024, Vienna, Austria, May 7-11, 2024. OpenRe-
+view.net. https://openreview.net/forum?id=KuPixIqPiq
+[9] Cursor. 2023. Cursor: The AI-first Code Editor. https://cursor.sh Accessed: 2024.
+[10] DeepSeek-AI, Aixin Liu, Bei Feng, Bing Xue, Bingxuan Wang, Bochao Wu,
+Chengda Lu, Chenggang Zhao, Chengqi Deng, Chenyu Zhang, Chong Ruan,
+Damai Dai, Daya Guo, Dejian Yang, Deli Chen, Dongjie Ji, Erhang Li, Fangyun
+Lin, Fucong Dai, Fuli Luo, Guangbo Hao, Guanting Chen, Guowei Li, H. Zhang,
+Han Bao, Hanwei Xu, Haocheng Wang, Haowei Zhang, Honghui Ding, Huajian
+Xin, Huazuo Gao, Hui Li, Hui Qu, J. L. Cai, Jian Liang, Jianzhong Guo, Jiaqi
+Ni, Jiashi Li, Jiawei Wang, Jin Chen, Jingchang Chen, Jingyang Yuan, Junjie
+Qiu, Junlong Li, Junxiao Song, Kai Dong, Kai Hu, Kaige Gao, Kang Guan, Kexin
+Huang, Kuai Yu, Lean Wang, Lecong Zhang, Lei Xu, Leyi Xia, Liang Zhao, Litong
+Wang, Liyue Zhang, Meng Li, Miaojun Wang, Mingchuan Zhang, Minghua Zhang,
+Minghui Tang, Mingming Li, Ning Tian, Panpan Huang, Peiyi Wang, Peng Zhang,
+Qiancheng Wang, Qihao Zhu, Qinyu Chen, Qiushi Du, R. J. Chen, R. L. Jin, Ruiqi
+Ge, Ruisong Zhang, Ruizhe Pan, Runji Wang, Runxin Xu, Ruoyu Zhang, Ruyi
+Chen, S. S. Li, Shanghao Lu, Shangyan Zhou, Shanhuang Chen, Shaoqing Wu,
+Shengfeng Ye, Shengfeng Ye, Shirong Ma, Shiyu Wang, Shuang Zhou, Shuiping
+Yu, Shunfeng Zhou, Shuting Pan, T. Wang, Tao Yun, Tian Pei, Tianyu Sun, W. L.
+Xiao, Wangding Zeng, Wanjia Zhao, Wei An, Wen Liu, Wenfeng Liang, Wenjun
+Gao, Wenqin Yu, Wentao Zhang, X. Q. Li, Xiangyue Jin, Xianzu Wang, Xiao Bi,
+Xiaodong Liu, Xiaohan Wang, Xiaojin Shen, Xiaokang Chen, Xiaokang Zhang,
+Xiaosha Chen, Xiaotao Nie, Xiaowen Sun, Xiaoxiang Wang, Xin Cheng, Xin
+Liu, Xin Xie, Xingchao Liu, Xingkai Yu, Xinnan Song, Xinxia Shan, Xinyi Zhou,
+Xinyu Yang, Xinyuan Li, Xuecheng Su, Xuheng Lin, Y. K. Li, Y. Q. Wang, Y. X.
+Wei, Y. X. Zhu, Yang Zhang, Yanhong Xu, Yanhong Xu, Yanping Huang, Yao
+Li, Yao Zhao, Yaofeng Sun, Yaohui Li, Yaohui Wang, Yi Yu, Yi Zheng, Yichao
+Zhang, Yifan Shi, Yiliang Xiong, Ying He, Ying Tang, Yishi Piao, Yisong Wang,
+Yixuan Tan, Yiyang Ma, Yiyuan Liu, Yongqiang Guo, Yu Wu, Yuan Ou, Yuchen
+Zhu, Yuduan Wang, Yue Gong, Yuheng Zou, Yujia He, Yukun Zha, Yunfan Xiong,
+Yunxian Ma, Yuting Yan, Yuxiang Luo, Yuxiang You, Yuxuan Liu, Yuyang Zhou,
+Z. F. Wu, Z. Z. Ren, Zehui Ren, Zhangli Sha, Zhe Fu, Zhean Xu, Zhen Huang, Zhen
+Zhang, Zhenda Xie, Zhengyan Zhang, Zhewen Hao, Zhibin Gou, Zhicheng Ma,
+Zhigang Yan, Zhihong Shao, Zhipeng Xu, Zhiyu Wu, Zhongyu Zhang, Zhuoshu
+Li, Zihui Gu, Zijia Zhu, Zijun Liu, Zilin Li, Ziwei Xie, Ziyang Song, Ziyi Gao, and
+
+
+Conference’17, July 2017, Washington, DC, USA
+Wang et al.
+Zizheng Pan. 2025. DeepSeek-V3 Technical Report. arXiv:2412.19437 [cs.CL]
+https://arxiv.org/abs/2412.19437
+[11] Yihong Dong, Xue Jiang, Zhi Jin, and Ge Li. 2024. Self-collaboration code genera-
+tion via ChatGPT. ACM Transactions on Software Engineering and Methodology
+(2024).
+[12] Xueying Du, Mingwei Liu, Kaixin Wang, Hanlin Wang, Junwei Liu, Yixuan
+Chen, Jiayi Feng, Chaofeng Sha, Xin Peng, and Yiling Lou. 2023. ClassEval: A
+Manually-Crafted Benchmark for Evaluating LLMs on Class-level Code Genera-
+tion. arXiv:2308.01861 [cs.CL] https://arxiv.org/abs/2308.01861
+[13] Linyong Gan, Jing Gao, Zixiang Yan, Wei Li, Zhi Guo, Jiajie Lu, et al. 2023. When
+neural model meets nl2sql: A survey. ACM Transactions on Database Systems 48,
+2 (2023), 1–52.
+[14] GitHub. 2021. GitHub Copilot: Your AI pair programmer. https://github.com/
+features/copilot Accessed: 2024.
+[15] Alex Gu, Baptiste Rozière, Hugh James Leather, Armando Solar-Lezama, Gabriel
+Synnaeve, and Sida Wang. 2024. CRUXEval: A Benchmark for Code Reasoning,
+Understanding and Execution. In Forty-first International Conference on Machine
+Learning, ICML 2024, Vienna, Austria, July 21-27, 2024. OpenReview.net. https:
+//openreview.net/forum?id=Ffpg52swvg
+[16] Alex Gu, Baptiste Rozière, Hugh James Leather, Armando Solar-Lezama, Gabriel
+Synnaeve, and Sida Wang. 2024. CRUXEval: A Benchmark for Code Reasoning,
+Understanding and Execution. In Forty-first International Conference on Machine
+Learning, ICML 2024, Vienna, Austria, July 21-27, 2024. OpenReview.net. https:
+//openreview.net/forum?id=Ffpg52swvg
+[17] Hamel Husain, Ho-Hsiang Wu, Tiferet Gazit, Miltiadis Allamanis, and Marc
+Brockschmidt. 2020. CodeSearchNet Challenge: Evaluating the State of Semantic
+Code Search. arXiv:1909.09436 [cs.LG] https://arxiv.org/abs/1909.09436
+[18] Naman Jain, King Han, Alex Gu, Wen-Ding Li, Fanjia Yan, Tianjun Zhang,
+Sida Wang, Armando Solar-Lezama, Koushik Sen, and Ion Stoica. 2025. Live-
+CodeBench: Holistic and Contamination Free Evaluation of Large Language
+Models for Code. In The Thirteenth International Conference on Learning Rep-
+resentations, ICLR 2025, Singapore, April 24-28, 2025. OpenReview.net.
+https:
+//openreview.net/forum?id=chfJJYC3iL
+[19] Naman Jain, King Han, Alex Gu, Wen-Ding Li, Fanjia Yan, Tianjun Zhang, Sida
+Wang, Armando Solar-Lezama, Koushik Sen, and Ion Stoica. 2023. REval: A
+Benchmark for Evaluating Reasoning Capabilities of Large Language Models on
+Code. arXiv preprint arXiv:2308.03688 (2023).
+[20] Carlos E. Jimenez, John Yang, Alexander Wettig, Shunyu Yao, Kexin Pei, Ofir Press,
+and Karthik R. Narasimhan. 2024. SWE-bench: Can Language Models Resolve
+Real-world Github Issues?. In The Twelfth International Conference on Learning
+Representations, ICLR 2024, Vienna, Austria, May 7-11, 2024. OpenReview.net.
+https://openreview.net/forum?id=VTF8yNQM66
+[21] Sungmin Kang, Bei Chen, Shin Yoo, and Jian-Guang Lou. 2025. Explainable
+automated debugging via large language model-driven scientific debugging.
+Empir. Softw. Eng. 30, 2 (2025), 45. doi:10.1007/S10664-024-10594-X
+[22] Yuhang Lai, Chengxi Li, Yiming Wang, Tianyi Zhang, Ruiqi Zhong, Luke Zettle-
+moyer, Wen-tau Yih, Daniel Fried, Sida Wang, and Tao Yu. 2023. DS-1000: A
+Natural and Reliable Benchmark for Data Science Code Generation. In Interna-
+tional Conference on Machine Learning. PMLR, 18319–18345.
+[23] Cheryl Lee, Chunqiu Steven Xia, Jen-tse Huang, Zhouruixin Zhu, Lingming
+Zhang, and Michael R. Lyu. 2024. A Unified Debugging Approach via LLM-Based
+Multi-Agent Synergy. CoRR abs/2404.17153 (2024). doi:10.48550/ARXIV.2404.
+17153 arXiv:2404.17153
+[24] Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin,
+Naman Goyal, Heinrich Küttler, Mike Lewis, Wen-tau Yih, Tim Rocktäschel,
+et al. 2020. Retrieval-augmented generation for knowledge-intensive nlp tasks.
+Advances in Neural Information Processing Systems 33 (2020), 9459–9474.
+[25] Raymond Li, Loubna Ben Allal, Yangtian Zi, Niklas Muennighoff, Denis Kocetkov,
+Chenghao Mou, Marc Marone, Christopher Akiki, Jia Li, Jenny Chim, et al. 2023.
+Starcoder: may the source be with you! arXiv preprint arXiv:2305.06161 (2023).
+[26] Changshu Liu, Shizhuo Dylan Zhang, and Reyhaneh Jabbarvand. 2024. CodeMind:
+A Framework to Challenge Large Language Models for Code Reasoning. arXiv
+preprint arXiv:2402.09664 (2024).
+[27] Changshu Liu, Shizhuo Dylan Zhang, and Reyhaneh Jabbarvand. 2024. CodeMind:
+A Framework to Challenge Large Language Models for Code Reasoning. CoRR
+abs/2402.09664 (2024). doi:10.48550/ARXIV.2402.09664 arXiv:2402.09664
+[28] Shuai Lu, Daya Guo, Shuo Ren, Junjie Huang, Alexey Svyatkovskiy, Ambrosio
+Blanco, Colin Clement, Dawn Drain, Daxin Jiang, Duyu Tang, Ge Li, Lidong Zhou,
+Linjun Shou, Long Zhou, Michele Tufano, Ming Gong, Ming Zhou, Nan Duan,
+Neel Sundaresan, Shao Kun Deng, Shengyu Fu, and Shujie Liu. 2021. CodeXGLUE:
+A Machine Learning Benchmark Dataset for Code Understanding and Generation.
+arXiv:2102.04664 [cs.SE] https://arxiv.org/abs/2102.04664
+[29] Yingwei Ma, Rongyu Cao, Yongchang Cao, Yue Zhang, Jue Chen, Yibo Liu,
+Yuchen Liu, Binhua Li, Fei Huang, and Yongbin Li. 2024. Lingma SWE-GPT:
+An Open Development-Process-Centric Language Model for Automated Soft-
+ware Improvement. CoRR abs/2411.00622 (2024). doi:10.48550/ARXIV.2411.00622
+arXiv:2411.00622
+[30] Zexiong Ma, Shengnan An, Bing Xie, and Zeqi Lin. 2024. Compositional API
+Recommendation for Library-Oriented Code Generation. In Proceedings of the
+32nd IEEE/ACM International Conference on Program Comprehension (ICPC ’24).
+ACM, 87–98. doi:10.1145/3643916.3644403
+[31] Vladimir Makharev and Vladimir Ivanov. 2025. Code Summarization Beyond
+Function Level. arXiv:2502.16704 [cs.CL] https://arxiv.org/abs/2502.16704
+[32] Ansong Ni, Miltiadis Allamanis, Arman Cohan, Yinlin Deng, Kensen Shi, Charles
+Sutton, and Pengcheng Yin. 2024. NExT: Teaching Large Language Models to
+Reason about Code Execution. In Forty-first International Conference on Machine
+Learning, ICML 2024, Vienna, Austria, July 21-27, 2024. OpenReview.net. https:
+//openreview.net/forum?id=B1W712hMBi
+[33] Theo X. Olausson, Jeevana Priya Inala, Chenglong Wang, Jianfeng Gao, and
+Armando Solar-Lezama. 2024. Is Self-Repair a Silver Bullet for Code Generation?
+arXiv:2306.09896 [cs.CL] https://arxiv.org/abs/2306.09896
+[34] Zhenyu Pan, Xuefeng Song, Yunkun Wang, Rongyu Cao, Binhua Li, Yongbin
+Li, and Han Liu. 2025. Do Code LLMs Understand Design Patterns?. In 2025
+IEEE/ACM International Workshop on Large Language Models for Code (LLM4Code).
+209–212. doi:10.1109/LLM4Code66737.2025.00031
+[35] Monoshi Kumar Roy, Simin Chen, Benjamin Steenhoek, Jinjun Peng, Gail Kaiser,
+Baishakhi Ray, and Wei Le. 2026. CodeSense: a Real-World Benchmark and
+Dataset for Code Semantic Reasoning. arXiv:2506.00750 [cs.SE] https://arxiv.
+org/abs/2506.00750
+[36] Baptiste Roziere, Jonas Gehring, Fabian Gloeckle, Sten Sootla, Itai Gat, Xiao-
+qing Ellen Tan, Yossi Adi, Jingyu Liu, Tal Remez, Jérémy Rapin, et al. 2023. Code
+llama: Open foundation models for code. arXiv preprint arXiv:2308.12950 (2023).
+[37] Baptiste Roziere, Marie-Anne Lachaux, Lowik Chanussot, and Guillaume Lample.
+2021. Leveraging automated unit tests for unsupervised code translation. In
+International Conference on Learning Representations.
+[38] Natu Steenhoek, Md Mahbubur Rahman, Richard Jiles, and Mingzhe Wei. 2023.
+Deep learning based vulnerability detection: Are we there yet? IEEE Transactions
+on Software Engineering 49, 6 (2023), 3397–3420.
+[39] Qwen Team. 2024. Qwen2.5 technical report. arXiv preprint arXiv:2412.15115
+(2024).
+[40] Yunkun Wang, Xuanhe Zhang, Junxiao Han, Chen Zhi, and Shuiguang Deng.
+2026.
+CodeGlance: Artifact and Replication Package.
+https://github.com/
+greenlight2000/CodeGlance. Accessed: 2026.
+[41] Yunkun Wang, Yue Zhang, Guochang Li, Chen Zhi, Binhua Li, Fei Huang, Yongbin
+Li, and Shuiguang Deng. 2025. InspectCoder: Dynamic Analysis-Enabled Self Re-
+pair through interactive LLM-Debugger Collaboration. arXiv:2510.18327 [cs.SE]
+https://arxiv.org/abs/2510.18327
+[42] Yunkun Wang, Yue Zhang, Zhen Qin, Chen Zhi, Binhua Li, Fei Huang, Yongbin
+Li, and Shuiguang Deng. 2024. ExploraCoder: Advancing code generation for
+multiple unseen APIs via planning and chained exploration. CoRR abs/2412.05366
+(2024). doi:10.48550/ARXIV.2412.05366 arXiv:2412.05366
+[43] Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Fei Xia, Ed Chi,
+Quoc V Le, and Denny Zhou. 2022. Chain-of-thought prompting elicits reasoning
+in large language models. In Advances in Neural Information Processing Systems,
+Vol. 35. 24824–24837.
+[44] Chunqiu Steven Xia, Yuxiang Wei, and Lingming Zhang. 2023. Conversational
+automated program repair. arXiv preprint arXiv:2301.13246 (2023).
+[45] Weixiang Yan, Haitian Liu, Yunkun Wang, Yunzhe Li, Qian Chen, Wen Wang,
+Tingyu Lin, Weishan Zhao, Li Zhu, Hari Sundaram, and Shuiguang Deng. 2024.
+CodeScope: An Execution-based Multilingual Multitask Multidimensional Bench-
+mark for Evaluating LLMs on Code Understanding and Generation. In Proceed-
+ings of the 62nd Annual Meeting of the Association for Computational Linguis-
+tics (Volume 1: Long Papers), Lun-Wei Ku, Andre Martins, and Vivek Srikumar
+(Eds.). Association for Computational Linguistics, Bangkok, Thailand, 5511–5558.
+doi:10.18653/v1/2024.acl-long.301
+[46] John Yang, Carlos E. Jimenez, Alexander Wettig, Kilian Lieret, Shunyu Yao,
+Karthik Narasimhan, and Ofir Press. 2024. SWE-agent: Agent-Computer Inter-
+faces Enable Automated Software Engineering. In Advances in Neural Information
+Processing Systems 38: Annual Conference on Neural Information Processing Systems
+2024, NeurIPS 2024, Vancouver, BC, Canada, December 10 - 15, 2024, Amir Glober-
+sons, Lester Mackey, Danielle Belgrave, Angela Fan, Ulrich Paquet, Jakub M.
+Tomczak, and Cheng Zhang (Eds.). http://papers.nips.cc/paper_files/paper/2024/
+hash/5a7c947568c1b1328ccc5230172e1e7c-Abstract-Conference.html
+[47] Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik R. Narasimhan,
+and Yuan Cao. 2023. ReAct: Synergizing Reasoning and Acting in Language
+Models. In The Eleventh International Conference on Learning Representations,
+ICLR 2023, Kigali, Rwanda, May 1-5, 2023. OpenReview.net. https://openreview.
+net/forum?id=WE_vluYUL-X
+[48] Daoguang Zan, Ailun Yu, Bo Shen, Bei Chen, Wei Li, Yongshun Gong, Xiaolin
+Chen, Yafen Yao, Weihua Luo, Bei Guan, Yan Liu, Yongji Wang, Qianxiang Wang,
+and Lizhen Cui. 2024. DiffCoder: Enhancing Large Language Model on API
+Invocation via Analogical Code Exercises. Proc. ACM Softw. Eng. 1, FSE, Article
+19 (July 2024), 21 pages. doi:10.1145/3643745
+[49] Fengji Zhang, Bei Chen, Yue Zhang, Jacky Keung, Jin Liu, Daoguang Zan, Yi
+Mao, Jian-Guang Lou, and Weizhu Chen. 2023. RepoCoder: Repository-Level
+
+
+CodeGlance: Understanding Code Reasoning Challenges in LLMs through Multi-Dimensional Feature Analysis
+Conference’17, July 2017, Washington, DC, USA
+Code Completion Through Iterative Retrieval and Generation. In Proceedings
+of the 2023 Conference on Empirical Methods in Natural Language Processing,
+Houda Bouamor, Juan Pino, and Kalika Bali (Eds.). Association for Computational
+Linguistics, Singapore, 2471–2484. doi:10.18653/v1/2023.emnlp-main.151
+[50] Kechi Zhang, Zhuo Li, Jia Li, Ge Li, and Zhi Jin. 2023. Self-Edit: Fault-Aware
+Code Editor for Code Generation. In Proceedings of the 61st Annual Meeting
+of the Association for Computational Linguistics (Volume 1: Long Papers), ACL
+2023, Toronto, Canada, July 9-14, 2023, Anna Rogers, Jordan L. Boyd-Graber,
+and Naoaki Okazaki (Eds.). Association for Computational Linguistics, 769–787.
+doi:10.18653/V1/2023.ACL-LONG.45
+[51] Yuntong Zhang, Haifeng Ruan, Zhiyu Fan, and Abhik Roychoudhury. 2024. Au-
+toCodeRover: Autonomous Program Improvement. In Proceedings of the 33rd
+ACM SIGSOFT International Symposium on Software Testing and Analysis, ISSTA
+2024, Vienna, Austria, September 16-20, 2024, Maria Christakis and Michael Pradel
+(Eds.). ACM, 1592–1604. doi:10.1145/3650212.3680384
+[52] Yuze Zhao, Zhenya Huang, Yixiao Ma, Rui Li, Kai Zhang, Hao Jiang, Qi Liu, Linbo
+Zhu, and Yu Su. 2024. RePair: Automated Program Repair with Process-based
+Feedback. In Findings of the Association for Computational Linguistics, ACL 2024,
+Bangkok, Thailand and virtual meeting, August 11-16, 2024, Lun-Wei Ku, Andre
+Martins, and Vivek Srikumar (Eds.). Association for Computational Linguistics,
+16415–16429. doi:10.18653/V1/2024.FINDINGS-ACL.973
+[53] Li Zhong, Zilong Wang, and Jingbo Shang. 2024. Debug like a Human: A Large
+Language Model Debugger via Verifying Runtime Execution Step by Step. In
+Findings of the Association for Computational Linguistics, ACL 2024, Bangkok,
+Thailand and virtual meeting, August 11-16, 2024, Lun-Wei Ku, Andre Martins,
+and Vivek Srikumar (Eds.). Association for Computational Linguistics, 851–870.
+doi:10.18653/V1/2024.FINDINGS-ACL.49
+[54] Terry Yue Zhuo, Minh Chien Vu, Jenny Chim, Han Hu, Wenhao Yu, Ratnadira
+Widyasari, Imam Nur Bani Yusuf, Haolan Zhan, Junda He, Indraneil Paul, Simon
+Brunner, Chen Gong, James Hoang, Armel Randy Zebaze, Xiaoheng Hong, Wen-
+Ding Li, Jean Kaddour, Ming Xu, Zhihan Zhang, Prateek Yadav, and et al. 2025.
+BigCodeBench: Benchmarking Code Generation with Diverse Function Calls
+and Complex Instructions. In The Thirteenth International Conference on Learning
+Representations, ICLR 2025, Singapore, April 24-28, 2025. OpenReview.net. https:
+//openreview.net/forum?id=YrycTjllL0

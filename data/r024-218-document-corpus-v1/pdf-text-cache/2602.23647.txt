@@ -1,0 +1,2133 @@
+SGAgent: Suggestion-Guided LLM-Based Multi-Agent
+Framework for Repository-Level Software Repair
+QUANJUN ZHANG, School of Computer Science and Engineering, Nanjing University of Science and
+Technology, China
+CHENGYU GAO, YU HAN, YE SHANG, CHUNRONG FANG∗, and ZHENYU CHEN, State
+Key Laboratory for Novel Software Technology, Nanjing University, China
+LIANG XIAO∗, School of Computer Science and Engineering, Nanjing University of Science and Technology,
+China
+The rapid advancement of Large Language Models (LLMs) has led to the emergence of intelligent agents
+capable of autonomously interacting with environments and invoking external tools. Recently, agent-based
+software repair approaches have received widespread attention, as repair agents can automatically analyze
+and localize bugs, generate patches, and achieve state-of-the-art performance on repository-level benchmarks
+(e.g.,, SWE-Bench). However, existing software repair approaches usually adopt a localize-then-fix paradigm,
+jumping directly from “where the bug is” to “how to fix it”, leaving a fundamental reasoning gap.
+To this end, we propose SGAgent, a Suggestion-Guided multi-Agent framework for repository-level
+software repair, which follows a localize-suggest-fix paradigm. Specifically, SGAgent introduces a suggestion
+to strengthen the transition from localization to repair. The suggester starts from the buggy locations and
+incrementally retrieves relevant context until it fully understands the bug, and then provides actionable repair
+suggestions. Moreover, we construct a Knowledge Graph (KG) from the target repository and develop a
+KG-based toolkit to enhance SGAgent’s ability to enhance global contextual awareness and repository-level
+reasoning. Based on these components, three specialized sub-agents in SGAgent (i.e., localizer, suggester, and
+fixer) collaborate to achieve automated end-to-end software repair. We evaluated SGAgent on the SWE-Bench-
+Lite benchmark. Experimental results show that SGAgent with Claude-3.5 achieves 51.3% repair accuracy,
+81.2% file-level, and 52.4% function-level localization accuracy with an average cost of $1.48 per instance,
+outperforming all baselines using the same base model. Moreover, SGAgent generalizes well across different
+base LLMs, further reaching a 60.7% resolution rate with Claude-4. When extended to vulnerability repair,
+SGAgent achieves a 48.0% resolution rate on VUL4J and VJBench, demonstrating strong generalization across
+tasks and programming languages.
+CCS Concepts: • Software and its engineering →Software testing and debugging.
+Additional Key Words and Phrases: Software Repair, Large Language Models, LLM-based Agent, LLM4SE
+∗Chunrong Fang and Liang Xiao are the corresponding authors.
+Authors’ Contact Information: Quanjun Zhang, quanjunzhang@njust.edu.cn, School of Computer Science and Engineering,
+Nanjing University of Science and Technology, Nanjing, China; Chengyu Gao, 502023320004@smail.nju.edu.cn; Yu Han,
+522024320053@smail.nju.edu.cn; Ye Shang, yeshang@smail.nju.edu.cn; Chunrong Fang, fangchunrong@nju.edu.cn; Zhenyu
+Chen, zychen@nju.edu.cn, State Key Laboratory for Novel Software Technology, Nanjing University, Nanjing, China;
+Liang Xiao, xiaoliang@mail.njust.edu.cn, School of Computer Science and Engineering, Nanjing University of Science and
+Technology, Nanjing, China.
+Permission to make digital or hard copies of all or part of this work for personal or classroom use is granted without fee
+provided that copies are not made or distributed for profit or commercial advantage and that copies bear this notice and
+the full citation on the first page. Copyrights for components of this work owned by others than ACM must be honored.
+Abstracting with credit is permitted. To copy otherwise, or republish, to post on servers or to redistribute to lists, requires
+prior specific permission and/or a fee. Request permissions from permissions@acm.org.
+© 2024 ACM.
+ACM 1557-7392/2024/1-ART1
+https://doi.org/1
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+arXiv:2602.23647v2  [cs.SE]  25 May 2026
+
+
+1:2
+Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao
+ACM Reference Format:
+Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao. 2024.
+SGAgent: Suggestion-Guided LLM-Based Multi-Agent Framework for Repository-Level Software Repair.
+ACM Trans. Softw. Eng. Methodol. 1, 1, Article 1 (January 2024), 32 pages. https://doi.org/1
+1
+Introduction
+Recently, Large Language Models (LLMs) have achieved remarkable progress across a wide range
+of software engineering tasks [15, 68], including code generation [11, 19], test generation [42, 65],
+and software repair [67, 69]. These advancements demonstrate the growing potential of LLMs to
+understand, generate, and manipulate source code in increasingly complex scenarios. However,
+most existing studies primarily concentrate on simplified, function-level tasks, where the repair or
+generation scope is limited to a single function or file [56, 60]. Such settings, while effective for
+controlled evaluation, fail to capture the repository-level dependencies and contextual complexities
+inherent in real-world software development.
+To bridge this gap, the research community has recently turned its attention to repository-level
+software repair, which has rapidly emerged as one of the most challenging and promising directions
+in LLM-based software engineering [40, 43, 52, 71]. In particular, the popular benchmark SWE-
+Bench [22] has been introduced to evaluate LLMs’ capabilities for resolving real GitHub issues
+with full repository access. Each task in SWE-Bench includes a natural-language issue description
+and its corresponding codebase, requiring LLMs to perform repository-level code reasoning to
+solve software-evolution challenges such as bug fixing and feature implementation. Given the
+computational overhead of running the full benchmark, the authors further released SWE-Bench
+Lite, a curated, lightweight subset that has become one of the most widely adopted benchmarks for
+evaluating LLMs on repository-level software repair tasks.
+To address the challenging real-world software engineering problems posed by SWE-bench,
+researchers have explored two primary paradigms: procedural [56, 60] and agentic [43, 52] ones.
+In particular, agentic approaches [43, 52] equip LLMs with external tools (e.g.,, file editing, code
+retrieval, and test execution) for iterative planning and environment interaction, enabling LLMs
+to autonomously navigate and modify large codebases in a manner akin to human developers.
+In contrast, procedural approaches [56, 60] integrate LLMs into predefined repair pipelines, and
+operate sequentially through multiple stages, such as fault localization, patch generation, and
+patch validation. Both paradigms have repeatedly advanced the state of the art on SWE-Bench,
+demonstrating the substantial potential of LLM-based repository-level software repair.
+Despite recent promising results, existing software repair approaches mainly follow a localize-
+then-fix paradigm, i.e., first identifying suspicious code elements and directly feeding them to
+LLMs to generate patches. However, jumping directly from fault localization to patch generation
+introduces several fundamental challenges. (1) Objective mismatch. Fault localization answers
+where the fault might be, whereas patch generation concerns how to modify the codebase. These
+two tasks require different semantic granularity and contextual understanding, and thus localization
+results alone do not provide sufficient guidance for reliable patch synthesis. In particular, simply
+providing LLMs with localized code snippets omits critical repository-level semantics, such as
+cross-file dependencies, meaning that knowing where the bug occurs does not provide enough
+information to determine what and how to change. (2) Sensitivity on localization results. The
+success of downstream patch generation largely depends on the quality of localization results [69].
+However, when the localization results are inaccurate, directly passing identified snippets to patch
+generation may propagate and even amplify errors in the downstream repair process. (3) Missing
+intermediate planning. Without an explicit planning phase between localization and repair, LLMs
+tend to directly apply edits to the nearest suspicious snippet, relying on trial-and-error rather than
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+SGAgent: Suggestion-Guided LLM-Based Multi-Agent Framework for Repository-Level Software Repair
+1:3
+reasoning about why and how the code should be modified. As a result, generated patches often
+overfit to the identified snippets, leading to redundant exploration and superficial fixes. Moreover,
+such opaque repair behavior reduces trustworthiness and hinders practical adoption in real-world
+development workflows, where developers require interpretable and justifiable repair suggestions.
+This Paper. To address the above issues, we propose SGAgent, a suggestion-guided, repository-
+level software repair approach that mimics human debugging practice based on multi-agent col-
+laboration. In real-world debugging scenarios, developers typically follow a three-step process:
+(1) analyze the issue behavior and localize suspicious code snippets; (2) reason about interactions
+between the suspicious region and other files, and devise a possible fix plan; and (3) attempt to
+modify the codebase and return a correct patch. Inspired by this expert practice, we design SGA-
+gent with three specialized agents: a fault localizer that identifies candidate fault regions; a repair
+suggester that performs backward analysis to convert coarse localization signals into actionable,
+repository-aware edit plans; and a patch generator that executes the plan and synthesizes patches.
+Importantly, the suggest stage closes the gap between where and how to fix issues by reinterpreting
+localization outputs before patching, thereby mitigating the challenge of imperfect localization and
+enabling interpretable, step-wise repair.
+Furthermore, to emulate how developers interact with IDEs to navigate the complex structure of
+codebases, we design and implement a fine-grained knowledge graph architecture and an API-based
+toolkit comprising 3 entity types, 7 relationship types, and 14 tools. This framework effectively
+covers nearly all static and dynamic program relationships (e.g.,, function calls, dependencies).
+Based on this, we not only leverage the knowledge graph to retrieve repository information during
+the localization phase, but also equip the suggester with the toolkit, enabling it to trace back related
+code from the identified buggy locations, provide repair suggestions and refine repair objectives.
+We evaluate SGAgent on the SWE-Bench-Lite dataset. Experimental results demonstrate that
+SGAgent achieves a 51.3% issue resolution rate, outperforming existing baselines under the same
+LLM setting. Moreover, when implemented with Claude-4, SGAgent further improves the resolution
+rate to 60.7%, demonstrating that our suggestion-guided multi-agent framework can effectively
+generalize across different backbone models. To provide a more rigorous evaluation, we additionally
+conduct experiments on SWE-Bench-Verified, where SGAgent resolves 327 out of 500 instances
+and achieves a 65.4% resolution rate, confirming its effectiveness on high-quality, human-validated
+repository-level repair tasks. We also evaluated the vulnerability repair capability of SGAgent
+on combined VUL4J and VJBench datasets. The results show that SGAgent achieves an average
+resolution rate of 48.0%, demonstrating its strong generalization ability to security-related repair
+scenarios.
+Novelty & Contributions. To sum up, the main contributions of this paper are as follows:
+• We propose SGAgent, a novel multi-agent framework for automatically repairing real-
+world repository-level software bugs. Drawing inspiration from real-world software repair
+processes, we design three agents with distinct roles, including localizer, suggester, and fixer.
+They collaborate with each other to complete bug localization and repair.
+• We replace the localize-then-fix paradigm with the locate-suggest-fix paradigm that mimics
+expert debugging expertise. By introducing an extra suggest stage before generating patches,
+SGAgent resolves 13.3% more instances on the SWE-Bench-Lite [22] dataset.
+• We are the first to develop a complex, scenario-oriented toolkit built upon a self-implemented
+fine-grained knowledge graph. The toolkit comprises 14 specialized tools, each designed
+to address specific repository-level software repair scenarios, and is tightly integrated into
+SGAgent. This integration significantly enhances SGAgent’s context retrieval and repository
+understanding capabilities, resulting in a 3.1% improvement in overall performance.
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+1:4
+Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao
+• We evaluate SGAgent on the SWE-Bench dataset and compare its performance against state-
+of-the-art approaches. Experimental results demonstrate that, under the same underlying
+LLM setting, SGAgent outperforms all baselines with a 51.3% resolve rate, an 81.2% file-level
+and 52.4% function-level localization accuracy, while maintaining a relatively low repair
+cost of $1.48 per instance (ranks third among all baselines). This highlights the significant
+potential of the repair agent and provides valuable guidance for future research.
+• To facilitate reproducibility and further research, we release the full implementation of
+SGAgent, including the source code, experiment configurations, and data processing pipeline.
+The project is openly available in our public repository [41].
+2
+Motivation
+if bulk_return and on_conflict is None:
+    inserted_rows.extend(
+        self._insert(
+            item,
+            fields = fields,
+            using = self.db,
+            returning_fields = db_returning_fields
+        ))
+django__django-17051
+if bulk_return and (on_conflict is None or 
+on_conflict == OnConflict.UPDATE):
+    inserted_rows.extend(
+        self._insert(
+        item,
+        fields = fields,
+        using = self.db,
+        returning_fields = db_returning_fields
+    ))
+Patch Without Suggestion +2 -1
+if bulk_return and (on_conflict is None or 
+on_conflict == OnConflict.UPDATE):
+    inserted_rows.extend(
+        self._insert(
+        item,
+        fields = fields,
+        using = self.db,
+        returning_fields = db_returning_fields,
+on_conflict=on_conflict,
+update_fields=update_fields,
+unique_fields=unique_fields
+    ))
+Patch With Suggestion +7 -3
+Based on my analysis of the interconnected bug 
+locations, here are my coo
+rdinated repair suggestions:
+... 
+2. Location 2 (Lines 1840 - 1848 in 
+`_batched_insert()` method):
+Update the condition to pass `returning_fields` 
+when using conflict resolution:
+```python
+Code here.
+```
+Note: Also add the conflict-related parameters 
+(`on_conflict`, `update_fields`, `unique_fields`) to 
+this `_insert()` call to ensure proper conflict 
+handling with returning fields.
+Generate patch
+directly
+First generate suggestion
+Then generate
+patch
+1
+2
+2
+Fig. 1. A motivation example of SGAgent.
+To illustrate the motivation behind SGAgent, we present a motivation example from the SWE-
+Bench benchmark. As shown in Figure 1, the bug instance django__django-17051 lies in the fail-
+ure to properly pass conflict-handling parameters on_conflict, update_fields, unique_fields from
+_batched_insert() to _insert(), causing the underlying logic to incorrectly handle ON CONFLICT DO
+UPDATE semantics despite modified conditions.
+We experimented with two repair strategies: the first directly generates a patch after localization,
+while the second first uses a model to generate repair suggestions based on the localization results,
+and then the repair model synthesizes both the localization output and the suggestions to produce
+the final patch. The results show that without repair suggestions, django__django-17051 cannot be
+correctly fixed. The generated patch simply modifies the conditional statement if bulk_return and
+on_conflict is None to if bulk_return and (on_conflict is None or on_conflict == OnConflict.UPDATE).
+Although this change superficially aligns with the intention of allowing UPDATE conflicts and return
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+SGAgent: Suggestion-Guided LLM-Based Multi-Agent Framework for Repository-Level Software Repair
+1:5
+IDs, it fails to handle the deeper semantic dependencies between related functions. Specifically,
+the _insert() call neglects to pass critical conflict-related parameters on_conflict, update_fields, and
+unique_fields, which are necessary for the underlying insertion logic to correctly execute conflict
+updates. As a result, the patch fails the benchmark test suite.
+In contrast, when the repair model is provided with repair suggestions, django__django-17051
+can be correctly fixed. The suggester analyzes the call relationship between _batched_insert()
+and _insert() and explicitly identifies that, beyond modifying the conditional statement, it is also
+essential to pass the conflict-handling parameters in the _insert() call. By introducing the three
+parameters on_conflict, update_fields, unique_fields, the patch achieves full compatibility with the
+ON CONFLICT DO UPDATE semantics, enabling the system to correctly return primary key IDs when
+update_conflicts=True is specified, thereby completely resolving the issue.
+The motivation example demonstrates that the suggester plays a crucial role not only in producing
+syntactically valid repair suggestions but also in injecting semantic context awareness into the
+repair process. Without repair suggestions, the repair model tends to generate superficially correct
+but structurally incomplete patches. With the suggester enabled, the repair model can reason across
+function-level dependencies and produce structurally complete and semantically correct repairs. In
+our work, we introduce an additional suggester module between localization and repair, enabling
+the repair model to better understand the bug and guide the fixing process.
+3
+Methodology
+3.1
+Problem Statement
+Assuming 𝐵is a bug to be fixed and𝐶is the codebase in which it resides, the existing localize-then-fix
+repair process can be defined as follows.
+Definition 3.1 (The localize-then-fix Repair Paradigm). The localize-then-fix process consists of
+two stages. First, the localization model 𝛼identifies the locations 𝐿of bug 𝐵based on the bug
+description and the codebase 𝐶. Then, the repair model 𝛽generates a patch 𝑃for the bug 𝐵using
+𝐵, 𝐶, and the identified locations 𝐿.
+𝜋𝜃(𝐿, 𝑃| 𝐶, 𝐵) = 𝜋𝛼(𝐿| 𝐶, 𝐵)
+|        {z        }
+Localization
+· 𝜋𝛽(𝑃| 𝐶, 𝐵, 𝐿)
+|            {z            }
+Fixing
+(1)
+Building upon the localize-then-fix process, SGAgent further introduces a suggest phase between
+localization and repair to generate repair suggestions, enabling the repair model to better understand
+the bug and refine the repair objective. The locate-suggest-fix process is defined as follows.
+Definition 3.2 (The locate-suggest-fix Repair Paradigm). The key difference between locate-
+suggest-fix and localize-then-fix lies in the introduction of a suggester parameterized by 𝛾
+after bug localization. Specifically, after the location 𝐿is identified, the suggester 𝛾generates a
+repair suggestion 𝑅based on the location 𝐿, the bug 𝐵, and the codebase 𝐶. This suggestion 𝑅is
+then used together with 𝐿as input in the subsequent repair phase.
+𝜋𝜃(𝐿, 𝑅, 𝑃| 𝐶, 𝐵) = 𝜋𝛼(𝐿| 𝐶, 𝐵)
+|        {z        }
+localizer
+· 𝜋𝛾(𝑅| 𝐶, 𝐵, 𝐿)
+|           {z           }
+suggester
+· 𝜋𝛽(𝑃| 𝐶, 𝐵, 𝐿, 𝑅)
+|               {z               }
+fixer
+(2)
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+1:6
+Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao
+File X
+File Y
+...
+Static Analysis
+Entity & Relation
+Identity
+General Tools
+KG-based Tools
+Hierarchy Analysis
+Code Search
+...
+Structure Analysis
+summarize
+Summarizer
+Self-Reflection
+Bug Location
+Suggester
+Propose 
+Suggestions
+Explore 
+Dependencies 
+Fixer
+Recommend
+Locations
+Issue
+Build Graph
+Operation System
+Content Search
+Dependency Analysis
+Sell Command
+...
+Build
+Tools
+Localizer
+Tools Call
+Repository
+Issue 
+Description
+Tool
+Executor
+Snapshot Storage
+Propose
+ Locations
+Propose
+Patches
+Patch Size
+Normalization
+Reproduction Test
+Regression Test
+Input
+Select Final
+Patch
+Select
+Suggestions
+Candidates
+Final Patch
+Summarize
+Return
+Knowledge Graph 
+Construction
+Graph-based 
+Toolkit Building
+Multi-Agent
+Framework
+Fig. 2. Overview of SGAgent.
+3.2
+Overview
+The overview of SGAgent is shown in Figure 2. SGAgent is a suggestion-guided multi-agent
+software repair framework that takes a GitHub issue and the corresponding codebase as inputs,
+and outputs a validated patch. Specifically, SGAgent is composed of three core components: (1)
+Knowledge Graph: a self-implemented repository graph consisting of three types of entities and
+seven types of relationships. This graph serves as the knowledge base capturing both the structural
+and semantic information of the repository. (2) Knowledge Graph Toolkit: a complex, knowledge-
+graph-driven toolkit that enables agents to perform accurate and efficient context retrieval across
+diverse repair scenarios. (3) Multi-Agent Framework: composed of the localizer, suggester, and fixer
+agents, which collaborate under a locate–suggest–fix paradigm to iteratively identify, analyze, and
+repair repository-level software bugs. Next, we introduce the core components of SGAgent in
+sequence.
+Knowledge Graph Construction. First, SGAgent constructs a structured knowledge graph
+based on the hierarchical organization of the target repository. It encodes code entities along with
+their structural and semantic relationships, serving as a knowledge base to support repository-level
+code understanding and contextual retrieval for the Multi-Agent system.
+KG-based Toolkit Implementation. Second, to enable the agents to efficiently utilize the
+knowledge graph for context retrieval, SGAgent builds a retrieval toolkit encompassing multiple
+querying mechanisms tailored to common code retrieval scenarios. Agents can invoke different
+tools within the toolkit depending on the task context, while the tools themselves provide additional
+contextual cues and guidance to optimize the retrieval process.
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+SGAgent: Suggestion-Guided LLM-Based Multi-Agent Framework for Repository-Level Software Repair
+1:7
+Multi-Agent Framework. SGAgent adopts a three-stage agent framework consisting of Locate,
+Suggest, and Fix phases, each handled by a specialized agent. The localizer retrieves relevant
+contextual information from the knowledge graph and proposes candidate bug locations. The
+suggester performs secondary retrieval based on the identified locations, refines the repair objectives,
+and generates repair suggestions. The fixer synthesizes patches according to the localization and
+suggestions, then performs patch ranking and selection to determine the final repair output.
+In the following sections, we will present the design rationale and technical implementation of
+these three components.
+3.3
+Knowledge Graph Construction
+To facilitate repository-level code retrieval and reasoning for LLMs, we construct a structured, repair-
+oriented knowledge graph based on static code analysis. To this end, we primarily use AST parsing
+to extract code entities and structural anchors, and then augment them with cross-file dependency
+relations that are directly useful for repository-level repair. Together with a custom-designed
+retrieval toolkit, this knowledge graph enables the agent to navigate large software repositories
+more effectively and to retrieve semantically relevant context for downstream reasoning and patch
+generation.
+Particularly, the construction process takes the complete repository as input, including both file
+structures and contents, and produces a graph composed of nodes and edges. The resulting graph
+can interact with a Neo4J database [31], providing optional persistent storage for efficient querying
+and visualization. In particular, the knowledge graph is built through the following four stages:
+(1) Tag Extraction: For each file 𝐹𝑖in the project, we employ abstract syntax tree analysis to
+extract raw tag information with Tree-sitter. If tag parsing fails to retrieve corresponding definition
+details, we additionally use Pygments to locate and supplement missing definitions, ensuring that
+all entities are fully captured. At this stage, ASTs are only used as the basis for entity extraction;
+they do not constitute the final graph structure.
+(2) File Structure Analysis: We then parse each file 𝐹𝑖to obtain its hierarchical structure, capturing
+file-level and intra-file structural relations such as class containment, method containment, and
+variable ownership. These relations provide the structural backbone of the graph. The relationships
+covered in our knowledge graph are shown in Table 1.
+(3) Entity and Relation Construction: As detailed in Table 2, we define three categories of entities,
+including classes, methods, and variables. Based on the tag information obtained in Step 1, we
+build indexed nodes for each entity through pointer analysis. We then derive multiple dependency
+relations from the structural information obtained in Step 2 and further enrich them with semantic
+dependency relations across files and modules. Unlike a pure AST, which is strictly confined to
+syntactic hierarchy within a single file, our construction combines Tree-sitter tokens with static
+analysis to connect usage sites (e.g.,, function calls) to their corresponding definition sites across the
+repository. These cross-file relations transform isolated hierarchical trees into an interconnected
+semantic network, enabling the agent to trace dependency propagation and retrieve repair-relevant
+context beyond local syntax.
+(4) Graph Representation: Finally, the knowledge graph is represented as a set of triples (ℎ,𝑡,𝑟),
+where ℎand 𝑡denote entities (represented as nodes) and 𝑟represents the relation between them
+(represented as edges). This representation enables efficient graph retrieval and semantic reasoning
+during context retrieval.
+It is worth noting that our goal is not to encode all possible forms of program semantics,
+but to construct a task-oriented knowledge graph that emphasizes relations most actionable for
+repository-level repair, such as containment, invocation, symbol reference, inheritance, and import-
+related dependencies. This design choice distinguishes our graph from heavyweight code property
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+1:8
+Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao
+Table 1. The relationships between entities defined in the knowledge graph.
+Relationships
+Source Node
+Target Node
+Description
+INHERITS
+Class
+Class
+Inheritance from child class to parent class.
+HAS_METHOD
+Class
+Method
+A class contains a method.
+BELONGS_TO
+Method
+Class
+A method belongs to a class.
+HAS_VARIABLE
+Class
+Variable
+A class contains a variable or constant.
+BELONGS_TO
+Variable
+Class
+A variable belongs to a class.
+CALLS
+Method
+Method
+Dependency of cross-file or intra-file method invocations.
+REFERENCES
+Method
+Class
+Dependency linking usages to their corresponding definitions.
+Table 2. The attributes of the entities defined in the knowledge graph.
+Attributes
+Data Type
+Description
+Class
+fully qualified name
+String
+Fully qualified name of the class
+name
+String
+Name of the class
+absolute path
+String
+Absolute path of the class
+start line
+Integer
+Start line number of the class
+end line
+Integer
+End line number of the class
+content
+String
+Source code of the class
+class type
+String
+Class type: normal or inner
+parent class
+String
+Fully qualified name of the parent class
+Method
+fully qualified name
+String
+Fully qualified name of the method
+name
+String
+Name of the method
+absolute path
+String
+Absolute path of the method
+start line
+Integer
+Start line number of the method
+end line
+Integer
+End line number of the method
+content
+String
+Source code of the method
+params
+Json String
+Parameter list of the method
+modifiers
+Json String
+Modifiers of the method (decorator and access level)
+signature
+String
+Signature of the method
+type
+String
+Constructor or normal
+Variable
+fully qualified name
+String
+Fully qualified name of the variable
+name
+String
+Name of the variable
+absolute path
+String
+Absolute path of the variable
+start line
+Integer
+Start line number of the variable
+end line
+Integer
+End line number of the variable
+content
+String
+Source code of the variable
+modifiers
+Json String
+Modifiers of the variable
+data type
+String
+Data type of the variable
+graph tools such as Joern, which integrate AST, control-flow, and program dependence graphs for
+comprehensive static analysis.
+3.4
+KG-based Toolkit Implementation
+Building upon the knowledge graph, we design a comprehensive retrieval toolkit that facilitates
+efficient interaction between SGAgent and the whole repository. The toolkit provides SGAgent
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+SGAgent: Suggestion-Guided LLM-Based Multi-Agent Framework for Repository-Level Software Repair
+1:9
+Table 3. The KG-based toolkit used by SGAgent.
+Tools
+Description
+Code Structure Analysis Tools
+analyze_file_structure
+Get a complete overview of a Python file
+get_code_relationships
+Discover how any code entity (method, class, or variable) connects to other code
+find_methods_by_name
+Locate all methods with a specific name across the entire project with simplified relationship analysis.
+Entity Analysis Tools
+extract_complete_method
+Extract full method implementation with automatic relationship analysis.
+find_class_constructor
+Locate and extract class constructor (__init__ method) with full implementation.
+list_class_attributes
+Get all field variables and attributes defined in a class, including their data types and content.
+find_variable_usage
+Search for variable usage in a specific file, showing all occurrences with line numbers and context.
+find_all_variables_named
+Find all variables with a specific name across the entire project.
+show_file_imports
+Extract all import statements from a Python file.
+Content Search Tools
+search_code_with_context
+Search for keywords in Python files with surrounding code context (3 lines before and after each match).
+find_files_containing
+Find all files that contain specific keywords in their content or filename.
+File System Tools
+explore_directory
+List directories and files in a given path.
+read_file_lines
+Read specific line ranges from files with line numbers. Maximum 50 lines per call.
+execute_shell_command_with_validation
+Execute read-only shell commands for system inspection.
+with precise and context-aware retrieval utilities that are preconfigured for multiple scenarios.
+A detailed description of each tool and its functionality is summarized in Table 3, and we omit
+exhaustive listings here due to space constraints.
+The design of the toolkit is motivated by the natural workflow of human developers during
+real-world debugging. In practice, developers rarely interact with a repository through a single
+monolithic operation. Instead, they usually begin by inspecting the overall code structure, then
+search for relevant keywords or symptoms, next analyze the definitions, usages, and relations
+of key entities, and finally inspect concrete file content or system states before implementing
+modifications. To simulate this debugging process, we intentionally organize the toolkit into four
+categories, allowing the agent to navigate the repository in a structured and human-like manner.
+Moreover, we deliberately design the tools as lightweight and composable primitives, rather than
+embedding overly complex reasoning into a single tool. This design preserves the flexibility of the
+agent, which serves as the reasoning engine and determines which tools to invoke, in what order,
+and how to combine their outputs.
+(1) Code Structure Analysis Tools. These tools focus on extracting and analyzing the structural
+information of the repository, such as file hierarchies and dependency relations between entities.
+For example, analyze_file_structure tool conducts a complete overview of a Python file, listing all
+classes and methods with their names, full qualified names, and parameters. It serves as an essential
+starting point for understanding file architecture.
+(2) Entity Analysis Tools. These tools handle retrievals related to code entities, including classes,
+methods, and variables (e.g., find_class_constructor tool extracts class constructor with full im-
+plementation). We further extend this category with import-analysis tools to capture inter-file
+dependencies introduced by module imports (e.g., show_file_imports tool extracts all import state-
+ments from a Python file).
+(3) Content Search Tools. These tools support contextual retrieval based on specific content or key-
+words within the codebase, helping agents locate relevant entities. For instance, search_code_with_context
+tool searches for keywords in Python files with 3 lines before and after each match.
+(4) File System Tools. These tools enable system-level interactions, including directory traversal ,
+file reading and command-line execution.
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+1:10
+Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao
+3.5
+Multi-Agent Framework
+To enable LLMs to autonomously leverage knowledge graphs and external tools, we design three
+dedicated agents inspired by the three-stage process of human debugging: the fault localizer, repair
+suggester, and issue fixer. Each agent is responsible for a distinct stage of the repair workflow.
+While all three agents share the same toolkit, they use it with different stage-specific objectives.
+Although these three roles could in principle be implemented as distinct phases within a single
+agent, we adopt a multi-agent design for two reasons. First, it improves context management.
+Repository-level repair requires extensive exploration, iterative tool invocation, and repeated
+retrieval of code context. If a single agent handles localization, planning, and patch generation
+within one unified interaction history, the accumulated tool traces and intermediate reasoning can
+quickly overwhelm the context window. As a result, the information most relevant to the final repair
+step may be diluted. By separating the workflow into the localizer, suggester, and fixer, each agent
+consumes only the condensed outputs relevant to its own subtask rather than the entire raw history.
+Second, it enforces clearer task boundaries. Localization, repair planning, and patch synthesis are
+related but fundamentally different reasoning tasks. In a monolithic agent, these tasks can easily
+become entangled, causing the model to prematurely jump from partial localization signals to patch
+generation. By assigning them to different agents with specialized prompts and responsibilities,
+SGAgent better reflects human debugging practice and improves cross-stage coordination.
+3.5.1
+Fault Localizer Agent. The localizer Agent is responsible for identifying potential bug loca-
+tions using the provided issue description and repository information, supported by the available
+tools. To achieve a comprehensive understanding of complex GitHub projects and accurate localiza-
+tion of buggy instances, the localizer is designed based on the ReAct [62] framework and performs
+an observe-think-act pattern and is equipped with a specialized toolkit. It is worth noting that the
+contribution of the localizer is not to propose a standalone new fault localization technique, but to
+design localization as a non-isolated component within the locate-suggest-fix framework, supported
+by the knowledge graph and specialized tools, and tightly coupled with downstream agents.
+Specifically, in the Locate stage, the localizer actively leverages the bug description provided in the
+issue to retrieve the constructed knowledge graph through a prebuilt toolkit. It dynamically searches
+for contextual information, such as related code entities and their interrelationships. After each
+retrieval step, the localizer is guided by auxiliary assistant feedback to analyze the retrieved entities
+and relations, and to interpret their potential relevance to the issue. The localizer then assesses
+whether the current contextual information is sufficient for bug localization. If not, it iteratively
+invokes additional tools within the retrieval toolkit to gather more comprehensive contextual data.
+Once sufficient context is established, the localizer outputs a candidate localization set containing
+up to five bug locations and summarizes the accumulated insights, which are subsequently passed
+to the suggester Agent for suggestion generation. Unlike prior work that treats localization as a
+separate stage whose outputs are forwarded directly to patch generation in a static manner, our
+localizer produces a set of candidate bug locations that are not taken as final repair targets, but can
+instead be refined into repair-oriented suggestions by the downstream suggester.
+The localizer is guided by a structured prompt (shown in Listing 1) explicitly designed to
+ensure accurate and interpretable bug localization. The prompt instructs the model to act as a bug
+localization specialist that understands the issue solely through its problem description, which
+serves as the single source of truth. It requires the agent to analyze the described symptoms, infer
+potential root causes, and output a set of up to five locations where the bug may reside. Each
+location must be expressed in a line-range format (e.g.,, line 42–47) and must not overlap with others.
+The prompt enforces minimal perfect coverage, ensuring that all buggy regions (including deleted
+or modified lines) are captured while avoiding redundancy. To guarantee clarity and consistency,
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+SGAgent: Suggestion-Guided LLM-Based Multi-Agent Framework for Repository-Level Software Repair
+1:11
+the prompt further defines explicit output schemas, completion signals, and structural tags (e.g.,,
+<locations>, <format>, <scope>, <constraint>), which enable deterministic parsing by downstream
+agents. Additionally, it emphasizes the logical or functional relationships among the identified
+locations, guiding the Localizer to reason across related components such as caller–callee pairs or
+shared-state interactions. This carefully designed prompt transforms the localization process into a
+structured reasoning task, encouraging the model to produce precise, consistent, and context-aware
+localization outputs suitable for subsequent suggestion and fix stages.
+Listing 1: Fault Localizer Agent Prompt
+Act as the localizer to understand bugs by analyzing problem descriptions, identifying root causes, and
+locating specific methods or line ranges in the codebase where bugs can be fixed.
+< 𝑜𝑢𝑡𝑝𝑢𝑡_𝑟𝑒𝑞𝑢𝑖𝑟𝑒𝑚𝑒𝑛𝑡𝑠>
+< 𝑙𝑜𝑐𝑎𝑡𝑖𝑜𝑛𝑠>
+< 𝑙𝑜𝑐𝑎𝑡𝑖𝑜𝑛𝑐𝑜𝑢𝑛𝑡>up to 5 precise and interrelated locations< 𝑐𝑜𝑢𝑛𝑡>
+< 𝑓𝑜𝑟𝑚𝑎𝑡>range of line numbers (e.g.,, line 42–47)< 𝑓𝑜𝑟𝑚𝑎𝑡>
+< 𝑠𝑐𝑜𝑝𝑒>single bug, possibly manifesting in multiple places< 𝑠𝑐𝑜𝑝𝑒>
+< 𝑟𝑒𝑙𝑎𝑡𝑖𝑜𝑛𝑠ℎ𝑖𝑝>logically or functionally connected< 𝑟𝑒𝑙𝑎𝑡𝑖𝑜𝑛𝑠ℎ𝑖𝑝>
+< 𝑐𝑜𝑛𝑠𝑡𝑟𝑎𝑖𝑛𝑡>provided ranges must not overlap with each other < 𝑐𝑜𝑛𝑠𝑡𝑟𝑎𝑖𝑛𝑡>
+< 𝑙𝑜𝑐𝑎𝑡𝑖𝑜𝑛𝑠>
+< 𝑐𝑜𝑚𝑝𝑙𝑒𝑡𝑖𝑜𝑛_𝑠𝑖𝑔𝑛𝑎𝑙> ... < 𝑐𝑜𝑚𝑝𝑙𝑒𝑡𝑖𝑜𝑛_𝑠𝑖𝑔𝑛𝑎𝑙>
+< 𝑜𝑢𝑡𝑝𝑢𝑡_𝑟𝑒𝑞𝑢𝑖𝑟𝑒𝑚𝑒𝑛𝑡𝑠>
+< 𝑔𝑢𝑖𝑑𝑒𝑙𝑖𝑛𝑒𝑠>
+< 𝑡𝑟𝑢𝑡ℎ_𝑠𝑜𝑢𝑟𝑐𝑒> The problem description is your sole source of truth. Base your entire investigation
+and reasoning on it. < 𝑡𝑟𝑢𝑡ℎ_𝑠𝑜𝑢𝑟𝑐𝑒>
+< 𝑐𝑜𝑣𝑒𝑟𝑎𝑔𝑒_𝑟𝑒𝑞𝑢𝑖𝑟𝑒𝑚𝑒𝑛𝑡> Provide minimal perfect coverage of vulnerable code locations, including
+any deleted lines. < 𝑐𝑜𝑣𝑒𝑟𝑎𝑔𝑒_𝑟𝑒𝑞𝑢𝑖𝑟𝑒𝑚𝑒𝑛𝑡>
+< 𝑔𝑢𝑖𝑑𝑒𝑙𝑖𝑛𝑒𝑠>
+3.5.2
+Repair suggester Agent. The suggester Agent is responsible for retrieving additional contex-
+tual information related to the identified locations and generating feasible repair suggestions. These
+suggestions serve to direct the fixer Agent’s attention toward more valuable and relevant context,
+effectively guiding the repair process while mitigating the influence of irrelevant information. It is
+worth noting that the suggester is not designed to explicitly re-localize, validate, or replace the
+bug locations proposed by the localizer, since such behavior would overlap with the role of the
+localizer. Instead, the suggester focuses on expanding the context around the candidate locations
+and refining these preliminary localization results into repair-oriented suggestions.
+In the Suggest stage, the suggester Agent builds upon the localization results produced by the
+previous tools to provide targeted repair suggestions for the subsequent fixing process. Specifically,
+starting from each identified location, the suggester performs context expansion guided by the
+issue description until it determines that the retrieved information is sufficient to adequately
+understand both the root cause of the bug and potential repair directions. Consistent with prior
+agent-based and ReAct-style studies [62, 70], this stopping decision is made autonomously by the
+model based on the current context and interaction history, rather than by a separate stopping
+criterion. For each candidate location, the suggester then generates specific repair suggestions and
+produces an updated context summarization, which are passed to the fixer Agent for execution.
+Although the suggester does not explicitly rewrite the localizer’s outputs, the secondary retrieval
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+1:12
+Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao
+and context expansion process may implicitly sharpen, supplement, or correct the repair-relevant
+locations reflected in the generated suggestions. By conducting this secondary exploration based
+on the localizer’s preliminary findings, the suggester refines the repair objective and reduces
+unnecessary search divergence, thereby allowing the fixer to focus on more accurate and efficient
+patch generation.
+Listing 2: Repair Suggester Agent Prompt
+Act as the suggester, collecting relevant context and providing precise, actionable repair suggestions for
+each bug location provided by the localizer.
+< 𝑙𝑜𝑐𝑎𝑡𝑖𝑜𝑛_𝑎𝑛𝑎𝑙𝑦𝑠𝑖𝑠>
+< 𝑖𝑛𝑡𝑒𝑟𝑐𝑜𝑛𝑛𝑒𝑐𝑡𝑖𝑜𝑛> These locations are functionally interconnected. Analyze how they relate to each
+other and together contribute to the bug. < 𝑖𝑛𝑡𝑒𝑟𝑐𝑜𝑛𝑛𝑒𝑐𝑡𝑖𝑜𝑛>
+< 𝑐𝑜𝑜𝑟𝑑𝑖𝑛𝑎𝑡𝑖𝑜𝑛> Suggestions should reflect this interconnectedness. While you may propose fixes for
+each location separately, they must work in coordination to fully resolve the bug. < 𝑐𝑜𝑜𝑟𝑑𝑖𝑛𝑎𝑡𝑖𝑜𝑛>
+< 𝑎𝑠𝑠𝑢𝑚𝑝𝑡𝑖𝑜𝑛𝑠> Do not question or validate the correctness of bug locations. Assume all provided
+locations are valid. Focus solely on understanding them as a whole and offering feasible, context-aware
+fixes. < 𝑎𝑠𝑠𝑢𝑚𝑝𝑡𝑖𝑜𝑛𝑠>
+< 𝑙𝑜𝑐𝑎𝑡𝑖𝑜𝑛_𝑎𝑛𝑎𝑙𝑦𝑠𝑖𝑠>
+< 𝑓𝑟𝑎𝑚𝑒𝑤𝑜𝑟𝑘_𝑝𝑟𝑒𝑠𝑒𝑟𝑣𝑎𝑡𝑖𝑜𝑛>
+< ℎ𝑒𝑟𝑖𝑡𝑎𝑔𝑒_𝑐ℎ𝑒𝑐𝑘>Maintain framework design patterns< ℎ𝑒𝑟𝑖𝑡𝑎𝑔𝑒_𝑐ℎ𝑒𝑐𝑘>
+< 𝑐𝑜𝑛𝑡𝑒𝑥𝑡_𝑖𝑛𝑡𝑒𝑔𝑟𝑖𝑡𝑦>Preserve error location tracking< 𝑐𝑜𝑛𝑡𝑒𝑥𝑡_𝑖𝑛𝑡𝑒𝑔𝑟𝑖𝑡𝑦>
+< 𝑎𝑝𝑖_𝑐𝑜𝑚𝑝𝑙𝑖𝑎𝑛𝑐𝑒>Use framework-approved interfaces< 𝑎𝑝𝑖_𝑐𝑜𝑚𝑝𝑙𝑖𝑎𝑛𝑐𝑒>
+< 𝑓𝑟𝑎𝑚𝑒𝑤𝑜𝑟𝑘_𝑝𝑟𝑒𝑠𝑒𝑟𝑣𝑎𝑡𝑖𝑜𝑛>
+< 𝑜𝑢𝑡𝑝𝑢𝑡_𝑓𝑜𝑟𝑚𝑎𝑡>
+< 𝑓𝑒𝑒𝑑𝑏𝑎𝑐𝑘_ℎ𝑎𝑛𝑑𝑙𝑖𝑛𝑔> ... < 𝑓𝑒𝑒𝑑𝑏𝑎𝑐𝑘_ℎ𝑎𝑛𝑑𝑙𝑖𝑛𝑔>
+< 𝑐𝑜𝑚𝑝𝑙𝑒𝑡𝑖𝑜𝑛_ℎ𝑒𝑎𝑑𝑒𝑟> ... < 𝑐𝑜𝑚𝑝𝑙𝑒𝑡𝑖𝑜𝑛_ℎ𝑒𝑎𝑑𝑒𝑟>
+< 𝑠𝑡𝑟𝑢𝑐𝑡𝑢𝑟𝑒_𝑒𝑥𝑎𝑚𝑝𝑙𝑒> ... < 𝑠𝑡𝑟𝑢𝑐𝑡𝑢𝑟𝑒_𝑒𝑥𝑎𝑚𝑝𝑙𝑒>
+< 𝑜𝑢𝑡𝑝𝑢𝑡_𝑓𝑜𝑟𝑚𝑎𝑡>
+The suggester operates under a structured prompt (shown in Listing 2) designed to guide it in
+performing extra context retrieval and generating coherent, framework-compliant repair sugges-
+tions. The prompt positions the model as a context-aware repair planner, instructing it to analyze
+the logically interconnected bug locations produced by the localizer and to infer how these regions
+collectively contribute to the underlying defect. Rather than validating or modifying the provided
+locations, the suggester is required to treat them as correct and focus exclusively on understanding
+their interactions and generating actionable repair strategies. To ensure contextual consistency, the
+prompt enforces several key principles: (1) interconnection analysis: requiring the suggester to
+reason about how different code locations are functionally related; (2) coordination constraints:
+ensuring that proposed fixes across locations remain logically and functionally aligned; and (3)
+framework preservation: mandating compliance with project-specific design rules such as main-
+taining framework patterns, ensuring context integrity, and adhering to tools provided. The output
+schema explicitly specifies structured tags (e.g., <location_analysis>, <framework_preservation>,
+<output_format>) and completion signals to maintain syntactic uniformity and enable downstream
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+SGAgent: Suggestion-Guided LLM-Based Multi-Agent Framework for Repository-Level Software Repair
+1:13
+parsing by the fixer. This design compels the suggester to transform loosely defined context ex-
+ploration into a structured reasoning process, producing targeted, framework-consistent repair
+suggestions that bridge the gap between localization and patch synthesis.
+3.5.3
+Issue Fixer Agent. The issue fixer agent is responsible for generating candidate patches from
+suspicious code snippets and repair suggestions provided by upstream agents, and for validating
+and selecting the final patch that resolves the bug. Specifically, the fixer Agent is guided to conduct
+a structured reasoning process over the provided contextual information and repair suggestions.
+First, the fixer analyzes the root cause of the bug based on the retrieved repository context and the
+suggestions generated by the suggester. When necessary, the fixer is allowed to retrieve additional
+contextual or dependency information from the knowledge graph or the toolkit to support its
+reasoning process. Unlike the root cause analysis performed by the Suggester, which focuses on
+refining localization results into repair-oriented plans, the Fixer’s analysis focuses on grounding
+the suggested repair in the concrete repository state and verifying how it should be instantiated as
+executable code changes. Next, the fixer is explicitly instructed to explain why the proposed repair
+is expected to resolve the bug described in the issue. This explanatory step enforces interpretability
+and helps ensure that the generated patch aligns semantically with the intended fix rather than
+being coincidentally valid. Finally, the fixer generates an executable patch that can be directly
+applied to the repository for validation through regression and reproduction testing. In particular,
+the fixer Agent synthesizes the localization results, repair suggestions, and contextual information
+to generate multiple patch candidates for each identified location.
+After patch generation, inspired by Agentless [56], SGAgent adopts a three-phase validation
+pipeline to ensure the functional correctness and semantic reliability of the generated patches.
+First, the fixer executes regression tests on each patch 𝑃𝑖, recording the number of passed tests
+𝑇𝑟𝑒𝑔𝑟𝑒𝑠𝑠𝑖𝑜𝑛. Based on these results, the patches are ranked, and the top-performing set 𝑃𝑟𝑒𝑔𝑟𝑒𝑠𝑠𝑖𝑜𝑛is
+selected. Next, SGAgent employs a separate LLM to automatically construct a reproduction test
+according to the issue description, aiming to replicate the reported bug. The fixer then executes
+these reproduction tests on each patch in 𝑃𝑟𝑒𝑔𝑟𝑒𝑠𝑠𝑖𝑜𝑛, records the number of successful passes
+𝑇𝑟𝑒𝑝𝑟𝑜𝑑𝑢𝑐𝑡𝑖𝑜𝑛, and re-ranks the results to obtain the top-performing set 𝑃𝑟𝑒𝑝𝑟𝑜𝑑𝑢𝑐𝑡𝑖𝑜𝑛. Finally, we
+normalize the remaining patches and apply a majority voting process, selecting the one with the
+most consistent semantics as the final patch. This multi-stage validation strategy enables SGAgent
+to produce patches that are both functionally correct and semantically aligned with the intended
+repair objective.
+Unlike the open-ended exploration of upstream agents, the fixer’s retrieval behavior is strictly
+local and closed. It does not search for new bug locations or alternative repair strategies. Instead,
+its retrieval is triggered solely by the need for precise code-level alignment right before generat-
+ing the final patch. By invoking restricted tools (e.g.,, read_file_lines) to verify specific physical
+details—such as exact line numbers, variable names, and indentations—the fixer mitigates the risk
+of hallucinating physical offsets when translating high-level suggestions into executable code. This
+localized verification ensures that the generated patch is physically compatible with the repository,
+serving as a micro-level execution step that perfectly complements the macro-level decision flow.
+The fixer operates under a task-oriented prompt (shown in Listing 3) designed to synthesize,
+justify, and implement executable patches based on the contextual information and repair sug-
+gestions provided by upstream agents. The prompt positions the model as a code repair executor
+that must reason over the aggregated evidence from the localizer and suggester, analyze the root
+cause of the defect, and produce a coherent and verifiable patch that resolves the described issue.
+The prompt enforces a systematic workflow comprising three key stages: (1) Pre-implementation
+analysis: The fixer is instructed to analyze the defect holistically using the provided context and
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+1:14
+Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao
+suggestions, explain the rationale behind its proposed solution, and confirm that the resulting
+patch is expected to pass the corresponding test suite. (2) System-aware repair generation: When
+multiple interconnected locations are involved, the fixer must treat them as a unified system,
+ensuring that each modification contributes to a consistent and functionally complete repair across
+all affected code regions. (3) Patch quality assurance: The prompt specifies explicit requirements
+for output structure, code quality, and framework compatibility (e.g.,, reuse of existing functions,
+minimal new definitions, and adherence to project conventions). The prompt includes structured
+fields such as <system_approach>, <pre_implementation_analysis>, and <patch_requirements> to
+ensure well-formed outputs and to facilitate downstream automated validation and ranking. By
+incorporating explicit reasoning and verification steps, the fixer prompt transforms code generation
+into a transparent, explainable process-bridging high-level repair intent with concrete, executable
+solutions that meet both functional and structural correctness criteria.
+Listing 3: Issue Fixer Agent Prompt
+Implement a complete and correct bug fix based on the localizer’s identified code locations and the
+suggester’s proposed suggestions. The project is written in Python, and bugs may occur at any granularity,
+e.g.,, from a single variable to an entire module.
+< 𝑠𝑦𝑠𝑡𝑒𝑚_𝑎𝑝𝑝𝑟𝑜𝑎𝑐ℎ>
+< 𝑖𝑛𝑡𝑒𝑟𝑐𝑜𝑛𝑛𝑒𝑐𝑡𝑒𝑑_𝑙𝑜𝑐𝑎𝑡𝑖𝑜𝑛𝑠>
+There may be multiple interconnected locations to fix. Treat them as a whole system: each fix must work
+together to fully resolve the bug.
+< 𝑖𝑛𝑡𝑒𝑟𝑐𝑜𝑛𝑛𝑒𝑐𝑡𝑒𝑑_𝑙𝑜𝑐𝑎𝑡𝑖𝑜𝑛𝑠>
+< 𝑝𝑟𝑒_𝑖𝑚𝑝𝑙𝑒𝑚𝑒𝑛𝑡𝑎𝑡𝑖𝑜𝑛_𝑎𝑛𝑎𝑙𝑦𝑠𝑖𝑠>
+Before presenting your fix, you should:
+- Analyze the root cause based on context and suggestions
+- Briefly explain why your solution addresses the issue holistically
+- Confirm that applying your patch causes the test suite to pass
+- Reuse existing code when possible; only define new functions or variables if necessary
+< 𝑝𝑟𝑒_𝑖𝑚𝑝𝑙𝑒𝑚𝑒𝑛𝑡𝑎𝑡𝑖𝑜𝑛_𝑎𝑛𝑎𝑙𝑦𝑠𝑖𝑠>
+< 𝑠𝑦𝑠𝑡𝑒𝑚_𝑎𝑝𝑝𝑟𝑜𝑎𝑐ℎ>
+< 𝑝𝑎𝑡𝑐ℎ_𝑟𝑒𝑞𝑢𝑖𝑟𝑒𝑚𝑒𝑛𝑡𝑠>
+< 𝑙𝑜𝑐𝑎𝑡𝑖𝑜𝑛_𝑚𝑎𝑡𝑐ℎ𝑖𝑛𝑔> ... < 𝑙𝑜𝑐𝑎𝑡𝑖𝑜𝑛_𝑚𝑎𝑡𝑐ℎ𝑖𝑛𝑔>
+< 𝑜𝑢𝑡𝑝𝑢𝑡_𝑓𝑜𝑟𝑚𝑎𝑡> ... < 𝑜𝑢𝑡𝑝𝑢𝑡_𝑓𝑜𝑟𝑚𝑎𝑡>
+< 𝑐𝑜𝑑𝑒_𝑞𝑢𝑎𝑙𝑖𝑡𝑦_𝑠𝑡𝑎𝑛𝑑𝑎𝑟𝑑𝑠> ... < 𝑐𝑜𝑑𝑒_𝑞𝑢𝑎𝑙𝑖𝑡𝑦_𝑠𝑡𝑎𝑛𝑑𝑎𝑟𝑑𝑠>
+< 𝑓𝑟𝑎𝑚𝑒𝑤𝑜𝑟𝑘_𝑐𝑜𝑚𝑝𝑎𝑡𝑖𝑏𝑖𝑙𝑖𝑡𝑦> ... < 𝑓𝑟𝑎𝑚𝑒𝑤𝑜𝑟𝑘_𝑐𝑜𝑚𝑝𝑎𝑡𝑖𝑏𝑖𝑙𝑖𝑡𝑦>
+< 𝑝𝑎𝑡𝑐ℎ_𝑟𝑒𝑞𝑢𝑖𝑟𝑒𝑚𝑒𝑛𝑡𝑠>
+3.5.4
+Dynamic Memory Summarization. Since the performance of LLMs is often sensitive to con-
+text length, excessively long conversational histories can lead to context dilution and hallucination,
+significantly impairing the reliability of SGAgent. To mitigate this issue, we introduce a summa-
+rization mechanism that dynamically compresses historical interactions while preserving essential
+contextual information for reasoning and retrieval. Specifically, SGAgent maintains a message win-
+dow for each agent. When the accumulated tokens within the queue exceed a predefined threshold
+𝑡𝑚𝑎𝑥, a dedicated summarization LLM is invoked to condense the current conversation history. The
+generated summary is then appended as part of the active context to guide subsequent exploration
+and reasoning. After summarization, only the most recent 𝑚𝑟𝑒𝑚𝑎𝑖𝑛messages are retained, and older
+messages are discarded. When discarding outdated messages, SGAgent ensures the structural
+integrity of tool interactions. Specifically, if a tool call message is subject to deletion while its
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+SGAgent: Suggestion-Guided LLM-Based Multi-Agent Framework for Repository-Level Software Repair
+1:15
+corresponding tool response must be retained, the associated tool call is preserved as well. This
+guarantees the completeness of tool-related message pairs and prevents information loss that
+could otherwise disrupt reasoning consistency or contextual grounding during subsequent agent
+operations. Furthermore, when a summary already exists and the message window reaches its
+capacity, the summarizer is instructed to integrate the previous summaries into the newly generated
+one, thereby ensuring contextual continuity and minimizing cumulative information loss. This
+mechanism strikes a balance between long-context retention and memory efficiency, enabling
+SGAgent to maintain coherent reasoning and stable performance in large-scale repository-level
+repair tasks.
+4
+Experimental Setup
+4.1
+Research Questions
+We evaluate SGAgent on the following research questions:
+RQ1: How does SGAgent perform compared to existing baselines?
+RQ2: How do each component contribute to the performance of SGAgent?
+RQ3: How does SGAgent perform with different base models?
+RQ4: How does SGAgent perform when extended to vulnerability repair tasks?
+4.2
+Benchmark
+We evaluate SGAgent on the repository-level software repair dataset SWE-Bench [22]. Specifically,
+we select SWE-Bench-Lite, a subset of SWE-Bench, as the primary benchmark because it has been
+widely evaluated and is more cost-efficient for experimentation. SWE-Bench-Lite collects and
+filters issues from twelve actively maintained GitHub python projects, resulting in a total of 300
+real-world, complete, and reproducible bug instances. Each bug instance includes a full snapshot of
+the project repository, an executable test suite, and a natural-language issue description.
+In recent years, SWE-Bench-Lite has become widely adopted among researchers due to its realism
+and complexity. It features large-scale software projects, with some repositories containing tens
+of thousands of lines of code, and buggy instances requiring patches that often span multiple
+locations across different files to repair. Consequently, APR tools must traverse extensive codebases,
+sometimes across hundreds of files, to identify the root causes of bugs and generate effective patches.
+This makes SWE-Bench-Lite a rigorous testbed for evaluating repository-level comprehension and
+cross-file reasoning capabilities.
+4.3
+Baselines
+To address our RQs, we compare SGAgent with state-of-the-art repair systems on the SWE-Bench-
+Lite leaderboard as baselines, including AutoCodeRover [70], SWE-Agent [61], DARS-Agent [2],
+OpenHands [52], Agentless [56], KGCompass [60], ExpeRepair [32]. DARS-Agent proposes a
+novel inference time compute scaling approach for coding agents. Lingxi introduces an agent
+manager to manage the software repair process and a supervisor to oversee the entire workflow
+of solving the issue, and decide which agent to route to depending on the current progress of the
+issue. OpenHands proposes a platform for the development of powerful and flexible AI agents,
+allowing for the implementation of new agents, the utilization of various LLMs, safe interaction
+with sandboxed environments for code execution, and the incorporation of evaluation benchmarks.
+Table 4 summarizes the main differences between SGAgent and representative prior work with
+publicly available pre-prints or published papers. The last column indicates whether an approach
+introduces an explicit intermediate stage between localization and patch generation.
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+1:16
+Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao
+Table 4. Comparison between SGAgent and state-of-the-art approaches
+Approach
+Time
+Publisher
+Paradigm
+KG
+Intermediate Stage
+AutoCodeRover [70]
+2024
+ISSTA
+Multi-agent
+×
+×
+SWE-Agent [61]
+2024
+NeurIPS
+Single-agent
+×
+×
+DARS-Agent [2]
+2025
+ACL
+Single-agent
+×
+×
+OpenHands [52]
+2025
+ICLR
+Multi-agent
+×
+×
+Agentless [56]
+2025
+FSE
+Workflow
+×
+×
+KGCompass [60]
+2025
+arXiv
+Workflow
+✓
+×
+ExpeRepair [32]
+2025
+arXiv
+Multi-agent
+×
+×
+SGAgent
+N/A
+N/A
+Multi-agent
+✓
+✓
+4.4
+Evaluation Metrics
+Following the standard practice of previous work [56, 60], we adopt four metrics to assess the
+performance of SGAgent on SWE-Bench-Lite, including % Resolved, File Acc., Func Acc., and Avg
+Cost per bug. % Resolved measures the proportion of instances whose final patch successfully passes
+all benchmark tests. File Acc. evaluates file-level localization accuracy, computed as the average
+Jaccard similarity between predicted and ground-truth file sets. Func Acc. measures function-level
+localization accuracy. Avg Cost per bug represents the average token consumption required to
+resolve each bug, reflecting the computational efficiency of SGAgent. For each buggy input instance
+𝑖, we use the following equation to compute the accuracy of file-level localization.
+𝑎file
+𝑖
+=
+𝐹★
+𝑖∩ˆ𝐹𝑖
+
+𝐹★
+𝑖∪ˆ𝐹𝑖
+
+(3)
+Where 𝐹★
+𝑖denotes the ground-truth set of files to be modified in instance 𝑖, and ˆ𝐹𝑖denotes
+the predicted set of files for instance 𝑖. For function-level localization, since Java syntax typically
+associates one file with one class, we do not distinguish between classes and files. Thus, function-
+level localization accuracy can be calculated by:
+𝑎func
+𝑖
+=
+𝐸★
+𝑖∩ˆ𝐸𝑖
+
+𝐸★
+𝑖∪ˆ𝐸𝑖
+
+(4)
+Where 𝐸★
+𝑖denotes the ground-truth set of files/classes requiring edits in instance 𝑖, and ˆ𝐸𝑖denotes
+the predicted set of files/classes. Based on file-level and function-level localization accuracy, the
+average accuracy of localization over a specific set of bugs 𝑆can be further calculated by:
+FileAcc = 1
+|𝑆|
+∑︁
+𝑖∈𝑆
+𝑎file
+𝑖,
+FuncAcc = 1
+|𝑆|
+∑︁
+𝑖∈𝑆
+𝑎func
+𝑖
+(5)
+These metrics collectively provide a comprehensive and objective evaluation of SGAgent’s
+localization accuracy, repair effectiveness, and computational efficiency.
+4.5
+Implementation Details
+All of our approaches are built on the LangChain [24] and LangGraph [25] frameworks. We primarily
+evaluate SGAgent using Claude-3.5-Sonnet [47] as the base model. To assess the model-agnostic
+capability of the framework, we further evaluate SGAgent with two alternative LLMs: DeepSeek-
+V3 [9] and Qwen3-235B-A22B [59]. All models are used with their default hyperparameters, and no
+explicit limit is imposed on output tokens. Following prior work [56], for each issue, we sample
+four localization sets, and each set contains up to five candidate bug locations. For each location,
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+SGAgent: Suggestion-Guided LLM-Based Multi-Agent Framework for Repository-Level Software Repair
+1:17
+Table 5. A comparison of repair results between SGAgent and existing baselines on SWE-Bench-Lite.
+Approaches
+Base Model
+% Resolved
+File Acc.
+Function Acc.
+Cost
+ExpeRepair-v1.0
+Claude-4-Sonnet & o4-mini
+181 (60.3%)
+84.7
+52.6
+∼$2.1
+Refact.ai Agent
+Claude-3.7-Sonnet & o4-mini
+180 (60.0%)
+80.6
+47.0
+N/A
+KGCompass
+Claude-4-Sonnet
+175 (58.3%)
+83.6
+56.0
+$0.2
+SWE-Agent
+Claude-4-Sonnet
+170 (56.7%)
+80.9
+53.9
+∼$1.6
+ExpeRepair-v1.0
+Claude-3.5-Sonnet & o3-mini
+145 (48.3%)
+80.7
+49.6
+$2.1
+SWE-Agent
+Claude-3.7-Sonnet
+144 (48.0%)
+79.3
+52.2
+∼$1.6
+DARS-Agent
+Claude-3.5-Sonnet & DeepSeek-R1
+141 (47.0%)
+78.4
+49.3
+$12.24
+KGCOMPASS
+Claude-3.5-Sonnet
+137 (46.0%)
+76.7
+49.4
+$0.2
+Lingxi
+Claude-3.5-Sonnet
+128 (42.7%)
+66.1
+39.7
+N/A
+OpenHands
+Claude-3.5-Sonnet
+125 (41.7%)
+69.3
+43.8
+$1.3
+Agentless-1.5
+Claude-3.5-Sonnet
+123 (41.0%)
+79.7
+51.8
+$1.3
+AutoCodeRover
+GPT-4o
+92 (30.7%)
+66.8
+38.3
+$1.3
+SGAgent
+Claude-3.5-Sonnet
+154 (51.3%)
+81.2
+52.4
+$1.48
+Table 6. Unique fixes achieved by SGAgent and state-of-the-art approaches, all using Claude-3.5 as the base
+model.
+Approaches
+Base Model
+Unique Fix by SGAgent
+Unique Fix by baselines
+DARS-Agent
+Claude-3.5-Sonnet
+37
+13
+KGCompass
+Claude-3.5-Sonnet
+46
+16
+Lingxi
+Claude-3.5-Sonnet
+40
+26
+OpenHands
+Claude-3.5-Sonnet
+47
+29
+Agentless-1.5
+Claude-3.5-Sonnet
+43
+32
+patches are sampled once with temperature 0 and nine times with temperature 0.8 to enhance
+patch diversity. For knowledge graph construction, we employ Tree-sitter [48], Python AST [1],
+and Pygments [39] to extract syntactic and structural information from the source code, forming
+the foundation for repository-level context retrieval.
+5
+Results and Analysis
+5.1
+RQ1: Comparison With State-of-the-Art Methods
+5.1.1
+Design. RQ1 aims to evaluate the repository-level software repair capability of SGAgent
+and compare it against state-of-the-art methods on the SWE-Bench-Lite benchmark. All baseline
+methods employ models from the Claude family as their base LLMs (including Claude-4, Claude-3.7,
+and Claude-3.5). In this research question, we use Claude-3.5 as the base model for SGAgent and
+conduct comparisons across four metrics: proportion of instances resolved(% Resolved), file-level
+localization accuracy (File Acc.), function-level localization accuracy (Func Acc.), and Avg Cost per
+bug (cost). Additionally, we perform a cross-analysis among all Claude-3.5-based approaches to
+determine whether SGAgent is capable of resolving unique buggy instances that other approaches
+fail to repair.
+5.1.2
+Results. Table 5 summarizes the performance comparison between SGAgent and ten state-of-
+the-art approaches on the SWE-Bench-Lite benchmark. Overall, SGAgent demonstrates a dominant
+performance advantage among all approaches that use Claude-3.5 as the base model, and even
+surpasses several methods that rely on newer or more complex LLMs. These results provide strong
+evidence of SGAgent’s effectiveness in repository-level software repair.
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+1:18
+Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao
+Specifically, SGAgent successfully resolves 154 buggy instances, achieving a 51.3% resolution
+rate, outperforming all other Claude-3.5-based baselines. Across all evaluated methods, SGAgent
+ranks 5th overall, exceeding the performance of SWE-Agent, which uses Claude-3.7-Sonnet as its
+backbone1. In terms of localization accuracy, SGAgent achieves the highest file-level accuracy
+(81.2%) and function-level accuracy (52.4%) among all Claude-3.5-based methods, ranking 3rd and
+4th overall, respectively. These results validate that our knowledge-graph-based context retrieval
+effectively enhances bug localization performance of SGAgent.
+Table 6 presents a pairwise comparison of unique fixes between SGAgent and five strong
+baselines under the same Claude-3.5-Sonnet setting, including DARS-Agent, KGCompass, Lingxi,
+OpenHands, and Agentless-1.5. The results show that SGAgent consistently resolves a substantial
+number of bugs that these baselines fail to fix. Specifically, compared with DARS-Agent, KGCompass,
+Lingxi, OpenHands, and Agentless-1.5, SGAgent uniquely resolves 37, 46, 40, 47, and 43 instances,
+respectively, whereas these baselines uniquely fix only 13, 16, 26, 29, and 32 instances that SGAgent
+misses. This result shows that SGAgent not only performs better overall but also repairs buggy
+instances that other competitive methods fail to resolve.
+In terms of computational cost, SGAgent requires $1.48 per instance, which is slightly higher
+than lightweight procedural methods such as Agentless ($1.3), but remains competitive among
+agent-based frameworks. In general, agent-based repair methods tend to be more costly than
+procedural pipelines, because they require multi-turn reasoning, dynamic context retrieval, and
+iterative validation, whereas procedural methods usually follow a more compact and static workflow.
+For example, SWE-Agent costs about $1.6 per instance and ExpeRepair costs about $2.1 per instance,
+while SGAgent achieves stronger same-model performance at a lower or comparable cost. This
+average cost is mainly attributed to the three core agents, including the Localizer ($0.35), the
+Suggester ($0.59), and the Fixer ($0.54), while knowledge graph construction introduces no LLM
+API cost. Among them, the Suggester accounts for the largest share due to its additional context
+exploration and repair planning. Overall, these results suggest that SGAgent maintains a favorable
+cost–performance trade-off despite the overhead introduced by multi-agent collaboration.
+Answer to RQ1: Findings: (1) Software Repair Capability: SGAgent achieves a 51.3% resolution
+rate, outperforming all baseline approaches that use the same base model and ranking fifth overall
+among all evaluated methods. (2) Localization capability: SGAgent attains 81.2% file-level and
+52.4% function-level localization accuracy, surpassing all same-base-model baselines and ranking
+third and fourth, respectively, among all approaches. (3) Efficiency: SGAgent demonstrates
+strong cost efficiency, requiring only $1.48 per instance, ranking third lowest among all methods.
+(4) Uniqueness: SGAgent ranks second in its ability to repair 14 unique instances that no other
+baseline approach can fix.
+Insights: By introducing the locate-suggest-fix paradigm, SGAgent effectively extends the
+reasoning and repair boundaries of agent-based approaches, enabling more comprehensive and
+accurate repository-level software repair.
+5.2
+RQ2: Ablation Study
+5.2.1
+Design. RQ2 investigates the independent contributions of the major components in SGA-
+gent to repository-level software repair performance. We conduct ablation studies by removing
+three key components: (1) the Suggest module, (2) the Knowledge Graph module, and (3) the
+Re-ranking module, resulting in three SGAgent variants. For the Suggest and Knowledge Graph
+module, we compare the variants with the full SGAgent approach across % Resolved, File Acc.,
+1Our method has been displayed at the official SWE-Bench-Lite leaderboard under the name Isea. Details can be found at
+https://www.swebench.com/
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+SGAgent: Suggestion-Guided LLM-Based Multi-Agent Framework for Repository-Level Software Repair
+1:19
+Table 7. Results of Component Ablation Study.
+System
+% Resolved
+File Acc.
+Function Acc.
+SGAgent
+154 (51.3%)
+81.2
+52.4
+w/o Suggest
+114 (38.0%)
+80.3
+51.9
+w/o KG
+132 (44.0%)
+78.1
+48.4
+Table 8. Results of Different Re-ranking Configurations.
+Ranking Strategy
+Claude-3.5-Sonnet
+Greedy Sampling
+113 (37.7%)
+Majority Voting
+121 (40.3%)
++ Regression Tests
+134 (44.7%)
++ Reproduction Tests
+154 (51.3%)
+and Func Acc. to comprehensively evaluate the impact of the Suggest and the Knowledge Graph
+on localization accuracy and repair effectiveness. For the Re-ranking module, we evaluate its
+independent contribution using only the % Resolved metric. To this end, we conduct a progressive
+enhancement analysis to examine the individual effects of majority voting, regression tests, and
+reproduction tests. Specifically, the Re-ranking process begins with the majority voting strategy,
+followed by the successive integration of regression tests and reproduction tests. In addition, we
+conduct a comparative experiment using greedy sampling only to assess the effectiveness of the
+majority voting strategy.
+5.2.2
+Results. Table 7 summarizes the evaluation results of the full SGAgent and its two ablated
+variants. The variant w/o Suggest removes the suggestion module, while w/o KG removes the
+knowledge graph retrieval module. Across all configurations, SGAgent maintains a stable level of
+localization and repair performance, demonstrating that the overall framework inherently possesses
+a strong software repair capability. However, removing individual components leads to varying
+degrees of performance degradation.
+First, removing the Knowledge Graph module results in a slight drop in performance: the resolve
+rate decreases by 5.3%, file-level localization accuracy by 3.1%, and function-level localization
+accuracy by 4.0%. This suggests that without knowledge-graph-based retrieval, the agent struggles
+to fully comprehend the semantics of large-scale repository projects, which in turn weakens the
+performance of both the suggest and fix stages, ultimately reducing repair effectiveness.
+In contrast, removing the Suggest module has a more pronounced impact on repair accuracy.
+Although file-level and function-level localization accuracies decrease only marginally (0.9% and
+0.5%), the overall resolve rate drops sharply by 13.3%. This confirms our earlier motivation: introduc-
+ing a suggest stage significantly enhances semantic-level reasoning and cross-stage coordination.
+The Suggest module effectively refines the agent’s exploration objective, improving repair suc-
+cess without compromising localization accuracy, and plays a critical role in SGAgent’s superior
+performance on complex, repository-level repair tasks.
+Table 8 presents the ablation results of the Re-ranking module. As shown in the table, using only
+the majority voting strategy yields a resolve rate of 40.33%, which already surpasses the greedy
+sampling baseline (37.67%). When incorporating regression tests and reproduction tests into the re-
+ranking process, the resolve rate further increases to 44.67% and 51.33%, respectively. These results
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+1:20
+Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao
+Table 9. A comparison of SGAgent’s performance on SWE-Bench-Lite using different base models.
+System
+% Resolved
+File Acc.
+Function Acc.
+Qwen3-235B-A22B
+98 (32.7%)
+71.0
+45.3
+DeepSeek-V3
+113 (37.7%)
+77.7
+51.7
+Claude-3.5-Sonnet
+154 (51.3%)
+81.2
+52.4
+Claude-4-Sonnet
+182 (60.7%)
+88.7
+57.2
+highlight two key insights: (1) the majority voting strategy provides a more robust mechanism for
+selecting high-quality patches compared to simple greedy decoding, and (2) integrating regression
+and reproduction tests into the ranking process plays a crucial role in identifying the most correct
+and semantically consistent patch candidates.
+Answer to RQ2: Findings: (1) Removing the Knowledge Graph module leads to a 5.3% decrease
+in resolve rate, and 3.1% and 4.0% reductions in file-level and function-level localization accuracy,
+respectively. (2) Removing the Suggest module results in only marginal declines in localization
+accuracy (0.9% and 0.5%), but causes a significant 13.3% drop in resolve rate. (3) Within the
+Re-ranking module, the majority voting, regression tests, and reproduction tests contribute 6.6%,
+4.4% and 2.6% improvements to overall performance, respectively.
+Insights: (1) All components play a meaningful role in the effectiveness of SGAgent, with the
+Suggest module providing the most substantial contribution. (2) By introducing an additional
+optimization stage for refining the agent’s exploration direction, the suggest stage empowers
+SGAgent to handle multi-hop reasoning and semantically entangled bugs more effectively,
+underscoring its crucial role in repository-level software repair.
+5.3
+RQ3: Performance of Different Base Models
+5.3.1
+Design. RQ3 investigates the performance of SGAgent under different base LLMs. We
+evaluate SGAgent with four representative models: Claude-3.5-Sonnet [47] (denoted as Claude-
+3.5), Claude-4-Sonnet [47] (Claude-4), DeepSeek-V3 [9], and Qwen3-235B-A22B [59] (Qwen3). For
+all experiments, we keep the configurations identical across models to ensure a fair comparison.
+This experiment aims to evaluate the generalization capability of SGAgent and examine how its
+performance varies with different base LLMs.
+5.3.2
+Results. Table 9 reports the performance of SGAgent with four different base LLMs. Overall,
+stronger base models consistently lead to better repair and localization performance. Among the
+evaluated models, Claude-4 achieves the best overall results, followed by Claude-3.5, DeepSeek-V3,
+and Qwen3.
+Specifically, Claude-4 resolves 182 instances, achieving a 60.7% resolution rate, with file-level and
+function-level localization accuracies of 88.7% and 57.2%, respectively. Under the same base model,
+this result also surpasses the Claude-4-based baselines reported in RQ1, including KGCompass
+(58.3%) and ExpeRepair-v1.0 (60.3%), validating the superiority of our locate-suggest-fix architecture
+in leveraging highly capable LLMs. Claude-3.5 ranks second, resolving 154 instances (51.3%), with
+81.2% file-level and 52.4% function-level localization accuracy. DeepSeek-V3 achieves a 37.7%
+resolution rate, together with 77.7% file-level and 51.7% function-level accuracy, while Qwen3
+performs the weakest, with 32.7%, 71.0%, and 45.3% on the three metrics, respectively. Compared
+with the gaps in resolution rate, the differences across models are smaller on localization accuracy.
+This suggests that the locate stage is relatively less sensitive to the capability of the base LLM,
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+SGAgent: Suggestion-Guided LLM-Based Multi-Agent Framework for Repository-Level Software Repair
+1:21
+whereas the suggest and fix stages depend more heavily on the model’s reasoning, synthesis, and
+instruction-following abilities. In particular, the suggest stage requires the model to integrate
+retrieved context with the issue description, refine the repair objective, and generate feasible repair
+strategies, which places higher demands on semantic reasoning than localization alone. Overall,
+these results suggest that SGAgent generalizes well across different base LLMs, while its final
+performance still benefits substantially from stronger underlying models.
+Answer to RQ3: Findings: (1) Claude-4-Sonnet achieves the best overall performance, with
+a 60.7% resolve rate, 88.7% file-level accuracy, and 57.2% function-level accuracy. (2) Claude-
+3.5-Sonnet ranks second, attaining 51.3%, 81.2%, and 52.4% on the three metrics, respectively.
+(3) DeepSeek-V3 and Qwen3-235B-A22B achieve lower performance, with Qwen3 showing the
+weakest overall results.
+Insights: (1) SGAgent exhibits consistent and robust performance across different base LLMs,
+highlighting its strong generalization ability and methodological stability. (2) Among all system
+stages, the suggest stage shows the highest dependency on model capability. (3) SGAgent is
+largely model-agnostic, maintaining its effectiveness and reliability across diverse language
+model architectures.
+5.4
+RQ4: Generalization Capability in Vulnerability Repair
+5.4.1
+Design. To verify the generality of SGAgent, we extend our framework to the vulnerability
+repair domain and develop SGAgent-Vul. We evaluate SGAgent-Vul on two widely used datasets,
+including VUL4J [6] and VJBench [55]. We include all 15 vulnerabilities from VJBench in our
+evaluation. Given the test-oriented nature of these benchmarks, we further incorporate a failure-
+guided patch enhancement mechanism: When a generated patch fails to pass validation, the failure
+test information is fed back as additional contextual input to the fixer for re-repair. If the fixer fails
+three consecutive times, the failed context is passed to the suggester for re-suggestion; after two
+failed iterations, it is escalated to the localizer for re-localization. To prevent infinite repair loops,
+we set an upper limit of 100 repair iterations per instance.
+We compare SGAgent-Vul against three state-of-the-art vulnerability repair methods, FSV [55],
+NTR [18], VRPILOT[23], and two advanced general-purpose software engineering agents SWE-
+Agent[61] and OpenHands[52], using vulnerability resolve rate as the primary evaluation metric.
+FSV is the first work to study and compare Java vulnerability repair capabilities of LLMs and
+DL-based APR models. NTR combines the strengths of both templates and large-scale LLMs to
+fix Java vulnerabilities. VRPILOT uses a chain-of-thought prompt to reason about a vulnerability
+prior to generating patch candidates and iteratively refines prompts according to the output of
+external tools on previously-generated patches. SWE-Agent is a general software engineering
+agent designed for repository-level problem solving through a structured command-line interaction
+interface. OpenHands is a general agent framework that supports tool use, terminal interaction,
+and multi-step reasoning in software engineering tasks.
+Additionally, we conduct ablation studies on SGAgent-Vul by removing the Suggest module
+and Knowledge Graph module, respectively, and by substituting the base model with GPT-4o,
+DeepSeek-V3, and Qwen3-235B-A22B. Notably, since the failure-guided enhancement mechanism
+introduces additional computational cost, we adopt GPT-4o as a more cost-efficient alternative for
+the base model, compared to Claude-3.5-Sonnet.
+5.4.2
+Results. Table 10 shows the comparison results between SGAgent-Vul and the baselines on
+VUL4J and VJBench. We report the number of applied patches on 35 vulnerabilities from VUL4J
+and 15 from VJBench. 𝐹𝑆𝑉𝐶𝑜𝑑𝑒𝑥denotes FSV with zero-shot Codex model and 𝐹𝑆𝑉𝐼𝑛𝑐𝑜𝑑𝑒𝑟_𝑓𝑖𝑛𝑒𝑡𝑢𝑛𝑒𝑑
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+1:22
+Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao
+Table 10. Comparison results between SGAgent-Vul and existing baselines on VUL4J and VJBench.
+SGAgent-Vul
+FSV-Codex
+FSV-finetuned
+NTR
+VRPILOT
+SWE-Agent
+OpenHands
+VUL4J
+17 (48.6%)
+11 (31.1%)
+9 (25.7%)
+14 (40.0%)
+14 (40.0%)
+11 (31.4%)
+14 (40.0%)
+VJBench
+7 (46.7%)
+6 (40.0%)
+4 (26.7%)
+N/A
+6 (40.0%)
+N/A
+N/A
+Table 11. Comparison of vulnerability repair rates and localization accuracies across different SGAgent-Vul
+variants.
+Configuration
+SGAgent-Vul
+w/o Suggest
+w/o KG
+DeepSeek-V3
+Qwen3-235B-A22B
+% Resolved
+24 (48.0%)
+13 (26.0%)
+11 (22.0%)
+26 (52.0%)
+20 (40.0%)
+File Acc.
+72.0
+68.0
+66.0
+76.0
+76.0
+Function Acc.
+64.0
+44.0
+42.0
+62.0
+54.0
+denotes FSV fine-tuned with general APR data. Overall, SGAgent-Vul achieves the best performance
+among the compared methods on both benchmarks, resolving 17 vulnerabilities on VUL4J and 7
+on VJBench. On VUL4J, SGAgent-Vul outperforms all specialized vulnerability repair baselines,
+including FSV-finetuned (9), NTR (14), and VRPILOT (14). It also performs better than the two
+recent general-purpose software engineering agents, SWE-Agent (11) and OpenHands (14). On
+VJBench, SGAgent-Vul again achieves the best result, surpassing FSV-Codex (6), FSV-finetuned (4),
+and VRPILOT (6). These comparisons suggest that SGAgent-Vul is effective not only against prior
+vulnerability-repair methods, but also against recent general-purpose agent frameworks.
+Table 11 presents the comparison of vulnerability resolution rates and localization accuracies
+across different SGAgent-Vul variants. Here, SGAgent-Vul denotes the full approach using GPT-4o
+as the base model; w/o Suggest and w/o KG represent the variants with the Suggest and Knowledge
+Graph modules removed, respectively; DeepSeek-V3 and Qwen3-235B-A22B denote variants using
+corresponding base models.
+To evaluate the effectiveness of each component, we remove either the Suggest or Knowledge
+Graph module, which leads to a substantial drop in performance. The repair rate decreases from
+48.0% to 26.0% and 22.0%, respectively. File-level and function-level localization accuracies drop from
+72.0% and 68.0% to 68.0% / 44.0% (without Suggest) and 66.0% / 42.0% (without Knowledge Graph).
+These results are consistent with the findings in RQ2, further confirming the critical roles of the
+Suggest and Knowledge Graph modules in achieving effective repair. Moreover, a cross-comparison
+between RQ2 and RQ4 reveals that the Knowledge Graph module plays a relatively greater role in
+vulnerability repair, whereas the Suggest module contributes more significantly in software repair.
+Additionally, the Suggest module also impacts localization accuracy due to the failure-guided patch
+enhancement mechanism, which aligns with our design expectations.
+Regarding base model performance, DeepSeek-V3 achieves the best overall results, with a 52.0%
+repair rate, 76.0% file-level accuracy, and 62.0% function-level accuracy, outperforming GPT-4o
+(48.0%, 72.0%, 64.0%) and Qwen3-235B-A22B (40.0%, 76.0%, 54.0%). This performance trend is
+consistent with that observed in RQ3, further demonstrating the strong generalization ability of
+the SGAgent framework across different domains and base models.
+Answer to RQ4: Findings: (1) SGAgent-Vul outperforms all baseline approaches in vulnera-
+bility repair scenarios, achieving a 48.0% resolve rate, 72.0% file-level, and 64.0% function-level
+localization accuracy. (2) Removing the Suggest or Knowledge Graph module leads to substantial
+performance degradation - the resolve rate drops by 22.0% and 26.0%, file-level localization
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+SGAgent: Suggestion-Guided LLM-Based Multi-Agent Framework for Repository-Level Software Repair
+1:23
+Table 12. A comparison of repair results between SGAgent and existing baselines on SWE-Bench-Verified
+Approaches
+Base Model
+% Resolved
+SWE-Agent
+Claude-3.5-Sonnet
+168(33.6%)
+Agentless-1.5
+Claude-3.5-Sonnet
+254(50.8%)
+AutoCodeRover-v2.1
+Claude-3.5-Sonnet
+258(51.6%)
+OpenHands + CodeAct v2.1
+Claude-3.5-Sonnet
+265(53.00%)
+SGAgent
+Claude-3.5-Sonnet
+327(65.4%)
+accuracy decreases by 4.0% and 6.0%, and function-level localization accuracy falls by 20.0%
+and 22.0%, respectively. (3) Among different base LLMs, DeepSeek-V3 achieves the best results
+(52.0%, 76.0%, and 62.0% for the three metrics), followed by GPT-4o (48.0%, 72.0%, and 64.0%) and
+Qwen3-235B-A22B (40.0%, 76.0%, and 54.0%).
+Insights: (1) When extended to the vulnerability repair domain, SGAgent maintains strong
+repair performance, demonstrating robust generalization ability. (2) The consistency of results
+between software repair and vulnerability repair tasks further validates SGAgent’s robustness,
+practical applicability, component effectiveness, and model-agnostic design, confirming its po-
+tential for broader real-world adoption.
+6
+Discussion
+6.1
+Comparison on SWE-Bench-Verified
+To provide a more rigorous evaluation and reduce potential bias caused by unverified or ill-formed
+issues, we further evaluate SGAgent on the SWE-Bench-Verified dataset. SWE-Bench-Verified is a
+strictly human-validated subset of 500 instances, in which each issue is confirmed to be well-posed
+and unambiguously solvable.
+Table 12 presents the comparison between SGAgent and recent state-of-the-art approaches on
+SWE-Bench-Verified, all using Claude-3.5-Sonnet as the base model. The results show that SGAgent
+achieves the best performance among the compared approaches on this rigorous benchmark. Specif-
+ically, SGAgent successfully resolves 327 out of 500 instances, achieving a resolution rate of 65.4%.
+This clearly outperforms several strong baselines, including EPAM AI (62.8%), AutoCodeRover-v2.1
+(51.6%), Agentless-1.5 (50.8%), and SWE-Agent (33.6%).
+This substantial performance margin on the Verified dataset highlights a critical advantage of
+our locate-suggest-fix paradigm. While procedural or purely trial-and-error baselines (such as
+Agentless or SWE-Agent) may struggle with complex cross-file dependencies even when the issue
+itself is well-posed, SGAgent leverages the Suggest stage and the Knowledge Graph toolkit to
+maintain deep reasoning consistency. By generating explicit, coordinated repair strategies before
+code modification, SGAgent effectively capitalizes on the high-quality nature of the Verified
+instances, translating clear problem descriptions into highly accurate, repository-level patches.
+6.2
+Case study: The Role of the Suggester
+To explicitly illustrate how suggester bridges the gap between localization and repair, we present a
+qualitative case study on the issue psf__requests-863 from SWE-Bench. As shown in Figure 3,
+the core problem is that the Request object fails to properly handle the list of hook functions passed
+during its initialization.
+Figure 4 presents the patches generated by SGAgent with and without the suggester agent. In a
+standard localize-then-fix pipeline (i.e., without the suggester), the agent is highly susceptible to
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+1:24
+Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao
+Github Issue: psf__requests-863
+Allow lists in the dict values of the hooks argument
+ 
+Currently the Request class has a .register_hook() method but it parses the dictionary it expects from 
+it's hooks argument weirdly: the argument can only specify one hook function per hook. If you pass in a list 
+of hook functions per hook the code in Request.init() will wrap the list in a list which then fails when the 
+hooks are consumed (since a list is not callable). This is especially annoying since you can not use multiple 
+hooks from a session. The only way to get multiple hooks now is to create the request object without 
+sending it, then call .register_hook() multiple times and then finally call .send().
+This would all be much easier if Request.init() parsed the hooks parameter in a way that it accepts lists 
+as it's values.
+Fig. 3. The issue psf__requests-863 from SWE-Bench-lite
+The patch generated without the suggester
+diff --git a/requests/models.py b/requests/models.py
+index d845637..03db89a 100644
+--- a/requests/models.py
++++ b/requests/models.py
+@@ -149,7 +149,11 @@ class Request(object):
+hooks = hooks or {}
+for (k, v) in list(hooks.items()):
+-
+self.register_hook(event=k, hook=v)
++            if isinstance(v, list):
++                for hook_func in v:
++                    self.register_hook(event=k, 
+hook=hook_func)
++            else:
++                self.register_hook(event=k, hook=v)
+#: Session.
+self.session = session
+The patch generated with the suggester
+diff --git a/requests/models.py b/requests/models.py
+index d845637..a295478 100644
+--- a/requests/models.py
++++ b/requests/models.py
+@@ -462,9 +462,11 @@ class Request(object):
+def register_hook(self, event, hook):
+"""Properly register a hook."""
+-
+self.hooks[event].append(hook)
++        if isinstance(hook, (list, tuple)):
++            self.hooks[event].extend(hook)
++        else:
++            self.hooks[event].append(hook)
+def deregister_hook(self, event, hook):
+"""Deregister a previously registered hook.
+Returns True if the hook existed, False if not.
+Fig. 4. Comparison of psf__requests-863 patches with/without the suggester agent. Left: the patch generated
+without the suggester; right: the patch generated with the suggester.
+the localized and often misleading hints in the raw issue description. As is shown in Figure 5, the
+original issue report explicitly points to the initialization phase and states that “This would all be
+much easier if Request._init_() parsed the hooks parameter in a way that it accepts lists as its
+values.” Constrained by this initial clue, the baseline agent follows the user’s naive suggestion and
+patches only the apparent symptom by hardcoding a type check (isinstance(v, list)) inside
+the initialization loop of Request._init_(). However, this superficial fix fails the repository’s
+validation tests. Because it limits the change to the initialization phase and ignores standalone
+register_hook calls, it is functionally incomplete. Moreover, it violates the single-responsibility
+principle and supports only lists, not tuples, demonstrating that localized trial-and-error based on
+imperfect issue descriptions can produce plausible yet incorrect patches.
+In contrast, the introduction of the suggester fundamentally shifts the paradigm from local
+trial-and-error to global architectural planning. By leveraging the knowledge graph for backward
+analysis, the suggester does not blindly patch __init__(). Instead, its generated output explicitly
+redefines the true impact area to the underlying register_hook method. As is shown in Figure 6,
+A typical suggester output provides the fixer with a clear rationale and an actionable blueprint:
+"The current register_hook method only handles single hook functions. The fix should handle
+both single hooks and lists/tuples by checking the type and extending/appending accordingly to
+maintain backward compatibility."
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+SGAgent: Suggestion-Guided LLM-Based Multi-Agent Framework for Repository-Level Software Repair
+1:25
+Localization output of psf__requests-863 without suggester
+"reasons": [
+"The bug is in the Request.__init__() method where hooks are processed. The code iterates over 
+hooks.items() and calls register_hook(event=k, hook=v) for each key-value pair. When v is a list (like 
+[func1, func2, it passes the entire list as the hook parameter to register_hook(), which then appends 
+the entire list as a single element to self.hooks[event]. This results in self.hooks[event] containing 
+[[func1, func2 instead of [func1, func2, causing the hooks to fail when consumed later since a list is not 
+callable."
+]
+Fig. 5. Localization output of psf__requests-863 without suggester.
+Suggestion output of psf__requests-863
+"suggestions": [
+{
+"rationale": [
+"The current register_hook method only handles single hook functions",
+"When users pass lists of hooks in the constructor, they get nested as single items",
+"The fix handles both single hooks and lists/tuples of hooks by checking type and 
+extending/appending accordingly",
+"Maintains backward compatibility with existing single hook usage"
+],
+"impact_area": "requests.models.Request.register_hook",
+"risks": [
+"Potential issue if existing code expects lists to be treated as single hook objects",
+"Could change behavior in edge cases where users intentionally used lists as single hook objects"
+],
+"references": [
+"register_hook method in requests/models.py lines 463466",
+"Request.__init__ method using register_hook in lines 151152",
+"dispatch_hook function that consumes hooks in requests/hooks.py lines 3249"
+]
+}
+]
+Fig. 6. Suggestion output of psf__requests-863.
+Guided by this explicit and structured plan, the fixer completely abandons the flawed __init__
+modifications. It directly targets the register_hook function, generating a highly cohesive patch.
+Unlike the baseline, the suggester-guided patch successfully passes all validation tests. It supports
+both lists and tuples, perfectly covers all hook registration scenarios, maintains strict backward
+compatibility, and adheres to expert-level design principles. This qualitative comparison clearly
+demonstrates that the suggester is an indispensable planning module, successfully preventing the
+LLM from falling into the trap of localized, fragmented edits that ultimately fail execution.
+6.3
+Tool Usage Analysis
+To provide further insight into SGAgent’s behavior and its interactions with the knowledge graph,
+we record the frequency of all tool invocations during the SWE-Bench-Lite evaluation. As shown
+in Table 13, SGAgent makes use of the entire KG-based toolkit. All 14 designed tools are invoked
+at least once, suggesting that the toolkit supports a broad range of repair scenarios and that even
+specialized tools are useful in specific cases.
+In total, SGAgent makes 8,886 tool calls, and the resulting usage pattern follows a clear long-
+tail distribution. Among all tools, read_file_lines is used most frequently, with 4,512 invocations.
+This result is consistent with the architectural design of our multi-agent framework: rather than
+relying solely on the LLM’s internal memory, the agents repeatedly query the repository’s exact
+physical state to verify line numbers and local code context before generating patches. Following
+read_file_lines, the most frequently used tools are those supporting broader semantic exploration, in-
+cluding search_code_with_context (1,243 calls), find_files_containing (733 calls), and explore_directory
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+1:26
+Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao
+Table 13. Invoke frequency of SGAgent’s toolkit.
+Tools
+Invoked Times
+Percentage
+analyze_file_structure
+289
+3.25%
+get_code_relationships
+25
+0.28%
+find_methods_by_name
+399
+4.49%
+extract_complete_method
+421
+4.74%
+find_class_constructor
+98
+1.10%
+list_class_attributes
+13
+0.14%
+find_variable_usage
+54
+0.61%
+find_all_variables_named
+14
+0.16%
+show_file_imports
+97
+1.10%
+search_code_with_context
+1243
+13.99%
+find_files_containing
+733
+8.24%
+explore_directory
+538
+6.05%
+read_file_lines
+4512
+50.78%
+execute_shell_command_with_validation
+450
+5.06%
+Total
+8886
+100%
+(538 calls). These tools are heavily used by the localizer and suggester to explore repository context,
+trace cross-file dependencies, and support the backward analysis needed for coordinated repair
+planning. In addition, the substantial use of execute_shell_command_with_validation (450 calls)
+reflects the framework’s interaction with the execution environment, allowing the agents to inspect
+repository states and validate hypotheses when necessary. By contrast, fine-grained entity-analysis
+tools (e.g.,, get_code_relationships and list_class_attributes) appear in the long tail of the distribution
+and are typically invoked only when the agents encounter highly specific object-oriented struc-
+tural constraints. Overall, the observed distribution suggests that, although the individual tools
+in SGAgent are lightweight, all pre-defined APIs are effectively utilized in practice and together
+provide sufficient support for software repair across the localization, suggestion, and fixing stages.
+7
+Related Work
+7.1
+LLM-based Automated Program Repair
+Recent advances in LLMs have fundamentally reshaped the landscape of APR [16, 67]. Although
+earlier learning-based approaches have demonstrated promising results [21, 26, 57, 66, 69], their
+reliance on large-scale labeled data and limited generalization across languages and repositories
+constrain their applicability in real-world settings. In contrast, LLM-based methods leverage the
+inherent reasoning and code understanding abilities of foundation models, enabling repair without
+task-specific retraining. This paradigm shift has led to a surge of research exploring diverse
+prompting and reasoning strategies, including zero-shot [37, 38, 50, 58], few-shot [36, 45, 53]
+prompting, to elicit repair behaviors directly from pretrained models.
+Retrieval-Augmented Generation (RAG) techniques [30, 35] further enhance these models by
+grounding their reasoning in external knowledge sources, improving contextual precision in
+complex repositories. Building on these advances, recent works have begun to move beyond
+static prompting toward interactive, agent-driven repair [49, 61, 70], where LLMs dynamically
+interact with tools, files, and execution environments to iteratively refine their reasoning and patch
+generation. Such approaches mark a transition from single-turn prediction to multi-step decision-
+making, bridging code understanding, localization, and fix generation in a unified, autonomous
+framework.
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+SGAgent: Suggestion-Guided LLM-Based Multi-Agent Framework for Repository-Level Software Repair
+1:27
+Beyond prompt-based methods, fine-tuning and Reinforcement Learning (RL) have emerged as
+complementary strategies for enhancing LLMs’ software repair capability. Fine-tuning approaches
+(e.g., DeepDebug [10], CIRCLE [63], APRFiT [14]) typically adapt a pre-trained LLM to domain-
+specific repair corpora, allowing the model to internalize recurring bug–fix patterns and language-
+specific conventions. However, such methods often suffer from high computational cost, catastrophic
+forgetting, and limited adaptability to unseen projects or languages. In contrast, RL offers a dynamic
+optimization paradigm that directly aligns model behavior with repair success signals. By treating
+code repair as a sequential decision-making process, RL-based approaches, such as SWE-RL [54],
+RepairLLaMA [44] and Repair-R1 [17], allow models to iteratively refine their outputs based on
+execution feedback or test results. These methods enhance the model’s ability to reason about
+repair quality beyond static supervision.
+In this work, we leverage existing LLMs to address complex repository-level software repair
+tasks. To minimize training cost and methodological complexity, we adopt a train-free multi-agent
+framework, enabling SGAgent to autonomously locate and repair bugs.
+7.2
+Repository-level Software Repair
+With the rapid growth of modern software projects, repository-level software repair has become an
+increasingly challenging task. Pure LLM-based approaches often struggle with multi-step reasoning
+and complex context management [4, 7, 72], motivating the exploration of new paradigms for
+large-scale program repair. Recent advances have popularized the agentic paradigm for repository-
+level repair [29, 40, 46, 51, 71]. Agent-based systems such as AutoGPT [43], GPT Engineer [33]
+and OpenHands [52] demonstrate that tool-augmented agents can iteratively analyze, plan, and
+act to solve complex software repair tasks. These agents perform repository reasoning, generate
+candidate patches, and validate fixes through automated testing[12, 13, 20, 27, 64]. For example,
+RepairAgent [5] introduces the first work to address the software repair challenge through an
+autonomous agent based on LLMs. SWE-Agent [61] integrates multi-step retrieval and testing
+to repair repository-level software bugs. OpenHands [52] introduces a multi-agent collaboration
+design for software repair and patch validation. AutoCodeRover [70] works on a program rep-
+resentation (abstract syntax tree) as opposed to viewing a software project as a mere collection
+of files. VRPILOT [23] uses a chain-of-thought prompt to reason about a vulnerability prior to
+generating patch candidates and iteratively refines prompts according to the output of external
+tools on previously-generated patches. In contrast, several procedure-based approaches rely on
+carefully designed static pipelines to organize and guide LLMs during repository-level repair. For
+example, Agentless [56] employs a simple three-phase process, i.e., localization, repair, and val-
+idation, without allowing the LLM to autonomously plan or interact with complex toolchains.
+Similarly, Moatless [3] argues that strong tool integration and sufficient contextual grounding can
+outperform fully autonomous agentic control.
+Unlike prior work that primarily treats repair as a localize-then-fix process, SGAgent introduces
+a suggestion-guided multi-agent framework that explicitly separates bug repair into three stages:
+locate, suggest, and fix. Although some existing approaches incorporate reasoning mechanisms such
+as chain-of-thought reasoning, such reasoning is typically tightly coupled with patch generation
+and remains largely unguided, leaving the model to determine the modification strategy on its own.
+In contrast, SGAgent is designed to mimic real-world developer practice by explicitly decomposing
+repository-level repair into specialized roles and enabling collaboration among multiple agents. In
+particular, the key novelty of SGAgent lies in introducing the Suggester as an explicit intermediate
+stage between localization and repair. Rather than directly editing localized snippets, the Suggester
+first performs secondary context exploration and dependency analysis based on candidate bug
+locations, and then transforms coarse localization signals into actionable, repository-aware repair
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+1:28
+Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao
+suggestions before any code is modified. Together with the knowledge graph and specialized toolkit,
+this design allows SGAgent to bridge the reasoning gap between “where the bug is” and “how the
+code should be changed.”
+7.3
+Knowledge-Graph-Guided Repository Retrieval
+Knowledge graphs have recently become a powerful tool for enhancing large-scale code under-
+standing and repository-level reasoning [8, 27, 28, 34, 60]. By representing software repositories as
+structured graphs of entities (e.g., classes, methods, and variables) and their relations (e.g., inheri-
+tance, invocation, and data dependencies), knowledge-graph-based approaches enable more precise
+and semantically grounded retrieval of relevant contexts for program repair and comprehension
+tasks. RepoGraph [34] proposes a plug-in module that manages a repository-level structure for
+modern AI software engineering solutions. KGCompass [60] proposes a novel repository-aware
+knowledge graph that accurately links repository artifacts (issues and pull requests) and code-
+base entities (files, classes, and functions) and a path-guided repair mechanism that leverages
+KG-mined entity paths, tracing through which allows us to augment LLMs with relevant con-
+textual information to generate precise patches along with their explanations. GraphCoder [27]
+leverages control-flow, data- and control-dependence between code statements to build a retrieval-
+augmented code completion framework. CodexGraph [28] enables the LLM agent to construct and
+execute queries, allowing for precise, code structure-aware context retrieval and code navigation
+by leveraging the structural properties of graph databases and the flexibility of the graph query
+language.
+Unlike prior work that mainly use knowledge graphs as static contextual augmentation, SGAgent
+operationalizes repository knowledge through a scenario-oriented toolkit for dynamic repository-
+level reasoning. This distinction is particularly important when comparing SGAgent with recent
+graph-based methods such as KGCompass [60]. KGCompass adopts a path-guided mechanism
+that relies on pre-computed entity paths mined from the knowledge graph and injects them into
+prompts as supplementary context. In contrast, SGAgent encapsulates repository knowledge into
+a scenario-oriented API toolkit comprising 14 specialized tools. Rather than passively consuming
+pre-computed paths, the agents in SGAgent invoke different tools according to the task context at
+runtime. As a result, SGAgent supports dynamic, fine-grained, and scenario-specific interaction
+with repository knowledge, making retrieval more precise, flexible, and adaptive for repair-oriented
+reasoning.
+8
+Threats to Validity
+8.1
+Internal Validity
+Internal validity concerns potential experimental biases that may affect the fairness or consistency
+of our evaluation. Since LLMs inherently involve stochastic generation, randomness in model
+outputs may introduce noise into the reported results. To mitigate this threat, we employ a multi-
+sampling strategy: for each instance, the model generates four candidate localization sets, and for
+each localization, patches are sampled once with temperature = 0 and four times with temperature
+= 0.8. This design balances stability and exploration, reducing the variance caused by random
+sampling while ensuring fair coverage of SGAgent’s repair potential. Furthermore, all experiments
+are conducted under identical configurations, with fixed random seeds and isolated environments,
+minimizing uncontrolled sources of variation.
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+SGAgent: Suggestion-Guided LLM-Based Multi-Agent Framework for Repository-Level Software Repair
+1:29
+8.2
+External Validity
+External validity addresses the generalizability of our findings beyond the specific datasets and
+programming languages used in this study. Our primary experiments are conducted on Python-
+based projects from the SWE-Bench-Lite benchmark, which may raise concerns about language
+dependency. To address this, we extend our evaluation to Java-based vulnerability datasets (e.g.,,
+VUL4J, VJBench), and observe consistent repair rates and localization accuracies across both settings.
+These results demonstrate that SGAgent’s architecture and methodology exhibit strong cross-
+language generalizability, indicating that its mechanisms for locate, suggest and fix stages are not
+restricted to a particular programming language or dataset domain.
+8.3
+Construct Validity
+Construct validity concerns whether our evaluation metrics accurately capture what they are
+intended to measure, i.e., the bug localization and repair capability of SGAgent, rather than artifacts
+of the underlying language model. SGAgent is primarily implemented using Claude-3.5-Sonnet
+as the base model, which may introduce biases tied to model-specific performance. To mitigate
+this, we further evaluate SGAgent using DeepSeek-V3 and Qwen3-235B-A22B. The consistent
+performance trends observed across these LLMs demonstrate that SGAgent’s improvements stem
+from its framework design rather than from the characteristics of any specific model. This supports
+the validity of our claim that SGAgent’s effectiveness is model-agnostic and method-driven.
+9
+Conclusion
+In this paper, we introduce SGAgent, a suggestion-guided multi-agent framework designed to auto-
+matically analyze and repair repository-level software bugs. SGAgent consists of three cooperating
+agents: localizer, suggester, and fixer, which work together to understand the structure of complex
+repositories and propose effective patches. SGAgent introduces a novel suggestion stage into the
+existing automated software repair pipeline. By performing secondary contextual refinement based
+on the exploratory results of the localization stage, SGAgent demonstrates strong effectiveness
+when handling complex repositories. Furthermore, we equip SGAgent with a repository-level
+knowledge graph and a corresponding retrieval toolkit, which together enhance LLMs’ ability to
+comprehend the structural and semantic relationships within large-scale codebases. Our evaluation
+demonstrates that SGAgent outperforms existing state-of-the-art approaches on resolve rate, file-
+level localization accuracy, and function-level localization accuracy while maintaining a relatively
+low cost. In addition, SGAgent exhibits strong scalability across diverse LLM architectures and
+maintains robust performance across different programming languages, highlighting its practical
+applicability and potential for deployment in real-world software development environments.
+Acknowledgments
+This work is supported partially by Natural Science Foundation of Jiangsu Province (BK20251458),
+National Natural Science Foundation of China (U24A20337, 62372228), and Frontier Technologies
+R&D Program of Jiangsu (BF2024070).
+References
+[1] Abstract Syntax Trees 2022. https://docs.python.org/3/library/ast.html
+[2] Vaibhav Aggarwal, Ojasv Kamal, Abhinav Japesh, Zhijing Jin, and Bernhard Schölkopf. 2025. Dars: Dynamic action
+re-sampling to enhance coding agent performance by adaptive tree traversal. arXiv preprint arXiv:2503.14269 (2025).
+[3] Antonis Antoniades, Albert Örwall, Kexun Zhang, Yuxi Xie, Anirudh Goyal, and William Wang. 2024. Swe-search:
+Enhancing software agents with monte carlo tree search and iterative refinement. arXiv preprint arXiv:2410.20285
+(2024).
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+1:30
+Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao
+[4] Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang, Carrie
+Cai, Michael Terry, Quoc Le, et al. 2021. Program synthesis with large language models. arXiv preprint arXiv:2108.07732
+(2021).
+[5] Islem Bouzenia, Premkumar Devanbu, and Michael Pradel. 2024. Repairagent: An autonomous, llm-based agent for
+program repair. arXiv preprint arXiv:2403.17134 (2024).
+[6] Quang-Cuong Bui, Riccardo Scandariato, and Nicolás E Díaz Ferreyra. 2022. Vul4j: A dataset of reproducible java
+vulnerabilities geared towards the study of program repair techniques. In Proceedings of the 19th International Conference
+on Mining Software Repositories. 464–468.
+[7] Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde De Oliveira Pinto, Jared Kaplan, Harri Edwards,
+Yuri Burda, Nicholas Joseph, Greg Brockman, et al. 2021. Evaluating large language models trained on code. arXiv
+preprint arXiv:2107.03374 (2021).
+[8] Zimin Chen, Yue Pan, Siyu Lu, Jiayi Xu, Claire Le Goues, Martin Monperrus, and He Ye. 2025. Prometheus: Unified
+knowledge graphs for issue resolution in multilingual codebases. arXiv preprint arXiv:2507.19942 (2025).
+[9] DeepSeek-AI, Aixin Liu, Bei Feng, Bing Xue, Bingxuan Wang, Bochao Wu, and Chengda Lu et al. 2025. DeepSeek-V3
+Technical Report. arXiv:2412.19437 [cs.CL] https://arxiv.org/abs/2412.19437
+[10] Dawn Drain, Colin B Clement, Guillermo Serrato, and Neel Sundaresan. 2021. Deepdebug: Fixing python bugs using
+stack traces, backtranslation, and code skeletons. arXiv preprint arXiv:2105.09352 (2021).
+[11] Xueying Du, Mingwei Liu, Kaixin Wang, Hanlin Wang, Junwei Liu, Yixuan Chen, Jiayi Feng, Chaofeng Sha, Xin Peng,
+and Yiling Lou. 2024. Evaluating large language models in class-level code generation. In Proceedings of the IEEE/ACM
+46th International Conference on Software Engineering. 1–13.
+[12] Michael Fu, Chakkrit Tantithamthavorn, Trung Le, Van Nguyen, and Dinh Phung. 2022. VulRepair: a T5-based
+automated software vulnerability repair. In Proceedings of the 30th ACM joint european software engineering conference
+and symposium on the foundations of software engineering. 935–947.
+[13] Michael Fu, Chakkrit Kla Tantithamthavorn, Van Nguyen, and Trung Le. 2023. Chatgpt for vulnerability detection,
+classification, and repair: How far are we?. In 2023 30th Asia-Pacific Software Engineering Conference (APSEC). IEEE,
+632–636.
+[14] Sichong Hao, Xianjun Shi, Hongwei Liu, and Yanjun Shu. 2023. Enhancing code language models for program repair
+by curricular fine-tuning framework. In 2023 IEEE International Conference on Software Maintenance and Evolution
+(ICSME). IEEE, 136–146.
+[15] Xinyi Hou, Yanjie Zhao, Yue Liu, Zhou Yang, Kailong Wang, Li Li, Xiapu Luo, David Lo, John C. Grundy, and Haoyu
+Wang. 2023. Large Language Models for Software Engineering: A Systematic Literature Review. CoRR abs/2308.10620
+(2023), arXiv–2308.
+[16] Haichuan Hu, Ye Shang, Guolin Xu, Congqing He, and Quanjun Zhang. 2025. Can GPT-O1 kill all bugs? An evaluation
+of GPT-family LLMs on QuixBugs. In 2025 IEEE/ACM International Workshop on Automated Program Repair (APR).
+IEEE, 11–18.
+[17] Haichuan Hu, Xiaochen Xie, and Quanjun Zhang. 2025.
+Repair-r1: Better test before repair.
+arXiv preprint
+arXiv:2507.22853 (2025).
+[18] Kai Huang, Jian Zhang, Xiangxin Meng, and Yang Liu. 2025. Template-Guided Program Repair in the Era of Large
+Language Models.. In ICSE. 1895–1907.
+[19] Juyong Jiang, Fan Wang, Jiasi Shen, Sungju Kim, and Sunghun Kim. 2024. A survey on large language models for code
+generation. arXiv preprint arXiv:2406.00515 (2024).
+[20] Nan Jiang, Kevin Liu, Thibaud Lutellier, and Lin Tan. 2023. Impact of code language models on automated program
+repair. In 2023 IEEE/ACM 45th International Conference on Software Engineering (ICSE). IEEE, 1430–1442.
+[21] Nan Jiang, Thibaud Lutellier, and Lin Tan. 2021. Cure: Code-aware neural machine translation for automatic program
+repair. In 2021 IEEE/ACM 43rd International Conference on Software Engineering (ICSE). IEEE, 1161–1173.
+[22] Carlos E Jimenez, John Yang, Alexander Wettig, Shunyu Yao, Kexin Pei, Ofir Press, and Karthik Narasimhan. 2023.
+Swe-bench: Can language models resolve real-world github issues? arXiv preprint arXiv:2310.06770 (2023).
+[23] Ummay Kulsum, Haotian Zhu, Bowen Xu, and Marcelo d’Amorim. 2024. A case study of llm for automated vulnerability
+repair: Assessing impact of reasoning and patch validation feedback. In Proceedings of the 1st ACM International
+Conference on AI-Powered Software. 103–111.
+[24] LangChain 2024. https://www.langchain.com/
+[25] LangGraph 2024. https://www.langchain.com/langgraph
+[26] Dongcheng Li, W Eric Wong, Mingyong Jian, Yi Geng, and Matthew Chau. 2022. Improving search-based automatic
+program repair with Neural Machine Translation. IEEE Access 10 (2022), 51167–51175.
+[27] Wei Liu, Ailun Yu, Daoguang Zan, Bo Shen, Wei Zhang, Haiyan Zhao, Zhi Jin, and Qianxiang Wang. 2024. Graphcoder:
+Enhancing repository-level code completion via code context graph-based retrieval and language model. arXiv preprint
+arXiv:2406.07003 (2024).
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+SGAgent: Suggestion-Guided LLM-Based Multi-Agent Framework for Repository-Level Software Repair
+1:31
+[28] Xiangyan Liu, Bo Lan, Zhiyuan Hu, Yang Liu, Zhicheng Zhang, Fei Wang, Michael Shieh, and Wenmeng Zhou.
+2024. Codexgraph: Bridging large language models and code repositories via code graph databases. arXiv preprint
+arXiv:2408.03910 (2024).
+[29] Zijun Liu, Yanzhe Zhang, Peng Li, Yang Liu, and Diyi Yang. 2023. Dynamic llm-agent network: An llm-agent
+collaboration framework with agent team optimization. arXiv preprint arXiv:2310.02170 (2023).
+[30] Elijah Mansur, Johnson Chen, Muhammad Anas Raza, and Mohammad Wardat. 2024. RAGFix: Enhancing LLM
+Code Repair Using RAG and Stack Overflow Posts. In 2024 IEEE International Conference on Big Data (BigData). IEEE,
+7491–7496.
+[31] Justin J Miller. 2013. Graph database applications and concepts with Neo4j. In Proceedings of the southern association
+for information systems conference, Atlanta, GA, USA, Vol. 2324. 141–147.
+[32] Fangwen Mu, Junjie Wang, Lin Shi, Song Wang, Shoubin Li, and Qing Wang. 2025. EXPEREPAIR: Dual-Memory
+Enhanced LLM-based Repository-Level Program Repair. arXiv preprint arXiv:2506.10484 (2025).
+[33] Anton Osika. 2023. gpt-engineer. https://github.com/gpt-engineer-org/gpt-engineer
+[34] Siru Ouyang, Wenhao Yu, Kaixin Ma, Zilin Xiao, Zhihan Zhang, Mengzhao Jia, Jiawei Han, Hongming Zhang, and Dong
+Yu. 2024. RepoGraph: Enhancing AI Software Engineering with Repository-level Code Graph. arXiv:2410.14684 [cs.SE]
+https://arxiv.org/abs/2410.14684
+[35] Shuyin Ouyang, Jie M Zhang, Zeyu Sun, and Albert Merono Penuela. 2025. Knowledge-Enhanced Program Repair for
+Data Science Code. arXiv preprint arXiv:2502.09771 (2025).
+[36] Archit Parnami and Minwoo Lee. 2022. Learning from few examples: A summary of approaches to few-shot learning.
+arXiv preprint arXiv:2203.04291 (2022).
+[37] Hammond Pearce, Benjamin Tan, Baleegh Ahmad, Ramesh Karri, and Brendan Dolan-Gavitt. 2023. Examining Zero-
+Shot Vulnerability Repair with Large Language Models. In 2023 IEEE Symposium on Security and Privacy (SP). 2339–2356.
+doi:10.1109/SP46215.2023.10179324
+[38] Farhad Pourpanah, Moloud Abdar, Yuxuan Luo, Xinlei Zhou, Ran Wang, Chee Peng Lim, Xi-Zhao Wang, and
+QM Jonathan Wu. 2022. A review of generalized zero-shot learning methods. IEEE transactions on pattern analysis and
+machine intelligence 45, 4 (2022), 4051–4070.
+[39] Pygments 2006. https://pygments.org/
+[40] Samuel Schmidgall, Yusheng Su, Ze Wang, Ximeng Sun, Jialian Wu, Xiaodong Yu, Jiang Liu, Michael Moor, Zicheng Liu,
+and Emad Barsoum. 2025. Agent laboratory: Using llm agents as research assistants. arXiv preprint arXiv:2501.04227
+(2025).
+[41] SGAgent 2026. https://github.com/iSEngLab/SGAgent
+[42] Ye Shang, Quanjun Zhang, Chunrong Fang, Siqi Gu, Jianyi Zhou, and Zhenyu Chen. 2025. A large-scale empirical
+study on fine-tuning large language models for unit testing. Proceedings of the ACM on Software Engineering 2, ISSTA
+(2025), 1678–1700.
+[43] Significant Gravitas. [n. d.]. AutoGPT. https://github.com/Significant-Gravitas/AutoGPT
+[44] André Silva, Sen Fang, and Martin Monperrus. 2025. Repairllama: Efficient representations and fine-tuned adapters for
+program repair. IEEE Transactions on Software Engineering (2025).
+[45] Yisheng Song, Ting Wang, Puyu Cai, Subrota K Mondal, and Jyoti Prakash Sahoo. 2023. A comprehensive survey of
+few-shot learning: Evolution, applications, challenges, and opportunities. Comput. Surveys 55, 13s (2023), 1–40.
+[46] Yashar Talebirad and Amirhossein Nadiri. 2023. Multi-agent collaboration: Harnessing the power of intelligent llm
+agents. arXiv preprint arXiv:2306.03314 (2023).
+[47] The Claude 3 Model Family: Opus, Sonnet, Haiku [n. d.]. https://www.anthropic.com/news/claude-3-family
+[48] Tree-Sitter 2017. https://tree-sitter.github.io/tree-sitter/
+[49] Simon Urli, Zhongxing Yu, Lionel Seinturier, and Martin Monperrus. 2018. How to design a program repair bot?
+insights from the repairnator project. In Proceedings of the 40th International Conference on Software Engineering:
+Software Engineering in Practice. 95–104.
+[50] Wei Wang, Vincent W Zheng, Han Yu, and Chunyan Miao. 2019. A survey of zero-shot learning: Settings, methods,
+and applications. ACM Transactions on Intelligent Systems and Technology (TIST) 10, 2 (2019), 1–37.
+[51] Xingyao Wang, Yangyi Chen, Lifan Yuan, Yizhe Zhang, Yunzhu Li, Hao Peng, and Heng Ji. 2024. Executable code
+actions elicit better llm agents. In Forty-first International Conference on Machine Learning.
+[52] Xingyao Wang, Boxuan Li, Yufan Song, Frank F Xu, Xiangru Tang, Mingchen Zhuge, Jiayi Pan, Yueqi Song, Bowen
+Li, Jaskirat Singh, et al. 2024. Openhands: An open platform for ai software developers as generalist agents. arXiv
+preprint arXiv:2407.16741 (2024).
+[53] Yaqing Wang, Quanming Yao, James T Kwok, and Lionel M Ni. 2020. Generalizing from a few examples: A survey on
+few-shot learning. ACM computing surveys (csur) 53, 3 (2020), 1–34.
+[54] Yuxiang Wei, Olivier Duchenne, Jade Copet, Quentin Carbonneaux, Lingming Zhang, Daniel Fried, Gabriel Synnaeve,
+Rishabh Singh, and Sida I Wang. 2025. Swe-rl: Advancing llm reasoning via reinforcement learning on open software
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.
+
+
+1:32
+Quanjun Zhang, Chengyu Gao, Yu Han, Ye Shang, Chunrong Fang, Zhenyu Chen, and Liang Xiao
+evolution. arXiv preprint arXiv:2502.18449 (2025).
+[55] Yi Wu, Nan Jiang, Hung Viet Pham, Thibaud Lutellier, Jordan Davis, Lin Tan, Petr Babkin, and Sameena Shah. 2023. How
+effective are neural networks for fixing security vulnerabilities. In Proceedings of the 32nd ACM SIGSOFT International
+Symposium on Software Testing and Analysis. 1282–1294.
+[56] Chunqiu Steven Xia, Yinlin Deng, Soren Dunn, and Lingming Zhang. 2024. Agentless: Demystifying llm-based software
+engineering agents. arXiv preprint arXiv:2407.01489 (2024).
+[57] Chunqiu Steven Xia, Yuxiang Wei, and Lingming Zhang. 2023. Automated program repair in the era of large pre-trained
+language models. In 2023 IEEE/ACM 45th International Conference on Software Engineering (ICSE). IEEE, 1482–1494.
+[58] Yongqin Xian, Bernt Schiele, and Zeynep Akata. 2017. Zero-shot learning-the good, the bad and the ugly. In Proceedings
+of the IEEE conference on computer vision and pattern recognition. 4582–4591.
+[59] An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chang Gao, Chengen Huang,
+Chenxu Lv, et al. 2025. Qwen3 Technical Report. arXiv preprint arXiv:2505.09388 (2025).
+[60] Boyang Yang, Haoye Tian, Jiadong Ren, Shunfu Jin, Yang Liu, Feng Liu, and Bach Le. 2025. Enhancing repository-level
+software repair via repository-aware knowledge graphs. arXiv preprint arXiv:2503.21710 (2025).
+[61] John Yang, Carlos E Jimenez, Alexander Wettig, Kilian Lieret, Shunyu Yao, Karthik Narasimhan, and Ofir Press. 2024.
+Swe-agent: Agent-computer interfaces enable automated software engineering. Advances in Neural Information
+Processing Systems 37 (2024), 50528–50652.
+[62] Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik R Narasimhan, and Yuan Cao. 2022. React: Syner-
+gizing reasoning and acting in language models. In The eleventh international conference on learning representations.
+[63] Wei Yuan, Quanjun Zhang, Tieke He, Chunrong Fang, Nguyen Quoc Viet Hung, Xiaodong Hao, and Hongzhi Yin.
+2022. CIRCLE: Continual repair across programming languages. In Proceedings of the 31st ACM SIGSOFT international
+symposium on software testing and analysis. 678–690.
+[64] Kechi Zhang, Jia Li, Ge Li, Xianjie Shi, and Zhi Jin. 2024. Codeagent: Enhancing code generation with tool-integrated
+agent systems for real-world repo-level coding challenges. arXiv preprint arXiv:2401.07339 (2024).
+[65] Quanjun Zhang, Chunrong Fang, Siqi Gu, Ye Shang, Zhenyu Chen, and Liang Xiao. 2025. Large Language Models for
+Unit Testing: A Systematic Literature Review. arXiv preprint arXiv:2506.15227 (2025).
+[66] Quanjun Zhang, Chunrong Fang, Yuxiang Ma, Weisong Sun, and Zhenyu Chen. 2023. A survey of learning-based
+automated program repair. ACM Transactions on Software Engineering and Methodology 33, 2 (2023), 1–69.
+[67] Quanjun Zhang, Chunrong Fang, Yang Xie, Yuxiang Ma, Weisong Sun, Yun Yang, and Zhenyu Chen. 2024. A Systematic
+Literature Review on Large Language Models for Automated Program Repair. CoRR abs/2405.01466 (2024), arXiv–2405.
+[68] Quanjun Zhang, Chunrong Fang, Yang Xie, Yaxin Zhang, Yun Yang, Weisong Sun, Shengcheng Yu, and Zhenyu Chen.
+2023. A Survey on Large Language Models for Software Engineering. CoRR abs/2312.15223 (2023), arXiv–2312.
+[69] Quanjun Zhang, Chunrong Fang, Tongke Zhang, Bowen Yu, Weisong Sun, and Zhenyu Chen. 2023. Gamma: Revisiting
+template-based automated program repair via mask prediction. In 2023 38th IEEE/ACM International Conference on
+Automated Software Engineering (ASE). IEEE, 535–547.
+[70] Yuntong Zhang, Haifeng Ruan, Zhiyu Fan, and Abhik Roychoudhury. 2024. Autocoderover: Autonomous program
+improvement. In Proceedings of the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis.
+1592–1604.
+[71] Andrew Zhao, Daniel Huang, Quentin Xu, Matthieu Lin, Yong-Jin Liu, and Gao Huang. 2024. Expel: Llm agents are
+experiential learners. In Proceedings of the AAAI Conference on Artificial Intelligence, Vol. 38. 19632–19642.
+[72] Zibin Zheng, Kaiwen Ning, Yanlin Wang, Jingwen Zhang, Dewu Zheng, Mingxi Ye, and Jiachi Chen. 2023. A survey of
+large language models for code: Evolution, benchmarking, and future trends. arXiv preprint arXiv:2311.10372 (2023).
+ACM Trans. Softw. Eng. Methodol., Vol. 1, No. 1, Article 1. Publication date: January 2024.

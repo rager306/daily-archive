@@ -1,0 +1,1290 @@
+RecoWorld: Building Simulated Environments for
+Agentic Recommender Systems
+Fei Liu
+feiliu1@meta.com
+Meta Platforms, Inc.
+Menlo Park, CA, USA
+Xinyu Lin∗
+xylin1028@gmail.com
+National University of
+Singapore
+Hanchao Yu
+hanchaoyu@meta.com
+Meta Platforms, Inc.
+Menlo Park, CA, USA
+Mingyuan Wu∗
+mw34@cs.illinois.edu
+University of Illinois
+Champaign, IL, USA
+Jianyu Wang
+Meta Platforms, Inc.
+Menlo Park, CA, USA
+Qiang Zhang
+Meta Platforms, Inc.
+Menlo Park, CA, USA
+Zhuokai Zhao
+Meta Platforms, Inc.
+New York, NY, USA
+Yinglong Xia
+Meta Platforms, Inc.
+Menlo Park, CA, USA
+Yao Zhang
+Meta Platforms, Inc.
+New York, NY, USA
+Weiwei Li
+Meta Platforms, Inc.
+New York, NY, USA
+Mingze Gao
+Meta Platforms, Inc.
+Menlo Park, CA, USA
+Qifan Wang
+Meta Platforms, Inc.
+Menlo Park, CA, USA
+Lizhu Zhang
+lizhu@meta.com
+Meta Platforms, Inc.
+Menlo Park, CA, USA
+Benyu Zhang
+byzhang@meta.com
+Meta Platforms, Inc.
+Menlo Park, CA, USA
+Xiangjun Fan†
+maxfan@meta.com
+Meta Platforms, Inc.
+Menlo Park, CA, USA
+Abstract
+We present RecoWorld, a blueprint for building simulated environ-
+ments tailored to agentic recommender systems. Such environments
+give agents a proper training space where they can learn from er-
+rors without impacting real users. RecoWorld distinguishes itself
+with a dual-view architecture: a simulated user and an agen-
+tic recommender engage in multi-turn interactions aimed
+at maximizing user retention. The user simulator reviews rec-
+ommended items, updates its mindset, and when sensing potential
+user disengagement, generates reflective instructions. The agentic
+recommender adapts its recommendations by incorporating these
+user instructions and reasoning traces, creating a dynamic feedback
+loop that actively engages users. This process leverages the excep-
+tional reasoning capabilities of modern LLMs. We explore diverse
+content representations within the simulator, including text-based,
+multimodal, and semantic ID modeling, and discuss how multi-
+turn RL enables the recommender to refine its strategies through
+iterative interactions. RecoWorld also supports multi-agent simu-
+lations, allowing creators to simulate the responses of targeted user
+populations. It marks an important first step toward recommender
+systems where users and agents collaboratively shape personal-
+ized information streams. We envision new interaction paradigms
+where “user instructs, recommender responds,” jointly optimizing
+user retention and engagement.
+∗Work completed during internship at Meta.
+†Corresponding author.
+This work is licensed under a Creative Commons Attribution-NonCommercial-
+NoDerivatives 4.0 International License.
+WWW Companion ’26, Dubai, United Arab Emirates
+© 2026 Copyright held by the owner/author(s).
+ACM ISBN 979-8-4007-2308-7/2026/04
+https://doi.org/10.1145/3774905.3794661
+CCS Concepts
+• Information systems →Recommender systems.
+Keywords
+Agentic Recommender Systems; Simulated Environments; Evalua-
+tion; (Multimodal) Large Language Models; Multi-Turn Interactions;
+Instruction-Following Recommenders
+ACM Reference Format:
+Fei Liu, Xinyu Lin, Hanchao Yu, Mingyuan Wu, Jianyu Wang, Qiang Zhang,
+Zhuokai Zhao, Yinglong Xia, Yao Zhang, Weiwei Li, Mingze Gao, Qifan
+Wang, Lizhu Zhang, Benyu Zhang, and Xiangjun Fan. 2026. RecoWorld:
+Building Simulated Environments for Agentic Recommender Systems. In
+Companion Proceedings of the ACM Web Conference 2026 (WWW Companion
+’26), April 13–17, 2026, Dubai, United Arab Emirates. ACM, New York, NY,
+USA, 10 pages. https://doi.org/10.1145/3774905.3794661
+1
+Introduction
+Recommender systems have long relied on offline metrics such
+as Recall@N, NDCG, and counterfactual policy evaluation, paired
+with online A/B tests [15, 60]. Offline evaluation is based on histor-
+ical user behavior, which can introduce exposure bias. This means
+the system often reinforces known patterns instead of discovering
+new user interests. In contrast, online A/B tests provide valuable
+insights, yet they involve a slow feedback loop and must be handled
+carefully with real users. As agentic recommender systems emerge,
+there is an increasing demand for simulated online environments
+that use LLMs to replicate user feedback. These simulations allow
+recommender systems to aggressively test bold, radically different
+strategies without compromising user experience.
+Simulated environments have accelerated the progress of rein-
+forcement learning (RL) research. For instance, OpenAI Gym [5]
+provides a collection of benchmarks for comparing the performance
+of RL algorithms. More recently, Park et al. [35] pioneered the use
+arXiv:2509.10397v2  [cs.IR]  6 Feb 2026
+
+
+WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates
+Fei Liu, Xinyu Lin, Hanchao Yu, et al.
+Example Use Cases of RecoWorld
+Evaluating RecSys’ Instruction Following Ability. Instruction-
+following capabilities are essential for agentic RecSys, much like
+they are for LLMs. E.g., a user might tell the recommender system
+their preferences through natural language or voice, e.g., “There
+are too many recommendations about hairstyling; I wanna see some-
+thing different but related,” or “I’d like to watch more content that
+people in the San Francisco Bay Area are watching right now.” If the
+agentic RecSys adjusts its recommendations based on these instruc-
+tions, we need a simulated environment to evaluate how well it
+performed. One approach is to measure the system’s success in
+instruction-following by using simulated user feedback as a proxy.
+This approach is important because agentic recommenders will need
+to handle a wide range of user instructions. Our RecoWorld pro-
+vides a promising way to estimate system performance without
+relying on ground-truth annotated data.
+Enabling Creators to Experiment with Publishing Strategies.
+A simulated environment helps creators explore different content
+strategies and reach their goals, e.g., growing followers, boosting
+views, or getting more likes. It lets them try bold, different ap-
+proaches without risking real user experience. For example, they can
+test new topics and styles to attract fresh audiences, find the right
+posting frequency to keep followers interested without annoying
+them, or see how controversial opinions might be received. By mim-
+icking user feedback, this environment lets creators test the waters
+safely. Simulated user profiles can be based on their current audi-
+ence, a general population sample, or even specific target groups.
+Supporting New and Marginal Users in Exploring Interests.
+Algorithms such as the multi-armed bandit are frequently used in
+RecSys to find the right balance between exploring new user inter-
+ests and exploiting known preferences. I.e., an agent chooses from
+a fixed set of actions (interests) to maximize cumulative reward
+over time. A challenge here is to explore without compromising user
+experience. RecoWorld addresses this by collecting simulated user
+engagement metrics, such as watch time and clicks, which serve
+as “pseudo-rewards” to evaluate the relevance of each interest. Our
+simulator can seamlessly integrate with contextual bandit by simu-
+lating groups of users with similar features, such as age, location,
+and past engagements, to provide collective exploration feedback.
+Building a Leaderboard for Agentic RecSys.
+Many enterprise
+recommender systems are developed in-house, making it difficult to
+replicate their results. The challenge is even greater with Agentic
+RecSys, which can take on various forms. They share an “agentic”
+nature, e.g., an agent (or multiple agents) interacts with an environ-
+ment; the agent takes actions and receives observations and rewards
+in return. However, each task may have a different setup, e.g., vari-
+ations in environmental states and reward signals. RecoWorld
+provides a shared platform with a community leaderboard, allow-
+ing different systems to be compared fairly. We invite practitioners
+to contribute their agentic tasks to RecoWorld using a common
+API. They can receive feedback signals from our simulated users
+and make their tasks available for the community to participate in.
+RecoWorld thus accelerates RL development, organizes various
+recommendation tasks from simple to complex for curriculum learn-
+ing, and even fosters an agent-agent collaborative ecosystem.
+Table 1: We provide four example use cases of RecoWorld,
+while recognizing that building simulated environments for
+agentic RecSys can go well beyond these applications.
+of LLMs to simulate human behavior by developing a small-town
+simulation of generative agents. AgentCompany [55] investigated
+a self-contained environment that mimics a software company.
+AgentSociety [38] is a simulator with over 10k agents designed to
+study societal impacts, such as universal basic income. CRMArena-
+Pro [27] utilizes simulated LLM agents to evaluate diverse business
+scenarios. These studies have shown promising initial results in us-
+ing LLMs to simulate human behavior, paving the way for creating
+simulated environments to evaluate agentic recommender systems.
+An ideal simulator would replicate real-world user interactions
+in a controlled environment [13, 14]. It allows developers to refine
+recommendation algorithms before deploying them. The simulator
+may include a variety of user profiles drawn from different demo-
+graphics to reflect the diversity of the actual user base. It would
+simulate realistic user behaviors, such as clicking, sharing, buying,
+and giving feedback, using historical data or even starting from
+scratch. It might also factor in contextual information such as time
+of day, location, and device type, which can influence user inter-
+actions. While feedback from simulated users may not perfectly
+replicate every interaction, it remains valuable by providing reward
+signals that reflect population-level preferences.
+We introduce RecoWorld, a blueprint for building simulated
+environments that propel the development of agentic recommender
+systems [26]. As these systems gain capabilities such as perception,
+reasoning, planning, memory, tool use, and autonomy, having envi-
+ronments for rapid system testing and refinement becomes essen-
+tial before deploying them widely. We do not propose new agentic
+recommenders here; instead, our focus is on creating simulated
+environments that replicate user feedback. RecoWorld harnesses
+LLMs’ strong reasoning, long-context understanding, and multi-
+modal abilities to simulate user responses. It focuses on optimizing
+for long-term value through simulated interactions. The approach
+also emphasizes collective impacts, e.g., a post is distributed to a
+community of interconnected users rather than isolated individuals.
+The design of user simulation and reward signals in RecoWorld
+offers promising potential for enhancing existing recommender
+systems in modeling both short- and long-term user interests, as
+well as for generative recommenders. [49, 52].
+Our contributions in this paper are summarized as follows.
+• We introduce RecoWorld, a simulated environment where vir-
+tual users interact with agentic recommender systems to maxi-
+mize engagement. RecoWorld generates multi-turn interaction
+trajectories, from which we extract engagement statistics that
+serve as reward signals for RL-based agent training.
+• Our user simulator models sequential user behavior. When a user
+is about to disengage, they can issue instructions, such as “show
+me more interesting content”, instead of simply dropping out. The
+agentic RecSys responds to these instructions by creating new
+item lists, aiming to re-engage the user. This cycle continues until
+the user chooses to exit without further instructions.
+• A successful simulator triggers accurate instructions that guide
+the recommender, while an effective recommender responds with
+item lists that enhance user satisfaction. To our knowledge, Re-
+coWorld is the first environment to enable instruction-following
+recommenders in a Gym-like RL framework, marking a signifi-
+cant step toward more interactive recommender systems.
+
+
+RecoWorld for Agentic Recommender Systems
+WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates
+[! ]
+[" ]
+User
+[" ]
+1st Turn
+2nd Turn
+3rd Turn
+Instruction
+Updated List
+Updated List
+Instruction
+“more interesting 
+content”
+“check my 
+friends’ feeds”
+Next
+Agentic RecSys
+Agentic RecSys
+Next
+[" ]
+Break
+# Clicks: 8
+# Turns: 3
+Time Spent: 42
+Clicked
+Skipped
+Leave
+Unvisited
+Trajectory 
+Rewards
+User 
+Simulator
+Agentic 
+RecSys
+RecoWorld: Building Simulated Environments for Agentic RecSys
+Agent 
+Training
+[" ]
+Figure 1: A simulated user interacts with an agentic RecSys over multiple turns within a session.
+2
+Agentic Environments for RecSys
+Agentic is emerging as a defining characteristic of next-generation
+foundation models. An agentic recommender system acts as an
+autonomous agent that actively learns from user interactions. It
+follows user instructions, acquires new skills to make proactive
+recommendations, and adapts its behavior based on these experi-
+ences [43]. This marks a shift from traditional recommender sys-
+tems that primarily make passive suggestions [26, 32, 42]. With
+new capabilities to reason and interact with users, there comes the
+urgent need to develop new environments for evaluation. Simu-
+lated environments enable rapid system iteration, enhance data
+curation, and are increasingly leveraged for agent training. E.g.,
+Claude uses simulated environments to check how the model re-
+sponds to risky prompts, such as being asked to act as a dark web
+shopping assistant [2].
+Fundamental Components.
+Our RecoWorld utilizes a dual-
+view architecture. A user simulator (a) generates simulated feedback
+by replicating the behavior of individual users or groups in response
+to recommendations, and (b) initiates requests to the recommender
+via explicit instructions or implicit signals. A second component
+is the recommender system itself, which consists of modules for
+candidate retrieval, ranking, re-ranking, etc.; these modules work
+together to deliver personalized suggestions. An agentic recom-
+mender system extends this setup by involving one or multiple
+agents that interact with the simulated user. These agents may
+engage in conversation to clarify requests or better understand user
+preferences. When such a system can respond to user instructions
+and dynamically update recommendation lists to keep the user im-
+mersed in the session, it is referred to as an instruction-following
+recommender. Our focus is on developing robust user simula-
+tors, and we provide a concise overview of the Agentic RecSys
+architecture in §4.
+Multi-Turn Interactions in a Session.
+A simulated user in-
+teracts with an agentic RecSys over multiple turns (see Figure 1).
+The user receives a list of recommended items and can take actions
+such as clicking or skipping. In the first turn, the user clicks on two
+items (green), skips two items (yellow), and then chooses to leave
+the session after the next item (red). Before leaving, the user reflects
+on their experience, identifies reasons for dissatisfaction, and gives
+a short instruction to the RecSys as feedback. If the RecSys cannot
+process user instructions, it simply updates recommendations based
+on recent interactions. If it can, it refreshes the recommendations
+to better address the user’s feedback. The user reviews the new
+list, continues interacting, and may repeat the process of providing
+feedback if considering leaving. This cycle continues until the user
+decides to end the session without further feedback. The sequence
+of recommended items and the user’s actions form the interaction
+trajectory for the session.
+Consider an example instruction: User: “Show me more interest-
+ing content.” System: “Absolutely! Here are videos tailored to your
+interests and engagement history. Would you like to specify what
+you find interesting, such as trending topics, educational content, or
+entertainment? You can also tell me if you want more from specific
+creators.” The agent perceives the user’s explicit instruction and
+reasons over their engagement history, demographics, and behavior
+to create a configuration for the recommender system to execute.
+The system returns an updated recommendation list along with
+strategies to guide the user. The user simulator then generates feed-
+back signals indicating whether the Agentic RecSys met the user’s
+instructions and may provide the next instruction.
+A successful simulator triggers accurate instructions that
+guide the recommender, while an effective recommender
+responds with item lists that enhance user satisfaction. The
+user simulator and agentic RecSys collaboratively enhance session
+retention. We use trajectory-level interaction metrics such as total
+time spent as reward signals to measure the effectiveness of agentic
+RecSys. Following Brown et al. [7], we generate multiple interaction
+trajectories per user and initial recommendations. An LLM-based
+judge evaluates each trajectory against predefined task rubrics. Only
+trajectories that satisfy the success criteria are retained for training.
+Such creation of high-quality agentic trajectories, combined with
+general RL techniques that leverage reward signals and self-critique,
+is crucial for developing advanced agentic RecSys.
+These reward signals are orthogonal to offline metrics. Metrics
+such as NDCG favor exploitation by optimizing for immediate
+relevance, while our simulator encourages exploration by modeling
+session dropout risk and optimizing for long-term user retention.
+We hypothesize that (a) high NDCG combined with high retention
+signals strong exploitation, with recommendations that are highly
+relevant; (b) high NDCG with low user retention reveals suboptimal
+recommendations; the content may be repetitive or insufficiently
+diverse, leading to user disengagement; and (c) low NDCG with
+
+
+WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates
+Fei Liu, Xinyu Lin, Hanchao Yu, et al.
+high user retention likely suggests effective exploration, where
+users are exposed to novel content, supporting long-term retention.
+Supporting Real and Simulated User Interactions.
+(a) When
+simulated users are replaced by human annotators, the agentic Rec-
+Sys interacts with actual users and receives authentic feedback
+signals, effectively functioning as an online experiment. (b) When
+Agentic RecSys is replaced with a traditional RecSys, the system ig-
+nores user instructions and generates recommendations only from
+the user’s past engagement history, without adapting to additional
+feedback. (c) When instructions are disabled, the user simulator
+defaults to an evaluator that scores a list of items, without giving
+instructions to the RecSys for improvement. Since no improvement
+is requested, there will be no follow-up iterations; the session will
+end after a single turn.
+Explicit Versus Implicit Instructions
+Importantly, user pref-
+erences are not conveyed solely through explicit instructions; they
+are also conveyed implicitly through behavior, whether users realize
+it or not. E.g., if a user frequently finishes watching videos that are
+>5 minutes, it indicates a receptiveness to long-form content, unlike
+those who prefer quick 10- or 20-second clips. If a user continues
+a session without interruption, it likely means they are satisfied
+with the recommendations. Conversely, if they request “something
+more interesting,” or if a user does not return for a while, it likely
+indicates that the previous recommendations failed to engage them.
+Implicit instructions can be inferred by monitoring user state. Users
+with similar behavioral patterns often share underlying implicit
+signals. Collaborative filtering can exploit these shared patterns to
+identify implicit instructions that reflect the collective interests of
+these user groups. Both implicit and explicit signals are crucial for
+agentic recommenders.
+Evaluating User Simulators.
+Our paper does not present
+experimental results; instead, we outline evaluation designs to en-
+sure user simulators are assessed in realistic settings. Our approach
+leverages existing RecSys datasets and validation by human an-
+notators. When an annotator is available, they receive the same
+initial item list as the simulator and perform a single action on
+each item. The annotator can instruct the RecSys to update recom-
+mendations or end the session at any point. The system continues
+to provide updated recommendations in a multi-turn setting until
+the annotator requests a break without further instructions. We
+compare session-level interaction statistics between the simulated
+user and the human annotator as a sanity check for simulator effec-
+tiveness. Our user simulator can also be evaluated using existing
+recommendation datasets. The simulated user interacts with a rec-
+ommended list (e.g., {𝑖1,𝑖2,𝑖3,𝑖4,𝑖5}), identifies break points (e.g., at
+𝑖3), and issues instructions to reorder the remaining items ({𝑖4,𝑖5}
+→{𝑖5,𝑖4}) to better match user instructions. This process contin-
+ues until no further instructions are given, resulting in an updated
+list (e.g., {𝑖1,𝑖2,𝑖3,𝑖5,𝑖4}). Essentially, the recommender periodically
+reorders the remaining items based on user feedback. The final
+recommendations can be directly compared to the initial list and
+ground-truth recommendations using metrics such as Recall@N
+and NDCG@N.
+Benefits of Simulated Environments.
+Simulated environ-
+ments provide a safe training space for RL-based recommendation
+agents [39], where they can learn from errors without inflicting
+them on real users. They enable modeling of long-term user feed-
+back over a session or across sessions [67], unlike conventional
+offline evaluations that focus on immediate responses, e.g., clicks.
+Further, LLM-driven simulators add interpretability by allowing
+simulated users to articulate their reasoning with thought traces,
+and give rich, natural language feedback, e.g. “I don’t like this recom-
+mendation because I’ve seen something similar”. Simulators also help
+alleviate data-sharing concerns. Some simulators combine real item
+data with synthetic user populations. So one can test algorithms
+on synthetic yet behaviorally realistic users without exposing any
+personal user data.
+3
+User Simulation
+LLMs’ strong reasoning and content understanding capabilities
+offer significant potential for simulating human behavior [3]. We
+simulate real user behavior by predicting their next action when
+presented with a list of recommended items. As illustrated in Fig-
+ure 2, the simulated user’s action space A for each item includes: (1)
+Click, (2) Comment, (3) Share, (4) Like, (5) Watch [specify duration
+in seconds], (6) Skip, and (7) Leave the session. If the user chooses
+to leave (action 7), they are prompted to reflect on their experience,
+specify reasons for dissatisfaction, and provide an instruction to
+the RecSys for improvement, or they may exit without further in-
+put. User decisions are influenced by both the current context C
+and past interactions H. As shown in Figure 2, we consider con-
+textual factors related to the user, such as temporal (time of day,
+seasonality), demographic (age, gender, location, etc.), behavioral
+(time spent, search queries, etc.), and social connections (group
+affiliations, etc.).
+A session begins when the user opens the app and ends when
+they exit. Each recommendation presents a list of 𝑘items, selected
+from a candidate set I and shown in order. The agent and simulated
+user may interact over multiple turns within a session, e.g., the user
+requests more interesting content, and the agent updates the list. A
+reward signal is generated after each list is shown. Crucially, we aim
+to optimize for long-term user retention as the reward signal, i.e.,
+maximizing session duration and minimizing the interval between
+sessions, which relates to Daily Active Users (DAU). Specifically,
+the simulated user goes through each recommendation one by one.
+For each item, the user takes three steps: 1. Think it through:
+What is your reasoning behind how you’ll respond? 2. Take action:
+Write down what you’ll actually do. 3. Update your mindset: How
+does this affect your current thinking? Table 2 shows a summary
+containing initial simulator results, including simulated user actions
+and reasoning for each item.
+3.1
+Multimodal User Engagment Modeling
+Effectively modeling user engagement history is essential for build-
+ing simulators. A user may engage with multimodal items spanning
+text, audio, images, and videos. Processing them within a unified se-
+mantic space is nontrivial. Incorporating extended histories further
+requires the simulator to handle long contexts, with recent inter-
+actions likely carrying greater weight. For example, summarizing
+that “in the past 7 days, the user watched 10 videos on deep-sea fish-
+ing, and commented on 5 friends’ posts” can provide useful insights.
+Such compression can be achieved through statistical aggregation,
+
+
+RecoWorld for Agentic Recommender Systems
+WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates
+Action Space
+You are able to take any of the following actions: 1. Click, 2. Comment, 3. Share, 4. Like, 
+5. Watch [specify duration in seconds], 6. Skip, 7. Leave the session ...
+Instruction
+Your goal is to simulate real user behavior. Consider their context and past interactions to 
+predict what they'd do next when shown a list of recommended items. Instruction: 
+{Speciﬁc Instructions}
+Context
+Here are some context factors related to the user: 
+1. Temporal - Time of day, day of week, seasonality.
+2. Demographics - Age, gender, location, language, occupation, and device type. 
+3. Behavioral - Time spent, ratings, purchases, search queries, prompts, etc. 
+4. Social - Social connections, group afﬁliations, etc. 
+Engagement History
+Here is the history of your interactions: {Engagement History}
+Observation
+Based on what you have liked before, here are some picks for you: 
+{Recommended Items}
+Action
+Go through each recommendation one by one. For each item: 
+1. Think it through – What's your reasoning behind how you'll respond? 
+2. Take action – Write down what you'll actually do. 
+3. Update your mindset – How this affects your current thinking.
+(a) LLM 
+as the Core Reasoning Engine 
+Text Encoder
+Items are represented by their text descriptions
+Backbone: Llama4, Qwen3, etc.
+(b) Omni-Modality LLM 
+as the Core Reasoning Engine 
+Text + Audio + Image + Video Encoder
+Items are represented by text, audio, image, video
+Backbone: Qwen3-Omni, etc.
+(c) Customized LLM with Semantic IDs 
+as the Foundation
+Semantic IDs
+Items are represented by SIDs: A334 B922 C321 …
+Backbone: Gemini co-trained w/ SIDs, etc
+Figure 2: Three modeling alternatives for engagement history that leverage LLMs’ powerful reasoning capabilities (§3).
+semantic embeddings, or RAG techniques, all of which improve sim-
+ulation efficiency. Below, we present three modeling alternatives
+for engagement history that leverage LLMs’ powerful reasoning
+capabilities (Figure 2).
+• Text-based modeling.
+One approach is to represent all user
+and item data in textual form T. User demographics can be spec-
+ified in the system prompt, while each item’s metadata, such as
+publish time, genre, creator, content type, interest cluster, and a
+brief summary, together with the user’s interaction history, are
+provided as textual context. Moreover, when short videos are gen-
+erated directly from user prompts, such as with Sora 2 [33], the
+prompts can be seamlessly incorporated into the item description.
+This approach offers flexibility in determining which information
+to include in lifelong user behaviors, supports prompt compres-
+sion for improved efficiency, and leverages the reasoning ability
+of LLMs to analyze user behavior and replicate user responses.
+Nonetheless, relying solely on textual descriptions may overlook
+certain nuances, including the mood of a video, sarcasm in con-
+tent, or musical characteristics, which can limit the fidelity of
+preference modeling.
+• Multimodal modeling.
+The second option is to present each
+item with multimodal information M, using a multimodal LLM
+(MLLM) as the backbone, such as Qwen3’s Omni model [56] or
+vision-language models (VLM), Gemini-2.5-Pro. In this setting,
+items are directly ingested by the model rather than represented
+through textual descriptions. Images are tokenized into patches,
+while short-form videos with their audio tracks can be jointly pro-
+cessed through frameworks that synchronize visual and acoustic
+signals. Demographic attributes and textual metadata can also be
+incorporated as auxiliary inputs. The model output may take mul-
+tiple modalities, though we restrict it to text for predicting user
+behavior. Compared with text-only LLMs, multimodal models
+provide richer representational capacity for multimodal content,
+enabling more faithful input understanding. Nevertheless, their
+reasoning ability, typically weaker, and the substantially larger to-
+ken space of audio–visual inputs imposes significant context and
+efficiency challenges, making prompt compression particularly
+difficult.
+• Semantic ID modeling.
+The third approach is to represent
+items using semantic IDs S, where each item’s content, including
+video and affiliated multimodal features such as audio and textual
+tags, is encoded into a semantic ID [16, 41, 69]. Items with similar
+semantics share similar IDs, with the sequence from the first to
+the last character encoding progressively finer-grained semantic
+information. During continuous pre-training, these semantic IDs
+are integrated into text descriptions so that their vector repre-
+sentations are learned jointly with the LLMs. At inference, user
+demographic information is provided in the prompt, while his-
+torical item engagements are represented using semantic IDs
+rather than textual descriptions or raw multimedia inputs. This
+approach leverages the strong reasoning capabilities of language
+models while providing a structured, compact representation of
+items. A limitation is that continuous pre-training is required to
+obtain a well-trained model, and periodic retraining is necessary
+to incorporate new content, such as newly released music al-
+bums. Unlike the first two approaches, no continual pre-training,
+supervised fine-tuning, or reinforcement learning is performed
+on the backbone LLMs or VLMs in this setting.
+Lifelong User Behavior Modeling.
+In addition to effective
+multimodal user engagement modeling, it is essential to achieve
+robust lifelong user behavior modeling. Users continuously inter-
+act with diverse items in recommender systems, resulting in ever-
+growing interaction histories. Over time, these histories can become
+effectively unbounded, making it computationally infeasible and
+costly to store and process all past behaviors. Precisely, we highlight
+two crucial principles built upon multimodal modeling:
+
+
+WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates
+Fei Liu, Xinyu Lin, Hanchao Yu, et al.
+Video
+Reasoning
+Action Taken
+Mindset Update
+1. Lobster Fishing
+Related to fishing interest
+Watch (20s)
+Open to more fishing content
+2. UFC Fight Night
+Strong interest, previous engagement
+Watch (30s), Like
+UFC is a top interest, expect more recommendations
+3. Hairstyling
+Unrelated, test new content
+Skip
+Not interested, less likely to engage
+4. UFC Fight Night
+Interest, but avoid over-engagement
+Watch (15s), Skip
+Selective with UFC, want variety
+5. Hairstyling
+Unrelated, already skipped
+Skip
+Not interested, expect fewer recommendations
+Table 2: LLM uses their reasoning abilities to simulate user responses step-by-step. Using GPT-4.1, we set up a user profile: a
+30-year-old male interested in deep sea fishing and has a history of liking UFC events. The RecSys serves him five short videos
+(see 1st column). For each, the simulator performs three tasks: “Reasoning” (2nd column), predicts the “Action Taken” (3rd
+column), and updates the “Mindset” (4th column).
+• Dynamic memory modeling.
+Users may have infinite his-
+torical interactions H. However, not all behaviors contribute
+equally to reflecting the user’s current intention, and many may
+introduce noise. It is therefore crucial to design mechanisms that
+can dynamically and intelligently store, filter, and retrieve user
+historical behaviors. In RecoWorld, we define an engagement
+memory M𝑡
+𝑢⊆H𝑢at time 𝑡:
+M𝑡
+𝑢= {(𝑎𝑘,𝑖𝑘,𝜏𝑘) ∈H𝑢| 𝛼𝑘> 𝛿},
+(1)
+where 𝑎𝑘denotes the action type (e.g., click, like) taken by the
+user at the 𝑘-th interaction, 𝑖𝑘is the item interacted with, and
+𝜏𝑘is the timestamp of the interaction. 𝛼𝑘= ℎ(𝑎𝑘,𝑖𝑘,𝜏𝑘| C𝑡) is
+the learned importance score conditioned on current context C𝑡,
+and 𝛿is a retention threshold. This enables dynamic filtering and
+retrieval of informative past behaviors while discarding noisy
+or outdated interactions. Session-wise behaviors are also essen-
+tial to model the user preference. Therefore, we organize the
+engagement memory at two levels: Interaction-wise memory:
+M𝑡,int
+𝑢
+= {(𝑎𝑘,𝑖𝑘)}𝑡
+𝑘=1,
+(2)
+which records fine-grained user actions 𝑎𝑘and the corresponding
+items 𝑖𝑘. 2) Session-wise memory: We group interactions into
+sessions S𝑢= {𝑠1,𝑠2, . . . ,𝑠𝑚}, where each session𝑠𝑗is a trajectory
+of actions. A session summarization function 𝜙(·) produces latent
+representations: 𝒔𝑗= 𝜙(𝑠𝑗) = 𝜙 {(𝑎𝑘,𝑖𝑘) ∈𝑠𝑗}, and the session-
+wise memory is defined as:
+M𝑡,sess
+𝑢
+= {𝒔1, 𝒔2, . . . , 𝒔𝑚},
+(3)
+capturing trajectory-level signals such as mindset shifts and cross-
+session preference transitions.
+• Evolving preference modeling.
+User interests are not static
+but continuously evolve with changing contexts C𝑡and the in-
+formation they are exposed to through recommendations. We
+denote the user’s latent preference state at time 𝑡as 𝒛𝑡. Its evolu-
+tion can be modeled as:
+𝒛𝑡= 𝑔 𝒛𝑡−1, M𝑡
+𝑢, C𝑡
+,
+(4)
+where M𝑡
+𝑢is the engagement memory (interaction-wise or session-
+wise), C𝑡is the current context, and 𝑔(·) is a temporal update
+function (e.g., recurrent, attention-based, or diffusion-style). To
+capture fine-grained preference shifts, we further decompose the
+update into a mindset update:
+𝒛𝑡= 𝒛𝑡−1 + Δ𝒎𝑡,
+Δ𝒎𝑡= 𝑓 M𝑡
+𝑢, C𝑡,𝑟𝑡, Δ𝑡
+,
+(5)
+where Δ𝒎𝑡is the mindset adjustment derived from the current
+memory M𝑡
+𝑢, context C𝑡, reasoning trace 𝑟𝑡, and any correction
+applied by the system to the user’s preference state Δ𝑡. This for-
+mulation ensures that the simulator captures temporal dynamics,
+long-term dependencies, and potential preference shifts, such
+that the generated behaviors remain personalized and timely
+throughout the interaction lifecycle (see Figure 2).
+3.2
+Candidate Items
+We use real-world content whenever possible (e.g., engagement
+history and recommended items) to ensure realistic user behavior
+modeling. Using both simulated content and simulated users can
+be challenging, as combining these approximations may affect the
+reliability of behavioral insights. Specifically, each item is presented
+by its content (e.g., short-form video) along with its metadata and
+text description. The metadata includes details such as the times-
+tamp, creator information, engagement metrics (e.g., likes, shares,
+comments), and content category. A user may be recommended
+various types of content, such as: (a) short-form videos, (b) text
+posts, (c) mixed media (posts, videos, and images), and (d) friend
+suggestions. Multiple representations can be used for content un-
+derstanding: text descriptions provide a summary of the image or
+video’s content; audio/visual encoders extract multimodal features
+from the media; and semantic IDs capture high-level semantic cat-
+egories. The simulator may also leverage metadata tags, such as
+hashtags or timestamps, to better mimic realistic user behavior.
+4
+Instruction-Following RecSys
+Once users get used to giving instructions to LLMs, they tend to
+do the same with every system they use [6, 71]. For recommender
+systems, this means developing new agentic capabilities that allow
+them to respond to user commands and adjust their behavior ac-
+cordingly. Users might ask to see more or less of the content that
+interests them, request content from specific sources such as partic-
+ular friends or topics, or ask questions about the content they are
+seeing in their screen. This applies to various media forms, ranging
+from text, photos, videos, multimedia carousels, to products and
+even social connections.
+An instruction-following recommender could be built around an
+autonomous agent with four core capabilities (see Figure 3): (a)
+perception: detecting user state and context; (b) reasoning and plan-
+ning: decomposing user instructions into subtasks and delegating
+them to retrieval and ranking modules; (c) action (tool use): deliver-
+ing updated recommendations and responding to user information
+
+
+RecoWorld for Agentic Recommender Systems
+WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates
+Agent
+Recommender System
+Perception
+Reasoning and Planning
+Action
+Memory
+System Conﬁgs
+Recommendations
+User Simulator: Show me more interesting content.
+Perception: detecting user state and context
+Reasoning and planning: decomposing user instructions into subtasks and 
+delegating them to retrieval and ranking modules
+Action: generating recommender system configurations to respond to user 
+information needs
+Memory: maintaining a record of user behavior to inform future interactions
+Agentic RecSys: Absolutely! Here are videos tailored to your interests and 
+engagement history. Would you like to specify what you find interesting, such 
+as trending topics, educational content, or entertainment? You can also tell 
+me if you want more from specific creators or communities.
+User Instruction
+Figure 3: An instruction-following recommender can be powered by an autonomous agent.
+needs; and (d) memory: maintaining a record of user behavior to
+inform future interactions.
+In the context of recommender systems, the interaction between
+a user and the system can be modeled as a Markov Decision Pro-
+cess. The task involves a series of interleaved states and actions
+(𝑠0,𝑎0,𝑠1, . . . ,𝑎𝑇−1,𝑠𝑇), beginning at an initial state 𝑠0 and finally
+reach the goal state 𝑠𝑇. Here, the environment state 𝑠𝑡represents
+the user’s mindset, which evolves as the user interacts with recom-
+mended items. The state transition is modeled as 𝑝𝜃(𝑠𝑡+1|𝑠𝑡,𝑎𝑡). It
+captures how the user’s mindset changes after the recommender
+system presents a new set of items, and this process can be simulated
+using a LLM-based user simulator, with parameters 𝜃. At each step,
+the agentic recommender system selects an action 𝑎𝑡∼𝑝𝜙(𝑎|𝑠𝑡),
+yielding a new list of recommendations by considering the user’s
+explicit or implicit instruction provided by 𝑠𝑡.
+The recommender model’s parameters 𝜙could be related to its
+perception, memory, planning, tool use modules or the architecture
+itself in the case of generative recommenders. These parameters
+are updated iteratively to improve the policy. The ultimate goal
+is to develop a policy, denoted as 𝑎∗
+𝑡= 𝑝𝜙(𝑎|𝑠𝑡), which focuses on
+identifying the optimal recommendations 𝑎∗
+𝑡given the current state
+𝑠𝑡, that maximizes the total expected reward over time. A reward
+function R assigns a scalar reward R𝜂(𝑟𝑡|𝑠𝑡,𝑎𝑡) after an action is
+taken from a given state. We can perform multiple rollouts to esti-
+mate cumulative rewards, using on-policy learning methods such as
+PPO with asynchronous rewards or off-policy learning such as DPO.
+The reward function may incorporate metrics such as total session
+time, number of clicks, self-critique scores, or a combination of
+factors that measure the system’s ability to follow user instructions
+and maximize engagement. This approach provides more robust
+feedback compared to action-level rewards.
+Voice-Driven Feedback. There is increasing business inter-
+est in developing agentic recommender systems. Companies have
+introduced easy-to-access voice entry points that allow users to
+adjust the content they see in their feed, friend graph, and across
+various product surfaces. E.g., a user might say “I want more content
+about F1,” “Show me more Reels like this,” “Show me what’s new with
+her,” “Show me content from my high school classmates,” “Show me
+the latest posts from my family,” “Show me more ‘interesting’ content”
+and “Show me less political content.” Such voice-based user instruc-
+tions provide valuable feedback signals that agentic recommender
+systems can learn from.
+Instruction Alignment.
+User instructions can span a broad
+spectrum, so it is necessary to align them accurately with the under-
+lying user intents [48]. For example, a user requesting more content
+on “UFC Fight Night” may have different motivations: they might
+be looking for a fun local event to enjoy with friends (a short-term,
+situational interest where other local activities could also appeal),
+or they could be exploring combat sports, possibly with a long-term
+interest of training for competitions (in which case Brazilian Jiu-
+Jitsu would be relevant). Users may provide vague or open-ended
+feedback, such as “I’m bored,” which poses a greater challenge than
+responding to specific requests such as “I’d like to see long skirts in
+light blue for around $200” [45]. While lexical or semantic matching
+can typically align user queries with relevant content, ambiguous
+instructions require more sophisticated handling. We envision a
+reasoning-intensive retrieval model powered by LLMs to infer user
+intents [54], refine ambiguous queries, and enhance the system’s
+ability to understand user instructions.
+Instruction-Following (InFoRec) vs. Conversational Rec-
+ommender System (CRS)
+The key difference is that InFoRec re-
+spond directly to user commands, while CRS takes a more proactive
+approach, suggesting items during the conversation. For example,
+in a CRS chat: User: “Hi, what’s the date today?" CRS: “Today is Sep-
+tember 16, 2025. By the way, have you heard of Brad Pitt’s new movie
+‘F1’? It’s super popular right now” [51, 68]. Previous research has de-
+veloped various persuasion strategies, such as authority, emotional
+appeal, social proof, to recommend items tailored to users’ person-
+ality traits. In contrast, InFoRec focuses on precisely following user
+instructions. It refines recommendations by adding, removing, or
+reordering items among the top results. Think of InFoRec as a tool
+that is triggered during the conversation: by utilizing the entire
+conversation and engagement history, InFoRec dynamically adjusts
+the recommendations shown to the user.
+5
+Multi-Agent Simulators
+Recent advances in multi-agent simulations have substantially en-
+hanced our ability to model the dynamics of individuals making
+decisions and interacting over time [1, 17, 21, 31, 35, 36, 40, 44, 57].
+Particularly, Anthis et al. [1] highlight the potential of LLM-based
+social simulations. They identify five key tractable challenges that
+pave the way for innovations in this space. AgentTorch [12] uses
+the COVID-19 pandemic to test whether LLM agents can replicate
+population-level behavioral statistics. It further examines the trade-
+off between simulation scale and individual agency. OASIS [57]
+
+
+WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates
+Fei Liu, Xinyu Lin, Hanchao Yu, et al.
+simulates social media platforms, e.g., X and Reddit, to study infor-
+mation diffusion, group polarization, and herd behavior. AgentSo-
+ciety [38] provides a testbed for computational social experiments,
+examining polarization, the spread of inflammatory content, uni-
+versal basic income, and the impact of shocks such as hurricanes.
+These simulators vary in scale, from thousands of agents to millions
+(e.g., OASIS, AgentScope).
+Consider an environment consisting of 𝑁simulated users. We
+denote by 𝑢𝑖(𝑡) the state of user 𝑖at simulation time 𝑡, which in-
+cludes a set of user attributes such as age, location, interests, and the
+set of recommendations with which they have interacted, among
+others. As the simulation progresses, user 𝑖updates their state 𝑢𝑖(𝑡)
+by interacting with their neighbors N𝑖(𝑡) and the environment 𝑒(𝑡),
+both of which may also evolve over time. The neighborhood of a
+user can be defined by a social network graph, similarity metrics,
+or other criteria. We denote by 𝑠𝑖𝑗(𝑡) the information that user 𝑖
+receives from their interaction with user 𝑗. For example, 𝑠𝑖𝑗(𝑡) may
+represent a shared post or a message exchanged between users.
+Following Chopra et al. [12], the user’s update rule is specified in
+Eq. (6), and the environment evolves in response to users’ actions
+and states, as described by Eq. (7). Both 𝑓and 𝑔are governed by
+the recommender system dynamics. The strength of user-to-user
+influence is specified by environment parameters.
+𝑢𝑖(𝑡+ 1) = 𝑓 𝑢𝑖(𝑡), ∪𝑗∈N(𝑖)𝑠𝑖𝑗(𝑡),𝑒(𝑡) .
+(6)
+𝑒(𝑡+ 1) = 𝑔
+
+{𝑢𝑖(𝑡+ 1)}𝑁
+𝑖=1,𝑒(𝑡)
+
+.
+(7)
+In recommender systems, these tools show great promise for
+creator support. They may provide projections to optimize con-
+tent planning and distribution, which helps creators grow their
+audience. When a creator compiles a new video, they may want
+to “test the waters” by exposing this content to a group of simu-
+lated users to gauge potential audience reactions. These simulated
+users can represent the creator’s existing followers, a general pop-
+ulation sample, or a targeted demographic (e.g., teens in the US
+and Canada). Creators might use this simulation to experiment
+with different publishing strategies, such as adjusting frequency to
+avoid audience fatigue, diversifying content to attract new viewers,
+or even publishing controversial material to boost engagement.
+Without a simulator, the outcomes of these strategies are often un-
+predictable and, if mishandled, could have negative consequences.
+By leveraging a network of interconnected simulated users, we can
+aggregate collective feedback and track predicted user responses at
+multiple intervals: 6 hours, 12 hours, 24 hours, 2 days, and 1 week
+post-exposure. Additionally, the simulation can be reset and rerun
+to measure variability and improve confidence in the predictions.
+This approach provides an early estimate of how the content might
+perform in the real world.
+6
+Related Work
+Evaluation of Recommender Systems.
+Recommender systems
+have seen tremendous progress in recent years [11, 15, 18, 24, 25, 46,
+53, 62, 70, 73], with generative recommenders, e.g. Meta’s HSTU and
+Kuaishou’s OneRec, and emerging agentic recommenders holding
+promise for delivering highly personalized content. For example,
+HSTU achieves up to 65% better ranking metrics than baselines,
+with a 1.5-trillion-parameter version boosting online A/B metrics
+by 12.4% [60]. Similarly, OneRec replaces the traditional retrieve-
+then-rank pipeline with an end-to-end generative model and was
+deployed to millions of users, yielding a +1.6% increase in watch-
+time. A critical challenge comes with these more powerful models
+is evaluation. Traditional offline metrics often prove insufficient:
+promising ideas are dropped due to unconvincing offline results, and
+improvements that look good offline do not always translate to real
+user gains. Yet running A/B tests is costly and time-consuming, and
+it is impractical (and risky) to expose users to every experiment. This
+has led to growing interest in large-scale simulated environments
+for recommender evaluation.
+Simulated Environments for Training Agentic Systems.
+Simulated environments have been pivotal in training autonomous
+agents through RL, ranging from physics sandboxes such as Mu-
+JoCo [59], to games in the Arcade Learning Environment [19], and
+to computer-use tasks such as WebArena [72]. World models, which
+are learned simulators of environment dynamics, have also played
+a significant role [20]. In RecSys, one notable effort is KuaiSim [67],
+which provides a rich user environment with multi-behavior feed-
+back and cross-session interactions. This enables training RL-based
+recommenders on sessions and retention scenarios [65]. Another
+example is AgentRecBench [42], which constructs a simulation envi-
+ronment by processing multi-domain datasets (e.g., Yelp, Goodreads,
+Amazon) and exposing standardized “world” APIs for an agent to
+query and act. These environments provide a sandbox for agents
+to plan, explore, and learn complex behaviors.
+User Simulation with LLMs. LLM-empowered user simulator
+has shown promising results in imitating real-world user behaviors
+across different domains, such as social simulation [23], legal judge-
+ment [28], and recommender systems [4, 10, 30, 34, 37]. In RecSys,
+LLM agents are used to generate simulated user feedback for model
+evaluation [9, 50, 58, 64] and optimization [8, 29]. Existing works
+can be mainly categorized into two groups: 1) Non-conversational
+user simulators [66]: These LLM agents give realistic feedback (e.g.,
+like, dislike) on recommendations, as exemplified by Agent4Rec [61]
+and AgentCF [63]. Typically, non-conversational user simulator
+cannot proactively give instructions to recommender systems or
+interact with environments (e.g., other LLM agents). Another line of
+work lies in 2) Conversational user simulators [22, 58]: These agents
+engage in dialogue with recommender models and other agents (e.g.,
+RecAgent [47]), often incorporating self-reflection mechanisms to
+more accurately model user intent. To support the development of
+agentic RecSys, we borrow the idea from conversational user sim-
+ulators: they can issue context-aware instructions at appropriate
+moments. E.g., indicating a desire to shift away from prior prefer-
+ences due to fatigue or boredom with previous recommendations.
+7
+Industry Use and Conclusion
+Our RecoWorld introduces a novel environment for instruction-
+driven interactions between users and agentic recommender sys-
+tems. Internally released in September 2025, this work establishes
+the foundation for instruction-following recommenders. In this
+paper, we prioritize presenting a comprehensive framework for
+building simulated environments. We note that RecoWorld has
+already received significant interest from leading industrial stake-
+holders, including Google and Kuaishou RecSys teams, suggesting
+its potential impact on real-world applications.
+
+
+RecoWorld for Agentic Recommender Systems
+WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates
+References
+[1] Jacy Reese Anthis, Ryan Liu, Sean M. Richardson, Austin C. Kozlowski, Bernard
+Koch, James Evans, Erik Brynjolfsson, and Michael Bernstein. 2025. LLM Social
+Simulations Are a Promising Research Method. arXiv:2504.02234 [cs.HC] https:
+//arxiv.org/abs/2504.02234
+[2] Anthropic. 2025. System Card: Claude Opus 4 & Claude Sonnet 4. Technical Report.
+https://www-cdn.anthropic.com/4263b940cabb546aa0e3283f35b686f4f3b2ff47.
+pdf Accessed: 2025-08-09.
+[3] Marcel Binz, Elif Akata, Matthias Bethge, Franziska Brändle, Fred Callaway, Ju-
+lian Coda-Forno, Peter Dayan, Can Demircan, Maria K. Eckstein, Noémi Éltető,
+Thomas L. Griffiths, Susanne Haridi, Akshay K. Jagadish, Li Ji-An, Alexander
+Kipnis, Sreejan Kumar, Tobias Ludwig, Marvin Mathony, Marcelo Mattar, Alireza
+Modirshanechi, Surabhi S. Nath, Joshua C. Peterson, Milena Rmus, Evan M.
+Russek, Tankred Saanum, Johannes A. Schubert, Luca M. Schulze Buschoff,
+Nishad Singhi, Xin Sui, Mirko Thalmann, Fabian J. Theis, Vuong Truong, Vishaal
+Udandarao, Konstantinos Voudouris, Robert Wilson, Kristin Witte, Shuchen Wu,
+Dirk U. Wulff, Huadong Xiong, and Eric Schulz. 2025. A foundation model to
+predict and capture human cognition. Nature (2 Jul 2025). doi:10.1038/s41586-
+025-09215-4
+[4] Nicolas Bougie and Narimasa Watanabe. 2025.
+SimUSER: Simulating User
+Behavior with Large Language Models for Recommender System Evaluation.
+arXiv:2504.12722 [cs.IR] https://arxiv.org/abs/2504.12722
+[5] Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John
+Schulman, Jie Tang, and Wojciech Zaremba. 2016.
+OpenAI Gym.
+arXiv:1606.01540 [cs.LG] https://arxiv.org/abs/1606.01540
+[6] Tim Brooks, Aleksander Holynski, and Alexei A. Efros. 2023. InstructPix2Pix:
+Learning to Follow Image Editing Instructions. arXiv:2211.09800 [cs.CV] https:
+//arxiv.org/abs/2211.09800
+[7] Bradley Brown, Jordan Juravsky, Ryan Ehrlich, Ronald Clark, Quoc V. Le,
+Christopher Ré, and Azalia Mirhoseini. 2024. Large Language Monkeys: Scal-
+ing Inference Compute with Repeated Sampling.
+arXiv:2407.21787 [cs.LG]
+https://arxiv.org/abs/2407.21787
+[8] Shihao Cai, Jizhi Zhang, Keqin Bao, Chongming Gao, Qifan Wang, Fuli Feng, and
+Xiangnan He. 2025. Agentic feedback loop modeling improves recommendation
+and user simulation. In Proceedings of the 48th International ACM SIGIR conference
+on Research and Development in Information Retrieval. 2235–2244.
+[9] Luyu Chen, Quanyu Dai, Zeyu Zhang, Xueyang Feng, Mingyu Zhang, Pengcheng
+Tang, Xu Chen, Yue Zhu, and Zhenhua Dong. 2025. RecUserSim: A Realistic and
+Diverse User Simulator for Evaluating Conversational Recommender Systems.
+In Companion Proceedings of the ACM on Web Conference 2025 (WWW ’25). ACM,
+133–142. doi:10.1145/3701716.3715258
+[10] Siran Chen, Boyu Chen, Chenyun Yu, Yuxiao Luo, Ouyang Yi, Lei Cheng,
+Chengxiang Zhuo, Zang Li, and Yali Wang. 2025.
+VRAgent-R1: Boosting
+Video Recommendation with MLLM-based Agents via Reinforcement Learn-
+ing. arXiv:2507.02626 [cs.MM] https://arxiv.org/abs/2507.02626
+[11] Xiangyi Chen, Kousik Rajesh, Matthew Lawhon, Zelun Wang, Hanyu Li, Haomiao
+Li, Saurabh Vishwas Joshi, Pong Eksombatchai, Jaewon Yang, Yi-Ping Hsu, Jiajing
+Xu, and Charles Rosenberg. 2025. PinFM: Foundation Model for User Activity
+Sequences at a Billion-scale Visual Discovery Platform. arXiv:2507.12704 [cs.LG]
+https://arxiv.org/abs/2507.12704
+[12] Ayush Chopra, Shashank Kumar, Nurullah Giray-Kuru, Ramesh Raskar, and
+Arnau Quera-Bofarull. 2024. On the limits of agency in agent-based models.
+arXiv:2409.10568 [cs.MA] https://arxiv.org/abs/2409.10568
+[13] Nathan Corecco, Giorgio Piatti, Luca A. Lanzendörfer, Flint Xiaofeng Fan, and
+Roger Wattenhofer. 2024. SUBER: An RL Environment with Simulated Human
+Behavior for Recommender Systems. arXiv:2406.01631 [cs.IR] https://arxiv.org/
+abs/2406.01631
+[14] Romain Deffayet, Thibaut Thonet, Dongyoon Hwang, Vassilissa Lehoux,
+Jean-Michel Renders, and Maarten de Rijke. 2024.
+SARDINE: A Simulator
+for Automated Recommendation in Dynamic and Interactive Environments.
+arXiv:2311.16586 [cs.IR] https://arxiv.org/abs/2311.16586
+[15] Jiaxin Deng, Shiyao Wang, Kuo Cai, Lejian Ren, Qigen Hu, Weifeng Ding, Qiang
+Luo, and Guorui Zhou. 2025. OneRec: Unifying Retrieve and Rank with Generative
+Recommender and Iterative Preference Alignment. arXiv:2502.18965 [cs.IR]
+https://arxiv.org/abs/2502.18965
+[16] Jiaxin Deng, Shiyao Wang, Kuo Cai, Lejian Ren, Qigen Hu, Weifeng Ding, Qiang
+Luo, and Guorui Zhou. 2025. Onerec: Unifying retrieve and rank with generative
+recommender and iterative preference alignment. arXiv preprint arXiv:2502.18965
+(2025).
+[17] Yann Dubois, Xuechen Li, Rohan Taori, Tianyi Zhang, Ishaan Gulrajani, Jimmy
+Ba, Carlos Guestrin, Percy Liang, and Tatsunori B. Hashimoto. 2024. Alpaca-
+Farm: A Simulation Framework for Methods that Learn from Human Feedback.
+arXiv:2305.14387 [cs.LG] https://arxiv.org/abs/2305.14387
+[18] Se eun Yoon, Xiaokai Wei, Yexi Jiang, Rachit Pareek, Frank Ong, Kevin Gao,
+Julian McAuley, and Michelle Gong. 2025. OMuleT: Orchestrating Multiple
+Tools for Practicable Conversational Recommendation. arXiv:2411.19352 [cs.AI]
+https://arxiv.org/abs/2411.19352
+[19] Jesse Farebrother and Pablo Samuel Castro. 2024. CALE: Continuous Arcade
+Learning Environment. arXiv:2410.23810 [cs.LG] https://arxiv.org/abs/2410.
+23810
+[20] Pascale Fung, Yoram Bachrach, Asli Celikyilmaz, Kamalika Chaudhuri, Delong
+Chen, Willy Chung, Emmanuel Dupoux, Hongyu Gong, Hervé Jégou, Alessandro
+Lazaric, Arjun Majumdar, Andrea Madotto, Franziska Meier, Florian Metze, Louis-
+Philippe Morency, Théo Moutakanni, Juan Pino, Basile Terver, Joseph Tighe,
+Paden Tomasello, and Jitendra Malik. 2025. Embodied AI Agents: Modeling the
+World. arXiv:2506.22355 [cs.AI] https://arxiv.org/abs/2506.22355
+[21] Dawei Gao, Zitao Li, Xuchen Pan, Weirui Kuang, Zhijian Ma, Bingchen Qian,
+Fei Wei, Wenhao Zhang, Yuexiang Xie, Daoyuan Chen, Liuyi Yao, Hongyi Peng,
+Zeyu Zhang, Lin Zhu, Chen Cheng, Hongzhu Shi, Yaliang Li, Bolin Ding, and
+Jingren Zhou. 2024. AgentScope: A Flexible yet Robust Multi-Agent Platform.
+arXiv:2402.14034 [cs.MA] https://arxiv.org/abs/2402.14034
+[22] Taicheng Guo, Chaochun Liu, Hai Wang, Varun Mannam, Fang Wang, Xin Chen,
+Xiangliang Zhang, and Chandan K Reddy. 2024. Knowledge graph enhanced
+language agents for recommendation. arXiv preprint arXiv:2410.19627 (2024).
+[23] Onder Gürcan. 2023. LLM-Augmented Agent-Based Modelling for Social Simula-
+tions: Challenges and Opportunities. HHAI 2024: Hybrid Human AI Systems for
+the Social Good (2023), 134.
+[24] Ruining He, Lukasz Heldt, Lichan Hong, Raghunandan Keshavan, Shifan Mao,
+Nikhil Mehta, Zhengyang Su, Alicia Tsai, Yueqi Wang, Shao-Chuan Wang,
+Xinyang Yi, Lexi Baugher, Baykal Cakici, Ed Chi, Cristos Goodrow, Ningren
+Han, He Ma, Romer Rosales, Abby Van Soest, Devansh Tandon, Su-Lin Wu, Wei-
+long Yang, and Yilin Zheng. 2025. PLUM: Adapting Pre-trained Language Mod-
+els for Industrial-scale Generative Recommendations. arXiv:2510.07784 [cs.IR]
+https://arxiv.org/abs/2510.07784
+[25] Yupeng Hou, Jianmo Ni, Zhankui He, Noveen Sachdeva, Wang-Cheng Kang,
+Ed H. Chi, Julian McAuley, and Derek Zhiyuan Cheng. 2025.
+ActionPiece:
+Contextually Tokenizing Action Sequences for Generative Recommendation.
+arXiv:2502.13581 [cs.IR] https://arxiv.org/abs/2502.13581
+[26] Chengkai Huang, Junda Wu, Yu Xia, Zixu Yu, Ruhan Wang, Tong Yu, Ruiyi Zhang,
+Ryan A. Rossi, Branislav Kveton, Dongruo Zhou, Julian McAuley, and Lina Yao.
+2025. Towards Agentic Recommender Systems in the Era of Multimodal Large
+Language Models. arXiv:2503.16734 [cs.AI] https://arxiv.org/abs/2503.16734
+[27] Kung-Hsiang Huang, Akshara Prabhakar, Onkar Thorat, Divyansh Agarwal,
+Prafulla Kumar Choubey, Yixin Mao, Silvio Savarese, Caiming Xiong, and Chien-
+Sheng Wu. 2025. CRMArena-Pro: Holistic Assessment of LLM Agents Across
+Diverse Business Scenarios and Interactions. arXiv:2505.18878 [cs.CL] https:
+//arxiv.org/abs/2505.18878
+[28] Cong Jiang and Xiaolei Yang. 2025. AgentsBench: A Multi-Agent LLM Simulation
+Framework for Legal Judgment Prediction. Systems 13, 8 (2025), 641.
+[29] Hongyang Liu, Zhu Sun, Tianjun Wei, Yan Wang, Jiajie Zhu, and Xinghua Qu.
+2025. Diagnostic-Guided Dynamic Profile Optimization for LLM-based User
+Simulators in Sequential Recommendation. arXiv:2508.12645 [cs.IR] https://
+arxiv.org/abs/2508.12645
+[30] Hongyang Liu, Zhu Sun, Tianjun Wei, Yan Wang, Jiajie Zhu, and Xinghua Qu.
+2026. Diagnostic-Guided Dynamic Profile Optimization for LLM-based User
+Simulators in Sequential Recommendation. arXiv:2508.12645 [cs.IR] https://
+arxiv.org/abs/2508.12645
+[31] Ryan Louie, Ifdita Hasan Orney, Juan Pablo Pacheco, Raj Sanjay Shah, Emma
+Brunskill, and Diyi Yang. 2025. Can LLM-Simulated Practice and Feedback
+Upskill Human Counselors? A Randomized Study with 90+ Novice Counselors.
+arXiv:2505.02428 [cs.HC] https://arxiv.org/abs/2505.02428
+[32] Reza Yousefi Maragheh and Yashar Deldjoo. 2025. The Future is Agentic: Defini-
+tions, Perspectives, and Open Challenges of Multi-Agent Recommender Systems.
+arXiv:2507.02097 [cs.IR] https://arxiv.org/abs/2507.02097
+[33] OpenAI. 2025. Sora 2 is here. https://openai.com/index/sora-2/.
+Accessed:
+2025-10-06.
+[34] Choongwon Park. 2025. LLM as User Simulator: Towards Training News Recom-
+mender without Real User Interactions. In Proceedings of the 48th International
+ACM SIGIR Conference on Research and Development in Information Retrieval
+(Padua, Italy) (SIGIR ’25). Association for Computing Machinery, New York, NY,
+USA, 3080–3084. doi:10.1145/3726302.3730224
+[35] Joon Sung Park, Joseph C. O’Brien, Carrie J. Cai, Meredith Ringel Morris, Percy
+Liang, and Michael S. Bernstein. 2023. Generative Agents: Interactive Simulacra
+of Human Behavior. arXiv:2304.03442 [cs.HC] https://arxiv.org/abs/2304.03442
+[36] Joon Sung Park, Carolyn Q. Zou, Aaron Shaw, Benjamin Mako Hill, Carrie Cai,
+Meredith Ringel Morris, Robb Willer, Percy Liang, and Michael S. Bernstein.
+2024. Generative Agent Simulations of 1,000 People. arXiv:2411.10109 [cs.AI]
+https://arxiv.org/abs/2411.10109
+[37] Qiyao Peng, Hongtao Liu, Hua Huang, Qing Yang, and Minglai Shao. 2025.
+A survey on llm-powered agents for recommender systems. arXiv preprint
+arXiv:2502.10050 (2025).
+[38] Jinghua Piao, Yuwei Yan, Jun Zhang, Nian Li, Junbo Yan, Xiaochong Lan, Zhihong
+Lu, Zhiheng Zheng, Jing Yi Wang, Di Zhou, Chen Gao, Fengli Xu, Fang Zhang,
+Ke Rong, Jun Su, and Yong Li. 2025. AgentSociety: Large-Scale Simulation of
+LLM-Driven Generative Agents Advances Understanding of Human Behaviors
+and Society. arXiv:2502.08691 [cs.SI] https://arxiv.org/abs/2502.08691
+
+
+WWW Companion ’26, April 13–17, 2026, Dubai, United Arab Emirates
+Fei Liu, Xinyu Lin, Hanchao Yu, et al.
+[39] Pranav Putta, Edmund Mills, Naman Garg, Sumeet Motwani, Chelsea Finn,
+Divyansh Garg, and Rafael Rafailov. 2024.
+Agent Q: Advanced Reasoning
+and Learning for Autonomous AI Agents.
+arXiv:2408.07199 [cs.AI] https:
+//arxiv.org/abs/2408.07199
+[40] Cheng Qian, Zuxin Liu, Akshara Prabhakar, Zhiwei Liu, Jianguo Zhang, Haolin
+Chen, Heng Ji, Weiran Yao, Shelby Heinecke, Silvio Savarese, Caiming Xiong, and
+Huan Wang. 2025. UserBench: An Interactive Gym Environment for User-Centric
+Agents. arXiv:2507.22034 [cs.AI] https://arxiv.org/abs/2507.22034
+[41] Shashank Rajput, Nikhil Mehta, Anima Singh, Raghunandan Hulikal Keshavan,
+Trung Vu, Lukasz Heldt, Lichan Hong, Yi Tay, Vinh Tran, Jonah Samost, et al.
+2023. Recommender systems with generative retrieval. Advances in Neural
+Information Processing Systems 36 (2023), 10299–10315.
+[42] Yu Shang, Peijie Liu, Yuwei Yan, Zijing Wu, Leheng Sheng, Yuanqing Yu, Chu-
+meng Jiang, An Zhang, Fengli Xu, Yu Wang, Min Zhang, and Yong Li. 2025.
+AgentRecBench: Benchmarking LLM Agent-based Personalized Recommender
+Systems. arXiv:2505.19623 [cs.IR] https://arxiv.org/abs/2505.19623
+[43] David Silver and Richard S. Sutton. 2025. Welcome to the Era of Experience.
+Technical Report. DeepMind. https://storage.googleapis.com/deepmind-media/
+Era-of-Experience%20/The%20Era%20of%20Experience%20Paper.pdf Preprint of
+a chapter to appear in the book Designing an Intelligence, MIT Press.
+[44] Jiakai Tang, Heyang Gao, Xuchen Pan, Lei Wang, Haoran Tan, Dawei Gao, Yushuo
+Chen, Xu Chen, Yankai Lin, Yaliang Li, Bolin Ding, Jingren Zhou, Jun Wang, and
+Ji-Rong Wen. 2025. GenSim: A General Social Simulation Platform with Large
+Language Model based Agents. arXiv:2410.04360 [cs.MA] https://arxiv.org/abs/
+2410.04360
+[45] Jiakai Tang, Yujie Luo, Xunke Xi, Fei Sun, Xueyang Feng, Sunhao Dai, Chao Yi,
+Dian Chen, Zhujin Gao, Yang Li, Xu Chen, Wen Chen, Jian Wu, Yuning Jiang, and
+Bo Zheng. 2025. Interactive Recommendation Agent with Active User Commands.
+arXiv:2509.21317 [cs.IR] https://arxiv.org/abs/2509.21317
+[46] Jianling Wang, Haokai Lu, Yifan Liu, He Ma, Yueqi Wang, Yang Gu, Shuzhou
+Zhang, Ningren Han, Shuchao Bi, Lexi Baugher, Ed Chi, and Minmin Chen. 2024.
+LLMs for User Interest Exploration in Large-scale Recommendation Systems.
+arXiv:2405.16363 [cs.IR] https://arxiv.org/abs/2405.16363
+[47] Lei Wang, Jingsen Zhang, Hao Yang, Zhi-Yuan Chen, Jiakai Tang, Zeyu Zhang, Xu
+Chen, Yankai Lin, Hao Sun, Ruihua Song, et al. 2025. User behavior simulation
+with large language model-based agents. ACM Transactions on Information
+Systems 43, 2 (2025), 1–37.
+[48] Xiaobei Wang, Shuchang Liu, Qingpeng Cai, Xiang Li, Lantao Hu, Han Li, and
+Guangming Xie. 2025. Value Function Decomposition in Markov Recommen-
+dation Process. In Proceedings of the ACM on Web Conference 2025 (WWW ’25).
+ACM, 379–390. doi:10.1145/3696410.3714807
+[49] Yejing Wang, Shengyu Zhou, Jinyu Lu, Qidong Liu, Xinhang Li, Wenlin Zhang,
+Feng Li, Pengjie Wang, Jian Xu, Bo Zheng, and Xiangyu Zhao. 2025. GFlowGR:
+Fine-tuning Generative Recommendation Frameworks with Generative Flow
+Networks. arXiv:2506.16114 [cs.IR] https://arxiv.org/abs/2506.16114
+[50] Tianjun Wei, Huizhong Guo, Yingpeng Du, Zhu Sun, Chen Huang, Dongxia Wang,
+and Jie Zhang. 2025. Mirroring Users: Towards Building Preference-aligned User
+Simulator with User Feedback in Recommendation. arXiv:2508.18142 [cs.HC]
+https://arxiv.org/abs/2508.18142
+[51] Jianyu Wen, Jingyun Wang, Cilin Yan, Jiayin Cai, Xiaolong Jiang, and Ying
+Zhang. 2025. USB-Rec: An Effective Framework for Improving Conversational
+Recommendation Capability of Large Language Model. arXiv:2509.20381 [cs.CL]
+https://arxiv.org/abs/2509.20381
+[52] Yu Xia, Rui Zhong, Hao Gu, Wei Yang, Chi Lu, Peng Jiang, and Kun Gai. 2025. Hier-
+archical Tree Search-based User Lifelong Behavior Modeling on Large Language
+Model. arXiv:2505.19505 [cs.IR] https://arxiv.org/abs/2505.19505
+[53] Haibo Xing, Hao Deng, Yucheng Mao, Jinxin Hu, Yi Xu, Hao Zhang, Jiahao
+Wang, Shizhun Wang, Yu Zhang, Xiaoyi Zeng, and Jing Zhang. 2025. REG4Rec:
+Reasoning-Enhanced Generative Model for Large-Scale Recommendation Sys-
+tems. arXiv:2508.15308 [cs.IR] https://arxiv.org/abs/2508.15308
+[54] Haibo Xing, Hao Deng, Yucheng Mao, Lingyu Mu, Jinxin Hu, Yi Xu, Hao Zhang,
+Jiahao Wang, Shizhun Wang, Yu Zhang, Xiaoyi Zeng, and Jing Zhang. 2026.
+REG4Rec: Reasoning-Enhanced Generative Model for Large-Scale Recommenda-
+tion Systems. arXiv:2508.15308 [cs.IR] https://arxiv.org/abs/2508.15308
+[55] Frank F. Xu, Yufan Song, Boxuan Li, Yuxuan Tang, Kritanjali Jain, Mengxue
+Bao, Zora Z. Wang, Xuhui Zhou, Zhitong Guo, Murong Cao, Mingyang Yang,
+Hao Yang Lu, Amaad Martin, Zhe Su, Leander Maben, Raj Mehta, Wayne Chi,
+Lawrence Jang, Yiqing Xie, Shuyan Zhou, and Graham Neubig. 2025. TheAgent-
+Company: Benchmarking LLM Agents on Consequential Real World Tasks.
+arXiv:2412.14161 [cs.CL] https://arxiv.org/abs/2412.14161
+[56] Jin Xu, Zhifang Guo, Jinzheng He, Hangrui Hu, Ting He, Shuai Bai, Keqin Chen,
+Jialin Wang, Yang Fan, Kai Dang, et al. 2025. Qwen2. 5-omni technical report.
+[57] Ziyi Yang, Zaibin Zhang, Zirui Zheng, Yuxian Jiang, Ziyue Gan, Zhiyu Wang,
+Zijian Ling, Jinsong Chen, Martz Ma, Bowen Dong, Prateek Gupta, Shuyue
+Hu, Zhenfei Yin, Guohao Li, Xu Jia, Lijun Wang, Bernard Ghanem, Huchuan
+Lu, Chaochao Lu, Wanli Ouyang, Yu Qiao, Philip Torr, and Jing Shao. 2025.
+OASIS: Open Agent Social Interaction Simulations with One Million Agents.
+arXiv:2411.11581 [cs.CL] https://arxiv.org/abs/2411.11581
+[58] Se-eun Yoon, Zhankui He, Jessica Maria Echterhoff, and Julian McAuley. 2024.
+Evaluating large language models as generative user simulators for conversa-
+tional recommendation. arXiv preprint arXiv:2403.09738 (2024).
+[59] Kevin Zakka, Baruch Tabanpour, Qiayuan Liao, Mustafa Haiderbhai, Samuel Holt,
+Jing Yuan Luo, Arthur Allshire, Erik Frey, Koushil Sreenath, Lueder A. Kahrs,
+Carmelo Sferrazza, Yuval Tassa, and Pieter Abbeel. 2025. MuJoCo Playground.
+arXiv:2502.08844 [cs.RO] https://arxiv.org/abs/2502.08844
+[60] Jiaqi Zhai, Lucy Liao, Xing Liu, Yueming Wang, Rui Li, Xuan Cao, Leon Gao, Zhao-
+jie Gong, Fangda Gu, Michael He, Yinghai Lu, and Yu Shi. 2024. Actions Speak
+Louder than Words: Trillion-Parameter Sequential Transducers for Generative
+Recommendations. arXiv:2402.17152 [cs.LG] https://arxiv.org/abs/2402.17152
+[61] An Zhang, Yuxin Chen, Leheng Sheng, Xiang Wang, and Tat-Seng Chua. 2024.
+On generative agents in recommendation. In Proceedings of the 47th international
+ACM SIGIR conference on research and development in Information Retrieval. 1807–
+1817.
+[62] Chao Zhang, Haoxin Zhang, Shiwei Wu, Di Wu, Tong Xu, Xiangyu Zhao, Yan Gao,
+Yao Hu, and Enhong Chen. 2025. NoteLLM-2: Multimodal Large Representation
+Models for Recommendation. arXiv:2405.16789 [cs.IR] https://arxiv.org/abs/2405.
+16789
+[63] Junjie Zhang, Yupeng Hou, Ruobing Xie, Wenqi Sun, Julian McAuley, Wayne Xin
+Zhao, Leyu Lin, and Ji-Rong Wen. 2024. Agentcf: Collaborative learning with
+autonomous language agents for recommender systems. In Proceedings of the
+ACM Web Conference 2024. 3679–3689.
+[64] Wenlin Zhang, Xiangyang Li, Qiyuan Ge, Kuicai Dong, Pengyue Jia, Xiaopeng
+Li, Zijian Zhang, Maolin Wang, Yichao Wang, Huifeng Guo, Ruiming Tang,
+and Xiangyu Zhao. 2026. Exploring Recommender System Evaluation: A Multi-
+Modal User Agent Framework for A/B Testing. arXiv:2601.04554 [cs.IR] https:
+//arxiv.org/abs/2601.04554
+[65] Yi Zhang, Ruihong Qiu, Xuwei Xu, Jiajun Liu, and Sen Wang. 2025. DARLR:
+Dual-Agent Offline Reinforcement Learning for Recommender Systems with
+Dynamic Reward. arXiv:2505.07257 [cs.IR] https://arxiv.org/abs/2505.07257
+[66] Zijian Zhang, Shuchang Liu, Ziru Liu, Rui Zhong, Qingpeng Cai, Xiangyu Zhao,
+Chunxu Zhang, Qidong Liu, and Peng Jiang. 2025. Llm-powered user simulator
+for recommender system. In Proceedings of the AAAI Conference on Artificial
+Intelligence, Vol. 39. 13339–13347.
+[67] Kesen Zhao, Shuchang Liu, Qingpeng Cai, Xiangyu Zhao, Ziru Liu, Dong Zheng,
+Peng Jiang, and Kun Gai. 2023. KuaiSim: A Comprehensive Simulator for Recom-
+mender Systems. arXiv:2309.12645 [cs.IR] https://arxiv.org/abs/2309.12645
+[68] Xiaoyan Zhao, Yang Deng, Wenjie Wang, Hongzhan lin, Hong Cheng, Rui Zhang,
+See-Kiong Ng, and Tat-Seng Chua. 2025. Exploring the Impact of Personal-
+ity Traits on Conversational Recommender Systems: A Simulation with Large
+Language Models. arXiv:2504.12313 [cs.CL] https://arxiv.org/abs/2504.12313
+[69] Carolina Zheng, Minhui Huang, Dmitrii Pedchenko, Kaushik Rangadurai, Siyu
+Wang, Gaby Nahum, Jie Lei, Yang Yang, Tao Liu, Zutian Luo, et al. 2025. Enhancing
+Embedding Representation Stability in Recommendation Systems with Semantic
+ID. arXiv preprint arXiv:2504.02137 (2025).
+[70] Guorui Zhou, Honghui Bao, Jiaming Huang, Jiaxin Deng, Jinghao Zhang, Junda
+She, Kuo Cai, Lejian Ren, Lu Ren, Qiang Luo, Qianqian Wang, Qigen Hu,
+Rongzhou Zhang, Ruiming Tang, Shiyao Wang, Wuchao Li, Xiangyu Wu, Xinchen
+Luo, Xingmei Wang, Yifei Hu, Yunfan Wu, Zhanyu Liu, Zhiyang Zhang, Zixing
+Zhang, Bo Chen, Bin Wen, Chaoyi Ma, Chengru Song, Chenglong Chu, Defu
+Lian, Fan Yang, Feng Jiang, Hongtao Cheng, Huanjie Wang, Kun Gai, Pengfei
+Zheng, Qiang Wang, Rui Huang, Siyang Mao, Tingting Gao, Wei Yuan, Yan Wang,
+Yang Zhou, Yi Su, Zexuan Cheng, Zhixin Ling, and Ziming Li. 2026. OpenOneRec
+Technical Report. arXiv:2512.24762 [cs.IR] https://arxiv.org/abs/2512.24762
+[71] Jeffrey Zhou, Tianjian Lu, Swaroop Mishra, Siddhartha Brahma, Sujoy Basu, Yi
+Luan, Denny Zhou, and Le Hou. 2023. Instruction-Following Evaluation for Large
+Language Models. arXiv:2311.07911 [cs.CL] https://arxiv.org/abs/2311.07911
+[72] Shuyan Zhou, Frank F. Xu, Hao Zhu, Xuhui Zhou, Robert Lo, Abishek Sridhar,
+Xianyi Cheng, Tianyue Ou, Yonatan Bisk, Daniel Fried, Uri Alon, and Graham
+Neubig. 2024. WebArena: A Realistic Web Environment for Building Autonomous
+Agents. arXiv:2307.13854 [cs.AI] https://arxiv.org/abs/2307.13854
+[73] Yongchun Zhu, Guanyu Jiang, Jingwu Chen, Feng Zhang, Xiao Yang, and Zuotao
+Liu. 2025. Long-Term Interest Clock: Fine-Grained Time Perception in Streaming
+Recommendation System. arXiv:2501.15817 [cs.IR] https://arxiv.org/abs/2501.
+15817

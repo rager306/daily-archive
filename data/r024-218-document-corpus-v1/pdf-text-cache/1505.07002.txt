@@ -1,0 +1,2166 @@
+Automatic Repair of Real Bugs: An Experience Report on
+the Defects4J Dataset
+Matias Martinez1,2 , Thomas Durieux1,2 , Jifeng Xuan3 , Romain Sommerard1 , Martin Monperrus1,2
+(1) University of Lille, (2) INRIA, (3) Wuhan University
+ABSTRACT
+Defects4J is a large, peer-reviewed, structured dataset of
+real-world Java bugs.
+Each bug in Defects4J is provided
+with a test suite and at least one failing test case that trig-
+gers the bug. In this paper, we report on an experiment to
+explore the eﬀectiveness of automatic repair on Defects4J.
+The result of our experiment shows that 47 bugs of the De-
+fects4J dataset can be automatically repaired by state-of-
+the-art repair. This sets a baseline for future research on
+automatic repair for Java. We have manually analyzed 84
+diﬀerent patches to assess their real correctness. In total, 9
+real Java bugs can be correctly ﬁxed with test-suite based re-
+pair. This analysis shows that test-suite based repair suﬀers
+from under-speciﬁed bugs, for which trivial and incorrect
+patches still pass the test suite. With respect to practical
+applicability, it takes in average 14.8 minutes to ﬁnd a patch.
+The experiment was done on a scientiﬁc grid, totaling 17.6
+days of computation time.
+All their systems and experi-
+mental results are publicly available on Github in order to
+facilitate future research on automatic repair.
+1.
+INTRODUCTION
+Automatic software repair is the process of automatically
+ﬁxing bugs. Test-suite based repair, notably introduced by
+GenProg [25], consists in synthesizing a patch that passes a
+given test suite with at least one failing test case. In this
+recent research ﬁeld, few empirical evaluations have been
+made to evaluate the practical ability of current techniques
+to repair real bugs. For instance, Le Goues et al. [22] re-
+ported on an experiment where they ran the GenProg repair
+system on 105 bugs in C code.
+The key for a valuable empirical evaluation of automatic
+repair is a good dataset of bugs. Here,“good”means that the
+bugs are real (as opposed to seeded) and in large software
+applications (as opposed to small programs). In the context
+of test-suite based repair, the bugs must also come with a
+test suite that encodes the expected behavior. Defects4J is
+such a dataset [19], which consists of 357 real-world Java
+bugs. It has been peer-reviewed, is publicly available, and
+is structured in a way that eases systematic experiments.
+Each bug in Defects4J comes with a test suite including
+failing test cases. To explore whether automatic repair can
+be applied in practice, this paper asks the following question:
+could bugs in Defects4J be repaired with state-of-the-art re-
+pair approaches?
+But actually, a concrete bug cannot be repaired by a “re-
+pair approach”.
+It is repaired by a “repair tool”.
+For in-
+stance, the same term“GenProg”refers to both the approach
+and the tool, while they are diﬀerent. To repair the bugs of
+Defects4J, we need executable tools.
+However, leaving aside the repair system developed in our
+group [9], there are no other available test-suite based re-
+pair tools for Java, outside Arcuri’s pioneering prototype
+[4] which is a small project incompatible with the scale and
+complexity of Defects4J. So we chose to re-implement two
+key repair approaches.
+Re-implementing a repair system
+that works on real test suites and real code is a signiﬁcant
+engineering eﬀort. We have re-implemented GenProg [25]
+and Kali [39]. The motivation for choosing those two is as
+follows. First, GenProg is arguably a baseline in the ﬁeld.
+Second, Kali will help us to assess the quality of the test
+suites in Defects4J. It is a repair system only based on code
+deletion [39] whose main goal is to identify under-speciﬁed
+bugs. An “under-speciﬁed” bug is a bug for which the test
+cases that specify the expected behavior are weak. These
+test cases have a low coverage and bad assertions. Indeed, if
+Kali ﬁxes a failing test case by removing some code, it often
+means that the buggy code contained unspeciﬁed function-
+ality. In the rest of this paper, we will use jGenProg and
+jKali to refer to these repair tools, in addition to Nopol [9,
+45], our repair tool based on speculative execution and code
+synthesis. All of them are publicly available on Github.
+In this paper, we present the results of an evaluation ex-
+periment consisting of running jGenProg, jKali, and Nopol
+on the bugs of Defects4J. Our experiment aims to answer to
+the following Research Questions (RQs):
+RQ1. Can the bugs of the Defects4J dataset be ﬁxed with
+the considered repair techniques? Answering this question is
+essential to consolidate the ﬁeld of automatic repair. First,
+previous evaluations of automatic repair techniques were
+made on a bug dataset that was speciﬁcally built for the
+evaluation of those techniques. In other words, the authors
+of a technique and the authors of its evaluation dataset were
+the same. This increases the risk of potential biases due to
+the cherry-picking data. On the contrary, we are not authors
+of the Defects4J dataset. Second, while previous work has
+shown that real bugs in large scale C code[22, 39, 26] can
+be repaired, there is no reproducible work showing that real
+bugs from large scale Java projects can be repaired.
+RQ2. In test-suite based repair, are the generated patches
+correct, beyond passing the test suite? By“correct”, we mean
+that the patch is meaningful, really ﬁxes the bug, and is not
+a partial ﬁx that only works for the input data encoded
+in the test cases. Indeed, a key concern behind test-suite
+based repair is whether test suites are acceptable to drive
+the generation of correct patches, where correct me accept-
+arXiv:1505.07002v2  [cs.SE]  23 Dec 2015
+
+
+able. Since the inception of the ﬁeld, this question has been
+raised many times and is still a hot question: Qi et al.’s re-
+cent results [39] show that most GenProg’s patches on the
+classical GenProg benchmark of 105 bugs are incorrect. We
+will answer RQ2 with a manual analysis of patches synthe-
+sized for Defects4J.
+RQ3. Which bugs in Defects4j are under-speciﬁed? For
+those bugs, current repair approaches fail to synthesize a cor-
+rect patch due to the lack of test cases. Those bugs are the
+most challenging bugs: to automatically repair them, one
+needs to reason on the expected functionality below what is
+encoded in the test suite, to take into account a source of
+information other than the test suite execution.
+RQ4. How long is the execution time of each repair ap-
+proach?
+The answer to this question also contributes to
+assess the practical applicability of automatic repair on real
+code.
+Our experiment considers 224 bugs that are spread over
+231K lines of code and 12K test cases in total.
+We ran
+the experiment for over 17.6 days of computational time on
+Grid’5000 [5], a large-scale grid for scientiﬁc experiments.
+Our contributions are as follows:
+• Answer to RQ1.
+The Defects4J dataset contains
+bugs that can be automatically repaired with state-of-
+the-art techniques. Our implementations of jGenProg,
+jKali, and Nopol ﬁx together 47 out of 224 bugs with 84
+diﬀerent patches. Nopol is the technique that ﬁxes the
+largest number of bugs (35/47); some bugs are repaired
+by all three considered repair approaches (12/47). This
+work can be viewed as a baseline for future usage of
+Defects4J in automatic repair research.
+• Answer to RQ2. Our manual analysis of all 84 gen-
+erated patches shows that 11/84 are correct, 61/84 are
+incorrect, and 12/84 require a domain expertise, which
+we do not have. The incorrect patches tend to overﬁt
+the test cases. This is a novel piece of evidence that ei-
+ther the current test suites are too weak or the current
+automatic repair techniques are too dumb.
+• Answer to RQ3.
+Defects4J contains very weakly
+speciﬁed bugs. Correctly ﬁxing those bugs by an au-
+tomatic repair approach that reasons beyond the test
+suite execution, using other sources of information, can
+be considered as the next milestone for the ﬁeld.
+• Answers to RQ4.
+The process of searching for a
+patch is a matter of minutes for a single bug (RQ4).
+This is an encouraging piece of evidence for this re-
+search have an impact on practitioners.
+For sake of open science and reproducible research, our
+code and experimental data are publicly available on Github:
+http://github.com/Spirals-Team/defects4j-repair/,
+http://github.com/SpoonLabs/nopol,
+http://github.com/SpoonLabs/astor
+The remainder of this paper is organized as follows. Sec-
+tion 2 provides the background of test-suite based repair and
+the dataset. Section 3 presents our experimental protocol.
+Section 4 details answers to our research questions. Section
+5 studies three generated patches in details. Section 6 dis-
+cusses our results and Section 7 presents the related work.
+Section 8 concludes this paper and proposes future work.
+Buggy program
+Fault localization
+Patch 
+validation
+Final patch
+Statement ranking
+1st Statement
+2nd Statement
+kth Statement
+...
+Yes
+Next statement
+One 
+statement
+No
+No patch
+No statement left
+jGenProg
+jKali
+Nopol
+Figure 1:
+Overview of test-suite based repair:
+it
+takes a buggy program and its test suite as input,
+incl. a failing test case; the output is the patch that
+passes the whole test suite if such patch exists.
+2.
+BACKGROUND
+In this paper, we consider one kind of automatic repair
+called test-suite based repair. We now give the correspond-
+ing background and present the dataset and repair approaches
+that are used in our experiment.
+2.1
+Test-Suite Based Repair
+Test-suite based repair generates a patch according to fail-
+ing and passing test cases. Diﬀerent kinds of techniques can
+be used, such as genetic programming search in GenProg
+[25] and SMT based program synthesis in SemFix [34]. Of-
+ten, before patch generation, a fault localization method is
+applied to rank the statements according to their suspicious-
+ness. The intuition is that the patch generation technique
+is more likely to be successful on suspicious statements.
+Fig. 1 presents a general overview of test-suite based re-
+pair approaches. In a repair approach, the input is a buggy
+program as well as its test suite; the output is a patch that
+makes the test suite pass, if any. To generate a patch for the
+buggy program, the executed statements are ranked to iden-
+tify the most suspicious statements. Fault localization is a
+family of techniques for ranking potential buggy statements
+[18, 3, 46]. Based on the statement ranking, patch gener-
+ation tries to modify a suspicious statement. For instance,
+GenProg [25] adds, removes, and replaces AST nodes. Once
+a patch is found, the whole test suite is executed to validate
+the patch; if the patch is not validated by the test suite, the
+repair approach goes on with next statement and repeats
+the repair process.
+2.2
+Defects4J
+Defects4J by Just et al. [19] is a bug database that consists
+
+
+Table 1:
+The Main Descriptive Statistics of Con-
+sidered Bugs in Defects4J. The Number of Lines of
+Code and the Number of Test Cases are Extracted
+from the Most Recent Version of Each Project.
+Project
+#Bugs Source KLoC Test KLoC #Test cases
+Commons Lang
+65
+22
+6
+2,245
+JFreeChart
+26
+96
+50
+2,205
+Commons Math
+106
+85
+19
+3,602
+Joda-Time
+27
+28
+53
+4,130
+Total
+224
+231
+128
+12,182
+of 357 real-world bugs from ﬁve widely-used and large open-
+source Java projects. Bugs in Defects4J are organized in a
+uniﬁed structure that abstracts over programs, test cases,
+and patches.
+Defects4J provides research with reproducible software
+bugs and enables controlled studies in software testing re-
+search (e.g., [35, 20]). To our knowledge, Defects4J is the
+largest open database of well-organized real-world Java bugs.
+In our work, we use four out of ﬁve projects, i.e., Commons
+Lang,1 JFreeChart,2 Commons Math,3 and Joda-Time.4 We
+do not use the Closure Compiler project5 because the test
+cases in Closure Compiler are organized in a non-conventional
+way, using scripts rather than standard JUnit test cases.
+This prevents us from running with our platform and is left
+for future work. Table 1 presents the main descriptive statis-
+tics of bugs in Defects4J.
+2.3
+Repair Approaches
+GenProg [25] repairs programs as follows. It randomly
+deletes, adds, and replaces abstract syntax tree nodes in the
+program.
+The modiﬁcation point is steered by spectrum
+based fault localization.
+Pieces of code that are inserted
+through addition or replacement always come from the same
+program, based on the “redundancy hypothesis” [31]. Gen-
+Prog is a generic repair approach and does not target any
+particular fault class.
+Kali [39] performs program repair by only removing or
+skipping code. Even if “repair” is achieved in the sense that
+the patches make the test suite passing, its primary goal is
+not repair per se.
+Instead, the goal of Kali is to identify
+weak test suites and under-speciﬁed bugs.
+Nopol [9, 45] targets a speciﬁc fault class: conditional
+bugs. It repairs programs by either modifying an existing
+if-condition or adding a precondition (aka. a guard) to any
+statement or block in the code. The modiﬁed or inserted
+condition is synthesized via input-output based code syn-
+thesis with SMT [16].
+3.
+EXPERIMENTAL PROTOCOL
+We present an experimental protocol to assess the eﬀec-
+tiveness of diﬀerent automatic repair approaches on the real-
+world bugs of Defects4J. The protocol supports the analysis
+1Apache Commons Lang,
+http://commons.apache.org/
+lang.
+2JFreeChart, http://jfree.org/jfreechart/.
+3Apache Commons Math, http://commons.apache.org/
+math.
+4Joda-Time, http://joda.org/joda-time/.
+5Google
+Closure
+Compiler,
+http://code.google.com/
+closure/compiler/.
+of several dimensions of automatic repair: ﬁxability, patch
+correctness, under-speciﬁed bugs, performance. We ﬁrst list
+the Research Questions (RQs) of our work; then we describe
+the research protocol of our experiment; ﬁnally, we present
+the implementation details.
+3.1
+Research Questions
+3.1.1
+RQ1. Fixability
+Which bugs of Defects4J can be automatically repaired?
+How many bugs can be repaired by each system?
+Fixability is the basic evaluation criterion of automatic
+repair research. In test-suite based repair, a bug is said to be
+ﬁxed if the whole test suite passes. To answer this question,
+we run each repair approach on each buggy program of the
+dataset under consideration and count the number of bugs,
+which are patched and can pass the test suite.
+3.1.2
+RQ2. Patch Correctness
+Which bug ﬁxes are semantically correct (beyond passing
+the test suite)?
+A patch that passes the whole test suite may not be ex-
+actly the same as the patch written by developers. It may
+be syntactically diﬀerent yet correct. It may also be incor-
+rect when the test suite is not well-designed and misses im-
+portant test cases and assertions. To answer this question,
+we manually examine all synthesized patches to identify the
+correctness as explained in 3.2.3.
+3.1.3
+RQ3. Under-Speciﬁed Bugs
+Which bugs in Defects4j are not suﬃciently speciﬁed by
+the test suite?
+In test-suite based repair, the quality of a synthesized
+patch is highly dependent on the quality of the test suite.
+In this paper, we deﬁne an “under-speciﬁed bug” as a bug
+for which the test cases (that specify the expected behav-
+ior) have a low coverage and weak assertions. To ﬁnd such
+under-speciﬁed bugs, we use two pieces of evidence. First,
+we closely look at the results of jKali.
+Since this repair
+system removes code and skips code execution, if it ﬁnds a
+patch, it hints that a functionality is not speciﬁed at all. Sec-
+ond, for patches found by jGenProg or Nopol, our manual
+analysis of the patch may also reveal an under-speciﬁcation.
+3.1.4
+RQ4. Performance (Execution Time)
+How long is the execution time of each repair approach?
+It is time-consuming to manually repair a bug. Test-suite
+based repair automates the process of patch generation. To
+conduct a quantitative analysis on the performance of auto-
+matic repair, we evaluate the execution time of each repair
+approach.
+3.2
+Protocol
+We run three repair systems jGenProg, jKali and Nopol
+on the Defects4J dataset (Section 2.2).
+Since the experi-
+ment requires a large amount of computation, we run it on
+a grid (Section 3.2.2).
+We then manually analyze all the
+synthesized patches (Section 3.2.3).
+3.2.1
+Repair Systems Under Study
+In this experiment, we consider a dataset of bugs in soft-
+ware written in the Java programming language, so we study
+repair systems that are able to handle this programming lan-
+guage. This is the ﬁrst selection criterion. The second one is
+
+
+that it is publicly available. This left us with Nopol, which
+comes from our previous work [9]. For instance, GenProg
+[25] and Kali [39] only repair C code. Par [21] is for Java
+but not available.
+However, we have re-implemented GenProg and Kali for
+Java software in a repair framework called Astor [29]. In
+the rest of this paper, we will use jGenProg and jKali to
+refer to their re-implementations in Java. Our motivation of
+re-implementing GenProg and Kali is the following. First,
+GenProg can be considered as a baseline in the ﬁeld and is a
+de-facto point of comparison in the literature. Second, Kali
+is a baseline system to identify under-speciﬁed bugs since
+it consists of only removing and skipping code. For sake of
+open research and replication, all three systems are made
+publicly available on Github [2].
+It can be argued that the results based on a re-implementation
+do not reﬂect the actual performance of the original system.
+For instance, a diﬀerence in the core algorithms or a bug
+in the re-implementation may produce invalid empirical re-
+sults.
+In jGenProg and jKali, we have carefully followed
+the description in the corresponding literature. We consider
+that jKali, our implementation of Kali, is the exact coun-
+terpart of the C implementation. For jGenProg, we had to
+make certain decisions on parts due to undeﬁned behaviors
+or implementation constraints. In any case, all implemen-
+tation decisions can be consulted in the source code that is
+publicly available [2]. For future replication, we note that
+all repair systems and in particular jGenProg are fully de-
+terministic thanks to the use of a seedable random number
+generator.
+This implementation work represents 9.5K lines of Java
+code for jGenProg and jKali (as measured in Astor), and
+Nopol has 25K lines of Java code.
+3.2.2
+Large Scale Execution
+We assess three repair approaches on 224 bugs. One re-
+pair attempt may take hours to be completed. Hence, we
+need a large amount of computation power. Consequently,
+we deploy our experiment in Grid’5000, a grid for high per-
+formance computing [5]. In our experiment, we manually
+set the computing nodes in Grid’5000 to the same hard-
+ware architecture. This avoids potential biases of the time
+cost measurement. All the experiments are deployed in the
+Nancy site of Grid’5000 (located in Nancy, France).
+The
+cluster management mechanism of Grid’5000 assists our ex-
+periments to be reproducible both in ﬁxability and in time
+cost.
+For each repair approach, we set the timeout to three
+hours per repair attempt, in order to have a maximum bound
+on the experiment time (our experiment still takes in total
+17.6 days of computation on Grid’5000).
+We stop the execution of a repair attempt after ﬁnding
+the ﬁrst patch.
+3.2.3
+Manual Analysis
+For correctness assesment, we manually examine the gen-
+erated patches. For each patch, one of the authors (called
+thereafter an“analyst”) analyzed the patch correctness, read-
+ability, and the diﬃculty of validating the correctness.
+The correctness of a patch can be correct, incorrect, or
+unknown. The term “correct” denotes that a patch is ex-
+actly the same or equivalent to the patch that is written
+by developers. The equivalence is assessed according to the
+analyst’s understanding of the patch. Analyzing one patch
+requires a period between a couple of minutes and several
+hours of work, depending on the complexity of the synthe-
+sized patch. On one hand, a patch that is identical to the
+one written by developers is obviously true; on the other
+hand, several patches require a domain expertise that none
+of the authors has.
+The readability of the patch can be easy, medium, or hard;
+and it results from the analyst opinion on the length and
+complexity of the patch (such as number of variables and
+method calls used).
+The diﬃculty can be easy, medium, hard, or expert. It is
+related to the eﬀort an analyst carries out for understanding
+the human patch and the generated patch correctness. For
+some bugs, it is enough to examine the source code of the
+patch for determining it correctness, for others the analyst
+has to debug the buggy and/or the patched application. A
+patch with diﬃculty “expert” means that is impossible for
+us to validate the correctness due to the required expertise
+in domain knowledge.
+4.
+EMPIRICAL RESULTS
+We present and discuss our answers to the research ques-
+tions that guide this work. The total execution of the ex-
+periment costs 17.6 days.
+4.1
+Fixability
+RQ1. Which bugs can be automatically repaired? How
+many bugs can be repaired by each system under study?
+The three automatic repair approaches in this experiment
+are able to together ﬁx 47 bugs of the Defects4J dataset.
+jGenProg ﬁnds a patch for 27 bugs; jKali identiﬁes a patch
+for 22 bugs; and Nopol synthesizes a condition that makes
+the test suite passing for 35 bugs. Table 2 shows the bug
+identiﬁers, for which at least one patch is found. Each line
+corresponds to one bug in Defects4J and each column de-
+notes the ﬁxability of one repair approach.
+For instance,
+Bug M2 from Commons Math has been automatically ﬁxed
+by jGenProg and jKali.
+As shown in Table 2, some bugs such as T11 can be ﬁxed
+by all systems, others by only a single one. For instance,
+bug L39 can only be ﬁxed by Nopol and bug M5 can only be
+ﬁxed by jGenProg. After the controversy about GenProg’s
+eﬀectiveness [39], it is notable to see that there are bugs for
+which only jGenProg works.
+Moreover, Table 2 shows that in project Commons Lang
+all the bugs are only ﬁxed by Nopol while jGenProg and
+jKali fail to synthesize a single patch. A possible reason is
+that the program of Commons Lang is more complex than
+that of Commons Math; both jGenProg and jKali cannot
+handle such a complex search space.
+Fig.
+2 shows the intersections between the ﬁxed bugs
+among the three repair approaches as a Venn diagram. Nopol
+can ﬁx 18 bugs that neither jGenProg nor jKali could re-
+pair. All the ﬁxed bugs by jKali can be ﬁxed by jGenProg
+or Nopol. For 12 bugs, all three repair systems can generate
+a patch to pass the test suite.
+To our knowledge, those results are the very ﬁrst on au-
+tomatic repair with the Defects4J benchmark. Recall that
+they are done with an open-science ethics, all the imple-
+mentations, experimental code, and results are available on
+Github [2].
+Future research in automatic repair may try
+to ﬁx more bugs than our work. Our experimental frame-
+
+
+Table 2: Results on the Fixability of 224 Bugs in
+Defects4J with Three Repair Approaches. In Total,
+the Three Repair Approaches can Repair 47 Bugs
+(21%)
+.
+Project
+Bug Id
+jGenProg
+jKali
+Nopol
+JFreeChart
+C1
+Fixed
+Fixed
+–
+C3
+Fixed
+–
+Fixed
+C5
+Fixed
+Fixed
+Fixed
+C7
+Fixed
+–
+–
+C13
+Fixed
+Fixed
+Fixed
+C15
+Fixed
+Fixed
+–
+C21
+–
+–
+Fixed
+C25
+Fixed
+Fixed
+Fixed
+C26
+–
+Fixed
+Fixed
+Commons Lang
+L39
+–
+–
+Fixed
+L44
+–
+–
+Fixed
+L46
+–
+–
+Fixed
+L51
+–
+–
+Fixed
+L53
+–
+–
+Fixed
+L55
+–
+–
+Fixed
+L58
+–
+–
+Fixed
+Commons Math
+M2
+Fixed
+Fixed
+–
+M5
+Fixed
+–
+–
+M8
+Fixed
+Fixed
+–
+M28
+Fixed
+Fixed
+–
+M32
+–
+Fixed
+Fixed
+M33
+–
+–
+Fixed
+M40
+Fixed
+Fixed
+Fixed
+M42
+–
+–
+Fixed
+M49
+Fixed
+Fixed
+Fixed
+M50
+Fixed
+Fixed
+Fixed
+M53
+Fixed
+–
+–
+M57
+–
+–
+Fixed
+M58
+–
+–
+Fixed
+M69
+–
+–
+Fixed
+M70
+Fixed
+–
+–
+M71
+Fixed
+–
+Fixed
+M73
+Fixed
+–
+Fixed
+M78
+Fixed
+Fixed
+Fixed
+M80
+Fixed
+Fixed
+Fixed
+M81
+Fixed
+Fixed
+Fixed
+M82
+Fixed
+Fixed
+Fixed
+M84
+Fixed
+Fixed
+–
+M85
+Fixed
+Fixed
+Fixed
+M87
+–
+–
+Fixed
+M88
+–
+–
+Fixed
+M95
+Fixed
+Fixed
+–
+M97
+–
+–
+Fixed
+M104
+–
+–
+Fixed
+M105
+–
+–
+Fixed
+Time
+T4
+Fixed
+Fixed
+–
+T11
+Fixed
+Fixed
+Fixed
+Total
+47 (21%)
+27 (12%)
+22 (9.8%) 35 (15.6%)
+work can be used to facilitate future comparisons by other
+researchers.
+Answer to RQ1. In Defects4J, 47 out of 224 bugs can
+be ﬁxed by an automatic repair system. Nopol can ﬁx the
+largest number of bugs (35 bugs). All the ﬁxed bugs by
+jKali can be ﬁxed by jGenProg or Nopol.
+4.2
+Patch Correctness
+RQ2. Which bug ﬁxes are semantically correct (beyond
+passing the test suite)?
+JGenProg
+Nopol
+jKali
+Defects4J bugs
+Unﬁxed bugs
+175
+4
+8
+12
+0
+18
+3
+2
+Discarded 
+bugs
+2
+Figure 2:
+Venn diagram that illustrates the bugs
+commonly ﬁxed by diﬀerent repair approaches. All
+ﬁxed bugs by jKali are also ﬁxed by jGenProg or
+Nopol.
+We manually evaluate the correctness of generated patches
+by the three repair approaches under study as explained in
+3.2.3. In short, a generated patch is considered correct if
+this patch is the same or equivalent as the manually-written
+patch by developers.
+A generated patch is incorrect if it
+actually does not completely ﬁx the bug (beyond making the
+failing test case to pass – a kind of incomplete bug oracle) or
+if it breaks an expected behavior (beyond keeping the rest
+of the test suite passing).
+Recall the history of automatic repair research.
+It has
+been hypothesized that a major pitfall of test-suite based
+repair is that a test suite cannot completely express the
+program speciﬁcations, so it is hazardous to drive the syn-
+thesis of a correct patch with a test suite. This comment
+has been made during conference talks and is common in
+peer reviews.
+Previous works have studied the maintain-
+ability of automatic generated patches [12] or their aids for
+debugging task [44]. However, only recent work by Qi et al.
+[39] has invested resources to manually analyze the correct-
+ness previously-generated patches by test-suite based repair.
+They found that the vast majority of patches by GenProg
+in the GenProg benchmark of C bugs are incorrect.
+To answer the question of patch correctness, we have man-
+ually analyzed all the patches generated by Nopol, jGenProg
+and jKali in our experiment, 84 patches in total. This rep-
+resents more than ten full days of work. To our knowledge,
+only Qi et al.
+[39] have performed a similar manual as-
+sessment of patch synthesized with automatic repair. The
+results of this analysis may be fallible due to the subjective
+nature of the assessment. For future research, all patches
+as well as a detailed case study for each of them are made
+publicly available on Github [2].
+Table 3 shows the results of this manual analysis. The
+“bug id” column refers to the Defects4J identiﬁer, while
+“Patch id” is an unique identiﬁer of each patch, for easily
+identifying the patch on our empirical result page [2]. The
+three main columns give the correctness, readability and dif-
+ﬁculty as explained in 3.2.3. In total, we have analyzed 84
+patches. Among these patches, 27, 22, and 35 patches are
+synthesized by jGenProg, jKali, and Nopol, respectively.
+As shown in Table 3, 11 out of 84 analyzed patches are
+correct and 61 are incorrect. Meanwhile, for the other 12
+patches, it is not possible to clearly validate the correctness,
+
+
+Table 3: The Results of the Manual Assessment of
+84 Patches that are Generated by Three Repair Ap-
+proaches.
+Project Bug id Patch id Approach Correctness Readability
+Diﬃculty
+JFreeChart
+C1
+1
+jGenProg
+Incorrect
+Easy
+Easy
+C1
+2
+jKali
+Incorrect
+Easy
+Easy
+C3
+3
+jGenProg
+Unknown
+Medium
+Medium
+C3
+4
+Nopol
+Incorrect
+Easy
+Medium
+C5
+5
+jGenProg
+Incorrect
+Easy
+Medium
+C5
+6
+jKali
+Incorrect
+Easy
+Medium
+C5
+7
+Nopol
+Correct
+Easy
+Medium
+C7
+8
+jGenProg
+Incorrect
+Easy
+Easy
+C13
+9
+jGenProg
+Incorrect
+Easy
+Easy
+C13
+10
+jKali
+Incorrect
+Easy
+Easy
+C13
+11
+Nopol
+Incorrect
+Easy
+Easy
+C15
+12
+jGenProg
+Incorrect
+Easy
+Medium
+C15
+13
+jKali
+Incorrect
+Medium
+Medium
+C21
+14
+Nopol
+Incorrect
+Hard
+Expert
+C25
+15
+jGenProg
+Incorrect
+Medium
+Medium
+C25
+16
+jKali
+Incorrect
+Medium
+Medium
+C25
+17
+Nopol
+Incorrect
+Easy
+Easy
+C26
+18
+jKali
+Incorrect
+Easy
+Medium
+C26
+19
+Nopol
+Incorrect
+Easy
+Medium
+Commons Lang
+L39
+20
+Nopol
+Incorrect
+Easy
+Medium
+L44
+21
+Nopol
+Correct
+Easy
+Medium
+L46
+22
+Nopol
+Incorrect
+Easy
+Medium
+L51
+23
+Nopol
+Incorrect
+Easy
+Easy
+L53
+24
+Nopol
+Incorrect
+Hard
+Expert
+L55
+25
+Nopol
+Correct
+Easy
+Medium
+L58
+26
+Nopol
+Correct
+Easy
+Medium
+Commons Math
+M2
+27
+jGenProg
+Incorrect
+Easy
+Hard
+M2
+28
+jKali
+Incorrect
+Easy
+Hard
+M5
+29
+jGenProg
+Correct
+Easy
+Easy
+M8
+30
+jGenProg
+Incorrect
+Easy
+Easy
+M8
+31
+jKali
+Incorrect
+Easy
+Easy
+M28
+32
+jGenProg
+Incorrect
+Medium
+Hard
+M28
+33
+jKali
+Incorrect
+Easy
+Hard
+M32
+34
+jKali
+Incorrect
+Easy
+Easy
+M32
+35
+Nopol
+Unknown
+Hard
+Expert
+M33
+36
+Nopol
+Incorrect
+Medium
+Medium
+M40
+37
+jGenProg
+Incorrect
+Hard
+Hard
+M40
+38
+jKali
+Incorrect
+Easy
+Medium
+M40
+39
+Nopol
+Unknown
+Hard
+Expert
+M42
+40
+Nopol
+Unknown
+Medium
+Expert
+M49
+41
+jGenProg
+Incorrect
+Easy
+Medium
+M49
+42
+jKali
+Incorrect
+Easy
+Medium
+M49
+43
+Nopol
+Incorrect
+Easy
+Medium
+M50
+44
+jGenProg
+Correct
+Easy
+Easy
+M50
+45
+jKali
+Correct
+Easy
+Easy
+M50
+46
+Nopol
+Correct
+Easy
+Medium
+M53
+47
+jGenProg
+Correct
+Easy
+Easy
+M57
+48
+Nopol
+Incorrect
+Medium
+Medium
+M58
+49
+Nopol
+Incorrect
+Medium
+Hard
+M69
+50
+Nopol
+Unknown
+Medium
+Expert
+M70
+51
+jGenProg
+Correct
+Easy
+Easy
+M71
+52
+jGenProg
+Unknown
+Medium
+Hard
+M71
+53
+Nopol
+Incorrect
+Medium
+Hard
+M73
+54
+jGenProg
+Correct
+Easy
+Easy
+M73
+55
+Nopol
+Incorrect
+Easy
+Easy
+M78
+56
+jGenProg
+Unknown
+Easy
+Hard
+M78
+57
+jKali
+Unknown
+Easy
+Hard
+M78
+58
+Nopol
+Incorrect
+Medium
+Hard
+M80
+59
+jGenProg
+Incorrect
+Hard
+Medium
+M80
+60
+jKali
+Unknown
+Easy
+Medium
+M80
+61
+Nopol
+Unknown
+Easy
+Medium
+M81
+62
+jGenProg
+Incorrect
+Easy
+Medium
+M81
+63
+jKali
+Incorrect
+Easy
+Medium
+M81
+64
+Nopol
+Incorrect
+Easy
+Medium
+M82
+65
+jGenProg
+Incorrect
+Easy
+Medium
+M82
+66
+jKali
+Incorrect
+Easy
+Medium
+M82
+67
+Nopol
+Incorrect
+Easy
+Medium
+M84
+68
+jGenProg
+Incorrect
+Easy
+Easy
+M84
+69
+jKali
+Incorrect
+Easy
+Easy
+M85
+70
+jGenProg
+Unknown
+Easy
+Easy
+M85
+71
+jKali
+Unknown
+Easy
+Easy
+M85
+72
+Nopol
+Incorrect
+Easy
+Easy
+M87
+73
+Nopol
+Incorrect
+Medium
+Expert
+M88
+74
+Nopol
+Incorrect
+Easy
+Medium
+M95
+75
+jGenProg
+Incorrect
+Easy
+Hard
+M95
+76
+jKali
+Incorrect
+Easy
+Hard
+M97
+77
+Nopol
+Incorrect
+Easy
+Medium
+M104
+78
+Nopol
+Incorrect
+Hard
+Expert
+M105
+79
+Nopol
+Incorrect
+Medium
+Medium
+Time
+T4
+80
+jGenProg
+Incorrect
+Easy
+Medium
+T4
+81
+jKali
+Incorrect
+Easy
+Medium
+T11
+82
+jGenProg
+Incorrect
+Easy
+Easy
+T11
+83
+jKali
+Incorrect
+Easy
+Easy
+T11
+84
+Nopol
+Incorrect
+Medium
+Medium
+84 Patches for 47 bugs
+11 Correct
+61 Easy
+21 Hard/Expert
+5 patches correct from jGenProg, 1 from jKali and 5 from Nopol
+due to the lack of domain expertise (labeled as unknown).
+Section 5 will present three case studies of generated patches
+via manual analysis.
+Among the 11 correct patches, jGenProg, jKali, and Nopol
+contribute to 5, 1, and 5 patches, respectively. All the cor-
+rect patches by jGenProg and jKali come from Commons
+Math; 3 correct patches by Nopol come from Commons
+Lang, one comes from JFreeChart and the other from Com-
+mons Math.
+For the incorrect patches, the main reasons are as follows.
+First, all three approaches are able to remove some code
+(pure removal for jKali, replacement for jGenProg, precon-
+dition addition for Nopol). The corresponding patches sim-
+ply exploit some under-speciﬁcation and remove the faulty
+but otherwise not used behavior. This goes along the line of
+Qi et al.’s results [39]. When the expected behavior seems
+to be well-speciﬁed (according to our understanding of the
+domain), the incorrect patches tend to overﬁt to the test
+data. For instance, if a failing test case handles a 2 × 2 ma-
+trix, the patch may use such test data to incorrectly force
+the patch to be suitable only for matrices of size of 2 × 2.
+This overﬁtting characteristic has recently been studied by
+Smith and colleagues [42].
+Among 84 analyzed patches, 61 patches are identiﬁed as
+easy to read and understand.
+For the diﬃculty of patch
+validation, 21 patches are labeled as hard or expert. This
+result shows that it is hard and time consuming to conduct
+the validation of patches.
+Overall, our experimental results conﬁrm the conclusion
+of Qi et al.
+[39] about incorrect patches due to under-
+speciﬁcation: most patches found by test-suite based repair
+are incorrect. This conﬁrmation is two-sided. First, both
+results by Qi et al. and by us have the same conclusion,
+but come from diﬀerent bug benchmarks. Second, the ﬁnd-
+ing holds for diﬀerent systems: while Qi et al.’s results were
+made on GenProg, the same ﬁnding holds for Nopol.
+This leads to two directions for future work. First, test
+case generation and test suite ampliﬁcation may be able to
+reduce the risk that the synthesized patches overﬁt the test
+case data.
+Second, we imagine that diﬀerent repair algo-
+rithms may be more or less subject to overﬁtting.
+Answer to RQ2. Based on manual examination of patch
+correctness, we ﬁnd out that only 11 out of 84 generated
+patches are semantically correct. The repair systems under
+study tend to suﬀer from weak test suite. There exists large
+room for improving the eﬀectiveness of test-suite based re-
+pair.
+4.3
+Under-speciﬁed bugs
+RQ3. Which bugs in Defects4j are not suﬃciently speci-
+ﬁed by the test suite?
+As shown in Section 4.1, the repair system jKali can gen-
+erate a patch for 22 bugs. Among these generated patches,
+from our manual evaluation, we ﬁnd out that 18 patches are
+incorrect (other 3 patches are unknown). In each of those
+generated patches by jKali, one statement is removed or
+skipped to eliminate the failing program behavior, instead
+of making it correct. This kind of patches shows that the cor-
+responding test suite is too weak with respect to the buggy
+functionality. The assertions that specify the expected be-
+havior of the removed statement and the surrounding code
+are inexistent or too weak.
+One exception among 22 patches by jKali is the patch of
+
+
+Table 4: The Most Challenging Bugs of Defects4J
+Because of Under-speciﬁcation.
+Project
+Bug ID
+Commons Math
+M2, M8,M28,M32,M40, M49, M78,
+M80, M81, M82,M84, M85,M95
+JFreeChart
+C1,C5, C13, C15, C25,C26
+Time
+T4,T11
+Bug M50. As shown in Section 4.2, the patch of Bug M50 is
+correct. That is, the statement removal is the correct patch.
+Another special case is Bug C5 which is patched by jKali
+(incorrect) and by Nopol (correct).
+The latter approach
+produces a patch similar to that one done by the developer.
+A patch (written by developer or automatically generated)
+that ﬁxes an under-speciﬁer bug could introduce new bugs
+(studied previously by Gu et al.
+[15]) or it could not be
+completely correct due to a weak test suite used as bug oracle
+[39].
+Table 4 summarizes this ﬁnding and list the under-
+speciﬁed bugs.
+This result is important for future research on automatic
+repair with Defects4J. First, any repair system that claims
+to correctly ﬁx one of those bugs should be validated with
+a detailed manual analysis of patch correctness, to check
+whether the patch is not a variation on the trivial removal
+solution. Second, those bugs can be considered as the most
+challenging ones of Defects4J. To ﬁx them, a repair system
+must somehow reason on the expected functionality below
+what is encoded in the test suite. This is what was actually
+been done by the human developer. A repair system that is
+able to produce a correct patch for those bugs would be a
+great advance for the ﬁeld.
+Answer to RQ3. There are under-speciﬁed bugs in the
+Defects4J dataset. For them, the test suite does not ac-
+curately specify the expected behavior and can be trivially
+repaired by removing code. To us, they are the most chal-
+lenging bugs: to automatically repair them, one needs to
+reason on the expected functionality below what is encoded
+in the test suite, to take into account a source of information
+other than the test suite execution.
+4.4
+Performance
+RQ4.
+How long is the execution time for each repair
+approach on one bug?
+For real applicability in industry, automatic repair ap-
+proaches must execute fast enough. By “fast enough”, we
+mean an acceptable time period, which depends on the us-
+age scenario of automatic repair and on the hardware. For
+instance, if automatic repair is meant to be done in the IDE,
+repair time should last at most some minutes on a standard
+desktop machine.
+On the contrary, if automatic repair is
+meant to be done on a continuous integration server, it is
+acceptable to last hours on a more powerful server hardware
+conﬁguration.
+The experiments in this paper are run on a grid where
+most of nodes have comparable characteristics. Typically,
+we use machines with Intel Xeon X3440 Quad-core proces-
+sor and 15GB RAM. Table 5 shows the time cost of patch
+generation in hours for bugs without timeout. As shown in
+Table 5, the median time for one bug by jGenProg is around
+one hour. The fastest repair attempt yields a patch in 31
+seconds (for Nopol). The median time to synthesize a patch
+Table 5: Time Cost of Patch Generation
+Time cost
+jGenProg
+jKali
+Nopol
+Min
+40 sec
+36 sec
+31sec
+Median
+1h 01m
+18m 45sec
+22m 30sec
+Max
+1h 16m
+1h 27m
+1h 54m
+Average
+55m 50sec
+23m 33sec
+30m 53sec
+Total
+8 days 12h
+3 days 6h
+7 days 3h
+is 6.7 minutes. This means that the execution time of auto-
+matic repair approaches is comparable to the time of manual
+repair by developers. It may be even faster, but we don’t
+know the actual repair time by real developers for the bug
+of the dataset.
+When a repair exists, it is found within minutes.
+This
+means that most of the time of the 17.6 days of computation
+for the experiment is spent on unﬁxed bugs, which reach
+the timeout. For jGenProg, it is always the case, because
+the search space is extremely large.
+For jKali, we often
+completely explore the search space, and we only reach the
+timeout in 20 cases. For Nopol, the timeout is reached in 26
+cases, either due to the search space of covered statements
+or the SMT synthesis that becomes slow in certain cases.
+One question is whether a larger timeout would improve the
+eﬀectiveness. According to this experiment, the answer is
+no. The repairability is quite binary: either a patch is found
+fast, or the patch cannot be found at all. This preliminary
+observation calls for future research.
+Answer to RQ4. For real bugs on large Java projects, the
+average repair time of the three systems under study is resp.
+23, 30 and 55 minutes. This means that the performance
+time of the considered repair systems is within reach of
+practical applicability.
+4.5
+Other Findings in Defects4J
+Our manual analysis of results enables us to uncover two
+problems in Defects4J. First, we found that bug #8 from
+project JFreeChart (C8) is ﬂaky, which depends on the ma-
+chine conﬁguration. Second, bug #99 from Commons Math
+(M99) is identical to bug M97. Both issues were reported to
+the authors of Defects4J and will be solved in future releases
+of Defects4J.
+5.
+CASE STUDIES
+In this section, we present three case studies of generated
+patches by jGenProg, jKali, and Nopol, respectively. These
+case studies are pieces of evidence that:
+• Automatic repair is able to ﬁnd correct patches (Sec-
+tions 5.1 and 5.3), but also fails with incorrect patches
+(Section 5.2).
+• It is possible to automatically generate the same patch
+as the manual patch written by the developer (Section
+5.1).
+• To pass the whole test suite, an automatic repair ap-
+proach may generate useless patches (Section 5.2).
+5.1
+Case Study of M70, Bug that is Only Fixed
+by jGenProg
+In this section, we study Bug M70, which is ﬁxed by jGen-
+Prog, but cannot be ﬁxed by jKali and Nopol.
+
+
+1
+double solve(UnivariateRealFunction f,
+2
+double min, double max, double initial)
+3
+throws MaxIterationsExceededException,
+4
+FunctionEvaluationException {
+5
+// FIX: return solve(f, min, max);
+6
+return solve(min, max);
+7
+}
+Figure 3: Code snippet of Bug M70. The manually-
+written patch and the patch by jGenProg are the
+same, which is shown in the FIX comment at Line 5,
+which adds a parameter to the method call.
+Bug M70 in Commons Math is about univariate real func-
+tion analysis. Fig. 3 presents the buggy method of Bug M70.
+This buggy method contains only one statement, a method
+call to an overloaded method. In order to perform the cor-
+rect calculation, the call has to be done to a with an ad-
+ditional parameter UnivariateRealFunction f (at Line 1) to
+the method call. Both the manually-written patch and the
+patch by jGenProg add the parameter f to the method call
+(at Line 5). This patch generated by jGenProg is considered
+correct since the it is the same as that by developers.
+To ﬁx Bug M70, jGenProg generates a patch by replacing
+the method call by another one, which is picked elsewhere in
+the same class. This bug cannot be ﬁxed by either jKali or
+Nopol. jKali removes and skips statements; Nopol only han-
+dles bugs that are related to if conditions. Indeed, the fact
+that certain bugs are only ﬁxed by one tool conﬁrms that
+the fault classes addressed by each approach are not iden-
+tical. To sum up, Bug M7 shows that the GenProg
+algorithm, as implemented in jGenProg, is capable
+of uniquely repairing real Java bugs (only GenProg
+succeeds).
+5.2
+Case Study of M8, Bug that is Incorrectly
+Fixed by jKali and jGenProg
+In this section, we present a case study of Bug M8, which
+is ﬁxed by jKali as well as jGenProg, but fails to be ﬁxed by
+Nopol.
+Bug M86 in Commons Math, is about the failure to cre-
+ate an array of a random sample from a discrete distribu-
+tion.
+Listing 4 shows an excerpt of the buggy code and
+the corresponding manual and synthesized ﬁxes (from class
+DiscreteDistribution<T>). The method sample receives the
+expected number sampleSize of random values and returns
+an array of the type T[].
+The bug is due to an exception thrown at line 11 during
+the assignment to out[i]. The method Array.newInstance(class,
+int) requires a class of a data type as the ﬁrst parameter.
+The bug occurs when a) the ﬁrst parameter is of type T1,
+which is a sub-class of T and b) one of the samples is an ob-
+ject which is of type T2, which is a sub-class of T, but not of
+type T1. Due to the incompatibility of types T1 and T2, an
+ArrayStoreException is thrown when this object is assigned
+to the array.
+In the manual patch, the developers change the array type
+in its declaration (from T[] to Object[]) and the way the
+6Bug ID in the bug tracking system of Commons Math
+is
+Math-942,
+http://issues.apache.org/jira/browse/
+MATH-942.
+1
+T[] sample(int sampleSize) {
+2
+if (sampleSize <= 0) {
+3
+throw new NotStrictlyPositiveException([...]);
+4
+}
+5
+// MANUAL FIX:
+6
+// Object[] out = new Object[sampleSize];
+7
+T[] out = (T[]) Array.newInstance(
+8
+singletons.get(0).getClass(), sampleSize);
+9
+for (int i = 0; i < sampleSize; i++) {
+10
+// FIX: removing the following line
+11
+out[i] = sample();
+12
+}
+13
+return out;
+14
+}
+Figure 4: Code snippet of Bug M8. The manually-
+written patch is shown in the MANUAL FIX comment at
+Lines 5 and 6 (changing a variable type). The patch
+by jKali in the FIX comment removes the loop body
+at Line 11.
+array is instantiated. The patch generated by jKali simply
+removes the statement, which assigns sample() to the array.
+As consequence, method sample never throws an exception
+but returns an empty array (only containing null values).
+This patch passes the failing test case and the full test suite
+as well. The reason of this is that the test case has only one
+assertion: it asserts that the array size is equal to 1. There is
+no assertion on the content of the returned array. However,
+despite passing the test suite, the patch is clearly incorrect.
+This is an example of a bug that is not well speciﬁed by the
+test suite. For this bug, jGenProg can also generate a patch
+by replacing the assignment by a side-eﬀect free statement,
+which is semantically equivalent to removing the code. To
+sum up, Bug M8 is an archetypal example of under-
+speciﬁed bugs as detected by the jKali system.
+5.3
+Case Study of L55, Bug that is Fixed by
+Nopol, Equivalent to the Manual Patch
+In this section, we present a case study of Bug L55, which
+is only ﬁxed by Nopol, but cannot be ﬁxed by jGenProg
+or jKali. Recall that Nopol [9] focuses on condition-related
+bugs.
+Bug L55 in Commons Lang relates a utility class for tim-
+ing.
+The bug appears when the user stops a suspended
+timer: the stop time saved by the suspend action is overwrit-
+ten by the stop action. Fig. 5 presents the buggy method
+of Bug L55. In order to solve this problem, the assignment
+at Line 10 has to be done only if the timer state is running.
+As shown in Fig. 5, the manually-written patch by the de-
+veloper adds a precondition before the assignment at Line
+10 and it checks that the current timer state is running (at
+Line 7). The patch by Nopol is diﬀerent from the manually-
+written one. The Nopol patch compares the stop time vari-
+able to a integer constant (at Line 9), which is pre-deﬁned in
+the program class and equals to 1. In fact, when the timer
+is running, the stop time variable is equals to −1; when it is
+suspended, the stop time variable contains the stop time in
+millisecond. Consequently, both preconditions by develop-
+ers and by Nopol are equivalent and correct. Despite being
+equivalent, the manual patch remains more understandable.
+
+
+1
+void stop() {
+2
+if (this.runningState != STATE RUNNING
+3
+&& this.runningState != STATE SUSPENDED) {
+4
+throw new IllegalStateException(...);
+5
+}
+6
+// MANUAL FIX:
+7
+// if (this.runningState == STATE RUNNING)
+8
+// NOPOL FIX:
+9
+// if (stopTime < StopWatch.STATE RUNNING)
+10
+stopTime = System.currentTimeMillis();
+11
+this.runningState = STATE STOPPED;
+12
+}
+Figure 5: Code snippet of Bug L55. The manually-
+written patch is shown in the MANUAL FIX comment at
+Lines 6 and 7 while the patch by Nopol is shown in
+the NOPOL FIX at Lines 8 and 9. The patch by Nopol
+is equivalent to the manually-written patch by de-
+velopers.
+This bug is neither ﬁxed by jGenProg nor jKali.
+To our
+knowledge, Nopol is the only approach that contains a strat-
+egy of adding preconditions to original statements, which
+does not exist in jGenProg or jKali. To sum up, Bug L55
+shows an example of a repaired bug, 1) that is in a
+hard-to-repair project (only Nopol succeeds) and 2)
+whose speciﬁcation by the test suite is good enough
+to drive the synthesis of a correct patch.
+5.4
+Summary
+. In this section, we have presented detailed case studies
+of three patches that are automatically generated for three
+real-world bugs of Defects4J. Our case studies show that
+automatic repair approaches are able to ﬁx real bugs. How-
+ever, diﬀerent factors, in particular the weakness of some
+test cases, yield clearly incorrect patches.
+6.
+DISCUSSION
+6.1
+Threats to Validity
+Implementations of GenProg and Kali. In jGenProg
+and jKali, we have re-implemented the GenProg and Kali al-
+gorithms in Java, according to the related papers. Although
+we have tried our best to understand and implement these
+two approaches, there still exists a threat that our imple-
+mentations do not exactly produce the same results as the
+original systems would.
+Since GenProg and Kali are not
+written for Java, the re-implementation was the only way
+to conduct a comparison. To ﬁnd re-implementation issues,
+our systems are publicly available on Github.
+Bias of assessing the correctness, readability, and
+diﬃculty. In our work, each patch in Table 3 is validated by
+an analyst, which is one of the authors. An analyst manually
+identiﬁes the correctness of a patch and labels the related
+readability and diﬃculty. However, it may happen that the
+judgment by analysts is incorrect. In our experiment, since
+manual analysis is very tedious, we did not cross analysis
+(more than one analyst per patch). However, we share our
+results online on the experiment Github repository to let
+readers have a preliminary idea of the diﬃculty of our anal-
+ysis work and the correctness of generated patches (see Sec-
+tion 4.1). For assessing the equivalence, one solution would
+be to use automatic technique, as done in mutation testing.
+However, whether the current equivalence detection tech-
+niques scale on large real Java code is an open question.
+Random nature of jGenProg. jGenProg, as the orig-
+inal GenProg implementation, has a random component.
+Statements and mutations are randomly chosen based on
+rules during the search. Consequently, it may happen that
+a diﬀerent run of jGenProg with the same timeout would
+repair more bugs. Due to the ultra large computation time
+of the experiment, it was impossible for us to run jGenProg
+enough times to assess this. We leave this to future work.
+Presence of multiple patches. In this experiment, we
+stop the execution of a repair system once the ﬁrst patch is
+found. This is the patch that is manually analyzed. How-
+ever, as also experienced by others, there are often several
+if not dozens of diﬀerent patches per bug. It might happen
+that a correct patch lies somewhere in this set of generated
+patches. We did not manually analyze all generated patches
+because it would require months of manual work. This ﬁnd-
+ing shows that there is a need for research on approaches
+that order the generated patches so as to reveal the most
+likely to be correct.
+6.2
+Impact of Flaky Tests on Repair
+Our experiment uncovered one ﬂaky test in Defects4J
+(C8). We realized that ﬂaky tests have a direct impact on
+automatic repair. If the failing test case is ﬂaky, the repair
+system might conclude that a correct patch has been found
+while it is actually correct. If one of the passing test cases
+is ﬂaky, the repair system might conclude that a patch has
+introduced a regression while it is not the case, this results
+in an underestimation of the eﬀectiveness of the repair tech-
+nique.
+6.3
+Reﬂections on GenProg
+The largest evaluations of GenProg are by Le Goues et
+al. [23] and Qi et al. [39]. The former reports that 55/105
+bugs are ﬁxed (under the deﬁnition that the patch passes the
+test suite), while the latter argued that only 2/105 bugs are
+correctly ﬁxed (under the deﬁnition that the patch passes
+the test suite and that the patch is correct and acceptable
+from the viewpoint of the developer). The diﬀerence is due
+to an experimental error and the presence of under-speciﬁed
+bugs.
+In this paper, we ﬁnd that our re-implementation of Gen-
+Prog, jGenProg correctly ﬁxes 5/224 (2.2%) bugs. In ad-
+dition, it uniquely ﬁxes 4 bugs, such as M70 discussed in
+Section 5.1.
+We interpret those results as follows. First, having cor-
+rectly and uniquely ﬁxed bugs indicates that the core intu-
+ition of GenProg is valid, and that GenProg can be a com-
+ponent of an integrated repair tool that would mix diﬀerent
+repair techniques. Second, the diﬀerence in repair rate is
+probably due to the inclusion criteria of both benchmarks
+(GenProg and Defects4J). To our opinion, none of them re-
+ﬂect the actual distribution of all bug kinds and diﬃculty
+in nature. Also, one factor may be the programming lan-
+guage under repair. One could hypothesize that GenProg is
+better suited to ﬁx procedural code (as C is), whereas the
+complexity of OO code written in Java does not lie in the
+control ﬂow of the methods, but in the class design and in-
+teractions. New experiments have to be designed to validate
+
+
+or invalidate this hypothesis.
+7.
+RELATED WORK
+7.1
+Real-World Datasets of Bugs
+The academic community has set up real-world bug data
+to evaluate their software testing methods and to analyze
+their performance in practice. For instance, Do et al. [10]
+propose a controlled experimentation platform for testing
+techniques. Their dataset is included in SIR database, which
+provides a widely-used testbed in debugging and test suite
+optimization.
+Dallmeier et al. [7] propose iBugs, a benchmark for bug
+localization obtained by extracting historical bug data. Bug-
+Bench by Lu et al. [28] and BegBunch by Cifuentes et al. [6]
+are two benchmarks that have been built to evaluate bug de-
+tection tools. The PROMISE repository [1] is a collection of
+datasets in various ﬁelds of software engineering. Le Goues
+et al. [24] have designed a benchmark of C bugs which is an
+extension of the GenProg benchmark.
+In this experience report, we employ Defects4J by Just et
+al. [19] to evaluate software repair. This database includes
+well-organized programs, bugs, and their test suites. The
+bug data in Defects4J has been extracted from the recent
+history of ﬁve widely-used Java projects. To us, Defects4J is
+the best dataset of real world Java bugs, both in terms of size
+and quality. To our knowledge, our experiment is the ﬁrst
+that evaluates automatic repair techniques via Defects4J.
+7.2
+Test-Suite Based Repair Approaches
+The idea of applying evolutionary optimization to repair
+derives from Arcuri & Yao [4]. Their work applies co-evolutionary
+computation to automatically generate bug ﬁxes. GenProg
+by Le Goues et al. [25] applies genetic programming to the
+AST of a buggy program and generates patches by adding,
+deleting, or replacing AST nodes. PAR by Kim et al. [21]
+leverages patch patterns learned from human-written patches
+to ﬁnd readable patches. RSRepair by Qi et al. [38] uses
+random search instead of genetic programming. This work
+shows that random search is more eﬃcient in ﬁnding patches
+than genetic programming. Their follow-up work [37] uses
+test case prioritization to reduce the cost of patch genera-
+tion.
+Debroy & Wong [8] propose a mutation-based repair method
+inspired from mutation testing. This work combines fault lo-
+calization with program mutation to exhaustively explore a
+space of possible patches. Kali by Qi et al. [39] has recently
+been proposed to examine the ﬁxability power of simple ac-
+tions, such as statement removal.
+SemFix by Nguyen et al. [34] is a notable constraint based
+repair approach. This approach provides patches for assign-
+ments and conditions by combining symbolic execution and
+code synthesis. Nopol by DeMarco et al. [9] is also a con-
+straint based method, which focuses on ﬁxing bugs in if
+conditions and missing preconditions. DirectFix by Mech-
+taev et al. [32] achieves the simplicity of patch generation
+with a Maximum Satisﬁability (MaxSAT) solver to ﬁnd the
+most concise patches. Reliﬁx [43] focuses on regression bugs.
+SPR [26] deﬁnes a set of staged repair operators so as to
+early discard many candidate repairs that cannot pass the
+supplied test suite and eventually to exhaustively explore a
+small and valuable search space.
+Besides test-suite based repair, other repair setups have
+been proposed. Yu et al. [36] proposed a contract based
+method for automatic repair. Other related repair methods
+include atomicity-violation ﬁxing (e.g. [17]), runtime error
+repair (e.g. [27]), and domain-speciﬁc repair (e.g. [40, 14]).
+7.3
+Empirical Investigation of Automatic Re-
+pair
+Beyond proposing new repair techniques, there is a thread
+of research on empirically investigating the foundations, im-
+pact and applicability of automatic repair.
+On the goodness of synthesized patches, Fry et al. [13]
+conducted a study of machine-generated patches based on
+150 participants and 32 real-world defects. Their work shows
+that machine-generated patches are slightly less maintain-
+able than human-written ones. Tao et al. [44] performed a
+similar study to study whether machine-generated patches
+assist human debugging. Monperrus [33] discussed in depth
+the acceptability criteria of synthesized patches.
+Martinez & Monperrus [30] studied thousands of commits
+to mine repair models from manually-written patches. They
+later investigated [31] the redundancy assumption in auto-
+matic repair (whether you can ﬁx bugs by rearranging exist-
+ing code). Zhong & Su [47] conducted a case study on over
+9,000 real-world patches and found two important facts for
+automatic repair: for instance, their analysis outlines that
+some bugs are repaired with changing the conﬁguration ﬁles.
+8.
+CONCLUSION
+We have presented an experience report of a large scale
+evaluation of automatic repair approaches. Our experiment
+was conducted with three automatic repair systems on 224
+bugs in the Defects4J dataset. We ﬁnd out that the systems
+under consideration can synthesize a patch for 47 out of
+224. Since the dataset only contains real bugs from large-
+scale Java software, this is a piece of evidence about the
+applicability of automatic repair in practice.
+Our ﬁndings indicate that there is a need for better repair
+algorithms, for instance, better code synthesis with multiple
+method calls or more complex patches applied at multiple
+locations.
+This may “unlock” other bugs from Defects4J.
+Also, we suggest that the presence of multiple patches indi-
+cate a need for research on approaches that order the gen-
+erated patches so as to reveal the most likely to be correct.
+Preliminary work is being done on this topic [11].
+To our opinion, there is also a need for research on test
+suites. For instance, any approach that automatically en-
+riches test suites with new tests [41] or stronger assertions
+would have a direct impact on repair, by preventing the syn-
+thesis of incorrect patches.
+The three repair systems and all experimental results are
+publicly available at
+http://github.com/Spirals-Team/defects4j-repair/.
+
+
+9.
+REFERENCES
+[1] Promise repository. http://openscience.us/repo/.
+Accessed: 2015-05-01.
+[2] The github repository of the experimental data.
+https:
+//github.com/Spirals-Team/defects4j-repair,
+2015.
+[3] R. Abreu, P. Zoeteweij, and A. J. Van Gemund. On
+the accuracy of spectrum-based fault localization. In
+Testing: Academic and Industrial Conference Practice
+and Research Techniques-MUTATION, 2007.
+TAICPART-MUTATION 2007, pages 89–98. IEEE,
+2007.
+[4] A. Arcuri and X. Yao. A novel co-evolutionary
+approach to automatic software bug ﬁxing. In
+Proceedings of the IEEE Congress on Evolutionary
+Computation, pages 162–168, 2008.
+[5] R. Bolze, F. Cappello, E. Caron, M. Dayd´e,
+F. Desprez, E. Jeannot, Y. J´egou, S. Lanteri,
+J. Leduc, N. Melab, et al. Grid’5000: a large scale and
+highly reconﬁgurable experimental grid testbed.
+volume 20, pages 481–494. SAGE Publications, 2006.
+[6] C. Cifuentes, C. Hoermann, N. Keynes, L. Li, S. Long,
+E. Mealy, M. Mounteney, and B. Scholz. Begbunch:
+Benchmarking for c bug detection tools. In Proceedings
+of ISSTA, pages 16–20, New York, USA, 2009. ACM.
+[7] V. Dallmeier and T. Zimmermann. Extraction of Bug
+Localization Benchmarks from History. In Proceedings
+of the Twenty-second IEEE/ACM International
+Conference on Automated Software Engineering, pages
+433–436, 2007.
+[8] V. Debroy and W. E. Wong. Using mutation to
+automatically suggest ﬁxes for faulty programs. In
+Third International Conference on Software Testing,
+Veriﬁcation and Validation, ICST 2010, Paris,
+France, April 7-9, 2010, pages 65–74, 2010.
+[9] F. Demarco, J. Xuan, D. L. Berre, and M. Monperrus.
+Automatic repair of buggy if conditions and missing
+preconditions with smt. In Proceedings of the 6th
+International Workshop on Constraints in Software
+Testing, Veriﬁcation, and Analysis, pages 30–39.
+ACM, 2014.
+[10] H. Do, S. Elbaum, and G. Rothermel. Supporting
+controlled experimentation with testing techniques:
+An infrastructure and its potential impact. Empirical
+Software Engineering, 10(4):405–435, 2005.
+[11] FanLong and M. Rinard. Prophet: Automatic Patch
+Generation via Learning from Successful Human
+Patches. Technical report, MIT, 2015.
+[12] Z. P. Fry, B. Landau, and W. Weimer. A human study
+of patch maintainability. In Proceedings of the 2012
+International Symposium on Software Testing and
+Analysis, ISSTA 2012, pages 177–187, New York, NY,
+USA, 2012. ACM.
+[13] Z. P. Fry, B. Landau, and W. Weimer. A human study
+of patch maintainability. In Proceedings of the
+International Symposium on Software Testing and
+Analysis, pages 177–187, 2012.
+[14] D. Gopinath, S. Khurshid, D. Saha, and S. Chandra.
+Data-guided repair of selection statements. In
+Proceedings of the 36th International Conference on
+Software Engineering, pages 243–253. ACM, 2014.
+[15] Z. Gu, E. Barr, D. Hamilton, and Z. Su. Has the bug
+really been ﬁxed? In Software Engineering, 2010
+ACM/IEEE 32nd International Conference on,
+volume 1, pages 55–64, May 2010.
+[16] S. Jha, S. Gulwani, S. A. Seshia, and A. Tiwari.
+Oracle-guided component-based program synthesis. In
+Proceedings of the International Conference on
+Software Engineering, volume 1, pages 215–224. IEEE,
+2010.
+[17] G. Jin, L. Song, W. Zhang, S. Lu, and B. Liblit.
+Automated atomicity-violation ﬁxing. In Proceedings
+of the 32nd ACM SIGPLAN Conference on
+Programming Language Design and Implementation,
+pages 389–400, 2011.
+[18] J. A. Jones, M. J. Harrold, and J. Stasko.
+Visualization of test information to assist fault
+localization. In Proceedings of the 24th international
+conference on Software engineering, pages 467–477.
+ACM, 2002.
+[19] R. Just, D. Jalali, and M. D. Ernst. Defects4J: A
+database of existing faults to enable controlled testing
+studies for Java programs. In Proceedings of the
+International Symposium on Software Testing and
+Analysis (ISSTA), pages 437–440, July 23–25 2014.
+[20] R. Just, D. Jalali, L. Inozemtseva, M. D. Ernst,
+R. Holmes, and G. Fraser. Are mutants a valid
+substitute for real faults in software testing. In 22nd
+International Symposium on the Foundations of
+Software Engineering (FSE 2014), 2014.
+[21] D. Kim, J. Nam, J. Song, and S. Kim. Automatic
+patch generation learned from human-written patches.
+In Proceedings of the 35th International Conference on
+Software Engineering, pages 802–811, 2013.
+[22] C. Le Goues, M. Dewey-Vogt, S. Forrest, and
+W. Weimer. A systematic study of automated
+program repair: Fixing 55 out of 105 bugs for $8 each.
+In Software Engineering (ICSE), 2012 34th
+International Conference on, pages 3–13. IEEE, 2012.
+[23] C. Le Goues, M. Dewey-Vogt, S. Forrest, and
+W. Weimer. A systematic study of automated
+program repair: Fixing 55 out of 105 bugs for $8 each.
+In Proceedings of the 34th International Conference on
+Software Engineering, pages 3–13, 2012.
+[24] C. Le Goues, N. Holtschulte, E. K. Smith, Y. Brun,
+P. Devanbu, S. Forrest, and W. Weimer. The
+manybugs and introclass benchmarks for automated
+repair of c programs. IEEE Transactions on Software
+Engineering (TSE), in press, 2015.
+[25] C. Le Goues, T. Nguyen, S. Forrest, and W. Weimer.
+Genprog: A generic method for automatic software
+repair. Software Engineering, IEEE Transactions on,
+38(1):54–72, 2012.
+[26] F. Long and M. C. Rinard. Staged program repair
+with condition synthesis. In Proceedings of ESE/FSE,
+2015.
+[27] F. Long, S. Sidiroglou-Douskos, and M. C. Rinard.
+Automatic runtime error repair and containment via
+recovery shepherding. In ACM SIGPLAN Conference
+on Programming Language Design and
+Implementation, PLDI ’14, Edinburgh, United
+Kingdom - June 09 - 11, 2014, page 26, 2014.
+[28] S. Lu, Z. Li, F. Qin, L. Tan, P. Zhou, and Y. Zhou.
+
+
+Bugbench: Benchmarks for evaluating bug detection
+tools. In Workshop on the Evaluation of Software
+Defect Detection Tools, 2005.
+[29] M. Martinez and M. Monperrus. ASTOR:
+Evolutionary Automatic Software Repair for Java.
+Technical report, Inria, 2014.
+[30] M. Martinez and M. Monperrus. Mining software
+repair models for reasoning on the search space of
+automated program ﬁxing. Empirical Software
+Engineering, 20(1):176–205, 2015.
+[31] M. Martinez, W. Weimer, and M. Monperrus. Do the
+ﬁx ingredients already exist? an empirical inquiry into
+the redundancy assumptions of program repair
+approaches. In Proceedings of the 36th International
+Conference on Software Engineering, pages 492–495,
+2014.
+[32] S. Mechtaev, J. Yi, and A. Roychoudhury. Directﬁx:
+Looking for simple program repairs. In Proceedings of
+the 37th International Conference on Software
+Engineering. IEEE, 2015.
+[33] M. Monperrus. A critical review of automatic patch
+generation learned from human-written patches: essay
+on the problem statement and the evaluation of
+automatic software repair. In Proceedings of the 36th
+International Conference on Software Engineering,
+pages 234–242. ACM, 2014.
+[34] H. D. T. Nguyen, D. Qi, A. Roychoudhury, and
+S. Chandra. Semﬁx: Program repair via semantic
+analysis. In Proceedings of the 2013 International
+Conference on Software Engineering, pages 772–781.
+IEEE Press, 2013.
+[35] T. Noor and H. Hemmati. Test case analytics: Mining
+test case traces to improve risk-driven testing. In
+Proceedings of the IEEE 1st International Workshop
+on Software Analytics, pages 13–16. IEEE, 2015.
+[36] Y. Pei, C. A. Furia, M. Nordio, Y. Wei, B. Meyer, and
+A. Zeller. Automated ﬁxing of programs with
+contracts. IEEE Trans. Software Eng., 40(5):427–449,
+2014.
+[37] Y. Qi, X. Mao, and Y. Lei. Eﬃcient automated
+program repair through fault-recorded testing
+prioritization. In 2013 IEEE International Conference
+on Software Maintenance, pages 180–189, 2013.
+[38] Y. Qi, X. Mao, Y. Lei, Z. Dai, and C. Wang. The
+strength of random search on automated program
+repair. In Proceedings of the 36th International
+Conference on Software Engineering, pages 254–265.
+ACM, 2014.
+[39] Z. Qi, F. Long, S. Achour, and M. Rinard. An analysis
+of patch plausibility and correctness for
+generate-and-validate patch generation systems. In
+Proceedings of ISSTA. ACM, 2015.
+[40] H. Samimi, M. Sch¨afer, S. Artzi, T. D. Millstein,
+F. Tip, and L. J. Hendren. Automated repair of
+HTML generation errors in PHP applications using
+string constraint solving. In Proceedings of the 34th
+International Conference on Software Engineering,
+pages 277–287, 2012.
+[41] S. Shamshiri, R. Just, J. M. Rojas, G. Fraser,
+P. McMinn, and A. Arcuri. Do automatically
+generated unit tests ﬁnd real faults? an empirical
+study of eﬀectiveness and challenges. In Proceedings of
+the International Conference on Automated Software
+Engineering, 2015.
+[42] E. K. Smith, E. Barr, C. Le Goues, and Y. Brun. Is
+the cure worse than the disease? overﬁtting in
+automated program repair. In Proceedings of the 10th
+Joint Meeting of the European Software Engineering
+Conference and ACM SIGSOFT Symposium on the
+Foundations of Software Engineering (ESEC/FSE),
+Bergamo, Italy, September 2015.
+[43] S. H. Tan and A. Roychoudhury. reliﬁx: Automated
+repair of software regressions. In Proceedings of ICSE,
+2015.
+[44] Y. Tao, J. Kim, S. Kim, and C. Xu. Automatically
+generated patches as debugging aids: a human study.
+In Proceedings of the 22nd ACM SIGSOFT
+International Symposium on Foundations of Software
+Engineering, pages 64–74, 2014.
+[45] J. Xuan, M. Matias, F. DeMarco, L. Sebastian,
+D. Thomas, D. Le Berre, and M. Monperrus. Nopol:
+Automatic repair of conditional statement bugs in
+large-scale object-oriented programs. Under 2nd
+review at IEEE Transactions on Software Engineering.
+[46] J. Xuan and M. Monperrus. Test case puriﬁcation for
+improving fault localization. In Proceedings of the
+22nd ACM SIGSOFT International Symposium on
+Foundations of Software Engineering (FSE). ACM,
+2014.
+[47] H. Zhong and Z. Su. An empirical study on real bug
+ﬁxes. In Proceedings of the 37th International
+Conference on Software Engineering (ICSE). IEEE,
+2015.

@@ -1,0 +1,1804 @@
+Programming with a Differentiable Forth Interpreter
+Matko Boˇsnjak 1 Tim Rockt¨aschel 2 Jason Naradowsky 3 Sebastian Riedel 1
+Abstract
+Given that in practice training data is scarce for all but a
+small set of problems, a core question is how to incorporate
+prior knowledge into a model. In this paper, we consider
+the case of prior procedural knowledge for neural networks,
+such as knowing how a program should traverse a sequence,
+but not what local actions should be performed at each
+step. To this end, we present an end-to-end differentiable
+interpreter for the programming language Forth which
+enables programmers to write program sketches with slots
+that can be ﬁlled with behaviour trained from program
+input-output data. We can optimise this behaviour directly
+through gradient descent techniques on user-speciﬁed
+objectives, and also integrate the program into any larger
+neural computation graph. We show empirically that our
+interpreter is able to effectively leverage different levels
+of prior program structure and learn complex behaviours
+such as sequence sorting and addition. When connected
+to outputs of an LSTM and trained jointly, our interpreter
+achieves state-of-the-art accuracy for end-to-end reasoning
+about quantities expressed in natural language stories.
+1. Introduction
+A central goal of Artiﬁcial Intelligence is the creation of
+machines that learn as effectively from human instruction
+as they do from data. A recent and important step towards
+this goal is the invention of neural architectures that
+learn to perform algorithms akin to traditional computers,
+using primitives such as memory access and stack ma-
+nipulation (Graves et al., 2014; Joulin & Mikolov, 2015;
+Grefenstette et al., 2015; Kaiser & Sutskever, 2015; Kurach
+et al., 2016; Graves et al., 2016). These architectures can
+be trained through standard gradient descent methods,
+and enable machines to learn complex behaviour from
+input-output pairs or program traces. In this context, the
+role of the human programmer is often limited to providing
+training data. However, training data is a scarce resource
+for many tasks. In these cases, the programmer may have
+1Department of Computer Science, University College Lon-
+don, London, UK 2Department of Computer Science, University
+of Oxford, Oxford, UK 3Department of Theoretical and Ap-
+plied Linguistics, University of Cambridge, Cambridge, UK.
+Correspondence to: Matko Boˇsnjak <m.bosnjak@cs.ucl.ac.uk>.
+Proceedings of the 34 th International Conference on Machine
+Learning, Sydney, Australia, PMLR 70, 2017. Copyright 2017 by
+the author(s).
+partial procedural background knowledge: one may know
+the rough structure of the program, or how to implement
+several subroutines that are likely necessary to solve the
+task. For example, in programming by demonstration (Lau
+et al., 2001) or query language programming (Neelakantan
+et al., 2015a) a user establishes a larger set of conditions on
+the data, and the model needs to set out the details. In all
+these scenarios, the question then becomes how to exploit
+various types of prior knowledge when learning algorithms.
+To address the above question we present an approach that
+enables programmers to inject their procedural background
+knowledge into a neural network.
+In this approach, the
+programmer speciﬁes a program sketch (Solar-Lezama
+et al., 2005) in a traditional programming language. This
+sketch deﬁnes one part of the neural network behaviour. The
+other part is learned using training data. The core insight
+that enables this approach is the fact that most programming
+languages can be formulated in terms of an abstract machine
+that executes the commands of the language. We implement
+these machines as neural networks, constraining parts of the
+networks to follow the sketched behaviour. The resulting
+neural programs are consistent with our prior knowledge
+and optimised with respect to the training data.
+In this paper, we focus on the programming language
+Forth (Brodie, 1980), a simple yet powerful stack-based
+language that facilitates factoring and abstraction. Under-
+lying Forth’s semantics is a simple abstract machine. We
+introduce ∂4, an implementation of this machine that is
+differentiable with respect to the transition it executes at
+each time step, as well as distributed input representations.
+Sketches that users write deﬁne underspeciﬁed behaviour
+which can then be trained with backpropagation.
+For two neural programming tasks introduced in previous
+work (Reed & de Freitas, 2015) we present Forth sketches
+that capture different degrees of prior knowledge.
+For
+example, we deﬁne only the general recursive structure of
+a sorting problem. We show that given only input-output
+pairs, ∂4 can learn to ﬁll the sketch and generalise well
+to problems of unseen size. In addition, we apply ∂4 to
+the task of solving word algebra problems. We show that
+when provided with basic algorithmic scaffolding and
+trained jointly with an upstream LSTM (Hochreiter &
+Schmidhuber, 1997), ∂4 is able to learn to read natural
+arXiv:1605.06640v3  [cs.NE]  23 Jul 2017
+
+
+Programming with a Differentiable Forth Interpreter
+language narratives, extract important numerical quantities,
+and reason with these, ultimately answering corresponding
+mathematical questions without the need for explicit
+intermediate representations used in previous work.
+The contributions of our work are as follows: i) We present
+a neural implementation of a dual stack machine underlying
+Forth, ii) we introduce Forth sketches for programming
+with partial procedural background knowledge, iii) we
+apply Forth sketches as a procedural prior on learning
+algorithms from data, iv) we introduce program code
+optimisations based on symbolic execution that can speed
+up neural execution, and v) using Forth sketches we obtain
+state-of-the-art for end-to-end reasoning about quantities
+expressed in natural language narratives.
+2. The Forth Abstract Machine
+Forth is a simple Turing-complete stack-based program-
+ming language (ANSI, 1994; Brodie, 1980). We chose Forth
+as the host language of our work because i) it is an estab-
+lished, general-purpose high-level language relatively close
+to machine code, ii) it promotes highly modular programs
+through use of branching, loops and function calls, thus
+bringing out a good balance between assembly and higher
+level languages, and importantly iii) its abstract machine is
+simple enough for a straightforward creation of its contin-
+uous approximation. Forth’s underlying abstract machine
+is represented by a state S = (D,R,H,c), which contains
+two stacks: a data evaluation pushdown stack D (data
+stack) holds values for manipulation, and a return address
+pushdown stack R (return stack) assists with return pointers
+and subroutine calls. These are accompanied by a heap or
+random memory access buffer H, and a program counter c.
+A Forth program P is a sequence1 of Forth words (i.e.
+commands) P =w1...wn. The role of a word varies, encom-
+passing language keywords, primitives, and user-deﬁned
+subroutines (e.g.
+DROP discards the top element of the
+data stack, or DUP duplicates the top element of the data
+stack).2 Each word wi deﬁnes a transition function between
+machine states wi : S →S. Therefore, a program P itself
+deﬁnes a transition function by simply applying the word at
+the current program counter to the current state. Although
+usually considered as a part of the heap H, we consider
+Forth programs P separately to ease the analysis.
+An example of a Bubble sort algorithm implemented in
+Forth is shown in Listing 1 in everything except lines
+3b-4c.
+The execution starts from line 12 where literals
+are pushed on the data stack and the SORT is called. Line
+10 executes the main loop over the sequence. Lines 2-7
+1Forth is a concatenative language.
+2In this work, we restrict ourselves to a subset of all Forth
+words, detailed in Appendix A.
+1 : BUBBLE ( a1 ... an n-1 -- one pass )
+2
+DUP IF >R
+3a
+OVER OVER < IF SWAP THEN
+4a
+R> SWAP >R 1- BUBBLE R>
+3b
+{ observe D0 D-1 -> permute D-1 D0 R0}
+4b
+1- BUBBLE R>
+3c
+{ observe D0 D-1 -> choose NOP SWAP }
+4c
+R> SWAP >R 1- BUBBLE R>
+5
+ELSE
+6
+DROP
+7
+THEN
+8 ;
+9 : SORT ( a1 .. an n -- sorted
+)
+10
+1- DUP 0 DO >R R@ BUBBLE R> LOOP DROP
+11 ;
+12 2 4 2 7 4 SORT \ Example call
+Listing 1: Three code alternatives (white lines are common
+to all, coloured/lettered lines are alternative-speciﬁc): i)
+Bubble sort in Forth (a lines – green), ii) PERMUTE sketch
+(b lines – blue), and iii) COMPARE sketch (c lines – yellow).
+denote the BUBBLE procedure – comparison of top two
+stack numbers (line 3a), and the recursive call to itself (line
+4a). A detailed description of how this program is executed
+by the Forth abstract machine is provided in Appendix B.
+Notice that while Forth provides common control structures
+such as looping and branching, these can always be reduced
+to low-level code that uses jumps and conditional jumps
+(using the words BRANCH and BRANCH0, respectively).
+Likewise, we can think of sub-routine deﬁnitions as labelled
+code blocks, and their invocation amounts to jumping to the
+code block with the respective label.
+3. ∂4: Differentiable Abstract Machine
+When a programmer writes a Forth program, they deﬁne
+a sequence of Forth words, i.e., a sequence of known state
+transition functions. In other words, the programmer knows
+exactly how computation should proceed. To accommodate
+for cases when the developer’s procedural background
+knowledge is incomplete, we extend Forth to support the
+deﬁnition of a program sketch. As is the case with Forth
+programs, sketches are sequences of transition functions.
+However, a sketch may contain transition functions whose
+behaviour is learned from data.
+To learn the behaviour of transition functions within a pro-
+gram we would like the machine output to be differentiable
+with respect to these functions (and possibly representa-
+tions of inputs to the program). This enables us to choose
+parameterised transition functions such as neural networks.
+To this end, we introduce ∂4, a TensorFlow (Abadi et al.,
+2015) implementation of a differentiable abstract machine
+with continuous state representations, differentiable words
+and sketches.
+Program execution in ∂4 is modelled by
+a recurrent neural network (RNN), parameterised by the
+transition functions at each time step.
+
+
+Programming with a Differentiable Forth Interpreter
+Low-level code
+d
+D
+H
+...
+>R
+CURRENT_REPR
+>R
+{permute...}
+{choose...}
+{choose...}
+{choose...}
+...
+P c
+θ
+Si
+Execution RNN
+P
+x
+y
+BiLSTM
+Ned
+had
+to
+wash
+3
+shorts
+…
+…
+R r
+Figure 1: Left: Neural Forth Abstract Machine. A forth sketch P is translated to a low-level code Pθ, with slots {...}
+substituted by a parametrised neural networks. Slots are learnt from input-output examples (x,y) through the differentiable
+machine whose state Si comprises the low-level code, program counter c, data stack D (with pointer d), return stack R
+(with pointer r), and the heap H. Right: BiLSTM trained on Word Algebra Problems. Output vectors corresponding to a
+representation of the entire problem, as well as context representations of numbers and the numbers themselves are fed into
+H to solve tasks. The entire system is end-to-end differentiable.
+3.1. Machine State Encoding
+We map the symbolic machine state S = (D, R, H, c)
+to a continuous representation S = (D, R, H, c) into
+two differentiable stacks (with pointers), the data stack
+D = (D,d) and the return stack R = (R,r), a heap H, and
+an attention vector c indicating which word of the sketch Pθ
+is being executed at the current time step. Figure 1 depicts
+the machine together with its elements. All three memory
+structures, the data stack, the return stack and the heap, are
+based on differentiable ﬂat memory buffers M∈{D,R,H},
+where D,R,H ∈Rl×v, for a stack size l and a value size v.
+Each has a differentiable read operation
+readM(a)=aT M
+and write operation
+writeM(x,a):M←M−(a1T )⊙M+xaT
+akin to the Neural Turing Machine (NTM) memory (Graves
+et al., 2014), where ⊙is the element-wise multiplication,
+and a is the address pointer.3 In addition to the memory
+buffers D and R, the data stack and the return stack contain
+pointers to the current top-of-the-stack (TOS) element
+d,r∈Rl, respectively. This allows us to implement pushing
+as writing a value x into M and incrementing the TOS
+pointer as:
+pushM(x):writeM(x,p)
+(side-effect: p←inc(p))
+where p ∈{d,r}, inc(p) = pT R1+, dec(p) = pT R−, and
+R1+ and R1−are increment and decrement matrices (left
+and right circular shift matrices).
+3The equal widths of H and D allow us to directly move vector
+representations of values between the heap and the stack.
+Popping is realized by multiplying the TOS pointer and the
+memory buffer, and decreasing the TOS pointer:
+popM( )=readM(p)
+(side-effect: p←dec(p))
+Finally, the program counter c ∈Rp is a vector that, when
+one-hot, points to a single word in a program of length
+p, and is equivalent to the c vector of the symbolic state
+machine.4 We use S to denote the space of all continuous
+representations S.
+Neural Forth Words
+It is straightforward to convert
+Forth words, deﬁned as functions on discrete machine
+states, to functions operating on the continuous space S.
+For example, consider the word DUP, which duplicates the
+top of the data stack. A differentiable version of DUP ﬁrst
+calculates the value e on the TOS address of D, as e=dT D.
+It then shifts the stack pointer via d ←inc(d), and writes
+e to D using writeD(e,d). The complete description of im-
+plemented Forth Words and their differentiable counterparts
+can be found in Appendix A.
+3.2. Forth Sketches
+We deﬁne a Forth sketch Pθ as a sequence of continuous
+transition functions P = w1 ... wn. Here, wi ∈S →S
+either corresponds to a neural Forth word or a trainable
+transition function (neural networks in our case). We will
+call these trainable functions slots, as they correspond to
+underspeciﬁed “slots” in the program code that need to be
+ﬁlled by learned behaviour.
+We allow users to deﬁne a slot w by specifying a pair of
+a state encoder wenc and a decoder wdec.
+The encoder
+4During training c can become distributed and is considered as
+attention over the program code.
+
+
+Programming with a Differentiable Forth Interpreter
+produces a latent representation h of the current machine
+state using a multi-layer perceptron, and the decoder
+consumes this representation to produce the next machine
+state. We hence have w = wdec ◦wenc. To use slots within
+Forth program code, we introduce a notation that reﬂects
+this decomposition. In particular, slots are deﬁned by the
+syntax { encoder -> decoder } where encoder
+and decoder are speciﬁcations of the corresponding slot
+parts as described below.
+Encoders
+We provide the following options for encoders:
+static produces a static representation, independent of
+the actual machine state.
+observe e1...em: concatenates the elements e1...em of
+the machine state. An element can be a stack item Di
+at relative index i, a return stack item Ri, etc.
+linear N, sigmoid, tanh represent chained trans-
+formations, which enable the multilayer perceptron
+architecture.
+Linear N projects to N dimensions,
+and sigmoid and tanh apply same-named functions
+elementwise.
+Decoders
+Users can specify the following decoders:
+choose w1...wm: chooses from the Forth words w1...wm.
+Takes an input vector h of length m to produce a
+weighted combination of machine states Pm
+i hiwi(S).
+manipulate e1...em: directly manipulates the machine
+state elements e1 ... em by writing the appropriately
+reshaped and softmaxed output of the encoder over the
+machine state elements with writeM.
+permute e1...em: permutes the machine state elements
+e1...em via a linear combination of m! state vectors.
+3.3. The Execution RNN
+We model execution using an RNN which produces a state
+Sn+1 conditioned on a previous state Sn. It does so by
+ﬁrst passing the current state to each function wi in the
+program, and then weighing each of the produced next
+states by the component of the program counter vector ci
+that corresponds to program index i, effectively using c as
+an attention vector over code. Formally we have:
+Sn+1 =RNN(Sn,Pθ)=
+|P |
+X
+i=1
+ciwi(Sn)
+Clearly, this recursion, and its ﬁnal state, are differentiable
+with respect to the program code Pθ, and its inputs. Further-
+more, for differentiable Forth programs the ﬁnal state of this
+RNN will correspond to the ﬁnal state of a symbolic execu-
+tion (when no slots are present, and one-hot values are used).
+: BUBBLE
+DUP
+BRANCH0 8
+>R
+{...}
+1-
+BUBBLE
+R>
+0
+1
+2
+3
+4
+5
+6
+7
+8
+P
+d
+c
+D
+R r
+0 1 2 3 4
+DROP
+: BUBBLE
+DUP
+BRANCH0 8
+>R
+{...}
+1-
+BUBBLE
+R>
+DROP
+: BUBBLE
+DUP
+BRANCH0 8
+>R
+{...}
+1-
+BUBBLE
+R>
+DROP
+: BUBBLE
+DUP
+BRANCH0 8
+>R
+{...}
+1-
+BUBBLE
+R>
+DROP
+0 1 2 3 4
+0 1 2 3 4
+0 1 2 3 4
+0
+1
+2
+3
+0
+1
+2
+3
+Figure 2: ∂4 segment of the RNN execution of a Forth
+sketch in blue in Listing 1. The pointers (d, r) and values
+(rows of R and D) are all in one-hot state (colours simply
+denote values observed, deﬁned by the top scale), while
+the program counter maintains the uncertainty. Subsequent
+states are discretised for clarity. Here, the slot {...} has
+learned its optimal behaviour.
+3.4. Program Code Optimisations
+The ∂4 RNN requires one-time step per transition. After
+each time step, the program counter is either incremented,
+decremented, explicitly set or popped from the stack. In
+turn, a new machine state is calculated by executing all
+words in the program and then weighting the result states
+by the program counter. As this is expensive, it is advisable
+to avoid full RNN steps wherever possible. We use two
+strategies to avoid full RNN steps and signiﬁcantly speed-up
+∂4: symbolic execution and interpolation of if-branches.
+Symbolic Execution
+Whenever we have a sequence of
+Forth words that contains no branch entry or exit points, we
+can collapse this sequence into a single transition instead
+of naively interpreting words one-by-one. We symbolically
+execute (King, 1976) a sequence of Forth words to calculate
+a new machine state. We then use the difference between the
+new and the initial state to derive the transition function of
+the sequence. For example, the sequence R> SWAP >R that
+swaps top elements of the data and the return stack yields the
+symbolic state D = r1d2...dl. and R = d1r2...rl. Compar-
+ing it to the initial state, we derive a single neural transition
+that only needs to swap the top elements of D and R.
+Interpolation of If-Branches
+We cannot apply symbolic
+execution to code with branching points as the branching
+behaviour depends on the current machine state, and we
+cannot resolve it symbolically.
+However, we can still
+collapse if-branches that involve no function calls or loops
+by executing both branches in parallel and weighing their
+output states by the value of the condition. If the if-branch
+does contain function calls or loops, we simply fall back to
+execution of all words weighted by the program counter.
+
+
+Programming with a Differentiable Forth Interpreter
+3.5. Training
+Our training procedure assumes input-output pairs of
+machine start and end states (xi,yi) only. The output yi
+deﬁnes a target memory YD
+i
+and a target pointer yd
+i on
+the data stack D. Additionally, we have a mask Ki that
+indicates which components of the stack should be included
+in the loss (e.g. we do not care about values above the stack
+depth). We use DT (θ,xi) and dT (θ,xi) to denote the ﬁnal
+state of D and d after T steps of execution RNN and using
+an initial state xi. We deﬁne the loss function as
+L(θ)=H(Ki⊙DT (θ,xi),Ki⊙YD
+i )
++H(Ki⊙dT (θ,xi),Ki⊙yd
+i )
+where H(x, y) = −x log y is the cross-entropy loss,
+and θ are parameters of slots in the program P. We can
+use backpropagation and any variant of gradient descent
+to optimise this loss function.
+Note that at this point it
+would be possible to include supervision of the interme-
+diate states (trace-level), as done by the Neural Program
+Interpreter (Reed & de Freitas, 2015).
+4. Experiments
+We evaluate ∂4 on three tasks. Two of these are simple
+transduction tasks, sorting and addition as presented in
+(Reed & de Freitas, 2015), with varying levels of program
+structure. For each problem, we introduce two sketches.
+We also test ∂4 on the more difﬁcult task of answering
+word algebra problems. We show that not only can ∂4 act
+as a standalone solver for such problems, bypassing the
+intermediary task of producing formula templates which
+must then be executed, but it can also outperform previous
+work when trained on the same data.
+4.1. Experimental Setup
+Speciﬁc to the transduction tasks, we discretise memory
+elements during testing. This effectively allows the trained
+model to generalise to any sequence length if the correct
+sketch behaviour has been learned. We also compare against
+a Seq2Seq (Sutskever et al., 2014) baseline. Full details of
+the experimental setup can be found in Appendix E.
+4.2. Sorting
+Sorting sequences of digits is a hard task for RNNs, as they
+fail to generalise to sequences even marginally longer than
+the ones they have been trained on (Reed & de Freitas,
+2015). We investigate several strong priors based on Bubble
+sort for this transduction task and present two ∂4 sketches in
+Listing 1 that enable us to learn sorting from only a few hun-
+dred training examples (see Appendix C.1 for more detail):
+Table 1: Accuracy (Hamming distance) of Permute and
+Compare sketches in comparison to a Seq2Seq baseline on
+the sorting problem.
+Test Length 8
+Test Length: 64
+Train Length:
+2
+3
+4
+2
+3
+4
+Seq2Seq
+26.2
+29.2
+39.1
+13.3
+13.6
+15.9
+∂4 Permute
+100.0
+100.0
+19.82
+100.0
+100.0
+7.81
+∂4 Compare
+100.0
+100.0
+49.22
+100.0
+100.0
+20.65
+PERMUTE. A sketch specifying that the top two elements
+of the stack, and the top of the return stack must be per-
+muted based on the values of the former (line 3b). Both
+the value comparison and the permutation behaviour
+must be learned. The core of this sketch is depicted in
+Listing 1 (b lines), and the sketch is explained in detail
+in Appendix D.
+COMPARE. This sketch provides additional prior proce-
+dural knowledge to the model. In contrast to PERMUTE,
+onlythecomparisonbetweenthetoptwoelementsonthe
+stack must be learned (line 3c). The core of this sketch is
+depicted in Listing 1 (c lines).
+In both sketches, the outer loop can be speciﬁed in ∂4 (List-
+ing1, line10), whichrepeatedlycallsafunctionBUBBLE.In
+doing so, it deﬁnes sufﬁcient structure so that the behaviour
+of the network is invariant to the input sequence length.
+Results on Bubble sort
+A quantitative comparison of our
+models on the Bubble sort task is provided in Table 1. For a
+given test sequence length, we vary the training set lengths
+to illustrate the model’s ability to generalise to sequences
+longer than those it observed during training. We ﬁnd that
+∂4 quickly learns the correct sketch behaviour, and it is able
+to generalise perfectly to sort sequences of 64 elements after
+observing only sequences of length two and three during
+training. In comparison, the Seq2Seq baseline falters when
+attempting similar generalisations, and performs close to
+chance when tested on longer sequences. Both ∂4 sketches
+perform ﬂawlessly when trained on short sequence lengths,
+but under-perform when trained on sequences of length 4
+due to arising computational difﬁculties (COMPARE sketch
+performs better due to more structure it imposes).
+We
+discuss this issue further in Section 5.
+4.3. Addition
+Next, we applied ∂4 to the problem of learning to add two
+n-digit numbers. We rely on the standard elementary school
+addition algorithm, where the goal is to iterate over pairs
+of aligned digits, calculating the sum of each to yield the
+resulting sum. The key complication arises when two digits
+sum to a two-digit number, requiring that the correct extra
+digit (a carry) be carried over to the subsequent column.
+
+
+Programming with a Differentiable Forth Interpreter
+1 : ADD-DIGITS
+( a1 b1...an bn carry n -- r1 r2...r_{n+1} )
+2
+DUP 0 = IF
+3
+DROP
+4
+ELSE
+5
+>R \ put n on R
+6a
+{ observe D0 D-1 D-2 -> tanh -> linear 70
+-> manipulate D-1 D-2 }
+7a
+DROP
+6b
+{ observe D0 D-1 D-2 -> tanh -> linear 10
+-> choose 0 1 }
+7b
+{ observe D-1 D-2 D-3 -> tanh -> linear 50
+-> choose 0 1 2 3 4 5 6 7 8 9 }
+>R SWAP DROP SWAP DROP SWAP DROP R>
+8
+R> 1- SWAP >R
+\ new_carry n-1
+9
+ADD-DIGITS \ call add-digits on n-1 subseq.
+10
+R> \ put remembered results back on the stack
+11
+THEN
+12 ;
+Listing 2: Manipulate sketch (a lines – green) and the
+choose sketch (b lines – blue) for Elementary Addition.
+Input data is used to ﬁll data stack externally
+We assume aligned pairs of digits as input, with a carry for
+the least signiﬁcant digit (potentially 0), and the length of
+the respective numbers. The sketches deﬁne the high-level
+operations through recursion, leaving the core addition to
+be learned from data.
+The speciﬁed high-level behaviour includes the recursive
+call template and the halting condition of the recursion (no
+remaining digits, line 2-3).
+The underspeciﬁed addition
+operation must take three digits from the previous call, the
+two digits to sum and a previous carry, and produce a single
+digit (the sum) and the resultant carry (lines 6a, 6b and 7a,
+7b). We introduce two sketches for inducing this behaviour:
+MANIPULATE. This sketch provides little prior procedu-
+ral knowledge as it directly manipulates the ∂4 machine
+state, ﬁlling in a carry and the result digits, based on the
+top three elements on the data stack (two digits and the
+carry). Depicted in Listing 2 in green.
+CHOOSE.
+Incorporating additional prior information,
+CHOOSE exactly speciﬁes the results of the computa-
+tion, namely the output of the ﬁrst slot (line 6b) is the
+carry, and the output of the second one (line 7b) is the
+result digit, both conditioned on the two digits and the
+carry on the data stack. Depicted in Listing 2 in blue.
+The rest of the sketch code reduces the problem size by one
+and returns the solution by popping it from the return stack.
+Quantitative Evaluation on Addition
+In a set of ex-
+periments analogous to those in our evaluation on Bubble
+sort, we demonstrate the performance of ∂4 on the addition
+task by examining test set sequence lengths of 8 and 64
+while varying the lengths of the training set instances
+(Table 2).
+The Seq2Seq model again fails to generalise
+Table 2: Accuracy (Hamming distance) of Choose and
+Manipulate sketches in comparison to a Seq2Seq baseline
+on the addition problem. Note that lengths corresponds to
+the length of the input sequence (two times the number of
+digits of both numbers).
+Test Length 8
+Test Length 64
+Train Length:
+2
+4
+8
+2
+4
+8
+Seq2Seq
+37.9
+57.8
+99.8
+15.0
+13.5
+13.3
+∂4 Choose
+100.0
+100.0
+100.0
+100.0
+100.0
+100.0
+∂4 Manipulate
+98.58
+100.0
+100.0
+99.49
+100.0
+100.0
+to longer sequences than those observed during training.
+In comparison, both the CHOOSE sketch and the less
+structured MANIPULATE sketch learn the correct sketch
+behaviour and generalise to all test sequence lengths (with
+an exception of MANIPULATE which required more data to
+train perfectly). In additional experiments, we were able to
+successfully train both the CHOOSE and the MANIPULATE
+sketches from sequences of input length 24, and we tested
+them up to the sequence length of 128, conﬁrming their
+perfect training and generalisation capabilities.
+4.4. Word Algebra Problems
+Word algebra problems (WAPs) are often used to assess the
+numerical reasoning abilities of schoolchildren. Questions
+are short narratives which focus on numerical quantities,
+culminating with a question. For example:
+A ﬂorist had 50 roses. If she sold 15 of them and then later
+picked 21 more, how many roses would she have?
+Answering such questions requires both the understanding
+of language and of algebra — one must know which
+numeric operations correspond to which phrase and how to
+execute these operations.
+Previous work cast WAPs as a transduction task by mapping
+a question to a template of a mathematical formula, thus
+requiring manuall labelled formulas.
+For instance, one
+formula that can be used to correctly answer the question
+in the example above is (50 - 15) + 21 = 56. In pre-
+vious work, local classiﬁers (Roy & Roth, 2015; Roy et al.,
+2015), hand-crafted grammars (Koncel-Kedziorski et al.,
+2015), and recurrent neural models (Bouchard et al., 2016)
+have been used to perform this task.
+Predicted formula
+templates may be marginalised during training (Kushman
+et al., 2014), or evaluated directly to produce an answer.
+In contrast to these approaches, ∂4 is able to learn both, a
+soft mapping from text to algebraic operations and their
+execution, without the need for manually labelled equations
+and no explicit symbolic representation of a formula.
+Model description
+Our model is a fully end-to-end
+differentiable structure, consisting of a ∂4 interpreter, a
+
+
+Programming with a Differentiable Forth Interpreter
+\ first copy data from H: vectors to R and numbers to D
+1 { observe R0 R-1 R-2 R-3 -> permute D0 D-1 D-2 }
+2 { observe R0 R-1 R-2 R-3 -> choose + - * / }
+3 { observe R0 R-1 R-2 R-3 -> choose SWAP NOP }
+4 { observe R0 R-1 R-2 R-3 -> choose + - * / }
+\ lastly, empty out the return stack
+Listing 3: Core of the Word Algebra Problem sketch. The
+full sketch can be found in the Appendix.
+sketch, and a Bidirectional LSTM (BiLSTM) reader.
+The BiLSTM reader reads the text of the problem and
+produces a vector representation (word vectors) for each
+word, concatenated from the forward and the backward pass
+of the BiLSTM network. We use the resulting word vectors
+corresponding only to numbers in the text, numerical values
+of those numbers (encoded as one-hot vectors), and a vector
+representation of the whole problem (concatenation of the
+last and the ﬁrst vector of the opposite passes) to initialise
+the ∂4 heap H.
+This is done in an end-to-end fashion,
+enabling gradient propagation through the BiLSTM to the
+vector representations. The process is depicted in Figure 1.
+The sketch, depicted in Listing 3 dictates the differentiable
+computation.5
+First, it copies values from the heap H
+– word vectors to the return stack R, and numbers (as
+one-hot vectors) on the data stack D. Second, it contains
+four slots that deﬁne the space of all possible operations
+of four operators on three operands, all conditioned on the
+vector representations on the return stack. These slots are i)
+permutation of the elements on the data stack, ii) choosing
+the ﬁrst operator, iii) possibly swapping the intermediate
+result and the last operand, and iv) the choice of the second
+operator. The ﬁnal set of commands simply empties out
+the return stack R. These slots deﬁne the space of possible
+operations, however, the model needs to learn how to utilise
+these operations in order to calculate the correct result.
+Results
+WeevaluatethemodelontheCommonCore(CC)
+dataset, introduced by Roy & Roth (2015). CC is notable for
+having the most diverse set of equation patterns, consisting
+of four operators (+, -, ×, ÷), with up to three operands.
+We compare against three baseline systems: (1) a local
+classiﬁer with hand-crafted features (Roy & Roth, 2015),
+(2) a Seq2Seq baseline, and (3) the same model with a data
+generation component (GeNeRe) Bouchard et al. (2016).
+All baselines are trained to predict the best equation, which
+is executed outside of the model to obtain the answer. In
+contrast, ∂4 is trained end-to-end from input-output pairs
+and predicts the answer directly without the need for an
+intermediate symbolic representation of a formula.
+Results are shown in Table 3.
+All RNN-based methods
+5Due to space constraints, we present the core of the sketch
+here. For the full sketch, please refer to Listing 4 in the Appendix.
+Table 3: Accuracies of models on the CC dataset. Asterisk
+denotes results obtained from Bouchard et al. (2016). Note
+that GeNeRe makes use of additional data
+Model
+Accuracy (%)
+Template Mapping
+Roy & Roth (2015)
+55.5
+Seq2Seq∗(Bouchard et al., 2016)
+95.0
+GeNeRe∗(Bouchard et al., 2016)
+98.5
+Fully End-to-End
+∂4
+96.0
+(bottom three) outperform the classiﬁer-based approach.
+Our method slightly outperforms a Seq2Seq baseline,
+achieving the highest reported result on this dataset without
+data augmentation.
+5. Discussion
+∂4 bridges the gap between a traditional programming lan-
+guage and a modern machine learning architecture. How-
+ever, as we have seen in our evaluation experiments, faith-
+fully simulating the underlying abstract machine architec-
+ture introduces its own unique set of challenges.
+One such challenge is the additional complexity of per-
+forming even simple tasks when they are viewed in terms of
+operations on the underlying machine state. As illustrated
+in Table 1, ∂4 sketches can be effectively trained from small
+training sets (see Appendix C.1), and generalise perfectly
+to sequences of any length. However, difﬁculty arises when
+training from sequences of modest lengths.
+Even when
+dealing with relatively short training length sequences,
+and with the program code optimisations employed, the
+underlying machine can unroll into a problematically large
+number states. For problems whose machine execution is
+quadratic, like the sorting task (which at input sequences
+of length 4 has 120 machine states), we observe signiﬁcant
+instabilities during training from backpropagating through
+such long RNN sequences, and consequent failures to train.
+In comparison, the addition problem was easier to train due
+to a comparatively shorter underlying execution RNNs.
+The higher degree of prior knowledge provided played an
+important role in successful learning.
+For example, the
+COMPARE sketch, which provides more structure, achieves
+higher accuracies when trained on longer sequences.
+Similarly, employing softmax on the directly manipulated
+memory elements enabled perfect training for the MANIP-
+ULATE sketch for addition. Furthermore, it is encouraging
+to see that ∂4 can be trained jointly with an upstream LSTM
+to provide strong procedural prior knowledge for solving a
+real-world NLP task.
+
+
+Programming with a Differentiable Forth Interpreter
+6. Related Work
+Program Synthesis
+The idea of program synthesis is as
+old as Artiﬁcial Intelligence, and has a long history in com-
+puter science (Manna & Waldinger, 1971). Whereas a large
+body of work has focused on using genetic programming
+(Koza, 1992) to induce programs from the given input-
+output speciﬁcation (Nordin, 1997), there are also various
+Inductive Programming approaches (Kitzelmann, 2009)
+aimed at inducing programs from incomplete speciﬁcations
+of the code to be implemented (Albarghouthi et al., 2013;
+Solar-Lezama et al., 2006). We tackle the same problem of
+sketching, but in our case, we ﬁll the sketches with neural
+networks able to learn the slot behaviour.
+Probabilistic and Bayesian Programming
+Our work
+is closely related to probabilistic programming languages
+such as Church (Goodman et al., 2008). They allow users
+to inject random choice primitives into programs as a way
+to deﬁne generative distributions over possible execution
+traces. In a sense, the random choice primitives in such
+languages correspond to the slots in our sketches. A core
+difference lies in the way we train the behaviour of slots:
+instead of calculating their posteriors using probabilistic
+inference, we estimate their parameters using backprop-
+agation and gradient descent.
+This is similar in-kind to
+TerpreT’s FMGD algorithm (Gaunt et al., 2016), which
+is employed for code induction via backpropagation.
+In
+comparison, our model which optimises slots of neural
+networks surrounded by continuous approximations of
+code, enables the combination of procedural behaviour and
+neural networks. In addition, the underlying programming
+and probabilistic paradigm in these programming languages
+is often functional and declarative, whereas our approach
+focuses on a procedural and discriminative view. By using
+an end-to-end differentiable architecture, it is easy to seam-
+lesslyconnectoursketchestofurtherneuralinputandoutput
+modules, such as an LSTM that feeds into the machine heap.
+Neural approaches
+Recently, there has been a surge of
+research in program synthesis, and execution in deep learn-
+ing, with increasingly elaborate deep models. Many of these
+models were based on differentiable versions of abstract
+data structures (Joulin & Mikolov, 2015; Grefenstette et al.,
+2015; Kurach et al., 2016), and a few abstract machines,
+such as the NTM (Graves et al., 2014), Differentiable
+Neural Computers (Graves et al., 2016), and Neural GPUs
+(Kaiser & Sutskever, 2015). All these models are able to
+induce algorithmic behaviour from training data. Our work
+differs in that our differentiable abstract machine allows us
+to seemingly integrate code and neural networks, and train
+the neural networks speciﬁed by slots via backpropagation.
+Related to our efforts is also the Autograd (Maclaurin et al.,
+2015), which enables automatic gradient computation in
+pure Python code, but does not deﬁne nor use differentiable
+access to its underlying abstract machine.
+The work in neural approximations to abstract structures
+and machines naturally leads to more elaborate machin-
+ery able to induce and call code or code-like behaviour.
+Neelakantan et al. (2015a) learned simple SQL-like
+behaviour–—querying tables from the natural language
+with simple arithmetic operations.
+Although sharing
+similarities on a high level, the primary goal of our model
+is not induction of (fully expressive) code but its injection.
+(Andreas et al., 2016) learn to compose neural modules to
+produce the desired behaviour for a visual QA task. Neural
+Programmer-Interpreters (Reed & de Freitas, 2015) learn
+to represent and execute programs, operating on different
+modes of an environment, and are able to incorporate
+decisions better captured in a neural network than in many
+lines of code (e.g. using an image as an input). Users inject
+prior procedural knowledge by training on program traces
+and hence require full procedural knowledge. In contrast,
+we enable users to use their partial knowledge in sketches.
+Neural approaches to language compilation have also been
+researched, from compiling a language into neural networks
+(Siegelmann, 1994), over building neural compilers (Gruau
+et al., 1995) to adaptive compilation (Bunel et al., 2016).
+However, that line of research did not perceive neural in-
+terpreters and compilers as a means of injecting procedural
+knowledge as we did. To the best of our knowledge, ∂4
+is the ﬁrst working neural implementation of an abstract
+machine for an actual programming language, and this
+enables us to inject such priors in a straightforward manner.
+7. Conclusion and Future Work
+We have presented ∂4, a differentiable abstract machine
+for the Forth programming language, and showed how it
+can be used to complement programmers’ prior knowledge
+through the learning of unspeciﬁed behaviour in Forth
+sketches.
+The ∂4 RNN successfully learns to sort and
+add, and solve word algebra problems, using only program
+sketches and program input-output pairs. We believe ∂4,
+and the larger paradigm it helps establish, will be useful for
+addressing complex problems where low-level representa-
+tions of the input are necessary, but higher-level reasoning
+is difﬁcult to learn and potentially easier to specify.
+In future work, we plan to apply ∂4 to other problems in
+the NLP domain, like machine reading and knowledge
+base inference. In the long-term, we see the integration of
+non-differentiable transitions (such as those arising when
+interacting with a real environment), as an exciting future
+direction which sits at the intersection of reinforcement
+learning and probabilistic programming.
+
+
+Programming with a Differentiable Forth Interpreter
+ACKNOWLEDGMENTS
+We thank Guillaume Bouchard, Danny Tarlow, Dirk Weis-
+senborn, Johannes Welbl and the anonymous reviewers
+for fruitful discussions and helpful comments on previous
+drafts of this paper. This work was supported by a Microsoft
+Research PhD Scholarship, an Allen Distinguished Investi-
+gator Award, and a Marie Curie Career Integration Award.
+References
+Abadi, Mart´ın, Agarwal, Ashish, Barham, Paul, Brevdo,
+Eugene, Chen, Zhifeng, Citro, Craig, Corrado, Greg S.,
+Davis, Andy, Dean, Jeffrey, Devin, Matthieu, Ghemawat,
+Sanjay, Goodfellow, Ian, Harp, Andrew, Irving, Geoffrey,
+Isard, Michael, Jia, Yangqing, Jozefowicz, Rafal, Kaiser,
+Lukasz, Kudlur, Manjunath, Levenberg, Josh, Man´e,
+Dan, Monga, Rajat, Moore, Sherry, Murray, Derek, Olah,
+Chris, Schuster, Mike, Shlens, Jonathon, Steiner, Benoit,
+Sutskever, Ilya, Talwar, Kunal, Tucker, Paul, Vanhoucke,
+Vincent, Vasudevan, Vijay, Vi´egas, Fernanda, Vinyals,
+Oriol, Warden, Pete, Wattenberg, Martin, Wicke, Mar-
+tin, Yu, Yuan, and Zheng, Xiaoqiang.
+TensorFlow:
+Large-scale machine learning on heterogeneous systems,
+2015. URL http://tensorflow.org/. Software
+available from tensorﬂow.org.
+Albarghouthi, Aws, Gulwani, Sumit, and Kincaid, Zachary.
+Recursive program synthesis.
+In Computer Aided
+Veriﬁcation, pp. 934–950. Springer, 2013.
+Andreas, Jacob, Rohrbach, Marcus, Darrell, Trevor, and
+Klein, Dan. Neural module networks. In Proceedings
+of IEEE Conference on Computer Vision and Pattern
+Recognition (CVPR), 2016.
+ANSI. Programming Languages - Forth, 1994. American
+National Standard for Information Systems,
+ANSI
+X3.215-1994.
+Bouchard, Guillaume, Stenetorp, Pontus, and Riedel,
+Sebastian. Learning to generate textual data. In Proceed-
+ings of the Conference on Empirical Methods in Natural
+Language Processing (EMNLP), pp. 1608–1616, 2016.
+Brodie, Leo. Starting Forth. Forth Inc., 1980.
+Bunel, Rudy, Desmaison, Alban, Kohli, Pushmeet, Torr,
+Philip HS, and Kumar, M Pawan.
+Adaptive neural
+compilation. In Proceedings of the Conference on Neural
+Information Processing Systems (NIPS), 2016.
+Gaunt, Alexander L, Brockschmidt, Marc, Singh, Rishabh,
+Kushman, Nate, Kohli, Pushmeet, Taylor, Jonathan,
+and Tarlow, Daniel. TerpreT: A Probabilistic Program-
+ming Language for Program Induction. arXiv preprint
+arXiv:1608.04428, 2016.
+Goodman, Noah, Mansinghka, Vikash, Roy, Daniel M,
+Bonawitz, Keith, and Tenenbaum, Joshua B.
+Church:
+a language for generative models.
+In Proceedings of
+the Conference in Uncertainty in Artiﬁcial Intelligence
+(UAI), pp. 220–229, 2008.
+Graves, Alex, Wayne, Greg, and Danihelka, Ivo. Neural
+Turing Machines. arXiv preprint arXiv:1410.5401, 2014.
+Graves, Alex, Wayne, Greg, Reynolds, Malcolm, Harley,
+Tim, Danihelka, Ivo, Grabska-Barwi´nska, Agnieszka,
+Colmenarejo, Sergio G´omez, Grefenstette, Edward,
+Ramalho, Tiago, Agapiou, John, et al. Hybrid computing
+using a neural network with dynamic external memory.
+Nature, 538(7626):471–476, 2016.
+Grefenstette, Edward, Hermann, Karl Moritz, Suleyman,
+Mustafa, and Blunsom, Phil. Learning to Transduce with
+Unbounded Memory. In Proceedings of the Conference
+on Neural Information Processing Systems (NIPS), pp.
+1819–1827, 2015.
+Gruau, Fr´ed´eric, Ratajszczak, Jean-Yves, and Wiber, Gilles.
+A Neural compiler. Theoretical Computer Science, 141
+(1):1–52, 1995.
+Hochreiter, Sepp and Schmidhuber, J¨urgen.
+Long short-
+term memory.
+Neural Computation, 9(8):1735–1780,
+1997.
+Joulin, Armand and Mikolov, Tomas. Inferring Algorithmic
+Patterns with Stack-Augmented Recurrent Nets.
+In
+Proceedings of the Conferences on Neural Information
+Processing Systems (NIPS), pp. 190–198, 2015.
+Kaiser, Łukasz and Sutskever, Ilya. Neural GPUs learn al-
+gorithms. In Proceedings of the International Conference
+on Learning Representations (ICLR), 2015.
+King, James C. Symbolic Execution and Program Testing.
+Commun. ACM, 19(7):385–394, 1976.
+Kingma, Diederik and Ba, Jimmy.
+Adam: A Method
+for Stochastic Optimization.
+In Proceedings of the
+International Conference for Learning Representations
+(ICLR), 2015.
+Kitzelmann, Emanuel. Inductive Programming: A Survey
+of Program Synthesis Techniques.
+In International
+Workshop on Approaches and Applications of Inductive
+Programming, pp. 50–73, 2009.
+Koncel-Kedziorski, Rik, Hajishirzi, Hannaneh, Sabharwal,
+Ashish, Etzioni, Oren, and Ang, Siena. Parsing Alge-
+braic Word Problems into Equations. Transactions of the
+Association for Computational Linguistics (TACL), 3:
+585–597, 2015.
+
+
+Programming with a Differentiable Forth Interpreter
+Koza, John R. Genetic Programming: On the Programming
+of Computers by Means of Natural Selection, volume 1.
+MIT press, 1992.
+Kurach, Karol, Andrychowicz, Marcin, and Sutskever, Ilya.
+Neural Random-Access Machines. In Proceedings of the
+International Conference on Learning Representations
+(ICLR), 2016.
+Kushman, Nate, Artzi, Yoav, Zettlemoyer, Luke, and Barzi-
+lay, Regina. Learning to Automatically Solve Algebra
+Word Problems. In Proceedings of the Annual Meeting
+of the Association for Computational Linguistics (ACL),
+pp. 271–281, 2014.
+Lau, Tessa, Wolfman, Steven A., Domingos, Pedro, and
+Weld, Daniel S. Learning repetitive text-editing proce-
+dures with smartedit. In Your Wish is My Command, pp.
+209–226. Morgan Kaufmann Publishers Inc., 2001.
+Maclaurin, Dougal, Duvenaud, David, and Adams, Ryan P.
+Gradient-based Hyperparameter Optimization through
+Reversible Learning. In Proceedings of the International
+Conference on Machine Learning (ICML), 2015.
+Manna, Zohar and Waldinger, Richard J. Toward automatic
+program synthesis. Communications of the ACM, 14(3):
+151–165, 1971.
+Neelakantan, Arvind, Le, Quoc V, and Sutskever, Ilya.
+Neural Programmer:
+Inducing latent programs with
+gradient descent.
+In Proceedings of the International
+Conference on Learning Representations (ICLR), 2015a.
+Neelakantan, Arvind, Vilnis, Luke, Le, Quoc V, Sutskever,
+Ilya, Kaiser, Lukasz, Kurach, Karol, and Martens, James.
+Adding Gradient Noise Improves Learning for Very Deep
+Networks. arXiv preprint arXiv:1511.06807, 2015b.
+Nordin, Peter. Evolutionary Program Induction of Binary
+Machine Code and its Applications.
+PhD thesis, der
+Universitat Dortmund am Fachereich Informatik, 1997.
+Reed, Scott and de Freitas, Nando. Neural programmer-
+interpreters.
+In Proceedings of the International
+Conference on Learning Representations (ICLR), 2015.
+Roy, Subhro and Roth, Dan. Solving General Arithmetic
+Word Problems. In Proceedings of the Conference on
+Empirical Methods in Natural Language Processing
+(EMNLP), pp. 1743–1752, 2015.
+Roy, Subhro, Vieira, Tim, and Roth, Dan.
+Reasoning
+about quantities in natural language. Transactions of the
+Association for Computational Linguistics (TACL), 3:
+1–13, 2015.
+Siegelmann, Hava T. Neural Programming Language. In
+Proceedings of the Twelfth AAAI National Conference on
+Artiﬁcial Intelligence, pp. 877–882, 1994.
+Solar-Lezama, Armando, Rabbah, Rodric, Bod´ık, Rastislav,
+and Ebcio˘glu, Kemal.
+Programming by Sketching for
+Bit-streaming Programs.
+In Proceedings of Program-
+ming Language Design and Implementation (PLDI), pp.
+281–294, 2005.
+Solar-Lezama, Armando, Tancau, Liviu, Bodik, Rastislav,
+Seshia, Sanjit, and Saraswat, Vijay.
+Combinatorial
+Sketching for Finite Programs. In ACM Sigplan Notices,
+volume 41, pp. 404–415, 2006.
+Sutskever, Ilya, Vinyals, Oriol, and Le, Quoc V. Sequence to
+Sequence Learning with Neural Networks. In Proceed-
+ings of the Conference on Neural Information Processing
+Systems (NIPS), pp. 3104–3112, 2014.
+
+
+Programming with a Differentiable Forth Interpreter
+Appendix
+A. Forth Words and their implementation
+We implemented a small subset of available Forth words in ∂4. The table of these words, together with their descriptions
+is given in Table 4, and their implementation is given in Table 5. The commands are roughly divided into 7 groups. These
+groups, line-separated in the table, are:
+Data stack operations {num}, 1+, 1-, DUP, SWAP, OVER, DROP, +, -, *, /
+Heap operations @, !
+Comparators >, <, =
+Return stack operations >R, R>, @R
+Control statements IF..ELSE..THEN, BEGIN..WHILE..REPEAT, DO..LOOP
+Subroutine control :, {sub}, ;, MACRO
+Variable creation VARIABLE, CREATE..ALLOT
+Table 4: Forth words and their descriptions. TOS denotes top-of-stack, NOS denotes next-on-stack, DSTACK denotes the
+data stack, RSTACK denotes the return stack, and HEAP denotes the heap.
+Forth Word
+Description
+{num}
+Pushes {num} to DSTACK.
+1+
+Increments DSTACK TOS by 1.
+1-
+Decrements DSTACK TOS by 1.
+DUP
+Duplicates DSTACK TOS.
+SWAP
+Swaps TOS and NOS.
+OVER
+Copies NOS and pushes it on the TOS.
+DROP
+Pops the TOS (non-destructive).
++, -, *, /
+Consumes DSTACK NOS and TOS. Returns NOS operator TOS.
+@
+Fetches the HEAP value from the DSTACK TOS address.
+!
+Stores DSTACK NOS to the DSTACK TOS address on the HEAP.
+>, <, =
+Consumes DSTACK NOS and TOS.
+Returns 1 (TRUE) if NOS >|<|= TOS respectivelly, 0 (FALSE) otherwise.
+>R
+Pushes DSTACK TOS to RSTACK TOS, removes it from DSTACK.
+R>
+Pushes RSTACK TOS to DSTACK TOS, removes it from RSTACK.
+@R
+Copies the RSTACK TOS TO DSTACK TOS.
+IF..ELSE..THEN
+Consumes DSTACK TOS, if it equals to a non-zero number (TRUE), executes
+commands between IF and ELSE. Otherwise executes commands between
+ELSE and THEN.
+BEGIN..WHILE..REPEAT
+Continually executes commands between WHILE and REPEAT while the code
+between BEGIN and WHILE evaluates to a non-zero number (TRUE).
+DO..LOOP
+Consumes NOS and TOS, assumes NOS as a limit, and TOS as a current index.
+Increases index by 1 until equal to NOS. At every increment, executes commands
+between DO and LOOP.
+:
+Denotes the subroutine, followed by a word deﬁning it.
+{sub}
+Subroutine invocation, puts the program counter PC on RSTACK, sets PC to the
+subroutine address.
+;
+Subroutine exit. Consumest TOS from the RSTACK and sets the PC to it.
+MACRO
+Treats the subroutine as a macro function.
+VARIABLE
+Creates a variable with a ﬁxed address. Invoking the variable name returns its
+address.
+CREATE..ALLOT
+Creates a variable with a ﬁxed address. Do not allocate the next N addresses to
+any other variable (effectively reserve that portion of heap to the variable)
+
+
+Programming with a Differentiable Forth Interpreter
+Table 5: Implementation of Forth words described in Table 4. Note that the variable creation words are implemented as ﬁxed
+address allocation, and MACRO words are implemented with inlining.
+Symbol
+Explanation
+M
+Stack, M∈{D,R}
+M
+Memory buffer, M∈{D,R,H}
+p
+Pointer, p∈{d,r,c}
+R1±
+Increment and decrement matrices (circular shift)
+R1±
+ij =
+1
+i±1≡j(modn))
+0
+otherwise
+R+,R−,R∗,R/
+Circular arithmetic operation tensors
+R{op}
+ijk
+=
+
+1
+i{op}j ≡k(modn))
+0
+otherwise
+Pointer and value manipulation
+Expression
+Increment a (or value x)
+inc(a)=aT R1+
+Decrement a (or value x)
+dec(a)=aT R1−
+Algebraic operation application
+{op}(a,b)=aT R{op}b
+Conditional jump a
+jump(c,a):p=(popD()=TRUE)
+c←pc+(1−p)a
+a−1
+Next on stack, a←aT R1−
+Buffer manipulation
+READ from M
+readM(a)=aT M
+WRITE to M
+writeM(x,a):M←M−a⊗1·M+x⊗a
+PUSH x onto M
+pushM(x): writeM(x,a)
+[side-effect: d←inc(d)]
+POP an element from M
+popM()=readM(a)
+[side-effect: d←dec(d)]
+Forth Word
+Literal x
+pushD(x)
+1+
+writeD(inc(readD(d)),d)
+1-
+writeD(dec(readD(d)),d)
+DUP
+pushD(readD(d))
+SWAP
+x=readD(d), y=readD(d−1)
+:writeD(d,y) , writeD(d−1,x)
+OVER
+pushD(readD(d))
+DROP
+popD()
++, -, *, /
+writeD({op}(readD(d−1),readD(d)),d)
+@
+readH(d)
+!
+writeH(d,d−1)
+<
+SWAP >
+>
+e1 =Pn−1
+i=0 i∗di, e2 =Pn−1
+i=0 i∗d−1
+i
+p=φpwl(e1−e2), where φpwl(x)=min(max(0,x+0.5),1)
+p1+(p−1)0
+=
+p=φpwl(d,d−1)
+p1+(p−1)0
+>R
+pushR(d)
+R>
+popR()
+@R
+writeD(d,readR(r))
+IF..1ELSE..2THEN
+p=(popD()=0)
+p∗..1+(1−p)∗..2
+BEGIN..1WHILE..2REPEAT
+..1 jump(c,..2)
+DO..LOOP
+start=c,current=inc(popD()),limit=popD()
+p=(current=limit)
+jump(p,..),jump(c,start)
+
+
+Programming with a Differentiable Forth Interpreter
+B. Bubble sort algorithm description
+An example of a Forth program that implements the Bubble sort algorithm is shown in Listing 1. We provide a description
+of how the ﬁrst iteration of this algorithm is executed by the Forth abstract machine:
+The program begins at line 11, putting the sequence [2 4 2 7] on the data stack D, followed by the sequence length 4.6 It then
+calls the SORT word.
+D
+R
+c
+comment
+1
+[]
+[]
+11
+execution start
+2
+[2 4 2 7 4]
+[]
+8
+pushing sequence to D, calling
+SORT subroutine puts ASORT to R
+For a sequence of length 4, SORT performs a do-loop in line 9 that calls the BUBBLE sub-routine 3 times. It does so by
+decrementing the top of D with the 1- word to 3. Subsequently, 3 is duplicated on D by using DUP, and 0 is pushed onto D.
+3
+[2 4 2 7 3]
+[ASORT]
+9
+1-
+4
+[2 4 2 7 3 3]
+[ASORT]
+9
+DUP
+6
+[2 4 2 7 3 3 0]
+[ASORT]
+9
+0
+DO consumes the top two stack elements 3 and 0 as the limit and starting point of the loop, leaving the stack D to be
+[2,4,2,7,3]. We use the return stack R as a temporary variable buffer and push 3 onto it using the word >R. This drops 3 from
+D, which we copy from R with R@
+7
+[2 4 2 7 3]
+[AddrSORT]
+9
+DO
+8
+[2 4 2 7]
+[AddrSORT 3]
+9
+>R
+9
+[2 4 2 7 3]
+[AddrSORT 3]
+9
+@R
+Next, we call BUBBLE to perform one iteration of the bubble pass, (calling BUBBLE 3 times internally), and consuming 3.
+Notice that this call puts the current program counter onto R, to be used for the program counter c when exiting BUBBLE.
+Inside the BUBBLE subroutine, DUP duplicates 3 on R. IF consumes the duplicated 3 and interprets is as TRUE. >R puts 3
+on R.
+10
+[2 4 2 7 3]
+[ASORT 3 ABUBBLE]
+0
+calling BUBBLE subroutine puts
+ABUBBLE to R
+11
+[2 4 2 7 3 3]
+[ASORT 3 ABUBBLE]
+1
+DUP
+12
+[2 4 2 7 3]
+[ASORT 3 ABUBBLE]
+1
+IF
+13
+[2 4 2 7]
+[ASORT 3 ABUBBLE 3]
+1
+>R
+Calling OVER twice duplicates the top two elements of the stack, to test them with <, which tests whether 2 < 7. IF tests if
+the result is TRUE (0), which it is, so it executes SWAP.
+14
+[2 4 2 7 2 7]
+[ASORT 3 ABUBBLE 3]
+2
+OVER OVER
+15
+[2 4 2 7 1]
+[ASORT 3 ABUBBLE 3]
+2
+<
+16
+[2 4 2 7]
+[ASORT 3 ABUBBLE 3]
+2
+IF
+17
+[2 4 7 2]
+[ASORT 3 ABUBBLE 3]
+2
+SWAP
+To prepare for the next call to BUBBLE we move 3 back from the return stack R to the data stack D via R>, SWAP it with the
+next element, put it back to R with >R, decrease the TOS with 1- and invoke BUBBLE again. Notice that R will accumulate
+the analysed part of the sequence, which will be recursively taken back.
+18
+[2 4 7 2 3]
+[ASORT 3 ABUBBLE]
+3
+R >
+19
+[2 4 7 3 2]
+[ASORT 3 ABUBBLE]
+3
+SWAP
+20
+[2 4 7 3]
+[ASORT 3 ABUBBLE 2]
+3
+>R
+21
+[2 4 7 2]
+[ASORT 3 ABUBBLE 2]
+3
+1-
+22
+[2 4 7 2]
+[ASORT 3 ABUBBLE 2]
+0
+...BUBBLE
+When we reach the loop limit we drop the length of the sequence and exit SORT using the ; word, which takes the return
+address from R. At the ﬁnal point, the stack should contain the ordered sequence [7 4 2 2].
+6Note that Forth uses Reverse Polish Notation and that the top of the data stack is 4 in this example.
+
+
+Programming with a Differentiable Forth Interpreter
+C. Learning and Run Time Efﬁciency
+C.1. Accuracy per training examples
+Sorter
+When measuring the performance of the model as
+the number of training instances varies, we can observe the
+beneﬁt of additional prior knowledge to the optimisation
+process. We ﬁnd that when stronger prior knowledge is
+provided (COMPARE), the model quickly maximises the
+training accuracy.
+Providing less structure (PERMUTE)
+results in lower testing accuracy initially, however, both
+sketches learn the correct behaviour and generalise equally
+well after seeing 256 training instances. Additionally, it
+is worth noting that the PERMUTE sketch was not always
+able to converge into a result of the correct length, and both
+sketches are not trivial to train.
+In comparison, Seq2Seq baseline is able to generalise only
+to the sequence it was trained on (Seq2Seq trained and
+tested on sequence length 3). When training it on sequence
+length 3, and testing it on a much longer sequence length of
+8, Seq2Seq baseline is not able to achieve more than 45%
+accuracy.
+4
+8
+16
+32
+64
+128
+256
+512
+1024
+# training examples
+0.2
+0.4
+0.6
+0.8
+1.0
+Accuracy
+compare
+permute
+Seq2Seq (test 3)
+Seq2Seq (test 8)
+Figure 3:
+Accuracy of models for varying number of
+training examples, trained on input sequence of length 3 for
+the Bubble sort task. Compare, permute, and Seq2Seq (test
+8) were tested on sequence lengths 8, and Seq2Seq (test 3)
+was tested on sequence length 3.
+Adder
+We tested the models to train on datasets of
+increasing size on the addition task. The results, depicted in
+Table 4 show that both the choose and the manipulate sketch
+are able to perfectly generalise from 256 examples, trained
+on sequence lengths of 8, tested on 16. In comparison, the
+Seq2Seq baseline achieves 98% when trained on 16384
+examples, but only when tested on the input of the same
+length, 8. If we test Seq2Seq as we tested the sketches, it is
+unable to achieve more 19.7%.
+4
+8
+16
+32
+64
+128
+256
+512
+1024
+2048
+4096
+8192
+16384
+# training examples
+0.2
+0.4
+0.6
+0.8
+1.0
+Accuracy
+choose
+manipulate
+Seq2Seq (test 8)
+Seq2Seq (test 16)
+Figure 4:
+Accuracy of models for varying number of
+training examples, trained on input sequence of length 8 for
+the addition task. Manipulate, choose, and Seq2Seq (test
+16) were tested on sequence lengths 16, and Seq2Seq (test
+8) was tested on sequence length 8.
+C.2. Program Code Optimisations
+We measure the runtime of Bubble sort on sequences of
+varying length with and without the optimisations described
+in Section 3.4. The results of ten repeated runs are shown
+in Figure 5 and demonstrate large relative improvements
+for symbolic execution and interpolation of if-branches
+compared to non-optimised ∂4 code.
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+80
+100
+120
+140
+160
+180
+200
+220
+240
+260
+Relative Runtime Improvement [%]
+Figure 5: Relative speed improvements of program code
+optimisations for different input sequence lengths (bottom).
+D. ∂4 execution of a Bubble sort sketch
+Listing 1 (lines 3b and 4b – in blue) deﬁnes the BUBBLE
+word as a sketch capturing several types of prior knowledge.
+In this section, we describe the PERMUTE sketch. In it, we
+assume BUBBLE involves a recursive call, that terminates at
+length 1, and that the next BUBBLE call takes as input some
+functionofthecurrentlengthandthetoptwostackelements.
+The input to this sketch are the sequence to be sorted and
+its length decremented by one, n−1 (line 1). These inputs
+
+
+Programming with a Differentiable Forth Interpreter
+are expected on the data stack. After the length (n −1)
+is duplicated for further use with DUP, the machine tests
+whether it is non-zero (using IF, which consumes the TOS
+during the check). If n−1>0, it is stored on the R stack for
+future use (line 2).
+At this point (line 3b) the programmer only knows that
+a decision must be made based on the top two data stack
+elements D0 and D-1 (comparison elements), and the top
+return stack, R0 (length decremented by 1). Here the precise
+nature of this decision is unknown but is limited to variants
+of permutation of these elements, the output of which pro-
+duce the input state to the decrement -1 and the recursive
+BUBBLE call (line 4b). At the culmination of the call, R0,
+the output of the learned slot behaviour, is moved onto the
+data stack using R>, and execution proceeds to the next step.
+Figure 2 illustrates how portions of this sketch are executed
+on the ∂4 RNN. The program counter initially resides at >R
+(line 3 in P), as indicated by the vector c, next to program
+P. Both data and return stacks are partially ﬁlled (R has 1
+element, D has 4), and we show the content both through
+horizontal one-hot vectors and their corresponding integer
+values (colour coded). The vectors d and r point to the top
+of both stacks, and are in a one-hot state as well. In this
+execution trace, the slot at line 4 is already showing optimal
+behaviour: it remembers the element on the return stack (4)
+is larger and executes BUBBLE on the remaining sequence
+with the counter n subtracted by one, to 1.
+E. Experimental details
+The
+parameters
+of
+each
+sketch
+are
+trained
+using
+Adam (Kingma & Ba, 2015), with gradient clipping
+(set to 1.0) and gradient noise (Neelakantan et al., 2015b).
+We tuned the learning rate, batch size, and the parameters
+of the gradient noise in a random search on a development
+variant of each task.
+E.1. Seq2Seq baseline
+The Seq2Seq baseline models are single-layer networks
+with LSTM cells of 50 dimensions.
+The training procedure for these models consists of 500
+epochs of Adam optimisation, with a batch size of 128,
+a learning rate of 0.01, and gradient clipping when the
+L2 norm of the model parameters exceeded 5.0. We vary
+the size of training and test data (Fig. 3), but observe no
+indication of the models failing to reach convergence under
+these training conditions.
+E.2. Sorting
+The Permute and Compare sketches in Table 1 were trained
+on a randomly generated train, development and test set
+containing 256, 32 and 32 instances, respectively.
+Note
+that the low number of dev and test instances was due to the
+computational complexity of the sketch.
+The batch size was set to a value between 64 and 16,
+depending on the problem size, and we used an initial
+learning rate of 1.0.
+E.3. Addition
+We trained the addition Choose and Manipulate sketches
+presented in Table 2 on a randomly generated train, develop-
+ment and test sets of sizes 512, 256, and 1024 respectively.
+The batch size was set to 16, and we used an initial learning
+rate of 0.05
+E.4. Word Algebra Problem
+The Common Core (CC) dataset (Roy & Roth, 2015) is par-
+titioned into a train, dev, and test set containing 300, 100,
+and 200 questions, respectively. The batch size was set to
+50, andweusedaninitiallearningrateof0.02. TheBiLSTM
+word vectors were initialised randomly to vectors of length
+75. The stack width was set to 150 and the stack size to 5.
+F. Qualitative
+Analysis on BubbleSort of PC traces
+In Figure 6 we visualise the program counter traces. The
+trace follows a single example from start, to middle, and the
+end of the training process. In the beginning of training, the
+program counter starts to deviate from the one-hot represen-
+tation in the ﬁrst 20 steps (not observed in the ﬁgure due to
+unobservable changes), and after two iterations of SORT, ∂4
+fails to correctly determine the next word. After a few train-
+ing epochs ∂4 learns better permutations which enable the
+algorithm to take crisp decisions and halt in the correct state.
+
+
+Programming with a Differentiable Forth Interpreter
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99100101102103104105106107108109110111112113114115116117118119
+(a) Program Counter trace in early stages of training.
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99100101102103104105106107108109110111112113114115116117118119
+(b) Program Counter trace in the middle of training.
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99100101102103104105106107108109110111112113114115116117118119
+(c) Program Counter trace at the end of training.
+Figure 6: Program Counter traces for a single example at different stages of training BubbleSort in Listing 1 (red: successive
+recursion calls to BUBBLE, green: successive returns from the recursion, and blue: calls to SORT). The last element in the
+last row is the halting command, which only gets executed after learning the correct slot behaviour.
+
+
+Programming with a Differentiable Forth Interpreter
+G. The complete Word Algebra Problem sketch
+The Word Algebra Problem (WAP) sketch described in Listing 3 is the core of the model that we use for WAP problems.
+However, there were additional words before and after the core which took care of copying the data from the heap to data
+and return stacks, and ﬁnally emptying out the return stack.
+The full WAP sketch is given in Listing 4. We deﬁne a QUESTION variable which will denote the address of the question
+vector on the heap. Lines 4 and 5 create REPR BUFFER and NUM BUFFER variables and denote that they will occupy
+four sequential memory slots on the heap, where we will store the representation vectors and numbers, respectively. Lines
+7 and 8 create variables REPR and NUM which will denote addresses to current representations and numbers on the heap.
+Lines 10 and 11 store REPR BUFFER to REPR and NUM BUFFER to NUM, essentially setting the values of variables REPR
+and NUM to starting addresses allotted in lines 4 and 5. Lines 14-16 and 19-20 create macro functions STEP NUM and
+STEP REPR which increment the NUM and REPR values on call. These macro functions will be used to iterate through the
+heap space. Lines 24-25 deﬁne macro functions CURRENT NUM for fetching the current number, and CURRENT REPR for
+fetching representation values. Lines 28-32 essentially copy values of numbers from the heap to the data stack by using
+the CURRENT NUM and STEP NUM macros. After that line 35 pushes the question vector, and lines 36-40 push the word
+representations of numbers on the return stack.
+Following that, we deﬁne the core operations of the sketch. Line 43 permutes the elements on the data stack (numbers) as a
+function of the elements on the return stack (vector representations of the question and numbers). Line 45 chooses an operator
+to execute over the TOS and NOS elements of the data stack (again, conditioned on elements on the return stack). Line 47
+executes a possible swap of the two elements on the data stack (the intermediate result and the last operand) conditioned on
+the return stack. Finally, line 49 chooses the last operator to execute on the data stack, conditioned on the return stack.
+The sketch ends with lines 52-55 which empty out the return stack.
+
+
+Programming with a Differentiable Forth Interpreter
+1 \ address of the question on H
+2 VARIABLE QUESTION
+3 \ allotting H for representations and numbers
+4 CREATE REPR_BUFFER 4 ALLOT
+5 CREATE NUM_BUFFER 4 ALLOT
+6 \ addresses of the first representation and number
+7 VARIABLE REPR
+8 VARIABLE NUM
+10 REPR_BUFFER REPR !
+11 NUM_BUFFER NUM !
+13 \ macro function for incrementing the pointer to numbers in H
+14 MACRO: STEP_NUM
+15
+NUM @ 1+ NUM !
+16 ;
+18 \ macro function for incrementing the pointer to representations in H
+19 MACRO: STEP_REPR
+20
+REPR @ 1+ REPR !
+21 ;
+23 \ macro functions for fetching current numbers and representations
+24 MACRO: CURRENT_NUM NUM @ @ ;
+25 MACRO: CURRENT_REPR REPR @ @ ;
+27 \ copy numbers to D
+28 CURRENT_NUM
+29 STEP_NUM
+30 CURRENT_NUM
+31 STEP_NUM
+32 CURRENT_NUM
+34 \ copy question vector, and representations of numbers to R
+35 QUESTION @ >R
+36 CURRENT_REPR >R
+37 STEP_REPR
+38 CURRENT_REPR >R
+39 STEP_REPR
+40 CURRENT_REPR >R
+42 \ permute stack elements, based on the question and number representations
+43 { observe R0 R-1 R-2 R-3 -> permute D0 D-1 D-2 }
+44 \ choose the first operation
+45 { observe R0 R-1 R-2 R-3 -> choose + - * / }
+46 \ choose whether to swap intermediate result and the bottom number
+47 { observe R0 R-1 R-2 R-3 -> choose SWAP NOP }
+48 \ choose the second operation
+49 { observe R0 R-1 R-2 R-3 -> choose + - * / }
+51 \ empty out R
+52 R> DROP
+53 R> DROP
+54 R> DROP
+55 R> DROP
+Listing 4: The complete Word Algebra Problem sketch

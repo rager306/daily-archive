@@ -1,0 +1,1710 @@
+Your Code Agent Can Grow Alongside You with Structured Memory
+Yi-Xuan Deng 1 * Xiaoqin Liu 2 Yi Zhang 1 Guo-Wei Yang 2 Shuojin YangB 1
+Abstract
+While "Intent-oriented programming" (or "Vibe
+Coding") redefines software engineering, exist-
+ing code agents remain tethered to static code
+snapshots. Consequently, they struggle to model
+the critical information embedded in the tem-
+poral evolution of projects, failing to leverage
+the "reasoning trajectories" implicit in past suc-
+cessful practices. This limitation results in rigid
+behavioral logic and a lack of autonomous adapt-
+ability, ultimately hindering their ability to tackle
+complex, repository-level problems. To bridge
+this static–dynamic mismatch, we propose Mem-
+Coder, a framework designed to enable continual
+human-AI co-evolution. MemCoder first struc-
+tures historical human experience to distill latent
+intent-to-code mappings from past commits. It
+then employs a self-refinement mechanism driven
+by verification feedback to correct agent behav-
+ior in real-time. Crucially, an experience self-
+internalization mechanism is introduced to crys-
+tallize human-validated solutions into long-term
+knowledge, thereby supporting sustained evolu-
+tion. Experimental results on SWE-bench Verified
+demonstrate that MemCoder not only achieves
+State-of-the-Art (SOTA) performance but also de-
+livers a 9.4% improvement in resolved rate over the
+general foundation model DeepSeek-V3.2. These
+findings indicate that equipping agents with the
+capability to co-evolve with humans via project
+history and real-time feedback effectively unlocks
+the potential of general models in complex soft-
+ware engineering tasks.
+1. Introduction
+The
+rapid
+evolution
+of
+Large
+Language
+Models
+(LLMs) (Yang et al., 2025a; Guo et al., 2025; Team, 2023;
+Zhang et al., 2025a) has fundamentally transformed software
+*Intern at Proxseer Inc
+1Tsinghua University
+2Proxseer
+Inc.
+Correspondence
+to:
+Shuojin
+Yang
+<yangshuo-
+jin@mail.tsinghua.edu.cn>.
+Preprint. March 17, 2026.
+User Instruction
+Repo Snapshot
+Frozen
+Iterative attempts
+Prevailing Code Agents
+User
+Code Agent
+Solved
+Commit
+Valuable ”Intent-to-Code”
+Experience Discarded
+Agent Resets:
+New Memory=0
+User Instruction
+Repo Snapshot
+Git Commit History
+MemCoder
+Self-Refinement
+Code Agent
+Refining Agent
+User Verification
+Vector Database
+Memory 
+Updating
+Final Code
+Solved Commit
+Leveraging Historical Experience
+Self-Refinement
+Self-Internalization
+Figure 1.
+Comparison of MemCoder with existing methods.
+MemCoder facilitates evolution by learning the intrinsic mapping
+from high-level intent to concrete code implementation, derived
+from structured memory.
+engineering into a human-AI collaborative paradigm (Guo
+et al., 2024a; Hui et al., 2024; Zeng et al., 2025). In this
+symbiosis, the developer transitions from a manual imple-
+menter to a high-level architect, engaging in “Intent-oriented
+Programming” (often referred to as “Vibe Coding”) (Ge
+et al., 2025; Yang et al., 2025b; Wang et al., 2024; Any-
+sphere, 2025; Zheng et al., 2023; Anthropic, 2025d; Wang
+et al., 2025). This shift positions the human as the source of
+strategic guidance and constraints, while the agent acts as
+the dynamic executor. While effective for isolated tasks, this
+collaboration often fractures in complex, repository-level
+environments. Here, natural language instructions alone
+are insufficient to convey tacit knowledge, such as complex
+inter-file dependencies and unwritten project conventions,
+that developers have accumulated over time (Pan et al., 2025;
+Zhang et al., 2023a).
+Crucially, these implicit constraints are embedded within
+the iterative interactions between developers and the code-
+base. However, as shown in Figure 1, the prevailing code
+agents (Dong et al., 2025; Wang et al., 2024; Guo et al.,
+2024b) operate under static paradigms that sever the evolu-
+tionary feedback loop between human developers and agent
+capabilities. This disconnection manifests in three critical
+deficiencies. First, current agents overlook the “human-in-
+the-loop” defect-repair patterns archived in version control
+systems, thereby losing access to historical resolutions of
+similar conflicts (Zhang et al., 2025c; Phan et al., 2024; Xia
+1
+arXiv:2603.13258v1  [cs.LG]  25 Feb 2026
+
+
+Your Code Agent Can Grow Alongside You with Structured Memory
+et al., 2025). Second, instruction prompting mechanisms are
+often rigid, failing to bridge the gap between abstract intent
+and concrete execution. Without retrieving relevant prece-
+dents to elaborate on an instruction, these agents fail to inject
+the implicit details required to align with evolving project
+standards (Lin et al., 2025; Rasheed et al., 2024; Islam et al.,
+2024). Third, and most critically, existing systems fail to in-
+ternalize human-verified solutions. Consequently, valuable
+human interventions are discarded rather than integrated,
+trapping the collaboration in amnesic cycles where the agent
+repeats errors, forcing the developer to act as a perpetual
+corrector rather than a co-evolutionary partner (Yao et al.,
+2023; Antoniades et al., 2025).
+Addressing these limitations necessitates a paradigm shift
+toward Human-AI Co-Evolution. To handle repository-level
+complexities, an agent must transform from a static execu-
+tor into an adaptive partner by systematically internalizing
+human wisdom. This requires a dual approach: reconstruct-
+ing “developer cognition” from historical trajectories to
+guide decision-making, and crystallizing ephemeral human
+interactions into enduring capabilities. Such a framework
+creates a virtuous evolutionary cycle, ensuring the agent
+progressively attunes itself to the developer’s specific coding
+philosophy and constraints.
+Building on these insights, we introduce MemCoder, a
+repository-level code agent framework designed for contin-
+uous human-AI co-evolution. Recognizing that historical
+contributions serve as the crucial carrier of both explicit
+solutions and implicit intent, we instantiate this collaborative
+paradigm along two dimensions, as illustrated in Figure 1.
+The Knowledge Dimension structures unstructured developer
+commits into memory entries, enabling the agent to recall
+how humans previously resolved similar complexities. The
+Execution Dimension implements intent concretization and
+dynamic self-refinement: it leverages retrieved historical
+context to refine sparse instructions into concrete specifica-
+tions. Subsequently, it crystallizes human-verified solutions
+into persistent memory to preserve successful intent-to-code
+mappings. This design ensures that the agent effectively
+internalizes past human wisdom while iteratively optimizing
+its alignment with developer intent.
+We conducted a comprehensive evaluation of MemCoder on
+the SWE-bench Verified dataset (Jimenez et al., 2024). The
+results demonstrate that by empowering agents to co-evolve
+alongside human developers, MemCoder achieves State-
+of-the-Art (SOTA) performance. With GPT-5.2 (OpenAI,
+2025) as the backbone, our approach sets a new benchmark.
+Notably, the framework significantly empowers general
+models like DeepSeek-V3.2 (DeepSeek-AI, 2025) to better
+comprehend and replicate human coding patterns, boosting
+the resolved rate from 68.4% to 77.8%.
+In summary, the core contributions of this paper are as
+follows:
+• We identify the “interaction disconnect” in repository-
+level agents and propose MemCoder, a framework
+designed for Human-AI Co-Evolution that enables the
+agent to grow with the project.
+• We introduce mechanisms for Human Experience In-
+ternalization: structuring historical human commits to
+recall past wisdom, and crystallizing human-verified
+solutions to accumulate current knowledge.
+• We achieve SOTA performance on SWE-bench Veri-
+fied, demonstrating that coupling general models with
+human-derived evolutionary context significantly em-
+powers them to master complex software engineering
+tasks.
+2. Related Work
+2.1. LLM-Based Code Generation Agents
+LLM-based code generation agents leverage Large Lan-
+guage Models (LLMs) as their core controllers, achieving
+autonomous code synthesis through real-time interaction
+with external tools and environments (Wang et al., 2024;
+Dong et al., 2025; Guo et al., 2024b). Prior research has
+largely focused on augmenting agent capabilities through
+specialized workflow designs.
+Inspired by human pro-
+gramming practices, one stream of work adopts iterative
+optimization driven by generative feedback, as exemplified
+by Self-Refine (Madaan et al., 2023) and Self-Edit (Zhang
+et al., 2023b).
+Another stream emphasizes multi-agent
+collaboration, where role specialization and coordinated
+execution significantly improve problem-solving efficiency
+in complex tasks (e.g., AgileCoder (Nguyen et al., 2025),
+AgentCoder (Huang et al., 2023), and MapCoder (Islam
+et al., 2024)). To transcend the limitations of rigid workflows,
+ReAct (Yao et al., 2023) introduced a paradigm that tightly
+couples reasoning traces with task-driven actions, serving
+as a foundational approach for dynamic decision-making.
+Building upon this foundational reasoning mechanism, Mem-
+Coder extends the agent’s capabilities by incorporating
+historical development wisdom into its decision-making
+process, thereby enabling more grounded and effective code
+synthesis.
+2.2. Long-Term Memory Mechanisms for LLMs
+Long-term Memory (LTM) mechanisms are widely adopted
+in LLM-based agents to enhance reasoning continuity and
+multi-agent collaboration (Shan et al., 2025; Qian et al.,
+2024). However, continuous interaction leads to the un-
+bounded growth of LTM, posing critical challenges for
+organization and retrieval. A standard strategy decouples
+LTM from the model, treating it as an external database
+2
+
+
+Your Code Agent Can Grow Alongside You with Structured Memory
+to facilitate inference (Jiang et al., 2024).
+To structure
+this vast information, biologically inspired approaches such
+as RAPTOR (Sarthi et al., 2024) and Memwalker (Chen
+et al., 2023) utilize tree-based architectures to organize
+memory spaces hierarchically. Furthermore, methods like
+MemoryBank (Zhong et al., 2024) and SAGE (Liang et al.,
+2025) incorporate the Ebbinghaus forgetting curve into LTM
+management to maintain conciseness by pruning obsolete
+information. In contrast to these rigid or decay-based struc-
+tures, MemCoder introduces a flat, autonomous memory
+management paradigm that dynamically integrates new in-
+sights.
+2.3. Dynamic Evolution
+Dynamic evolution mechanisms enable agents to calibrate
+their strategies based on historical context and real-time
+observations. This evolution primarily manifests through
+two pathways: memory consolidation and prompt optimiza-
+tion (Gao et al., 2025a). Specifically, frameworks such as
+A-mem (Xu et al., 2025) and MemInsight (Salama et al.,
+2025) continuously update memory architectures by distill-
+ing successful experiences, allowing the agent to achieve
+self-evolution through iterative environmental interaction.
+In parallel, automated prompt engineering approaches like
+APE (Zhou et al., 2023) leverage LLMs to generate and
+validate candidate prompts. Subsequent works, including
+ERM (Yan et al., 2025) and OPRO (Yang et al., 2024),
+further advance this by introducing optimization driven
+by execution feedback. Distinguishing itself from isolated
+improvements, MemCoder integrates diverse evolutionary
+mechanisms driven by historical human experience to realize
+a continuous human–AI co-evolution framework.
+3. Method
+The core methodology of MemCoder is built upon a human-
+AI co-evolution paradigm. Rather than treating code genera-
+tion as a static inference task, we model it as a continuous
+learning process where the agent system Π iteratively refines
+itself. This refinement is governed by an evolution function
+Evolv, which synthesizes insights from long-term mem-
+ory 𝑀, current execution trajectories 𝜏, and multi-source
+feedback 𝜉:
+Π′ = Evolv(Π, F (𝑀, 𝜏, 𝜉)).
+(1)
+Here, F = { 𝑓struct, 𝑓refine, 𝑓intern} represents the composite
+adaptive mechanism, where the specific formulation of each
+function is detailed in the following subsections. To imple-
+ment this theoretical model, MemCoder orchestrates three
+critical phases: constructing structured memory from histor-
+ical repositories, retrieving context-aware experience during
+execution, and internalizing human-validated solutions for
+future iterations.
+3.1. Experience Representation and Utilization
+To bridge the gap between abstract intents and concrete
+project conventions, we leverage the codebase’s history.
+MemCoder replaces the fixed snapshot view with a dynamic
+repository, where raw commits are distilled into reference
+solutions. This allows the agent to retrieve and replicate the
+reasoning behind past successful implementations precisely.
+Structuring Historical Experience.
+High-quality long-
+term memory serves as the fundamental cornerstone for the
+human-AI co-evolution of agent systems. However, raw hu-
+man experiences are often permeated with non-standardized,
+ambiguous, and idiosyncratic descriptions, which introduce
+inherent biases during the agent’s comprehension and knowl-
+edge acquisition. To transform these raw experiences into
+standardized and agent-centric memory representations for
+more effective learning, we propose an LLM-driven memory
+construction algorithm predicated on Defect Management
+theory (Singh & Solanki, 2013). Specifically, we formalize
+the memory set as 𝑀= {𝑚1, 𝑚2, . . . , 𝑚𝑁}, where each
+memory entry 𝑚𝑖is defined as a structured sextuple:
+𝑚𝑖= (𝑜𝑖, 𝑐𝑖, 𝑘𝑖, 𝑝𝑖, 𝑟𝑖, 𝑠𝑖).
+(2)
+As shown in Stage 1 of Figure 2, MemCoder first ingests the
+raw historical repository data, including the original commit
+message 𝑜𝑖, the associated code changes 𝑐𝑖.
+Building
+upon this context, the LLM-driven engine reconstructs the
+experience by synthesizing a semantic knowledge layer
+to facilitate agent comprehension. This layer comprises
+four high-level components designed to transform implicit
+developer expertise into explicit, agent-friendly knowledge.
+Specifically, a set of functional keywords 𝑘𝑖abstracts the core
+phenomena and application scenarios to serve as semantic
+anchors for precise indexing, while the formal description
+of the addressed problem 𝑝𝑖captures observable symptoms
+and situational constraints to further refine the retrieval
+granularity.
+Building upon these indexing elements, the root-cause anal-
+ysis 𝑟𝑖elucidates the fundamental logic and technical bot-
+tlenecks underlying the issue, enabling the agent system to
+internalize critical development expertise and reason about
+the "why" of the problem. Finally, the summarized solution
+𝑠𝑖distills the corrective actions into standardized, action-
+able guidelines, effectively instructing the agent on optimal
+decision-making and execution procedures when navigating
+analogous scenarios in future tasks.
+𝑘𝑖, 𝑝𝑖, 𝑟𝑖, 𝑠𝑖←LLM(𝑜𝑖, 𝑐𝑖| P𝑔𝑒𝑛).
+(3)
+3
+
+
+Your Code Agent Can Grow Alongside You with Structured Memory
+Online Repo
+Raw Commit Data
+Stage 1: Memory Construction
+Keywords (𝑘!)
+Problem (𝑝!)
+Root Cause(𝑟!)
+Solution (𝑠!)
+Vectorization
+Unstructured
+Commit Data
+Structured Knowledge
+Commit 01d1
+Author: john
+Date: 20250102
+---------------------
+Add Feature
+Files Changed:
+Main.py …
+Commit 01d1
+Author: john
+Date: 20250102
+---------------------
+Add Feature
+Files Changed:
+Main.py …
+Commit 01d1
+Author: john
+Date: 20250102
+---------------------
+Add Feature
+  Files Changed:
+Main.py …
+Commit 01d1
+Author: john
+Date: 20250102
+---------------------
+Add Feature
+Files Changed:
+Main.py …
+LLM Polisher
+Polish
+Crawl
+Input
+(Test Result + Checklist)
+Check Loop
+Refining Agent
+Code Agent
+Final Code
+Success
+Top-k 
+commits
+Top-k 
+commits
+Fix the bug  
+in project
+Query
+Query
+FeedBack Loop
+(Draft Code)
+User
+Stage 2: Self-Refinement and Internalization 
+Human-
+Verified    
+Structuring Historical Experience
+Internalizing Verified Experience
+Same as Stage 1
+Database
+Local Vector
+Database
+Figure 2. Architectural overview of MemCoder, illustrating a closed-loop human–AI co-evolution paradigm.In Stage 1, MemCoder
+reconstructs developer cognition by distilling raw commit histories into structured long-term memory, capturing latent intent-to-code
+mappings from historical human practices. In Stage 2, the agent performs context-aware dual-stage retrieval to access relevant experience,
+while a Refining Sub-agent enables execution-time self-refinement through prompt concretization, automated test generation, and
+verification feedback. Crucially, human-validated solutions are subsequently internalized into long-term memory, closing the evolutionary
+loop and enabling the agent to progressively align with repository-specific conventions across iterations.
+To operationalize this construction, we leverage the reason-
+ing capabilities of an LLM to distill latent development
+intents and issue-fixing expertise embedded within the code
+changes. The transformation from raw context to the struc-
+tured sextuple is executed through a task-specific prompt
+template P𝑔𝑒𝑛, which ensures that the resulting memory
+units are both standardized and optimized for robust agentic
+reasoning and actionable insight extraction.
+Consequently, the memory construction function 𝑓𝑠𝑡𝑟𝑢𝑐𝑡is
+defined as:
+𝑔𝑖= LLM(𝑜𝑖, 𝑐𝑖| Pgen)
+𝑀←{(𝑜𝑖, 𝑐𝑖) ⊕𝑔𝑖| (𝑜𝑖, 𝑐𝑖) ∈H} ,
+(4)
+which indicates that the agent transforms the collection of
+historical commits H into high-quality long-term memory
+through LLM and a prompt template.
+Context-Aware Dual-Stage Retrieval.
+Long-term mem-
+ory serves as a vast knowledge repository for autonomous
+agent systems, and a precise retrieval mechanism acts as
+the critical interface for accessing this information. The
+quality of content generated by agents, including code syn-
+thesis, test case generation, and prompt augmentation, is
+fundamentally constrained by the relevance of the retrieved
+memories. Consequently, developing an effective mem-
+ory retrieval mechanism is of paramount importance. To
+ensure scalable and efficient retrieval from extensive long-
+term memory, we employ an embedding model to encode
+each reconstructed memory entry 𝑚𝑖into a dense, high-
+dimensional vector. This process constructs a vectorized
+database 𝐸= {e1, e2, . . . , eN}, defined as:
+ei = Embed(𝑘𝑖⊕𝑝𝑖).
+(5)
+We implement a two-stage "retrieval-then-rerank" pipeline
+to identify historical memories most relevant to the cur-
+rent problem. In the first stage, given a search query 𝑞
+derived from the problem description, we perform a rapid
+approximate nearest neighbor (ANN) search (Aumüller et al.,
+2020), implemented using Facebook AI Similarity Search
+(FAISS) (Douze et al., 2025). This stage retrieves a candi-
+date set I comprising a selection of the most similar entries
+4
+
+
+Your Code Agent Can Grow Alongside You with Structured Memory
+based on cosine similarity.
+I =
+arg top
+𝑖∈{1,...,𝑁}
+
+q⊤e𝑖
+∥q∥∥e𝑖∥
+
+.
+(6)
+It should be noted that I encompasses a broader pool of
+entries than the final selection. By maintaining a robust can-
+didate set, the system effectively mitigates the risk of recall
+loss during the initial retrieval phase, thereby safeguarding
+the quality of the filtered historical experiences.
+In the second stage, to address the semantic bottleneck inher-
+ent in bi-encoder architectures, we employ a cross-encoder
+reranker for fine-grained semantic matching. This model
+processes the raw text of both the query and the candidate
+entries to capture nuanced semantic dependencies. Unlike
+the initial retrieval phase, the final ranking is determined
+exclusively by the reranking score:
+𝛼𝑖= CrossEnc(𝑞, 𝑘𝑖⊕𝑝𝑖)
+∀𝑖∈I.
+(7)
+The search query 𝑞is autonomously synthesized by the
+agent based on its internal reasoning state and task context.
+This mechanism enhances the precision and adaptivity of
+the retrieval process, empowering the agent to proactively
+explore historical knowledge through nuanced formulations
+tailored to the specific requirements of the issue at hand.
+By utilizing the reranker’s output as the primary metric for
+relevance, the system effectively filters out false positives
+from the initial ANN search, providing the agent with high-
+fidelity historical insights to guide the subsequent code
+generation process.
+3.2. Self-Refinement and Internalization
+The capacity for continual learning from itself and humans
+is widely recognized as a quintessential hallmark of agentic
+evolution. Constrained by the inherent staticity of backbone
+LLMs, agent systems must explore alternative dimensions
+to facilitate evolution. To this end, MemCoder investigates
+this potential through the dual perspectives of prompt opti-
+mization and memory updating. The technical details are
+elaborated as follows.
+Dynamic Self-Refinement.
+During execution, long-term
+memory is typically treated as immutable, limiting an
+agent’s ability to adapt to real-time feedback and to interpret
+repository-specific conventions. To address this limitation,
+MemCoder introduces a Refining Sub-agent, proactively
+invoked by the Primary Agent (Stage 2 in Figure 2), which
+retrieves human-validated successful experiences from struc-
+tured memory to ground execution in repository-specific
+patterns and proven intent-to-code mappings.
+Leveraging the retrieved context, the Refining Sub-agent
+synthesizes targeted test code 𝑡and iteratively constructs a
+verification checklist 𝑙. By aligning current execution with
+historically successful practices, this process concretizes
+developer intent beyond abstract instructions. The resulting
+checklist directly guides the subsequent decision-making
+of the Primary Agent, enabling execution-time refinement
+while remaining consistent with the repository’s evolutionary
+trajectory.
+Concretely, the Refining Sub-agent employs a specialized
+prompt template P𝑟𝑒𝑓𝑖𝑛𝑒to guide the LLM in generating
+both the test code 𝑡and the verification checklist 𝑙. The
+generation is conditioned on a multidimensional context
+integrating the problem description 𝑝, execution trace 𝜏, en-
+vironmental feedback 𝜉, and retrieved historical experiences
+from memory 𝑀, formalized as:
+𝑡, 𝑙←LLM(𝑝, 𝜏, 𝜉| 𝑀, P𝑟𝑒𝑓𝑖𝑛𝑒).
+(8)
+Through iterative invocation, the Refining Sub-agent up-
+dates its verification logic by reconciling execution feedback
+with retrieved successful precedents, allowing the agent
+to deepen its understanding of the codebase and generate
+higher-quality, repository-aligned code without modifying
+long-term memory during execution. During this phase, the
+adaptive refinement function 𝑓𝑟𝑒𝑓𝑖𝑛𝑒updates the feedback
+state:
+𝜉′ ←𝜉∪{𝑡, 𝑙},
+(9)
+highlighting the Refining Sub-agent as the primary driver of
+execution-time adaptation and a key enabler of human–AI
+co-evolution within MemCoder.
+Self-Internalization for Experience.
+MemCoder updates
+its long-term memory by integrating human-verified expe-
+riences, thereby preserving the critical alignment between
+high-level intent and concrete code implementation. At
+this stage, the memory internalization function 𝑓𝑖𝑛𝑡𝑒𝑟𝑛is
+formulated as:
+𝑀𝑁+1 ←𝑀𝑁∪{𝑚𝑁+1},
+(10)
+signifying the realization of a closed-loop evolution pro-
+cess within the agent system. Unlike historical commits,
+these experiences originate from model-generated solutions
+and human validation, enabling the memory to gradually
+shift from human-only priors to human–agent co-evolved
+knowledge.
+4. Experiment
+In this section, we conduct extensive experiments to demon-
+strate the effectiveness of our proposed method and evaluate
+5
+
+
+Your Code Agent Can Grow Alongside You with Structured Memory
+MemCoder/OpenHands
+GPT-5.2
+MemCoder/OpenHands
+DeepSeek-V3.2
+TRAE 
+Doubao-Seed-Code
+live-SWE-agent 
+Gemini 3 Pro Preview
+EPAM AI/Run
+Claude 4 Sonnet
+Atlassian Rovo Dev
+Warp
+ACoder
+60
+65
+70
+75
+80
+Resolve Rate (%)
+78.8
+78.8
+77.8
+77.4
+76.8
+76.8
+76.4
+75.6
+74.4
+68.4
+Figure 3. Comparison of MemCoder with the top 6 methods on the SWE-bench Verified leaderboard as of January 20, 2026.
+the contribution of each individual component to the overall
+performance of the agent system.
+4.1. Experimental Settings
+Benchmarks.
+To evaluate the effectiveness of the pro-
+posed framework on real-world software engineering tasks,
+we adopt SWE-bench (Jimenez et al., 2024) as our primary
+benchmark. SWE-bench is a large-scale, execution-based
+benchmark designed to assess the end-to-end software en-
+gineering capabilities of LLM-based agents. It consists of
+2,294 task instances collected from real GitHub issues and
+corresponding pull requests across 12 widely used open-
+source Python repositories. The benchmark poses significant
+repository-level challenges, requiring agents to reason over
+entire codebases, handle complex cross-file dependencies,
+and generate functional code patches to resolve bugs or
+implement features. Evaluation is performed by execut-
+ing generated patches against unit test suites, emphasizing
+functional correctness rather than textual similarity, and
+thus providing a rigorous measure of agents’ autonomous
+problem-solving ability in practical development settings.
+To improve evaluation efficiency, we conduct our experi-
+ments on SWE-bench Verified, a manually curated, high-
+quality subset of 500 task instances widely used by existing
+baselines. Compared to the full benchmark, SWE-bench
+Verified offers more precise problem specifications and more
+rigorous test designs, enabling a more reliable assessment
+of the code patch generation quality of agent frameworks.
+Models.
+Our experiments are primarily conducted using
+DeepSeek-V3.2 (DeepSeek-AI, 2025) as the backbone LLM,
+selected for its exceptional code generation and tool-calling
+capabilities. It serves as an ideal choice for the core reason-
+ing engine within an LLM-based autonomous programming
+framework. Additionally, we verify the absolute perfor-
+mance of our method using the more powerful GPT-5.2
+(OpenAI, 2025). Experimental results demonstrate that our
+approach achieves performance levels comparable to the
+current State-of-the-Art (SOTA) on the SWE-bench Verified
+leaderboard.
+Metrics and Baselines.
+We follow the official evaluation
+methodology provided by SWE-bench. Task instances are
+executed locally to generate code patches in git diff format,
+which are then submitted via the official sb-cli tool for
+evaluation. We report the primary metrics: the resolution
+rate and the number of resolved issues. For the SWE-bench
+Verified dataset, we benchmark our method against the
+top six performing approaches on the official leaderboard,
+ensuring a comprehensive comparison with the current state
+of the field. To ensure a fair evaluation and prevent temporal
+leakage, we strictly restrict the agent at test time to retrieve
+only historical experiences created prior to the corresponding
+test issue.
+4.2. Performance on Repository-Level Code Generation
+On the SWE-bench Verified benchmark, MemCoder demon-
+strates robust software engineering code generation capa-
+bilities, achieving performance on par with the SOTA. In
+Figure 3, we report the performance of MemCoder on GPT-
+5.2 and provide a comparison with the top six methods (Wang
+et al., 2025; OpenAI, 2025; DeepSeek-AI, 2025; Gao et al.,
+2025b; Xia et al., 2025; Zhang et al., 2025b; Gemini Team,
+2025; Anthropic, 2025a) on the current leaderboard and back-
+bone models. We conduct experiments under the pass@1
+6
+
+
+Your Code Agent Can Grow Alongside You with Structured Memory
+Table 1. Comparative analysis of LLM performance under Open-
+Hands vs. MemCoder on SWE-bench Verified.
+Method
+Setting
+Resolved(%)
+MemCoder + GPT-5.2
+pass@2
+83.8 (419)
+MemCoder + GPT-5.2
+pass@1
+78.8 (394)
+MemCoder + DeepSeek-V3.2
+pass@1
+77.8 (389)
+OpenHands + Claude Opus 4.5
+pass@3
+77.6 (388)
+OpenHands + Claude Sonnet 4.5 pass@3
+74.6 (373)
+OpenHands + GPT-5.2
+pass@3
+74.4 (372)
+OpenHands + Gemini 3 pro
+pass@3
+70.4 (352)
+evaluation protocol. The experimental results show that
+MemCoder delivers exceptional performance, reaching a
+level comparable to existing SOTA approaches.
+MemCoder is built upon the OpenHands framework (Wang
+et al., 2025). To provide a clearer illustration of the per-
+formance gains introduced by our approach, Table 1 sum-
+marizes the performance of various LLMs (DeepSeek-AI,
+2025; OpenAI, 2025; Anthropic, 2025c;b; Gemini Team,
+2025) integrated with the OpenHands agent framework and
+MemCoder on the SWE-bench Verified benchmark, with all
+data sourced from the official OpenHands. While the official
+OpenHands results are reported under pass@3, MemCoder
+achieves a solved rate of 83.8% with GPT-5.2 under the more
+restrictive pass@2 setting, highlighting improved efficiency
+per attempt.
+4.3. Ablation Study
+To investigate the individual contributions of various mod-
+ules within MemCoder, we conducted a series of ablation
+studies. Specifically, we evaluated several variant agent
+configurations by systematically removing the commit re-
+trieval module, the experience representation module, and
+the dynamic self-refine module. These experiments were
+performed using DeepSeek-V3.2 as the backbone model
+on the SWE-bench Verified benchmark. The experimental
+results are summarized in Table 2.
+Table 2. Ablation study of MemCoder on the SWE-bench Verified
+dataset using DeepSeek-V3.2. The notation ‘w/o’ indicates experi-
+ments where specific modules were removed. The abbreviations
+CR, ER, and DSR denote the commit retrieval module, experience
+representation module, and the dynamic self-refine module, respec-
+tively.
+Method
+Resolved(%)
+Δ
+MemCoder
+77.8 (389)
+-
+w/o DSR
+76.4 (382)
+-1.4%(-7)
+w/o DSR & ER
+73.0 (365)
+-4.8%(-24)
+w/o CR
+71.6 (358)
+-6.2%(-31)
+w/o all
+68.4 (342)
+-9.4%(-47)
+Table 2 demonstrates that all three proposed modules con-
+tribute positively to the performance enhancement of Mem-
+Coder. Notably, the retrieval module yields the most signifi-
+cant performance gains for the overall framework, underscor-
+ing that the self-evolving capability of agentic systems can
+effectively enhance their efficacy in repository-level code
+generation. To provide deeper insights into the underlying
+mechanisms of the retrieval module, we perform a compre-
+hensive exploration across three key dimensions: experience
+representation, retrieval granularity, and retrieval quantity.
+Experience Representation.
+MemCoder introduces an
+LLM-based experience construction mechanism to stan-
+dardize and structure raw commits within code repositories,
+ensuring that the vast scale of historical data remains "agent-
+friendly." To evaluate the actual performance gains derived
+from structured experiences, we conducted a controlled
+comparison across three distinct memory configurations
+while keeping other variables constant: (i) No historical
+experience; (ii) Raw commits and patch records without
+structuring; and (iii) Structured memory polished by an
+LLM. As shown in Table 2, the resolved rate for the "w/o
+all," "w/o DSR & ER," and "w/o DSR" settings are 68.4%,
+73%, and 76.4%, respectively. These results indicate that
+even raw, unstructured historical data can provide a baseline
+performance boost compared to the zero-experience setting.
+However, the efficiency of information extraction is often
+hampered by noise, semantic ambiguity, and the inherent
+gap between human linguistic habits and the processing
+patterns of backbone LLMs. In contrast, structured memory
+with a unified style yields more significant and stable perfor-
+mance improvements. These empirical findings substantiate
+that structured memory is pivotal for enhancing the overall
+performance of MemCoder.
+Retrieval Granularity.
+While the agent framework au-
+tonomously determines the timing of retrieval tool invocation
+and the scope of information acquisition, we can modulate
+the agent’s behavior by manipulating the initial retrieval
+parameter, top-k. By adjusting the initial top-k, we
+investigate the non-linear effects of retrieval granularity
+on the agent’s dynamic interaction patterns and decision-
+making quality.
+Figure 4 reveals a significant trade-off
+between initial information bandwidth and iterative retrieval
+frequency.
+With a smaller initial top-k, the agent framework compen-
+sates by increasing retrieval frequency to ensure sufficient
+information acquisition. Conversely, as the initial top-k
+increases, the retrieval frequency gradually declines. This
+indicates that a broader initial field of view effectively en-
+hances the information "hit rate" per retrieval, enabling the
+agent to terminate the search process earlier. Concurrently,
+a marginal increase in retrieved information volume cor-
+7
+
+
+Your Code Agent Can Grow Alongside You with Structured Memory
+1
+2
+4
+8
+16
+32
+Default top-k Value
+75.5
+35.0
+5.9
+75.0
+35.4
+5.1
+76.0
+40.9
+4.7
+78.0
+46.4
+4.4
+79.0
+63.2
+4.1
+78.0
+88.6
+4.1
+Resolved Rate(%)
+Avg. Experience
+Avg. Tool Calls
+Figure 4.
+Performance of MemCoder across various top-k
+values. The metrics include resolved rate, average number of
+retrieved historical experiences, and average tool call frequency. All
+experiments are conducted using DeepSeek-V3.2 as the backbone
+model and evaluated on a randomly sampled 200-instance subset
+of the SWE-bench Verified dataset.
+relates with improved agent performance, suggesting that
+appropriately augmenting the agent’s access to historical
+experience enhances its capabilities. However, this gain
+in interaction efficiency does not translate into a sustained
+linear growth in the resolved rate; the performance curve
+tends to plateau at larger top-k values. Furthermore, the
+retrieval frequency ceases to decline, indicating an intrinsic
+need for the agent to retrieve multi-faceted information to
+support task completion. Meanwhile, an excessively large
+top-k significantly dilutes the signal-to-noise ratio of valid
+evidence, introducing unnecessary context overhead. Thus,
+the data suggest that a moderate initial retrieval granularity
+serves as the most effective configuration, maximizing per-
+formance while avoiding the diminishing returns and noise
+associated with excessive information accumulation.
+Retrieval Quantity.
+To intuitively demonstrate the impact
+of the quantity of retrieved historical experiences on the
+performance of the agent system, we constrained the agent to
+a single retrieval tool invocation and observed performance
+variations by modulating the top-k parameter (the number
+of results returned). Figure 5 illustrates that within a lower
+top-k range, increasing the retrieval scale yields steady
+performance improvements. This suggests that, at this stage,
+a greater volume of feedback enables the agent to acquire
+more historical experiences conducive to resolving the cur-
+rent problem. However, as top-k exceeds 8, the rate of
+performance gain diminishes, eventually plateauing within a
+specific range. This implies that with a single retrieval oppor-
+1
+2
+4
+8
+16
+32
+48
+64
+Default top-k Value
+50
+60
+70
+80
+Resolve Rate (%)
+73.5
+74.5
+76.0
+78.0
+76.0
+77.0
+74.0
+58.0
+Figure 5. Performance of MemCoder across various top-k values
+with the retrieval frequency restricted to one. The metric displayed
+is the Resolve Rate (%). All experiments are conducted using
+DeepSeek-V3.2 as the backbone model and evaluated on a randomly
+sampled 200-instance subset of the SWE-bench Verified dataset.
+tunity, the agent has already sufficiently acquired the most
+representative experiences, rendering additional retrieval
+results redundant. Conversely, when top-k becomes exces-
+sively large, the agent suffers from performance degradation
+due to an overload of context information.
+These results underscore the "signal-to-noise ratio" challenge
+inherent in Retrieval-Augmented Generation (RAG): while
+expanding the retrieval scope enhances the probability of
+recalling relevant information, it simultaneously dilutes the
+effective density of the context. An excessively large top-k
+leads to the accumulation of irrelevant segments, which not
+only taxes the model’s attention mechanism but also exacer-
+bates the "Lost-in-the-Middle" phenomenon, resulting in the
+degeneration of inference capabilities. Consequently, rather
+than indiscriminately increasing the volume of retrieval,
+prioritizing the precision of retrieval results proves more
+critical for enhancing agent performance.
+5. Conclusion
+We proposed MemCoder to address the limitation where
+static code agents fail to capture the critical information em-
+bedded in the temporal evolution of projects. Our approach
+reconstructs developer cognition by structuring historical
+commits and leveraging this retrospective wisdom to guide
+the agent in verifying and refining its own execution. Ex-
+perimental results on SWE-bench Verified demonstrate that
+MemCoder achieves State-of-the-Art performance and effec-
+tively unlocks the potential of general models like DeepSeek-
+V3.2 in complex engineering tasks. These findings validate
+the critical importance of Human-AI Co-Evolution. By con-
+tinuously internalizing the reasoning trajectories embedded
+in human history, the agent transcends its role as a mere
+executor to become an adaptive partner capable of growing
+alongside the developer.
+8
+
+
+Your Code Agent Can Grow Alongside You with Structured Memory
+6. Impact Statement
+This paper presents work whose goal is to advance the field
+of machine learning. There are many potential societal
+consequences of our work, none of which we feel must be
+specifically highlighted here.
+References
+Anthropic. Introducing claude 4, May 2025a. URL https:
+//www.anthropic.com/news/claude-4.
+Anthropic. Introducing claude opus 4.5, November 2025b.
+URL https://www.anthropic.com/news/c
+laude-opus-4-5.
+Anthropic. Introducing claude sonnet 4.5, September 2025c.
+URL https://www.anthropic.com/news/c
+laude-sonnet-4-5.
+Anthropic. Claude code, 2025d. URL https://github
+.com/anthropics/claude-code.
+Antoniades, A., Örwall, A., Zhang, K., Xie, Y., Goyal, A.,
+and Wang, W. Y. Swe-search: Enhancing software agents
+with monte carlo tree search and iterative refinement. In
+The Thirteenth International Conference on Learning
+Representations, ICLR 2025, Singapore, April 24-28,
+2025. OpenReview.net, 2025. URL https://openre
+view.net/forum?id=G7sIFXugTX.
+Anysphere. Cursor - the ai code editor, 2025. URL https:
+//cursor.com/en.
+Aumüller, M., Bernhardsson, E., and Faithfull, A. J.
+Ann-benchmarks: A benchmarking tool for approxi-
+mate nearest neighbor algorithms. Inf. Syst., 87, 2020.
+doi:
+10.1016/J.IS.2019.02.006.
+URL https:
+//doi.org/10.1016/j.is.2019.02.006.
+Chen, H., Pasunuru, R., Weston, J., and Celikyilmaz, A.
+Walking down the memory maze: Beyond context limit
+through interactive reading. CoRR, abs/2310.05029, 2023.
+doi: 10.48550/ARXIV.2310.05029. URL https:
+//doi.org/10.48550/arXiv.2310.05029.
+DeepSeek-AI. Deepseek-v3.2: Pushing the frontier of open
+large language models. CoRR, abs/2512.02556, 2025.
+doi: 10.48550/ARXIV.2512.02556. URL https:
+//doi.org/10.48550/arXiv.2512.02556.
+Dong, Y., Jiang, X., Qian, J., Wang, T., Zhang, K., Jin, Z.,
+and Li, G. A survey on code generation with llm-based
+agents. CoRR, abs/2508.00083, 2025. doi: 10.48550/A
+RXIV.2508.00083. URL https://doi.org/10.4
+8550/arXiv.2508.00083.
+Douze, M., Guzhva, A., Deng, C., Johnson, J., Szilvasy, G.,
+Mazaré, P.-E., Lomeli, M., Hosseini, L., and Jégou, H.
+The faiss library. IEEE Transactions on Big Data, 2025.
+Gao, H., Geng, J., Hua, W., Hu, M., Juan, X., Liu, H., Liu,
+S., Qiu, J., Qi, X., Wu, Y., Wang, H., Xiao, H., Zhou,
+Y., Zhang, S., Zhang, J., Xiang, J., Fang, Y., Zhao, Q.,
+Liu, D., Ren, Q., Qian, C., Wang, Z., Hu, M., Wang, H.,
+Wu, Q., Ji, H., and Wang, M. A survey of self-evolving
+agents: On path to artificial super intelligence. CoRR,
+abs/2507.21046, 2025a. doi: 10.48550/ARXIV.2507.21
+046. URL https://doi.org/10.48550/arXiv
+.2507.21046.
+Gao, P., Tian, Z., Meng, X., Wang, X., Hu, R., Xiao, Y.,
+Liu, Y., Zhang, Z., Chen, J., Gao, C., Lin, Y., Xiong, Y.,
+Peng, C., and Liu, X. Trae agent: An llm-based agent
+for software engineering with test-time scaling. CoRR,
+abs/2507.23370, 2025b. URL https://doi.org/
+10.48550/arXiv.2507.23370.
+Ge, Y., Mei, L., Duan, Z., Li, T., Zheng, Y., Wang, Y.,
+Wang, L., Yao, J., Liu, T., Cai, Y., Bi, B., Guo, F., Guo,
+J., Liu, S., and Cheng, X. A survey of vibe coding with
+large language models. CoRR, abs/2510.12399, 2025.
+doi: 10.48550/ARXIV.2510.12399. URL https:
+//doi.org/10.48550/arXiv.2510.12399.
+Gemini Team, G. Best for complex tasks and bringing
+creative concepts to life, 2025. URL https://deep
+mind.google/models/gemini/pro/.
+Guo, D., Zhu, Q., Yang, D., Xie, Z., Dong, K., Zhang, W.,
+Chen, G., Bi, X., Wu, Y., Li, Y. K., Luo, F., Xiong, Y.,
+and Liang, W. Deepseek-coder: When the large language
+model meets programming - the rise of code intelligence.
+CoRR, abs/2401.14196, 2024a. doi: 10.48550/ARXIV
+.2401.14196. URL https://doi.org/10.48550
+/arXiv.2401.14196.
+Guo, D., Yang, D., Zhang, H., Song, J., Wang, P., Zhu,
+Q., Xu, R., Zhang, R., Ma, S., Bi, X., et al. Deepseek-
+r1 incentivizes reasoning in llms through reinforcement
+learning. Nature, 645(8081):633–638, 2025.
+Guo, T., Chen, X., Wang, Y., Chang, R., Pei, S., Chawla,
+N. V., Wiest, O., and Zhang, X. Large language model
+based multi-agents: A survey of progress and challenges.
+In Proceedings of the Thirty-Third International Joint
+Conference on Artificial Intelligence, IJCAI 2024, Jeju,
+South Korea, August 3-9, 2024, pp. 8048–8057. ijcai.org,
+2024b.
+Huang, D., Bu, Q., Zhang, J. M., Luck, M., and Cui, H.
+Agentcoder: Multi-agent-based code generation with
+iterative testing and optimisation. CoRR, abs/2312.13010,
+2023. doi: 10.48550/ARXIV.2312.13010. URL https:
+//doi.org/10.48550/arXiv.2312.13010.
+9
+
+
+Your Code Agent Can Grow Alongside You with Structured Memory
+Hui, B., Yang, J., Cui, Z., Yang, J., Liu, D., Zhang, L.,
+Liu, T., Zhang, J., Yu, B., Dang, K., Yang, A., Men,
+R., Huang, F., Ren, X., Ren, X., Zhou, J., and Lin, J.
+Qwen2.5-coder technical report. CoRR, abs/2409.12186,
+2024. doi: 10.48550/ARXIV.2409.12186. URL https:
+//doi.org/10.48550/arXiv.2409.12186.
+Islam, M. A., Ali, M. E., and Parvez, M. R. Mapcoder: Multi-
+agent code generation for competitive problem solving.
+In Ku, L., Martins, A., and Srikumar, V. (eds.), Pro-
+ceedings of the 62nd Annual Meeting of the Association
+for Computational Linguistics (Volume 1: Long Papers),
+ACL 2024, Bangkok, Thailand, August 11-16, 2024, pp.
+4912–4944. Association for Computational Linguistics,
+2024. doi: 10.18653/V1/2024.ACL-LONG.269. URL
+https://doi.org/10.18653/v1/2024.acl
+-long.269.
+Jiang, X., Li, F., Zhao, H., Wang, J., Shao, J., Xu, S.,
+Zhang, S., Chen, W., Tang, X., Chen, Y., Wu, M., Ma,
+W., Wang, M., and Chen, T. Long term memory: The
+foundation of AI self-evolution. CoRR, abs/2410.15665,
+2024. doi: 10.48550/ARXIV.2410.15665. URL https:
+//doi.org/10.48550/arXiv.2410.15665.
+Jimenez, C. E., Yang, J., Wettig, A., Yao, S., Pei, K., Press,
+O., and Narasimhan, K. R. Swe-bench: Can language
+models resolve real-world github issues? In The Twelfth
+International Conference on Learning Representations,
+ICLR 2024, Vienna, Austria, May 7-11, 2024. OpenRe-
+view.net, 2024. URL https://openreview.net
+/forum?id=VTF8yNQM66.
+Liang, X., Tao, M., Xia, Y., Wang, J., Li, K., Wang, Y.,
+He, Y., Yang, J., Shi, T., Wang, Y., Zhang, M., and
+Wang, X. SAGE: self-evolving agents with reflective
+and memory-augmented abilities. Neurocomputing, 647:
+130470, 2025. doi: 10.1016/J.NEUCOM.2025.130470.
+URL https://doi.org/10.1016/j.neucom
+.2025.130470.
+Lin, F., Kim, D. J., and Chen, T. SOEN-101: code gener-
+ation by emulating software process models using large
+language model agents. In 47th IEEE/ACM International
+Conference on Software Engineering, ICSE 2025, Ottawa,
+ON, Canada, April 26 - May 6, 2025, pp. 1527–1539.
+IEEE, 2025. doi: 10.1109/ICSE55347.2025.00140. URL
+https://doi.org/10.1109/ICSE55347.20
+25.00140.
+Madaan, A., Tandon, N., Gupta, P., Hallinan, S., Gao, L.,
+Wiegreffe, S., Alon, U., Dziri, N., Prabhumoye, S., Yang,
+Y., Gupta, S., Majumder, B. P., Hermann, K., Welleck,
+S., Yazdanbakhsh, A., and Clark, P. Self-refine: Iterative
+refinement with self-feedback. In Oh, A., Naumann,
+T., Globerson, A., Saenko, K., Hardt, M., and Levine,
+S. (eds.), Advances in Neural Information Processing
+Systems 36: Annual Conference on Neural Information
+Processing Systems 2023, NeurIPS 2023, New Orleans,
+LA, USA, December 10 - 16, 2023, 2023. URL http:
+//papers.nips.cc/paper_files/paper/2
+023/hash/91edff07232fb1b55a505a9e9f6
+c0ff3-Abstract-Conference.html.
+Nguyen, M. H., Chau, T. P., Nguyen, P. X., and Bui, N. D. Q.
+Agilecoder: Dynamic collaborative agents for software
+development based on agile methodology. In IEEE/ACM
+Second International Conference on AI Foundation Mod-
+els and Software Engineering, Forge@ICSE 2025, Ot-
+tawa, ON, Canada, April 27-28, 2025, pp. 156–167. IEEE,
+2025. doi: 10.1109/FORGE66646.2025.00026. URL
+https://doi.org/10.1109/Forge66646.2
+025.00026.
+OpenAI. Introducing GPT-5.2, December 2025. URL
+https://openai.com/index/introducing
+-gpt-5-2/.
+Pan, Z., Hu, X., Xia, X., and Yang, X. Catcoder: Repository-
+level code generation with relevant code and type context.
+ACM Transactions on Software Engineering and Method-
+ology, 2025.
+Phan, H. N., Phan, H. N., Nguyen, T. N., and Bui, N. D. Q.
+Repohyper: Better context retrieval is all you need for
+repository-level code completion. CoRR, abs/2403.06095,
+2024. doi: 10.48550/ARXIV.2403.06095. URL https:
+//doi.org/10.48550/arXiv.2403.06095.
+Qian, C., Dang, Y., Li, J., Liu, W., Xie, Z., Wang, Y., Chen,
+W., Yang, C., Cong, X., Che, X., Liu, Z., and Sun, M.
+Experiential co-learning of software-developing agents.
+In Ku, L., Martins, A., and Srikumar, V. (eds.), Pro-
+ceedings of the 62nd Annual Meeting of the Association
+for Computational Linguistics (Volume 1: Long Papers),
+ACL 2024, Bangkok, Thailand, August 11-16, 2024, pp.
+5628–5640. Association for Computational Linguistics,
+2024. doi: 10.18653/V1/2024.ACL-LONG.305. URL
+https://doi.org/10.18653/v1/2024.acl
+-long.305.
+Rasheed, Z., Waseem, M., Saari, M., Systä, K., and Abra-
+hamsson, P. Codepori: Large scale model for autonomous
+software development by using multi-agents.
+CoRR,
+abs/2402.01411, 2024. doi: 10.48550/ARXIV.2402.
+01411. URL https://doi.org/10.48550/arX
+iv.2402.01411.
+Salama, R., Cai, J., Yuan, M., Currey, A., Sunkara,
+M., Zhang, Y., and Benajiba, Y.
+Meminsight: Au-
+tonomous memory augmentation for LLM agents. CoRR,
+abs/2503.21760, 2025. doi: 10.48550/ARXIV.2503.21
+10
+
+
+Your Code Agent Can Grow Alongside You with Structured Memory
+760. URL https://doi.org/10.48550/arXiv
+.2503.21760.
+Sarthi, P., Abdullah, S., Tuli, A., Khanna, S., Goldie, A.,
+and Manning, C. D. RAPTOR: recursive abstractive
+processing for tree-organized retrieval. In The Twelfth
+International Conference on Learning Representations,
+ICLR 2024, Vienna, Austria, May 7-11, 2024. OpenRe-
+view.net, 2024. URL https://openreview.net
+/forum?id=GN921JHCRw.
+Shan, L., Luo, S., Zhu, Z., Yuan, Y., and Wu, Y. Cognitive
+memory in large language models. CoRR, abs/2504.02441,
+2025. doi: 10.48550/ARXIV.2504.02441. URL https:
+//doi.org/10.48550/arXiv.2504.02441.
+Singh, D. Y. and Solanki, K. Improving software quality
+through effective defect management process: A review.
+Software Engineering and Technology, 5(5), 2013.
+Team, G. Gemini: A family of highly capable multimodal
+models. CoRR, abs/2312.11805, 2023. doi: 10.48550/A
+RXIV.2312.11805. URL https://doi.org/10.4
+8550/arXiv.2312.11805.
+Wang, L., Ma, C., Feng, X., Zhang, Z., Yang, H., Zhang, J.,
+Chen, Z., Tang, J., Chen, X., Lin, Y., Zhao, W. X., Wei,
+Z., and Wen, J. A survey on large language model based
+autonomous agents. Frontiers Comput. Sci., 18(6):186345,
+2024. doi: 10.1007/S11704-024-40231-1. URL https:
+//doi.org/10.1007/s11704-024-40231-1.
+Wang, X., Li, B., Song, Y., Xu, F. F., Tang, X., Zhuge, M.,
+Pan, J., Song, Y., Li, B., Singh, J., Tran, H. H., Li, F.,
+Ma, R., Zheng, M., Qian, B., Shao, Y., Muennighoff, N.,
+Zhang, Y., Hui, B., Lin, J., and et al. Openhands: An
+open platform for AI software developers as generalist
+agents. In The Thirteenth International Conference on
+Learning Representations, ICLR 2025, Singapore, April
+24-28, 2025. OpenReview.net, 2025.
+URL https:
+//openreview.net/forum?id=OJd3ayDDoF.
+Xia, C. S., Wang, Z., Yang, Y., Wei, Y., and Zhang, L.
+Live-swe-agent: Can software engineering agents self-
+evolve on the fly? CoRR, abs/2511.13646, 2025. doi:
+10.48550/ARXIV.2511.13646. URL https://doi.
+org/10.48550/arXiv.2511.13646.
+Xu, W., Liang, Z., Mei, K., Gao, H., Tan, J., and Zhang,
+Y. A-MEM: agentic memory for LLM agents. CoRR,
+abs/2502.12110, 2025. doi: 10.48550/ARXIV.2502.12
+110. URL https://doi.org/10.48550/arXiv
+.2502.12110.
+Yan, C., Wang, J., Zhang, L., Zhao, R., Wu, X., Xiong, K.,
+Liu, Q., Kang, G., and Kang, Y. Efficient and accurate
+prompt optimization: the benefit of memory in exemplar-
+guided reflection. In Che, W., Nabende, J., Shutova, E.,
+and Pilehvar, M. T. (eds.), Proceedings of the 63rd Annual
+Meeting of the Association for Computational Linguistics
+(Volume 1: Long Papers), ACL 2025, Vienna, Austria,
+July 27 - August 1, 2025, pp. 753–779. Association
+for Computational Linguistics, 2025.
+URL https:
+//aclanthology.org/2025.acl-long.37/.
+Yang, A., Li, A., Yang, B., Zhang, B., Hui, B., Zheng, B.,
+Yu, B., Gao, C., Huang, C., Lv, C., Zheng, C., Liu, D.,
+Zhou, F., Huang, F., Hu, F., Ge, H., Wei, H., Lin, H.,
+Tang, J., Yang, J., Tu, J., Zhang, J., Yang, J., Yang, J.,
+Zhou, J., Lin, J., Dang, K., Bao, K., Yang, K., Yu, L.,
+Deng, L., Li, M., Xue, M., Li, M., Zhang, P., Wang,
+P., Zhu, Q., Men, R., Gao, R., Liu, S., Luo, S., Li, T.,
+Tang, T., Yin, W., Ren, X., Wang, X., Zhang, X., Ren,
+X., Fan, Y., Su, Y., Zhang, Y., Zhang, Y., Wan, Y., Liu,
+Y., Wang, Z., Cui, Z., Zhang, Z., Zhou, Z., and Qiu, Z.
+Qwen3 technical report. CoRR, abs/2505.09388, 2025a.
+doi: 10.48550/ARXIV.2505.09388. URL https:
+//doi.org/10.48550/arXiv.2505.09388.
+Yang, C., Wang, X., Lu, Y., Liu, H., Le, Q. V., Zhou,
+D., and Chen, X. Large language models as optimizers.
+In The Twelfth International Conference on Learning
+Representations, ICLR 2024, Vienna, Austria, May 7-11,
+2024. OpenReview.net, 2024. URL https://openre
+view.net/forum?id=Bb4VGOWELI.
+Yang, J., Liu, X., Lv, W., Deng, K., Guo, S., Jing, L., Li,
+Y., Liu, S., Luo, X., Luo, Y., Pan, C., Shi, E., Tan, Y.,
+Tao, R., Wu, J., Wu, X., Wu, Z., Zan, D., Zhang, C.,
+Zhang, W., Zhu, H., Zhuo, T. Y., Cao, K., Cheng, X.,
+Dong, J., Fang, S., Fei, Z., Guan, X., Guo, Q., Han,
+Z., James, J., Luo, T., Li, R., Li, Y., Liang, Y., Liu, C.,
+Liu, J., Liu, Q., Liu, R., Loakman, T., Meng, X., Peng,
+C., Peng, T., Shi, J., Tang, M., Wang, B., Wang, H.,
+Wang, Y., Xu, F., Xu, Z., Yuan, F., Zhang, G., Zhang,
+J., Zhang, X., Zhou, W., Zhu, H., Zhu, K., Dai, B., Liu,
+A., Li, Z., Lin, C., Liu, T., Peng, C., Shen, K., Qin,
+L., Song, S., Zhan, Z., Zhang, J., Zhang, J., Zhang, Z.,
+and Zheng, B. From code foundation models to agents
+and applications: A comprehensive survey and practical
+guide to code intelligence. CoRR, abs/2511.18538, 2025b.
+doi: 10.48550/ARXIV.2511.18538. URL https:
+//doi.org/10.48550/arXiv.2511.18538.
+Yao, S., Zhao, J., Yu, D., Du, N., Shafran, I., Narasimhan,
+K. R., and Cao, Y. React: Synergizing reasoning and
+acting in language models. In The Eleventh International
+Conference on Learning Representations, ICLR 2023,
+Kigali, Rwanda, May 1-5, 2023. OpenReview.net, 2023.
+URL https://openreview.net/forum?id=
+WE_vluYUL-X.
+Zeng, A., Lv, X., Zheng, Q., Hou, Z., Chen, B., Xie, C.,
+Wang, C., Yin, D., Zeng, H., Zhang, J., Wang, K., Zhong,
+11
+
+
+Your Code Agent Can Grow Alongside You with Structured Memory
+L., Liu, M., Lu, R., Cao, S., Zhang, X., Huang, X., Wei,
+Y., Cheng, Y., An, Y., Niu, Y., Wen, Y., Bai, Y., Du,
+Z., Wang, Z., Zhu, Z., Zhang, B., Wen, B., Wu, B., Xu,
+B., Huang, C., Zhao, C., Cai, C., Yu, C., Li, C., Ge,
+C., Huang, C., Zhang, C., Xu, C., Zhu, C., Li, C., Yin,
+C., Lin, D., Yang, D., Jiang, D., Ai, D., Zhu, E., Wang,
+F., Pan, G., Wang, G., Sun, H., Li, H., Li, H., Hu, H.,
+Zhang, H., Peng, H., Tai, H., Zhang, H., Wang, H., Yang,
+H., Liu, H., Zhao, H., Liu, H., Yan, H., Liu, H., Chen,
+H., Li, J., Zhao, J., Ren, J., Jiao, J., Zhao, J., Yan, J.,
+Wang, J., Gui, J., Zhao, J., Liu, J., Li, J., Li, J., Lu, J.,
+Wang, J., Yuan, J., Li, J., Du, J., Du, J., Liu, J., Zhi, J.,
+Gao, J., Wang, K., Yang, L., Xu, L., Fan, L., Wu, L.,
+Ding, L., Wang, L., Zhang, M., Li, M., Xu, M., Zhao, M.,
+and Zhai, M. GLM-4.5: agentic, reasoning, and coding
+(ARC) foundation models. CoRR, abs/2508.06471, 2025.
+doi: 10.48550/ARXIV.2508.06471. URL https:
+//doi.org/10.48550/arXiv.2508.06471.
+Zhang, F., Chen, B., Zhang, Y., Keung, J., Liu, J.,
+Zan, D., Mao, Y., Lou, J., and Chen, W. Repocoder:
+Repository-level code completion through iterative re-
+trieval and generation. In Bouamor, H., Pino, J., and
+Bali, K. (eds.), Proceedings of the 2023 Conference
+on Empirical Methods in Natural Language Processing,
+EMNLP 2023, Singapore, December 6-10, 2023, pp. 2471–
+2484. Association for Computational Linguistics, 2023a.
+doi: 10.18653/V1/2023.EMNLP-MAIN.151. URL
+https://doi.org/10.18653/v1/2023.emn
+lp-main.151.
+Zhang, K., Li, Z., Li, J., Li, G., and Jin, Z. Self-edit: Fault-
+aware code editor for code generation. In Rogers, A., Boyd-
+Graber, J. L., and Okazaki, N. (eds.), Proceedings of the
+61st Annual Meeting of the Association for Computational
+Linguistics (Volume 1: Long Papers), ACL 2023, Toronto,
+Canada, July 9-14, 2023, pp. 769–787. Association for
+Computational Linguistics, 2023b. doi: 10.18653/V1/20
+23.ACL-LONG.45. URL https://doi.org/10.1
+8653/v1/2023.acl-long.45.
+Zhang, Y., Ni, B., Chen, X.-S., Zhang, H.-R., Rao, Y.,
+Peng, H., Lu, Q., Hu, H., Guo, M.-H., and Hu, S.-
+M.
+Bee: A high-quality corpus and full-stack suite
+to unlock advanced fully open mllms. arXiv preprint
+arXiv:2510.13795, 2025a.
+Zhang, Y., Su, J., Sun, Y., Xi, C., Xiao, X., Zheng, S.,
+Zhang, A., Liu, K., Zan, D., Sun, T., Zhu, J., Xin, S.,
+Huang, D., Bai, Y., Dong, L., Li, C., Chen, J., Zhou, H.,
+Huang, Y., Ning, G., Song, X., Chen, J., Liu, S., Shen, K.,
+Xiang, L., and Wu, Y. Seed-coder: Let the code model
+curate data for itself. CoRR, abs/2506.03524, 2025b.
+doi: 10.48550/ARXIV.2506.03524. URL https:
+//doi.org/10.48550/arXiv.2506.03524.
+Zhang, Y., Zhao, X., Wang, Z. Z., Yang, C., Wei, J., and Wu,
+T. cast: Enhancing code retrieval-augmented generation
+with structural chunking via abstract syntax tree. CoRR,
+abs/2506.15655, 2025c. doi: 10.48550/ARXIV.2506.15
+655. URL https://doi.org/10.48550/arXiv
+.2506.15655.
+Zheng, Q., Xia, X., Zou, X., Dong, Y., Wang, S., Xue, Y.,
+Wang, Z., Shen, L., Wang, A., Li, Y., Su, T., Yang, Z.,
+and Tang, J. Codegeex: A pre-trained model for code
+generation with multilingual benchmarking on humaneval-
+x. In Proceedings of the 29th ACM SIGKDD Conference
+on Knowledge Discovery and Data Mining, pp. 5673–
+5684, 2023.
+Zhong, W., Guo, L., Gao, Q., Ye, H., and Wang, Y. Memory-
+bank: Enhancing large language models with long-term
+memory. In Wooldridge, M. J., Dy, J. G., and Natarajan, S.
+(eds.), Thirty-Eighth AAAI Conference on Artificial Intelli-
+gence, AAAI 2024, Thirty-Sixth Conference on Innovative
+Applications of Artificial Intelligence, IAAI 2024, Four-
+teenth Symposium on Educational Advances in Artificial
+Intelligence, EAAI 2014, February 20-27, 2024, Van-
+couver, Canada, pp. 19724–19731. AAAI Press, 2024.
+doi: 10.1609/AAAI.V38I17.29946. URL https:
+//doi.org/10.1609/aaai.v38i17.29946.
+Zhou, Y., Muresanu, A. I., Han, Z., Paster, K., Pitis, S.,
+Chan, H., and Ba, J. Large language models are human-
+level prompt engineers. In The Eleventh International
+Conference on Learning Representations, ICLR 2023,
+Kigali, Rwanda, May 1-5, 2023. OpenReview.net, 2023.
+URL https://openreview.net/forum?id=
+92gvk82DE-.
+12
+
+
+Your Code Agent Can Grow Alongside You with Structured Memory
+APPENDIX
+A. Case Study
+To intuitively illustrate the impact of retrieving historical experience on the agent’s behavior, we select the instance with
+instance_id django__django-16315 as a representative example. As shown, without access to the retrieved
+experience, the agent applies fixes at an incorrect location. In contrast, the historical experience highlights a prior modification
+to the function on_conflict_suffix_sql, effectively signaling an issue in the current code’s invocation of this
+function, which in turn guides the agent to successfully repair the bug.
+Problem Statement
+When calling bulk_create or bulk_update, if a 
+model field uses db_column and the column 
+name has mixed case, the generated SQL will fail. 
+For example:
+qs.bulk_create(instances, update_conflicts=True, 
+update_fields=["sectorid"], 
+unique_fields=["blacklistid"])
+The INSERT statement correctly uses the 
+db_column name:
+INSERT INTO "Activity_BlackListed" 
+("BlacklistID", ...) VALUES (%s, ...)
+However, the ON CONFLICT clause uses the field 
+name instead of db_column:
+ON CONFLICT("blacklistid") DO UPDATE SET 
+"sectorid" = EXCLUDED."sectorid"
+This causes PostgreSQL to raise an error: column 
+"blacklistid" does not exist.
+The correct SQL should use the column names:
+ON CONFLICT("BlacklistID") DO UPDATE SET 
+"SectorID" = EXCLUDED."SectorID"
++ def on_conflict_suffix_sql(self, fields, on_conflict, 
+update_fields, unique_fields):
++        if on_conflict == OnConflict.UPDATE:
++            conflict_suffix_sql = 'ON DUPLICATE KEY UPDATE 
+%(fields)s'
++            field_sql = '%(field)s = VALUES(%(field)s)'
++            if not self.connection.mysql_is_mariadb:
++                if self.connection.mysql_version >= (8, 0, 19):
++                    conflict_suffix_sql = f'AS new 
+{conflict_suffix_sql}'
++                    field_sql = '%(field)s = new.%(field)s'
++            elif self.connection.mysql_version >= (10, 3, 3):
++                field_sql = '%(field)s = VALUE(%(field)s)'
++            fields = ', '.join([
++                field_sql % {'field': field}
++                for field in map(self.quote_name, update_fields)
++            ])
++            return conflict_suffix_sql % {'fields': fields}
++        return super().on_conflict_suffix_sql(
++            fields, on_conflict, update_fields, unique_fields,
++        )
+SQLInsertCompiler(SQLCompiler):
++    def get_column_name(field):
++      """Get column name from either a field object 
+or field name."""
++      if isinstance(field, str):
++        # It's a field name, get the field object first
++        return meta.get_field(field).column
++      else:
++        # Assume it's a field object
++        return field.column
++    
++    update_columns = [get_column_name(f) for f in 
+self.query.update_fields]
++    unique_columns = [get_column_name(f) for f in 
+self.query.unique_fields]
+    on_conflict_suffix_sql = 
+self.connection.ops.on_conflict_suffix_sql(
+      fields,
+      self.query.on_conflict,
+-      self.query.update_fields,
+-      self.query.unique_fields,
++      update_columns,
++      unique_columns,
+    )
+File 1
+ DatabaseOperations(BaseDatabaseOperations):
++            # Extract column names from field objects
++            def get_column_name(field):
++                return field.column if hasattr(field, 'column') 
+else field
++            
++            update_columns = [get_column_name(f) for f in 
+update_fields]  
+File 2
+DatabaseOperations(BaseDatabaseOperations):
+ 
+ 
+return "ON CONFLICT(%s) DO UPDATE SET %s" % (
+-                ", ".join(map(self.quote_name, unique_fields)),
++                ", ".join(map(self.quote_name, 
+unique_columns)),
+                 ", ".join(
+                     [
+                         f"{field} = EXCLUDED.{field}"
+-                        for field in map(self.quote_name, 
+update_fields)
++                        for field in map(self.quote_name, 
+update_columns)
+                     ]
+File 3
+DatabaseOperations(BaseDatabaseOperations):
+             return "ON CONFLICT(%s) DO UPDATE SET %s" % (
+-              ", ".join(map(self.quote_name, unique_fields)),
++                ", ".join(map(self.quote_name, 
+unique_columns)),
+Patch Generated without Retrieval
+Retrieved Commit Patch
+Patch Generated with Retrieval
+13
+
+
+Your Code Agent Can Grow Alongside You with Structured Memory
+B. Algorithmic Pipeline
+Section B provides the pseudocode of the proposed pipeline as a concise algorithmic summary. The pseudocode formalizes
+the overall control flow and module interactions of our method, including memory construction, experience retrieval, iterative
+refinement, and experience internalization with human assistance. All components and design choices follow the pipeline
+described in the main text, and the pseudocode is intended solely to clarify execution order and interface dependencies,
+rather than to introduce additional mechanisms.
+Algorithm 1 MemCoder Process
+Require: Target Repo R, Issue 𝑃, Existing Memory M
+Ensure: Resolved Solution 𝑆
+1: Definitions:
+2:
+C: Context history (actions, observations, thoughts)
+3:
+𝑐: Candidate code patch generated by agent
+4: Stage 1: Memory Synchronization
+5: Identify new commits 𝐻𝑛𝑒𝑤in R that are not in M
+6: for all ℎ𝑖∈𝐻𝑛𝑒𝑤do
+7:
+𝑚𝑖←LLMPolish(ℎ𝑖) {Summarize commit logic}
+8:
+𝑣𝑖←Embed(𝑚𝑖)
+9:
+M ←M ∪{(𝑚𝑖, 𝑣𝑖)} {Update memory}
+10: end for
+11: Stage 2: Execution Loop
+12: C ←{𝑃}, 𝑠𝑜𝑙𝑣𝑒𝑑←false
+13: while not 𝑠𝑜𝑙𝑣𝑒𝑑and steps < MaxSteps do
+14:
+𝐴𝑐𝑡𝑖𝑜𝑛, 𝐴𝑟𝑔𝑠←PrimaryAgent(C)
+15:
+if 𝐴𝑐𝑡𝑖𝑜𝑛== "Retrieve" then
+16:
+𝐾←Retrieve(𝐴𝑟𝑔𝑠, M)
+17:
+C ←C ∪𝐾
+18:
+else if 𝐴𝑐𝑡𝑖𝑜𝑛== "Refining Agent" then
+19:
+𝑐←𝐴𝑟𝑔𝑠
+20:
+𝑇𝑒𝑠𝑡𝑅𝑒𝑠, 𝐶ℎ𝑒𝑐𝑘𝑙𝑖𝑠𝑡←Refining Agent(𝑐, 𝑃, M)
+21:
+if 𝑇𝑒𝑠𝑡𝑅𝑒𝑠is Pass then
+22:
+𝑆←𝑐
+23:
+𝑠𝑜𝑙𝑣𝑒𝑑←true
+24:
+break
+25:
+else
+26:
+C ←C ∪{𝑇𝑒𝑠𝑡𝑅𝑒𝑠, 𝐶ℎ𝑒𝑐𝑘𝑙𝑖𝑠𝑡}
+27:
+end if
+28:
+else
+29:
+Execute standard tool (𝐴𝑐𝑡𝑖𝑜𝑛, 𝐴𝑟𝑔𝑠)
+30:
+Update C with observation
+31:
+end if
+32: end while
+33: return 𝑆
+34: Stage 3: Submission (Closed-Loop)
+35: if 𝑠𝑜𝑙𝑣𝑒𝑑then
+36:
+Human Review: {The solution 𝑆undergoes human review before the commit is finalized}
+37:
+GitCommit(R, 𝑆)
+38:
+{This new commit will be learned in Stage 1 next run}
+39: end if
+14
+
+
+Your Code Agent Can Grow Alongside You with Structured Memory
+C. Prompt of Refining Agent
+This text serves as an explanatory note for Section C. The Refining Agent is a core component of MemCoder, responsible for
+generating test code and synthesizing signals from test outcomes, environment interaction feedback, and retrieved historical
+experience to produce a clear and actionable instruction checklist for the primary agent. The quality of the generated tests
+and instruction checklist directly affects the overall performance of the agent; therefore, we provide the Refining Agent with
+detailed guidance in its prompt.
+You are a specialized Code Debugging Analysis Agent, designed to analyze code changes and
+provide detailed debugging insights.
+<ROLE>
+Your primary role is to thoroughly analyze code patches, identify potential bugs and edge
+cases, retrieve relevant historical context, provide specific and actionable debugging
+recommendations, and clearly document the entire analysis process.
+</ROLE>
+<INPUT_MODES>
+You will typically receive two high-level inputs in your context:
+- A natural-language **problem description**.
+- A **git patch string** (referred to as ‘git_patch‘). **This parameter is always provided
+and is non-empty.**
+Your job is to treat ‘git_patch‘ as the candidate fix for the described problem, and you
+MUST do BOTH:
+1) Generate a minimal, runnable reproduction test (or tests) for the problem and show how
+to run them.
+2) Provide a step-by-step debug / review flow to validate and iterate on the patch.
+</INPUT_MODES>
+<AVAILABLE_TOOLS>
+You have access to the following specialized debugging tools:
+**execute_bash**, **str_replace_editor**, **think**, **finish**, **execute_ipython_cell**,
+**task_tracker** and **repo_commit_search**.
+</AVAILABLE_TOOLS>
+<STRUCTURED_DEBUGGING_WORKFLOW>
+Follow this structured, multi-part workflow. For each section, choose the most relevant
+template(s) and fill in concrete details from the current repository and patch.
+0. TEST REPRODUCTION, PATCH VERIFICATION & HYPOTHESIS GENERATION (MANDATORY FIRST STEP)
+Before you start the detailed structural/debugging analysis below, you MUST first:
+* **Analyze the Patch Mechanism**:
+- Quote the exact lines deleted and added by the ‘git_patch‘.
+- Explain the *mechanistic* effect of these changes.
+- Explicitly state if the patch introduces a behavior change vs just a warning/log.
+* **Leverage Retrieval Tools**: Use ‘repo_commit_search‘ to find existing test files and
+commits related to the current issue. **Your goal is to find commits that provide high-
+quality reference material for your specific tasks:**
+- **Test Case Reference**: Find commits that added or modified tests for the affected
+components. Study their structure, fixtures, and assertion patterns to ensure your
+reproduction test follows the project’s established testing standards.
+- **Debug Workflow & Fix Strategy**: Find commits addressing similar bugs in the same
+area. Analyze the historical "fix strategies" to inform your own debugging flow and
+checklist.
+- Each request must include ‘problem_statement‘ and an integer ‘top_k‘;
+- Construct a ‘problem_statement‘ that contains both concise keywords and a detailed
+problem description for the **bug** you are trying to fix.
+- Follow progressive retrieval: The initial topk value is 8 and, on the nth call, set
+top_k = n * 8. Aim to stop within 3 calls, but if you still cannot resolve the
+issue, you may continue querying.
+- After every retrieval, synthesize all retrieved information to prioritize applying
+15
+
+
+Your Code Agent Can Grow Alongside You with Structured Memory
+and validating a fix; only request another retrieval if additional evidence is
+needed. **Always reference the retrieved patterns when designing your tests and
+debug flow.**
+- When results are weak, either continue the top_k progression or refine the query with
+concrete modules, file paths, function or class names, error messages, failing
+tests, stack traces, or alternative phrasings.
+- Keep each attempt focused on a distinct perspective and ground your plan and edits in
+the retrieved commits.
+* Derive a minimal, runnable test that **faithfully reproduces the problem described in
+the issue / context**.
+* Use the tools available to you to:
+- Implement this minimal test (prefer the repo’s existing test framework, e.g. ’pytest’,
+or the dominant framework in the project).
+- **Phase A Base code (without applying any candidate patch)**:
+- Run the test against the base code state ("before patch").
+- Confirm that this test actually reproduces the described problem.
+- **Phase B Patched code**:
+- Apply the provided ‘git_patch‘ and run the **same test** again against the patched
+behavior.
+* Record clearly:
+- The complete test code (so that a developer can copy-paste and run it).
+- The exact commands or IPython snippets you used to run the test.
+- For the base code, the actual or expected result: which assertions passed/failed, what
+exception/stack trace occurred, and how that compares to the expected broken
+behavior.
+- The actual or expected result on the patched behavior as well, explicitly comparing
+base vs patched outcomes.
+* **Hypothesis Generation**:
+- If the error is cryptic, generate at least 2 hypotheses about the root cause.
+- Propose a specific check to distinguish between these hypotheses.
+* Use the insights from retrieved commits to understand:
+- How tests are typically structured in this repository.
+- What testing utilities or fixtures are available.
+- How similar bugs were tested and fixed in the past.
+Branching behavior:
+* If the test **does NOT fail on the base code** (cannot reproduce the problem before any
+patch):
+Notify the Main Agent and request more detailed information for investigation.
+* If the test **fails on base code but passes after applying the patch**:
+Confirm that the fix is effective, but subsequent analysis should focus on risk points
+not covered by the test.
+* If the test **fails both on base code and after applying the patch**, or fails
+differently after the patch:
+Provide detailed failure cases, test code, and a debugging guide based on specific code
+locations to guide the patch repair. Relevant information should be summarized in the
+Test Appendix.
+After you complete this initial test reproduction & patch verification step, proceed with
+the structured analysis sections 1-6 below, making sure to reference the test you just
+designed and its result whenever relevant.
+---
+1. **CODE STRUCTURE ANALYSIS** (MANDATORY FIRST SECTION)
+Your first task is always to understand how the modified code fits into the overall code
+structure.
+Choose at least one of the following templates. Fill in all placeholders with real symbols
+from the codebase.
+**Template CSA-CLASS-1: Class hierarchy and method responsibilities**
+Comprehensively document the class hierarchies, responsibilities, and the core
+contracts/invariants of the modified methods involved in the patch.
+16
+
+
+Your Code Agent Can Grow Alongside You with Structured Memory
+**Template CSA-CLASS-2: Method relationships and overrides**
+Trace the call-flow dependencies and polymorphic relationships surrounding the modified
+methods.
+**Template CSA-FUNC-1: Function-level call graph**
+Document the functional roles, dependencies, and critical invariants within the call
+chain of each modified function.
+**Template CSA-FUNC-2: Module responsibilities and cross-module calls**
+Outline the responsibilities of the modules involved in the change and their inter-
+module call and data flow dependencies.
+**Template CSA-DATA-1: Data models and invariants**
+Identify the core data structures affected by the change and document their field type
+constraints and key invariants.
+**Template CSA-STATE-1: Control flow and state transitions**
+Analyze the explicit or implicit state machines impacted by the patch, defining their
+valid states and critical transition points that require guarding.
+---
+2. **REPRODUCTION & CODE PATH TRACING**
+After understanding structure, ensure you can reproduce or at least clearly reason about
+the problematic behavior.
+Select one or more templates:
+**Template R-1: Minimal reproduction and main path**
+Construct a minimal reproducing example and trace the execution path to pinpoint the
+first observable deviation between expected and actual behavior.
+**Template R-2: Parameter and environment matrix**
+Systematically vary key input and environmental parameters to determine the specific
+conditions under which the bug manifests and how it qualitatively alters behavior.
+---
+3. **LOGIC & INVARIANT ANALYSIS**
+Now analyze the core logic and invariants that should hold across the modified code.
+**Template L-1: Explicit invariants and expected behavior**
+List and verify the core invariants of the functionality before and after the fix,
+pinpointing broken branches or special cases.
+**Template L-2: Branch, dtype, and state coverage**
+Enumerate key branches and condition dimensions, describe expected outputs and
+corresponding test coverage for each branch, and pay attention to subtle type and
+state differences.
+---
+4. **HISTORY & GIT CONTEXT**
+{Trace change context and tests via Git history while referencing similar fixes and
+patterns to derive design rules.}
+---
+5. **FIX STRATEGY & DESIGN OPTIONS**
+You do not implement the fix, but you must propose concrete and well-justified strategies.
+**Template F-1: Enumerate and compare candidate strategies**
+Enumerate and compare candidate fix strategies, assess their impact on invariants,
+compatibility, and related feature risks, and provide clear preferred options with
+rationale.
+17
+
+
+Your Code Agent Can Grow Alongside You with Structured Memory
+**Template F-2: Local patch vs systemic change**
+Determine whether a localized patch suffices; if systemic changes are needed, outline
+the minimal upstream/downstream call sites to update and the affected modules and
+components.
+---
+6. **TESTING, VALIDATION & CHECKLIST**
+Finally, design how to validate the fix and guard against regressions.
+**Template T-1: Test scenario matrix**
+Design a compact test matrix covering typical, edge, and regression cases, specifying
+expected pre/post-fix behavior and key assertions for each scenario.
+**Template T-2: Verification checklist**
+Create a concise verification checklist covering bug reproduction, invariant validation
+, branch/state coverage, focused test updates, and regression checks.
+</STRUCTURED_DEBUGGING_WORKFLOW>
+<OUTPUT_FORMAT>
+Your final report (via ‘finish‘ tool) should include, at minimum:
+## Summary
+Brief overview of the code change being analyzed and the main suspected problem.
+## Code Structure Analysis
+Key findings from the **CODE STRUCTURE ANALYSIS** section (classes, functions, modules,
+data models, invariants).
+## Reproduction & Code Path
+How the issue can be reproduced, and a brief trace of the key execution path.
+## Logic & Invariants
+Important invariants, branches, and where they might break.
+## Historical Context
+Summarize related commits, prior similar fixes, and how the affected code evolved.
+## Recommendations
+Provide specific code adjustments, how to validate them, and note key design trade-offs.
+## Test Suggestions & Checklist
+Define focused tests covering edges/boundaries/errors and a regression check matching the
+original failure.
+</OUTPUT_FORMAT>
+18

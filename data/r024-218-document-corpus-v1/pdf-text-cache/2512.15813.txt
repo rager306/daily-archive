@@ -1,0 +1,604 @@
+CodeMem: Architecting Reproducible Agents via
+Dynamic MCP and Procedural Memory
+Nishant Gaurav
+nishant@agentr.dev
+Adit Akarsh
+adit@agentr.dev
+Tejas Ravishankar
+tejas@agentr.dev
+Manoj Bajaj
+manoj@agentr.dev
+Abstract
+Current tool-using AI agents suffer from limited action space, context inefficiency,
+and probabilistic instability that makes them unsuitable for handling repetitive
+tasks which are otherwise reliably and efficiently tackled by agentic workflows
+built on platforms like n8n [12] and Zapier [8]. Earlier works like CodeAct [15],
+DynaSaur [13], Code Mode [4] have tried to tackle the first two issues by using
+the whole Python language as its action space: The number of tools that the agent
+can call becomes infinite. Python code blocks can execute complex actions into
+a single step and print only relevant results which helps in keeping the context
+lean. However, the probabilistic instability issue still remains, as for the same
+task in the same environment, the agent can follow different trajectories due to
+the probabilistic nature of LLMs. Therefore, we need procedural memory for
+consistency and reliability. This paper proposes CodeMem, an architecture to
+implement procedural memory via code which can be used to build and run reusable
+agentic workflows with deterministic reliability.
+1
+Introduction
+Tool-using language agents have evolved from single-shot chatbots into complex systems capable of
+planning and state management. Frameworks like CoALA emphasize that capable agents require
+structured memory, rich action spaces, and iterative decision-making loops [14]. However, most
+production architectures still rely on token-heavy, tool-centric interaction patterns where the LLM
+micromanages every step. This paper proposes CodeMem, an architecture that reframes the LLM as
+an architect of executable workflows. Instead of standard chat-based tool calling, the agent utilizes a
+sandbox to write, validate, and save successful logic into a persistent procedural memory bank. This
+approach solves the reproducibility crisis inherent in probabilistic models by shifting complex logic
+from volatile context windows into deterministic code.
+The plan for the rest of the paper is as follows. We first summarize the relevant literature which
+form the basis for CodeMem (in Section 2). Then we dive deeper into the benefits of CodeAct over
+ReAct which establishes that Code is the right format for capturing procedures (in Section 3). The
+next Section covers the key bottlenecks which must be solved (in Section 4). Section 5 proposes
+the CodeMem Architecture which overcomes the key bottlenecks specified in the previous section.
+In Section 6, we show how CodeMem creates procedural memory with a real-world case-study.
+Section 7 shows experiments which prove the benefits of CodeMem quantitatively. Finally we
+summarize the findings in Section 8.
+Preprint.
+arXiv:2512.15813v1  [cs.SE]  17 Dec 2025
+
+
+2
+Related Work
+2.1
+Procedural Memory in Theory
+The CoALA framework organizes agent memory into working, episodic, semantic, and procedural
+categories [14]. While working memory (context) and semantic memory (RAG) are well-solved,
+procedural memory (implicit knowledge of how to execute tasks) remains a bottleneck. The paper
+suggests three possible approaches for capturing procedural memory in AI Agents:
+1. Rewriting the code of the Agent
+2. Editing the weights of the LLMs
+3. Editing the instructions of the AI Agent
+Theoretically both these approaches make sense, but practical implementations are still missing.
+LangGraph, a popular agentic framework, calls this out in their documentation:
+“In practice, it is fairly uncommon for agents to modify their model weights or
+rewrite their code. However, it is more common for agents to modify their own
+prompts.” [9]
+2.2
+Implementing Procedural Memory via Meta Prompting
+Frameworks like LangGraph distinguish between short-term memory (thread-scoped checkpoints)
+and long-term memory (cross-thread persistence) [10].
+Short-Term:
+LangGraph effectively manages conversation state (i.e. the messages history, includ-
+ing human, AI, and tool messages) via checkpoints. All kinds of memory (semantic, episodic, and
+procedural) can be captured in short term memory but there is no guarantee that the agent will utilize
+this memory reliably. That’s why we need long term memory.
+Long-Term:
+For capturing semantic and episodic memory we can leverage RAG and there are
+several open-source projects (e.g. Graphiti [6], LightRAG [7]) which are getting used in production.
+However, capturing procedural memory is still an underexplored topic. LangGraph conceptualizes
+procedural updates primarily as modifications to graph topology or just the system instructions (e.g.,
+“update the prompt to handle X better next time”) [9].
+For example, the LangGraph team built a Tweet generator using external feedback and prompt re-
+writing to produce high-quality paper summaries for Twitter. In this case, the specific summarization
+prompt was difficult to specify a priori, but it was fairly easy for a user to critique the generated
+Tweets and provide feedback on how to improve the summarization process [11].
+However, relying on prompt updates for procedural memory is brittle. Because LLMs are stochastic,
+updating a system prompt does not guarantee the agent will adhere to the new procedure in the future,
+especially for longer instructions.
+In contrast, CodeMem treats procedural memory as frozen code, ensuring deterministic execution
+without relying on the model’s instruction-following capability.
+2.3
+Progressive Disclosure for Tool Calling
+Standard approaches to tool use require injecting full tool definitions into the system prompt. As tool
+libraries grow, this leads to context window bloat and attention degradation. Dynamic ReAct [5]
+proposes a solution by decoupling tool existence from tool definition. Instead of loading all tools,
+the agent is given a discovery mechanism to query a registry and load only relevant tools and their
+schemas on-demand.
+This follows the principle of progressive disclosure where we disclose the relevant tools to the LLM
+on an ad hoc basis. This shifts tool access from an O(N) context cost to an O(1) search opera-
+tion, enabling infinite-scale tool libraries. This approach was also later highlighted in Anthropic’s
+engineering blog titled Code execution with MCP [1].
+2
+
+
+Figure 1: Mechanism for updating procedural memory via instruction tuning. The agent analyzes
+the conversation history and existing instructions to generate refined new instructions (e.g., adding
+constraints like "Do not use hashtags"). This process, utilized by the LangGraph Tweet generator,
+relies on meta-prompting rather than code modification [11].
+Access to a tool registry is also a key ingredient for an infinite action space. Without it, a CodeAct
+Agent cannot leverage capabilities outside of first party python libraries.
+3
+Comparative Analysis: Executable Code vs. Direct Tool Calling
+Recent benchmarks indicate a fundamental limit to the JSON-centric tool calling paradigm (ReAct),
+where LLMs are provided a set of tools (with tool names and tool arguments), and they write JSON
+text for calling these tools. By shifting from discrete tool calls to executable code, agents achieve
+higher success rates and lower latency.
+3.1
+The Performance Gap: CodeAct vs. ReAct
+Research by Wang et al. [15] on the CodeAct framework demonstrates that agents utilizing executable
+Python code as their primary action space significantly outperform those relying on standard text-
+based or JSON-based tool invocation.
+• Success Rate: On the M3ToolEval benchmark, code-driven agents achieved a 20% higher
+success rate compared to ReAct agents.
+• Action Efficiency: Code agents required 30% fewer turns to complete equivalent tasks.
+This efficiency stems from the ability to compose multiple actions (e.g., search →filter →
+sort) into a single executable block, whereas ReAct requires a full LLM inference cycle for
+each individual step.
+3.2
+Decoupling Reasoning from Computation
+Standard agents suffer from “computation hallucination,” where the LLM attempts to perform
+arithmetic or logic within the context window. Chen et al. [3] introduced Program of Thoughts (PoT),
+showing that offloading logic to a Python interpreter improves numerical reasoning accuracy by
+over 10% compared to Chain of Thought (CoT). In the CodeMem architecture, the Dynamic MCP
+tools serve as the “API,” but the logic (loops, data processing) is offloaded to the Python Sandbox.
+This separation ensures that the LLM acts as a semantic router while the CPU handles the syntactic
+execution, eliminating non-deterministic errors in logical processing.
+3
+
+
+3.3
+Contextual Complexity Analysis
+We define the context cost C for a workflow of N steps.
+• Standard Tool Calling:
+C ≈
+N
+X
+i=1
+(Sprompt + Shistory + Stool_outputi)
+The context grows linearly with every intermediate step, often truncating memory before
+the task is complete.
+• CodeMem:
+C ≈Sprompt + Scode_block + Sfinal_result
+Intermediate data transformations occur in the sandbox’s memory (RAM), not the LLM’s
+context window. This allows for infinite-depth processing (e.g., looping through 10,000
+database rows) without consuming token budget.
+Table 1: Benchmark Comparison: JSON Tool Calling vs. CodeMem Execution
+Metric
+Standard Tool Calling (JSON)
+CodeMem (Python)
+Multi-step Latency
+High (N× Inference Time)
+Low (1× Inference + Execution Time)
+Logic Reliability
+Probabilistic (LLM predicts logic)
+Deterministic (Python executes logic)
+Max Loop Depth
+< 25 (Limited by Context)
+∞(Limited by Compute/Time)
+Reproducibility
+Low (Varies by seed/drift)
+High (Versioned Scripts)
+4
+The Limitations of Vanilla CodeAct
+While shifting from ReAct to CodeAct addresses the issues of context inefficiency and limited action
+spaces, it introduces a new set of bottlenecks related to reliability and persistence. CodeAct allows an
+agent to utilize the full expressivity of Python [15], but without a dedicated memory architecture, it
+suffers from issues arising from the nature of LLMs. We identify four structural penalties of using
+vanilla CodeAct without a persistence layer:
+4.1
+Probabilistic Instability
+Standard CodeAct relies on generative improvisation for every task. Because LLMs are non-
+deterministic, the agent may generate different code paths for the exact same request across different
+sessions, especially if the request is not detailed (e.g., using pandas one day and openpyxl the next).
+This leads to trajectory divergence, where the logic validated in a previous session is not guaranteed
+to be reproduced, effectively causing the agent to “reinvent the wheel” unpredictably.
+4.2
+Redundant Computation and Latency
+Re-deriving solutions from scratch consumes extra tokens and requires computational time, even if
+provided perfect instructions. The total time for a task is calculated as:
+Ttask = Tplan + Twrite_code + Tdebug + Texecute
+Even for tasks solved hundreds of times, the agent wastes tokens and time re-generating the planning
+and coding phases, since in practice it usually does not get everything right in one go. A system with
+procedural memory avoids this overhead by reducing the cost to approximately Texecute.
+4.3
+Inability to Retain Feedback
+Vanilla CodeAct agents lack cross-session memory, making them unsuitable for workflows with any
+customization. If a user provides specific feedback, such as “filter by ‘received’ date rather than ‘sent’
+date”, that correction is lost once the current context window closes. Without a mechanism to save
+successful logic, the agent fails to learn from the environment and requires repeated supervision for
+the same errors.
+4
+
+
+4.4
+Context Drift
+In longer, multi-step tasks (e.g., “Scrape 100 pages, filter by keyword, then summarize”), standard
+CodeAct agents often suffer from context drift. As the conversation history fills with intermediate
+code outputs and error logs, the original high-level goal gets pushed out of the LLM’s attention span.
+The agent might successfully scrape the data but “forget” to summarize it, or it might get stuck in a
+loop trying to fix a minor scraping error, losing sight of the overall objective.
+5
+The Solution: CodeMem Architecture
+To overcome the structural penalties of vanilla CodeAct, we propose CodeMem, an architecture that
+transitions the LLM from a perpetual improviser to an architect of reusable skills. We address the
+bottlenecks identified in Section 4 by combining a Dynamic MCP discovery layer with a Procedural
+Memory Bank.
+5.1
+The Core Toolset
+The foundation of the architecture relies on four primary tools that enable the agent to navigate, plan,
+and execute logic deterministically:
+• search_functions & load_functions: Implements the Dynamic MCP protocol [5].
+This allows the agent to discover relevant tools and inject their schemas Just-in-Time,
+preventing context window bloat.
+• write_todos: A state persistence mechanism for long-horizon planning. It explicitly tracks
+dependencies (Pending →In Progress →Completed), preventing the “Goal Drift” often
+seen in standard CodeAct sessions.
+• execute_code: Runs Python scripts in a secure sandbox [2], allowing the agent to chain
+loaded tools together programmatically rather than sequentially via chat.
+• register_skill: The tool to add to procedural memory. This tool takes a successfully
+validated Python function and saves it into the user’s permanent library. It freezes the logic
+(and any specific user constraints) after it is finalized so it can be recalled deterministically
+in future sessions without re-generation.
+5.2
+Solving Instability
+To resolve Probabilistic Instability (Section 4.1) and the lack of a method to incorporate user feedback
+(Section 4.3), CodeMem changes the lifecycle of code generation. Instead of treating code as
+ephemeral text, we treat it as a candidate for permanent storage.
+Trial: The agent uses execute_code to generate and test logic in the sandbox, self-correcting errors
+in real-time.
+Saving: Once the output matches user requirements including any specific constraints like “filter by
+received date”, the system triggers register_skill.
+Persistence: The validated logic is saved to the user’s library, and used deterministically in the
+future.
+5.3
+Solving Latency and Cost
+To eliminate the Re-Derivation Penalty (Section 4.2), CodeMem alters the execution flow for recurrent
+tasks.
+• Standard CodeAct:
+Ttask = Tplan + Twrite + Tdebug + Texecute
+• CodeMem Reuse:
+Ttask ≈Texecute
+5
+
+
+The user is able to access their repository of stored skills, and load it into the execution environment’s
+context as well as the LLM’s context. This allows the LLM to be aware of the function’s functionality,
+while also not having to rewrite the code to use it. Thus, by skipping the planning, writing/rewriting,
+and debugging phases entirely, the agent reduces latency and eliminates the token costs associated
+with re-generation.
+5.4
+Solving Context Drift
+To prevent context drift (Section 4.4) during longer tasks, CodeMem utilizes write_todos as an
+external anchor. Implicit internal reasoning often fails as the context window fills with logs and
+code blocks. write_todos maintains a structured checklist (Pending →In Progress →Completed)
+outside of the chat history. This allows the agent to deep-dive into specific sub-tasks (like debugging
+a scraper) without losing its place in the overall plan, ensuring the final crystallized code is complete
+and modular.
+User Query
+Agent (LLM)
+Architect
+Python
+Sandbox
+execute_code
+Success?
+Final Output
+Tool
+Registry
+(Dynamic
+MCP)
+Procedural
+Memory
+(Saved
+Skills)
+1. Gen Script
+Result
+search
+schemas
+recall
+functions
+No
+Retry (Stderr)
+Yes
+register_skill
+Figure 2: The CodeMem Architecture. The Agent creates reproducible workflows by discovering
+tools (Left), executing them in a sandbox (Center), and freezing successful logic into persistent
+memory (Right).
+6
+Creating Procedural Memory: A Case Study
+The ultimate goal of the CodeMem architecture is not merely to execute a task once, but to crystallize
+the successful logic into a reusable skill. This process transforms ephemeral chains of thought
+into persistent procedural memory. To illustrate the necessity and mechanics of this transition,
+we examine the Outlook-OneDrive Bridge, a complex administrative task that requires temporal
+filtering, conditional logic, and cross-service file orchestration.
+6.1
+The Challenge: High-Fidelity Data Orchestration
+Consider the following real-world request, which represents a class of tasks typically fatal to standard
+chat agents:
+6
+
+
+User Query: “Go through the past 15 days of emails in my Outlook. Wherever
+there’s a PDF or XLSX attachment, save it to a OneDrive folder named ‘Email
+Attachments/[Company Name]’. Ignore internal emails from @agentr.dev. If the
+company name is codeword, extract the real company name from the attachment
+metadata.”
+This prompt contains four distinct constraints: a temporal window (15 days), a file-type filter
+(PDF/XLSX), a negative filter (ignore domain), and a conditional logic branch (pseudo-code extrac-
+tion).
+6.1.1
+The ReAct Failure Mode: Context Collapse
+In a standard Tool-Calling (ReAct) architecture, the agent attempts to solve this iteratively. This
+approach fails due to linear complexity scaling:
+1. Ingestion: The agent calls outlook_list_emails and receives a JSON list of 50+ emails.
+2. Iteration: It must iterate through this list one by one. For every email with an attachment, it
+calls outlook_get_attachment.
+3. Collapse: The API returns the raw Base64 string of a 5MB PDF. This single data payload
+instantly fills the context window. The agent undergoes Context Collapse—the truncation of
+the conversation history deletes the memory of which emails have already been processed.
+The agent typically enters a failure loop, re-fetching the first email indefinitely until the
+token budget is exhausted.
+6.2
+The CodeMem Solution: Sandbox Orchestration
+In the CodeMem architecture, the LLM does not ingest the data; instead, it architects the pipeline
+that moves the data. The agent operates in three distinct phases to ensure reliability.
+Phase 1: Discovery & Planning. The agent utilizes search_functions to map the API surface,
+identifying the necessary tools for retrieval and storage.
+Phase 2: Script Generation. Instead of calling tools one by one, the agent authors a robust Python
+script (Listing 1) that handles the logic in silico.
+Phase 3: Execution. The script executes in the sandbox. In our experiments, it processed 7 emails,
+filtered 3, and uploaded 4 files in a single execution pass taking 14 seconds. The final artifact
+is the agent_main function itself, which is saved to the user’s library for zero-shot reuse.
+6.3
+Architectural Advantages
+The shift from ReAct to CodeMem introduces two fundamental improvements in agent reliability:
+• O(1) Context Complexity: In ReAct, context consumption scales linearly with the size
+of the data (O(D)), as file contents must pass through the LLM. In CodeMem, context
+consumption is constant (O(1)) relative to data size. The LLM only sees the reference to
+the data (e.g., variable attachment[’content’]), while the actual binary transfer occurs
+within the Python Sandbox’s heap memory. This allows agents to process gigabytes of data
+without utilizing a single token of context.
+• Deterministic Control Flow: The requirement to “ignore emails from @agentr.dev” is a
+simple boolean check. In an LLM-driven loop, the model must “remember” to apply this
+rule at every step, making it susceptible to attention drift. In the generated script, the if
+statement is syntactically enforced by the Python interpreter, ensuring 100% compliance
+with the negative filter.
+7
+
+
+Listing 1: The Agent-Generated Orchestration Script
+1
+async def
+agent_main(days_back =15):
+2
+# 1. Deterministic
+Date
+Calculation
+3
+cutoff = datetime.now() - timedelta(days=days_back)
+4
+filter_query = f" receivedDateTime
+>= {cutoff} and
+hasAttachments
+eq true"
+5
+6
+# 2. Bulk
+Fetch & Local
+Filter
+7
+emails = await
+outlook__list_emails (filter=filter_query)
+8
+9
+for email in emails:
+10
+# Logic
+handled in loop , not via tokens
+11
+if "@agentr.dev" in email[’from ’]:
+12
+continue
+13
+14
+# 3. Data
+Streaming (Not
+Context
+Loading)
+15
+attachment = await
+outlook__get_attachment (email[’id’])
+16
+17
+# 4. Metadata
+Extraction
+via Helper
+18
+meta = await
+_analyze_email_metadata (email)
+19
+path = f"Email
+Attachments
+December /{ meta[’company ’]}/"
+20
+21
+await
+onedrive__upload_file (path , attachment[’content ’])
+6.4
+Pathways to Formation: Instruction vs. Exploration
+There are two distinct ways to turn a one-time conversation into a reusable tool. The reliability of the
+resulting tool depends on whether the user provides the blueprint (Instruction) or the agent discovers
+it (Exploration).
+6.4.1
+Pathway 1: Exploration-Driven (The Scientist)
+In this scenario, the user provides a high-level goal (“Fetch my emails...”) without implementation
+details. The agent must perform Hierarchical Task Analysis, decomposing the abstract request into
+executable steps through trial and error.
+• Cognitive Load: High. The agent must hypothesize which tools to use (e.g., searching for
+“fetch emails”), discover that the API lacks specific filters (e.g., filtering by attachment type),
+and devise a Python-side logic to compensate.
+• Execution Profile: Iterative and Cyclic. The logs show the agent loading tools, attempting
+execution, discovering limitations (e.g., lack of file writing capabilities), and pivoting
+strategies (e.g., switching from markitdown to pandas).
+• Risk: Without a clear map, the agent is prone to Goal Drift—forgetting the high-level
+objective while fixing low-level syntax errors.
+6.4.2
+Pathway 2: Instruction-Driven (The Architect)
+In this scenario, the user acts as the Architect, providing a fully specified algorithm. The agent acts
+as a Builder, translating natural language constraints directly into control flow. This pathway is
+characterized by a “Handshake” protocol where the agent confirms the architectural details before
+building.
+User Prompt: “Create a reproducible workflow...
+[Detailed logic for Out-
+look/OneDrive]... Ignore emails where the domain is @agentr.dev... Set an appro-
+priate name...”
+Because the instructions are dense, the agent recognizes the need for state management and halts to
+verify requirements before writing the final code:
+8
+
+
+Agent: “Since this workflow fetches emails from a rolling window... running it multiple times could
+result in duplicate files. Would you like me to add a ‘memory’ to this agent (e.g., using a
+Google Sheet) to track processed emails?”
+User: “no log required”
+Agent: [Generates Plan] “I will filter out emails from @agentr.dev... and use the current month for
+dynamic folder naming.”
+User: “ok”
+This confirmation step is critical. It ensures that the resulting procedural memory aligns exactly with
+user intent before the logic is crystallized into the codebase.
+6.5
+State Anchoring via write_todos
+To manage the complexity of both pathways, particularly the exploration-driven one, the agent
+utilizes write_todos as an External Working Memory. Before executing complex logic, the agent
+externalizes its plan:
+todos:
+- status: completed
+content: Load functions for Outlook and OneDrive
+- status: pending
+content: Fetch Outlook emails... filter for (.pdf, .xlsx)
+- status: pending
+content: Process sample... extract Company Name...
+- status: pending
+content: Create folders... and upload
+This bridges the gap between Goal and Execution. If the sandbox crashes or the context is truncated
+due to a large error log, the agent reads the todos object to perform State Recovery. It identifies that
+“Process sample” is still marked pending and immediately generates a fix for the error, picking up
+exactly where it left off without needing to re-derive the plan from the chat history.
+7
+Experimental Evaluation
+7.1
+Dataset Composition
+To rigorously evaluate the efficacy of the CodeMem architecture, we curated a dataset of 25 multi-
+step agentic tasks. These tasks range from simple retrieval (Difficulty 1) to complex, multi-tool
+orchestration (Difficulty 5). The dataset covers diverse domains including:
+• Personal Productivity: "Find unread emails from the last 24 hours and draft replies."
+• Data Analysis: "Analyze Census data for ZIP 94012 and email a visualized report."
+• System Operations: "Scrape Reddit threads, filter by sentiment, and update a Google
+Sheet."
+Each task requires the agent to navigate a real-world environment, chaining between 2 to 8 distinct
+tools (e.g., Gmail, Google Sheets, Reddit, Web Search) to achieve a verifiable outcome.
+7.2
+Evaluation Methodology
+Given the open-ended nature of agentic tasks, we employed an LLM-as-a-Judge framework to
+measure correctness. We utilized Gemini 2.5 Flash as the evaluator model.
+Crucially, the judge was not limited to checking the final text response. It was granted access to the
+full agent trajectory, including:
+1. The sequence of tool selections and arguments.
+2. The raw code executed in the sandbox.
+9
+
+
+3. The execution outputs (stdout/stderr) and side effects (e.g., API success responses).
+This allowed the judge to verify functional success (e.g., "Did the file actually get saved to Drive?")
+rather than relying solely on the agent’s self-reported success.
+7.3
+CodeMem Performance Analysis
+We evaluated the CodeMem architecture across three state-of-the-art foundational models. Table 2
+presents the comparative performance metrics.
+Table 2: Performance Comparison on CodeMem Benchmarks
+Model
+Correctness (Min)
+Avg. Calls
+P50 Latency
+Total Tokens
+Gemini 3 Full
+96%
+7.00
+100.48s
+2.02M
+Claude 4.5 Sonnet
+79%
+6.96
+71.38s
+2.61M
+GPT-5 Chat
+68%
+2.80
+14.75s
+0.49M
+As shown in Table 2, Gemini 3 Full achieved the highest stability with a minimum correctness of
+96%, utilizing an average of 7.00 assistant calls to fully resolve tasks. Conversely, while GPT-5
+Chat appears highly efficient in terms of latency (14.75s) and token usage (0.49M), this efficiency is
+illusory. The model frequently failed to iterate on edge cases, exiting the loop prematurely (2.80 avg
+calls) compared to the ∼7 calls required by higher-reasoning models to achieve success.
+8
+Summary of Architecture
+Table 3: Comparison of Architectural Components and Problems Solved
+Feature
+Implementation Tool
+Problem Solved
+Context Management
+search / load_functions
+Context Bloat: Tools are loaded Just-in-Time
+via Dynamic MCP [5].
+State Persistence
+write_todos
+Goal Drift: Complex plans are tracked in a
+structured list, preventing agents from "forget-
+ting" parallel tasks.
+Flow Control
+execute_code (Sandbox)
+Rigid Orchestration: Loops and conditionals
+occur in deterministic code, not probabilistic
+chat.
+Computation
+execute_code (Pandas)
+Logic Failure: Mathematical operations are
+calculated by the CPU, not predicted by tokens.
+Reliability
+register_skill (DB)
+Reproducibility: Successful logic is frozen
+into reusable skills, avoiding stochastic prompt
+drift.
+References
+[1] Anthropic.
+Code execution with MCP.
+https://www.anthropic.com/engineering/
+code-execution-with-mcp, 2024. Anthropic Engineering Blog.
+[2] Anthropic.
+Introducing agent skills.
+https://www.claude.com/blog/skills, 2025.
+Claude.com Blog.
+[3] Wenhu Chen, Xueguang Ma, Xinyi Wang, and William W Cohen. Program of thoughts prompt-
+ing: Disentangling computation from reasoning for numerical reasoning tasks. Transactions
+on Machine Learning Research, 2023. ISSN 2835-8856. URL https://openreview.net/
+forum?id=YfZ4ZPt8zd. Also available as arXiv:2211.12588 (2022).
+10
+
+
+[4] Cloudflare. Code mode: A new way to build agents. https://blog.cloudflare.com/
+code-mode/, 2024. Accessed: 2025-01-01.
+[5] Nishant Gaurav, Adit Akarsh, Ankit Ranjan, and Manoj Bajaj. Dynamic react: Scalable tool
+selection for large-scale mcp environments. arXiv preprint arXiv:2509.20386, 2025. URL
+https://arxiv.org/abs/2509.20386.
+[6] GetZep. Graphiti: Build real-time knowledge graphs for ai agents. https://github.com/
+getzep/graphiti, 2024.
+[7] HKUDS. Lightrag: Simple and fast retrieval-augmented generation. https://github.com/
+HKUDS/LightRAG, 2024. Associated with arXiv:2410.05779.
+[8] Zapier Inc. Zapier: Automation that moves you forward. https://zapier.com, 2024.
+[9] LangChain AI. Langgraph: Adding memory to agents. LangChain Documentation, 2024. URL
+https://langchain-ai.github.io/langgraph/how-tos/memory/add-memory/.
+[10] LangChain AI. Langgraph: Persistence and memory. LangChain Documentation, 2024. URL
+https://langchain-ai.github.io/langgraph/how-tos/persistence/.
+[11] LangChain AI.
+Langgraph concepts: Memory.
+https://langchain-ai.github.io/
+langgraph/concepts/memory/, 2024. Section: Procedural Memory.
+[12] n8n.io. n8n: Workflow automation tool. https://n8n.io, 2024. Accessed: 2024-05-20.
+[13] Dang Nguyen, Viet Dac Lai, Seunghyun Yoon, Ryan A Rossi, Handong Zhao, Ruiyi Zhang,
+Puneet Mathur, Nedim Lipka, Yu Wang, et al. Dynasaur: Large language agents beyond
+predefined actions. arXiv preprint arXiv:2411.01747, 2024.
+[14] Theodore Sumers, Shunyu Yao, Karthik Narasimhan, and Thomas L. Griffiths. Cognitive
+architectures for language agents (coala). arXiv preprint arXiv:2309.02427, 2024. URL
+https://arxiv.org/abs/2309.02427.
+[15] Xingyao Wang, Yangyi Chen, Lifan Yuan, Yizhe Zhang, Yunzhu Li, Hao Peng, and Heng Ji.
+Executable code actions elicit better llm agents, 2024.
+11
