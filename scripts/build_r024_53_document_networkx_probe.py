@@ -184,8 +184,6 @@ def main() -> int:
 
     # memory profile: after
     snap_after = tracemalloc.take_snapshot()
-    stats_before = snap_before.compare_to(snap_after, "filename")
-    stats_after = snap_after.compare_to(snap_before, "filename")
 
     # top allocations
     top_diff = snap_after.compare_to(snap_before, "lineno")

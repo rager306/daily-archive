@@ -26,9 +26,11 @@ import json
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any, cast
 
 from research_graph.infrastructure.corpus.ingestion.catalog_ingest import (
     M056_CUMULATIVE_CORPUS_PATH_DEFAULT,
+    CumulativePdfRecord,
     SafetyOverride,
     build_article_record,
     load_m056_corpus,
@@ -36,6 +38,85 @@ from research_graph.infrastructure.corpus.ingestion.catalog_ingest import (
     verify_m056_sha256,
     write_article_record,
 )
+
+
+def _article_claims_offline_m056(article: dict[str, Any], expected_sha256: str) -> bool:
+    identity = article.get("identity", {})
+    if not isinstance(identity, dict):
+        return False
+    if identity.get("sha256") != expected_sha256:
+        return False
+    if identity.get("source_kind") != "m056_cumulative_corpus_local_pdf":
+        return False
+    variants = article.get("source_variants", [])
+    if not isinstance(variants, list):
+        return False
+    return all(
+        isinstance(variant, dict) and variant.get("network_fetch_attempted") is False
+        for variant in variants
+    )
+
+
+def _patch_m056_offline_article(
+    *,
+    article: dict[str, Any],
+    record: CumulativePdfRecord,
+    pdf_path: Path,
+    catalog_root: Path,
+    safety: SafetyOverride,
+) -> dict[str, Any]:
+    """Patch build_article_record output with M056 offline-corpus metadata."""
+    arxiv_id = record.arxiv_id
+    source_strategy = cast(dict[str, Any], article["source_strategy"])
+    identity = cast(dict[str, Any], article["identity"])
+    source_variants = cast(list[dict[str, Any]], article["source_variants"])
+    expected_profile = cast(dict[str, Any], article["expected_profile"])
+    safety_flags = cast(dict[str, Any], article["safety_flags"])
+
+    source_strategy["primary_source_variant_id"] = f"{arxiv_id}:source:m056-cumulative-corpus"
+    source_strategy["metadata_order"] = ["m056_cumulative_corpus_json"]
+    source_strategy["pdf_policy"] = f"m056_{record.source_milestone}_sha256_verified"
+    source_strategy["fallback_policy"] = (
+        "use local PDF from M056 cumulative corpus only; no network, graph writes, "
+        "or production import is authorized"
+    )
+
+    identity["source_kind"] = "m056_cumulative_corpus_local_pdf"
+    identity["sha256"] = record.sha256
+    identity["size_bytes"] = record.size_bytes
+    identity["pages_estimate"] = record.pages_estimate
+    identity["source_milestone"] = record.source_milestone
+
+    source_variants[0].update(
+        {
+            "variant_id": f"{arxiv_id}:source:m056-cumulative-corpus",
+            "source_role": "m056_cumulative_corpus_json",
+            "source_origin": "local_artifact",
+            "path": str(M056_CUMULATIVE_CORPUS_PATH_DEFAULT),
+            "url": None,
+            "capture_status": "captured_local",
+            "capture_policy": "local_m056_cumulative_corpus_json_no_network",
+            "loader_outcome": "loaded_metadata_from_cumulative_corpus_json",
+            "network_fetch_attempted": False,
+        }
+    )
+    source_variants[1].update(
+        {
+            "path": str(pdf_path.relative_to(catalog_root)),
+            "source_origin": "m056_local_acquisition",
+            "capture_policy": "local_copy_from_m056_cumulative_corpus_no_additional_pdf_download",
+            "network_fetch_attempted": False,
+        }
+    )
+
+    article["safety_override"] = {
+        "external_network_authorized": False,
+        "reason": safety.reason,
+        "scope": safety.scope,
+    }
+    safety_flags["network_fetch_required_for_pipeline_phase"] = False
+    expected_profile["synthetic_metadata"] = True
+    return article
 
 
 def main() -> int:
@@ -74,12 +155,13 @@ def main() -> int:
             pdf_path = record.pdf_path
             article_path = pdf_path.parents[1] / "article.json"
 
-            # Skip if article.json already exists with matching sha256
+            # Skip only if article.json already exists and fully reflects the
+            # offline M056 corpus contract. Older S02 records with matching
+            # SHA256 but stale network_fetch_attempted=true must be rewritten.
             if article_path.exists():
                 try:
                     existing = json.loads(article_path.read_text())
-                    existing_sha = existing.get("identity", {}).get("sha256", "")
-                    if existing_sha == record.sha256:
+                    if _article_claims_offline_m056(existing, record.sha256):
                         skipped_count += 1
                         continue
                 except Exception:
@@ -94,22 +176,13 @@ def main() -> int:
                 dest_pdf=pdf_path,
                 catalog_root=catalog_root,
             )
-            # patch with cumulative-corpus metadata
-            article["source_strategy"]["pdf_policy"] = (
-                f"m056_{record.source_milestone}_sha256_verified"
+            article = _patch_m056_offline_article(
+                article=article,
+                record=record,
+                pdf_path=pdf_path,
+                catalog_root=catalog_root,
+                safety=safety,
             )
-            article["identity"]["sha256"] = record.sha256
-            article["identity"]["size_bytes"] = record.size_bytes
-            article["identity"]["pages_estimate"] = record.pages_estimate
-            article["identity"]["source_milestone"] = record.source_milestone
-            article["source_variants"][1]["path"] = str(pdf_path.relative_to(catalog_root))
-            article["safety_override"] = {
-                "external_network_authorized": False,
-                "reason": safety.reason,
-                "scope": safety.scope,
-            }
-            # mark synthetic_only
-            article["expected_profile"]["synthetic_metadata"] = True
 
             write_article_record(article_path, article)
             events.append(
