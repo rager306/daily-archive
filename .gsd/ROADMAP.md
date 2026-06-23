@@ -125,4 +125,4 @@
 - ✅ **M118-a2rx90: Graph Readiness Validation (R024): one-week corpus (53 articles), final stage** (`depends:[—]`)
 - ✅ **M119-3eb3vy: Graph Readiness Validation (R024): entity-level scale-out (catalog-limited pivot)** (`depends:[—]`)
 - ✅ **M120-rh6uye: Canonical Catalog Ingest Migration: M061 orphan script to research_graph package** (`depends:[—]`)
-- 🔄 **M121-kd3kzr: Catalog Expansion: Ingest 165 M056 pre-positioned PDFs via catalog_ingest package** (`depends:[—]`)
+- ✅ **M121-kd3kzr: Catalog Expansion: Ingest 165 M056 pre-positioned PDFs via catalog_ingest package** (`depends:[—]`)
