@@ -51,6 +51,9 @@ CANONICAL_ARXIV_ROOT_DEFAULT = CATALOG_ROOT_DEFAULT / "article_catalog" / "arxiv
 M061_ROOT_DEFAULT = Path("artifacts/m061-2hop")
 REPORT_PATH_DEFAULT = M061_ROOT_DEFAULT / "s04-ingest-report.md"
 
+# M056 cumulative corpus (M121 S01): pre-positioned PDFs with sha256 + size + pages metadata.
+M056_CUMULATIVE_CORPUS_PATH_DEFAULT = Path("artifacts/m056-bfs-graph/cumulative-corpus.json")
+
 # ---------------------------------------------------------------------------
 # Safety defaults + override pattern
 # ---------------------------------------------------------------------------
@@ -696,6 +699,112 @@ def per_anchor_counts(records: Iterable[IngestRecord]) -> dict[str, Counter[str]
 
 
 # ---------------------------------------------------------------------------
+# M056 cumulative corpus loader (M121 S01)
+# ---------------------------------------------------------------------------
+
+
+@dataclasses.dataclass(frozen=True)
+class CumulativePdfRecord:
+    """One pre-positioned PDF entry from M056 cumulative-corpus.json."""
+
+    arxiv_id: str
+    pdf_path: Path
+    sha256: str
+    size_bytes: int
+    pages_estimate: int
+    source_milestone: str
+    category: str  # derived from path: arxiv/<category>/<id>/source/<id>.pdf
+
+
+def load_m056_corpus(
+    cumulative_corpus_path: Path = M056_CUMULATIVE_CORPUS_PATH_DEFAULT,
+    repo_root: Path = Path(),
+) -> dict[str, CumulativePdfRecord]:
+    """Load M056 cumulative corpus JSON into arxiv_id -> CumulativePdfRecord map.
+
+    Verifies that each PDF exists at its declared path. Raises FileNotFoundError
+    if any PDF is missing. Skips entries with non-conforming paths (no 'arxiv/' prefix).
+    """
+    if not cumulative_corpus_path.exists():
+        raise FileNotFoundError(f"M056 cumulative corpus not found: {cumulative_corpus_path}")
+
+    payload = json.loads(cumulative_corpus_path.read_text(encoding="utf-8"))
+    pdfs = payload.get("pdfs", [])
+    if not pdfs:
+        raise ValueError(f"M056 cumulative corpus has empty pdfs list: {cumulative_corpus_path}")
+
+    out: dict[str, CumulativePdfRecord] = {}
+    missing: list[str] = []
+    for entry in pdfs:
+        path_str = str(entry.get("path", ""))
+        parts = Path(path_str).parts
+        # path: data/article_catalog/article_catalog/arxiv/<category>/<id>/source/<id>.pdf
+        if "arxiv" not in parts:
+            continue
+        arxiv_idx = parts.index("arxiv")
+        # rel path from arxiv root: <category>/<id>/source/<id>.pdf
+        rel = Path(*parts[arxiv_idx + 1 :])
+        if len(rel.parts) < 4:
+            continue
+        category = rel.parts[0]
+        arxiv_id = entry["arxiv_id"]
+        pdf_abs = repo_root / path_str if repo_root else Path(path_str)
+        if not pdf_abs.exists():
+            missing.append(f"{arxiv_id} ({path_str})")
+            continue
+        out[arxiv_id] = CumulativePdfRecord(
+            arxiv_id=arxiv_id,
+            pdf_path=pdf_abs,
+            sha256=entry.get("sha256", ""),
+            size_bytes=int(entry.get("size_bytes", 0)),
+            pages_estimate=int(entry.get("pages_estimate", 0)),
+            source_milestone=str(entry.get("source_milestone", "")),
+            category=category,
+        )
+
+    if missing:
+        raise FileNotFoundError(
+            f"M056 cumulative corpus: {len(missing)} missing PDFs; first 5: {missing[:5]}"
+        )
+
+    return out
+
+
+@dataclasses.dataclass(frozen=True)
+class Sha256Mismatch:
+    """One SHA256 mismatch between cumulative-corpus.json and PDF on disk."""
+
+    arxiv_id: str
+    pdf_path: Path
+    expected_sha256: str
+    actual_sha256: str
+
+
+def verify_m056_sha256(
+    records: dict[str, CumulativePdfRecord],
+) -> list[Sha256Mismatch]:
+    """Verify SHA256 of each PDF against cumulative-corpus.json entry.
+
+    Returns list of mismatches (empty = all OK). Uses streaming SHA256.
+    """
+    mismatches: list[Sha256Mismatch] = []
+    for arxiv_id, record in records.items():
+        if not record.sha256:
+            continue  # no expected sha256 to compare against
+        actual = sha256_file(record.pdf_path)
+        if actual != record.sha256:
+            mismatches.append(
+                Sha256Mismatch(
+                    arxiv_id=arxiv_id,
+                    pdf_path=record.pdf_path,
+                    expected_sha256=record.sha256,
+                    actual_sha256=actual,
+                )
+            )
+    return mismatches
+
+
+# ---------------------------------------------------------------------------
 # Report rendering
 # ---------------------------------------------------------------------------
 
@@ -813,17 +922,20 @@ __all__ = [
     "CANONICAL_ARXIV_ROOT_DEFAULT",
     "CATALOG_ROOT_DEFAULT",
     "CATALOG_SAFETY_FLAGS",
+    "CumulativePdfRecord",
     "FALLBACK_CATEGORY",
     "IngestOptions",
     "IngestRecord",
     "IngestResult",
     "KNOWN_REPORT_BUCKETS",
+    "M056_CUMULATIVE_CORPUS_PATH_DEFAULT",
     "M061_ROOT_DEFAULT",
     "REPORT_PATH_DEFAULT",
     "RequestPacer",
     "SAFETY_DEFAULTS",
     "SAFETY_OVERRIDE_M061_INGEST",
     "SafetyOverride",
+    "Sha256Mismatch",
     "arxiv_query_url",
     "build_article_record",
     "catalog_pdf_count",
@@ -831,6 +943,7 @@ __all__ = [
     "fetch_arxiv_metadata",
     "ingest_catalog",
     "invert_anchor_membership",
+    "load_m056_corpus",
     "load_pdf_paths",
     "load_selected_ids",
     "normalize_arxiv_id",
@@ -841,5 +954,6 @@ __all__ = [
     "report_bucket",
     "sha256_file",
     "update_index_if_exists",
+    "verify_m056_sha256",
     "write_article_record",
 ]
