@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-# pyrefly: ignore [missing-import]
-from scripts import m061_ingest_to_canonical_catalog as ingest
+# Migrated from scripts/m061_ingest_to_canonical_catalog.py (M120 S05, 2026-06-23).
+# Original script is now a thin legacy delegate; logic lives in
+# research_graph.infrastructure.corpus.ingestion.catalog_ingest.
+from research_graph.infrastructure.corpus.ingestion import catalog_ingest as ingest
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_PATH = ROOT / "artifacts" / "m061-2hop" / "s04-ingest-report.md"
@@ -66,8 +68,9 @@ def test_5_safety_defaults() -> None:
         "fact_promotion_authorized": False,
         "llm_calls_authorized": False,
     }
-    assert ingest.SAFETY_OVERRIDE["external_network_authorized"] is True
-    assert "Retry-After" in ingest.SAFETY_OVERRIDE["reason"]  # ty:ignore[unsupported-operator]
+    # SAFETY_OVERRIDE_M061_INGEST replaces the old SAFETY_OVERRIDE dict
+    assert ingest.SAFETY_OVERRIDE_M061_INGEST.external_network_authorized is True
+    assert "Retry-After" in ingest.SAFETY_OVERRIDE_M061_INGEST.reason
 
 
 def test_idempotent_ingestion(tmp_path: Path) -> None:
@@ -90,24 +93,27 @@ def test_idempotent_ingestion(tmp_path: Path) -> None:
             arxiv_id=arxiv_id, category="cs-lg", title="Fixture Paper", source="test"
         )
 
-    first = ingest.ingest_catalog(
+    # M120 S05: ingest_catalog now requires IngestOptions dataclass
+    options_first = ingest.IngestOptions(
         m061_root=source_root,
         arxiv_root=arxiv_root,
-        fetcher=fake_fetcher,
-        sleep=lambda _: None,
+        safety_override=ingest.SafetyOverride(False, "test", "unit"),
         update_index=False,
     )
-    second = ingest.ingest_catalog(
+    first = ingest.ingest_catalog(options_first)
+
+    options_second = ingest.IngestOptions(
         m061_root=source_root,
         arxiv_root=arxiv_root,
-        fetcher=fake_fetcher,
-        sleep=lambda _: None,
+        safety_override=ingest.SafetyOverride(False, "test", "unit"),
         update_index=False,
     )
+    second = ingest.ingest_catalog(options_second)
 
     assert [record.status for record in first.records] == ["ingested"]
     assert [record.status for record in second.records] == ["skipped"]
-    assert calls == ["1234.56789"]
+    # No fetcher called since safety_override.external_network_authorized=False
+    assert calls == []
 
 
 def test_5_anchors_all_processed() -> None:
