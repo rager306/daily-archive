@@ -8,7 +8,12 @@ from typing import Any
 
 import pytest
 
-REPO_ROOT = Path("/root/daily-archive")
+from research_graph.infrastructure.graph.r024_networkx_probe import (
+    R024NetworkXProbeConfig,
+    build_request,
+)
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 R218_DIR = REPO_ROOT / "data" / "r024-218-document-corpus-v1"
 PROBE_DIR = R218_DIR / "networkx-probe"
 GRAPHML = PROBE_DIR / "probe.graphml"
@@ -142,6 +147,26 @@ def test_probe_events_cover_completed_and_excluded_parser_events() -> None:
     assert excluded == parser_skipped
     assert len(added) == EXPECTED_COMPLETED
     assert len(excluded) == EXPECTED_SKIPPED
+
+
+def test_build_request_records_repo_relative_input_artifact_path() -> None:
+    request = build_request(
+        R024NetworkXProbeConfig(
+            corpus_id="r024-218-document-corpus-v1",
+            corpus_dir=R218_DIR,
+            parser_events_path=PARSER_EVENTS,
+            probe_dir=PROBE_DIR,
+            graphml_path=GRAPHML,
+            summary_path=SUMMARY,
+            events_path=EVENTS_LOG,
+            summary_schema_version="test-summary.v1",
+            repo_root=REPO_ROOT,
+        )
+    )
+
+    assert request.input_artifacts[0].path == (
+        "data/r024-218-document-corpus-v1/parser-chunking/events.jsonl"
+    )
 
 
 def test_probe_events_fail_closed() -> None:

@@ -1,0 +1,441 @@
+{
+  "items": [
+    {
+      "category": "catalog-ingest",
+      "classification": "production-candidate",
+      "contract": {
+        "expected_outputs": [
+          "data/article_catalog/article_catalog/index.json",
+          "artifacts/m061-2hop/s04-ingest-report.md"
+        ],
+        "inputs": [
+          "artifacts/m061-2hop/summary.json"
+        ],
+        "required_flags": [
+          "--m061-root",
+          "--catalog-root",
+          "--report-path",
+          "--no-index",
+          "--no-network"
+        ],
+        "summary_fields": [
+          "processed_pdf_copies",
+          "unique_arxiv_ids",
+          "ingested",
+          "skipped",
+          "fallback"
+        ],
+        "verification": [
+          "uv run pytest tests/test_catalog_ingest.py tests/test_ingest_cli.py"
+        ]
+      },
+      "migration_slice": "S02",
+      "notes": "Current canonical ingest CLI delegates to the M122 application use case with filesystem adapters while preserving M061 report compatibility.",
+      "path": "scripts/ingest_to_canonical_catalog.py",
+      "script_id": "ingest-to-canonical-catalog"
+    },
+    {
+      "category": "catalog-ingest",
+      "classification": "production-candidate",
+      "contract": {
+        "expected_outputs": [
+          "data/r024-218-document-corpus-v1/catalog-ingest/ingest-summary.json",
+          "data/r024-218-document-corpus-v1/catalog-ingest/ingest-events.jsonl"
+        ],
+        "inputs": [
+          "data/m056-cumulative-corpus/cumulative-corpus.json"
+        ],
+        "required_flags": [],
+        "summary_fields": [
+          "verified_pdf_count",
+          "catalog_record_count",
+          "ingested",
+          "skipped"
+        ],
+        "verification": [
+          "uv run pytest tests/test_catalog_ingest_m056.py tests/test_catalog_expansion_m121.py"
+        ]
+      },
+      "migration_slice": "S02",
+      "notes": "M121 ingest path with offline M056 metadata patching; migrate after the shared catalog ingest use case exists.",
+      "path": "scripts/ingest_m056_corpus.py",
+      "script_id": "ingest-m056-corpus"
+    },
+    {
+      "category": "catalog-ingest",
+      "classification": "compatibility-wrapper",
+      "contract": {
+        "expected_outputs": [
+          "artifacts/m061-2hop/s04-ingest-report.md"
+        ],
+        "inputs": [
+          "artifacts/m061-2hop/summary.json"
+        ],
+        "required_flags": [
+          "--m061-root",
+          "--catalog-root",
+          "--report-path",
+          "--no-index",
+          "--no-network"
+        ],
+        "summary_fields": [
+          "processed_pdf_copies",
+          "unique_arxiv_ids",
+          "ingested",
+          "skipped"
+        ],
+        "verification": [
+          "uv run pytest tests/test_m061_legacy_delegate.py"
+        ]
+      },
+      "migration_slice": "S02",
+      "notes": "Historical compatibility entrypoint retained because project knowledge names its canonical ingest pattern.",
+      "path": "scripts/m061_ingest_to_canonical_catalog.py",
+      "script_id": "m061-legacy-ingest"
+    },
+    {
+      "category": "parser-replay",
+      "classification": "production-candidate",
+      "contract": {
+        "expected_outputs": [
+          "data/r024-10-document-corpus-v1/parser-chunking/summary.json",
+          "data/r024-10-document-corpus-v1/parser-chunking/events.jsonl"
+        ],
+        "inputs": [
+          "data/r024-10-document-corpus-v1/selection.json"
+        ],
+        "required_flags": [],
+        "summary_fields": [
+          "completed",
+          "skipped",
+          "errors",
+          "chunks"
+        ],
+        "verification": [
+          "uv run pytest tests/test_r024_parser_chunking.py"
+        ]
+      },
+      "migration_slice": "S03",
+      "notes": "Small parser replay variant; migrate after the 218-document path defines the shared use case.",
+      "path": "scripts/replay_r024_10_document_parser_chunking.py",
+      "script_id": "replay-r024-10-parser-chunking"
+    },
+    {
+      "category": "parser-replay",
+      "classification": "production-candidate",
+      "contract": {
+        "expected_outputs": [
+          "data/r024-20-document-corpus-v1/parser-chunking/summary.json",
+          "data/r024-20-document-corpus-v1/parser-chunking/events.jsonl"
+        ],
+        "inputs": [
+          "data/r024-20-document-corpus-v1/selection.json"
+        ],
+        "required_flags": [],
+        "summary_fields": [
+          "completed",
+          "skipped",
+          "errors",
+          "chunks"
+        ],
+        "verification": [
+          "uv run pytest tests/test_r024_20_document_parser_chunking.py"
+        ]
+      },
+      "migration_slice": "S03",
+      "notes": "20-document replay variant; preserve output fields while sharing S03 application logic.",
+      "path": "scripts/replay_r024_20_document_parser_chunking.py",
+      "script_id": "replay-r024-20-parser-chunking"
+    },
+    {
+      "category": "parser-replay",
+      "classification": "production-candidate",
+      "contract": {
+        "expected_outputs": [
+          "data/r024-53-document-corpus-v1/parser-chunking/summary.json",
+          "data/r024-53-document-corpus-v1/parser-chunking/events.jsonl"
+        ],
+        "inputs": [
+          "data/r024-53-document-corpus-v1/selection.json"
+        ],
+        "required_flags": [],
+        "summary_fields": [
+          "completed",
+          "skipped",
+          "errors",
+          "chunks"
+        ],
+        "verification": [
+          "uv run pytest tests/test_r024_53_document_parser_chunking.py"
+        ]
+      },
+      "migration_slice": "S03",
+      "notes": "53-document replay variant; preserve source resolution semantics through the shared S03 use case.",
+      "path": "scripts/replay_r024_53_document_parser_chunking.py",
+      "script_id": "replay-r024-53-parser-chunking"
+    },
+    {
+      "category": "parser-replay",
+      "classification": "production-candidate",
+      "contract": {
+        "expected_outputs": [
+          "data/r024-218-document-corpus-v1/parser-chunking/summary.json",
+          "data/r024-218-document-corpus-v1/parser-chunking/events.jsonl"
+        ],
+        "inputs": [
+          "data/article_catalog/article_catalog/index.json"
+        ],
+        "required_flags": [],
+        "summary_fields": [
+          "completed",
+          "metadata_only_skipped",
+          "errors",
+          "chunks"
+        ],
+        "verification": [
+          "uv run pytest tests/test_r024_218_document_parser_chunking.py"
+        ]
+      },
+      "migration_slice": "S03",
+      "notes": "Primary parser replay extraction target because it includes PDF cache, source resolution, metadata-only skip, and M121-scale output.",
+      "path": "scripts/replay_r024_218_document_parser_chunking.py",
+      "script_id": "replay-r024-218-parser-chunking"
+    },
+    {
+      "category": "graph-probe",
+      "classification": "production-candidate",
+      "contract": {
+        "expected_outputs": [
+          "data/r024-10-document-corpus-v1/networkx-probe/summary.json"
+        ],
+        "inputs": [
+          "data/r024-10-document-corpus-v1/parser-chunking/events.jsonl"
+        ],
+        "required_flags": [],
+        "summary_fields": [
+          "nodes",
+          "edges",
+          "citation_relations"
+        ],
+        "verification": [
+          "uv run pytest tests/test_r024_networkx_probe.py"
+        ]
+      },
+      "migration_slice": "S05",
+      "notes": "Small graph probe variant; currently builds NetworkX graph directly in the script.",
+      "path": "scripts/build_r024_networkx_probe.py",
+      "script_id": "networkx-r024-10-probe"
+    },
+    {
+      "category": "graph-probe",
+      "classification": "production-candidate",
+      "contract": {
+        "expected_outputs": [
+          "data/r024-20-document-corpus-v1/networkx-probe/summary.json"
+        ],
+        "inputs": [
+          "data/r024-20-document-corpus-v1/parser-chunking/events.jsonl"
+        ],
+        "required_flags": [],
+        "summary_fields": [
+          "nodes",
+          "edges",
+          "citation_relations"
+        ],
+        "verification": [
+          "uv run pytest tests/test_r024_20_document_networkx_probe.py"
+        ]
+      },
+      "migration_slice": "S05",
+      "notes": "20-document graph probe variant; migrate to NetworkX adapter behind graph probe port.",
+      "path": "scripts/build_r024_20_document_networkx_probe.py",
+      "script_id": "networkx-r024-20-probe"
+    },
+    {
+      "category": "graph-probe",
+      "classification": "production-candidate",
+      "contract": {
+        "expected_outputs": [
+          "data/r024-53-document-corpus-v1/networkx-probe/summary.json",
+          "data/r024-53-document-corpus-v1/networkx-probe/memory-profile.json"
+        ],
+        "inputs": [
+          "data/r024-53-document-corpus-v1/parser-chunking/events.jsonl"
+        ],
+        "required_flags": [],
+        "summary_fields": [
+          "nodes",
+          "edges",
+          "citation_relations",
+          "peak_memory_mb"
+        ],
+        "verification": [
+          "uv run pytest tests/test_r024_53_document_networkx_probe.py"
+        ]
+      },
+      "migration_slice": "S05",
+      "notes": "53-document graph probe variant with memory profile output.",
+      "path": "scripts/build_r024_53_document_networkx_probe.py",
+      "script_id": "networkx-r024-53-probe"
+    },
+    {
+      "category": "graph-probe",
+      "classification": "production-candidate",
+      "contract": {
+        "expected_outputs": [
+          "data/r024-218-document-corpus-v1/networkx-probe/summary.json",
+          "data/r024-218-document-corpus-v1/networkx-probe/memory-profile.json"
+        ],
+        "inputs": [
+          "data/r024-218-document-corpus-v1/parser-chunking/events.jsonl"
+        ],
+        "required_flags": [],
+        "summary_fields": [
+          "nodes",
+          "edges",
+          "citation_relations",
+          "peak_memory_mb"
+        ],
+        "verification": [
+          "uv run pytest tests/test_r024_218_document_networkx_probe.py"
+        ]
+      },
+      "migration_slice": "S05",
+      "notes": "Primary graph probe extraction target because it is M121-scale and fully script-bound today.",
+      "path": "scripts/build_r024_218_document_networkx_probe.py",
+      "script_id": "networkx-r024-218-probe"
+    },
+    {
+      "category": "graph-probe",
+      "classification": "production-candidate",
+      "contract": {
+        "expected_outputs": [
+          "data/r024-entity-scale-corpus-v1/networkx-probe/summary.json",
+          "data/r024-entity-scale-corpus-v1/networkx-probe/memory-profile.json"
+        ],
+        "inputs": [
+          "data/r024-entity-scale-corpus-v1/entities-summary.json"
+        ],
+        "required_flags": [],
+        "summary_fields": [
+          "nodes",
+          "edges",
+          "entity_nodes",
+          "peak_memory_mb"
+        ],
+        "verification": [
+          "uv run pytest tests/test_r024_entity_networkx_probe.py"
+        ]
+      },
+      "migration_slice": "S05",
+      "notes": "Entity-scale probe is recurring but may remain follow-up if S05 scope narrows to document graph paths.",
+      "path": "scripts/build_r024_entity_networkx_probe.py",
+      "script_id": "networkx-r024-entity-probe"
+    },
+    {
+      "category": "quality-metrics",
+      "classification": "production-candidate",
+      "contract": {
+        "expected_outputs": [
+          "data/r024-10-document-corpus-v1/quality-metrics.json",
+          "data/r024-10-document-corpus-v1/quality-comparison-5-vs-10.md"
+        ],
+        "inputs": [
+          "data/r024-10-document-corpus-v1/parser-chunking/events.jsonl"
+        ],
+        "required_flags": [],
+        "summary_fields": [
+          "article_count",
+          "chunk_count",
+          "comparison"
+        ],
+        "verification": [
+          "uv run pytest tests/test_r024_quality_metrics.py"
+        ]
+      },
+      "migration_slice": "S04",
+      "notes": "First-class quality metrics category so report scripts are not lost between coverage and graph migration.",
+      "path": "scripts/extract_r024_quality_metrics.py",
+      "script_id": "extract-r024-quality-metrics"
+    },
+    {
+      "category": "quality-metrics",
+      "classification": "production-candidate",
+      "contract": {
+        "expected_outputs": [
+          "data/r024-20-document-corpus-v1/quality-metrics.json",
+          "data/r024-20-document-corpus-v1/quality-comparison-10-vs-20.md"
+        ],
+        "inputs": [
+          "data/r024-20-document-corpus-v1/parser-chunking/events.jsonl"
+        ],
+        "required_flags": [],
+        "summary_fields": [
+          "article_count",
+          "chunk_count",
+          "comparison"
+        ],
+        "verification": [
+          "uv run pytest tests/test_r024_20_document_quality_metrics.py"
+        ]
+      },
+      "migration_slice": "S04",
+      "notes": "20-document quality metrics report path for S04 coverage/reporting migration.",
+      "path": "scripts/extract_r024_20_document_quality_metrics.py",
+      "script_id": "extract-r024-20-quality-metrics"
+    },
+    {
+      "category": "quality-metrics",
+      "classification": "production-candidate",
+      "contract": {
+        "expected_outputs": [
+          "data/r024-53-document-corpus-v1/quality-metrics.json",
+          "data/r024-53-document-corpus-v1/quality-comparison-20-vs-53.md"
+        ],
+        "inputs": [
+          "data/r024-53-document-corpus-v1/parser-chunking/events.jsonl"
+        ],
+        "required_flags": [],
+        "summary_fields": [
+          "article_count",
+          "chunk_count",
+          "comparison"
+        ],
+        "verification": [
+          "uv run pytest tests/test_r024_53_document_quality_metrics.py"
+        ]
+      },
+      "migration_slice": "S04",
+      "notes": "53-document quality metrics report path for S04 coverage/reporting migration.",
+      "path": "scripts/extract_r024_53_document_quality_metrics.py",
+      "script_id": "extract-r024-53-quality-metrics"
+    },
+    {
+      "category": "quality-metrics",
+      "classification": "production-candidate",
+      "contract": {
+        "expected_outputs": [
+          "data/r024-entity-scale-corpus-v1/quality-metrics.json",
+          "data/r024-entity-scale-corpus-v1/comparison-5-entities-vs-10-entities.md"
+        ],
+        "inputs": [
+          "data/r024-entity-scale-corpus-v1/entities-summary.json"
+        ],
+        "required_flags": [],
+        "summary_fields": [
+          "entity_count",
+          "relation_count",
+          "comparison"
+        ],
+        "verification": [
+          "uv run pytest tests/test_r024_entity_quality_metrics.py"
+        ]
+      },
+      "migration_slice": "S04",
+      "notes": "Entity-scale quality metrics path is explicitly classified for S04 or follow-up planning.",
+      "path": "scripts/extract_r024_entity_quality_metrics.py",
+      "script_id": "extract-r024-entity-quality-metrics"
+    }
+  ],
+  "schema_version": "pipeline-script-inventory/v1"
+}

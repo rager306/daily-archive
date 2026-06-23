@@ -1,152 +1,55 @@
 #!/usr/bin/env python3
-"""R024 S02: parser+chunking replay on 10-article corpus (using M025 framework).
-
-Runs parse_article + build_page_index_from_parsed on 10 articles from
-data/r024-10-document-corpus-v1/selection.json. Captures per-article artifacts:
-- chunks count via page_index.nodes
-- text source path (local article.html or abs.html)
-- per-article parser quality (implicit via parse_article return)
-
-Fail-closed invariants (M025 S04):
-- network_fetch_attempted: false
-- production_import_attempted: false
-- graph_import_allowed: false
-- ladybugdb_written: false
-- trusted_kg_import_allowed: false
-- graph_readiness_claim: false
-
-Outputs:
-- data/r024-10-document-corpus-v1/parser-chunking/events.jsonl
-- data/r024-10-document-corpus-v1/parser-chunking/summary.json
-"""
+"""R024 S02 parser+chunking replay wrapper for the 10-article corpus."""
 
 from __future__ import annotations
 
-import json
 import sys
-from datetime import UTC, datetime
 from pathlib import Path
 
-REPO_ROOT = Path("/root/daily-archive")
-SELECTION = REPO_ROOT / "data" / "r024-10-document-corpus-v1" / "selection.json"
-OUTPUT_DIR = REPO_ROOT / "data" / "r024-10-document-corpus-v1" / "parser-chunking"
-EVENTS_LOG = OUTPUT_DIR / "events.jsonl"
-SUMMARY = OUTPUT_DIR / "summary.json"
-
-from research_graph.infrastructure.corpus.ingestion import FullTextSource, ingest_full_text
-from research_graph.infrastructure.corpus.parsing.parser import parse_article
-from research_graph.infrastructure.papers.indexing.parsed_page_index import (
-    build_page_index_from_parsed,
+from research_graph.application.corpus.parser_replay import ParserReplayUseCase
+from research_graph.infrastructure.corpus.parsing.replay_adapters import (
+    ExistingFullTextParserAdapter,
+    FilesystemParserReplaySourceLoader,
+    PageIndexChunkWriterAdapter,
+    ParserReplayArtifactWriter,
+    SelectionJsonArticleSelector,
 )
 
-
-def find_text_source(article_dir: Path) -> Path | None:
-    """Find a text/markdown/html source file in the article directory (recursive).
-
-    Prefer abs.html, then article.html, then any *.html, then *.txt.
-    """
-    for ext in ("*.md", "*.markdown", "*.html", "*.txt"):
-        matches = list(article_dir.rglob(ext))
-        if matches:
-            for pref in ("abs.html", "article.html"):
-                for m in matches:
-                    if m.name == pref:
-                        return m
-            return matches[0]
-    return None
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SELECTION = REPO_ROOT / "data" / "r024-10-document-corpus-v1" / "selection.json"
+OUTPUT_DIR = REPO_ROOT / "data" / "r024-10-document-corpus-v1" / "parser-chunking"
+CACHE_DIR = REPO_ROOT / "data" / "r024-10-document-corpus-v1" / "pdf-text-cache"
+EVENTS_LOG = OUTPUT_DIR / "events.jsonl"
+SUMMARY = OUTPUT_DIR / "summary.json"
+CATALOG_PARENT = REPO_ROOT / "data" / "article_catalog"
 
 
 def main() -> int:
-    sel = json.loads(SELECTION.read_text())
-    articles = sel["articles"]
-    print(f"Processing {len(articles)} articles...")
+    result = ParserReplayUseCase(
+        article_selector=SelectionJsonArticleSelector(SELECTION),
+        source_loader=FilesystemParserReplaySourceLoader(
+            catalog_parent=CATALOG_PARENT,
+            cache_dir=CACHE_DIR,
+            repo_root=REPO_ROOT,
+            prefer_pdf=False,
+        ),
+        full_text_parser=ExistingFullTextParserAdapter(),
+        chunk_writer=PageIndexChunkWriterAdapter(),
+    ).run()
 
-    per_article: list[dict[str, str | int | None]] = []
-    events: list[dict[str, str | bool | int]] = []
-    for a in articles:
-        ref = a["article_ref"]
-        key = a["article_key"]
-        article_dirs = list(REPO_ROOT.glob(f"data/article_catalog/article_catalog/{ref}"))
-        if not article_dirs:
-            print(f"  SKIP {ref}: no article dir")
-            continue
-        article_dir = article_dirs[0]
-        text_source = find_text_source(article_dir)
-        if not text_source:
-            print(f"  SKIP {ref}: no text source in {article_dir}")
-            continue
-        try:
-            source = FullTextSource(
-                paper_id=ref,
-                source_type="text",
-                source_path=text_source,
-            )
-            ingestion = ingest_full_text(source)
-            parsed = parse_article(ingestion)
-            page_index = build_page_index_from_parsed(parsed)
-            n_chunks = len(page_index.nodes) if hasattr(page_index, "nodes") else 0
-            per_article.append(
-                {
-                    "article_ref": ref,
-                    "article_key": key,
-                    "text_source": str(text_source.relative_to(REPO_ROOT)),
-                    "chunk_count": n_chunks,
-                    "status": "ok",
-                }
-            )
-            events.append(
-                {
-                    "event": "parser_chunking_complete",
-                    "timestamp": datetime.now(UTC).isoformat(),
-                    "article_ref": ref,
-                    "chunk_count": n_chunks,
-                    "text_source": str(text_source.relative_to(REPO_ROOT)),
-                    "network_fetch_attempted": False,
-                    "production_import_attempted": False,
-                    "graph_import_allowed": False,
-                    "ladybugdb_written": False,
-                }
-            )
-            print(f"  OK {ref}: chunks={n_chunks}")
-        except Exception as e:
-            err = str(e)[:120]
-            print(f"  FAIL {ref}: {err}")
-            per_article.append(
-                {
-                    "article_ref": ref,
-                    "article_key": key,
-                    "status": "error",
-                    "error": err,
-                }
-            )
-            events.append(
-                {
-                    "event": "parser_chunking_error",
-                    "timestamp": datetime.now(UTC).isoformat(),
-                    "article_ref": ref,
-                    "error": err,
-                }
-            )
+    ParserReplayArtifactWriter(
+        output_dir=OUTPUT_DIR,
+        events_log=EVENTS_LOG,
+        summary_path=SUMMARY,
+        schema_version="r024-parser-chunking-summary.v00.01",
+        repo_root=REPO_ROOT,
+    ).write(result)
 
-    EVENTS_LOG.parent.mkdir(parents=True, exist_ok=True)
-    with open(EVENTS_LOG, "w") as f:
-        for e in events:
-            f.write(json.dumps(e) + "\n")
-    n_ok = sum(1 for a in per_article if a.get("status") == "ok")
-    n_err = sum(1 for a in per_article if a.get("status") == "error")
-    summary = {
-        "schema_version": "r024-parser-chunking-summary.v00.01",
-        "total": len(per_article),
-        "ok": n_ok,
-        "errors": n_err,
-        "network_fetch_attempted": False,
-        "production_import_attempted": False,
-        "graph_import_allowed": False,
-        "ladybugdb_written": False,
-    }
-    SUMMARY.write_text(json.dumps(summary, indent=2))
-    print(f"summary: {n_ok} ok, {n_err} errors")
-    return 0 if n_err == 0 else 1
+    print(
+        f"summary: {result.completed_count} ok, {result.skipped_count} skipped, "
+        f"{result.low_quality_count} low_quality, {result.failed_count} errors"
+    )
+    return 0 if result.failed_count == 0 else 1
 
 
 if __name__ == "__main__":

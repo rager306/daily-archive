@@ -1,0 +1,153 @@
+{
+  "schema_version": "pipeline-architecture-acceptance.v00.01",
+  "generated_at": "2026-06-23T13:48:43.913292+00:00",
+  "started_at": "2026-06-23T13:48:40.663856+00:00",
+  "succeeded": true,
+  "phase_count": 4,
+  "phases": [
+    {
+      "name": "catalog_ingest_wrapper",
+      "status": "pass",
+      "command": [
+        "uv",
+        "run",
+        "python",
+        "scripts/ingest_to_canonical_catalog.py",
+        "--no-network",
+        "--no-index",
+        "--report-path",
+        "data/pipeline-script-architecture/acceptance-ingest-report.md"
+      ],
+      "duration_ms": 399,
+      "exit_code": 0,
+      "artifacts": [
+        {
+          "path": "data/pipeline-script-architecture/acceptance-ingest-report.md",
+          "exists": true,
+          "size_bytes": 10253
+        }
+      ],
+      "counts": {},
+      "first_failure": null,
+      "stdout_tail": "processed_pdf_copies=150\nunique_arxiv_ids=32\ningested=0\nskipped=32\nfallback=0\narxiv_api_requests=0\narxiv_api_429s=0\ncatalog_pdf_count=218->218\nreport=data/pipeline-script-architecture/acceptance-ingest-report.md\n",
+      "stderr_tail": ""
+    },
+    {
+      "name": "parser_replay_wrapper",
+      "status": "pass",
+      "command": [
+        "uv",
+        "run",
+        "python",
+        "scripts/replay_r024_218_document_parser_chunking.py"
+      ],
+      "duration_ms": 878,
+      "exit_code": 0,
+      "artifacts": [
+        {
+          "path": "data/r024-218-document-corpus-v1/parser-chunking/summary.json",
+          "exists": true,
+          "size_bytes": 531
+        },
+        {
+          "path": "data/r024-218-document-corpus-v1/parser-chunking/events.jsonl",
+          "exists": true,
+          "size_bytes": 106766
+        }
+      ],
+      "counts": {
+        "total": 221,
+        "ok": 219,
+        "skipped": 2,
+        "errors": 0,
+        "chunk_count_total": 2576
+      },
+      "first_failure": null,
+      "stdout_tail": "summary: 219 ok, 2 skipped, 0 low_quality, 0 errors\n",
+      "stderr_tail": ""
+    },
+    {
+      "name": "networkx_probe_wrapper",
+      "status": "pass",
+      "command": [
+        "uv",
+        "run",
+        "python",
+        "scripts/build_r024_218_document_networkx_probe.py"
+      ],
+      "duration_ms": 1852,
+      "exit_code": 0,
+      "artifacts": [
+        {
+          "path": "data/r024-218-document-corpus-v1/networkx-probe/summary.json",
+          "exists": true,
+          "size_bytes": 2078
+        },
+        {
+          "path": "data/r024-218-document-corpus-v1/networkx-probe/memory-profile.json",
+          "exists": true,
+          "size_bytes": 1167
+        },
+        {
+          "path": "data/r024-218-document-corpus-v1/networkx-probe/events.jsonl",
+          "exists": true,
+          "size_bytes": 70864
+        },
+        {
+          "path": "data/r024-218-document-corpus-v1/networkx-probe/probe.graphml",
+          "exists": true,
+          "size_bytes": 2598758
+        }
+      ],
+      "counts": {
+        "total_catalog_records_seen": 221,
+        "corpus_size": 219,
+        "skipped_metadata_only": 2,
+        "chunk_count_total": 2576,
+        "n_nodes": 3891,
+        "n_edges": 10102,
+        "citation_relations_count": 6212
+      },
+      "first_failure": null,
+      "stdout_tail": "Building NetworkX probe for 219 completed records (2 metadata-only skips)...\nsummary: nodes=3891, edges=10102, citation_relations=6212\nmemory: peak=13.43 MB\nsummary_path=/root/daily-archive/data/r024-218-document-corpus-v1/networkx-probe/summary.json\n",
+      "stderr_tail": ""
+    },
+    {
+      "name": "coverage_report_wrapper",
+      "status": "pass",
+      "command": [
+        "uv",
+        "run",
+        "python",
+        "scripts/build_r024_coverage_report.py"
+      ],
+      "duration_ms": 117,
+      "exit_code": 0,
+      "artifacts": [
+        {
+          "path": "data/r024-218-document-corpus-v1/R024-COVERAGE.md",
+          "exists": true,
+          "size_bytes": 3706
+        },
+        {
+          "path": "data/r024-218-document-corpus-v1/coverage-summary.json",
+          "exists": true,
+          "size_bytes": 2504
+        }
+      ],
+      "counts": {
+        "catalog_records": 221,
+        "source_backed_records": 219,
+        "metadata_only_records": 2,
+        "parser_errors": 0,
+        "graph_nodes": 3891,
+        "graph_edges": 10102,
+        "citation_relations": 6212
+      },
+      "first_failure": null,
+      "stdout_tail": "report=/root/daily-archive/data/r024-218-document-corpus-v1/R024-COVERAGE.md\nsummary=/root/daily-archive/data/r024-218-document-corpus-v1/coverage-summary.json\nschema_version=corpus-coverage-report.v00.01\ncatalog_records=221\nsource_backed_records=219\nmetadata_only_records=2\nparser_errors=0\nfailed_denominator_checks=0\n",
+      "stderr_tail": ""
+    }
+  ],
+  "first_failure": null
+}

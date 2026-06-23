@@ -661,6 +661,16 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: M045 implemented `scripts/check_project_trajectory.py`, tests, codebase-memory MCP snapshot support, real JSON/Markdown trajectory reports, README preflight documentation, and D080. The report covers architecture, functionality, module_code, evidence, safety, operations, and next_gate dimensions; flags drift risks; verifies no-write boundaries; and treats codebase-memory as non-canonical recall/navigation evidence.
 - Notes: Validated as a derived trajectory preflight, not a replacement for GSD, ADRs, GitNexus, or governance mirrors.
 
+### R066 — Recurring corpus pipeline logic must live behind hexagonal onion application use cases and ports, with milestone scripts reduced to thin CLI or compatibility wrappers.
+- Class: quality-attribute
+- Status: validated
+- Description: Recurring corpus pipeline logic must live behind hexagonal onion application use cases and ports, with milestone scripts reduced to thin CLI or compatibility wrappers.
+- Why it matters: M121 proved the pipeline with GSD-era scripts, but long-term maintainability requires business rules to be testable inside package boundaries rather than embedded in milestone scripts.
+- Source: M122-qq2mfe planning
+- Primary owning slice: M122-qq2mfe
+- Validation: Validated by M122-qq2mfe S01-S06. Final acceptance runner generated passing `data/pipeline-script-architecture/acceptance-summary.json`; onion layering guard clean; fresh milestone verification passed 94 tests. Migrated catalog ingest, parser replay, coverage report, and graph probe wrappers delegate through application use cases and infrastructure adapters/writers while preserving M121/R024 artifact compatibility.
+- Notes: Quality-metrics remains a first-class category and is documented out of the S06 integrated M121-style acceptance path rather than folded into coverage/reporting.
+
 ## Deferred
 
 ## Out of Scope
@@ -734,10 +744,11 @@ This file is the explicit capability and coverage contract for the project.
 | R063 | operability | validated | M039-7o4yf1 | M038-hdx112 | M039 generated `.codebase-memory/governance-graph.json` from canonical GSD/ADR artifacts with typed nodes and edges. Verifier evidence: sync/check passed for markdown and graph artifacts, 10 graph tests passed, ruff passed, JSON parsed, required D075/D076/R062/R063/ADR-005/M038/M039 nodes and D076/D075/R063/ADR-005 edges were asserted, codebase-memory MCP readback/search found graph projection markers after fast index refresh, and `ingest_traces` confirmed runtime edge creation is not implemented so native custom graph claims are avoided. |
 | R064 | core-capability | validated | M041-8k3kv4 | M040-4flhk6 | M041 generated and ran a mixed 20-article no-write smoke: 10 retained baseline articles, 5 articles linked from already loaded local sources, and 5 Hermes review-section articles. Evidence: M041 manifest category counts, M041 run summary with 20 completed handoffs, M041 audit with 20 continuity artifacts and empty blockers, all graph/import/promotion flags false, and README/report documenting arXiv deferred metadata caveat. |
 | R065 | operability | validated | none | none | M045 implemented `scripts/check_project_trajectory.py`, tests, codebase-memory MCP snapshot support, real JSON/Markdown trajectory reports, README preflight documentation, and D080. The report covers architecture, functionality, module_code, evidence, safety, operations, and next_gate dimensions; flags drift risks; verifies no-write boundaries; and treats codebase-memory as non-canonical recall/navigation evidence. |
+| R066 | quality-attribute | validated | M122-qq2mfe | none | Validated by M122-qq2mfe S01-S06. Final acceptance runner generated passing `data/pipeline-script-architecture/acceptance-summary.json`; onion layering guard clean; fresh milestone verification passed 94 tests. Migrated catalog ingest, parser replay, coverage report, and graph probe wrappers delegate through application use cases and infrastructure adapters/writers while preserving M121/R024 artifact compatibility. |
 
 ## Coverage Summary
 
 - Active requirements: 17
 - Mapped to slices: 7
-- Validated: 48 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R036, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049, R053, R057, R058, R059, R060, R061, R062, R063, R064, R065)
+- Validated: 49 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R036, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049, R053, R057, R058, R059, R060, R061, R062, R063, R064, R065, R066)
 - Unmapped active requirements: 5

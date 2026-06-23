@@ -7,7 +7,7 @@ from typing import cast
 
 import pytest
 
-REPO_ROOT = Path("/root/daily-archive")
+REPO_ROOT = Path(__file__).resolve().parents[1]
 COVERAGE = REPO_ROOT / "data" / "r024-10-document-corpus-v1" / "R024-COVERAGE.md"
 REQUIREMENTS = REPO_ROOT / ".gsd" / "REQUIREMENTS.md"
 
@@ -70,14 +70,15 @@ def test_coverage_has_risk_notes() -> None:
     assert "no regressions" in text.lower() or "preserved" in text.lower()
 
 
-def test_requirements_r024_has_m116_update() -> None:
+def test_requirements_r024_has_current_m121_update() -> None:
     text = REQUIREMENTS.read_text()
     # find R024 section
     idx = text.find("### R024 ")
     assert idx >= 0, "R024 section missing"
-    section = text[idx : idx + 4000]
-    assert "M116" in section, "M116 reference missing in R024"
-    assert "10-document" in section or "10-document corpus" in section
+    section = text[idx : idx + 5000]
+    assert "M121" in section, "M121 reference missing in current R024"
+    assert "221 article records" in section
+    assert "219 source-backed" in section
 
 
 def test_requirements_r024_still_active() -> None:
@@ -88,12 +89,12 @@ def test_requirements_r024_still_active() -> None:
     assert "Status: active" in section
 
 
-def test_requirements_r024_mentions_networkx() -> None:
+def test_requirements_r024_mentions_networkx_probe() -> None:
     text = REQUIREMENTS.read_text()
     idx = text.find("### R024 ")
     assert idx >= 0, "R024 section missing"
     section = text[idx : idx + 5000]
-    assert "NetworkX" in section, "NetworkX reference missing in R024"
+    assert "networkx-probe/summary.json" in section, "NetworkX probe reference missing in R024"
 
 
 if __name__ == "__main__":

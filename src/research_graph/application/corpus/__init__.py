@@ -1,0 +1,61 @@
+"""Application use cases for corpus workflows."""
+
+from research_graph.application.corpus.catalog_ingest import (
+    CatalogIngestRequest,
+    CatalogIngestResult,
+    CatalogIngestUseCase,
+    CatalogRepositoryPort,
+    ChecksumVerifierPort,
+    MetadataProviderPort,
+    SourceAssetStorePort,
+)
+from research_graph.application.corpus.coverage import (
+    CatalogCoverageInput,
+    CorpusCoverageRequest,
+    CorpusCoverageResult,
+    CorpusCoverageUseCase,
+    CoverageDenominator,
+    CoverageDiagnostic,
+    CoverageSourceArtifact,
+    CoverageSummarySourcePort,
+    GraphProbeCoverageInput,
+    ParserCoverageInput,
+)
+from research_graph.application.corpus.parser_replay import (
+    FullTextParserPort,
+    ParserReplayArticleSelectorPort,
+    ParserReplayChunkWriterPort,
+    ParserReplayEventSinkPort,
+    ParserReplayRequest,
+    ParserReplayResult,
+    ParserReplaySourceLoaderPort,
+    ParserReplayUseCase,
+)
+
+__all__ = [
+    "CatalogIngestRequest",
+    "CatalogIngestResult",
+    "CatalogIngestUseCase",
+    "CatalogRepositoryPort",
+    "ChecksumVerifierPort",
+    "CatalogCoverageInput",
+    "CorpusCoverageRequest",
+    "CorpusCoverageResult",
+    "CorpusCoverageUseCase",
+    "CoverageDenominator",
+    "CoverageDiagnostic",
+    "CoverageSourceArtifact",
+    "CoverageSummarySourcePort",
+    "FullTextParserPort",
+    "GraphProbeCoverageInput",
+    "MetadataProviderPort",
+    "ParserReplayArticleSelectorPort",
+    "ParserReplayChunkWriterPort",
+    "ParserReplayEventSinkPort",
+    "ParserReplayRequest",
+    "ParserReplayResult",
+    "ParserReplaySourceLoaderPort",
+    "ParserCoverageInput",
+    "ParserReplayUseCase",
+    "SourceAssetStorePort",
+]

@@ -49,6 +49,7 @@ INFRA_PREFIXES: tuple[str, ...] = (
     "research_graph.infrastructure.ops",
     "research_graph.workflows",  # entry / wiring
     "research_graph.cli",  # entry
+    "scripts",  # local script entrypoints must not be imported inward
 )
 
 # Per-layer forbidden import prefixes. Domain must not import application OR
@@ -156,19 +157,19 @@ def main() -> int:
         "--root",
         type=Path,
         default=None,
-        help="scan a single directory (legacy domain-only mode); omit to scan all layers",
+        help="scan a single directory (legacy domain-only mode unless --layer is supplied); omit to scan all layers",
     )
     parser.add_argument(
         "--layer",
         choices=sorted(LAYER_ROOTS),
         default=None,
-        help="scan one named layer (domain or application)",
+        help="scan one named layer (domain or application); combines with --root for synthetic fixtures",
     )
     parser.add_argument("--json", action="store_true", help="emit a JSON report to stdout")
     args = parser.parse_args()
 
     if args.root is not None:
-        report = scan_layer("domain", args.root)
+        report = scan_layer(args.layer or "domain", args.root)
     elif args.layer is not None:
         report = scan_layer(args.layer, LAYER_ROOTS[args.layer])
     else:

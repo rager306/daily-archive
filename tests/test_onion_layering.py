@@ -18,10 +18,25 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 GUARD_SCRIPT = ROOT / "scripts" / "verify_onion_layering.py"
 DOMAIN_DIR = ROOT / "src" / "research_graph" / "domain"
+APPLICATION_DIR = ROOT / "src" / "research_graph" / "application"
 
 
-def _run_guard(domain_root: Path, *, json: bool = False) -> subprocess.CompletedProcess[str]:
-    cmd = [sys.executable, str(GUARD_SCRIPT), "--root", str(domain_root)]
+def _run_guard(
+    layer_root: Path,
+    *,
+    layer: str | None = None,
+    json: bool = False,
+) -> subprocess.CompletedProcess[str]:
+    cmd = [sys.executable, str(GUARD_SCRIPT), "--root", str(layer_root)]
+    if layer:
+        cmd.extend(["--layer", layer])
+    if json:
+        cmd.append("--json")
+    return subprocess.run(cmd, capture_output=True, text=True)
+
+
+def _run_all_guard(*, json: bool = False) -> subprocess.CompletedProcess[str]:
+    cmd = [sys.executable, str(GUARD_SCRIPT)]
     if json:
         cmd.append("--json")
     return subprocess.run(cmd, capture_output=True, text=True)
@@ -68,6 +83,39 @@ class TestOnionLayeringGuard:
             )
             result = _run_guard(domain)
         assert result.returncode == 0
+
+    def test_real_application_layer_is_clean_and_scans_new_modules(self) -> None:
+        """The actual application/ layer must scan corpus and graph use-case modules."""
+        import json
+
+        result = _run_all_guard(json=True)
+
+        assert result.returncode == 0, result.stderr
+        report = json.loads(result.stdout)
+        app_report = report["layers"]["application"]
+        scanned = set(app_report["scanned_files"])
+        assert "corpus/coverage.py" in scanned
+        assert "corpus/parser_replay.py" in scanned
+        assert "graph/probe.py" in scanned
+        assert app_report["violation_count"] == 0
+
+    def test_application_guard_catches_infrastructure_and_script_imports(self) -> None:
+        """Application code must not import concrete adapters or local scripts."""
+        import json
+
+        with tempfile.TemporaryDirectory() as td:
+            application = Path(td) / "application"
+            application.mkdir()
+            (application / "bad.py").write_text(
+                "from research_graph.infrastructure.graph.networkx_probe import NetworkXGraphProbeAdapter\n"
+                "from scripts.build_r024_coverage_report import main\n"
+            )
+            result = _run_guard(application, layer="application", json=True)
+        assert result.returncode == 1
+        report = json.loads(result.stdout)
+        modules = {v["module"] for v in report["violations"]}
+        assert "research_graph.infrastructure.graph.networkx_probe" in modules
+        assert "scripts.build_r024_coverage_report" in modules
 
 
 # ── Composition root ────────────────────────────────────────────────────────

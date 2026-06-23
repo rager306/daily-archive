@@ -10,7 +10,7 @@ dependencies = [
     "httpx>=0.28.0",
     "anthropic>=0.38.0",
     "yake>=0.5.0",
-    # pymupdf removed — using arxiv2md (REST) + Marker (fallback for papers <2020)
+    # PyMuPDF backs local PDF text extraction for parser replay and source repair fallbacks.
     "feedparser>=6.0.0",
     "rich>=13.0.0",
     "typer>=0.16.0",
@@ -19,6 +19,7 @@ dependencies = [
     "loguru>=0.7.3",
     "riskratchet>=0.2.8",
     "transformers>=4.45.2,<5",
+    "pymupdf>=1.27.0",
 ]
 
 [project.optional-dependencies]
@@ -38,6 +39,7 @@ where = ["src"]
 [tool.ruff]
 target-version = "py313"
 line-length = 100
+extend-exclude = [".agents"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "C4", "T20", "TID"]
@@ -84,6 +86,16 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 pythonpath = ["src"]
 
+[tool.pytest-gremlins]
+paths = [
+    "src/research_graph/application/corpus/coverage.py",
+    "src/research_graph/application/corpus/parser_replay.py",
+    "src/research_graph/application/graph/probe.py",
+]
+report = ["console", "json"]
+cache = true
+max_pardons = 0
+
 [tool.riskratchet]
 paths = ["src/research_graph"]
 exclude = ["**/__pycache__/**", "**/.venv/**"]
@@ -92,6 +104,7 @@ missing_coverage = "ignore"
 [dependency-groups]
 dev = [
     "pyrefly>=1.1.1",
+    "pytest-gremlins>=1.8.1",
     "ruff>=0.15.18",
     "ty>=0.0.51",
 ]

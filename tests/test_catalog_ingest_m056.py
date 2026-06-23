@@ -7,16 +7,28 @@ from pathlib import Path
 
 import pytest
 
+from research_graph.application.corpus.catalog_ingest import (
+    CatalogIngestRequest,
+    CatalogIngestUseCase,
+)
+from research_graph.domain.corpus import CatalogIngestStatus
+from research_graph.infrastructure.corpus.ingestion.catalog_adapters import (
+    M056CumulativeCorpusSourceAssetStore,
+    M056FilesystemCatalogRepository,
+    M056OfflineMetadataProvider,
+    Sha256ChecksumVerifier,
+)
 from research_graph.infrastructure.corpus.ingestion.catalog_ingest import (
     M056_CUMULATIVE_CORPUS_PATH_DEFAULT,
     CumulativePdfRecord,
+    SafetyOverride,
     Sha256Mismatch,
     load_m056_corpus,
     sha256_file,
     verify_m056_sha256,
 )
 
-REPO_ROOT = Path("/root/daily-archive")
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_m056_corpus_path_default() -> None:
@@ -209,4 +221,98 @@ def test_cumulative_pdf_record_is_frozen() -> None:
     import dataclasses
 
     with pytest.raises(dataclasses.FrozenInstanceError):
-        record.arxiv_id = "y"  # type: ignore[misc]
+        record.__setattr__("arxiv_id", "y")
+
+
+def _write_m056_adapter_fixture(tmp_path: Path) -> tuple[Path, Path, str]:
+    repo_root = tmp_path
+    article_id = "2605.18747"
+    pdf = (
+        repo_root
+        / "data"
+        / "article_catalog"
+        / "article_catalog"
+        / "arxiv"
+        / "cs-lg"
+        / article_id
+        / "source"
+        / f"{article_id}.pdf"
+    )
+    pdf.parent.mkdir(parents=True)
+    pdf.write_bytes(b"%PDF-1.4 fixture")
+    checksum = sha256_file(pdf)
+    corpus = repo_root / "cumulative-corpus.json"
+    corpus.write_text(
+        json.dumps(
+            {
+                "pdf_count": 1,
+                "pdfs": [
+                    {
+                        "arxiv_id": article_id,
+                        "path": str(pdf.relative_to(repo_root)),
+                        "sha256": checksum,
+                        "size_bytes": pdf.stat().st_size,
+                        "pages_estimate": 7,
+                        "source_milestone": "wave-1",
+                    }
+                ],
+            }
+        )
+    )
+    return repo_root, corpus, article_id
+
+
+def test_m056_adapters_rewrite_stale_article_then_skip_matching_offline_record(
+    tmp_path: Path,
+) -> None:
+    repo_root, corpus, article_id = _write_m056_adapter_fixture(tmp_path)
+    source_assets = M056CumulativeCorpusSourceAssetStore(corpus, repo_root=repo_root)
+    assert source_assets.sha256_mismatches() == []
+
+    record = source_assets.records[article_id]
+    article_path = record.pdf_path.parents[1] / "article.json"
+    article_path.write_text(
+        json.dumps(
+            {
+                "identity": {"sha256": record.sha256},
+                "source_variants": [{"network_fetch_attempted": True}],
+            }
+        )
+    )
+
+    safety = SafetyOverride(
+        external_network_authorized=False,
+        reason="test offline M056 ingest",
+        scope="test",
+    )
+    repository = M056FilesystemCatalogRepository(
+        repo_root / "data" / "article_catalog",
+        records=source_assets.records,
+        safety_override=safety,
+    )
+
+    result = CatalogIngestUseCase(
+        source_assets=source_assets,
+        metadata_provider=M056OfflineMetadataProvider(source_assets.records),
+        checksum_verifier=Sha256ChecksumVerifier(),
+        catalog_repository=repository,
+    ).run(CatalogIngestRequest(update_index=False))
+
+    assert result.succeeded is True
+    assert result.status_counts == {CatalogIngestStatus.INGESTED.value: 1}
+    article = json.loads(article_path.read_text())
+    assert article["identity"]["source_kind"] == "m056_cumulative_corpus_local_pdf"
+    assert article["identity"]["sha256"] == record.sha256
+    assert article["identity"]["pages_estimate"] == 7
+    assert article["source_variants"][0]["network_fetch_attempted"] is False
+    assert article["source_variants"][1]["network_fetch_attempted"] is False
+    assert article["expected_profile"]["synthetic_metadata"] is True
+
+    rerun = CatalogIngestUseCase(
+        source_assets=source_assets,
+        metadata_provider=M056OfflineMetadataProvider(source_assets.records),
+        checksum_verifier=Sha256ChecksumVerifier(),
+        catalog_repository=repository,
+    ).run(CatalogIngestRequest(update_index=False))
+
+    assert rerun.status_counts == {CatalogIngestStatus.SKIPPED.value: 1}

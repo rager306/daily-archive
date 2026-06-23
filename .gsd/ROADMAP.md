@@ -126,3 +126,7 @@
 - ✅ **M119-3eb3vy: Graph Readiness Validation (R024): entity-level scale-out (catalog-limited pivot)** (`depends:[—]`)
 - ✅ **M120-rh6uye: Canonical Catalog Ingest Migration: M061 orphan script to research_graph package** (`depends:[—]`)
 - ✅ **M121-kd3kzr: Catalog Expansion: Ingest 165 M056 pre-positioned PDFs via catalog_ingest package** (`depends:[—]`)
+- ✅ **M122-qq2mfe: Pipeline Script Architecture Migration** (`depends:[—]`)
+- ✅ **M123-xw1vh7: Post M122 Mutation Gate Hardening** (`depends:[—]`)
+- ✅ **M124-42eplz: Pre Commit Hygiene Cleanup** (`depends:[—]`)
+- ✅ **M125-xjewhv: Repo Root Portability Fix** (`depends:[—]`)
