@@ -1,0 +1,104 @@
+{
+  "schema_version": "r024-entity-scale-schema.v00.01",
+  "generated_at": "2026-06-22T16:55Z",
+  "milestone": "M119-3eb3vy",
+  "purpose": "Entity-level scale-out for R024 graph readiness validation. Catalog exhausted at 55 articles; pivot to entity-level validation (more entity types per article).",
+  "entity_types": [
+    {
+      "entity_type": "metadata",
+      "source": "m025_chunk_types",
+      "derivation": "derived from M025 chunk_type=metadata",
+      "description": "Article-level metadata (catalog_path, source_code, etc.)",
+      "m025_chunk_type": "metadata"
+    },
+    {
+      "entity_type": "table_context",
+      "source": "m025_chunk_types",
+      "derivation": "derived from M025 chunk_type=table_context",
+      "description": "Tables referenced in the article",
+      "m025_chunk_type": "table_context"
+    },
+    {
+      "entity_type": "figure_caption_context",
+      "source": "m025_chunk_types",
+      "derivation": "derived from M025 chunk_type=figure_caption_context",
+      "description": "Figure captions in the article",
+      "m025_chunk_type": "figure_caption_context"
+    },
+    {
+      "entity_type": "citation_context",
+      "source": "m025_chunk_types",
+      "derivation": "derived from M025 chunk_type=citation_context",
+      "description": "Citation contexts in the article",
+      "m025_chunk_type": "citation_context"
+    },
+    {
+      "entity_type": "retrieval_context",
+      "source": "m025_chunk_types",
+      "derivation": "derived from M025 chunk_type=retrieval_context",
+      "description": "Retrieval-ready chunks",
+      "m025_chunk_type": "retrieval_context"
+    },
+    {
+      "entity_type": "title",
+      "source": "article_metadata",
+      "derivation": "article.identity.title",
+      "description": "Article title (from article.json identity)",
+      "m025_chunk_type": null
+    },
+    {
+      "entity_type": "authors",
+      "source": "article_metadata",
+      "derivation": "article.identity.authors",
+      "description": "Article authors (from article.json identity)",
+      "m025_chunk_type": null
+    },
+    {
+      "entity_type": "abstract",
+      "source": "article_metadata",
+      "derivation": "article.identity.abstract",
+      "description": "Article abstract (from article.json identity)",
+      "m025_chunk_type": null
+    },
+    {
+      "entity_type": "references",
+      "source": "article_metadata",
+      "derivation": "synthesized from citation_context chunks",
+      "description": "Reference list (synthetic, derived from citation_context chunks)",
+      "m025_chunk_type": "citation_context"
+    },
+    {
+      "entity_type": "keywords",
+      "source": "article_metadata",
+      "derivation": "article.topic_tags",
+      "description": "Article keywords (from article.json topic_tags)",
+      "m025_chunk_type": null
+    }
+  ],
+  "counts": {
+    "from_m025_chunk_types": 5,
+    "from_article_metadata": 4,
+    "synthetic_from_metadata_plus_chunks": 1,
+    "total_entity_types": 10
+  },
+  "pivot_rationale": {
+    "original_target": "200+ article corpus",
+    "catalog_limit": 55,
+    "extractable_articles": 53,
+    "catalog_exhausted": true,
+    "pivot_decision": "Entity-level scale validation (more entity types per article)",
+    "M118_baseline_entities": 265,
+    "M119_target_entities": 530,
+    "scale_factor": 2.0
+  },
+  "fail_closed_invariants": {
+    "network_fetch_attempted": false,
+    "production_import_attempted": false,
+    "graph_import_allowed": false,
+    "ladybugdb_written": false,
+    "trusted_kg_import_allowed": false,
+    "graph_readiness_claim": false,
+    "real_llm_extraction_used": false,
+    "synthetic_only": true
+  }
+}
