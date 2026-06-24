@@ -75,6 +75,21 @@ repos:
         verbose: true
         timeout: 30
 
+  # Local repository: M127 riskratchet maintainability telemetry.
+  # Diagnostic-only and non-blocking: writes reports outside the repository and
+  # exits zero even when telemetry collection is unavailable.
+  - repo: local
+    hooks:
+      - id: m127-riskratchet-maintainability
+        name: M127 riskratchet maintainability telemetry (non-blocking)
+        entry: bash -c 'uv run python scripts/run_quality_gate.py --output-dir /tmp/daily-archive-riskratchet --base-ref HEAD --always-zero || true'
+        language: system
+        files: \.(py)$
+        pass_filenames: false
+        always_run: false
+        stages: [pre-commit]
+        verbose: true
+
   # Local repository: M107 pyrefly type checker.
   # Runs pyrefly on the configured project whenever Python files are part of
   # a commit. Pyrefly's suppressed baseline remains non-blocking, but active

@@ -24,9 +24,9 @@ from research_graph.infrastructure.quality import (
 DEFAULT_BASE_REF = "HEAD"
 DEFAULT_OUTPUT_DIR = Path("artifacts/quality")
 DEFAULT_DIAGNOSTIC_SCOPE = (
-    Path("src/arxiv_archive/quality/riskratchet_adapter.py"),
-    Path("src/arxiv_archive/quality/maintainability_report.py"),
-    Path("src/arxiv_archive/quality/baselines.py"),
+    Path("src/research_graph/infrastructure/quality/riskratchet_adapter.py"),
+    Path("src/research_graph/infrastructure/quality/maintainability_report.py"),
+    Path("src/research_graph/infrastructure/quality/baselines.py"),
 )
 JSON_REPORT_NAME = "maintainability-diagnostic.json"
 HUMAN_REPORT_NAME = "maintainability-diagnostic.md"
@@ -187,17 +187,40 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         help="Git ref used for touched-module discovery when paths are omitted.",
     )
     parser.add_argument("--json", action="store_true", help="Print the report envelope as JSON.")
+    parser.add_argument(
+        "--always-zero",
+        action="store_true",
+        help="Return exit code 0 even if diagnostic collection fails; intended for telemetry hooks.",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(argv)
-    report = run_quality_gate(
-        paths=args.paths or None,
-        output_dir=args.output_dir,
-        baseline_path=args.baseline,
-        base_ref=args.base_ref,
-    )
+    try:
+        report = run_quality_gate(
+            paths=args.paths or None,
+            output_dir=args.output_dir,
+            baseline_path=args.baseline,
+            base_ref=args.base_ref,
+        )
+    except Exception as exc:
+        if not args.always_zero:
+            raise
+        sys.stdout.write(
+            " | ".join(
+                [
+                    "riskratchet: maintainability telemetry",
+                    "status: diagnostic_unavailable",
+                    "diagnostic only: true",
+                    "blocking: false",
+                    "pass/fail affected: false",
+                    f"error: {type(exc).__name__}: {exc}",
+                ]
+            )
+            + "\n"
+        )
+        return 0
     if args.json:
         sys.stdout.write(json.dumps(report, indent=2, sort_keys=True) + "\n")
     else:
@@ -206,9 +229,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         sys.stdout.write(
             " | ".join(
                 [
+                    "riskratchet: maintainability telemetry",
                     f"status: {report.get('status')}",
                     "diagnostic only: true",
                     "blocking: false",
+                    "pass/fail affected: false",
                     f"functions: {summary.get('total_functions', 0)}",
                     f"max score: {summary.get('max_score', 0.0)}",
                     f"human report: {output_paths.get('human')}",

@@ -149,7 +149,7 @@ def test_quality_gate_runner_writes_json_and_human_reports(
     monkeypatch.setattr(quality_gate_runner, "build_maintainability_report", fake_report)
 
     report = quality_gate_runner.run_quality_gate(
-        paths=["src/research_graph/quality/baselines.py"],
+        paths=["src/research_graph/infrastructure/quality/baselines.py"],
         output_dir=tmp_path,
     )
 
@@ -162,7 +162,7 @@ def test_quality_gate_runner_writes_json_and_human_reports(
     assert report["pass_fail_affected"] is False
     assert json_payload["quality_gate"]["diagnostic_only"] is True
     assert json_payload["quality_gate"]["touched_modules"] == [
-        "src/research_graph/quality/baselines.py"
+        "src/research_graph/infrastructure/quality/baselines.py"
     ]
     assert json_payload["output_paths"] == {"json": str(json_path), "human": str(human_path)}
     assert "Diagnostic-only" in human_report
@@ -178,7 +178,7 @@ def test_quality_gate_touched_module_discovery_filters_to_source_and_scripts(
         returncode=0,
         stdout="\n".join(
             [
-                "src/research_graph/quality/baselines.py",
+                "src/research_graph/infrastructure/quality/baselines.py",
                 "scripts/run_quality_gate.py",
                 "tests/test_riskratchet_gate.py",
                 "README.md",
@@ -191,9 +191,15 @@ def test_quality_gate_touched_module_discovery_filters_to_source_and_scripts(
     touched = quality_gate_runner.gather_touched_python_modules(base_ref="HEAD~1")
 
     assert touched == (
-        Path("src/research_graph/quality/baselines.py"),
+        Path("src/research_graph/infrastructure/quality/baselines.py"),
         Path("scripts/run_quality_gate.py"),
     )
+
+
+def test_quality_gate_default_diagnostic_scope_paths_exist() -> None:
+    assert quality_gate_runner.DEFAULT_DIAGNOSTIC_SCOPE
+    for path in quality_gate_runner.DEFAULT_DIAGNOSTIC_SCOPE:
+        assert path.exists(), path
 
 
 def test_quality_gate_touched_module_discovery_falls_back_when_git_fails(
@@ -207,6 +213,24 @@ def test_quality_gate_touched_module_discovery_falls_back_when_git_fails(
     touched = quality_gate_runner.gather_touched_python_modules()
 
     assert touched == quality_gate_runner.DEFAULT_DIAGNOSTIC_SCOPE
+
+
+def test_quality_gate_runner_always_zero_mode_reports_unavailable_without_blocking(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    def raise_runtime_error(*args, **kwargs):
+        raise RuntimeError("riskratchet exploded")
+
+    monkeypatch.setattr(quality_gate_runner, "run_quality_gate", raise_runtime_error)
+
+    exit_code = quality_gate_runner.main(["--always-zero"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "riskratchet: maintainability telemetry" in captured.out
+    assert "status: diagnostic_unavailable" in captured.out
+    assert "blocking: false" in captured.out
+    assert "pass/fail affected: false" in captured.out
 
 
 def test_quality_gate_runner_is_non_blocking_for_critical_scores(
@@ -240,7 +264,11 @@ def test_quality_gate_runner_is_non_blocking_for_critical_scores(
     monkeypatch.setattr(quality_gate_runner, "build_maintainability_report", critical_report)
 
     exit_code = quality_gate_runner.main(
-        ["src/arxiv_archive/quality/riskratchet_adapter.py", "--output-dir", str(tmp_path)]
+        [
+            "src/research_graph/infrastructure/quality/riskratchet_adapter.py",
+            "--output-dir",
+            str(tmp_path),
+        ]
     )
 
     payload = json.loads(

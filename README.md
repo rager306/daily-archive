@@ -26,6 +26,32 @@ Source → Parser → Structure → Extraction → Graph → Review → Agents
 - **Corpus**: 220+ PDFs in canonical arXiv catalog
 - **Tests**: 835+ passing
 
+## Local maintainability telemetry
+
+`riskratchet` is integrated as **diagnostic-only maintainability telemetry**. It reports function scores, severity bands, and baseline deltas, but it is not a correctness, safety, replay, or release gate.
+
+Run it directly with either command:
+
+```bash
+uv run python scripts/run_quality_gate.py --output-dir tmp/riskratchet-local
+uv run python -m research_graph quality maintainability src/research_graph/infrastructure/quality/riskratchet_adapter.py --json
+```
+
+The local pre-commit config also includes `m127-riskratchet-maintainability`. It prints a compact summary during Python-file commits and writes JSON/Markdown reports to:
+
+```text
+/tmp/daily-archive-riskratchet/
+```
+
+Expected semantics in every report:
+
+```text
+blocking=false
+pass_fail_affected=false
+```
+
+Use riskratchet output to spot maintainability pressure, not to claim feature correctness or readiness.
+
 ## Current first-domain runtime
 
 The current CLI processes research papers from arXiv categories and produces local session artifacts and optional delivery output.

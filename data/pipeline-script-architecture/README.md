@@ -55,6 +55,24 @@ The deterministic fallback smoke check remains available for agents or CI surfac
 uv run python scripts/run_m122_mutation_smoke.py --json
 ```
 
+## Non-blocking maintainability telemetry
+
+Riskratchet is available for local maintainability visibility, but it is deliberately **not** part of M122 correctness acceptance. It must report `blocking=false` and `pass_fail_affected=false`.
+
+Run the local diagnostic command when you want maintainability telemetry for touched Python modules:
+
+```bash
+uv run python scripts/run_quality_gate.py --output-dir tmp/riskratchet-local
+```
+
+The pre-commit hook `m127-riskratchet-maintainability` prints the same diagnostic-only summary for Python commits and writes reports outside the repo under:
+
+```text
+/tmp/daily-archive-riskratchet/
+```
+
+Do not use riskratchet scores as evidence that replay, mutation, acceptance, or safety gates passed.
+
 ## Intentionally out of scope
 
 These scripts remain deliberately outside the S06 integrated M121-style acceptance path:

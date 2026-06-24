@@ -130,3 +130,5 @@
 - ✅ **M123-xw1vh7: Post M122 Mutation Gate Hardening** (`depends:[—]`)
 - ✅ **M124-42eplz: Pre Commit Hygiene Cleanup** (`depends:[—]`)
 - ✅ **M125-xjewhv: Repo Root Portability Fix** (`depends:[—]`)
+- ✅ **M126-v6gp40: M107 Pyrefly Pre Commit Recovery** (`depends:[M125-xjewhv]`)
+- ✅ **M127-3ug5zf: Riskratchet Workflow Visibility** (`depends:[M126-v6gp40]`)
