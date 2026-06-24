@@ -19,9 +19,46 @@ import httpx
 logger = logging.getLogger(__name__)
 
 
+def _read_dotenv_if_present(path: str | Path = ".env") -> dict[str, str]:
+    """Read local KEY=VALUE pairs without mutating process env."""
+    try:
+        env_path = Path(path)
+    except OSError:
+        return {}
+    if not env_path.exists():
+        return {}
+    try:
+        lines = env_path.read_text().splitlines()
+    except OSError:
+        return {}
+
+    values: dict[str, str] = {}
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if key:
+            values[key] = value.strip().strip('"').strip("'")
+    return values
+
+
+def _load_dotenv_if_present(path: str | Path = ".env") -> dict[str, str]:
+    """Backward-compatible non-mutating dotenv reader."""
+    return _read_dotenv_if_present(path)
+
+
+_DOTENV_VALUES = _read_dotenv_if_present()
+
+
+def _env_get(name: str) -> str | None:
+    return os.environ.get(name) or _DOTENV_VALUES.get(name)
+
+
 def _env_int(name: str, default: int) -> int:
     try:
-        return int(os.environ.get(name, str(default)))
+        return int(_env_get(name) or str(default))
     except ValueError:
         logger.warning(
             "invalid integer env value; using default",
@@ -32,7 +69,7 @@ def _env_int(name: str, default: int) -> int:
 
 def _env_float(name: str, default: float) -> float:
     try:
-        return float(os.environ.get(name, str(default)))
+        return float(_env_get(name) or str(default))
     except ValueError:
         logger.warning(
             "invalid float env value; using default",
@@ -42,18 +79,18 @@ def _env_float(name: str, default: float) -> float:
 
 
 def _env_bool(name: str, default: bool) -> bool:
-    raw = os.environ.get(name)
+    raw = _env_get(name)
     if raw is None:
         return default
     return raw.lower() in ("true", "1", "yes")
 
 
 def _env_str(name: str, default: str) -> str:
-    return os.environ.get(name, default)
+    return _env_get(name) or default
 
 
 def _env_list(name: str, default: list[float]) -> list[float]:
-    raw = os.environ.get(name)
+    raw = _env_get(name)
     if not raw:
         return default
     try:
@@ -72,7 +109,7 @@ DEFAULT_TEI_URL = _env_str(
 DEFAULT_ENDPOINT = _env_str(
     "FD_EMBEDDINGS_ENDPOINT", f"{DEFAULT_TEI_URL.rstrip('/')}/v1/embeddings"
 )
-DEFAULT_API_KEY = os.environ.get("FD_API_KEY")
+DEFAULT_API_KEY = _env_get("FD_API_KEY")
 DEFAULT_MODEL_ID = _env_str("MODEL_ID", _env_str("FD_MODEL_NAME", "deepvk/USER-bge-m3"))
 DEFAULT_MODEL_NAME = DEFAULT_MODEL_ID
 DEFAULT_REDIS_HOST = _env_str("REDIS_HOST", "127.0.0.1")
@@ -88,92 +125,6 @@ DEFAULT_CIRCUIT_FAILURE_THRESHOLD = _env_int("FD_CIRCUIT_FAILURE_THRESHOLD", 3)
 DEFAULT_CIRCUIT_OPEN_SECONDS = _env_float("FD_CIRCUIT_OPEN_SECONDS", 60.0)
 DEFAULT_GRACEFUL_DEGRADATION_ENABLED = _env_bool("FD_GRACEFUL_DEGRADATION_ENABLED", True)
 
-
-def _load_dotenv_if_present(path: str | Path = ".env") -> None:
-    """Load KEY=VALUE pairs from a local .env file without overriding process env.
-
-    This is a minimal, dependency-free loader that mirrors the pattern used in
-    ``scripts/m060g_smoke_test.py``. It runs once at module import so callers of
-    ``Embedder`` see ``FD_API_KEY`` and related fd env vars even when the
-    hosting process was started without ``source .env``.
-    """
-    try:
-        env_path = Path(path)
-    except OSError:
-        return
-    if not env_path.exists():
-        return
-    try:
-        lines = env_path.read_text().splitlines()
-    except OSError:
-        return
-    for raw_line in lines:
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip().strip('"').strip("'")
-        if key and key not in os.environ:
-            os.environ[key] = value
-
-
-_load_dotenv_if_present()
-# Re-evaluate fd env defaults now that .env has been loaded. Module-import
-# ``DEFAULT_*`` constants must reflect the loaded ``FD_API_KEY`` and friends.
-DEFAULT_TEI_URL = _env_str(
-    "TEI_URL", _env_str("FD_EMBEDDINGS_ENDPOINT_BASE", "http://127.0.0.1:8000")
-)
-DEFAULT_ENDPOINT = _env_str(
-    "FD_EMBEDDINGS_ENDPOINT", f"{DEFAULT_TEI_URL.rstrip('/')}/v1/embeddings"
-)
-DEFAULT_API_KEY = os.environ.get("FD_API_KEY")
-DEFAULT_MODEL_ID = _env_str("MODEL_ID", _env_str("FD_MODEL_NAME", "deepvk/USER-bge-m3"))
-DEFAULT_MODEL_NAME = DEFAULT_MODEL_ID
-DEFAULT_REDIS_HOST = _env_str("REDIS_HOST", "127.0.0.1")
-DEFAULT_REDIS_PORT = _env_int("REDIS_PORT", 6379)
-DEFAULT_DIMENSIONS = _env_int("FD_DIMENSIONS", 1024)
-DEFAULT_BATCH_SIZE = _env_int("FD_BATCH_SIZE", 32)
-DEFAULT_TIMEOUT_SECONDS = _env_float("FD_REQUEST_TIMEOUT_SECONDS", 120.0)
-DEFAULT_RETRY_SCHEDULE_SECONDS = tuple(
-    _env_list("FD_RETRY_BACKOFF_SECONDS", [1.0, 5.0, 15.0, 60.0, 300.0])
-)
-DEFAULT_MAX_ATTEMPTS = _env_int("FD_MAX_RETRIES", 3)
-DEFAULT_CIRCUIT_FAILURE_THRESHOLD = _env_int("FD_CIRCUIT_FAILURE_THRESHOLD", 3)
-DEFAULT_CIRCUIT_OPEN_SECONDS = _env_float("FD_CIRCUIT_OPEN_SECONDS", 60.0)
-DEFAULT_GRACEFUL_DEGRADATION_ENABLED = _env_bool("FD_GRACEFUL_DEGRADATION_ENABLED", True)
-
-
-def _load_dotenv_if_present(path: str | Path = ".env") -> None:
-    """Load KEY=VALUE pairs from a local .env file without overriding process env.
-
-    This is a minimal, dependency-free loader that mirrors the pattern used in
-    ``scripts/m060g_smoke_test.py``. It runs once at module import so callers of
-    ``Embedder`` see ``FD_API_KEY`` and related fd env vars even when the
-    hosting process was started without ``source .env``.
-    """
-    try:
-        env_path = Path(path)
-    except OSError:
-        return
-    if not env_path.exists():
-        return
-    try:
-        lines = env_path.read_text().splitlines()
-    except OSError:
-        return
-    for raw_line in lines:
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip().strip('"').strip("'")
-        if key and key not in os.environ:
-            os.environ[key] = value
-
-
-_load_dotenv_if_present()
 
 SAFETY_DEFAULTS: dict[str, bool] = {
     "graph_writes_authorized": False,

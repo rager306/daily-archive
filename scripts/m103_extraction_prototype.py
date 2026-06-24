@@ -49,10 +49,11 @@ LLM_CALL_DELAY_SECONDS = 2.0
 
 
 def _load_env() -> None:
-    """Load .env so MiniMax keys are present (embedder's dependency-free loader)."""
+    """Load .env so MiniMax keys are present for this CLI process."""
     from research_graph.infrastructure.retrieval.embedder import _load_dotenv_if_present
 
-    _load_dotenv_if_present()
+    for key, value in _load_dotenv_if_present().items():
+        os.environ.setdefault(key, value)
 
 
 def _require_key() -> str:

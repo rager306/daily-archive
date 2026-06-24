@@ -4,8 +4,10 @@ import importlib
 import inspect
 import json
 import os
+import tempfile
 from collections.abc import Awaitable, Callable
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -42,14 +44,24 @@ FD_ENV_KEYS = (
 
 
 @contextmanager
-def _embedder_env(**overrides: str):
+def _embedder_env(dotenv_dir: Path | None = None, **overrides: str):
     original = {key: os.environ.get(key) for key in FD_ENV_KEYS}
+    original_cwd = os.getcwd()
+    temp_dir = None
     try:
         for key in FD_ENV_KEYS:
             os.environ.pop(key, None)
         os.environ.update(overrides)
+        if dotenv_dir is None:
+            temp_dir = tempfile.TemporaryDirectory()
+            os.chdir(temp_dir.name)
+        else:
+            os.chdir(dotenv_dir)
         yield importlib.reload(embedder_module)
     finally:
+        os.chdir(original_cwd)
+        if temp_dir is not None:
+            temp_dir.cleanup()
         for key, value in original.items():
             if value is None:
                 os.environ.pop(key, None)
@@ -203,6 +215,43 @@ def test_env_override_dimensions() -> None:
     with _embedder_env(FD_DIMENSIONS="512") as module:
         assert module.DEFAULT_DIMENSIONS == 512
         assert module.Embedder().dimensions == 512
+
+
+def test_dotenv_fallback_does_not_mutate_process_env(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".env").write_text(
+        "FD_EMBEDDINGS_ENDPOINT=http://127.0.0.1:19000/v1/embeddings\n"
+        "FD_API_KEY=dotenv-key\n"
+        "FD_DIMENSIONS=512\n"
+    )
+
+    with _embedder_env(dotenv_dir=tmp_path) as module:
+        assert module.DEFAULT_ENDPOINT == "http://127.0.0.1:19000/v1/embeddings"
+        assert module.DEFAULT_API_KEY == "dotenv-key"
+        assert module.DEFAULT_DIMENSIONS == 512
+        assert "FD_EMBEDDINGS_ENDPOINT" not in os.environ
+        assert "FD_API_KEY" not in os.environ
+        assert "FD_DIMENSIONS" not in os.environ
+
+
+def test_process_env_overrides_dotenv(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".env").write_text(
+        "FD_EMBEDDINGS_ENDPOINT=http://127.0.0.1:19000/v1/embeddings\nFD_DIMENSIONS=512\n"
+    )
+
+    endpoint = "http://127.0.0.1:20000/v1/embeddings"
+    with _embedder_env(
+        dotenv_dir=tmp_path, FD_EMBEDDINGS_ENDPOINT=endpoint, FD_DIMENSIONS="768"
+    ) as module:
+        assert module.DEFAULT_ENDPOINT == endpoint
+        assert module.DEFAULT_DIMENSIONS == 768
+        assert module.Embedder().endpoint == endpoint
+        assert module.Embedder().dimensions == 768
 
 
 def test_env_default_values() -> None:
