@@ -1,0 +1,50 @@
+{
+  "after_counts": {
+    "dynamic_script_import": 52,
+    "legacy_mixed": 66,
+    "strict_application": 6,
+    "strict_domain": 0,
+    "strict_infrastructure": 5,
+    "strict_script_wrapper": 6
+  },
+  "before_counts": {
+    "dynamic_script_import": 53,
+    "legacy_mixed": 67,
+    "strict_application": 6,
+    "strict_domain": 0,
+    "strict_infrastructure": 5,
+    "strict_script_wrapper": 5
+  },
+  "excluded_patterns": [
+    "subprocess wrapper tests where process invocation is the behavior under test",
+    "large acceptance tests that span many scripts at once",
+    "tests with infrastructure signals and multiple script modules that deserve a separate focused review",
+    "tests that fail focused baseline pytest before migration"
+  ],
+  "milestone_id": "M130-5d8rs0",
+  "ratchet_delta": {
+    "dynamic_script_import": -1,
+    "legacy_mixed": -1,
+    "strict_script_wrapper": 1
+  },
+  "rejected_after_baseline": [
+    {
+      "path": "tests/test_m061_s02.py",
+      "reason": "Focused baseline pytest failed before migration: `test_m050_m064_s01_regression` expected stale git blob SHA for `artifacts/m061-2hop/s01-decision.md`. The file is not safe for an import-only ratchet until the fixture expectation is repaired separately."
+    }
+  ],
+  "schema_version": "daily-archive-test-ratchet-candidates.v1",
+  "selected": [
+    {
+      "current_bucket": "legacy-mixed",
+      "current_debt": [
+        "dynamic_script_import"
+      ],
+      "migration_strategy": "Replace `_load_wrapper_module()` dynamic loading of `scripts/build_r024_coverage_report.py` with a normal `from scripts import build_r024_coverage_report` import.",
+      "path": "tests/test_r024_218_document_coverage_report.py",
+      "rationale": "The test exercises a script wrapper around the corpus coverage use case; normal import preserves the wrapper contract and removes dynamic loader boilerplate.",
+      "target_bucket": "script-wrapper"
+    }
+  ],
+  "selection_strategy": "second low-risk explicit scripts/*.py dynamic-import ratchet batch"
+}

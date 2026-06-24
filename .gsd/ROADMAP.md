@@ -134,3 +134,4 @@
 - ✅ **M127-3ug5zf: Riskratchet Workflow Visibility** (`depends:[M126-v6gp40]`)
 - ✅ **M128-e2lp61: Test Architecture Alignment** (`depends:[M122-qq2mfe]`)
 - ✅ **M129-vjokx6: Test Allowlist Ratchet One** (`depends:[M128-e2lp61]`)
+- ✅ **M130-5d8rs0: Test Allowlist Ratchet Two** (`depends:[M129-vjokx6]`)

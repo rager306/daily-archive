@@ -2,28 +2,17 @@
 
 from __future__ import annotations
 
-import importlib.util
 import json
 from pathlib import Path
 from typing import Any
+
+from scripts import build_r024_coverage_report as wrapper  # pyrefly: ignore [missing-import]
 
 REPORT = Path("data/r024-218-document-corpus-v1/R024-COVERAGE.md")
 INGEST_SUMMARY = Path("data/r024-218-document-corpus-v1/ingest-summary.json")
 PARSER_SUMMARY = Path("data/r024-218-document-corpus-v1/parser-chunking/summary.json")
 NETWORKX_SUMMARY = Path("data/r024-218-document-corpus-v1/networkx-probe/summary.json")
 MEMORY_PROFILE = Path("data/r024-218-document-corpus-v1/networkx-probe/memory-profile.json")
-WRAPPER = Path("scripts/build_r024_coverage_report.py")
-
-
-def _load_wrapper_module():
-    spec = importlib.util.spec_from_file_location("build_r024_coverage_report", WRAPPER)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
 def _text() -> str:
     return REPORT.read_text()
 
@@ -131,7 +120,6 @@ def test_report_does_not_claim_production_readiness() -> None:
 
 
 def test_coverage_wrapper_can_regenerate_contract_compatible_report(tmp_path: Path) -> None:
-    wrapper = _load_wrapper_module()
     args = wrapper.parse_args(
         [
             "--report-path",

@@ -92,3 +92,13 @@ M129 performed the first ratchet pass:
 | `dynamic_script_import` | 56 | 53 | -3 |
 | `legacy_mixed` | 70 | 67 | -3 |
 | `strict_script_wrapper` | 2 | 5 | +3 |
+
+M130 performed the second ratchet pass:
+
+| Bucket | Before | After | Delta |
+|---|---:|---:|---:|
+| `dynamic_script_import` | 53 | 52 | -1 |
+| `legacy_mixed` | 67 | 66 | -1 |
+| `strict_script_wrapper` | 5 | 6 | +1 |
+
+If a candidate fails focused baseline pytest before migration, exclude it from the ratchet batch and record the reason in the candidate artifact. M130 rejected `tests/test_m061_s02.py` this way because it had a stale fixture SHA before any import cleanup.
