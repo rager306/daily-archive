@@ -5,7 +5,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-from scripts import verify_m027_validation_remediation  # pyrefly: ignore [missing-import]
+from scripts import verify_m027_validation_remediation
 
 CANONICAL_CLASSES = verify_m027_validation_remediation.CANONICAL_CLASSES
 EXPECTED_CLASSIFICATIONS = verify_m027_validation_remediation.EXPECTED_CLASSIFICATIONS

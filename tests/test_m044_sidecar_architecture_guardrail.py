@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from scripts import (  # pyrefly: ignore [missing-import]
-    verify_m044_sidecar_architecture_guardrail as guard,
-)
+from scripts import verify_m044_sidecar_architecture_guardrail as guard
 
 
 def _pack(tmp_path: Path) -> dict:

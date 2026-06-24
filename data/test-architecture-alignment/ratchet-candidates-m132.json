@@ -1,0 +1,42 @@
+{
+  "after_counts": {
+    "dynamic_script_import": 51,
+    "legacy_mixed": 65,
+    "strict_application": 6,
+    "strict_domain": 0,
+    "strict_infrastructure": 5,
+    "strict_script_wrapper": 7
+  },
+  "before_counts": {
+    "dynamic_script_import": 52,
+    "legacy_mixed": 66,
+    "strict_application": 6,
+    "strict_domain": 0,
+    "strict_infrastructure": 5,
+    "strict_script_wrapper": 6
+  },
+  "milestone_id": "M132-cxbome",
+  "ratchet_delta": {
+    "dynamic_script_import": -1,
+    "legacy_mixed": -1,
+    "strict_script_wrapper": 1
+  },
+  "schema_version": "daily-archive-test-ratchet-candidates.v1",
+  "selected": [
+    {
+      "current_bucket": "legacy-mixed",
+      "current_debt": [
+        "dynamic_script_import"
+      ],
+      "migration_strategy": "After M131 repaired stale fixture SHA constants and S01 configured pyrefly search-path, replace dynamic loading of scripts/m061_full_5_anchors.py with normal from scripts import m061_full_5_anchors.",
+      "path": "tests/test_m061_s02.py",
+      "rationale": "The test validates script-produced M061 artifact contracts. Baseline pytest is now green and normal import preserves the import-time script module behavior already executed by the prior dynamic loader.",
+      "target_bucket": "script-wrapper"
+    }
+  ],
+  "selection_strategy": "ratchet baseline-green M061 candidate after M131 fixture repair and pyrefly scripts search-path config",
+  "suppression_cleanup": {
+    "pyrefly_search_path": ".",
+    "remove_missing_import_suppressions_for_normal_scripts_imports": true
+  }
+}

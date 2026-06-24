@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from scripts import build_r024_coverage_report as wrapper  # pyrefly: ignore [missing-import]
+from scripts import build_r024_coverage_report as wrapper
 
 REPORT = Path("data/r024-218-document-corpus-v1/R024-COVERAGE.md")
 INGEST_SUMMARY = Path("data/r024-218-document-corpus-v1/ingest-summary.json")

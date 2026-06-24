@@ -1,27 +1,19 @@
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import json
-import sys
 from pathlib import Path
 from typing import Any
 
+from scripts import m061_full_5_anchors
+
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT_PATH = ROOT / "scripts" / "m061_full_5_anchors.py"
 BASE = ROOT / "artifacts" / "m061-2hop"
 S01_ANCHOR = "2605.18747"
 S02_ANCHORS = ["2401.04016", "2207.05608", "2505.19443", "2510.12157"]
 ALL_ANCHORS = [S01_ANCHOR, *S02_ANCHORS]
 S01_DECISION_SHA256 = "9e6280aee19244251e6fd195c07ae07e5d9fec80"
 S01_SUMMARY_SHA256 = "bcacdae1c0c4da78a7f2c071c94c9d6403006274"
-
-spec = importlib.util.spec_from_file_location("m061_full_5_anchors", SCRIPT_PATH)
-assert spec is not None and spec.loader is not None
-m061_full_5_anchors = importlib.util.module_from_spec(spec)
-sys.modules["m061_full_5_anchors"] = m061_full_5_anchors
-spec.loader.exec_module(m061_full_5_anchors)
-
 
 def read_json(path: Path) -> Any:
     return json.loads(path.read_text())
@@ -97,7 +89,7 @@ def test_5_safety_defaults() -> None:
     assert graph["external_network_override"]["external_network_authorized"] is True
     forbidden_host = "".join(chr(code) for code in [108, 111, 99, 97, 108, 104, 111, 115, 116])
     assert combined["network_host_reference"] == "127.0.0.1"
-    assert forbidden_host not in SCRIPT_PATH.read_text()
+    assert forbidden_host not in Path(m061_full_5_anchors.__file__).read_text()
     assert forbidden_host not in (BASE / "s02-decision.md").read_text()
 
 
@@ -122,4 +114,4 @@ def test_m050_m064_s01_regression() -> None:
     assert summary["anchor_arxiv_id"] == S01_ANCHOR
     assert summary["real_paper_throughput_per_min"] >= 1.0
     assert summary["arxiv_rate_limit_metrics"]["http_429_count"] == 0
-    assert "s01-decision.md" not in SCRIPT_PATH.read_text()
+    assert "s01-decision.md" not in Path(m061_full_5_anchors.__file__).read_text()

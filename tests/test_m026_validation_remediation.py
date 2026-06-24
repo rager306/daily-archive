@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from scripts import verify_m026_validation_remediation  # pyrefly: ignore [missing-import]
+from scripts import verify_m026_validation_remediation
 
 CANONICAL_CLASSES = verify_m026_validation_remediation.CANONICAL_CLASSES
 REQUIRED_FALSE_SAFETY_FLAGS = verify_m026_validation_remediation.REQUIRED_FALSE_SAFETY_FLAGS

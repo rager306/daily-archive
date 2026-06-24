@@ -101,4 +101,14 @@ M130 performed the second ratchet pass:
 | `legacy_mixed` | 67 | 66 | -1 |
 | `strict_script_wrapper` | 5 | 6 | +1 |
 
-If a candidate fails focused baseline pytest before migration, exclude it from the ratchet batch and record the reason in the candidate artifact. M130 rejected `tests/test_m061_s02.py` this way because it had a stale fixture SHA before any import cleanup.
+M132 performed the third ratchet pass after M131 repaired the M061 stale fixture:
+
+| Bucket | Before | After | Delta |
+|---|---:|---:|---:|
+| `dynamic_script_import` | 52 | 51 | -1 |
+| `legacy_mixed` | 66 | 65 | -1 |
+| `strict_script_wrapper` | 6 | 7 | +1 |
+
+M132 also configured pyrefly with `search-path = ["."]` so normal repo-root `from scripts import ...` imports type-check without local `pyrefly: ignore [missing-import]` comments. Use local missing-import suppressions only for genuine optional dependencies or legacy import hacks that are not solved by the repo-root search path.
+
+If a candidate fails focused baseline pytest before migration, exclude it from the ratchet batch and record the reason in the candidate artifact. M130 rejected `tests/test_m061_s02.py` this way because it had a stale fixture SHA before any import cleanup; M131 repaired that stale fixture before M132 ratcheted the file.
