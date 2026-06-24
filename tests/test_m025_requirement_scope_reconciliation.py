@@ -1,28 +1,17 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-MODULE_PATH = (
-    Path(__file__).parents[1] / "scripts" / "verify_m025_requirement_scope_reconciliation.py"
+from scripts.verify_m025_requirement_scope_reconciliation import (
+    main,
+    validate_coverage_handoff,
+    validate_matrix,
 )
-spec = importlib.util.spec_from_file_location(
-    "verify_m025_requirement_scope_reconciliation", MODULE_PATH
-)
-assert spec is not None and spec.loader is not None
-verify_m025_requirement_scope_reconciliation = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = verify_m025_requirement_scope_reconciliation
-spec.loader.exec_module(verify_m025_requirement_scope_reconciliation)
-
-validate_matrix = verify_m025_requirement_scope_reconciliation.validate_matrix
-validate_coverage_handoff = verify_m025_requirement_scope_reconciliation.validate_coverage_handoff
-main = verify_m025_requirement_scope_reconciliation.main
 
 REAL_MATRIX = (
     Path(__file__).parents[1] / "doc" / "validation" / "m025_requirement_scope_matrix.json"
