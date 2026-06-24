@@ -162,3 +162,4 @@
 - ✅ **M155-pihn5k: Hexagonal Async Architecture Hardening** (`depends:[M154-o6vjr8]`)
 - ✅ **M156-cen0w5: Embedder Env Mutation Hardening** (`depends:[M155-pihn5k]`)
 - ✅ **M157-zods0h: Embedder Public Config API** (`depends:[M156-cen0w5]`)
+- ✅ **M158-c0fuqn: Run Analysis Async First API** (`depends:[M157-zods0h]`)

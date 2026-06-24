@@ -194,6 +194,44 @@ def test_run_analysis_returns_empty_without_scoring_or_persistence(
 
 
 @pytest.mark.asyncio
+async def test_run_analysis_async_returns_done_daily_analysis(
+    patch_analysis_components: None,
+) -> None:
+    from research_graph.cli import run_analysis_async
+
+    FakeArxivClient.papers = [make_paper(index) for index in range(3, 0, -1)]
+
+    analysis = await run_analysis_async(RUN_DATE)
+
+    assert analysis.status == "done"
+    assert analysis.papers_fetched == 3
+    assert [paper.paper.id for paper in analysis.papers] == [
+        "2605.00001",
+        "2605.00002",
+        "2605.00003",
+    ]
+    assert len(FakeEmbedder.calls) == 1
+    assert all(paper.embedding == [0.0, 0.0, 0.0] for paper in analysis.papers)
+
+
+@pytest.mark.asyncio
+async def test_run_analysis_async_returns_empty_without_scoring(
+    patch_analysis_components: None,
+) -> None:
+    from research_graph.cli import run_analysis_async
+
+    FakeArxivClient.papers = []
+
+    analysis = await run_analysis_async(RUN_DATE)
+
+    assert analysis.status == "empty"
+    assert analysis.papers_fetched == 0
+    assert analysis.papers == []
+    assert FakeKeywordExtractor.calls == []
+    assert FakeScoringEngine.calls == []
+
+
+@pytest.mark.asyncio
 async def test_run_analysis_fails_explicitly_inside_running_loop(
     patch_analysis_components: None,
 ) -> None:
