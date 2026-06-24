@@ -296,4 +296,16 @@ M149 promoted three validation remediation tests into strict script-wrapper cove
 
 The batch was baseline-green before migration and now imports validation remediation verifier scripts normally while preserving existing test-level aliases.
 
+M150 promoted three M056 wave analyzer tests into strict script-wrapper coverage:
+
+| Bucket | Before | After | Delta |
+|---|---:|---:|---:|
+| `dynamic_script_import` | 27 | 24 | -3 |
+| `legacy_mixed` | 41 | 38 | -3 |
+| `strict_script_wrapper` | 31 | 34 | +3 |
+| `strict_infrastructure` | 6 | 6 | 0 |
+| `unknown` | 77 | 77 | 0 |
+
+The batch was baseline-green before migration and now imports M056 wave analyzer scripts normally while preserving the `load_analyzer()` helper API.
+
 If a candidate fails focused baseline pytest before migration, exclude it from the ratchet batch and record the reason in the candidate artifact. M130 rejected `tests/test_m061_s02.py` this way because it had a stale fixture SHA before any import cleanup; M131 repaired that stale fixture before M132 ratcheted the file.

@@ -13,9 +13,9 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 | `domain` | 0 |
 | `application` | 10 |
 | `infrastructure` | 87 |
-| `script-wrapper` | 48 |
+| `script-wrapper` | 51 |
 | `acceptance` | 6 |
-| `legacy-mixed` | 41 |
+| `legacy-mixed` | 38 |
 | `unknown` | 77 |
 
 ### Import and execution signals
@@ -23,12 +23,12 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 | Signal | Count |
 |---|---:|
 | `acceptance_name` | 6 |
-| `dynamic_script_import` | 27 |
+| `dynamic_script_import` | 24 |
 | `imports_application` | 17 |
 | `imports_cli` | 5 |
 | `imports_domain` | 14 |
 | `imports_infrastructure` | 95 |
-| `imports_scripts_normal` | 40 |
+| `imports_scripts_normal` | 43 |
 | `imports_workflows` | 24 |
 | `subprocess_script_invocation` | 16 |
 

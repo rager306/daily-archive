@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-import importlib.util
 import json
 from pathlib import Path
 from types import ModuleType
+
+from scripts import analyze_m056_wave_5 as analyzer
 
 ROOT = Path(__file__).resolve().parents[1]
 WAVE_ORDER = Path("/tmp/wave-order.json")
@@ -18,7 +19,6 @@ ANALYSIS_MD = WAVE_5_DIR / "analysis.md"
 CUMULATIVE_CORPUS = WAVE_5_DIR / "cumulative-corpus.json"
 GROBID_DIR = WAVE_5_DIR / "grobid-fulltext"
 OPENDATALOADER_DIR = WAVE_5_DIR / "opendataloader"
-SCRIPT_PATH = ROOT / "scripts" / "analyze_m056_wave_5.py"
 
 
 def load_json(path: Path) -> dict:
@@ -32,12 +32,7 @@ def assert_all_false(value: object) -> None:
 
 
 def load_analyzer() -> ModuleType:
-    spec = importlib.util.spec_from_file_location("analyze_m056_wave_5", SCRIPT_PATH)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return analyzer
 
 
 def test_wave_5_acquisition_matches_positions_121_to_150() -> None:

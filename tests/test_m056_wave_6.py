@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-import importlib.util
 import json
 from pathlib import Path
 from types import ModuleType
+
+from scripts import analyze_m056_wave_6 as analyzer
 
 ROOT = Path(__file__).resolve().parents[1]
 WAVE_ORDER = Path("/tmp/wave-order.json")
@@ -18,7 +19,7 @@ ANALYSIS_MD = WAVE_6_DIR / "analysis.md"
 CUMULATIVE_CORPUS = WAVE_6_DIR / "cumulative-corpus.json"
 GROBID_DIR = WAVE_6_DIR / "grobid-fulltext"
 OPENDATALOADER_DIR = WAVE_6_DIR / "opendataloader"
-SCRIPT_PATH = ROOT / "scripts" / "analyze_m056_wave_6.py"
+ANALYZER_SCRIPT_PATH = ROOT / "scripts" / "analyze_m056_wave_6.py"
 
 
 def load_json(path: Path) -> dict:
@@ -32,12 +33,7 @@ def assert_all_false(value: object) -> None:
 
 
 def load_analyzer() -> ModuleType:
-    spec = importlib.util.spec_from_file_location("analyze_m056_wave_6", SCRIPT_PATH)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return analyzer
 
 
 def test_wave_6_acquisition_matches_positions_151_to_166() -> None:
@@ -125,7 +121,7 @@ def test_wave_6_final_corpus_accounting_and_recommendation() -> None:
 
 def test_wave_6_markdown_is_safe_for_trajectory_scan() -> None:
     markdown = ANALYSIS_MD.read_text(encoding="utf-8")
-    source = SCRIPT_PATH.read_text(encoding="utf-8")
+    source = ANALYZER_SCRIPT_PATH.read_text(encoding="utf-8")
 
     assert "is not authorized" in markdown
     assert "localhost" not in markdown
