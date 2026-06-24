@@ -1,0 +1,63 @@
+{
+  "after_counts": {
+    "dynamic_script_import": 53,
+    "legacy_mixed": 67,
+    "strict_application": 6,
+    "strict_domain": 0,
+    "strict_infrastructure": 5,
+    "strict_script_wrapper": 5
+  },
+  "before_counts": {
+    "dynamic_script_import": 56,
+    "legacy_mixed": 70,
+    "strict_application": 6,
+    "strict_domain": 0,
+    "strict_infrastructure": 5,
+    "strict_script_wrapper": 2
+  },
+  "excluded_patterns": [
+    "subprocess wrapper tests where subprocess behavior is the contract",
+    "large acceptance tests covering many scripts at once",
+    "tests involving optional parser dependencies or broad corpus setup"
+  ],
+  "milestone_id": "M129-vjokx6",
+  "ratchet_delta": {
+    "dynamic_script_import": -3,
+    "legacy_mixed": -3,
+    "strict_script_wrapper": 3
+  },
+  "schema_version": "daily-archive-test-ratchet-candidates.v1",
+  "selected": [
+    {
+      "current_bucket": "legacy-mixed",
+      "current_debt": [
+        "dynamic_script_import"
+      ],
+      "migration_strategy": "Replace importlib.util.spec_from_file_location script loading with a normal `from scripts import verify_m044_sidecar_architecture_guardrail as guard` import.",
+      "path": "tests/test_m044_sidecar_architecture_guardrail.py",
+      "rationale": "The test exercises a script wrapper module directly and does not need custom import semantics, subprocess execution, or optional dependencies.",
+      "target_bucket": "script-wrapper"
+    },
+    {
+      "current_bucket": "legacy-mixed",
+      "current_debt": [
+        "dynamic_script_import"
+      ],
+      "migration_strategy": "Replace dynamic script loading with a normal `from scripts import verify_m026_validation_remediation` import while preserving module alias usage.",
+      "path": "tests/test_m026_validation_remediation.py",
+      "rationale": "The test imports constants and pure validation functions from one script; normal script-package import preserves behavior and removes dynamic loader debt.",
+      "target_bucket": "script-wrapper"
+    },
+    {
+      "current_bucket": "legacy-mixed",
+      "current_debt": [
+        "dynamic_script_import"
+      ],
+      "migration_strategy": "Replace dynamic script loading with a normal `from scripts import verify_m027_validation_remediation` import while preserving module alias usage.",
+      "path": "tests/test_m027_validation_remediation.py",
+      "rationale": "The test imports constants and pure validation functions from one script; normal script-package import preserves behavior and removes dynamic loader debt.",
+      "target_bucket": "script-wrapper"
+    }
+  ],
+  "selection_strategy": "first low-risk dynamic-import ratchet batch"
+}

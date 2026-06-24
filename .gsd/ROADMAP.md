@@ -133,3 +133,4 @@
 - ✅ **M126-v6gp40: M107 Pyrefly Pre Commit Recovery** (`depends:[M125-xjewhv]`)
 - ✅ **M127-3ug5zf: Riskratchet Workflow Visibility** (`depends:[M126-v6gp40]`)
 - ✅ **M128-e2lp61: Test Architecture Alignment** (`depends:[M122-qq2mfe]`)
+- ✅ **M129-vjokx6: Test Allowlist Ratchet One** (`depends:[M128-e2lp61]`)

@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from collections.abc import Callable
 from copy import deepcopy
 from pathlib import Path
@@ -10,12 +8,7 @@ from typing import Any
 
 import pytest
 
-MODULE_PATH = Path(__file__).parents[1] / "scripts" / "verify_m026_validation_remediation.py"
-spec = importlib.util.spec_from_file_location("verify_m026_validation_remediation", MODULE_PATH)
-assert spec is not None and spec.loader is not None
-verify_m026_validation_remediation = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = verify_m026_validation_remediation
-spec.loader.exec_module(verify_m026_validation_remediation)
+from scripts import verify_m026_validation_remediation  # pyrefly: ignore [missing-import]
 
 CANONICAL_CLASSES = verify_m026_validation_remediation.CANONICAL_CLASSES
 REQUIRED_FALSE_SAFETY_FLAGS = verify_m026_validation_remediation.REQUIRED_FALSE_SAFETY_FLAGS

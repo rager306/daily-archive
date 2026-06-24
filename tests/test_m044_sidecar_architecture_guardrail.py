@@ -1,19 +1,10 @@
 from __future__ import annotations
 
-import importlib.util
-import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = ROOT / "scripts" / "verify_m044_sidecar_architecture_guardrail.py"
-spec = importlib.util.spec_from_file_location(
-    "verify_m044_sidecar_architecture_guardrail", MODULE_PATH
+from scripts import (  # pyrefly: ignore [missing-import]
+    verify_m044_sidecar_architecture_guardrail as guard,
 )
-assert spec is not None
-guard = importlib.util.module_from_spec(spec)
-sys.modules["verify_m044_sidecar_architecture_guardrail"] = guard
-assert spec.loader is not None
-spec.loader.exec_module(guard)
 
 
 def _pack(tmp_path: Path) -> dict:

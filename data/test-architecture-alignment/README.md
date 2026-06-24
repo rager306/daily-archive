@@ -74,3 +74,21 @@ When adding or moving tests:
 6. Do not add new dynamic script imports unless the file is intentionally classified and allowlisted as legacy-mixed.
 
 Future milestones should shrink `legacy_mixed`, `dynamic_script_import`, and `unknown` counts rather than expanding the allowlist.
+
+## Ratchet workflow
+
+For a small allowlist-reduction pass:
+
+1. Write a candidate artifact, such as `ratchet-candidates.json` / `.md`, with before counts, selected files, target bucket, and exclusions.
+2. Run focused pytest on selected files before editing.
+3. Replace dynamic script loading with normal imports or otherwise clarify the test boundary without changing assertions.
+4. Regenerate inventory and update `test-architecture-allowlist.json` so migrated files leave `legacy_mixed` / `dynamic_script_import` and enter the appropriate strict set.
+5. Run the guardrail and assert exact before/after count deltas.
+
+M129 performed the first ratchet pass:
+
+| Bucket | Before | After | Delta |
+|---|---:|---:|---:|
+| `dynamic_script_import` | 56 | 53 | -3 |
+| `legacy_mixed` | 70 | 67 | -3 |
+| `strict_script_wrapper` | 2 | 5 | +3 |

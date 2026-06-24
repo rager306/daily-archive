@@ -13,9 +13,9 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 | `domain` | 0 |
 | `application` | 10 |
 | `infrastructure` | 87 |
-| `script-wrapper` | 15 |
+| `script-wrapper` | 18 |
 | `acceptance` | 6 |
-| `legacy-mixed` | 70 |
+| `legacy-mixed` | 67 |
 | `unknown` | 81 |
 
 ### Import and execution signals
@@ -23,12 +23,12 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 | Signal | Count |
 |---|---:|
 | `acceptance_name` | 6 |
-| `dynamic_script_import` | 56 |
+| `dynamic_script_import` | 53 |
 | `imports_application` | 17 |
 | `imports_cli` | 5 |
 | `imports_domain` | 14 |
 | `imports_infrastructure` | 95 |
-| `imports_scripts_normal` | 4 |
+| `imports_scripts_normal` | 7 |
 | `imports_workflows` | 24 |
 | `subprocess_script_invocation` | 16 |
 
@@ -69,13 +69,13 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 - `tests/test_ingest_cli.py` — script wrapper or subprocess invocation
 - `tests/test_locator_evidence_audit.py` — script wrapper or subprocess invocation
 - `tests/test_m023_artifact_scaffold_gate.py` — script wrapper or subprocess invocation
+- `tests/test_m026_validation_remediation.py` — script wrapper or subprocess invocation
 - `tests/test_m027_mixed_source_catalog.py` — script wrapper or subprocess invocation
+- `tests/test_m027_validation_remediation.py` — script wrapper or subprocess invocation
 - `tests/test_m028_smoke_replay_closeout.py` — script wrapper or subprocess invocation
 - `tests/test_m031_import_boundary_rehearsal.py` — script wrapper or subprocess invocation
 - `tests/test_m031_process_continuity_audit.py` — script wrapper or subprocess invocation
 - `tests/test_m031_s05_closeout.py` — script wrapper or subprocess invocation
-- `tests/test_m053_grobid_pilot.py` — script wrapper or subprocess invocation
-- `tests/test_m059_s01.py` — script wrapper or subprocess invocation
 
 ### acceptance
 
