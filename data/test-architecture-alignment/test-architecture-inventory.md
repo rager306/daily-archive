@@ -13,9 +13,9 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 | `domain` | 0 |
 | `application` | 10 |
 | `infrastructure` | 87 |
-| `script-wrapper` | 59 |
+| `script-wrapper` | 61 |
 | `acceptance` | 6 |
-| `legacy-mixed` | 30 |
+| `legacy-mixed` | 28 |
 | `unknown` | 77 |
 
 ### Import and execution signals
@@ -23,12 +23,12 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 | Signal | Count |
 |---|---:|
 | `acceptance_name` | 6 |
-| `dynamic_script_import` | 16 |
+| `dynamic_script_import` | 14 |
 | `imports_application` | 17 |
 | `imports_cli` | 5 |
 | `imports_domain` | 14 |
 | `imports_infrastructure` | 95 |
-| `imports_scripts_normal` | 51 |
+| `imports_scripts_normal` | 53 |
 | `imports_workflows` | 24 |
 | `subprocess_script_invocation` | 16 |
 
@@ -128,5 +128,7 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 | `tests/test_parser_replay_adapters.py` | `infrastructure` | `infrastructure` |
 | `tests/test_parser_replay_use_case.py` | `application` | `application` |
 | `tests/test_pipeline_architecture_acceptance.py` | `acceptance` | `acceptance` |
+| `tests/test_pipeline_script_audit.py` | `script-wrapper` | `script-wrapper` |
 | `tests/test_pipeline_script_inventory.py` | `application` | `application` |
+| `tests/test_pipeline_script_wrapper_contracts.py` | `script-wrapper` | `script-wrapper` |
 | `tests/test_riskratchet_gate.py` | `script-wrapper` | `script-wrapper` |

@@ -1,0 +1,60 @@
+{
+  "after_counts": {
+    "dynamic_script_import": 14,
+    "legacy_mixed": 28,
+    "strict_infrastructure": 6,
+    "strict_script_wrapper": 44
+  },
+  "before_counts": {
+    "dynamic_script_import": 16,
+    "legacy_mixed": 30,
+    "strict_infrastructure": 6,
+    "strict_script_wrapper": 42
+  },
+  "classification": "strict_script_wrapper",
+  "delta": {
+    "dynamic_script_import": -2,
+    "legacy_mixed": -2,
+    "strict_infrastructure": 0,
+    "strict_script_wrapper": 2
+  },
+  "excluded_baseline_candidates": {
+    "tests/test_m045_project_trajectory.py": "baseline failed: reverse_adr_audit rule_count expected 8 observed 10",
+    "tests/test_m060d_s01.py": "baseline failed: project template reference and trajectory verdict drift",
+    "tests/test_m060g_s02.py": "previously timed out at 300s and remains excluded",
+    "tests/test_m061_s01.py": "baseline timed out at 300s",
+    "tests/test_m061_s03.py": "baseline failed: protected hash and synthesis aggregate drift",
+    "tests/test_m062_s03.py": "baseline failed: missing legacy embedder path and FD contract expectations",
+    "tests/test_m066_s01.py": "baseline failed: scoring matrix heading expectation",
+    "tests/test_m067_s03.py": "baseline failed: validation text expectation"
+  },
+  "milestone_id": "M153-eqp1t7",
+  "promoted": [
+    "tests/test_pipeline_script_audit.py",
+    "tests/test_pipeline_script_wrapper_contracts.py"
+  ],
+  "rationale": "Two pipeline audit tests were baseline-green and now import `scripts.audit_pipeline_scripts` normally instead of dynamic importlib loading.",
+  "schema_version": "daily-archive-m153-pipeline-audit-batch-ratchet.v1",
+  "verification": [
+    {
+      "command": "uv run pytest tests/test_pipeline_script_audit.py",
+      "result": "4 passed"
+    },
+    {
+      "command": "uv run pytest tests/test_pipeline_script_wrapper_contracts.py",
+      "result": "11 passed"
+    },
+    {
+      "command": "uv run pytest <two pipeline audit files>",
+      "result": "15 passed"
+    },
+    {
+      "command": "uv run ruff check <two pipeline audit files>",
+      "result": "passed"
+    },
+    {
+      "command": "uv run pyrefly check <two pipeline audit files>",
+      "result": "0 errors"
+    }
+  ]
+}

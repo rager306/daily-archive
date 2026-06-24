@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import ast
-import importlib.util
 import json
 from pathlib import Path
 
@@ -10,10 +9,10 @@ from research_graph.application.pipeline_script_inventory import (
     ScriptInventory,
     validate_inventory,
 )
+from scripts import audit_pipeline_scripts
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 INVENTORY_PATH = REPO_ROOT / "data" / "pipeline-script-architecture" / "script-inventory.json"
-AUDIT_SCRIPT = REPO_ROOT / "scripts" / "audit_pipeline_scripts.py"
 
 
 def _load_inventory() -> ScriptInventory:
@@ -21,12 +20,7 @@ def _load_inventory() -> ScriptInventory:
 
 
 def _load_audit_module():
-    spec = importlib.util.spec_from_file_location("audit_pipeline_scripts", AUDIT_SCRIPT)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return audit_pipeline_scripts
 
 
 def _literal_string(node: ast.AST) -> str | None:

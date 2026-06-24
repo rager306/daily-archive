@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import importlib.util
 import json
 import subprocess
 import sys
@@ -13,18 +12,14 @@ from research_graph.application.pipeline_script_inventory import (
     ScriptInventory,
     validate_inventory,
 )
+from scripts import audit_pipeline_scripts
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-AUDIT_SCRIPT = REPO_ROOT / "scripts" / "audit_pipeline_scripts.py"
+AUDIT_SCRIPT_PATH = REPO_ROOT / "scripts" / "audit_pipeline_scripts.py"
 
 
 def _load_audit_module():
-    spec = importlib.util.spec_from_file_location("audit_pipeline_scripts", AUDIT_SCRIPT)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return audit_pipeline_scripts
 
 
 def test_build_inventory_captures_recurring_pipeline_categories() -> None:
@@ -79,7 +74,7 @@ def test_cli_write_outputs_schema_and_summary(tmp_path: Path) -> None:
     output = tmp_path / "script-inventory.json"
 
     result = subprocess.run(
-        [sys.executable, str(AUDIT_SCRIPT), "--repo-root", str(REPO_ROOT), "--write", str(output)],
+        [sys.executable, str(AUDIT_SCRIPT_PATH), "--repo-root", str(REPO_ROOT), "--write", str(output)],
         check=True,
         text=True,
         capture_output=True,

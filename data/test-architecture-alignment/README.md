@@ -332,4 +332,16 @@ M152 promoted five M041-M043 connectivity-sidecar tests into strict script-wrapp
 
 The batch was baseline-green before migration and now imports connectivity-sidecar scripts normally. M041 keeps script-directory path setup for a bare sibling import in the script under test; no dynamic module loading remains.
 
+M153 promoted two pipeline audit tests into strict script-wrapper coverage:
+
+| Bucket | Before | After | Delta |
+|---|---:|---:|---:|
+| `dynamic_script_import` | 16 | 14 | -2 |
+| `legacy_mixed` | 30 | 28 | -2 |
+| `strict_script_wrapper` | 42 | 44 | +2 |
+| `strict_infrastructure` | 6 | 6 | 0 |
+| `unknown` | 77 | 77 | 0 |
+
+The batch was baseline-green before migration and now imports `scripts.audit_pipeline_scripts` normally. The helper `_load_audit_module()` remains as a compatibility shim returning the imported module; `AUDIT_SCRIPT_PATH` remains only as a subprocess CLI path.
+
 If a candidate fails focused baseline pytest before migration, exclude it from the ratchet batch and record the reason in the candidate artifact. M130 rejected `tests/test_m061_s02.py` this way because it had a stale fixture SHA before any import cleanup; M131 repaired that stale fixture before M132 ratcheted the file.
