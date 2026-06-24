@@ -1,18 +1,11 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from pathlib import Path
 
+from scripts import check_project_trajectory as traj
+
 ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = ROOT / "scripts" / "check_project_trajectory.py"
-spec = importlib.util.spec_from_file_location("check_project_trajectory", MODULE_PATH)
-assert spec is not None
-traj = importlib.util.module_from_spec(spec)
-sys.modules["check_project_trajectory"] = traj
-assert spec.loader is not None
-spec.loader.exec_module(traj)
 
 
 def _write(path: Path, text: str) -> None:
@@ -147,7 +140,7 @@ def test_reverse_adr_audit_clear_on_clean_project(tmp_path, monkeypatch):
     assert report["dimensions"]["reverse_adr_audit"]["status"] == "clear"
     assert report["dimensions"]["reverse_adr_audit"]["flags"] == []
     assert report["reverse_adr_audit_details"]["status"] == "clear"
-    assert report["reverse_adr_audit_details"]["rule_count"] == 8
+    assert report["reverse_adr_audit_details"]["rule_count"] == 10
 
 
 def test_reverse_adr_audit_flags_ladybugdb_import_in_src(tmp_path, monkeypatch):

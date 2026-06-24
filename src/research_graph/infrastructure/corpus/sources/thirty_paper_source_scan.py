@@ -155,7 +155,14 @@ async def acquire_sources_for_manifest(
 
 def acquire_sources_for_manifest_sync(**kwargs: Any) -> dict[str, Path]:
     """Synchronous wrapper for command-line/script use."""
-    return asyncio.run(acquire_sources_for_manifest(**kwargs))
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(acquire_sources_for_manifest(**kwargs))
+    raise RuntimeError(
+        "acquire_sources_for_manifest_sync() cannot run inside an active event loop; "
+        "await acquire_sources_for_manifest() instead"
+    )
 
 
 async def _convert_bounded(

@@ -306,6 +306,17 @@ async def test_run_pipeline_fails_explicitly_inside_running_loop() -> None:
         run_pipeline(RUN_DATE)
 
 
+def test_cli_async_entrypoints_and_sync_wrappers_are_explicit() -> None:
+    import research_graph.cli as cli
+
+    assert inspect.iscoroutinefunction(cli.run_analysis_async)
+    assert inspect.iscoroutinefunction(cli.run_pipeline_async)
+    assert inspect.iscoroutinefunction(cli.run_command_async)
+    assert "asyncio.run(run_analysis_async" in inspect.getsource(cli.run_analysis)
+    assert "asyncio.run(run_pipeline_async" in inspect.getsource(cli.run_pipeline)
+    assert "asyncio.run(run_command_async" in inspect.getsource(cli.run)
+
+
 def test_run_analysis_propagates_dependency_failures(monkeypatch: pytest.MonkeyPatch) -> None:
     import research_graph.cli as cli
 

@@ -3,10 +3,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from research_graph.infrastructure.corpus.sources.markdown_converter import ConversionResult
 from research_graph.infrastructure.corpus.sources.thirty_paper_source_scan import (
     AcquisitionPaths,
     acquire_sources_for_manifest,
+    acquire_sources_for_manifest_sync,
     missing_markdown_paper_ids,
 )
 
@@ -59,6 +62,12 @@ def test_missing_markdown_paper_ids_reads_manifest_flags(tmp_path: Path) -> None
     manifest = json.loads(_manifest(tmp_path).read_text(encoding="utf-8"))
 
     assert missing_markdown_paper_ids(manifest) == ["2001.00116v2", "2001.00119v2"]
+
+
+@pytest.mark.asyncio
+async def test_acquire_sources_for_manifest_sync_fails_inside_running_loop() -> None:
+    with pytest.raises(RuntimeError, match="await acquire_sources_for_manifest"):
+        acquire_sources_for_manifest_sync()
 
 
 async def test_acquire_sources_for_manifest_writes_redacted_summary_and_diagnostics(
