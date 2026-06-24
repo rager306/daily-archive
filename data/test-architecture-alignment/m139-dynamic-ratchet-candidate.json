@@ -1,0 +1,59 @@
+{
+  "before_counts": {
+    "dynamic_script_import": 47,
+    "legacy_mixed": 61,
+    "strict_script_wrapper": 12,
+    "unknown": 77
+  },
+  "expected_after_counts": {
+    "dynamic_script_import": 46,
+    "legacy_mixed": 60,
+    "strict_script_wrapper": 13,
+    "unknown": 77
+  },
+  "intended_delta": {
+    "dynamic_script_import": -1,
+    "legacy_mixed": -1,
+    "strict_script_wrapper": 1,
+    "unknown": 0
+  },
+  "milestone_id": "M139-c30uwy",
+  "schema_version": "daily-archive-m139-dynamic-ratchet-candidate.v1",
+  "selected": {
+    "baseline_pytest": "10 passed",
+    "current_allowlist_membership": {
+      "dynamic_script_import": true,
+      "legacy_mixed": true,
+      "strict_script_wrapper": false
+    },
+    "current_bucket": "legacy-mixed",
+    "gitnexus_blast_radius": "LOW for representative test and script function; no HIGH or CRITICAL risk",
+    "path": "tests/test_codebase_memory_governance.py",
+    "signals": {
+      "acceptance_name": false,
+      "dynamic_script_import": true,
+      "imports_application": false,
+      "imports_cli": false,
+      "imports_domain": false,
+      "imports_infrastructure": false,
+      "imports_pipeline_legacy": false,
+      "imports_scripts_normal": false,
+      "imports_workflows": false,
+      "subprocess_script_invocation": false
+    }
+  },
+  "verification": [
+    {
+      "command": "uv run pytest tests/test_codebase_memory_governance.py",
+      "result": "10 passed"
+    },
+    {
+      "command": "gitnexus_impact target=test_current_digest_contains_hybrid_governance_markers",
+      "result": "LOW, impactedCount=0"
+    },
+    {
+      "command": "gitnexus_impact target=generate_digest",
+      "result": "LOW, impactedCount=5, affected_processes=0"
+    }
+  ]
+}

@@ -1,21 +1,11 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = ROOT / "scripts" / "sync_codebase_memory_governance.py"
-
-spec = importlib.util.spec_from_file_location("sync_codebase_memory_governance", MODULE_PATH)
-assert spec is not None
-sync = importlib.util.module_from_spec(spec)
-sys.modules["sync_codebase_memory_governance"] = sync
-assert spec.loader is not None
-spec.loader.exec_module(sync)
+from scripts import sync_codebase_memory_governance as sync
 
 
 def test_current_digest_contains_hybrid_governance_markers() -> None:

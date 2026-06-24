@@ -166,4 +166,15 @@ M138 performed the seventh dynamic ratchet pass:
 
 M138 moved `tests/test_bounded_chunk_repair.py` from importlib script loading to normal `scripts` imports after focused baseline pytest, ruff, pyrefly, and LOW target-file GitNexus blast-radius checks passed.
 
+M139 performed the eighth dynamic ratchet pass:
+
+| Bucket | Before | After | Delta |
+|---|---:|---:|---:|
+| `dynamic_script_import` | 47 | 46 | -1 |
+| `legacy_mixed` | 61 | 60 | -1 |
+| `strict_script_wrapper` | 12 | 13 | +1 |
+| `unknown` | 77 | 77 | 0 |
+
+M139 moved `tests/test_codebase_memory_governance.py` from importlib script loading to a normal `scripts` import after focused baseline pytest, ruff, pyrefly, and LOW GitNexus blast-radius checks passed.
+
 If a candidate fails focused baseline pytest before migration, exclude it from the ratchet batch and record the reason in the candidate artifact. M130 rejected `tests/test_m061_s02.py` this way because it had a stale fixture SHA before any import cleanup; M131 repaired that stale fixture before M132 ratcheted the file.
