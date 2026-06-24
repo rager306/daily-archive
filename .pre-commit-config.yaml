@@ -75,22 +75,21 @@ repos:
         verbose: true
         timeout: 30
 
-  # Local repository: M107 pyrefly type checker (advisory on M107 baseline).
-  # Runs pyrefly on changed Python files. Pre-commit binary is not
-  # currently installed; this hook is config-ready and will activate
-  # when `bash scripts/install-precommit.sh` is run.
-  # Baseline (2026-06-22): 693 errors. The hook is configured as advisory
-  # (does not fail the commit) until the baseline is intentionally reduced.
+  # Local repository: M107 pyrefly type checker.
+  # Runs pyrefly on the configured project whenever Python files are part of
+  # a commit. Pyrefly's suppressed baseline remains non-blocking, but active
+  # unsuppressed diagnostics fail the hook. This acts as a blocking ratchet:
+  # fix new active errors instead of bypassing with SKIP.
   - repo: local
     hooks:
       - id: m107-pyrefly-typecheck
-        name: M107 pyrefly type checker (advisory until baseline reduced)
+        name: M107 pyrefly type checker (blocking ratchet)
         entry: uv run pyrefly check
         language: system
         files: \.(py)$
         pass_filenames: false
         always_run: true
-        # Advisory: do not fail the commit, just print output.
+        # Blocking ratchet: fail commits on active unsuppressed diagnostics.
         stages: [pre-commit]
         # Show the verifier output on failure.
         verbose: true

@@ -20,7 +20,7 @@ from collections import Counter
 from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
-from typing import Any
+from typing import Any, cast
 
 try:  # Imported lazily by tests/command; dependency is available in project env.
     import fitz  # type: ignore[import-untyped]  # ty:ignore[unresolved-import]
@@ -407,7 +407,7 @@ def extract_pdf_text(source_path: Path) -> tuple[str, dict[str, Any], dict[str, 
         pages_processed = min(page_count, MAX_PDF_PAGES)
         parts: list[str] = []
         for page_index in range(pages_processed):
-            page_text = document[page_index].get_text("text")
+            page_text = cast(str, document[page_index].get_text("text"))
             parts.append(page_text)
             if sum(len(part) for part in parts) >= MAX_TEXT_CHARS:
                 break

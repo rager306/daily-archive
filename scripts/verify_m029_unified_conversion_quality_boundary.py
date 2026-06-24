@@ -19,7 +19,7 @@ import tempfile
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Mapping
 from pathlib import Path, PurePosixPath
-from typing import Any
+from typing import Any, cast
 
 try:  # Dependency is available in the project env; tests keep this optional.
     import fitz  # type: ignore[import-untyped]  # ty:ignore[unresolved-import]
@@ -409,7 +409,7 @@ def extract_pdf_text(source_path: Path) -> tuple[str, dict[str, Any], dict[str, 
         pages_processed = min(page_count, MAX_PDF_PAGES)
         parts: list[str] = []
         for page_index in range(pages_processed):
-            parts.append(document[page_index].get_text("text"))
+            parts.append(cast(str, document[page_index].get_text("text")))
             if sum(len(part) for part in parts) >= MAX_TEXT_CHARS:
                 break
         text = clean_text("\n".join(parts))[:MAX_TEXT_CHARS]
