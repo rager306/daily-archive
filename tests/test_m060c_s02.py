@@ -1,21 +1,15 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-SCRIPT_PATH = ROOT / "scripts" / "m060c_applicability_matrix.py"
-FORBIDDEN_LOOPBACK_HOSTNAME = "local" + "host"
+from scripts import m060c_applicability_matrix
 
-spec = importlib.util.spec_from_file_location("m060c_applicability_matrix", SCRIPT_PATH)
-assert spec is not None and spec.loader is not None
-m060c_applicability_matrix = importlib.util.module_from_spec(spec)
-sys.modules["m060c_applicability_matrix"] = m060c_applicability_matrix
-spec.loader.exec_module(m060c_applicability_matrix)
+ROOT = Path(__file__).resolve().parents[1]
+MATRIX_SCRIPT_SOURCE = ROOT / "scripts" / "m060c_applicability_matrix.py"
+FORBIDDEN_LOOPBACK_HOSTNAME = "local" + "host"
 
 
 @pytest.fixture(scope="module")
@@ -123,7 +117,7 @@ def test_5_safety_defaults(matrix_report: dict) -> None:
         "LLM calls default is disabled.",
     ]
     assert matrix_report["loopback_host"] == "127.0.0.1"
-    assert FORBIDDEN_LOOPBACK_HOSTNAME not in SCRIPT_PATH.read_text(encoding="utf-8")
+    assert FORBIDDEN_LOOPBACK_HOSTNAME not in MATRIX_SCRIPT_SOURCE.read_text(encoding="utf-8")
 
 
 def test_m050_m060g_s01_regression_surfaces_remain_read_only() -> None:

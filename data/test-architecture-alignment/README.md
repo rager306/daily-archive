@@ -308,4 +308,16 @@ M150 promoted three M056 wave analyzer tests into strict script-wrapper coverage
 
 The batch was baseline-green before migration and now imports M056 wave analyzer scripts normally while preserving the `load_analyzer()` helper API.
 
+M151 promoted three selected M060 tests into strict script-wrapper coverage:
+
+| Bucket | Before | After | Delta |
+|---|---:|---:|---:|
+| `dynamic_script_import` | 24 | 21 | -3 |
+| `legacy_mixed` | 38 | 35 | -3 |
+| `strict_script_wrapper` | 34 | 37 | +3 |
+| `strict_infrastructure` | 6 | 6 | 0 |
+| `unknown` | 77 | 77 | 0 |
+
+`tests/test_m060g_s02.py` was excluded because baseline focused pytest timed out at 300 seconds. The promoted files now import M060 scripts normally; M060C source-text assertions retain explicit source path constants.
+
 If a candidate fails focused baseline pytest before migration, exclude it from the ratchet batch and record the reason in the candidate artifact. M130 rejected `tests/test_m061_s02.py` this way because it had a stale fixture SHA before any import cleanup; M131 repaired that stale fixture before M132 ratcheted the file.

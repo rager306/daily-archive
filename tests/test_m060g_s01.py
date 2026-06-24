@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import importlib.util
 import os
 import sys
 from pathlib import Path
@@ -8,20 +7,15 @@ from pathlib import Path
 import pytest
 import yaml
 
+from scripts import m060g_smoke_test
+
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT_PATH = ROOT / "scripts" / "m060g_smoke_test.py"
 VALIDATOR_PATH = ROOT / "scripts"
 if str(VALIDATOR_PATH) not in sys.path:
     sys.path.insert(0, str(VALIDATOR_PATH))
 
 # pyrefly: ignore [missing-import]
 import validate_models_yaml  # noqa: E402  # ty:ignore[unresolved-import]
-
-spec = importlib.util.spec_from_file_location("m060g_smoke_test", SCRIPT_PATH)
-assert spec is not None and spec.loader is not None
-m060g_smoke_test = importlib.util.module_from_spec(spec)
-sys.modules["m060g_smoke_test"] = m060g_smoke_test
-spec.loader.exec_module(m060g_smoke_test)
 
 
 def _registry() -> dict:

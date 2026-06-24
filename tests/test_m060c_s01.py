@@ -1,20 +1,14 @@
 from __future__ import annotations
 
-import importlib.util
-import sys
 from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-SCRIPT_PATH = ROOT / "scripts" / "m060c_benchmark.py"
-FORBIDDEN_LOOPBACK_HOSTNAME = "local" + "host"
+from scripts import m060c_benchmark
 
-spec = importlib.util.spec_from_file_location("m060c_benchmark", SCRIPT_PATH)
-assert spec is not None and spec.loader is not None
-m060c_benchmark = importlib.util.module_from_spec(spec)
-sys.modules["m060c_benchmark"] = m060c_benchmark
-spec.loader.exec_module(m060c_benchmark)
+ROOT = Path(__file__).resolve().parents[1]
+BENCHMARK_SCRIPT_SOURCE = ROOT / "scripts" / "m060c_benchmark.py"
+FORBIDDEN_LOOPBACK_HOSTNAME = "local" + "host"
 
 
 @pytest.fixture(scope="module")
@@ -107,7 +101,7 @@ def test_5_safety_defaults(benchmark_report: dict) -> None:
         "LLM calls default is disabled.",
     ]
     assert benchmark_report["metadata"]["loopback_host"] == "127.0.0.1"
-    assert FORBIDDEN_LOOPBACK_HOSTNAME not in SCRIPT_PATH.read_text(encoding="utf-8")
+    assert FORBIDDEN_LOOPBACK_HOSTNAME not in BENCHMARK_SCRIPT_SOURCE.read_text(encoding="utf-8")
 
 
 def test_m050_m060g_regression_surfaces_remain_read_only() -> None:
@@ -125,10 +119,11 @@ def test_m050_m060g_regression_surfaces_remain_read_only() -> None:
         "LLM calls default is disabled.",
     ):
         assert phrase in report or phrase in scope
-    assert "NetworkX-Temporal" not in SCRIPT_PATH.read_text(encoding="utf-8")
-    assert "graph-tool" not in SCRIPT_PATH.read_text(encoding="utf-8")
-    assert "PyG" not in SCRIPT_PATH.read_text(encoding="utf-8")
-    assert "DGL" not in SCRIPT_PATH.read_text(encoding="utf-8")
+    benchmark_source = BENCHMARK_SCRIPT_SOURCE.read_text(encoding="utf-8")
+    assert "NetworkX-Temporal" not in benchmark_source
+    assert "graph-tool" not in benchmark_source
+    assert "PyG" not in benchmark_source
+    assert "DGL" not in benchmark_source
 
 
 def test_library_research_reports_exist() -> None:
