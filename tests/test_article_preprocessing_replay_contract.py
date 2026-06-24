@@ -1,23 +1,14 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from argparse import Namespace
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-MODULE_PATH = Path(__file__).parents[1] / "scripts" / "verify_m025_final_preprocessing_replay.py"
-spec = importlib.util.spec_from_file_location("verify_m025_final_preprocessing_replay", MODULE_PATH)
-assert spec is not None and spec.loader is not None
-verify_m025_final_preprocessing_replay = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = verify_m025_final_preprocessing_replay
-spec.loader.exec_module(verify_m025_final_preprocessing_replay)
-
-FinalReplayError = verify_m025_final_preprocessing_replay.FinalReplayError
-run_replay = verify_m025_final_preprocessing_replay.run_replay
+from scripts import verify_m025_final_preprocessing_replay
+from scripts.verify_m025_final_preprocessing_replay import FinalReplayError, run_replay
 
 FIXTURE_CONTRACT = (
     Path(__file__).parent / "fixtures" / "article_preprocessing_replay_v00_01" / "contract.json"

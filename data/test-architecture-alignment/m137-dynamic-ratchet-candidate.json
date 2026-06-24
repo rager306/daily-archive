@@ -1,0 +1,59 @@
+{
+  "before_counts": {
+    "dynamic_script_import": 49,
+    "legacy_mixed": 63,
+    "strict_script_wrapper": 10,
+    "unknown": 77
+  },
+  "expected_after_counts": {
+    "dynamic_script_import": 48,
+    "legacy_mixed": 62,
+    "strict_script_wrapper": 11,
+    "unknown": 77
+  },
+  "intended_delta": {
+    "dynamic_script_import": -1,
+    "legacy_mixed": -1,
+    "strict_script_wrapper": 1,
+    "unknown": 0
+  },
+  "milestone_id": "M137-p3u866",
+  "schema_version": "daily-archive-m137-dynamic-ratchet-candidate.v1",
+  "selected": {
+    "baseline_pytest": "6 passed",
+    "current_allowlist_membership": {
+      "dynamic_script_import": true,
+      "legacy_mixed": true,
+      "strict_script_wrapper": false
+    },
+    "current_bucket": "legacy-mixed",
+    "gitnexus_blast_radius": "LOW for test symbol; run_replay max LOW with no HIGH or CRITICAL risk",
+    "path": "tests/test_article_preprocessing_replay_contract.py",
+    "signals": {
+      "acceptance_name": false,
+      "dynamic_script_import": true,
+      "imports_application": false,
+      "imports_cli": false,
+      "imports_domain": false,
+      "imports_infrastructure": false,
+      "imports_pipeline_legacy": false,
+      "imports_scripts_normal": false,
+      "imports_workflows": false,
+      "subprocess_script_invocation": false
+    }
+  },
+  "verification": [
+    {
+      "command": "uv run pytest tests/test_article_preprocessing_replay_contract.py",
+      "result": "6 passed"
+    },
+    {
+      "command": "gitnexus_impact target=test_final_replay_requires_no_network_execution",
+      "result": "LOW, impactedCount=0"
+    },
+    {
+      "command": "gitnexus_impact target=run_replay",
+      "result": "ambiguous, maxRisk=LOW"
+    }
+  ]
+}
