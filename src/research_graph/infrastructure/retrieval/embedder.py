@@ -192,6 +192,17 @@ class FdEmbeddingError(RuntimeError):
     """Raised when fd returns an unusable embedding response."""
 
 
+def _raise_if_running_loop(sync_name: str, async_name: str) -> None:
+    """Fail explicitly when a sync wrapper is called from async code."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return
+    raise RuntimeError(
+        f"{sync_name}() cannot run inside an active event loop; await {async_name}() instead"
+    )
+
+
 class Embedder:
     """Async HTTP client for generating embeddings through the local fd service."""
 
@@ -388,10 +399,12 @@ class Embedder:
 
     def embed_batch_sync(self, texts: list[str]) -> list[list[float]]:
         """Synchronous wrapper for one-off scripts that cannot use async directly."""
+        _raise_if_running_loop("Embedder.embed_batch_sync", "embed_batch")
         return asyncio.run(self.embed_batch(texts))
 
     def embed_all_sync(self, texts: list[str]) -> list[list[float]]:
         """Synchronous wrapper for embedding multiple batches."""
+        _raise_if_running_loop("Embedder.embed_all_sync", "embed_all")
         return asyncio.run(self.embed_all(texts))
 
     def export_metrics(self) -> dict[str, Any]:

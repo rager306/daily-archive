@@ -36,7 +36,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Install uv
         run: |
@@ -45,6 +45,10 @@ jobs:
 
       - name: Sync dependencies
         run: uv sync --frozen
+
+      - name: Run D086 onion layering guard
+        run: |
+          uv run python scripts/verify_onion_layering.py --json
 
       - name: Run M044 architecture guardrail
         id: m044
@@ -73,7 +77,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Install uv
         run: |

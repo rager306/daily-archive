@@ -57,28 +57,20 @@ class MiniMaxSummarizer:
         """Initialize the MiniMax summarizer.
 
         Args:
-            api_key: Optional API key. If provided, sets ANTHROPIC_API_KEY and
-                ANTHROPIC_BASE_URL env vars for the SDK. Otherwise reads from
-                existing env vars.
+            api_key: Optional API key. If omitted, reads ANTHROPIC_API_KEY from
+                the current process environment without mutating it.
         """
         api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
-        # MiniMax uses X-Api-Key header (not Bearer).
-        # Source: https://platform.minimax.io/docs/api-reference/text-anthropic-api#2-configure-environment-variables
-        # Block SDK from reading any ANTHROPIC_* env — it adds Authorization: Bearer which MiniMax rejects.
-        # MiniMax uses X-Api-Key header instead.
-        # Source: https://platform.minimax.io/docs/api-reference/text-anthropic-api#2-configure-environment-variables
-        _api_key = os.environ.pop("ANTHROPIC_API_KEY", None)
-        _auth_token = os.environ.pop("ANTHROPIC_AUTH_TOKEN", None)
-        try:
-            self._client = anthropic.Anthropic(
-                default_headers={"X-Api-Key": api_key or ""},
-                base_url="https://api.minimax.io/anthropic",
-            )
-        finally:
-            if _api_key is not None:
-                os.environ["ANTHROPIC_API_KEY"] = _api_key
-            if _auth_token is not None:
-                os.environ["ANTHROPIC_AUTH_TOKEN"] = _auth_token
+        # MiniMax uses X-Api-Key header (not Bearer). Pass a dummy Anthropic
+        # api_key to stop the SDK from falling back to ANTHROPIC_* env vars;
+        # auth_token=None prevents Authorization: Bearer injection while keeping
+        # the process environment unchanged for other threads/tasks.
+        self._client = anthropic.Anthropic(
+            api_key="unused-minimax-compat-key",
+            auth_token=None,
+            default_headers={"X-Api-Key": api_key or ""},
+            base_url="https://api.minimax.io/anthropic",
+        )
 
     def summarize(self, title: str, abstract: str) -> PaperSummary:
         """Generate a structured summary of a research paper.

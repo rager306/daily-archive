@@ -193,6 +193,18 @@ def test_run_analysis_returns_empty_without_scoring_or_persistence(
     assert FakeScoringEngine.calls == []
 
 
+@pytest.mark.asyncio
+async def test_run_analysis_fails_explicitly_inside_running_loop(
+    patch_analysis_components: None,
+) -> None:
+    from research_graph.cli import run_analysis
+
+    FakeArxivClient.papers = [make_paper(1)]
+
+    with pytest.raises(RuntimeError, match="active event loop"):
+        run_analysis(RUN_DATE)
+
+
 def test_run_analysis_propagates_dependency_failures(monkeypatch: pytest.MonkeyPatch) -> None:
     import research_graph.cli as cli
 

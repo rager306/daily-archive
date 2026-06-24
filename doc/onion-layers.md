@@ -15,11 +15,11 @@ domain  ←  application  ←  infrastructure
 - **`domain`** depends only on the stdlib and on its own typed models. It NEVER
   imports `application` or `infrastructure`. This is the invariant the
   [`verify_onion_layering.py`](../scripts/verify_onion_layering.py) guard enforces.
-- **`application`** depends on `domain` (Ports, schema), never on
-  `infrastructure` directly. Infrastructure reaches the application only through
-  the Ports the application declares.
-- **`infrastructure`** may import `application` + `domain`; it implements the
-  Ports (Adapters).
+- **`application`** depends on `domain` (cross-cutting Ports, schema), never on
+  `infrastructure` directly. Application may declare use-case-local Protocol
+  ports beside the use case when the seam is not yet cross-cutting.
+- **`infrastructure`** may import `application` + `domain`; it implements domain
+  Ports and application use-case Ports as concrete Adapters.
 
 A reverse import (e.g. `domain/ports.py` doing `from research_graph.infrastructure
 ...`) is a layering violation and fails the guard.
@@ -33,9 +33,9 @@ A reverse import (e.g. `domain/ports.py` doing `from research_graph.infrastructu
 
 | Layer | Packages (physical) | Role |
 |---|---|---|
-| **domain (Core)** | `domain/` (Ports + `schema`, `relation_types`, `statistical_context`, `extraction_signatures`, `semantic_chunks`, `navigation`) | Typed models + Port interfaces. Pure: no I/O, no drivers, no SDKs. AST-guarded. |
-| **application** | `application/` (`types`, `primitives`, `orchestrator`, `profiles`) | Use cases: the typed extraction pipeline. Imports only domain + stdlib (+ Adaptix at the LLM boundary). Infrastructure reaches it only via injected Ports/callables. |
-| **infrastructure** | `graph/` (ladybug_client), `corpus/` (sources, ingestion, parsing), `llm/`, `retrieval/`, `identity/`, `papers/` (indexing/chunking logic), `quality/`, `repair/`, `staging/`, `ops/`, `infrastructure/` (Adapters: `ladybug_adapter`, `md_converter_adapter`) | Concrete Adapters + driver-bearing code. Implement Ports. |
+| **domain (Core)** | `domain/` (`ports`, `schema`, `relation_types`, `statistical_context`, `extraction_signatures`, `semantic_chunks`, `navigation`) | Typed models + cross-cutting Port interfaces. Pure: no I/O, no drivers, no SDKs. AST-guarded. |
+| **application** | `application/` (`types`, `primitives`, `orchestrator`, `profiles`, `corpus`, `graph`) | Use cases: the typed extraction pipeline plus local use-case Protocol ports. Imports only domain + stdlib (+ Adaptix at the LLM boundary). Infrastructure reaches it only by implementing injected Ports/callables. |
+| **infrastructure** | `graph/` (ladybug_client), `corpus/` (sources, ingestion, parsing), `llm/`, `retrieval/`, `identity/`, `papers/` (indexing/chunking logic), `quality/`, `repair/`, `staging/`, `ops/`, `infrastructure/` (Adapters: `ladybug_adapter`, `md_converter_adapter`) | Concrete Adapters + driver-bearing code. Implement domain Ports and application use-case Ports. May contain infra-local Protocols for adapter internals only. |
 | **entry / wiring** | `cli/`, `workflows/` (universal_kb, rlm, validation), `scripts/` (prototype), `application/profiles` (composition root) | Composition roots & runtime entry points. The ONE place Adapters/infra callables are injected into the application via Ports. |
 
 ### Back-compat shims (canonical home moved, not duplicated)
@@ -44,7 +44,17 @@ A reverse import (e.g. `domain/ports.py` doing `from research_graph.infrastructu
 * `papers/semantic_chunks.py` keeps `build_*` logic and re-exports `EvidencePath`/`SemanticChunk` from `domain/`.
 * `papers/indexing/navigation.py` re-exports `PageIndexDocument`/`PageIndexNode`/`NavigationAnchor` from `domain/`.
 
-New code imports from the domain; the shims keep the 37+ legacy import sites green.
+New code imports cross-cutting models and Ports from the domain; the shims keep the 37+ legacy import sites green.
+
+### Port taxonomy
+
+ADR-034 uses "Port" in three explicit scopes:
+
+1. **Domain cross-cutting Ports** live in `domain/ports.py`. Examples: `LLMClientPort`, `GraphDBPort`, and `FullTextProviderPort`.
+2. **Application use-case Ports** live beside a use case in `application/**` when the seam is local to that use case. Examples: catalog ingest repository/source ports, parser replay ports, graph probe execution port, and `DispatchProtocol`.
+3. **Infrastructure-local Protocols** live in `infrastructure/**` only for adapter internals such as transports or event loggers. They are not imported inward.
+
+This keeps local seams local until there is evidence that a seam should become a cross-cutting domain Port. The Ponytail Port rule still applies: no Protocol for symmetry, no interface without a real seam.
 
 ### Why `evaluation/` is domain, not application
 
@@ -80,17 +90,15 @@ infrastructure (concrete adapter) ──calls──> build_wired_paper_pipeline(
 ## What the guard enforces
 
 `scripts/verify_onion_layering.py` AST-scans `src/research_graph/domain/` and
-fails if any file imports from:
+`src/research_graph/application/` and fails on forbidden inward imports:
 
-- `research_graph.pipeline` (application)
-- `research_graph.infrastructure`, `research_graph.graph`, `research_graph.corpus`,
-  `research_graph.llm`, `research_graph.retrieval`, `research_graph.identity`,
-  `research_graph.quality`, `research_graph.repair`, `research_graph.staging`,
-  `research_graph.ops`, `research_graph.workflows`, `research_graph.cli`
-  (infrastructure / entry)
+- domain must not import `research_graph.application`, infrastructure packages,
+  workflows, cli, or local `scripts`.
+- application must not import `research_graph.infrastructure`, workflows, cli, or
+  local `scripts`.
 
-Allowed domain imports: stdlib, `research_graph.evaluation`, `research_graph.papers`,
-and `research_graph.domain.*` itself.
+Allowed domain imports: stdlib and `research_graph.domain.*` itself. Application
+may import stdlib, domain, and its own application modules.
 
 `evaluation/` and `papers/` are permitted in the domain because they hold the
 typed models the Core references; if a future change makes them carry driver

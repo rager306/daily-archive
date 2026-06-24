@@ -84,6 +84,16 @@ ANALOGY: Think of it like a test."""
     assert summary.analogy == "Think of it like a test."
 
 
+def test_summarizer_construction_preserves_anthropic_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "env-key")
+    monkeypatch.setenv("ANTHROPIC_AUTH_TOKEN", "env-token")
+
+    MiniMaxSummarizer(api_key="explicit-key")
+
+    assert os.environ["ANTHROPIC_API_KEY"] == "env-key"
+    assert os.environ["ANTHROPIC_AUTH_TOKEN"] == "env-token"
+
+
 def test_summarize_api_call() -> None:
     """Test actual API call to MiniMax (skip if no real API key)."""
     # Load .env so api_key is available outside of shell context.

@@ -478,27 +478,12 @@ def test_cache_none_result(temp_cache):
     assert not (temp_cache / "2101.12345.md").exists()
 
 
-def test_convert_sync_in_async_loop(monkeypatch):
+@pytest.mark.asyncio
+async def test_convert_sync_in_async_loop_fails_explicitly():
     converter = MDConverter()
 
-    class FakeFuture:
-        def result(self):
-            return ConversionResult(markdown="sync in async", method="arxiv2md", error=None)
-
-    future = FakeFuture()
-
-    import asyncio
-
-    class FakeLoop:
-        def run_until_complete(self, f):
-            return f.result()
-
-    monkeypatch.setattr(asyncio, "get_running_loop", lambda: FakeLoop())
-    monkeypatch.setattr(asyncio, "ensure_future", lambda f: future)
-    monkeypatch.setattr(converter, "convert", lambda arxiv_id: future)
-
-    result = converter.convert_sync("2101.12345")
-    assert result.markdown == "sync in async"
+    with pytest.raises(RuntimeError, match="await convert"):
+        converter.convert_sync("2101.12345")
 
 
 @pytest.mark.asyncio

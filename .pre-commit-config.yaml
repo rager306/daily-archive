@@ -21,6 +21,19 @@ default_language_version:
 default_stages: [pre-commit]
 
 repos:
+  # Local repository: D086 onion layering guard (mandatory).
+  - repo: local
+    hooks:
+      - id: d086-onion-layering-guard
+        name: D086 onion layering guard
+        entry: uv run python scripts/verify_onion_layering.py
+        language: system
+        files: ^(src/research_graph/(domain|application)/.*\.py|scripts/verify_onion_layering\.py|tests/test_onion_layering\.py|doc/(onion-layers\.md|adr/ADR-034-.*\.md))$
+        pass_filenames: false
+        always_run: false
+        fail_fast: false
+        verbose: true
+
   # Local repository: M044 architecture guardrail (D079 mandatory).
   - repo: local
     hooks:

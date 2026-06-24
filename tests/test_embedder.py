@@ -72,6 +72,16 @@ async def test_embedder_empty():
 
 
 @pytest.mark.asyncio
+async def test_embedder_sync_wrappers_fail_inside_running_loop():
+    embedder = Embedder()
+
+    with pytest.raises(RuntimeError, match="await embed_batch"):
+        embedder.embed_batch_sync(["text"])
+    with pytest.raises(RuntimeError, match="await embed_all"):
+        embedder.embed_all_sync(["text"])
+
+
+@pytest.mark.asyncio
 async def test_embedder_http_error(monkeypatch):
     embedder = Embedder(
         max_attempts=1, circuit_failure_threshold=99, graceful_degradation_enabled=False

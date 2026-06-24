@@ -86,11 +86,19 @@ A Port is added **only** when at least one holds:
 
 Otherwise: concrete-first. **Never add a Port "for symmetry."**
 
-| Port | Justification | Status |
+ADR-034 now distinguishes three Protocol categories so "Port" placement is explicit:
+
+1. **Domain cross-cutting Ports** live in `domain/ports.py` when multiple application areas or future migrations depend on the seam.
+2. **Application use-case Ports** may live next to the use case in `application/**` when the seam is local to that use case and moving it inward would create speculative generality. Infrastructure may import these application Protocols to implement adapters; application still never imports infrastructure.
+3. **Infrastructure-local Protocols** may live in `infrastructure/**` only for adapter-internal collaborators such as transports, event loggers, or test doubles. They are not application Ports and must not be imported inward by domain/application.
+
+| Domain Port | Justification | Status |
 |---|---|---|
 | `LLMClientPort` | MiniMax primary + GLM fallback (ADR-025) | ✓ 2 implementations |
 | `GraphDBPort` | LadybugDB → FalkorDB migration (Phase 3, ADR-022) | ✓ planned migration |
 | `FullTextProviderPort` | MDConverter: arxiv2md/marker/docling backends + fallback (D088) | ✓ 2+ implementations |
+
+Application-local examples include catalog ingest, parser replay, graph probe, and dispatch Protocols; these are use-case contracts, not new domain abstractions. This preserves the Ponytail Port rule by keeping local seams local until they need to become cross-cutting domain Ports.
 
 ### 2.4 Adapters in infrastructure
 
@@ -104,7 +112,8 @@ Adapters implement Ports by delegating to existing driver code (thin wrappers, P
 
 ### 2.6 Enforcement
 
-- **`scripts/verify_onion_layering.py`** — AST guard scanning `domain/` and `application/`, failing (exit 1) on any forbidden infrastructure import. Multi-layer: domain must not import application/infra; application must not import infra.
+- **`scripts/verify_onion_layering.py`** — AST guard scanning `domain/` and `application/`, failing (exit 1) on any forbidden import. Multi-layer: domain must not import application/infra/entry/scripts; application must not import infra/entry/scripts.
+- **Direct local/CI enforcement (M155)** — pre-commit and the architecture GitHub workflow run the onion guard directly, in addition to tests.
 - **ruff `flake8-tidy-imports` (TID)** — selected in `pyproject.toml` for tidy-import checks. (Per-layer `banned-api` is global in ruff and creates false positives on legitimate infrastructure self-imports, so the authoritative layer guard is the AST script.)
 
 ## 3. Applies To

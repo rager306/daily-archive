@@ -159,3 +159,4 @@
 - ✅ **M152-v88ni6: Connectivity Sidecar Script Wrapper Batch Ratchet** (`depends:[M151-vpgcsl]`)
 - ✅ **M153-eqp1t7: Pipeline Audit Script Wrapper Ratchet** (`depends:[M152-v88ni6]`)
 - ✅ **M154-o6vjr8: Expanded Script Wrapper Ratchet** (`depends:[M153-eqp1t7]`)
+- ✅ **M155-pihn5k: Hexagonal Async Architecture Hardening** (`depends:[M154-o6vjr8]`)

@@ -355,13 +355,15 @@ class MDConverter:
 
     # Sync wrapper for backwards compatibility
     def convert_sync(self, arxiv_id: str) -> ConversionResult:
-        """Synchronous wrapper for convert()."""
+        """Synchronous wrapper for convert().
+
+        This wrapper is for synchronous entry points only. Calling it from an
+        active event loop would require nested loop execution, which is unsafe
+        in async hosts. Async callers must await :meth:`convert` directly.
+        """
         try:
-            loop = asyncio.get_running_loop()
+            asyncio.get_running_loop()
         except RuntimeError:
             # No running loop — create one and close the async HTTP client bound to it.
             return asyncio.run(self._convert_and_close(arxiv_id))
-        else:
-            # Already in async context — schedule and block
-            future = asyncio.ensure_future(self.convert(arxiv_id))
-            return loop.run_until_complete(future)
+        raise RuntimeError("MDConverter.convert_sync() cannot run inside an active event loop; await convert() instead")

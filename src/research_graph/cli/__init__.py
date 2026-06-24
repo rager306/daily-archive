@@ -476,10 +476,13 @@ def run_analysis(run_date: date) -> DailyAnalysis:
         return scored_list
 
     try:
-        loop = asyncio.get_running_loop()
-        scored_papers = loop.run_until_complete(_process_all())
+        asyncio.get_running_loop()
     except RuntimeError:
         scored_papers = asyncio.run(_process_all())
+    else:
+        raise RuntimeError(
+            "run_analysis() cannot run inside an active event loop; use async orchestration instead"
+        )
 
     scored_papers.sort(key=lambda x: x.score, reverse=True)
     top_papers = scored_papers[:10]
