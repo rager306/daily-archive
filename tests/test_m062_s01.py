@@ -274,9 +274,17 @@ def test_public_env_config_can_apply_dotenv_explicitly(
 def test_live_code_uses_public_embedder_env_config() -> None:
     embedder_source = Path("src/research_graph/infrastructure/retrieval/embedder.py").read_text()
     m103_source = Path("scripts/m103_extraction_prototype.py").read_text()
+    live_sources = list(Path("src").rglob("*.py")) + list(Path("scripts").glob("*.py"))
 
+    offenders = [
+        str(path)
+        for path in live_sources
+        if "_load_dotenv_if_present" in path.read_text()
+        or "from research_graph.infrastructure.retrieval.embedder import _" in path.read_text()
+    ]
+
+    assert offenders == []
     assert "_load_dotenv_if_present" not in embedder_source
-    assert "_load_dotenv_if_present" not in m103_source
     assert "load_embedder_env_config" in m103_source
 
 

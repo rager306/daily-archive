@@ -164,3 +164,4 @@
 - ✅ **M157-zods0h: Embedder Public Config API** (`depends:[M156-cen0w5]`)
 - ✅ **M158-c0fuqn: Run Analysis Async First API** (`depends:[M157-zods0h]`)
 - ✅ **M159-15vd28: Run Pipeline Async Wrapper Migration** (`depends:[M158-c0fuqn]`)
+- ✅ **M160-152kk2: Async CLI Command and Retrieval Import Cleanup** (`depends:[M159-15vd28]`)

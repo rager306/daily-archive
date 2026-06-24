@@ -6,6 +6,7 @@ implementation exists. They must not call live arXiv, YAKE, or persistence.
 
 from __future__ import annotations
 
+import inspect
 import json
 import os
 import subprocess
@@ -350,6 +351,85 @@ def test_write_state_json_persists_cron_queue_schema(
     assert "error" not in payload
 
 
+@pytest.mark.asyncio
+async def test_run_command_async_writes_state_and_returns_analysis(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import research_graph.cli as cli
+
+    analysis = cli.DailyAnalysis(
+        run_date=RUN_DATE,
+        status="empty",
+        papers_fetched=0,
+        papers=[],
+        top_papers=[],
+        analysis_timestamp=datetime(2026, 5, 14, 12, 0, 0),
+    )
+
+    async def fake_run_analysis_async(run_date: date) -> cli.DailyAnalysis:
+        assert run_date == RUN_DATE
+        return analysis
+
+    monkeypatch.setattr(cli, "run_analysis_async", fake_run_analysis_async)
+
+    result = await cli.run_command_async(RUN_DATE)
+
+    assert result is analysis
+    payload = json.loads((cli.QUEUE_DIR / "2026-05-14.json").read_text())
+    assert payload["status"] == "empty"
+    assert payload["stage"] == "done"
+    assert "error" not in payload
+
+
+@pytest.mark.asyncio
+async def test_run_command_async_writes_json_artifacts(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    import research_graph.cli as cli
+
+    sessions_dir = tmp_path / "sessions"
+    analysis_dir = tmp_path / "analysis"
+    papers_dir = tmp_path / "papers"
+    monkeypatch.setattr(cli, "SESSIONS_DIR", sessions_dir)
+    monkeypatch.setattr(cli, "ANALYSIS_DIR", analysis_dir)
+    monkeypatch.setattr(cli, "PAPERS_DIR", papers_dir)
+    analysis = make_s03_empty_analysis()
+
+    async def fake_run_analysis_async(_run_date: date) -> cli.DailyAnalysis:
+        return analysis
+
+    monkeypatch.setattr(cli, "run_analysis_async", fake_run_analysis_async)
+
+    await cli.run_command_async(RUN_DATE, json_output=True)
+
+    assert (sessions_dir / "2026-05-14.json").exists()
+    assert (analysis_dir / "2026-05-14" / "papers.json").exists()
+    assert (analysis_dir / "2026-05-14" / "scored.json").exists()
+    assert (analysis_dir / "2026-05-14" / "overview.json").exists()
+
+
+@pytest.mark.asyncio
+async def test_run_command_async_persists_failed_state(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import research_graph.cli as cli
+
+    async def raise_analysis(_run_date: date) -> cli.DailyAnalysis:
+        raise RuntimeError("fixture async analysis failed")
+
+    monkeypatch.setattr(cli, "run_analysis_async", raise_analysis)
+
+    with pytest.raises(RuntimeError, match="fixture async analysis failed"):
+        await cli.run_command_async(RUN_DATE)
+
+    payload = json.loads((cli.QUEUE_DIR / "2026-05-14.json").read_text())
+    assert payload["status"] == "failed"
+    assert payload["stage"] == "failed"
+    assert payload["error"] == "fixture async analysis failed"
+    assert "Traceback" not in payload["error"]
+
+
 def test_cli_run_outputs_done_summary_without_live_dependencies(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -364,7 +444,11 @@ def test_cli_run_outputs_done_summary_without_live_dependencies(
         top_papers=[make_scored(make_paper(1), 9.0), make_scored(make_paper(2), 8.0)],
         analysis_timestamp=datetime(2026, 5, 14, 12, 0, 0),
     )
-    monkeypatch.setattr(cli, "run_analysis", lambda run_date: analysis)
+
+    async def fake_run_analysis_async(_run_date: date) -> cli.DailyAnalysis:
+        return analysis
+
+    monkeypatch.setattr(cli, "run_analysis_async", fake_run_analysis_async)
 
     cli.run("2026-05-14")
 
@@ -389,7 +473,11 @@ def test_cli_run_outputs_empty_summary_without_live_dependencies(
         top_papers=[],
         analysis_timestamp=datetime(2026, 5, 14, 12, 0, 0),
     )
-    monkeypatch.setattr(cli, "run_analysis", lambda run_date: analysis)
+
+    async def fake_run_analysis_async(_run_date: date) -> cli.DailyAnalysis:
+        return analysis
+
+    monkeypatch.setattr(cli, "run_analysis_async", fake_run_analysis_async)
 
     cli.run("2026-05-14")
 
@@ -413,7 +501,11 @@ def test_cli_run_persists_empty_queue_state_without_error(
         top_papers=[],
         analysis_timestamp=datetime(2026, 5, 14, 12, 0, 0),
     )
-    monkeypatch.setattr(cli, "run_analysis", lambda run_date: analysis)
+
+    async def fake_run_analysis_async(_run_date: date) -> cli.DailyAnalysis:
+        return analysis
+
+    monkeypatch.setattr(cli, "run_analysis_async", fake_run_analysis_async)
 
     cli.run("2026-05-14")
 
@@ -430,10 +522,10 @@ def test_cli_run_persists_failed_queue_state_before_reraising(
 ) -> None:
     import research_graph.cli as cli
 
-    def raise_analysis(_run_date: date) -> None:
+    async def raise_analysis(_run_date: date) -> cli.DailyAnalysis:
         raise RuntimeError("fixture analysis failed")
 
-    monkeypatch.setattr(cli, "run_analysis", raise_analysis)
+    monkeypatch.setattr(cli, "run_analysis_async", raise_analysis)
 
     with pytest.raises(RuntimeError, match="fixture analysis failed"):
         cli.run("2026-05-14")
@@ -445,6 +537,14 @@ def test_cli_run_persists_failed_queue_state_before_reraising(
     assert payload["timestamp"].endswith("Z")
     assert payload["error"] == "fixture analysis failed"
     assert "Traceback" not in payload["error"]
+
+
+def test_cli_run_uses_async_command_runner() -> None:
+    import research_graph.cli as cli
+
+    source = inspect.getsource(cli.run)
+    assert "run_command_async" in source
+    assert "run_analysis(" not in source
 
 
 def test_cli_malformed_date_fails_typer_validation() -> None:
@@ -801,7 +901,10 @@ def test_s03_cli_json_run_invokes_json_writers_and_keeps_status_stdout(
     analysis = make_s03_done_analysis()
     calls: list[tuple[str, object]] = []
 
-    monkeypatch.setattr(cli, "run_analysis", lambda run_date: analysis)
+    async def fake_run_analysis_async(_run_date: date) -> cli.DailyAnalysis:
+        return analysis
+
+    monkeypatch.setattr(cli, "run_analysis_async", fake_run_analysis_async)
     monkeypatch.setattr(
         cli,
         "write_session_json",
@@ -864,7 +967,7 @@ def _scored(paper, score, keywords):
     )
 
 
-def _fake_run_analysis(run_date):
+async def _fake_run_analysis_async(run_date):
     mode = os.environ.get("ARXIV_ARCHIVE_S05_STUB", "done")
     label = os.environ.get("ARXIV_ARCHIVE_S05_LABEL", "fixture")
     if mode == "failed":
@@ -894,7 +997,7 @@ def _fake_run_analysis(run_date):
     )
 
 
-cli.run_analysis = _fake_run_analysis
+cli.run_analysis_async = _fake_run_analysis_async
 """
     )
     return sitecustomize

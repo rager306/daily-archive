@@ -523,6 +523,22 @@ def run_pipeline(run_date: date) -> None:
     )
 
 
+async def run_command_async(parsed_date: date, *, json_output: bool = False) -> DailyAnalysis:
+    """Run command orchestration around the async analysis entrypoint."""
+    write_state_json(parsed_date, "running", "fetch")
+    try:
+        analysis = await run_analysis_async(parsed_date)
+    except Exception as exc:
+        write_state_json(parsed_date, "failed", "failed", str(exc))
+        raise
+
+    write_state_json(parsed_date, analysis.status, "done")
+    if json_output:
+        write_session_json(analysis)
+        write_daily_artifacts(analysis)
+    return analysis
+
+
 @app.command(help=AGENT_CONTRACT_HELP)
 def run(
     run_date: Annotated[
@@ -549,17 +565,7 @@ def run(
     except ValueError as exc:
         raise typer.BadParameter("date must be in YYYY-MM-DD format") from exc
 
-    write_state_json(parsed_date, "running", "fetch")
-    try:
-        analysis = run_analysis(parsed_date)
-    except Exception as exc:
-        write_state_json(parsed_date, "failed", "failed", str(exc))
-        raise
-
-    write_state_json(parsed_date, analysis.status, "done")
-    if json_output:
-        write_session_json(analysis)
-        write_daily_artifacts(analysis)
+    analysis = asyncio.run(run_command_async(parsed_date, json_output=json_output))
     typer.echo(
         " | ".join(
             [
