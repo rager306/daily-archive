@@ -1,17 +1,6 @@
 from __future__ import annotations
 
-import importlib.util
-import sys
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = ROOT / "scripts" / "probe_m043_sidecar_runtime_readiness.py"
-spec = importlib.util.spec_from_file_location("probe_m043_sidecar_runtime_readiness", MODULE_PATH)
-assert spec is not None
-probe = importlib.util.module_from_spec(spec)
-sys.modules["probe_m043_sidecar_runtime_readiness"] = probe
-assert spec.loader is not None
-spec.loader.exec_module(probe)
+from scripts import probe_m043_sidecar_runtime_readiness as probe
 
 
 def _target() -> dict:

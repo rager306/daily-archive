@@ -1,22 +1,16 @@
 from __future__ import annotations
 
-import importlib.util
 import sys
 from pathlib import Path
 
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = ROOT / "scripts" / "select_m041_mixed_connectivity_batch.py"
-SCRIPT_DIR = str(MODULE_PATH.parent)
+SCRIPT_DIR = str(ROOT / "scripts")
 if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
-spec = importlib.util.spec_from_file_location("select_m041_mixed_connectivity_batch", MODULE_PATH)
-assert spec is not None
-selector = importlib.util.module_from_spec(spec)
-sys.modules["select_m041_mixed_connectivity_batch"] = selector
-assert spec.loader is not None
-spec.loader.exec_module(selector)
+
+from scripts import select_m041_mixed_connectivity_batch as selector
 
 
 def _baseline() -> list[dict]:

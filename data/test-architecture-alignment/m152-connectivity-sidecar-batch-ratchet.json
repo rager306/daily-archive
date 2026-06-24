@@ -1,0 +1,48 @@
+{
+  "after_counts": {
+    "dynamic_script_import": 16,
+    "legacy_mixed": 30,
+    "strict_infrastructure": 6,
+    "strict_script_wrapper": 42
+  },
+  "before_counts": {
+    "dynamic_script_import": 21,
+    "legacy_mixed": 35,
+    "strict_infrastructure": 6,
+    "strict_script_wrapper": 37
+  },
+  "classification": "strict_script_wrapper",
+  "compatibility_notes": [
+    "tests/test_m041_mixed_connectivity_batch.py retains scripts-directory path setup because the script under test imports a sibling script by bare module name."
+  ],
+  "delta": {
+    "dynamic_script_import": -5,
+    "legacy_mixed": -5,
+    "strict_infrastructure": 0,
+    "strict_script_wrapper": 5
+  },
+  "milestone_id": "M152-v88ni6",
+  "promoted": [
+    "tests/test_m041_mixed_connectivity_batch.py",
+    "tests/test_m042_connectivity_groups.py",
+    "tests/test_m042_linked_metadata_repair.py",
+    "tests/test_m043_sidecar_packets.py",
+    "tests/test_m043_sidecar_runtime_readiness.py"
+  ],
+  "rationale": "Five M041-M043 connectivity-sidecar tests were baseline-green and now import their scripts through normal repo-root `scripts` imports instead of dynamic importlib loading.",
+  "schema_version": "daily-archive-m152-connectivity-sidecar-batch-ratchet.v1",
+  "verification": [
+    {
+      "command": "uv run pytest <five connectivity-sidecar files>",
+      "result": "20 passed"
+    },
+    {
+      "command": "uv run ruff check <five connectivity-sidecar files>",
+      "result": "passed"
+    },
+    {
+      "command": "uv run pyrefly check <five connectivity-sidecar files>",
+      "result": "0 errors"
+    }
+  ]
+}

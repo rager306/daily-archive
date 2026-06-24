@@ -1,17 +1,6 @@
 from __future__ import annotations
 
-import importlib.util
-import sys
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = ROOT / "scripts" / "build_m043_sidecar_packets.py"
-spec = importlib.util.spec_from_file_location("build_m043_sidecar_packets", MODULE_PATH)
-assert spec is not None
-packets_mod = importlib.util.module_from_spec(spec)
-sys.modules["build_m043_sidecar_packets"] = packets_mod
-assert spec.loader is not None
-spec.loader.exec_module(packets_mod)
+from scripts import build_m043_sidecar_packets as packets_mod
 
 
 def _target() -> dict:

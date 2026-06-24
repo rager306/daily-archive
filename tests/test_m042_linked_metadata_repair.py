@@ -1,17 +1,8 @@
 from __future__ import annotations
 
-import importlib.util
-import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = ROOT / "scripts" / "repair_m042_linked_metadata.py"
-spec = importlib.util.spec_from_file_location("repair_m042_linked_metadata", MODULE_PATH)
-assert spec is not None
-repair = importlib.util.module_from_spec(spec)
-sys.modules["repair_m042_linked_metadata"] = repair
-assert spec.loader is not None
-spec.loader.exec_module(repair)
+from scripts import repair_m042_linked_metadata as repair
 
 
 def _write_json(path: Path, payload: dict) -> None:

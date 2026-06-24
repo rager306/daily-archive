@@ -156,3 +156,4 @@
 - ✅ **M149-zxhycz: Validation Remediation Script Wrapper Batch Ratchet** (`depends:[M148-q4ylje]`)
 - ✅ **M150-seemt9: M056 Wave Analyzer Script Wrapper Batch Ratchet** (`depends:[M149-zxhycz]`)
 - ✅ **M151-vpgcsl: M060 Script Wrapper Batch Ratchet** (`depends:[M150-seemt9]`)
+- ✅ **M152-v88ni6: Connectivity Sidecar Script Wrapper Batch Ratchet** (`depends:[M151-vpgcsl]`)
