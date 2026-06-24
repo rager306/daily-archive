@@ -1,28 +1,20 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-MODULE_PATH = (
-    Path(__file__).parents[1] / "scripts" / "verify_m026_requirement_scope_reconciliation.py"
+from scripts.verify_m026_requirement_scope_reconciliation import (
+    REQUIRED_REQUIREMENT_IDS as REQUIRED_IDS,
 )
-spec = importlib.util.spec_from_file_location(
-    "verify_m026_requirement_scope_reconciliation", MODULE_PATH
+from scripts.verify_m026_requirement_scope_reconciliation import (
+    main,
+    validate_coverage_markdown,
+    validate_matrix,
 )
-assert spec is not None and spec.loader is not None
-verify_m026_requirement_scope_reconciliation = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = verify_m026_requirement_scope_reconciliation
-spec.loader.exec_module(verify_m026_requirement_scope_reconciliation)
-
-validate_matrix = verify_m026_requirement_scope_reconciliation.validate_matrix
-validate_coverage_markdown = verify_m026_requirement_scope_reconciliation.validate_coverage_markdown
-main = verify_m026_requirement_scope_reconciliation.main
 
 REAL_MATRIX = (
     Path(__file__).parents[1] / "doc" / "validation" / "m026_requirement_scope_matrix.json"
@@ -39,7 +31,6 @@ REAL_COVERAGE = (
     / "S05"
     / "S05-COVERAGE.md"
 )
-REQUIRED_IDS = verify_m026_requirement_scope_reconciliation.REQUIRED_REQUIREMENT_IDS
 
 
 def _load_real_matrix() -> dict[str, Any]:

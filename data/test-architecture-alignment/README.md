@@ -236,4 +236,16 @@ M144 promoted `tests/test_m025_requirement_scope_reconciliation.py` into strict 
 
 The test was baseline-green before migration and now imports `scripts.verify_m025_requirement_scope_reconciliation` normally while preserving helper aliases.
 
+M145 promoted `tests/test_m026_requirement_scope_reconciliation.py` into strict script-wrapper coverage:
+
+| Bucket | Before | After | Delta |
+|---|---:|---:|---:|
+| `dynamic_script_import` | 41 | 40 | -1 |
+| `legacy_mixed` | 55 | 54 | -1 |
+| `strict_script_wrapper` | 17 | 18 | +1 |
+| `strict_infrastructure` | 6 | 6 | 0 |
+| `unknown` | 77 | 77 | 0 |
+
+The test was baseline-green before migration and now imports `scripts.verify_m026_requirement_scope_reconciliation` normally while preserving helper aliases.
+
 If a candidate fails focused baseline pytest before migration, exclude it from the ratchet batch and record the reason in the candidate artifact. M130 rejected `tests/test_m061_s02.py` this way because it had a stale fixture SHA before any import cleanup; M131 repaired that stale fixture before M132 ratcheted the file.

@@ -149,3 +149,4 @@
 - ✅ **M142-jbvdjj: M025 Boundary Replay Script Wrapper Ratchet** (`depends:[M141-d5bfww]`)
 - ✅ **M143-oav38f: M025 Evidence Replay Script Wrapper Ratchet** (`depends:[M142-jbvdjj]`)
 - ✅ **M144-f4ifiv: M025 Requirement Scope Script Wrapper Ratchet** (`depends:[M143-oav38f]`)
+- ✅ **M145-ruvvyw: M026 Requirement Scope Script Wrapper Ratchet** (`depends:[M144-f4ifiv]`)

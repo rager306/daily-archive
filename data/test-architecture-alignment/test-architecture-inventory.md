@@ -13,9 +13,9 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 | `domain` | 0 |
 | `application` | 10 |
 | `infrastructure` | 87 |
-| `script-wrapper` | 34 |
+| `script-wrapper` | 35 |
 | `acceptance` | 6 |
-| `legacy-mixed` | 55 |
+| `legacy-mixed` | 54 |
 | `unknown` | 77 |
 
 ### Import and execution signals
@@ -23,12 +23,12 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 | Signal | Count |
 |---|---:|
 | `acceptance_name` | 6 |
-| `dynamic_script_import` | 41 |
+| `dynamic_script_import` | 40 |
 | `imports_application` | 17 |
 | `imports_cli` | 5 |
 | `imports_domain` | 14 |
 | `imports_infrastructure` | 95 |
-| `imports_scripts_normal` | 26 |
+| `imports_scripts_normal` | 27 |
 | `imports_workflows` | 24 |
 | `subprocess_script_invocation` | 16 |
 
@@ -89,7 +89,6 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 ### legacy-mixed
 
 - `tests/test_import_boundary_rehearsal.py` — imports workflow, CLI, or legacy pipeline surface
-- `tests/test_m026_requirement_scope_reconciliation.py` — dynamic script import via spec_from_file_location
 - `tests/test_m027_current_pipeline_baseline.py` — dynamic script import via spec_from_file_location
 - `tests/test_m027_end_to_end_mixed_replay.py` — dynamic script import via spec_from_file_location
 - `tests/test_m027_pipeline_readiness_synthesis.py` — dynamic script import via spec_from_file_location
@@ -98,6 +97,7 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 - `tests/test_m028_hermes_digest_projection.py` — dynamic script import via spec_from_file_location
 - `tests/test_m028_pdf_acquisition_diagnostics.py` — dynamic script import via spec_from_file_location
 - `tests/test_m028_requirement_scope_reconciliation.py` — dynamic script import via spec_from_file_location
+- `tests/test_m028_source_metadata_adapters.py` — dynamic script import via spec_from_file_location
 
 ### unknown
 
