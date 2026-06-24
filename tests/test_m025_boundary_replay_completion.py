@@ -1,26 +1,23 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from argparse import Namespace
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-MODULE_PATH = Path(__file__).parents[1] / "scripts" / "verify_m025_boundary_replay_completion.py"
-spec = importlib.util.spec_from_file_location("verify_m025_boundary_replay_completion", MODULE_PATH)
-assert spec is not None and spec.loader is not None
-verify_m025_boundary_replay_completion = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = verify_m025_boundary_replay_completion
-spec.loader.exec_module(verify_m025_boundary_replay_completion)
-
-BoundaryReplayError = verify_m025_boundary_replay_completion.BoundaryReplayError
-run_replay = verify_m025_boundary_replay_completion.run_replay
-summary_from_artifacts = verify_m025_boundary_replay_completion._summary_from_artifacts
-write_report = verify_m025_boundary_replay_completion._write_report
-main = verify_m025_boundary_replay_completion.main
+from scripts.verify_m025_boundary_replay_completion import (
+    BoundaryReplayError,
+    main,
+    run_replay,
+)
+from scripts.verify_m025_boundary_replay_completion import (
+    _summary_from_artifacts as summary_from_artifacts,
+)
+from scripts.verify_m025_boundary_replay_completion import (
+    _write_report as write_report,
+)
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:

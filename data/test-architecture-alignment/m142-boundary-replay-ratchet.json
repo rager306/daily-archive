@@ -1,0 +1,39 @@
+{
+  "after_counts": {
+    "dynamic_script_import": 43,
+    "legacy_mixed": 57,
+    "strict_infrastructure": 6,
+    "strict_script_wrapper": 15
+  },
+  "before_counts": {
+    "dynamic_script_import": 44,
+    "legacy_mixed": 58,
+    "strict_infrastructure": 6,
+    "strict_script_wrapper": 14
+  },
+  "classification": "strict_script_wrapper",
+  "delta": {
+    "dynamic_script_import": -1,
+    "legacy_mixed": -1,
+    "strict_infrastructure": 0,
+    "strict_script_wrapper": 1
+  },
+  "milestone_id": "M142-jbvdjj",
+  "promoted": "tests/test_m025_boundary_replay_completion.py",
+  "rationale": "The M025 boundary replay test was baseline-green and now imports its script under test through a normal repo-root `scripts` import instead of dynamic importlib loading.",
+  "schema_version": "daily-archive-m142-boundary-replay-ratchet.v1",
+  "verification": [
+    {
+      "command": "uv run pytest tests/test_m025_boundary_replay_completion.py",
+      "result": "7 passed"
+    },
+    {
+      "command": "uv run ruff check tests/test_m025_boundary_replay_completion.py",
+      "result": "passed"
+    },
+    {
+      "command": "uv run pyrefly check tests/test_m025_boundary_replay_completion.py",
+      "result": "0 errors"
+    }
+  ]
+}
