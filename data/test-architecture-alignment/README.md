@@ -122,4 +122,15 @@ M133 performed the fourth ratchet pass and classifier cleanup:
 
 M133 also categorized remaining `pyrefly: ignore [missing-import]` suppressions, removed three obsolete normal `scripts.*` import suppressions from baseline-green tests, and documented the remaining suppression debt by category. The unknown bucket reduction came from recognizing AST imports whose module is `scripts` or starts with `scripts.` as script-wrapper tests. `tests/test_m052_s02_e2e.py` was reclassified by import shape but remains baseline-red and must be repaired separately before runtime ratcheting.
 
+M135 performed a strict script-wrapper promotion after M134 repaired M052:
+
+| Bucket | Before | After | Delta |
+|---|---:|---:|---:|
+| `dynamic_script_import` | 50 | 50 | 0 |
+| `legacy_mixed` | 64 | 64 | 0 |
+| `strict_script_wrapper` | 8 | 9 | +1 |
+| `unknown` | 77 | 77 | 0 |
+
+M135 added `tests/test_m052_s02_e2e.py` to strict script-wrapper coverage after fresh pytest, ruff, pyrefly, and inventory checks passed. This was an allowlist-only promotion; no source code or dynamic/legacy debt counts changed.
+
 If a candidate fails focused baseline pytest before migration, exclude it from the ratchet batch and record the reason in the candidate artifact. M130 rejected `tests/test_m061_s02.py` this way because it had a stale fixture SHA before any import cleanup; M131 repaired that stale fixture before M132 ratcheted the file.

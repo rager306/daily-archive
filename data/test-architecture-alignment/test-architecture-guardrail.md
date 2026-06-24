@@ -12,7 +12,7 @@ Status: `passed`
 - Strict application files: `6`
 - Strict domain files: `0`
 - Strict infrastructure files: `5`
-- Strict script-wrapper files: `8`
+- Strict script-wrapper files: `9`
 
 ## Violations
 
