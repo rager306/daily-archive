@@ -135,3 +135,4 @@
 - ✅ **M128-e2lp61: Test Architecture Alignment** (`depends:[M122-qq2mfe]`)
 - ✅ **M129-vjokx6: Test Allowlist Ratchet One** (`depends:[M128-e2lp61]`)
 - ✅ **M130-5d8rs0: Test Allowlist Ratchet Two** (`depends:[M129-vjokx6]`)
+- ✅ **M131-6r3bsx: M061 S02 Fixture Repair** (`depends:[M130-5d8rs0]`)

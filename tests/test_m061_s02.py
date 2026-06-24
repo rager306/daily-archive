@@ -13,8 +13,8 @@ BASE = ROOT / "artifacts" / "m061-2hop"
 S01_ANCHOR = "2605.18747"
 S02_ANCHORS = ["2401.04016", "2207.05608", "2505.19443", "2510.12157"]
 ALL_ANCHORS = [S01_ANCHOR, *S02_ANCHORS]
-S01_DECISION_SHA256 = "7ed6c71c955c8a9de1e52e143b7a62c9c79ae26d"
-S01_SUMMARY_SHA256 = "965a8f7103699f3c95e8e5cf179d75e82994fa1b"
+S01_DECISION_SHA256 = "9e6280aee19244251e6fd195c07ae07e5d9fec80"
+S01_SUMMARY_SHA256 = "bcacdae1c0c4da78a7f2c071c94c9d6403006274"
 
 spec = importlib.util.spec_from_file_location("m061_full_5_anchors", SCRIPT_PATH)
 assert spec is not None and spec.loader is not None

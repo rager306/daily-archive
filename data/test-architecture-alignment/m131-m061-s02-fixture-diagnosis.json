@@ -1,0 +1,40 @@
+{
+  "schema_version": "daily-archive-fixture-diagnosis.v1",
+  "milestone_id": "M131-6r3bsx",
+  "subject": "tests/test_m061_s02.py stale fixture hash",
+  "reproduced_failure": {
+    "command": "uv run pytest tests/test_m061_s02.py",
+    "exit_code": 1,
+    "failed_test": "tests/test_m061_s02.py::test_m050_m064_s01_regression",
+    "failure": "S01_DECISION_SHA256 expected 7ed6c71c955c8a9de1e52e143b7a62c9c79ae26d but current tracked artifact blob is 9e6280aee19244251e6fd195c07ae07e5d9fec80"
+  },
+  "artifact_hashes": {
+    "artifacts/m061-2hop/s01-decision.md": {
+      "expected_in_test": "7ed6c71c955c8a9de1e52e143b7a62c9c79ae26d",
+      "current_git_blob_sha1": "9e6280aee19244251e6fd195c07ae07e5d9fec80",
+      "tracked_blob_sha1": "9e6280aee19244251e6fd195c07ae07e5d9fec80"
+    },
+    "artifacts/m061-2hop/anchor-2605.18747/pipeline-summary.json": {
+      "expected_in_test": "965a8f7103699f3c95e8e5cf179d75e82994fa1b",
+      "current_git_blob_sha1": "bcacdae1c0c4da78a7f2c071c94c9d6403006274",
+      "tracked_blob_sha1": "bcacdae1c0c4da78a7f2c071c94c9d6403006274"
+    }
+  },
+  "content_review": {
+    "decision_contains_go_to_s02": true,
+    "decision_scope": "M061 S01 1-anchor pilot for 2605.18747 with GO to S02 and safety defaults preserved.",
+    "summary_anchor_arxiv_id": "2605.18747",
+    "summary_generated_by": "scripts/m061_anchor_pilot.py",
+    "summary_real_arxiv_downloaded_pdf_count": 30,
+    "summary_real_arxiv_downloaded_eprint_count": 30,
+    "summary_fully_processed_real_paper_count": 30,
+    "summary_http_429_count": 0
+  },
+  "repair_recommendation": {
+    "action": "update_expected_sha",
+    "rationale": "The protected artifact files are clean tracked files in git and their content still preserves the regression invariants asserted by the test. The stale values are the hardcoded expectations in the test, not untracked artifact drift.",
+    "update_file": "tests/test_m061_s02.py",
+    "do_not_modify_artifacts": true,
+    "defer_dynamic_import_ratchet": true
+  }
+}
