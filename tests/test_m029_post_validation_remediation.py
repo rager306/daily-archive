@@ -1,36 +1,21 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-MODULE_PATH = Path(__file__).parents[1] / "scripts" / "verify_m029_post_validation_remediation.py"
-spec = importlib.util.spec_from_file_location(
-    "verify_m029_post_validation_remediation", MODULE_PATH
+from scripts.verify_m029_post_validation_remediation import (
+    EXPECTED_IN_SCOPE_REQUIREMENTS,
+    EXPECTED_OUT_OF_SCOPE_REQUIREMENTS,
+    REQUIRED_DIAGNOSTIC_CODES,
+    REQUIRED_FALSE_BOUNDARY_FLAGS,
+    REQUIRED_FALSE_SAFETY_FLAGS,
+    main,
+    validate_remediation,
 )
-assert spec is not None and spec.loader is not None
-verify_m029_post_validation_remediation = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = verify_m029_post_validation_remediation
-spec.loader.exec_module(verify_m029_post_validation_remediation)
-
-main = verify_m029_post_validation_remediation.main
-validate_remediation = verify_m029_post_validation_remediation.validate_remediation
-EXPECTED_IN_SCOPE_REQUIREMENTS = (
-    verify_m029_post_validation_remediation.EXPECTED_IN_SCOPE_REQUIREMENTS
-)
-EXPECTED_OUT_OF_SCOPE_REQUIREMENTS = (
-    verify_m029_post_validation_remediation.EXPECTED_OUT_OF_SCOPE_REQUIREMENTS
-)
-REQUIRED_FALSE_SAFETY_FLAGS = verify_m029_post_validation_remediation.REQUIRED_FALSE_SAFETY_FLAGS
-REQUIRED_FALSE_BOUNDARY_FLAGS = (
-    verify_m029_post_validation_remediation.REQUIRED_FALSE_BOUNDARY_FLAGS
-)
-REQUIRED_DIAGNOSTIC_CODES = verify_m029_post_validation_remediation.REQUIRED_DIAGNOSTIC_CODES
 
 
 def _m029_selection() -> dict[str, Any]:

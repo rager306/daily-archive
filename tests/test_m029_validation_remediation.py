@@ -1,24 +1,17 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-MODULE_PATH = Path(__file__).parents[1] / "scripts" / "verify_m029_validation_remediation.py"
-spec = importlib.util.spec_from_file_location("verify_m029_validation_remediation", MODULE_PATH)
-assert spec is not None and spec.loader is not None
-verify_m029_validation_remediation = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = verify_m029_validation_remediation
-spec.loader.exec_module(verify_m029_validation_remediation)
-
-main = verify_m029_validation_remediation.main
-validate_remediation = verify_m029_validation_remediation.validate_remediation
-EXPECTED_REQUIREMENT_IDS = verify_m029_validation_remediation.EXPECTED_REQUIREMENT_IDS
-REQUIRED_FALSE_FLAGS = verify_m029_validation_remediation.REQUIRED_FALSE_FLAGS
+from scripts.verify_m029_validation_remediation import (
+    EXPECTED_REQUIREMENT_IDS,
+    REQUIRED_FALSE_FLAGS,
+    main,
+    validate_remediation,
+)
 
 
 def _m029_selection() -> dict[str, Any]:

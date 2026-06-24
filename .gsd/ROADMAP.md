@@ -153,3 +153,4 @@
 - ✅ **M146-uvn4kh: M027 Current Pipeline Baseline Script Wrapper Ratchet** (`depends:[M145-ruvvyw]`)
 - ✅ **M147-toxooi: M027 Script Wrapper Batch Ratchet** (`depends:[M146-uvn4kh]`)
 - ✅ **M148-q4ylje: M028 Script Wrapper Batch Ratchet** (`depends:[M147-toxooi]`)
+- ✅ **M149-zxhycz: Validation Remediation Script Wrapper Batch Ratchet** (`depends:[M148-q4ylje]`)

@@ -13,9 +13,9 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 | `domain` | 0 |
 | `application` | 10 |
 | `infrastructure` | 87 |
-| `script-wrapper` | 45 |
+| `script-wrapper` | 48 |
 | `acceptance` | 6 |
-| `legacy-mixed` | 44 |
+| `legacy-mixed` | 41 |
 | `unknown` | 77 |
 
 ### Import and execution signals
@@ -23,12 +23,12 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 | Signal | Count |
 |---|---:|
 | `acceptance_name` | 6 |
-| `dynamic_script_import` | 30 |
+| `dynamic_script_import` | 27 |
 | `imports_application` | 17 |
 | `imports_cli` | 5 |
 | `imports_domain` | 14 |
 | `imports_infrastructure` | 95 |
-| `imports_scripts_normal` | 37 |
+| `imports_scripts_normal` | 40 |
 | `imports_workflows` | 24 |
 | `subprocess_script_invocation` | 16 |
 
@@ -89,15 +89,15 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 ### legacy-mixed
 
 - `tests/test_import_boundary_rehearsal.py` — imports workflow, CLI, or legacy pipeline surface
-- `tests/test_m029_post_validation_remediation.py` — dynamic script import via spec_from_file_location
-- `tests/test_m029_validation_remediation.py` — dynamic script import via spec_from_file_location
-- `tests/test_m031_validation_remediation.py` — dynamic script import via spec_from_file_location
 - `tests/test_m041_mixed_connectivity_batch.py` — dynamic script import via spec_from_file_location
 - `tests/test_m042_connectivity_groups.py` — dynamic script import via spec_from_file_location
 - `tests/test_m042_linked_metadata_repair.py` — dynamic script import via spec_from_file_location
 - `tests/test_m043_sidecar_packets.py` — dynamic script import via spec_from_file_location
 - `tests/test_m043_sidecar_runtime_readiness.py` — dynamic script import via spec_from_file_location
 - `tests/test_m044_live_grobid_candidate_probe.py` — dynamic script import via spec_from_file_location
+- `tests/test_m045_project_trajectory.py` — dynamic script import via spec_from_file_location
+- `tests/test_m052_rlm_workflow.py` — imports workflow, CLI, or legacy pipeline surface
+- `tests/test_m056_final_s07.py` — dynamic script import via spec_from_file_location
 
 ### unknown
 

@@ -1,27 +1,19 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-MODULE_PATH = Path(__file__).parents[1] / "scripts" / "verify_m031_validation_remediation.py"
-spec = importlib.util.spec_from_file_location("verify_m031_validation_remediation", MODULE_PATH)
-assert spec is not None and spec.loader is not None
-verify_m031_validation_remediation = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = verify_m031_validation_remediation
-spec.loader.exec_module(verify_m031_validation_remediation)
-
-build_evidence = verify_m031_validation_remediation.build_evidence
-build_runtime_diagnostics = verify_m031_validation_remediation.build_runtime_diagnostics
-validate_diagnostics_rows = verify_m031_validation_remediation.validate_diagnostics_rows
-validate_evidence = verify_m031_validation_remediation.validate_evidence
-main = verify_m031_validation_remediation.main
-
-REQUIRED_FALSE_FLAGS = verify_m031_validation_remediation.REQUIRED_FALSE_FLAGS
-OUTPUT_DIR = verify_m031_validation_remediation.OUTPUT_DIR
+from scripts.verify_m031_validation_remediation import (
+    OUTPUT_DIR,
+    REQUIRED_FALSE_FLAGS,
+    build_evidence,
+    build_runtime_diagnostics,
+    main,
+    validate_diagnostics_rows,
+    validate_evidence,
+)
 
 
 def _assessment() -> str:
