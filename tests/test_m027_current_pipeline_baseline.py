@@ -1,31 +1,14 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from argparse import Namespace
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-MODULE_PATH = Path(__file__).parents[1] / "scripts" / "replay_m027_current_pipeline_baseline.py"
-spec = importlib.util.spec_from_file_location("replay_m027_current_pipeline_baseline", MODULE_PATH)
-assert spec is not None and spec.loader is not None
-replay = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = replay
-spec.loader.exec_module(replay)
-
-VERIFY_MODULE_PATH = (
-    Path(__file__).parents[1] / "scripts" / "verify_m027_current_pipeline_baseline.py"
-)
-verify_spec = importlib.util.spec_from_file_location(
-    "verify_m027_current_pipeline_baseline", VERIFY_MODULE_PATH
-)
-assert verify_spec is not None and verify_spec.loader is not None
-verifier = importlib.util.module_from_spec(verify_spec)
-sys.modules[verify_spec.name] = verifier
-verify_spec.loader.exec_module(verifier)
+from scripts import replay_m027_current_pipeline_baseline as replay
+from scripts import verify_m027_current_pipeline_baseline as verifier
 
 BaselineReplayError = replay.BaselineReplayError
 
