@@ -212,4 +212,16 @@ M142 promoted `tests/test_m025_boundary_replay_completion.py` into strict script
 
 The test was baseline-green before migration and now imports `scripts.verify_m025_boundary_replay_completion` normally while preserving the existing helper aliases.
 
+M143 promoted `tests/test_m025_evidence_replay.py` into strict script-wrapper coverage:
+
+| Bucket | Before | After | Delta |
+|---|---:|---:|---:|
+| `dynamic_script_import` | 43 | 42 | -1 |
+| `legacy_mixed` | 57 | 56 | -1 |
+| `strict_script_wrapper` | 15 | 16 | +1 |
+| `strict_infrastructure` | 6 | 6 | 0 |
+| `unknown` | 77 | 77 | 0 |
+
+The test was baseline-green before migration and now imports `scripts.verify_m025_evidence_boundaries` normally while preserving the existing module alias and helper aliases.
+
 If a candidate fails focused baseline pytest before migration, exclude it from the ratchet batch and record the reason in the candidate artifact. M130 rejected `tests/test_m061_s02.py` this way because it had a stale fixture SHA before any import cleanup; M131 repaired that stale fixture before M132 ratcheted the file.

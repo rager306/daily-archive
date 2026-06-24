@@ -1,20 +1,13 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from argparse import Namespace
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-MODULE_PATH = Path(__file__).parents[1] / "scripts" / "verify_m025_evidence_boundaries.py"
-spec = importlib.util.spec_from_file_location("verify_m025_evidence_boundaries", MODULE_PATH)
-assert spec is not None and spec.loader is not None
-verify_m025_evidence_boundaries = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = verify_m025_evidence_boundaries
-spec.loader.exec_module(verify_m025_evidence_boundaries)
+from scripts import verify_m025_evidence_boundaries
 
 EvidenceReplayError = verify_m025_evidence_boundaries.EvidenceReplayError
 replay = verify_m025_evidence_boundaries.replay
