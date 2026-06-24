@@ -1,28 +1,19 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-MODULE_PATH = (
-    Path(__file__).parents[1] / "scripts" / "verify_m028_requirement_scope_reconciliation.py"
+from scripts.verify_m028_requirement_scope_reconciliation import (
+    REQUIRED_REQUIREMENT_IDS as REQUIRED_IDS,
 )
-spec = importlib.util.spec_from_file_location(
-    "verify_m028_requirement_scope_reconciliation", MODULE_PATH
+from scripts.verify_m028_requirement_scope_reconciliation import (
+    main,
+    validate_matrix,
 )
-assert spec is not None and spec.loader is not None
-verify_m028_requirement_scope_reconciliation = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = verify_m028_requirement_scope_reconciliation
-spec.loader.exec_module(verify_m028_requirement_scope_reconciliation)
-
-validate_matrix = verify_m028_requirement_scope_reconciliation.validate_matrix
-main = verify_m028_requirement_scope_reconciliation.main
-REQUIRED_IDS = verify_m028_requirement_scope_reconciliation.REQUIRED_REQUIREMENT_IDS
 
 REAL_MATRIX = (
     Path(__file__).parents[1] / "doc" / "validation" / "m028_requirement_scope_matrix.json"

@@ -272,4 +272,16 @@ M147 promoted four M027 cohort tests into strict script-wrapper coverage:
 
 The batch was baseline-green before migration and now imports M027 replay, verification, synthesis, gate, and requirement-scope scripts normally while preserving existing aliases.
 
+M148 promoted five M028 cohort tests into strict script-wrapper coverage:
+
+| Bucket | Before | After | Delta |
+|---|---:|---:|---:|
+| `dynamic_script_import` | 35 | 30 | -5 |
+| `legacy_mixed` | 49 | 44 | -5 |
+| `strict_script_wrapper` | 23 | 28 | +5 |
+| `strict_infrastructure` | 6 | 6 | 0 |
+| `unknown` | 77 | 77 | 0 |
+
+The batch was baseline-green before migration and now imports M028 build/verify scripts normally. Two verifier compatibility aliases remain in `sys.modules` for bare build-script imports; no dynamic module loading remains.
+
 If a candidate fails focused baseline pytest before migration, exclude it from the ratchet batch and record the reason in the candidate artifact. M130 rejected `tests/test_m061_s02.py` this way because it had a stale fixture SHA before any import cleanup; M131 repaired that stale fixture before M132 ratcheted the file.

@@ -1,0 +1,49 @@
+{
+  "after_counts": {
+    "dynamic_script_import": 30,
+    "legacy_mixed": 44,
+    "strict_infrastructure": 6,
+    "strict_script_wrapper": 28
+  },
+  "before_counts": {
+    "dynamic_script_import": 35,
+    "legacy_mixed": 49,
+    "strict_infrastructure": 6,
+    "strict_script_wrapper": 23
+  },
+  "classification": "strict_script_wrapper",
+  "compatibility_notes": [
+    "tests/test_m028_hermes_digest_projection.py preserves sys.modules alias for build_m028_hermes_digest_projection because the verifier imports the build script by bare module name.",
+    "tests/test_m028_universal_loader_evidence_bundles.py preserves sys.modules alias for build_m028_universal_loader_evidence_bundles because the verifier imports the build script by bare module name."
+  ],
+  "delta": {
+    "dynamic_script_import": -5,
+    "legacy_mixed": -5,
+    "strict_infrastructure": 0,
+    "strict_script_wrapper": 5
+  },
+  "milestone_id": "M148-q4ylje",
+  "promoted": [
+    "tests/test_m028_hermes_digest_projection.py",
+    "tests/test_m028_pdf_acquisition_diagnostics.py",
+    "tests/test_m028_requirement_scope_reconciliation.py",
+    "tests/test_m028_source_metadata_adapters.py",
+    "tests/test_m028_universal_loader_evidence_bundles.py"
+  ],
+  "rationale": "Five M028 cohort tests were baseline-green and now import their scripts under test through normal repo-root `scripts` imports instead of dynamic importlib loading.",
+  "schema_version": "daily-archive-m148-m028-batch-ratchet.v1",
+  "verification": [
+    {
+      "command": "uv run pytest <five M028 files>",
+      "result": "120 passed"
+    },
+    {
+      "command": "uv run ruff check <five M028 files>",
+      "result": "passed"
+    },
+    {
+      "command": "uv run pyrefly check <five M028 files>",
+      "result": "0 errors"
+    }
+  ]
+}

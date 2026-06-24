@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import importlib.util
 import json
 from copy import deepcopy
 from pathlib import Path
@@ -10,32 +9,19 @@ from types import ModuleType
 
 import pytest
 
+from scripts import build_m028_pdf_acquisition_diagnostics as build_script
+from scripts import verify_m028_pdf_acquisition_diagnostics as verifier
+
 REPO_ROOT = Path(__file__).parents[1]
-BUILD_SCRIPT_PATH = REPO_ROOT / "scripts" / "build_m028_pdf_acquisition_diagnostics.py"
-VERIFY_SCRIPT_PATH = REPO_ROOT / "scripts" / "verify_m028_pdf_acquisition_diagnostics.py"
 REAL_CORPUS_DIR = REPO_ROOT / "data" / "article_corpora" / "m028-universal-loader-runtime-smoke-v1"
 
 
 def _load_script() -> ModuleType:
-    spec = importlib.util.spec_from_file_location(
-        "build_m028_pdf_acquisition_diagnostics", BUILD_SCRIPT_PATH
-    )
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return build_script
 
 
 def _load_verifier() -> ModuleType:
-    spec = importlib.util.spec_from_file_location(
-        "verify_m028_pdf_acquisition_diagnostics", VERIFY_SCRIPT_PATH
-    )
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return verifier
 
 
 def _write_json(path: Path, payload: dict[str, object]) -> None:

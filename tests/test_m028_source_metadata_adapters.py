@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import importlib.util
 import json
 from copy import deepcopy
 from pathlib import Path
@@ -10,27 +9,19 @@ from types import ModuleType
 
 import pytest
 
+from scripts import build_m028_source_metadata_adapters as build_script
+from scripts import verify_m028_source_metadata_adapters as verifier
+
 REPO_ROOT = Path(__file__).parents[1]
-BUILD_SCRIPT_PATH = REPO_ROOT / "scripts" / "build_m028_source_metadata_adapters.py"
-VERIFY_SCRIPT_PATH = REPO_ROOT / "scripts" / "verify_m028_source_metadata_adapters.py"
 REAL_CORPUS_DIR = REPO_ROOT / "data" / "article_corpora" / "m028-universal-loader-runtime-smoke-v1"
 
 
-def _load_script(path: Path, module_name: str) -> ModuleType:
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
 def _load_build_script() -> ModuleType:
-    return _load_script(BUILD_SCRIPT_PATH, "build_m028_source_metadata_adapters")
+    return build_script
 
 
 def _load_verify_script() -> ModuleType:
-    return _load_script(VERIFY_SCRIPT_PATH, "verify_m028_source_metadata_adapters")
+    return verifier
 
 
 def _write_json(path: Path, payload: dict[str, object]) -> None:

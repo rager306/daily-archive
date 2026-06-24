@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import sys
 from copy import deepcopy
@@ -11,32 +10,22 @@ from types import ModuleType
 
 import pytest
 
+from scripts import build_m028_universal_loader_evidence_bundles as build_script
+
+sys.modules.setdefault("build_m028_universal_loader_evidence_bundles", build_script)
+
+from scripts import verify_m028_universal_loader_evidence_bundles as verifier
+
 REPO_ROOT = Path(__file__).parents[1]
-BUILD_SCRIPT_PATH = REPO_ROOT / "scripts" / "build_m028_universal_loader_evidence_bundles.py"
-VERIFY_SCRIPT_PATH = REPO_ROOT / "scripts" / "verify_m028_universal_loader_evidence_bundles.py"
 REAL_CORPUS_DIR = REPO_ROOT / "data" / "article_corpora" / "m028-universal-loader-runtime-smoke-v1"
 
 
 def _load_script() -> ModuleType:
-    spec = importlib.util.spec_from_file_location(
-        "build_m028_universal_loader_evidence_bundles", BUILD_SCRIPT_PATH
-    )
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return build_script
 
 
 def _load_verifier() -> ModuleType:
-    module_name = "verify_m028_universal_loader_evidence_bundles"
-    spec = importlib.util.spec_from_file_location(module_name, VERIFY_SCRIPT_PATH)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
+    return verifier
 
 
 def _write_json(path: Path, payload: dict[str, object]) -> None:

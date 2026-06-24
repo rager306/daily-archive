@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import shutil
 import sys
@@ -12,29 +11,22 @@ from types import ModuleType
 
 import pytest
 
+from scripts import build_m028_hermes_digest_projection as build_script
+
+sys.modules.setdefault("build_m028_hermes_digest_projection", build_script)
+
+from scripts import verify_m028_hermes_digest_projection as verifier
+
 REPO_ROOT = Path(__file__).parents[1]
-BUILD_SCRIPT_PATH = REPO_ROOT / "scripts" / "build_m028_hermes_digest_projection.py"
-VERIFY_SCRIPT_PATH = REPO_ROOT / "scripts" / "verify_m028_hermes_digest_projection.py"
 REAL_CORPUS_DIR = REPO_ROOT / "data" / "article_corpora" / "m028-universal-loader-runtime-smoke-v1"
 
 
-def _load_module(module_name: str, script_path: Path) -> ModuleType:
-    spec = importlib.util.spec_from_file_location(module_name, script_path)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
 def _load_script() -> ModuleType:
-    return _load_module("build_m028_hermes_digest_projection", BUILD_SCRIPT_PATH)
+    return build_script
 
 
 def _load_verifier() -> ModuleType:
-    _load_script()
-    return _load_module("verify_m028_hermes_digest_projection", VERIFY_SCRIPT_PATH)
+    return verifier
 
 
 def _read_json(path: Path) -> dict[str, object]:
