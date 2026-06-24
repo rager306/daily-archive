@@ -1,0 +1,83 @@
+{
+  "before_counts": {
+    "dynamic_script_import": 46,
+    "legacy_mixed": 60,
+    "strict_script_wrapper": 13,
+    "unknown": 77
+  },
+  "expected_after_counts": {
+    "dynamic_script_import": 45,
+    "legacy_mixed": 59,
+    "strict_script_wrapper": 14,
+    "unknown": 77
+  },
+  "intended_delta": {
+    "dynamic_script_import": -1,
+    "legacy_mixed": -1,
+    "strict_script_wrapper": 1,
+    "unknown": 0
+  },
+  "milestone_id": "M140-sq0hxw",
+  "schema_version": "daily-archive-m140-dynamic-ratchet-candidate.v1",
+  "selected": {
+    "baseline_pytest": "14 passed",
+    "current_allowlist_membership": {
+      "dynamic_script_import": true,
+      "legacy_mixed": true,
+      "strict_script_wrapper": false
+    },
+    "current_bucket": "legacy-mixed",
+    "gitnexus_blast_radius": "LOW for representative test and script function; no HIGH or CRITICAL risk",
+    "path": "tests/test_m024_validation_evidence_closure.py",
+    "signals": {
+      "acceptance_name": false,
+      "dynamic_script_import": true,
+      "imports_application": false,
+      "imports_cli": false,
+      "imports_domain": false,
+      "imports_infrastructure": false,
+      "imports_pipeline_legacy": false,
+      "imports_scripts_normal": false,
+      "imports_workflows": false,
+      "subprocess_script_invocation": false
+    }
+  },
+  "skipped": [
+    {
+      "action": "do not ratchet until separate baseline repair milestone fixes the stale path",
+      "current_bucket": "legacy-mixed",
+      "path": "tests/test_dspy_extraction_boundary.py",
+      "reason": "baseline pytest failed before migration: stale static-scope path src/research_graph.infrastructure.evaluation.dspy_extraction.py does not exist",
+      "signals": {
+        "acceptance_name": false,
+        "dynamic_script_import": true,
+        "imports_application": false,
+        "imports_cli": false,
+        "imports_domain": false,
+        "imports_infrastructure": true,
+        "imports_pipeline_legacy": false,
+        "imports_scripts_normal": false,
+        "imports_workflows": false,
+        "subprocess_script_invocation": false
+      }
+    }
+  ],
+  "verification": [
+    {
+      "command": "uv run pytest tests/test_dspy_extraction_boundary.py",
+      "result": "1 failed, 8 passed; skipped for ratchet"
+    },
+    {
+      "command": "uv run pytest tests/test_m024_validation_evidence_closure.py",
+      "result": "14 passed"
+    },
+    {
+      "command": "gitnexus_impact target=test_real_m024_validation_evidence_closure_passes",
+      "result": "LOW, impactedCount=0"
+    },
+    {
+      "command": "gitnexus_impact target=validate_closure",
+      "result": "LOW, affected_processes=0"
+    }
+  ]
+}

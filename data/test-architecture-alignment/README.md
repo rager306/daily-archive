@@ -177,4 +177,15 @@ M139 performed the eighth dynamic ratchet pass:
 
 M139 moved `tests/test_codebase_memory_governance.py` from importlib script loading to a normal `scripts` import after focused baseline pytest, ruff, pyrefly, and LOW GitNexus blast-radius checks passed.
 
+M140 performed the ninth dynamic ratchet pass after skipping a baseline-red candidate:
+
+| Bucket | Before | After | Delta |
+|---|---:|---:|---:|
+| `dynamic_script_import` | 46 | 45 | -1 |
+| `legacy_mixed` | 60 | 59 | -1 |
+| `strict_script_wrapper` | 13 | 14 | +1 |
+| `unknown` | 77 | 77 | 0 |
+
+M140 skipped `tests/test_dspy_extraction_boundary.py` because focused baseline pytest failed before migration on stale static-scope path `src/research_graph.infrastructure.evaluation.dspy_extraction.py`. It then moved `tests/test_m024_validation_evidence_closure.py` from importlib script loading to a normal `scripts` import after focused baseline pytest, ruff, pyrefly, and LOW GitNexus blast-radius checks passed.
+
 If a candidate fails focused baseline pytest before migration, exclude it from the ratchet batch and record the reason in the candidate artifact. M130 rejected `tests/test_m061_s02.py` this way because it had a stale fixture SHA before any import cleanup; M131 repaired that stale fixture before M132 ratcheted the file.

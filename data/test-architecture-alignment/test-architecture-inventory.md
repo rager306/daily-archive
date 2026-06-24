@@ -13,9 +13,9 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 | `domain` | 0 |
 | `application` | 10 |
 | `infrastructure` | 86 |
-| `script-wrapper` | 30 |
+| `script-wrapper` | 31 |
 | `acceptance` | 6 |
-| `legacy-mixed` | 60 |
+| `legacy-mixed` | 59 |
 | `unknown` | 77 |
 
 ### Import and execution signals
@@ -23,12 +23,12 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 | Signal | Count |
 |---|---:|
 | `acceptance_name` | 6 |
-| `dynamic_script_import` | 46 |
+| `dynamic_script_import` | 45 |
 | `imports_application` | 17 |
 | `imports_cli` | 5 |
 | `imports_domain` | 14 |
 | `imports_infrastructure` | 95 |
-| `imports_scripts_normal` | 22 |
+| `imports_scripts_normal` | 23 |
 | `imports_workflows` | 24 |
 | `subprocess_script_invocation` | 16 |
 
@@ -74,8 +74,8 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 - `tests/test_ingest_cli.py` — script wrapper or subprocess invocation
 - `tests/test_locator_evidence_audit.py` — script wrapper or subprocess invocation
 - `tests/test_m023_artifact_scaffold_gate.py` — script wrapper or subprocess invocation
+- `tests/test_m024_validation_evidence_closure.py` — script wrapper or subprocess invocation
 - `tests/test_m026_validation_remediation.py` — script wrapper or subprocess invocation
-- `tests/test_m027_mixed_source_catalog.py` — script wrapper or subprocess invocation
 
 ### acceptance
 
@@ -90,7 +90,6 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 
 - `tests/test_dspy_extraction_boundary.py` — dynamic script import via spec_from_file_location
 - `tests/test_import_boundary_rehearsal.py` — imports workflow, CLI, or legacy pipeline surface
-- `tests/test_m024_validation_evidence_closure.py` — dynamic script import via spec_from_file_location
 - `tests/test_m025_boundary_replay_completion.py` — dynamic script import via spec_from_file_location
 - `tests/test_m025_evidence_replay.py` — dynamic script import via spec_from_file_location
 - `tests/test_m025_requirement_scope_reconciliation.py` — dynamic script import via spec_from_file_location
@@ -98,6 +97,7 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 - `tests/test_m027_current_pipeline_baseline.py` — dynamic script import via spec_from_file_location
 - `tests/test_m027_end_to_end_mixed_replay.py` — dynamic script import via spec_from_file_location
 - `tests/test_m027_pipeline_readiness_synthesis.py` — dynamic script import via spec_from_file_location
+- `tests/test_m027_provenance_and_riskratchet_gate.py` — dynamic script import via spec_from_file_location
 
 ### unknown
 

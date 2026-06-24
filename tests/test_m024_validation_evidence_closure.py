@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import importlib.util
 import json
 import subprocess
 import sys
@@ -10,13 +9,10 @@ from typing import Any
 
 import pytest
 
+from scripts import verify_m024_validation_evidence_closure as verifier
+
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "verify_m024_validation_evidence_closure.py"
-
-spec = importlib.util.spec_from_file_location("verify_m024_validation_evidence_closure", SCRIPT)
-assert spec and spec.loader
-verifier = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(verifier)
 
 
 def _load_real() -> tuple[dict[str, Any], dict[str, Any]]:

@@ -144,3 +144,4 @@
 - ✅ **M137-p3u866: Dynamic Ratchet Preprocessing Replay** (`depends:[M136-tssbn9]`)
 - ✅ **M138-3d53eg: Dynamic Ratchet Bounded Chunk Repair** (`depends:[M137-p3u866]`)
 - ✅ **M139-c30uwy: Dynamic Ratchet Codebase Memory Governance** (`depends:[M138-3d53eg]`)
+- ✅ **M140-sq0hxw: Dynamic Ratchet M024 Evidence Closure** (`depends:[M139-c30uwy]`)
