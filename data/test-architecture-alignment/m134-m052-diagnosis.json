@@ -1,0 +1,55 @@
+{
+  "current_contract": {
+    "Claim": [
+      "claim_id",
+      "source_id",
+      "text",
+      "claim_type",
+      "confidence",
+      "evidence_path",
+      "extractor_version",
+      "schema_version"
+    ],
+    "ExtractionPatch": [
+      "source_id",
+      "claims",
+      "entities",
+      "relations",
+      "schema_version",
+      "extractor_version"
+    ],
+    "ScientificEntity_alias_TypedEntity": [
+      "entity_id",
+      "source_id",
+      "entity_type",
+      "canonical_name",
+      "confidence",
+      "evidence_path",
+      "extractor_version",
+      "schema_version"
+    ],
+    "ScientificRelation_alias_TypedRelation": [
+      "relation_id",
+      "source_id",
+      "relation_type",
+      "from_entity_id",
+      "to_entity_id",
+      "confidence",
+      "evidence_path",
+      "extractor_version",
+      "schema_version"
+    ]
+  },
+  "failing_command": "uv run pytest tests/test_m052_s02_e2e.py",
+  "failing_test": "tests/test_m052_s02_e2e.py",
+  "milestone_id": "M134-ek4cbn",
+  "minimal_repair": "Update only the M052 fixture construction in scripts/m052_rlm_e2e.py to use the current typed field names and canonical UPPERCASE relation type, mirroring tests/test_ladybug_scientific_kg.py. Remove stale pyrefly/ty ignores that existed only for the legacy mismatched constructor fields.",
+  "not_repairing": "Do not change domain schema or test architecture allowlists in M134; M052 ratchet remains future work after baseline repair.",
+  "observed_failure": {
+    "exception": "TypeError: Claim.__init__() got an unexpected keyword argument id",
+    "location": "scripts/m052_rlm_e2e.py:91 in build_fixture_patch",
+    "tests_failed": 7
+  },
+  "root_cause": "scripts/m052_rlm_e2e.py constructs typed extraction fixture objects with legacy flat constructor fields (`id`, `paper_id`, `label`, relation `source_id`/`target_id`, patch `paper_id`). Current `research_graph.domain.schema` dataclasses use typed fields (`claim_id`, `source_id`, `entity_id`, `canonical_name`, `relation_id`, `from_entity_id`, `to_entity_id`) and UPPERCASE typed relation values.",
+  "schema_version": "daily-archive-m134-m052-diagnosis.v1"
+}

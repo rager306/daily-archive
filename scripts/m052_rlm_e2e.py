@@ -87,12 +87,9 @@ def build_document() -> PageIndexDocument:
 
 def build_fixture_patch(evidence: EvidencePath) -> ExtractionPatch:
     """Build a minimal validated scientific KG patch for the ephemeral fixture."""
-    # pyrefly: ignore [missing-argument]
     claim = Claim(
-        # pyrefly: ignore [unexpected-keyword]
-        id="claim:2605.12345:method:chunk-0001:local-markdown-pageindex",  # ty:ignore[unknown-argument]
-        # pyrefly: ignore [unexpected-keyword]
-        paper_id="2605.12345",  # ty:ignore[unknown-argument]
+        claim_id="claim:2605.12345:method:chunk-0001:local-markdown-pageindex",
+        source_id="2605.12345",
         text="Local markdown is enough to build a deterministic PageIndex.",
         claim_type="method",
         confidence=0.91,
@@ -101,15 +98,11 @@ def build_fixture_patch(evidence: EvidencePath) -> ExtractionPatch:
         extractor_version=EXTRACTOR_VERSION,
         validation_warnings=[],
         provenance={"source": "m052_s02_e2e_fixture"},
-    )  # ty:ignore[missing-argument]
-    # pyrefly: ignore [missing-argument]
+    )
     entity = ScientificEntity(
-        # pyrefly: ignore [unexpected-keyword]
-        id="entity:2605.12345:pageindex",  # ty:ignore[unknown-argument]
-        # pyrefly: ignore [unexpected-keyword]
-        paper_id="2605.12345",  # ty:ignore[unknown-argument]
-        # pyrefly: ignore [unexpected-keyword]
-        label="PageIndex",  # ty:ignore[unknown-argument]
+        entity_id="entity:2605.12345:pageindex",
+        source_id="2605.12345",
+        canonical_name="PageIndex",
         entity_type="method",
         confidence=0.88,
         evidence_path=evidence,
@@ -117,29 +110,22 @@ def build_fixture_patch(evidence: EvidencePath) -> ExtractionPatch:
         extractor_version=EXTRACTOR_VERSION,
         validation_warnings=[],
         provenance={"source": "m052_s02_e2e_fixture"},
-    )  # ty:ignore[missing-argument]
-    # pyrefly: ignore [missing-argument]
+    )
     relation = ScientificRelation(
-        # pyrefly: ignore [unexpected-keyword]
-        id="relation:2605.12345:claim-local-markdown-pageindex:entity-pageindex:supports",  # ty:ignore[unknown-argument]
-        # pyrefly: ignore [unexpected-keyword]
-        paper_id="2605.12345",  # ty:ignore[unknown-argument]
-        relation_type="supports",
-        # pyrefly: ignore [missing-attribute]
-        source_id=claim.id,  # ty:ignore[unresolved-attribute]
-        # pyrefly: ignore [missing-attribute, unexpected-keyword]
-        target_id=entity.id,  # ty:ignore[unknown-argument, unresolved-attribute]
+        relation_id="relation:2605.12345:claim-local-markdown-pageindex:entity-pageindex:SUPPORTS",
+        source_id="2605.12345",
+        relation_type="SUPPORTS",
+        from_entity_id=claim.claim_id,
+        to_entity_id=entity.entity_id,
         confidence=0.84,
         evidence_path=evidence,
         schema_version=SCHEMA_VERSION,
         extractor_version=EXTRACTOR_VERSION,
         validation_warnings=[],
         provenance={"source": "m052_s02_e2e_fixture"},
-    )  # ty:ignore[missing-argument]
-    # pyrefly: ignore [missing-argument]
+    )
     return ExtractionPatch(
-        # pyrefly: ignore [unexpected-keyword]
-        paper_id="2605.12345",  # ty:ignore[unknown-argument]
+        source_id="2605.12345",
         claims=[claim],
         entities=[entity],
         relations=[relation],
@@ -147,7 +133,7 @@ def build_fixture_patch(evidence: EvidencePath) -> ExtractionPatch:
         extractor_version=EXTRACTOR_VERSION,
         validation_warnings=[],
         provenance={"source": "m052_s02_e2e_fixture"},
-    )  # ty:ignore[missing-argument]
+    )
 
 
 def _evidence_for_chunk(evidence_paths: list[EvidencePath], semantic_chunk_id: str) -> EvidencePath:
