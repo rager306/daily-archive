@@ -1,0 +1,59 @@
+{
+  "before_counts": {
+    "dynamic_script_import": 48,
+    "legacy_mixed": 62,
+    "strict_script_wrapper": 11,
+    "unknown": 77
+  },
+  "expected_after_counts": {
+    "dynamic_script_import": 47,
+    "legacy_mixed": 61,
+    "strict_script_wrapper": 12,
+    "unknown": 77
+  },
+  "intended_delta": {
+    "dynamic_script_import": -1,
+    "legacy_mixed": -1,
+    "strict_script_wrapper": 1,
+    "unknown": 0
+  },
+  "milestone_id": "M138-3d53eg",
+  "schema_version": "daily-archive-m138-dynamic-ratchet-candidate.v1",
+  "selected": {
+    "baseline_pytest": "17 passed",
+    "current_allowlist_membership": {
+      "dynamic_script_import": true,
+      "legacy_mixed": true,
+      "strict_script_wrapper": false
+    },
+    "current_bucket": "legacy-mixed",
+    "gitnexus_blast_radius": "LOW for representative test symbol and target-file _load_script helper; no HIGH or CRITICAL risk",
+    "path": "tests/test_bounded_chunk_repair.py",
+    "signals": {
+      "acceptance_name": false,
+      "dynamic_script_import": true,
+      "imports_application": false,
+      "imports_cli": false,
+      "imports_domain": false,
+      "imports_infrastructure": true,
+      "imports_pipeline_legacy": false,
+      "imports_scripts_normal": false,
+      "imports_workflows": false,
+      "subprocess_script_invocation": false
+    }
+  },
+  "verification": [
+    {
+      "command": "uv run pytest tests/test_bounded_chunk_repair.py",
+      "result": "17 passed"
+    },
+    {
+      "command": "gitnexus_impact target=test_builds_deterministic_non_empty_targets_that_validate_against_contract",
+      "result": "LOW, impactedCount=0"
+    },
+    {
+      "command": "gitnexus_impact target=_load_script",
+      "result": "ambiguous; target-file candidate LOW with 3 impacted tests; global max MEDIUM from other files not edited"
+    }
+  ]
+}

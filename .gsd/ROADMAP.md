@@ -142,3 +142,4 @@
 - ✅ **M135-b4b79a: M052 Strict Script Wrapper Promotion** (`depends:[M134-ek4cbn]`)
 - ✅ **M136-tssbn9: Dynamic Ratchet Baseline Recovery Replay** (`depends:[M135-b4b79a]`)
 - ✅ **M137-p3u866: Dynamic Ratchet Preprocessing Replay** (`depends:[M136-tssbn9]`)
+- ✅ **M138-3d53eg: Dynamic Ratchet Bounded Chunk Repair** (`depends:[M137-p3u866]`)

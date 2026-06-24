@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from copy import deepcopy
 from pathlib import Path
 
@@ -20,11 +18,10 @@ from research_graph.infrastructure.repair.chunk_repair_contract import (
     scan_forbidden_payload_keys,
     validate_chunk_repair_contract,
 )
+from scripts import render_bounded_repair_prototype, verify_bounded_repair_prototype
 
 CONTRACT_FIXTURE = Path("tests/fixtures/chunk_repair_contract.json")
 LOCATOR_FIXTURE = Path("tests/fixtures/bounded_locator_batch.json")
-RENDER_SCRIPT = Path("scripts/render_bounded_repair_prototype.py")
-VERIFY_SCRIPT = Path("scripts/verify_bounded_repair_prototype.py")
 FORBIDDEN_KEYS = {
     "raw_text",
     "chunk_text",
@@ -35,16 +32,6 @@ FORBIDDEN_KEYS = {
     "token",
     "api_key",
 }
-
-
-def _load_script(path: Path, module_name: str):
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
 
 
 def _locator_batch() -> dict[str, object]:
@@ -289,7 +276,7 @@ def test_markdown_renderer_reports_counts_classifications_and_redacted_safety() 
 def test_render_cli_writes_only_after_json_and_markdown_validation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    renderer = _load_script(RENDER_SCRIPT, "render_bounded_repair_prototype_for_test")
+    renderer = render_bounded_repair_prototype
     contract_path = tmp_path / "contract.json"
     contract_path.write_text(json.dumps(_contract()), encoding="utf-8")
     json_output = tmp_path / "prototype.json"
@@ -329,8 +316,8 @@ def test_render_cli_writes_only_after_json_and_markdown_validation(
 def test_verify_cli_accepts_generated_artifacts_and_rejects_unsafe_or_unresolved_targets(
     tmp_path: Path,
 ) -> None:
-    renderer = _load_script(RENDER_SCRIPT, "render_bounded_repair_prototype_for_verify_test")
-    verifier = _load_script(VERIFY_SCRIPT, "verify_bounded_repair_prototype_for_test")
+    renderer = render_bounded_repair_prototype
+    verifier = verify_bounded_repair_prototype
     contract_path = tmp_path / "contract.json"
     contract_path.write_text(json.dumps(_contract()), encoding="utf-8")
     json_output = tmp_path / "prototype.json"
@@ -370,7 +357,7 @@ def test_verify_cli_accepts_generated_artifacts_and_rejects_unsafe_or_unresolved
 
 
 def test_render_cli_rejects_malformed_locator_batch_before_write(tmp_path: Path) -> None:
-    renderer = _load_script(RENDER_SCRIPT, "render_bounded_repair_prototype_malformed_test")
+    renderer = render_bounded_repair_prototype
     contract_path = tmp_path / "contract.json"
     contract_path.write_text(json.dumps(_contract()), encoding="utf-8")
     malformed = tmp_path / "malformed.json"
