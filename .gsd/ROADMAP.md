@@ -132,3 +132,4 @@
 - ✅ **M125-xjewhv: Repo Root Portability Fix** (`depends:[—]`)
 - ✅ **M126-v6gp40: M107 Pyrefly Pre Commit Recovery** (`depends:[M125-xjewhv]`)
 - ✅ **M127-3ug5zf: Riskratchet Workflow Visibility** (`depends:[M126-v6gp40]`)
+- ✅ **M128-e2lp61: Test Architecture Alignment** (`depends:[M122-qq2mfe]`)

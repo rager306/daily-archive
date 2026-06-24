@@ -26,6 +26,23 @@ Source → Parser → Structure → Extraction → Graph → Review → Agents
 - **Corpus**: 220+ PDFs in canonical arXiv catalog
 - **Tests**: 835+ passing
 
+## Test architecture alignment
+
+M128 tracks test-suite alignment with the hexagonal/onion architecture. The taxonomy, inventory, guardrail, and pilot commands live in:
+
+```text
+data/test-architecture-alignment/
+```
+
+Start with:
+
+```bash
+uv run python scripts/audit_test_architecture.py --output-dir data/test-architecture-alignment
+uv run python scripts/verify_test_architecture.py --output-dir data/test-architecture-alignment
+```
+
+Use the guardrail as a ratchet: shrink legacy-mixed and dynamic script-import allowlists over time instead of broad rewrites.
+
 ## Local maintainability telemetry
 
 `riskratchet` is integrated as **diagnostic-only maintainability telemetry**. It reports function scores, severity bands, and baseline deltas, but it is not a correctness, safety, replay, or release gate.
