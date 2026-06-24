@@ -188,4 +188,16 @@ M140 performed the ninth dynamic ratchet pass after skipping a baseline-red cand
 
 M140 skipped `tests/test_dspy_extraction_boundary.py` because focused baseline pytest failed before migration on stale static-scope path `src/research_graph.infrastructure.evaluation.dspy_extraction.py`. It then moved `tests/test_m024_validation_evidence_closure.py` from importlib script loading to a normal `scripts` import after focused baseline pytest, ruff, pyrefly, and LOW GitNexus blast-radius checks passed.
 
+M141 repaired and ratcheted the DSPy boundary test into strict infrastructure coverage:
+
+| Bucket | Before | After | Delta |
+|---|---:|---:|---:|
+| `dynamic_script_import` | 45 | 44 | -1 |
+| `legacy_mixed` | 59 | 58 | -1 |
+| `strict_infrastructure` | 5 | 6 | +1 |
+| `strict_script_wrapper` | 14 | 14 | 0 |
+| `unknown` | 77 | 77 | 0 |
+
+M141 first repaired `tests/test_dspy_extraction_boundary.py` by correcting its stale static-scope source path, then replaced its dynamic fixture loader with a normal `tests.test_ladybug_scientific_kg` fixture import. Because the test imports infrastructure boundary code, it was promoted to `strict_infrastructure`, not `strict_script_wrapper`.
+
 If a candidate fails focused baseline pytest before migration, exclude it from the ratchet batch and record the reason in the candidate artifact. M130 rejected `tests/test_m061_s02.py` this way because it had a stale fixture SHA before any import cleanup; M131 repaired that stale fixture before M132 ratcheted the file.

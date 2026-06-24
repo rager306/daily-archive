@@ -8,11 +8,9 @@ runtime, optimizers, live clients, embeddings, network calls, or storage writes.
 from __future__ import annotations
 
 import ast
-import importlib.util
-from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import pytest
 
@@ -21,10 +19,11 @@ from research_graph.infrastructure.evaluation.dspy_extraction import (
     DspyExtractionInput,
 )
 from research_graph.infrastructure.graph.ladybug_client import evidence_path_id
+from tests.test_ladybug_scientific_kg import build_fixture_payload as build_ladybug_fixture_payload
 
 RAW_FIXTURE_CLAIM_TEXT = "Local markdown is enough to build a deterministic PageIndex."
 S08_FILES = (
-    Path("src/research_graph.infrastructure.evaluation.dspy_extraction.py"),
+    Path("src/research_graph/infrastructure/evaluation/dspy_extraction.py"),
     Path("tests/test_dspy_extraction_boundary.py"),
 )
 FORBIDDEN_IMPORT_ROOTS = {
@@ -78,7 +77,6 @@ ALLOWED_STRING_LITERAL_FRAGMENTS = (
         "storage writes",
     }
 )
-BuildFixturePayload = Callable[[], tuple[Any, list[Any], list[Any], Any]]
 
 
 def _safe_text(value: Any) -> str:
@@ -86,14 +84,7 @@ def _safe_text(value: Any) -> str:
 
 
 def _build_fixture_payload() -> tuple[Any, list[Any], list[Any], Any]:
-    fixture_module_path = Path(__file__).with_name("test_ladybug_scientific_kg.py")
-    spec = importlib.util.spec_from_file_location("_s08_ladybug_fixture", fixture_module_path)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    builder = cast(BuildFixturePayload, module.build_fixture_payload)
-    return builder()
+    return build_ladybug_fixture_payload()
 
 
 def _fixture_patch_contract() -> tuple[Any, frozenset[str]]:

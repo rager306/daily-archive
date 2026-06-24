@@ -145,3 +145,4 @@
 - ✅ **M138-3d53eg: Dynamic Ratchet Bounded Chunk Repair** (`depends:[M137-p3u866]`)
 - ✅ **M139-c30uwy: Dynamic Ratchet Codebase Memory Governance** (`depends:[M138-3d53eg]`)
 - ✅ **M140-sq0hxw: Dynamic Ratchet M024 Evidence Closure** (`depends:[M139-c30uwy]`)
+- ✅ **M141-d5bfww: DSPy Boundary Repair and Dynamic Ratchet** (`depends:[M140-sq0hxw]`)
