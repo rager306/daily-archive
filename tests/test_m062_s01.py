@@ -254,6 +254,32 @@ def test_process_env_overrides_dotenv(
         assert module.Embedder().dimensions == 768
 
 
+def test_public_env_config_can_apply_dotenv_explicitly(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".env").write_text("FD_API_KEY=dotenv-key\nFD_DIMENSIONS=512\n")
+
+    with _embedder_env(dotenv_dir=tmp_path) as module:
+        config = module.load_embedder_env_config()
+        assert config.get("FD_API_KEY") == "dotenv-key"
+        assert "FD_API_KEY" not in os.environ
+
+        config.apply_to_environ()
+
+        assert os.environ["FD_API_KEY"] == "dotenv-key"
+        assert os.environ["FD_DIMENSIONS"] == "512"
+
+
+def test_live_code_uses_public_embedder_env_config() -> None:
+    embedder_source = Path("src/research_graph/infrastructure/retrieval/embedder.py").read_text()
+    m103_source = Path("scripts/m103_extraction_prototype.py").read_text()
+
+    assert "_load_dotenv_if_present" not in embedder_source
+    assert "_load_dotenv_if_present" not in m103_source
+    assert "load_embedder_env_config" in m103_source
+
+
 def test_env_default_values() -> None:
     with _embedder_env() as module:
         assert module.DEFAULT_TEI_URL == "http://127.0.0.1:8000"

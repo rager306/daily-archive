@@ -8,7 +8,8 @@ import asyncio
 import logging
 import os
 import time
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
+from dataclasses import dataclass
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from statistics import median
@@ -19,18 +20,33 @@ import httpx
 logger = logging.getLogger(__name__)
 
 
-def _read_dotenv_if_present(path: str | Path = ".env") -> dict[str, str]:
+@dataclass(frozen=True)
+class EmbedderEnvConfig:
+    """Non-mutating embedder environment config."""
+
+    dotenv_values: Mapping[str, str]
+
+    def get(self, name: str) -> str | None:
+        return os.environ.get(name) or self.dotenv_values.get(name)
+
+    def apply_to_environ(self) -> None:
+        """Explicitly copy dotenv fallback values into this process env."""
+        for key, value in self.dotenv_values.items():
+            os.environ.setdefault(key, value)
+
+
+def load_embedder_env_config(path: str | Path = ".env") -> EmbedderEnvConfig:
     """Read local KEY=VALUE pairs without mutating process env."""
     try:
         env_path = Path(path)
     except OSError:
-        return {}
+        return EmbedderEnvConfig({})
     if not env_path.exists():
-        return {}
+        return EmbedderEnvConfig({})
     try:
         lines = env_path.read_text().splitlines()
     except OSError:
-        return {}
+        return EmbedderEnvConfig({})
 
     values: dict[str, str] = {}
     for raw_line in lines:
@@ -41,19 +57,14 @@ def _read_dotenv_if_present(path: str | Path = ".env") -> dict[str, str]:
         key = key.strip()
         if key:
             values[key] = value.strip().strip('"').strip("'")
-    return values
+    return EmbedderEnvConfig(values)
 
 
-def _load_dotenv_if_present(path: str | Path = ".env") -> dict[str, str]:
-    """Backward-compatible non-mutating dotenv reader."""
-    return _read_dotenv_if_present(path)
-
-
-_DOTENV_VALUES = _read_dotenv_if_present()
+_DEFAULT_ENV_CONFIG = load_embedder_env_config()
 
 
 def _env_get(name: str) -> str | None:
-    return os.environ.get(name) or _DOTENV_VALUES.get(name)
+    return _DEFAULT_ENV_CONFIG.get(name)
 
 
 def _env_int(name: str, default: int) -> int:
