@@ -1,24 +1,13 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from argparse import Namespace
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-MODULE_PATH = (
-    Path(__file__).parents[1] / "scripts" / "verify_m027_provenance_and_riskratchet_gate.py"
-)
-spec = importlib.util.spec_from_file_location(
-    "verify_m027_provenance_and_riskratchet_gate", MODULE_PATH
-)
-assert spec is not None and spec.loader is not None
-gate = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = gate
-spec.loader.exec_module(gate)
+from scripts import verify_m027_provenance_and_riskratchet_gate as gate
 
 
 def _sha(path: Path) -> str:

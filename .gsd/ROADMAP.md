@@ -151,3 +151,4 @@
 - ✅ **M144-f4ifiv: M025 Requirement Scope Script Wrapper Ratchet** (`depends:[M143-oav38f]`)
 - ✅ **M145-ruvvyw: M026 Requirement Scope Script Wrapper Ratchet** (`depends:[M144-f4ifiv]`)
 - ✅ **M146-uvn4kh: M027 Current Pipeline Baseline Script Wrapper Ratchet** (`depends:[M145-ruvvyw]`)
+- ✅ **M147-toxooi: M027 Script Wrapper Batch Ratchet** (`depends:[M146-uvn4kh]`)

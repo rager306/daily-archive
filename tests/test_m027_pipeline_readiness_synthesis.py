@@ -1,17 +1,10 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from pathlib import Path
 from typing import Any
 
-MODULE_PATH = Path(__file__).parents[1] / "scripts" / "synthesize_m027_pipeline_readiness.py"
-spec = importlib.util.spec_from_file_location("synthesize_m027_pipeline_readiness", MODULE_PATH)
-assert spec is not None and spec.loader is not None
-synthesis = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = synthesis
-spec.loader.exec_module(synthesis)
+from scripts import synthesize_m027_pipeline_readiness as synthesis
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:

@@ -1,0 +1,44 @@
+{
+  "after_counts": {
+    "dynamic_script_import": 35,
+    "legacy_mixed": 49,
+    "strict_infrastructure": 6,
+    "strict_script_wrapper": 23
+  },
+  "before_counts": {
+    "dynamic_script_import": 39,
+    "legacy_mixed": 53,
+    "strict_infrastructure": 6,
+    "strict_script_wrapper": 19
+  },
+  "classification": "strict_script_wrapper",
+  "delta": {
+    "dynamic_script_import": -4,
+    "legacy_mixed": -4,
+    "strict_infrastructure": 0,
+    "strict_script_wrapper": 4
+  },
+  "milestone_id": "M147-toxooi",
+  "promoted": [
+    "tests/test_m027_end_to_end_mixed_replay.py",
+    "tests/test_m027_pipeline_readiness_synthesis.py",
+    "tests/test_m027_provenance_and_riskratchet_gate.py",
+    "tests/test_m027_requirement_scope_reconciliation.py"
+  ],
+  "rationale": "Four M027 cohort tests were baseline-green and now import their scripts under test through normal repo-root `scripts` imports instead of dynamic importlib loading.",
+  "schema_version": "daily-archive-m147-m027-batch-ratchet.v1",
+  "verification": [
+    {
+      "command": "uv run pytest <four M027 files>",
+      "result": "85 passed"
+    },
+    {
+      "command": "uv run ruff check <four M027 files>",
+      "result": "passed"
+    },
+    {
+      "command": "uv run pyrefly check <four M027 files>",
+      "result": "0 errors"
+    }
+  ]
+}
