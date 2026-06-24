@@ -344,4 +344,16 @@ M153 promoted two pipeline audit tests into strict script-wrapper coverage:
 
 The batch was baseline-green before migration and now imports `scripts.audit_pipeline_scripts` normally. The helper `_load_audit_module()` remains as a compatibility shim returning the imported module; `AUDIT_SCRIPT_PATH` remains only as a subprocess CLI path.
 
+M154 promoted all six currently baseline-green remaining dynamic candidates:
+
+| Bucket | Before | After | Delta |
+|---|---:|---:|---:|
+| `dynamic_script_import` | 14 | 8 | -6 |
+| `legacy_mixed` | 28 | 23 | -5 |
+| `strict_script_wrapper` | 44 | 49 | +5 |
+| `strict_infrastructure` | 6 | 6 | 0 |
+| `unknown` | 77 | 77 | 0 |
+
+Five legacy-mixed files entered strict script-wrapper coverage. `tests/test_pipeline_architecture_acceptance.py` left dynamic import debt but remains in the acceptance bucket, so it does not increment strict script-wrapper.
+
 If a candidate fails focused baseline pytest before migration, exclude it from the ratchet batch and record the reason in the candidate artifact. M130 rejected `tests/test_m061_s02.py` this way because it had a stale fixture SHA before any import cleanup; M131 repaired that stale fixture before M132 ratcheted the file.

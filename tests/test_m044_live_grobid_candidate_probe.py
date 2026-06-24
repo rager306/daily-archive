@@ -1,17 +1,8 @@
 from __future__ import annotations
 
-import importlib.util
-import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = ROOT / "scripts" / "run_m044_live_grobid_candidate_probe.py"
-spec = importlib.util.spec_from_file_location("run_m044_live_grobid_candidate_probe", MODULE_PATH)
-assert spec is not None
-probe = importlib.util.module_from_spec(spec)
-sys.modules["run_m044_live_grobid_candidate_probe"] = probe
-assert spec.loader is not None
-spec.loader.exec_module(probe)
+from scripts import run_m044_live_grobid_candidate_probe as probe
 
 
 def _target() -> dict:

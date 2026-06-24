@@ -13,9 +13,9 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 | `domain` | 0 |
 | `application` | 10 |
 | `infrastructure` | 87 |
-| `script-wrapper` | 61 |
+| `script-wrapper` | 66 |
 | `acceptance` | 6 |
-| `legacy-mixed` | 28 |
+| `legacy-mixed` | 23 |
 | `unknown` | 77 |
 
 ### Import and execution signals
@@ -23,12 +23,12 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 | Signal | Count |
 |---|---:|
 | `acceptance_name` | 6 |
-| `dynamic_script_import` | 14 |
+| `dynamic_script_import` | 8 |
 | `imports_application` | 17 |
 | `imports_cli` | 5 |
 | `imports_domain` | 14 |
 | `imports_infrastructure` | 95 |
-| `imports_scripts_normal` | 53 |
+| `imports_scripts_normal` | 59 |
 | `imports_workflows` | 24 |
 | `subprocess_script_invocation` | 16 |
 
@@ -89,15 +89,15 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 ### legacy-mixed
 
 - `tests/test_import_boundary_rehearsal.py` — imports workflow, CLI, or legacy pipeline surface
-- `tests/test_m044_live_grobid_candidate_probe.py` — dynamic script import via spec_from_file_location
 - `tests/test_m045_project_trajectory.py` — dynamic script import via spec_from_file_location
 - `tests/test_m052_rlm_workflow.py` — imports workflow, CLI, or legacy pipeline surface
-- `tests/test_m056_final_s07.py` — dynamic script import via spec_from_file_location
 - `tests/test_m060d_s01.py` — dynamic script import via spec_from_file_location
 - `tests/test_m060g_s02.py` — dynamic script import via spec_from_file_location
-- `tests/test_m061_legacy_delegate.py` — dynamic script import via spec_from_file_location
 - `tests/test_m061_s01.py` — dynamic script import via spec_from_file_location
 - `tests/test_m061_s03.py` — dynamic script import via spec_from_file_location
+- `tests/test_m062_s03.py` — dynamic script import via spec_from_file_location
+- `tests/test_m066_s01.py` — dynamic script import via spec_from_file_location
+- `tests/test_m067_s03.py` — dynamic script import via spec_from_file_location
 
 ### unknown
 

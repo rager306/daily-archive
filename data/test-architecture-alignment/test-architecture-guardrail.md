@@ -7,12 +7,12 @@ Status: `passed`
 
 - Total test files: `269`
 - Violations: `0`
-- Allowlisted legacy mixed: `28`
-- Allowlisted dynamic script import: `14`
+- Allowlisted legacy mixed: `23`
+- Allowlisted dynamic script import: `8`
 - Strict application files: `6`
 - Strict domain files: `0`
 - Strict infrastructure files: `6`
-- Strict script-wrapper files: `44`
+- Strict script-wrapper files: `49`
 
 ## Violations
 

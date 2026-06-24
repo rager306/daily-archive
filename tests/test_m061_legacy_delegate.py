@@ -13,8 +13,6 @@ import sys
 import warnings
 from pathlib import Path
 
-import pytest
-
 LEGACY_CLI = Path(__file__).resolve().parents[1] / "scripts" / "m061_ingest_to_canonical_catalog.py"
 NEW_CLI = Path(__file__).resolve().parents[1] / "scripts" / "ingest_to_canonical_catalog.py"
 
@@ -30,18 +28,18 @@ def _run_legacy_cli(*args: str) -> subprocess.CompletedProcess[str]:
 
 def test_legacy_emits_deprecation_warning_at_import() -> None:
     """Importing the legacy module emits DeprecationWarning."""
-    import importlib.util
+    import scripts
+
+    module_name = "scripts.m061_ingest_to_canonical_catalog"
+    sys.modules.pop(module_name, None)
+    if hasattr(scripts, "m061_ingest_to_canonical_catalog"):
+        delattr(scripts, "m061_ingest_to_canonical_catalog")
 
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        spec = importlib.util.spec_from_file_location(
-            "scripts.m061_ingest_to_canonical_catalog",
-            str(LEGACY_CLI),
-        )
-        if spec is None or spec.loader is None:
-            pytest.skip("Could not load legacy module spec")
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)  # type: ignore[union-attr]
+        from scripts import m061_ingest_to_canonical_catalog as module
+
+        assert module is not None
         deprecation_warnings = [
             w
             for w in w

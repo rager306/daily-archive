@@ -1,24 +1,19 @@
 from __future__ import annotations
 
-import importlib.util
 import json
 from pathlib import Path
+
+from scripts import emit_m056_candidate_edges
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT = ROOT / "artifacts" / "m056-bfs-graph" / "REPORT.md"
 CANDIDATE_EDGES = ROOT / "artifacts" / "m056-bfs-graph" / "candidate-edges.json"
 ADR_010 = ROOT / "doc" / "adr" / "ADR-010-bfs-scale-167-pdf.md"
 ADR_INDEX = ROOT / "doc" / "adr" / "ADR-INDEX.md"
-EMIT_SCRIPT = ROOT / "scripts" / "emit_m056_candidate_edges.py"
 
 
 def _load_emit_module():
-    spec = importlib.util.spec_from_file_location("emit_m056_candidate_edges", EMIT_SCRIPT)
-    assert spec is not None
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
+    return emit_m056_candidate_edges
 
 
 def _read_json(path: Path) -> dict:

@@ -1,23 +1,17 @@
 from __future__ import annotations
 
-import importlib.util
 import json
 import subprocess
 import sys
 from pathlib import Path
+
+from scripts import m063_graphdb_benchmark as benchmark
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "m063_graphdb_benchmark.py"
 ARTIFACT_DIR = ROOT / "artifacts" / "m063-graphdb"
 CANDIDATE_DIR = ARTIFACT_DIR / "candidates"
 MATRIX = ARTIFACT_DIR / "scoring-matrix.md"
-
-spec = importlib.util.spec_from_file_location("m063_graphdb_benchmark", SCRIPT)
-assert spec is not None
-benchmark = importlib.util.module_from_spec(spec)
-sys.modules["m063_graphdb_benchmark"] = benchmark
-assert spec.loader is not None
-spec.loader.exec_module(benchmark)
 
 EXPECTED_REPORTS = {
     "falkordb-report.md",
