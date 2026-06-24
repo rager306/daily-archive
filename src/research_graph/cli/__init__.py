@@ -495,29 +495,32 @@ def run_analysis(run_date: date) -> DailyAnalysis:
     )
 
 
-def run_pipeline(run_date: date) -> None:
-    """Run the legacy arxiv archive pipeline for a given date and save a session.
+async def run_pipeline_async(run_date: date) -> None:
+    """Run the legacy pipeline using the async analysis entrypoint."""
+    analysis = await run_analysis_async(run_date)
 
-    This compatibility wrapper preserves the pre-S02 persistence behavior for any
-    direct callers while sharing the normalized analysis boundary.
-
-    Args:
-        run_date: The date to fetch papers for.
-    """
-    analysis = run_analysis(run_date)
-
-    # Save session
     session_path = save_session(
         analysis.run_date,
         analysis.papers_fetched,
         analysis.top_papers,
     )
 
-    # Print legacy summary
     print(  # noqa: T201
         f"Fetched {analysis.papers_fetched} papers, selected top {len(analysis.top_papers)}"
     )
     print(f"Session saved to {session_path}")  # noqa: T201
+
+
+def run_pipeline(run_date: date) -> None:
+    """Synchronous compatibility wrapper for the legacy pipeline."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        asyncio.run(run_pipeline_async(run_date))
+        return
+    raise RuntimeError(
+        "run_pipeline() cannot run inside an active event loop; await run_pipeline_async() instead"
+    )
 
 
 @app.command(help=AGENT_CONTRACT_HELP)

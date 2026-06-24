@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 from dataclasses import replace
 from datetime import date, datetime
 from pathlib import Path
@@ -241,6 +242,67 @@ async def test_run_analysis_fails_explicitly_inside_running_loop(
 
     with pytest.raises(RuntimeError, match="active event loop"):
         run_analysis(RUN_DATE)
+
+
+@pytest.mark.asyncio
+async def test_run_pipeline_async_persists_and_prints_summary(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    import research_graph.cli as cli
+
+    scored = [make_scored(make_paper(1), score=1.0)]
+    analysis = cli.DailyAnalysis(
+        run_date=RUN_DATE,
+        status="done",
+        papers_fetched=1,
+        papers=scored,
+        top_papers=scored,
+        analysis_timestamp=datetime(2026, 5, 14, 12, 30),
+    )
+    calls: dict[str, Any] = {}
+
+    async def fake_run_analysis_async(run_date: date) -> cli.DailyAnalysis:
+        calls["run_date"] = run_date
+        return analysis
+
+    def fake_save_session(run_date: date, papers_fetched: int, top_papers: list[ScoredPaper]) -> Path:
+        calls["save_session"] = (run_date, papers_fetched, top_papers)
+        return tmp_path / "session.md"
+
+    monkeypatch.setattr(cli, "run_analysis_async", fake_run_analysis_async)
+    monkeypatch.setattr(cli, "save_session", fake_save_session)
+
+    await cli.run_pipeline_async(RUN_DATE)
+
+    assert calls["run_date"] == RUN_DATE
+    assert calls["save_session"] == (RUN_DATE, 1, scored)
+    assert capsys.readouterr().out == "Fetched 1 papers, selected top 1\nSession saved to " + str(
+        tmp_path / "session.md"
+    ) + "\n"
+
+
+def test_run_pipeline_sync_wrapper_delegates(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    import research_graph.cli as cli
+
+    async def fake_run_pipeline_async(run_date: date) -> None:
+        assert run_date == RUN_DATE
+        sys.stdout.write(f"Session saved to {tmp_path / 'session.md'}\n")
+
+    monkeypatch.setattr(cli, "run_pipeline_async", fake_run_pipeline_async)
+
+    cli.run_pipeline(RUN_DATE)
+
+    assert capsys.readouterr().out == f"Session saved to {tmp_path / 'session.md'}\n"
+
+
+@pytest.mark.asyncio
+async def test_run_pipeline_fails_explicitly_inside_running_loop() -> None:
+    from research_graph.cli import run_pipeline
+
+    with pytest.raises(RuntimeError, match="run_pipeline_async"):
+        run_pipeline(RUN_DATE)
 
 
 def test_run_analysis_propagates_dependency_failures(monkeypatch: pytest.MonkeyPatch) -> None:
