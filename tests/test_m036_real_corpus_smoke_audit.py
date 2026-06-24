@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 
-# pyrefly: ignore [missing-import]
 from scripts.audit_m036_real_corpus_smoke import audit_smoke, write_markdown_report
 
 FALSE_FLAGS = {

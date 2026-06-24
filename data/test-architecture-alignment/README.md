@@ -111,4 +111,15 @@ M132 performed the third ratchet pass after M131 repaired the M061 stale fixture
 
 M132 also configured pyrefly with `search-path = ["."]` so normal repo-root `from scripts import ...` imports type-check without local `pyrefly: ignore [missing-import]` comments. Use local missing-import suppressions only for genuine optional dependencies or legacy import hacks that are not solved by the repo-root search path.
 
+M133 performed the fourth ratchet pass and classifier cleanup:
+
+| Bucket | Before | After | Delta |
+|---|---:|---:|---:|
+| `dynamic_script_import` | 51 | 50 | -1 |
+| `legacy_mixed` | 65 | 64 | -1 |
+| `strict_script_wrapper` | 7 | 8 | +1 |
+| `unknown` | 81 | 77 | -4 |
+
+M133 also categorized remaining `pyrefly: ignore [missing-import]` suppressions, removed three obsolete normal `scripts.*` import suppressions from baseline-green tests, and documented the remaining suppression debt by category. The unknown bucket reduction came from recognizing AST imports whose module is `scripts` or starts with `scripts.` as script-wrapper tests. `tests/test_m052_s02_e2e.py` was reclassified by import shape but remains baseline-red and must be repaired separately before runtime ratcheting.
+
 If a candidate fails focused baseline pytest before migration, exclude it from the ratchet batch and record the reason in the candidate artifact. M130 rejected `tests/test_m061_s02.py` this way because it had a stale fixture SHA before any import cleanup; M131 repaired that stale fixture before M132 ratcheted the file.

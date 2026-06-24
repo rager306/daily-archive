@@ -75,7 +75,9 @@ def analyze_test_file(path: Path) -> TestFileAnalysis:
         "imports_workflows": any(name.startswith("research_graph.workflows") for name in imports),
         "imports_cli": any(name.startswith("research_graph.cli") for name in imports),
         "imports_pipeline_legacy": any(name.startswith("research_graph.pipeline") for name in imports),
-        "imports_scripts_normal": "from scripts import" in text or "import scripts." in text,
+        "imports_scripts_normal": any(
+            name == "scripts" or name.startswith("scripts.") for name in imports
+        ),
         "dynamic_script_import": "spec_from_file_location" in text,
         "subprocess_script_invocation": "subprocess" in text and "scripts/" in text,
         "acceptance_name": "acceptance" in path.name or "acceptance" in text,

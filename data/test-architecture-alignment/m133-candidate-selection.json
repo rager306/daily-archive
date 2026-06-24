@@ -1,0 +1,48 @@
+{
+  "dynamic_ratchet_blockers": [],
+  "milestone_id": "M133-rjp6lo",
+  "schema_version": "daily-archive-m133-candidate-selection.v1",
+  "selected_dynamic_ratchet": [
+    {
+      "baseline_verification": {
+        "command": "uv run pytest tests/test_m122_mutation_smoke.py",
+        "result": "1 passed"
+      },
+      "current_bucket": "legacy-mixed",
+      "path": "tests/test_m122_mutation_smoke.py",
+      "rationale": "Shortest dynamic script import debt file; imports a single script runner; baseline-green; no network or artifact mutation in test body.",
+      "script_module": "scripts.run_m122_mutation_smoke",
+      "target_bucket": "script-wrapper"
+    }
+  ],
+  "selected_unknown_reduction": [
+    {
+      "baseline_verification": {
+        "command": "uv run pytest tests/test_replay_m028_smoke_closeout.py tests/test_m036_real_corpus_no_write_smoke.py tests/test_m036_real_corpus_smoke_audit.py",
+        "result": "12 passed"
+      },
+      "current_gap": "direct `import scripts.<module>` files are unknown even though they are script-wrapper tests",
+      "expected_reclassified_files_sample": [
+        "tests/test_replay_m028_smoke_closeout.py",
+        "tests/test_m036_real_corpus_no_write_smoke.py",
+        "tests/test_m036_real_corpus_smoke_audit.py"
+      ],
+      "rationale": "Changing the audit classifier to recognize `scripts.` imports reduces unknown bucket without changing runtime behavior.",
+      "strategy": "audit classifier enhancement"
+    }
+  ],
+  "suppression_work_scope": {
+    "do_not_touch": "optional dependency or generated legacy import suppressions unless focused pyrefly proves removal is safe",
+    "goal": "categorize all pyrefly missing-import suppressions and remove only obsolete script-import suppressions that pyrefly search-path now resolves"
+  },
+  "unknown_reduction_blockers": [
+    {
+      "baseline_verification": {
+        "command": "uv run pytest tests/test_m122_mutation_smoke.py tests/test_m052_s02_e2e.py",
+        "result": "M122 passed; M052 failed 7 tests"
+      },
+      "path": "tests/test_m052_s02_e2e.py",
+      "reason": "baseline-red before any M133 edit; failure is Claim.__init__ unexpected keyword argument id in scripts/m052_rlm_e2e.py"
+    }
+  ]
+}

@@ -770,7 +770,7 @@
       }
     },
     {
-      "bucket": "infrastructure",
+      "bucket": "script-wrapper",
       "imports": [
         "__future__",
         "copy",
@@ -781,7 +781,7 @@
       ],
       "path": "tests/test_chunk_repair_contract.py",
       "reasons": [
-        "imports infrastructure adapter layer"
+        "script wrapper or subprocess invocation"
       ],
       "signals": {
         "acceptance_name": false,
@@ -791,7 +791,7 @@
         "imports_domain": false,
         "imports_infrastructure": true,
         "imports_pipeline_legacy": false,
-        "imports_scripts_normal": false,
+        "imports_scripts_normal": true,
         "imports_workflows": false,
         "subprocess_script_invocation": false
       }
@@ -1698,7 +1698,7 @@
         "imports_domain": false,
         "imports_infrastructure": false,
         "imports_pipeline_legacy": false,
-        "imports_scripts_normal": false,
+        "imports_scripts_normal": true,
         "imports_workflows": false,
         "subprocess_script_invocation": true
       }
@@ -1727,7 +1727,7 @@
         "imports_domain": false,
         "imports_infrastructure": true,
         "imports_pipeline_legacy": false,
-        "imports_scripts_normal": false,
+        "imports_scripts_normal": true,
         "imports_workflows": true,
         "subprocess_script_invocation": false
       }
@@ -1753,7 +1753,7 @@
         "imports_domain": false,
         "imports_infrastructure": false,
         "imports_pipeline_legacy": false,
-        "imports_scripts_normal": false,
+        "imports_scripts_normal": true,
         "imports_workflows": false,
         "subprocess_script_invocation": true
       }
@@ -2850,7 +2850,7 @@
       }
     },
     {
-      "bucket": "unknown",
+      "bucket": "script-wrapper",
       "imports": [
         "__future__",
         "json",
@@ -2860,7 +2860,7 @@
       ],
       "path": "tests/test_m036_real_corpus_no_write_smoke.py",
       "reasons": [
-        "no recognized project-layer import signal"
+        "script wrapper or subprocess invocation"
       ],
       "signals": {
         "acceptance_name": false,
@@ -2870,13 +2870,13 @@
         "imports_domain": false,
         "imports_infrastructure": false,
         "imports_pipeline_legacy": false,
-        "imports_scripts_normal": false,
+        "imports_scripts_normal": true,
         "imports_workflows": false,
         "subprocess_script_invocation": false
       }
     },
     {
-      "bucket": "unknown",
+      "bucket": "script-wrapper",
       "imports": [
         "__future__",
         "json",
@@ -2886,7 +2886,7 @@
       ],
       "path": "tests/test_m036_real_corpus_smoke_audit.py",
       "reasons": [
-        "no recognized project-layer import signal"
+        "script wrapper or subprocess invocation"
       ],
       "signals": {
         "acceptance_name": false,
@@ -2896,7 +2896,7 @@
         "imports_domain": false,
         "imports_infrastructure": false,
         "imports_pipeline_legacy": false,
-        "imports_scripts_normal": false,
+        "imports_scripts_normal": true,
         "imports_workflows": false,
         "subprocess_script_invocation": false
       }
@@ -3215,7 +3215,7 @@
       }
     },
     {
-      "bucket": "unknown",
+      "bucket": "script-wrapper",
       "imports": [
         "__future__",
         "json",
@@ -3225,7 +3225,7 @@
       ],
       "path": "tests/test_m052_s02_e2e.py",
       "reasons": [
-        "no recognized project-layer import signal"
+        "script wrapper or subprocess invocation"
       ],
       "signals": {
         "acceptance_name": false,
@@ -3235,7 +3235,7 @@
         "imports_domain": false,
         "imports_infrastructure": false,
         "imports_pipeline_legacy": false,
-        "imports_scripts_normal": false,
+        "imports_scripts_normal": true,
         "imports_workflows": false,
         "subprocess_script_invocation": false
       }
@@ -4820,27 +4820,24 @@
       }
     },
     {
-      "bucket": "legacy-mixed",
+      "bucket": "script-wrapper",
       "imports": [
         "__future__",
-        "importlib.util",
-        "pathlib",
-        "sys",
-        "types"
+        "scripts"
       ],
       "path": "tests/test_m122_mutation_smoke.py",
       "reasons": [
-        "dynamic script import via spec_from_file_location"
+        "script wrapper or subprocess invocation"
       ],
       "signals": {
         "acceptance_name": false,
-        "dynamic_script_import": true,
+        "dynamic_script_import": false,
         "imports_application": false,
         "imports_cli": false,
         "imports_domain": false,
         "imports_infrastructure": false,
         "imports_pipeline_legacy": false,
-        "imports_scripts_normal": false,
+        "imports_scripts_normal": true,
         "imports_workflows": false,
         "subprocess_script_invocation": false
       }
@@ -6259,7 +6256,7 @@
       }
     },
     {
-      "bucket": "unknown",
+      "bucket": "script-wrapper",
       "imports": [
         "hashlib",
         "json",
@@ -6269,7 +6266,7 @@
       ],
       "path": "tests/test_replay_m028_smoke_closeout.py",
       "reasons": [
-        "no recognized project-layer import signal"
+        "script wrapper or subprocess invocation"
       ],
       "signals": {
         "acceptance_name": false,
@@ -6279,7 +6276,7 @@
         "imports_domain": false,
         "imports_infrastructure": false,
         "imports_pipeline_legacy": false,
-        "imports_scripts_normal": false,
+        "imports_scripts_normal": true,
         "imports_workflows": false,
         "subprocess_script_invocation": false
       }
@@ -7335,6 +7332,12 @@
       "suggested_layer": "application"
     },
     {
+      "current_bucket": "script-wrapper",
+      "path": "tests/test_m122_mutation_smoke.py",
+      "rationale": "script wrapper or subprocess invocation",
+      "suggested_layer": "script-wrapper"
+    },
+    {
       "current_bucket": "application",
       "path": "tests/test_m122_property_mutation_guards.py",
       "rationale": "imports application layer without infrastructure",
@@ -7383,19 +7386,19 @@
       "acceptance": 6,
       "application": 10,
       "domain": 0,
-      "infrastructure": 87,
-      "legacy-mixed": 65,
-      "script-wrapper": 20,
-      "unknown": 81
+      "infrastructure": 86,
+      "legacy-mixed": 64,
+      "script-wrapper": 26,
+      "unknown": 77
     },
     "signals": {
       "acceptance_name": 6,
-      "dynamic_script_import": 51,
+      "dynamic_script_import": 50,
       "imports_application": 17,
       "imports_cli": 5,
       "imports_domain": 14,
       "imports_infrastructure": 95,
-      "imports_scripts_normal": 9,
+      "imports_scripts_normal": 18,
       "imports_workflows": 24,
       "subprocess_script_invocation": 16
     },
