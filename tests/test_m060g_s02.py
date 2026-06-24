@@ -1,25 +1,15 @@
 from __future__ import annotations
 
-import importlib.util
 import json
 import os
-import sys
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-SCRIPT_PATH = ROOT / "scripts" / "m060g_figure_judge.py"
-M050_PATH = ROOT / "src" / "arxiv_archive"
-if str(M050_PATH) not in sys.path:
-    sys.path.insert(0, str(M050_PATH))
+from scripts import m060g_figure_judge
 
-spec = importlib.util.spec_from_file_location("m060g_figure_judge", SCRIPT_PATH)
-assert spec is not None and spec.loader is not None
-m060g_figure_judge = importlib.util.module_from_spec(spec)
-sys.modules["m060g_figure_judge"] = m060g_figure_judge
-spec.loader.exec_module(m060g_figure_judge)
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _fake_model_result(
@@ -230,8 +220,7 @@ def test_balanced_m058_selection_15_plots_15_schema() -> None:
 
 
 def test_m050_m060g_s01_regression() -> None:
-    # pyrefly: ignore [missing-import]
-    from article_artifact_worker import HttpTransport  # ty:ignore[unresolved-import]
+    from research_graph.infrastructure.papers.artifacts.worker import HttpTransport
 
     binding_ids = m060g_figure_judge.load_bindings()
     assert m060g_figure_judge.FAST_BINDING_ID in binding_ids

@@ -1,21 +1,14 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-SCRIPT_PATH = ROOT / "scripts" / "m061_anchor_pilot.py"
+from scripts import m061_anchor_pilot
 
-spec = importlib.util.spec_from_file_location("m061_anchor_pilot", SCRIPT_PATH)
-assert spec is not None and spec.loader is not None
-m061_anchor_pilot = importlib.util.module_from_spec(spec)
-sys.modules["m061_anchor_pilot"] = m061_anchor_pilot
-spec.loader.exec_module(m061_anchor_pilot)
+ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture(scope="session")

@@ -1,0 +1,87 @@
+{
+  "schema_version": "m162-timeout-probes.v1",
+  "milestone": "M162-k0pgb5",
+  "summary": {
+    "dynamic_script_import_after_s03": 3,
+    "legacy_mixed_after_s03": 18,
+    "strict_script_wrapper_after_s03": 54,
+    "violations": 0
+  },
+  "probes": [
+    {
+      "test_file": "tests/test_m060g_s02.py",
+      "prior_issue": "M161 classified as timeout-risk from earlier 300 second baseline attempt.",
+      "commands": [
+        {
+          "command": "timeout 45 uv run pytest tests/test_m060g_s02.py --collect-only -q",
+          "exit_code": 0,
+          "duration_ms": 933,
+          "result": "11 tests collected quickly"
+        },
+        {
+          "command": "timeout 45 uv run pytest tests/test_m060g_s02.py -q -k 'not figure_judge_runs'",
+          "exit_code": 1,
+          "duration_ms": 1032,
+          "result": "Quick failure before repair: stale article_artifact_worker import"
+        },
+        {
+          "command": "timeout 45 uv run python -c 'from scripts import m060g_figure_judge as m; ...'",
+          "exit_code": 0,
+          "duration_ms": 144,
+          "result": "Normal scripts import works"
+        },
+        {
+          "command": "uv run pytest tests/test_m060g_s02.py -q -k 'not figure_judge_runs'",
+          "exit_code": 0,
+          "duration_ms": 230,
+          "result": "10 passed, 1 deselected after import repair"
+        }
+      ],
+      "repair": {
+        "status": "promoted",
+        "changes": [
+          "Replaced dynamic m060g_figure_judge import with normal scripts import",
+          "Replaced stale article_artifact_worker import with research_graph.infrastructure.papers.artifacts.worker.HttpTransport"
+        ],
+        "remaining_runtime_limit": "Live figure_judge_runs test remains guarded by API-key skip and was not forced."
+      }
+    },
+    {
+      "test_file": "tests/test_m061_s01.py",
+      "prior_issue": "M161 classified as timeout-risk from earlier 300 second baseline attempt.",
+      "commands": [
+        {
+          "command": "timeout 45 uv run pytest tests/test_m061_s01.py --collect-only -q",
+          "exit_code": 0,
+          "duration_ms": 915,
+          "result": "8 tests collected quickly"
+        },
+        {
+          "command": "timeout 45 uv run python -c 'from scripts import m061_anchor_pilot as m; ...'",
+          "exit_code": 0,
+          "duration_ms": 185,
+          "result": "Normal scripts import works"
+        },
+        {
+          "command": "timeout 45 uv run python -c 'from scripts import m061_anchor_pilot as m; print(summary_exists)'",
+          "exit_code": 0,
+          "duration_ms": 195,
+          "result": "Default output and existing pipeline-summary.json are present"
+        },
+        {
+          "command": "uv run pytest tests/test_m061_s01.py --collect-only -q",
+          "exit_code": 0,
+          "duration_ms": 190,
+          "result": "8 tests collected after import repair"
+        }
+      ],
+      "repair": {
+        "status": "promoted_for_import_architecture",
+        "changes": [
+          "Replaced dynamic m061_anchor_pilot import with normal scripts import"
+        ],
+        "remaining_runtime_limit": "Full file still uses a session fixture that runs the real 30-paper pilot; full runtime was intentionally not rerun in S03."
+      }
+    }
+  ]
+}

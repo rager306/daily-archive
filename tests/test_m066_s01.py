@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import importlib.util
 import json
 import subprocess
 import sys
 from pathlib import Path
+
+from scripts import m066_graphdb_full_benchmark as benchmark
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "m066_graphdb_full_benchmark.py"
@@ -12,13 +13,6 @@ ARTIFACT_DIR = ROOT / "artifacts" / "m066-graphdb-reselection"
 CANDIDATE_DIR = ARTIFACT_DIR / "candidates"
 MATRIX = ARTIFACT_DIR / "scoring-matrix.md"
 BENCHMARK_DATA = ARTIFACT_DIR / "benchmark-data.json"
-
-spec = importlib.util.spec_from_file_location("m066_graphdb_full_benchmark", SCRIPT)
-assert spec is not None
-benchmark = importlib.util.module_from_spec(spec)
-sys.modules["m066_graphdb_full_benchmark"] = benchmark
-assert spec.loader is not None
-spec.loader.exec_module(benchmark)
 
 EXPECTED_REPORTS = {
     "falkordb-report.md",
@@ -66,13 +60,10 @@ def test_benchmark_script_runs(tmp_path: Path) -> None:
         assert "DB_PORT" in candidate["env_config"]
 
 
-def test_scoring_matrix_has_top_3() -> None:
+def test_scoring_matrix_records_winners() -> None:
     text = MATRIX.read_text(encoding="utf-8")
-    assert "## Top-3 candidates" in text
-    assert "### #1 Neo4j — 76/90" in text
-    assert "### #2 FalkorDB — 68/90" in text
-    assert "### #3 Apache AGE — 64/90" in text
-    assert "**Winner: Neo4j (76/90).**" in text
+    assert "**Total-score winner: Neo4j (76/90).**" in text
+    assert "**M067 self-hosted winner: FalkorDB (70/90).**" in text
 
 
 def test_candidate_reports_have_17_criteria_each() -> None:

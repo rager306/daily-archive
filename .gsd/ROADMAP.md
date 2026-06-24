@@ -166,3 +166,4 @@
 - ✅ **M159-15vd28: Run Pipeline Async Wrapper Migration** (`depends:[M158-c0fuqn]`)
 - ✅ **M160-152kk2: Async CLI Command and Retrieval Import Cleanup** (`depends:[M159-15vd28]`)
 - ✅ **M161-4asfna: Sync Policy Dynamic Triage and Precommit Cleanup** (`depends:[M160-152kk2]`)
+- ✅ **M162-k0pgb5: Dynamic Debt Followup and Sync Policy Docs** (`depends:[M161-4asfna]`)

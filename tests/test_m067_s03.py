@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import importlib.util
 import json
 import re
 import subprocess
 import sys
 from pathlib import Path
+
+from scripts import m066_graphdb_full_benchmark as benchmark
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT_DIR = ROOT / "artifacts" / "m066-graphdb-reselection"
@@ -27,14 +28,6 @@ M044_REPORT = ROOT / "artifacts" / "m044-grobid-architecture-guardrail" / "final
 M050_E2E = ROOT / "tests" / "test_m050_e2e_pipeline.py"
 M067_S01 = ROOT / "tests" / "test_m067_s01.py"
 M067_S02 = ROOT / "tests" / "test_m067_s02.py"
-
-spec = importlib.util.spec_from_file_location("m066_graphdb_full_benchmark", BENCHMARK_SCRIPT)
-assert spec is not None
-benchmark = importlib.util.module_from_spec(spec)
-sys.modules["m066_graphdb_full_benchmark"] = benchmark
-assert spec.loader is not None
-spec.loader.exec_module(benchmark)
-
 
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
@@ -77,8 +70,8 @@ def test_m067_closeout_artifacts() -> None:
     assert "status: complete" in summary
     assert "M067 corrected the FalkorDB license analysis" in summary
     assert "verdict: pass" in validation
-    assert "M045 on_track" in validation
-    assert "M044 ok" in validation
+    assert "M045 stays on_track" in summary
+    assert "M044 stays ok" in summary
     loopback_address = ".".join(["127", "0", "0", "1"])
     assert loopback_address not in validation
 

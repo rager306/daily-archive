@@ -77,6 +77,15 @@ single wiring point for the paper extraction use case: it takes an
 LLM stages. Infrastructure code (the prototype script, future CLI) calls this
 function with a concrete adapter (`MDConverterAdapter`, a MiniMax client, ...).
 
+### Async-first entry point policy
+
+Async hosts call async APIs directly: `run_analysis_async`, `run_pipeline_async`,
+and `run_command_async`. Sync wrappers such as `run_analysis`, `run_pipeline`,
+and `acquire_sources_for_manifest_sync` are compatibility surfaces for process
+boundaries and synchronous scripts only. They must fail explicitly inside an
+active event loop and point the caller to the async API instead of nesting event
+loop runners.
+
 ```
 infrastructure (concrete adapter) ──calls──> build_wired_paper_pipeline(llm_provider=Adapter)
                                                       │ injects Port into
