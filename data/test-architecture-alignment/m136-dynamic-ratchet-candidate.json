@@ -1,0 +1,59 @@
+{
+  "before_counts": {
+    "dynamic_script_import": 50,
+    "legacy_mixed": 64,
+    "strict_script_wrapper": 9,
+    "unknown": 77
+  },
+  "expected_after_counts": {
+    "dynamic_script_import": 49,
+    "legacy_mixed": 63,
+    "strict_script_wrapper": 10,
+    "unknown": 77
+  },
+  "intended_delta": {
+    "dynamic_script_import": -1,
+    "legacy_mixed": -1,
+    "strict_script_wrapper": 1,
+    "unknown": 0
+  },
+  "milestone_id": "M136-tssbn9",
+  "schema_version": "daily-archive-m136-dynamic-ratchet-candidate.v1",
+  "selected": {
+    "baseline_pytest": "11 passed",
+    "current_allowlist_membership": {
+      "dynamic_script_import": true,
+      "legacy_mixed": true,
+      "strict_script_wrapper": false
+    },
+    "current_bucket": "legacy-mixed",
+    "gitnexus_blast_radius": "LOW for test symbol; run_recovery max LOW with no HIGH or CRITICAL risk",
+    "path": "tests/test_article_baseline_recovery_replay.py",
+    "signals": {
+      "acceptance_name": false,
+      "dynamic_script_import": true,
+      "imports_application": false,
+      "imports_cli": false,
+      "imports_domain": false,
+      "imports_infrastructure": false,
+      "imports_pipeline_legacy": false,
+      "imports_scripts_normal": false,
+      "imports_workflows": false,
+      "subprocess_script_invocation": false
+    }
+  },
+  "verification": [
+    {
+      "command": "uv run pytest tests/test_article_baseline_recovery_replay.py",
+      "result": "11 passed"
+    },
+    {
+      "command": "gitnexus_impact target=test_baseline_recovery_requires_no_network_execution",
+      "result": "LOW, impactedCount=0"
+    },
+    {
+      "command": "gitnexus_impact target=run_recovery",
+      "result": "ambiguous, maxRisk=LOW"
+    }
+  ]
+}

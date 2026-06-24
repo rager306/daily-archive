@@ -133,4 +133,15 @@ M135 performed a strict script-wrapper promotion after M134 repaired M052:
 
 M135 added `tests/test_m052_s02_e2e.py` to strict script-wrapper coverage after fresh pytest, ruff, pyrefly, and inventory checks passed. This was an allowlist-only promotion; no source code or dynamic/legacy debt counts changed.
 
+M136 performed the fifth dynamic ratchet pass:
+
+| Bucket | Before | After | Delta |
+|---|---:|---:|---:|
+| `dynamic_script_import` | 50 | 49 | -1 |
+| `legacy_mixed` | 64 | 63 | -1 |
+| `strict_script_wrapper` | 9 | 10 | +1 |
+| `unknown` | 77 | 77 | 0 |
+
+M136 moved `tests/test_article_baseline_recovery_replay.py` from importlib script loading to normal `scripts` imports after focused baseline pytest, ruff, pyrefly, and LOW GitNexus blast-radius checks passed.
+
 If a candidate fails focused baseline pytest before migration, exclude it from the ratchet batch and record the reason in the candidate artifact. M130 rejected `tests/test_m061_s02.py` this way because it had a stale fixture SHA before any import cleanup; M131 repaired that stale fixture before M132 ratcheted the file.

@@ -13,9 +13,9 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 | `domain` | 0 |
 | `application` | 10 |
 | `infrastructure` | 86 |
-| `script-wrapper` | 26 |
+| `script-wrapper` | 27 |
 | `acceptance` | 6 |
-| `legacy-mixed` | 64 |
+| `legacy-mixed` | 63 |
 | `unknown` | 77 |
 
 ### Import and execution signals
@@ -23,12 +23,12 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 | Signal | Count |
 |---|---:|
 | `acceptance_name` | 6 |
-| `dynamic_script_import` | 50 |
+| `dynamic_script_import` | 49 |
 | `imports_application` | 17 |
 | `imports_cli` | 5 |
 | `imports_domain` | 14 |
 | `imports_infrastructure` | 95 |
-| `imports_scripts_normal` | 18 |
+| `imports_scripts_normal` | 19 |
 | `imports_workflows` | 24 |
 | `subprocess_script_invocation` | 16 |
 
@@ -66,6 +66,7 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 
 ### script-wrapper
 
+- `tests/test_article_baseline_recovery_replay.py` — script wrapper or subprocess invocation
 - `tests/test_chunk_repair_contract.py` — script wrapper or subprocess invocation
 - `tests/test_ingest_cli.py` — script wrapper or subprocess invocation
 - `tests/test_locator_evidence_audit.py` — script wrapper or subprocess invocation
@@ -75,7 +76,6 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 - `tests/test_m027_validation_remediation.py` — script wrapper or subprocess invocation
 - `tests/test_m028_smoke_replay_closeout.py` — script wrapper or subprocess invocation
 - `tests/test_m031_import_boundary_rehearsal.py` — script wrapper or subprocess invocation
-- `tests/test_m031_process_continuity_audit.py` — script wrapper or subprocess invocation
 
 ### acceptance
 
@@ -88,7 +88,6 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 
 ### legacy-mixed
 
-- `tests/test_article_baseline_recovery_replay.py` — dynamic script import via spec_from_file_location
 - `tests/test_article_preprocessing_replay_contract.py` — dynamic script import via spec_from_file_location
 - `tests/test_bounded_chunk_repair.py` — dynamic script import via spec_from_file_location
 - `tests/test_codebase_memory_governance.py` — dynamic script import via spec_from_file_location
@@ -98,6 +97,7 @@ Schema: `daily-archive-test-architecture-inventory.v1`
 - `tests/test_m025_boundary_replay_completion.py` — dynamic script import via spec_from_file_location
 - `tests/test_m025_evidence_replay.py` — dynamic script import via spec_from_file_location
 - `tests/test_m025_requirement_scope_reconciliation.py` — dynamic script import via spec_from_file_location
+- `tests/test_m026_requirement_scope_reconciliation.py` — dynamic script import via spec_from_file_location
 
 ### unknown
 

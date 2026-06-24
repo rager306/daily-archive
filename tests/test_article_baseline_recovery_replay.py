@@ -1,38 +1,14 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from argparse import Namespace
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-RECOVERY_MODULE_PATH = (
-    Path(__file__).parents[1] / "scripts" / "verify_m025_baseline_recovery_replay.py"
-)
-recovery_spec = importlib.util.spec_from_file_location(
-    "verify_m025_baseline_recovery_replay", RECOVERY_MODULE_PATH
-)
-assert recovery_spec is not None and recovery_spec.loader is not None
-verify_m025_baseline_recovery_replay = importlib.util.module_from_spec(recovery_spec)
-sys.modules[recovery_spec.name] = verify_m025_baseline_recovery_replay
-recovery_spec.loader.exec_module(verify_m025_baseline_recovery_replay)
-
-OUTPUTS_MODULE_PATH = (
-    Path(__file__).parents[1] / "scripts" / "verify_m025_baseline_recovery_outputs.py"
-)
-outputs_spec = importlib.util.spec_from_file_location(
-    "verify_m025_baseline_recovery_outputs", OUTPUTS_MODULE_PATH
-)
-assert outputs_spec is not None and outputs_spec.loader is not None
-verify_m025_baseline_recovery_outputs = importlib.util.module_from_spec(outputs_spec)
-sys.modules[outputs_spec.name] = verify_m025_baseline_recovery_outputs
-outputs_spec.loader.exec_module(verify_m025_baseline_recovery_outputs)
-
-BaselineRecoveryError = verify_m025_baseline_recovery_replay.BaselineRecoveryError
-run_recovery = verify_m025_baseline_recovery_replay.run_recovery
+from scripts import verify_m025_baseline_recovery_outputs, verify_m025_baseline_recovery_replay
+from scripts.verify_m025_baseline_recovery_replay import BaselineRecoveryError, run_recovery
 
 FIXTURE_CONTRACT = (
     Path(__file__).parent / "fixtures" / "article_baseline_recovery_v00_01" / "contract.json"
