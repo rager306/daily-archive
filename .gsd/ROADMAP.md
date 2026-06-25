@@ -171,3 +171,4 @@
 - ✅ **M164-xlnipx: Strict Onion Guardrails Contracts and Concurrency Hardening** (`depends:[M163-7bodtq]`)
 - ✅ **M165-241jeg: Strict Hexagonal Onion Architecture Assessment** (`depends:[M164-xlnipx]`)
 - ✅ **M166-xww7fh: Architecture P1 Environment Docs and Shim Policy Remediation** (`depends:[M165-241jeg]`)
+- ✅ **M167-wnrt6k: Write Path Queue and Test Allowlist Hardening** (`depends:[M166-xww7fh]`)

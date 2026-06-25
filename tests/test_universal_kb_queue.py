@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from threading import Barrier, Thread
 
 import pytest
 
@@ -389,6 +390,56 @@ def test_claim_is_exclusive_and_sets_lease_fields(tmp_path: Path) -> None:
     assert claimed["heartbeat_at"] == "2026-06-08T00:00:00Z"
     assert claimed["lease_until"] == "2026-06-08T00:01:00Z"
     assert second_claim is None
+
+
+def test_multi_connection_claim_allows_only_one_worker(tmp_path: Path) -> None:
+    clock = FixedClock()
+    db_path = tmp_path / "queue.sqlite"
+    queue = UniversalKBQueue(db_path, clock=clock).initialize()
+    queue.enqueue(
+        job_id="job-1",
+        stage="review",
+        input_refs=("artifact:a",),
+        input_hash="sha256:input-v1",
+        tool_version="tool-v1",
+        contract_version="contract-v1",
+    )
+    queue.unblock_ready_jobs()
+    queue.close()
+
+    barrier = Barrier(2)
+    results: dict[str, dict | None] = {}
+
+    def worker(worker_id: str) -> None:
+        local_queue = UniversalKBQueue(db_path, clock=clock).initialize()
+        try:
+            barrier.wait(timeout=5)
+            results[worker_id] = local_queue.claim(worker_id=worker_id, lease_seconds=60)
+        finally:
+            local_queue.close()
+
+    threads = [Thread(target=worker, args=(worker_id,)) for worker_id in ("worker-a", "worker-b")]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=5)
+        assert not thread.is_alive()
+
+    claimed = [row for row in results.values() if row is not None]
+    assert len(claimed) == 1
+    assert claimed[0]["status"] == "running"
+    assert claimed[0]["lease_owner"] in {"worker-a", "worker-b"}
+
+    inspect_queue = UniversalKBQueue(db_path, clock=clock).initialize()
+    try:
+        assert [event["event_type"] for event in inspect_queue.events("job-1")] == [
+            "enqueue",
+            "unblock",
+            "claim",
+        ]
+        assert inspect_queue.claim(worker_id="worker-c", lease_seconds=60) is None
+    finally:
+        inspect_queue.close()
 
 
 def test_heartbeat_extends_matching_lease_and_rejects_wrong_owner(tmp_path: Path) -> None:

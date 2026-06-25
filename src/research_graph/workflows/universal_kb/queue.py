@@ -408,7 +408,7 @@ class UniversalKBQueue:
             ).fetchone()
             if row is None:
                 return None
-            self.connection.execute(
+            cursor = self.connection.execute(
                 """
                 UPDATE jobs
                 SET status = 'running', lease_owner = ?, lease_until = ?, heartbeat_at = ?,
@@ -417,6 +417,8 @@ class UniversalKBQueue:
                 """,
                 (worker_id, lease_until, now, now, row["job_id"]),
             )
+            if cursor.rowcount != 1:
+                return None
             self._insert_event(
                 row["job_id"],
                 "claim",

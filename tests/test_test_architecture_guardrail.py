@@ -42,6 +42,7 @@ def test_allowlisted_legacy_mixed_and_dynamic_script_import_pass() -> None:
         "strict_application": [],
         "strict_domain": [],
         "strict_infrastructure": [],
+        "strict_workflows": [],
         "strict_script_wrapper": [],
     }
 
@@ -63,6 +64,7 @@ def test_unallowlisted_legacy_mixed_is_violation() -> None:
         "strict_application": [],
         "strict_domain": [],
         "strict_infrastructure": [],
+        "strict_workflows": [],
         "strict_script_wrapper": [],
     }
 
@@ -90,6 +92,7 @@ def test_strict_application_rejects_infrastructure_import() -> None:
         "strict_application": ["tests/test_use_case.py"],
         "strict_domain": [],
         "strict_infrastructure": [],
+        "strict_workflows": [],
         "strict_script_wrapper": [],
     }
 
@@ -112,6 +115,7 @@ def test_strict_domain_rejects_application_import() -> None:
         "strict_application": [],
         "strict_domain": ["tests/test_domain.py"],
         "strict_infrastructure": [],
+        "strict_workflows": [],
         "strict_script_wrapper": [],
     }
 
@@ -121,6 +125,35 @@ def test_strict_domain_rejects_application_import() -> None:
     assert any(
         item["code"] == "domain_forbidden_imports_application" for item in report["violations"]
     )
+
+
+def test_strict_workflows_accepts_workflow_imports_and_rejects_scripts() -> None:
+    inventory = _inventory(
+        _file("tests/test_workflow.py", "legacy-mixed", imports_workflows=True),
+        _file(
+            "tests/test_bad_workflow.py",
+            "legacy-mixed",
+            imports_workflows=True,
+            imports_scripts_normal=True,
+        ),
+    )
+    allowlist = {
+        "legacy_mixed": [],
+        "dynamic_script_import": [],
+        "strict_application": [],
+        "strict_domain": [],
+        "strict_infrastructure": [],
+        "strict_workflows": ["tests/test_workflow.py", "tests/test_bad_workflow.py"],
+        "strict_script_wrapper": [],
+    }
+
+    report = guardrail.verify_inventory(inventory, allowlist)
+
+    assert report["status"] == "failed"
+    assert report["summary"]["strict_workflows"] == 2
+    assert {item["code"] for item in report["violations"]} == {
+        "workflows_forbidden_imports_scripts_normal",
+    }
 
 
 def test_render_markdown_includes_summary_and_violations() -> None:
@@ -135,6 +168,7 @@ def test_render_markdown_includes_summary_and_violations() -> None:
             "strict_application": 1,
             "strict_domain": 0,
             "strict_infrastructure": 0,
+            "strict_workflows": 0,
             "strict_script_wrapper": 0,
         },
         "violations": [

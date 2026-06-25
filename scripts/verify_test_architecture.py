@@ -50,6 +50,11 @@ BLOCKED_FOR_INFRASTRUCTURE = (
     "imports_scripts_normal",
     "dynamic_script_import",
 )
+BLOCKED_FOR_WORKFLOWS = (
+    "imports_scripts_normal",
+    "dynamic_script_import",
+    "subprocess_script_invocation",
+)
 
 
 def load_allowlist(path: Path = DEFAULT_ALLOWLIST) -> dict[str, Any]:
@@ -64,13 +69,14 @@ def verify_inventory(inventory: dict[str, Any], allowlist: dict[str, Any]) -> di
     strict_application = set(allowlist.get("strict_application", []))
     strict_domain = set(allowlist.get("strict_domain", []))
     strict_infrastructure = set(allowlist.get("strict_infrastructure", []))
+    strict_workflows = set(allowlist.get("strict_workflows", []))
     strict_script_wrapper = set(allowlist.get("strict_script_wrapper", []))
 
     violations: list[dict[str, Any]] = []
     for item in files:
         path = item["path"]
         signals = item["signals"]
-        if item["bucket"] == "legacy-mixed" and path not in legacy_allow:
+        if item["bucket"] == "legacy-mixed" and path not in legacy_allow and path not in strict_workflows:
             violations.append(
                 violation(path, "unallowlisted_legacy_mixed", "legacy-mixed test is not allowlisted")
             )
@@ -128,6 +134,21 @@ def verify_inventory(inventory: dict[str, Any], allowlist: dict[str, Any]) -> di
                     violation(path, f"infrastructure_forbidden_{signal}", "strict infrastructure test should not dynamic-import scripts")
                 )
 
+    for path in sorted(strict_workflows):
+        item = by_path.get(path)
+        if item is None:
+            violations.append(violation(path, "missing_strict_workflows", "strict file missing"))
+            continue
+        if not item["signals"].get("imports_workflows"):
+            violations.append(
+                violation(path, "workflows_missing_workflows_import", "strict workflow test should import workflows layer")
+            )
+        for signal in BLOCKED_FOR_WORKFLOWS:
+            if item["signals"].get(signal):
+                violations.append(
+                    violation(path, f"workflows_forbidden_{signal}", "strict workflow test should not depend on script surfaces")
+                )
+
     for path in sorted(strict_script_wrapper):
         item = by_path.get(path)
         if item is None:
@@ -149,6 +170,7 @@ def verify_inventory(inventory: dict[str, Any], allowlist: dict[str, Any]) -> di
             "strict_application": len(strict_application),
             "strict_domain": len(strict_domain),
             "strict_infrastructure": len(strict_infrastructure),
+            "strict_workflows": len(strict_workflows),
             "strict_script_wrapper": len(strict_script_wrapper),
         },
         "violations": violations,
@@ -185,6 +207,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Strict application files: `{summary['strict_application']}`",
         f"- Strict domain files: `{summary['strict_domain']}`",
         f"- Strict infrastructure files: `{summary['strict_infrastructure']}`",
+        f"- Strict workflow files: `{summary['strict_workflows']}`",
         f"- Strict script-wrapper files: `{summary['strict_script_wrapper']}`",
         "",
         "## Violations",
