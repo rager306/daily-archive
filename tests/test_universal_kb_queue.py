@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from threading import Barrier, Thread
+from threading import Barrier, Lock, Thread
 
 import pytest
 
@@ -438,6 +438,77 @@ def test_multi_connection_claim_allows_only_one_worker(tmp_path: Path) -> None:
             "claim",
         ]
         assert inspect_queue.claim(worker_id="worker-c", lease_seconds=60) is None
+    finally:
+        inspect_queue.close()
+
+
+def test_bounded_multi_worker_stress_claims_and_completes_each_job_once(tmp_path: Path) -> None:
+    clock = FixedClock()
+    db_path = tmp_path / "queue.sqlite"
+    job_count = 24
+    worker_count = 6
+    queue = UniversalKBQueue(db_path, clock=clock).initialize()
+    for index in range(job_count):
+        queue.enqueue(
+            job_id=f"job-{index:02d}",
+            stage="review",
+            input_refs=(f"artifact:job-{index:02d}",),
+            input_hash=f"sha256:input-{index:02d}",
+            tool_version="tool-v1",
+            contract_version="contract-v1",
+        )
+    assert len(queue.unblock_ready_jobs()) == job_count
+    queue.close()
+
+    barrier = Barrier(worker_count)
+    lock = Lock()
+    claimed_job_ids: list[str] = []
+    errors: list[str] = []
+
+    def worker(worker_id: str) -> None:
+        local_queue = UniversalKBQueue(db_path, clock=clock).initialize()
+        try:
+            barrier.wait(timeout=5)
+            while True:
+                claimed = local_queue.claim(worker_id=worker_id, lease_seconds=30)
+                if claimed is None:
+                    return
+                job_id = str(claimed["job_id"])
+                completed = local_queue.complete(
+                    job_id,
+                    worker_id=worker_id,
+                    output_paths=(f"artifacts/{job_id}.json",),
+                )
+                if completed["status"] != "succeeded":
+                    raise AssertionError(f"{job_id} completed with {completed['status']}")
+                with lock:
+                    claimed_job_ids.append(job_id)
+        except Exception as exc:  # pragma: no cover - asserted through errors list
+            with lock:
+                errors.append(f"{worker_id}: {exc!r}")
+        finally:
+            local_queue.close()
+
+    threads = [Thread(target=worker, args=(f"worker-{index}",)) for index in range(worker_count)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=10)
+        assert not thread.is_alive()
+
+    assert errors == []
+    assert len(claimed_job_ids) == job_count
+    assert len(set(claimed_job_ids)) == job_count
+
+    inspect_queue = UniversalKBQueue(db_path, clock=clock).initialize()
+    try:
+        for index in range(job_count):
+            job_id = f"job-{index:02d}"
+            inspected = inspect_queue.inspect(job_id)
+            assert inspected["job"]["status"] == "succeeded"
+            event_types = [event["event_type"] for event in inspected["events"]]
+            assert event_types.count("claim") == 1
+            assert event_types.count("complete") == 1
     finally:
         inspect_queue.close()
 

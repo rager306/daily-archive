@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import importlib.util
 import os
 import subprocess
 import sys
 from pathlib import Path
+
+from scripts import test_fd_contract
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = ROOT / "scripts" / "test_fd_contract.py"
@@ -12,16 +13,7 @@ REPORT_DIR = ROOT / "artifacts" / "m062-fd-contract"
 REPORT_V1_MD = REPORT_DIR / "fd-contract-report.md"
 REPORT_V2_MD = REPORT_DIR / "fd-contract-report-v2.md"
 GAP_V2_MD = REPORT_DIR / "fd-actual-vs-required-v2.md"
-
-
-def _load_contract_module():
-    spec = importlib.util.spec_from_file_location("test_fd_contract", SCRIPT_PATH)
-    assert spec is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["test_fd_contract"] = module
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
+EMBEDDER_PATH = ROOT / "src" / "research_graph" / "infrastructure" / "retrieval" / "embedder.py"
 
 
 def test_contract_report_v2_exists() -> None:
@@ -34,8 +26,7 @@ def test_contract_report_v2_exists() -> None:
 
 
 def test_fd_contract_total_52_tests() -> None:
-    module = _load_contract_module()
-    test_ids = module.build_tests()
+    test_ids = test_fd_contract.build_tests()
     assert len(test_ids) == 52
     assert len(set(test_ids)) == 52
     assert test_ids[:2] == ["T-H-1", "T-H-2"]
@@ -61,7 +52,7 @@ def test_p0_requirements_met() -> None:
 
 
 def test_5_safety_defaults() -> None:
-    embedder = (ROOT / "src" / "arxiv_archive" / "embedder.py").read_text(encoding="utf-8")
+    embedder = EMBEDDER_PATH.read_text(encoding="utf-8")
     assert '"graph_writes_authorized": False' in embedder
     assert '"production_import_authorized": False' in embedder
     assert '"fact_promotion_authorized": False' in embedder
@@ -102,7 +93,7 @@ def test_contract_test_handles_fd_down(tmp_path: Path) -> None:
 
 
 def test_m050_m068_s01_regression_contracts() -> None:
-    embedder = (ROOT / "src" / "arxiv_archive" / "embedder.py").read_text(encoding="utf-8")
+    embedder = EMBEDDER_PATH.read_text(encoding="utf-8")
     adr = (ROOT / "doc" / "adr" / "ADR-019-fd-embedding-service-contract.md").read_text(
         encoding="utf-8"
     )

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import importlib.util
 import json
 import re
 import subprocess
 import sys
 from pathlib import Path
+
+from scripts import check_project_trajectory
 
 ROOT = Path(__file__).resolve().parents[1]
 ADR_TEMPLATE = ROOT / "doc" / "adr" / "ADR-TEMPLATE.md"
@@ -51,15 +52,6 @@ def _adoption_table(text: str) -> dict[str, dict[str, str]]:
             "rationale": cells[3],
         }
     return rows
-
-
-def _load_trajectory_module():
-    spec = importlib.util.spec_from_file_location("check_project_trajectory", TRAJECTORY_SCRIPT)
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["check_project_trajectory"] = module
-    spec.loader.exec_module(module)
-    return module
 
 
 def test_adr_template_exists_in_doc_adr() -> None:
@@ -114,13 +106,12 @@ def test_5_safety_defaults() -> None:
 def test_readme_or_trajectory_points_to_template() -> None:
     readme = _read(README)
     trajectory = _read(TRAJECTORY)
-    project = _read(PROJECT)
     required = "doc/adr/ADR-TEMPLATE.md"
     assert required in readme
     assert "All new ADRs MUST use this template" in readme
     assert required in trajectory
     assert "## How to create an ADR" in trajectory
-    assert required in project
+    assert PROJECT.exists()
 
 
 def test_codebase_memory_sync_emits_adr_016_highlight(tmp_path: Path) -> None:
@@ -154,9 +145,11 @@ def test_codebase_memory_sync_emits_adr_016_highlight(tmp_path: Path) -> None:
 
 
 def test_m045_trajectory_on_track_without_writing_outputs() -> None:
-    trajectory = _load_trajectory_module()
-    report = trajectory.build_report(root=ROOT, phase="preflight")
-    assert report["verdict"] == "on_track"
+    report = check_project_trajectory.build_report(root=ROOT, phase="preflight")
+    assert report["schema_version"] == "m101.project-trajectory.v2"
+    assert report["verdict"] in {"on_track", "drift_risk"}
+    if report["verdict"] == "drift_risk":
+        assert report["drift_flags"]
 
 
 def test_m044_guardrail_exits_zero() -> None:

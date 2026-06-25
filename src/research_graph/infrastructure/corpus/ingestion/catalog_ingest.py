@@ -19,8 +19,10 @@ import dataclasses
 import email.utils
 import hashlib
 import json
+import os
 import shutil
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.parse
@@ -520,10 +522,33 @@ def build_article_record(
     }
 
 
+def _atomic_write_text(path: Path, text: str, *, encoding: str = "utf-8") -> None:
+    """Atomically replace ``path`` with ``text`` using a sibling temp file."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding=encoding,
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as handle:
+            tmp_path = Path(handle.name)
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+        tmp_path.replace(path)
+    except Exception:
+        if tmp_path is not None and tmp_path.exists():
+            tmp_path.unlink()
+        raise
+
+
 def write_article_record(article_path: Path, article: dict[str, Any]) -> None:
     """Persist article.json with stable key order."""
-    article_path.parent.mkdir(parents=True, exist_ok=True)
-    article_path.write_text(json.dumps(article, indent=2, sort_keys=False) + "\n", encoding="utf-8")
+    _atomic_write_text(article_path, json.dumps(article, indent=2, sort_keys=False) + "\n")
 
 
 def update_index_if_exists(
@@ -547,7 +572,7 @@ def update_index_if_exists(
     existing = json.loads(index_path.read_text(encoding="utf-8"))
     catalog_manifest_path = catalog_root / "catalog.json"
     rebuilt, diagnostics = rebuild_index_from_articles(catalog_manifest_path, existing)
-    index_path.write_text(json.dumps(rebuilt, indent=2, sort_keys=False) + "\n", encoding="utf-8")
+    _atomic_write_text(index_path, json.dumps(rebuilt, indent=2, sort_keys=False) + "\n")
     return (
         True,
         len(rebuilt.get("articles", [])) if isinstance(rebuilt.get("articles"), list) else None,

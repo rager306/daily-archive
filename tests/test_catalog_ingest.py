@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -27,6 +29,7 @@ from research_graph.infrastructure.corpus.ingestion.catalog_ingest import (
     IngestOptions,
     RequestPacer,
     SafetyOverride,
+    _atomic_write_text,
     arxiv_query_url,
     build_article_record,
     catalog_pdf_count,
@@ -40,6 +43,7 @@ from research_graph.infrastructure.corpus.ingestion.catalog_ingest import (
     normalize_category,
     parse_retry_after,
     report_bucket,
+    update_index_if_exists,
     write_article_record,
 )
 
@@ -154,6 +158,92 @@ def test_parse_retry_after_invalid() -> None:
 
 def test_catalog_pdf_count_missing_dir(tmp_path: Path) -> None:
     assert catalog_pdf_count(tmp_path / "nonexistent") == 0
+
+
+# ---------------------------------------------------------------------------
+# Atomic catalog JSON writes
+# ---------------------------------------------------------------------------
+
+
+def test_atomic_write_text_preserves_existing_file_if_replace_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    target = tmp_path / "article.json"
+    target.write_text('{"old": true}\n', encoding="utf-8")
+
+    def fail_replace(self: Path, target_path: Path) -> Path:
+        raise OSError("simulated replace failure")
+
+    monkeypatch.setattr(Path, "replace", fail_replace)
+
+    with pytest.raises(OSError, match="simulated replace failure"):
+        _atomic_write_text(target, '{"new": true}\n')
+
+    assert target.read_text(encoding="utf-8") == '{"old": true}\n'
+    assert not list(tmp_path.glob(".article.json.*.tmp"))
+
+
+def test_write_article_record_uses_atomic_text_helper(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[tuple[Path, str]] = []
+
+    def fake_atomic_write(path: Path, text: str, *, encoding: str = "utf-8") -> None:
+        calls.append((path, text))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding=encoding)
+
+    monkeypatch.setattr(
+        "research_graph.infrastructure.corpus.ingestion.catalog_ingest._atomic_write_text",
+        fake_atomic_write,
+    )
+
+    article_path = tmp_path / "catalog" / "article.json"
+    write_article_record(article_path, {"article_key": "2605.18747"})
+
+    assert calls == [(article_path, '{\n  "article_key": "2605.18747"\n}\n')]
+    assert json.loads(article_path.read_text(encoding="utf-8")) == {"article_key": "2605.18747"}
+
+
+def test_update_index_if_exists_uses_atomic_text_helper(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    catalog_root = tmp_path / "catalog"
+    index_path = catalog_root / "article_catalog" / "index.json"
+    index_path.parent.mkdir(parents=True)
+    index_path.write_text('{"articles": []}\n', encoding="utf-8")
+    (catalog_root / "catalog.json").write_text("{}\n", encoding="utf-8")
+
+    module = types.ModuleType("verify_m025_article_catalog")
+
+    def rebuild_index_from_articles(catalog_manifest_path: Path, existing: dict) -> tuple[dict, list]:
+        assert catalog_manifest_path == catalog_root / "catalog.json"
+        assert existing == {"articles": []}
+        return {"articles": [{"article_key": "2605.18747"}]}, []
+
+    module.rebuild_index_from_articles = rebuild_index_from_articles  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "verify_m025_article_catalog", module)
+
+    calls: list[Path] = []
+
+    def fake_atomic_write(path: Path, text: str, *, encoding: str = "utf-8") -> None:
+        calls.append(path)
+        path.write_text(text, encoding=encoding)
+
+    monkeypatch.setattr(
+        "research_graph.infrastructure.corpus.ingestion.catalog_ingest._atomic_write_text",
+        fake_atomic_write,
+    )
+
+    updated, entries, diagnostics = update_index_if_exists(catalog_root)
+
+    assert updated is True
+    assert entries == 1
+    assert diagnostics == []
+    assert calls == [index_path]
+    assert json.loads(index_path.read_text(encoding="utf-8")) == {
+        "articles": [{"article_key": "2605.18747"}]
+    }
 
 
 # ---------------------------------------------------------------------------

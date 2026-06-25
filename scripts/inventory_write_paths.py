@@ -20,6 +20,23 @@ ROOTS = (Path("src/research_graph"), Path("scripts"))
 WRITE_ATTRS = {"write_text", "write_bytes"}
 OPEN_ATTRS = {"open"}
 DB_CONNECT_MODULES = {"sqlite3"}
+CALLER_OWNED_TARGET_TOKENS = (
+    "filepath",
+    "destination",
+    "cache_path",
+    "markdown_path",
+    "json_path",
+    "md_path",
+    "method_path",
+    "review_path",
+    "claims_path",
+    "memory_profile_path",
+    "selection_manifest_path",
+    "delta_path",
+    "outlier_path",
+    "manifests_dir",
+    "summary_path",
+)
 SCHEMA_VERSION = "daily-archive-write-path-inventory.v1"
 
 
@@ -79,6 +96,11 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
         return "append-log", "event or diagnostics log path"
     if any(token in path_text for token in ("queue", "state", "index", "catalog")):
         return "shared-state", "stable shared state or index path"
+    target_text = target.lower()
+    if "temp" in target_text:
+        return "temporary", "same-directory temporary write before final replacement"
+    if target_text == "path" or any(token in target_text for token in CALLER_OWNED_TARGET_TOKENS):
+        return "caller-owned", "caller-provided or adapter-owned output path"
     if any(token in path_text for token in ("output", "artifact", "run", "day_dir", "summary")):
         return "run-scoped", "caller/output scoped artifact path"
     return "unknown", "static scanner could not infer ownership"

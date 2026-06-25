@@ -3,11 +3,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from research_graph.application.corpus.catalog_ingest import (
     CatalogIngestRequest,
     CatalogIngestUseCase,
 )
 from research_graph.domain.corpus import CatalogIngestStatus
+from research_graph.infrastructure.corpus.ingestion import catalog_adapters
 from research_graph.infrastructure.corpus.ingestion.catalog_adapters import (
     ArxivCatalogMetadataProvider,
     FilesystemCatalogRepository,
@@ -88,6 +91,33 @@ def test_filesystem_catalog_repository_preserves_layout_and_article_record(tmp_p
     assert article["source_variants"][1]["path"] == (
         "article_catalog/arxiv/mixed-source/2605.18747/source/2605.18747.pdf"
     )
+
+
+def test_filesystem_catalog_repository_write_article_record_uses_catalog_helper(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_pdf = tmp_path / "source" / "2605.18747.pdf"
+    source_pdf.parent.mkdir()
+    source_pdf.write_bytes(b"%PDF-1.4 fixture")
+    checksum = Sha256ChecksumVerifier().digest(source_pdf.as_posix())
+    repository = FilesystemCatalogRepository(tmp_path / "data" / "article_catalog")
+    metadata = ArxivCatalogMetadataProvider.offline().metadata_for("2605.18747")
+    catalog_asset = repository.store_pdf_asset(
+        source_asset=M061SourceAssetStore.source_asset_from_path("2605.18747", source_pdf),
+        metadata=metadata,
+        source_sha256=checksum,
+    )
+    calls = []
+
+    def fake_write_article_record(path: Path, article: dict) -> None:
+        calls.append((path, article["article_key"]))
+        path.write_text(json.dumps(article), encoding="utf-8")
+
+    monkeypatch.setattr(catalog_adapters, "write_article_record", fake_write_article_record)
+
+    repository.write_article_record(metadata, catalog_asset, ["test"])
+
+    assert calls == [(Path(catalog_asset.path).parents[1] / "article.json", "2605.18747")]
 
 
 def test_filesystem_catalog_repository_detects_existing_matching_asset(tmp_path: Path) -> None:
