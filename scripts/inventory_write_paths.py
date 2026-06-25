@@ -86,6 +86,8 @@ def _call_name(func: ast.AST) -> str:
 
 def _classify(source_path: Path, operation: str, target: str, mode: str | None) -> tuple[str, str]:
     path_text = f"{source_path} {target}".lower()
+    source_text = source_path.as_posix()
+    target_text = target.lower()
     if source_path.parts and source_path.parts[0] == "scripts":
         return "script-only", "write occurs in process-boundary script"
     if operation == "sqlite3.connect" or ".db" in path_text or "database" in path_text:
@@ -94,9 +96,16 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
         return "append-log", "append mode"
     if any(token in path_text for token in ("events", "jsonl", "diagnostics")):
         return "append-log", "event or diagnostics log path"
+    if source_text == "src/research_graph/application/validation/batch_state.py" and target_text == "output_path":
+        return "run-owned-state", "workflow-owned batch state replacement"
+    if source_text == "src/research_graph/infrastructure/corpus/ingestion/catalog_adapters.py" and target_text == "summary_path":
+        return "legacy-evidence-regeneration", "reviewed legacy ingest summary regeneration"
+    if source_text == "src/research_graph/infrastructure/corpus/ingestion/catalog_ingest.py" and target_text == "report_path":
+        return "legacy-evidence-regeneration", "reviewed legacy ingest report regeneration"
+    if source_text == "src/research_graph/infrastructure/repair/chunk_baseline_measurement.py" and target_text == "index_path":
+        return "caller-owned-index", "caller-provided paired review index output"
     if any(token in path_text for token in ("queue", "state", "index", "catalog")):
         return "shared-state", "stable shared state or index path"
-    target_text = target.lower()
     if "temp" in target_text:
         return "temporary", "same-directory temporary write before final replacement"
     if target_text == "path" or any(token in target_text for token in CALLER_OWNED_TARGET_TOKENS):

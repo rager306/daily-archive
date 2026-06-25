@@ -175,3 +175,4 @@
 - ✅ **M168-8z7vrq: Catalog Queue Dynamic Tests and Write Path Hardening** (`depends:[M167-wnrt6k]`)
 - ✅ **M169-54didq: M061 Unknown Writes and Queue Soak Remediation** (`depends:[M168-8z7vrq]`)
 - ✅ **M170-kgl839: Architecture Backlog Queue Soak and Cache Coordination** (`depends:[M169-54didq]`)
+- ✅ **M171-7vt18j: Queue Activation Soak and Write Inventory Categories** (`depends:[M170-kgl839]`)
