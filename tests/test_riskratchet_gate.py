@@ -12,11 +12,9 @@ from research_graph.infrastructure.quality import (
     build_maintainability_report,
     write_maintainability_report,
 )
+from research_graph.infrastructure.quality import gate as quality_gate_runner
 from research_graph.infrastructure.quality.baselines import baseline_delta, read_baseline
 from research_graph.infrastructure.quality.thresholds import MaintainabilityThresholds
-
-# pyrefly: ignore [missing-import]
-from scripts import run_quality_gate as quality_gate_runner
 
 
 def test_thresholds_classify_boundary_scores() -> None:
@@ -30,7 +28,7 @@ def test_thresholds_classify_boundary_scores() -> None:
 
 def test_maintainability_report_is_diagnostic_only_for_real_source_file() -> None:
     report = build_maintainability_report(
-        paths=["src/research_graph/workflows/validation/logging.py"]
+        paths=["src/research_graph/infrastructure/validation/logging.py"]
     )
 
     assert report["status"] == "diagnostic_complete"
@@ -88,7 +86,7 @@ def test_cli_writes_json_report_without_blocking(tmp_path: Path) -> None:
             "research_graph",
             "quality",
             "maintainability",
-            "src/research_graph/workflows/validation/logging.py",
+            "src/research_graph/infrastructure/validation/logging.py",
             "--output",
             str(output_path),
             "--json",

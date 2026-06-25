@@ -19,6 +19,8 @@ ROOT = Path(__file__).resolve().parents[1]
 GUARD_SCRIPT = ROOT / "scripts" / "verify_onion_layering.py"
 DOMAIN_DIR = ROOT / "src" / "research_graph" / "domain"
 APPLICATION_DIR = ROOT / "src" / "research_graph" / "application"
+INFRASTRUCTURE_DIR = ROOT / "src" / "research_graph" / "infrastructure"
+WORKFLOWS_DIR = ROOT / "src" / "research_graph" / "workflows"
 
 
 def _run_guard(
@@ -116,6 +118,72 @@ class TestOnionLayeringGuard:
         modules = {v["module"] for v in report["violations"]}
         assert "research_graph.infrastructure.graph.networkx_probe" in modules
         assert "scripts.build_r024_coverage_report" in modules
+
+    def test_real_infrastructure_layer_has_no_boundary_debt(self) -> None:
+        """Infrastructure must not import CLI/workflow/script entry modules."""
+        import json
+
+        result = _run_guard(INFRASTRUCTURE_DIR, layer="infrastructure", json=True)
+
+        assert result.returncode == 0, result.stderr
+        report = json.loads(result.stdout)
+        assert report["layer"] == "infrastructure"
+        assert report["violation_count"] == 0
+        assert report["allowed_violation_count"] == 0
+        assert report["allowed_violations"] == []
+
+    def test_infrastructure_guard_catches_unallowlisted_entry_imports(self) -> None:
+        """Infrastructure code must not add new CLI/workflow/script imports."""
+        import json
+
+        with tempfile.TemporaryDirectory() as td:
+            infrastructure = Path(td) / "infrastructure"
+            infrastructure.mkdir()
+            (infrastructure / "bad.py").write_text(
+                "from research_graph.cli import DailyAnalysis\n"
+                "from research_graph.workflows.validation.logging import log_event\n"
+                "from scripts.run_quality_gate import main\n"
+            )
+            result = _run_guard(infrastructure, layer="infrastructure", json=True)
+        assert result.returncode == 1
+        report = json.loads(result.stdout)
+        modules = {v["module"] for v in report["violations"]}
+        assert "research_graph.cli" in modules
+        assert "research_graph.workflows.validation.logging" in modules
+        assert "scripts.run_quality_gate" in modules
+
+    def test_real_workflows_layer_has_no_script_debt(self) -> None:
+        """Workflow code must not import local script wrappers."""
+        import json
+
+        result = _run_guard(WORKFLOWS_DIR, layer="workflows", json=True)
+
+        assert result.returncode == 0, result.stderr
+        report = json.loads(result.stdout)
+        assert report["layer"] == "workflows"
+        assert report["violation_count"] == 0
+        assert report["allowed_violation_count"] == 0
+        assert report["allowed_violations"] == []
+
+    def test_workflows_guard_catches_unallowlisted_script_imports(self) -> None:
+        """Workflow code must not add new imports from script wrappers."""
+        import json
+
+        with tempfile.TemporaryDirectory() as td:
+            workflows = Path(td) / "workflows"
+            workflows.mkdir()
+            (workflows / "bad.py").write_text("from scripts.new_wrapper import main\n")
+            result = _run_guard(workflows, layer="workflows", json=True)
+        assert result.returncode == 1
+        report = json.loads(result.stdout)
+        assert report["violations"] == [
+            {
+                "file": "bad.py",
+                "module": "scripts.new_wrapper",
+                "line": 0,
+                "detail": "forbidden layer import",
+            }
+        ]
 
 
 # ── Composition root ────────────────────────────────────────────────────────

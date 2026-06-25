@@ -12,14 +12,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-# pyrefly: ignore [missing-import]
-from scripts.audit_m036_real_corpus_smoke import audit_smoke, write_json, write_markdown_report
-
-# pyrefly: ignore [missing-import]
-from scripts.run_m036_real_corpus_no_write_smoke import run_smoke
-
-# pyrefly: ignore [missing-import]
-from scripts.select_m036_real_corpus_smoke_batch import select_entries
+from research_graph.workflows.universal_kb.smoke_audit import (
+    audit_smoke,
+    write_json,
+    write_markdown_report,
+)
+from research_graph.workflows.universal_kb.smoke_runner import run_smoke
+from research_graph.workflows.universal_kb.smoke_selection import select_entries
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BASE_DIR = ROOT / "artifacts" / "m036-real-corpus-no-write-smoke"

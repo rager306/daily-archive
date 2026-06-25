@@ -299,7 +299,7 @@ def test_validation_batch_smoke_writes_functional_and_quality_review(tmp_path: P
     assert review["maintainability_diagnostic"]["baseline_delta"]["baseline_present"] is False
     assert quality_json["quality_gate"]["blocking"] is False
     assert quality_json["quality_gate"]["touched_modules"] == [
-        "src/arxiv_archive/validation_batch_workflow.py"
+        "src/research_graph/workflows/validation/batch_workflow.py"
     ]
     assert "Severity bands" in human_quality
 

@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol
 
-from research_graph.workflows.validation.logging import ValidationLogger
+from research_graph.infrastructure.validation.logging import ValidationLogger
 
 PHASE = "article_loader"
 LOADER_NAME = "local_article_loader"

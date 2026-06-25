@@ -116,6 +116,24 @@ async def test_embedder_get_client():
 
 
 @pytest.mark.asyncio
+async def test_embedder_close_does_not_close_injected_client():
+    class InjectedClient:
+        def __init__(self):
+            self.closed = False
+
+        async def aclose(self):
+            self.closed = True
+
+    client = InjectedClient()
+    embedder = Embedder(client=client)  # type: ignore[arg-type]
+
+    await embedder.close()
+
+    assert client.closed is False
+    assert embedder._client is None
+
+
+@pytest.mark.asyncio
 async def test_embedder_malformed_response(monkeypatch):
     embedder = Embedder(
         max_attempts=1, circuit_failure_threshold=99, graceful_degradation_enabled=False

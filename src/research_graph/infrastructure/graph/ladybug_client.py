@@ -17,7 +17,7 @@ from research_graph.infrastructure.evaluation.scientific_extraction import (
 from research_graph.infrastructure.papers.indexing import PageIndexDocument
 
 if TYPE_CHECKING:
-    from research_graph.cli import DailyAnalysis
+    from research_graph.application.analysis import DailyAnalysis
 
 logger = logging.getLogger(__name__)
 

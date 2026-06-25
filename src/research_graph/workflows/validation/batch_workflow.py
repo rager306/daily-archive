@@ -19,6 +19,7 @@ from research_graph.infrastructure.corpus.ingestion.loader import load_article_s
 from research_graph.infrastructure.corpus.sources.thirty_paper_deviation_scan import (
     build_thirty_paper_deviation_scan,
 )
+from research_graph.infrastructure.quality.gate import run_quality_gate
 from research_graph.workflows.validation.batch_state import (
     ScanArtifactPaths,
     SelectedPaper,
@@ -31,10 +32,16 @@ from research_graph.workflows.validation.batch_state import (
 )
 from research_graph.workflows.validation.logging import ValidationLogger, sanitize_event_details
 
-# pyrefly: ignore [missing-import]
-from scripts.run_quality_gate import run_quality_gate
-
 VALIDATION_SMOKE_REVIEW_SCHEMA_VERSION = "m025-validation-smoke-review.v1"
+DEFAULT_QUALITY_GATE_PATHS = (
+    Path("src/research_graph/workflows/validation/batch_workflow.py"),
+    Path("scripts/run_quality_gate.py"),
+    Path("src/research_graph/infrastructure/quality/riskratchet_adapter.py"),
+)
+LEGACY_QUALITY_GATE_PATHS = {
+    Path("src/arxiv_archive/validation_batch_workflow.py"): DEFAULT_QUALITY_GATE_PATHS[0],
+    Path("src/arxiv_archive/quality/riskratchet_adapter.py"): DEFAULT_QUALITY_GATE_PATHS[2],
+}
 
 SELECTION_ROLE_ALIASES = {
     "m005_baseline_overlap": "baseline_overlap",
@@ -377,12 +384,7 @@ def run_validation_batch_smoke_with_quality_gate(
     )
     quality_dir = output / "quality"
     quality_report = run_quality_gate(
-        paths=quality_gate_paths
-        or (
-            Path("src/arxiv_archive/validation_batch_workflow.py"),
-            Path("scripts/run_quality_gate.py"),
-            Path("src/arxiv_archive/quality/riskratchet_adapter.py"),
-        ),
+        paths=_canonical_quality_gate_paths(quality_gate_paths),
         output_dir=quality_dir,
         baseline_path=quality_gate_baseline_path,
     )
@@ -398,6 +400,13 @@ def run_validation_batch_smoke_with_quality_gate(
         "quality_gate_human_path": Path(quality_report["output_paths"]["human"]),
         "smoke_review_path": review_path,
     }
+
+
+def _canonical_quality_gate_paths(
+    paths: tuple[str | Path, ...] | list[str | Path] | None,
+) -> tuple[Path, ...]:
+    selected = DEFAULT_QUALITY_GATE_PATHS if paths is None else tuple(Path(path) for path in paths)
+    return tuple(LEGACY_QUALITY_GATE_PATHS.get(path, path) for path in selected)
 
 
 def write_validation_smoke_review(

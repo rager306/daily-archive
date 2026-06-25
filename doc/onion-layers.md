@@ -38,6 +38,15 @@ A reverse import (e.g. `domain/ports.py` doing `from research_graph.infrastructu
 | **infrastructure** | `graph/` (ladybug_client), `corpus/` (sources, ingestion, parsing), `llm/`, `retrieval/`, `identity/`, `papers/` (indexing/chunking logic), `quality/`, `repair/`, `staging/`, `ops/`, `infrastructure/` (Adapters: `ladybug_adapter`, `md_converter_adapter`) | Concrete Adapters + driver-bearing code. Implement domain Ports and application use-case Ports. May contain infra-local Protocols for adapter internals only. |
 | **entry / wiring** | `cli/`, `workflows/` (universal_kb, rlm, validation), `scripts/` (prototype), `application/profiles` (composition root) | Composition roots & runtime entry points. The ONE place Adapters/infra callables are injected into the application via Ports. |
 
+### Strict boundary classification policy
+
+M164 makes the outer-layer rules explicit while existing debt is ratcheted down:
+
+* Reusable contracts imported by infrastructure must live inward in `domain/` or `application/`; `workflows/` is orchestration, not a contract home.
+* CLI DTOs must not be imported by infrastructure. Shared analysis result shapes belong in `application/`; `cli/` remains an entrypoint.
+* Scripts are process-boundary wrappers. Reusable logic belongs in package modules, and scripts delegate to it.
+* Existing violations may be temporarily reported as bounded guard debt, but the guard must expose the count and exact imports.
+
 ### Back-compat shims (canonical home moved, not duplicated)
 
 * `evaluation/__init__.py` re-exports `schema`/`relation_types`/`statistical_context`/`extraction_signatures` canonical types now in `domain/`.
@@ -85,6 +94,24 @@ and `acquire_sources_for_manifest_sync` are compatibility surfaces for process
 boundaries and synchronous scripts only. They must fail explicitly inside an
 active event loop and point the caller to the async API instead of nesting event
 loop runners.
+
+### Artifact write-safety policy
+
+Future multi-worker code must treat shared artifact paths as contested state:
+
+* Small JSON/text state files use write-to-temp plus atomic `Path.replace()`.
+* Larger run artifacts prefer run-scoped directories over shared filenames.
+* Cross-process append logs or mutable databases need an explicit lock or a single-writer owner.
+* Callers must not treat this as fully migrated until each write path is converted or explicitly scoped.
+
+### Adapter ownership and lifecycle policy
+
+Async adapters are owned by the run/task that creates them unless a module says otherwise:
+
+* Do not share mutable adapter instances across threads or worker processes by default.
+* Injected clients are caller-owned; adapter `close()` methods close only resources they created.
+* Sync wrappers are process-boundary compatibility surfaces only and must fail inside active event loops.
+* If future code needs shared adapters, it must add an explicit ownership, locking, and close-order contract with tests.
 
 ```
 infrastructure (concrete adapter) ──calls──> build_wired_paper_pipeline(llm_provider=Adapter)

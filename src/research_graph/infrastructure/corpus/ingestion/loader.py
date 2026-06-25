@@ -22,7 +22,7 @@ from research_graph.infrastructure.corpus.ingestion.logging import (
     emit_load_started,
     emit_load_terminal,
 )
-from research_graph.workflows.validation.logging import ValidationLogger
+from research_graph.infrastructure.validation.logging import ValidationLogger
 
 FullTextSourceType = Literal["markdown", "text"]
 ExtractionMode = Literal[

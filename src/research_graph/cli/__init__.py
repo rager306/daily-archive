@@ -7,7 +7,6 @@ import hashlib
 import json
 import os
 from collections import Counter, defaultdict
-from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Annotated, Any, Literal
@@ -25,6 +24,7 @@ if _env_path.exists():
             key, _, value = line.partition("=")
             os.environ.setdefault(key.strip(), value.strip())
 
+from research_graph.application.analysis import DailyAnalysis, DailyAnalysisStatus  # noqa: E402
 from research_graph.infrastructure.corpus.sources.arxiv_client import (
     ArxivClient,  # noqa: E402  # noqa: F401
 )
@@ -86,21 +86,9 @@ ANALYSIS_DIR = Path.home() / ".research" / "analysis"
 PAPERS_DIR = Path.home() / ".research" / "papers"
 
 CATEGORIES = ["cs.AI", "cs.LG", "cs.CL", "cs.CV", "cs.IR", "cs.KG", "cs.SI"]
+ANALYSIS_SCORE_CONCURRENCY = 8
 
-DailyAnalysisStatus = Literal["done", "empty"]
 QueueStateStatus = Literal["running", "done", "empty", "failed"]
-
-
-@dataclass(frozen=True)
-class DailyAnalysis:
-    """Normalized in-memory analysis result for one arXiv archive day."""
-
-    run_date: date
-    status: DailyAnalysisStatus
-    papers_fetched: int
-    papers: list[ScoredPaper]
-    top_papers: list[ScoredPaper]
-    analysis_timestamp: datetime
 
 
 AGENT_CONTRACT_HELP = """Daily arXiv archive CLI for research agents.
@@ -253,6 +241,18 @@ def _serialize_analysis_timestamp(value: datetime) -> str:
     return value.replace(microsecond=0).isoformat()
 
 
+def _write_text_atomic(path: Path, text: str) -> None:
+    """Write a small text artifact via same-directory atomic replace."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    try:
+        temp_path.write_text(text, encoding="utf-8")
+        temp_path.replace(path)
+    finally:
+        if temp_path.exists():
+            temp_path.unlink()
+
+
 def write_state_json(
     run_date: date,
     status: QueueStateStatus,
@@ -260,7 +260,6 @@ def write_state_json(
     error: str | None = None,
 ) -> Path:
     """Write the cron/Hermes queue state file for one daily CLI run."""
-    QUEUE_DIR.mkdir(parents=True, exist_ok=True)
     filepath = QUEUE_DIR / f"{run_date.isoformat()}.json"
     payload = {
         "date": run_date.isoformat(),
@@ -270,7 +269,7 @@ def write_state_json(
     }
     if error:
         payload["error"] = error
-    filepath.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    _write_text_atomic(filepath, json.dumps(payload, indent=2, sort_keys=True) + "\n")
     return filepath
 
 
@@ -430,6 +429,23 @@ async def _process_paper_async(paper, extractor, scorer):
     return await loop.run_in_executor(None, _extract_and_score)
 
 
+async def _score_papers_bounded(
+    papers: list[Any],
+    extractor: Any,
+    scorer: Any,
+    *,
+    concurrency: int = ANALYSIS_SCORE_CONCURRENCY,
+) -> list[ScoredPaper]:
+    """Score fetched papers with an explicit concurrency budget."""
+    semaphore = asyncio.Semaphore(concurrency)
+
+    async def _bounded_score(paper: Any) -> ScoredPaper:
+        async with semaphore:
+            return await _process_paper_async(paper, extractor, scorer)
+
+    return await asyncio.gather(*(_bounded_score(paper) for paper in papers))
+
+
 async def run_analysis_async(run_date: date) -> DailyAnalysis:
     """Build the normalized in-memory analysis result for one run date."""
     _preferences = load_preferences()
@@ -456,8 +472,7 @@ async def run_analysis_async(run_date: date) -> DailyAnalysis:
             top_papers=[],
         )
 
-    tasks = [_process_paper_async(p, extractor, scorer) for p in papers]
-    scored_papers = await asyncio.gather(*tasks)
+    scored_papers = await _score_papers_bounded(papers, extractor, scorer)
 
     embedder = Embedder()
     try:

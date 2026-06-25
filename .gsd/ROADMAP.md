@@ -168,3 +168,4 @@
 - ✅ **M161-4asfna: Sync Policy Dynamic Triage and Precommit Cleanup** (`depends:[M160-152kk2]`)
 - ✅ **M162-k0pgb5: Dynamic Debt Followup and Sync Policy Docs** (`depends:[M161-4asfna]`)
 - ✅ **M163-7bodtq: Hexagonal Onion Architecture Assessment** (`depends:[M162-k0pgb5]`)
+- ✅ **M164-xlnipx: Strict Onion Guardrails Contracts and Concurrency Hardening** (`depends:[M163-7bodtq]`)

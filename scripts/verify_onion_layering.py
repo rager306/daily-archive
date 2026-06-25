@@ -31,6 +31,8 @@ ROOT = Path(__file__).resolve().parents[1]
 LAYER_ROOTS: dict[str, Path] = {
     "domain": ROOT / "src" / "research_graph" / "domain",
     "application": ROOT / "src" / "research_graph" / "application",
+    "infrastructure": ROOT / "src" / "research_graph" / "infrastructure",
+    "workflows": ROOT / "src" / "research_graph" / "workflows",
 }
 
 # Infrastructure + entry package prefixes that inner layers must NOT import.
@@ -58,7 +60,13 @@ INFRA_PREFIXES: tuple[str, ...] = (
 LAYER_FORBIDDEN: dict[str, tuple[str, ...]] = {
     "domain": ("research_graph.application", *INFRA_PREFIXES),
     "application": INFRA_PREFIXES,
+    "infrastructure": ("research_graph.cli", "research_graph.workflows", "scripts"),
+    "workflows": ("scripts",),
 }
+
+# Existing strict-boundary debt. Keep this empty unless a later migration needs
+# a bounded, explicit temporary allowance with tests ratcheting it back down.
+STRICT_DEBT_ALLOWLIST: dict[str, frozenset[tuple[str, str]]] = {}
 
 DEFAULT_DOMAIN_ROOT = LAYER_ROOTS["domain"]
 # Back-compat alias used by older call sites / docs.
@@ -91,10 +99,15 @@ def _is_forbidden(module: str) -> bool:
     return _is_forbidden_for(module, FORBIDDEN_PREFIXES)
 
 
+def _is_allowed_debt(layer: str, rel_file: str, module: str) -> bool:
+    return (rel_file, module) in STRICT_DEBT_ALLOWLIST.get(layer, frozenset())
+
+
 def scan_layer(layer: str, layer_root: Path) -> dict[str, object]:
     """Scan one onion layer root for forbidden imports. Returns a report dict."""
     forbidden = LAYER_FORBIDDEN[layer]
     violations: list[dict[str, object]] = []
+    allowed_violations: list[dict[str, object]] = []
     scanned: list[str] = []
     if not layer_root.exists():
         return {
@@ -121,9 +134,11 @@ def scan_layer(layer: str, layer_root: Path) -> dict[str, object]:
             continue
         for module in _imported_modules(tree):
             if _is_forbidden_for(module, forbidden):
-                violations.append(
-                    {"file": rel, "module": module, "line": 0, "detail": "forbidden layer import"}
-                )
+                violation: dict[str, object] = {"file": rel, "module": module, "line": 0, "detail": "forbidden layer import"}
+                if _is_allowed_debt(layer, rel, module):
+                    allowed_violations.append({**violation, "detail": "bounded existing layer debt"})
+                else:
+                    violations.append(violation)
     return {
         "layer": layer,
         "status": "clear" if not violations else "violations",
@@ -132,6 +147,8 @@ def scan_layer(layer: str, layer_root: Path) -> dict[str, object]:
         "forbidden_prefixes": list(forbidden),
         "violation_count": len(violations),
         "violations": violations,
+        "allowed_violation_count": len(allowed_violations),
+        "allowed_violations": allowed_violations,
     }
 
 
@@ -141,12 +158,14 @@ def scan_domain(domain_root: Path) -> dict[str, object]:
 
 
 def scan_all() -> dict[str, object]:
-    """Scan every configured layer (domain, application). Returns an aggregate report."""
+    """Scan every configured layer. Returns an aggregate report."""
     reports = {layer: scan_layer(layer, root) for layer, root in LAYER_ROOTS.items()}
     total = sum(r["violation_count"] for r in reports.values())  # pyrefly: ignore [bad-assignment, no-matching-overload]
+    allowed_total = sum(r["allowed_violation_count"] for r in reports.values())  # pyrefly: ignore [bad-assignment, no-matching-overload]
     return {
         "status": "clear" if total == 0 else "violations",
         "violation_count": total,
+        "allowed_violation_count": allowed_total,
         "layers": reports,
     }
 
@@ -163,7 +182,7 @@ def main() -> int:
         "--layer",
         choices=sorted(LAYER_ROOTS),
         default=None,
-        help="scan one named layer (domain or application); combines with --root for synthetic fixtures",
+        help="scan one named layer; combines with --root for synthetic fixtures",
     )
     parser.add_argument("--json", action="store_true", help="emit a JSON report to stdout")
     args = parser.parse_args()
@@ -185,7 +204,7 @@ def main() -> int:
                 # pyrefly: ignore [missing-attribute]
                 f"onion layering guard ok: all layers clean "
                 f"({', '.join(f'{name}={len(r["scanned_files"])} files' for name, r in report['layers'].items())}, "  # ty:ignore[unresolved-attribute]
-                f"0 forbidden imports)\n"
+                f"0 blocked imports, {report['allowed_violation_count']} bounded debt imports)\n"
             )
         else:
             sys.stderr.write(f"onion layering guard FAILED: {total} violation(s)\n")
@@ -202,7 +221,8 @@ def main() -> int:
             sys.stdout.write(
                 # pyrefly: ignore [bad-argument-type]
                 f"onion layering guard ok: {layer} clean "
-                f"({len(report['scanned_files'])} files scanned, 0 forbidden imports)\n"  # ty:ignore[invalid-argument-type]
+                f"({len(report['scanned_files'])} files scanned, 0 blocked imports, "  # ty:ignore[invalid-argument-type]
+                f"{report['allowed_violation_count']} bounded debt imports)\n"
             )
         else:
             sys.stderr.write(

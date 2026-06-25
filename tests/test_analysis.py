@@ -6,6 +6,7 @@ implementation exists. They must not call live arXiv, YAKE, or persistence.
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 import json
 import os
@@ -196,6 +197,32 @@ def test_run_analysis_returns_empty_without_scoring_or_persistence(
 
 
 @pytest.mark.asyncio
+async def test_score_papers_bounded_limits_concurrency(monkeypatch: pytest.MonkeyPatch) -> None:
+    import research_graph.cli as cli
+
+    active = 0
+    max_active = 0
+
+    async def fake_process_paper_async(
+        paper: ArxivPaper, _extractor: object, _scorer: object
+    ) -> ScoredPaper:
+        nonlocal active, max_active
+        active += 1
+        max_active = max(max_active, active)
+        await asyncio.sleep(0.01)
+        active -= 1
+        return make_scored(paper, score=float(int(paper.id.split(".")[-1])))
+
+    monkeypatch.setattr(cli, "_process_paper_async", fake_process_paper_async)
+    papers = [make_paper(index) for index in range(1, 7)]
+
+    scored = await cli._score_papers_bounded(papers, object(), object(), concurrency=2)
+
+    assert max_active == 2
+    assert [paper.paper.id for paper in scored] == [paper.id for paper in papers]
+
+
+@pytest.mark.asyncio
 async def test_run_analysis_async_returns_done_daily_analysis(
     patch_analysis_components: None,
 ) -> None:
@@ -360,6 +387,7 @@ def test_write_state_json_persists_cron_queue_schema(
     assert payload["stage"] == "fetch"
     assert payload["timestamp"].endswith("Z")
     assert "error" not in payload
+    assert not list(queue_dir.glob(".*.tmp"))
 
 
 @pytest.mark.asyncio
