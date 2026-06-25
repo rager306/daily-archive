@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import json
 import os
+import tempfile
 from collections import Counter, defaultdict
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -348,15 +349,38 @@ def write_session_json(analysis: DailyAnalysis) -> Path:
     return filepath
 
 
+def _atomic_write_text(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_name: str | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as temp_file:
+            temp_file.write(content)
+            temp_name = temp_file.name
+        Path(temp_name).replace(path)
+    except Exception:
+        if temp_name is not None:
+            Path(temp_name).unlink(missing_ok=True)
+        raise
+
+
 def write_paper_artifacts(scored: ScoredPaper) -> Path:
     """Write reusable per-paper raw and scored JSON artifacts."""
     paper_dir = PAPERS_DIR / scored.paper.id
     paper_dir.mkdir(parents=True, exist_ok=True)
-    (paper_dir / "paper.json").write_text(
-        json.dumps(_serialize_paper(scored.paper), indent=2, sort_keys=True) + "\n"
+    _atomic_write_text(
+        paper_dir / "paper.json",
+        json.dumps(_serialize_paper(scored.paper), indent=2, sort_keys=True) + "\n",
     )
-    (paper_dir / "scored.json").write_text(
-        json.dumps(_serialize_scored_paper(scored), indent=2, sort_keys=True) + "\n"
+    _atomic_write_text(
+        paper_dir / "scored.json",
+        json.dumps(_serialize_scored_paper(scored), indent=2, sort_keys=True) + "\n",
     )
     return paper_dir
 

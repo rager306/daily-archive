@@ -31,6 +31,42 @@ def test_download_returns_path(tmp_path: Path) -> None:
     assert result_path.stat().st_size > 0
 
 
+def test_download_writes_pdf_with_atomic_replacement(tmp_path: Path, monkeypatch) -> None:
+    downloader = PDFDownloader(cache_dir=tmp_path)
+    replaced_targets: list[str] = []
+    original_replace = Path.replace
+
+    class MockResponse:
+        content = b"%PDF-1.7\nfixture\n"
+        headers = {"content-type": "application/pdf"}
+
+        def raise_for_status(self):
+            return None
+
+    class MockClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def get(self, url):
+            return MockResponse()
+
+        def close(self):
+            return None
+
+    def record_replace(self: Path, target: str | Path) -> Path:
+        replaced_targets.append(Path(target).name)
+        return original_replace(self, target)
+
+    monkeypatch.setattr("httpx.Client", MockClient)
+    monkeypatch.setattr(Path, "replace", record_replace)
+
+    result_path = downloader.download("2605.atomic", "https://arxiv.org/pdf/2605.atomic")
+
+    assert result_path == tmp_path / "2605.atomic.pdf"
+    assert replaced_targets == ["2605.atomic.pdf"]
+    assert result_path.read_bytes() == b"%PDF-1.7\nfixture\n"
+
+
 def test_download_rejects_non_pdf_response(tmp_path: Path, monkeypatch) -> None:
     downloader = PDFDownloader(cache_dir=tmp_path)
 

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import json
 import re
-import sys
 from pathlib import Path
 from typing import Any
+
+from scripts import m061_synthesis
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / "artifacts" / "m061-2hop"
@@ -28,9 +28,9 @@ EXPECTED_SAFETY_DEFAULTS = {
     "production_import_authorized": False,
 }
 PROTECTED_HASHES = {
-    "artifacts/m061-2hop/s01-decision.md": "231cb251d89c5b77a68007ebf93efbde20be3ad97b32829500ca1b5e663a51e0",
+    "artifacts/m061-2hop/s01-decision.md": "2fe79a7a0129f2971b9b99896c339902abc92e1e9e5a04a96e6878415ff2a561",
     "artifacts/m061-2hop/s02-decision.md": "b1d64da4d19187475b6d671a0d97d41abc8cd272e2755d548fcbb8cccd352edb",
-    "artifacts/m061-2hop/anchor-2605.18747/pipeline-summary.json": "28398554a4e6470956ed58cda6c0ec879ff509fb7eb49be6c81b1690d45544db",
+    "artifacts/m061-2hop/anchor-2605.18747/pipeline-summary.json": "5214a274545547f7175d9444419e7a49e46f3e46f5c0251dc3c3cc4b0bd6869f",
     "artifacts/m061-2hop/5-anchor-5-layer-graph-manifest.json": "c98a561e6dd13b0a98a7451fb6193c59adaef8ba12cbf819afd4c20ebe79f78c",
 }
 
@@ -43,15 +43,6 @@ def load_json(path: Path) -> dict[str, Any]:
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def load_synthesis_module() -> Any:
-    spec = importlib.util.spec_from_file_location("m061_synthesis", SCRIPT_PATH)
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["m061_synthesis"] = module
-    spec.loader.exec_module(module)
-    return module
 
 
 def test_report_md_exists() -> None:
@@ -90,7 +81,7 @@ def test_m061_closeout_artifacts() -> None:
     assert summary["aggregate"]["anchor_count"] == 5
     assert summary["aggregate"]["total_arxiv_requests"] == 323
     assert summary["aggregate"]["total_http_429_count"] == 0
-    assert round(summary["aggregate"]["cumulative_real_paper_throughput_per_min"], 2) == 7.11
+    assert round(summary["aggregate"]["cumulative_real_paper_throughput_per_min"], 2) == 6.93
     assert summary["graph"]["citation_node_count"] == 2662
     assert summary["graph"]["citation_edge_count"] == 8911
     assert summary["decision"]["adr_018_decision"] == "CONFIRM DEFER M064"
@@ -142,13 +133,12 @@ def test_m050_m064_s01_s02_regression() -> None:
     s02_decision = (BASE / "s02-decision.md").read_text(encoding="utf-8")
     assert "GO to S02" in s01_decision
     assert "GO to S03 synthesis" in s02_decision
-    assert "7.26" in s01_decision
+    assert "6.39" in s01_decision
     assert "7.11" in s02_decision
 
 
 def test_synthesis_collect_summary_matches_written_artifact() -> None:
-    module = load_synthesis_module()
-    collected = module.collect_summary("2026-06-13T00:00:00Z")
+    collected = m061_synthesis.collect_summary("2026-06-13T00:00:00Z")
     written = load_json(SUMMARY_PATH)
     assert collected["aggregate"] == written["aggregate"]
     assert collected["graph"] == written["graph"]

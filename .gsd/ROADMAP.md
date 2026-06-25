@@ -173,3 +173,4 @@
 - ✅ **M166-xww7fh: Architecture P1 Environment Docs and Shim Policy Remediation** (`depends:[M165-241jeg]`)
 - ✅ **M167-wnrt6k: Write Path Queue and Test Allowlist Hardening** (`depends:[M166-xww7fh]`)
 - ✅ **M168-8z7vrq: Catalog Queue Dynamic Tests and Write Path Hardening** (`depends:[M167-wnrt6k]`)
+- ✅ **M169-54didq: M061 Unknown Writes and Queue Soak Remediation** (`depends:[M168-8z7vrq]`)

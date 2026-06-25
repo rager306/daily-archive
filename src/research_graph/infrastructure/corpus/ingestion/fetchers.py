@@ -4,6 +4,7 @@ Formerly: src/arxiv_archive/ingestion/fetchers.py"""
 
 from __future__ import annotations
 
+import tempfile
 from pathlib import Path
 
 import httpx
@@ -41,11 +42,32 @@ class PDFDownloader:
                 raise ValueError(
                     f"arXiv PDF download for {arxiv_id} did not return a PDF: {content_type or 'unknown content-type'}"
                 )
-            pdf_path.write_bytes(response.content)
+            _atomic_write_bytes(pdf_path, response.content)
         finally:
             client.close()
 
         return pdf_path
+
+
+def _atomic_write_bytes(path: Path, content: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_name: str | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "wb",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as temp_file:
+            temp_file.write(content)
+            temp_name = temp_file.name
+        Path(temp_name).replace(path)
+    except Exception:
+        if temp_name is not None:
+            Path(temp_name).unlink(missing_ok=True)
+        raise
+
 
 
 def arxiv_pdf_url(arxiv_id: str) -> str:

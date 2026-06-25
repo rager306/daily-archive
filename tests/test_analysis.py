@@ -884,6 +884,30 @@ def test_s04_write_daily_artifacts_persists_per_paper_raw_and_scored_json(
         assert "semschol" in scored_payload
 
 
+def test_s04_write_paper_artifacts_uses_atomic_replacement(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    import research_graph.cli as cli
+
+    _analysis_dir, _papers_dir = patch_s04_artifact_dirs(monkeypatch, tmp_path)
+    analysis = make_s04_scored_analysis()
+    replaced_targets: list[str] = []
+    original_replace = Path.replace
+
+    def record_replace(self: Path, target: str | Path) -> Path:
+        replaced_targets.append(Path(target).name)
+        return original_replace(self, target)
+
+    monkeypatch.setattr(Path, "replace", record_replace)
+
+    paper_dir = cli.write_paper_artifacts(analysis.papers[0])
+
+    assert sorted(replaced_targets) == ["paper.json", "scored.json"]
+    assert json.loads((paper_dir / "paper.json").read_text())["id"] == "2605.00001"
+    assert json.loads((paper_dir / "scored.json").read_text())["score"] == 9.5
+
+
 def test_s04_write_daily_artifacts_populates_overview_aggregates(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

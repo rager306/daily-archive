@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from multiprocessing import Process, Queue
 from pathlib import Path
+from queue import Empty
 from threading import Barrier, Lock, Thread
 
 import pytest
@@ -21,6 +23,27 @@ class FixedClock:
 
 def _queue(tmp_path: Path, clock: FixedClock | None = None) -> UniversalKBQueue:
     return UniversalKBQueue(tmp_path / "queue.sqlite", clock=clock or FixedClock()).initialize()
+
+
+def _multiprocess_queue_worker(db_path: str, worker_id: str, result_queue) -> None:
+    local_queue = UniversalKBQueue(Path(db_path)).initialize()
+    try:
+        while True:
+            claimed = local_queue.claim(worker_id=worker_id, lease_seconds=30)
+            if claimed is None:
+                result_queue.put(("done", worker_id, None))
+                return
+            job_id = str(claimed["job_id"])
+            completed = local_queue.complete(
+                job_id,
+                worker_id=worker_id,
+                output_paths=(f"artifacts/{job_id}.json",),
+            )
+            result_queue.put(("complete", worker_id, job_id, completed["status"]))
+    except Exception as exc:  # pragma: no cover - asserted through parent diagnostics
+        result_queue.put(("error", worker_id, repr(exc)))
+    finally:
+        local_queue.close()
 
 
 def test_rejects_raw_or_secret_shaped_input_refs(tmp_path: Path) -> None:
@@ -504,6 +527,72 @@ def test_bounded_multi_worker_stress_claims_and_completes_each_job_once(tmp_path
     try:
         for index in range(job_count):
             job_id = f"job-{index:02d}"
+            inspected = inspect_queue.inspect(job_id)
+            assert inspected["job"]["status"] == "succeeded"
+            event_types = [event["event_type"] for event in inspected["events"]]
+            assert event_types.count("claim") == 1
+            assert event_types.count("complete") == 1
+    finally:
+        inspect_queue.close()
+
+
+def test_multiprocess_stress_claims_and_completes_each_job_once(tmp_path: Path) -> None:
+    db_path = tmp_path / "queue.sqlite"
+    job_count = 16
+    process_count = 4
+    queue = UniversalKBQueue(db_path).initialize()
+    for index in range(job_count):
+        queue.enqueue(
+            job_id=f"process-job-{index:02d}",
+            stage="review",
+            input_refs=(f"artifact:process-job-{index:02d}",),
+            input_hash=f"sha256:process-input-{index:02d}",
+            tool_version="tool-v1",
+            contract_version="contract-v1",
+        )
+    assert len(queue.unblock_ready_jobs()) == job_count
+    queue.close()
+
+    result_queue = Queue()
+    processes = [
+        Process(
+            target=_multiprocess_queue_worker,
+            args=(str(db_path), f"process-worker-{index}", result_queue),
+        )
+        for index in range(process_count)
+    ]
+    for process in processes:
+        process.start()
+    for process in processes:
+        process.join(timeout=15)
+
+    still_alive = [process.name for process in processes if process.is_alive()]
+    for process in processes:
+        if process.is_alive():
+            process.terminate()
+            process.join(timeout=5)
+    assert still_alive == []
+
+    results = []
+    while True:
+        try:
+            results.append(result_queue.get_nowait())
+        except Empty:
+            break
+
+    errors = [result for result in results if result[0] == "error"]
+    completed_job_ids = [result[2] for result in results if result[0] == "complete"]
+    done_workers = [result[1] for result in results if result[0] == "done"]
+
+    assert errors == []
+    assert sorted(done_workers) == [f"process-worker-{index}" for index in range(process_count)]
+    assert len(completed_job_ids) == job_count
+    assert len(set(completed_job_ids)) == job_count
+
+    inspect_queue = UniversalKBQueue(db_path).initialize()
+    try:
+        for index in range(job_count):
+            job_id = f"process-job-{index:02d}"
             inspected = inspect_queue.inspect(job_id)
             assert inspected["job"]["status"] == "succeeded"
             event_types = [event["event_type"] for event in inspected["events"]]
