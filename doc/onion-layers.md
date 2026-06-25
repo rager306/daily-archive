@@ -55,6 +55,20 @@ M164 makes the outer-layer rules explicit while existing debt is ratcheted down:
 
 New code imports cross-cutting models and Ports from the domain; the shims keep the 37+ legacy import sites green.
 
+### Compatibility shim lifecycle
+
+Compatibility shims are **deprecated facades**, not canonical homes:
+
+* New production imports target the canonical `domain/`, `application/`, or
+  `infrastructure/` module named by the move.
+* A shim may remain only to preserve historical imports while downstream callers
+  migrate.
+* Do not add new production dependencies on workflow/CLI/script shim paths.
+* Remove shims through an explicit ratchet cleanup after usage drops to zero or
+  after a public API support decision says they must stay longer.
+
+This preserves compatibility without letting old boundary violations regrow.
+
 ### Port taxonomy
 
 ADR-034 uses "Port" in three explicit scopes:
@@ -125,16 +139,23 @@ infrastructure (concrete adapter) ──calls──> build_wired_paper_pipeline(
 
 ## What the guard enforces
 
-`scripts/verify_onion_layering.py` AST-scans `src/research_graph/domain/` and
-`src/research_graph/application/` and fails on forbidden inward imports:
+`scripts/verify_onion_layering.py` AST-scans the four guarded source layers:
+`src/research_graph/domain/`, `src/research_graph/application/`,
+`src/research_graph/infrastructure/`, and `src/research_graph/workflows/`.
+It fails on forbidden outward/entry imports:
 
 - domain must not import `research_graph.application`, infrastructure packages,
   workflows, cli, or local `scripts`.
 - application must not import `research_graph.infrastructure`, workflows, cli, or
   local `scripts`.
+- infrastructure must not import CLI, workflow, or local script entry modules.
+- workflows must not import local `scripts`; reusable script logic belongs in
+  package modules with scripts as thin process-boundary wrappers.
 
 Allowed domain imports: stdlib and `research_graph.domain.*` itself. Application
-may import stdlib, domain, and its own application modules.
+may import stdlib, domain, and its own application modules. Infrastructure may
+import inward domain/application contracts. Workflows may orchestrate inward
+package modules but may not depend on script wrappers.
 
 `evaluation/` and `papers/` are permitted in the domain because they hold the
 typed models the Core references; if a future change makes them carry driver

@@ -13,16 +13,27 @@ from typing import Annotated, Any, Literal
 
 import typer
 
-# Load .env before any module that might need API keys
-_env_path = Path(__file__).parent.parent.parent / ".env"
-if _env_path.exists():
-    for line in _env_path.read_text().splitlines():
+CLI_ENV_PATH = Path(__file__).parent.parent.parent / ".env"
+
+
+def apply_cli_env_config(path: str | Path | None = None) -> None:
+    """Apply dotenv values explicitly at CLI/process boundaries.
+
+    Importing :mod:`research_graph.cli` must remain library-safe for async hosts,
+    tests, and worker processes. Process entrypoints can call this helper to keep
+    the previous CLI behavior without mutating ``os.environ`` at import time.
+    """
+    env_path = Path(path) if path is not None else CLI_ENV_PATH
+    if not env_path.exists():
+        return
+    for line in env_path.read_text().splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
             continue
         if "=" in line:
             key, _, value = line.partition("=")
             os.environ.setdefault(key.strip(), value.strip())
+
 
 from research_graph.application.analysis import DailyAnalysis, DailyAnalysisStatus  # noqa: E402
 from research_graph.infrastructure.corpus.sources.arxiv_client import (
@@ -504,6 +515,7 @@ def run_analysis(run_date: date) -> DailyAnalysis:
     try:
         asyncio.get_running_loop()
     except RuntimeError:
+        apply_cli_env_config()
         return asyncio.run(run_analysis_async(run_date))
     raise RuntimeError(
         "run_analysis() cannot run inside an active event loop; await run_analysis_async() instead"
@@ -531,6 +543,7 @@ def run_pipeline(run_date: date) -> None:
     try:
         asyncio.get_running_loop()
     except RuntimeError:
+        apply_cli_env_config()
         asyncio.run(run_pipeline_async(run_date))
         return
     raise RuntimeError(
@@ -580,6 +593,7 @@ def run(
     except ValueError as exc:
         raise typer.BadParameter("date must be in YYYY-MM-DD format") from exc
 
+    apply_cli_env_config()
     analysis = asyncio.run(run_command_async(parsed_date, json_output=json_output))
     typer.echo(
         " | ".join(

@@ -112,9 +112,13 @@ Adapters implement Ports by delegating to existing driver code (thin wrappers, P
 
 ### 2.6 Enforcement
 
-- **`scripts/verify_onion_layering.py`** — AST guard scanning `domain/` and `application/`, failing (exit 1) on any forbidden import. Multi-layer: domain must not import application/infra/entry/scripts; application must not import infra/entry/scripts.
-- **Direct local/CI enforcement (M155)** — pre-commit and the architecture GitHub workflow run the onion guard directly, in addition to tests.
+- **`scripts/verify_onion_layering.py`** — AST guard scanning the four guarded source layers: `domain/`, `application/`, `infrastructure/`, and `workflows/`, failing (exit 1) on any forbidden import. Domain must not import application/infra/entry/scripts; application must not import infra/entry/scripts; infrastructure must not import CLI/workflow/script entry modules; workflows must not import local scripts.
+- **Direct local/CI enforcement (M155, expanded in M164)** — pre-commit and the architecture GitHub workflow run the onion guard directly, in addition to tests.
 - **ruff `flake8-tidy-imports` (TID)** — selected in `pyproject.toml` for tidy-import checks. (Per-layer `banned-api` is global in ruff and creates false positives on legitimate infrastructure self-imports, so the authoritative layer guard is the AST script.)
+
+### 2.7 Current enforcement status after M164
+
+M164 extended ADR-034 enforcement from the original inner-layer checks to the full strict boundary matrix used by M165/M166. Current guard evidence supersedes the original M104 file counts: the guard now reports `status=clear`, `violation_count=0`, and `allowed_violation_count=0` across `domain`, `application`, `infrastructure`, and `workflows`.
 
 ## 3. Applies To
 
@@ -292,8 +296,8 @@ New contracts (Ports): `LLMClientPort.extract(prompt, kind, context)`, `GraphDBP
 
 | Check | Tool | Status |
 |---|---|---|
-| domain zero infra imports | `verify_onion_layering.py` AST | ✓ exit 0 (8 files) |
-| application zero infra imports | `verify_onion_layering.py` AST | ✓ exit 0 (6 files) |
+| domain/application/infrastructure/workflows strict boundary matrix | `verify_onion_layering.py` AST | ✓ current guard clear, 0 blocked imports, 0 bounded-debt imports |
+| domain/application inner-layer purity | `verify_onion_layering.py` AST | ✓ covered by current four-layer guard |
 | Port substitutability | `tests/test_ladybug_adapter_port.py` (9), `tests/test_fulltext_provider_port.py` (10) | ✓ green |
 | Pipeline through Ports | `tests/test_onion_layering.py` (6), `tests/test_pipeline_framework.py` (23) | ✓ green |
 | Composition root wiring | `build_wired_paper_pipeline(llm_provider, keyword_extractor)` | ✓ green |
@@ -334,7 +338,7 @@ None yet.
 - **Layers:** `domain/` (Ports + typed models, pure Core), `application/` (pipeline, imports only domain), `infrastructure/` (adapters + drivers). Entry/wiring (`application/profiles` composition root) is the one place infra reaches the app.
 - **D088 pivot:** `PDFParserPort` was removed (single `parse_article` impl — Ponytail rule); replaced by `FullTextProviderPort` (MDConverter, ≥2 backends).
 - **D087:** Prefect rejected; `DispatchProtocol`/`SyncDispatch`/`QueueDispatch` seam kept.
-- **Enforcement:** `scripts/verify_onion_layering.py` (multi-layer AST, domain+application clean) + ruff `flake8-tidy-imports`.
+- **Enforcement:** `scripts/verify_onion_layering.py` (four-layer AST guard: domain/application/infrastructure/workflows clean) + ruff `flake8-tidy-imports`.
 - **No conflicts** with existing ADRs; extends ADR-033, prepares ADR-022 (FalkorDB) and ADR-025 (LLM) seams.
 - **Not authorized:** graph imports, production writes, fact promotion (5 fail-closed flags unchanged).
 - **Back-compat:** evaluation/ + papers/indexing shims re-export from domain until legacy imports migrate.

@@ -344,6 +344,54 @@ def test_cli_async_entrypoints_and_sync_wrappers_are_explicit() -> None:
     assert "asyncio.run(run_command_async" in inspect.getsource(cli.run)
 
 
+def _run_cli_env_probe(code: str, *, key: str, value: str) -> str:
+    """Run an isolated CLI import probe with a temporary project `.env`."""
+    env_path = PROJECT_ROOT / "src" / ".env"
+    previous = env_path.read_text() if env_path.exists() else None
+    env_path.write_text(f"{key}={value}\n", encoding="utf-8")
+    child_env = os.environ.copy()
+    child_env.pop(key, None)
+    child_env["PYTHONPATH"] = str(PROJECT_ROOT / "src")
+    try:
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            cwd=PROJECT_ROOT,
+            env=child_env,
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+    finally:
+        if previous is None:
+            env_path.unlink(missing_ok=True)
+        else:
+            env_path.write_text(previous, encoding="utf-8")
+    return result.stdout.strip()
+
+
+def test_cli_import_does_not_apply_dotenv_to_process_env() -> None:
+    output = _run_cli_env_probe(
+        "import os; import research_graph.cli; "
+        "print(os.environ.get('M166_CLI_IMPORT_ENV_PROBE', '<unset>'))",
+        key="M166_CLI_IMPORT_ENV_PROBE",
+        value="from-dotenv",
+    )
+
+    assert output == "<unset>"
+
+
+def test_cli_process_boundary_can_apply_dotenv_explicitly() -> None:
+    output = _run_cli_env_probe(
+        "import os; from research_graph.cli import apply_cli_env_config; "
+        "apply_cli_env_config(); "
+        "print(os.environ.get('M166_CLI_EXPLICIT_ENV_PROBE', '<unset>'))",
+        key="M166_CLI_EXPLICIT_ENV_PROBE",
+        value="from-explicit-setup",
+    )
+
+    assert output == "from-explicit-setup"
+
+
 def test_run_analysis_propagates_dependency_failures(monkeypatch: pytest.MonkeyPatch) -> None:
     import research_graph.cli as cli
 
