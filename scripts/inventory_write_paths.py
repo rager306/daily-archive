@@ -92,6 +92,14 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
         return "script-only", "write occurs in process-boundary script"
     if operation == "sqlite3.connect" or ".db" in path_text or "database" in path_text:
         return "database", "database-backed mutable state"
+    if source_text.startswith("src/research_graph/infrastructure/graph/readiness/"):
+        return "graph-readiness-evidence", "reviewed graph-readiness evidence output"
+    if source_text == "src/research_graph/infrastructure/papers/source_assets/registry.py":
+        return "source-asset-package", "reviewed source asset package output"
+    if source_text == "src/research_graph/cli/commands/article_artifacts.py" or source_text.startswith(
+        "src/research_graph/infrastructure/papers/artifacts/"
+    ):
+        return "article-artifact-package", "reviewed article artifact package output"
     if mode and "a" in mode:
         return "append-log", "append mode"
     if any(token in path_text for token in ("events", "jsonl", "diagnostics")):
