@@ -62,7 +62,34 @@ def test_source_asset_and_article_artifact_outputs_get_precise_categories() -> N
     ) == ("article-artifact-package", "reviewed article artifact package output")
 
 
-def test_unreviewed_summary_and_artifact_paths_keep_broad_categories() -> None:
+def test_parser_replay_outputs_get_precise_category() -> None:
+    assert _classify(
+        Path("src/research_graph/infrastructure/corpus/parsing/replay_adapters.py"),
+        "write_text",
+        "cache_path",
+        None,
+    ) == ("parser-replay-output", "reviewed parser replay output")
+
+
+def test_source_scan_outputs_get_precise_category() -> None:
+    assert _classify(
+        Path("src/research_graph/infrastructure/corpus/sources/thirty_paper_source_scan.py"),
+        "write_text",
+        "destination",
+        None,
+    ) == ("source-scan-output", "reviewed source scan output")
+
+
+def test_graph_probe_outputs_get_precise_category() -> None:
+    assert _classify(
+        Path("src/research_graph/infrastructure/graph/r024_networkx_probe.py"),
+        "write_text",
+        "config.memory_profile_path",
+        None,
+    ) == ("graph-probe-output", "reviewed graph probe output")
+
+
+def test_unreviewed_summary_artifact_cache_and_destination_paths_keep_broad_categories() -> None:
     assert _classify(
         Path("src/research_graph/infrastructure/example_writer.py"),
         "write_text",
@@ -75,6 +102,24 @@ def test_unreviewed_summary_and_artifact_paths_keep_broad_categories() -> None:
         "output_dir / 'source-asset-summary.json'",
         None,
     ) == ("run-scoped", "caller/output scoped artifact path")
+    assert _classify(
+        Path("src/research_graph/infrastructure/example_writer.py"),
+        "write_text",
+        "cache_path",
+        None,
+    ) == ("caller-owned", "caller-provided or adapter-owned output path")
+    assert _classify(
+        Path("src/research_graph/infrastructure/example_writer.py"),
+        "write_text",
+        "destination",
+        None,
+    ) == ("caller-owned", "caller-provided or adapter-owned output path")
+    assert _classify(
+        Path("src/research_graph/infrastructure/graph/example_probe.py"),
+        "write_text",
+        "summary_path",
+        None,
+    ) == ("caller-owned", "caller-provided or adapter-owned output path")
 
 
 def test_unreviewed_state_index_catalog_paths_remain_shared_state() -> None:

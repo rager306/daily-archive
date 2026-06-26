@@ -100,6 +100,15 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
         "src/research_graph/infrastructure/papers/artifacts/"
     ):
         return "article-artifact-package", "reviewed article artifact package output"
+    if source_text == "src/research_graph/infrastructure/corpus/parsing/replay_adapters.py":
+        return "parser-replay-output", "reviewed parser replay output"
+    if source_text in {
+        "src/research_graph/infrastructure/corpus/sources/thirty_paper_deviation_scan.py",
+        "src/research_graph/infrastructure/corpus/sources/thirty_paper_source_scan.py",
+    }:
+        return "source-scan-output", "reviewed source scan output"
+    if source_text == "src/research_graph/infrastructure/graph/r024_networkx_probe.py":
+        return "graph-probe-output", "reviewed graph probe output"
     if mode and "a" in mode:
         return "append-log", "append mode"
     if any(token in path_text for token in ("events", "jsonl", "diagnostics")):
