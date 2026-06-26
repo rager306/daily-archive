@@ -62,6 +62,36 @@ def test_source_asset_and_article_artifact_outputs_get_precise_categories() -> N
     ) == ("article-artifact-package", "reviewed article artifact package output")
 
 
+def test_m176_script_wave_one_outputs_get_precise_categories_without_generic_script_rules() -> None:
+    assert _classify(
+        Path("scripts/m061_anchor_pilot.py"),
+        "write_text",
+        "path",
+        None,
+    ) == ("m061-acquisition-pipeline-output", "reviewed M061 acquisition pipeline output")
+    assert _classify(
+        Path("scripts/m058_plotextractor_extract.py"),
+        "write_text",
+        "summary_path",
+        None,
+    ) == (
+        "figure-extraction-benchmark-output",
+        "reviewed figure extraction benchmark output",
+    )
+    assert _classify(
+        Path("scripts/build_m028_pdf_acquisition_diagnostics.py"),
+        "write_text",
+        "out_dir / REPORT_FILENAME",
+        None,
+    ) == ("m028-acquisition-evidence-output", "reviewed M028 acquisition evidence output")
+    assert _classify(
+        Path("scripts/verify_m029_unified_source_acquisition.py"),
+        "write_text",
+        "path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
 def test_daily_cli_outputs_get_precise_category_without_moving_temp_path() -> None:
     assert _classify(
         Path("src/research_graph/cli/__init__.py"),

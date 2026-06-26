@@ -180,3 +180,4 @@
 - ✅ **M173-bo556j: Inventory Category Expansion Batch Two** (`depends:[—]`)
 - ✅ **M174-2q29fs: Repair Benchmark Inventory Category** (`depends:[—]`)
 - ✅ **M175-ridwnm: CLI Broad Outputs and Delta Reporting** (`depends:[M174-2q29fs]`)
+- ✅ **M176-pvnc1a: Script Only Inventory Wave One** (`depends:[M175-ridwnm]`)

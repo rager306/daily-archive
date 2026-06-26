@@ -88,6 +88,23 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
     path_text = f"{source_path} {target}".lower()
     source_text = source_path.as_posix()
     target_text = target.lower()
+    if source_text in {
+        "scripts/m061_anchor_pilot.py",
+        "scripts/m061_full_5_anchors.py",
+    }:
+        return "m061-acquisition-pipeline-output", "reviewed M061 acquisition pipeline output"
+    if source_text in {
+        "scripts/m057_marker_extract.py",
+        "scripts/m058_plotextractor_extract.py",
+        "scripts/m058_compare_v2_vs_m057.py",
+        "scripts/m058_marker_compare_5.py",
+    }:
+        return "figure-extraction-benchmark-output", "reviewed figure extraction benchmark output"
+    if source_text in {
+        "scripts/build_m028_pdf_acquisition_diagnostics.py",
+        "scripts/build_m028_universal_loader_evidence_bundles.py",
+    }:
+        return "m028-acquisition-evidence-output", "reviewed M028 acquisition evidence output"
     if source_path.parts and source_path.parts[0] == "scripts":
         return "script-only", "write occurs in process-boundary script"
     if operation == "sqlite3.connect" or ".db" in path_text or "database" in path_text:
