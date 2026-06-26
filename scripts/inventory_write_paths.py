@@ -180,6 +180,22 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
         "scripts/m060b_two_hop_preview.py",
     }:
         return "m060-graph-figure-benchmark-output", "reviewed M060 graph and figure benchmark output"
+    if source_text in {
+        "scripts/verify_m031_s05_closeout.py",
+        "scripts/verify_m031_validation_remediation.py",
+        "scripts/verify_m031_process_continuity_audit.py",
+        "scripts/verify_m031_chunk_evidence_replay.py",
+        "scripts/verify_m031_parser_conversion_replay.py",
+    }:
+        return "verify-m031-output", "reviewed M031 verification output"
+    if source_text in {
+        "scripts/verify_m033_combined_parser_architecture.py",
+        "scripts/verify_m033_external_parser_quality_plan.py",
+        "scripts/verify_m033_grobid_probe.py",
+        "scripts/verify_m033_opendataloader_adaptix_adapter.py",
+        "scripts/verify_m033_quantmind_pattern_study.py",
+    }:
+        return "verify-m033-output", "reviewed M033 verification output"
     if source_path.parts and source_path.parts[0] == "scripts":
         return "script-only", "write occurs in process-boundary script"
     if operation == "sqlite3.connect" or ".db" in path_text or "database" in path_text:

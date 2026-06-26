@@ -208,7 +208,7 @@ def test_m178_m027_pipeline_replay_outputs_get_precise_category() -> None:
             None,
         ) == ("m027-pipeline-replay-output", "reviewed M027 pipeline replay output")
     assert _classify(
-        Path("scripts/verify_m031_validation_remediation.py"),
+        Path("scripts/verify_m031_future_unreviewed.py"),
         "write_text",
         "path",
         None,
@@ -230,7 +230,7 @@ def test_m178_m025_recovery_evidence_outputs_get_precise_category() -> None:
             None,
         ) == ("m025-recovery-evidence-output", "reviewed M025 recovery evidence output")
     assert _classify(
-        Path("scripts/verify_m033_grobid_probe.py"),
+        Path("scripts/verify_m033_future_unreviewed.py"),
         "write_text",
         "path",
         None,
@@ -286,6 +286,50 @@ def test_m179_m060_graph_figure_outputs_get_precise_category() -> None:
         )
     assert _classify(
         Path("scripts/m060_unreviewed_followup.py"),
+        "write_text",
+        "path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
+def test_m180_verify_m031_outputs_get_precise_category() -> None:
+    for path in (
+        "scripts/verify_m031_s05_closeout.py",
+        "scripts/verify_m031_validation_remediation.py",
+        "scripts/verify_m031_process_continuity_audit.py",
+        "scripts/verify_m031_chunk_evidence_replay.py",
+        "scripts/verify_m031_parser_conversion_replay.py",
+    ):
+        assert _classify(
+            Path(path),
+            "write_text",
+            "path",
+            None,
+        ) == ("verify-m031-output", "reviewed M031 verification output")
+    assert _classify(
+        Path("scripts/verify_m031_future_probe.py"),
+        "write_text",
+        "path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
+def test_m180_verify_m033_outputs_get_precise_category() -> None:
+    for path in (
+        "scripts/verify_m033_combined_parser_architecture.py",
+        "scripts/verify_m033_external_parser_quality_plan.py",
+        "scripts/verify_m033_grobid_probe.py",
+        "scripts/verify_m033_opendataloader_adaptix_adapter.py",
+        "scripts/verify_m033_quantmind_pattern_study.py",
+    ):
+        assert _classify(
+            Path(path),
+            "write_text",
+            "path",
+            None,
+        ) == ("verify-m033-output", "reviewed M033 verification output")
+    assert _classify(
+        Path("scripts/verify_m033_future_probe.py"),
         "write_text",
         "path",
         None,

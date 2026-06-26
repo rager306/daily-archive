@@ -36,14 +36,12 @@ Total records: `341`
 | repair-benchmark-output | 5 |
 | run-owned-state | 1 |
 | run-scoped | 6 |
-| script-only | 122 |
+| script-only | 142 |
 | smoke-script-output | 8 |
 | source-asset-package | 4 |
 | source-scan-output | 3 |
 | temporary | 1 |
 | validation-batch-output | 10 |
-| verify-m031-output | 10 |
-| verify-m033-output | 10 |
 
 ## Records
 
@@ -207,9 +205,9 @@ Total records: `341`
 | `scripts/extract_r024_entity_scale_entities.py` | 261 | `write_text` | `SUMMARY` | r024-entity-extraction-output |
 | `scripts/extract_r024_quality_metrics.py` | 128 | `write_text` | `METRICS` | r024-quality-metrics-output |
 | `scripts/extract_r024_quality_metrics.py` | 174 | `write_text` | `COMPARISON` | r024-quality-metrics-output |
-| `scripts/inventory_write_paths.py` | 401 | `write_text` | `args.json` | inventory-report-output |
-| `scripts/inventory_write_paths.py` | 402 | `write_text` | `args.markdown` | inventory-report-output |
-| `scripts/inventory_write_paths.py` | 406 | `write_text` | `args.delta_markdown` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 385 | `write_text` | `args.json` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 386 | `write_text` | `args.markdown` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 390 | `write_text` | `args.delta_markdown` | inventory-report-output |
 | `scripts/legacy/m057_table_embed.py` | 170 | `write_text` | `output_path` | m057-structure-extraction-output |
 | `scripts/m052_rlm_e2e.py` | 309 | `write_text` | `audit_json_path` | script-only |
 | `scripts/m052_rlm_e2e.py` | 312 | `write_text` | `audit_md_path` | script-only |
@@ -366,26 +364,26 @@ Total records: `341`
 | `scripts/verify_m029_unified_source_acquisition.py` | 795 | `write_text` | `args.write_report` | script-only |
 | `scripts/verify_m029_unified_source_acquisition.py` | 819 | `write_text` | `args.write_report` | script-only |
 | `scripts/verify_m029_validation_remediation.py` | 989 | `write_text` | `path` | script-only |
-| `scripts/verify_m031_chunk_evidence_replay.py` | 115 | `write_text` | `path` | verify-m031-output |
-| `scripts/verify_m031_parser_conversion_replay.py` | 107 | `write_text` | `path` | verify-m031-output |
-| `scripts/verify_m031_process_continuity_audit.py` | 246 | `write_text` | `path` | verify-m031-output |
-| `scripts/verify_m031_process_continuity_audit.py` | 251 | `write_text` | `path` | verify-m031-output |
-| `scripts/verify_m031_s05_closeout.py` | 253 | `write_text` | `path` | verify-m031-output |
-| `scripts/verify_m031_s05_closeout.py` | 258 | `write_text` | `path` | verify-m031-output |
-| `scripts/verify_m031_s05_closeout.py` | 266 | `write_text` | `path` | verify-m031-output |
-| `scripts/verify_m031_validation_remediation.py` | 1045 | `write_text` | `path` | verify-m031-output |
-| `scripts/verify_m031_validation_remediation.py` | 1050 | `write_text` | `path` | verify-m031-output |
-| `scripts/verify_m031_validation_remediation.py` | 1057 | `write_text` | `path` | verify-m031-output |
-| `scripts/verify_m033_combined_parser_architecture.py` | 166 | `write_text` | `path` | verify-m033-output |
-| `scripts/verify_m033_combined_parser_architecture.py` | 196 | `write_text` | `path` | verify-m033-output |
-| `scripts/verify_m033_external_parser_quality_plan.py` | 190 | `write_text` | `path` | verify-m033-output |
-| `scripts/verify_m033_external_parser_quality_plan.py` | 220 | `write_text` | `path` | verify-m033-output |
-| `scripts/verify_m033_grobid_probe.py` | 177 | `write_text` | `path` | verify-m033-output |
-| `scripts/verify_m033_grobid_probe.py` | 208 | `write_text` | `path` | verify-m033-output |
-| `scripts/verify_m033_opendataloader_adaptix_adapter.py` | 42 | `write_text` | `path` | verify-m033-output |
-| `scripts/verify_m033_opendataloader_adaptix_adapter.py` | 173 | `write_text` | `adapter_dir / 'adaptix-adapter-closeout-report.md'` | verify-m033-output |
-| `scripts/verify_m033_quantmind_pattern_study.py` | 216 | `write_text` | `path` | verify-m033-output |
-| `scripts/verify_m033_quantmind_pattern_study.py` | 249 | `write_text` | `path` | verify-m033-output |
+| `scripts/verify_m031_chunk_evidence_replay.py` | 115 | `write_text` | `path` | script-only |
+| `scripts/verify_m031_parser_conversion_replay.py` | 107 | `write_text` | `path` | script-only |
+| `scripts/verify_m031_process_continuity_audit.py` | 246 | `write_text` | `path` | script-only |
+| `scripts/verify_m031_process_continuity_audit.py` | 251 | `write_text` | `path` | script-only |
+| `scripts/verify_m031_s05_closeout.py` | 253 | `write_text` | `path` | script-only |
+| `scripts/verify_m031_s05_closeout.py` | 258 | `write_text` | `path` | script-only |
+| `scripts/verify_m031_s05_closeout.py` | 266 | `write_text` | `path` | script-only |
+| `scripts/verify_m031_validation_remediation.py` | 1045 | `write_text` | `path` | script-only |
+| `scripts/verify_m031_validation_remediation.py` | 1050 | `write_text` | `path` | script-only |
+| `scripts/verify_m031_validation_remediation.py` | 1057 | `write_text` | `path` | script-only |
+| `scripts/verify_m033_combined_parser_architecture.py` | 166 | `write_text` | `path` | script-only |
+| `scripts/verify_m033_combined_parser_architecture.py` | 196 | `write_text` | `path` | script-only |
+| `scripts/verify_m033_external_parser_quality_plan.py` | 190 | `write_text` | `path` | script-only |
+| `scripts/verify_m033_external_parser_quality_plan.py` | 220 | `write_text` | `path` | script-only |
+| `scripts/verify_m033_grobid_probe.py` | 177 | `write_text` | `path` | script-only |
+| `scripts/verify_m033_grobid_probe.py` | 208 | `write_text` | `path` | script-only |
+| `scripts/verify_m033_opendataloader_adaptix_adapter.py` | 42 | `write_text` | `path` | script-only |
+| `scripts/verify_m033_opendataloader_adaptix_adapter.py` | 173 | `write_text` | `adapter_dir / 'adaptix-adapter-closeout-report.md'` | script-only |
+| `scripts/verify_m033_quantmind_pattern_study.py` | 216 | `write_text` | `path` | script-only |
+| `scripts/verify_m033_quantmind_pattern_study.py` | 249 | `write_text` | `path` | script-only |
 | `scripts/verify_m072_queue_benchmark_gate.py` | 97 | `write_text` | `output_path` | queue-gate-output |
 | `scripts/verify_m073_queue_evidence_gate.py` | 87 | `write_text` | `output_path` | queue-gate-output |
 | `scripts/verify_test_architecture.py` | 188 | `write_text` | `json_path` | script-only |
