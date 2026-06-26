@@ -105,6 +105,41 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
         "scripts/build_m028_universal_loader_evidence_bundles.py",
     }:
         return "m028-acquisition-evidence-output", "reviewed M028 acquisition evidence output"
+    if source_text in {
+        "scripts/build_r024_20_document_corpus_selection.py",
+        "scripts/build_r024_53_document_corpus_selection.py",
+    }:
+        return "r024-corpus-selection-output", "reviewed R024 corpus selection output"
+    if source_text == "scripts/extract_r024_entity_scale_entities.py":
+        return "r024-entity-extraction-output", "reviewed R024 entity extraction output"
+    if source_text == "scripts/convert_r024_53_pdf_to_text.py":
+        return "r024-conversion-output", "reviewed R024 conversion output"
+    if source_text == "scripts/build_r024_entity_networkx_probe.py":
+        return "r024-networkx-probe-output", "reviewed R024 networkx probe output"
+    if source_text in {
+        "scripts/extract_r024_quality_metrics.py",
+        "scripts/extract_r024_20_document_quality_metrics.py",
+        "scripts/extract_r024_53_document_quality_metrics.py",
+        "scripts/extract_r024_entity_quality_metrics.py",
+    }:
+        return "r024-quality-metrics-output", "reviewed R024 quality metrics output"
+    if source_text == "scripts/inventory_write_paths.py":
+        return "inventory-report-output", "reviewed inventory report output"
+    if source_text == "scripts/soak_universal_kb_queue.py":
+        return "queue-soak-output", "reviewed queue soak output"
+    if source_text in {
+        "scripts/verify_m072_queue_benchmark_gate.py",
+        "scripts/verify_m073_queue_evidence_gate.py",
+    }:
+        return "queue-gate-output", "reviewed queue gate output"
+    if source_text in {
+        "scripts/m060g_smoke_test.py",
+        "scripts/replay_m028_smoke_closeout.py",
+        "scripts/run_m029_unified_loader_runtime_smoke.py",
+        "scripts/verify_m029_unified_loader_runtime_smoke.py",
+        "scripts/run_m122_mutation_smoke.py",
+    }:
+        return "smoke-script-output", "reviewed smoke script output"
     if source_path.parts and source_path.parts[0] == "scripts":
         return "script-only", "write occurs in process-boundary script"
     if operation == "sqlite3.connect" or ".db" in path_text or "database" in path_text:

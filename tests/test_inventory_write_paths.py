@@ -92,6 +92,107 @@ def test_m176_script_wave_one_outputs_get_precise_categories_without_generic_scr
     ) == ("script-only", "write occurs in process-boundary script")
 
 
+def test_m177_r024_script_outputs_get_precise_categories_without_generic_script_rules() -> None:
+    assert _classify(
+        Path("scripts/build_r024_20_document_corpus_selection.py"),
+        "write_text",
+        "OUT_SELECTION",
+        None,
+    ) == ("r024-corpus-selection-output", "reviewed R024 corpus selection output")
+    assert _classify(
+        Path("scripts/extract_r024_entity_scale_entities.py"),
+        "write_text",
+        "SUMMARY",
+        None,
+    ) == ("r024-entity-extraction-output", "reviewed R024 entity extraction output")
+    assert _classify(
+        Path("scripts/convert_r024_53_pdf_to_text.py"),
+        "write_text",
+        "out_path",
+        None,
+    ) == ("r024-conversion-output", "reviewed R024 conversion output")
+    assert _classify(
+        Path("scripts/build_r024_entity_networkx_probe.py"),
+        "write_text",
+        "MEMORY_PROFILE",
+        None,
+    ) == ("r024-networkx-probe-output", "reviewed R024 networkx probe output")
+    assert _classify(
+        Path("scripts/extract_r024_quality_metrics.py"),
+        "write_text",
+        "METRICS",
+        None,
+    ) == ("r024-quality-metrics-output", "reviewed R024 quality metrics output")
+    assert _classify(
+        Path("scripts/verify_m029_unified_source_acquisition.py"),
+        "write_text",
+        "path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
+def test_m177_inventory_report_outputs_get_precise_category() -> None:
+    for target in ("args.json", "args.markdown", "args.delta_markdown"):
+        assert _classify(
+            Path("scripts/inventory_write_paths.py"),
+            "write_text",
+            target,
+            None,
+        ) == ("inventory-report-output", "reviewed inventory report output")
+
+
+def test_m177_markdown_converter_cache_policy_preserves_caller_owned_outputs() -> None:
+    for target in ("md_path", "method_path"):
+        assert _classify(
+            Path("src/research_graph/infrastructure/corpus/sources/markdown_converter.py"),
+            "write_text",
+            target,
+            None,
+        ) == ("caller-owned", "caller-provided or adapter-owned output path")
+
+
+def test_m177_queue_and_smoke_script_outputs_get_precise_categories() -> None:
+    assert _classify(
+        Path("scripts/soak_universal_kb_queue.py"),
+        "write_text",
+        "args.json_out",
+        None,
+    ) == ("queue-soak-output", "reviewed queue soak output")
+    assert _classify(
+        Path("scripts/verify_m072_queue_benchmark_gate.py"),
+        "write_text",
+        "output_path",
+        None,
+    ) == ("queue-gate-output", "reviewed queue gate output")
+    assert _classify(
+        Path("scripts/replay_m028_smoke_closeout.py"),
+        "write_text",
+        "summary_path",
+        None,
+    ) == ("smoke-script-output", "reviewed smoke script output")
+
+
+def test_m177_universal_kb_workflow_categories_remain_unchanged() -> None:
+    assert _classify(
+        Path("src/research_graph/workflows/universal_kb/queue.py"),
+        "sqlite3.connect",
+        "self.db_path",
+        None,
+    ) == ("database", "database-backed mutable state")
+    assert _classify(
+        Path("src/research_graph/workflows/universal_kb/smoke.py"),
+        "write_text",
+        "path",
+        None,
+    ) == ("caller-owned", "caller-provided or adapter-owned output path")
+    assert _classify(
+        Path("src/research_graph/workflows/universal_kb/smoke_selection.py"),
+        "write_text",
+        "args.output",
+        None,
+    ) == ("run-scoped", "caller/output scoped artifact path")
+
+
 def test_daily_cli_outputs_get_precise_category_without_moving_temp_path() -> None:
     assert _classify(
         Path("src/research_graph/cli/__init__.py"),
