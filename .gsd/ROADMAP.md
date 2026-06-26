@@ -179,3 +179,4 @@
 - ✅ **M172-lhizj3: Write Inventory Category Expansion** (`depends:[—]`)
 - ✅ **M173-bo556j: Inventory Category Expansion Batch Two** (`depends:[—]`)
 - ✅ **M174-2q29fs: Repair Benchmark Inventory Category** (`depends:[—]`)
+- ✅ **M175-ridwnm: CLI Broad Outputs and Delta Reporting** (`depends:[M174-2q29fs]`)

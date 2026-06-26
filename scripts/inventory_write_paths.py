@@ -100,6 +100,13 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
         "src/research_graph/infrastructure/papers/artifacts/"
     ):
         return "article-artifact-package", "reviewed article artifact package output"
+    if source_text == "src/research_graph/cli/__init__.py" and target_text in {
+        "filepath",
+        "day_dir / 'papers.json'",
+        "day_dir / 'scored.json'",
+        "day_dir / 'overview.json'",
+    }:
+        return "daily-cli-output", "reviewed daily CLI output"
     if source_text == "src/research_graph/infrastructure/corpus/parsing/replay_adapters.py":
         return "parser-replay-output", "reviewed parser replay output"
     if source_text in {
@@ -116,6 +123,15 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
         "src/research_graph/infrastructure/repair/chunking_benchmark.py",
     }:
         return "repair-benchmark-output", "reviewed repair benchmark output"
+    if source_text == "src/research_graph/workflows/validation/batch_workflow.py" and target_text in {
+        "selection_manifest_path",
+        "summary_path",
+        "delta_path",
+        "outlier_path",
+        "path",
+        "output_path",
+    }:
+        return "validation-batch-output", "reviewed validation batch output"
     if mode and "a" in mode:
         return "append-log", "append mode"
     if any(token in path_text for token in ("events", "jsonl", "diagnostics")):
@@ -233,17 +249,53 @@ def render_markdown(payload: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_delta_markdown(baseline: dict[str, Any], current: dict[str, Any]) -> str:
+    baseline_summary = baseline["summary"]
+    current_summary = current["summary"]
+    baseline_categories = baseline_summary["by_category"]
+    current_categories = current_summary["by_category"]
+    categories = sorted(set(baseline_categories) | set(current_categories))
+    baseline_total = int(baseline_summary["total_records"])
+    current_total = int(current_summary["total_records"])
+    lines = [
+        "# Write Path Inventory Delta",
+        "",
+        f"Baseline total records: `{baseline_total}`",
+        f"Current total records: `{current_total}`",
+        f"Total delta: `{current_total - baseline_total:+d}`",
+        "",
+        "| Category | Baseline | Current | Delta |",
+        "|---|---:|---:|---:|",
+    ]
+    for category in categories:
+        baseline_count = int(baseline_categories.get(category, 0))
+        current_count = int(current_categories.get(category, 0))
+        lines.append(
+            f"| {category} | {baseline_count} | {current_count} | "
+            f"{current_count - baseline_count:+d} |"
+        )
+    return "\n".join(lines) + "\n"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", type=Path, required=True, help="Path for JSON inventory output")
     parser.add_argument("--markdown", type=Path, required=True, help="Path for Markdown inventory output")
+    parser.add_argument("--delta-from", type=Path, help="Baseline JSON inventory for delta rendering")
+    parser.add_argument("--delta-markdown", type=Path, help="Path for Markdown delta output")
     args = parser.parse_args()
+    if (args.delta_from is None) != (args.delta_markdown is None):
+        parser.error("--delta-from and --delta-markdown must be provided together")
 
     records = collect_records()
     payload = build_payload(records)
     args.json.parent.mkdir(parents=True, exist_ok=True)
     args.json.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     args.markdown.write_text(render_markdown(payload), encoding="utf-8")
+    if args.delta_from and args.delta_markdown:
+        baseline = json.loads(args.delta_from.read_text(encoding="utf-8"))
+        args.delta_markdown.parent.mkdir(parents=True, exist_ok=True)
+        args.delta_markdown.write_text(render_delta_markdown(baseline, payload), encoding="utf-8")
     print(json.dumps(payload["summary"], sort_keys=True))
 
 

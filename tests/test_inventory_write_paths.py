@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from scripts.inventory_write_paths import _classify
+from scripts.inventory_write_paths import _classify, render_delta_markdown
 
 
 def test_reviewed_shared_state_records_get_precise_categories() -> None:
@@ -62,6 +62,33 @@ def test_source_asset_and_article_artifact_outputs_get_precise_categories() -> N
     ) == ("article-artifact-package", "reviewed article artifact package output")
 
 
+def test_daily_cli_outputs_get_precise_category_without_moving_temp_path() -> None:
+    assert _classify(
+        Path("src/research_graph/cli/__init__.py"),
+        "write_text",
+        "filepath",
+        None,
+    ) == ("daily-cli-output", "reviewed daily CLI output")
+    assert _classify(
+        Path("src/research_graph/cli/__init__.py"),
+        "write_text",
+        "day_dir / 'papers.json'",
+        None,
+    ) == ("daily-cli-output", "reviewed daily CLI output")
+    assert _classify(
+        Path("src/research_graph/cli/__init__.py"),
+        "write_text",
+        "temp_path",
+        None,
+    ) == ("temporary", "same-directory temporary write before final replacement")
+    assert _classify(
+        Path("src/research_graph/infrastructure/example_writer.py"),
+        "write_text",
+        "filepath",
+        None,
+    ) == ("caller-owned", "caller-provided or adapter-owned output path")
+
+
 def test_parser_replay_outputs_get_precise_category() -> None:
     assert _classify(
         Path("src/research_graph/infrastructure/corpus/parsing/replay_adapters.py"),
@@ -102,6 +129,27 @@ def test_repair_benchmark_outputs_get_precise_category_without_moving_index() ->
         "index_path",
         None,
     ) == ("caller-owned-index", "caller-provided paired review index output")
+
+
+def test_validation_batch_outputs_get_precise_category_without_generic_summary_rule() -> None:
+    assert _classify(
+        Path("src/research_graph/workflows/validation/batch_workflow.py"),
+        "write_text",
+        "summary_path",
+        None,
+    ) == ("validation-batch-output", "reviewed validation batch output")
+    assert _classify(
+        Path("src/research_graph/workflows/validation/batch_workflow.py"),
+        "write_text",
+        "output_path",
+        None,
+    ) == ("validation-batch-output", "reviewed validation batch output")
+    assert _classify(
+        Path("src/research_graph/infrastructure/example_writer.py"),
+        "write_text",
+        "summary_path",
+        None,
+    ) == ("caller-owned", "caller-provided or adapter-owned output path")
 
 
 def test_unreviewed_summary_artifact_cache_and_destination_paths_keep_broad_categories() -> None:
@@ -153,3 +201,30 @@ def test_unreviewed_state_index_catalog_paths_remain_shared_state() -> None:
         )
         assert category == "shared-state"
         assert reason == "stable shared state or index path"
+
+
+def test_render_delta_markdown_reports_totals_and_sorted_category_deltas() -> None:
+    baseline = {
+        "summary": {
+            "total_records": 3,
+            "by_category": {"caller-owned": 2, "run-scoped": 1},
+        }
+    }
+    current = {
+        "summary": {
+            "total_records": 4,
+            "by_category": {"caller-owned": 1, "daily-cli-output": 2, "run-scoped": 1},
+        }
+    }
+
+    markdown = render_delta_markdown(baseline, current)
+
+    assert "Baseline total records: `3`" in markdown
+    assert "Current total records: `4`" in markdown
+    assert "Total delta: `+1`" in markdown
+    assert "| caller-owned | 2 | 1 | -1 |" in markdown
+    assert "| daily-cli-output | 0 | 2 | +2 |" in markdown
+    assert "| run-scoped | 1 | 1 | +0 |" in markdown
+    assert markdown.index("caller-owned") < markdown.index("daily-cli-output") < markdown.index(
+        "run-scoped"
+    )
