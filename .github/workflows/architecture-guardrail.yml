@@ -58,17 +58,18 @@ jobs:
 
       - name: Run write-path inventory drift check
         run: |
-          FINAL_BASELINE="data/architecture-assessment/m178-write-path-inventory-final.json"
-          PREVIEW_BASELINE="data/architecture-assessment/m178-write-path-inventory-baseline.json"
+          CANONICAL_BASELINE="data/architecture-assessment/write-path-inventory-canonical.json"
+          PREVIEW_BASELINE="data/architecture-assessment/m179-write-path-inventory-baseline.json"
           STRICT_DRIFT=0
           BASELINE="$PREVIEW_BASELINE"
-          if [ -f "$FINAL_BASELINE" ]; then
-            BASELINE="$FINAL_BASELINE"
+          if [ -f "$CANONICAL_BASELINE" ]; then
+            BASELINE="$CANONICAL_BASELINE"
             STRICT_DRIFT=1
           fi
           CURRENT_JSON="$(mktemp)"
           CURRENT_MD="$(mktemp)"
           DELTA_MD="$(mktemp)"
+          trap 'rm -f "$CURRENT_JSON" "$CURRENT_MD" "$DELTA_MD"' EXIT
           uv run python scripts/inventory_write_paths.py \
             --json "$CURRENT_JSON" \
             --markdown "$CURRENT_MD" \
@@ -92,7 +93,7 @@ jobs:
               assert not forbidden, forbidden
               print("write-path inventory strict drift: pass")
           else:
-              print("write-path inventory drift preview: final baseline not present yet")
+              print("write-path inventory drift preview: canonical baseline not present yet")
           print("write-path inventory guardrails: unknown=0 shared-state=0")
           print("write-path inventory delta preview:")
           print("\n".join(delta_text.splitlines()[:20]))

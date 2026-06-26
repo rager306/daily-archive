@@ -156,6 +156,30 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
         "scripts/capture_m025_article_sources.py",
     }:
         return "m025-recovery-evidence-output", "reviewed M025 recovery evidence output"
+    if source_text in {
+        "scripts/m057_compare_marker_opendataloader.py",
+        "scripts/m057_figure_similarity.py",
+        "scripts/m057_marker_extract_5.py",
+        "scripts/m057_table_similarity.py",
+        "scripts/legacy/m057_table_embed.py",
+        "scripts/m057_build_graph_manifest.py",
+        "scripts/m057_compare_marker_opendataloader_1pdf.py",
+        "scripts/m057_fd_validate.py",
+        "scripts/m057_figure_caption_build.py",
+        "scripts/m057_figure_embed.py",
+        "scripts/m057_table_text_build.py",
+    }:
+        return "m057-structure-extraction-output", "reviewed M057 structure extraction output"
+    if source_text in {
+        "scripts/m060g_figure_judge.py",
+        "scripts/m060b_graph_stats.py",
+        "scripts/m060b_graph_validate.py",
+        "scripts/m060c_applicability_matrix.py",
+        "scripts/m060c_benchmark.py",
+        "scripts/m060b_graph_visualize.py",
+        "scripts/m060b_two_hop_preview.py",
+    }:
+        return "m060-graph-figure-benchmark-output", "reviewed M060 graph and figure benchmark output"
     if source_path.parts and source_path.parts[0] == "scripts":
         return "script-only", "write occurs in process-boundary script"
     if operation == "sqlite3.connect" or ".db" in path_text or "database" in path_text:

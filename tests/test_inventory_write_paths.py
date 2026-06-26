@@ -237,6 +237,61 @@ def test_m178_m025_recovery_evidence_outputs_get_precise_category() -> None:
     ) == ("script-only", "write occurs in process-boundary script")
 
 
+def test_m179_m057_structure_extraction_outputs_get_precise_category() -> None:
+    for path in (
+        "scripts/m057_compare_marker_opendataloader.py",
+        "scripts/m057_figure_similarity.py",
+        "scripts/m057_marker_extract_5.py",
+        "scripts/m057_table_similarity.py",
+        "scripts/legacy/m057_table_embed.py",
+        "scripts/m057_build_graph_manifest.py",
+        "scripts/m057_compare_marker_opendataloader_1pdf.py",
+        "scripts/m057_fd_validate.py",
+        "scripts/m057_figure_caption_build.py",
+        "scripts/m057_figure_embed.py",
+        "scripts/m057_table_text_build.py",
+    ):
+        assert _classify(
+            Path(path),
+            "write_text",
+            "path",
+            None,
+        ) == ("m057-structure-extraction-output", "reviewed M057 structure extraction output")
+    assert _classify(
+        Path("scripts/m057_new_unreviewed_probe.py"),
+        "write_text",
+        "path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
+def test_m179_m060_graph_figure_outputs_get_precise_category() -> None:
+    for path in (
+        "scripts/m060g_figure_judge.py",
+        "scripts/m060b_graph_stats.py",
+        "scripts/m060b_graph_validate.py",
+        "scripts/m060c_applicability_matrix.py",
+        "scripts/m060c_benchmark.py",
+        "scripts/m060b_graph_visualize.py",
+        "scripts/m060b_two_hop_preview.py",
+    ):
+        assert _classify(
+            Path(path),
+            "write_text",
+            "path",
+            None,
+        ) == (
+            "m060-graph-figure-benchmark-output",
+            "reviewed M060 graph and figure benchmark output",
+        )
+    assert _classify(
+        Path("scripts/m060_unreviewed_followup.py"),
+        "write_text",
+        "path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
 def test_daily_cli_outputs_get_precise_category_without_moving_temp_path() -> None:
     assert _classify(
         Path("src/research_graph/cli/__init__.py"),
