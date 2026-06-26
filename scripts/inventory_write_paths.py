@@ -140,6 +140,22 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
         "scripts/run_m122_mutation_smoke.py",
     }:
         return "smoke-script-output", "reviewed smoke script output"
+    if source_text in {
+        "scripts/replay_m027_current_pipeline_baseline.py",
+        "scripts/replay_m027_end_to_end_mixed_replay.py",
+        "scripts/synthesize_m027_pipeline_readiness.py",
+        "scripts/verify_m027_provenance_and_riskratchet_gate.py",
+        "scripts/verify_m027_end_to_end_mixed_replay.py",
+    }:
+        return "m027-pipeline-replay-output", "reviewed M027 pipeline replay output"
+    if source_text in {
+        "scripts/verify_m025_baseline_recovery_replay.py",
+        "scripts/verify_m025_boundary_replay_completion.py",
+        "scripts/verify_m025_evidence_boundaries.py",
+        "scripts/verify_m025_final_preprocessing_replay.py",
+        "scripts/capture_m025_article_sources.py",
+    }:
+        return "m025-recovery-evidence-output", "reviewed M025 recovery evidence output"
     if source_path.parts and source_path.parts[0] == "scripts":
         return "script-only", "write occurs in process-boundary script"
     if operation == "sqlite3.connect" or ".db" in path_text or "database" in path_text:

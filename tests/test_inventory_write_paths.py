@@ -193,6 +193,50 @@ def test_m177_universal_kb_workflow_categories_remain_unchanged() -> None:
     ) == ("run-scoped", "caller/output scoped artifact path")
 
 
+def test_m178_m027_pipeline_replay_outputs_get_precise_category() -> None:
+    for path in (
+        "scripts/replay_m027_current_pipeline_baseline.py",
+        "scripts/replay_m027_end_to_end_mixed_replay.py",
+        "scripts/synthesize_m027_pipeline_readiness.py",
+        "scripts/verify_m027_provenance_and_riskratchet_gate.py",
+        "scripts/verify_m027_end_to_end_mixed_replay.py",
+    ):
+        assert _classify(
+            Path(path),
+            "write_text",
+            "path",
+            None,
+        ) == ("m027-pipeline-replay-output", "reviewed M027 pipeline replay output")
+    assert _classify(
+        Path("scripts/verify_m031_validation_remediation.py"),
+        "write_text",
+        "path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
+def test_m178_m025_recovery_evidence_outputs_get_precise_category() -> None:
+    for path in (
+        "scripts/verify_m025_baseline_recovery_replay.py",
+        "scripts/verify_m025_boundary_replay_completion.py",
+        "scripts/verify_m025_evidence_boundaries.py",
+        "scripts/verify_m025_final_preprocessing_replay.py",
+        "scripts/capture_m025_article_sources.py",
+    ):
+        assert _classify(
+            Path(path),
+            "write_text",
+            "path",
+            None,
+        ) == ("m025-recovery-evidence-output", "reviewed M025 recovery evidence output")
+    assert _classify(
+        Path("scripts/verify_m033_grobid_probe.py"),
+        "write_text",
+        "path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
 def test_daily_cli_outputs_get_precise_category_without_moving_temp_path() -> None:
     assert _classify(
         Path("src/research_graph/cli/__init__.py"),

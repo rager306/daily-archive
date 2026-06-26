@@ -56,11 +56,15 @@ jobs:
           uv run python scripts/verify_m044_sidecar_architecture_guardrail.py
         # exit code 0 = pass, 1 = fail (mandatory)
 
-      - name: Run write-path inventory delta smoke
+      - name: Run write-path inventory drift check
         run: |
-          BASELINE="data/architecture-assessment/m177-write-path-inventory-final.json"
-          if [ ! -f "$BASELINE" ]; then
-            BASELINE="data/architecture-assessment/m177-write-path-inventory-baseline.json"
+          FINAL_BASELINE="data/architecture-assessment/m178-write-path-inventory-final.json"
+          PREVIEW_BASELINE="data/architecture-assessment/m178-write-path-inventory-baseline.json"
+          STRICT_DRIFT=0
+          BASELINE="$PREVIEW_BASELINE"
+          if [ -f "$FINAL_BASELINE" ]; then
+            BASELINE="$FINAL_BASELINE"
+            STRICT_DRIFT=1
           fi
           CURRENT_JSON="$(mktemp)"
           CURRENT_MD="$(mktemp)"
@@ -70,18 +74,28 @@ jobs:
             --markdown "$CURRENT_MD" \
             --delta-from "$BASELINE" \
             --delta-markdown "$DELTA_MD"
-          uv run python - "$CURRENT_JSON" "$DELTA_MD" <<'PY'
+          uv run python - "$CURRENT_JSON" "$DELTA_MD" "$STRICT_DRIFT" <<'PY'
           import json
           import sys
           from pathlib import Path
 
           current = json.loads(Path(sys.argv[1]).read_text())
+          delta_text = Path(sys.argv[2]).read_text()
+          strict_drift = sys.argv[3] == "1"
           categories = current["summary"]["by_category"]
           assert categories.get("unknown", 0) == 0, categories
           assert categories.get("shared-state", 0) == 0, categories
+          if strict_drift:
+              forbidden = [line for line in delta_text.splitlines() if line.startswith("|") and not line.endswith("| +0 |")]
+              forbidden = [line for line in forbidden if not line.startswith("| Category ") and not line.startswith("|---")]
+              assert "Total delta: `+0`" in delta_text, delta_text
+              assert not forbidden, forbidden
+              print("write-path inventory strict drift: pass")
+          else:
+              print("write-path inventory drift preview: final baseline not present yet")
           print("write-path inventory guardrails: unknown=0 shared-state=0")
           print("write-path inventory delta preview:")
-          print("\n".join(Path(sys.argv[2]).read_text().splitlines()[:20]))
+          print("\n".join(delta_text.splitlines()[:20]))
           PY
 
       - name: Upload M044 evidence on success
