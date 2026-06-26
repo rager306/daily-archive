@@ -89,6 +89,21 @@ def test_graph_probe_outputs_get_precise_category() -> None:
     ) == ("graph-probe-output", "reviewed graph probe output")
 
 
+def test_repair_benchmark_outputs_get_precise_category_without_moving_index() -> None:
+    assert _classify(
+        Path("src/research_graph/infrastructure/repair/chunking_benchmark.py"),
+        "write_text",
+        "output_dir / 'chunking-benchmark-summary.json'",
+        None,
+    ) == ("repair-benchmark-output", "reviewed repair benchmark output")
+    assert _classify(
+        Path("src/research_graph/infrastructure/repair/chunk_baseline_measurement.py"),
+        "write_text",
+        "index_path",
+        None,
+    ) == ("caller-owned-index", "caller-provided paired review index output")
+
+
 def test_unreviewed_summary_artifact_cache_and_destination_paths_keep_broad_categories() -> None:
     assert _classify(
         Path("src/research_graph/infrastructure/example_writer.py"),
@@ -120,6 +135,12 @@ def test_unreviewed_summary_artifact_cache_and_destination_paths_keep_broad_cate
         "summary_path",
         None,
     ) == ("caller-owned", "caller-provided or adapter-owned output path")
+    assert _classify(
+        Path("src/research_graph/infrastructure/repair/example_benchmark.py"),
+        "write_text",
+        "diagnostics_path",
+        None,
+    ) == ("append-log", "event or diagnostics log path")
 
 
 def test_unreviewed_state_index_catalog_paths_remain_shared_state() -> None:

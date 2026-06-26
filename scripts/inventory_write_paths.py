@@ -109,6 +109,13 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
         return "source-scan-output", "reviewed source scan output"
     if source_text == "src/research_graph/infrastructure/graph/r024_networkx_probe.py":
         return "graph-probe-output", "reviewed graph probe output"
+    if source_text == "src/research_graph/infrastructure/repair/chunk_baseline_measurement.py" and target_text == "index_path":
+        return "caller-owned-index", "caller-provided paired review index output"
+    if source_text in {
+        "src/research_graph/infrastructure/repair/chunk_baseline_measurement.py",
+        "src/research_graph/infrastructure/repair/chunking_benchmark.py",
+    }:
+        return "repair-benchmark-output", "reviewed repair benchmark output"
     if mode and "a" in mode:
         return "append-log", "append mode"
     if any(token in path_text for token in ("events", "jsonl", "diagnostics")):
@@ -119,8 +126,6 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
         return "legacy-evidence-regeneration", "reviewed legacy ingest summary regeneration"
     if source_text == "src/research_graph/infrastructure/corpus/ingestion/catalog_ingest.py" and target_text == "report_path":
         return "legacy-evidence-regeneration", "reviewed legacy ingest report regeneration"
-    if source_text == "src/research_graph/infrastructure/repair/chunk_baseline_measurement.py" and target_text == "index_path":
-        return "caller-owned-index", "caller-provided paired review index output"
     if any(token in path_text for token in ("queue", "state", "index", "catalog")):
         return "shared-state", "stable shared state or index path"
     if "temp" in target_text:

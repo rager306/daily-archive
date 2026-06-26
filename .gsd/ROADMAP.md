@@ -178,3 +178,4 @@
 - ✅ **M171-7vt18j: Queue Activation Soak and Write Inventory Categories** (`depends:[M170-kgl839]`)
 - ✅ **M172-lhizj3: Write Inventory Category Expansion** (`depends:[—]`)
 - ✅ **M173-bo556j: Inventory Category Expansion Batch Two** (`depends:[—]`)
+- ✅ **M174-2q29fs: Repair Benchmark Inventory Category** (`depends:[—]`)
