@@ -106,6 +106,86 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
     }:
         return "m028-acquisition-evidence-output", "reviewed M028 acquisition evidence output"
     if source_text in {
+        "scripts/acquire_linked_target_pdfs.py",
+        "scripts/acquire_m056_wave.py",
+        "scripts/audit_m054_pdf_acquisition.py",
+        "scripts/capture_m027_mixed_source_sources.py",
+        "scripts/convert_m027_source_quality_boundary.py",
+        "scripts/convert_m029_unified_source_quality_boundary.py",
+        "scripts/emit_m056_candidate_edges.py",
+    }:
+        return "source-acquisition-evidence-output", "reviewed source acquisition evidence output"
+    if source_text in {
+        "scripts/analyze_m056_wave_1.py",
+        "scripts/analyze_m056_wave_2.py",
+        "scripts/analyze_m056_wave_3.py",
+        "scripts/analyze_m056_wave_4.py",
+        "scripts/analyze_m056_wave_5.py",
+        "scripts/analyze_m056_wave_6.py",
+        "scripts/audit_locator_evidence.py",
+        "scripts/audit_m042_connectivity_groups.py",
+        "scripts/audit_m053_grobid_pilot.py",
+        "scripts/audit_pipeline_scripts.py",
+        "scripts/check_project_trajectory.py",
+        "scripts/test_fd_contract.py",
+        "scripts/verify_test_architecture.py",
+    }:
+        return "audit-analysis-output", "reviewed audit analysis output"
+    if source_text in {
+        "scripts/render_bounded_repair_prototype.py",
+        "scripts/render_chunk_repair_contract.py",
+        "scripts/render_m055_report.py",
+        "scripts/render_m055deep_report.py",
+        "scripts/render_m056_report.py",
+        "scripts/render_reviewer_packet_prototype.py",
+    }:
+        return "render-report-contract-output", "reviewed render report contract output"
+    if source_text in {
+        "scripts/replay_m025_article_loader.py",
+        "scripts/run_m029_unified_replay.py",
+    }:
+        return "replay-conversion-output", "reviewed replay conversion output"
+    if source_text in {
+        "scripts/m063_graphdb_benchmark.py",
+        "scripts/probe_m033_opendataloader_adaptix_adapter.py",
+        "scripts/probe_m043_sidecar_runtime_readiness.py",
+        "scripts/probe_m053_grobid_pilot.py",
+        "scripts/repair_m042_linked_metadata.py",
+        "scripts/run_m044_live_grobid_candidate_probe.py",
+        "scripts/select_m041_mixed_connectivity_batch.py",
+    }:
+        return "graph-connectivity-probe-output", "reviewed graph connectivity probe output"
+    if source_text in {
+        "scripts/augment_m073_evidence_paths.py",
+        "scripts/sync_codebase_memory_governance.py",
+    }:
+        return "governance-sync-output", "reviewed governance sync output"
+    if source_text in {
+        "scripts/compare_m055_header_vs_fulltext.py",
+        "scripts/m052_rlm_e2e.py",
+        "scripts/m058_marker_extract_5.py",
+        "scripts/m058_plotextractor_embed.py",
+        "scripts/m058_plotextractor_similarity.py",
+        "scripts/m059_e2e_test.py",
+        "scripts/m068_integration_test.py",
+        "scripts/m103_extraction_prototype.py",
+    }:
+        return "experiment-probe-output", "reviewed experiment probe output"
+    if source_text in {
+        "scripts/build_m043_sidecar_packets.py",
+        "scripts/m061_synthesis.py",
+        "scripts/run_pipeline_architecture_acceptance.py",
+        "scripts/synthesize_m029_unified_readiness.py",
+        "scripts/update_m043_target_subset_post_m053.py",
+        "scripts/update_m043_target_subset_post_m054.py",
+        "scripts/verify_article_catalog.py",
+        "scripts/verify_m022_final_gate.py",
+        "scripts/verify_m023_artifact_scaffold_gate.py",
+        "scripts/verify_m025_article_catalog.py",
+        "scripts/verify_m025_baseline_recovery_outputs.py",
+    }:
+        return "misc-architecture-artifact-output", "reviewed misc architecture artifact output"
+    if source_text in {
         "scripts/build_r024_20_document_corpus_selection.py",
         "scripts/build_r024_53_document_corpus_selection.py",
     }:

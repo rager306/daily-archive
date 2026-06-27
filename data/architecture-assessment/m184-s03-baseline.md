@@ -10,7 +10,6 @@ Total records: `341`
 |---|---:|
 | append-log | 1 |
 | article-artifact-package | 7 |
-| audit-analysis-output | 24 |
 | benchmark-m055-output | 5 |
 | benchmark-m055deep-output | 3 |
 | build-m028-output | 4 |
@@ -18,10 +17,7 @@ Total records: `341`
 | caller-owned-index | 1 |
 | daily-cli-output | 5 |
 | database | 1 |
-| experiment-probe-output | 12 |
 | figure-extraction-benchmark-output | 13 |
-| governance-sync-output | 4 |
-| graph-connectivity-probe-output | 12 |
 | graph-probe-output | 2 |
 | graph-readiness-evidence | 14 |
 | inventory-report-output | 3 |
@@ -33,7 +29,6 @@ Total records: `341`
 | m060-graph-figure-benchmark-output | 13 |
 | m061-acquisition-pipeline-output | 11 |
 | m066-graphdb-benchmark-output | 3 |
-| misc-architecture-artifact-output | 13 |
 | parser-replay-output | 3 |
 | queue-gate-output | 2 |
 | queue-soak-output | 1 |
@@ -42,15 +37,12 @@ Total records: `341`
 | r024-entity-extraction-output | 3 |
 | r024-networkx-probe-output | 3 |
 | r024-quality-metrics-output | 8 |
-| render-report-contract-output | 8 |
 | repair-benchmark-output | 5 |
-| replay-conversion-output | 2 |
 | replay-m031-output | 3 |
 | run-owned-state | 1 |
 | run-scoped | 6 |
-| script-only | 4 |
+| script-only | 89 |
 | smoke-script-output | 8 |
-| source-acquisition-evidence-output | 10 |
 | source-asset-package | 4 |
 | source-scan-output | 3 |
 | temporary | 1 |
@@ -141,33 +133,33 @@ Total records: `341`
 | `src/research_graph/workflows/validation/batch_workflow.py` | 508 | `write_text` | `summary_path` | validation-batch-output |
 | `src/research_graph/workflows/validation/batch_workflow.py` | 649 | `write_text` | `summary_path` | validation-batch-output |
 | `src/research_graph/workflows/validation/batch_workflow.py` | 736 | `write_text` | `summary_path` | validation-batch-output |
-| `scripts/acquire_linked_target_pdfs.py` | 114 | `write_bytes` | `tmp_path` | source-acquisition-evidence-output |
-| `scripts/acquire_linked_target_pdfs.py` | 279 | `write_text` | `log_path` | source-acquisition-evidence-output |
-| `scripts/acquire_m056_wave.py` | 92 | `write_text` | `tmp_path` | source-acquisition-evidence-output |
-| `scripts/acquire_m056_wave.py` | 196 | `write_bytes` | `tmp_path` | source-acquisition-evidence-output |
-| `scripts/analyze_m056_wave_1.py` | 49 | `write_text` | `tmp_path` | audit-analysis-output |
-| `scripts/analyze_m056_wave_1.py` | 56 | `write_text` | `tmp_path` | audit-analysis-output |
-| `scripts/analyze_m056_wave_2.py` | 50 | `write_text` | `tmp_path` | audit-analysis-output |
-| `scripts/analyze_m056_wave_2.py` | 57 | `write_text` | `tmp_path` | audit-analysis-output |
-| `scripts/analyze_m056_wave_3.py` | 51 | `write_text` | `tmp_path` | audit-analysis-output |
-| `scripts/analyze_m056_wave_3.py` | 58 | `write_text` | `tmp_path` | audit-analysis-output |
-| `scripts/analyze_m056_wave_4.py` | 53 | `write_text` | `tmp_path` | audit-analysis-output |
-| `scripts/analyze_m056_wave_4.py` | 60 | `write_text` | `tmp_path` | audit-analysis-output |
-| `scripts/analyze_m056_wave_5.py` | 54 | `write_text` | `tmp_path` | audit-analysis-output |
-| `scripts/analyze_m056_wave_5.py` | 61 | `write_text` | `tmp_path` | audit-analysis-output |
-| `scripts/analyze_m056_wave_6.py` | 56 | `write_text` | `tmp` | audit-analysis-output |
-| `scripts/audit_locator_evidence.py` | 202 | `write_text` | `destination` | audit-analysis-output |
-| `scripts/audit_locator_evidence.py` | 206 | `write_text` | `destination` | audit-analysis-output |
-| `scripts/audit_m042_connectivity_groups.py` | 31 | `write_text` | `path` | audit-analysis-output |
-| `scripts/audit_m042_connectivity_groups.py` | 38 | `write_text` | `path` | audit-analysis-output |
-| `scripts/audit_m053_grobid_pilot.py` | 198 | `write_text` | `output_path` | audit-analysis-output |
-| `scripts/audit_m054_pdf_acquisition.py` | 227 | `write_text` | `DEFAULT_AUDIT_PATH` | source-acquisition-evidence-output |
-| `scripts/audit_pipeline_scripts.py` | 355 | `write_text` | `path` | audit-analysis-output |
+| `scripts/acquire_linked_target_pdfs.py` | 114 | `write_bytes` | `tmp_path` | script-only |
+| `scripts/acquire_linked_target_pdfs.py` | 279 | `write_text` | `log_path` | script-only |
+| `scripts/acquire_m056_wave.py` | 92 | `write_text` | `tmp_path` | script-only |
+| `scripts/acquire_m056_wave.py` | 196 | `write_bytes` | `tmp_path` | script-only |
+| `scripts/analyze_m056_wave_1.py` | 49 | `write_text` | `tmp_path` | script-only |
+| `scripts/analyze_m056_wave_1.py` | 56 | `write_text` | `tmp_path` | script-only |
+| `scripts/analyze_m056_wave_2.py` | 50 | `write_text` | `tmp_path` | script-only |
+| `scripts/analyze_m056_wave_2.py` | 57 | `write_text` | `tmp_path` | script-only |
+| `scripts/analyze_m056_wave_3.py` | 51 | `write_text` | `tmp_path` | script-only |
+| `scripts/analyze_m056_wave_3.py` | 58 | `write_text` | `tmp_path` | script-only |
+| `scripts/analyze_m056_wave_4.py` | 53 | `write_text` | `tmp_path` | script-only |
+| `scripts/analyze_m056_wave_4.py` | 60 | `write_text` | `tmp_path` | script-only |
+| `scripts/analyze_m056_wave_5.py` | 54 | `write_text` | `tmp_path` | script-only |
+| `scripts/analyze_m056_wave_5.py` | 61 | `write_text` | `tmp_path` | script-only |
+| `scripts/analyze_m056_wave_6.py` | 56 | `write_text` | `tmp` | script-only |
+| `scripts/audit_locator_evidence.py` | 202 | `write_text` | `destination` | script-only |
+| `scripts/audit_locator_evidence.py` | 206 | `write_text` | `destination` | script-only |
+| `scripts/audit_m042_connectivity_groups.py` | 31 | `write_text` | `path` | script-only |
+| `scripts/audit_m042_connectivity_groups.py` | 38 | `write_text` | `path` | script-only |
+| `scripts/audit_m053_grobid_pilot.py` | 198 | `write_text` | `output_path` | script-only |
+| `scripts/audit_m054_pdf_acquisition.py` | 227 | `write_text` | `DEFAULT_AUDIT_PATH` | script-only |
+| `scripts/audit_pipeline_scripts.py` | 355 | `write_text` | `path` | script-only |
 | `scripts/audit_test_architecture.py` | 204 | `write_text` | `json_path` | test-architecture-audit-output |
 | `scripts/audit_test_architecture.py` | 205 | `write_text` | `markdown_path` | test-architecture-audit-output |
 | `scripts/audit_test_architecture.py` | 206 | `write_text` | `pilot_path` | test-architecture-audit-output |
-| `scripts/augment_m073_evidence_paths.py` | 44 | `write_text` | `path` | governance-sync-output |
-| `scripts/augment_m073_evidence_paths.py` | 146 | `write_text` | `output` | governance-sync-output |
+| `scripts/augment_m073_evidence_paths.py` | 44 | `write_text` | `path` | script-only |
+| `scripts/augment_m073_evidence_paths.py` | 146 | `write_text` | `output` | script-only |
 | `scripts/benchmark_m055_availability_probe.py` | 195 | `write_text` | `output_path` | benchmark-m055-output |
 | `scripts/benchmark_m055_corpus_manifest.py` | 118 | `write_text` | `output_path` | script-only |
 | `scripts/benchmark_m055_grobid_only.py` | 65 | `write_bytes` | `tmp_path` | benchmark-m055-output |
@@ -187,8 +179,8 @@ Total records: `341`
 | `scripts/build_m028_universal_loader_evidence_bundles.py` | 758 | `write_text` | `out_dir / BUNDLES_FILENAME` | m028-acquisition-evidence-output |
 | `scripts/build_m028_universal_loader_evidence_bundles.py` | 761 | `write_text` | `out_dir / SUMMARY_FILENAME` | m028-acquisition-evidence-output |
 | `scripts/build_m028_universal_loader_evidence_bundles.py` | 764 | `write_text` | `out_dir / REPORT_FILENAME` | m028-acquisition-evidence-output |
-| `scripts/build_m043_sidecar_packets.py` | 56 | `write_text` | `path` | misc-architecture-artifact-output |
-| `scripts/build_m043_sidecar_packets.py` | 63 | `write_text` | `path` | misc-architecture-artifact-output |
+| `scripts/build_m043_sidecar_packets.py` | 56 | `write_text` | `path` | script-only |
+| `scripts/build_m043_sidecar_packets.py` | 63 | `write_text` | `path` | script-only |
 | `scripts/build_m055deep_corpus_manifest_20.py` | 224 | `write_text` | `output_path` | script-only |
 | `scripts/build_r024_20_document_corpus_selection.py` | 159 | `write_text` | `OUT_SELECTION` | r024-corpus-selection-output |
 | `scripts/build_r024_20_document_corpus_selection.py` | 194 | `open` | `OUT_EVENTS` | r024-corpus-selection-output |
@@ -201,17 +193,17 @@ Total records: `341`
 | `scripts/build_r024_entity_networkx_probe.py` | 288 | `open` | `PROBE_EVENTS` | r024-networkx-probe-output |
 | `scripts/capture_m025_article_sources.py` | 31 | `write_text` | `path` | m025-recovery-evidence-output |
 | `scripts/capture_m025_article_sources.py` | 108 | `write_bytes` | `target` | m025-recovery-evidence-output |
-| `scripts/capture_m027_mixed_source_sources.py` | 920 | `write_text` | `report_path` | source-acquisition-evidence-output |
-| `scripts/capture_m027_mixed_source_sources.py` | 925 | `write_text` | `report_path` | source-acquisition-evidence-output |
-| `scripts/check_project_trajectory.py` | 121 | `write_text` | `path` | audit-analysis-output |
-| `scripts/check_project_trajectory.py` | 128 | `write_text` | `path` | audit-analysis-output |
-| `scripts/compare_m055_header_vs_fulltext.py` | 30 | `write_text` | `tmp_path` | experiment-probe-output |
-| `scripts/convert_m027_source_quality_boundary.py` | 91 | `open` | `fd` | source-acquisition-evidence-output |
-| `scripts/convert_m029_unified_source_quality_boundary.py` | 97 | `open` | `fd` | source-acquisition-evidence-output |
+| `scripts/capture_m027_mixed_source_sources.py` | 920 | `write_text` | `report_path` | script-only |
+| `scripts/capture_m027_mixed_source_sources.py` | 925 | `write_text` | `report_path` | script-only |
+| `scripts/check_project_trajectory.py` | 121 | `write_text` | `path` | script-only |
+| `scripts/check_project_trajectory.py` | 128 | `write_text` | `path` | script-only |
+| `scripts/compare_m055_header_vs_fulltext.py` | 30 | `write_text` | `tmp_path` | script-only |
+| `scripts/convert_m027_source_quality_boundary.py` | 91 | `open` | `fd` | script-only |
+| `scripts/convert_m029_unified_source_quality_boundary.py` | 97 | `open` | `fd` | script-only |
 | `scripts/convert_r024_53_pdf_to_text.py` | 70 | `write_text` | `out_path` | r024-conversion-output |
 | `scripts/convert_r024_53_pdf_to_text.py` | 105 | `open` | `EVENTS_LOG` | r024-conversion-output |
 | `scripts/convert_r024_53_pdf_to_text.py` | 119 | `write_text` | `SUMMARY` | r024-conversion-output |
-| `scripts/emit_m056_candidate_edges.py` | 288 | `write_text` | `output` | source-acquisition-evidence-output |
+| `scripts/emit_m056_candidate_edges.py` | 288 | `write_text` | `output` | script-only |
 | `scripts/extract_r024_20_document_quality_metrics.py` | 96 | `write_text` | `METRICS` | r024-quality-metrics-output |
 | `scripts/extract_r024_20_document_quality_metrics.py` | 138 | `write_text` | `COMPARISON` | r024-quality-metrics-output |
 | `scripts/extract_r024_53_document_quality_metrics.py` | 102 | `write_text` | `METRICS` | r024-quality-metrics-output |
@@ -223,12 +215,12 @@ Total records: `341`
 | `scripts/extract_r024_entity_scale_entities.py` | 261 | `write_text` | `SUMMARY` | r024-entity-extraction-output |
 | `scripts/extract_r024_quality_metrics.py` | 128 | `write_text` | `METRICS` | r024-quality-metrics-output |
 | `scripts/extract_r024_quality_metrics.py` | 174 | `write_text` | `COMPARISON` | r024-quality-metrics-output |
-| `scripts/inventory_write_paths.py` | 519 | `write_text` | `args.json` | inventory-report-output |
-| `scripts/inventory_write_paths.py` | 520 | `write_text` | `args.markdown` | inventory-report-output |
-| `scripts/inventory_write_paths.py` | 524 | `write_text` | `args.delta_markdown` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 439 | `write_text` | `args.json` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 440 | `write_text` | `args.markdown` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 444 | `write_text` | `args.delta_markdown` | inventory-report-output |
 | `scripts/legacy/m057_table_embed.py` | 170 | `write_text` | `output_path` | m057-structure-extraction-output |
-| `scripts/m052_rlm_e2e.py` | 309 | `write_text` | `audit_json_path` | experiment-probe-output |
-| `scripts/m052_rlm_e2e.py` | 312 | `write_text` | `audit_md_path` | experiment-probe-output |
+| `scripts/m052_rlm_e2e.py` | 309 | `write_text` | `audit_json_path` | script-only |
+| `scripts/m052_rlm_e2e.py` | 312 | `write_text` | `audit_md_path` | script-only |
 | `scripts/m057_build_graph_manifest.py` | 41 | `write_text` | `path` | m057-structure-extraction-output |
 | `scripts/m057_compare_marker_opendataloader.py` | 237 | `write_text` | `json_output` | m057-structure-extraction-output |
 | `scripts/m057_compare_marker_opendataloader.py` | 238 | `write_text` | `md_output` | m057-structure-extraction-output |
@@ -253,17 +245,17 @@ Total records: `341`
 | `scripts/m058_marker_compare_5.py` | 315 | `write_text` | `COMPARISON_JSON` | figure-extraction-benchmark-output |
 | `scripts/m058_marker_compare_5.py` | 318 | `write_text` | `COMPARISON_MD` | figure-extraction-benchmark-output |
 | `scripts/m058_marker_compare_5.py` | 319 | `write_text` | `DECISION_MD` | figure-extraction-benchmark-output |
-| `scripts/m058_marker_extract_5.py` | 221 | `write_text` | `PER_PDF_DIR / f'{sample.arxiv_id}.json'` | experiment-probe-output |
-| `scripts/m058_marker_extract_5.py` | 264 | `write_text` | `OUTPUT_ROOT / 'summary.json'` | experiment-probe-output |
-| `scripts/m058_plotextractor_embed.py` | 135 | `write_text` | `output_path` | experiment-probe-output |
+| `scripts/m058_marker_extract_5.py` | 221 | `write_text` | `PER_PDF_DIR / f'{sample.arxiv_id}.json'` | script-only |
+| `scripts/m058_marker_extract_5.py` | 264 | `write_text` | `OUTPUT_ROOT / 'summary.json'` | script-only |
+| `scripts/m058_plotextractor_embed.py` | 135 | `write_text` | `output_path` | script-only |
 | `scripts/m058_plotextractor_extract.py` | 122 | `write_bytes` | `tarball_path` | figure-extraction-benchmark-output |
 | `scripts/m058_plotextractor_extract.py` | 362 | `write_text` | `per_pdf_dir / f'{arxiv_id}.json'` | figure-extraction-benchmark-output |
 | `scripts/m058_plotextractor_extract.py` | 424 | `write_text` | `summary_path` | figure-extraction-benchmark-output |
 | `scripts/m058_plotextractor_extract.py` | 425 | `write_text` | `summary_path.parent / 'figure-caption-corpus.json'` | figure-extraction-benchmark-output |
-| `scripts/m058_plotextractor_similarity.py` | 152 | `write_text` | `edges_path` | experiment-probe-output |
-| `scripts/m058_plotextractor_similarity.py` | 155 | `write_text` | `summary_path` | experiment-probe-output |
+| `scripts/m058_plotextractor_similarity.py` | 152 | `write_text` | `edges_path` | script-only |
+| `scripts/m058_plotextractor_similarity.py` | 155 | `write_text` | `summary_path` | script-only |
 | `scripts/m059_build_manifest.py` | 179 | `write_text` | `actual_output` | script-only |
-| `scripts/m059_e2e_test.py` | 30 | `write_text` | `path` | experiment-probe-output |
+| `scripts/m059_e2e_test.py` | 30 | `write_text` | `path` | script-only |
 | `scripts/m060b_graph_stats.py` | 244 | `write_text` | `json_path` | m060-graph-figure-benchmark-output |
 | `scripts/m060b_graph_stats.py` | 245 | `write_text` | `md_path` | m060-graph-figure-benchmark-output |
 | `scripts/m060b_graph_validate.py` | 291 | `write_text` | `json_path` | m060-graph-figure-benchmark-output |
@@ -289,30 +281,30 @@ Total records: `341`
 | `scripts/m061_full_5_anchors.py` | 193 | `write_bytes` | `eprint_path` | m061-acquisition-pipeline-output |
 | `scripts/m061_full_5_anchors.py` | 739 | `write_text` | `BASE_OUTPUT_DIR / 's02-decision.md'` | m061-acquisition-pipeline-output |
 | `scripts/m061_full_5_anchors.py` | 761 | `write_text` | `BASE_OUTPUT_DIR / 's02-decision.md'` | m061-acquisition-pipeline-output |
-| `scripts/m061_synthesis.py` | 546 | `write_text` | `path` | misc-architecture-artifact-output |
-| `scripts/m063_graphdb_benchmark.py` | 381 | `write_text` | `output` | graph-connectivity-probe-output |
+| `scripts/m061_synthesis.py` | 546 | `write_text` | `path` | script-only |
+| `scripts/m063_graphdb_benchmark.py` | 381 | `write_text` | `output` | script-only |
 | `scripts/m066_graphdb_full_benchmark.py` | 675 | `write_text` | `report_path` | m066-graphdb-benchmark-output |
 | `scripts/m066_graphdb_full_benchmark.py` | 676 | `write_text` | `artifact_dir / 'scoring-matrix.md'` | m066-graphdb-benchmark-output |
 | `scripts/m066_graphdb_full_benchmark.py` | 683 | `write_text` | `output` | m066-graphdb-benchmark-output |
-| `scripts/m068_integration_test.py` | 368 | `write_text` | `results_path` | experiment-probe-output |
-| `scripts/m068_integration_test.py` | 371 | `write_text` | `report_path` | experiment-probe-output |
-| `scripts/m103_extraction_prototype.py` | 478 | `write_text` | `out` | experiment-probe-output |
-| `scripts/probe_m033_opendataloader_adaptix_adapter.py` | 89 | `write_text` | `path` | graph-connectivity-probe-output |
-| `scripts/probe_m033_opendataloader_adaptix_adapter.py` | 301 | `write_text` | `output_dir / 'adaptix-adapter-report.md'` | graph-connectivity-probe-output |
-| `scripts/probe_m043_sidecar_runtime_readiness.py` | 38 | `write_text` | `path` | graph-connectivity-probe-output |
-| `scripts/probe_m043_sidecar_runtime_readiness.py` | 45 | `write_text` | `path` | graph-connectivity-probe-output |
-| `scripts/probe_m053_grobid_pilot.py` | 73 | `write_bytes` | `tmp_path` | graph-connectivity-probe-output |
-| `scripts/render_bounded_repair_prototype.py` | 91 | `write_text` | `json_output` | render-report-contract-output |
-| `scripts/render_bounded_repair_prototype.py` | 92 | `write_text` | `markdown_output` | render-report-contract-output |
-| `scripts/render_chunk_repair_contract.py` | 85 | `write_text` | `json_output` | render-report-contract-output |
-| `scripts/render_chunk_repair_contract.py` | 86 | `write_text` | `markdown_output` | render-report-contract-output |
-| `scripts/render_m055_report.py` | 53 | `write_text` | `path` | render-report-contract-output |
-| `scripts/render_m055deep_report.py` | 408 | `write_text` | `output_path` | render-report-contract-output |
-| `scripts/render_m056_report.py` | 492 | `write_text` | `output` | render-report-contract-output |
-| `scripts/render_reviewer_packet_prototype.py` | 267 | `write_text` | `temp_path` | render-report-contract-output |
-| `scripts/repair_m042_linked_metadata.py` | 63 | `write_text` | `path` | graph-connectivity-probe-output |
-| `scripts/repair_m042_linked_metadata.py` | 70 | `write_text` | `path` | graph-connectivity-probe-output |
-| `scripts/replay_m025_article_loader.py` | 27 | `write_text` | `path` | replay-conversion-output |
+| `scripts/m068_integration_test.py` | 368 | `write_text` | `results_path` | script-only |
+| `scripts/m068_integration_test.py` | 371 | `write_text` | `report_path` | script-only |
+| `scripts/m103_extraction_prototype.py` | 478 | `write_text` | `out` | script-only |
+| `scripts/probe_m033_opendataloader_adaptix_adapter.py` | 89 | `write_text` | `path` | script-only |
+| `scripts/probe_m033_opendataloader_adaptix_adapter.py` | 301 | `write_text` | `output_dir / 'adaptix-adapter-report.md'` | script-only |
+| `scripts/probe_m043_sidecar_runtime_readiness.py` | 38 | `write_text` | `path` | script-only |
+| `scripts/probe_m043_sidecar_runtime_readiness.py` | 45 | `write_text` | `path` | script-only |
+| `scripts/probe_m053_grobid_pilot.py` | 73 | `write_bytes` | `tmp_path` | script-only |
+| `scripts/render_bounded_repair_prototype.py` | 91 | `write_text` | `json_output` | script-only |
+| `scripts/render_bounded_repair_prototype.py` | 92 | `write_text` | `markdown_output` | script-only |
+| `scripts/render_chunk_repair_contract.py` | 85 | `write_text` | `json_output` | script-only |
+| `scripts/render_chunk_repair_contract.py` | 86 | `write_text` | `markdown_output` | script-only |
+| `scripts/render_m055_report.py` | 53 | `write_text` | `path` | script-only |
+| `scripts/render_m055deep_report.py` | 408 | `write_text` | `output_path` | script-only |
+| `scripts/render_m056_report.py` | 492 | `write_text` | `output` | script-only |
+| `scripts/render_reviewer_packet_prototype.py` | 267 | `write_text` | `temp_path` | script-only |
+| `scripts/repair_m042_linked_metadata.py` | 63 | `write_text` | `path` | script-only |
+| `scripts/repair_m042_linked_metadata.py` | 70 | `write_text` | `path` | script-only |
+| `scripts/replay_m025_article_loader.py` | 27 | `write_text` | `path` | script-only |
 | `scripts/replay_m027_current_pipeline_baseline.py` | 119 | `write_text` | `path` | m027-pipeline-replay-output |
 | `scripts/replay_m027_current_pipeline_baseline.py` | 124 | `write_text` | `path` | m027-pipeline-replay-output |
 | `scripts/replay_m027_current_pipeline_baseline.py` | 737 | `write_text` | `path` | m027-pipeline-replay-output |
@@ -326,32 +318,32 @@ Total records: `341`
 | `scripts/replay_m031_import_boundary_rehearsal.py` | 170 | `write_text` | `diagnostics_path_out` | replay-m031-output |
 | `scripts/replay_m031_import_boundary_rehearsal.py` | 177 | `write_text` | `report_path_out` | replay-m031-output |
 | `scripts/run_m029_unified_loader_runtime_smoke.py` | 56 | `open` | `fd` | smoke-script-output |
-| `scripts/run_m029_unified_replay.py` | 56 | `open` | `fd` | replay-conversion-output |
-| `scripts/run_m044_live_grobid_candidate_probe.py` | 55 | `write_text` | `path` | graph-connectivity-probe-output |
-| `scripts/run_m044_live_grobid_candidate_probe.py` | 62 | `write_text` | `path` | graph-connectivity-probe-output |
+| `scripts/run_m029_unified_replay.py` | 56 | `open` | `fd` | script-only |
+| `scripts/run_m044_live_grobid_candidate_probe.py` | 55 | `write_text` | `path` | script-only |
+| `scripts/run_m044_live_grobid_candidate_probe.py` | 62 | `write_text` | `path` | script-only |
 | `scripts/run_m122_mutation_smoke.py` | 104 | `write_text` | `spec.path` | smoke-script-output |
 | `scripts/run_m122_mutation_smoke.py` | 113 | `write_text` | `spec.path` | smoke-script-output |
-| `scripts/run_pipeline_architecture_acceptance.py` | 174 | `write_text` | `summary_path` | misc-architecture-artifact-output |
-| `scripts/select_m041_mixed_connectivity_batch.py` | 97 | `write_text` | `path` | graph-connectivity-probe-output |
-| `scripts/select_m041_mixed_connectivity_batch.py` | 104 | `write_text` | `path` | graph-connectivity-probe-output |
+| `scripts/run_pipeline_architecture_acceptance.py` | 174 | `write_text` | `summary_path` | script-only |
+| `scripts/select_m041_mixed_connectivity_batch.py` | 97 | `write_text` | `path` | script-only |
+| `scripts/select_m041_mixed_connectivity_batch.py` | 104 | `write_text` | `path` | script-only |
 | `scripts/soak_universal_kb_queue.py` | 274 | `write_text` | `args.json_out` | queue-soak-output |
-| `scripts/sync_codebase_memory_governance.py` | 516 | `write_text` | `output` | governance-sync-output |
-| `scripts/sync_codebase_memory_governance.py` | 517 | `write_text` | `graph_output` | governance-sync-output |
+| `scripts/sync_codebase_memory_governance.py` | 516 | `write_text` | `output` | script-only |
+| `scripts/sync_codebase_memory_governance.py` | 517 | `write_text` | `graph_output` | script-only |
 | `scripts/synthesize_m027_pipeline_readiness.py` | 1248 | `write_text` | `path` | m027-pipeline-replay-output |
 | `scripts/synthesize_m027_pipeline_readiness.py` | 1253 | `write_text` | `path` | m027-pipeline-replay-output |
 | `scripts/synthesize_m027_pipeline_readiness.py` | 1377 | `write_text` | `path` | m027-pipeline-replay-output |
-| `scripts/synthesize_m029_unified_readiness.py` | 59 | `open` | `fd` | misc-architecture-artifact-output |
-| `scripts/test_fd_contract.py` | 1418 | `write_text` | `artifact_dir / RESULTS_JSON` | audit-analysis-output |
-| `scripts/test_fd_contract.py` | 1533 | `write_text` | `artifact_dir / REPORT_MD` | audit-analysis-output |
-| `scripts/test_fd_contract.py` | 1569 | `write_text` | `artifact_dir / GAP_MD` | audit-analysis-output |
-| `scripts/update_m043_target_subset_post_m053.py` | 144 | `write_text` | `output_path` | misc-architecture-artifact-output |
-| `scripts/update_m043_target_subset_post_m054.py` | 127 | `write_text` | `DEFAULT_TARGET_PATH` | misc-architecture-artifact-output |
-| `scripts/verify_article_catalog.py` | 73 | `write_text` | `selection_path` | misc-architecture-artifact-output |
-| `scripts/verify_m022_final_gate.py` | 387 | `write_text` | `output_path` | misc-architecture-artifact-output |
-| `scripts/verify_m023_artifact_scaffold_gate.py` | 484 | `write_text` | `path` | misc-architecture-artifact-output |
-| `scripts/verify_m023_artifact_scaffold_gate.py` | 489 | `write_text` | `path` | misc-architecture-artifact-output |
-| `scripts/verify_m025_article_catalog.py` | 1550 | `write_text` | `args.write_report` | misc-architecture-artifact-output |
-| `scripts/verify_m025_baseline_recovery_outputs.py` | 447 | `write_text` | `args.write_summary` | misc-architecture-artifact-output |
+| `scripts/synthesize_m029_unified_readiness.py` | 59 | `open` | `fd` | script-only |
+| `scripts/test_fd_contract.py` | 1418 | `write_text` | `artifact_dir / RESULTS_JSON` | script-only |
+| `scripts/test_fd_contract.py` | 1533 | `write_text` | `artifact_dir / REPORT_MD` | script-only |
+| `scripts/test_fd_contract.py` | 1569 | `write_text` | `artifact_dir / GAP_MD` | script-only |
+| `scripts/update_m043_target_subset_post_m053.py` | 144 | `write_text` | `output_path` | script-only |
+| `scripts/update_m043_target_subset_post_m054.py` | 127 | `write_text` | `DEFAULT_TARGET_PATH` | script-only |
+| `scripts/verify_article_catalog.py` | 73 | `write_text` | `selection_path` | script-only |
+| `scripts/verify_m022_final_gate.py` | 387 | `write_text` | `output_path` | script-only |
+| `scripts/verify_m023_artifact_scaffold_gate.py` | 484 | `write_text` | `path` | script-only |
+| `scripts/verify_m023_artifact_scaffold_gate.py` | 489 | `write_text` | `path` | script-only |
+| `scripts/verify_m025_article_catalog.py` | 1550 | `write_text` | `args.write_report` | script-only |
+| `scripts/verify_m025_baseline_recovery_outputs.py` | 447 | `write_text` | `args.write_summary` | script-only |
 | `scripts/verify_m025_baseline_recovery_replay.py` | 128 | `write_text` | `path` | m025-recovery-evidence-output |
 | `scripts/verify_m025_baseline_recovery_replay.py` | 494 | `write_text` | `path` | m025-recovery-evidence-output |
 | `scripts/verify_m025_baseline_recovery_replay.py` | 520 | `write_text` | `args.write_events` | m025-recovery-evidence-output |
@@ -404,5 +396,5 @@ Total records: `341`
 | `scripts/verify_m033_quantmind_pattern_study.py` | 249 | `write_text` | `path` | verify-m033-output |
 | `scripts/verify_m072_queue_benchmark_gate.py` | 97 | `write_text` | `output_path` | queue-gate-output |
 | `scripts/verify_m073_queue_evidence_gate.py` | 87 | `write_text` | `output_path` | queue-gate-output |
-| `scripts/verify_test_architecture.py` | 188 | `write_text` | `json_path` | audit-analysis-output |
-| `scripts/verify_test_architecture.py` | 189 | `write_text` | `markdown_path` | audit-analysis-output |
+| `scripts/verify_test_architecture.py` | 188 | `write_text` | `json_path` | script-only |
+| `scripts/verify_test_architecture.py` | 189 | `write_text` | `markdown_path` | script-only |

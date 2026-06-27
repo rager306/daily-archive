@@ -5,7 +5,7 @@ Status: `passed`
 
 ## Summary
 
-- Total test files: `270`
+- Total test files: `271`
 - Violations: `0`
 - Allowlisted legacy mixed: `0`
 - Allowlisted dynamic script import: `0`

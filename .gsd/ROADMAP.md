@@ -188,3 +188,4 @@
 - ✅ **M181-2xosbi: Residual Verify Wave Docs Cleanup and Cache Ownership Review** (`depends:[—]`)
 - ✅ **M182-l6wsbs: Build and Replay Residual Script Wave** (`depends:[M181-2xosbi]`)
 - ✅ **M183-lg1xjb: Audit Report Wave Docs Crystallization and Cache Review** (`depends:[M182-l6wsbs]`)
+- ✅ **M184-g6wwlr: Architecture Refactor Waves and Ratchets** (`depends:[—]`)

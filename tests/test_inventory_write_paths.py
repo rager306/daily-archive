@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from scripts.inventory_write_paths import _classify, render_delta_markdown
@@ -486,6 +487,174 @@ def test_m183_m066_and_test_architecture_audit_outputs_get_precise_categories() 
     ) == ("script-only", "write occurs in process-boundary script")
 
 
+def test_m184_source_acquisition_outputs_get_precise_category() -> None:
+    for path, target in (
+        ("scripts/acquire_linked_target_pdfs.py", "log_path"),
+        ("scripts/acquire_linked_target_pdfs.py", "tmp_path"),
+        ("scripts/acquire_m056_wave.py", "tmp_path"),
+        ("scripts/audit_m054_pdf_acquisition.py", "DEFAULT_AUDIT_PATH"),
+        ("scripts/capture_m027_mixed_source_sources.py", "report_path"),
+        ("scripts/convert_m027_source_quality_boundary.py", "fd"),
+        ("scripts/convert_m029_unified_source_quality_boundary.py", "fd"),
+        ("scripts/emit_m056_candidate_edges.py", "output"),
+    ):
+        assert _classify(
+            Path(path),
+            "write_text",
+            target,
+            None,
+        ) == (
+            "source-acquisition-evidence-output",
+            "reviewed source acquisition evidence output",
+        )
+    assert _classify(
+        Path("scripts/acquire_future_unlisted.py"),
+        "write_text",
+        "log_path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
+def test_m184_audit_analysis_outputs_get_precise_category() -> None:
+    for path, target in (
+        ("scripts/analyze_m056_wave_1.py", "tmp_path"),
+        ("scripts/analyze_m056_wave_2.py", "tmp_path"),
+        ("scripts/analyze_m056_wave_3.py", "tmp_path"),
+        ("scripts/analyze_m056_wave_4.py", "tmp_path"),
+        ("scripts/analyze_m056_wave_5.py", "tmp_path"),
+        ("scripts/analyze_m056_wave_6.py", "tmp"),
+        ("scripts/audit_locator_evidence.py", "destination"),
+        ("scripts/audit_m042_connectivity_groups.py", "path"),
+        ("scripts/audit_m053_grobid_pilot.py", "output_path"),
+        ("scripts/audit_pipeline_scripts.py", "path"),
+        ("scripts/check_project_trajectory.py", "path"),
+        ("scripts/test_fd_contract.py", "artifact_dir / REPORT_MD"),
+        ("scripts/verify_test_architecture.py", "json_path"),
+    ):
+        assert _classify(
+            Path(path),
+            "write_text",
+            target,
+            None,
+        ) == ("audit-analysis-output", "reviewed audit analysis output")
+    assert _classify(
+        Path("scripts/audit_future_unlisted.py"),
+        "write_text",
+        "path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
+def test_m184_render_report_contract_outputs_get_precise_category() -> None:
+    for path, target in (
+        ("scripts/render_bounded_repair_prototype.py", "json_output"),
+        ("scripts/render_bounded_repair_prototype.py", "markdown_output"),
+        ("scripts/render_chunk_repair_contract.py", "json_output"),
+        ("scripts/render_chunk_repair_contract.py", "markdown_output"),
+        ("scripts/render_m055_report.py", "path"),
+        ("scripts/render_m055deep_report.py", "output_path"),
+        ("scripts/render_m056_report.py", "output"),
+        ("scripts/render_reviewer_packet_prototype.py", "temp_path"),
+    ):
+        assert _classify(
+            Path(path),
+            "write_text",
+            target,
+            None,
+        ) == (
+            "render-report-contract-output",
+            "reviewed render report contract output",
+        )
+    assert _classify(
+        Path("scripts/render_future_unlisted.py"),
+        "write_text",
+        "output",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
+def test_m184_replay_conversion_outputs_get_precise_category() -> None:
+    for path, target in (
+        ("scripts/replay_m025_article_loader.py", "path"),
+        ("scripts/run_m029_unified_replay.py", "fd"),
+    ):
+        assert _classify(
+            Path(path),
+            "write_text",
+            target,
+            None,
+        ) == ("replay-conversion-output", "reviewed replay conversion output")
+    assert _classify(
+        Path("scripts/replay_future_unlisted.py"),
+        "write_text",
+        "path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
+def test_m184_graph_connectivity_probe_outputs_get_precise_category_without_manifest() -> None:
+    for path, target in (
+        ("scripts/m063_graphdb_benchmark.py", "output"),
+        ("scripts/probe_m033_opendataloader_adaptix_adapter.py", "path"),
+        ("scripts/probe_m033_opendataloader_adaptix_adapter.py", "output_dir / 'adaptix-adapter-report.md'"),
+        ("scripts/probe_m043_sidecar_runtime_readiness.py", "path"),
+        ("scripts/probe_m053_grobid_pilot.py", "tmp_path"),
+        ("scripts/repair_m042_linked_metadata.py", "path"),
+        ("scripts/run_m044_live_grobid_candidate_probe.py", "path"),
+        ("scripts/select_m041_mixed_connectivity_batch.py", "path"),
+    ):
+        assert _classify(
+            Path(path),
+            "write_text",
+            target,
+            None,
+        ) == (
+            "graph-connectivity-probe-output",
+            "reviewed graph connectivity probe output",
+        )
+    assert _classify(
+        Path("scripts/m058_build_graph_manifest.py"),
+        "write_text",
+        "path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+    assert _classify(
+        Path("scripts/probe_future_unlisted.py"),
+        "write_text",
+        "path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
+def test_m184_remaining_residual_outputs_get_precise_categories_without_manifests() -> None:
+    for path, target, category, reason in (
+        ("scripts/augment_m073_evidence_paths.py", "output", "governance-sync-output", "reviewed governance sync output"),
+        ("scripts/sync_codebase_memory_governance.py", "graph_output", "governance-sync-output", "reviewed governance sync output"),
+        ("scripts/compare_m055_header_vs_fulltext.py", "tmp_path", "experiment-probe-output", "reviewed experiment probe output"),
+        ("scripts/m052_rlm_e2e.py", "audit_json_path", "experiment-probe-output", "reviewed experiment probe output"),
+        ("scripts/m058_marker_extract_5.py", "OUTPUT_ROOT / 'summary.json'", "experiment-probe-output", "reviewed experiment probe output"),
+        ("scripts/m058_plotextractor_similarity.py", "summary_path", "experiment-probe-output", "reviewed experiment probe output"),
+        ("scripts/m068_integration_test.py", "report_path", "experiment-probe-output", "reviewed experiment probe output"),
+        ("scripts/build_m043_sidecar_packets.py", "path", "misc-architecture-artifact-output", "reviewed misc architecture artifact output"),
+        ("scripts/m061_synthesis.py", "path", "misc-architecture-artifact-output", "reviewed misc architecture artifact output"),
+        ("scripts/run_pipeline_architecture_acceptance.py", "summary_path", "misc-architecture-artifact-output", "reviewed misc architecture artifact output"),
+        ("scripts/update_m043_target_subset_post_m054.py", "DEFAULT_TARGET_PATH", "misc-architecture-artifact-output", "reviewed misc architecture artifact output"),
+        ("scripts/verify_m023_artifact_scaffold_gate.py", "path", "misc-architecture-artifact-output", "reviewed misc architecture artifact output"),
+        ("scripts/verify_m025_article_catalog.py", "args.write_report", "misc-architecture-artifact-output", "reviewed misc architecture artifact output"),
+    ):
+        assert _classify(Path(path), "write_text", target, None) == (category, reason)
+    for path, target in (
+        ("scripts/benchmark_m055_corpus_manifest.py", "output_path"),
+        ("scripts/build_m055deep_corpus_manifest_20.py", "output_path"),
+        ("scripts/m058_build_graph_manifest.py", "path"),
+        ("scripts/m059_build_manifest.py", "actual_output"),
+    ):
+        assert _classify(Path(path), "write_text", target, None) == (
+            "script-only",
+            "write occurs in process-boundary script",
+        )
+
+
 def test_daily_cli_outputs_get_precise_category_without_moving_temp_path() -> None:
     assert _classify(
         Path("src/research_graph/cli/__init__.py"),
@@ -652,3 +821,14 @@ def test_render_delta_markdown_reports_totals_and_sorted_category_deltas() -> No
     assert markdown.index("caller-owned") < markdown.index("daily-cli-output") < markdown.index(
         "run-scoped"
     )
+
+
+def test_m184_canonical_inventory_ratchets_script_only_without_guardrail_regression() -> None:
+    canonical = json.loads(
+        Path("data/architecture-assessment/write-path-inventory-canonical.json").read_text()
+    )
+    categories = canonical["summary"]["by_category"]
+
+    assert categories.get("script-only", 0) <= 4
+    assert categories.get("unknown", 0) == 0
+    assert categories.get("shared-state", 0) == 0

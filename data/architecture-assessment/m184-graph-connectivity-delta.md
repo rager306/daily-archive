@@ -16,10 +16,8 @@ Total delta: `+0`
 | caller-owned-index | 1 | 1 | +0 |
 | daily-cli-output | 5 | 5 | +0 |
 | database | 1 | 1 | +0 |
-| experiment-probe-output | 0 | 12 | +12 |
 | figure-extraction-benchmark-output | 13 | 13 | +0 |
-| governance-sync-output | 0 | 4 | +4 |
-| graph-connectivity-probe-output | 12 | 12 | +0 |
+| graph-connectivity-probe-output | 0 | 12 | +12 |
 | graph-probe-output | 2 | 2 | +0 |
 | graph-readiness-evidence | 14 | 14 | +0 |
 | inventory-report-output | 3 | 3 | +0 |
@@ -31,7 +29,6 @@ Total delta: `+0`
 | m060-graph-figure-benchmark-output | 13 | 13 | +0 |
 | m061-acquisition-pipeline-output | 11 | 11 | +0 |
 | m066-graphdb-benchmark-output | 3 | 3 | +0 |
-| misc-architecture-artifact-output | 0 | 13 | +13 |
 | parser-replay-output | 3 | 3 | +0 |
 | queue-gate-output | 2 | 2 | +0 |
 | queue-soak-output | 1 | 1 | +0 |
@@ -46,7 +43,7 @@ Total delta: `+0`
 | replay-m031-output | 3 | 3 | +0 |
 | run-owned-state | 1 | 1 | +0 |
 | run-scoped | 6 | 6 | +0 |
-| script-only | 33 | 4 | -29 |
+| script-only | 45 | 33 | -12 |
 | smoke-script-output | 8 | 8 | +0 |
 | source-acquisition-evidence-output | 10 | 10 | +0 |
 | source-asset-package | 4 | 4 | +0 |

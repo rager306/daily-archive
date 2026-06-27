@@ -13,15 +13,20 @@ preserving the core verifier's explicit-argument contract for specialized runs.
 
 from __future__ import annotations
 
+# ruff: noqa: I001
+
 import json
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
+
+from research_graph.application.corpus.article_catalog_selection import (
+    build_current_catalog_index_selection,
+)
 
 # pyrefly: ignore [missing-import]
 from verify_m025_article_catalog import main
@@ -29,30 +34,6 @@ from verify_m025_article_catalog import main
 ROOT = SCRIPT_DIR.parents[0]
 DEFAULT_CATALOG = ROOT / "data" / "article_catalog" / "catalog.json"
 DEFAULT_INDEX = ROOT / "data" / "article_catalog" / "article_catalog" / "index.json"
-
-
-def build_default_selection(index_path: Path) -> dict[str, Any]:
-    index = json.loads(index_path.read_text(encoding="utf-8"))
-    articles = [
-        {
-            "article_ref": row["article_ref"],
-            "source_code": row["source_code"],
-            "title": row.get("title"),
-        }
-        for row in index.get("articles", [])
-        if isinstance(row, dict) and row.get("article_ref") and row.get("source_code")
-    ]
-    return {
-        "schema_version": "article-corpus-selection.v00.01",
-        "selection_id": "current-article-catalog-index",
-        "catalog_schema_version": "article-catalog.v00.01",
-        "article_schema_version": "article.v00.01",
-        "network_policy": {
-            "test_phase_must_not_fetch": True,
-            "pipeline_phase_reads_catalog_only": True,
-        },
-        "articles": articles,
-    }
 
 
 def run_core(effective_argv: list[str]) -> int:
@@ -71,7 +52,8 @@ def run(argv: list[str]) -> int:
     with tempfile.TemporaryDirectory(prefix="article-catalog-selection-") as tmp_dir:
         selection_path = Path(tmp_dir) / "selection.json"
         selection_path.write_text(
-            json.dumps(build_default_selection(DEFAULT_INDEX), indent=2) + "\n", encoding="utf-8"
+            json.dumps(build_current_catalog_index_selection(DEFAULT_INDEX), indent=2) + "\n",
+            encoding="utf-8",
         )
         return run_core(
             [
