@@ -209,6 +209,13 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
         "scripts/verify_m027_source_acquisition_boundary.py",
     }:
         return "verify-m027-output", "reviewed M027 verification output"
+    if source_text in {
+        "scripts/build_m028_hermes_digest_projection.py",
+        "scripts/build_m028_source_metadata_adapters.py",
+    }:
+        return "build-m028-output", "reviewed M028 builder output"
+    if source_text == "scripts/replay_m031_import_boundary_rehearsal.py":
+        return "replay-m031-output", "reviewed M031 replay output"
     if source_path.parts and source_path.parts[0] == "scripts":
         return "script-only", "write occurs in process-boundary script"
     if operation == "sqlite3.connect" or ".db" in path_text or "database" in path_text:

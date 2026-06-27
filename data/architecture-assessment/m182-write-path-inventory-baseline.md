@@ -10,7 +10,6 @@ Total records: `341`
 |---|---:|
 | append-log | 1 |
 | article-artifact-package | 7 |
-| build-m028-output | 4 |
 | caller-owned | 10 |
 | caller-owned-index | 1 |
 | daily-cli-output | 5 |
@@ -35,10 +34,9 @@ Total records: `341`
 | r024-networkx-probe-output | 3 |
 | r024-quality-metrics-output | 8 |
 | repair-benchmark-output | 5 |
-| replay-m031-output | 3 |
 | run-owned-state | 1 |
 | run-scoped | 6 |
-| script-only | 103 |
+| script-only | 110 |
 | smoke-script-output | 8 |
 | source-asset-package | 4 |
 | source-scan-output | 3 |
@@ -165,13 +163,13 @@ Total records: `341`
 | `scripts/benchmark_m055deep_grobid_fulltext.py` | 56 | `write_bytes` | `tmp_path` | script-only |
 | `scripts/benchmark_m055deep_hybrid_routing_20.py` | 50 | `write_bytes` | `tmp_path` | script-only |
 | `scripts/benchmark_m055deep_opendataloader_correctness.py` | 45 | `write_text` | `path` | script-only |
-| `scripts/build_m028_hermes_digest_projection.py` | 775 | `write_text` | `out_dir / DIGEST_FILENAME` | build-m028-output |
-| `scripts/build_m028_hermes_digest_projection.py` | 778 | `write_text` | `out_dir / REPORT_FILENAME` | build-m028-output |
+| `scripts/build_m028_hermes_digest_projection.py` | 775 | `write_text` | `out_dir / DIGEST_FILENAME` | script-only |
+| `scripts/build_m028_hermes_digest_projection.py` | 778 | `write_text` | `out_dir / REPORT_FILENAME` | script-only |
 | `scripts/build_m028_pdf_acquisition_diagnostics.py` | 740 | `write_text` | `out_dir / EVENTS_FILENAME` | m028-acquisition-evidence-output |
 | `scripts/build_m028_pdf_acquisition_diagnostics.py` | 743 | `write_text` | `out_dir / SUMMARY_FILENAME` | m028-acquisition-evidence-output |
 | `scripts/build_m028_pdf_acquisition_diagnostics.py` | 746 | `write_text` | `out_dir / REPORT_FILENAME` | m028-acquisition-evidence-output |
-| `scripts/build_m028_source_metadata_adapters.py` | 668 | `write_text` | `events_path` | build-m028-output |
-| `scripts/build_m028_source_metadata_adapters.py` | 671 | `write_text` | `summary_path` | build-m028-output |
+| `scripts/build_m028_source_metadata_adapters.py` | 668 | `write_text` | `events_path` | script-only |
+| `scripts/build_m028_source_metadata_adapters.py` | 671 | `write_text` | `summary_path` | script-only |
 | `scripts/build_m028_universal_loader_evidence_bundles.py` | 758 | `write_text` | `out_dir / BUNDLES_FILENAME` | m028-acquisition-evidence-output |
 | `scripts/build_m028_universal_loader_evidence_bundles.py` | 761 | `write_text` | `out_dir / SUMMARY_FILENAME` | m028-acquisition-evidence-output |
 | `scripts/build_m028_universal_loader_evidence_bundles.py` | 764 | `write_text` | `out_dir / REPORT_FILENAME` | m028-acquisition-evidence-output |
@@ -211,9 +209,9 @@ Total records: `341`
 | `scripts/extract_r024_entity_scale_entities.py` | 261 | `write_text` | `SUMMARY` | r024-entity-extraction-output |
 | `scripts/extract_r024_quality_metrics.py` | 128 | `write_text` | `METRICS` | r024-quality-metrics-output |
 | `scripts/extract_r024_quality_metrics.py` | 174 | `write_text` | `COMPARISON` | r024-quality-metrics-output |
-| `scripts/inventory_write_paths.py` | 421 | `write_text` | `args.json` | inventory-report-output |
-| `scripts/inventory_write_paths.py` | 422 | `write_text` | `args.markdown` | inventory-report-output |
-| `scripts/inventory_write_paths.py` | 426 | `write_text` | `args.delta_markdown` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 414 | `write_text` | `args.json` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 415 | `write_text` | `args.markdown` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 419 | `write_text` | `args.delta_markdown` | inventory-report-output |
 | `scripts/legacy/m057_table_embed.py` | 170 | `write_text` | `output_path` | m057-structure-extraction-output |
 | `scripts/m052_rlm_e2e.py` | 309 | `write_text` | `audit_json_path` | script-only |
 | `scripts/m052_rlm_e2e.py` | 312 | `write_text` | `audit_md_path` | script-only |
@@ -310,9 +308,9 @@ Total records: `341`
 | `scripts/replay_m028_smoke_closeout.py` | 882 | `write_text` | `events_path` | smoke-script-output |
 | `scripts/replay_m028_smoke_closeout.py` | 886 | `write_text` | `summary_path` | smoke-script-output |
 | `scripts/replay_m028_smoke_closeout.py` | 887 | `write_text` | `report_path` | smoke-script-output |
-| `scripts/replay_m031_import_boundary_rehearsal.py` | 167 | `write_text` | `summary_path_out` | replay-m031-output |
-| `scripts/replay_m031_import_boundary_rehearsal.py` | 170 | `write_text` | `diagnostics_path_out` | replay-m031-output |
-| `scripts/replay_m031_import_boundary_rehearsal.py` | 177 | `write_text` | `report_path_out` | replay-m031-output |
+| `scripts/replay_m031_import_boundary_rehearsal.py` | 167 | `write_text` | `summary_path_out` | script-only |
+| `scripts/replay_m031_import_boundary_rehearsal.py` | 170 | `write_text` | `diagnostics_path_out` | script-only |
+| `scripts/replay_m031_import_boundary_rehearsal.py` | 177 | `write_text` | `report_path_out` | script-only |
 | `scripts/run_m029_unified_loader_runtime_smoke.py` | 56 | `open` | `fd` | smoke-script-output |
 | `scripts/run_m029_unified_replay.py` | 56 | `open` | `fd` | script-only |
 | `scripts/run_m044_live_grobid_candidate_probe.py` | 55 | `write_text` | `path` | script-only |

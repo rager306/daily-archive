@@ -377,6 +377,40 @@ def test_m181_verify_m027_outputs_get_precise_category() -> None:
     ) == ("script-only", "write occurs in process-boundary script")
 
 
+def test_m182_build_m028_outputs_get_precise_category() -> None:
+    for path in (
+        "scripts/build_m028_hermes_digest_projection.py",
+        "scripts/build_m028_source_metadata_adapters.py",
+    ):
+        assert _classify(
+            Path(path),
+            "write_text",
+            "summary_path",
+            None,
+        ) == ("build-m028-output", "reviewed M028 builder output")
+    assert _classify(
+        Path("scripts/build_m028_future_unlisted.py"),
+        "write_text",
+        "summary_path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
+def test_m182_replay_m031_outputs_get_precise_category() -> None:
+    assert _classify(
+        Path("scripts/replay_m031_import_boundary_rehearsal.py"),
+        "write_text",
+        "summary_path_out",
+        None,
+    ) == ("replay-m031-output", "reviewed M031 replay output")
+    assert _classify(
+        Path("scripts/replay_m031_future_unlisted.py"),
+        "write_text",
+        "summary_path_out",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
 def test_daily_cli_outputs_get_precise_category_without_moving_temp_path() -> None:
     assert _classify(
         Path("src/research_graph/cli/__init__.py"),
