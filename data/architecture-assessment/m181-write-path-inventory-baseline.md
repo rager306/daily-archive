@@ -36,14 +36,12 @@ Total records: `341`
 | repair-benchmark-output | 5 |
 | run-owned-state | 1 |
 | run-scoped | 6 |
-| script-only | 110 |
+| script-only | 122 |
 | smoke-script-output | 8 |
 | source-asset-package | 4 |
 | source-scan-output | 3 |
 | temporary | 1 |
 | validation-batch-output | 10 |
-| verify-m027-output | 4 |
-| verify-m029-output | 8 |
 | verify-m031-output | 10 |
 | verify-m033-output | 10 |
 
@@ -209,9 +207,9 @@ Total records: `341`
 | `scripts/extract_r024_entity_scale_entities.py` | 261 | `write_text` | `SUMMARY` | r024-entity-extraction-output |
 | `scripts/extract_r024_quality_metrics.py` | 128 | `write_text` | `METRICS` | r024-quality-metrics-output |
 | `scripts/extract_r024_quality_metrics.py` | 174 | `write_text` | `COMPARISON` | r024-quality-metrics-output |
-| `scripts/inventory_write_paths.py` | 414 | `write_text` | `args.json` | inventory-report-output |
-| `scripts/inventory_write_paths.py` | 415 | `write_text` | `args.markdown` | inventory-report-output |
-| `scripts/inventory_write_paths.py` | 419 | `write_text` | `args.delta_markdown` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 401 | `write_text` | `args.json` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 402 | `write_text` | `args.markdown` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 406 | `write_text` | `args.delta_markdown` | inventory-report-output |
 | `scripts/legacy/m057_table_embed.py` | 170 | `write_text` | `output_path` | m057-structure-extraction-output |
 | `scripts/m052_rlm_e2e.py` | 309 | `write_text` | `audit_json_path` | script-only |
 | `scripts/m052_rlm_e2e.py` | 312 | `write_text` | `audit_md_path` | script-only |
@@ -352,22 +350,22 @@ Total records: `341`
 | `scripts/verify_m025_final_preprocessing_replay.py` | 615 | `write_text` | `args.write_events` | m025-recovery-evidence-output |
 | `scripts/verify_m027_end_to_end_mixed_replay.py` | 1307 | `write_text` | `verification_path` | m027-pipeline-replay-output |
 | `scripts/verify_m027_end_to_end_mixed_replay.py` | 1343 | `write_text` | `report_path` | m027-pipeline-replay-output |
-| `scripts/verify_m027_mixed_source_catalog.py` | 373 | `write_text` | `REPORT_PATH` | verify-m027-output |
+| `scripts/verify_m027_mixed_source_catalog.py` | 373 | `write_text` | `REPORT_PATH` | script-only |
 | `scripts/verify_m027_provenance_and_riskratchet_gate.py` | 776 | `write_text` | `path` | m027-pipeline-replay-output |
 | `scripts/verify_m027_provenance_and_riskratchet_gate.py` | 781 | `write_text` | `path` | m027-pipeline-replay-output |
 | `scripts/verify_m027_provenance_and_riskratchet_gate.py` | 853 | `write_text` | `path` | m027-pipeline-replay-output |
-| `scripts/verify_m027_source_acquisition_boundary.py` | 117 | `write_text` | `path` | verify-m027-output |
-| `scripts/verify_m027_source_acquisition_boundary.py` | 122 | `write_text` | `path` | verify-m027-output |
-| `scripts/verify_m027_source_acquisition_boundary.py` | 832 | `write_text` | `args.report` | verify-m027-output |
-| `scripts/verify_m029_post_validation_remediation.py` | 1205 | `write_text` | `path` | verify-m029-output |
-| `scripts/verify_m029_unified_conversion_quality_boundary.py` | 114 | `open` | `fd` | verify-m029-output |
+| `scripts/verify_m027_source_acquisition_boundary.py` | 117 | `write_text` | `path` | script-only |
+| `scripts/verify_m027_source_acquisition_boundary.py` | 122 | `write_text` | `path` | script-only |
+| `scripts/verify_m027_source_acquisition_boundary.py` | 832 | `write_text` | `args.report` | script-only |
+| `scripts/verify_m029_post_validation_remediation.py` | 1205 | `write_text` | `path` | script-only |
+| `scripts/verify_m029_unified_conversion_quality_boundary.py` | 114 | `open` | `fd` | script-only |
 | `scripts/verify_m029_unified_loader_runtime_smoke.py` | 68 | `open` | `fd` | smoke-script-output |
-| `scripts/verify_m029_unified_readiness.py` | 506 | `write_text` | `path` | verify-m029-output |
-| `scripts/verify_m029_unified_source_acquisition.py` | 55 | `write_text` | `path` | verify-m029-output |
-| `scripts/verify_m029_unified_source_acquisition.py` | 60 | `write_text` | `path` | verify-m029-output |
-| `scripts/verify_m029_unified_source_acquisition.py` | 795 | `write_text` | `args.write_report` | verify-m029-output |
-| `scripts/verify_m029_unified_source_acquisition.py` | 819 | `write_text` | `args.write_report` | verify-m029-output |
-| `scripts/verify_m029_validation_remediation.py` | 989 | `write_text` | `path` | verify-m029-output |
+| `scripts/verify_m029_unified_readiness.py` | 506 | `write_text` | `path` | script-only |
+| `scripts/verify_m029_unified_source_acquisition.py` | 55 | `write_text` | `path` | script-only |
+| `scripts/verify_m029_unified_source_acquisition.py` | 60 | `write_text` | `path` | script-only |
+| `scripts/verify_m029_unified_source_acquisition.py` | 795 | `write_text` | `args.write_report` | script-only |
+| `scripts/verify_m029_unified_source_acquisition.py` | 819 | `write_text` | `args.write_report` | script-only |
+| `scripts/verify_m029_validation_remediation.py` | 989 | `write_text` | `path` | script-only |
 | `scripts/verify_m031_chunk_evidence_replay.py` | 115 | `write_text` | `path` | verify-m031-output |
 | `scripts/verify_m031_parser_conversion_replay.py` | 107 | `write_text` | `path` | verify-m031-output |
 | `scripts/verify_m031_process_continuity_audit.py` | 246 | `write_text` | `path` | verify-m031-output |

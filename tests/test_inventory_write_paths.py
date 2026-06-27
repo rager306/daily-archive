@@ -85,7 +85,7 @@ def test_m176_script_wave_one_outputs_get_precise_categories_without_generic_scr
         None,
     ) == ("m028-acquisition-evidence-output", "reviewed M028 acquisition evidence output")
     assert _classify(
-        Path("scripts/verify_m029_unified_source_acquisition.py"),
+        Path("scripts/verify_m029_future_unlisted.py"),
         "write_text",
         "path",
         None,
@@ -124,7 +124,7 @@ def test_m177_r024_script_outputs_get_precise_categories_without_generic_script_
         None,
     ) == ("r024-quality-metrics-output", "reviewed R024 quality metrics output")
     assert _classify(
-        Path("scripts/verify_m029_unified_source_acquisition.py"),
+        Path("scripts/verify_m029_future_unlisted.py"),
         "write_text",
         "path",
         None,
@@ -330,6 +330,47 @@ def test_m180_verify_m033_outputs_get_precise_category() -> None:
         ) == ("verify-m033-output", "reviewed M033 verification output")
     assert _classify(
         Path("scripts/verify_m033_future_probe.py"),
+        "write_text",
+        "path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
+def test_m181_verify_m029_outputs_get_precise_category() -> None:
+    for path in (
+        "scripts/verify_m029_post_validation_remediation.py",
+        "scripts/verify_m029_unified_conversion_quality_boundary.py",
+        "scripts/verify_m029_unified_readiness.py",
+        "scripts/verify_m029_unified_source_acquisition.py",
+        "scripts/verify_m029_validation_remediation.py",
+    ):
+        assert _classify(
+            Path(path),
+            "write_text",
+            "path",
+            None,
+        ) == ("verify-m029-output", "reviewed M029 verification output")
+    assert _classify(
+        Path("scripts/verify_m029_future_unlisted.py"),
+        "write_text",
+        "path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
+def test_m181_verify_m027_outputs_get_precise_category() -> None:
+    for path in (
+        "scripts/verify_m027_mixed_source_catalog.py",
+        "scripts/verify_m027_source_acquisition_boundary.py",
+    ):
+        assert _classify(
+            Path(path),
+            "write_text",
+            "path",
+            None,
+        ) == ("verify-m027-output", "reviewed M027 verification output")
+    assert _classify(
+        Path("scripts/verify_m027_future_unlisted.py"),
         "write_text",
         "path",
         None,

@@ -185,3 +185,4 @@
 - ✅ **M178-w4s1zh: Residual Script Drift and Cache Coordination Wave** (`depends:[M177-1gx4de]`)
 - ✅ **M179-iwrzh7: Residual Script Canonical Baseline and Cache Lifecycle** (`depends:[M178-w4s1zh]`)
 - ✅ **M180-ohhf17: Residual Verify Wave Canonical Soak and Cache Review** (`depends:[M179-iwrzh7]`)
+- ✅ **M181-2xosbi: Residual Verify Wave Docs Cleanup and Cache Ownership Review** (`depends:[—]`)

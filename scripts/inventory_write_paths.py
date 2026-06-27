@@ -196,6 +196,19 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
         "scripts/verify_m033_quantmind_pattern_study.py",
     }:
         return "verify-m033-output", "reviewed M033 verification output"
+    if source_text in {
+        "scripts/verify_m029_post_validation_remediation.py",
+        "scripts/verify_m029_unified_conversion_quality_boundary.py",
+        "scripts/verify_m029_unified_readiness.py",
+        "scripts/verify_m029_unified_source_acquisition.py",
+        "scripts/verify_m029_validation_remediation.py",
+    }:
+        return "verify-m029-output", "reviewed M029 verification output"
+    if source_text in {
+        "scripts/verify_m027_mixed_source_catalog.py",
+        "scripts/verify_m027_source_acquisition_boundary.py",
+    }:
+        return "verify-m027-output", "reviewed M027 verification output"
     if source_path.parts and source_path.parts[0] == "scripts":
         return "script-only", "write occurs in process-boundary script"
     if operation == "sqlite3.connect" or ".db" in path_text or "database" in path_text:
