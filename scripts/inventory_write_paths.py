@@ -312,7 +312,10 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
         return "benchmark-m055deep-output", "reviewed M055 deep benchmark output"
     if source_text == "scripts/m066_graphdb_full_benchmark.py":
         return "m066-graphdb-benchmark-output", "reviewed M066 graphdb benchmark output"
-    if source_text == "scripts/audit_test_architecture.py":
+    if source_text in {
+        "scripts/audit_test_architecture.py",
+        "src/research_graph/application/test_architecture_inventory.py",
+    }:
         return "test-architecture-audit-output", "reviewed test architecture audit output"
     if source_path.parts and source_path.parts[0] == "scripts":
         return "script-only", "write occurs in process-boundary script"

@@ -467,12 +467,16 @@ def test_m183_m066_and_test_architecture_audit_outputs_get_precise_categories() 
         "report_path",
         None,
     ) == ("m066-graphdb-benchmark-output", "reviewed M066 graphdb benchmark output")
-    assert _classify(
-        Path("scripts/audit_test_architecture.py"),
-        "write_text",
-        "markdown_path",
-        None,
-    ) == ("test-architecture-audit-output", "reviewed test architecture audit output")
+    for path in (
+        "scripts/audit_test_architecture.py",
+        "src/research_graph/application/test_architecture_inventory.py",
+    ):
+        assert _classify(
+            Path(path),
+            "write_text",
+            "markdown_path",
+            None,
+        ) == ("test-architecture-audit-output", "reviewed test architecture audit output")
     assert _classify(
         Path("scripts/m066_graphdb_future_unlisted.py"),
         "write_text",

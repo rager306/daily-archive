@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
+
+# pyrefly: ignore [missing-import]
+from scripts import audit_test_architecture as audit_tool
 
 # pyrefly: ignore [missing-import]
 from scripts import verify_test_architecture as guardrail
@@ -32,7 +37,29 @@ def _inventory(*files: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def test_allowlisted_legacy_mixed_and_dynamic_script_import_pass() -> None:
+def test_audit_test_architecture_writes_schema_and_pilot_outputs(tmp_path: Path) -> None:
+    tests_dir = tmp_path / "tests"
+    output_dir = tmp_path / "audit"
+    tests_dir.mkdir()
+    (tests_dir / "test_example.py").write_text(
+        "from research_graph.application.corpus.article_catalog_selection import "
+        "build_current_catalog_index_selection\n",
+        encoding="utf-8",
+    )
+
+    inventory = audit_tool.build_inventory(tests_dir)
+    json_path, markdown_path, pilot_path = audit_tool.write_outputs(inventory, output_dir)
+
+    payload = json.loads(json_path.read_text(encoding="utf-8"))
+    pilots = json.loads(pilot_path.read_text(encoding="utf-8"))
+    markdown = markdown_path.read_text(encoding="utf-8")
+    assert payload["schema_version"] == audit_tool.SCHEMA_VERSION
+    assert payload["summary"]["total_test_files"] == 1
+    assert payload["summary"]["buckets"]["application"] == 1
+    assert pilots == payload["pilot_candidates"]
+    assert "# Test Architecture Inventory" in markdown
+
+
     inventory = _inventory(
         _file("tests/test_legacy.py", "legacy-mixed", dynamic_script_import=True)
     )
