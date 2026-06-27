@@ -411,6 +411,81 @@ def test_m182_replay_m031_outputs_get_precise_category() -> None:
     ) == ("script-only", "write occurs in process-boundary script")
 
 
+def test_m183_benchmark_m055_outputs_get_precise_category_without_manifest_movement() -> None:
+    for path in (
+        "scripts/benchmark_m055_availability_probe.py",
+        "scripts/benchmark_m055_grobid_only.py",
+        "scripts/benchmark_m055_hybrid_routing.py",
+        "scripts/benchmark_m055_opendataloader_only.py",
+        "scripts/benchmark_m055_vendor_check.py",
+    ):
+        assert _classify(
+            Path(path),
+            "write_text",
+            "output_path",
+            None,
+        ) == ("benchmark-m055-output", "reviewed M055 benchmark output")
+    assert _classify(
+        Path("scripts/benchmark_m055_corpus_manifest.py"),
+        "write_text",
+        "output_path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+    assert _classify(
+        Path("scripts/benchmark_m055_future_unlisted.py"),
+        "write_text",
+        "output_path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
+def test_m183_benchmark_m055deep_outputs_get_precise_category() -> None:
+    for path in (
+        "scripts/benchmark_m055deep_grobid_fulltext.py",
+        "scripts/benchmark_m055deep_hybrid_routing_20.py",
+        "scripts/benchmark_m055deep_opendataloader_correctness.py",
+    ):
+        assert _classify(
+            Path(path),
+            "write_text",
+            "tmp_path",
+            None,
+        ) == ("benchmark-m055deep-output", "reviewed M055 deep benchmark output")
+    assert _classify(
+        Path("scripts/benchmark_m055deep_future_unlisted.py"),
+        "write_text",
+        "tmp_path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
+def test_m183_m066_and_test_architecture_audit_outputs_get_precise_categories() -> None:
+    assert _classify(
+        Path("scripts/m066_graphdb_full_benchmark.py"),
+        "write_text",
+        "report_path",
+        None,
+    ) == ("m066-graphdb-benchmark-output", "reviewed M066 graphdb benchmark output")
+    assert _classify(
+        Path("scripts/audit_test_architecture.py"),
+        "write_text",
+        "markdown_path",
+        None,
+    ) == ("test-architecture-audit-output", "reviewed test architecture audit output")
+    assert _classify(
+        Path("scripts/m066_graphdb_future_unlisted.py"),
+        "write_text",
+        "report_path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+    assert _classify(
+        Path("scripts/audit_test_future_unlisted.py"),
+        "write_text",
+        "markdown_path",
+        None,
+    ) == ("script-only", "write occurs in process-boundary script")
+
+
 def test_daily_cli_outputs_get_precise_category_without_moving_temp_path() -> None:
     assert _classify(
         Path("src/research_graph/cli/__init__.py"),

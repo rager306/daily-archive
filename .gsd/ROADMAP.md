@@ -187,3 +187,4 @@
 - ✅ **M180-ohhf17: Residual Verify Wave Canonical Soak and Cache Review** (`depends:[M179-iwrzh7]`)
 - ✅ **M181-2xosbi: Residual Verify Wave Docs Cleanup and Cache Ownership Review** (`depends:[—]`)
 - ✅ **M182-l6wsbs: Build and Replay Residual Script Wave** (`depends:[M181-2xosbi]`)
+- ✅ **M183-lg1xjb: Audit Report Wave Docs Crystallization and Cache Review** (`depends:[M182-l6wsbs]`)

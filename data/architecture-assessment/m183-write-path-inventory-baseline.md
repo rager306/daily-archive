@@ -10,8 +10,6 @@ Total records: `341`
 |---|---:|
 | append-log | 1 |
 | article-artifact-package | 7 |
-| benchmark-m055-output | 5 |
-| benchmark-m055deep-output | 3 |
 | build-m028-output | 4 |
 | caller-owned | 10 |
 | caller-owned-index | 1 |
@@ -28,7 +26,6 @@ Total records: `341`
 | m057-structure-extraction-output | 15 |
 | m060-graph-figure-benchmark-output | 13 |
 | m061-acquisition-pipeline-output | 11 |
-| m066-graphdb-benchmark-output | 3 |
 | parser-replay-output | 3 |
 | queue-gate-output | 2 |
 | queue-soak-output | 1 |
@@ -41,12 +38,11 @@ Total records: `341`
 | replay-m031-output | 3 |
 | run-owned-state | 1 |
 | run-scoped | 6 |
-| script-only | 89 |
+| script-only | 103 |
 | smoke-script-output | 8 |
 | source-asset-package | 4 |
 | source-scan-output | 3 |
 | temporary | 1 |
-| test-architecture-audit-output | 3 |
 | validation-batch-output | 10 |
 | verify-m027-output | 4 |
 | verify-m029-output | 8 |
@@ -155,20 +151,20 @@ Total records: `341`
 | `scripts/audit_m053_grobid_pilot.py` | 198 | `write_text` | `output_path` | script-only |
 | `scripts/audit_m054_pdf_acquisition.py` | 227 | `write_text` | `DEFAULT_AUDIT_PATH` | script-only |
 | `scripts/audit_pipeline_scripts.py` | 355 | `write_text` | `path` | script-only |
-| `scripts/audit_test_architecture.py` | 204 | `write_text` | `json_path` | test-architecture-audit-output |
-| `scripts/audit_test_architecture.py` | 205 | `write_text` | `markdown_path` | test-architecture-audit-output |
-| `scripts/audit_test_architecture.py` | 206 | `write_text` | `pilot_path` | test-architecture-audit-output |
+| `scripts/audit_test_architecture.py` | 204 | `write_text` | `json_path` | script-only |
+| `scripts/audit_test_architecture.py` | 205 | `write_text` | `markdown_path` | script-only |
+| `scripts/audit_test_architecture.py` | 206 | `write_text` | `pilot_path` | script-only |
 | `scripts/augment_m073_evidence_paths.py` | 44 | `write_text` | `path` | script-only |
 | `scripts/augment_m073_evidence_paths.py` | 146 | `write_text` | `output` | script-only |
-| `scripts/benchmark_m055_availability_probe.py` | 195 | `write_text` | `output_path` | benchmark-m055-output |
+| `scripts/benchmark_m055_availability_probe.py` | 195 | `write_text` | `output_path` | script-only |
 | `scripts/benchmark_m055_corpus_manifest.py` | 118 | `write_text` | `output_path` | script-only |
-| `scripts/benchmark_m055_grobid_only.py` | 65 | `write_bytes` | `tmp_path` | benchmark-m055-output |
-| `scripts/benchmark_m055_hybrid_routing.py` | 50 | `write_bytes` | `tmp_path` | benchmark-m055-output |
-| `scripts/benchmark_m055_opendataloader_only.py` | 59 | `write_bytes` | `tmp_path` | benchmark-m055-output |
-| `scripts/benchmark_m055_vendor_check.py` | 134 | `write_text` | `output_path` | benchmark-m055-output |
-| `scripts/benchmark_m055deep_grobid_fulltext.py` | 56 | `write_bytes` | `tmp_path` | benchmark-m055deep-output |
-| `scripts/benchmark_m055deep_hybrid_routing_20.py` | 50 | `write_bytes` | `tmp_path` | benchmark-m055deep-output |
-| `scripts/benchmark_m055deep_opendataloader_correctness.py` | 45 | `write_text` | `path` | benchmark-m055deep-output |
+| `scripts/benchmark_m055_grobid_only.py` | 65 | `write_bytes` | `tmp_path` | script-only |
+| `scripts/benchmark_m055_hybrid_routing.py` | 50 | `write_bytes` | `tmp_path` | script-only |
+| `scripts/benchmark_m055_opendataloader_only.py` | 59 | `write_bytes` | `tmp_path` | script-only |
+| `scripts/benchmark_m055_vendor_check.py` | 134 | `write_text` | `output_path` | script-only |
+| `scripts/benchmark_m055deep_grobid_fulltext.py` | 56 | `write_bytes` | `tmp_path` | script-only |
+| `scripts/benchmark_m055deep_hybrid_routing_20.py` | 50 | `write_bytes` | `tmp_path` | script-only |
+| `scripts/benchmark_m055deep_opendataloader_correctness.py` | 45 | `write_text` | `path` | script-only |
 | `scripts/build_m028_hermes_digest_projection.py` | 775 | `write_text` | `out_dir / DIGEST_FILENAME` | build-m028-output |
 | `scripts/build_m028_hermes_digest_projection.py` | 778 | `write_text` | `out_dir / REPORT_FILENAME` | build-m028-output |
 | `scripts/build_m028_pdf_acquisition_diagnostics.py` | 740 | `write_text` | `out_dir / EVENTS_FILENAME` | m028-acquisition-evidence-output |
@@ -215,9 +211,9 @@ Total records: `341`
 | `scripts/extract_r024_entity_scale_entities.py` | 261 | `write_text` | `SUMMARY` | r024-entity-extraction-output |
 | `scripts/extract_r024_quality_metrics.py` | 128 | `write_text` | `METRICS` | r024-quality-metrics-output |
 | `scripts/extract_r024_quality_metrics.py` | 174 | `write_text` | `COMPARISON` | r024-quality-metrics-output |
-| `scripts/inventory_write_paths.py` | 439 | `write_text` | `args.json` | inventory-report-output |
-| `scripts/inventory_write_paths.py` | 440 | `write_text` | `args.markdown` | inventory-report-output |
-| `scripts/inventory_write_paths.py` | 444 | `write_text` | `args.delta_markdown` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 421 | `write_text` | `args.json` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 422 | `write_text` | `args.markdown` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 426 | `write_text` | `args.delta_markdown` | inventory-report-output |
 | `scripts/legacy/m057_table_embed.py` | 170 | `write_text` | `output_path` | m057-structure-extraction-output |
 | `scripts/m052_rlm_e2e.py` | 309 | `write_text` | `audit_json_path` | script-only |
 | `scripts/m052_rlm_e2e.py` | 312 | `write_text` | `audit_md_path` | script-only |
@@ -283,9 +279,9 @@ Total records: `341`
 | `scripts/m061_full_5_anchors.py` | 761 | `write_text` | `BASE_OUTPUT_DIR / 's02-decision.md'` | m061-acquisition-pipeline-output |
 | `scripts/m061_synthesis.py` | 546 | `write_text` | `path` | script-only |
 | `scripts/m063_graphdb_benchmark.py` | 381 | `write_text` | `output` | script-only |
-| `scripts/m066_graphdb_full_benchmark.py` | 675 | `write_text` | `report_path` | m066-graphdb-benchmark-output |
-| `scripts/m066_graphdb_full_benchmark.py` | 676 | `write_text` | `artifact_dir / 'scoring-matrix.md'` | m066-graphdb-benchmark-output |
-| `scripts/m066_graphdb_full_benchmark.py` | 683 | `write_text` | `output` | m066-graphdb-benchmark-output |
+| `scripts/m066_graphdb_full_benchmark.py` | 675 | `write_text` | `report_path` | script-only |
+| `scripts/m066_graphdb_full_benchmark.py` | 676 | `write_text` | `artifact_dir / 'scoring-matrix.md'` | script-only |
+| `scripts/m066_graphdb_full_benchmark.py` | 683 | `write_text` | `output` | script-only |
 | `scripts/m068_integration_test.py` | 368 | `write_text` | `results_path` | script-only |
 | `scripts/m068_integration_test.py` | 371 | `write_text` | `report_path` | script-only |
 | `scripts/m103_extraction_prototype.py` | 478 | `write_text` | `out` | script-only |

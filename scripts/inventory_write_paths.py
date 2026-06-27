@@ -216,6 +216,24 @@ def _classify(source_path: Path, operation: str, target: str, mode: str | None) 
         return "build-m028-output", "reviewed M028 builder output"
     if source_text == "scripts/replay_m031_import_boundary_rehearsal.py":
         return "replay-m031-output", "reviewed M031 replay output"
+    if source_text in {
+        "scripts/benchmark_m055_availability_probe.py",
+        "scripts/benchmark_m055_grobid_only.py",
+        "scripts/benchmark_m055_hybrid_routing.py",
+        "scripts/benchmark_m055_opendataloader_only.py",
+        "scripts/benchmark_m055_vendor_check.py",
+    }:
+        return "benchmark-m055-output", "reviewed M055 benchmark output"
+    if source_text in {
+        "scripts/benchmark_m055deep_grobid_fulltext.py",
+        "scripts/benchmark_m055deep_hybrid_routing_20.py",
+        "scripts/benchmark_m055deep_opendataloader_correctness.py",
+    }:
+        return "benchmark-m055deep-output", "reviewed M055 deep benchmark output"
+    if source_text == "scripts/m066_graphdb_full_benchmark.py":
+        return "m066-graphdb-benchmark-output", "reviewed M066 graphdb benchmark output"
+    if source_text == "scripts/audit_test_architecture.py":
+        return "test-architecture-audit-output", "reviewed test architecture audit output"
     if source_path.parts and source_path.parts[0] == "scripts":
         return "script-only", "write occurs in process-boundary script"
     if operation == "sqlite3.connect" or ".db" in path_text or "database" in path_text:
