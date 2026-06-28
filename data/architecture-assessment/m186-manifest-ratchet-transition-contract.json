@@ -1,0 +1,41 @@
+{
+  "schema_version": "m186-manifest-ratchet-transition-contract.v1",
+  "current_mode": "preserve-ratchet",
+  "current_required_counts": {
+    "script-only": 4,
+    "unknown": 0,
+    "shared-state": 0
+  },
+  "movement_blocker": "Directly wiring a residual to application manifest_io reduces script-only to 3 under the current inventory model.",
+  "allowed_modes": {
+    "preserve-ratchet": {
+      "residual_wiring_allowed": false,
+      "required_counts": {
+        "script-only": 4,
+        "unknown": 0,
+        "shared-state": 0
+      },
+      "required_evidence": [
+        "strict_drift_pass",
+        "inventory_tests_pass",
+        "lifecycle_contract_keeps_residual_blocked"
+      ]
+    },
+    "transition-ratchet": {
+      "residual_wiring_allowed": true,
+      "required_counts": {
+        "script-only": "explicit_new_baseline",
+        "unknown": 0,
+        "shared-state": 0
+      },
+      "required_evidence": [
+        "exact_gitnexus_impact",
+        "focused_residual_tests",
+        "strict_drift_delta_explained",
+        "canonical_inventory_baseline_update",
+        "ratchet_decision_artifact"
+      ]
+    }
+  },
+  "next_slice_rule": "S12-S13 must either remain no-move under preserve-ratchet or first switch this contract to transition-ratchet with evidence."
+}

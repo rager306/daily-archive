@@ -6,6 +6,15 @@ import subprocess
 import sys
 from pathlib import Path
 
+from scripts.verify_m025_article_catalog import (
+    CATALOG_RECORD_DIR,
+    FORBIDDEN_TRUE_FLAGS,
+    article_ref_from_path,
+    check_safety_flags,
+    normalize_posix_path,
+    safe_catalog_path,
+)
+
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "article_catalog_v00_01"
 SCRIPT = Path(__file__).parents[1] / "scripts" / "verify_m025_article_catalog.py"
 
@@ -88,6 +97,46 @@ def _run_rebuild(
         check=False,
         text=True,
     )
+
+
+def test_m186_catalog_path_helpers_are_fail_closed(tmp_path: Path) -> None:
+    catalog = tmp_path / "catalog.json"
+    catalog.write_text("{}", encoding="utf-8")
+    article_path = f"{CATALOG_RECORD_DIR}/arxiv/cs-ai/1234.56789/article.json"
+
+    assert normalize_posix_path(r"article_catalog\\arxiv\\cs-ai\\1234.56789\\article.json") == article_path
+    assert safe_catalog_path(catalog, article_path) == (tmp_path / article_path).resolve()
+    assert article_ref_from_path(article_path) == "arxiv/cs-ai/1234.56789"
+
+    for unsafe in ("/article.json", "../article.json", f"{CATALOG_RECORD_DIR}/../secret/article.json"):
+        try:
+            safe_catalog_path(catalog, unsafe)
+        except ValueError:
+            pass
+        else:  # pragma: no cover - assertion message is the contract
+            raise AssertionError(f"unsafe catalog path accepted: {unsafe!r}")
+
+    for noncanonical in (
+        "arxiv/cs-ai/1234.56789/article.json",
+        f"{CATALOG_RECORD_DIR}/arxiv/cs-ai/1234.56789/source.pdf",
+    ):
+        try:
+            article_ref_from_path(noncanonical)
+        except ValueError:
+            pass
+        else:  # pragma: no cover - assertion message is the contract
+            raise AssertionError(f"non-canonical article path accepted: {noncanonical!r}")
+
+
+def test_m186_safety_flags_reject_forbidden_true_values() -> None:
+    errors: list[str] = []
+    safe_payload = dict.fromkeys(FORBIDDEN_TRUE_FLAGS, False)
+    check_safety_flags(errors, "catalog", safe_payload)
+    assert errors == []
+
+    unsafe_key = next(iter(FORBIDDEN_TRUE_FLAGS))
+    check_safety_flags(errors, "catalog", {"nested": [{unsafe_key: True}]})
+    assert errors == [f"catalog.nested[0].{unsafe_key} must be false; got True"]
 
 
 def _run_catalog_report(

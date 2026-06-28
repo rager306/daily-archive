@@ -19,6 +19,19 @@ import tempfile
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from research_graph.application.corpus.catalog_safety import (
+    article_ref_from_path as _application_article_ref_from_path,
+)
+from research_graph.application.corpus.catalog_safety import (
+    normalize_posix_path as _application_normalize_posix_path,
+)
+from research_graph.application.corpus.catalog_safety import (
+    safe_catalog_path as _application_safe_catalog_path,
+)
+from research_graph.application.corpus.catalog_safety import (
+    safety_flag_errors,
+)
+
 CATALOG_SCHEMA_VERSION = "article-catalog.v00.01"
 ARTICLE_SCHEMA_VERSION = "article.v00.01"
 INDEX_SCHEMA_VERSION = "article-catalog-index.v00.01"
@@ -94,19 +107,13 @@ def require_equal(errors: list[str], path: str, actual: Any, expected: Any) -> N
 
 
 def check_safety_flags(errors: list[str], location: str, value: Any) -> None:
-    if isinstance(value, dict):
-        for key, child in value.items():
-            child_location = f"{location}.{key}" if location else key
-            if key in FORBIDDEN_TRUE_FLAGS and child is not False:
-                errors.append(f"{child_location} must be false; got {child!r}")
-            check_safety_flags(errors, child_location, child)
-    elif isinstance(value, list):
-        for index, child in enumerate(value):
-            check_safety_flags(errors, f"{location}[{index}]", child)
+    errors.extend(
+        safety_flag_errors(location, value, forbidden_true_flags=FORBIDDEN_TRUE_FLAGS)
+    )
 
 
 def normalize_posix_path(value: str) -> str:
-    return PurePosixPath(value.replace("\\", "/")).as_posix()
+    return _application_normalize_posix_path(value)
 
 
 def catalog_root(catalog_path: Path) -> Path:
@@ -114,14 +121,7 @@ def catalog_root(catalog_path: Path) -> Path:
 
 
 def safe_catalog_path(catalog_path: Path, article_path: str) -> Path:
-    normalized = normalize_posix_path(article_path)
-    if normalized.startswith("/") or ".." in PurePosixPath(normalized).parts:
-        raise ValueError(f"unsafe catalog-relative path: {article_path}")
-    root = catalog_root(catalog_path)
-    resolved = (catalog_path.parent / normalized).resolve()
-    if not resolved.is_relative_to(root):
-        raise ValueError(f"path resolves outside catalog root: {article_path}")
-    return resolved
+    return _application_safe_catalog_path(catalog_path, article_path)
 
 
 def article_manifest_path(catalog_path: Path, article_path: str) -> Path:
@@ -129,12 +129,9 @@ def article_manifest_path(catalog_path: Path, article_path: str) -> Path:
 
 
 def article_ref_from_path(article_path: str) -> str:
-    normalized = normalize_posix_path(article_path)
-    prefix = f"{CATALOG_RECORD_DIR}/"
-    suffix = "/article.json"
-    if not normalized.startswith(prefix) or not normalized.endswith(suffix):
-        raise ValueError(f"non-canonical article path: {article_path}")
-    return normalized[len(prefix) : -len(suffix)]
+    return _application_article_ref_from_path(
+        article_path, catalog_record_dir=CATALOG_RECORD_DIR
+    )
 
 
 def validate_catalog(catalog_path: Path, catalog: dict[str, Any]) -> list[str]:

@@ -8,6 +8,10 @@ from typing import Any
 from scripts.verify_m031_validation_remediation import (
     OUTPUT_DIR,
     REQUIRED_FALSE_FLAGS,
+    M031ValidationRemediationError,
+    _json_path,
+    _repo_relative_path,
+    _safe_output_path,
     build_evidence,
     build_runtime_diagnostics,
     main,
@@ -106,6 +110,56 @@ def _evidence() -> dict[str, Any]:
         continuity_audit=_audit(),
         review_events=_review_events(),
     )
+
+
+def test_m186_json_and_repo_path_helpers_are_fail_closed(tmp_path: Path) -> None:
+    existing = tmp_path / "inputs" / "evidence.json"
+    existing.parent.mkdir(parents=True)
+    existing.write_text("{}", encoding="utf-8")
+
+    assert _json_path("$.rows", 0) == "$.rows[0]"
+    assert _json_path("$", "safety_flags") == "$.safety_flags"
+    assert _repo_relative_path(
+        "inputs/evidence.json", repo_root=tmp_path, label="input"
+    ) == existing.resolve()
+    assert _safe_output_path(
+        OUTPUT_DIR / "evidence.json", repo_root=tmp_path, label="output"
+    ) == (tmp_path / OUTPUT_DIR / "evidence.json").resolve()
+
+    for unsafe in ("", " inputs/evidence.json", "../evidence.json", "/tmp/evidence.json", "https://example.test/evidence.json"):
+        try:
+            _repo_relative_path(unsafe, repo_root=tmp_path, label="input")
+        except M031ValidationRemediationError:
+            pass
+        else:  # pragma: no cover - assertion message is the contract
+            raise AssertionError(f"unsafe repo-relative path accepted: {unsafe!r}")
+
+    try:
+        _safe_output_path("tmp/evidence.json", repo_root=tmp_path, label="output")
+    except M031ValidationRemediationError:
+        pass
+    else:  # pragma: no cover - assertion message is the contract
+        raise AssertionError("output outside validation remediation directory accepted")
+
+
+def test_m186_build_evidence_remains_metadata_only_and_fail_closed() -> None:
+    evidence = _evidence()
+
+    assert evidence["metadata_only"] is True
+    assert evidence["graph_import_boundary"]["completed_review_refusal_in_force"] is True
+    for key in REQUIRED_FALSE_FLAGS:
+        assert evidence["safety_flags"][key] is False
+    for key in (
+        "requirement_records_modified",
+        "graph_or_import_writes_enabled",
+        "source_write_attempted",
+        "non_artifact_write_attempted",
+        "import_ready_claimed",
+        "trusted_fact_promotion_allowed",
+        "model_call_attempted",
+        "secrets_included",
+    ):
+        assert evidence["safety_flags"][key] is False
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:

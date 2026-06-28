@@ -19,6 +19,13 @@ from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
+from research_graph.application.validation.evidence_paths import (
+    ValidationEvidencePathError,
+    json_path,
+    repo_relative_path,
+    safe_output_path,
+)
+
 MILESTONE_ID = "M031-vwpd8e"
 SLICE_ID = "S06"
 TASK_ID = "T01"
@@ -152,7 +159,7 @@ class M031ValidationRemediationError(RuntimeError):
 
 
 def _json_path(parent: str, key: str | int) -> str:
-    return f"{parent}[{key}]" if isinstance(key, int) else f"{parent}.{key}"
+    return json_path(parent, key)
 
 
 def _walk(
@@ -198,37 +205,21 @@ def diagnostic(
 def _repo_relative_path(
     path_value: str | Path, *, repo_root: Path, label: str, require_exists: bool = True
 ) -> Path:
-    path_text = Path(path_value).as_posix() if isinstance(path_value, Path) else str(path_value)
-    if not path_text or path_text.strip() != path_text or "://" in path_text:
-        raise M031ValidationRemediationError(
-            f"{label} must be a non-empty repo-relative path: {path_text!r}"
-        )
-    path = Path(path_text)
-    if path.is_absolute() or any(part == ".." for part in path.parts):
-        raise M031ValidationRemediationError(
-            f"{label} must remain under the repo root: {path_text}"
-        )
-    root = repo_root.resolve()
-    resolved = (root / path).resolve()
     try:
-        resolved.relative_to(root)
-    except ValueError as exc:
-        raise M031ValidationRemediationError(f"{label} escapes repo root: {path_text}") from exc
-    if require_exists and not resolved.exists():
-        raise M031ValidationRemediationError(f"{label} is missing: {path_text}")
-    return resolved
+        return repo_relative_path(
+            path_value, repo_root=repo_root, label=label, require_exists=require_exists
+        )
+    except ValidationEvidencePathError as exc:
+        raise M031ValidationRemediationError(str(exc)) from exc
 
 
 def _safe_output_path(path_value: str | Path, *, repo_root: Path, label: str) -> Path:
-    path = _repo_relative_path(path_value, repo_root=repo_root, label=label, require_exists=False)
-    output_root = (repo_root / OUTPUT_DIR).resolve()
     try:
-        path.resolve().relative_to(output_root)
-    except ValueError as exc:
-        raise M031ValidationRemediationError(
-            f"{label} must be under {OUTPUT_DIR.as_posix()}: {path_value}"
-        ) from exc
-    return path
+        return safe_output_path(
+            path_value, repo_root=repo_root, label=label, output_dir=OUTPUT_DIR
+        )
+    except ValidationEvidencePathError as exc:
+        raise M031ValidationRemediationError(str(exc)) from exc
 
 
 def load_text(path_value: str | Path, *, repo_root: Path, label: str) -> str:
