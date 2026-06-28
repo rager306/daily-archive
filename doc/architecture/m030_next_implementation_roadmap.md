@@ -159,7 +159,7 @@ Acceptance criteria:
 Verification candidates:
 
 - `uv run pytest tests/test_graph_readiness_export.py tests/test_graph_readiness_review.py tests/test_import_ready_contract.py tests/test_import_boundary_rehearsal.py`
-- `uv run python -m arxiv_archive.graph_readiness_review --review-dir <review-dir> --events <events.jsonl> --validate-only --require-completed-review`
+- `uv run python -m research_graph.infrastructure.graph.readiness.review --review-dir <review-dir> --events <events.jsonl> --validate-only --require-completed-review`
 
 ## Milestone Acceptance Criteria
 

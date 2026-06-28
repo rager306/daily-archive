@@ -198,10 +198,10 @@ Rendered for M030 S04 T02 from the M030 module-function readiness report. This i
 - `src/arxiv_archive/graph_readiness_export.py:_graph_ready_chunks`
 - `src/arxiv_archive/graph_readiness_export.py:_evidence_path_refs`
 - `src/arxiv_archive/graph_readiness_export.py:_report`
-- `src/arxiv_archive/graph_readiness_review.py:generate_review_bundles`
-- `src/arxiv_archive/graph_readiness_review.py:select_review_papers`
-- `src/arxiv_archive/graph_readiness_review.py:render_review_bundle`
-- `src/arxiv_archive/graph_readiness_review.py:validate_review_artifacts`
+- `src/research_graph/infrastructure/graph/readiness/review.py:generate_review_bundles`
+- `src/research_graph/infrastructure/graph/readiness/review.py:select_review_papers`
+- `src/research_graph/infrastructure/graph/readiness/review.py:render_review_bundle`
+- `src/research_graph/infrastructure/graph/readiness/review.py:validate_review_artifacts`
 
 **Module/function that must move next**
 
@@ -212,7 +212,7 @@ Rendered for M030 S04 T02 from the M030 module-function readiness report. This i
 
 - `tests/test_graph_readiness_export.py`
 - `tests/test_graph_readiness_review.py`
-- `uv run python -m arxiv_archive.graph_readiness_review --review-dir <review-dir> --events <events.jsonl> --validate-only --require-completed-review`
+- `uv run python -m research_graph.infrastructure.graph.readiness.review --review-dir <review-dir> --events <events.jsonl> --validate-only --require-completed-review`
 
 **Observability surfaces**
 

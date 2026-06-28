@@ -473,7 +473,7 @@ Chunking is in-memory over PageIndex nodes. At 10x, memory/CPU for section trave
 **Owner files**
 
 - `src/arxiv_archive/graph_readiness_export.py`
-- `src/arxiv_archive/graph_readiness_review.py`
+- `src/research_graph/infrastructure/graph/readiness/review.py`
 - `tests/test_graph_readiness_export.py`
 - `tests/test_graph_readiness_review.py`
 
@@ -484,10 +484,10 @@ Chunking is in-memory over PageIndex nodes. At 10x, memory/CPU for section trave
 - `src/arxiv_archive/graph_readiness_export.py:_graph_ready_chunks`
 - `src/arxiv_archive/graph_readiness_export.py:_evidence_path_refs`
 - `src/arxiv_archive/graph_readiness_export.py:_report`
-- `src/arxiv_archive/graph_readiness_review.py:generate_review_bundles`
-- `src/arxiv_archive/graph_readiness_review.py:select_review_papers`
-- `src/arxiv_archive/graph_readiness_review.py:render_review_bundle`
-- `src/arxiv_archive/graph_readiness_review.py:validate_review_artifacts`
+- `src/research_graph/infrastructure/graph/readiness/review.py:generate_review_bundles`
+- `src/research_graph/infrastructure/graph/readiness/review.py:select_review_papers`
+- `src/research_graph/infrastructure/graph/readiness/review.py:render_review_bundle`
+- `src/research_graph/infrastructure/graph/readiness/review.py:validate_review_artifacts`
 
 **Inputs**
 
@@ -507,12 +507,12 @@ Chunking is in-memory over PageIndex nodes. At 10x, memory/CPU for section trave
 
 - `tests/test_graph_readiness_export.py`
 - `tests/test_graph_readiness_review.py`
-- uv run python -m arxiv_archive.graph_readiness_review --review-dir <review-dir> --events <events.jsonl> --validate-only --require-completed-review
+- uv run python -m research_graph.infrastructure.graph.readiness.review --review-dir <review-dir> --events <events.jsonl> --validate-only --require-completed-review
 
 **Evidence paths**
 
 - `src/arxiv_archive/graph_readiness_export.py`
-- `src/arxiv_archive/graph_readiness_review.py`
+- `src/research_graph/infrastructure/graph/readiness/review.py`
 - `tests/test_graph_readiness_export.py`
 - `tests/test_graph_readiness_review.py`
 
