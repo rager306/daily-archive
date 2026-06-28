@@ -15,6 +15,8 @@ from pathlib import Path
 from statistics import mean
 from typing import Any
 
+from research_graph.application.corpus.manifest_io import write_manifest_json_atomic
+
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CITATION_EDGES = ROOT / "artifacts" / "m056-bfs-graph" / "candidate-edges.json"
 DEFAULT_TABLE_EDGES = ROOT / "artifacts" / "m057-fd-marker" / "table-similarity" / "edges.json"
@@ -49,10 +51,7 @@ def load_edges(path: Path) -> list[dict[str, Any]]:
 
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    write_manifest_json_atomic(path, payload, sort_keys=True)
 
 
 def _as_int_or_none(value: Any) -> int | None:

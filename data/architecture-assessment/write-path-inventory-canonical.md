@@ -4,17 +4,17 @@ Schema: `daily-archive-write-path-inventory.v1`
 
 ## Summary
 
-Total records: `341`
+Total records: `337`
 
 | Category | Count |
 |---|---:|
 | append-log | 1 |
 | article-artifact-package | 7 |
-| audit-analysis-output | 24 |
+| audit-analysis-output | 23 |
 | benchmark-m055-output | 5 |
 | benchmark-m055deep-output | 3 |
 | build-m028-output | 4 |
-| caller-owned | 10 |
+| caller-owned | 11 |
 | caller-owned-index | 1 |
 | daily-cli-output | 5 |
 | database | 1 |
@@ -48,7 +48,6 @@ Total records: `341`
 | replay-m031-output | 3 |
 | run-owned-state | 1 |
 | run-scoped | 6 |
-| script-only | 4 |
 | smoke-script-output | 8 |
 | source-acquisition-evidence-output | 10 |
 | source-asset-package | 4 |
@@ -65,6 +64,10 @@ Total records: `341`
 
 | Path | Line | Operation | Target | Category |
 |---|---:|---|---|---|
+| `src/research_graph/application/pipeline_script_audit_inventory.py` | 342 | `write_text` | `path` | caller-owned |
+| `src/research_graph/application/test_architecture_inventory.py` | 200 | `write_text` | `json_path` | test-architecture-audit-output |
+| `src/research_graph/application/test_architecture_inventory.py` | 201 | `write_text` | `markdown_path` | test-architecture-audit-output |
+| `src/research_graph/application/test_architecture_inventory.py` | 202 | `write_text` | `pilot_path` | test-architecture-audit-output |
 | `src/research_graph/application/validation/batch_provenance.py` | 247 | `write_text` | `output_path` | run-scoped |
 | `src/research_graph/application/validation/batch_state.py` | 252 | `write_text` | `output_path` | run-owned-state |
 | `src/research_graph/cli/__init__.py` | 232 | `open` | `filepath` | daily-cli-output |
@@ -162,14 +165,9 @@ Total records: `341`
 | `scripts/audit_m042_connectivity_groups.py` | 38 | `write_text` | `path` | audit-analysis-output |
 | `scripts/audit_m053_grobid_pilot.py` | 198 | `write_text` | `output_path` | audit-analysis-output |
 | `scripts/audit_m054_pdf_acquisition.py` | 227 | `write_text` | `DEFAULT_AUDIT_PATH` | source-acquisition-evidence-output |
-| `scripts/audit_pipeline_scripts.py` | 355 | `write_text` | `path` | audit-analysis-output |
-| `scripts/audit_test_architecture.py` | 204 | `write_text` | `json_path` | test-architecture-audit-output |
-| `scripts/audit_test_architecture.py` | 205 | `write_text` | `markdown_path` | test-architecture-audit-output |
-| `scripts/audit_test_architecture.py` | 206 | `write_text` | `pilot_path` | test-architecture-audit-output |
 | `scripts/augment_m073_evidence_paths.py` | 44 | `write_text` | `path` | governance-sync-output |
 | `scripts/augment_m073_evidence_paths.py` | 146 | `write_text` | `output` | governance-sync-output |
 | `scripts/benchmark_m055_availability_probe.py` | 195 | `write_text` | `output_path` | benchmark-m055-output |
-| `scripts/benchmark_m055_corpus_manifest.py` | 118 | `write_text` | `output_path` | script-only |
 | `scripts/benchmark_m055_grobid_only.py` | 65 | `write_bytes` | `tmp_path` | benchmark-m055-output |
 | `scripts/benchmark_m055_hybrid_routing.py` | 50 | `write_bytes` | `tmp_path` | benchmark-m055-output |
 | `scripts/benchmark_m055_opendataloader_only.py` | 59 | `write_bytes` | `tmp_path` | benchmark-m055-output |
@@ -189,7 +187,6 @@ Total records: `341`
 | `scripts/build_m028_universal_loader_evidence_bundles.py` | 764 | `write_text` | `out_dir / REPORT_FILENAME` | m028-acquisition-evidence-output |
 | `scripts/build_m043_sidecar_packets.py` | 56 | `write_text` | `path` | misc-architecture-artifact-output |
 | `scripts/build_m043_sidecar_packets.py` | 63 | `write_text` | `path` | misc-architecture-artifact-output |
-| `scripts/build_m055deep_corpus_manifest_20.py` | 224 | `write_text` | `output_path` | script-only |
 | `scripts/build_r024_20_document_corpus_selection.py` | 159 | `write_text` | `OUT_SELECTION` | r024-corpus-selection-output |
 | `scripts/build_r024_20_document_corpus_selection.py` | 194 | `open` | `OUT_EVENTS` | r024-corpus-selection-output |
 | `scripts/build_r024_20_document_corpus_selection.py` | 212 | `write_text` | `OUT_SUMMARY` | r024-corpus-selection-output |
@@ -223,9 +220,9 @@ Total records: `341`
 | `scripts/extract_r024_entity_scale_entities.py` | 261 | `write_text` | `SUMMARY` | r024-entity-extraction-output |
 | `scripts/extract_r024_quality_metrics.py` | 128 | `write_text` | `METRICS` | r024-quality-metrics-output |
 | `scripts/extract_r024_quality_metrics.py` | 174 | `write_text` | `COMPARISON` | r024-quality-metrics-output |
-| `scripts/inventory_write_paths.py` | 519 | `write_text` | `args.json` | inventory-report-output |
-| `scripts/inventory_write_paths.py` | 520 | `write_text` | `args.markdown` | inventory-report-output |
-| `scripts/inventory_write_paths.py` | 524 | `write_text` | `args.delta_markdown` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 522 | `write_text` | `args.json` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 523 | `write_text` | `args.markdown` | inventory-report-output |
+| `scripts/inventory_write_paths.py` | 527 | `write_text` | `args.delta_markdown` | inventory-report-output |
 | `scripts/legacy/m057_table_embed.py` | 170 | `write_text` | `output_path` | m057-structure-extraction-output |
 | `scripts/m052_rlm_e2e.py` | 309 | `write_text` | `audit_json_path` | experiment-probe-output |
 | `scripts/m052_rlm_e2e.py` | 312 | `write_text` | `audit_md_path` | experiment-probe-output |
@@ -246,7 +243,6 @@ Total records: `341`
 | `scripts/m057_table_similarity.py` | 143 | `write_text` | `edges_path` | m057-structure-extraction-output |
 | `scripts/m057_table_similarity.py` | 146 | `write_text` | `summary_path` | m057-structure-extraction-output |
 | `scripts/m057_table_text_build.py` | 284 | `write_text` | `output_path` | m057-structure-extraction-output |
-| `scripts/m058_build_graph_manifest.py` | 53 | `write_text` | `path` | script-only |
 | `scripts/m058_compare_v2_vs_m057.py` | 175 | `write_text` | `output_json_path` | figure-extraction-benchmark-output |
 | `scripts/m058_compare_v2_vs_m057.py` | 179 | `write_text` | `output_md_path` | figure-extraction-benchmark-output |
 | `scripts/m058_compare_v2_vs_m057.py` | 180 | `write_text` | `decision_path` | figure-extraction-benchmark-output |
@@ -262,7 +258,6 @@ Total records: `341`
 | `scripts/m058_plotextractor_extract.py` | 425 | `write_text` | `summary_path.parent / 'figure-caption-corpus.json'` | figure-extraction-benchmark-output |
 | `scripts/m058_plotextractor_similarity.py` | 152 | `write_text` | `edges_path` | experiment-probe-output |
 | `scripts/m058_plotextractor_similarity.py` | 155 | `write_text` | `summary_path` | experiment-probe-output |
-| `scripts/m059_build_manifest.py` | 179 | `write_text` | `actual_output` | script-only |
 | `scripts/m059_e2e_test.py` | 30 | `write_text` | `path` | experiment-probe-output |
 | `scripts/m060b_graph_stats.py` | 244 | `write_text` | `json_path` | m060-graph-figure-benchmark-output |
 | `scripts/m060b_graph_stats.py` | 245 | `write_text` | `md_path` | m060-graph-figure-benchmark-output |
@@ -346,11 +341,11 @@ Total records: `341`
 | `scripts/test_fd_contract.py` | 1569 | `write_text` | `artifact_dir / GAP_MD` | audit-analysis-output |
 | `scripts/update_m043_target_subset_post_m053.py` | 144 | `write_text` | `output_path` | misc-architecture-artifact-output |
 | `scripts/update_m043_target_subset_post_m054.py` | 127 | `write_text` | `DEFAULT_TARGET_PATH` | misc-architecture-artifact-output |
-| `scripts/verify_article_catalog.py` | 73 | `write_text` | `selection_path` | misc-architecture-artifact-output |
+| `scripts/verify_article_catalog.py` | 54 | `write_text` | `selection_path` | misc-architecture-artifact-output |
 | `scripts/verify_m022_final_gate.py` | 387 | `write_text` | `output_path` | misc-architecture-artifact-output |
 | `scripts/verify_m023_artifact_scaffold_gate.py` | 484 | `write_text` | `path` | misc-architecture-artifact-output |
 | `scripts/verify_m023_artifact_scaffold_gate.py` | 489 | `write_text` | `path` | misc-architecture-artifact-output |
-| `scripts/verify_m025_article_catalog.py` | 1550 | `write_text` | `args.write_report` | misc-architecture-artifact-output |
+| `scripts/verify_m025_article_catalog.py` | 1547 | `write_text` | `args.write_report` | misc-architecture-artifact-output |
 | `scripts/verify_m025_baseline_recovery_outputs.py` | 447 | `write_text` | `args.write_summary` | misc-architecture-artifact-output |
 | `scripts/verify_m025_baseline_recovery_replay.py` | 128 | `write_text` | `path` | m025-recovery-evidence-output |
 | `scripts/verify_m025_baseline_recovery_replay.py` | 494 | `write_text` | `path` | m025-recovery-evidence-output |
@@ -389,9 +384,9 @@ Total records: `341`
 | `scripts/verify_m031_s05_closeout.py` | 253 | `write_text` | `path` | verify-m031-output |
 | `scripts/verify_m031_s05_closeout.py` | 258 | `write_text` | `path` | verify-m031-output |
 | `scripts/verify_m031_s05_closeout.py` | 266 | `write_text` | `path` | verify-m031-output |
-| `scripts/verify_m031_validation_remediation.py` | 1045 | `write_text` | `path` | verify-m031-output |
-| `scripts/verify_m031_validation_remediation.py` | 1050 | `write_text` | `path` | verify-m031-output |
-| `scripts/verify_m031_validation_remediation.py` | 1057 | `write_text` | `path` | verify-m031-output |
+| `scripts/verify_m031_validation_remediation.py` | 1036 | `write_text` | `path` | verify-m031-output |
+| `scripts/verify_m031_validation_remediation.py` | 1041 | `write_text` | `path` | verify-m031-output |
+| `scripts/verify_m031_validation_remediation.py` | 1048 | `write_text` | `path` | verify-m031-output |
 | `scripts/verify_m033_combined_parser_architecture.py` | 166 | `write_text` | `path` | verify-m033-output |
 | `scripts/verify_m033_combined_parser_architecture.py` | 196 | `write_text` | `path` | verify-m033-output |
 | `scripts/verify_m033_external_parser_quality_plan.py` | 190 | `write_text` | `path` | verify-m033-output |

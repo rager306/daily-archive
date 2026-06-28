@@ -22,6 +22,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from research_graph.application.corpus.manifest_io import write_manifest_json_atomic
+
 SCHEMA_VERSION = "m055deep-parser-benchmark-corpus-manifest-20.v1"
 DEFAULT_M051_MANIFEST = Path("artifacts/m055-parser-benchmark/corpus-manifest.json")
 DEFAULT_ARTICLE_CATALOG_ROOT = Path("data/article_catalog/article_catalog/arxiv")
@@ -221,10 +223,7 @@ def write_manifest(payload: dict[str, Any], output_path: Path) -> dict[str, Any]
             stable_payload["generated_at"] = existing.get(
                 "generated_at", stable_payload["generated_at"]
             )
-    output_path.write_text(
-        json.dumps(stable_payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
+    write_manifest_json_atomic(output_path, stable_payload, sort_keys=True)
     return stable_payload
 
 

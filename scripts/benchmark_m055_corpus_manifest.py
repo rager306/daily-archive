@@ -11,6 +11,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from research_graph.application.corpus.manifest_io import write_manifest_json_atomic
+
 SCHEMA_VERSION = "m055-parser-benchmark-corpus-manifest.v1"
 DEFAULT_TARGET_SUBSET = Path("artifacts/m054-pdf-acquisition/target-subset.json")
 DEFAULT_OUTPUT = Path("artifacts/m055-parser-benchmark/corpus-manifest.json")
@@ -114,8 +116,7 @@ def build_corpus_manifest(
         "safety": dict(SAFETY_DEFAULTS),
         "pdfs": entries,
     }
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    write_manifest_json_atomic(output_path, payload, sort_keys=True)
     return payload
 
 

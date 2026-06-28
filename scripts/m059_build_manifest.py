@@ -15,6 +15,8 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
+from research_graph.application.corpus.manifest_io import write_manifest_json_atomic
+
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_VERSION = "daily-archive.pdf-batch-manifest.v1"
 GENERATED_BY = "scripts/m059_build_manifest.py"
@@ -67,11 +69,10 @@ def arxiv_pdf_uri(arxiv_id: str) -> str:
 
 def find_pdf(arxiv_id: str) -> Path:
     """Find a local PDF by arXiv identifier under the article catalog."""
-    matches = sorted(
-        (ROOT / "data" / "article_catalog" / "article_catalog" / "arxiv").glob(
-            f"**/{arxiv_id}/source/{arxiv_id}.pdf"
-        )
-    )
+    catalog_root = ROOT / "data" / "article_catalog" / "article_catalog" / "arxiv"
+    matches = sorted(catalog_root.glob(f"**/{arxiv_id}/source/{arxiv_id}.pdf"))
+    if not matches:
+        matches = sorted(catalog_root.glob(f"**/{arxiv_id}/source/*.pdf"))
     if not matches:
         raise FileNotFoundError(f"No local PDF found for {arxiv_id}")
     return matches[0]
@@ -175,8 +176,7 @@ def finalize_manifest(
         ],
     }
     actual_output = output_path if output_path.is_absolute() else ROOT / output_path
-    actual_output.parent.mkdir(parents=True, exist_ok=True)
-    actual_output.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    write_manifest_json_atomic(actual_output, manifest, sort_keys=True)
     return manifest
 
 

@@ -1,0 +1,54 @@
+{
+  "schema_version": "m187-transition-ratchet-decision.v1",
+  "decision": "activate-transition-ratchet-for-m187",
+  "previous_mode": "preserve-ratchet",
+  "active_mode_for_m187": "transition-ratchet",
+  "residual_wiring_allowed": true,
+  "target_residuals": [
+    {
+      "id": "m055-five-pdf",
+      "symbol": "Function:scripts/benchmark_m055_corpus_manifest.py:build_corpus_manifest",
+      "batch": "S02"
+    },
+    {
+      "id": "m055deep-20-pdf",
+      "symbol": "Function:scripts/build_m055deep_corpus_manifest_20.py:write_manifest",
+      "batch": "S02"
+    },
+    {
+      "id": "m058-graph-manifest",
+      "symbol": "Function:scripts/m058_build_graph_manifest.py:write_json",
+      "batch": "S03"
+    },
+    {
+      "id": "m059-batch-manifest",
+      "symbol": "Function:scripts/m059_build_manifest.py:finalize_manifest",
+      "batch": "S03"
+    }
+  ],
+  "required_evidence_before_each_edit": [
+    "exact_gitnexus_impact_by_symbol_uid",
+    "risk_review_for_medium_or_higher",
+    "focused_residual_tests_identified",
+    "rollback_boundary_understood"
+  ],
+  "required_evidence_after_each_batch": [
+    "focused_residual_tests_pass",
+    "manifest_contract_tests_pass",
+    "strict_drift_delta_explained",
+    "unknown_remains_0",
+    "shared_state_remains_0"
+  ],
+  "baseline_update_allowed_only_in": "S04",
+  "forbidden": [
+    "broad_write_path_classification_rules",
+    "canonical_baseline_update_before_behavior_proof",
+    "unscoped_manifest_json_helper_replacement",
+    "parser_chunk_or_graph_readiness_claims"
+  ],
+  "target_counts": {
+    "script-only": "0_after_all_four_residuals_retired_or_documented_target_delta",
+    "unknown": 0,
+    "shared-state": 0
+  }
+}
