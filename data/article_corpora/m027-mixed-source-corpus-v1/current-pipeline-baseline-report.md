@@ -24,28 +24,28 @@ This report captures accepted current mixed-source pipeline behavior before S05 
 
 | Article | Variant | Parser-ready | Chunks | Import ready | Diagnostic artifact |
 |---|---|---:|---:|---:|---|
-| arxiv/mixed-source/2605.20897 | 2605.20897:source:arxiv-abs | no | 0 | no | `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline/arxiv_mixed-source_2605.20897/baseline.json` |
-| arxiv/mixed-source/2605.20897 | 2605.20897:source:arxiv-pdf-seed | yes | 1 | no | `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline/arxiv_mixed-source_2605.20897/baseline.json` |
-| arxiv/mixed-source/2605.21401 | 2605.21401:source:arxiv-abs | no | 0 | no | `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline/arxiv_mixed-source_2605.21401/baseline.json` |
-| arxiv/mixed-source/2605.21401 | 2605.21401:source:arxiv-pdf | yes | 1 | no | `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline/arxiv_mixed-source_2605.21401/baseline.json` |
-| nature/mixed-source/s44387-025-00019-5 | s44387-025-00019-5:source:nature-html | yes | 1 | no | `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline/nature_mixed-source_s44387-025-00019-5/baseline.json` |
-| arxiv/mixed-source/2605.25522 | 2605.25522:source:arxiv-abs | no | 0 | no | `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline/arxiv_mixed-source_2605.25522/baseline.json` |
-| arxiv/mixed-source/2605.25522 | 2605.25522:source:arxiv-pdf | yes | 0 | no | `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline/arxiv_mixed-source_2605.25522/baseline.json` |
-| arxiv/mixed-source/2603.04448 | 2603.04448:source:arxiv-abs | no | 0 | no | `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline/arxiv_mixed-source_2603.04448/baseline.json` |
-| arxiv/mixed-source/2603.04448 | 2603.04448:source:arxiv-pdf | yes | 1 | no | `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline/arxiv_mixed-source_2603.04448/baseline.json` |
-| arxiv/mixed-source/2604.18478 | 2604.18478:source:arxiv-abs | no | 0 | no | `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline/arxiv_mixed-source_2604.18478/baseline.json` |
-| arxiv/mixed-source/2604.18478 | 2604.18478:source:arxiv-pdf | yes | 1 | no | `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline/arxiv_mixed-source_2604.18478/baseline.json` |
+| arxiv/mixed-source/2605.20897 | 2605.20897:source:arxiv-abs | no | 0 | no | `data/architecture-assessment/m190-m027-current-pipeline-replay/arxiv_mixed-source_2605.20897/baseline.json` |
+| arxiv/mixed-source/2605.20897 | 2605.20897:source:arxiv-pdf-seed | yes | 1 | no | `data/architecture-assessment/m190-m027-current-pipeline-replay/arxiv_mixed-source_2605.20897/baseline.json` |
+| arxiv/mixed-source/2605.21401 | 2605.21401:source:arxiv-abs | no | 0 | no | `data/architecture-assessment/m190-m027-current-pipeline-replay/arxiv_mixed-source_2605.21401/baseline.json` |
+| arxiv/mixed-source/2605.21401 | 2605.21401:source:arxiv-pdf | yes | 1 | no | `data/architecture-assessment/m190-m027-current-pipeline-replay/arxiv_mixed-source_2605.21401/baseline.json` |
+| nature/mixed-source/s44387-025-00019-5 | s44387-025-00019-5:source:nature-html | yes | 1 | no | `data/architecture-assessment/m190-m027-current-pipeline-replay/nature_mixed-source_s44387-025-00019-5/baseline.json` |
+| arxiv/mixed-source/2605.25522 | 2605.25522:source:arxiv-abs | no | 0 | no | `data/architecture-assessment/m190-m027-current-pipeline-replay/arxiv_mixed-source_2605.25522/baseline.json` |
+| arxiv/mixed-source/2605.25522 | 2605.25522:source:arxiv-pdf | yes | 0 | no | `data/architecture-assessment/m190-m027-current-pipeline-replay/arxiv_mixed-source_2605.25522/baseline.json` |
+| arxiv/mixed-source/2603.04448 | 2603.04448:source:arxiv-abs | no | 0 | no | `data/architecture-assessment/m190-m027-current-pipeline-replay/arxiv_mixed-source_2603.04448/baseline.json` |
+| arxiv/mixed-source/2603.04448 | 2603.04448:source:arxiv-pdf | yes | 1 | no | `data/architecture-assessment/m190-m027-current-pipeline-replay/arxiv_mixed-source_2603.04448/baseline.json` |
+| arxiv/mixed-source/2604.18478 | 2604.18478:source:arxiv-abs | no | 0 | no | `data/architecture-assessment/m190-m027-current-pipeline-replay/arxiv_mixed-source_2604.18478/baseline.json` |
+| arxiv/mixed-source/2604.18478 | 2604.18478:source:arxiv-pdf | yes | 1 | no | `data/architecture-assessment/m190-m027-current-pipeline-replay/arxiv_mixed-source_2604.18478/baseline.json` |
 
 ## Diagnostics
 
-`{"converted_payload_hash_verified": 6, "current_pipeline_retrieval_only_chunks": 5, "current_pipeline_zero_chunks": 1, "metadata_only_not_replayed": 5, "no_converted_payload_expected": 5, "s03_linkage_verified": 1}`
+`{"converted_payload_hash_verified": 6, "current_pipeline_retrieval_only_chunks": 5, "current_pipeline_zero_chunks": 1, "metadata_only_not_replayed": 5, "no_converted_payload_expected": 5, "s03_converter_refreshed_after_source_verifier": 1, "s03_linkage_verified": 1}`
 
 ## Provenance
 
 - Conversion summary: `data/article_corpora/m027-mixed-source-corpus-v1/conversion-quality-summary.json`
-- Conversion summary SHA-256: `54b435f75e02cf438a1ee96b08fd80c6ac98e97416891540f1692249dda0cbd0`
+- Conversion summary SHA-256: `b51dae1fbd084c3e4ba9bb80a7a10614ba79410d0114247783ce70fddb8c3404`
 - Baseline diagnostics: `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline-diagnostics.jsonl`
-- Per-article baseline directory: `data/article_corpora/m027-mixed-source-corpus-v1/current-pipeline-baseline`
+- Per-article baseline directory: `data/architecture-assessment/m190-m027-current-pipeline-replay`
 
 ## Failure Modes
 
