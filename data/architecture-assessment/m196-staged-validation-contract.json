@@ -1,0 +1,104 @@
+{
+  "schema_version": "m196-staged-validation-contract.v1",
+  "milestone_id": "M196-0nrede",
+  "graph_writes_allowed": false,
+  "import_eligible_allowed": false,
+  "requires_network": false,
+  "blocked_readiness": [
+    "production_graph_import",
+    "ladybugdb_write",
+    "falkordb_write",
+    "schema_migration_execution",
+    "import_eligible_true",
+    "arxiv_archive.graph_readiness_review"
+  ],
+  "forbidden_payload_terms": [
+    "api_key",
+    "secret_value",
+    "raw_prompt_payload",
+    "paper_text_payload",
+    "chunk_text_payload",
+    "embedding_payload",
+    "vector_payload"
+  ],
+  "stages": [
+    {
+      "id": "contract",
+      "purpose": "Validate the staged validation contract and blocked readiness flags.",
+      "command": "uv run pytest tests/test_m196_staged_validation_contract.py -q",
+      "expected_outputs": [
+        "data/architecture-assessment/m196-staged-validation-contract.json"
+      ],
+      "acceptance_criteria": [
+        "all required stage fields are present",
+        "graph_writes_allowed is false",
+        "import_eligible_allowed is false",
+        "requires_network is false"
+      ],
+      "max_runtime_seconds": 60,
+      "requires_network": false,
+      "graph_writes_allowed": false,
+      "import_eligible_allowed": false
+    },
+    {
+      "id": "smoke",
+      "purpose": "Run one local no-write Universal KB rehearsal and inspect metadata artifacts.",
+      "command": "uv run pytest tests/test_universal_kb_rehearsal.py -q",
+      "expected_outputs": [
+        "candidate.json",
+        "review_packet.json",
+        "review_trace.json",
+        "queue_inspect.json",
+        "readiness_handoff.json",
+        "schema_gate_result.json",
+        "projection_result.json",
+        "summary.json"
+      ],
+      "acceptance_criteria": [
+        "schema gate accepts current schemas",
+        "projection backend is networkx",
+        "import_eligible is false",
+        "production_import_attempted is false"
+      ],
+      "max_runtime_seconds": 120,
+      "requires_network": false,
+      "graph_writes_allowed": false,
+      "import_eligible_allowed": false
+    },
+    {
+      "id": "compatibility",
+      "purpose": "Protect queue, projection, schema, backend seam, and governance compatibility.",
+      "command": "uv run pytest tests/test_universal_kb_queue.py tests/test_universal_kb_rehearsal.py tests/test_graph_projection_schema_gate.py tests/test_graph_projection_port.py tests/test_networkx_graph_probe_adapter.py tests/test_projection_backend_seams.py tests/test_m195_governance_ratchets.py -q",
+      "expected_outputs": [
+        "pytest_pass"
+      ],
+      "acceptance_criteria": [
+        "queue tests pass",
+        "projection tests pass",
+        "governance ratchets pass",
+        "no backend writes are enabled"
+      ],
+      "max_runtime_seconds": 240,
+      "requires_network": false,
+      "graph_writes_allowed": false,
+      "import_eligible_allowed": false
+    },
+    {
+      "id": "no_leak",
+      "purpose": "Audit staged validation and runtime artifacts for metadata-only observability.",
+      "command": "uv run pytest tests/test_m196_staged_validation_contract.py tests/test_universal_kb_rehearsal.py -q",
+      "expected_outputs": [
+        "metadata_only_artifact_checks"
+      ],
+      "acceptance_criteria": [
+        "no forbidden payload terms appear in staged validation contract",
+        "no credentials are logged",
+        "no raw prompt or source text payloads are persisted"
+      ],
+      "max_runtime_seconds": 120,
+      "requires_network": false,
+      "graph_writes_allowed": false,
+      "import_eligible_allowed": false
+    }
+  ]
+}
