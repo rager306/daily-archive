@@ -12,6 +12,9 @@ from research_graph.infrastructure.repair.chunk_import_contract import (
     validation_to_dict,
 )
 from research_graph.workflows.universal_kb.contracts import (
+    PIPELINE_FAILURE_CLASSES,
+    PIPELINE_FAILURE_CODES,
+    RETRYABLE_FAILURE_CODES,
     CandidatePacket,
     DependencyRecord,
     EvidenceArtifactRecord,
@@ -70,6 +73,46 @@ def test_candidate_packet_preserves_candidate_only_boundary() -> None:
     assert packet.safety_flags == SafetyFlags()
     assert packet.to_dict()["safety_flags"]["import_eligible"] is False
     packet.assert_no_write()
+
+
+def test_candidate_packet_serializes_graph_projection_metadata() -> None:
+    packet = CandidatePacket(
+        candidate_id="candidate-1",
+        evidence_refs=("artifact:1",),
+        candidate_type="sidecar_layout",
+        schema_version="universal-kb-candidate.v1",
+        graph_node_refs=("node:paper:1",),
+        graph_edge_refs=("edge:paper:1->claim:1",),
+        provenance_refs=("source:arxiv:abc",),
+        diagnostics=("missing_review_packet",),
+    )
+
+    dumped = packet.to_dict()
+
+    assert dumped["schema_version"] == "universal-kb-candidate.v1"
+    assert dumped["graph_node_refs"] == ["node:paper:1"]
+    assert dumped["graph_edge_refs"] == ["edge:paper:1->claim:1"]
+    assert dumped["provenance_refs"] == ["source:arxiv:abc"]
+    assert dumped["diagnostics"] == ["missing_review_packet"]
+    assert dumped["safety_flags"]["import_eligible"] is False
+
+
+def test_candidate_packet_rejects_invalid_graph_projection_metadata() -> None:
+    with pytest.raises(ValueError, match="schema_version must be non-empty"):
+        CandidatePacket(
+            candidate_id="candidate-1",
+            evidence_refs=("artifact:1",),
+            candidate_type="sidecar_layout",
+            schema_version="",
+        )
+
+    with pytest.raises(ValueError, match="diagnostic refs contain forbidden keys"):
+        CandidatePacket(
+            candidate_id="candidate-1",
+            evidence_refs=("artifact:1",),
+            candidate_type="sidecar_layout",
+            diagnostics=("raw_text",),
+        )
 
 
 @pytest.mark.parametrize("review_state", ["approved", "ready", "import_eligible"])
@@ -162,6 +205,93 @@ def test_operational_records_serialize_to_json_safe_dicts(record: object) -> Non
     dumped = record.to_dict()  # type: ignore[attr-defined]  # ty:ignore[unresolved-attribute]
     assert isinstance(dumped, dict)
     assert dumped
+
+
+def test_pipeline_failure_taxonomy_covers_m195_failure_modes() -> None:
+    assert {
+        "network",
+        "source",
+        "resource",
+        "llm",
+        "artifact",
+        "schema",
+        "review",
+        "validation",
+        "queue",
+    } <= PIPELINE_FAILURE_CLASSES
+    assert {
+        "network_unavailable",
+        "arxiv_unavailable",
+        "rate_limited",
+        "resource_limit",
+        "llm_limit",
+        "stale_hash",
+        "low_quality_source",
+        "source_missing",
+        "partial_artifact",
+        "schema_validation_failed",
+        "missing_review_packet",
+        "incomplete_review_packet",
+    } <= PIPELINE_FAILURE_CODES
+    assert RETRYABLE_FAILURE_CODES <= PIPELINE_FAILURE_CODES
+
+
+def test_failure_record_validates_pipeline_failure_taxonomy() -> None:
+    record = FailureRecord(
+        failure_id="failure-network",
+        job_id="job-1",
+        failure_class="network",
+        error_code="network_unavailable",
+        retryable=True,
+        redacted_message="external dependency unavailable",
+        occurred_at="2026-06-08T00:00:00Z",
+    )
+
+    assert record.to_dict()["error_code"] == "network_unavailable"
+
+    with pytest.raises(ValueError, match="failure_class must be one of"):
+        FailureRecord(
+            failure_id="failure-unknown-class",
+            job_id="job-1",
+            failure_class="unknown",
+            error_code="network_unavailable",
+            retryable=True,
+            redacted_message="external dependency unavailable",
+            occurred_at="2026-06-08T00:00:00Z",
+        )
+
+    with pytest.raises(ValueError, match="error_code must be one of"):
+        FailureRecord(
+            failure_id="failure-unknown-code",
+            job_id="job-1",
+            failure_class="network",
+            error_code="unknown_error",
+            retryable=False,
+            redacted_message="external dependency unavailable",
+            occurred_at="2026-06-08T00:00:00Z",
+        )
+
+    with pytest.raises(ValueError, match="retryable must match"):
+        FailureRecord(
+            failure_id="failure-retry-mismatch",
+            job_id="job-1",
+            failure_class="network",
+            error_code="network_unavailable",
+            retryable=False,
+            redacted_message="external dependency unavailable",
+            occurred_at="2026-06-08T00:00:00Z",
+        )
+
+    with pytest.raises(ValueError, match="redacted_message must be metadata-only"):
+        FailureRecord(
+            failure_id="failure-raw-message",
+            job_id="job-1",
+            failure_class="source",
+            error_code="low_quality_source",
+            retryable=False,
+            redacted_message="raw_text leaked",
+            occurred_at="2026-06-08T00:00:00Z",
+        )
 
 
 def test_processing_job_rejects_negative_attempt_count() -> None:

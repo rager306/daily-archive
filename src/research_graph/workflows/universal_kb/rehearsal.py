@@ -14,7 +14,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from research_graph.domain.graph_projection_schema import GraphProjectionSchemaGate
+from research_graph.domain.ports import ProjectionRequest
+from research_graph.infrastructure.graph.networkx_probe import NetworkXProjectionAdapter
 from research_graph.infrastructure.llm.minimax_structured import DEFAULT_MINIMAX_MODEL
+from research_graph.workflows.universal_kb.contracts import CandidatePacket
 from research_graph.workflows.universal_kb.queue import UniversalKBQueue
 from research_graph.workflows.universal_kb.review_assistance import (
     build_review_assistance_packet,
@@ -33,6 +37,8 @@ _ARTIFACT_NAMES = (
     "review_trace.json",
     "queue_inspect.json",
     "readiness_handoff.json",
+    "schema_gate_result.json",
+    "projection_result.json",
     "summary.json",
 )
 
@@ -58,6 +64,20 @@ def _assert_clean_artifact_dir(artifact_dir: Path) -> None:
     existing = [artifact_dir / name for name in _ARTIFACT_NAMES if (artifact_dir / name).exists()]
     if existing:
         raise FileExistsError(f"rehearsal artifact already exists: {existing[0]}")
+
+
+def _projection_candidate(candidate: CandidatePacket) -> CandidatePacket:
+    return CandidatePacket(
+        candidate_id=candidate.candidate_id,
+        evidence_refs=candidate.evidence_refs,
+        candidate_type=candidate.candidate_type,
+        review_state=candidate.review_state,
+        schema_version=candidate.schema_version,
+        graph_node_refs=("node:paper:sidecar-candidate-1", "node:claim:sidecar-candidate-1"),
+        graph_edge_refs=("edge:paper:sidecar-candidate-1->claim:sidecar-candidate-1",),
+        provenance_refs=("source:opendataloader-fixture:v1",),
+        diagnostics=candidate.diagnostics,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,7 +114,7 @@ def run_universal_kb_no_write_rehearsal(artifact_dir: str | Path) -> RehearsalRe
     output_dir = Path(artifact_dir)
     _assert_clean_artifact_dir(output_dir)
 
-    candidate = candidate_packet_from_sidecar_json(_sidecar_fixture())
+    candidate = _projection_candidate(candidate_packet_from_sidecar_json(_sidecar_fixture()))
     candidate.assert_no_write()
 
     review_packet = build_review_assistance_packet(
@@ -136,7 +156,15 @@ def run_universal_kb_no_write_rehearsal(artifact_dir: str | Path) -> RehearsalRe
     review_trace_path = output_dir / "review_trace.json"
     queue_inspect_path = output_dir / "queue_inspect.json"
     handoff_path = output_dir / "readiness_handoff.json"
+    schema_gate_path = output_dir / "schema_gate_result.json"
+    projection_path = output_dir / "projection_result.json"
     summary_path = output_dir / "summary.json"
+
+    projection_request = ProjectionRequest(candidate_packet=candidate)
+    schema_gate_result = GraphProjectionSchemaGate().validate(projection_request)
+    schema_gate_result.assert_no_write()
+    projection_result = NetworkXProjectionAdapter().project(projection_request)
+    projection_result.assert_no_write()
 
     _write_json(candidate_path, candidate.to_dict())
     _write_json(review_packet_path, review_packet.to_dict())
@@ -144,6 +172,10 @@ def run_universal_kb_no_write_rehearsal(artifact_dir: str | Path) -> RehearsalRe
     _write_json(queue_inspect_path, queue_inspect)
     handoff_payload = handoff.to_dict()
     _write_json(handoff_path, handoff_payload)
+    schema_gate_payload = schema_gate_result.to_dict()
+    _write_json(schema_gate_path, schema_gate_payload)
+    projection_payload = projection_result.to_dict()
+    _write_json(projection_path, projection_payload)
 
     artifact_paths = (
         candidate_path,
@@ -151,6 +183,8 @@ def run_universal_kb_no_write_rehearsal(artifact_dir: str | Path) -> RehearsalRe
         review_trace_path,
         queue_inspect_path,
         handoff_path,
+        schema_gate_path,
+        projection_path,
         summary_path,
     )
     summary = {
@@ -166,6 +200,14 @@ def run_universal_kb_no_write_rehearsal(artifact_dir: str | Path) -> RehearsalRe
         "helper_evidence_only": True,
         "minimax_source_of_truth": False,
         "artifact_paths": [path.name for path in artifact_paths if path != summary_path],
+        "schema_gate_accepted": schema_gate_payload["accepted"],
+        "schema_gate_migration_required": schema_gate_payload["migration_required"],
+        "schema_gate_diagnostics": schema_gate_payload["diagnostics"],
+        "projection_backend": projection_payload["backend"],
+        "projection_import_eligible": projection_payload["safety_flags"]["import_eligible"],
+        "projection_diagnostics": [
+            diagnostic["code"] for diagnostic in projection_payload["diagnostics"]
+        ],
     }
     _write_json(summary_path, summary)
 

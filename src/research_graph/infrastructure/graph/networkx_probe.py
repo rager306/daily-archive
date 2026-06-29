@@ -16,6 +16,13 @@ from research_graph.application.graph.probe import (
     GraphProbeMetrics,
     GraphProbeRequest,
 )
+from research_graph.domain.ports import (
+    ProjectionDiagnostic,
+    ProjectionEdgeRef,
+    ProjectionNodeRef,
+    ProjectionRequest,
+    ProjectionResult,
+)
 
 DEFAULT_ENTITY_TYPES = (
     "metadata",
@@ -24,6 +31,55 @@ DEFAULT_ENTITY_TYPES = (
     "citation_context",
     "retrieval_context",
 )
+
+
+class NetworkXProjectionAdapter:
+    """Project candidate-packet metadata refs into an in-memory NetworkX graph."""
+
+    def __init__(self, *, graph_library: Any | None = None) -> None:
+        self._graph_library = graph_library
+
+    def project(self, request: ProjectionRequest) -> ProjectionResult:
+        try:
+            nx = self._networkx()
+            graph = nx.DiGraph(name=request.candidate_packet.candidate_id)
+            node_refs = tuple(
+                ProjectionNodeRef(ref=ref, node_type=_projection_ref_kind(ref, default="node"))
+                for ref in request.candidate_packet.graph_node_refs
+            )
+            edge_refs = tuple(
+                _projection_edge_ref(ref) for ref in request.candidate_packet.graph_edge_refs
+            )
+            for node in node_refs:
+                graph.add_node(node.ref, node_type=node.node_type)
+            for edge in edge_refs:
+                graph.add_edge(edge.source_ref, edge.target_ref, edge_type=edge.edge_type, ref=edge.ref)
+            return ProjectionResult(
+                schema_version=request.schema_version,
+                backend="networkx",
+                node_refs=node_refs,
+                edge_refs=edge_refs,
+                evidence_refs=request.candidate_packet.evidence_refs,
+                provenance_refs=request.candidate_packet.provenance_refs,
+                diagnostics=(
+                    ProjectionDiagnostic(code="networkx_projection_completed", phase="graph_projection"),
+                ),
+            )
+        except Exception:
+            return ProjectionResult(
+                schema_version=request.schema_version,
+                backend="networkx",
+                diagnostics=(
+                    ProjectionDiagnostic(code="networkx_projection_failed", phase="graph_projection"),
+                ),
+            )
+
+    def _networkx(self) -> Any:
+        if self._graph_library is not None:
+            return self._graph_library
+        import networkx as nx  # type: ignore[import-unresolved]
+
+        return nx
 
 
 class NetworkXGraphProbeAdapter:
@@ -316,6 +372,33 @@ class NetworkXGraphProbeAdapter:
             self._trace_module.stop()
         except Exception:
             return
+
+
+def _projection_edge_ref(ref: str) -> ProjectionEdgeRef:
+    body = ref.removeprefix("edge:")
+    if "->" not in body:
+        return ProjectionEdgeRef(
+            ref=ref,
+            edge_type="candidate_edge",
+            source_ref="node:unknown:source",
+            target_ref="node:unknown:target",
+        )
+    source, target = body.split("->", 1)
+    source_ref = source if source.startswith("node:") else f"node:{source}"
+    target_ref = target if target.startswith("node:") else f"node:{target}"
+    return ProjectionEdgeRef(
+        ref=ref,
+        edge_type=f"{_projection_ref_kind(source_ref, default='source')}_to_{_projection_ref_kind(target_ref, default='target')}",
+        source_ref=source_ref,
+        target_ref=target_ref,
+    )
+
+
+def _projection_ref_kind(ref: str, *, default: str) -> str:
+    parts = ref.split(":")
+    if len(parts) >= 2 and parts[1]:
+        return parts[1]
+    return default
 
 
 def find_citation_relations(article_refs: Sequence[str]) -> list[tuple[str, str, str]]:

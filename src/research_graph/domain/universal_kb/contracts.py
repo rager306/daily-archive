@@ -33,6 +33,40 @@ FORBIDDEN_DIAGNOSTIC_KEYS = frozenset(
         "raw_prompt",
     }
 )
+PIPELINE_FAILURE_CLASSES = frozenset(
+    {"network", "source", "resource", "llm", "artifact", "schema", "review", "validation", "queue"}
+)
+PIPELINE_FAILURE_CODES = frozenset(
+    {
+        "network_unavailable",
+        "arxiv_unavailable",
+        "rate_limited",
+        "resource_limit",
+        "llm_limit",
+        "stale_hash",
+        "low_quality_source",
+        "source_missing",
+        "source_empty",
+        "no_substantive_body",
+        "partial_artifact",
+        "schema_validation_failed",
+        "missing_review_packet",
+        "incomplete_review_packet",
+        "queue_dispatch_error",
+        "stage_dispatch_error",
+    }
+)
+RETRYABLE_FAILURE_CODES = frozenset(
+    {
+        "network_unavailable",
+        "arxiv_unavailable",
+        "rate_limited",
+        "resource_limit",
+        "llm_limit",
+        "queue_dispatch_error",
+        "stage_dispatch_error",
+    }
+)
 
 
 def _tuple(values: tuple[str, ...] | list[str] | None) -> tuple[str, ...]:
@@ -64,6 +98,12 @@ def _reject_forbidden_diagnostic_keys(data: dict[str, Any]) -> None:
     forbidden = sorted(lower_keys & FORBIDDEN_DIAGNOSTIC_KEYS)
     if forbidden:
         raise ValueError(f"diagnostic payload contains forbidden keys: {', '.join(forbidden)}")
+
+
+def _reject_forbidden_diagnostic_refs(values: tuple[str, ...]) -> None:
+    forbidden = sorted({value.lower() for value in values} & FORBIDDEN_DIAGNOSTIC_KEYS)
+    if forbidden:
+        raise ValueError(f"diagnostic refs contain forbidden keys: {', '.join(forbidden)}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -131,11 +171,22 @@ class CandidatePacket:
     candidate_type: str
     review_state: str = "pending"
     safety_flags: SafetyFlags = field(default_factory=SafetyFlags)
+    schema_version: str = "universal-kb-candidate.v1"
+    graph_node_refs: tuple[str, ...] = field(default_factory=tuple)
+    graph_edge_refs: tuple[str, ...] = field(default_factory=tuple)
+    provenance_refs: tuple[str, ...] = field(default_factory=tuple)
+    diagnostics: tuple[str, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
         _require_non_empty(self.candidate_id, "candidate_id")
         _require_non_empty(self.candidate_type, "candidate_type")
+        _require_non_empty(self.schema_version, "schema_version")
         object.__setattr__(self, "evidence_refs", _tuple(self.evidence_refs))
+        object.__setattr__(self, "graph_node_refs", _tuple(self.graph_node_refs))
+        object.__setattr__(self, "graph_edge_refs", _tuple(self.graph_edge_refs))
+        object.__setattr__(self, "provenance_refs", _tuple(self.provenance_refs))
+        object.__setattr__(self, "diagnostics", _tuple(self.diagnostics))
+        _reject_forbidden_diagnostic_refs(self.diagnostics)
         if self.review_state in AUTHORITATIVE_REVIEW_STATES:
             raise ValueError("candidate packet cannot carry authoritative review state")
         self.assert_no_write()
@@ -232,6 +283,18 @@ class FailureRecord:
             "occurred_at",
         ):
             _require_non_empty(str(getattr(self, field_name)), field_name)
+        if self.failure_class not in PIPELINE_FAILURE_CLASSES:
+            allowed = ", ".join(sorted(PIPELINE_FAILURE_CLASSES))
+            raise ValueError(f"failure_class must be one of: {allowed}")
+        if self.error_code not in PIPELINE_FAILURE_CODES:
+            allowed = ", ".join(sorted(PIPELINE_FAILURE_CODES))
+            raise ValueError(f"error_code must be one of: {allowed}")
+        expected_retryable = self.error_code in RETRYABLE_FAILURE_CODES
+        if self.retryable is not expected_retryable:
+            raise ValueError("retryable must match the pipeline failure code taxonomy")
+        lowered_message = self.redacted_message.lower()
+        if any(forbidden in lowered_message for forbidden in FORBIDDEN_DIAGNOSTIC_KEYS):
+            raise ValueError("redacted_message must be metadata-only")
 
     def to_dict(self) -> dict[str, Any]:
         return _as_json_safe_dict(self)

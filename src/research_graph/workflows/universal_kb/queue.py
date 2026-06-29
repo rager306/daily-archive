@@ -41,6 +41,19 @@ STATUSES = frozenset(
         "skipped",
     }
 )
+TERMINAL_STATUSES = frozenset({"succeeded", "failed_terminal", "skipped"})
+ACTIVE_STATUSES = STATUSES - TERMINAL_STATUSES
+PIPELINE_STAGES = frozenset(
+    {
+        "intake",
+        "acquisition",
+        "parsing",
+        "chunking",
+        "evidence",
+        "graph_candidate",
+        "projection_rehearsal",
+    }
+)
 
 PAYLOAD_METADATA_KEYS = frozenset(
     {
@@ -51,6 +64,10 @@ PAYLOAD_METADATA_KEYS = frozenset(
         "prompt_program_hash",
         "source_artifact_refs",
         "evidence_path_refs",
+        "candidate_packet_refs",
+        "graph_node_refs",
+        "graph_edge_refs",
+        "provenance_refs",
         "cost_estimate",
         "latency_ms",
         "retry_count",
@@ -70,6 +87,10 @@ def _default_payload_metadata() -> dict[str, Any]:
         "prompt_program_hash": None,
         "source_artifact_refs": [],
         "evidence_path_refs": [],
+        "candidate_packet_refs": [],
+        "graph_node_refs": [],
+        "graph_edge_refs": [],
+        "provenance_refs": [],
         "cost_estimate": None,
         "latency_ms": None,
         "retry_count": 0,
@@ -196,6 +217,16 @@ class UniversalKBQueue:
                 "ON jobs(input_hash, tool_version, contract_version)"
             )
             self.connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS artifact_refs (
+                    artifact_ref TEXT PRIMARY KEY,
+                    artifact_hash TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
+            self.connection.execute(
                 "CREATE INDEX IF NOT EXISTS idx_job_events_order ON job_events(job_id, created_at)"
             )
         return self
@@ -216,6 +247,7 @@ class UniversalKBQueue:
     ) -> dict[str, Any]:
         self._require_non_empty(job_id, "job_id")
         self._require_non_empty(stage, "stage")
+        self._require_metadata_code(stage, "stage")
         self._require_non_empty(input_hash, "input_hash")
         self._require_non_empty(tool_version, "tool_version")
         self._require_non_empty(contract_version, "contract_version")
@@ -628,6 +660,49 @@ class UniversalKBQueue:
                 reclaimed.append(self._row_to_job(self._fetch_job(row["job_id"])))
         return reclaimed
 
+    def register_artifact(self, *, artifact_ref: str, artifact_hash: str) -> dict[str, Any]:
+        """Record a metadata-only artifact ref/hash for dependency unblocking."""
+        self._require_metadata_ref(artifact_ref, "artifact_ref")
+        self._require_non_empty(artifact_hash, "artifact_hash")
+        self._require_safe_metadata_value(artifact_hash, "artifact_hash")
+        now = self.clock()
+        with self.connection:
+            self.connection.execute(
+                """
+                INSERT INTO artifact_refs (artifact_ref, artifact_hash, created_at, updated_at)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(artifact_ref) DO UPDATE SET
+                    artifact_hash = excluded.artifact_hash,
+                    updated_at = excluded.updated_at
+                """,
+                (artifact_ref, artifact_hash, now, now),
+            )
+            dependent_rows = self.connection.execute(
+                """
+                SELECT jobs.job_id, jobs.status
+                FROM jobs
+                INNER JOIN job_dependencies ON jobs.job_id = job_dependencies.job_id
+                WHERE job_dependencies.depends_on_artifact_ref = ?
+                ORDER BY jobs.created_at ASC, jobs.job_id ASC
+                """,
+                (artifact_ref,),
+            ).fetchall()
+            for row in dependent_rows:
+                self._insert_event(
+                    row["job_id"],
+                    "artifact_registered",
+                    row["status"],
+                    row["status"],
+                    "artifact ref hash registered",
+                    None,
+                    None,
+                    now,
+                )
+            artifact = self.connection.execute(
+                "SELECT * FROM artifact_refs WHERE artifact_ref = ?", (artifact_ref,)
+            ).fetchone()
+        return dict(artifact)
+
     def mark_stale(
         self,
         job_id: str,
@@ -683,14 +758,20 @@ class UniversalKBQueue:
         ).fetchall()
         for dependency in dependencies:
             upstream_job_id = dependency["depends_on_job_id"]
-            if upstream_job_id is None:
-                # Artifact references require a future explicit artifact registry/hash
-                # verifier. Without one, treating the dependency as satisfied would
-                # silently bypass lineage checks.
-                return False
-            upstream = self._fetch_job(upstream_job_id)
-            if upstream is None or upstream["status"] != dependency["required_status"]:
-                return False
+            artifact_ref = dependency["depends_on_artifact_ref"]
+            if upstream_job_id is not None:
+                upstream = self._fetch_job(upstream_job_id)
+                if upstream is None or upstream["status"] != dependency["required_status"]:
+                    return False
+            if artifact_ref is not None:
+                expected_hash = dependency["expected_hash"]
+                if not expected_hash:
+                    return False
+                artifact = self.connection.execute(
+                    "SELECT artifact_hash FROM artifact_refs WHERE artifact_ref = ?", (artifact_ref,)
+                ).fetchone()
+                if artifact is None or artifact["artifact_hash"] != expected_hash:
+                    return False
         return True
 
     def _ensure_jobs_column(self, column_name: str, column_sql: str) -> None:
@@ -718,7 +799,14 @@ class UniversalKBQueue:
                 "prompt_program_hash",
             }:
                 sanitized[key] = self._sanitize_optional_metadata_code(value, key)
-            elif key in {"source_artifact_refs", "evidence_path_refs"}:
+            elif key in {
+                "source_artifact_refs",
+                "evidence_path_refs",
+                "candidate_packet_refs",
+                "graph_node_refs",
+                "graph_edge_refs",
+                "provenance_refs",
+            }:
                 sanitized[key] = self._sanitize_metadata_ref_list(value, key)
             elif key == "cost_estimate":
                 sanitized[key] = self._sanitize_optional_non_negative_number(value, key)
@@ -797,6 +885,14 @@ class UniversalKBQueue:
             forbidden in lowered for forbidden in FORBIDDEN_DIAGNOSTIC_KEYS
         ) or SECRET_SHAPED_PATTERN.search(value):
             raise ValueError("diagnostic must be redacted and metadata-only")
+
+    @staticmethod
+    def _require_safe_metadata_value(value: str, field_name: str) -> None:
+        lowered = value.lower()
+        if any(
+            forbidden in lowered for forbidden in FORBIDDEN_DIAGNOSTIC_KEYS
+        ) or SECRET_SHAPED_PATTERN.search(value):
+            raise ValueError(f"{field_name} must be redacted and metadata-only")
 
     @staticmethod
     def _require_metadata_ref(value: str, field_name: str) -> None:

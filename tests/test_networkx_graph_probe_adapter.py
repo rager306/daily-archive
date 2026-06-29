@@ -8,10 +8,13 @@ from research_graph.application.graph.probe import (
     GraphProbeArticleEvidence,
     GraphProbeRequest,
 )
+from research_graph.domain.ports import KnowledgeGraphProjectionPort, ProjectionRequest
 from research_graph.infrastructure.graph.networkx_probe import (
     NetworkXGraphProbeAdapter,
+    NetworkXProjectionAdapter,
     find_citation_relations,
 )
+from research_graph.workflows.universal_kb.contracts import CandidatePacket
 
 
 class MissingNetworkX:
@@ -43,6 +46,18 @@ class BrokenMetricsNetworkX:
         return BrokenMetricsGraph()
 
 
+def _candidate_packet() -> CandidatePacket:
+    return CandidatePacket(
+        candidate_id="candidate-1",
+        evidence_refs=("artifact:evidence-1",),
+        candidate_type="graph_candidate",
+        schema_version="universal-kb-candidate.v1",
+        graph_node_refs=("node:paper:1", "node:claim:1"),
+        graph_edge_refs=("edge:paper:1->claim:1",),
+        provenance_refs=("source:arxiv:2605.18747",),
+    )
+
+
 def _fixture_request() -> GraphProbeRequest:
     return GraphProbeRequest(
         corpus_id="r024-fixture",
@@ -71,6 +86,40 @@ def _fixture_request() -> GraphProbeRequest:
         ),
         entity_types=("metadata", "citation_context"),
     )
+
+
+def test_networkx_projection_adapter_projects_candidate_packet_metadata() -> None:
+    pytest.importorskip("networkx")
+    adapter = NetworkXProjectionAdapter()
+    request = ProjectionRequest(candidate_packet=_candidate_packet())
+
+    assert isinstance(adapter, KnowledgeGraphProjectionPort)
+    result = adapter.project(request)
+
+    assert result.schema_version == "knowledge-graph-projection.v1"
+    assert result.backend == "networkx"
+    assert [node.ref for node in result.node_refs] == ["node:paper:1", "node:claim:1"]
+    assert [edge.ref for edge in result.edge_refs] == ["edge:paper:1->claim:1"]
+    assert result.evidence_refs == ("artifact:evidence-1",)
+    assert result.provenance_refs == ("source:arxiv:2605.18747",)
+    assert result.diagnostics[0].code == "networkx_projection_completed"
+    assert result.safety_flags["import_eligible"] is False if isinstance(result.safety_flags, dict) else result.safety_flags.import_eligible is False
+    result.assert_no_write()
+
+
+def test_networkx_projection_adapter_reports_metadata_only_failure() -> None:
+    adapter = NetworkXProjectionAdapter(graph_library=MissingNetworkX())
+
+    result = adapter.project(ProjectionRequest(candidate_packet=_candidate_packet()))
+
+    assert result.backend == "networkx"
+    assert result.node_refs == ()
+    assert result.edge_refs == ()
+    assert result.diagnostics[0].code == "networkx_projection_failed"
+    assert result.diagnostics[0].phase == "graph_projection"
+    assert "payload" not in result.diagnostics[0].code
+    assert "payload" not in result.diagnostics[0].phase
+    assert result.safety_flags.import_eligible is False
 
 
 def test_networkx_adapter_extracts_fixture_metrics(tmp_path: Path) -> None:

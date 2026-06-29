@@ -22,12 +22,18 @@ types and the typed schema models. No LLM SDK, no graph driver, no parser.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+import re
 from typing import Any, Protocol, runtime_checkable
 
 from research_graph.domain.navigation import PageIndexDocument
 from research_graph.domain.schema import ExtractionPatch
 from research_graph.domain.semantic_chunks import EvidencePath, SemanticChunk
+from research_graph.domain.universal_kb.contracts import (
+    CandidatePacket,
+    FORBIDDEN_DIAGNOSTIC_KEYS,
+    SafetyFlags,
+)
 
 #: Extraction kinds the LLM boundary distinguishes (matches the prototype's
 #: ``extraction_kind`` snapshot hint and the forced-tool schemas). The Port is
@@ -50,6 +56,123 @@ class ConversionResult:
     markdown: str | None
     method: str  # "arxiv2md" | "marker" | "docling" | "error"
     error: str | None
+
+
+PROJECTION_SCHEMA_VERSION = "knowledge-graph-projection.v1"
+_PROJECTION_SECRET_PATTERN = re.compile(
+    r"(?i)(sk-[a-z0-9][a-z0-9._-]{8,}|bearer\s+[a-z0-9._-]{12,}|x-api-key\s*[:=]\s*[^\s]+)"
+)
+
+
+def _tuple(values: tuple[Any, ...] | list[Any] | None) -> tuple[Any, ...]:
+    if values is None:
+        return ()
+    return tuple(values)
+
+
+def _require_projection_metadata(value: str, field_name: str) -> None:
+    lowered = value.lower()
+    if (
+        not value.strip()
+        or any(forbidden in lowered for forbidden in FORBIDDEN_DIAGNOSTIC_KEYS)
+        or _PROJECTION_SECRET_PATTERN.search(value)
+    ):
+        raise ValueError(f"{field_name} must be metadata-only")
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectionNodeRef:
+    """Metadata-only node reference prepared for a graph projection adapter."""
+
+    ref: str
+    node_type: str
+
+    def __post_init__(self) -> None:
+        _require_projection_metadata(self.ref, "node ref")
+        _require_projection_metadata(self.node_type, "node type")
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectionEdgeRef:
+    """Metadata-only edge reference prepared for a graph projection adapter."""
+
+    ref: str
+    edge_type: str
+    source_ref: str
+    target_ref: str
+
+    def __post_init__(self) -> None:
+        _require_projection_metadata(self.ref, "edge ref")
+        _require_projection_metadata(self.edge_type, "edge type")
+        _require_projection_metadata(self.source_ref, "source ref")
+        _require_projection_metadata(self.target_ref, "target ref")
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectionDiagnostic:
+    """Reason-coded graph projection diagnostic without corpus payload values."""
+
+    code: str
+    phase: str
+    severity: str = "info"
+
+    def __post_init__(self) -> None:
+        _require_projection_metadata(self.code, "diagnostic code")
+        _require_projection_metadata(self.phase, "diagnostic phase")
+        _require_projection_metadata(self.severity, "diagnostic severity")
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectionRequest:
+    """Candidate-packet projection request for no-write graph rehearsal adapters."""
+
+    candidate_packet: CandidatePacket
+    schema_version: str = PROJECTION_SCHEMA_VERSION
+
+    def __post_init__(self) -> None:
+        _require_projection_metadata(self.schema_version, "schema_version")
+        self.candidate_packet.assert_no_write()
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectionResult:
+    """Backend-neutral graph projection result with fail-closed safety flags."""
+
+    schema_version: str
+    backend: str
+    node_refs: tuple[ProjectionNodeRef, ...] = ()
+    edge_refs: tuple[ProjectionEdgeRef, ...] = ()
+    evidence_refs: tuple[str, ...] = ()
+    provenance_refs: tuple[str, ...] = ()
+    diagnostics: tuple[ProjectionDiagnostic, ...] = ()
+    safety_flags: SafetyFlags = SafetyFlags()
+
+    def __post_init__(self) -> None:
+        _require_projection_metadata(self.schema_version, "schema_version")
+        _require_projection_metadata(self.backend, "backend")
+        object.__setattr__(self, "node_refs", _tuple(self.node_refs))
+        object.__setattr__(self, "edge_refs", _tuple(self.edge_refs))
+        object.__setattr__(self, "evidence_refs", _tuple(self.evidence_refs))
+        object.__setattr__(self, "provenance_refs", _tuple(self.provenance_refs))
+        object.__setattr__(self, "diagnostics", _tuple(self.diagnostics))
+        for ref in (*self.evidence_refs, *self.provenance_refs):
+            _require_projection_metadata(str(ref), "projection ref")
+        self.assert_no_write()
+
+    def assert_no_write(self) -> None:
+        self.safety_flags.assert_no_write()
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@runtime_checkable
+class KnowledgeGraphProjectionPort(Protocol):
+    """No-write graph projection boundary for rehearsal and backend comparison."""
+
+    def project(self, request: ProjectionRequest) -> ProjectionResult:
+        """Project a candidate packet into backend-neutral graph-shape metadata."""
+        ...
 
 
 @runtime_checkable
@@ -135,5 +258,12 @@ __all__ = [
     "EXTRACTION_KIND_RELATIONS",
     "FullTextProviderPort",
     "GraphDBPort",
+    "KnowledgeGraphProjectionPort",
     "LLMClientPort",
+    "PROJECTION_SCHEMA_VERSION",
+    "ProjectionDiagnostic",
+    "ProjectionEdgeRef",
+    "ProjectionNodeRef",
+    "ProjectionRequest",
+    "ProjectionResult",
 ]

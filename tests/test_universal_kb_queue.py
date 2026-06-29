@@ -7,7 +7,13 @@ from threading import Barrier, Lock, Thread
 
 import pytest
 
-from research_graph.workflows.universal_kb.queue import UniversalKBQueue
+from research_graph.workflows.universal_kb.queue import (
+    ACTIVE_STATUSES,
+    PIPELINE_STAGES,
+    STATUSES,
+    TERMINAL_STATUSES,
+    UniversalKBQueue,
+)
 
 
 class FixedClock:
@@ -105,6 +111,45 @@ def test_rejects_secret_shaped_persisted_diagnostics(tmp_path: Path) -> None:
     assert "sk-live" not in serialized
 
 
+def test_pipeline_stage_and_status_constants_cover_m195_lifecycle() -> None:
+    assert {
+        "intake",
+        "acquisition",
+        "parsing",
+        "chunking",
+        "evidence",
+        "graph_candidate",
+        "projection_rehearsal",
+    } <= PIPELINE_STAGES
+    assert TERMINAL_STATUSES <= STATUSES
+    assert ACTIVE_STATUSES <= STATUSES
+    assert TERMINAL_STATUSES.isdisjoint(ACTIVE_STATUSES)
+
+
+def test_enqueue_rejects_raw_or_secret_shaped_stage(tmp_path: Path) -> None:
+    queue = _queue(tmp_path)
+
+    with pytest.raises(ValueError, match="stage must be a metadata code"):
+        queue.enqueue(
+            job_id="job-raw-stage",
+            stage="parse this raw text please",
+            input_refs=("artifact:paper-manifest",),
+            input_hash="sha256:input",
+            tool_version="tool-v1",
+            contract_version="contract-v1",
+        )
+
+    with pytest.raises(ValueError, match="stage must be a metadata code"):
+        queue.enqueue(
+            job_id="job-secret-stage",
+            stage="sk-live-abc1234567890",
+            input_refs=("artifact:paper-manifest",),
+            input_hash="sha256:input",
+            tool_version="tool-v1",
+            contract_version="contract-v1",
+        )
+
+
 def test_enqueue_adds_safe_payload_metadata_defaults(tmp_path: Path) -> None:
     queue = _queue(tmp_path)
 
@@ -125,6 +170,10 @@ def test_enqueue_adds_safe_payload_metadata_defaults(tmp_path: Path) -> None:
         "prompt_program_hash": None,
         "source_artifact_refs": [],
         "evidence_path_refs": [],
+        "candidate_packet_refs": [],
+        "graph_node_refs": [],
+        "graph_edge_refs": [],
+        "provenance_refs": [],
         "cost_estimate": None,
         "latency_ms": None,
         "retry_count": 0,
@@ -154,6 +203,10 @@ def test_enqueue_roundtrips_m069_payload_metadata(tmp_path: Path) -> None:
             "prompt_program_hash": "hash:abc123",
             "source_artifact_refs": ["artifact:paper-manifest"],
             "evidence_path_refs": ["evidence:path-001"],
+            "candidate_packet_refs": ["candidate:packet-001"],
+            "graph_node_refs": ["node:paper:001"],
+            "graph_edge_refs": ["edge:paper-001_claim-001"],
+            "provenance_refs": ["source:arxiv:001"],
             "cost_estimate": 0.12,
             "latency_ms": 1530,
             "retry_count": 1,
@@ -167,6 +220,10 @@ def test_enqueue_roundtrips_m069_payload_metadata(tmp_path: Path) -> None:
     assert job["payload_metadata"]["metric_bundle_id"] == "metric_bundle:m069_v1"
     assert job["payload_metadata"]["source_artifact_refs"] == ["artifact:paper-manifest"]
     assert job["payload_metadata"]["evidence_path_refs"] == ["evidence:path-001"]
+    assert job["payload_metadata"]["candidate_packet_refs"] == ["candidate:packet-001"]
+    assert job["payload_metadata"]["graph_node_refs"] == ["node:paper:001"]
+    assert job["payload_metadata"]["graph_edge_refs"] == ["edge:paper-001_claim-001"]
+    assert job["payload_metadata"]["provenance_refs"] == ["source:arxiv:001"]
     assert job["payload_metadata"]["cost_estimate"] == 0.12
     assert job["payload_metadata"]["latency_ms"] == 1530
     assert job["payload_metadata"]["diagnostics"] == {"json_valid": True, "schema_status": "valid"}
@@ -342,9 +399,71 @@ def test_artifact_dependencies_without_hash_do_not_unblock_job(tmp_path: Path) -
         contract_version="contract-v1",
     )
     queue.add_dependency(job_id="job-artifact", depends_on_artifact_ref="artifact:missing")
+    queue.register_artifact(artifact_ref="artifact:missing", artifact_hash="sha256:actual")
 
     assert queue.unblock_ready_jobs() == []
     assert queue.inspect("job-artifact")["job"]["status"] == "blocked"
+
+
+def test_artifact_dependency_unblocks_only_after_expected_hash_is_registered(tmp_path: Path) -> None:
+    queue = _queue(tmp_path)
+    queue.enqueue(
+        job_id="job-artifact-hash",
+        stage="review",
+        input_refs=("artifact:a",),
+        input_hash="sha256:input",
+        tool_version="tool-v1",
+        contract_version="contract-v1",
+    )
+    queue.add_dependency(
+        job_id="job-artifact-hash",
+        depends_on_artifact_ref="artifact:packet-v1",
+        expected_hash="sha256:packet-v1",
+    )
+
+    assert queue.unblock_ready_jobs() == []
+    queue.register_artifact(artifact_ref="artifact:packet-v1", artifact_hash="sha256:wrong")
+    assert queue.unblock_ready_jobs() == []
+    registered = queue.register_artifact(
+        artifact_ref="artifact:packet-v1", artifact_hash="sha256:packet-v1"
+    )
+    ready = queue.unblock_ready_jobs()
+
+    assert registered == {
+        "artifact_ref": "artifact:packet-v1",
+        "artifact_hash": "sha256:packet-v1",
+        "created_at": "2026-06-08T00:00:00Z",
+        "updated_at": "2026-06-08T00:00:00Z",
+    }
+    assert ready[0]["job_id"] == "job-artifact-hash"
+    assert ready[0]["status"] == "ready"
+    assert [event["event_type"] for event in queue.events("job-artifact-hash")] == [
+        "enqueue",
+        "block",
+        "artifact_registered",
+        "artifact_registered",
+        "unblock",
+    ]
+
+
+def test_register_artifact_rejects_raw_secret_or_empty_metadata(tmp_path: Path) -> None:
+    queue = _queue(tmp_path)
+
+    with pytest.raises(ValueError, match="artifact_ref must be a metadata reference"):
+        queue.register_artifact(artifact_ref="plain reference words", artifact_hash="sha256:packet")
+
+    with pytest.raises(ValueError, match="artifact_ref must be redacted"):
+        queue.register_artifact(
+            artifact_ref="artifact:sk-live-abc1234567890", artifact_hash="sha256:packet"
+        )
+
+    with pytest.raises(ValueError, match="artifact_hash must be non-empty"):
+        queue.register_artifact(artifact_ref="artifact:packet", artifact_hash="")
+
+    with pytest.raises(ValueError, match="artifact_hash must be redacted"):
+        queue.register_artifact(
+            artifact_ref="artifact:packet", artifact_hash="sk-live-abc1234567890"
+        )
 
 
 def test_initialize_sets_sqlite_pragmas_and_schema(tmp_path: Path) -> None:
