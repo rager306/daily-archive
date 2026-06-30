@@ -13,6 +13,8 @@
 | Bounded concurrency compatibility | PASS: 26 passed | `gsd_exec[0b1ff97e-7b93-41e6-8c00-5e8702358c4a]` |
 | Focused S05 verification | PASS: 26 passed | `gsd_exec[663387a2-75ce-40c0-9954-8c3a9d490ea3]` |
 | GitNexus detect_changes | LOW: changed_files=5, changed_count=0, affected_count=0 | scoped `repo=daily-archive` detect_changes |
+| Corrected GitNexus analyze | PASS | `gitnexus analyze` without unsupported `--repo` option |
+| GitNexus exact impact for `run_reactive_stage` | LOW: impacted_count=2, no affected processes | exact UID impact after corrected analyze |
 | codebase-memory detect_changes | changed_count=5, impacted_symbols=[] | `codebase-memory-mcp detect_changes` |
 
 ## Delivered files

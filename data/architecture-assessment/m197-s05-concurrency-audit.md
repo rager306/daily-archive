@@ -32,7 +32,7 @@ The suite covered:
 
 ## Impact note
 
-GitNexus still did not resolve the new async symbol after track plus re-index. codebase-memory-mcp resolved `run_reactive_stage` and reported no inbound callers. S05 source edits were limited to the new additive runner module and its tests; queue, rehearsal, smoke runner, and smoke wrapper files were not edited.
+The first two CLI re-index attempts failed because `gitnexus analyze --repo daily-archive` used an unsupported `--repo` option. After correction, `gitnexus analyze` succeeded and GitNexus exact impact for `Function:src/research_graph/workflows/universal_kb/reactive_runner.py:run_reactive_stage` was LOW: direct caller `run_one`, upstream `run_reactive_stages_bounded`, no affected processes. codebase-memory-mcp also resolved the symbol and was useful supplemental evidence while GitNexus was stale. S05 source edits were limited to the new additive runner module and its tests; queue, rehearsal, smoke runner, and smoke wrapper files were not edited.
 
 ## Boundary statement
 
