@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 
 import pytest
 
-from research_graph.workflows.universal_kb.reactive_runner import run_reactive_stage
+from research_graph.workflows.universal_kb.reactive_runner import (
+    run_reactive_stage,
+    run_reactive_stages_bounded,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "data/architecture-assessment/m197-reactive-event-contract.json"
@@ -90,6 +94,66 @@ async def test_reactive_stage_accepts_sync_stage_callable_for_small_adapters() -
     assert events[-1]["event_type"] == "stage.completed"
     assert events[-1]["artifact_refs"] == ["queue_inspect.json"]
     assert events[-1]["diagnostics"] == {"queue_status": "ready"}
+
+
+@pytest.mark.asyncio
+async def test_reactive_stages_bounded_enforces_limit_and_deterministic_order() -> None:
+    active = 0
+    max_seen = 0
+
+    def make_stage(index: int):
+        async def stage() -> dict:
+            nonlocal active, max_seen
+            active += 1
+            max_seen = max(max_seen, active)
+            await asyncio.sleep(0.01 * (3 - index))
+            active -= 1
+            return {
+                "artifact_refs": [f"stage-{index}.json"],
+                "diagnostics": {"completed_index": index},
+            }
+
+        return stage
+
+    events = await run_reactive_stages_bounded(
+        job_id="job-bounded",
+        correlation_id="corr-bounded",
+        max_concurrency=2,
+        stages=[
+            {"stage_id": "stage.0", "phase": "phase", "stage": make_stage(0)},
+            {"stage_id": "stage.1", "phase": "phase", "stage": make_stage(1)},
+            {"stage_id": "stage.2", "phase": "phase", "stage": make_stage(2)},
+        ],
+    )
+
+    assert max_seen == 2
+    assert [event["stage_id"] for event in events] == [
+        "stage.0",
+        "stage.0",
+        "stage.1",
+        "stage.1",
+        "stage.2",
+        "stage.2",
+    ]
+    for event in events:
+        _assert_contract_event(event)
+        assert event["diagnostics"]["max_concurrency"] == 2
+    assert [event["artifact_refs"] for event in events if event["event_type"] == "stage.completed"] == [
+        ["stage-0.json"],
+        ["stage-1.json"],
+        ["stage-2.json"],
+    ]
+
+
+@pytest.mark.asyncio
+async def test_reactive_stages_bounded_rejects_invalid_concurrency() -> None:
+    with pytest.raises(ValueError, match="max_concurrency"):
+        await run_reactive_stages_bounded(
+            job_id="job-invalid",
+            correlation_id="corr-invalid",
+            max_concurrency=0,
+            stages=[],
+        )
 
 
 def test_reactive_runner_module_does_not_import_queue_or_rehearsal() -> None:
