@@ -1,0 +1,127 @@
+{
+  "schema_version": "m198.readiness_evidence.v1",
+  "contract_status": "planning_contract",
+  "scope": "reactive_readiness_preconditions_no_write",
+  "source_kinds": [
+    "reactive_dry_run",
+    "sync_no_write_rehearsal",
+    "smoke_boundary",
+    "graph_readiness_validate_only",
+    "disabled_backend",
+    "governance_ratchet"
+  ],
+  "required_fields": [
+    "schema_version",
+    "evidence_id",
+    "source_kind",
+    "correlation_id",
+    "status",
+    "drift_class",
+    "timestamp",
+    "graph_writes_allowed",
+    "schema_migration_allowed",
+    "import_eligible",
+    "evidence_refs",
+    "diagnostics",
+    "non_goals"
+  ],
+  "optional_fields": [
+    "source_command",
+    "source_artifact_refs",
+    "source_checksums",
+    "event_count",
+    "queue_artifact_present",
+    "standalone_queue_events_present",
+    "blocked_transition_refs",
+    "remediation_owner"
+  ],
+  "statuses": [
+    "pass",
+    "warning",
+    "blocker"
+  ],
+  "drift_classes": [
+    "expected",
+    "warning",
+    "blocker",
+    "not_applicable"
+  ],
+  "blocked_readiness": {
+    "graph_writes_allowed": false,
+    "schema_migration_allowed": false,
+    "import_eligible": false,
+    "production_graph_import": false,
+    "schema_migration": false,
+    "queue_dependency_semantic_change": false,
+    "smoke_semantic_change": false,
+    "rehearsal_semantic_change": false,
+    "retired_graph_readiness_shim": false
+  },
+  "blocked_transitions": [
+    "production_graph_import",
+    "schema_migration",
+    "queue_dependency_semantic_change",
+    "smoke_semantic_change",
+    "rehearsal_semantic_change",
+    "retired_graph_readiness_shim",
+    "import_eligible_true"
+  ],
+  "forbidden_payload_terms": [
+    "raw_prompt_payload",
+    "source_text_payload",
+    "paper_text_payload",
+    "chunk_text_payload",
+    "embedding_payload",
+    "vector_payload",
+    "api_key",
+    "secret_value"
+  ],
+  "allowed_payload_metadata": [
+    "payload_kind",
+    "payload_sha256",
+    "payload_size_bytes",
+    "payload_redaction_status",
+    "source_ref",
+    "artifact_ref",
+    "checksum_sha256"
+  ],
+  "source_kind_expectations": {
+    "reactive_dry_run": [
+      "reads m197 reactive JSONL events",
+      "does not create queue.sqlite",
+      "keeps graph_writes_allowed false"
+    ],
+    "sync_no_write_rehearsal": [
+      "may create queue.sqlite in temp dirs",
+      "must not emit standalone queue_events.json",
+      "keeps projection import_eligible false"
+    ],
+    "smoke_boundary": [
+      "compatibility input only",
+      "no smoke source semantic edits",
+      "requires false flag assertions"
+    ],
+    "graph_readiness_validate_only": [
+      "validate-only command surface",
+      "requires completed review when applicable",
+      "retired shim remains blocked"
+    ],
+    "disabled_backend": [
+      "fail-closed backend evidence only",
+      "no production graph writes",
+      "no import eligibility promotion"
+    ],
+    "governance_ratchet": [
+      "protects blocked transitions",
+      "preserves payload safety",
+      "requires explicit non_goals"
+    ]
+  },
+  "compatibility_tests": [
+    "tests/test_m198_readiness_evidence_contract.py",
+    "tests/test_m197_reactive_event_contract.py",
+    "tests/test_m197_governance_ratchets.py",
+    "tests/test_m196_governance_ratchets.py",
+    "tests/test_m195_governance_ratchets.py"
+  ]
+}
