@@ -181,6 +181,62 @@ async def test_reactive_stage_retryable_failure_emits_retryable_metadata_only() 
 
 
 @pytest.mark.asyncio
+async def test_reactive_stage_success_emits_lineage_metadata_without_payloads() -> None:
+    async def stage() -> dict:
+        return {
+            "artifact_refs": ["child.json"],
+            "child_artifact_refs": ["child.json"],
+            "checksum_sha256": "a" * 64,
+            "diagnostics": {"lineage": "recorded"},
+        }
+
+    events = await run_reactive_stage(
+        job_id="job-lineage",
+        stage_id="stage.lineage",
+        correlation_id="corr-lineage",
+        phase="lineage",
+        stage=stage,
+        parent_artifact_refs=["parent.json"],
+    )
+
+    for event in events:
+        _assert_contract_event(event)
+        assert event["parent_artifact_refs"] == ["parent.json"]
+    completed = events[-1]
+    assert completed["event_type"] == "stage.completed"
+    assert completed["child_artifact_refs"] == ["child.json"]
+    assert completed["checksum_sha256"] == "a" * 64
+    event_text = json.dumps(events).lower()
+    for term in _contract()["forbidden_payload_terms"]:
+        assert term.lower() not in event_text
+
+
+@pytest.mark.asyncio
+async def test_reactive_stages_bounded_forwards_parent_artifact_refs() -> None:
+    async def stage() -> dict:
+        return {"artifact_refs": ["child.json"], "checksum_sha256": "b" * 64}
+
+    events = await run_reactive_stages_bounded(
+        job_id="job-lineage-bounded",
+        correlation_id="corr-lineage-bounded",
+        max_concurrency=1,
+        stages=[
+            {
+                "stage_id": "stage.lineage",
+                "phase": "lineage",
+                "stage": stage,
+                "parent_artifact_refs": ["parent.json"],
+            }
+        ],
+    )
+
+    assert events[0]["parent_artifact_refs"] == ["parent.json"]
+    assert events[-1]["child_artifact_refs"] == ["child.json"]
+    assert events[-1]["checksum_sha256"] == "b" * 64
+    assert events[-1]["diagnostics"]["stage_index"] == 0
+
+
+@pytest.mark.asyncio
 async def test_reactive_stages_bounded_enforces_limit_and_deterministic_order() -> None:
     active = 0
     max_seen = 0

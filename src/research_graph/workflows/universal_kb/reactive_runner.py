@@ -30,6 +30,9 @@ def _base_event(
     cancelled: bool | None = None,
     heartbeat_at: str | None = None,
     lease_expires_at: str | None = None,
+    parent_artifact_refs: Sequence[str] = (),
+    child_artifact_refs: Sequence[str] = (),
+    checksum_sha256: str | None = None,
 ) -> dict[str, Any]:
     event = {
         "schema_version": SCHEMA_VERSION,
@@ -55,6 +58,12 @@ def _base_event(
         event["heartbeat_at"] = heartbeat_at
     if lease_expires_at is not None:
         event["lease_expires_at"] = lease_expires_at
+    if parent_artifact_refs:
+        event["parent_artifact_refs"] = list(parent_artifact_refs)
+    if child_artifact_refs:
+        event["child_artifact_refs"] = list(child_artifact_refs)
+    if checksum_sha256 is not None:
+        event["checksum_sha256"] = checksum_sha256
     return event
 
 
@@ -76,6 +85,7 @@ async def run_reactive_stage(
     retry_after_ms: int | None = None,
     heartbeat_at: str | None = None,
     lease_expires_at: str | None = None,
+    parent_artifact_refs: Sequence[str] = (),
 ) -> list[dict[str, Any]]:
     """Run one no-write stage and return contract-shaped lifecycle events."""
 
@@ -90,6 +100,7 @@ async def run_reactive_stage(
             attempt=attempt,
             heartbeat_at=heartbeat_at,
             lease_expires_at=lease_expires_at,
+            parent_artifact_refs=parent_artifact_refs,
         )
     ]
     try:
@@ -112,6 +123,7 @@ async def run_reactive_stage(
                 cancelled=False,
                 heartbeat_at=heartbeat_at,
                 lease_expires_at=lease_expires_at,
+                parent_artifact_refs=parent_artifact_refs,
             )
         )
         return events
@@ -130,6 +142,7 @@ async def run_reactive_stage(
                 cancelled=True,
                 heartbeat_at=heartbeat_at,
                 lease_expires_at=lease_expires_at,
+                parent_artifact_refs=parent_artifact_refs,
             )
         )
         return events
@@ -152,6 +165,7 @@ async def run_reactive_stage(
                 cancelled=False,
                 heartbeat_at=heartbeat_at,
                 lease_expires_at=lease_expires_at,
+                parent_artifact_refs=parent_artifact_refs,
             )
         )
         return events
@@ -159,6 +173,8 @@ async def run_reactive_stage(
     result_mapping = dict(result or {})
     artifact_refs = result_mapping.get("artifact_refs", ())
     diagnostics = result_mapping.get("diagnostics", {})
+    child_artifact_refs = list(result_mapping.get("child_artifact_refs") or artifact_refs)
+    checksum_sha256 = result_mapping.get("checksum_sha256")
     events.append(
         _base_event(
             event_type="stage.completed",
@@ -172,6 +188,9 @@ async def run_reactive_stage(
             diagnostics=diagnostics,
             heartbeat_at=heartbeat_at,
             lease_expires_at=lease_expires_at,
+            parent_artifact_refs=parent_artifact_refs,
+            child_artifact_refs=child_artifact_refs,
+            checksum_sha256=checksum_sha256,
         )
     )
     return events
@@ -206,6 +225,7 @@ async def run_reactive_stages_bounded(
                 retry_after_ms=spec.get("retry_after_ms"),
                 heartbeat_at=spec.get("heartbeat_at"),
                 lease_expires_at=spec.get("lease_expires_at"),
+                parent_artifact_refs=spec.get("parent_artifact_refs", ()),
             )
         for event in events:
             event["diagnostics"].setdefault("stage_index", index)
