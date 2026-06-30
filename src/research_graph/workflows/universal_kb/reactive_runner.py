@@ -28,6 +28,8 @@ def _base_event(
     diagnostics: Mapping[str, Any] | None = None,
     timeout_ms: int | None = None,
     cancelled: bool | None = None,
+    heartbeat_at: str | None = None,
+    lease_expires_at: str | None = None,
 ) -> dict[str, Any]:
     event = {
         "schema_version": SCHEMA_VERSION,
@@ -49,6 +51,10 @@ def _base_event(
         event["timeout_ms"] = timeout_ms
     if cancelled is not None:
         event["cancelled"] = cancelled
+    if heartbeat_at is not None:
+        event["heartbeat_at"] = heartbeat_at
+    if lease_expires_at is not None:
+        event["lease_expires_at"] = lease_expires_at
     return event
 
 
@@ -66,6 +72,10 @@ async def run_reactive_stage(
     stage: StageCallable,
     attempt: int = 0,
     timeout_ms: int | None = None,
+    retryable_exceptions: tuple[type[BaseException], ...] = (),
+    retry_after_ms: int | None = None,
+    heartbeat_at: str | None = None,
+    lease_expires_at: str | None = None,
 ) -> list[dict[str, Any]]:
     """Run one no-write stage and return contract-shaped lifecycle events."""
 
@@ -78,6 +88,8 @@ async def run_reactive_stage(
             phase=phase,
             status="started",
             attempt=attempt,
+            heartbeat_at=heartbeat_at,
+            lease_expires_at=lease_expires_at,
         )
     ]
     try:
@@ -98,6 +110,8 @@ async def run_reactive_stage(
                 diagnostics={"last_error_code": "TimeoutError"},
                 timeout_ms=timeout_ms,
                 cancelled=False,
+                heartbeat_at=heartbeat_at,
+                lease_expires_at=lease_expires_at,
             )
         )
         return events
@@ -114,22 +128,30 @@ async def run_reactive_stage(
                 diagnostics={"last_error_code": "CancelledError"},
                 timeout_ms=timeout_ms,
                 cancelled=True,
+                heartbeat_at=heartbeat_at,
+                lease_expires_at=lease_expires_at,
             )
         )
         return events
     except Exception as exc:  # noqa: BLE001 - event boundary converts failures to metadata.
+        is_retryable = isinstance(exc, retryable_exceptions)
+        diagnostics: dict[str, Any] = {"last_error_code": type(exc).__name__}
+        if is_retryable and retry_after_ms is not None:
+            diagnostics["retry_after_ms"] = retry_after_ms
         events.append(
             _base_event(
-                event_type="stage.failed_terminal",
+                event_type="stage.failed_retryable" if is_retryable else "stage.failed_terminal",
                 job_id=job_id,
                 stage_id=stage_id,
                 correlation_id=correlation_id,
                 phase=phase,
-                status="failed_terminal",
+                status="failed_retryable" if is_retryable else "failed_terminal",
                 attempt=attempt,
-                diagnostics={"last_error_code": type(exc).__name__},
+                diagnostics=diagnostics,
                 timeout_ms=timeout_ms,
                 cancelled=False,
+                heartbeat_at=heartbeat_at,
+                lease_expires_at=lease_expires_at,
             )
         )
         return events
@@ -148,6 +170,8 @@ async def run_reactive_stage(
             attempt=attempt,
             artifact_refs=artifact_refs,
             diagnostics=diagnostics,
+            heartbeat_at=heartbeat_at,
+            lease_expires_at=lease_expires_at,
         )
     )
     return events
@@ -178,6 +202,10 @@ async def run_reactive_stages_bounded(
                 stage=spec["stage"],
                 attempt=attempt,
                 timeout_ms=spec.get("timeout_ms"),
+                retryable_exceptions=spec.get("retryable_exceptions", ()),
+                retry_after_ms=spec.get("retry_after_ms"),
+                heartbeat_at=spec.get("heartbeat_at"),
+                lease_expires_at=spec.get("lease_expires_at"),
             )
         for event in events:
             event["diagnostics"].setdefault("stage_index", index)

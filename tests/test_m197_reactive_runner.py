@@ -146,6 +146,41 @@ async def test_reactive_stage_cancelled_emits_cancelled_without_completion_or_pa
 
 
 @pytest.mark.asyncio
+async def test_reactive_stage_retryable_failure_emits_retryable_metadata_only() -> None:
+    class RetryableProviderError(Exception):
+        pass
+
+    async def stage() -> dict:
+        raise RetryableProviderError("raw prompt payload should not be copied")
+
+    events = await run_reactive_stage(
+        job_id="job-retry",
+        stage_id="stage.retry",
+        correlation_id="corr-retry",
+        phase="llm",
+        stage=stage,
+        attempt=2,
+        retryable_exceptions=(RetryableProviderError,),
+        retry_after_ms=250,
+        heartbeat_at="2026-06-30T00:00:00+00:00",
+        lease_expires_at="2026-06-30T00:01:00+00:00",
+    )
+
+    assert [event["event_type"] for event in events] == ["stage.started", "stage.failed_retryable"]
+    for event in events:
+        _assert_contract_event(event)
+        assert event["heartbeat_at"] == "2026-06-30T00:00:00+00:00"
+        assert event["lease_expires_at"] == "2026-06-30T00:01:00+00:00"
+    assert events[-1]["status"] == "failed_retryable"
+    assert events[-1]["attempt"] == 2
+    assert events[-1]["diagnostics"] == {
+        "last_error_code": "RetryableProviderError",
+        "retry_after_ms": 250,
+    }
+    assert "raw prompt payload" not in json.dumps(events)
+
+
+@pytest.mark.asyncio
 async def test_reactive_stages_bounded_enforces_limit_and_deterministic_order() -> None:
     active = 0
     max_seen = 0
@@ -227,6 +262,40 @@ async def test_reactive_stages_bounded_preserves_order_when_a_stage_times_out() 
     ]
     assert events[-1]["diagnostics"]["stage_index"] == 1
     assert events[-1]["diagnostics"]["max_concurrency"] == 2
+
+
+@pytest.mark.asyncio
+async def test_reactive_stages_bounded_forwards_retry_heartbeat_and_lease_metadata() -> None:
+    class RetryableProviderError(Exception):
+        pass
+
+    async def retryable_stage() -> dict:
+        raise RetryableProviderError("secret_value should not be copied")
+
+    events = await run_reactive_stages_bounded(
+        job_id="job-retry-bounded",
+        correlation_id="corr-retry-bounded",
+        max_concurrency=1,
+        stages=[
+            {
+                "stage_id": "stage.retry",
+                "phase": "llm",
+                "stage": retryable_stage,
+                "retryable_exceptions": (RetryableProviderError,),
+                "retry_after_ms": 500,
+                "heartbeat_at": "2026-06-30T00:00:00+00:00",
+                "lease_expires_at": "2026-06-30T00:02:00+00:00",
+            }
+        ],
+    )
+
+    assert [event["event_type"] for event in events] == ["stage.started", "stage.failed_retryable"]
+    assert events[-1]["diagnostics"]["retry_after_ms"] == 500
+    assert events[-1]["diagnostics"]["stage_index"] == 0
+    assert events[-1]["diagnostics"]["max_concurrency"] == 1
+    assert events[-1]["heartbeat_at"] == "2026-06-30T00:00:00+00:00"
+    assert events[-1]["lease_expires_at"] == "2026-06-30T00:02:00+00:00"
+    assert "secret_value" not in json.dumps(events)
 
 
 @pytest.mark.asyncio
