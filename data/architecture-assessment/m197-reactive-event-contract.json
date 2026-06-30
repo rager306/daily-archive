@@ -1,0 +1,96 @@
+{
+  "schema_version": "m197.reactive_event.v1",
+  "contract_status": "planning_contract",
+  "scope": "no_write_async_reactive_pilot",
+  "event_types": [
+    "job.created",
+    "job.claimed",
+    "job.heartbeat",
+    "job.retry_scheduled",
+    "job.completed",
+    "job.failed_retryable",
+    "job.failed_terminal",
+    "job.cancelled",
+    "stage.started",
+    "stage.artifact_registered",
+    "stage.completed",
+    "stage.failed_retryable",
+    "stage.failed_terminal",
+    "stage.timeout",
+    "stage.cancelled"
+  ],
+  "required_fields": [
+    "schema_version",
+    "event_type",
+    "job_id",
+    "stage_id",
+    "correlation_id",
+    "phase",
+    "status",
+    "attempt",
+    "timestamp",
+    "graph_writes_allowed",
+    "schema_migration_allowed",
+    "import_eligible",
+    "artifact_refs",
+    "diagnostics"
+  ],
+  "optional_fields": [
+    "timeout_ms",
+    "cancelled",
+    "lease_expires_at",
+    "heartbeat_at",
+    "last_error_code",
+    "parent_artifact_refs",
+    "child_artifact_refs",
+    "checksum_sha256"
+  ],
+  "terminal_statuses": [
+    "completed",
+    "failed_terminal",
+    "cancelled",
+    "timeout"
+  ],
+  "retryable_statuses": [
+    "failed_retryable",
+    "retry_scheduled"
+  ],
+  "blocked_readiness": {
+    "graph_writes_allowed": false,
+    "schema_migration_allowed": false,
+    "import_eligible": false,
+    "production_graph_import": false,
+    "ladybugdb_write": false,
+    "falkordb_write": false
+  },
+  "forbidden_payload_terms": [
+    "raw_prompt_payload",
+    "source_text_payload",
+    "paper_text_payload",
+    "chunk_text_payload",
+    "embedding_payload",
+    "vector_payload",
+    "api_key",
+    "secret_value"
+  ],
+  "allowed_payload_metadata": [
+    "payload_kind",
+    "payload_sha256",
+    "payload_size_bytes",
+    "payload_redaction_status",
+    "source_ref",
+    "artifact_ref"
+  ],
+  "ordering_rules": [
+    "job.created precedes job.claimed",
+    "stage.started precedes stage.completed or stage.failed_retryable or stage.failed_terminal or stage.timeout or stage.cancelled",
+    "stage.artifact_registered requires at least one artifact_ref",
+    "terminal_statuses must not be followed by stage.completed for the same stage_id",
+    "import_eligible must remain false for all M197 events"
+  ],
+  "compatibility_tests": [
+    "tests/test_m197_reactive_event_contract.py",
+    "tests/test_m195_governance_ratchets.py",
+    "tests/test_m196_governance_ratchets.py"
+  ]
+}
