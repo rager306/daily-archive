@@ -26,8 +26,10 @@ def _base_event(
     attempt: int,
     artifact_refs: Sequence[str] = (),
     diagnostics: Mapping[str, Any] | None = None,
+    timeout_ms: int | None = None,
+    cancelled: bool | None = None,
 ) -> dict[str, Any]:
-    return {
+    event = {
         "schema_version": SCHEMA_VERSION,
         "event_type": event_type,
         "job_id": job_id,
@@ -43,6 +45,16 @@ def _base_event(
         "artifact_refs": list(artifact_refs),
         "diagnostics": dict(diagnostics or {}),
     }
+    if timeout_ms is not None:
+        event["timeout_ms"] = timeout_ms
+    if cancelled is not None:
+        event["cancelled"] = cancelled
+    return event
+
+
+async def _resolve_stage(stage: StageCallable) -> Mapping[str, Any] | None:
+    value = stage()
+    return await value if inspect.isawaitable(value) else value
 
 
 async def run_reactive_stage(
@@ -53,6 +65,7 @@ async def run_reactive_stage(
     phase: str,
     stage: StageCallable,
     attempt: int = 0,
+    timeout_ms: int | None = None,
 ) -> list[dict[str, Any]]:
     """Run one no-write stage and return contract-shaped lifecycle events."""
 
@@ -68,8 +81,42 @@ async def run_reactive_stage(
         )
     ]
     try:
-        value = stage()
-        result = await value if inspect.isawaitable(value) else value
+        if timeout_ms is None:
+            result = await _resolve_stage(stage)
+        else:
+            result = await asyncio.wait_for(_resolve_stage(stage), timeout=timeout_ms / 1000)
+    except TimeoutError:
+        events.append(
+            _base_event(
+                event_type="stage.timeout",
+                job_id=job_id,
+                stage_id=stage_id,
+                correlation_id=correlation_id,
+                phase=phase,
+                status="timeout",
+                attempt=attempt,
+                diagnostics={"last_error_code": "TimeoutError"},
+                timeout_ms=timeout_ms,
+                cancelled=False,
+            )
+        )
+        return events
+    except asyncio.CancelledError:
+        events.append(
+            _base_event(
+                event_type="stage.cancelled",
+                job_id=job_id,
+                stage_id=stage_id,
+                correlation_id=correlation_id,
+                phase=phase,
+                status="cancelled",
+                attempt=attempt,
+                diagnostics={"last_error_code": "CancelledError"},
+                timeout_ms=timeout_ms,
+                cancelled=True,
+            )
+        )
+        return events
     except Exception as exc:  # noqa: BLE001 - event boundary converts failures to metadata.
         events.append(
             _base_event(
@@ -81,6 +128,8 @@ async def run_reactive_stage(
                 status="failed_terminal",
                 attempt=attempt,
                 diagnostics={"last_error_code": type(exc).__name__},
+                timeout_ms=timeout_ms,
+                cancelled=False,
             )
         )
         return events
@@ -128,6 +177,7 @@ async def run_reactive_stages_bounded(
                 phase=str(spec["phase"]),
                 stage=spec["stage"],
                 attempt=attempt,
+                timeout_ms=spec.get("timeout_ms"),
             )
         for event in events:
             event["diagnostics"].setdefault("stage_index", index)

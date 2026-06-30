@@ -97,6 +97,55 @@ async def test_reactive_stage_accepts_sync_stage_callable_for_small_adapters() -
 
 
 @pytest.mark.asyncio
+async def test_reactive_stage_timeout_emits_timeout_without_completion_or_payload() -> None:
+    async def stage() -> dict:
+        await asyncio.sleep(0.05)
+        return {"artifact_refs": ["should-not-appear.json"]}
+
+    events = await run_reactive_stage(
+        job_id="job-timeout",
+        stage_id="stage.timeout",
+        correlation_id="corr-timeout",
+        phase="projection",
+        stage=stage,
+        timeout_ms=1,
+    )
+
+    assert [event["event_type"] for event in events] == ["stage.started", "stage.timeout"]
+    for event in events:
+        _assert_contract_event(event)
+    assert events[-1]["status"] == "timeout"
+    assert events[-1]["timeout_ms"] == 1
+    assert events[-1]["cancelled"] is False
+    assert events[-1]["diagnostics"] == {"last_error_code": "TimeoutError"}
+    assert "should-not-appear" not in json.dumps(events)
+
+
+@pytest.mark.asyncio
+async def test_reactive_stage_cancelled_emits_cancelled_without_completion_or_payload() -> None:
+    async def stage() -> dict:
+        raise asyncio.CancelledError("source text should not be copied")
+
+    events = await run_reactive_stage(
+        job_id="job-cancelled",
+        stage_id="stage.cancelled",
+        correlation_id="corr-cancelled",
+        phase="projection",
+        stage=stage,
+        timeout_ms=100,
+    )
+
+    assert [event["event_type"] for event in events] == ["stage.started", "stage.cancelled"]
+    for event in events:
+        _assert_contract_event(event)
+    assert events[-1]["status"] == "cancelled"
+    assert events[-1]["cancelled"] is True
+    assert events[-1]["timeout_ms"] == 100
+    assert events[-1]["diagnostics"] == {"last_error_code": "CancelledError"}
+    assert "source text" not in json.dumps(events)
+
+
+@pytest.mark.asyncio
 async def test_reactive_stages_bounded_enforces_limit_and_deterministic_order() -> None:
     active = 0
     max_seen = 0
@@ -143,6 +192,41 @@ async def test_reactive_stages_bounded_enforces_limit_and_deterministic_order() 
         ["stage-1.json"],
         ["stage-2.json"],
     ]
+
+
+@pytest.mark.asyncio
+async def test_reactive_stages_bounded_preserves_order_when_a_stage_times_out() -> None:
+    async def ok_stage() -> dict:
+        return {"artifact_refs": ["ok.json"], "diagnostics": {"ok": True}}
+
+    async def slow_stage() -> dict:
+        await asyncio.sleep(0.05)
+        return {"artifact_refs": ["slow.json"]}
+
+    events = await run_reactive_stages_bounded(
+        job_id="job-timeout-bounded",
+        correlation_id="corr-timeout-bounded",
+        max_concurrency=2,
+        stages=[
+            {"stage_id": "stage.ok", "phase": "phase", "stage": ok_stage},
+            {"stage_id": "stage.slow", "phase": "phase", "stage": slow_stage, "timeout_ms": 1},
+        ],
+    )
+
+    assert [event["stage_id"] for event in events] == [
+        "stage.ok",
+        "stage.ok",
+        "stage.slow",
+        "stage.slow",
+    ]
+    assert [event["event_type"] for event in events] == [
+        "stage.started",
+        "stage.completed",
+        "stage.started",
+        "stage.timeout",
+    ]
+    assert events[-1]["diagnostics"]["stage_index"] == 1
+    assert events[-1]["diagnostics"]["max_concurrency"] == 2
 
 
 @pytest.mark.asyncio
