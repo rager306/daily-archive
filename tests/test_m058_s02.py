@@ -4,10 +4,18 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
+
+# M058 marker pilot requires the optional `marker` and `pypdf` packages,
+# which are not installed in light CI/dev environments. Skip the module
+# cleanly rather than failing collection.
+pytest.importorskip("marker")
+pytest.importorskip("pypdf")
 
 # pyrefly: ignore [missing-import]
 import m058_marker_compare_5 as compare_5  # noqa: E402  # ty:ignore[unresolved-import]

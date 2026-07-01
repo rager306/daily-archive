@@ -4,10 +4,17 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
+
+# M058 plotextractor pilot requires the optional `plotextractor` package,
+# which is not installed in light CI/dev environments. Skip the module
+# cleanly rather than failing collection.
+pytest.importorskip("plotextractor")
 
 # pyrefly: ignore [missing-import]
 import m058_compare_v2_vs_m057 as compare_v2  # noqa: E402  # ty:ignore[unresolved-import]
