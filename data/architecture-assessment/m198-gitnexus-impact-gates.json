@@ -1,0 +1,89 @@
+{
+  "schema_version": "m198.gitnexus_impact_gates.v1",
+  "milestone": "M198-t5wlml",
+  "repo": "daily-archive",
+  "index_refresh": {
+    "command": "gitnexus analyze",
+    "cwd": "/root/daily-archive",
+    "unsupported_commands": [
+      "gitnexus analyze --repo daily-archive"
+    ],
+    "required_after_committing_new_symbols": true
+  },
+  "detect_changes": {
+    "tool": "gitnexus_detect_changes",
+    "repo_required": true,
+    "repo": "daily-archive",
+    "scope": "all",
+    "required_before_commit": true
+  },
+  "gates": [
+    {
+      "id": "queue_dependency_semantics",
+      "target": "Method:src/research_graph/workflows/universal_kb/queue.py:UniversalKBQueue._dependencies_satisfied#1",
+      "expected_risk": "HIGH",
+      "status": "out_of_scope_for_m198_readiness_reporting",
+      "affected_processes": [
+        "run_universal_kb_no_write_rehearsal",
+        "run_article",
+        "src/research_graph/workflows/universal_kb/smoke.py:main"
+      ],
+      "required_before_edit": [
+        "exact_gitnexus_impact",
+        "warn_user_on_high_or_critical",
+        "queue_tests",
+        "no_write_rehearsal_tests",
+        "smoke_compatibility_tests"
+      ]
+    },
+    {
+      "id": "readiness_report_generator",
+      "target": "Function:scripts/run_m198_readiness_report.py:build_report",
+      "expected_risk": "LOW",
+      "status": "additive_readiness_surface",
+      "required_before_edit": [
+        "gitnexus_impact_or_documented_partial_limitation",
+        "focused_report_tests",
+        "no_write_governance_ratchets"
+      ]
+    },
+    {
+      "id": "no_write_governance_ratchets",
+      "target": "tests/test_m198_no_write_governance.py",
+      "expected_risk": "LOW",
+      "status": "test_only_ratchet",
+      "required_before_edit": [
+        "m195_m196_m197_governance_ratchets",
+        "m198_no_write_governance_tests"
+      ]
+    },
+    {
+      "id": "retired_graph_readiness_alias",
+      "target": "retired_graph_readiness_alias_absent",
+      "expected_risk": "BLOCKED_IF_RESTORED",
+      "status": "must_remain_absent",
+      "required_before_edit": [
+        "m195_retired_alias_ratchet"
+      ]
+    },
+    {
+      "id": "readiness_write_import_flags",
+      "target": "m198_readiness_evidence_flags",
+      "expected_risk": "BLOCKED_IF_TRUE",
+      "status": "must_remain_false",
+      "required_before_edit": [
+        "m198_readiness_contract_tests",
+        "m198_no_write_governance_tests"
+      ]
+    }
+  ],
+  "required_non_goals": [
+    "production_graph_import",
+    "schema_migration",
+    "queue_dependency_semantic_change",
+    "smoke_semantic_change",
+    "rehearsal_semantic_change",
+    "retired_graph_readiness_shim",
+    "import_eligible_true"
+  ]
+}
