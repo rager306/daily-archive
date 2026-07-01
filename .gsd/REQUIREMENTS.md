@@ -180,6 +180,56 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: future pipeline orchestration milestone
 - Validation: All future sidecar pipeline artifacts keep graph_import_allowed=false, ladybugdb_written=false, production_import_attempted=false, and import_eligible=false until a separately authorized graph-readiness/import milestone changes those flags with evidence.
 
+### R079 — Every pipeline service that touches external or local I/O (ArxivClient, TEI Embedder, Markdown Converter, SemanticScholar) must wrap network/local calls in typed error handling (HTTPError, TimeoutException, ConnectError, 429-rate-limit) and surface typed diagnostics (error code, service name, redacted message, retry count, final outcome) instead of propagating opaque exceptions.
+- Class: quality-attribute
+- Status: active
+- Description: Every pipeline service that touches external or local I/O (ArxivClient, TEI Embedder, Markdown Converter, SemanticScholar) must wrap network/local calls in typed error handling (HTTPError, TimeoutException, ConnectError, 429-rate-limit) and surface typed diagnostics (error code, service name, redacted message, retry count, final outcome) instead of propagating opaque exceptions.
+- Why it matters: Opaque exception propagation (e.g. bare httpx.HTTPStatusError from ArxivClient) makes unattended pipeline failures undiagnosable and prevents operators from distinguishing transient rate-limiting from permanent failures.
+- Source: M199 live pipeline audit 2026-07-01
+- Primary owning slice: M199-4rex3i
+- Supporting slices: S01, S02, S03, S04
+- Validation: Each service module raises a typed error on exhausted retries carrying error code, service name, redacted message, retry count; integration tests with a mock transport verify typed diagnostics for 429/5xx/timeout.
+
+### R080 — Transient failures (429, 5xx, timeout) for pipeline services must retry with bounded backoff honoring Retry-After where present. The mature catalog_ingest retry/backoff/Retry-After pattern (ARXIV_BACKOFF_SECONDS=(1,5,15,60,300)) is the established project pattern and must be reused rather than reinvented.
+- Class: quality-attribute
+- Status: active
+- Description: Transient failures (429, 5xx, timeout) for pipeline services must retry with bounded backoff honoring Retry-After where present. The mature catalog_ingest retry/backoff/Retry-After pattern (ARXIV_BACKOFF_SECONDS=(1,5,15,60,300)) is the established project pattern and must be reused rather than reinvented.
+- Why it matters: ArxivClient currently has zero retry on transient failures, while catalog_ingest has mature retry+backoff for the same arxiv API — a duplicated-but-divergent pattern that contradicts Ponytail 'already-installed pattern solves it'.
+- Source: M199 live pipeline audit 2026-07-01
+- Primary owning slice: M199-4rex3i
+- Supporting slices: S01, S03
+- Validation: Integration tests verify the retry schedule and Retry-After honour for each retried service (ArxivClient, Markdown Converter arxiv2md). No service silently skips transient failures.
+
+### R081 — Graceful degradation (e.g. TEI Embedder returning zero vectors when the circuit-breaker is open) is allowed only when the degraded output is explicitly marked via a typed signal or safety flag, and downstream consumers fail closed on or annotate its use. No service may silently degrade to corrupt data.
+- Class: operability
+- Status: active
+- Description: Graceful degradation (e.g. TEI Embedder returning zero vectors when the circuit-breaker is open) is allowed only when the degraded output is explicitly marked via a typed signal or safety flag, and downstream consumers fail closed on or annotate its use. No service may silently degrade to corrupt data.
+- Why it matters: TEI Embedder currently returns 1024-dim zero vectors on circuit-breaker open, and downstream retrieval/semantic steps receive garbage they cannot detect — silent data corruption in the KG.
+- Source: M199 live pipeline audit 2026-07-01
+- Primary owning slice: M199-4rex3i
+- Supporting slices: S02, S04
+- Validation: Live test demonstrates that TEI outage produces an explicit degraded signal; downstream embedding-stamping path refuses or annotates; no unmarked-good zero vectors reach artifacts.
+
+### R082 — The ScoringEngine recency score must document and enforce its same-day-run contract: a retrospective scoring run must either use an explicit run_date parameter or be rejected, never silently score all papers recency=0.5 by comparing against date.today().
+- Class: constraint
+- Status: active
+- Description: The ScoringEngine recency score must document and enforce its same-day-run contract: a retrospective scoring run must either use an explicit run_date parameter or be rejected, never silently score all papers recency=0.5 by comparing against date.today().
+- Why it matters: _recency_score compares against date.today(), so any historical/replay run silently scores all papers 0.5 recency (20% of score weight), distorting the ranking without any signal.
+- Source: M199 live pipeline audit 2026-07-01
+- Primary owning slice: M199-4rex3i
+- Supporting slices: S03
+- Validation: Contract test confirms a retrospective run without explicit run_date is corrected or rejected rather than producing uniform recency=0.5.
+
+### R083 — Error diagnostics across all pipeline services must never include raw payload, raw text, embeddings, vectors, or secrets — only error code, service name, redacted message, retry count, and final outcome.
+- Class: compliance/security
+- Status: active
+- Description: Error diagnostics across all pipeline services must never include raw payload, raw text, embeddings, vectors, or secrets — only error code, service name, redacted message, retry count, and final outcome.
+- Why it matters: Services handle arxiv API responses, embedding vectors, and conversion text. Diagnostic leakage of these would violate the project's EvidencePath and fail-closed safety invariants.
+- Source: M199 live pipeline audit 2026-07-01
+- Primary owning slice: M199-4rex3i
+- Supporting slices: S01, S02, S03, S04
+- Validation: Review of diagnostics surfaces confirms no raw payload or secret leakage; redaction verified via contract test.
+
 ## Validated
 
 ### R001 — CLI help info
@@ -671,6 +721,126 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: Validated by M122-qq2mfe S01-S06. Final acceptance runner generated passing `data/pipeline-script-architecture/acceptance-summary.json`; onion layering guard clean; fresh milestone verification passed 94 tests. Migrated catalog ingest, parser replay, coverage report, and graph probe wrappers delegate through application use cases and infrastructure adapters/writers while preserving M121/R024 artifact compatibility.
 - Notes: Quality-metrics remains a first-class category and is documented out of the S06 integrated M121-style acceptance path rather than folded into coverage/reporting.
 
+### R067 — Pipeline must expose typed, resumable, observable jobs for intake, acquisition, parsing, chunking, evidence, and graph-candidate preparation before graph import claims.
+- Class: core-capability
+- Status: validated
+- Description: Pipeline must expose typed, resumable, observable jobs for intake, acquisition, parsing, chunking, evidence, and graph-candidate preparation before graph import claims.
+- Why it matters: Architecture crystallization requires the pipeline to be a governed application workflow rather than disconnected scripts before any graph transition.
+- Source: M195 planning after D109 and D110
+- Primary owning slice: M195
+- Validation: M195 final validation: final focused suite passed (98 passed, gsd_exec[315c75c2-2dcf-4d85-99d9-513809a8c276]); final no-write runtime smoke passed (gsd_exec[3886e84d-75e6-4489-86ee-e6492799d327]); S12 proved queue-to-schema-to-projection no-write rehearsal artifacts with false write/import flags.
+- Notes: Validated for no-write pipeline/projection rehearsal only; production graph import remains out of scope.
+
+### R068 — Pipeline external dependency failures must be typed and fail closed for network, arXiv availability, resource limits, LLM limits, stale hashes, and partial artifacts.
+- Class: failure-visibility
+- Status: validated
+- Description: Pipeline external dependency failures must be typed and fail closed for network, arXiv availability, resource limits, LLM limits, stale hashes, and partial artifacts.
+- Why it matters: The system cannot safely prepare graph candidates if upstream failure modes can masquerade as successful ingestion or conversion.
+- Source: M195 planning after D109
+- Primary owning slice: M195
+- Validation: M195 final validation: schema gate tests passed and final suite passed (98 passed, gsd_exec[315c75c2-2dcf-4d85-99d9-513809a8c276]); runtime smoke confirmed schema_gate.diagnostics=[schema_versions_current] and import_eligible=false.
+- Notes: Validated as schema governance and placeholder migration readiness only; no migration execution is enabled.
+
+### R069 — Graph readiness work must pass through a graph projection boundary with schema versioning, evidence paths, and lightweight NetworkX rehearsal before any production graph backend write.
+- Class: integration
+- Status: validated
+- Description: Graph readiness work must pass through a graph projection boundary with schema versioning, evidence paths, and lightweight NetworkX rehearsal before any production graph backend write.
+- Why it matters: NetworkX, LadybugDB, and FalkorDB should be interchangeable downstream adapters without coupling domain/application code to backend-specific infrastructure.
+- Source: M195 planning after D110
+- Primary owning slice: M195
+- Validation: M195 final validation: projection port, NetworkX adapter, disabled backend seams, governance ratchets, and no-write rehearsal passed in final suite (98 passed, gsd_exec[315c75c2-2dcf-4d85-99d9-513809a8c276]); runtime smoke confirmed projection_backend=networkx and import_eligible=false.
+- Notes: Validated as no-write graph projection boundary only; LadybugDB/FalkorDB writes remain disabled and unvalidated.
+
+### R070 — Pipeline production hardening must provide staged validation evidence before any production promotion.
+- Class: operability
+- Status: validated
+- Description: Pipeline production hardening must provide staged validation evidence before any production promotion.
+- Why it matters: M195 proved no-write projection rehearsal, but production hardening needs repeatable staged runs, acceptance thresholds, and rollback-friendly evidence before broader use.
+- Source: M196 planning after M195
+- Primary owning slice: M196-0nrede
+- Validation: M196 final validation: staged validation contract tests passed and final focused suite passed with 111 passed (gsd_exec[c0d190c3-387c-4f58-a928-04a4dabc6cb4]); final runtime smoke passed (gsd_exec[7f187fc6-091e-46dc-b851-d15cb05a1bfb]).
+- Notes: Validated for bounded staged production hardening contract and repeated local verification only; production graph import remains out of scope.
+
+### R071 — Pipeline hardening must persist operator-readable run state, failure diagnostics, retry counts, and artifact lineage.
+- Class: failure-visibility
+- Status: validated
+- Description: Pipeline hardening must persist operator-readable run state, failure diagnostics, retry counts, and artifact lineage.
+- Why it matters: Future agents need enough state to diagnose failed or partial pipeline runs without re-running blindly or inspecting raw payloads.
+- Source: M196 planning after M195
+- Primary owning slice: M196-0nrede
+- Validation: M196 final validation: queue resilience tests, run artifact observability tests, and final runtime smoke passed; artifacts expose queue status/events, schema gate diagnostics, projection diagnostics, summary linkage, and false write/import flags without checked payload leakage.
+- Notes: Validated for metadata-only operator diagnostics and artifact lineage in no-write rehearsal/hardening context.
+
+### R072 — Pipeline production hardening must not enable graph backend writes, migration execution, or import eligibility.
+- Class: constraint
+- Status: validated
+- Description: Pipeline production hardening must not enable graph backend writes, migration execution, or import eligibility.
+- Why it matters: M195 intentionally kept graph import blocked; hardening should improve pipeline reliability without bypassing graph readiness gates.
+- Source: M196 planning after M195
+- Primary owning slice: M196-0nrede
+- Validation: M196 final validation: M196/M195 governance ratchets passed in final suite (111 passed); final runtime smoke confirmed import_eligible=false and no graph backend write path was enabled.
+- Notes: Validated as a no-write/no-import constraint; LadybugDB/FalkorDB writes, migration execution, and import_eligible=true remain blocked.
+
+### R073 — Pipeline orchestration should support bounded asynchronous execution for independent I/O-bound stages while preserving deterministic sync domain contracts.
+- Class: quality-attribute
+- Status: validated
+- Description: Pipeline orchestration should support bounded asynchronous execution for independent I/O-bound stages while preserving deterministic sync domain contracts.
+- Why it matters: Async should improve throughput and responsiveness without making extraction, validation, schema, and no-write contracts nondeterministic or harder to test.
+- Source: Post-M196 reactive architecture inventory
+- Primary owning slice: Future async/reactive pipeline milestone
+- Validation: Validated by M197 reactive runner, dry-run script, realistic no-write rehearsal, and final compatibility sweep. Evidence: data/architecture-assessment/m197-requirement-outcomes.md and data/architecture-assessment/m197-s14-final-compatibility-evidence.md.
+- Notes: M197 validates additive async/reactive pilot behavior only; production graph import remains out of scope.
+
+### R074 — Reactive pipeline jobs must expose observable state transitions, correlation IDs, retries, cancellation, timeout, and artifact lineage.
+- Class: operability
+- Status: validated
+- Description: Reactive pipeline jobs must expose observable state transitions, correlation IDs, retries, cancellation, timeout, and artifact lineage.
+- Why it matters: Async systems fail by hanging, racing, or partially completing; operators and agents need durable state to diagnose work without inspecting raw payloads.
+- Source: Post-M196 reactive architecture inventory
+- Primary owning slice: Future async/reactive pipeline milestone
+- Validation: Validated by M197 reactive event contract, lifecycle/failure/retry/lineage metadata, operator handoff, governance ratchets, and final compatibility sweep. Evidence: data/architecture-assessment/m197-requirement-outcomes.md.
+- Notes: Event surface remains contract-first and metadata-only.
+
+### R075 — Async/reactive adoption must preserve fail-closed graph/import governance boundaries.
+- Class: constraint
+- Status: validated
+- Description: Async/reactive adoption must preserve fail-closed graph/import governance boundaries.
+- Why it matters: Concurrency must not accidentally bypass staged validation, write gates, schema migration guards, or import eligibility controls.
+- Source: Post-M196 reactive architecture inventory
+- Primary owning slice: Future async/reactive pipeline milestone
+- Validation: Validated by no-write/import-blocked reactive event flags, queue compatibility tests, governance ratchets, final safety audit, and M195/M196 compatibility. Evidence: data/architecture-assessment/m197-requirement-outcomes.md and data/architecture-assessment/m197-s14-final-safety-audit.md.
+- Notes: No production graph import, schema migration, queue dependency semantic change, or smoke/rehearsal semantic change was enabled.
+
+### R076 — Reactive no-write pilot must gain production-readiness preconditions that compare dry-run, sync rehearsal, smoke, and graph readiness evidence without enabling production writes.
+- Class: core-capability
+- Status: validated
+- Description: Reactive no-write pilot must gain production-readiness preconditions that compare dry-run, sync rehearsal, smoke, and graph readiness evidence without enabling production writes.
+- Why it matters: M197 proved a safe reactive pilot, but future production orchestration needs objective readiness gates before any write/import transition.
+- Source: M198-t5wlml planning
+- Primary owning slice: M198-t5wlml
+- Validation: Validated by M198 final verification: readiness evidence/index/diagnostics/report/rehearsal/package chain passed final suite with 82 tests, Ruff, Pyrefly, and GitNexus detect_changes LOW. Evidence: data/architecture-assessment/m198-final-validation-evidence.md and m198-requirement-outcomes.md.
+- Notes: M198 produced metadata-only readiness precondition evidence; production import remains out of scope.
+
+### R077 — Reactive readiness workflows must expose operator-readable failure diagnostics, drift deltas, and evidence indexes for dry-run versus sync/smoke parity.
+- Class: failure-visibility
+- Status: validated
+- Description: Reactive readiness workflows must expose operator-readable failure diagnostics, drift deltas, and evidence indexes for dry-run versus sync/smoke parity.
+- Why it matters: Future agents need clear failure surfaces before promoting reactive orchestration beyond no-write mode.
+- Source: M198-t5wlml planning
+- Primary owning slice: M198-t5wlml
+- Validation: Validated by M198 drift classifier, operator diagnostics, readiness report, rehearsal command log, smoke parity audit, disabled backend safety audit, validation package, and operator runbook. Final suite passed with 82 tests and package-level failure visibility. Evidence: data/architecture-assessment/m198-final-validation-evidence.md.
+- Notes: Failure visibility is operator/package-level; remediation ownership remains for future milestones.
+
+### R078 — No production graph import, schema migration, queue dependency semantic change, or smoke/rehearsal semantic change may be enabled by M198 readiness work.
+- Class: compliance/security
+- Status: validated
+- Description: No production graph import, schema migration, queue dependency semantic change, or smoke/rehearsal semantic change may be enabled by M198 readiness work.
+- Why it matters: Queue dependency impact is HIGH and M197 explicitly validated only a no-write reactive pilot.
+- Source: M198-t5wlml planning
+- Primary owning slice: M198-t5wlml
+- Validation: Validated by no-write/import-blocked contract, S11 governance ratchets, S12 GitNexus impact gates, S13-S16 boundary confirmations, M195-M197 governance ratchets, and final GitNexus detect_changes LOW. Evidence: data/architecture-assessment/m198-final-validation-evidence.md and m198-requirement-outcomes.md.
+- Notes: No production graph import, schema migration, queue semantic change, smoke/rehearsal semantic change, retired shim restoration, or import eligibility promotion was enabled.
+
 ## Deferred
 
 ## Out of Scope
@@ -745,10 +915,27 @@ This file is the explicit capability and coverage contract for the project.
 | R064 | core-capability | validated | M041-8k3kv4 | M040-4flhk6 | M041 generated and ran a mixed 20-article no-write smoke: 10 retained baseline articles, 5 articles linked from already loaded local sources, and 5 Hermes review-section articles. Evidence: M041 manifest category counts, M041 run summary with 20 completed handoffs, M041 audit with 20 continuity artifacts and empty blockers, all graph/import/promotion flags false, and README/report documenting arXiv deferred metadata caveat. |
 | R065 | operability | validated | none | none | M045 implemented `scripts/check_project_trajectory.py`, tests, codebase-memory MCP snapshot support, real JSON/Markdown trajectory reports, README preflight documentation, and D080. The report covers architecture, functionality, module_code, evidence, safety, operations, and next_gate dimensions; flags drift risks; verifies no-write boundaries; and treats codebase-memory as non-canonical recall/navigation evidence. |
 | R066 | quality-attribute | validated | M122-qq2mfe | none | Validated by M122-qq2mfe S01-S06. Final acceptance runner generated passing `data/pipeline-script-architecture/acceptance-summary.json`; onion layering guard clean; fresh milestone verification passed 94 tests. Migrated catalog ingest, parser replay, coverage report, and graph probe wrappers delegate through application use cases and infrastructure adapters/writers while preserving M121/R024 artifact compatibility. |
+| R067 | core-capability | validated | M195 | none | M195 final validation: final focused suite passed (98 passed, gsd_exec[315c75c2-2dcf-4d85-99d9-513809a8c276]); final no-write runtime smoke passed (gsd_exec[3886e84d-75e6-4489-86ee-e6492799d327]); S12 proved queue-to-schema-to-projection no-write rehearsal artifacts with false write/import flags. |
+| R068 | failure-visibility | validated | M195 | none | M195 final validation: schema gate tests passed and final suite passed (98 passed, gsd_exec[315c75c2-2dcf-4d85-99d9-513809a8c276]); runtime smoke confirmed schema_gate.diagnostics=[schema_versions_current] and import_eligible=false. |
+| R069 | integration | validated | M195 | none | M195 final validation: projection port, NetworkX adapter, disabled backend seams, governance ratchets, and no-write rehearsal passed in final suite (98 passed, gsd_exec[315c75c2-2dcf-4d85-99d9-513809a8c276]); runtime smoke confirmed projection_backend=networkx and import_eligible=false. |
+| R070 | operability | validated | M196-0nrede | none | M196 final validation: staged validation contract tests passed and final focused suite passed with 111 passed (gsd_exec[c0d190c3-387c-4f58-a928-04a4dabc6cb4]); final runtime smoke passed (gsd_exec[7f187fc6-091e-46dc-b851-d15cb05a1bfb]). |
+| R071 | failure-visibility | validated | M196-0nrede | none | M196 final validation: queue resilience tests, run artifact observability tests, and final runtime smoke passed; artifacts expose queue status/events, schema gate diagnostics, projection diagnostics, summary linkage, and false write/import flags without checked payload leakage. |
+| R072 | constraint | validated | M196-0nrede | none | M196 final validation: M196/M195 governance ratchets passed in final suite (111 passed); final runtime smoke confirmed import_eligible=false and no graph backend write path was enabled. |
+| R073 | quality-attribute | validated | Future async/reactive pipeline milestone | none | Validated by M197 reactive runner, dry-run script, realistic no-write rehearsal, and final compatibility sweep. Evidence: data/architecture-assessment/m197-requirement-outcomes.md and data/architecture-assessment/m197-s14-final-compatibility-evidence.md. |
+| R074 | operability | validated | Future async/reactive pipeline milestone | none | Validated by M197 reactive event contract, lifecycle/failure/retry/lineage metadata, operator handoff, governance ratchets, and final compatibility sweep. Evidence: data/architecture-assessment/m197-requirement-outcomes.md. |
+| R075 | constraint | validated | Future async/reactive pipeline milestone | none | Validated by no-write/import-blocked reactive event flags, queue compatibility tests, governance ratchets, final safety audit, and M195/M196 compatibility. Evidence: data/architecture-assessment/m197-requirement-outcomes.md and data/architecture-assessment/m197-s14-final-safety-audit.md. |
+| R076 | core-capability | validated | M198-t5wlml | none | Validated by M198 final verification: readiness evidence/index/diagnostics/report/rehearsal/package chain passed final suite with 82 tests, Ruff, Pyrefly, and GitNexus detect_changes LOW. Evidence: data/architecture-assessment/m198-final-validation-evidence.md and m198-requirement-outcomes.md. |
+| R077 | failure-visibility | validated | M198-t5wlml | none | Validated by M198 drift classifier, operator diagnostics, readiness report, rehearsal command log, smoke parity audit, disabled backend safety audit, validation package, and operator runbook. Final suite passed with 82 tests and package-level failure visibility. Evidence: data/architecture-assessment/m198-final-validation-evidence.md. |
+| R078 | compliance/security | validated | M198-t5wlml | none | Validated by no-write/import-blocked contract, S11 governance ratchets, S12 GitNexus impact gates, S13-S16 boundary confirmations, M195-M197 governance ratchets, and final GitNexus detect_changes LOW. Evidence: data/architecture-assessment/m198-final-validation-evidence.md and m198-requirement-outcomes.md. |
+| R079 | quality-attribute | active | M199-4rex3i | S01, S02, S03, S04 | Each service module raises a typed error on exhausted retries carrying error code, service name, redacted message, retry count; integration tests with a mock transport verify typed diagnostics for 429/5xx/timeout. |
+| R080 | quality-attribute | active | M199-4rex3i | S01, S03 | Integration tests verify the retry schedule and Retry-After honour for each retried service (ArxivClient, Markdown Converter arxiv2md). No service silently skips transient failures. |
+| R081 | operability | active | M199-4rex3i | S02, S04 | Live test demonstrates that TEI outage produces an explicit degraded signal; downstream embedding-stamping path refuses or annotates; no unmarked-good zero vectors reach artifacts. |
+| R082 | constraint | active | M199-4rex3i | S03 | Contract test confirms a retrospective run without explicit run_date is corrected or rejected rather than producing uniform recency=0.5. |
+| R083 | compliance/security | active | M199-4rex3i | S01, S02, S03, S04 | Review of diagnostics surfaces confirms no raw payload or secret leakage; redaction verified via contract test. |
 
 ## Coverage Summary
 
-- Active requirements: 17
+- Active requirements: 22
 - Mapped to slices: 7
-- Validated: 49 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R036, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049, R053, R057, R058, R059, R060, R061, R062, R063, R064, R065, R066)
+- Validated: 61 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R012, R013, R014, R015, R016, R017, R018, R020, R021, R025, R026, R028, R030, R034, R036, R037, R038, R039, R041, R042, R043, R044, R045, R046, R047, R048, R049, R053, R057, R058, R059, R060, R061, R062, R063, R064, R065, R066, R067, R068, R069, R070, R071, R072, R073, R074, R075, R076, R077, R078)
 - Unmapped active requirements: 5
