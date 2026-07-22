@@ -306,6 +306,36 @@ Success rules (unchanged):
 - `import_eligible` / `graph_writes_allowed` always false on this path
 - Without ports → `hybrid_deferred` (never fake hybrid completeness)
 
+### M213 hybrid batch gate (10 local PDFs)
+
+Selection: `artifacts/m213-hybrid-gate/selection.json` (10 catalog PDFs, offline).
+
+```bash
+# Offline / CI (inject fakes in tests — unit suite)
+uv run python -m pytest tests/test_m213_hybrid_batch_gate.py tests/test_m213_hybrid_gate_selection.py -q
+
+# Live batch (GROBID + ODL required; composition root only)
+uv run python - <<'PY'
+from pathlib import Path
+from research_graph.workflows.composition.hybrid_batch_gate import (
+    HybridBatchGateRequest,
+    run_hybrid_batch_gate,
+)
+res = run_hybrid_batch_gate(HybridBatchGateRequest(
+    selection_path=Path("artifacts/m213-hybrid-gate/selection.json"),
+    work_dir=Path("artifacts/m213-hybrid-gate/runs"),
+    enable_live_hybrid=True,
+    ensure_hybrid_containers=True,
+    min_hybrid_success=7,  # first-rung target; tune with evidence
+    repo_root=Path("."),
+))
+print(res.to_dict()["gate_pass"], res.to_dict()["hybrid_success_count"], res.to_dict()["hybrid_deferred_count"])
+PY
+```
+
+Output: `artifacts/m213-hybrid-gate/runs/batch-summary.json` (per-paper routes + aggregate).  
+Import/writes remain fail-closed regardless of hybrid success count.
+
 
 
 Current live probe result: 1 target article has `live_success` GROBID TEI summary evidence; 5 linked target articles remain `missing_pdf` blockers until bounded local PDF acquisition is performed. Raw TEI/full text is not persisted.
