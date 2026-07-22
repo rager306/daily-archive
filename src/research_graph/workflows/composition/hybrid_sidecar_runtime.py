@@ -103,10 +103,58 @@ def run_hybrid_sidecar_runtime(
     return HybridRuntimeResult(packet=packet, diagnostics=tuple(diagnostics))
 
 
+def ensure_live_hybrid_runtime(
+    request: HybridRuntimeRequest,
+    *,
+    use_live: bool = True,
+    ensure_containers: bool | None = None,
+) -> HybridRuntimeResult:
+    """Optionally ensure GROBID/ODL then run hybrid runtime with live adapters.
+
+    When use_live is False, behaves like run_hybrid_sidecar_runtime without ports
+    (deferred). Does not authorize graph import.
+    """
+    if not use_live:
+        return run_hybrid_sidecar_runtime(request)
+
+    # Lazy import: keep offline unit tests free of docker/env side effects unless called.
+    import os
+
+    from research_graph.infrastructure.corpus.parsing.live_sidecar_adapters import (
+        LiveGrobidSidecarAdapter,
+        LiveOpenDataLoaderSidecarAdapter,
+    )
+    from research_graph.infrastructure.corpus.parsing.sidecar_services import (
+        probe_parser_sidecars,
+    )
+
+    do_ensure = (
+        os.environ.get("HYBRID_AUTO_START_CONTAINERS", "true").strip().lower()
+        in {"1", "true", "yes", "on"}
+        if ensure_containers is None
+        else ensure_containers
+    )
+    status = probe_parser_sidecars(ensure=do_ensure)
+    grobid = LiveGrobidSidecarAdapter(ensure_service=do_ensure)
+    odl = LiveOpenDataLoaderSidecarAdapter(ensure_import=do_ensure)
+    result = run_hybrid_sidecar_runtime(request, grobid=grobid, opendataloader=odl)
+    extra = (
+        f"sidecar_probe_grobid:{status.grobid.available}",
+        f"sidecar_probe_odl:{status.opendataloader.available}",
+        f"auto_start_attempted:{status.grobid.auto_start_attempted}",
+    )
+    return HybridRuntimeResult(
+        packet=result.packet,
+        diagnostics=result.diagnostics + extra,
+        safety_flags=result.safety_flags,
+    )
+
+
 __all__ = [
     "GrobidSidecarPort",
     "HybridRuntimeRequest",
     "HybridRuntimeResult",
     "OpenDataLoaderSidecarPort",
+    "ensure_live_hybrid_runtime",
     "run_hybrid_sidecar_runtime",
 ]

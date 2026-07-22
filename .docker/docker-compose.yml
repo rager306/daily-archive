@@ -1,0 +1,62 @@
+# daily-archive parser sidecars (GROBID + optional OpenDataLoader workspace)
+#
+# Start GROBID (default):
+#   docker compose -f .docker/docker-compose.yml --env-file .env up -d grobid
+#
+# OpenDataLoader is primarily an in-process Python+Java library (pip: opendataloader-pdf),
+# not a long-lived HTTP API. The optional `opendataloader` profile only keeps a warm
+# Java/Python workspace for CLI conversions; hybrid runtime prefers host import.
+#
+# Stop:
+#   docker compose -f .docker/docker-compose.yml down
+
+name: daily-archive-parser-sidecars
+
+services:
+  grobid:
+    image: ${GROBID_IMAGE:-grobid/grobid:0.9.0-crf}
+    container_name: ${GROBID_CONTAINER_NAME:-daily-archive-grobid}
+    ports:
+      - "${GROBID_HOST_PORT:-8070}:8070"
+    environment:
+      # Keep heap bounded for laptop/dev hosts; raise via .env when needed.
+      JAVA_OPTS: ${GROBID_JAVA_OPTS:--Xmx4g}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8070 && printf \"GET /api/isalive HTTP/1.0\\r\\n\\r\\n\" >&3 && cat <&3 | grep -qi true'",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
+    restart: unless-stopped
+    # CRF image is CPU-only; no GPU required (matches M033/M044 pilot).
+
+  # Optional workspace for ODL CLI experiments (profile: odl).
+  # Hybrid production path still uses host `opendataloader_pdf` import by default.
+  opendataloader:
+    profiles: ["odl"]
+    image: ${ODL_IMAGE:-python:3.13-slim-bookworm}
+    container_name: ${ODL_CONTAINER_NAME:-daily-archive-opendataloader}
+    working_dir: /work
+    volumes:
+      - odl_work:/work
+    environment:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    command:
+      - bash
+      - -lc
+      - |
+        set -euo pipefail
+        apt-get update -qq
+        apt-get install -y -qq --no-install-recommends openjdk-17-jre-headless curl ca-certificates
+        pip install --no-cache-dir 'opendataloader-pdf'
+        echo "opendataloader-pdf ready (library mode). Not an HTTP API."
+        # Keep container alive for exec-based conversions.
+        sleep infinity
+    restart: unless-stopped
+
+volumes:
+  odl_work:

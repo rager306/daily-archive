@@ -253,6 +253,28 @@ artifacts/m044-grobid-architecture-guardrail/live-grobid-candidate-packets.json
 artifacts/m044-grobid-architecture-guardrail/final-report.md
 ```
 
+## Parser sidecars (GROBID / OpenDataLoader)
+
+Compose file: `.docker/docker-compose.yml`.
+
+```bash
+# Start GROBID (CRF image used in M033/M044 pilots)
+docker compose -f .docker/docker-compose.yml --env-file .env up -d grobid
+curl -sS "$GROBID_URL/api/isalive"   # default http://127.0.0.1:8070/api/isalive → true
+
+# OpenDataLoader: prefer host library (not a long-lived HTTP API)
+uv pip install opendataloader-pdf
+
+# Optional workspace container
+docker compose -f .docker/docker-compose.yml --env-file .env --profile odl up -d opendataloader
+```
+
+Env defaults live in `.env.example` (`GROBID_URL`, `GROBID_AUTO_START`, `HYBRID_AUTO_START_CONTAINERS`, …).  
+Runtime probe/auto-start: `research_graph.infrastructure.corpus.parsing.sidecar_services`.  
+Hybrid merge remains fail-closed (M212): container up ≠ graph import.
+
+
+
 Current live probe result: 1 target article has `live_success` GROBID TEI summary evidence; 5 linked target articles remain `missing_pdf` blockers until bounded local PDF acquisition is performed. Raw TEI/full text is not persisted.
 
 M049 models registry (canonical MiniMax model paths):
