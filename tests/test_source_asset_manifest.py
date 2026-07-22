@@ -51,7 +51,8 @@ def _asset() -> AssetRecord:
 def _manifest() -> dict:
     return SourceAssetManifest(
         paper_id="p1",
-        workspace_root=".gsd/milestones/M005-dlko4z/slices/S05/run-evidence/papers/p1",
+        # Path string only (contract metadata); no on-disk M005 nested milestone required.
+        workspace_root="artifacts/m005-chunking-benchmark/papers/p1",
         source_files=(_source_file(),),
         assets=(_asset(),),
     ).to_contract()

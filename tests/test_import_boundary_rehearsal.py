@@ -12,6 +12,15 @@ from research_graph.workflows.import_boundary_rehearsal import (
     write_import_boundary_rehearsal_run,
 )
 
+# Stable post flat-phase path (was .gsd/milestones/M005-.../run-evidence/).
+M005_CHUNKING_BENCHMARK_DIR = (
+    Path(__file__).resolve().parents[1] / "artifacts" / "m005-chunking-benchmark"
+)
+M005_CHUNKING_SUMMARY = M005_CHUNKING_BENCHMARK_DIR / "chunking-benchmark-summary.json"
+M005_CHUNKING_DIAGNOSTICS = (
+    M005_CHUNKING_BENCHMARK_DIR / "chunking-benchmark-diagnostics.jsonl"
+)
+
 
 def _candidate(**overrides: object) -> ImportCandidate:
     values = {
@@ -138,12 +147,8 @@ def test_validate_import_boundary_rehearsal_rejects_nested_forbidden_fields_with
 
 def test_build_import_boundary_rehearsal_from_current_benchmark_artifacts() -> None:
     contract = build_import_boundary_rehearsal_from_benchmark(
-        summary_path=Path(
-            ".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-summary.json"
-        ),
-        diagnostics_path=Path(
-            ".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-diagnostics.jsonl"
-        ),
+        summary_path=M005_CHUNKING_SUMMARY,
+        diagnostics_path=M005_CHUNKING_DIAGNOSTICS,
     )
 
     validation = validate_import_boundary_rehearsal(contract)
@@ -178,12 +183,8 @@ def test_build_import_boundary_rehearsal_from_current_benchmark_artifacts() -> N
 
 def test_build_import_boundary_rehearsal_preserves_missing_source_caveats() -> None:
     contract = build_import_boundary_rehearsal_from_benchmark(
-        summary_path=Path(
-            ".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-summary.json"
-        ),
-        diagnostics_path=Path(
-            ".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-diagnostics.jsonl"
-        ),
+        summary_path=M005_CHUNKING_SUMMARY,
+        diagnostics_path=M005_CHUNKING_DIAGNOSTICS,
     )
 
     assert "missing_original_pdf:16" in contract["caveats"]
@@ -191,12 +192,8 @@ def test_build_import_boundary_rehearsal_preserves_missing_source_caveats() -> N
 
 def test_write_import_boundary_rehearsal_run_writes_summary_and_diagnostics(tmp_path: Path) -> None:
     paths = write_import_boundary_rehearsal_run(
-        summary_path=Path(
-            ".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-summary.json"
-        ),
-        diagnostics_path=Path(
-            ".gsd/milestones/M005-dlko4z/slices/S06/run-evidence/chunking-benchmark-diagnostics.jsonl"
-        ),
+        summary_path=M005_CHUNKING_SUMMARY,
+        diagnostics_path=M005_CHUNKING_DIAGNOSTICS,
         output_dir=tmp_path,
     )
 
