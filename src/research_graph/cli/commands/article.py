@@ -13,13 +13,29 @@ from research_graph.workflows.composition.single_article_pipeline import (
     run_single_article_pipeline,
 )
 
+
+def _resolve_enable_live_hybrid(*, mode: str, live_hybrid: bool) -> bool:
+    """mode=hybrid defaults to live ports; --no-live-hybrid forces off even for hybrid."""
+    try:
+        import click
+
+        ctx = click.get_current_context(silent=True)
+        if ctx is not None:
+            src = ctx.get_parameter_source("live_hybrid")
+            if src is not None and src.name == "COMMANDLINE":
+                return live_hybrid
+    except Exception:  # noqa: BLE001 - offline/unit fallback without click context
+        pass
+    return live_hybrid or mode == "hybrid"
+
+
 article_app = typer.Typer(
     add_completion=False,
     help=(
         "Single-article no-write pipeline: resolve body route "
-        "(html_native|mdconverter|fitz_offline|hybrid_deferred), "
+        "(html_native|mdconverter|fitz_offline|hybrid|hybrid_deferred), "
         "then load→structure→candidate→projection→promotion readiness package. "
-        "Does not authorize graph import or writes. Never claims hybrid success."
+        "Does not authorize graph import or writes. Hybrid success only with body evidence."
     ),
 )
 
@@ -47,7 +63,10 @@ def article_run(
         Literal["auto", "html", "pdf", "local", "mdconverter", "fitz", "hybrid"],
         typer.Option(
             "--mode",
-            help="Body mode: auto|html|pdf|local|mdconverter|fitz|hybrid (hybrid needs ports; else deferred).",
+            help=(
+                "Body mode: auto|html|pdf|local|mdconverter|fitz|hybrid. "
+                "hybrid defaults to live sidecars (GROBID/ODL); use --no-live-hybrid to force deferred."
+            ),
         ),
     ] = "auto",
     prefer: Annotated[
@@ -57,6 +76,23 @@ def article_run(
     also_pdf: Annotated[
         bool,
         typer.Option("--also-pdf/--no-also-pdf", help="Also download PDF sidecar when possible."),
+    ] = True,
+    live_hybrid: Annotated[
+        bool,
+        typer.Option(
+            "--live-hybrid/--no-live-hybrid",
+            help=(
+                "Inject live GROBID/ODL ports (probe/auto-start). "
+                "Default true when --mode hybrid; false otherwise."
+            ),
+        ),
+    ] = False,
+    ensure_containers: Annotated[
+        bool,
+        typer.Option(
+            "--ensure-containers/--no-ensure-containers",
+            help="When live hybrid is on, docker compose up grobid if isalive fails.",
+        ),
     ] = True,
     review_completed: Annotated[
         bool,
@@ -73,6 +109,10 @@ def article_run(
     """Resolve body route and emit a fail-closed graph-data readiness package."""
     work_dir = output_dir.expanduser().resolve()
     work_dir.mkdir(parents=True, exist_ok=True)
+    # mode=hybrid enables live sidecars by default; --no-live-hybrid forces offline deferred.
+    # --live-hybrid forces on for any mode (only useful if hybrid preference path is taken).
+    enable_live = _resolve_enable_live_hybrid(mode=mode, live_hybrid=live_hybrid)
+
     try:
         result = run_single_article_pipeline(
             SingleArticleRunRequest(
@@ -83,7 +123,9 @@ def article_run(
                 also_pdf=also_pdf,
                 review_completed=review_completed,
                 repo_root=Path.cwd(),
-            )
+            ),
+            enable_live_hybrid=enable_live,
+            ensure_hybrid_containers=ensure_containers,
         )
     except (FileNotFoundError, ValueError) as exc:
         typer.echo(f"error: {exc}", err=True)
@@ -99,8 +141,11 @@ def article_run(
 
     typer.echo(f"paper_id: {result.paper_id}")
     typer.echo(f"body_route: {result.body_route}")
-    typer.echo("hybrid_claimed_success: false")
+    typer.echo(
+        f"hybrid_claimed_success: {str(result.body_route == 'hybrid').lower()}"
+    )
     typer.echo(f"body_chars: {result.body.body_chars}")
+    typer.echo(f"live_hybrid: {str(enable_live).lower()}")
     typer.echo(f"sources: {len(result.local_sources)}")
     for row in result.local_sources:
         typer.echo(f"  - {row['kind']}: {row['path']} ({row['origin']})")

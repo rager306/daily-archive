@@ -151,3 +151,62 @@ def test_cli_json_includes_body_route(tmp_path: Path) -> None:
     payload = json.loads(completed.output)
     assert payload["body_route"] == "html_native"
     assert payload["hybrid_claimed_success"] is False
+
+
+def test_pipeline_enable_live_hybrid_false_stays_deferred(tmp_path: Path) -> None:
+    """Without live ports, hybrid mode must not claim success (architecture default)."""
+    pdf = tmp_path / "paper.pdf"
+    # Minimal PDF header so path is treated as PDF; sidecars not invoked when disabled.
+    pdf.write_bytes(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n")
+    work = tmp_path / "work"
+    result = run_single_article_pipeline(
+        SingleArticleRunRequest(
+            source=str(pdf),
+            work_dir=work,
+            mode="hybrid",
+            also_pdf=False,
+            allow_network=False,
+            repo_root=ROOT,
+        ),
+        enable_live_hybrid=False,
+    )
+    assert result.body_route == "hybrid_deferred"
+    assert result.to_dict()["hybrid_claimed_success"] is False
+    assert result.import_eligible is False if hasattr(result, "import_eligible") else True
+    assert result.to_dict()["import_eligible"] is False
+    assert "live_hybrid_disabled" in result.body.diagnostics
+
+
+def test_cli_hybrid_no_live_hybrid_is_deferred(tmp_path: Path) -> None:
+    pdf = tmp_path / "cli-hybrid.pdf"
+    pdf.write_bytes(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n")
+    out = tmp_path / "out"
+    completed = runner.invoke(
+        app,
+        [
+            "article",
+            "run",
+            str(pdf),
+            "--output-dir",
+            str(out),
+            "--mode",
+            "hybrid",
+            "--no-live-hybrid",
+            "--no-also-pdf",
+            "--json",
+        ],
+    )
+    assert completed.exit_code == 0, completed.output
+    payload = json.loads(completed.output)
+    assert payload["body_route"] == "hybrid_deferred"
+    assert payload["hybrid_claimed_success"] is False
+    assert payload["import_eligible"] is False
+
+
+def test_resolve_enable_live_hybrid_defaults() -> None:
+    from research_graph.cli.commands.article import _resolve_enable_live_hybrid
+
+    # No click context: hybrid mode enables live; other modes need explicit flag.
+    assert _resolve_enable_live_hybrid(mode="hybrid", live_hybrid=False) is True
+    assert _resolve_enable_live_hybrid(mode="auto", live_hybrid=False) is False
+    assert _resolve_enable_live_hybrid(mode="auto", live_hybrid=True) is True

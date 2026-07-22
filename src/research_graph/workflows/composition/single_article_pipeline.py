@@ -145,15 +145,42 @@ def run_single_article_pipeline(
     grobid=None,
     opendataloader=None,
     hybrid_pdf_path: Path | None = None,
+    enable_live_hybrid: bool = False,
+    ensure_hybrid_containers: bool = True,
     write_artifacts: bool = True,
 ) -> SingleArticleRunResult:
-    """Resolve body route, acquire optional PDF sidecar, run no-write readiness."""
+    """Resolve body route, acquire optional PDF sidecar, run no-write readiness.
+
+    Live hybrid ports are composition-root only:
+    - explicit grobid/opendataloader kwargs win (tests/injection);
+    - else if enable_live_hybrid (or mode=hybrid with enable_live_hybrid), build live ports;
+    - default remains offline/deferred (no docker/import side effects).
+    """
     preference = _mode_to_preference(request.mode, request.prefer)
     # If hybrid mode and local pdf, pass path for sidecar runtime.
     pdf_for_hybrid = hybrid_pdf_path
     src_path = Path(request.source)
     if pdf_for_hybrid is None and src_path.is_file() and src_path.suffix.lower() == ".pdf":
         pdf_for_hybrid = src_path.resolve()
+
+    live_diag: tuple[str, ...] = ()
+    if grobid is None and opendataloader is None and enable_live_hybrid:
+        from research_graph.workflows.composition.hybrid_live_ports import (
+            resolve_live_hybrid_ports,
+        )
+
+        live = resolve_live_hybrid_ports(
+            enable=True,
+            ensure_containers=ensure_hybrid_containers,
+        )
+        grobid = live.grobid
+        opendataloader = live.opendataloader
+        live_diag = live.diagnostics
+    elif enable_live_hybrid:
+        live_diag = ("live_hybrid_skipped_explicit_ports_injected",)
+    else:
+        live_diag = ("live_hybrid_disabled",)
+
     body = resolve_article_body(
         ArticleBodyRequest(
             source=request.source,
@@ -169,6 +196,11 @@ def run_single_article_pipeline(
         opendataloader=opendataloader,
         hybrid_pdf_path=pdf_for_hybrid,
     )
+    # Append composition diagnostics without mutating frozen body fields via replace.
+    if live_diag:
+        from dataclasses import replace
+
+        body = replace(body, diagnostics=body.diagnostics + live_diag)
     paper_id = body.paper_id
     records: list[dict[str, str]] = []
     if body.body_path is not None:
