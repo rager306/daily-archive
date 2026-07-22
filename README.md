@@ -344,6 +344,31 @@ Output: `batch-summary.json` under the chosen `work_dir` (per-paper routes + agg
 Runtime dirs `runs/`, `runs-live/`, `runs-live-20/` are gitignored.  
 Import/writes remain fail-closed regardless of hybrid success count.
 
+### M215 hybrid selection vs catalog coverage
+
+After a hybrid gate selection, reconcile papers against the canonical catalog index
+(composition root only; reuses M210 `reconcile_paths`):
+
+```bash
+uv run python - <<'PY'
+from pathlib import Path
+from research_graph.workflows.composition.hybrid_catalog_coverage import (
+    HybridCatalogCoverageRequest,
+    run_hybrid_catalog_coverage,
+)
+res = run_hybrid_catalog_coverage(HybridCatalogCoverageRequest(
+    hybrid_selection_path=Path("artifacts/m213-hybrid-gate/selection-20.json"),
+    catalog_index_path=Path("data/article_catalog/index.json"),
+    catalog_root=Path("data/article_catalog"),
+    output_path=Path("artifacts/m215-catalog-coverage/selection-20-coverage.json"),
+    repo_root=Path("."),
+))
+print(res.package.verdict, res.cataloged_count, res.blocker_count)
+PY
+```
+
+Missing selection refs become `typed_catalog_blocker` (never silently already_cataloged).
+
 
 
 Current live probe result: 1 target article has `live_success` GROBID TEI summary evidence; 5 linked target articles remain `missing_pdf` blockers until bounded local PDF acquisition is performed. Raw TEI/full text is not persisted.
