@@ -369,6 +369,34 @@ PY
 
 Missing selection refs become `typed_catalog_blocker` (never silently already_cataloged).
 
+### M216 hybrid coverage + readiness handoff
+
+Compose catalog coverage with no-write graph-data readiness over **precomputed** hybrid bodies
+(e.g. `runs-live-20/{paper_id}/body/{paper_id}.hybrid.body.md`). Does **not** start GROBID/ODL.
+
+```bash
+uv run python - <<'PY'
+from pathlib import Path
+from research_graph.workflows.composition.hybrid_readiness_handoff import (
+    HybridReadinessHandoffRequest,
+    run_hybrid_readiness_handoff,
+)
+res = run_hybrid_readiness_handoff(HybridReadinessHandoffRequest(
+    hybrid_selection_path=Path("artifacts/m213-hybrid-gate/selection-20.json"),
+    body_root=Path("artifacts/m213-hybrid-gate/runs-live-20"),
+    catalog_index_path=Path("data/article_catalog/index.json"),
+    catalog_root=Path("data/article_catalog"),
+    output_path=Path("artifacts/m216-hybrid-readiness-handoff/handoff.json"),
+    repo_root=Path("."),
+))
+print(res.handoff_verdict, res.bodies_found, res.bodies_missing,
+      res.coverage.package.verdict,
+      res.readiness.package.verdict if res.readiness else None)
+PY
+```
+
+`import_eligible` / `graph_writes_allowed` stay false even when coverage is `covered`.
+
 
 
 Current live probe result: 1 target article has `live_success` GROBID TEI summary evidence; 5 linked target articles remain `missing_pdf` blockers until bounded local PDF acquisition is performed. Raw TEI/full text is not persisted.
