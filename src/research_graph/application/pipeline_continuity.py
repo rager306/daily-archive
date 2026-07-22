@@ -39,6 +39,7 @@ DEFAULT_LAYER_SEAMS: dict[LayerName, tuple[str, ...]] = {
         "src/research_graph/infrastructure/corpus/ingestion/loader.py",
         "src/research_graph/workflows/composition/universal_source.py",
         "src/research_graph/application/analyze_source.py",
+        "src/research_graph/application/corpus/catalog_coverage_reconciliation.py",
     ),
     "parser": (
         "src/research_graph/infrastructure/corpus/parsing/parser.py",
@@ -65,6 +66,7 @@ DEFAULT_LAYER_SEAMS: dict[LayerName, tuple[str, ...]] = {
         "src/research_graph/application/graph/promotion_boundary.py",
         "src/research_graph/infrastructure/staging/import_boundary.py",
         "src/research_graph/infrastructure/graph/readiness/review.py",
+        "src/research_graph/application/corpus/catalog_coverage_reconciliation.py",
     ),
     "agents": (
         "src/research_graph/workflows/composition/symfsm_operators.py",
