@@ -47,7 +47,7 @@ def article_run(
         Literal["auto", "html", "pdf", "local", "mdconverter", "fitz", "hybrid"],
         typer.Option(
             "--mode",
-            help="Body mode: auto|html|pdf|local|mdconverter|fitz|hybrid (hybrid is deferred).",
+            help="Body mode: auto|html|pdf|local|mdconverter|fitz|hybrid (hybrid needs ports; else deferred).",
         ),
     ] = "auto",
     prefer: Annotated[

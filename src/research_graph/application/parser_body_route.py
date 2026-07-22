@@ -17,6 +17,7 @@ BodyRoute = Literal[
     "html_native",
     "mdconverter",
     "fitz_offline",
+    "hybrid",
     "hybrid_deferred",
     "unavailable",
 ]
@@ -52,11 +53,9 @@ class BodyRouteDecision:
 
     def __post_init__(self) -> None:
         self.safety_flags.assert_no_write()
-        if self.hybrid_claimed_success and self.route != "hybrid_deferred":
-            # Only a future hybrid runtime may claim success; policy never does.
-            raise ValueError("body route policy cannot claim hybrid success")
+        # Policy decisions never claim hybrid success — only resolve after packet evidence.
         if self.hybrid_claimed_success:
-            raise ValueError("M211 policy forbids hybrid_claimed_success=true")
+            raise ValueError("body route policy cannot claim hybrid success; resolve layer only")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -135,15 +134,26 @@ def decide_body_route(intent: BodyRouteIntent) -> BodyRouteDecision:
         )
 
     if intent.preference == "hybrid":
-        # Honest: hybrid runtime not composed in M211.
+        if intent.hybrid_runtime_available:
+            # Attempt hybrid at resolve; policy does not claim success yet.
+            return BodyRouteDecision(
+                route="hybrid",
+                reason="preference_hybrid_runtime_available",
+                hybrid_available=True,
+                diagnostics=(
+                    "prefer:hybrid",
+                    "adr008_adr009_binding",
+                    "runtime_available_attempt_at_resolve",
+                ),
+            )
         return BodyRouteDecision(
             route="hybrid_deferred",
-            reason="hybrid_requested_but_runtime_not_composed",
-            hybrid_available=intent.hybrid_runtime_available,
+            reason="hybrid_requested_but_runtime_not_available",
+            hybrid_available=False,
             diagnostics=(
                 "prefer:hybrid",
                 "adr008_adr009_binding",
-                "runtime_not_wired_m211",
+                "runtime_ports_not_injected",
                 "do_not_claim_hybrid_success",
             ),
         )
@@ -180,12 +190,12 @@ def decide_body_route(intent: BodyRouteIntent) -> BodyRouteDecision:
             reason="auto_fitz_last_resort",
             diagnostics=("auto", "fitz_offline_fallback", "not_hybrid"),
         )
-    if intent.hybrid_runtime_available:
+    if intent.hybrid_runtime_available and intent.has_local_pdf:
         return BodyRouteDecision(
-            route="hybrid_deferred",
-            reason="auto_hybrid_runtime_flag_but_not_composed",
+            route="hybrid",
+            reason="auto_hybrid_runtime_with_pdf",
             hybrid_available=True,
-            diagnostics=("auto", "hybrid_flag_true_but_m211_defers"),
+            diagnostics=("auto", "hybrid_runtime_available", "attempt_at_resolve"),
         )
     return BodyRouteDecision(
         route="unavailable",

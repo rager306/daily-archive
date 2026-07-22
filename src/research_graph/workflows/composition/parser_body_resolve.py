@@ -1,8 +1,9 @@
-"""Resolve article body for graph-prep (M211 composition).
+"""Resolve article body for graph-prep (M211/M212 composition).
 
-Executes BodyRouteDecision via injected ports/callables. Hybrid ADR-008/009 remains
-deferred: this module never reports hybrid success. May use network only through
-injected downloaders / FullTextProviderPort.
+Executes BodyRouteDecision via injected ports/callables.
+Hybrid ADR-008/009 success only when hybrid runtime returns body evidence;
+otherwise hybrid_deferred. May use network only through injected downloaders /
+FullTextProviderPort / hybrid sidecar ports.
 """
 
 from __future__ import annotations
@@ -27,6 +28,12 @@ from research_graph.infrastructure.corpus.ingestion.fetchers import (
     normalize_arxiv_ref,
 )
 from research_graph.infrastructure.corpus.ingestion.loader import load_article_source
+from research_graph.workflows.composition.hybrid_sidecar_runtime import (
+    GrobidSidecarPort,
+    OpenDataLoaderSidecarPort,
+    HybridRuntimeRequest,
+    run_hybrid_sidecar_runtime,
+)
 
 FitzExtractFn = Callable[[Path, Path], Path]
 
@@ -59,8 +66,9 @@ class ArticleBodyResult:
     def __post_init__(self) -> None:
         self.safety_flags.assert_no_write()
         self.decision.safety_flags.assert_no_write()
+        # Policy decision never claims hybrid; result may after packet evidence.
         if self.decision.hybrid_claimed_success:
-            raise ValueError("body resolve cannot claim hybrid success")
+            raise ValueError("body resolve decision cannot claim hybrid success")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -87,6 +95,7 @@ def _probe_intent(
     request: ArticleBodyRequest,
     *,
     fulltext_provider: FullTextProviderPort | None,
+    hybrid_runtime_available: bool = False,
 ) -> tuple[str, BodyRouteIntent, Path | None]:
     """Build routing intent and optional local path / arxiv id."""
     local_path: Path | None = None
@@ -118,7 +127,7 @@ def _probe_intent(
         has_arxiv_id=arxiv_id is not None,
         fulltext_provider_available=fulltext_provider is not None,
         fitz_fallback_allowed=request.fitz_fallback_allowed,
-        hybrid_runtime_available=False,
+        hybrid_runtime_available=hybrid_runtime_available,
     )
     return paper_id, intent, local_path
 
@@ -129,14 +138,62 @@ def resolve_article_body(
     fulltext_provider: FullTextProviderPort | None = None,
     html_downloader: _HtmlDownloaderLike | None = None,
     fitz_extract: FitzExtractFn | None = None,
+    grobid: GrobidSidecarPort | None = None,
+    opendataloader: OpenDataLoaderSidecarPort | None = None,
+    hybrid_pdf_path: Path | None = None,
 ) -> ArticleBodyResult:
     """Resolve a body text file path + honest route diagnostics."""
     work = request.work_dir
     body_dir = work / "body"
     body_dir.mkdir(parents=True, exist_ok=True)
-    paper_id, intent, local_path = _probe_intent(request, fulltext_provider=fulltext_provider)
+    hybrid_available = grobid is not None or opendataloader is not None
+    paper_id, intent, local_path = _probe_intent(
+        request,
+        fulltext_provider=fulltext_provider,
+        hybrid_runtime_available=hybrid_available,
+    )
     decision = decide_body_route(intent)
     diagnostics: list[str] = list(decision.diagnostics)
+
+    if decision.route == "hybrid":
+        pdf_path = hybrid_pdf_path
+        if pdf_path is None and local_path is not None and local_path.suffix.lower() == ".pdf":
+            pdf_path = local_path
+        runtime = run_hybrid_sidecar_runtime(
+            HybridRuntimeRequest(paper_id=paper_id, pdf_path=pdf_path),
+            grobid=grobid,
+            opendataloader=opendataloader,
+        )
+        diagnostics.extend(runtime.diagnostics)
+        packet = runtime.packet
+        if packet.hybrid_claimed_success and packet.body_markdown:
+            text_path = body_dir / f"{paper_id}.hybrid.body.md"
+            text_path.write_text(packet.body_markdown, encoding="utf-8")
+            return ArticleBodyResult(
+                paper_id=paper_id,
+                route="hybrid",
+                decision=decision,
+                body_path=text_path,
+                body_source_type="markdown",
+                body_chars=packet.body_chars,
+                diagnostics=tuple(diagnostics)
+                + (f"hybrid_route:{packet.route}", "hybrid_body_from_packet"),
+            )
+        # Honest fallback: no body evidence
+        return ArticleBodyResult(
+            paper_id=paper_id,
+            route="hybrid_deferred",
+            decision=decision,
+            body_path=None,
+            body_source_type="none",
+            body_chars=0,
+            diagnostics=tuple(diagnostics)
+            + (
+                f"hybrid_route:{packet.route}",
+                "hybrid_no_body_evidence",
+                "do_not_claim_hybrid_success",
+            ),
+        )
 
     if decision.route == "hybrid_deferred":
         return ArticleBodyResult(

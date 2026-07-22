@@ -54,7 +54,7 @@ def test_s01_decide_body_route_auto_and_preferences() -> None:
 
 
 def test_s01_policy_forbids_hybrid_success_flag() -> None:
-    with pytest.raises(ValueError, match="forbids hybrid_claimed_success"):
+    with pytest.raises(ValueError, match="cannot claim hybrid success"):
         BodyRouteDecision(
             route="hybrid_deferred",
             reason="x",

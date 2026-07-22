@@ -78,8 +78,9 @@ class SingleArticleRunResult:
         self.body.safety_flags.assert_no_write()
         if self.readiness is not None:
             self.readiness.package.safety_flags.assert_no_write()
+        # decision never claims hybrid; body route hybrid is evidence-backed
         if self.body.decision.hybrid_claimed_success:
-            raise ValueError("single article result cannot claim hybrid success")
+            raise ValueError("single article decision cannot claim hybrid success")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -96,7 +97,7 @@ class SingleArticleRunResult:
             "graph_writes_allowed": False,
             "production_import_attempted": False,
             "falkor_touched": False,
-            "hybrid_claimed_success": False,
+            "hybrid_claimed_success": self.body_route == "hybrid",
             "safety_flags": self.safety_flags.to_dict(),
         }
 
@@ -141,10 +142,18 @@ def run_single_article_pipeline(
     pdf_downloader: PDFDownloader | None = None,
     fulltext_provider: FullTextProviderPort | None = None,
     fitz_extract: FitzExtractFn | None = None,
+    grobid=None,
+    opendataloader=None,
+    hybrid_pdf_path: Path | None = None,
     write_artifacts: bool = True,
 ) -> SingleArticleRunResult:
     """Resolve body route, acquire optional PDF sidecar, run no-write readiness."""
     preference = _mode_to_preference(request.mode, request.prefer)
+    # If hybrid mode and local pdf, pass path for sidecar runtime.
+    pdf_for_hybrid = hybrid_pdf_path
+    src_path = Path(request.source)
+    if pdf_for_hybrid is None and src_path.is_file() and src_path.suffix.lower() == ".pdf":
+        pdf_for_hybrid = src_path.resolve()
     body = resolve_article_body(
         ArticleBodyRequest(
             source=request.source,
@@ -156,6 +165,9 @@ def run_single_article_pipeline(
         fulltext_provider=fulltext_provider,
         html_downloader=html_downloader,
         fitz_extract=fitz_extract,
+        grobid=grobid,
+        opendataloader=opendataloader,
+        hybrid_pdf_path=pdf_for_hybrid,
     )
     paper_id = body.paper_id
     records: list[dict[str, str]] = []
@@ -209,7 +221,7 @@ def run_single_article_pipeline(
             "package": readiness.package.to_dict() if readiness else None,
             "import_eligible": False,
             "graph_writes_allowed": False,
-            "hybrid_claimed_success": False,
+            "hybrid_claimed_success": body.route == "hybrid",
             "sources": records,
         }
         package_path.write_text(
@@ -233,7 +245,7 @@ def run_single_article_pipeline(
                     "sources": records,
                     "import_eligible": False,
                     "graph_writes_allowed": False,
-                    "hybrid_claimed_success": False,
+                    "hybrid_claimed_success": body.route == "hybrid",
                 },
                 indent=2,
                 sort_keys=True,
