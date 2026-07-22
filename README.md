@@ -306,13 +306,18 @@ Success rules (unchanged):
 - `import_eligible` / `graph_writes_allowed` always false on this path
 - Without ports → `hybrid_deferred` (never fake hybrid completeness)
 
-### M213 hybrid batch gate (10 local PDFs)
+### M213/M214 hybrid batch gate (10 → 20 local PDFs)
 
-Selection: `artifacts/m213-hybrid-gate/selection.json` (10 catalog PDFs, offline).
+Selections (offline, tracked):
+
+- 10-rung: `artifacts/m213-hybrid-gate/selection.json`
+- 20-rung: `artifacts/m213-hybrid-gate/selection-20.json` (first 10 identical to selection.json)
 
 ```bash
 # Offline / CI (inject fakes in tests — unit suite)
-uv run python -m pytest tests/test_m213_hybrid_batch_gate.py tests/test_m213_hybrid_gate_selection.py -q
+uv run python -m pytest tests/test_m213_hybrid_batch_gate.py \
+  tests/test_m213_hybrid_gate_selection.py \
+  tests/test_m214_hybrid_gate_selection20.py -q
 
 # Live batch (GROBID + ODL required; composition root only)
 uv run python - <<'PY'
@@ -321,19 +326,22 @@ from research_graph.workflows.composition.hybrid_batch_gate import (
     HybridBatchGateRequest,
     run_hybrid_batch_gate,
 )
+# 10-rung: selection.json + min_hybrid_success=7
+# 20-rung: selection-20.json + min_hybrid_success=14
 res = run_hybrid_batch_gate(HybridBatchGateRequest(
-    selection_path=Path("artifacts/m213-hybrid-gate/selection.json"),
-    work_dir=Path("artifacts/m213-hybrid-gate/runs"),
+    selection_path=Path("artifacts/m213-hybrid-gate/selection-20.json"),
+    work_dir=Path("artifacts/m213-hybrid-gate/runs-live-20"),
     enable_live_hybrid=True,
     ensure_hybrid_containers=True,
-    min_hybrid_success=7,  # first-rung target; tune with evidence
+    min_hybrid_success=14,
     repo_root=Path("."),
 ))
 print(res.to_dict()["gate_pass"], res.to_dict()["hybrid_success_count"], res.to_dict()["hybrid_deferred_count"])
 PY
 ```
 
-Output: `artifacts/m213-hybrid-gate/runs/batch-summary.json` (per-paper routes + aggregate).  
+Output: `batch-summary.json` under the chosen `work_dir` (per-paper routes + aggregate).  
+Runtime dirs `runs/`, `runs-live/`, `runs-live-20/` are gitignored.  
 Import/writes remain fail-closed regardless of hybrid success count.
 
 
