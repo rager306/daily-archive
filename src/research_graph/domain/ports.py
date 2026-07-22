@@ -22,16 +22,16 @@ types and the typed schema models. No LLM SDK, no graph driver, no parser.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
 import re
+from dataclasses import asdict, dataclass
 from typing import Any, Protocol, runtime_checkable
 
 from research_graph.domain.navigation import PageIndexDocument
 from research_graph.domain.schema import ExtractionPatch
 from research_graph.domain.semantic_chunks import EvidencePath, SemanticChunk
 from research_graph.domain.universal_kb.contracts import (
-    CandidatePacket,
     FORBIDDEN_DIAGNOSTIC_KEYS,
+    CandidatePacket,
     SafetyFlags,
 )
 
@@ -231,6 +231,36 @@ class GraphDBPort(Protocol):
 
 
 @runtime_checkable
+class GraphReadPort(Protocol):
+    """Backend-neutral read seam for hybrid retrieval and graph traversal (M206).
+
+    Justified two-adapter Port: Ladybug fixture connection + controlled Falkor
+    snapshot. Application and hybrid fusion must not import ladybug/falkordb.
+    Read-only: no writes, no import eligibility changes.
+    """
+
+    def seed_match(self, needle: str, *, limit: int = 10) -> list[dict[str, Any]]:
+        """Return seed graph candidates matching needle (metadata scores only)."""
+        ...
+
+    def lineage_expand(self, needle: str, *, limit: int = 10) -> list[dict[str, Any]]:
+        """Return one-hop lineage candidates for needle."""
+        ...
+
+    def evidence_paths_by_chunk(self) -> dict[str, tuple[str, str]]:
+        """Map semantic_chunk_id → (evidence_path_id, page_index_node_id)."""
+        ...
+
+    def page_neighbors(self, semantic_chunk_id: str) -> list[str]:
+        """Return neighboring semantic_chunk_ids via page-index NEXT links."""
+        ...
+
+    def integrity_scan(self) -> dict[str, Any]:
+        """Return orphan/broken/duplicate/schema violation counts (metadata only)."""
+        ...
+
+
+@runtime_checkable
 class FullTextProviderPort(Protocol):
     """Full-text provider boundary — arXiv id → markdown (D088 pivot).
 
@@ -258,6 +288,7 @@ __all__ = [
     "EXTRACTION_KIND_RELATIONS",
     "FullTextProviderPort",
     "GraphDBPort",
+    "GraphReadPort",
     "KnowledgeGraphProjectionPort",
     "LLMClientPort",
     "PROJECTION_SCHEMA_VERSION",

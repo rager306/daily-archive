@@ -37,8 +37,13 @@ def apply_cli_env_config(path: str | Path | None = None) -> None:
 
 
 from research_graph.application.analysis import DailyAnalysis, DailyAnalysisStatus  # noqa: E402
-from research_graph.infrastructure.corpus.sources.arxiv_client import (
-    ArxivClient,  # noqa: E402  # noqa: F401
+from research_graph.application.analyze_day import (  # noqa: E402
+    AnalyzeDayError,
+    AnalyzeDayUseCase,
+)
+from research_graph.infrastructure.corpus.sources.arxiv_client import (  # noqa: E402
+    ArxivClient,
+    ArxivFetchError,
 )
 from research_graph.infrastructure.evaluation.scoring import (  # noqa: E402  # noqa: F401
     ScoredPaper,
@@ -69,7 +74,11 @@ from research_graph.infrastructure.quality import (  # noqa: E402  # noqa: F401
     maintainability_report_to_json,
     write_maintainability_report,
 )
-from research_graph.infrastructure.retrieval.embedder import Embedder  # noqa: E402  # noqa: F401
+from research_graph.infrastructure.retrieval.embedder import (  # noqa: E402
+    Embedder,
+    FdAuthError,
+    FdDegradedEmbeddingsError,
+)
 from research_graph.infrastructure.retrieval.keyword_extractor import (
     KeywordExtractor,  # noqa: E402  # noqa: F401
 )
@@ -451,87 +460,36 @@ def write_daily_artifacts(analysis: DailyAnalysis) -> Path:
     return day_dir
 
 
-async def _process_paper_async(paper, extractor, scorer):
-    # Offload CPU-bound extraction and scoring to threadpool
-    loop = asyncio.get_running_loop()
-
-    def _extract_and_score():
-        if not isinstance(paper.title, str) or not isinstance(paper.abstract, str):
-            raise TypeError("fetched paper title and abstract must be strings")
-        keywords = extractor.extract_for_paper(paper.title, paper.abstract)
-        return scorer.score(paper, semschol=None, keywords=keywords)
-
-    return await loop.run_in_executor(None, _extract_and_score)
-
-
-async def _score_papers_bounded(
-    papers: list[Any],
-    extractor: Any,
-    scorer: Any,
-    *,
-    concurrency: int = ANALYSIS_SCORE_CONCURRENCY,
-) -> list[ScoredPaper]:
-    """Score fetched papers with an explicit concurrency budget."""
-    semaphore = asyncio.Semaphore(concurrency)
-
-    async def _bounded_score(paper: Any) -> ScoredPaper:
-        async with semaphore:
-            return await _process_paper_async(paper, extractor, scorer)
-
-    return await asyncio.gather(*(_bounded_score(paper) for paper in papers))
-
-
 async def run_analysis_async(run_date: date) -> DailyAnalysis:
-    """Build the normalized in-memory analysis result for one run date."""
+    """CLI adapter: delegate day analysis to application-owned AnalyzeDayUseCase.
+
+    M001 contracts (DailyAnalysis shape, state.json on typed I/O failure) stay
+    at this boundary. Composition of fetch/score/embed lives in application.
+    """
     _preferences = load_preferences()
 
-    client = ArxivClient()
-    extractor = KeywordExtractor()
-    scorer = ScoringEngine()
-
-    papers = client.fetch_papers(
-        start_date=run_date,
-        end_date=run_date,
+    use_case = AnalyzeDayUseCase(
+        paper_fetch=ArxivClient(),
+        keyword_extractor=KeywordExtractor(),
+        scorer=ScoringEngine(),
+        embedder_factory=Embedder,
         categories=CATEGORIES,
+        score_concurrency=ANALYSIS_SCORE_CONCURRENCY,
     )
-
-    if not papers:
-        from datetime import datetime
-
-        return DailyAnalysis(
-            run_date=run_date,
-            status="empty",
-            analysis_timestamp=datetime.now(UTC),
-            papers_fetched=0,
-            papers=[],
-            top_papers=[],
-        )
-
-    scored_papers = await _score_papers_bounded(papers, extractor, scorer)
-
-    embedder = Embedder()
     try:
-        abstracts = [p.paper.abstract for p in scored_papers]
-        embeddings = await embedder.embed_all(abstracts)
-
-        for scored, emb in zip(scored_papers, embeddings, strict=True):
-            scored.embedding = emb
-    finally:
-        await embedder.close()
-
-    scored_papers.sort(key=lambda x: x.score, reverse=True)
-    top_papers = scored_papers[:10]
-
-    from datetime import datetime
-
-    return DailyAnalysis(
-        run_date=run_date,
-        status="done",
-        analysis_timestamp=datetime.now(UTC),
-        papers_fetched=len(papers),
-        papers=scored_papers,
-        top_papers=top_papers,
-    )
+        return await use_case.run(run_date)
+    except ArxivFetchError as exc:
+        write_state_json(run_date, "failed", "fetch", exc.diagnostic)
+        raise
+    except FdAuthError as exc:
+        write_state_json(run_date, "failed", "embed", exc.diagnostic)
+        raise
+    except FdDegradedEmbeddingsError as exc:
+        write_state_json(run_date, "failed", "embed", exc.diagnostic)
+        raise
+    except AnalyzeDayError as exc:
+        write_state_json(run_date, "failed", exc.stage, exc.diagnostic)
+        raise
 
 
 def run_analysis(run_date: date) -> DailyAnalysis:
@@ -580,6 +538,17 @@ async def run_command_async(parsed_date: date, *, json_output: bool = False) -> 
     write_state_json(parsed_date, "running", "fetch")
     try:
         analysis = await run_analysis_async(parsed_date)
+    except ArxivFetchError as exc:
+        # Prefer the typed diagnostic; run_analysis_async may already have written
+        # stage=fetch, but re-write failed/failed for the outer orchestrator contract.
+        write_state_json(parsed_date, "failed", "failed", exc.diagnostic)
+        raise
+    except (FdAuthError, FdDegradedEmbeddingsError) as exc:
+        write_state_json(parsed_date, "failed", "failed", exc.diagnostic)
+        raise
+    except AnalyzeDayError as exc:
+        write_state_json(parsed_date, "failed", "failed", exc.diagnostic)
+        raise
     except Exception as exc:
         write_state_json(parsed_date, "failed", "failed", str(exc))
         raise

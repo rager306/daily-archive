@@ -48,6 +48,10 @@ class RLMGraphTraversalConfig:
     max_steps: int = 4
     max_neighbors_per_step: int = 3
     top_k: int = 4
+    # M206 S05: explicit hop / query-token / wall-clock budgets (local fixture only).
+    max_hops: int = 4
+    max_query_tokens: int = 256
+    max_wall_clock_ms: int = 5000
 
     def __post_init__(self) -> None:
         if self.max_steps < 0:
@@ -56,6 +60,15 @@ class RLMGraphTraversalConfig:
             raise ValueError("invalid_config:max_neighbors_per_step_negative")
         if self.top_k < 0:
             raise ValueError("invalid_config:top_k_negative")
+        if self.max_hops < 0:
+            raise ValueError("invalid_config:max_hops_negative")
+        if self.max_query_tokens < 0:
+            raise ValueError("invalid_config:max_query_tokens_negative")
+        if self.max_wall_clock_ms < 0:
+            raise ValueError("invalid_config:max_wall_clock_ms_negative")
+        # Hop budget cannot exceed step budget.
+        if self.max_hops < self.max_steps:
+            object.__setattr__(self, "max_steps", self.max_hops)
 
 
 @dataclass(frozen=True)

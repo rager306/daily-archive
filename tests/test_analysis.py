@@ -84,7 +84,14 @@ class FakeKeywordExtractor:
 class FakeScoringEngine:
     calls: list[tuple[ArxivPaper, object, list[str]]] = []
 
-    def score(self, paper: ArxivPaper, semschol: object, keywords: list[str]) -> ScoredPaper:
+    def score(
+        self,
+        paper: ArxivPaper,
+        semschol: object,
+        keywords: list[str],
+        *,
+        run_date=None,
+    ) -> ScoredPaper:
         self.calls.append((paper, semschol, keywords))
         # Deliberately make lower-index papers score higher than higher-index papers
         # so the test fails if run_analysis preserves fetch order instead of sorting.
@@ -94,11 +101,12 @@ class FakeScoringEngine:
 
 class FakeEmbedder:
     calls: list[list[str]] = []
+    last_degraded = None
 
     async def embed_all(self, texts: list[str]) -> list[list[float]]:
-        # Deterministic local-only vectors; one zero-vector per text keeps sorted-by-score invariants intact.
+        # Deterministic non-zero local vectors (M199 S02 fail-closed rejects all-zero batches).
         FakeEmbedder.calls.append(list(texts))
-        return [[0.0, 0.0, 0.0] for _ in texts]
+        return [[0.1, 0.2, 0.3] for _ in texts]
 
     async def close(self) -> None:
         return None
@@ -174,7 +182,7 @@ def test_run_analysis_returns_done_daily_analysis_sorted_and_capped(
     assert len(FakeScoringEngine.calls) == 12
     assert len(FakeEmbedder.calls) == 1
     assert len(FakeEmbedder.calls[0]) == 12
-    assert all(paper.embedding == [0.0, 0.0, 0.0] for paper in analysis.papers)
+    assert all(paper.embedding == [0.1, 0.2, 0.3] for paper in analysis.papers)
 
 
 def test_run_analysis_returns_empty_without_scoring_or_persistence(
@@ -198,26 +206,56 @@ def test_run_analysis_returns_empty_without_scoring_or_persistence(
 
 @pytest.mark.asyncio
 async def test_score_papers_bounded_limits_concurrency(monkeypatch: pytest.MonkeyPatch) -> None:
-    import research_graph.cli as cli
+    from research_graph.application.analyze_day import AnalyzeDayUseCase
 
     active = 0
     max_active = 0
+    papers = [make_paper(index) for index in range(1, 7)]
 
-    async def fake_process_paper_async(
-        paper: ArxivPaper, _extractor: object, _scorer: object
-    ) -> ScoredPaper:
+    class Keywords:
+        def extract_for_paper(self, title, abstract):
+            return ["kw"]
+
+    class Scorer:
+        def score(self, paper, semschol, keywords, *, run_date=None):
+            return make_scored(paper, score=float(int(paper.id.split(".")[-1])))
+
+    class _UnusedFetch:
+        def fetch_papers(self, start_date, end_date=None, categories=None):  # pragma: no cover
+            raise AssertionError("paper_fetch unused in concurrency unit test")
+
+    class _UnusedEmbedder:
+        last_degraded = False
+
+        async def embed_all(self, texts):  # pragma: no cover
+            raise AssertionError("embedder unused in concurrency unit test")
+
+        async def close(self) -> None:  # pragma: no cover
+            return None
+
+    uc = AnalyzeDayUseCase(
+        paper_fetch=_UnusedFetch(),
+        keyword_extractor=Keywords(),
+        scorer=Scorer(),
+        embedder_factory=lambda: _UnusedEmbedder(),
+        categories=["cs.AI"],
+        score_concurrency=2,
+    )
+
+    real_process = uc._process_paper
+
+    async def tracked(paper, *, run_date):
         nonlocal active, max_active
         active += 1
         max_active = max(max_active, active)
-        await asyncio.sleep(0.01)
-        active -= 1
-        return make_scored(paper, score=float(int(paper.id.split(".")[-1])))
+        await asyncio.sleep(0.02)
+        try:
+            return await real_process(paper, run_date=run_date)
+        finally:
+            active -= 1
 
-    monkeypatch.setattr(cli, "_process_paper_async", fake_process_paper_async)
-    papers = [make_paper(index) for index in range(1, 7)]
-
-    scored = await cli._score_papers_bounded(papers, object(), object(), concurrency=2)
-
+    uc._process_paper = tracked  # type: ignore[method-assign]
+    scored = await uc._score_papers_bounded(papers, run_date=RUN_DATE)
     assert max_active == 2
     assert [paper.paper.id for paper in scored] == [paper.id for paper in papers]
 
@@ -240,7 +278,7 @@ async def test_run_analysis_async_returns_done_daily_analysis(
         "2605.00003",
     ]
     assert len(FakeEmbedder.calls) == 1
-    assert all(paper.embedding == [0.0, 0.0, 0.0] for paper in analysis.papers)
+    assert all(paper.embedding == [0.1, 0.2, 0.3] for paper in analysis.papers)
 
 
 @pytest.mark.asyncio

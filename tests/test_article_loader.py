@@ -125,11 +125,13 @@ def test_loads_markdown_with_text_payload_provenance_and_completed_events(tmp_pa
         "source_id": result.source_id,
         "source_path": str(source_path),
         "source_type": "markdown",
+        "source_kind": "markdown",
         "media_type": "text/markdown",
         "sha256": result.sha256,
         "byte_size": result.byte_size,
         "parser_name": "markdown_loader",
         "loader_name": "local_article_loader",
+        "network_fetch_attempted": False,
     }
 
     events = _read_events(log_path)

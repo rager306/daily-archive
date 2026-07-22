@@ -154,6 +154,125 @@ class FdEmbeddingError(RuntimeError):
     """Raised when fd returns an unusable embedding response."""
 
 
+MIN_FD_API_KEY_LEN = 16
+ZERO_VECTOR_EPS = 1e-12
+
+FdErrorCode = str  # FD_AUTH_MISSING | FD_AUTH_INVALID | FD_DEGRADED_ZERO_VECTORS | ...
+
+
+@dataclass(frozen=True)
+class DegradedEmbeddingSignal:
+    """Explicit marker that zero (or otherwise unusable) vectors were produced."""
+
+    reason: str
+    batch_size: int
+    dimensions: int
+    code: str = "FD_DEGRADED_ZERO_VECTORS"
+    service: str = "fd_embedder"
+
+    @property
+    def diagnostic(self) -> str:
+        return (
+            f"{self.service}:{self.code} exhausted after 0 retries "
+            f"reason={self.reason} batch_size={self.batch_size} dims={self.dimensions}"
+        )
+
+
+class FdAuthError(RuntimeError):
+    """Typed pre-flight auth failure for FD_API_KEY (D113 / M199 S02)."""
+
+    def __init__(self, *, code: str, message: str, service: str = "fd_embedder") -> None:
+        self.code = code
+        self.service = service
+        self.message = message
+        self.retry_count = 0
+        self.outcome = "exhausted"
+        super().__init__(self.diagnostic)
+
+    @property
+    def diagnostic(self) -> str:
+        return f"{self.service}:{self.code} {self.outcome} after 0 retries: {self.message}"
+
+
+class FdDegradedEmbeddingsError(RuntimeError):
+    """Downstream-facing fail-closed error when embeddings are degraded/all-zero."""
+
+    def __init__(
+        self,
+        *,
+        message: str,
+        reason: str,
+        batch_size: int = 0,
+        dimensions: int = 0,
+        code: str = "FD_DEGRADED_ZERO_VECTORS",
+        service: str = "fd_embedder",
+    ) -> None:
+        self.code = code
+        self.service = service
+        self.message = message
+        self.reason = reason
+        self.batch_size = batch_size
+        self.dimensions = dimensions
+        self.retry_count = 0
+        self.outcome = "exhausted"
+        super().__init__(self.diagnostic)
+
+    @property
+    def diagnostic(self) -> str:
+        return (
+            f"{self.service}:{self.code} {self.outcome} after 0 retries "
+            f"reason={self.reason}: {self.message}"
+        )
+
+
+def is_zero_vector(vector: Sequence[float], *, eps: float = ZERO_VECTOR_EPS) -> bool:
+    """True when every component is within eps of zero."""
+    if not vector:
+        return True
+    return all(abs(float(x)) <= eps for x in vector)
+
+
+def is_zero_embedding_batch(
+    embeddings: Sequence[Sequence[float]], *, eps: float = ZERO_VECTOR_EPS
+) -> bool:
+    """True when the batch is non-empty and every vector is all-zero."""
+    if not embeddings:
+        return False
+    return all(is_zero_vector(vec, eps=eps) for vec in embeddings)
+
+
+def validate_fd_api_key(api_key: str | None) -> str:
+    """Pre-flight FD_API_KEY presence/format check (no network).
+
+    Returns the stripped key on success; raises FdAuthError otherwise.
+    Does not log or echo the key value.
+    """
+    if api_key is None:
+        raise FdAuthError(
+            code="FD_AUTH_MISSING",
+            message="FD_API_KEY is missing",
+        )
+    stripped = api_key.strip()
+    if not stripped:
+        raise FdAuthError(
+            code="FD_AUTH_MISSING",
+            message="FD_API_KEY is empty",
+        )
+    if len(stripped) < MIN_FD_API_KEY_LEN:
+        raise FdAuthError(
+            code="FD_AUTH_INVALID",
+            message=f"FD_API_KEY length below minimum ({MIN_FD_API_KEY_LEN})",
+        )
+    # Placeholder / example values that previously caused silent zero-vector degradation.
+    lowered = stripped.lower()
+    if lowered.startswith("<") or "your-fd-api-key" in lowered or stripped in {"changeme", "test"}:
+        raise FdAuthError(
+            code="FD_AUTH_INVALID",
+            message="FD_API_KEY looks like a placeholder",
+        )
+    return stripped
+
+
 def _raise_if_running_loop(sync_name: str, async_name: str) -> None:
     """Fail explicitly when a sync wrapper is called from async code."""
     try:
@@ -182,6 +301,7 @@ class Embedder:
         circuit_open_seconds: float = DEFAULT_CIRCUIT_OPEN_SECONDS,
         graceful_degradation_enabled: bool = DEFAULT_GRACEFUL_DEGRADATION_ENABLED,
         api_key: str | None = DEFAULT_API_KEY,
+        require_api_key: bool = True,
         client: httpx.AsyncClient | None = None,
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
         time_fn: Callable[[], float] = time.monotonic,
@@ -200,6 +320,8 @@ class Embedder:
             circuit_open_seconds: Cooldown before probing fd in half-open state.
             graceful_degradation_enabled: Return zero embeddings instead of raising when the circuit opens.
             api_key: Optional fd API key used only as a bearer token header.
+            require_api_key: When True (default), pre-flight validate_fd_api_key before HTTP.
+                Tests that inject a mock client without a key may pass require_api_key=False.
             client: Optional injected AsyncClient for tests or shared lifecycle management.
             sleep: Async sleep function, injectable to keep retry tests fast.
             time_fn: Monotonic clock, injectable for circuit-breaker tests.
@@ -216,10 +338,12 @@ class Embedder:
         self.circuit_failure_threshold = circuit_failure_threshold
         self.circuit_open_seconds = circuit_open_seconds
         self.graceful_degradation_enabled = graceful_degradation_enabled
+        self.require_api_key = require_api_key
         self._client = client
         self._owns_client = client is None
         self._sleep = sleep
         self._time_fn = time_fn
+        self.last_degraded: DegradedEmbeddingSignal | None = None
 
         self.request_count = 0
         self.error_count = 0
@@ -255,15 +379,23 @@ class Embedder:
             await self._client.aclose()
         self._client = None
 
+    def preflight_auth(self) -> None:
+        """D113 pre-flight: reject missing/placeholder FD_API_KEY before HTTP."""
+        if not self.require_api_key:
+            return
+        validate_fd_api_key(self.api_key)
+
     async def embed_batch(self, texts: list[str]) -> list[list[float]]:
         """Embed a single batch of text through fd.
 
         Returns zero embeddings when the circuit is open so callers can degrade
-        gracefully without writing partial or inconsistent graph state.
+        gracefully without writing partial or inconsistent graph state. Zero
+        batches always set ``last_degraded`` for fail-closed downstream checks.
         """
         if not texts:
             return []
 
+        self.preflight_auth()
         self._refresh_circuit_state()
         if self._circuit_state == CIRCUIT_OPEN:
             if self.graceful_degradation_enabled:
@@ -303,6 +435,10 @@ class Embedder:
                 embeddings = self._parse_embeddings_response(
                     response.json(), expected_count=len(texts)
                 )
+                if is_zero_embedding_batch(embeddings):
+                    # Server returned all-zero vectors (auth/proxy soft-fail path).
+                    return self._zero_embeddings(texts, reason="response_all_zero")
+                self.last_degraded = None
                 self._record_success()
                 logger.info(
                     "fd embedding request succeeded",
@@ -420,6 +556,12 @@ class Embedder:
             )
 
     def _zero_embeddings(self, texts: list[str], *, reason: str) -> list[list[float]]:
+        signal = DegradedEmbeddingSignal(
+            reason=reason,
+            batch_size=len(texts),
+            dimensions=self.dimensions,
+        )
+        self.last_degraded = signal
         logger.warning(
             "fd embedding graceful degradation returned zero embeddings",
             extra={
@@ -428,6 +570,7 @@ class Embedder:
                 "batch_size": len(texts),
                 "dimensions": self.dimensions,
                 "circuit_state": self._circuit_state,
+                "degraded_code": signal.code,
             },
         )
         return [[0.0] * self.dimensions for _ in texts]

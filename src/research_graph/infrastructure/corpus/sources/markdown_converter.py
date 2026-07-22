@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import re
 import shutil
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 import httpx
@@ -25,6 +26,8 @@ ARXIV2MD_URL = "https://arxiv2md.org/api/markdown"
 HTML_CUTOFF_YEAR = 2020
 CACHE_DIR = Path.home() / ".arxiv_cache"
 MARKER_TIMEOUT_SECONDS = 600  # 10 minutes
+ARXIV2MD_MAX_RETRY_ATTEMPTS = 3
+ARXIV2MD_BACKOFF_SECONDS: tuple[float, ...] = (1.0, 5.0, 15.0)
 
 
 # Canonical ConversionResult lives in the domain (D088, FullTextProviderPort
@@ -36,9 +39,19 @@ from research_graph.domain.ports import ConversionResult  # noqa: E402
 class MDConverter:
     """Converts arXiv papers to markdown using arxiv2md REST + PDF fallback."""
 
-    def __init__(self, *, pdf_downloader: PDFDownloader | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        pdf_downloader: PDFDownloader | None = None,
+        sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+        max_retry_attempts: int = ARXIV2MD_MAX_RETRY_ATTEMPTS,
+        backoff_seconds: tuple[float, ...] = ARXIV2MD_BACKOFF_SECONDS,
+    ) -> None:
         self._http_client: httpx.AsyncClient | None = None
         self._pdf_downloader = pdf_downloader or PDFDownloader(cache_dir=CACHE_DIR)
+        self._sleep = sleep
+        self._max_retry_attempts = max_retry_attempts
+        self._backoff_seconds = backoff_seconds
 
     async def _get_http_client(self) -> httpx.AsyncClient:
         if self._http_client is None:
@@ -84,18 +97,39 @@ class MDConverter:
         return result
 
     async def _try_arxiv2md(self, arxiv_id: str) -> ConversionResult:
-        """Call arxiv2md.org REST API to convert paper to markdown.
+        """Call arxiv2md.org REST API with bounded retry before Marker fallback.
 
-        Args:
-            arxiv_id: ArXiv paper ID.
-
-        Returns:
-            ConversionResult with markdown or error.
+        Retries transient failures (timeout, connect, 429, 5xx) up to
+        ``_max_retry_attempts`` with ``_backoff_seconds``. Non-transient 404
+        fails fast. Exhaustion returns ConversionResult.error (convert() may
+        still attempt Marker).
         """
         client = await self._get_http_client()
-        try:
-            response = await client.get(ARXIV2MD_URL, params={"url": arxiv_id})
-            if response.status_code == 200:
+        last_error = "arxiv2md API failure"
+        retries = 0
+
+        for attempt in range(self._max_retry_attempts + 1):
+            try:
+                response = await client.get(ARXIV2MD_URL, params={"url": arxiv_id})
+            except httpx.TimeoutException:
+                last_error = "arxiv2md API timeout"
+                if attempt >= self._max_retry_attempts:
+                    break
+                delay = self._backoff_seconds[min(attempt, len(self._backoff_seconds) - 1)]
+                retries += 1
+                await self._sleep(delay)
+                continue
+            except httpx.HTTPError as exc:
+                last_error = f"arxiv2md API error: {type(exc).__name__}"
+                if attempt >= self._max_retry_attempts:
+                    break
+                delay = self._backoff_seconds[min(attempt, len(self._backoff_seconds) - 1)]
+                retries += 1
+                await self._sleep(delay)
+                continue
+
+            status = response.status_code
+            if status == 200:
                 quality = assess_full_text_quality(response.text)
                 if quality.status != "ok":
                     return ConversionResult(
@@ -111,30 +145,32 @@ class MDConverter:
                     method="arxiv2md",
                     error=None,
                 )
-            elif response.status_code == 404:
+            if status == 404:
                 return ConversionResult(
                     markdown=None,
                     method="arxiv2md",
                     error=f"Paper {arxiv_id} not found (404)",
                 )
-            else:
-                return ConversionResult(
-                    markdown=None,
-                    method="arxiv2md",
-                    error=f"arxiv2md API returned status {response.status_code}",
-                )
-        except httpx.TimeoutException:
+            if status == 429 or 500 <= status <= 599:
+                last_error = f"arxiv2md API returned status {status}"
+                if attempt >= self._max_retry_attempts:
+                    break
+                delay = self._backoff_seconds[min(attempt, len(self._backoff_seconds) - 1)]
+                retries += 1
+                await self._sleep(delay)
+                continue
             return ConversionResult(
                 markdown=None,
                 method="arxiv2md",
-                error="arxiv2md API timeout",
+                error=f"arxiv2md API returned status {status}",
             )
-        except httpx.HTTPError as exc:
-            return ConversionResult(
-                markdown=None,
-                method="arxiv2md",
-                error=f"arxiv2md API error: {exc}",
-            )
+
+        suffix = f" after {retries} retries" if retries else ""
+        return ConversionResult(
+            markdown=None,
+            method="arxiv2md",
+            error=f"{last_error}{suffix}",
+        )
 
     async def _try_marker(self, arxiv_id: str) -> ConversionResult:
         """Run Marker CLI to convert PDF to markdown, downloading the PDF if needed.

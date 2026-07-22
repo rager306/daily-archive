@@ -180,3 +180,52 @@ class TestScoringEngine:
 
         # Multiple categories - takes max
         assert engine._preference_score(["cs.AI", "cs.SI"]) == 1.5
+
+
+class TestRecencyRunDateContract:
+    """M199 S03: recency same-day-run contract."""
+
+    def test_recency_uses_run_date_not_wall_clock(self):
+        engine = ScoringEngine()
+        run_date = date(2026, 5, 14)
+        paper = ArxivPaper(
+            id="2501.1",
+            title="t",
+            abstract="a",
+            authors=["a"],
+            published=date(2026, 5, 14),
+            updated=date(2026, 5, 14),
+            categories=["cs.AI"],
+            pdf_url="https://arxiv.org/pdf/2501.1.pdf",
+        )
+        scored = engine.score(paper, None, ["kw"], run_date=run_date)
+        assert scored.breakdown["recency"] == 10.0
+
+        older = ArxivPaper(
+            id="2501.2",
+            title="t",
+            abstract="a",
+            authors=["a"],
+            published=date(2026, 5, 1),
+            updated=date(2026, 5, 1),
+            categories=["cs.AI"],
+            pdf_url="https://arxiv.org/pdf/2501.2.pdf",
+        )
+        scored_old = engine.score(older, None, ["kw"], run_date=run_date)
+        assert scored_old.breakdown["recency"] == 0.5
+
+    def test_default_citations_weight_is_zero(self):
+        engine = ScoringEngine()
+        assert engine.weights is not None
+        assert engine.weights["citations"] == 0.0
+        assert abs(sum(engine.weights.values()) - 1.0) < 1e-9
+
+    def test_recency_score_as_of_kwarg(self):
+        engine = ScoringEngine()
+        as_of = date(2026, 5, 14)
+        assert engine._recency_score(date(2026, 5, 14), as_of=as_of) == 10.0
+        assert engine._recency_score(date(2026, 5, 13), as_of=as_of) == 8.0
+        assert engine._recency_score(date(2026, 5, 11), as_of=as_of) == 5.0
+        assert engine._recency_score(date(2026, 5, 7), as_of=as_of) == 2.0
+        assert engine._recency_score(date(2026, 4, 1), as_of=as_of) == 0.5
+

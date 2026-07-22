@@ -81,6 +81,35 @@ class DisabledFalkorProjectionAdapter(DisabledBackendProjectionAdapter):
     def __init__(self, *, dry_run: bool = False) -> None:
         super().__init__(backend="falkordb", dry_run=dry_run)
 
+    def project(self, request: ProjectionRequest) -> ProjectionResult:
+        result = super().project(request)
+        # Falkor-specific no-write translation metadata (M203 S03).
+        # Does not import SDK or execute Cypher; only annotates diagnostics.
+        extra = (
+            ProjectionDiagnostic(
+                code="falkordb_no_write_translation",
+                phase="falkordb_projection",
+            ),
+            ProjectionDiagnostic(
+                code=(
+                    "falkordb_writes_blocked"
+                    if not self.dry_run
+                    else "falkordb_dry_run_plan_ready"
+                ),
+                phase="falkordb_projection",
+            ),
+        )
+        return ProjectionResult(
+            schema_version=result.schema_version,
+            backend=result.backend,
+            node_refs=result.node_refs,
+            edge_refs=result.edge_refs,
+            evidence_refs=result.evidence_refs,
+            provenance_refs=result.provenance_refs,
+            diagnostics=result.diagnostics + extra,
+            safety_flags=result.safety_flags,
+        )
+
 
 def _projection_edge_ref(ref: str) -> ProjectionEdgeRef:
     body = ref.removeprefix("edge:")

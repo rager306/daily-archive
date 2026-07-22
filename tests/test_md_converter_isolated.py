@@ -103,7 +103,12 @@ async def test_arxiv2md_404(temp_cache, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_arxiv2md_timeout(temp_cache, monkeypatch):
-    converter = MDConverter()
+    sleeps: list[float] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+
+    converter = MDConverter(sleep=fake_sleep, max_retry_attempts=2, backoff_seconds=(0.0, 0.0))
 
     class MockClient:
         async def get(self, url, params):
@@ -128,6 +133,8 @@ async def test_arxiv2md_timeout(temp_cache, monkeypatch):
     assert result.markdown is None
     assert result.error is not None
     assert "timeout" in result.error
+    assert "retries" in result.error
+    assert len(sleeps) == 2
 
 
 @pytest.mark.asyncio
@@ -361,7 +368,12 @@ async def test_get_http_client():
 
 @pytest.mark.asyncio
 async def test_arxiv2md_httperror(temp_cache, monkeypatch):
-    converter = MDConverter()
+    sleeps: list[float] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+
+    converter = MDConverter(sleep=fake_sleep, max_retry_attempts=2, backoff_seconds=(0.0, 0.0))
 
     class MockClient:
         async def get(self, url, params):
@@ -385,7 +397,9 @@ async def test_arxiv2md_httperror(temp_cache, monkeypatch):
     result = await converter.convert("2101.12345")
     assert result.markdown is None
     assert result.error is not None
-    assert "arxiv2md API error: Request failed" in result.error
+    assert "arxiv2md API error: RequestError" in result.error
+    assert "retries" in result.error
+    assert len(sleeps) == 2
 
 
 @pytest.mark.asyncio
@@ -511,3 +525,123 @@ async def test_marker_no_markdown_output(temp_cache, monkeypatch):
     assert result.markdown is None
     assert result.error is not None
     assert "Marker produced no markdown file" in result.error
+
+
+@pytest.mark.asyncio
+async def test_arxiv2md_retries_timeout_then_succeeds(temp_cache, monkeypatch):
+    sleeps: list[float] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+
+    converter = MDConverter(sleep=fake_sleep, max_retry_attempts=3, backoff_seconds=(0.01, 0.02, 0.03))
+    calls = {"n": 0}
+
+    class MockClient:
+        async def get(self, url, params):
+            calls["n"] += 1
+            if calls["n"] < 3:
+                raise httpx.TimeoutException("Timeout")
+
+            class Ok:
+                status_code = 200
+                text = "# Recovered\n\nBody after retry with enough content for quality gate."
+
+            return Ok()
+
+        async def aclose(self):
+            pass
+
+    async def get_client():
+        return MockClient()
+
+    monkeypatch.setattr(converter, "_get_http_client", get_client)
+    # bypass quality gate if needed by patching assess
+    monkeypatch.setattr(
+        "research_graph.infrastructure.corpus.sources.markdown_converter.assess_full_text_quality",
+        lambda text: type("Q", (), {"status": "ok", "fallback_reason": None})(),
+    )
+
+    result = await converter.convert("2101.12345")
+    assert result.markdown is not None
+    assert result.method == "arxiv2md"
+    assert calls["n"] == 3
+    assert len(sleeps) == 2
+
+
+@pytest.mark.asyncio
+async def test_arxiv2md_timeout_exhaustion_reports_retries(temp_cache, monkeypatch):
+    sleeps: list[float] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+
+    converter = MDConverter(sleep=fake_sleep, max_retry_attempts=2, backoff_seconds=(0.01, 0.02))
+
+    class MockClient:
+        async def get(self, url, params):
+            raise httpx.TimeoutException("Timeout")
+
+        async def aclose(self):
+            pass
+
+    async def get_client():
+        return MockClient()
+
+    monkeypatch.setattr(converter, "_get_http_client", get_client)
+    monkeypatch.setattr(converter, "_needs_marker_fallback", lambda x: False)
+
+    class FailingDownloader:
+        def download(self, arxiv_id, pdf_url):
+            raise RuntimeError("offline")
+
+    converter._pdf_downloader = FailingDownloader()  # pyrefly: ignore[bad-assignment]
+
+    result = await converter.convert("2101.12345")
+    assert result.markdown is None
+    assert result.error is not None
+    assert "timeout" in result.error
+    assert "retries" in result.error
+    assert len(sleeps) == 2
+
+
+@pytest.mark.asyncio
+async def test_arxiv2md_404_no_retry(temp_cache, monkeypatch):
+    sleeps: list[float] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+
+    converter = MDConverter(sleep=fake_sleep)
+    calls = {"n": 0}
+
+    class MockClient:
+        async def get(self, url, params):
+            calls["n"] += 1
+
+            class R:
+                status_code = 404
+
+            return R()
+
+        async def aclose(self):
+            pass
+
+    async def get_client():
+        return MockClient()
+
+    monkeypatch.setattr(converter, "_get_http_client", get_client)
+    monkeypatch.setattr(converter, "_needs_marker_fallback", lambda x: False)
+
+    class FailingDownloader:
+        def download(self, arxiv_id, pdf_url):
+            raise RuntimeError("offline")
+
+    converter._pdf_downloader = FailingDownloader()  # pyrefly: ignore[bad-assignment]
+
+    result = await converter.convert("2101.12345")
+    assert result.markdown is None
+    assert "not found" in (result.error or "")
+    assert calls["n"] == 1
+    assert sleeps == []
+

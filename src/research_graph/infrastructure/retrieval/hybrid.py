@@ -3,8 +3,9 @@
 """Fixture-level hybrid retrieval over vectors and the scientific KG.
 
 This module intentionally stays deterministic and local-only: callers provide
-query vectors directly, graph expansion uses read-only LadybugDB queries, and no
-embedding service, paper text, credentials, or live network dependency is used.
+query vectors directly, graph expansion uses the backend-neutral GraphReadPort
+(or a legacy Ladybug connection via LadybugGraphReadAdapter), and no embedding
+service, paper text, credentials, or live network dependency is used.
 """
 
 from __future__ import annotations
@@ -15,7 +16,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, cast
 
-import ladybug
+from research_graph.domain.ports import GraphReadPort
+from research_graph.infrastructure.graph.graph_read_adapters import LadybugGraphReadAdapter
 
 
 class HybridRetrievalMode(StrEnum):
@@ -107,14 +109,27 @@ class InMemoryVectorCandidateIndex:
 
 
 def retrieve_hybrid(
-    conn: ladybug.Connection,
-    query: HybridRetrievalQuery,
+    conn: Any = None,
+    query: HybridRetrievalQuery | None = None,
     *,
+    graph_read: GraphReadPort | None = None,
     vector_index: InMemoryVectorCandidateIndex | None = None,
     vector_weight: float = 0.7,
     graph_weight: float = 0.3,
 ) -> HybridRetrievalResponse:
-    """Retrieve fixture candidates with vector scoring, graph expansion, or both."""
+    """Retrieve fixture candidates with vector scoring, graph expansion, or both.
+
+    Prefer ``graph_read=`` (GraphReadPort). Legacy ``conn=`` (Ladybug connection)
+    is still accepted and wrapped via LadybugGraphReadAdapter for compatibility.
+    """
+    if query is None:
+        raise TypeError("query is required")
+    reader = graph_read
+    if reader is None:
+        if conn is None:
+            raise TypeError("graph_read= or legacy conn= is required")
+        reader = LadybugGraphReadAdapter(conn)
+
     use_vector = query.mode in {HybridRetrievalMode.VECTOR_ONLY, HybridRetrievalMode.HYBRID}
     use_graph = query.mode in {HybridRetrievalMode.GRAPH_ONLY, HybridRetrievalMode.HYBRID}
 
@@ -126,9 +141,9 @@ def retrieve_hybrid(
         candidates=[], diagnostics=_empty_graph_diagnostics(query.text, reason=None)
     )
     if use_graph:
-        graph_expansion = _expand_graph_candidates(conn, query.text, limit=query.limit)
+        graph_expansion = _expand_graph_candidates(reader, query.text, limit=query.limit)
 
-    evidence_by_chunk = _evidence_paths_by_chunk(conn)
+    evidence_by_chunk = reader.evidence_paths_by_chunk()
     results = _fuse_results(
         mode=query.mode,
         vector_candidates=vector_candidates,
@@ -256,19 +271,27 @@ def _cosine_similarity(left: Sequence[float], right: Sequence[float]) -> float:
     return dot / (left_norm * right_norm)
 
 
-def _expand_graph_candidates(conn: ladybug.Connection, text: str, *, limit: int) -> GraphExpansion:
-    """Expand SCI KG neighborhoods through read-only evidence-backed queries."""
+def _expand_graph_candidates(
+    graph_read: GraphReadPort | Any, text: str, *, limit: int
+) -> GraphExpansion:
+    """Expand SCI KG neighborhoods through GraphReadPort (or legacy conn)."""
     needle = text.casefold().strip()
     if not needle:
         return GraphExpansion(
             candidates=[], diagnostics=_empty_graph_diagnostics(text, reason="blank_query")
         )
 
+    reader: GraphReadPort
+    if hasattr(graph_read, "seed_match") and hasattr(graph_read, "lineage_expand"):
+        reader = cast(GraphReadPort, graph_read)
+    else:
+        reader = LadybugGraphReadAdapter(graph_read)
+
     rows: dict[str, GraphCandidate] = {}
-    for candidate in _direct_scientific_kg_candidates(conn, needle):
-        _keep_best_graph_candidate(rows, candidate)
-    for candidate in _relation_neighborhood_candidates(conn, needle):
-        _keep_best_graph_candidate(rows, candidate)
+    for raw in reader.seed_match(text, limit=limit):
+        _keep_best_graph_candidate(rows, _graph_candidate_from_row(raw))
+    for raw in reader.lineage_expand(text, limit=limit):
+        _keep_best_graph_candidate(rows, _graph_candidate_from_row(raw))
 
     candidates = list(rows.values())
     candidates.sort(
@@ -291,79 +314,19 @@ def _expand_graph_candidates(conn: ladybug.Connection, text: str, *, limit: int)
     )
 
 
+def _graph_candidate_from_row(raw: Mapping[str, Any]) -> GraphCandidate:
+    return GraphCandidate(
+        semantic_chunk_id=str(raw["semantic_chunk_id"]),
+        page_index_node_id=str(raw["page_index_node_id"]),
+        evidence_path_id=str(raw["evidence_path_id"]),
+        graph_score=float(raw.get("graph_score") or 0.0),
+        graph_source=str(raw.get("graph_source") or "graph"),
+    )
+
+
 # Backwards-compatible name for tests or callers that imported the T02 helper.
-def _graph_candidates(conn: ladybug.Connection, text: str, *, limit: int) -> list[GraphCandidate]:
+def _graph_candidates(conn: Any, text: str, *, limit: int) -> list[GraphCandidate]:
     return _expand_graph_candidates(conn, text, limit=limit).candidates
-
-
-def _direct_scientific_kg_candidates(conn: ladybug.Connection, needle: str) -> list[GraphCandidate]:
-    candidates: list[GraphCandidate] = []
-    for label, text_property, source_name in [
-        ("Claim", "text", "claim"),
-        ("ScientificEntity", "label", "entity"),
-        ("ScientificRelation", "relation_type", "relation"),
-    ]:
-        result = cast(
-            Any,
-            conn.execute(
-                f"MATCH (item:{label})-[:EVIDENCED_BY]->(evidence:EvidencePath) "
-                "RETURN item."
-                f"{text_property}, item.confidence, evidence.id, evidence.page_index_node_id, evidence.semantic_chunk_id"
-            ),
-        )
-        while result.has_next():
-            item_text, confidence, evidence_id, page_index_node_id, semantic_chunk_id = (
-                result.get_next()
-            )
-            if needle not in str(item_text).casefold():
-                continue
-            candidates.append(
-                GraphCandidate(
-                    semantic_chunk_id=str(semantic_chunk_id),
-                    page_index_node_id=str(page_index_node_id),
-                    evidence_path_id=str(evidence_id),
-                    graph_score=_bounded_score(confidence),
-                    graph_source=source_name,
-                )
-            )
-    return candidates
-
-
-def _relation_neighborhood_candidates(
-    conn: ladybug.Connection, needle: str
-) -> list[GraphCandidate]:
-    """Return one-hop relation endpoint evidence without mutating the graph."""
-    candidates: list[GraphCandidate] = []
-    for endpoint_label, text_property, endpoint_role in [
-        ("Claim", "text", "claim_endpoint"),
-        ("ScientificEntity", "label", "entity_endpoint"),
-    ]:
-        for rel_table in ["SCIENTIFIC_RELATION_SOURCE", "SCIENTIFIC_RELATION_TARGET"]:
-            result = cast(
-                Any,
-                conn.execute(
-                    f"MATCH (relation:ScientificRelation)-[:{rel_table}]->(endpoint:{endpoint_label}), "
-                    "(relation)-[:EVIDENCED_BY]->(evidence:EvidencePath) "
-                    "RETURN endpoint."
-                    f"{text_property}, relation.confidence, evidence.id, evidence.page_index_node_id, evidence.semantic_chunk_id"
-                ),
-            )
-            while result.has_next():
-                endpoint_text, confidence, evidence_id, page_index_node_id, semantic_chunk_id = (
-                    result.get_next()
-                )
-                if needle not in str(endpoint_text).casefold():
-                    continue
-                candidates.append(
-                    GraphCandidate(
-                        semantic_chunk_id=str(semantic_chunk_id),
-                        page_index_node_id=str(page_index_node_id),
-                        evidence_path_id=str(evidence_id),
-                        graph_score=_bounded_score(confidence) * 0.9,
-                        graph_source=endpoint_role,
-                    )
-                )
-    return candidates
 
 
 def _keep_best_graph_candidate(rows: dict[str, GraphCandidate], candidate: GraphCandidate) -> None:
@@ -392,19 +355,11 @@ def _empty_graph_diagnostics(text: str, *, reason: str | None) -> dict[str, Any]
     }
 
 
-def _evidence_paths_by_chunk(conn: ladybug.Connection) -> dict[str, tuple[str, str]]:
-    result = cast(
-        Any,
-        conn.execute(
-            "MATCH (evidence:EvidencePath) "
-            "RETURN evidence.semantic_chunk_id, evidence.id, evidence.page_index_node_id"
-        ),
-    )
-    evidence_by_chunk: dict[str, tuple[str, str]] = {}
-    while result.has_next():
-        semantic_chunk_id, evidence_id, page_index_node_id = result.get_next()
-        evidence_by_chunk[str(semantic_chunk_id)] = (str(evidence_id), str(page_index_node_id))
-    return evidence_by_chunk
+def _evidence_paths_by_chunk(conn: Any) -> dict[str, tuple[str, str]]:
+    """Legacy helper: wrap conn as GraphReadPort when needed."""
+    if hasattr(conn, "evidence_paths_by_chunk"):
+        return cast(GraphReadPort, conn).evidence_paths_by_chunk()
+    return LadybugGraphReadAdapter(conn).evidence_paths_by_chunk()
 
 
 def _page_index_node_id_from_chunk(semantic_chunk_id: str) -> str:

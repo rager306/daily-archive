@@ -10,8 +10,10 @@ Formerly: src/arxiv_archive/ingestion/loader.py"""
 from __future__ import annotations
 
 import hashlib
+import re
 import time
 from dataclasses import dataclass
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Literal
 
@@ -355,6 +357,10 @@ def load_article_source(
             )
 
         text = _decode_text(raw_bytes)
+        if text is None and classified.source_type == "html":
+            # Optional latin-1 only when the payload still looks like real HTML text
+            # (rejects binary/control-heavy bytes; preserves decode_failed contract).
+            text = _decode_html_latin1_if_plausible(raw_bytes)
         if text is None:
             return _terminal_result(
                 active_logger,
@@ -365,7 +371,14 @@ def load_article_source(
                 warnings=["source could not be decoded as utf-8 text"],
             )
 
-        stripped = text.strip()
+        warnings: list[str] = []
+        if classified.source_type == "html":
+            normalized, html_warnings = normalize_local_html(text)
+            warnings.extend(html_warnings)
+            stripped = normalized.strip()
+        else:
+            stripped = text.strip()
+
         if not stripped:
             return _terminal_result(
                 active_logger,
@@ -373,7 +386,7 @@ def load_article_source(
                 start=start,
                 outcome="failed",
                 failure_reason="source_empty",
-                warnings=["source file is empty after trimming whitespace"],
+                warnings=warnings + ["source file is empty after trimming whitespace"],
             )
 
         quality = _assess_quality_if_applicable(classified.source_type, stripped)
@@ -384,7 +397,7 @@ def load_article_source(
                 start=start,
                 outcome="failed",
                 failure_reason=quality.fallback_reason,
-                warnings=quality.warnings,
+                warnings=list(quality.warnings) + warnings,
                 quality=quality,
             )
 
@@ -394,7 +407,7 @@ def load_article_source(
             start=start,
             outcome="loaded",
             failure_reason=None,
-            warnings=[],
+            warnings=warnings,
             text=stripped,
             quality=quality,
         )
@@ -531,8 +544,133 @@ def _decode_text(raw_bytes: bytes) -> str | None:
         return None
 
 
+def _decode_html_latin1_if_plausible(raw_bytes: bytes) -> str | None:
+    """Decode non-UTF-8 HTML only when content is mostly printable HTML text."""
+    try:
+        candidate = raw_bytes.decode("latin-1")
+    except Exception:
+        return None
+    if not candidate:
+        return None
+    controls = sum(1 for ch in candidate if ord(ch) < 9 or 13 < ord(ch) < 32)
+    if controls / max(len(candidate), 1) > 0.02:
+        return None
+    if "\x00" in candidate:
+        return None
+    lower = candidate.casefold()
+    if not any(marker in lower for marker in ("<html", "<body", "<article", "<p", "<!doctype")):
+        return None
+    return candidate
+
+
+class _HTMLTextExtractor(HTMLParser):
+    """Stdlib HTML → text/markdown-ish extractor (local only, no network)."""
+
+    _BLOCK = {
+        "p",
+        "div",
+        "section",
+        "article",
+        "li",
+        "ul",
+        "ol",
+        "br",
+        "tr",
+        "table",
+        "header",
+        "footer",
+        "main",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+    }
+    _SKIP = {"script", "style", "noscript", "template"}
+    _HEADING = {"h1": "#", "h2": "##", "h3": "###", "h4": "####", "h5": "#####", "h6": "######"}
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self._parts: list[str] = []
+        self._skip_depth = 0
+        self._pending_heading: str | None = None
+        self.broken_anchors = 0
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        tag_l = tag.lower()
+        if tag_l in self._SKIP:
+            self._skip_depth += 1
+            return
+        if self._skip_depth:
+            return
+        if tag_l in self._HEADING:
+            self._pending_heading = self._HEADING[tag_l]
+            self._parts.append("\n")
+        elif tag_l in self._BLOCK:
+            self._parts.append("\n")
+        if tag_l == "a":
+            href = dict(attrs).get("href")
+            if href in (None, "", "#") or str(href).startswith("javascript:"):
+                self.broken_anchors += 1
+
+    def handle_endtag(self, tag: str) -> None:
+        tag_l = tag.lower()
+        if tag_l in self._SKIP and self._skip_depth:
+            self._skip_depth -= 1
+            return
+        if self._skip_depth:
+            return
+        if tag_l in self._HEADING:
+            self._pending_heading = None
+            self._parts.append("\n")
+        elif tag_l in self._BLOCK:
+            self._parts.append("\n")
+
+    def handle_data(self, data: str) -> None:
+        if self._skip_depth:
+            return
+        text = data.strip()
+        if not text:
+            return
+        if self._pending_heading:
+            self._parts.append(f"{self._pending_heading} {text}")
+            self._pending_heading = None
+        else:
+            self._parts.append(text + " ")
+
+    def text(self) -> str:
+        joined = "".join(self._parts)
+        joined = re.sub(r"[ \t]+", " ", joined)
+        joined = re.sub(r"\n{3,}", "\n\n", joined)
+        return joined.strip()
+
+
+def normalize_local_html(raw_html: str) -> tuple[str, list[str]]:
+    """Normalize local HTML to plain/markdown-like text without network fetches."""
+    warnings: list[str] = []
+    if not raw_html.strip():
+        return "", ["html_empty"]
+    # Boilerplate-only detection: mostly navigation chrome without article body.
+    lower = raw_html.casefold()
+    if "<body" not in lower and "<article" not in lower and "<p" not in lower:
+        warnings.append("html_missing_body_markers")
+    parser = _HTMLTextExtractor()
+    try:
+        parser.feed(raw_html)
+        parser.close()
+    except Exception as exc:  # noqa: BLE001 - fail-closed HTML parse
+        return "", [f"html_parse_error:{type(exc).__name__}"]
+    text = parser.text()
+    if parser.broken_anchors:
+        warnings.append(f"broken_anchors:{parser.broken_anchors}")
+    if not text:
+        warnings.append("html_boilerplate_or_empty")
+    return text, warnings
+
+
 def _assess_quality_if_applicable(source_type: str, text: str) -> FullTextQualityReport | None:
-    if source_type in {"markdown", "text"}:
+    if source_type in {"markdown", "text", "html"}:
         return assess_full_text_quality(text)
     return None
 
@@ -548,15 +686,20 @@ def _build_article_result(
     quality: FullTextQualityReport | None = None,
 ) -> ArticleLoadResult:
     duration_ms = _duration_ms(start)
+    # source_kind is the universal provenance tag (M207); mirrors source_type for
+    # loaded text-like sources and stays explicit for downstream projection/retrieval.
+    source_kind = classified.source_type
     provenance: dict[str, str | int | None] = {
         "source_id": classified.source_id,
         "source_path": str(classified.source_path),
         "source_type": classified.source_type,
+        "source_kind": source_kind,
         "media_type": classified.media_type,
         "sha256": classified.sha256,
         "byte_size": classified.byte_size,
         "parser_name": classified.parser_name,
         "loader_name": LOADER_NAME,
+        "network_fetch_attempted": False,
     }
     if classified.paper_id is not None:
         provenance["paper_id"] = classified.paper_id
@@ -596,6 +739,7 @@ def _full_text_result(
     provenance = {
         "paper_id": source.paper_id,
         "source_type": source.source_type,
+        "source_kind": source.source_type,
         "source_path": str(source.source_path),
         "extraction_mode": extraction_mode,
     }
@@ -636,4 +780,5 @@ __all__ = [
     "full_text_source_for_paper",
     "ingest_full_text",
     "load_article_source",
+    "normalize_local_html",
 ]
