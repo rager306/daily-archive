@@ -10,17 +10,21 @@ Source → Parser → Structure → Extraction → Graph → Review → Agents
 
 ## Текущая стадия pipeline
 
-**Стадия: pre-production readiness / import-blocked validation.**
+**Стадия: post-M208 graph-data readiness / import-blocked validation.**
 
-M198 завершён и validated: реактивный no-write pilot из M197 превращён в проверенный слой readiness-preconditions. Это значит:
+M202–M208 закрыты. Контракты extraction metrics, Falkor no-write compatibility, promotion boundary, disposable write pilot, retrieval quality, universal HTML source_kind и read-only SymFSM (O1–O6) существуют на fixture/contract уровне. **FalkorDB live driver не активируется**, пока не отработана цепочка данных и readiness.
 
-- dry-run, sync rehearsal, smoke boundary и graph-readiness validate-only поверхности сопоставлены;
-- readiness evidence собирается как metadata-only, без payload/vector/secret leakage;
-- operator diagnostics, readiness report, validation package и runbook готовы;
-- no-write/import governance ратчеты проходят;
-- production graph import всё ещё НЕ включён.
+M209 добавляет:
 
-Проект готов к следующему этапу проектирования/валидации production import, но не находится в стадии production graph ingestion.
+- continuity audit по 7 слоям pipeline;
+- no-write composition root `run_graph_data_readiness_pipeline` (load → structure → candidate → projection → promotion);
+- metadata-only `GraphDataReadinessPackage` с `import_eligible=false` и `graph_writes_allowed=false`.
+
+Это значит:
+
+- operator path для graph-data readiness собирается без live Falkor;
+- production graph import всё ещё НЕ включён;
+- следующий горизонт — catalog coverage, real-corpus quality gates (10→20→week), затем только при явной готовности — live graph backend.
 
 ## Архитектура сейчас
 
@@ -65,18 +69,22 @@ M198 завершён и validated: реактивный no-write pilot из M19
 
 - Сохранён statistical-first принцип.
 - LLM JSON boundary изолирован; provider-specific logic вынесен в config/helpers.
-- MiniMax/GLM интеграции считаются hot-pluggable, но production extraction quality ещё требует staged metrics/ablations.
+- MiniMax/GLM hot-pluggable (M201); reviewed metrics/ablations (M202) на fixture harness.
+- Live fleet extraction quality всё ещё требует real-corpus staged gates.
+
+### Parser / hybrid
+
+- Body routes: `html_native` | `mdconverter` | `fitz_offline` | `hybrid` | `hybrid_deferred` | `unavailable`.
+- M211–M212 parser body routes + hybrid sidecar offline inject закрыты. Live GROBID/ODL подключаются только на composition root (`hybrid_live_ports` / `article run --mode hybrid`); `hybrid_claimed_success` только с body evidence; import/writes fail-closed.
+- Sidecars: `.docker/docker-compose.yml` (GROBID :8070), host `opendataloader-pdf` (`uv sync --extra hybrid`).
 
 ### Graph/readiness
 
-- FalkorDB остаётся production target, но import не включён.
-- Graph readiness validate-only path проработан.
-- M195-M198 закрыли серию no-write/readiness работ:
-  - queue/backend/import safety boundaries;
-  - reactive dry-run/rehearsal/smoke readiness;
-  - GitNexus impact gates;
-  - disabled backend safety audit;
-  - validation package and operator runbook.
+- FalkorDB остаётся production target, но **live driver и production import не включены** (явный hold до data readiness).
+- GraphReadPort + NetworkX/DisabledFalkor no-write path (M203/M206).
+- Promotion boundary: `pilot_eligible ≠ import_eligible` (M204).
+- Disposable write pilot isolated under `pilot_write/` (M205) — не production activation.
+- M209 composition root готовит graph-data readiness package без Falkor.
 
 ### Governance/operations
 
