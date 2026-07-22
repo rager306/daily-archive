@@ -1,4 +1,4 @@
-"""Single-article CLI: acquire + no-write readiness pipeline."""
+"""Single-article CLI: body-route resolve + no-write readiness pipeline."""
 
 from __future__ import annotations
 
@@ -16,9 +16,10 @@ from research_graph.workflows.composition.single_article_pipeline import (
 article_app = typer.Typer(
     add_completion=False,
     help=(
-        "Single-article no-write pipeline: resolve arXiv HTML/PDF (or local file), "
-        "run load→structure→candidate→projection→promotion readiness package. "
-        "Does not authorize graph import or writes."
+        "Single-article no-write pipeline: resolve body route "
+        "(html_native|mdconverter|fitz_offline|hybrid_deferred), "
+        "then load→structure→candidate→projection→promotion readiness package. "
+        "Does not authorize graph import or writes. Never claims hybrid success."
     ),
 )
 
@@ -30,7 +31,7 @@ def article_run(
         typer.Argument(
             help=(
                 "arXiv id/URL (abs|pdf|html) or local file path "
-                "(.html/.md/.txt). Example: https://arxiv.org/html/2607.13104v1"
+                "(.html/.md/.txt/.pdf). Example: https://arxiv.org/html/2607.13104v1"
             )
         ),
     ],
@@ -39,20 +40,23 @@ def article_run(
         typer.Option(
             "--output-dir",
             "-o",
-            help="Work directory for acquired sources and readiness artifacts.",
+            help="Work directory for body, acquired sources, and readiness artifacts.",
         ),
     ] = Path("artifacts/single-article"),
     mode: Annotated[
-        Literal["auto", "html", "pdf", "local"],
-        typer.Option("--mode", help="Source mode: auto|html|pdf|local."),
+        Literal["auto", "html", "pdf", "local", "mdconverter", "fitz", "hybrid"],
+        typer.Option(
+            "--mode",
+            help="Body mode: auto|html|pdf|local|mdconverter|fitz|hybrid (hybrid is deferred).",
+        ),
     ] = "auto",
     prefer: Annotated[
         Literal["html", "pdf"],
-        typer.Option("--prefer", help="When mode=auto for remote arXiv, prefer html or pdf body."),
+        typer.Option("--prefer", help="When mode=auto, prefer html body or mdconverter/pdf stack."),
     ] = "html",
     also_pdf: Annotated[
         bool,
-        typer.Option("--also-pdf/--no-also-pdf", help="Also download PDF alongside HTML."),
+        typer.Option("--also-pdf/--no-also-pdf", help="Also download PDF sidecar when possible."),
     ] = True,
     review_completed: Annotated[
         bool,
@@ -66,7 +70,7 @@ def article_run(
         typer.Option("--json", help="Print machine-readable package JSON to stdout."),
     ] = False,
 ) -> None:
-    """Acquire one article and emit a fail-closed graph-data readiness package."""
+    """Resolve body route and emit a fail-closed graph-data readiness package."""
     work_dir = output_dir.expanduser().resolve()
     work_dir.mkdir(parents=True, exist_ok=True)
     try:
@@ -91,26 +95,35 @@ def article_run(
     payload = result.to_dict()
     if json_output:
         typer.echo(json.dumps(payload, indent=2, sort_keys=True))
-    else:
-        pkg = result.readiness.package
-        typer.echo(f"paper_id: {result.paper_id}")
-        typer.echo(f"verdict: {pkg.verdict}")
-        typer.echo(f"sources: {len(result.local_sources)}")
-        for row in result.local_sources:
-            typer.echo(f"  - {row['kind']}: {row['path']} ({row['origin']})")
-        if result.package_path:
-            typer.echo(f"package: {result.package_path}")
-        if result.continuity_report_path:
-            typer.echo(f"continuity: {result.continuity_report_path}")
-        typer.echo("import_eligible: false")
-        typer.echo("graph_writes_allowed: false")
-        for source_row in pkg.sources:
-            typer.echo(
-                f"readiness[{source_row.paper_id}]: "
-                f"load={source_row.load_ok} structure={source_row.structure_ok} "
-                f"pilot_eligible={source_row.pilot_eligible} "
-                f"chunks={source_row.chunk_count} blockers={list(source_row.blockers)}"
-            )
+        return
+
+    typer.echo(f"paper_id: {result.paper_id}")
+    typer.echo(f"body_route: {result.body_route}")
+    typer.echo("hybrid_claimed_success: false")
+    typer.echo(f"body_chars: {result.body.body_chars}")
+    typer.echo(f"sources: {len(result.local_sources)}")
+    for row in result.local_sources:
+        typer.echo(f"  - {row['kind']}: {row['path']} ({row['origin']})")
+    if result.package_path:
+        typer.echo(f"package: {result.package_path}")
+    if result.continuity_report_path:
+        typer.echo(f"continuity: {result.continuity_report_path}")
+    typer.echo("import_eligible: false")
+    typer.echo("graph_writes_allowed: false")
+    if result.readiness is None:
+        typer.echo(f"verdict: no_readiness ({result.body_route})")
+        for d in result.body.diagnostics:
+            typer.echo(f"  diagnostic: {d}")
+        return
+    pkg = result.readiness.package
+    typer.echo(f"verdict: {pkg.verdict}")
+    for source_row in pkg.sources:
+        typer.echo(
+            f"readiness[{source_row.paper_id}]: "
+            f"load={source_row.load_ok} structure={source_row.structure_ok} "
+            f"pilot_eligible={source_row.pilot_eligible} "
+            f"chunks={source_row.chunk_count} blockers={list(source_row.blockers)}"
+        )
 
 
 def register(app: typer.Typer) -> None:

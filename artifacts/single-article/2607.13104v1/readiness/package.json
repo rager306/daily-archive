@@ -1,0 +1,222 @@
+{
+  "continuity": {
+    "diagnostics": [
+      "post_m208_continuity_inventory",
+      "falkor_deferred_by_policy",
+      "import_write_fail_closed",
+      "overall:partial"
+    ],
+    "falkor_touched": false,
+    "graph_writes_allowed": false,
+    "import_eligible": false,
+    "layers": [
+      {
+        "gaps": [
+          "pdf_body_not_fulltext",
+          "no_batch_filter_in_core_loader"
+        ],
+        "health": "partial",
+        "layer": "source",
+        "missing_seams": [],
+        "notes": "seams:4/4",
+        "present_seams": [
+          "src/research_graph/infrastructure/corpus/ingestion/loader.py",
+          "src/research_graph/workflows/composition/universal_source.py",
+          "src/research_graph/application/analyze_source.py",
+          "src/research_graph/application/corpus/catalog_coverage_reconciliation.py"
+        ]
+      },
+      {
+        "gaps": [
+          "real_pdf_quality_variance"
+        ],
+        "health": "partial",
+        "layer": "parser",
+        "missing_seams": [],
+        "notes": "seams:2/2",
+        "present_seams": [
+          "src/research_graph/infrastructure/corpus/parsing/parser.py",
+          "src/research_graph/application/corpus/parser_replay.py"
+        ]
+      },
+      {
+        "gaps": [
+          "real_corpus_chunk_quality_not_continuously_gated"
+        ],
+        "health": "partial",
+        "layer": "structure",
+        "missing_seams": [],
+        "notes": "seams:2/2",
+        "present_seams": [
+          "src/research_graph/infrastructure/papers/indexing/parsed_page_index.py",
+          "src/research_graph/infrastructure/papers/semantic_chunks.py"
+        ]
+      },
+      {
+        "gaps": [
+          "live_llm_optional_not_fleet"
+        ],
+        "health": "partial",
+        "layer": "extraction",
+        "missing_seams": [],
+        "notes": "seams:4/4",
+        "present_seams": [
+          "src/research_graph/application/paper_extraction.py",
+          "src/research_graph/application/chunk_extraction.py",
+          "src/research_graph/application/extraction_pilot.py",
+          "src/research_graph/application/reviewed_extraction_metrics.py"
+        ]
+      },
+      {
+        "gaps": [
+          "no_live_falkor_driver_by_policy",
+          "composition_root_missing_pre_m209",
+          "cli_not_wired_to_projection"
+        ],
+        "health": "partial",
+        "layer": "graph",
+        "missing_seams": [],
+        "notes": "seams:5/5",
+        "present_seams": [
+          "src/research_graph/domain/ports.py",
+          "src/research_graph/infrastructure/graph/projection_backends.py",
+          "src/research_graph/infrastructure/graph/graph_read_adapters.py",
+          "src/research_graph/application/graph/falkor_operation_plan.py",
+          "src/research_graph/workflows/composition/graph_data_readiness.py"
+        ]
+      },
+      {
+        "gaps": [
+          "operator_cli_not_wired",
+          "pilot_eligible_not_import_eligible"
+        ],
+        "health": "partial",
+        "layer": "review",
+        "missing_seams": [],
+        "notes": "seams:4/4",
+        "present_seams": [
+          "src/research_graph/application/graph/promotion_boundary.py",
+          "src/research_graph/infrastructure/staging/import_boundary.py",
+          "src/research_graph/infrastructure/graph/readiness/review.py",
+          "src/research_graph/application/corpus/catalog_coverage_reconciliation.py"
+        ]
+      },
+      {
+        "gaps": [
+          "symfsm_not_cli_wired",
+          "experience_store_deferred"
+        ],
+        "health": "partial",
+        "layer": "agents",
+        "missing_seams": [],
+        "notes": "seams:3/3",
+        "present_seams": [
+          "src/research_graph/workflows/composition/symfsm_operators.py",
+          "src/research_graph/workflows/composition/symfsm_loop.py",
+          "src/research_graph/workflows/rlm/graph_traversal.py"
+        ]
+      }
+    ],
+    "overall": "partial",
+    "production_import_attempted": false,
+    "safety_flags": {
+      "graph_import_allowed": false,
+      "graphdb_written": false,
+      "import_eligible": false,
+      "ladybugdb_written": false,
+      "production_import_attempted": false
+    }
+  },
+  "counts": {
+    "blocked": 0,
+    "pilot_eligible": 1,
+    "source_count": 1,
+    "structure_ok": 1
+  },
+  "diagnostics": [
+    "graph_data_readiness_no_write",
+    "falkor_deferred_by_policy",
+    "verdict:ready_for_review",
+    "sources:1"
+  ],
+  "falkor_touched": false,
+  "graph_writes_allowed": false,
+  "import_eligible": false,
+  "production_import_attempted": false,
+  "safety_flags": {
+    "graph_import_allowed": false,
+    "graphdb_written": false,
+    "import_eligible": false,
+    "ladybugdb_written": false,
+    "production_import_attempted": false
+  },
+  "sources": [
+    {
+      "blockers": [],
+      "candidate_ok": true,
+      "chunk_count": 119,
+      "evidence_count": 119,
+      "graph_writes_allowed": false,
+      "import_eligible": false,
+      "load_ok": true,
+      "paper_id": "2607.13104v1",
+      "pilot_eligible": true,
+      "projection_ok": true,
+      "source_kind": "html",
+      "stages": [
+        {
+          "diagnostics": [
+            "outcome:loaded",
+            "source_type:html"
+          ],
+          "stage": "load",
+          "status": "done"
+        },
+        {
+          "diagnostics": [
+            "chunks:119",
+            "evidence:119",
+            "source_kind:html"
+          ],
+          "stage": "structure",
+          "status": "done"
+        },
+        {
+          "diagnostics": [
+            "source_kind:html",
+            "entities:3",
+            "prov:True"
+          ],
+          "stage": "candidate",
+          "status": "done"
+        },
+        {
+          "diagnostics": [
+            "nx_nodes:4",
+            "fk_backend:falkordb",
+            "plan:9e349c7d82919482"
+          ],
+          "stage": "projection",
+          "status": "done"
+        },
+        {
+          "diagnostics": [
+            "decision:eligible",
+            "import_eligible:False"
+          ],
+          "stage": "promotion",
+          "status": "done"
+        },
+        {
+          "diagnostics": [
+            "per_source_packaged"
+          ],
+          "stage": "package",
+          "status": "done"
+        }
+      ],
+      "structure_ok": true
+    }
+  ],
+  "verdict": "ready_for_review"
+}
