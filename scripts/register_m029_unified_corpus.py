@@ -485,7 +485,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--m028-roadmap",
         type=Path,
-        default=Path(".gsd/milestones/M028-8hwqjk/M028-8hwqjk-ROADMAP.md"),
+        # Flat-phase layout (nested .gsd/milestones/M028-... removed by GSD migration).
+        default=Path(
+            ".gsd/phases/28-8hwqjk-m028-8hwqjk-universal-loader-runtime-smo/28-ROADMAP.md"
+        ),
     )
     parser.add_argument("--catalog-root", type=Path, default=Path("data/article_catalog"))
     parser.add_argument(

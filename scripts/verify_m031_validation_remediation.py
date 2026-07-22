@@ -36,9 +36,11 @@ VERIFY_SCHEMA_VERSION = "m031-validation-remediation-verifier.v1"
 CORPUS_DIR = Path("data/article_corpora/m031-catalog-backed-replay-v1")
 OUTPUT_DIR = CORPUS_DIR / "validation-remediation"
 
-DEFAULT_S02_ASSESSMENT = Path(".gsd/milestones/M031-vwpd8e/slices/S02/S02-ASSESSMENT.md")
-DEFAULT_S02_SUMMARY = Path(".gsd/milestones/M031-vwpd8e/slices/S02/S02-SUMMARY.md")
-DEFAULT_S02_UAT = Path(".gsd/milestones/M031-vwpd8e/slices/S02/S02-UAT.md")
+# Flat-phase layout: S02 → 31-02-* under phases/31-vwpd8e-...
+_M031_PHASE = Path(".gsd/phases/31-vwpd8e-m031-vwpd8e-catalog-backed-replay-to-gra")
+DEFAULT_S02_ASSESSMENT = _M031_PHASE / "31-02-ASSESSMENT.md"
+DEFAULT_S02_SUMMARY = _M031_PHASE / "31-02-SUMMARY.md"
+DEFAULT_S02_UAT = _M031_PHASE / "31-02-UAT.md"
 DEFAULT_REPLAY_CLOSEOUT = CORPUS_DIR / "replay-closeout-summary.json"
 DEFAULT_S05_CLOSEOUT = CORPUS_DIR / "s05-closeout-summary.json"
 DEFAULT_MATRIX = CORPUS_DIR / "progression-matrix.json"

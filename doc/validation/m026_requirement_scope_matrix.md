@@ -53,8 +53,8 @@ M026 is a loader research, Hermes digest contract, universal loader contract, an
 
 ## Evidence Sources
 - `.gsd/REQUIREMENTS.md`
-- `.gsd/milestones/M026-3rvvgp/M026-3rvvgp-ROADMAP.md`
-- `.gsd/milestones/M026-3rvvgp/slices/S05/S05-RESEARCH.md`
+- `.gsd/phases/26-3rvvgp-m026-3rvvgp-loader-research-and-hermes-d/26-ROADMAP.md`
+- `.gsd/phases/26-3rvvgp-m026-3rvvgp-loader-research-and-hermes-d/26-05-RESEARCH.md`
 - `.gsd/reports/article-artifact-loader-research.md`
 - `.gsd/reports/article-artifact-loader-digest-contract.md`
 - `.gsd/reports/article-artifact-universal-loader-contract.md`

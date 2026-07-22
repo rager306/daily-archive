@@ -4,13 +4,13 @@
 
 ## Remediation Target
 
-- Validation report: `.gsd/milestones/M026-3rvvgp/M026-3rvvgp-VALIDATION.md`
+- Validation report: `.gsd/phases/26-3rvvgp-m026-3rvvgp-loader-research-and-hermes-d/26-VALIDATION.md`
 - Current validation verdict: `needs-remediation`
 - Target: Resolve validation rerun inputs by reconciling requirement coverage with S05 semantics and explicitly auditing Contract, Integration, Operational, and UAT verification classes.
 
 ## Criteria Source
 
-- Canonical success criteria source: `.gsd/milestones/M026-3rvvgp/M026-3rvvgp-ROADMAP.md`
+- Canonical success criteria source: `.gsd/phases/26-3rvvgp-m026-3rvvgp-loader-research-and-hermes-d/26-ROADMAP.md`
 - Decision: Use the milestone roadmap as the canonical success-criteria source for validation rerun; no separate CONTEXT artifact is restored by this metadata-only remediation task.
 - Mismatch rule: When validation prose conflicts with S05 matrix semantics, trust the S05 matrix and this remediation interpretation.
 
@@ -78,14 +78,14 @@ M026 is a loader research, Hermes digest contract, universal loader contract, an
 
 | Class | Verdict | Scope | Planned check | Evidence paths |
 |---|---|---|---|---|
-| Contract | PASS | M026 research, contract, and metadata-only evidence only | S01 source-capability matrix, S02 Hermes digest contract, S03 universal loader contract, and S04 real-source validation all exist and preserve loader/digest/selection boundaries. | `.gsd/reports/article-artifact-loader-research.md`<br>`.gsd/reports/article-artifact-loader-digest-contract.md`<br>`.gsd/reports/article-artifact-universal-loader-contract.md`<br>`.gsd/reports/article-artifact-loader-validation.md`<br>`.gsd/milestones/M026-3rvvgp/M026-3rvvgp-ROADMAP.md` |
-| Integration | PASS | Boundary integration between research artifacts only; no runtime integration or production import path. | Discovery metadata, PDF/content acquisition, Hermes digest projection, universal loader evidence, and future batch selection remain separable. | `.gsd/reports/article-artifact-loader-digest-contract.md`<br>`.gsd/reports/article-artifact-universal-loader-contract.md`<br>`.gsd/reports/article-artifact-loader-validation.md`<br>`.gsd/milestones/M026-3rvvgp/M026-3rvvgp-VALIDATION.md` |
-| Operational | PASS | Local-first documentation, reports, and verifier evidence only; no service runtime load or production operation. | Artifacts are local, metadata-only, provenance-supporting, and research-first; failure modes and load boundaries are documented without introducing shared services. | `.gsd/reports/article-artifact-loader-research.md`<br>`.gsd/reports/article-artifact-loader-validation.md`<br>`.gsd/milestones/M026-3rvvgp/slices/S05/S05-COVERAGE.md`<br>`doc/validation/m026_requirement_scope_matrix.json` |
-| UAT | PASS | Small real-source sample and human-reviewable contract validation only; no corpus-scale acceptance. | Small real arXiv records were checked against source capability, PDF metadata-only handling, digest separation, and universal-loader contract assumptions. | `.gsd/reports/article-artifact-loader-validation.md`<br>`.gsd/reports/article-artifact-loader-research.md`<br>`.gsd/milestones/M026-3rvvgp/M026-3rvvgp-VALIDATION.md` |
+| Contract | PASS | M026 research, contract, and metadata-only evidence only | S01 source-capability matrix, S02 Hermes digest contract, S03 universal loader contract, and S04 real-source validation all exist and preserve loader/digest/selection boundaries. | `.gsd/reports/article-artifact-loader-research.md`<br>`.gsd/reports/article-artifact-loader-digest-contract.md`<br>`.gsd/reports/article-artifact-universal-loader-contract.md`<br>`.gsd/reports/article-artifact-loader-validation.md`<br>`.gsd/phases/26-3rvvgp-m026-3rvvgp-loader-research-and-hermes-d/26-ROADMAP.md` |
+| Integration | PASS | Boundary integration between research artifacts only; no runtime integration or production import path. | Discovery metadata, PDF/content acquisition, Hermes digest projection, universal loader evidence, and future batch selection remain separable. | `.gsd/reports/article-artifact-loader-digest-contract.md`<br>`.gsd/reports/article-artifact-universal-loader-contract.md`<br>`.gsd/reports/article-artifact-loader-validation.md`<br>`.gsd/phases/26-3rvvgp-m026-3rvvgp-loader-research-and-hermes-d/26-VALIDATION.md` |
+| Operational | PASS | Local-first documentation, reports, and verifier evidence only; no service runtime load or production operation. | Artifacts are local, metadata-only, provenance-supporting, and research-first; failure modes and load boundaries are documented without introducing shared services. | `.gsd/reports/article-artifact-loader-research.md`<br>`.gsd/reports/article-artifact-loader-validation.md`<br>`.gsd/phases/26-3rvvgp-m026-3rvvgp-loader-research-and-hermes-d/26-05-SUMMARY.md`<br>`doc/validation/m026_requirement_scope_matrix.json` |
+| UAT | PASS | Small real-source sample and human-reviewable contract validation only; no corpus-scale acceptance. | Small real arXiv records were checked against source capability, PDF metadata-only handling, digest separation, and universal-loader contract assumptions. | `.gsd/reports/article-artifact-loader-validation.md`<br>`.gsd/reports/article-artifact-loader-research.md`<br>`.gsd/phases/26-3rvvgp-m026-3rvvgp-loader-research-and-hermes-d/26-VALIDATION.md` |
 
 ## Rerun-Ready Validation Inputs
 
-- Success criteria source: `.gsd/milestones/M026-3rvvgp/M026-3rvvgp-ROADMAP.md`
+- Success criteria source: `.gsd/phases/26-3rvvgp-m026-3rvvgp-loader-research-and-hermes-d/26-ROADMAP.md`
 - Requirement coverage source: `doc/validation/m026_requirement_scope_matrix.json`
 - Expected requirement rows checked: `27`
 
@@ -93,7 +93,7 @@ M026 is a loader research, Hermes digest contract, universal loader contract, an
 
 ```bash
 uv run python -m json.tool doc/validation/m026_validation_remediation_class_audit.json
-uv run python scripts/verify_m026_requirement_scope_reconciliation.py --matrix doc/validation/m026_requirement_scope_matrix.json --rendered doc/validation/m026_requirement_scope_matrix.md --coverage .gsd/milestones/M026-3rvvgp/slices/S05/S05-COVERAGE.md --require-active-scope --reject-unsafe-claims
+uv run python scripts/verify_m026_requirement_scope_reconciliation.py --matrix doc/validation/m026_requirement_scope_matrix.json --rendered doc/validation/m026_requirement_scope_matrix.md --coverage .gsd/phases/26-3rvvgp-m026-3rvvgp-loader-research-and-hermes-d/26-05-SUMMARY.md --require-active-scope --reject-unsafe-claims
 uv run pytest tests/test_m026_requirement_scope_reconciliation.py -q
 ```
 

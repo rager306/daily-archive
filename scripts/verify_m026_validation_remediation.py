@@ -22,8 +22,13 @@ SLICE_ID = "S06"
 SCHEMA_VERSION = "m026-validation-remediation-class-audit.v1"
 MATRIX_SCHEMA_VERSION = "m026-requirement-scope-matrix.v1"
 MATRIX_PATH = "doc/validation/m026_requirement_scope_matrix.json"
-ROADMAP_PATH = ".gsd/milestones/M026-3rvvgp/M026-3rvvgp-ROADMAP.md"
-VALIDATION_PATH = ".gsd/milestones/M026-3rvvgp/M026-3rvvgp-VALIDATION.md"
+# Flat-phase layout (nested .gsd/milestones/M026-... removed by GSD migration).
+ROADMAP_PATH = (
+    ".gsd/phases/26-3rvvgp-m026-3rvvgp-loader-research-and-hermes-d/26-ROADMAP.md"
+)
+VALIDATION_PATH = (
+    ".gsd/phases/26-3rvvgp-m026-3rvvgp-loader-research-and-hermes-d/26-VALIDATION.md"
+)
 AUDIT_JSON_PATH = "doc/validation/m026_validation_remediation_class_audit.json"
 AUDIT_MARKDOWN_PATH = "doc/validation/m026_validation_remediation_class_audit.md"
 

@@ -23,7 +23,10 @@ SCHEMA_VERSION = "m027-validation-remediation-class-audit.v1"
 MATRIX_SCHEMA_VERSION = "m027-requirement-scope-matrix.v1"
 MATRIX_PATH = "doc/validation/m027_requirement_scope_matrix.json"
 MATRIX_MARKDOWN_PATH = "doc/validation/m027_requirement_scope_matrix.md"
-ROADMAP_PATH = ".gsd/milestones/M027-aakeky/M027-aakeky-ROADMAP.md"
+# Flat-phase layout (nested .gsd/milestones/M027-... removed by GSD migration).
+ROADMAP_PATH = (
+    ".gsd/phases/27-aakeky-m027-aakeky-mixed-source-article-pipelin/27-ROADMAP.md"
+)
 AUDIT_JSON_PATH = "doc/validation/m027_validation_remediation_class_audit.json"
 AUDIT_MARKDOWN_PATH = "doc/validation/m027_validation_remediation_class_audit.md"
 S07_SUMMARY_PATH = "data/article_corpora/m027-mixed-source-corpus-v1/pipeline-readiness-synthesis/pipeline-readiness-synthesis-summary.json"

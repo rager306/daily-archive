@@ -32,8 +32,8 @@ M027-aakeky advanced a local six-article mixed-source preprocessing cycle and va
 | R036 | active | `s07_closeout_validation_chain_preserved` | `validation_chain_preserved_not_globally_closed` | preserve_s07_closeout_chain_and_keep_active |
 
 ## Evidence Sources
-- `.gsd/milestones/M027-aakeky/M027-aakeky-ROADMAP.md`
-- `.gsd/milestones/M027-aakeky/slices/S07/S07-SUMMARY.md`
+- `.gsd/phases/27-aakeky-m027-aakeky-mixed-source-article-pipelin/27-ROADMAP.md`
+- `.gsd/phases/27-aakeky-m027-aakeky-mixed-source-article-pipelin/27-07-SUMMARY.md`
 - `data/article_corpora/m027-mixed-source-corpus-v1/pipeline-readiness-synthesis/pipeline-readiness-synthesis-summary.json`
 - `data/article_corpora/m027-mixed-source-corpus-v1/pipeline-readiness-synthesis/pipeline-readiness-synthesis-report.md`
 - `data/article_corpora/m027-mixed-source-corpus-v1/provenance-riskratchet-gate/provenance-riskratchet-gate-summary.json`

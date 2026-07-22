@@ -39,8 +39,8 @@ M028-8hwqjk proves a bounded universal-loader runtime smoke replay for an accept
 
 ## Evidence Sources
 - .gsd/REQUIREMENTS.md
-- .gsd/milestones/M028-8hwqjk/M028-8hwqjk-ROADMAP.md
-- .gsd/milestones/M028-8hwqjk/slices/S06/S06-SUMMARY.md
+- .gsd/phases/28-8hwqjk-m028-8hwqjk-universal-loader-runtime-smo/28-ROADMAP.md
+- .gsd/phases/28-8hwqjk-m028-8hwqjk-universal-loader-runtime-smo/28-06-SUMMARY.md
 - data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/smoke-replay-closeout-summary.json
 - data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/smoke-replay-closeout-events.jsonl
 - data/article_corpora/m028-universal-loader-runtime-smoke-v1/smoke-replay-closeout/smoke-replay-closeout-report.md
