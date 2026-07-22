@@ -7,7 +7,6 @@ never raise into application for ordinary service absence.
 
 from __future__ import annotations
 
-import json
 import time
 import urllib.error
 import urllib.request
@@ -215,23 +214,39 @@ class LiveOpenDataLoaderSidecarAdapter:
 
 
 def _odl_convert_to_markdown(mod: Any, pdf_path: Path) -> str:
-    """Best-effort call across opendataloader-pdf API shapes."""
-    # Common patterns: convert(path) / convert_to_markdown / run with format.
+    """Best-effort call across opendataloader-pdf API shapes.
+
+    v2.x `convert(...)` writes artifacts to `output_dir` and returns None.
+    """
+    import tempfile
+
     if hasattr(mod, "convert_to_markdown"):
         out = mod.convert_to_markdown(str(pdf_path))
-        return out if isinstance(out, str) else str(out)
-    if hasattr(mod, "convert"):
-        out = mod.convert(str(pdf_path), format="markdown")
         if isinstance(out, str):
             return out
-        if isinstance(out, dict):
-            for key in ("markdown", "text", "content"):
-                if isinstance(out.get(key), str):
-                    return out[key]
-            return json.dumps(out)
-        return str(out)
-    # Fallback: subprocess CLI if module exposes __file__ only
-    raise RuntimeError("opendataloader_pdf has no convert/convert_to_markdown API")
+
+    if not hasattr(mod, "convert"):
+        raise RuntimeError("opendataloader_pdf has no convert API")
+
+    with tempfile.TemporaryDirectory(prefix="odl-live-") as tmp:
+        out_dir = Path(tmp)
+        # format list forces markdown file; quiet reduces jar noise.
+        mod.convert(
+            str(pdf_path),
+            output_dir=str(out_dir),
+            format=["markdown"],
+            quiet=True,
+        )
+        md_files = sorted(out_dir.rglob("*.md"))
+        if not md_files:
+            # Some builds emit .txt
+            md_files = sorted(out_dir.rglob("*.txt"))
+        if not md_files:
+            raise RuntimeError(f"odl_no_markdown_output dir={out_dir}")
+        # Prefer stem match to input PDF when multiple pages/files appear.
+        preferred = [p for p in md_files if p.stem.startswith(pdf_path.stem)]
+        chosen = preferred[0] if preferred else md_files[0]
+        return chosen.read_text(encoding="utf-8", errors="replace")
 
 
 def build_live_hybrid_ports(
