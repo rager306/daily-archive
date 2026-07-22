@@ -273,6 +273,39 @@ Env defaults live in `.env.example` (`GROBID_URL`, `GROBID_AUTO_START`, `HYBRID_
 Runtime probe/auto-start: `research_graph.infrastructure.corpus.parsing.sidecar_services`.  
 Hybrid merge remains fail-closed (M212): container up ≠ graph import.
 
+### Operator path (`article run` + live hybrid)
+
+Architecture: **application** stays pure; live GROBID/ODL ports are built only in
+`workflows/composition/hybrid_live_ports.py` and injected into the single-article pipeline.
+
+```bash
+# Install ODL library (optional extra)
+uv sync --extra hybrid
+
+# GROBID must be up (or HYBRID_AUTO_START_CONTAINERS=true)
+docker compose -f .docker/docker-compose.yml --env-file .env up -d grobid
+
+# Live hybrid: --mode hybrid enables live ports by default
+uv run python -m research_graph article run path/to/paper.pdf --mode hybrid -o artifacts/single-article/demo
+
+# Honest deferred (no sidecars)
+uv run python -m research_graph article run path/to/paper.pdf --mode hybrid --no-live-hybrid
+```
+
+Flags:
+
+| Flag | Meaning |
+|------|---------|
+| `--mode hybrid` | Prefer hybrid body route; **enables live ports by default** |
+| `--live-hybrid` / `--no-live-hybrid` | Force live inject on/off (CLI source overrides hybrid default) |
+| `--ensure-containers` / `--no-ensure-containers` | Allow/forbid `docker compose up grobid` on probe miss |
+
+Success rules (unchanged):
+
+- `hybrid_claimed_success` only when body markdown meets evidence threshold (~5000 chars)
+- `import_eligible` / `graph_writes_allowed` always false on this path
+- Without ports → `hybrid_deferred` (never fake hybrid completeness)
+
 
 
 Current live probe result: 1 target article has `live_success` GROBID TEI summary evidence; 5 linked target articles remain `missing_pdf` blockers until bounded local PDF acquisition is performed. Raw TEI/full text is not persisted.
