@@ -154,8 +154,14 @@ app = typer.Typer(
 
 
 # Register subcommand modules
-from research_graph.cli.commands import article_artifacts, quality, validation_batch  # noqa: F401
+from research_graph.cli.commands import (  # noqa: F401
+    article,
+    article_artifacts,
+    quality,
+    validation_batch,
+)
 
+article.register(app)
 article_artifacts.register(app)
 validation_batch.register(app)
 quality.register(app)
