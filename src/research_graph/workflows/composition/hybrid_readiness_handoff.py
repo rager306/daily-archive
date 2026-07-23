@@ -21,9 +21,6 @@ from research_graph.application.corpus.preprocess_summary import (
     preprocess_summary_for_body,
 )
 from research_graph.domain.universal_kb.contracts import SafetyFlags
-from research_graph.workflows.composition.yake_keyword_inject import (
-    yake_keywords_for_text,
-)
 from research_graph.workflows.composition.graph_data_readiness import (
     GraphDataReadinessRequest,
     GraphDataReadinessResult,
@@ -34,6 +31,9 @@ from research_graph.workflows.composition.hybrid_catalog_coverage import (
     HybridCatalogCoverageRequest,
     HybridCatalogCoverageResult,
     run_hybrid_catalog_coverage,
+)
+from research_graph.workflows.composition.yake_keyword_inject import (
+    yake_keywords_for_text,
 )
 
 DEFAULT_SELECTION = Path("artifacts/m213-hybrid-gate/selection-20.json")

@@ -17,13 +17,13 @@ from research_graph.application.corpus.preprocess_summary import (
     preprocess_summary_for_body,
 )
 from research_graph.domain.universal_kb.contracts import SafetyFlags
-from research_graph.workflows.composition.yake_keyword_inject import (
-    yake_keywords_for_text,
-)
 from research_graph.workflows.composition.universal_source import (
     StructuredSourceBundle,
     load_local_html_chapter,
     structure_loaded_source,
+)
+from research_graph.workflows.composition.yake_keyword_inject import (
+    yake_keywords_for_text,
 )
 
 SCHEMA_VERSION = "m226-non-arxiv-html-source-proof.v1"
