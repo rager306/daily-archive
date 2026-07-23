@@ -15,6 +15,7 @@ from typing import Any
 
 from research_graph.application.corpus.language_detect import detect_text_language
 from research_graph.application.corpus.preprocess_rollup import (
+    empty_preprocess_rollup,
     rollup_preprocess_bodies,
 )
 from research_graph.application.corpus.preprocess_summary import (
@@ -70,7 +71,7 @@ class NonArxivHtmlSourceProofResult:
     diagnostics: tuple[str, ...] = ()
     output_path: str | None = None
     preprocess: dict[str, Any] | None = None
-    preprocess_rollup: dict[str, Any] = field(default_factory=dict)
+    preprocess_rollup: dict[str, Any] = field(default_factory=empty_preprocess_rollup)
 
     def __post_init__(self) -> None:
         self.safety_flags.assert_no_write()

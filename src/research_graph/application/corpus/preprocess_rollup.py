@@ -1,7 +1,10 @@
-"""Aggregate preprocess body diagnostics (M233).
+"""Aggregate preprocess body diagnostics (M233/M235).
 
 Pure rollup for operator visibility. Never authorizes import and never
 drives handoff/proof verdicts (ADR-036 enrichment-only).
+
+M235: ``empty_preprocess_rollup`` is the fail-closed default factory for
+composition result dataclasses (fresh dict per call).
 """
 
 from __future__ import annotations
@@ -34,4 +37,9 @@ def rollup_preprocess_bodies(
     }
 
 
-__all__ = ["rollup_preprocess_bodies"]
+def empty_preprocess_rollup() -> dict[str, Any]:
+    """Fresh empty rollup for dataclass default_factory (fail-closed)."""
+    return rollup_preprocess_bodies([])
+
+
+__all__ = ["empty_preprocess_rollup", "rollup_preprocess_bodies"]

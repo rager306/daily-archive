@@ -19,6 +19,7 @@ from typing import Any, Literal
 
 from research_graph.application.corpus.language_detect import detect_text_language
 from research_graph.application.corpus.preprocess_rollup import (
+    empty_preprocess_rollup,
     rollup_preprocess_bodies,
 )
 from research_graph.application.corpus.preprocess_summary import (
@@ -280,7 +281,7 @@ class HybridReadinessHandoffResult:
     scholarly_resolutions: tuple[ScholarlyArtifactResolution, ...] = ()
     scholarly_wrapper: dict[str, Any] = field(default_factory=dict)
     preprocess_bodies: tuple[dict[str, Any], ...] = ()
-    preprocess_rollup: dict[str, Any] = field(default_factory=dict)
+    preprocess_rollup: dict[str, Any] = field(default_factory=empty_preprocess_rollup)
     import_eligible: bool = False
     graph_writes_allowed: bool = False
     safety_flags: SafetyFlags = field(default_factory=SafetyFlags)
