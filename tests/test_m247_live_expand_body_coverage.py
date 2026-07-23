@@ -27,8 +27,9 @@ def test_live_expand_body_increases_hybrid_found_if_present() -> None:
         EtlBodyCoverageRequest(repo_root=ROOT)
     )
     assert result.import_eligible is False
-    assert result.package.hybrid_body_found >= 21
+    # M248 expand batch limit-5: expand root holds multiple bodies (was 1, then 6).
+    expand_n = len(bodies)
+    assert result.package.hybrid_body_found >= 20 + min(expand_n, 20)
     used = " ".join(result.body_roots_used)
     assert "runs-live-expand" in used
-    # unique file from expand present in multi-root file count
-    assert result.package.hybrid_body_artifact_files >= 21
+    assert result.package.hybrid_body_artifact_files >= result.package.hybrid_body_found
