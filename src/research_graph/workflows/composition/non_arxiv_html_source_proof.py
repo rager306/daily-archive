@@ -14,6 +14,9 @@ from pathlib import Path
 from typing import Any
 
 from research_graph.application.corpus.language_detect import detect_text_language
+from research_graph.application.corpus.preprocess_rollup import (
+    rollup_preprocess_bodies,
+)
 from research_graph.application.corpus.preprocess_summary import (
     preprocess_summary_for_body,
 )
@@ -67,6 +70,7 @@ class NonArxivHtmlSourceProofResult:
     diagnostics: tuple[str, ...] = ()
     output_path: str | None = None
     preprocess: dict[str, Any] | None = None
+    preprocess_rollup: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.safety_flags.assert_no_write()
@@ -76,6 +80,10 @@ class NonArxivHtmlSourceProofResult:
             raise ValueError("non-arxiv html proof cannot claim hybrid TEI success")
         if self.preprocess is not None and self.preprocess.get("import_eligible") is True:
             raise ValueError("preprocess enrichment cannot authorize import")
+        if self.preprocess_rollup.get("import_eligible") is True:
+            raise ValueError("preprocess rollup cannot authorize import")
+        if self.preprocess_rollup.get("drives_verdict") is True:
+            raise ValueError("preprocess rollup cannot drive proof_pass")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -100,6 +108,7 @@ class NonArxivHtmlSourceProofResult:
             "graph_writes_allowed": False,
             "hybrid_claimed_success": False,
             "preprocess": self.preprocess,
+            "preprocess_rollup": dict(self.preprocess_rollup),
             "diagnostics": list(self.diagnostics),
             "safety_flags": self.safety_flags.to_dict(),
             "output_path": self.output_path,
@@ -168,6 +177,7 @@ def run_non_arxiv_html_source_proof(
         out_path_str = str(out_path)
 
     if html_path is None:
+        empty_rollup = rollup_preprocess_bodies([])
         result = NonArxivHtmlSourceProofResult(
             schema_version=SCHEMA_VERSION,
             article_ref=article_ref,
@@ -179,8 +189,16 @@ def run_non_arxiv_html_source_proof(
             source_kind="html",
             structure=None,
             proof_pass=False,
-            diagnostics=tuple(diag + ["missing_content_bearing_html"]),
+            diagnostics=tuple(
+                diag
+                + [
+                    "missing_content_bearing_html",
+                    f"preprocess_rollup_bodies:{empty_rollup['body_count']}",
+                    f"preprocess_rollup_drives_verdict:{empty_rollup['drives_verdict']}",
+                ]
+            ),
             output_path=out_path_str,
+            preprocess_rollup=empty_rollup,
         )
     else:
         load = load_local_html_chapter(html_path, paper_id=article_key or "non-arxiv")
@@ -251,6 +269,13 @@ def run_non_arxiv_html_source_proof(
                 diag.append(f"yake_language:{yake_lan}")
                 diag.append(f"yake_input_chars:{yake_input_chars}")
 
+        rows = [preprocess_summary] if preprocess_summary is not None else []
+        preprocess_rollup = rollup_preprocess_bodies(rows)
+        diag.append(f"preprocess_rollup_bodies:{preprocess_rollup['body_count']}")
+        diag.append(
+            f"preprocess_rollup_drives_verdict:{preprocess_rollup['drives_verdict']}"
+        )
+
         result = NonArxivHtmlSourceProofResult(
             schema_version=SCHEMA_VERSION,
             article_ref=article_ref,
@@ -265,6 +290,7 @@ def run_non_arxiv_html_source_proof(
             diagnostics=tuple(diag),
             output_path=out_path_str,
             preprocess=preprocess_summary,
+            preprocess_rollup=preprocess_rollup,
         )
 
     if out_path is not None:
