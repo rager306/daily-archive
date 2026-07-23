@@ -18,6 +18,9 @@ from pathlib import Path
 from typing import Any, Literal
 
 from research_graph.application.corpus.language_detect import detect_text_language
+from research_graph.application.corpus.preprocess_rollup import (
+    rollup_preprocess_bodies,
+)
 from research_graph.application.corpus.preprocess_summary import (
     preprocess_summary_for_body,
 )
@@ -277,6 +280,7 @@ class HybridReadinessHandoffResult:
     scholarly_resolutions: tuple[ScholarlyArtifactResolution, ...] = ()
     scholarly_wrapper: dict[str, Any] = field(default_factory=dict)
     preprocess_bodies: tuple[dict[str, Any], ...] = ()
+    preprocess_rollup: dict[str, Any] = field(default_factory=dict)
     import_eligible: bool = False
     graph_writes_allowed: bool = False
     safety_flags: SafetyFlags = field(default_factory=SafetyFlags)
@@ -296,6 +300,10 @@ class HybridReadinessHandoffResult:
         for row in self.preprocess_bodies:
             if row.get("import_eligible") is True:
                 raise ValueError("preprocess body enrichment cannot authorize import")
+        if self.preprocess_rollup.get("import_eligible") is True:
+            raise ValueError("preprocess rollup cannot authorize import")
+        if self.preprocess_rollup.get("drives_verdict") is True:
+            raise ValueError("preprocess rollup cannot drive handoff verdict")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -315,6 +323,7 @@ class HybridReadinessHandoffResult:
             "body_resolutions": [row.to_dict() for row in self.body_resolutions],
             "scholarly_wrapper": dict(self.scholarly_wrapper),
             "preprocess_bodies": list(self.preprocess_bodies),
+            "preprocess_rollup": dict(self.preprocess_rollup),
             "diagnostics": list(self.diagnostics),
             "safety_flags": self.safety_flags.to_dict(),
             "output_path": self.output_path,
@@ -434,6 +443,7 @@ def run_hybrid_readiness_handoff(
             if r.get("yake_language")
         }
     )
+    preprocess_rollup = rollup_preprocess_bodies(preprocess_rows)
     diagnostics = (
         f"bodies_found:{found}",
         f"bodies_missing:{missing}",
@@ -445,6 +455,8 @@ def run_hybrid_readiness_handoff(
         f"readiness_verdict:{readiness_verdict or 'skipped_no_bodies'}",
         f"handoff_verdict:{handoff_verdict}",
         f"preprocess_bodies:{len(preprocess_rows)}",
+        f"preprocess_rollup_bodies:{preprocess_rollup['body_count']}",
+        f"preprocess_rollup_drives_verdict:{preprocess_rollup['drives_verdict']}",
         f"use_yake_keywords:{request.use_yake_keywords}",
         f"yake_languages:{','.join(yake_langs) if yake_langs else 'none'}",
         "import_write_fail_closed",
@@ -469,6 +481,7 @@ def run_hybrid_readiness_handoff(
         scholarly_resolutions=scholarly,
         scholarly_wrapper=scholarly_summary,
         preprocess_bodies=tuple(preprocess_rows),
+        preprocess_rollup=preprocess_rollup,
         diagnostics=diagnostics,
         output_path=str(out_path) if out_path else None,
     )
