@@ -19,6 +19,8 @@ from research_graph.domain.universal_kb.contracts import SafetyFlags
 DEFAULT_CATALOG_INDEX = Path("data/article_catalog/index.json")
 DEFAULT_CATALOG_ROOT = Path("data/article_catalog")
 DEFAULT_BODY_ROOTS: tuple[Path, ...] = (
+    # Expand batch work_dir first so new hybrid bodies join coverage (M247).
+    Path("artifacts/m213-hybrid-gate/runs-live-expand"),
     Path("artifacts/m213-hybrid-gate/runs-live-20"),
     Path("artifacts/m213-hybrid-gate/runs-live"),
     Path("artifacts/m213-hybrid-gate/runs-live-scholarly-20"),
