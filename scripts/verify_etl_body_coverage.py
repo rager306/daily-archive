@@ -101,6 +101,8 @@ def main(argv: list[str] | None = None) -> int:
             f"hybrid_found: {pkg.hybrid_body_found} | "
             f"hybrid_missing: {pkg.hybrid_body_missing} | "
             f"hybrid_fraction: {pkg.hybrid_body_fraction} | "
+            f"hybrid_unique_ids: {pkg.hybrid_body_unique_paper_ids} | "
+            f"hybrid_files: {pkg.hybrid_body_artifact_files} | "
             f"article_json_found: {pkg.article_json_found} | "
             f"body_roots: {len(result.body_roots_used)} | "
             f"gaps: {len(pkg.gaps)} | "
@@ -109,6 +111,12 @@ def main(argv: list[str] | None = None) -> int:
         if pkg.by_source_code:
             parts = [f"{k}={v}" for k, v in sorted(pkg.by_source_code.items())]
             sys.stdout.write("  by_source: " + ", ".join(parts) + "\n")
+        if pkg.hybrid_body_files_by_root:
+            parts = [
+                f"{Path(k).name}={v}"
+                for k, v in sorted(pkg.hybrid_body_files_by_root.items())
+            ]
+            sys.stdout.write("  files_by_root: " + ", ".join(parts) + "\n")
         if pkg.gaps:
             sys.stdout.write("  gaps: " + ", ".join(pkg.gaps) + "\n")
 

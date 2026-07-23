@@ -1,4 +1,4 @@
-"""Wave A ETL body coverage audit (M241).
+"""Wave A ETL body coverage audit (M241/M242).
 
 Read-only: catalog index + optional local article.json paths + hybrid body
 markdown under body roots. Never network, never authorizes import.
@@ -6,6 +6,10 @@ markdown under body roots. Never network, never authorizes import.
 Hybrid body convention (M213/M216)::
 
     {body_root}/{paper_id}/body/{paper_id}.hybrid.body.md
+
+M242: separate **catalog-joined unique paper_ids** (``hybrid_body_found``)
+from **raw artifact file volume** across overlapping body roots
+(``hybrid_body_artifact_files`` / ``hybrid_body_unique_paper_ids``).
 """
 
 from __future__ import annotations
@@ -17,7 +21,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = "m241-etl-body-coverage-audit.v1"
+SCHEMA_VERSION = "m242-etl-body-coverage-audit.v1"
 
 
 def paper_id_for_article(article: Mapping[str, Any]) -> str:
@@ -59,6 +63,36 @@ def find_hybrid_body(paper_id: str, body_roots: Sequence[Path]) -> Path | None:
     return None
 
 
+def scan_hybrid_body_artifacts(
+    body_roots: Sequence[Path],
+) -> tuple[int, int, dict[str, int]]:
+    """Scan body roots for ``*.hybrid.body.md`` files.
+
+    Returns:
+        (artifact_file_count, unique_paper_id_count, files_by_root)
+    Multi-root copies of the same paper_id count as multiple files but one unique id.
+    """
+    files_by_root: dict[str, int] = {}
+    unique_ids: set[str] = set()
+    total_files = 0
+    for root in body_roots:
+        root_p = Path(root)
+        if not root_p.is_dir():
+            files_by_root[str(root_p)] = 0
+            continue
+        n = 0
+        for path in root_p.rglob("*.hybrid.body.md"):
+            if not path.is_file():
+                continue
+            n += 1
+            total_files += 1
+            name = path.name
+            if name.endswith(".hybrid.body.md"):
+                unique_ids.add(name[: -len(".hybrid.body.md")])
+        files_by_root[str(root_p)] = n
+    return total_files, len(unique_ids), files_by_root
+
+
 @dataclass(frozen=True, slots=True)
 class EtlBodyCoverageSample:
     article_ref: str
@@ -93,6 +127,10 @@ class EtlBodyCoveragePackage:
     gaps: tuple[str, ...]
     samples: tuple[EtlBodyCoverageSample, ...]
     diagnostics: tuple[str, ...]
+    # M242: artifact volume (may exceed unique catalog join due to multi-root copies)
+    hybrid_body_artifact_files: int = 0
+    hybrid_body_unique_paper_ids: int = 0
+    hybrid_body_files_by_root: dict[str, int] | None = None
     import_eligible: bool = False
     graph_writes_allowed: bool = False
 
@@ -114,6 +152,9 @@ class EtlBodyCoveragePackage:
             "hybrid_body_found": self.hybrid_body_found,
             "hybrid_body_missing": self.hybrid_body_missing,
             "hybrid_body_fraction": self.hybrid_body_fraction,
+            "hybrid_body_artifact_files": self.hybrid_body_artifact_files,
+            "hybrid_body_unique_paper_ids": self.hybrid_body_unique_paper_ids,
+            "hybrid_body_files_by_root": dict(self.hybrid_body_files_by_root or {}),
             "article_json_found": self.article_json_found,
             "article_json_missing": self.article_json_missing,
             "body_roots_scanned": self.body_roots_scanned,
@@ -122,7 +163,11 @@ class EtlBodyCoveragePackage:
             "diagnostics": list(self.diagnostics),
             "import_eligible": False,
             "graph_writes_allowed": False,
-            "note": "Wave A coverage audit only; not graph import; not extraction quality",
+            "note": (
+                "Wave A coverage audit only; not graph import; not extraction quality. "
+                "hybrid_body_found = unique catalog join; "
+                "hybrid_body_artifact_files = raw *.hybrid.body.md under roots."
+            ),
         }
 
 
@@ -191,17 +236,23 @@ def audit_catalog_body_coverage(
                 )
             )
 
+    artifact_files, unique_ids, files_by_root = scan_hybrid_body_artifacts(roots)
+
     if articles and hybrid_found == 0 and roots:
         gaps.append("no_hybrid_bodies_under_body_roots")
     if articles and hybrid_found < len(articles) and roots:
         gaps.append("partial_hybrid_body_coverage")
     if not roots:
         gaps.append("no_body_roots_configured")
+    if artifact_files > unique_ids and unique_ids > 0:
+        gaps.append("multi_root_hybrid_body_copies")
 
     diagnostics = (
         f"articles:{len(articles)}",
         f"hybrid_found:{hybrid_found}",
         f"hybrid_missing:{hybrid_missing}",
+        f"hybrid_artifact_files:{artifact_files}",
+        f"hybrid_unique_paper_ids:{unique_ids}",
         f"body_roots:{len(roots)}",
         "import_write_fail_closed",
         "wave_a_coverage_only",
@@ -219,6 +270,9 @@ def audit_catalog_body_coverage(
         gaps=tuple(gaps),
         samples=tuple(samples),
         diagnostics=diagnostics,
+        hybrid_body_artifact_files=artifact_files,
+        hybrid_body_unique_paper_ids=unique_ids,
+        hybrid_body_files_by_root=dict(sorted(files_by_root.items())),
     )
 
 
@@ -229,4 +283,5 @@ __all__ = [
     "audit_catalog_body_coverage",
     "find_hybrid_body",
     "paper_id_for_article",
+    "scan_hybrid_body_artifacts",
 ]
