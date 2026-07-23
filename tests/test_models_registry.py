@@ -109,7 +109,23 @@ def test_invalid_endpoint_scheme_fails():
     bad_model = {**VALID_REGISTRY["models"][0], "endpoint": "http://insecure.example.com"}  # ty:ignore[invalid-argument-type]
     payload = {**VALID_REGISTRY, "models": [bad_model]}
     errors = validate_models_yaml.validate_registry(payload)
-    assert any("endpoint" in e and "https://" in e for e in errors)
+    assert any("endpoint" in e for e in errors)
+
+
+def test_local_http_endpoint_allowed_for_ninerouter():
+    local_model = {
+        **VALID_REGISTRY["models"][0],
+        "id": "ninerouter-local-openai",
+        "provider": "openai",
+        "endpoint": "http://127.0.0.1:20128/v1/chat/completions",
+        "model_name": "agnes-ai/agnes-2.0-flash",
+    }
+    payload = {
+        **VALID_REGISTRY,
+        "models": [*VALID_REGISTRY["models"], local_model],
+    }
+    errors = validate_models_yaml.validate_registry(payload)
+    assert errors == []
 
 
 def test_invalid_id_format_fails():

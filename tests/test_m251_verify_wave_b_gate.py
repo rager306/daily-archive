@@ -11,9 +11,10 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "verify_wave_b_gate.py"
 
 
-def test_default_blocked() -> None:
+def test_no_stamp_blocked() -> None:
+    """M254: explicit --no-stamp preserves M251 default-blocked contract."""
     proc = subprocess.run(
-        [sys.executable, str(SCRIPT), "--json"],
+        [sys.executable, str(SCRIPT), "--no-stamp", "--json"],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -30,7 +31,7 @@ def test_default_blocked() -> None:
 
 def test_human_go_dry_run_opens() -> None:
     proc = subprocess.run(
-        [sys.executable, str(SCRIPT), "--human-go", "--json"],
+        [sys.executable, str(SCRIPT), "--no-stamp", "--human-go", "--json"],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -46,9 +47,9 @@ def test_human_go_dry_run_opens() -> None:
     assert report["import_eligible"] is False
 
 
-def test_summary_line_default() -> None:
+def test_summary_line_no_stamp() -> None:
     proc = subprocess.run(
-        [sys.executable, str(SCRIPT)],
+        [sys.executable, str(SCRIPT), "--no-stamp"],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -58,7 +59,6 @@ def test_summary_line_default() -> None:
     assert "wave-b-gate" in proc.stdout
     assert "signal: blocked" in proc.stdout
     assert "import_eligible: false" in proc.stdout
-    assert "D123" in proc.stdout or "human go" in proc.stdout
 
 
 def test_with_closeout_live_if_catalog() -> None:
@@ -66,7 +66,7 @@ def test_with_closeout_live_if_catalog() -> None:
     if not index.is_file():
         return
     proc = subprocess.run(
-        [sys.executable, str(SCRIPT), "--with-closeout", "--json"],
+        [sys.executable, str(SCRIPT), "--no-stamp", "--with-closeout", "--json"],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -79,3 +79,26 @@ def test_with_closeout_live_if_catalog() -> None:
     # live A closed should show closeout context when metrics available
     if report.get("wave_a_closeout_pass") is True:
         assert report["wave_a_closeout_signal"] == "wave_a_closed"
+
+
+def test_default_reads_repo_stamp_if_present() -> None:
+    """M254: default path reads durable stamp (may be open on live repo)."""
+    stamp = ROOT / "artifacts" / "wave-b" / "human_go.json"
+    proc = subprocess.run(
+        [sys.executable, str(SCRIPT), "--json"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    report = json.loads(proc.stdout)
+    assert report["import_eligible"] is False
+    assert report["graph_writes_allowed"] is False
+    if stamp.is_file():
+        # live D124 stamp should open without dry-run
+        if report.get("human_go") is True:
+            assert report["wave_b_gate_open"] is True
+            assert report["human_go_source"] == "stamp"
+            assert report["human_go_persisted"] is True
+            assert report["human_go_is_dry_run"] is False

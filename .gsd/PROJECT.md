@@ -10,21 +10,31 @@ Source → Parser → Structure → Extraction → Graph → Review → Agents
 
 ## Текущая стадия pipeline
 
-**Стадия: post-M208 graph-data readiness / import-blocked validation.**
+**Стадия: post-M253 / M254 — Wave A closed + Wave B open (stamp D124) + 9router LLM summary path (import закрыт).**
 
-M202–M208 закрыты. Контракты extraction metrics, Falkor no-write compatibility, promotion boundary, disposable write pilot, retrieval quality, universal HTML source_kind и read-only SymFSM (O1–O6) существуют на fixture/contract уровне. **FalkorDB live driver не активируется**, пока не отработана цепочка данных и readiness.
+Wave A data readiness closed (`wave_a_closed`, hybrid_found≥40, continuity `ready_for_review`, import-hold 0). Wave B extraction quality active via durable `artifacts/wave-b/human_go.json` (D124); M072 baseline proceed; hybrid inventory 41; live hybrid extraction **scaffold** only (no LLM extract yet, no DSPy). LLM primary surface is local 9router (`NINEROUTER_URL`); paper-summary roles: default **agnes**, quality **MiniMax-M2.7-highspeed**, fallback **grok-code-fast-1**; optional summary stage package exists and is **composition-default off**, always `import_eligible=false`.
 
-M209 добавляет:
+**Live FalkorDB driver и production import выключены**, пока не будет отдельного явного Wave D readiness milestone.
 
-- continuity audit по 7 слоям pipeline;
-- no-write composition root `run_graph_data_readiness_pipeline` (load → structure → candidate → projection → promotion);
-- metadata-only `GraphDataReadinessPackage` с `import_eligible=false` и `graph_writes_allowed=false`.
+Закрыто с M209 (high-signal):
+
+- M209–M212: graph-data readiness package; parser body routes; hybrid sidecar offline inject
+- M213–M216: hybrid body 10→20, catalog coverage, readiness handoff (import закрыт)
+- M217–M221: GROBID TEI header/citations ETL; scholarly metrics; citation inventory + review policy
+- M222–M223: multi-source inventory; GNN textbook HTML catalog; company_blog HTML proof; Stanford PDF capture; catalog index **~230**
+- M224–M229: non-LLM preprocess (clean/quality/HTML main/language/outline/fingerprint/spans/windows) + **ADR-036**
+- M230–M232: optional YAKE inject (composition only; language-aware; cleaned body)
+- M233–M235: non-gating `preprocess_rollup` на hybrid и non_arxiv; fail-closed empty default
+- M236–M238: multi-tree import-hold inventory; default package roots; ADR closeout
+- M239–M240: `scripts/verify_import_hold_inventory.py` + pre-commit hook `m239-import-hold-inventory`
 
 Это значит:
 
-- operator path для graph-data readiness собирается без live Falkor;
-- production graph import всё ещё НЕ включён;
-- следующий горизонт — catalog coverage, real-corpus quality gates (10→20→week), затем только при явной готовности — live graph backend.
+- hybrid scholarly + multi-source custody paths usable для оператора **без** authorization на import;
+- `pilot_eligible ≠ import_eligible`; SafetyFlags fail-closed;
+- non-LLM preprocess и optional YAKE — enrichment only; **не** двигают `proof_pass` / `handoff_verdict` / import;
+- import-hold inventory + pre-commit держат `import_eligible = True` / `graph_writes_allowed = True` вне пакета;
+- **следующий горизонт — не «ещё hold-polish»**, а осознанный выбор: реальная data readiness без import, operator path, пауза волны, или отдельный import/Falkor milestone.
 
 ## Архитектура сейчас
 
@@ -72,11 +82,15 @@ M209 добавляет:
 - MiniMax/GLM hot-pluggable (M201); reviewed metrics/ablations (M202) на fixture harness.
 - Live fleet extraction quality всё ещё требует real-corpus staged gates.
 
-### Parser / hybrid
+### Parser / hybrid / multi-source
 
+- M213/M214 hybrid body gates (10→20) live-proven; M215 catalog coverage; M216 readiness handoff + scholarly_wrapper (import-blocked).
+- M217 pure GROBID TEI header/citations ETL; M218–M219 scholarly metrics on batch gate; M220 citation inventory; M221 review policy (`ready_for_human_review`, import false).
+- M222–M223 multi-source: catalog inventory; GNN textbook HTML register; company_blog via `universal_source` (not hybrid TEI); nature metadata-only; Stanford PDF captured.
 - Body routes: `html_native` | `mdconverter` | `fitz_offline` | `hybrid` | `hybrid_deferred` | `unavailable`.
-- M211–M212 parser body routes + hybrid sidecar offline inject закрыты. Live GROBID/ODL подключаются только на composition root (`hybrid_live_ports` / `article run --mode hybrid`); `hybrid_claimed_success` только с body evidence; import/writes fail-closed.
+- Live GROBID/ODL only on composition root; `hybrid_claimed_success` requires body evidence; sidecars candidate-only (ADR-008/009).
 - Sidecars: `.docker/docker-compose.yml` (GROBID :8070), host `opendataloader-pdf` (`uv sync --extra hybrid`).
+- PageIndex is format-agnostic full-text structure (not PDF-native TEI tree); hybrid PDF supplies body text for the same builder.
 
 ### Graph/readiness
 
@@ -111,11 +125,16 @@ M209 добавляет:
 - Утвердить explicit import eligibility promotion rules.
 - Проверить write-path governance не только на artifacts, но и на реальном import path.
 
+### Non-LLM article preprocess (next)
+
+- Deterministic body clean + HTML main-content + body_quality diagnostics before YAKE/PageIndex (vendor lessons: quant-mind clean/outline, yago hygiene, xberg positions — patterns only, no runtime swap).
+- OutlineSignals / language / content fingerprint as structure/stat enrichment.
+- Preprocess never opens import; scholarly vs web quality profiles.
+
 ### Extraction quality
 
-- Довести staged metrics/ablations для extraction quality.
-- Зафиксировать benchmark fixtures и failure taxonomy для typed entities/relations.
-- Не включать optimizer/DSPy-style claims без verified metrics.
+- Staged metrics/ablations exist (M202); live fleet quality still needs real-corpus gates.
+- No optimizer/DSPy production claims without verified metrics.
 
 ### Graph layer
 
@@ -130,19 +149,17 @@ M209 добавляет:
 
 ### Test hygiene
 
-- Общий pytest collect сейчас не является clean: collect-only видит 2,905 tests collected и 2 legacy collection errors в `tests/test_m058_s01.py` / `tests/test_m058_s02.py` из-за отсутствующего `marker` module.
-- Это не блокировало M198, потому что финальная валидация была targeted, но перед full-suite claims нужно либо восстановить optional legacy dependency, либо зафиксировать quarantine/skip policy.
+- Full `pytest --collect-only` is clean: **3178 tests collected** (post-M223).
+- M058 optional pilots (`plotextractor` / `marker`) use `pytest.importorskip` and skip when deps absent — not collection errors.
+- Prefer targeted suites for milestone closeout; full-suite green claims still need intentional runs, not only collect.
 
 ## Тестовое покрытие и verification surfaces
 
 ### Инвентарь тестов
 
-- Test files в `tests/`: 311.
-- M198-specific test files: 16.
-- Governance/ratchet/guardrail-style test files: 13.
-- Graph-related test files: 23.
-- Corpus/parser/catalog/ingest/PDF-related test files: 35.
-- Pytest collect-only: 2,905 tests collected, 2 legacy collection errors.
+- Pytest collect-only (post-M223): **3178 tests collected**, 0 collection errors.
+- Hybrid/multi-source suites: `test_m213_*` … `test_m223_*` plus scholarly/citation/inventory modules.
+- Governance/no-write/onion ratchets remain required on new application/composition code.
 
 ### Что реально проходило в финальной M198 валидации
 
@@ -169,24 +186,63 @@ M198 closeout verification:
 
 Финальное `82 passed` — это targeted readiness/governance suite, а не утверждение, что весь исторический repository suite полностью green. Для полного green claim сначала нужно устранить/классифицировать legacy collection errors.
 
-## Current roadmap posture
+## Текущая поза roadmap
 
-| Area | State |
+| Область | Состояние |
 |---|---|
-| Architecture crystallization | Complete enough for current work |
-| Source/catalog/parser/chunking | Substantial staged coverage exists |
-| Extraction quality | Needs metrics/ablations before production claims |
-| Graph readiness | Validate-only readiness complete; production import blocked |
-| Backend writes/imports | Explicitly disabled |
-| Operator readiness | M198 package/runbook complete |
-| Agents/SymFSM | Future development |
+| Архитектура (hex/onion, ADR) | Достаточно стабильна для текущей работы |
+| Source/catalog/parser/chunking | Существенное staged coverage |
+| Non-LLM preprocess + YAKE boundary | **Закрыто** M224–M235 / ADR-036 |
+| Import-hold inventory + operator gate | **Закрыто** M236–M240 |
+| Extraction quality | Нужны metrics/ablations до production claims |
+| Graph readiness | Validate-only есть; **production import заблокирован** |
+| Backend writes/imports | Явно выключены |
+| Operator readiness | M198 package/runbook + import-hold verify/pre-commit |
+| Agents/SymFSM | Будущая разработка |
 
-## Immediate next best milestone
+## Ближайший следующий шаг
 
-The next milestone should not “turn on imports” directly. Safer sequence:
+**Import и live Falkor не включать**, пока волны A–C не дадут evidence. SafetyFlags не «смягчать».
 
-1. repair or quarantine legacy pytest collection errors;
-2. design production import activation contract;
-3. run GitNexus impact gates for queue/backend/import seams;
-4. rehearse schema migration/import eligibility promotion in validate-only mode;
-5. only then consider controlled write-enabled pilot.
+### Уже сделано (не переоткрывать без причины)
+
+- M202–M223: hybrid scholarly + multi-source operator path (import закрыт).
+- M224–M240: non-LLM preprocess, ADR-036, YAKE composition inject, dual-wire rollup, import-hold inventory, operator verify, pre-commit guard.
+- Статистика-first: YAKE/PageIndex — core (ADR-024 + ADR-036).
+
+### Длинный горизонт ETL → ~99% (волны; import в конце)
+
+Цель ~99% — **operator-honest end-to-end data preparation + measured quality + explicit write gate**, не «включить Falkor наугад».
+
+| Волна | Фокус | Критерий готовности волны | Import? |
+|---|---|---|---|
+| **A. Data readiness** | Catalog↔body/hybrid coverage, continuity audit, preprocess metrics 10→20 | Измеримый coverage report; gaps classed; handoff/readiness на live artifacts | **Нет** |
+| **B. Extraction quality** | Real-corpus metrics/ablations до optimizer | Staged extraction quality gates; no DSPy claims without metrics | **Нет** |
+| **C. Structure graph-ready** | Chunk/structure quality vs promotion contract | Documented graph-ready fractions; still no write | **Нет** |
+| **D. Explicit import pilot** | Fail-closed promotion + optional disposable pilot | Evidence package + GitNexus impact; SafetyFlags only if approved | **Только явно** |
+| **E. Agents** | Read-only / SymFSM over ready graph | After D | After D |
+
+**Порядок обязателен:** A → B → C → (D только по go) → E.  
+**Неподключённый функционал** (nature fulltext, live Falkor, fleet DSPy, agentic collapse) — не подключать «чтобы % вырос»; только по wave criteria.
+
+### Сейчас: Wave B (extraction quality) + LLM boundary rewrite (M254)
+
+1. **Done M241–M253:** Wave A **closed**; Wave B **active** (D124 stamp) — gate **open** from stamp (`verify_wave_b_gate` stamp-aware); hybrid extraction candidates **41**; M072 baseline entity_f1 **0.917** gate proceed; disagreements inventory live; import false; DSPy false.
+2. **Done M254 (partial/session):** stamp-aware Wave B gate CLI; `models.yaml` 9router summary bindings; thin `NineRouterChatClient`; binding-driven `PaperSummarizer` (agnes default); optional fail-closed summary stage (default off); live hybrid extraction **scaffold** (`pending_extraction`, 41 candidates).
+3. **Next B:** real staged extraction metrics on hybrid samples (statistical-first; LLM only with metrics; **no import**, **no DSPy optimizer** until metrics demand).
+4. Import/Falkor не открывать до Wave D + evidence. **Не переспрашивать go на A/B.**
+
+```bash
+uv run python scripts/verify_wave_b_gate.py
+uv run python scripts/verify_wave_b_hybrid_extraction_inventory.py
+uv run python scripts/verify_wave_b_live_hybrid_extraction.py
+uv run python scripts/verify_wave_b_extraction_baseline.py
+uv run python scripts/verify_import_hold_inventory.py
+```
+
+### Операторские команды (hold)
+
+```bash
+uv run python scripts/verify_import_hold_inventory.py
+uv run python scripts/verify_onion_layering.py
+```

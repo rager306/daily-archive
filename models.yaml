@@ -8,12 +8,14 @@
 #   id:              stable identifier used in code (snake_case, ends with provider)
 #   provider:        one of {anthropic, openai}
 #   endpoint:        full URL for the API call
+#                    (https:// public, or http://127.0.0.1|localhost for 9router)
 #   model_name:      exact model name as expected by the provider
 #   tool_version:    semver of the tool/api contract; bump on protocol changes
 #   policy_version:  semver of the calling-side policy; bump on behavior changes
 #
 # Validation: scripts/validate_models_yaml.py (runs in pre-commit hook, M044 mandatory).
-# Last updated: per D074 + M046 Recommendation 6 + M048 patterns-review 01.
+# Last updated: summary-eval 10-paper roles (agnes default fast; M2.7 quality;
+#               grok fallback) via local 9router OpenAI-compatible path.
 
 schema_version: "v0.1"
 
@@ -46,6 +48,43 @@ models:
     tool_version: 2026-05-15
     policy_version: m060g-v0.1
 
+  # --- Local 9router (OpenAI-compatible) — primary LLM surface ---
+  # Base: NINEROUTER_URL=http://127.0.0.1:20128  (env may override host/port)
+  - id: ninerouter-agnes-2-0-flash-openai
+    provider: openai
+    endpoint: http://127.0.0.1:20128/v1/chat/completions
+    model_name: agnes-ai/agnes-2.0-flash
+    tool_version: 2026-07-22
+    policy_version: summary-roles-v0.1
+
+  - id: ninerouter-minimax-m27-highspeed-openai
+    provider: openai
+    endpoint: http://127.0.0.1:20128/v1/chat/completions
+    model_name: minimax/MiniMax-M2.7-highspeed
+    tool_version: 2026-07-22
+    policy_version: summary-roles-v0.1
+
+  - id: ninerouter-grok-code-fast-1-openai
+    provider: openai
+    endpoint: http://127.0.0.1:20128/v1/chat/completions
+    model_name: xai/grok-code-fast-1
+    tool_version: 2026-07-22
+    policy_version: summary-roles-v0.1
+
+  - id: ninerouter-glm-5-2-openai
+    provider: openai
+    endpoint: http://127.0.0.1:20128/v1/chat/completions
+    model_name: glm/glm-5.2
+    tool_version: 2026-07-22
+    policy_version: summary-roles-v0.1
+
+  - id: ninerouter-gpt-5-4-mini-openai
+    provider: openai
+    endpoint: http://127.0.0.1:20128/v1/chat/completions
+    model_name: cx/gpt-5.4-mini
+    tool_version: 2026-07-22
+    policy_version: summary-roles-v0.1
+
 bindings:
   # bindings map a usage purpose to a model id
   # used by M050 worker pool and downstream helper code
@@ -68,3 +107,26 @@ bindings:
   - binding_id: figure-qa-judge-quality
     model_id: minimax-m3-multimodal-anthropic
     description: "Diagnostic-only figure QA judge quality path using MiniMax-M3 multimodal"
+
+  # --- Paper summary roles (10-paper eval; optional ETL stage, import_eligible=false) ---
+  # Default NOW: agnes for tests + fast volume. Quality = MiniMax M2.7 (subscription).
+  # Fallback = grok-code-fast-1. DSPy prompt/program optimization on agnes: later check.
+  - binding_id: paper-summary-generate-default
+    model_id: ninerouter-agnes-2-0-flash-openai
+    description: "Default paper summary generator for tests and fast volume (agnes-2.0-flash via 9router)"
+
+  - binding_id: paper-summary-generate-quality
+    model_id: ninerouter-minimax-m27-highspeed-openai
+    description: "Quality paper summary generator (minimax/MiniMax-M2.7-highspeed via 9router; operator subscription)"
+
+  - binding_id: paper-summary-generate-fallback
+    model_id: ninerouter-grok-code-fast-1-openai
+    description: "Fallback paper summary generator when quality/default unavailable (xai/grok-code-fast-1 via 9router)"
+
+  - binding_id: paper-summary-judge-primary
+    model_id: ninerouter-glm-5-2-openai
+    description: "Primary summary quality judge (glm/glm-5.2); may put answer in reasoning_content"
+
+  - binding_id: paper-summary-judge-secondary
+    model_id: ninerouter-gpt-5-4-mini-openai
+    description: "Second-opinion summary judge (cx/gpt-5.4-mini)"

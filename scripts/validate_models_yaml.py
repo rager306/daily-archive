@@ -51,8 +51,21 @@ REQUIRED_TOP_LEVEL = {"schema_version", "models", "bindings"}
 VERSION_LIKE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+\-]*$")
 # ID pattern: snake_case OR kebab-case OR with dots (e.g., m3-512k)
 ID_PATTERN = re.compile(r"^[a-z][a-z0-9_.\-]*$")
-ENDPOINT_PATTERN = re.compile(r"^https://")
+# Public cloud endpoints must be https; local-only 9router may use loopback http.
+ENDPOINT_HTTPS_PATTERN = re.compile(r"^https://")
+ENDPOINT_LOCAL_HTTP_PATTERN = re.compile(
+    r"^http://(127\.0\.0\.1|localhost)(:\d+)?(/.*)?$"
+)
 DEFAULT_YAML_PATH = Path("models.yaml")
+
+
+def _endpoint_allowed(endpoint: object) -> bool:
+    if not isinstance(endpoint, str) or not endpoint.strip():
+        return False
+    return bool(
+        ENDPOINT_HTTPS_PATTERN.match(endpoint)
+        or ENDPOINT_LOCAL_HTTP_PATTERN.match(endpoint)
+    )
 
 
 def _is_version_like(s: object) -> bool:
@@ -105,8 +118,11 @@ def validate_registry(payload: dict[str, Any]) -> list[str]:
             errors.append(
                 f"{prefix}.provider='{model['provider']}': must be one of {sorted(ALLOWED_PROVIDERS)}"
             )
-        if not ENDPOINT_PATTERN.match(model["endpoint"]):
-            errors.append(f"{prefix}.endpoint='{model['endpoint']}': must start with https://")
+        if not _endpoint_allowed(model["endpoint"]):
+            errors.append(
+                f"{prefix}.endpoint='{model['endpoint']}': must start with https:// "
+                "or be local-only http://127.0.0.1|localhost"
+            )
         if not isinstance(model["model_name"], str) or not model["model_name"].strip():
             errors.append(f"{prefix}.model_name: must be non-empty string")
         if not _is_version_like(model["tool_version"]):
