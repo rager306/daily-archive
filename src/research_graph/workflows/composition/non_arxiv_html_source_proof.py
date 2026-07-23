@@ -1,6 +1,8 @@
-"""M223: prove non-arxiv HTML sources via M207 universal_source path.
+"""M223/M226: prove non-arxiv HTML sources via M207 universal_source path.
 
 Default subject: company_blog PageIndex article (already captured).
+M226: optional ArticlePreprocessPackage enrichment (language/outline/fingerprint)
+on loaded HTML body — diagnostics only, never import/hybrid authorization.
 Never claims hybrid TEI scholarly success. Never authorizes import.
 """
 
@@ -11,6 +13,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from research_graph.application.corpus.article_preprocess import (
+    build_article_preprocess_package,
+)
+from research_graph.application.corpus.content_fingerprint import (
+    fingerprint_cleaned_body,
+)
 from research_graph.domain.universal_kb.contracts import SafetyFlags
 from research_graph.workflows.composition.universal_source import (
     StructuredSourceBundle,
@@ -18,7 +26,7 @@ from research_graph.workflows.composition.universal_source import (
     structure_loaded_source,
 )
 
-SCHEMA_VERSION = "m223-non-arxiv-html-source-proof.v1"
+SCHEMA_VERSION = "m226-non-arxiv-html-source-proof.v1"
 DEFAULT_BLOG_ARTICLE = Path(
     "data/article_catalog/article_catalog/company_blog/cs-ir/"
     "pageindex_zhang2025pageindex/article.json"
@@ -53,6 +61,7 @@ class NonArxivHtmlSourceProofResult:
     safety_flags: SafetyFlags = field(default_factory=SafetyFlags)
     diagnostics: tuple[str, ...] = ()
     output_path: str | None = None
+    preprocess: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         self.safety_flags.assert_no_write()
@@ -60,6 +69,8 @@ class NonArxivHtmlSourceProofResult:
             raise ValueError("non-arxiv html proof cannot authorize import/writes")
         if self.hybrid_claimed_success:
             raise ValueError("non-arxiv html proof cannot claim hybrid TEI success")
+        if self.preprocess is not None and self.preprocess.get("import_eligible") is True:
+            raise ValueError("preprocess enrichment cannot authorize import")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -83,6 +94,7 @@ class NonArxivHtmlSourceProofResult:
             "import_eligible": False,
             "graph_writes_allowed": False,
             "hybrid_claimed_success": False,
+            "preprocess": self.preprocess,
             "diagnostics": list(self.diagnostics),
             "safety_flags": self.safety_flags.to_dict(),
             "output_path": self.output_path,
@@ -195,6 +207,33 @@ def run_non_arxiv_html_source_proof(
         )
         diag.append(f"proof_pass:{proof_pass}")
 
+        preprocess_summary: dict[str, Any] | None = None
+        if load.outcome == "loaded" and load.text:
+            pkg = build_article_preprocess_package(
+                source_id=article_key or "non-arxiv",
+                text=load.text,
+                source_class=source_code or "company_blog",
+                profile="web",
+                is_html=True,
+            )
+            fp = fingerprint_cleaned_body(pkg.cleaned_text)
+            preprocess_summary = {
+                "schema_version": pkg.schema_version,
+                "language": pkg.language,
+                "language_confidence": pkg.language_confidence,
+                "quality_status": pkg.quality_status,
+                "quality_rule_hits": list(pkg.quality_rule_hits),
+                "word_count": pkg.word_count,
+                "outline_heading_count": pkg.outline_heading_count,
+                "clean_ops": list(pkg.clean_ops),
+                "html_main_content_ratio": pkg.html_main_content_ratio,
+                "content_fingerprint_sha256": fp.sha256,
+                "cleaned_text_chars": len(pkg.cleaned_text),
+                "import_eligible": False,
+            }
+            diag.append(f"preprocess_language:{pkg.language}")
+            diag.append(f"content_fingerprint:{fp.sha256[:12]}")
+
         result = NonArxivHtmlSourceProofResult(
             schema_version=SCHEMA_VERSION,
             article_ref=article_ref,
@@ -208,6 +247,7 @@ def run_non_arxiv_html_source_proof(
             proof_pass=proof_pass,
             diagnostics=tuple(diag),
             output_path=out_path_str,
+            preprocess=preprocess_summary,
         )
 
     if out_path is not None:
