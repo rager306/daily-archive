@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
+from research_graph.application.corpus.language_detect import detect_text_language
 from research_graph.application.corpus.preprocess_summary import (
     preprocess_summary_for_body,
 )
@@ -34,6 +35,7 @@ from research_graph.workflows.composition.hybrid_catalog_coverage import (
 )
 from research_graph.workflows.composition.yake_keyword_inject import (
     yake_keywords_for_text,
+    yake_language_code,
 )
 
 DEFAULT_SELECTION = Path("artifacts/m213-hybrid-gate/selection-20.json")
@@ -397,19 +399,32 @@ def run_hybrid_readiness_handoff(
         except OSError:
             continue
         injected: list[str] | None = None
+        yake_lan = ""
         if request.use_yake_keywords:
-            injected = yake_keywords_for_text(body_text, language="en", top_k=12)
-        preprocess_rows.append(
-            preprocess_summary_for_body(
-                source_id=row.paper_id,
-                text=body_text,
-                source_class="arxiv",
-                profile="scholarly",
-                is_html=False,
-                keywords=injected,
+            detected = detect_text_language(body_text)
+            yake_lan = yake_language_code(detected.language)
+            injected = yake_keywords_for_text(
+                body_text, language=yake_lan, top_k=12
             )
+        row_summary = preprocess_summary_for_body(
+            source_id=row.paper_id,
+            text=body_text,
+            source_class="arxiv",
+            profile="scholarly",
+            is_html=False,
+            keywords=injected,
         )
+        if yake_lan:
+            row_summary = {**row_summary, "yake_language": yake_lan}
+        preprocess_rows.append(row_summary)
 
+    yake_langs = sorted(
+        {
+            str(r.get("yake_language"))
+            for r in preprocess_rows
+            if r.get("yake_language")
+        }
+    )
     diagnostics = (
         f"bodies_found:{found}",
         f"bodies_missing:{missing}",
@@ -422,6 +437,7 @@ def run_hybrid_readiness_handoff(
         f"handoff_verdict:{handoff_verdict}",
         f"preprocess_bodies:{len(preprocess_rows)}",
         f"use_yake_keywords:{request.use_yake_keywords}",
+        f"yake_languages:{','.join(yake_langs) if yake_langs else 'none'}",
         "import_write_fail_closed",
         "no_live_sidecar_start",
         "scholarly_wrapper_candidate_only",

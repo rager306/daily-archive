@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from research_graph.application.corpus.language_detect import detect_text_language
 from research_graph.application.corpus.preprocess_summary import (
     preprocess_summary_for_body,
 )
@@ -24,6 +25,7 @@ from research_graph.workflows.composition.universal_source import (
 )
 from research_graph.workflows.composition.yake_keyword_inject import (
     yake_keywords_for_text,
+    yake_language_code,
 )
 
 SCHEMA_VERSION = "m226-non-arxiv-html-source-proof.v1"
@@ -212,9 +214,12 @@ def run_non_arxiv_html_source_proof(
         preprocess_summary: dict[str, Any] | None = None
         if load.outcome == "loaded" and load.text:
             injected: list[str] | None = None
+            yake_lan = ""
             if request.use_yake_keywords:
+                detected = detect_text_language(load.text)
+                yake_lan = yake_language_code(detected.language)
                 injected = yake_keywords_for_text(
-                    load.text, language="en", top_k=12
+                    load.text, language=yake_lan, top_k=12
                 )
             preprocess_summary = preprocess_summary_for_body(
                 source_id=article_key or "non-arxiv",
@@ -224,6 +229,11 @@ def run_non_arxiv_html_source_proof(
                 is_html=True,
                 keywords=injected,
             )
+            if yake_lan:
+                preprocess_summary = {
+                    **preprocess_summary,
+                    "yake_language": yake_lan,
+                }
             fp = str(preprocess_summary.get("content_fingerprint_sha256") or "")
             diag.append(f"preprocess_language:{preprocess_summary.get('language')}")
             diag.append(f"content_fingerprint:{fp[:12]}")
@@ -231,6 +241,8 @@ def run_non_arxiv_html_source_proof(
                 f"keyword_source:{preprocess_summary.get('keyword_source')}"
             )
             diag.append(f"use_yake_keywords:{request.use_yake_keywords}")
+            if yake_lan:
+                diag.append(f"yake_language:{yake_lan}")
 
         result = NonArxivHtmlSourceProofResult(
             schema_version=SCHEMA_VERSION,
