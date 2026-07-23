@@ -444,6 +444,18 @@ Live reparse (gitignored `runs-live-scholarly/`):
 Live selection-10 proof (M219): 10/10 hybrid, 10/10 scholarly complete, 301 citations, import false.
 Point handoff `body_root` at `runs-live-scholarly` for non-zero `scholarly_wrapper`.
 
+### M220 selection-20 scholarly + citation candidate inventory
+
+- Live rung: `selection-20.json` → gitignored `runs-live-scholarly-20/` (reuse `hybrid_batch_gate`).
+- Live proof: **20/20** hybrid + scholarly complete, **878** citations, import false (~152s).
+- Pure inventory: `research_graph.application.corpus.citation_candidate_inventory`
+- Composition: `run_citation_candidate_inventory` scans `body_root` for header/cites and emits coverage rates (title/author/idno/date/venue). **Not** a review gate; import false.
+
+```bash
+.venv/bin/python -c "from pathlib import Path; from research_graph.workflows.composition.citation_candidate_inventory import CitationInventoryRequest, run_citation_candidate_inventory; r=run_citation_candidate_inventory(CitationInventoryRequest(hybrid_selection_path=Path('artifacts/m213-hybrid-gate/selection-20.json'), body_root=Path('artifacts/m213-hybrid-gate/runs-live-scholarly-20'), repo_root=Path('.'))); print(r.package.citation_total, r.package.to_dict()['title_coverage'], r.import_eligible)"
+```
+
+
 Current live probe result: 1 target article has `live_success` GROBID TEI summary evidence; 5 linked target articles remain `missing_pdf` blockers until bounded local PDF acquisition is performed. Raw TEI/full text is not persisted.
 
 M049 models registry (canonical MiniMax model paths):
