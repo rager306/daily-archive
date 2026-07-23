@@ -9,7 +9,12 @@ Never authorizes import or graph writes.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Literal
+
+from research_graph.application.corpus.wave_b_extraction_baseline import (
+    read_human_go_stamp,
+)
 
 SCHEMA_VERSION = "m251-wave-b-gate.v1"
 
@@ -97,9 +102,44 @@ def evaluate_wave_b_gate(
     )
 
 
+def evaluate_wave_b_gate_from_stamp(
+    stamp_path: Path,
+    *,
+    wave_a_closeout_pass: bool | None = None,
+    wave_a_closeout_signal: str | None = None,
+) -> WaveBGatePackage:
+    """Open Wave B gate when durable human_go stamp is present and valid.
+
+    Missing/invalid stamp → blocked. Stamp never authorizes import.
+    """
+    stamp = read_human_go_stamp(Path(stamp_path))
+    human_go = bool(stamp and stamp.get("human_go") is True)
+    package = evaluate_wave_b_gate(
+        human_go=human_go,
+        wave_a_closeout_pass=wave_a_closeout_pass,
+        wave_a_closeout_signal=wave_a_closeout_signal,
+    )
+    extra = (
+        f"stamp_path:{stamp_path}",
+        f"stamp_present:{stamp is not None}",
+        f"stamp_decision_ref:{(stamp or {}).get('decision_ref')}",
+        "stamp_not_import_authorization",
+    )
+    return WaveBGatePackage(
+        schema_version=package.schema_version,
+        gate_signal=package.gate_signal,
+        wave_b_gate_open=package.wave_b_gate_open,
+        human_go=package.human_go,
+        wave_a_closeout_pass=package.wave_a_closeout_pass,
+        wave_a_closeout_signal=package.wave_a_closeout_signal,
+        diagnostics=package.diagnostics + extra,
+    )
+
+
 __all__ = [
     "SCHEMA_VERSION",
     "GateSignal",
     "WaveBGatePackage",
     "evaluate_wave_b_gate",
+    "evaluate_wave_b_gate_from_stamp",
 ]
