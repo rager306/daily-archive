@@ -455,6 +455,23 @@ Point handoff `body_root` at `runs-live-scholarly` for non-zero `scholarly_wrapp
 .venv/bin/python -c "from pathlib import Path; from research_graph.workflows.composition.citation_candidate_inventory import CitationInventoryRequest, run_citation_candidate_inventory; r=run_citation_candidate_inventory(CitationInventoryRequest(hybrid_selection_path=Path('artifacts/m213-hybrid-gate/selection-20.json'), body_root=Path('artifacts/m213-hybrid-gate/runs-live-scholarly-20'), repo_root=Path('.'))); print(r.package.citation_total, r.package.to_dict()['title_coverage'], r.import_eligible)"
 ```
 
+### M221 citation review policy (pre-import)
+
+Pure `evaluate_citation_review_policy` maps M220 inventory coverages to:
+
+- `ready_for_human_review` — hard thresholds met (title/author/file fraction)
+- `repair` — coverage below thresholds
+- `blocked` — no papers/cites/files
+
+**Always** `import_eligible=false`, `review_required=true`.  
+Default: **idno is advisory** (live TEI ~0.40); set `enforce_idno=True` only when DOI policy hardens.
+
+```bash
+.venv/bin/python -c "from pathlib import Path; from research_graph.workflows.composition.citation_review_policy import CitationReviewPolicyRequest, run_citation_review_policy; r=run_citation_review_policy(CitationReviewPolicyRequest(hybrid_selection_path=Path('artifacts/m213-hybrid-gate/selection-20.json'), body_root=Path('artifacts/m213-hybrid-gate/runs-live-scholarly-20'), repo_root=Path('.'))); print(r.policy.verdict, r.policy.citation_total, r.import_eligible)"
+```
+
+Live scholarly-20 smoke: `ready_for_human_review`, 878 cites, import false.
+
 
 Current live probe result: 1 target article has `live_success` GROBID TEI summary evidence; 5 linked target articles remain `missing_pdf` blockers until bounded local PDF acquisition is performed. Raw TEI/full text is not persisted.
 
