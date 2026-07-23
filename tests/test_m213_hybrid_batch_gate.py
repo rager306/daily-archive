@@ -19,10 +19,23 @@ SELECTION = ROOT / "artifacts" / "m213-hybrid-gate" / "selection.json"
 
 class _FakeGrobid:
     def extract_metrics(self, pdf_path: Path, *, paper_id: str) -> dict:
+        # M217 structured payload so hybrid resolve persists header/cites artifacts.
         return {
             "status": "success",
             "header_title_present": True,
-            "bibl_count": 5,
+            "bibl_count": 2,
+            "structured_parse_ok": True,
+            "header": {
+                "title": f"Title for {paper_id}",
+                "authors": [{"full_name": "A Author"}],
+                "import_eligible": False,
+                "graph_writes_allowed": False,
+            },
+            "citations": [
+                {"title": "Cite 1", "import_eligible": False},
+                {"title": "Cite 2", "import_eligible": False},
+            ],
+            "citation_count": 2,
         }
 
 

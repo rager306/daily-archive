@@ -425,7 +425,24 @@ precomputed `hybrid.header.json` / `hybrid.citations.jsonl` next to body markdow
 
 Missing header/cites are reported as zeros — never invented. Still not graph import.
 
+### M219 hybrid batch scholarly metrics + live reparse
 
+`run_hybrid_batch_gate` scans each paper `body/` for M217 artifacts and reports:
+
+- per-row: `header_found`, `citations_found`, `citation_count`, `header_title`
+- batch: `headers_found`, `citations_files_found`, `scholarly_complete_count`, `citation_total`
+- `scholarly_wrapper` in `batch-summary.json` (candidate-only)
+
+Scholarly metrics are **additive observability** — `gate_pass` still depends on hybrid body success, not cites.
+
+Live reparse (gitignored `runs-live-scholarly/`):
+
+```bash
+.venv/bin/python -c "from pathlib import Path; from research_graph.workflows.composition.hybrid_batch_gate import HybridBatchGateRequest, run_hybrid_batch_gate; r=run_hybrid_batch_gate(HybridBatchGateRequest(selection_path=Path('artifacts/m213-hybrid-gate/selection.json'), work_dir=Path('artifacts/m213-hybrid-gate/runs-live-scholarly'), enable_live_hybrid=True, repo_root=Path('.'), min_hybrid_success=10)); print(r.headers_found, r.citation_total, r.gate_pass)"
+```
+
+Live selection-10 proof (M219): 10/10 hybrid, 10/10 scholarly complete, 301 citations, import false.
+Point handoff `body_root` at `runs-live-scholarly` for non-zero `scholarly_wrapper`.
 
 Current live probe result: 1 target article has `live_success` GROBID TEI summary evidence; 5 linked target articles remain `missing_pdf` blockers until bounded local PDF acquisition is performed. Raw TEI/full text is not persisted.
 

@@ -1,7 +1,9 @@
-"""M213 hybrid batch gate composition root.
+"""M213/M219 hybrid batch gate composition root.
 
 Runs single_article_pipeline over a selection.json of local PDFs with optional
-live hybrid ports. Application stays pure; no graph import/writes.
+live hybrid ports. After each paper, scans body dir for M217 GROBID
+hybrid.header.json / hybrid.citations.jsonl and reports candidate-only
+scholarly metrics. Application stays pure; no graph import/writes.
 """
 
 from __future__ import annotations
@@ -18,7 +20,49 @@ from research_graph.workflows.composition.single_article_pipeline import (
 )
 
 DEFAULT_SELECTION = Path("artifacts/m213-hybrid-gate/selection.json")
-SCHEMA_VERSION = "m213-hybrid-batch-result.v1"
+SCHEMA_VERSION = "m219-hybrid-batch-result.v1"
+
+
+def scan_scholarly_artifacts(
+    paper_work: Path,
+    *,
+    paper_id: str,
+) -> dict[str, Any]:
+    """Read presence/counts of hybrid.header.json + hybrid.citations.jsonl.
+
+    Looks under `{paper_work}/body/` (M217 layout). Candidate-only; never invents.
+    """
+    body_dir = paper_work / "body"
+    header_p = body_dir / f"{paper_id}.hybrid.header.json"
+    cites_p = body_dir / f"{paper_id}.hybrid.citations.jsonl"
+    header_found = header_p.is_file()
+    cites_found = cites_p.is_file()
+    citation_count = 0
+    header_title: str | None = None
+    if header_found:
+        try:
+            obj = json.loads(header_p.read_text(encoding="utf-8"))
+            if isinstance(obj, dict) and obj.get("title"):
+                header_title = str(obj["title"])
+        except (OSError, json.JSONDecodeError):
+            header_title = None
+    if cites_found:
+        try:
+            citation_count = sum(
+                1 for line in cites_p.read_text(encoding="utf-8").splitlines() if line.strip()
+            )
+        except OSError:
+            citation_count = 0
+    return {
+        "header_found": header_found,
+        "citations_found": cites_found,
+        "citation_count": citation_count,
+        "header_title": header_title,
+        "header_path": str(header_p) if header_found else None,
+        "citations_path": str(cites_p) if cites_found else None,
+        "import_eligible": False,
+        "graph_writes_allowed": False,
+    }
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,6 +93,10 @@ class PaperGateRow:
     package_path: str | None
     diagnostics: tuple[str, ...]
     error: str | None = None
+    header_found: bool = False
+    citations_found: bool = False
+    citation_count: int = 0
+    header_title: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -63,6 +111,11 @@ class PaperGateRow:
             "package_path": self.package_path,
             "diagnostics": list(self.diagnostics),
             "error": self.error,
+            "header_found": self.header_found,
+            "citations_found": self.citations_found,
+            "citation_count": self.citation_count,
+            "header_title": self.header_title,
+            "scholarly_complete": bool(self.header_found and self.citations_found),
         }
 
 
@@ -79,6 +132,10 @@ class HybridBatchGateResult:
     import_eligible_any: bool
     graph_writes_any: bool
     gate_pass: bool
+    headers_found: int = 0
+    citations_files_found: int = 0
+    scholarly_complete_count: int = 0
+    citation_total: int = 0
     safety_flags: SafetyFlags = field(default_factory=SafetyFlags)
     diagnostics: tuple[str, ...] = ()
 
@@ -99,6 +156,20 @@ class HybridBatchGateResult:
             "import_eligible_any": False,
             "graph_writes_any": False,
             "gate_pass": self.gate_pass,
+            "headers_found": self.headers_found,
+            "citations_files_found": self.citations_files_found,
+            "scholarly_complete_count": self.scholarly_complete_count,
+            "citation_total": self.citation_total,
+            "scholarly_wrapper": {
+                "headers_found": self.headers_found,
+                "citations_files_found": self.citations_files_found,
+                "scholarly_complete_count": self.scholarly_complete_count,
+                "citation_total": self.citation_total,
+                "import_eligible": False,
+                "graph_writes_allowed": False,
+                "source": "hybrid_batch_gate_scan",
+                "note": "candidate-only; not graph import",
+            },
             "papers": [r.to_dict() for r in self.rows],
             "diagnostics": list(self.diagnostics),
             "safety_flags": self.safety_flags.to_dict(),
@@ -180,6 +251,7 @@ def run_hybrid_batch_gate(request: HybridBatchGateRequest) -> HybridBatchGateRes
             verdict = None
             if result.readiness is not None:
                 verdict = str(result.readiness.package.verdict)
+            scholarly = scan_scholarly_artifacts(paper_work, paper_id=result.paper_id)
             rows.append(
                 PaperGateRow(
                     paper_id=result.paper_id,
@@ -193,9 +265,14 @@ def run_hybrid_batch_gate(request: HybridBatchGateRequest) -> HybridBatchGateRes
                     package_path=str(result.package_path) if result.package_path else None,
                     diagnostics=tuple(result.body.diagnostics),
                     error=None,
+                    header_found=bool(scholarly["header_found"]),
+                    citations_found=bool(scholarly["citations_found"]),
+                    citation_count=int(scholarly["citation_count"]),
+                    header_title=scholarly.get("header_title"),
                 )
             )
         except Exception as exc:  # noqa: BLE001 - batch continues fail-closed per paper
+            scholarly = scan_scholarly_artifacts(paper_work, paper_id=paper_id)
             rows.append(
                 PaperGateRow(
                     paper_id=paper_id,
@@ -209,6 +286,10 @@ def run_hybrid_batch_gate(request: HybridBatchGateRequest) -> HybridBatchGateRes
                     package_path=None,
                     diagnostics=(f"error:{type(exc).__name__}",),
                     error=f"{type(exc).__name__}:{exc}",
+                    header_found=bool(scholarly["header_found"]),
+                    citations_found=bool(scholarly["citations_found"]),
+                    citation_count=int(scholarly["citation_count"]),
+                    header_title=scholarly.get("header_title"),
                 )
             )
 
@@ -217,8 +298,13 @@ def run_hybrid_batch_gate(request: HybridBatchGateRequest) -> HybridBatchGateRes
     errors = sum(1 for r in rows if r.error)
     other = len(rows) - hybrid_ok - deferred - errors
     body_chars_total = sum(r.body_chars for r in rows)
+    headers_found = sum(1 for r in rows if r.header_found)
+    cites_files = sum(1 for r in rows if r.citations_found)
+    scholarly_complete = sum(1 for r in rows if r.header_found and r.citations_found)
+    citation_total = sum(r.citation_count for r in rows)
     # Structural pass: no per-paper crash path that sets error when min threshold is the success bar;
     # hard fail on any import/write; require min_hybrid_success hybrid body successes.
+    # Scholarly metrics are additive observability — not required for gate_pass.
     fail_closed_ok = all((not r.import_eligible) and (not r.graph_writes_allowed) for r in rows)
     gate_pass = (
         fail_closed_ok
@@ -228,6 +314,11 @@ def run_hybrid_batch_gate(request: HybridBatchGateRequest) -> HybridBatchGateRes
     batch_diag.append(f"hybrid_ok:{hybrid_ok}")
     batch_diag.append(f"min_hybrid_success:{request.min_hybrid_success}")
     batch_diag.append(f"body_chars_total:{body_chars_total}")
+    batch_diag.append(f"headers_found:{headers_found}")
+    batch_diag.append(f"citations_files_found:{cites_files}")
+    batch_diag.append(f"scholarly_complete:{scholarly_complete}")
+    batch_diag.append(f"citation_total:{citation_total}")
+    batch_diag.append("scholarly_candidate_only")
 
     result = HybridBatchGateResult(
         schema_version=SCHEMA_VERSION,
@@ -241,6 +332,10 @@ def run_hybrid_batch_gate(request: HybridBatchGateRequest) -> HybridBatchGateRes
         import_eligible_any=False,
         graph_writes_any=False,
         gate_pass=gate_pass,
+        headers_found=headers_found,
+        citations_files_found=cites_files,
+        scholarly_complete_count=scholarly_complete,
+        citation_total=citation_total,
         diagnostics=tuple(batch_diag),
     )
 
@@ -257,6 +352,7 @@ __all__ = [
     "HybridBatchGateResult",
     "PaperGateRow",
     "SCHEMA_VERSION",
+    "scan_scholarly_artifacts",
     "load_selection",
     "run_hybrid_batch_gate",
 ]
