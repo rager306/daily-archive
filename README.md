@@ -473,6 +473,27 @@ Default: **idno is advisory** (live TEI ~0.40); set `enforce_idno=True` only whe
 Live scholarly-20 smoke: `ready_for_human_review`, 878 cites, import false.
 
 
+
+### M222 multi-source ingest readiness + GNN textbook HTML
+
+Closes the PDF-only operator blind spot with two thin paths (ADR-032 first non-paper domain):
+
+1. **Catalog multi-source inventory** — offline scan of `article.json` `source_variants` by `source_code` / format / capture_status.
+2. **GNN textbook HTML** — reuses M207 `load_local_html_chapter` + structure; optional bounded live fetch of [GNN textbook](https://anvithpothula.github.io/graph-neural-networks-textbook/) into gitignored `artifacts/m222-gnn-textbook/`.
+
+```bash
+# catalog inventory (no network)
+.venv/bin/python -c "from pathlib import Path; from research_graph.workflows.composition.catalog_source_inventory import CatalogSourceInventoryRequest, run_catalog_source_inventory; r=run_catalog_source_inventory(CatalogSourceInventoryRequest(repo_root=Path('.'))); print(r.package.by_source_code, r.package.content_bearing_captured, r.package.gaps)"
+
+# offline GNN chapter fixture
+.venv/bin/python -c "from pathlib import Path; from research_graph.workflows.composition.gnn_textbook_ingest import GnnTextbookIngestRequest, run_gnn_textbook_ingest; r=run_gnn_textbook_ingest(GnnTextbookIngestRequest(chapter_path=Path('tests/fixtures/gnn_textbook/chapter_01_intro.html'), allow_network=False, repo_root=Path('.'))); print(r.chapters[0].load_outcome, r.chapters[0].structure.chunk_count if r.chapters[0].structure else None, r.import_eligible)"
+```
+
+Live catalog snapshot (M222): arxiv 223 / company_blog 1 / nature 1 / stanford 1; pdf 214; html 24; md 0; content_bearing_captured 217; missing 2. GNN live seeds: 4 chapters loaded, import false.
+
+**Not** full ADR-032 (no code_repo/dataset/tech_doc pipelines; no graph import).
+
+
 Current live probe result: 1 target article has `live_success` GROBID TEI summary evidence; 5 linked target articles remain `missing_pdf` blockers until bounded local PDF acquisition is performed. Raw TEI/full text is not persisted.
 
 M049 models registry (canonical MiniMax model paths):
