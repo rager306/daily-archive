@@ -55,7 +55,7 @@ def _cyrillic_ratio(text: str) -> float:
 
 def _stopword_scores(tokens: list[str]) -> dict[str, float]:
     if not tokens:
-        return {code: 0.0 for code in _STOPWORDS}
+        return dict.fromkeys(_STOPWORDS, 0.0)
     total = len(tokens)
     scores: dict[str, float] = {}
     for code, words in _STOPWORDS.items():
