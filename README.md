@@ -494,6 +494,25 @@ Live catalog snapshot (M222): arxiv 223 / company_blog 1 / nature 1 / stanford 1
 **Not** full ADR-032 (no code_repo/dataset/tech_doc pipelines; no graph import).
 
 
+
+### M223 multi-source strengthen (company_blog + GNN catalog)
+
+Operator path beyond arXiv pilots:
+
+1. **company_blog HTML proof** — `run_non_arxiv_html_source_proof` loads captured PageIndex HTML via M207 universal_source (not hybrid TEI).
+2. **GNN textbook catalog registration** — copies M222 HTML seeds into `article_catalog/gnn_textbook/html/*/`, rebuilds `index.json`.
+3. **Multi-source selection** — company_blog + gnn chapters package (`import_eligible=false`).
+4. **Stanford PDF** — bounded capture of CS224n gradient-notes into catalog source/.
+
+```bash
+.venv/bin/python -c "from pathlib import Path; from research_graph.workflows.composition.non_arxiv_html_source_proof import NonArxivHtmlSourceProofRequest, run_non_arxiv_html_source_proof; r=run_non_arxiv_html_source_proof(NonArxivHtmlSourceProofRequest(repo_root=Path('.'))); print(r.proof_pass, r.body_chars, r.structure.chunk_count if r.structure else None)"
+
+.venv/bin/python -c "from pathlib import Path; from research_graph.workflows.composition.gnn_textbook_catalog_register import GnnTextbookCatalogRegisterRequest, register_gnn_textbook_chapters; r=register_gnn_textbook_chapters(GnnTextbookCatalogRegisterRequest(repo_root=Path('.'), rebuild_index=True)); print(len(r.registered), r.index_article_count, r.import_eligible)"
+```
+
+Live after M223: index **230** articles — arxiv 223, gnn_textbook 4, company_blog/nature/stanford 1 each. Blog proof: 13k chars / 18 chunks. Import still false.
+
+
 Current live probe result: 1 target article has `live_success` GROBID TEI summary evidence; 5 linked target articles remain `missing_pdf` blockers until bounded local PDF acquisition is performed. Raw TEI/full text is not persisted.
 
 M049 models registry (canonical MiniMax model paths):
