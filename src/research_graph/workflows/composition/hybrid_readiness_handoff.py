@@ -34,6 +34,7 @@ from research_graph.workflows.composition.hybrid_catalog_coverage import (
     run_hybrid_catalog_coverage,
 )
 from research_graph.workflows.composition.yake_keyword_inject import (
+    cleaned_body_for_yake,
     yake_keywords_for_text,
     yake_language_code,
 )
@@ -400,11 +401,15 @@ def run_hybrid_readiness_handoff(
             continue
         injected: list[str] | None = None
         yake_lan = ""
+        yake_input_chars = 0
         if request.use_yake_keywords:
-            detected = detect_text_language(body_text)
+            # Align YAKE with preprocess cleaned body (markdown, not HTML).
+            yake_text = cleaned_body_for_yake(body_text, is_html=False)
+            yake_input_chars = len(yake_text)
+            detected = detect_text_language(yake_text)
             yake_lan = yake_language_code(detected.language)
             injected = yake_keywords_for_text(
-                body_text, language=yake_lan, top_k=12
+                yake_text, language=yake_lan, top_k=12
             )
         row_summary = preprocess_summary_for_body(
             source_id=row.paper_id,
@@ -415,7 +420,11 @@ def run_hybrid_readiness_handoff(
             keywords=injected,
         )
         if yake_lan:
-            row_summary = {**row_summary, "yake_language": yake_lan}
+            row_summary = {
+                **row_summary,
+                "yake_language": yake_lan,
+                "yake_input_chars": yake_input_chars,
+            }
         preprocess_rows.append(row_summary)
 
     yake_langs = sorted(

@@ -3,7 +3,7 @@
 **Status:** Accepted (binding)  
 **Date:** 2026-07-23  
 **Deciders:** collaborative  
-**Milestone:** M229-3ugna8 (implementation M224–M228)  
+**Milestone:** M229-3ugna8 (implementation M224–M228; YAKE composition inject M230–M232)  
 **Scope:** evidence-pipeline / data-preparation / safety  
 **Binding Level:** binding  
 **Revisable:** yes, with implementation evidence and onion guard green
@@ -75,9 +75,10 @@ flowchart TD
 | Fingerprint | `application/corpus/content_fingerprint.py` | SHA256 custody identity |
 | Keyword spans | `application/corpus/keyword_spans.py` | casefold char offsets |
 | Term-dense window | `application/corpus/term_dense_window.py` | local evidence snippet |
-| Summary | `application/corpus/preprocess_summary.py` | composition JSON summary |
-| HTML wire | `workflows/composition/non_arxiv_html_source_proof.py` | enrichment only |
-| Hybrid wire | `workflows/composition/hybrid_readiness_handoff.py` | `preprocess_bodies` enrichment only |
+| Summary | `application/corpus/preprocess_summary.py` | composition JSON summary; optional injected keywords |
+| YAKE inject | `workflows/composition/yake_keyword_inject.py` | composition/infra only; cleaned body + language map |
+| HTML wire | `workflows/composition/non_arxiv_html_source_proof.py` | enrichment only; optional `use_yake_keywords` |
+| Hybrid wire | `workflows/composition/hybrid_readiness_handoff.py` | `preprocess_bodies` enrichment only; optional YAKE |
 
 ## 4. Safety and Layering
 
@@ -90,7 +91,7 @@ flowchart TD
 
 - LLM stages receive cleaner body and measurable diagnostics without new LLM cost.
 - Multi-source HTML and hybrid scholarly paths share one summary helper with different profiles.
-- Future YAKE integration must stay at composition/infra boundary (inject keywords into span locator), not application imports.
+- **Done (M230–M232):** optional YAKE keyword inject stays at composition/infra boundary (`use_yake_keywords` default false). Keywords are extracted from **cleaned** body (HTML main-content + clean when applicable), language-mapped to YAKE `lan`, then injected into `preprocess_summary_for_body` → spans/windows. Application never imports YAKE.
 - ADR-024 remains binding; this ADR **extends** statistical-first with an earlier non-LLM hygiene layer.
 
 ## 6. Action Items
@@ -98,11 +99,12 @@ flowchart TD
 1. Keep preprocess enrichment optional and non-gating for operator verdicts.
 2. Prefer additive summary fields over breaking package constructors.
 3. Re-run onion guard and targeted preprocess tests on any stack change.
-4. Optional later: inject YAKE keyword lists at composition root into `locate_keyword_spans`.
+4. **Done (M230–M232):** YAKE keyword lists injectable at composition root into span/window stages via `keywords=` / `use_yake_keywords`; cleaned-body alignment required.
 
 ## LLM Reading Notes
 
 - **Binding:** non-LLM preprocess stack exists; import always false; YAKE not in application.
+- **YAKE path:** composition only — `cleaned_body_for_yake` → `detect_text_language` → `yake_language_code` → `KeywordExtractor` → inject keywords.
 - **Non-authorization:** no graph import; no hybrid TEI claim from preprocess; verdicts not driven by quality scores.
-- **Primary code:** `research_graph.application.corpus.*` + two composition wires listed above.
+- **Primary code:** `research_graph.application.corpus.*` + composition wires + `yake_keyword_inject`.
 - **Related ADRs:** ADR-024 (statistical-first), ADR-034 (onion), ADR-008/009 (hybrid parser).

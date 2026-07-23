@@ -24,6 +24,7 @@ from research_graph.workflows.composition.universal_source import (
     structure_loaded_source,
 )
 from research_graph.workflows.composition.yake_keyword_inject import (
+    cleaned_body_for_yake,
     yake_keywords_for_text,
     yake_language_code,
 )
@@ -215,11 +216,15 @@ def run_non_arxiv_html_source_proof(
         if load.outcome == "loaded" and load.text:
             injected: list[str] | None = None
             yake_lan = ""
+            yake_input_chars = 0
             if request.use_yake_keywords:
-                detected = detect_text_language(load.text)
+                # Align YAKE with preprocess cleaned body (HTML main + clean).
+                yake_text = cleaned_body_for_yake(load.text, is_html=True)
+                yake_input_chars = len(yake_text)
+                detected = detect_text_language(yake_text)
                 yake_lan = yake_language_code(detected.language)
                 injected = yake_keywords_for_text(
-                    load.text, language=yake_lan, top_k=12
+                    yake_text, language=yake_lan, top_k=12
                 )
             preprocess_summary = preprocess_summary_for_body(
                 source_id=article_key or "non-arxiv",
@@ -233,6 +238,7 @@ def run_non_arxiv_html_source_proof(
                 preprocess_summary = {
                     **preprocess_summary,
                     "yake_language": yake_lan,
+                    "yake_input_chars": yake_input_chars,
                 }
             fp = str(preprocess_summary.get("content_fingerprint_sha256") or "")
             diag.append(f"preprocess_language:{preprocess_summary.get('language')}")
@@ -243,6 +249,7 @@ def run_non_arxiv_html_source_proof(
             diag.append(f"use_yake_keywords:{request.use_yake_keywords}")
             if yake_lan:
                 diag.append(f"yake_language:{yake_lan}")
+                diag.append(f"yake_input_chars:{yake_input_chars}")
 
         result = NonArxivHtmlSourceProofResult(
             schema_version=SCHEMA_VERSION,
