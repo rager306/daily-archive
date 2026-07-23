@@ -13,7 +13,7 @@ This index lists project-level ADRs and points to historical ADR packages kept u
 
 ## Project-Level ADRs
 
-Project-level ADR count: 35
+Project-level ADR count: 36
 
 | ADR | Status | Title | Path | Notes |
 | --- | --- | --- | --- | --- |
@@ -46,6 +46,7 @@ Project-level ADR count: 35
 | ADR-033 | Accepted (binding) | Modular Pipeline Architecture with Typed Schema Evolution | `doc/adr/ADR-033-modular-pipeline-architecture.md` | M101: 4 abstraction levels, schema evolution (not duplication), Adaptix at LLM boundary, stdlib dataclasses, 10-step implementation timeline. |
 | ADR-034 | Accepted (binding) | Hexagonal and Onion Architecture Overlay | `doc/adr/ADR-034-hexagonal-onion-overlay.md` | M104: Ports/Adapters + onion layering (domain/application/infrastructure), Ponytail Port rule, D087 (Prefect rejected), D088 (FullTextProviderPort). Multi-layer AST guard + ruff TID. |
 | ADR-035 | Accepted (binding) | Write Path Governance and Canonical Inventory Baseline | `doc/adr/ADR-035-write-path-governance-and-canonical-baseline.md` | M183: exact source-path scanner policy, canonical baseline update protocol, script boundary contract, and cache/index/manifest proof gate. |
+| ADR-036 | Accepted (binding) | Non-LLM Article Preprocess Stack | `doc/adr/ADR-036-non-llm-article-preprocess-stack.md` | M224–M228 / M229: deterministic body clean, quality profiles, HTML main-content, language, outline, fingerprint, keyword spans, term-dense windows; composition enrichment only; import never authorized. |
 
 ## Historical ADR Packages
 
