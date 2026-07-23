@@ -397,6 +397,18 @@ PY
 
 `import_eligible` / `graph_writes_allowed` stay false even when coverage is `covered`.
 
+### M217 GROBID TEI → header/citations ETL (candidate-only)
+
+Hybrid path now persists structured GROBID artifacts next to ODL body:
+
+- `{paper_id}.hybrid.body.md` — OpenDataLoader body (as before)
+- `{paper_id}.hybrid.header.json` — title/authors/abstract/idnos from TEI
+- `{paper_id}.hybrid.citations.jsonl` — one `biblStruct` row per line from `listBibl`
+
+Pure parse: `research_graph.application.corpus.grobid_tei_parse.parse_grobid_tei`  
+Live extract still uses `/api/processFulltextDocument` (Apache-2.0 GROBID 0.9.0-crf).  
+**Not** graph-importable; raw TEI is not stored as graph truth.
+
 
 
 Current live probe result: 1 target article has `live_success` GROBID TEI summary evidence; 5 linked target articles remain `missing_pdf` blockers until bounded local PDF acquisition is performed. Raw TEI/full text is not persisted.

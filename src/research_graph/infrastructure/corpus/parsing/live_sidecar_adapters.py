@@ -105,13 +105,18 @@ class LiveGrobidSidecarAdapter:
             )
 
         title_present, author_count, bibl_count, body_count, ref_count = _tei_counts(tei)
+        # Structured ETL (M217): header + listBibl citations as candidate payloads.
+        # Still not graph-importable; raw TEI is not persisted here.
+        from research_graph.application.corpus.grobid_tei_parse import parse_grobid_tei
+
+        parsed = parse_grobid_tei(tei, paper_id=paper_id)
         return {
             "status": "success",
             "paper_id": paper_id,
             "arxiv_id": paper_id,
-            "header_title_present": title_present,
-            "header_author_count": author_count,
-            "bibl_count": bibl_count,
+            "header_title_present": title_present or bool(parsed.header.title),
+            "header_author_count": author_count or len(parsed.header.authors),
+            "bibl_count": bibl_count if bibl_count else len(parsed.citations),
             "body_element_count": body_count,
             "ref_count": ref_count,
             "bytes": len(tei),
@@ -120,6 +125,13 @@ class LiveGrobidSidecarAdapter:
             "grobid_url": self.base_url,
             # TEI is not promoted as graph body; body ownership stays ODL when present.
             "tei_present": True,
+            "header": parsed.header.to_dict(),
+            "citations": list(parsed.citations),
+            "citation_count": len(parsed.citations),
+            "structured_parse_ok": parsed.parse_ok,
+            "structured_diagnostics": list(parsed.diagnostics),
+            "import_eligible": False,
+            "graph_writes_allowed": False,
         }
 
 

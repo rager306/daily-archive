@@ -41,6 +41,9 @@ class HybridRuntimeResult:
     packet: HybridCandidatePacket
     diagnostics: tuple[str, ...] = ()
     safety_flags: SafetyFlags = field(default_factory=SafetyFlags)
+    # Optional sidecar metric payloads (M217 structured GROBID header/cites).
+    grobid_metrics: dict[str, Any] | None = None
+    opendataloader_metrics: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         self.safety_flags.assert_no_write()
@@ -51,6 +54,16 @@ class HybridRuntimeResult:
             "packet": self.packet.to_dict(),
             "diagnostics": list(self.diagnostics),
             "safety_flags": self.safety_flags.to_dict(),
+            "grobid_citation_count": (
+                (self.grobid_metrics or {}).get("citation_count")
+                if isinstance(self.grobid_metrics, dict)
+                else None
+            ),
+            "grobid_structured_parse_ok": (
+                (self.grobid_metrics or {}).get("structured_parse_ok")
+                if isinstance(self.grobid_metrics, dict)
+                else None
+            ),
         }
 
 
@@ -100,7 +113,16 @@ def run_hybrid_sidecar_runtime(
         body_markdown=body_md,
     )
     diagnostics.extend(packet.diagnostics)
-    return HybridRuntimeResult(packet=packet, diagnostics=tuple(diagnostics))
+    if isinstance(g_metrics, dict) and g_metrics.get("citation_count") is not None:
+        diagnostics.append(f"grobid_citation_count:{g_metrics.get('citation_count')}")
+    if isinstance(g_metrics, dict) and g_metrics.get("structured_parse_ok") is not None:
+        diagnostics.append(f"grobid_structured_parse_ok:{g_metrics.get('structured_parse_ok')}")
+    return HybridRuntimeResult(
+        packet=packet,
+        diagnostics=tuple(diagnostics),
+        grobid_metrics=g_metrics if isinstance(g_metrics, dict) else None,
+        opendataloader_metrics=o_metrics if isinstance(o_metrics, dict) else None,
+    )
 
 
 def ensure_live_hybrid_runtime(
@@ -147,6 +169,8 @@ def ensure_live_hybrid_runtime(
         packet=result.packet,
         diagnostics=result.diagnostics + extra,
         safety_flags=result.safety_flags,
+        grobid_metrics=result.grobid_metrics,
+        opendataloader_metrics=result.opendataloader_metrics,
     )
 
 

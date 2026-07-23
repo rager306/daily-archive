@@ -30,8 +30,8 @@ from research_graph.infrastructure.corpus.ingestion.fetchers import (
 from research_graph.infrastructure.corpus.ingestion.loader import load_article_source
 from research_graph.workflows.composition.hybrid_sidecar_runtime import (
     GrobidSidecarPort,
-    OpenDataLoaderSidecarPort,
     HybridRuntimeRequest,
+    OpenDataLoaderSidecarPort,
     run_hybrid_sidecar_runtime,
 )
 
@@ -84,6 +84,53 @@ class ArticleBodyResult:
             "graph_writes_allowed": False,
             "safety_flags": self.safety_flags.to_dict(),
         }
+
+
+def _persist_grobid_structured_artifacts(
+    *,
+    body_dir: Path,
+    paper_id: str,
+    grobid_metrics: dict[str, Any] | None,
+) -> list[str]:
+    """Write hybrid.header.json + hybrid.citations.jsonl when GROBID structured payload exists.
+
+    Candidate-only artifacts; never sets import/write true.
+    """
+    import json
+
+    diag: list[str] = []
+    if not isinstance(grobid_metrics, dict):
+        return ["grobid_structured_absent"]
+    header = grobid_metrics.get("header")
+    citations = grobid_metrics.get("citations")
+    if not isinstance(header, dict) and not isinstance(citations, list):
+        return ["grobid_structured_absent"]
+
+    body_dir.mkdir(parents=True, exist_ok=True)
+    if isinstance(header, dict):
+        # Force fail-closed flags on disk
+        payload = dict(header)
+        payload["import_eligible"] = False
+        payload["graph_writes_allowed"] = False
+        header_path = body_dir / f"{paper_id}.hybrid.header.json"
+        header_path.write_text(
+            json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        diag.append(f"grobid_header_artifact:{header_path.name}")
+    if isinstance(citations, list):
+        cites_path = body_dir / f"{paper_id}.hybrid.citations.jsonl"
+        lines: list[str] = []
+        for row in citations:
+            if not isinstance(row, dict):
+                continue
+            item = dict(row)
+            item["import_eligible"] = False
+            item["graph_writes_allowed"] = False
+            lines.append(json.dumps(item, sort_keys=True))
+        cites_path.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+        diag.append(f"grobid_citations_artifact:{cites_path.name}")
+        diag.append(f"grobid_citation_rows:{len(lines)}")
+    return diag
 
 
 def _is_local_file(source: str) -> bool:
@@ -166,6 +213,13 @@ def resolve_article_body(
         )
         diagnostics.extend(runtime.diagnostics)
         packet = runtime.packet
+        # Persist GROBID structured candidates when present (M217), even if body later fails.
+        grobid_artifact_diag = _persist_grobid_structured_artifacts(
+            body_dir=body_dir,
+            paper_id=paper_id,
+            grobid_metrics=runtime.grobid_metrics,
+        )
+        diagnostics.extend(grobid_artifact_diag)
         if packet.hybrid_claimed_success and packet.body_markdown:
             text_path = body_dir / f"{paper_id}.hybrid.body.md"
             text_path.write_text(packet.body_markdown, encoding="utf-8")
