@@ -1,7 +1,8 @@
-"""Article preprocess package builder (M224 S03).
+"""Article preprocess package builder (M224 S03 / M225 S03).
 
-Composes pure clean + optional HTML main-content + body quality into a
-versioned skeleton package. Never authorizes import or graph writes.
+Composes pure clean + optional HTML main-content + body quality +
+language detect + outline signals into a versioned skeleton package.
+Never authorizes import or graph writes.
 """
 
 from __future__ import annotations
@@ -15,8 +16,10 @@ from research_graph.application.corpus.body_quality import (
 )
 from research_graph.application.corpus.body_text_clean import clean_body_text
 from research_graph.application.corpus.html_main_content import extract_html_main_content
+from research_graph.application.corpus.language_detect import detect_text_language
+from research_graph.application.corpus.outline_signals import extract_outline_signals
 
-SCHEMA_VERSION = "m224-article-preprocess.v1"
+SCHEMA_VERSION = "m225-article-preprocess.v1"
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,6 +38,10 @@ class ArticlePreprocessPackage:
     word_count: int
     html_main_content_ratio: float | None = None
     html_region: str | None = None
+    language: str = "unknown"
+    language_confidence: float = 0.0
+    outline_heading_count: int = 0
+    outline_heading_titles: tuple[str, ...] = ()
     import_eligible: bool = False
     graph_writes_allowed: bool = False
 
@@ -56,6 +63,10 @@ class ArticlePreprocessPackage:
             "word_count": self.word_count,
             "html_main_content_ratio": self.html_main_content_ratio,
             "html_region": self.html_region,
+            "language": self.language,
+            "language_confidence": self.language_confidence,
+            "outline_heading_count": self.outline_heading_count,
+            "outline_heading_titles": list(self.outline_heading_titles),
             "import_eligible": self.import_eligible,
             "graph_writes_allowed": self.graph_writes_allowed,
         }
@@ -71,7 +82,7 @@ def build_article_preprocess_package(
 ) -> ArticlePreprocessPackage:
     """Build fail-closed preprocess package from raw text or HTML.
 
-    Order: optional HTML main-content → body clean → body quality.
+    Order: optional HTML main-content → body clean → quality → language → outline.
     """
     ops: list[str] = []
     working = text
@@ -89,6 +100,11 @@ def build_article_preprocess_package(
     ops.extend(cleaned.ops)
 
     quality = assess_body_quality(cleaned.text, profile=profile)
+    lang = detect_text_language(cleaned.text)
+    ops.append("language_detect")
+    outline = extract_outline_signals(cleaned.text)
+    ops.append("outline_signals")
+    titles = tuple(h.text for h in outline.headings[:32])
 
     return ArticlePreprocessPackage(
         schema_version=SCHEMA_VERSION,
@@ -103,6 +119,10 @@ def build_article_preprocess_package(
         word_count=quality.word_count,
         html_main_content_ratio=html_ratio,
         html_region=html_region,
+        language=lang.language,
+        language_confidence=lang.confidence,
+        outline_heading_count=len(outline.headings),
+        outline_heading_titles=titles,
     )
 
 

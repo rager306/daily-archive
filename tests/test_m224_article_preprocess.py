@@ -58,7 +58,7 @@ def test_build_package_from_plain_text_scholarly() -> None:
     assert pkg.html_main_content_ratio is None
     d = pkg.to_dict()
     assert d["import_eligible"] is False
-    assert d["schema_version"].startswith("m224")
+    assert "article-preprocess" in d["schema_version"]
 
 
 def test_build_package_from_html_strips_chrome() -> None:
