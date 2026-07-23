@@ -1,11 +1,12 @@
-"""M216: hybrid coverage + graph-data readiness handoff composition.
+"""M216/M218: hybrid coverage + readiness handoff (+ GROBID scholarly wrapper).
 
 Orchestrates:
 1) hybrid selection → catalog coverage (M215)
 2) resolve hybrid body markdown paths under a body_root
-3) no-write graph-data readiness on available bodies (M209)
+3) resolve GROBID hybrid.header.json / hybrid.citations.jsonl (M217/M218)
+4) no-write graph-data readiness on available bodies (M209)
 
-Never authorizes import/writes. Does not start GROBID/ODL (bodies must pre-exist).
+Never authorizes import/writes. Does not start GROBID/ODL (artifacts must pre-exist).
 """
 
 from __future__ import annotations
@@ -32,7 +33,7 @@ DEFAULT_SELECTION = Path("artifacts/m213-hybrid-gate/selection-20.json")
 DEFAULT_BODY_ROOT = Path("artifacts/m213-hybrid-gate/runs-live-20")
 DEFAULT_CATALOG_INDEX = Path("data/article_catalog/index.json")
 DEFAULT_CATALOG_ROOT = Path("data/article_catalog")
-SCHEMA_VERSION = "m216-hybrid-readiness-handoff.v1"
+SCHEMA_VERSION = "m218-hybrid-readiness-handoff.v1"
 
 HandoffVerdict = Literal["ready_for_review", "repair", "blocked"]
 
@@ -51,6 +52,127 @@ class BodyPathResolution:
             "body_path": self.body_path,
             "found": self.found,
         }
+
+
+@dataclass(frozen=True, slots=True)
+class ScholarlyArtifactResolution:
+    """Per-paper GROBID header/citations artifact presence (candidate-only)."""
+
+    paper_id: str
+    header_path: str | None
+    header_found: bool
+    citations_path: str | None
+    citations_found: bool
+    citation_count: int
+    header_title: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "paper_id": self.paper_id,
+            "header_path": self.header_path,
+            "header_found": self.header_found,
+            "citations_path": self.citations_path,
+            "citations_found": self.citations_found,
+            "citation_count": self.citation_count,
+            "header_title": self.header_title,
+            "import_eligible": False,
+            "graph_writes_allowed": False,
+        }
+
+
+def resolve_scholarly_artifact_paths(
+    hybrid_selection: dict[str, Any],
+    *,
+    body_root: Path,
+    load_counts: bool = True,
+) -> tuple[ScholarlyArtifactResolution, ...]:
+    """Resolve `{body_root}/{paper_id}/body/{paper_id}.hybrid.{header.json,citations.jsonl}`.
+
+    Optional load_counts reads citation jsonl line count and header title.
+    Never invents missing files; never authorizes import.
+    """
+    papers = hybrid_selection.get("papers")
+    if not isinstance(papers, list):
+        return ()
+    rows: list[ScholarlyArtifactResolution] = []
+    for raw in papers:
+        if not isinstance(raw, dict):
+            continue
+        paper_id = str(raw.get("paper_id") or "").strip()
+        if not paper_id:
+            rows.append(
+                ScholarlyArtifactResolution(
+                    paper_id="",
+                    header_path=None,
+                    header_found=False,
+                    citations_path=None,
+                    citations_found=False,
+                    citation_count=0,
+                )
+            )
+            continue
+        body_dir = body_root / paper_id / "body"
+        header_p = body_dir / f"{paper_id}.hybrid.header.json"
+        cites_p = body_dir / f"{paper_id}.hybrid.citations.jsonl"
+        header_found = header_p.is_file()
+        cites_found = cites_p.is_file()
+        citation_count = 0
+        header_title: str | None = None
+        if load_counts and header_found:
+            try:
+                header_obj = json.loads(header_p.read_text(encoding="utf-8"))
+                if isinstance(header_obj, dict):
+                    title = header_obj.get("title")
+                    header_title = str(title) if title else None
+            except (OSError, json.JSONDecodeError):
+                header_title = None
+        if load_counts and cites_found:
+            try:
+                citation_count = sum(
+                    1
+                    for line in cites_p.read_text(encoding="utf-8").splitlines()
+                    if line.strip()
+                )
+            except OSError:
+                citation_count = 0
+        rows.append(
+            ScholarlyArtifactResolution(
+                paper_id=paper_id,
+                header_path=str(header_p),
+                header_found=header_found,
+                citations_path=str(cites_p),
+                citations_found=cites_found,
+                citation_count=citation_count,
+                header_title=header_title,
+            )
+        )
+    return tuple(rows)
+
+
+def _scholarly_wrapper_summary(
+    rows: tuple[ScholarlyArtifactResolution, ...],
+) -> dict[str, Any]:
+    papers = len(rows)
+    headers = sum(1 for r in rows if r.header_found)
+    cites_files = sum(1 for r in rows if r.citations_found)
+    citation_total = sum(r.citation_count for r in rows)
+    return {
+        "schema_version": "m218-scholarly-wrapper.v1",
+        "papers": papers,
+        "headers_found": headers,
+        "headers_missing": max(0, papers - headers),
+        "citations_files_found": cites_files,
+        "citations_files_missing": max(0, papers - cites_files),
+        "citation_total": citation_total,
+        "complete_wrapper_count": sum(
+            1 for r in rows if r.header_found and r.citations_found
+        ),
+        "per_paper": [r.to_dict() for r in rows],
+        "import_eligible": False,
+        "graph_writes_allowed": False,
+        "source": "grobid_tei_artifacts",
+        "note": "candidate-only; not graph import",
+    }
 
 
 def resolve_hybrid_body_paths(
@@ -140,6 +262,8 @@ class HybridReadinessHandoffResult:
     body_resolutions: tuple[BodyPathResolution, ...]
     bodies_found: int
     bodies_missing: int
+    scholarly_resolutions: tuple[ScholarlyArtifactResolution, ...] = ()
+    scholarly_wrapper: dict[str, Any] = field(default_factory=dict)
     import_eligible: bool = False
     graph_writes_allowed: bool = False
     safety_flags: SafetyFlags = field(default_factory=SafetyFlags)
@@ -154,6 +278,8 @@ class HybridReadinessHandoffResult:
             raise ValueError("coverage package cannot authorize import inside handoff")
         if self.readiness is not None and self.readiness.package.import_eligible:
             raise ValueError("readiness package cannot authorize import inside handoff")
+        if self.scholarly_wrapper.get("import_eligible") is True:
+            raise ValueError("scholarly wrapper cannot authorize import inside handoff")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -171,6 +297,7 @@ class HybridReadinessHandoffResult:
                 ),
             },
             "body_resolutions": [row.to_dict() for row in self.body_resolutions],
+            "scholarly_wrapper": dict(self.scholarly_wrapper),
             "diagnostics": list(self.diagnostics),
             "safety_flags": self.safety_flags.to_dict(),
             "output_path": self.output_path,
@@ -197,6 +324,10 @@ def run_hybrid_readiness_handoff(
     bodies = resolve_hybrid_body_paths(hybrid_selection, body_root=body_root)
     found = sum(1 for row in bodies if row.found)
     missing = sum(1 for row in bodies if not row.found)
+    scholarly = resolve_scholarly_artifact_paths(
+        hybrid_selection, body_root=body_root, load_counts=True
+    )
+    scholarly_summary = _scholarly_wrapper_summary(scholarly)
 
     coverage = run_hybrid_catalog_coverage(
         HybridCatalogCoverageRequest(
@@ -243,11 +374,16 @@ def run_hybrid_readiness_handoff(
     diagnostics = (
         f"bodies_found:{found}",
         f"bodies_missing:{missing}",
+        f"headers_found:{scholarly_summary.get('headers_found')}",
+        f"headers_missing:{scholarly_summary.get('headers_missing')}",
+        f"citations_files_found:{scholarly_summary.get('citations_files_found')}",
+        f"citation_total:{scholarly_summary.get('citation_total')}",
         f"coverage_verdict:{coverage.package.verdict}",
         f"readiness_verdict:{readiness_verdict or 'skipped_no_bodies'}",
         f"handoff_verdict:{handoff_verdict}",
         "import_write_fail_closed",
         "no_live_sidecar_start",
+        "scholarly_wrapper_candidate_only",
     )
 
     out_path = request.output_path
@@ -263,6 +399,8 @@ def run_hybrid_readiness_handoff(
         body_resolutions=bodies,
         bodies_found=found,
         bodies_missing=missing,
+        scholarly_resolutions=scholarly,
+        scholarly_wrapper=scholarly_summary,
         diagnostics=diagnostics,
         output_path=str(out_path) if out_path else None,
     )
@@ -281,6 +419,8 @@ __all__ = [
     "HybridReadinessHandoffRequest",
     "HybridReadinessHandoffResult",
     "SCHEMA_VERSION",
+    "ScholarlyArtifactResolution",
     "resolve_hybrid_body_paths",
+    "resolve_scholarly_artifact_paths",
     "run_hybrid_readiness_handoff",
 ]

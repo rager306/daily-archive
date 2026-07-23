@@ -409,6 +409,22 @@ Pure parse: `research_graph.application.corpus.grobid_tei_parse.parse_grobid_tei
 Live extract still uses `/api/processFulltextDocument` (Apache-2.0 GROBID 0.9.0-crf).  
 **Not** graph-importable; raw TEI is not stored as graph truth.
 
+### M218 scholarly wrapper in readiness handoff
+
+`run_hybrid_readiness_handoff` attaches a **candidate-only** `scholarly_wrapper` section by scanning
+precomputed `hybrid.header.json` / `hybrid.citations.jsonl` next to body markdown (no live GROBID):
+
+```json
+"scholarly_wrapper": {
+  "headers_found": 1,
+  "citation_total": 35,
+  "complete_wrapper_count": 1,
+  "import_eligible": false
+}
+```
+
+Missing header/cites are reported as zeros — never invented. Still not graph import.
+
 
 
 Current live probe result: 1 target article has `live_success` GROBID TEI summary evidence; 5 linked target articles remain `missing_pdf` blockers until bounded local PDF acquisition is performed. Raw TEI/full text is not persisted.
