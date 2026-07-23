@@ -1,4 +1,4 @@
-"""Import-hold surface inventory (M236/M237).
+"""Import-hold surface inventory (M236/M237/M238).
 
 Read-only scan of Python modules for ``import_eligible`` mentions and forbidden
 Python True enablements of ``import_eligible`` / ``graph_writes_allowed``.
@@ -6,6 +6,7 @@ Python True enablements of ``import_eligible`` / ``graph_writes_allowed``.
 M236: composition-only helper.
 M237: multi-tree scan + precise assignment pattern (avoids docstring/string
 markers like ``import_eligible: true``).
+M238: default package roots (domain/application/composition/infrastructure).
 
 Never authorizes import.
 """
@@ -22,6 +23,22 @@ _IMPORT_ELIGIBLE_MENTION = re.compile(r"\bimport_eligible\b")
 _FORBIDDEN_ENABLE = re.compile(
     r"""\b(?:import_eligible|graph_writes_allowed)\b\s*=\s*True\b"""
 )
+
+
+def default_import_hold_roots() -> list[Path]:
+    """Package-relative roots for the import-hold default inventory.
+
+    Order: domain → application → composition → infrastructure.
+    Paths resolve from the installed/source ``research_graph`` package, not cwd.
+    """
+    # .../research_graph/application/corpus/this_file.py → research_graph/
+    pkg_root = Path(__file__).resolve().parents[2]
+    return [
+        pkg_root / "domain",
+        pkg_root / "application",
+        pkg_root / "workflows" / "composition",
+        pkg_root / "infrastructure",
+    ]
 
 
 def _scan_tree(root: Path) -> tuple[list[str], list[str], int]:
@@ -110,6 +127,7 @@ def inventory_composition_import_hold(composition_dir: Path) -> dict[str, Any]:
 
 
 __all__ = [
+    "default_import_hold_roots",
     "inventory_composition_import_hold",
     "inventory_import_hold_trees",
 ]
