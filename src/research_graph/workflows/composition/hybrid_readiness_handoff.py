@@ -21,6 +21,9 @@ from research_graph.application.corpus.preprocess_summary import (
     preprocess_summary_for_body,
 )
 from research_graph.domain.universal_kb.contracts import SafetyFlags
+from research_graph.workflows.composition.yake_keyword_inject import (
+    yake_keywords_for_text,
+)
 from research_graph.workflows.composition.graph_data_readiness import (
     GraphDataReadinessRequest,
     GraphDataReadinessResult,
@@ -255,6 +258,8 @@ class HybridReadinessHandoffRequest:
     repo_root: Path = field(default_factory=lambda: Path("."))
     # When True, skip readiness if no bodies (still emit coverage).
     allow_empty_readiness: bool = True
+    # M230: optional YAKE keyword inject at composition boundary (default off).
+    use_yake_keywords: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -391,6 +396,9 @@ def run_hybrid_readiness_handoff(
             body_text = body_file.read_text(encoding="utf-8")
         except OSError:
             continue
+        injected: list[str] | None = None
+        if request.use_yake_keywords:
+            injected = yake_keywords_for_text(body_text, language="en", top_k=12)
         preprocess_rows.append(
             preprocess_summary_for_body(
                 source_id=row.paper_id,
@@ -398,6 +406,7 @@ def run_hybrid_readiness_handoff(
                 source_class="arxiv",
                 profile="scholarly",
                 is_html=False,
+                keywords=injected,
             )
         )
 
@@ -412,6 +421,7 @@ def run_hybrid_readiness_handoff(
         f"readiness_verdict:{readiness_verdict or 'skipped_no_bodies'}",
         f"handoff_verdict:{handoff_verdict}",
         f"preprocess_bodies:{len(preprocess_rows)}",
+        f"use_yake_keywords:{request.use_yake_keywords}",
         "import_write_fail_closed",
         "no_live_sidecar_start",
         "scholarly_wrapper_candidate_only",

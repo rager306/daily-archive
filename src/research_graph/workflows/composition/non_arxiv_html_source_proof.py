@@ -17,6 +17,9 @@ from research_graph.application.corpus.preprocess_summary import (
     preprocess_summary_for_body,
 )
 from research_graph.domain.universal_kb.contracts import SafetyFlags
+from research_graph.workflows.composition.yake_keyword_inject import (
+    yake_keywords_for_text,
+)
 from research_graph.workflows.composition.universal_source import (
     StructuredSourceBundle,
     load_local_html_chapter,
@@ -38,6 +41,8 @@ class NonArxivHtmlSourceProofRequest:
     repo_root: Path = field(default_factory=lambda: Path("."))
     min_body_chars: int = 500
     min_chunks: int = 1
+    # M230: optional YAKE keyword inject at composition boundary (default off).
+    use_yake_keywords: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -206,16 +211,26 @@ def run_non_arxiv_html_source_proof(
 
         preprocess_summary: dict[str, Any] | None = None
         if load.outcome == "loaded" and load.text:
+            injected: list[str] | None = None
+            if request.use_yake_keywords:
+                injected = yake_keywords_for_text(
+                    load.text, language="en", top_k=12
+                )
             preprocess_summary = preprocess_summary_for_body(
                 source_id=article_key or "non-arxiv",
                 text=load.text,
                 source_class=source_code or "company_blog",
                 profile="web",
                 is_html=True,
+                keywords=injected,
             )
             fp = str(preprocess_summary.get("content_fingerprint_sha256") or "")
             diag.append(f"preprocess_language:{preprocess_summary.get('language')}")
             diag.append(f"content_fingerprint:{fp[:12]}")
+            diag.append(
+                f"keyword_source:{preprocess_summary.get('keyword_source')}"
+            )
+            diag.append(f"use_yake_keywords:{request.use_yake_keywords}")
 
         result = NonArxivHtmlSourceProofResult(
             schema_version=SCHEMA_VERSION,

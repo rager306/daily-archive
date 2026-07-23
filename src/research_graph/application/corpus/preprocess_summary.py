@@ -1,9 +1,12 @@
-"""Shared preprocess summary for composition enrichment (M227/M228).
+"""Shared preprocess summary for composition enrichment (M227/M228/M230).
 
 Builds a JSON-serializable diagnostic dict from body text via
 ArticlePreprocessPackage + content fingerprint + keyword spans +
-term-dense evidence window. Keywords are token-frequency (no YAKE in
-application). Never authorizes import.
+term-dense evidence window.
+
+Keywords default to token-frequency (stdlib only). Optional ``keywords``
+may be injected from composition (e.g. YAKE) without importing YAKE here
+(ADR-036). Never authorizes import.
 """
 
 from __future__ import annotations
@@ -54,8 +57,14 @@ def preprocess_summary_for_body(
     source_class: str = "unknown",
     profile: BodyQualityProfile = "scholarly",
     is_html: bool = False,
+    keywords: list[str] | tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
-    """Return fail-closed preprocess summary for one body text."""
+    """Return fail-closed preprocess summary for one body text.
+
+    When ``keywords`` is a non-empty sequence, those strings drive span and
+    window stages (``keyword_source=injected``). Otherwise token-frequency
+    keywords are used (``keyword_source=token_frequency``).
+    """
     pkg = build_article_preprocess_package(
         source_id=source_id,
         text=text,
@@ -64,8 +73,13 @@ def preprocess_summary_for_body(
         is_html=is_html,
     )
     fp = fingerprint_cleaned_body(pkg.cleaned_text)
-    keywords = _content_keywords(pkg.cleaned_text)
-    span_result = locate_keyword_spans(pkg.cleaned_text, keywords)
+    if keywords:
+        kw_list = [str(k).strip() for k in keywords if str(k).strip()]
+        keyword_source = "injected"
+    else:
+        kw_list = _content_keywords(pkg.cleaned_text)
+        keyword_source = "token_frequency"
+    span_result = locate_keyword_spans(pkg.cleaned_text, kw_list)
     window = term_dense_window(
         pkg.cleaned_text, spans=span_result.spans, max_chars=320
     )
@@ -83,7 +97,8 @@ def preprocess_summary_for_body(
         "html_main_content_ratio": pkg.html_main_content_ratio,
         "content_fingerprint_sha256": fp.sha256,
         "cleaned_text_chars": len(pkg.cleaned_text),
-        "content_keywords": keywords,
+        "content_keywords": kw_list,
+        "keyword_source": keyword_source,
         "keyword_span_count": len(span_result.spans),
         "evidence_window": {
             "start": window.start,
