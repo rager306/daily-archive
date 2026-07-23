@@ -1,10 +1,11 @@
-"""M216/M218: hybrid coverage + readiness handoff (+ GROBID scholarly wrapper).
+"""M216/M218/M227: hybrid coverage + readiness handoff (+ scholarly wrapper).
 
 Orchestrates:
 1) hybrid selection → catalog coverage (M215)
 2) resolve hybrid body markdown paths under a body_root
 3) resolve GROBID hybrid.header.json / hybrid.citations.jsonl (M217/M218)
 4) no-write graph-data readiness on available bodies (M209)
+5) M227: scholarly preprocess summary per found body (enrichment only)
 
 Never authorizes import/writes. Does not start GROBID/ODL (artifacts must pre-exist).
 """
@@ -16,6 +17,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
+from research_graph.application.corpus.preprocess_summary import (
+    preprocess_summary_for_body,
+)
 from research_graph.domain.universal_kb.contracts import SafetyFlags
 from research_graph.workflows.composition.graph_data_readiness import (
     GraphDataReadinessRequest,
@@ -33,7 +37,7 @@ DEFAULT_SELECTION = Path("artifacts/m213-hybrid-gate/selection-20.json")
 DEFAULT_BODY_ROOT = Path("artifacts/m213-hybrid-gate/runs-live-20")
 DEFAULT_CATALOG_INDEX = Path("data/article_catalog/index.json")
 DEFAULT_CATALOG_ROOT = Path("data/article_catalog")
-SCHEMA_VERSION = "m218-hybrid-readiness-handoff.v1"
+SCHEMA_VERSION = "m227-hybrid-readiness-handoff.v1"
 
 HandoffVerdict = Literal["ready_for_review", "repair", "blocked"]
 
@@ -264,6 +268,7 @@ class HybridReadinessHandoffResult:
     bodies_missing: int
     scholarly_resolutions: tuple[ScholarlyArtifactResolution, ...] = ()
     scholarly_wrapper: dict[str, Any] = field(default_factory=dict)
+    preprocess_bodies: tuple[dict[str, Any], ...] = ()
     import_eligible: bool = False
     graph_writes_allowed: bool = False
     safety_flags: SafetyFlags = field(default_factory=SafetyFlags)
@@ -280,6 +285,9 @@ class HybridReadinessHandoffResult:
             raise ValueError("readiness package cannot authorize import inside handoff")
         if self.scholarly_wrapper.get("import_eligible") is True:
             raise ValueError("scholarly wrapper cannot authorize import inside handoff")
+        for row in self.preprocess_bodies:
+            if row.get("import_eligible") is True:
+                raise ValueError("preprocess body enrichment cannot authorize import")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -298,6 +306,7 @@ class HybridReadinessHandoffResult:
             },
             "body_resolutions": [row.to_dict() for row in self.body_resolutions],
             "scholarly_wrapper": dict(self.scholarly_wrapper),
+            "preprocess_bodies": list(self.preprocess_bodies),
             "diagnostics": list(self.diagnostics),
             "safety_flags": self.safety_flags.to_dict(),
             "output_path": self.output_path,
@@ -371,6 +380,27 @@ def run_hybrid_readiness_handoff(
         paper_count=len(bodies),
     )
 
+    preprocess_rows: list[dict[str, Any]] = []
+    for row in bodies:
+        if not row.found or not row.body_path:
+            continue
+        body_file = Path(row.body_path)
+        if not body_file.is_file():
+            continue
+        try:
+            body_text = body_file.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        preprocess_rows.append(
+            preprocess_summary_for_body(
+                source_id=row.paper_id,
+                text=body_text,
+                source_class="arxiv",
+                profile="scholarly",
+                is_html=False,
+            )
+        )
+
     diagnostics = (
         f"bodies_found:{found}",
         f"bodies_missing:{missing}",
@@ -381,9 +411,11 @@ def run_hybrid_readiness_handoff(
         f"coverage_verdict:{coverage.package.verdict}",
         f"readiness_verdict:{readiness_verdict or 'skipped_no_bodies'}",
         f"handoff_verdict:{handoff_verdict}",
+        f"preprocess_bodies:{len(preprocess_rows)}",
         "import_write_fail_closed",
         "no_live_sidecar_start",
         "scholarly_wrapper_candidate_only",
+        "preprocess_enrichment_only",
     )
 
     out_path = request.output_path
@@ -401,6 +433,7 @@ def run_hybrid_readiness_handoff(
         bodies_missing=missing,
         scholarly_resolutions=scholarly,
         scholarly_wrapper=scholarly_summary,
+        preprocess_bodies=tuple(preprocess_rows),
         diagnostics=diagnostics,
         output_path=str(out_path) if out_path else None,
     )

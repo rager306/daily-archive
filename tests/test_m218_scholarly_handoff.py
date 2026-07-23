@@ -106,7 +106,7 @@ def test_handoff_includes_scholarly_wrapper(tmp_path: Path) -> None:
         )
     )
     assert result.import_eligible is False
-    assert result.schema_version.startswith("m218")
+    assert "hybrid-readiness-handoff" in result.schema_version
     sw = result.scholarly_wrapper
     assert sw["import_eligible"] is False
     assert sw["headers_found"] == 1

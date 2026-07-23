@@ -13,11 +13,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from research_graph.application.corpus.article_preprocess import (
-    build_article_preprocess_package,
-)
-from research_graph.application.corpus.content_fingerprint import (
-    fingerprint_cleaned_body,
+from research_graph.application.corpus.preprocess_summary import (
+    preprocess_summary_for_body,
 )
 from research_graph.domain.universal_kb.contracts import SafetyFlags
 from research_graph.workflows.composition.universal_source import (
@@ -209,30 +206,16 @@ def run_non_arxiv_html_source_proof(
 
         preprocess_summary: dict[str, Any] | None = None
         if load.outcome == "loaded" and load.text:
-            pkg = build_article_preprocess_package(
+            preprocess_summary = preprocess_summary_for_body(
                 source_id=article_key or "non-arxiv",
                 text=load.text,
                 source_class=source_code or "company_blog",
                 profile="web",
                 is_html=True,
             )
-            fp = fingerprint_cleaned_body(pkg.cleaned_text)
-            preprocess_summary = {
-                "schema_version": pkg.schema_version,
-                "language": pkg.language,
-                "language_confidence": pkg.language_confidence,
-                "quality_status": pkg.quality_status,
-                "quality_rule_hits": list(pkg.quality_rule_hits),
-                "word_count": pkg.word_count,
-                "outline_heading_count": pkg.outline_heading_count,
-                "clean_ops": list(pkg.clean_ops),
-                "html_main_content_ratio": pkg.html_main_content_ratio,
-                "content_fingerprint_sha256": fp.sha256,
-                "cleaned_text_chars": len(pkg.cleaned_text),
-                "import_eligible": False,
-            }
-            diag.append(f"preprocess_language:{pkg.language}")
-            diag.append(f"content_fingerprint:{fp.sha256[:12]}")
+            fp = str(preprocess_summary.get("content_fingerprint_sha256") or "")
+            diag.append(f"preprocess_language:{preprocess_summary.get('language')}")
+            diag.append(f"content_fingerprint:{fp[:12]}")
 
         result = NonArxivHtmlSourceProofResult(
             schema_version=SCHEMA_VERSION,
