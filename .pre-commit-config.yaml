@@ -34,6 +34,21 @@ repos:
         fail_fast: false
         verbose: true
 
+  # Local repository: M239/M240 import-hold inventory (fail-closed).
+  # Blocks commits that introduce import_eligible/graph_writes_allowed = True
+  # on package hold surfaces. Never authorizes import.
+  - repo: local
+    hooks:
+      - id: m239-import-hold-inventory
+        name: M239 import-hold inventory (fail-closed)
+        entry: uv run python scripts/verify_import_hold_inventory.py
+        language: system
+        files: ^(src/research_graph/(domain|application|infrastructure)/.*\.py|src/research_graph/workflows/composition/.*\.py|scripts/verify_import_hold_inventory\.py|tests/test_m23[6-9]_.*\.py|tests/test_m240_.*\.py)$
+        pass_filenames: false
+        always_run: false
+        fail_fast: false
+        verbose: true
+
   # Local repository: M044 architecture guardrail (D079 mandatory).
   - repo: local
     hooks:
