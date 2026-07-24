@@ -875,6 +875,9 @@ def score_gold_hybrid_constrained_pilot(
                 "relation_predicted": len(pred.get("relations") or []),
                 "json_valid": bool(pred.get("json_valid")),
                 "import_eligible": False,
+                # Observability for empty-LLM → header fallback (optional keys).
+                "fallback_used": bool(selection.get("fallback_used")),
+                "fallback_reason": selection.get("fallback_reason"),
             }
         )
 

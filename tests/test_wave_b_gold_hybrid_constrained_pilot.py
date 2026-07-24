@@ -216,3 +216,56 @@ def test_package_rejects_import() -> None:
             diagnostics=(),
             import_eligible=True,
         )
+
+
+def test_per_case_records_fallback_used() -> None:
+    """Selection fallback_used must surface in per_case observability."""
+    from research_graph.application.corpus.wave_b_gold_hybrid_constrained_pilot import (
+        score_gold_hybrid_constrained_pilot,
+    )
+
+    body = (
+        "# A Joint Model of Language and Perception for Grounded Attribute Learning\n\n"
+        "We study Language and Perception for Grounded Attribute Learning.\n"
+    )
+    gold = {
+        "case_id": "case:train:1206.6423",
+        "paper_id": "arxiv:1206.6423",
+        "source_artifact_refs": ["artifact:x"],
+        "entities": [
+            {
+                "id": "e:field",
+                "type": "Field",
+                "label": "Language and Perception",
+                "evidence_refs": ["e1"],
+            },
+            {
+                "id": "e:task",
+                "type": "Task",
+                "label": "Grounded Attribute Learning",
+                "evidence_refs": ["e2"],
+            },
+        ],
+        "relations": [],
+        "schema_valid": True,
+        "json_valid": True,
+        "operational": {"cost_estimate": 0.0, "latency_ms": 0, "retry_count": 0},
+    }
+
+    def empty_then_marked(body_text, case_id, candidates):
+        return {"entities": [], "relations": [], "json_valid": False, "fallback_used": True}
+
+    pkg = score_gold_hybrid_constrained_pilot(
+        cases=(
+            {
+                "case_id": gold["case_id"],
+                "paper_id": "1206.6423",
+                "gold": gold,
+                "body_text": body,
+            },
+        ),
+        select_fn=empty_then_marked,
+        llm_used=True,
+    )
+    assert pkg.per_case
+    assert pkg.per_case[0].get("fallback_used") is True

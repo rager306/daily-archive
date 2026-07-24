@@ -101,3 +101,47 @@ def test_llm_mode_without_live_uses_header_fallback_or_requires_flag() -> None:
         "llm_requires_live_flag",
         "blocked_gate",
     }
+
+
+
+def test_progress_output_flag_accepted_on_header_mode() -> None:
+    """--progress-output is valid even without live LLM (no crash)."""
+    import json
+    import subprocess
+    import sys
+    import tempfile
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    script = root / "scripts" / "verify_wave_b_constrained_select.py"
+    stamp = root / "artifacts" / "wave-b" / "human_go.json"
+    if not stamp.is_file():
+        return
+    with tempfile.TemporaryDirectory() as td:
+        prog = Path(td) / "progress.json"
+        proc = subprocess.run(
+            [
+                sys.executable,
+                str(script),
+                "--stamp",
+                str(stamp),
+                "--mode",
+                "header",
+                "--json",
+                "--progress-output",
+                str(prog),
+                "--case-limit",
+                "2",
+            ],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert proc.returncode == 0, proc.stdout + proc.stderr
+        report = json.loads(proc.stdout)
+        assert report["import_eligible"] is False
+        # progress file optional for header; if written must be valid json
+        if prog.is_file():
+            data = json.loads(prog.read_text(encoding="utf-8"))
+            assert data.get("import_eligible") is False

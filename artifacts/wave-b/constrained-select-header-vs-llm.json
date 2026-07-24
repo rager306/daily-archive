@@ -1,4 +1,8 @@
 {
+  "delta_vs_header": {
+    "entity_f1": -0.22819148936170214,
+    "relation_f1": -0.1648148148148148
+  },
   "dspy_optimizer_enabled": false,
   "gepa_justified": false,
   "header": {
@@ -9,17 +13,19 @@
   },
   "import_eligible": false,
   "joined_count": 20,
-  "llm_agnes": {
+  "llm_agnes_free_with_header_fallback": {
+    "entity_f1": 0.4468085106382979,
+    "fallback_used_count": 9,
+    "model_id": "agnes-ai-free/agnes-2.0-flash",
+    "operator_status": "llm_constrained_select_with_header_fallback",
+    "relation_f1": 0.18518518518518517
+  },
+  "llm_agnes_no_fallback_prior": {
     "entity_f1": 0.3409090909090909,
     "model_id": "agnes-ai/agnes-2.0-flash",
     "relation_f1": 0.038461538461538464
   },
-  "llm_agnes_free": {
-    "entity_f1": 0.26829268292682923,
-    "model_id": "agnes-ai-free/agnes-2.0-flash",
-    "relation_f1": 0.0
-  },
-  "note": "Structural header ranking fixes (author-span tech tokens, prose noise, core-over-wrapper, prefer shorter core, open-tail complete NP) lifted header entity F1 0.50\u21920.675 on n=20; easy-6 restored to 1.0/1.0. LLM constrained select still below header on prior live run. Operator --mode llm supports --llm-fallback-header. GEPA/DSPy/import remain closed.",
+  "note": "Live n=20 constrained LLM (agnes-free) with header fallback: entity F1\u22480.45 vs header 0.675. fallback_used_count=9/20 (primary empty). Non-empty wrong LLM picks still hurt vs pure header. Process: progressive write + per_case.fallback_used. GEPA/DSPy/import closed.",
   "schema_version": "wave-b-constrained-select-comparison.v1",
-  "verdict": "header_wins_on_n20_improved"
+  "verdict": "header_wins_on_n20_fallback_covers_empty_only"
 }

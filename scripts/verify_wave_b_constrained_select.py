@@ -177,6 +177,15 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Also score header_priority baseline side-by-side (llm/oracle modes)",
     )
+    parser.add_argument(
+        "--progress-output",
+        type=Path,
+        default=None,
+        help=(
+            "Write progressive JSON after each case during --mode llm --live-llm "
+            "(timeout-safe partial artifact). Harmless for header/oracle."
+        ),
+    )
     args = parser.parse_args(argv)
 
     repo = Path(args.repo_root)
@@ -278,8 +287,97 @@ def main(argv: list[str] | None = None) -> int:
             )
             if use_fallback:
                 select_fn = make_header_fallback_select_fn(select_fn)
-            pilot = score_gold_hybrid_constrained_pilot(
-                cases=cases,
+
+            # Cache selections by case_id so progressive rescoring is O(n) LLM
+            # calls, not O(n^2).
+            _select_cache: dict[str, dict] = {}
+            _inner_select = select_fn
+
+            def select_fn(body_text, case_id, candidates):  # type: ignore[no-redef]
+                key = str(case_id)
+                if key in _select_cache:
+                    return _select_cache[key]
+                out = dict(_inner_select(body_text, case_id, candidates) or {})
+                _select_cache[key] = out
+                return out
+
+            # Progressive live path: write partial JSON after each case so a
+            # wall-clock timeout still leaves an auditable artifact.
+            progress_path = None
+            if args.progress_output is not None:
+                progress_path = (
+                    args.progress_output
+                    if args.progress_output.is_absolute()
+                    else (repo / args.progress_output)
+                )
+                progress_path.parent.mkdir(parents=True, exist_ok=True)
+            elif args.output is not None and args.live_llm:
+                # Default: progressive write to final output when live.
+                progress_path = (
+                    args.output if args.output.is_absolute() else (repo / args.output)
+                )
+                progress_path.parent.mkdir(parents=True, exist_ok=True)
+
+            scored_cases: list[dict] = []
+            last_pilot = None
+            for i, case in enumerate(cases, start=1):
+                scored_cases.append(case)
+                last_pilot = score_gold_hybrid_constrained_pilot(
+                    cases=scored_cases,
+                    select_fn=select_fn,
+                    floor_metrics=floor_metrics,
+                    max_body_chars=int(args.max_body_chars),
+                    llm_used=True,
+                    model_id=str(args.model),
+                )
+                if progress_path is not None:
+                    partial = last_pilot.to_dict()
+                    partial["operator_status"] = (
+                        "llm_constrained_select_with_header_fallback_partial"
+                        if use_fallback
+                        else "llm_constrained_select_partial"
+                    )
+                    partial["select_mode"] = "llm"
+                    partial["llm_used"] = True
+                    partial["model_id"] = str(args.model)
+                    partial["llm_fallback_header"] = use_fallback
+                    partial["wave_b_gate_open"] = gate.wave_b_gate_open
+                    partial["human_go"] = gate.human_go
+                    partial["joined_count"] = join.joined_count
+                    partial["scored_case_count"] = last_pilot.case_count
+                    partial["partial"] = True
+                    partial["partial_index"] = i
+                    partial["partial_total"] = len(cases)
+                    partial["import_eligible"] = False
+                    partial["dspy_optimizer_enabled"] = False
+                    partial["ninerouter_diagnostics"] = dict(client.last_diagnostics)
+                    # count fallbacks so far
+                    fb = sum(
+                        1
+                        for row in (last_pilot.per_case or [])
+                        if isinstance(row, dict) and row.get("fallback_used")
+                    )
+                    partial["fallback_used_count"] = fb
+                    if header_metrics is not None:
+                        partial["header_baseline_metrics"] = header_metrics
+                        m = (
+                            partial.get("metrics")
+                            if isinstance(partial.get("metrics"), dict)
+                            else {}
+                        )
+                        partial["delta_vs_header"] = {
+                            "entity_f1": (m.get("entity_f1") or 0.0)
+                            - (header_metrics.get("entity_f1") or 0.0),
+                            "relation_f1": (m.get("relation_f1") or 0.0)
+                            - (header_metrics.get("relation_f1") or 0.0),
+                        }
+                    progress_path.write_text(
+                        json.dumps(partial, indent=2, sort_keys=True) + "\n",
+                        encoding="utf-8",
+                    )
+
+            pilot = last_pilot if last_pilot is not None else score_gold_hybrid_constrained_pilot(
+                cases=[],
                 select_fn=select_fn,
                 floor_metrics=floor_metrics,
                 max_body_chars=int(args.max_body_chars),
@@ -314,6 +412,13 @@ def main(argv: list[str] | None = None) -> int:
             payload["llm_fallback_header"] = bool(args.llm_fallback_header) and not bool(
                 args.no_llm_fallback_header
             )
+            fb_count = sum(
+                1
+                for row in (pilot.per_case or [])
+                if isinstance(row, dict) and row.get("fallback_used")
+            )
+            payload["fallback_used_count"] = fb_count
+            payload["partial"] = False
         payload["operator_status"] = mode_name
         payload["select_mode"] = args.mode
         payload["llm_used"] = llm_used
@@ -335,6 +440,19 @@ def main(argv: list[str] | None = None) -> int:
                 "relation_f1": (m.get("relation_f1") or 0.0)
                 - (header_metrics.get("relation_f1") or 0.0),
             }
+
+    
+    # Optional progress snapshot for non-live modes / final state.
+    if getattr(args, "progress_output", None) is not None and args.mode != "llm":
+        prog = (
+            args.progress_output
+            if args.progress_output.is_absolute()
+            else (repo / args.progress_output)
+        )
+        prog.parent.mkdir(parents=True, exist_ok=True)
+        snap = dict(payload)
+        snap["partial"] = False
+        prog.write_text(json.dumps(snap, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
     if args.output is not None:
@@ -372,6 +490,7 @@ def main(argv: list[str] | None = None) -> int:
             f"floor_relation_f1: {fm.get('relation_f1')} | "
             f"header_entity_f1: {hb.get('entity_f1')} | "
             f"delta_entity_f1: {delta.get('entity_f1')} | "
+            f"fallback_used: {payload.get('fallback_used_count')} | "
             f"llm: {str(payload.get('llm_used')).lower()} | "
             f"model: {payload.get('model_id') or 'none'} | "
             "dspy: false | import_eligible: false\n"
