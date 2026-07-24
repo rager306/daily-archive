@@ -1,40 +1,31 @@
 {
   "delta_vs_header": {
-    "entity_f1": 0.0,
-    "relation_f1": 0.0
+    "entity_f1": -0.050000000000000044,
+    "relation_f1": -0.04999999999999999
   },
   "dspy_optimizer_enabled": false,
   "gepa_justified": false,
   "header": {
     "entity_f1": 0.675,
-    "entity_true_positive": 27,
     "model_id": "header_priority_select",
     "relation_f1": 0.35
   },
   "import_eligible": false,
   "joined_count": 20,
-  "llm_agnes_free_empty_fallback_prior": {
-    "entity_f1": 0.4468085106382979,
-    "note": "empty-only fallback prior run",
-    "relation_f1": 0.18518518518518517
-  },
-  "llm_agnes_free_with_header_prefer": {
-    "entity_f1": 0.675,
+  "llm_agnes_free_compact_prompt_prefer_header": {
+    "entity_f1": 0.625,
     "fallback_reasons": {
-      "primary_empty_entities": 6,
-      "primary_weaker_structural": 14
+      "primary_empty_entities": 10,
+      "primary_not_stronger_structural": 5,
+      "primary_weaker_structural": 4
     },
-    "fallback_used_count": 20,
+    "fallback_used_count": 19,
+    "llm_kept": 1,
     "model_id": "agnes-ai-free/agnes-2.0-flash",
     "operator_status": "llm_constrained_select_with_header_prefer",
-    "relation_f1": 0.35
+    "relation_f1": 0.3
   },
-  "llm_agnes_no_fallback_prior": {
-    "entity_f1": 0.3409090909090909,
-    "model_id": "agnes-ai/agnes-2.0-flash",
-    "relation_f1": 0.038461538461538464
-  },
-  "note": "Structural prefer-header (top-2 entity credit, no gold labels) falls back on all 20 cases (6 empty + 14 weaker). Metrics match header 0.675/0.35 \u2014 fail-closed quality floor. LLM never wins structural arbiter with compact-pair design. GEPA/DSPy/import closed.",
+  "note": "Compact prompt (EXACTLY 2 entities) + prioritize_candidates + trim_selection_to_top_k. Live n=20 agnes-free + prefer-header: entity F1 0.625 vs header 0.675; llm_kept=1/20. Prefer-header still fail-closed floor when LLM weak. GEPA/DSPy/import closed.",
   "schema_version": "wave-b-constrained-select-comparison.v1",
-  "verdict": "prefer_header_matches_header_floor_on_n20"
+  "verdict": "header_still_wins_compact_prompt_llm_kept_1"
 }

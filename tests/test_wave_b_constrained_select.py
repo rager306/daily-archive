@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from research_graph.application.corpus.wave_b_constrained_select import (
     _looks_like_author_span,
     guess_entity_type,
@@ -11,7 +13,9 @@ from research_graph.application.corpus.wave_b_constrained_select import (
     score_selection_structural,
     make_llm_constrained_select_fn,
     parse_constrained_llm_selection,
+    prioritize_candidates_for_prompt,
     render_constrained_select_prompt,
+    trim_selection_to_top_k,
 )
 from research_graph.application.corpus.wave_b_gold_hybrid_constrained_pilot import (
     build_body_candidates,
@@ -588,3 +592,159 @@ def test_make_header_prefer_select_fn_keeps_strictly_stronger_primary() -> None:
     # With large margin, header must beat primary by >10; equal keeps primary.
     assert sel2.get("fallback_used") is False
     assert len(sel2["entities"]) >= 2
+
+
+
+def test_render_constrained_prompt_requires_exactly_two() -> None:
+    cands = [
+        {
+            "candidate_id": "c:a",
+            "surface": "Language and Perception",
+            "surface_norm": "language and perception",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:noise",
+            "surface": "although several works",
+            "surface_norm": "although several works",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:ng",
+            "surface": "random body ngram",
+            "surface_norm": "random body ngram",
+            "source": "ngram",
+        },
+    ]
+    prompt = render_constrained_select_prompt(
+        case_id="case:x",
+        paper_id="x",
+        candidates=prioritize_candidates_for_prompt(cands),
+    )
+    assert "EXACTLY 2" in prompt or "exactly 2" in prompt.casefold()
+    assert "Select 2-4" not in prompt
+    assert "c:a" in prompt
+    # noise/ngram may be listed later or omitted; header multiword first
+    pos_a = prompt.find("c:a")
+    pos_ng = prompt.find("c:ng")
+    if pos_ng >= 0:
+        assert pos_a < pos_ng
+
+
+def test_prioritize_candidates_for_prompt_orders_header_multiword_first() -> None:
+    cands = [
+        {
+            "candidate_id": "c:ng",
+            "surface": "random body ngram",
+            "surface_norm": "random body ngram",
+            "source": "ngram",
+        },
+        {
+            "candidate_id": "c:a",
+            "surface": "Language and Perception",
+            "surface_norm": "language and perception",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:one",
+            "surface": "Attention",
+            "surface_norm": "attention",
+            "source": "header_title",
+        },
+    ]
+    ordered = prioritize_candidates_for_prompt(cands)
+    assert ordered[0]["candidate_id"] == "c:a"
+
+
+def test_trim_selection_to_top_k_keeps_best_two() -> None:
+    cands = [
+        {
+            "candidate_id": "c:a",
+            "surface": "Language and Perception",
+            "surface_norm": "language and perception",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:b",
+            "surface": "Grounded Attribute Learning",
+            "surface_norm": "grounded attribute learning",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:noise",
+            "surface": "although several works",
+            "surface_norm": "although several works",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:ng",
+            "surface": "random body ngram",
+            "surface_norm": "random body ngram",
+            "source": "ngram",
+        },
+    ]
+    raw = {
+        "entities": [
+            {"candidate_id": "c:noise", "type": "Method"},
+            {"candidate_id": "c:a", "type": "Field"},
+            {"candidate_id": "c:ng", "type": "Task"},
+            {"candidate_id": "c:b", "type": "Task"},
+        ],
+        "relations": [
+            {
+                "type": "APPLIED_TO",
+                "source_id": "c:a",
+                "target_id": "c:b",
+            },
+            {
+                "type": "APPLIED_TO",
+                "source_id": "c:noise",
+                "target_id": "c:ng",
+            },
+        ],
+        "json_valid": True,
+    }
+    trimmed = trim_selection_to_top_k(raw, cands, k=2)
+    ids = {e["candidate_id"] for e in trimmed["entities"]}
+    assert ids == {"c:a", "c:b"}
+    assert len(trimmed["relations"]) == 1
+    assert trimmed["relations"][0]["source_id"] == "c:a"
+
+
+def test_make_llm_trims_overselect_before_return() -> None:
+    body, gold = _body_and_gold()
+    cands = build_body_candidates(body, paper_id="1206.6423")
+    by_surface = {c["surface"]: c["candidate_id"] for c in cands}
+    cid_field = by_surface["Language and Perception"]
+    cid_task = by_surface["Grounded Attribute Learning"]
+    # pick a third if available
+    extra = next(
+        (c["candidate_id"] for c in cands if c["candidate_id"] not in {cid_field, cid_task}),
+        None,
+    )
+
+    def chat_fn(messages, *, model, max_tokens=700, temperature=0.0):
+        ents = [
+            {"candidate_id": cid_field, "type": "Field"},
+            {"candidate_id": cid_task, "type": "Task"},
+        ]
+        if extra:
+            ents.append({"candidate_id": extra, "type": "Method"})
+        payload = {
+            "entities": ents,
+            "relations": [
+                {
+                    "type": "APPLIED_TO",
+                    "source_id": cid_field,
+                    "target_id": cid_task,
+                }
+            ],
+        }
+        return json.dumps(payload)
+
+    select = make_llm_constrained_select_fn(chat_fn=chat_fn, model="mock")
+    sel = select(body, gold["case_id"], cands)
+    assert len(sel["entities"]) <= 2
+    ids = {e["candidate_id"] for e in sel["entities"]}
+    assert cid_field in ids
+    assert cid_task in ids

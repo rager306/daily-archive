@@ -968,6 +968,138 @@ def parse_constrained_llm_selection(
     }
 
 
+
+def prioritize_candidates_for_prompt(
+    candidates: Sequence[Mapping[str, Any]],
+    *,
+    max_candidates: int = 40,
+) -> list[dict[str, Any]]:
+    """Order candidates for the LLM prompt: header multiword first, demote noise.
+
+    Structural only (no gold labels). Limits listing size for cost/focus.
+    """
+    rows = [dict(c) for c in candidates if isinstance(c, Mapping)]
+
+    def key(c: Mapping[str, Any]) -> tuple:
+        surface = str(c.get("surface") or "")
+        source = str(c.get("source") or "")
+        words = surface.split()
+        noise = 1 if _is_prose_noise_surface(surface) or _looks_like_author_span(surface) else 0
+        header = 0 if source == "header_title" else (1 if "title" in source else 2)
+        multi = 0 if len(words) in (2, 3, 4) else (1 if len(words) == 1 else 2)
+        return (noise, header, multi, surface.casefold())
+
+    ordered = sorted(rows, key=key)
+    clean = [
+        c
+        for c in ordered
+        if not _is_prose_noise_surface(str(c.get("surface") or ""))
+        and not _looks_like_author_span(str(c.get("surface") or ""))
+    ]
+    pool = clean if len(clean) >= 4 else ordered
+    return pool[: max(1, int(max_candidates))]
+
+
+def trim_selection_to_top_k(
+    selection: Mapping[str, Any],
+    candidates: Sequence[Mapping[str, Any]],
+    *,
+    k: int = 2,
+) -> dict[str, Any]:
+    """Keep the structurally best k entities and relations among them.
+
+    Post-parse compacting for constrained LLM over-select. No gold labels.
+    """
+    by_id = {
+        str(c.get("candidate_id")): c
+        for c in candidates
+        if isinstance(c, Mapping) and c.get("candidate_id")
+    }
+    ents = [dict(e) for e in (selection.get("entities") or []) if isinstance(e, Mapping)]
+    if not ents:
+        return {
+            "entities": [],
+            "relations": [],
+            "json_valid": bool(selection.get("json_valid", True)),
+        }
+
+    def ent_score(e: Mapping[str, Any]) -> float:
+        cid = str(e.get("candidate_id") or "")
+        c = by_id.get(cid)
+        if c is None:
+            return -100.0
+        local = 0.0
+        surface = str(c.get("surface") or "")
+        source = str(c.get("source") or "")
+        words = surface.split()
+        etype = str(e.get("type") or "")
+        if etype in ALLOWED_ENTITY_TYPES:
+            local += 1.0
+        if source == "header_title":
+            local += 4.0
+        elif "title" in source:
+            local += 1.5
+        else:
+            local -= 1.0
+        if len(words) in (2, 3, 4):
+            local += 2.5
+        elif len(words) == 1:
+            local -= 1.0
+        else:
+            local -= 2.0
+        if _is_prose_noise_surface(surface):
+            local -= 6.0
+        if _looks_like_author_span(surface):
+            local -= 5.0
+        return local
+
+    best_by_id: dict[str, dict[str, Any]] = {}
+    best_score: dict[str, float] = {}
+    for e in ents:
+        cid = str(e.get("candidate_id") or "")
+        if not cid:
+            continue
+        sc = ent_score(e)
+        if cid not in best_score or sc > best_score[cid]:
+            best_by_id[cid] = dict(e)
+            best_score[cid] = sc
+    ranked = sorted(best_by_id.values(), key=ent_score, reverse=True)
+    kept = ranked[: max(0, int(k))]
+    kept_ids = {str(e.get("candidate_id")) for e in kept}
+    rels_out: list[dict[str, Any]] = []
+    for r in selection.get("relations") or []:
+        if not isinstance(r, Mapping):
+            continue
+        rtype = str(r.get("type") or r.get("relation_type") or "").strip().upper()
+        if rtype not in ALLOWED_RELATION_TYPES:
+            continue
+        src = str(r.get("source_id") or r.get("source") or "").strip()
+        tgt = str(r.get("target_id") or r.get("target") or "").strip()
+        if src in kept_ids and tgt in kept_ids and src != tgt:
+            rels_out.append({"type": rtype, "source_id": src, "target_id": tgt})
+    if len(kept) >= 2 and not rels_out:
+        a, b = kept[0], kept[1]
+        rels_out.append(
+            {
+                "type": "APPLIED_TO",
+                "source_id": str(a.get("candidate_id")),
+                "target_id": str(b.get("candidate_id")),
+            }
+        )
+    return {
+        "entities": [
+            {
+                "candidate_id": str(e.get("candidate_id")),
+                "type": str(e.get("type") or "Method"),
+            }
+            for e in kept
+            if e.get("candidate_id")
+        ],
+        "relations": rels_out[:1],
+        "json_valid": bool(selection.get("json_valid", True)),
+    }
+
+
 def render_constrained_select_prompt(
     *,
     case_id: str,
@@ -979,35 +1111,39 @@ def render_constrained_select_prompt(
     """Prompt for LLM to pick among candidates only (no new labels)."""
     entity_types = ", ".join(sorted(ALLOWED_ENTITY_TYPES))
     rel_types = ", ".join(sorted(ALLOWED_RELATION_TYPES))
-    lines = []
-    for c in list(candidates)[:max_candidates]:
+    ordered = list(candidates)[:max_candidates]
+    lines: list[str] = []
+    for c in ordered:
         if not isinstance(c, Mapping):
             continue
         lines.append(
             f"- {c.get('candidate_id')}: {c.get('surface')} [{c.get('source')}]"
         )
     outline = ", ".join(outline_titles or []) or "(none)"
-    return (
-        f"case_id={case_id}\n"
-        f"paper_id={paper_id}\n"
-        f"outline_titles: {outline}\n"
-        f"Allowed entity types: {entity_types}\n"
-        f"Allowed relation types: {rel_types}\n"
-        "Select 2-4 central entities ONLY from the candidate list below.\n"
-        "Return candidate_id values exactly. Do NOT invent new labels or ids.\n"
-        "Prefer header_title multiword technical phrases from the title/abstract.\n"
-        "JSON schema only:\n"
-        "{\n"
+    parts = [
+        f"case_id={case_id}",
+        f"paper_id={paper_id}",
+        f"outline_titles: {outline}",
+        f"Allowed entity types: {entity_types}",
+        f"Allowed relation types: {rel_types}",
+        "Select EXACTLY 2 central entities ONLY from the candidate list below.",
+        "Return candidate_id values exactly. Do NOT invent new labels or ids.",
+        "Prefer header_title multiword technical noun phrases (2-4 words).",
+        "Avoid sentence fragments, author/org names, and single stopword tokens.",
+        "Add at most ONE relation linking the two selected entities.",
+        "JSON schema only:",
+        "{",
         '  "entities": [{"candidate_id": "c:...", '
-        '"type": "Field|Task|Method|Dataset|Model|Metric"}],\n'
+        '"type": "Field|Task|Method|Dataset|Model|Metric"}],',
         '  "relations": [{"type": "APPLIED_TO|USES_COMPONENT|EVALUATED_ON|OUTPERFORMS",'
-        ' "source_id": "c:...", "target_id": "c:..."}]\n'
-        "}\n"
-        "--- CANDIDATES ---\n"
-        + ("\n".join(lines) if lines else "(none)")
-        + "\n--- END ---\n"
-        "JSON:"
-    )
+        ' "source_id": "c:...", "target_id": "c:..."}]',
+        "}",
+        "--- CANDIDATES ---",
+        ("\n".join(lines) if lines else "(none)"),
+        "--- END ---",
+        "JSON:",
+    ]
+    return "\n".join(parts)
 
 
 def make_llm_constrained_select_fn(
@@ -1038,11 +1174,7 @@ def make_llm_constrained_select_fn(
                     outline_titles.append(title)
         except Exception:  # noqa: BLE001 - outline is optional context
             outline_titles = []
-        # Prefer header_title candidates first in the prompt listing.
-        ordered = sorted(
-            [c for c in candidates if isinstance(c, Mapping)],
-            key=lambda c: 0 if str(c.get("source") or "") == "header_title" else 1,
-        )
+        ordered = prioritize_candidates_for_prompt(candidates)
         prompt = render_constrained_select_prompt(
             case_id=case_id,
             paper_id=paper_id,
@@ -1056,8 +1188,10 @@ def make_llm_constrained_select_fn(
                         "role": "system",
                         "content": (
                             "You select knowledge-graph entities from a closed "
-                            "candidate list. Return ONLY JSON. Never invent "
-                            "candidate_id or labels."
+                            "candidate list. Return ONLY JSON with EXACTLY 2 "
+                            "entities and at most one relation. Prefer "
+                            "header_title multiword technical phrases. Never "
+                            "invent candidate_id or labels."
                         ),
                     },
                     {"role": "user", "content": prompt},
@@ -1112,7 +1246,8 @@ def make_llm_constrained_select_fn(
                 )
         obj["entities"] = mapped
         obj.setdefault("json_valid", True)
-        return parse_constrained_llm_selection(obj, candidates)
+        parsed_sel = parse_constrained_llm_selection(obj, candidates)
+        return trim_selection_to_top_k(parsed_sel, candidates, k=2)
 
     return _select
 
@@ -1321,7 +1456,9 @@ __all__ = [
     "make_header_prefer_select_fn",
     "make_llm_constrained_select_fn",
     "parse_constrained_llm_selection",
+    "prioritize_candidates_for_prompt",
     "render_constrained_select_prompt",
     "score_selection_structural",
     "surface_norm",
+    "trim_selection_to_top_k",
 ]
