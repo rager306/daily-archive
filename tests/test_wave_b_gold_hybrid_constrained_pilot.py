@@ -61,6 +61,28 @@ def test_surface_in_body_and_candidates_include_multiword() -> None:
     assert all(c["candidate_id"].startswith("c:") for c in cands)
 
 
+def test_header_allcaps_and_single_token_candidates() -> None:
+    body = (
+        "## TRAIN SHORT, TEST LONG: ATTENTION WITH LINEAR BIASES ENABLES "
+        "INPUT LENGTH EXTRAPOLATION\n\n"
+        "## Learning Language Games through Interaction\n\n"
+        "Abstract body continues with methods and experiments."
+    )
+    cands = build_body_candidates(body, paper_id="header-demo")
+    norms = {c["surface_norm"] for c in cands}
+    assert "attention with linear biases" in norms
+    assert "input length extrapolation" in norms
+    assert "language games" in norms
+    assert "interaction" in norms
+    sources = {
+        c["source"]
+        for c in cands
+        if c["surface_norm"]
+        in {"attention with linear biases", "language games", "interaction"}
+    }
+    assert "header_title" in sources
+
+
 def test_grounding_drops_ungrounded_and_maps_selection() -> None:
     body = "Language and Perception for Grounded Attribute Learning works."
     cands = build_body_candidates(body)

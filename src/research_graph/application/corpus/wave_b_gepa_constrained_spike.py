@@ -766,8 +766,11 @@ def offline_reflective_spike(
     )
 
     best = dict(seed)
-    best_eval = seed_eval
+    # Seed train metrics separately (val may be coverage-starved on tiny splits).
+    seed_train_eval = adapter.evaluate(None, seed, capture_traces=False)
+    best_train_sum = sum(seed_train_eval.scores)
     best_metrics = dict(seed_metrics)
+    best_train_metrics = _aggregate_objective(seed_train_eval)
     iterations: list[dict[str, Any]] = []
     reflective_samples: list[dict[str, Any]] = []
 
@@ -798,27 +801,40 @@ def offline_reflective_spike(
         accepted = after_sum > before_sum
         val_after = val_adapter.evaluate(None, proposed, capture_traces=True)
         val_metrics = _aggregate_objective(val_after)
+        train_metrics = _aggregate_objective(after_eval)
         iterations.append(
             {
                 "iteration": i,
                 "accepted": accepted,
                 "train_score_sum_before": before_sum,
                 "train_score_sum_after": after_sum,
+                "train_entity_f1": train_metrics.get("entity_f1"),
                 "val_entity_f1": val_metrics.get("entity_f1"),
                 "val_relation_f1": val_metrics.get("relation_f1"),
             }
         )
         if accepted:
             current = proposed
-            if float(val_metrics.get("entity_f1") or 0.0) >= float(
-                best_metrics.get("entity_f1") or 0.0
-            ):
+            # Prefer train improvement for best_candidate on tiny pilots where val
+            # papers may have zero candidate coverage (cannot improve via prompts).
+            if after_sum >= best_train_sum:
                 best = dict(proposed)
-                best_eval = val_after
+                best_train_sum = after_sum
+                best_train_metrics = dict(train_metrics)
                 best_metrics = dict(val_metrics)
 
-    # If reflection never accepted but proposed still better on val at end, keep best
-    del best_eval
+    # Full-set metrics for the best candidate (honest overall ceiling vs train-only).
+    full_adapter = WaveBConstrainedGEPAAdapter(
+        cases_list, max_body_chars=max_body_chars
+    )
+    full_best = full_adapter.evaluate(None, best, capture_traces=False)
+    full_metrics = _aggregate_objective(full_best)
+    # Surface train metrics as primary best when full still low due to OOD gold.
+    best_metrics = {
+        **full_metrics,
+        "train_entity_f1": best_train_metrics.get("entity_f1"),
+        "val_entity_f1": best_metrics.get("entity_f1"),
+    }
 
     import importlib.util
 

@@ -38,6 +38,134 @@ _TOKEN_RE = re.compile(r"[A-Za-z\u0400-\u04FF][A-Za-z\u0400-\u04FF'\-]{2,}")
 _CONNECTORS = frozenset(
     {"and", "of", "for", "with", "via", "the", "a", "an", "to", "in", "on", "vs"}
 )
+# Closed-class / boilerplate tokens that make weak multiword candidates.
+_STOPWORDS = _CONNECTORS | frozenset(
+    {
+        "this",
+        "that",
+        "these",
+        "those",
+        "they",
+        "them",
+        "their",
+        "there",
+        "then",
+        "than",
+        "when",
+        "where",
+        "which",
+        "what",
+        "who",
+        "whom",
+        "whose",
+        "how",
+        "why",
+        "are",
+        "was",
+        "were",
+        "been",
+        "being",
+        "have",
+        "has",
+        "had",
+        "having",
+        "do",
+        "does",
+        "did",
+        "done",
+        "can",
+        "could",
+        "should",
+        "would",
+        "may",
+        "might",
+        "must",
+        "will",
+        "shall",
+        "not",
+        "nor",
+        "but",
+        "or",
+        "if",
+        "from",
+        "into",
+        "onto",
+        "over",
+        "under",
+        "about",
+        "after",
+        "before",
+        "between",
+        "through",
+        "during",
+        "without",
+        "within",
+        "also",
+        "such",
+        "only",
+        "just",
+        "very",
+        "more",
+        "most",
+        "other",
+        "some",
+        "any",
+        "each",
+        "every",
+        "all",
+        "both",
+        "few",
+        "many",
+        "much",
+        "our",
+        "your",
+        "its",
+        "his",
+        "her",
+        "out",
+        "up",
+        "down",
+        "off",
+        "again",
+        "further",
+        "once",
+        "here",
+        "using",
+        "used",
+        "use",
+        "based",
+        "paper",
+        "we",
+        "present",
+        "show",
+        "propose",
+        "proposed",
+        "method",
+        "methods",
+        "model",
+        "models",
+        "approach",
+        "results",
+        "figure",
+        "table",
+        "section",
+        "introduction",
+        "conclusion",
+        "abstract",
+        "et",
+        "al",
+        "edu",
+        "com",
+        "org",
+        "https",
+        "http",
+        "www",
+    }
+)
+_HEADER_LINE_RE = re.compile(r"^(#{1,6}|\*\*)\s*(.+?)(\*\*)?\s*$", re.MULTILINE)
+_ALLCAPS_TITLE_RE = re.compile(
+    r"(?m)^(?:#{1,6}\s*)?([A-Z][A-Z0-9][A-Z0-9 ,:;'/\-]{8,120})$"
+)
 
 
 def _normalize_surface(value: str) -> str:
@@ -173,7 +301,115 @@ def _phrase_quality(surface: str) -> tuple:
     punct = sum(1 for ch in s if ch in ":;#[](){}")
     has_digit = any(ch.isdigit() for ch in s)
     words = len(s.split())
-    return (noise_hits, punct, 1 if has_digit else 0, abs(words - 3), len(s))
+    stop_hits = sum(1 for w in low.split() if w in _STOPWORDS)
+    return (noise_hits, stop_hits, punct, 1 if has_digit else 0, abs(words - 3), len(s))
+
+
+def _is_weak_ngram(parts: Sequence[str]) -> bool:
+    """Reject stopword-heavy / function-word n-grams that crowd out titles."""
+    if not parts:
+        return True
+    lows = [p.casefold() for p in parts]
+    if lows[0] in _STOPWORDS or lows[-1] in _STOPWORDS:
+        return True
+    content = [p for p in lows if p not in _STOPWORDS and p not in _CONNECTORS]
+    if len(content) < 2:
+        return True
+    stop_ratio = sum(1 for p in lows if p in _STOPWORDS) / max(1, len(lows))
+    return stop_ratio > 0.34
+
+
+def _title_case_surface(parts: Sequence[str]) -> str:
+    """Canonical display form: Title Case content, keep connectors lower."""
+    out: list[str] = []
+    for p in parts:
+        if p.casefold() in _CONNECTORS:
+            out.append(p.casefold())
+        elif p.isupper() and len(p) > 1:
+            out.append(p[:1].upper() + p[1:].lower())
+        else:
+            out.append(p)
+    return " ".join(out)
+
+
+def _extract_markdown_header_phrases(text: str, *, max_phrases: int = 48) -> list[str]:
+    """Pull multiword + strong single tokens from markdown / ALLCAPS title lines.
+
+    Priority source for gold-style labels that live in paper titles/abstract heads.
+    Emits subspans and Title-Case variants so ALLCAPS headers match gold casing.
+    """
+    counts: dict[str, int] = {}
+    header_blobs: list[str] = []
+
+    for match in _HEADER_LINE_RE.finditer(text or ""):
+        raw = (match.group(2) or "").strip()
+        if raw:
+            header_blobs.append(raw)
+    for match in _ALLCAPS_TITLE_RE.finditer(text or ""):
+        raw = (match.group(1) or "").strip()
+        if raw:
+            header_blobs.append(raw)
+
+    # Also treat first non-empty lines as soft headers (hybrid bodies vary).
+    line_budget = 0
+    for line in (text or "").splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("#") or stripped.isupper() or stripped[:1].isupper():
+            header_blobs.append(stripped.lstrip("#").strip())
+            line_budget += 1
+            if line_budget >= 12:
+                break
+
+    for blob in header_blobs:
+        # Drop author/email-ish lines early.
+        low = blob.casefold()
+        if any(x in low for x in ("@", ".edu", "arxiv:", "http", "university")):
+            continue
+        tokens = list(_TOKEN_RE.finditer(blob))
+        if not tokens:
+            continue
+        parts = [t.group(0) for t in tokens]
+        # Full header phrase + subspans (2..min(6, n))
+        n = len(parts)
+        if n >= 2:
+            for width in range(2, min(6, n) + 1):
+                for start in range(0, n - width + 1):
+                    window = parts[start : start + width]
+                    if window[0].casefold() in _CONNECTORS or window[-1].casefold() in _CONNECTORS:
+                        continue
+                    conn = sum(1 for w in window if w.casefold() in _CONNECTORS)
+                    if conn > 1:
+                        continue
+                    if _is_weak_ngram(window):
+                        continue
+                    surface_raw = " ".join(window)
+                    surface_tc = _title_case_surface(window)
+                    counts[surface_raw] = counts.get(surface_raw, 0) + 2
+                    counts[surface_tc] = counts.get(surface_tc, 0) + 3
+        # Strong single-token titles (e.g. gold label "Interaction").
+        # Weight short title-like headers higher so singles are not crowded out
+        # by long abstract soft-header n-grams.
+        title_like = n <= 8 and not any(
+            w.casefold() in {"abstract", "introduction", "conclusion"} for w in parts
+        )
+        if title_like:
+            for idx, p in enumerate(parts):
+                if len(p) < 5 or p.casefold() in _STOPWORDS or p.casefold() in _CONNECTORS:
+                    continue
+                if not (p[:1].isupper() or p.isupper()):
+                    continue
+                surface_tc = _title_case_surface([p])
+                # Terminal content token of a short title is especially valuable.
+                boost = 4 if idx == n - 1 else 2
+                counts[surface_tc] = counts.get(surface_tc, 0) + boost
+                counts[p] = counts.get(p, 0) + boost
+
+    ranked = sorted(
+        counts.items(), key=lambda kv: (-kv[1], _phrase_quality(kv[0]), kv[0].casefold())
+    )
+    return [s for s, _ in ranked[:max_phrases]]
 
 
 def build_body_candidates(
@@ -182,9 +418,17 @@ def build_body_candidates(
     paper_id: str = "",
     top_k_keywords: int = 16,
     max_multiword: int = 32,
-    max_total: int = 64,
+    max_total: int = 96,
 ) -> list[dict[str, Any]]:
-    """Deterministic candidate inventory from hybrid body (no LLM, no gold)."""
+    """Deterministic candidate inventory from hybrid body (no LLM, no gold).
+
+    Priority order (fills slots before lower-priority sources can crowd them out):
+      1. markdown / ALLCAPS title-header phrases (+ Title-Case variants)
+      2. titleish multiword from document head
+      3. titleish multiword from tail (small budget)
+      4. stopword-filtered head n-grams
+      5. statistical keywords
+    """
     text = body_text or ""
     stats = build_hybrid_statistical_extraction(
         paper_id=paper_id or "unknown",
@@ -195,12 +439,15 @@ def build_body_candidates(
     candidates: list[dict[str, Any]] = []
     seen: set[str] = set()
 
-    def _add(surface: str, source: str) -> None:
+    def _add(surface: str, source: str) -> bool:
+        """Add grounded surface; return True if accepted."""
+        if len(candidates) >= max_total:
+            return False
         norm = _normalize_surface(surface)
         if not norm or norm in seen:
-            return
+            return False
         if not surface_in_body(surface, text):
-            return
+            return False
         seen.add(norm)
         cid = f"c:{_slug(surface)}:{len(candidates)}"
         candidates.append(
@@ -211,64 +458,82 @@ def build_body_candidates(
                 "source": source,
             }
         )
+        return True
 
     # Prefer head-of-document phrases (titles/abstract); bibliography tails are noisy.
-    head = text[:3500]
-    tail = text[3500:]
+    head = text[:4500]
+    tail = text[4500:]
 
-    # Case-insensitive content n-grams (2–4 tokens) from document head first.
-    # Recovers gold-style phrases in sentence/Title/ALLCAPS form.
-    head_tokens = list(_TOKEN_RE.finditer(head))
-    ngram_counts: dict[str, int] = {}
-    for width in (4, 3, 2):
-        for i in range(0, max(0, len(head_tokens) - width + 1)):
-            parts = [head_tokens[i + k].group(0) for k in range(width)]
-            if parts[0].casefold() in _CONNECTORS or parts[-1].casefold() in _CONNECTORS:
-                continue
-            conn = sum(1 for p in parts if p.casefold() in _CONNECTORS)
-            if conn > 1:
-                continue
-            content = [p for p in parts if p.casefold() not in _CONNECTORS]
-            if len(content) < 2:
-                continue
-            # Join tokens only (skip markdown/punct between matches).
-            surface = " ".join(parts)
-            if len(surface) < 6 or len(surface) > 80:
-                continue
-            # Must still be grounded as contiguous casefold substring in body.
-            if not surface_in_body(surface, head):
-                continue
-            ngram_counts[surface] = ngram_counts.get(surface, 0) + 1
-    ranked_ngrams = sorted(
-        ngram_counts.items(),
-        key=lambda kv: (_phrase_quality(kv[0]), -kv[1], kv[0].casefold()),
-    )
-    for surface, _count in ranked_ngrams[: max_multiword * 3]:
-        _add(surface, "head_ngram")
-        if len(candidates) >= max_total:
-            return candidates
+    # 1) Title / header phrases first (never short-circuit before this finishes).
+    for surface in _extract_markdown_header_phrases(
+        head, max_phrases=max_multiword * 3
+    ):
+        _add(surface, "header_title")
 
+    # 2) Title-case / ALLCAPS multiword runs in head
     head_phrases = sorted(
         _extract_titleish_phrases(head, max_phrases=max_multiword * 2),
         key=_phrase_quality,
     )
     for surface in head_phrases:
         _add(surface, "multiword_titleish_head")
-        if len(candidates) >= max_total:
-            return candidates
-    for surface in _extract_titleish_phrases(tail, max_phrases=max(8, max_multiword // 3)):
-        _add(surface, "multiword_titleish_tail")
-        if len(candidates) >= max_total:
-            return candidates
+        # Title-Case variant for ALLCAPS extractions
+        parts = surface.split()
+        if parts and all(p.isupper() or p.casefold() in _CONNECTORS for p in parts):
+            _add(_title_case_surface(parts), "multiword_titleish_head_tc")
 
-    for kw in stats.keywords:
-        surface = str(
-            kw.get("keyword") or kw.get("token") or kw.get("term") or ""
-        ).strip()
-        if surface:
-            _add(surface, "statistical_keyword")
-        if len(candidates) >= max_total:
-            break
+    # 3) Small tail budget (methods sections), only if slots remain
+    if len(candidates) < max_total:
+        for surface in _extract_titleish_phrases(
+            tail, max_phrases=max(8, max_multiword // 3)
+        ):
+            _add(surface, "multiword_titleish_tail")
+
+    # 4) Stopword-filtered content n-grams from head (secondary)
+    if len(candidates) < max_total:
+        head_tokens = list(_TOKEN_RE.finditer(head))
+        ngram_counts: dict[str, int] = {}
+        for width in (4, 3, 2):
+            for i in range(0, max(0, len(head_tokens) - width + 1)):
+                parts = [head_tokens[i + k].group(0) for k in range(width)]
+                if _is_weak_ngram(parts):
+                    continue
+                conn = sum(1 for p in parts if p.casefold() in _CONNECTORS)
+                if conn > 1:
+                    continue
+                surface = " ".join(parts)
+                if len(surface) < 6 or len(surface) > 80:
+                    continue
+                if not surface_in_body(surface, head):
+                    continue
+                ngram_counts[surface] = ngram_counts.get(surface, 0) + 1
+                # Title-Case form helps match gold labels from ALLCAPS regions
+                if any(p.isupper() and len(p) > 1 for p in parts):
+                    tc = _title_case_surface(parts)
+                    if surface_in_body(tc, head):
+                        ngram_counts[tc] = ngram_counts.get(tc, 0) + 2
+        ranked_ngrams = sorted(
+            ngram_counts.items(),
+            key=lambda kv: (_phrase_quality(kv[0]), -kv[1], kv[0].casefold()),
+        )
+        ngram_budget = max(8, max_multiword)
+        added_ngrams = 0
+        for surface, _count in ranked_ngrams:
+            if added_ngrams >= ngram_budget or len(candidates) >= max_total:
+                break
+            if _add(surface, "head_ngram"):
+                added_ngrams += 1
+
+    # 5) Statistical keywords fill remaining slots
+    if len(candidates) < max_total:
+        for kw in stats.keywords:
+            surface = str(
+                kw.get("keyword") or kw.get("token") or kw.get("term") or ""
+            ).strip()
+            if surface:
+                _add(surface, "statistical_keyword")
+            if len(candidates) >= max_total:
+                break
 
     return candidates
 
