@@ -1,0 +1,84 @@
+{
+  "deltas": {
+    "header_minus_floor_entity_f1": -0.325,
+    "header_minus_floor_relation_f1": -0.65,
+    "llm_beats_header": false,
+    "llm_minus_header_entity_f1": -0.05,
+    "llm_minus_header_relation_f1": -0.05
+  },
+  "diagnostics": [
+    "ship_ready:True",
+    "ship_blocker:None",
+    "ship_path:header_priority_constrained_select",
+    "header_entity_f1:0.675",
+    "header_relation_f1:0.35",
+    "floor_entity_f1:1.0",
+    "floor_relation_f1:1.0",
+    "llm_entity_f1:0.625",
+    "llm_relation_f1:0.3",
+    "gepa_justified:False",
+    "joined_count:20",
+    "import_write_fail_closed",
+    "wave_b_ship_gate_matrix_only"
+  ],
+  "dspy_optimizer_enabled": false,
+  "gate_signal": "open",
+  "gepa_justified": false,
+  "graph_writes_allowed": false,
+  "import_eligible": false,
+  "note": "Single ship-gate matrix for Wave B quality worlds. floor=lexical oracle ceiling; header=constrained deploy path; baseline=fixture extraction gate; llm=compare only. GEPA/DSPy only if llm delta_vs_header > 0 on entity and relation. Never import.",
+  "relation_status": {
+    "accepted_as_deploy_ceiling": true,
+    "allowed_relation_types": [
+      "APPLIED_TO",
+      "EVALUATED_ON",
+      "OUTPERFORMS",
+      "USES_COMPONENT"
+    ],
+    "ceiling_note": "Header path relation F1 is co-occurrence typed links among top-2 header entities (at most one APPLIED_TO). Floor/oracle 1.0 is not deploy quality. Accept header relation ceiling until constrained relation candidates beat header without invent.",
+    "floor_relation_f1": 1.0,
+    "free_invent": false,
+    "gepa_open": false,
+    "header_relation_f1": 0.35,
+    "path": "header_priority_cooccurrence",
+    "relation_gap_vs_floor": 0.65
+  },
+  "schema_version": "wave-b-ship-gate-matrix.v1",
+  "ship_blocker": null,
+  "ship_path": "header_priority_constrained_select",
+  "ship_ready": true,
+  "wave_a_closeout_signal": "wave_a_closed",
+  "worlds": {
+    "context": {
+      "grounding_body_ratio": 1.0,
+      "grounding_cand_ratio": 1.0,
+      "human_go": true,
+      "joined_count": 20,
+      "wave_a_closeout_pass": true
+    },
+    "extraction_baseline_train": {
+      "entity_f1": 0.925,
+      "relation_f1": 0.6470588235294117,
+      "role": "fixture_gate_not_hybrid_deploy"
+    },
+    "floor_lexical_oracle": {
+      "entity_f1": 1.0,
+      "relation_f1": 1.0,
+      "role": "ceiling_not_deploy"
+    },
+    "header_constrained_select": {
+      "entity_f1": 0.675,
+      "model_id": "header_priority_select",
+      "relation_f1": 0.35,
+      "role": "deploy_default"
+    },
+    "llm_constrained_compare": {
+      "entity_f1": 0.625,
+      "fallback_used_count": 19,
+      "llm_kept": 1,
+      "model_id": "agnes-ai-free/agnes-2.0-flash",
+      "relation_f1": 0.3,
+      "role": "compare_only"
+    }
+  }
+}

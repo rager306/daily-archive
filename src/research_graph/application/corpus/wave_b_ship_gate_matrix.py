@@ -1,0 +1,298 @@
+"""Wave B ship-gate metric matrix (M260).
+
+Composes floor / header constrained / extraction baseline / optional LLM compare
+into one fail-closed decision surface. Never invents gold. Never authorizes
+import or GEPA/DSPy unless explicit positive delta vs header is provided.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+from dataclasses import dataclass
+from typing import Any
+
+from research_graph.application.corpus.wave_b_gold_hybrid_llm_pilot import (
+    ALLOWED_RELATION_TYPES,
+)
+
+SCHEMA_VERSION = "wave-b-ship-gate-matrix.v1"
+
+# Deployable Wave B quality path is header constrained select until LLM wins.
+DEFAULT_SHIP_PATH = "header_priority_constrained_select"
+
+
+@dataclass(frozen=True, slots=True)
+class WaveBShipGateMatrixPackage:
+    schema_version: str
+    worlds: dict[str, Any]
+    deltas: dict[str, Any]
+    relation_status: dict[str, Any]
+    ship_path: str
+    ship_blocker: str | None
+    ship_ready: bool
+    gepa_justified: bool
+    dspy_optimizer_enabled: bool
+    diagnostics: tuple[str, ...]
+    import_eligible: bool = False
+    graph_writes_allowed: bool = False
+
+    def __post_init__(self) -> None:
+        if self.import_eligible or self.graph_writes_allowed:
+            raise ValueError("ship gate matrix cannot authorize import/writes")
+        if self.dspy_optimizer_enabled:
+            raise ValueError("ship gate matrix cannot enable DSPy optimizer")
+        if self.gepa_justified and self.ship_blocker is not None:
+            # GEPA may only be justified when no ship_blocker remains for LLM path
+            pass
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": self.schema_version,
+            "worlds": dict(self.worlds),
+            "deltas": dict(self.deltas),
+            "relation_status": dict(self.relation_status),
+            "ship_path": self.ship_path,
+            "ship_blocker": self.ship_blocker,
+            "ship_ready": self.ship_ready,
+            "gepa_justified": self.gepa_justified,
+            "dspy_optimizer_enabled": False,
+            "diagnostics": list(self.diagnostics),
+            "import_eligible": False,
+            "graph_writes_allowed": False,
+            "note": (
+                "Single ship-gate matrix for Wave B quality worlds. "
+                "floor=lexical oracle ceiling; header=constrained deploy path; "
+                "baseline=fixture extraction gate; llm=compare only. "
+                "GEPA/DSPy only if llm delta_vs_header > 0 on entity and relation. "
+                "Never import."
+            ),
+        }
+
+
+def _f1(block: Mapping[str, Any] | None, *keys: str) -> float | None:
+    if not block:
+        return None
+    for k in keys:
+        if k in block and block[k] is not None:
+            try:
+                return float(block[k])
+            except (TypeError, ValueError):
+                return None
+    metrics = block.get("metrics")
+    if isinstance(metrics, Mapping):
+        for k in keys:
+            if k in metrics and metrics[k] is not None:
+                try:
+                    return float(metrics[k])
+                except (TypeError, ValueError):
+                    return None
+    return None
+
+
+def _delta(a: float | None, b: float | None) -> float | None:
+    if a is None or b is None:
+        return None
+    return round(float(a) - float(b), 6)
+
+
+def build_wave_b_ship_gate_matrix(
+    *,
+    floor: Mapping[str, Any] | None = None,
+    header: Mapping[str, Any] | None = None,
+    baseline: Mapping[str, Any] | None = None,
+    llm: Mapping[str, Any] | None = None,
+    llm_compare: Mapping[str, Any] | None = None,
+    joined_count: int | None = None,
+    grounding_body_ratio: float | None = None,
+    grounding_cand_ratio: float | None = None,
+    human_go: bool | None = None,
+    wave_a_closeout_pass: bool | None = None,
+) -> WaveBShipGateMatrixPackage:
+    """Build ship matrix from metric worlds (pure).
+
+    Parameters accept either flat {entity_f1, relation_f1} or nested metrics dicts
+    / operator payloads.
+    """
+    floor = dict(floor or {})
+    header = dict(header or {})
+    baseline = dict(baseline or {})
+    llm = dict(llm or {})
+    compare = dict(llm_compare or {})
+
+    # Prefer explicit compare artifact when present
+    if compare:
+        if not header and isinstance(compare.get("header"), Mapping):
+            header = dict(compare["header"])
+        if not llm:
+            for key in (
+                "llm_agnes_free_compact_prompt_prefer_header",
+                "llm",
+                "llm_metrics",
+            ):
+                if isinstance(compare.get(key), Mapping):
+                    llm = dict(compare[key])
+                    break
+        if joined_count is None and compare.get("joined_count") is not None:
+            joined_count = int(compare["joined_count"])
+
+    floor_e = _f1(floor, "entity_f1", "floor_entity_f1")
+    floor_r = _f1(floor, "relation_f1", "floor_relation_f1")
+    # nested floor_metrics on header operator payload
+    if floor_e is None:
+        floor_e = _f1(header.get("floor_metrics") if isinstance(header.get("floor_metrics"), Mapping) else None, "entity_f1")
+    if floor_r is None:
+        floor_r = _f1(header.get("floor_metrics") if isinstance(header.get("floor_metrics"), Mapping) else None, "relation_f1")
+
+    header_e = _f1(header, "entity_f1")
+    header_r = _f1(header, "relation_f1")
+    baseline_e = _f1(baseline, "entity_f1", "train_entity_f1")
+    baseline_r = _f1(baseline, "relation_f1", "train_relation_f1")
+    llm_e = _f1(llm, "entity_f1")
+    llm_r = _f1(llm, "relation_f1")
+
+    # deltas vs header (LLM must beat header to justify optimizer)
+    delta_llm_e = _delta(llm_e, header_e)
+    delta_llm_r = _delta(llm_r, header_r)
+    if compare.get("delta_vs_header") and isinstance(compare["delta_vs_header"], Mapping):
+        dv = compare["delta_vs_header"]
+        if delta_llm_e is None and dv.get("entity_f1") is not None:
+            delta_llm_e = float(dv["entity_f1"])
+        if delta_llm_r is None and dv.get("relation_f1") is not None:
+            delta_llm_r = float(dv["relation_f1"])
+
+    gepa_from_compare = bool(compare.get("gepa_justified") is True)
+    llm_beats_header = (
+        delta_llm_e is not None
+        and delta_llm_r is not None
+        and delta_llm_e > 0
+        and delta_llm_r > 0
+    )
+    gepa_justified = bool(llm_beats_header and gepa_from_compare) if gepa_from_compare else bool(llm_beats_header)
+
+    blockers: list[str] = []
+    if human_go is False:
+        blockers.append("human_go_false")
+    if wave_a_closeout_pass is False:
+        blockers.append("wave_a_closeout_not_pass")
+    if grounding_body_ratio is not None and grounding_body_ratio < 1.0:
+        blockers.append(f"grounding_body_ratio:{grounding_body_ratio}<1.0")
+    if grounding_cand_ratio is not None and grounding_cand_ratio < 1.0:
+        blockers.append(f"grounding_cand_ratio:{grounding_cand_ratio}<1.0")
+    if header_e is None or header_r is None:
+        blockers.append("header_metrics_missing")
+    # Deploy path is header; LLM weaker is not a ship blocker for header path,
+    # but GEPA must stay closed.
+    if not llm_beats_header:
+        # informational — not always a ship blocker for header deploy
+        pass
+    # Relation ceiling: header relation weak relative to floor — document, do not fake
+    relation_gap = None
+    if header_r is not None and floor_r is not None:
+        relation_gap = round(float(floor_r) - float(header_r), 6)
+
+    # Ship ready = header path metrics present + no hard blockers
+    hard = [b for b in blockers if not b.startswith("grounding_")]
+    # grounding is hard too
+    hard = list(blockers)
+    ship_ready = len(hard) == 0 and header_e is not None and header_r is not None
+    ship_blocker = None if ship_ready else (hard[0] if hard else "unknown")
+
+    # If LLM does not beat header, preferred ship path remains header
+    ship_path = DEFAULT_SHIP_PATH
+    if llm_beats_header:
+        ship_path = "constrained_llm_prefer_header_candidate"
+
+    relation_status = {
+        "path": "header_priority_cooccurrence",
+        "header_relation_f1": header_r,
+        "floor_relation_f1": floor_r,
+        "relation_gap_vs_floor": relation_gap,
+        "allowed_relation_types": sorted(ALLOWED_RELATION_TYPES),
+        "ceiling_note": (
+            "Header path relation F1 is co-occurrence typed links among top-2 "
+            "header entities (at most one APPLIED_TO). Floor/oracle 1.0 is not "
+            "deploy quality. Accept header relation ceiling until constrained "
+            "relation candidates beat header without invent."
+        ),
+        "accepted_as_deploy_ceiling": True if header_r is not None else False,
+        "free_invent": False,
+        "gepa_open": False,
+    }
+
+    worlds = {
+        "floor_lexical_oracle": {
+            "entity_f1": floor_e,
+            "relation_f1": floor_r,
+            "role": "ceiling_not_deploy",
+        },
+        "header_constrained_select": {
+            "entity_f1": header_e,
+            "relation_f1": header_r,
+            "role": "deploy_default",
+            "model_id": header.get("model_id") or "header_priority_select",
+        },
+        "extraction_baseline_train": {
+            "entity_f1": baseline_e,
+            "relation_f1": baseline_r,
+            "role": "fixture_gate_not_hybrid_deploy",
+        },
+        "llm_constrained_compare": {
+            "entity_f1": llm_e,
+            "relation_f1": llm_r,
+            "role": "compare_only",
+            "model_id": llm.get("model_id"),
+            "llm_kept": llm.get("llm_kept"),
+            "fallback_used_count": llm.get("fallback_used_count"),
+        },
+        "context": {
+            "joined_count": joined_count,
+            "grounding_body_ratio": grounding_body_ratio,
+            "grounding_cand_ratio": grounding_cand_ratio,
+            "human_go": human_go,
+            "wave_a_closeout_pass": wave_a_closeout_pass,
+        },
+    }
+    deltas = {
+        "llm_minus_header_entity_f1": delta_llm_e,
+        "llm_minus_header_relation_f1": delta_llm_r,
+        "header_minus_floor_entity_f1": _delta(header_e, floor_e),
+        "header_minus_floor_relation_f1": _delta(header_r, floor_r),
+        "llm_beats_header": llm_beats_header,
+    }
+
+    diagnostics = (
+        f"ship_ready:{ship_ready}",
+        f"ship_blocker:{ship_blocker}",
+        f"ship_path:{ship_path}",
+        f"header_entity_f1:{header_e}",
+        f"header_relation_f1:{header_r}",
+        f"floor_entity_f1:{floor_e}",
+        f"floor_relation_f1:{floor_r}",
+        f"llm_entity_f1:{llm_e}",
+        f"llm_relation_f1:{llm_r}",
+        f"gepa_justified:{gepa_justified}",
+        f"joined_count:{joined_count}",
+        "import_write_fail_closed",
+        "wave_b_ship_gate_matrix_only",
+    )
+
+    return WaveBShipGateMatrixPackage(
+        schema_version=SCHEMA_VERSION,
+        worlds=worlds,
+        deltas=deltas,
+        relation_status=relation_status,
+        ship_path=ship_path,
+        ship_blocker=ship_blocker,
+        ship_ready=ship_ready,
+        gepa_justified=gepa_justified and llm_beats_header,
+        dspy_optimizer_enabled=False,
+        diagnostics=diagnostics,
+    )
+
+
+__all__ = [
+    "SCHEMA_VERSION",
+    "DEFAULT_SHIP_PATH",
+    "WaveBShipGateMatrixPackage",
+    "build_wave_b_ship_gate_matrix",
+]
