@@ -133,6 +133,23 @@ def main(argv: list[str] | None = None) -> int:
         default=0,
         help="Optional max cases (0 = all joined)",
     )
+    parser.add_argument(
+        "--structured",
+        action="store_true",
+        default=True,
+        help="Feed structured context pack (outline/sections/candidates; default)",
+    )
+    parser.add_argument(
+        "--raw-body",
+        action="store_true",
+        help="Legacy: feed truncated raw hybrid markdown only",
+    )
+    parser.add_argument(
+        "--max-followup-rounds",
+        type=int,
+        default=1,
+        help="Allow model to request more sections N times (structured mode)",
+    )
     args = parser.parse_args(argv)
 
     repo = Path(args.repo_root)
@@ -183,7 +200,13 @@ def main(argv: list[str] | None = None) -> int:
         max_tokens = int(args.max_tokens)
         if max_tokens <= 0:
             max_tokens = 1400 if model_id.startswith("agnes-ai-free/") else 900
-        client = NineRouterJsonExtractClient(model=model_id, max_tokens=max_tokens)
+        use_structured = not bool(args.raw_body)
+        client = NineRouterJsonExtractClient(
+            model=model_id,
+            max_tokens=max_tokens,
+            use_structured_context=use_structured,
+            max_followup_rounds=int(args.max_followup_rounds),
+        )
         pilot = score_gold_hybrid_llm_pilot(
             cases=cases,
             extract_fn=client.as_extract_fn(),
@@ -197,6 +220,9 @@ def main(argv: list[str] | None = None) -> int:
         payload["joined_count"] = join.joined_count
         payload["scored_case_count"] = pilot.case_count
         payload["operator_status"] = "sampled"
+        payload["context_mode"] = (
+            "structured_context" if use_structured else "raw_body"
+        )
         payload["last_extract_diagnostics"] = dict(client.last_diagnostics)
 
     text = json.dumps(payload, indent=2, sort_keys=True) + "\n"

@@ -101,12 +101,22 @@ def parse_llm_extraction_json(text: str) -> dict[str, Any]:
             entities = []
         if not isinstance(relations, list):
             relations = []
+        need_raw = data.get("need_sections")
+        need_sections: list[str] = []
+        if isinstance(need_raw, list):
+            need_sections = [str(x).strip() for x in need_raw if str(x).strip()]
         return {
             "entities": [e for e in entities if isinstance(e, Mapping)],
             "relations": [r for r in relations if isinstance(r, Mapping)],
+            "need_sections": need_sections,
             "json_valid": True,
         }
-    return {"entities": [], "relations": [], "json_valid": False}
+    return {
+        "entities": [],
+        "relations": [],
+        "need_sections": [],
+        "json_valid": False,
+    }
 
 
 def _slug(value: str) -> str:
