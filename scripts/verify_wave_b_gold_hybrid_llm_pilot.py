@@ -42,6 +42,7 @@ from research_graph.application.reviewed_extraction_fixtures import (
     load_reviewed_extraction_split,
 )
 from research_graph.infrastructure.llm.ninerouter_json_extract import (
+    AGNES_25_PILOT_MODEL,
     DEFAULT_PILOT_MODEL,
     QUALITY_PILOT_MODEL,
     NineRouterJsonExtractClient,
@@ -101,7 +102,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--model",
         default=DEFAULT_PILOT_MODEL,
-        help=f"9router model id (default {DEFAULT_PILOT_MODEL}; quality={QUALITY_PILOT_MODEL})",
+        help=(
+            f"9router model id (default {DEFAULT_PILOT_MODEL}; "
+            f"agnes2.5={AGNES_25_PILOT_MODEL}; quality={QUALITY_PILOT_MODEL})"
+        ),
     )
     parser.add_argument(
         "--max-body-chars",

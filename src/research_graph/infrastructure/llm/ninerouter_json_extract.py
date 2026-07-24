@@ -19,6 +19,7 @@ from research_graph.application.corpus.wave_b_gold_hybrid_llm_pilot import (
 from research_graph.infrastructure.llm.ninerouter_client import NineRouterChatClient
 
 DEFAULT_PILOT_MODEL = "agnes-ai/agnes-2.0-flash"
+AGNES_25_PILOT_MODEL = "agnes-ai/agnes-2.5-flash"
 QUALITY_PILOT_MODEL = "minimax/MiniMax-M2.7-highspeed"
 
 _SYSTEM = (
@@ -101,6 +102,7 @@ class NineRouterJsonExtractClient:
 
 
 __all__ = [
+    "AGNES_25_PILOT_MODEL",
     "DEFAULT_PILOT_MODEL",
     "QUALITY_PILOT_MODEL",
     "NineRouterJsonExtractClient",
