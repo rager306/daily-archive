@@ -1120,34 +1120,66 @@ def try_gepa_optimize(
     max_metric_calls: int = 30,
     max_body_chars: int = 8000,
     reflection_lm: Callable[[str], str] | None = None,
+    held_out_case_ids: Sequence[str] | None = None,
+    train_ratio: float = 0.67,
+    split_seed: int = 0,
 ) -> dict[str, Any]:
     """Optional real gepa.optimize call. Returns status dict; never raises import.
 
     Requires optional dependency ``gepa``. Reflection LM must be provided by caller
     (injectible); default skips with reason if missing.
+
+    M280: held_out_case_ids excluded from trainset via partition_cases_for_gepa.
     """
     import importlib.util
 
-    if importlib.util.find_spec("gepa") is None:
+    # Always filter train pool first (even if gepa missing) so isolation is testable.
+    try:
+        part = partition_cases_for_gepa(
+            cases,
+            held_out_case_ids=held_out_case_ids,
+            train_ratio=train_ratio,
+            split_seed=split_seed,
+        )
+    except ValueError as exc:
         return {
             "ran": False,
-            "reason": "gepa_package_not_installed",
+            "reason": str(exc),
+            "gt_isolation_ok": False,
             "import_eligible": False,
+        }
+
+    train_cases = list(part["train"])
+    isolation = part["isolation"]
+    held_ids = list(part["held_out_ids"])
+    trainset = [{"case_id": str(c.get("case_id") or "")} for c in train_cases]
+
+    base_status = {
+        "gt_isolation_ok": bool(isolation.ok),
+        "held_out_case_ids": held_ids,
+        "train_case_ids": list(part["train_case_ids"]),
+        "trainset_size": len(trainset),
+        "import_eligible": False,
+        "dspy_optimizer_enabled": False,
+    }
+
+    if importlib.util.find_spec("gepa") is None:
+        return {
+            **base_status,
+            "ran": False,
+            "reason": "gepa_package_not_installed",
         }
     if reflection_lm is None:
         return {
+            **base_status,
             "ran": False,
             "reason": "reflection_lm_not_provided",
-            "import_eligible": False,
             "hint": "Pass injectible reflection_lm; do not hardcode secrets",
         }
     import gepa  # type: ignore
 
-    adapter = WaveBConstrainedGEPAAdapter(cases, max_body_chars=max_body_chars)
+    adapter = WaveBConstrainedGEPAAdapter(train_cases, max_body_chars=max_body_chars)
     seed = dict(seed_candidate or DEFAULT_CANDIDATE)
-    # gepa.optimize expects trainset as list of examples adapter understands.
-    # Our adapter reads case_id from batch items matching prepared cases.
-    trainset = [{"case_id": str(c.get("case_id") or "")} for c in cases]
     try:
         result = gepa.optimize(
             seed_candidate=seed,
@@ -1157,27 +1189,25 @@ def try_gepa_optimize(
             max_metric_calls=max_metric_calls,
         )
     except TypeError:
-        # API shape may differ across gepa versions — capture and fail closed
         return {
+            **base_status,
             "ran": False,
             "reason": "gepa_optimize_signature_mismatch",
-            "import_eligible": False,
         }
     except Exception as exc:  # noqa: BLE001
         return {
+            **base_status,
             "ran": False,
             "reason": f"gepa_optimize_error:{type(exc).__name__}",
-            "import_eligible": False,
         }
     best = getattr(result, "best_candidate", None) or getattr(
         result, "best_program", None
     )
     return {
+        **base_status,
         "ran": True,
         "reason": "ok",
         "best_candidate": dict(best) if isinstance(best, Mapping) else best,
-        "import_eligible": False,
-        "dspy_optimizer_enabled": False,
     }
 
 

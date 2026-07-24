@@ -66,6 +66,19 @@ class CanaryCorpusDesign:
         if self.target_size < 60:
             raise ValueError("canary target_size must be >= 60")
 
+    @property
+    def assigned_count(self) -> int:
+        return sum(1 for s in self.slots if s.paper_id)
+
+    @property
+    def annotation_status(self) -> str:
+        n = self.assigned_count
+        if n == 0:
+            return "design_only"
+        if n >= self.target_size:
+            return "ids_assigned_labels_pending"
+        return "partial_ids_assigned"
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "schema_version": self.schema_version,
@@ -74,12 +87,14 @@ class CanaryCorpusDesign:
             "slots": [s.to_dict() for s in self.slots],
             "label_schema": list(self.label_schema),
             "diagnostics": list(self.diagnostics),
+            "assigned_count": self.assigned_count,
             "import_eligible": False,
             "graph_writes_allowed": False,
-            "annotation_status": "design_only",
+            "annotation_status": self.annotation_status,
             "note": (
-                "E2.2 design plan: stratified canary slots for evidence metrics. "
-                "Not a gold set yet; do not feed into GEPA/LLM. Never import."
+                "Canary slots for evidence metrics. paper_ids may be assigned; "
+                "labels still pending. Never feed held-out into GEPA/LLM train. "
+                "Never import."
             ),
         }
 
@@ -157,12 +172,21 @@ def build_canary_corpus_design(
         slots = filled
 
     assigned_n = sum(1 for s in slots if s.paper_id)
+    status = (
+        "design_only"
+        if assigned_n == 0
+        else (
+            "ids_assigned_labels_pending"
+            if assigned_n >= n
+            else "partial_ids_assigned"
+        )
+    )
     diagnostics = (
         f"target_size:{n}",
         f"slot_count:{len(slots)}",
         f"strata_count:{len(strata_list)}",
         f"assigned:{assigned_n}",
-        "annotation_status:design_only",
+        f"annotation_status:{status}",
         "gepa_llm_isolation:do_not_use_as_train",
         "import_write_fail_closed",
     )
@@ -176,6 +200,102 @@ def build_canary_corpus_design(
     )
 
 
+def assign_canary_paper_ids(
+    design: CanaryCorpusDesign,
+    paper_ids: Sequence[str],
+    *,
+    held_out_count: int = 12,
+    held_out_seed: int = 0,
+) -> tuple[CanaryCorpusDesign, tuple[str, ...], dict[str, Any]]:
+    """Fill unassigned slots from paper_ids in order; freeze held-out split.
+
+    Held-out is a deterministic tail of assigned ids (not used as GEPA train).
+    Returns (new_design, held_out_ids, freeze_payload).
+    """
+    import hashlib
+
+    from research_graph.application.corpus.gt_isolation import freeze_canary_split
+
+    # unique preserve order
+    seen: set[str] = set()
+    pool: list[str] = []
+    for raw in paper_ids:
+        pid = str(raw).replace("arxiv:", "").strip()
+        if not pid or pid in seen:
+            continue
+        seen.add(pid)
+        pool.append(pid)
+
+    if len(pool) < design.target_size:
+        raise ValueError(
+            f"need at least {design.target_size} unique paper_ids, got {len(pool)}"
+        )
+
+    filled: list[CanarySlot] = []
+    pi = 0
+    for slot in design.slots:
+        if slot.paper_id:
+            filled.append(slot)
+            continue
+        pid = pool[pi]
+        pi += 1
+        filled.append(
+            CanarySlot(
+                slot_id=slot.slot_id,
+                stratum=slot.stratum,
+                priority=slot.priority,
+                labels_planned=slot.labels_planned,
+                paper_id=pid,
+                notes="paper_id assigned; labels pending",
+            )
+        )
+
+    assigned_ids = [s.paper_id for s in filled if s.paper_id]
+    # deterministic held-out: hash-sort assigned, take last held_out_count
+    scored = sorted(
+        assigned_ids,
+        key=lambda x: hashlib.md5(f"{held_out_seed}:{x}".encode()).hexdigest(),
+    )
+    k = max(0, min(int(held_out_count), len(scored) // 3 if len(scored) >= 3 else 0))
+    if k == 0 and held_out_count > 0 and len(scored) >= 2:
+        k = 1
+    held = tuple(scored[-k:]) if k else ()
+    freeze = freeze_canary_split(assigned_ids, held_out_ids=held)
+
+    new_design = build_canary_corpus_design(
+        target_size=design.target_size,
+        strata=design.strata,
+        assigned=[(s.slot_id, s.paper_id) for s in filled if s.paper_id],
+    )
+    # rebuild preserves notes via assigned path; re-apply label notes
+    notes_slots = []
+    for s in new_design.slots:
+        notes_slots.append(
+            CanarySlot(
+                slot_id=s.slot_id,
+                stratum=s.stratum,
+                priority=s.priority,
+                labels_planned=s.labels_planned,
+                paper_id=s.paper_id,
+                notes="paper_id assigned; labels pending" if s.paper_id else s.notes,
+            )
+        )
+    diagnostics = tuple(new_design.diagnostics) + (
+        f"held_out_count:{len(held)}",
+        f"held_out_seed:{held_out_seed}",
+        "gepa_held_out_frozen",
+    )
+    final = CanaryCorpusDesign(
+        schema_version=new_design.schema_version,
+        target_size=new_design.target_size,
+        strata=new_design.strata,
+        slots=tuple(notes_slots),
+        label_schema=new_design.label_schema,
+        diagnostics=diagnostics,
+    )
+    return final, held, freeze
+
+
 __all__ = [
     "SCHEMA_VERSION",
     "DEFAULT_TARGET_SIZE",
@@ -183,4 +303,5 @@ __all__ = [
     "CanarySlot",
     "CanaryCorpusDesign",
     "build_canary_corpus_design",
+    "assign_canary_paper_ids",
 ]
