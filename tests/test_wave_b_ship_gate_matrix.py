@@ -142,3 +142,54 @@ def test_stale_llm_compare_does_not_promote() -> None:
     assert pkg.ship_path == "header_priority_constrained_select"
     assert pkg.gepa_justified is False
     assert pkg.worlds["context"]["compare_n_matches"] is False
+
+
+
+def test_offline_gepa_val_gap_blocks_promote() -> None:
+    """Dual F1 win is not enough when train-val gap exceeds threshold (D128)."""
+    pkg = build_wave_b_ship_gate_matrix(
+        floor={"entity_f1": 1.0, "relation_f1": 1.0},
+        header={"entity_f1": 0.5, "relation_f1": 0.26, "model_id": "header_priority_select"},
+        offline_gepa={
+            "entity_f1": 0.64,
+            "relation_f1": 0.29,
+            "train_entity_f1": 0.93,
+            "val_entity_f1": 0.08,
+            "model_id": "gepa_instruction_rule_select",
+            "promote_ready": True,
+        },
+        joined_count=23,
+        grounding_body_ratio=1.0,
+        grounding_cand_ratio=1.0,
+        human_go=True,
+        wave_a_closeout_pass=True,
+        max_val_gap=0.35,
+    )
+    assert pkg.deltas["gepa_beats_header"] is False
+    assert pkg.ship_path == "header_priority_constrained_select"
+    assert pkg.gepa_justified is False
+    assert pkg.worlds["offline_gepa_instruction_select"]["val_gap_ok"] is False
+
+
+def test_offline_gepa_promotes_when_dual_f1_and_val_ok() -> None:
+    pkg = build_wave_b_ship_gate_matrix(
+        floor={"entity_f1": 1.0, "relation_f1": 1.0},
+        header={"entity_f1": 0.5, "relation_f1": 0.26},
+        offline_gepa={
+            "entity_f1": 0.64,
+            "relation_f1": 0.29,
+            "train_entity_f1": 0.70,
+            "val_entity_f1": 0.55,
+            "model_id": "gepa_instruction_rule_select",
+            "promote_ready": True,
+        },
+        joined_count=23,
+        grounding_body_ratio=1.0,
+        grounding_cand_ratio=1.0,
+        human_go=True,
+        wave_a_closeout_pass=True,
+        max_val_gap=0.35,
+    )
+    assert pkg.deltas["gepa_beats_header"] is True
+    assert pkg.ship_path == "gepa_instruction_rule_select"
+    assert pkg.gepa_justified is True

@@ -102,11 +102,13 @@ def build_wave_b_ship_gate_matrix(
     baseline: Mapping[str, Any] | None = None,
     llm: Mapping[str, Any] | None = None,
     llm_compare: Mapping[str, Any] | None = None,
+    offline_gepa: Mapping[str, Any] | None = None,
     joined_count: int | None = None,
     grounding_body_ratio: float | None = None,
     grounding_cand_ratio: float | None = None,
     human_go: bool | None = None,
     wave_a_closeout_pass: bool | None = None,
+    max_val_gap: float = 0.35,
 ) -> WaveBShipGateMatrixPackage:
     """Build ship matrix from metric worlds (pure).
 
@@ -171,7 +173,41 @@ def build_wave_b_ship_gate_matrix(
         if delta_llm_r is None and dv.get("relation_f1") is not None:
             delta_llm_r = float(dv["relation_f1"])
 
-    # Promotion requires same joined_count and positive dual F1 delta (D128).
+    # Offline GEPA instruction-select world (same-n preferred)
+    ogepa = dict(offline_gepa or {})
+    if not ogepa and isinstance(compare.get("gepa"), Mapping):
+        ogepa = dict(compare["gepa"])
+    # also accept full gepa-vs-header package
+    if not ogepa and isinstance(compare.get("offline_gepa"), Mapping):
+        ogepa = dict(compare["offline_gepa"])
+    gepa_e = _f1(ogepa, "entity_f1")
+    gepa_r = _f1(ogepa, "relation_f1")
+    if gepa_e is None and isinstance(ogepa.get("metrics"), Mapping):
+        gepa_e = _f1(ogepa.get("metrics"), "entity_f1")  # type: ignore[arg-type]
+    if gepa_r is None and isinstance(ogepa.get("metrics"), Mapping):
+        gepa_r = _f1(ogepa.get("metrics"), "relation_f1")  # type: ignore[arg-type]
+    delta_gepa_e = _delta(gepa_e, header_e)
+    delta_gepa_r = _delta(gepa_r, header_r)
+    train_e = ogepa.get("train_entity_f1")
+    val_e = ogepa.get("val_entity_f1")
+    if train_e is None and isinstance(ogepa.get("metrics"), Mapping):
+        train_e = ogepa["metrics"].get("train_entity_f1")
+    if val_e is None and isinstance(ogepa.get("metrics"), Mapping):
+        val_e = ogepa["metrics"].get("val_entity_f1")
+    # promote package flag if present
+    promote_ready_flag = ogepa.get("promote_ready")
+    if promote_ready_flag is None and isinstance(compare.get("promote_ready"), bool):
+        promote_ready_flag = compare.get("promote_ready")
+
+    val_gap_ok = True
+    val_gap_blocker: str | None = None
+    if train_e is not None and val_e is not None:
+        gap = float(train_e) - float(val_e)
+        if gap > float(max_val_gap):
+            val_gap_ok = False
+            val_gap_blocker = f"val_gap:{gap:.4f}>{float(max_val_gap):.4f}"
+
+    # LLM promotion still requires same-n dual F1 (stale compare guard).
     llm_beats_header = (
         compare_n_matches
         and delta_llm_e is not None
@@ -179,8 +215,17 @@ def build_wave_b_ship_gate_matrix(
         and delta_llm_e > 0
         and delta_llm_r > 0
     )
-    # gepa_justified = ready to promote constrained GEPA/LLM path to deploy
-    gepa_justified = bool(llm_beats_header)
+    # Offline GEPA promotion: dual F1 > header + val-gap guard (D128).
+    gepa_beats_header = (
+        delta_gepa_e is not None
+        and delta_gepa_r is not None
+        and delta_gepa_e > 0
+        and delta_gepa_r > 0
+        and val_gap_ok
+        and (promote_ready_flag is not False)
+    )
+    # gepa_justified = offline GEPA (preferred) or LLM path ready to promote
+    gepa_justified = bool(gepa_beats_header or llm_beats_header)
 
     blockers: list[str] = []
     if human_go is False:
@@ -210,9 +255,11 @@ def build_wave_b_ship_gate_matrix(
     ship_ready = len(hard) == 0 and header_e is not None and header_r is not None
     ship_blocker = None if ship_ready else (hard[0] if hard else "unknown")
 
-    # Deploy stays header until same-n dual F1 promotion (D128).
+    # Deploy stays header until dual F1 promotion with val-gap guard (D128).
     ship_path = DEFAULT_SHIP_PATH
-    if llm_beats_header:
+    if gepa_beats_header:
+        ship_path = "gepa_instruction_rule_select"
+    elif llm_beats_header:
         ship_path = "constrained_llm_prefer_header_candidate"
 
     relation_status = {
@@ -257,6 +304,17 @@ def build_wave_b_ship_gate_matrix(
             "llm_kept": llm.get("llm_kept"),
             "fallback_used_count": llm.get("fallback_used_count"),
         },
+        "offline_gepa_instruction_select": {
+            "entity_f1": gepa_e,
+            "relation_f1": gepa_r,
+            "role": "staged_gepa_candidate",
+            "model_id": ogepa.get("model_id") or "gepa_instruction_rule_select",
+            "train_entity_f1": train_e,
+            "val_entity_f1": val_e,
+            "val_gap_ok": val_gap_ok,
+            "val_gap_blocker": val_gap_blocker,
+            "promote_ready": promote_ready_flag,
+        },
         "context": {
             "joined_count": joined_count,
             "compare_joined_count": compare_joined,
@@ -265,14 +323,18 @@ def build_wave_b_ship_gate_matrix(
             "grounding_cand_ratio": grounding_cand_ratio,
             "human_go": human_go,
             "wave_a_closeout_pass": wave_a_closeout_pass,
+            "max_val_gap": max_val_gap,
         },
     }
     deltas = {
         "llm_minus_header_entity_f1": delta_llm_e,
         "llm_minus_header_relation_f1": delta_llm_r,
+        "gepa_minus_header_entity_f1": delta_gepa_e,
+        "gepa_minus_header_relation_f1": delta_gepa_r,
         "header_minus_floor_entity_f1": _delta(header_e, floor_e),
         "header_minus_floor_relation_f1": _delta(header_r, floor_r),
         "llm_beats_header": llm_beats_header,
+        "gepa_beats_header": gepa_beats_header,
     }
 
     diagnostics = (
@@ -285,6 +347,10 @@ def build_wave_b_ship_gate_matrix(
         f"floor_relation_f1:{floor_r}",
         f"llm_entity_f1:{llm_e}",
         f"llm_relation_f1:{llm_r}",
+        f"gepa_entity_f1:{gepa_e}",
+        f"gepa_relation_f1:{gepa_r}",
+        f"gepa_beats_header:{gepa_beats_header}",
+        f"val_gap_ok:{val_gap_ok}",
         f"gepa_justified:{gepa_justified}",
         f"joined_count:{joined_count}",
         f"compare_joined:{compare_joined}",
@@ -301,7 +367,7 @@ def build_wave_b_ship_gate_matrix(
         ship_path=ship_path,
         ship_blocker=ship_blocker,
         ship_ready=ship_ready,
-        gepa_justified=gepa_justified and llm_beats_header,
+        gepa_justified=gepa_justified,
         dspy_optimizer_enabled=False,
         diagnostics=diagnostics,
     )

@@ -151,6 +151,18 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Use only on-disk artifacts (no re-score header/floor)",
     )
+    parser.add_argument(
+        "--gepa-vs-header",
+        type=Path,
+        default=Path("artifacts/wave-b/gepa-vs-header-n23.json"),
+        help="Optional same-n GEPA vs header comparison artifact",
+    )
+    parser.add_argument(
+        "--max-val-gap",
+        type=float,
+        default=0.35,
+        help="Max train-val entity F1 gap for offline GEPA promote (D128)",
+    )
     args = parser.parse_args(argv)
     repo = Path(args.repo_root)
 
@@ -218,6 +230,16 @@ def main(argv: list[str] | None = None) -> int:
         ),
     }
     llm_compare = _load_json(_r(repo, Path(args.llm_compare)))
+    gepa_vs = _load_json(_r(repo, Path(args.gepa_vs_header)))
+    offline_gepa = None
+    if isinstance(gepa_vs, dict):
+        # prefer nested gepa view from compare package
+        if isinstance(gepa_vs.get("gepa"), dict):
+            offline_gepa = dict(gepa_vs["gepa"])
+            offline_gepa["promote_ready"] = gepa_vs.get("promote_ready")
+            offline_gepa["joined_count"] = gepa_vs.get("joined_count")
+        else:
+            offline_gepa = gepa_vs
 
     matrix = build_wave_b_ship_gate_matrix(
         floor=floor_metrics
@@ -229,11 +251,13 @@ def main(argv: list[str] | None = None) -> int:
         header=header_payload,
         baseline=baseline,
         llm_compare=llm_compare,
+        offline_gepa=offline_gepa,
         joined_count=joined_count,
         grounding_body_ratio=float(body_ratio) if body_ratio is not None else None,
         grounding_cand_ratio=float(cand_ratio) if cand_ratio is not None else None,
         human_go=human_go,
         wave_a_closeout_pass=closeout_pass,
+        max_val_gap=float(args.max_val_gap),
     )
     payload = matrix.to_dict()
     payload["import_eligible"] = False
@@ -253,6 +277,7 @@ def main(argv: list[str] | None = None) -> int:
         h = w.get("header_constrained_select") or {}
         f = w.get("floor_lexical_oracle") or {}
         l = w.get("llm_constrained_compare") or {}
+        og = w.get("offline_gepa_instruction_select") or {}
         rel = payload.get("relation_status") or {}
         sys.stdout.write(
             "wave-b-ship-gate-matrix | "
@@ -262,6 +287,8 @@ def main(argv: list[str] | None = None) -> int:
             f"header: e={h.get('entity_f1')} r={h.get('relation_f1')} | "
             f"floor: e={f.get('entity_f1')} r={f.get('relation_f1')} | "
             f"llm: e={l.get('entity_f1')} r={l.get('relation_f1')} | "
+            f"offline_gepa: e={og.get('entity_f1')} r={og.get('relation_f1')} "
+            f"val_gap_ok={og.get('val_gap_ok')} | "
             f"gepa_justified: {str(payload['gepa_justified']).lower()} | "
             f"relation_path: {rel.get('path')} | "
             "import_eligible: false\n"
