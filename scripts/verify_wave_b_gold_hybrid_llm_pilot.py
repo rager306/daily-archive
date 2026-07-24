@@ -43,6 +43,7 @@ from research_graph.application.reviewed_extraction_fixtures import (
 )
 from research_graph.infrastructure.llm.ninerouter_json_extract import (
     AGNES_25_PILOT_MODEL,
+    AGNES_FREE_25_PILOT_MODEL,
     DEFAULT_PILOT_MODEL,
     QUALITY_PILOT_MODEL,
     NineRouterJsonExtractClient,
@@ -104,7 +105,9 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_PILOT_MODEL,
         help=(
             f"9router model id (default {DEFAULT_PILOT_MODEL}; "
-            f"agnes2.5={AGNES_25_PILOT_MODEL}; quality={QUALITY_PILOT_MODEL})"
+            f"agnes2.5={AGNES_25_PILOT_MODEL}; "
+            f"agnes2.5-free={AGNES_FREE_25_PILOT_MODEL}; "
+            f"quality={QUALITY_PILOT_MODEL})"
         ),
     )
     parser.add_argument(
@@ -112,6 +115,12 @@ def main(argv: list[str] | None = None) -> int:
         type=int,
         default=8000,
         help="Truncate hybrid body window for pilot cost control",
+    )
+    parser.add_argument(
+        "--max-tokens",
+        type=int,
+        default=0,
+        help="Chat max_tokens (0 = 900 default, 1400 for agnes-ai-free/*)",
     )
     parser.add_argument(
         "--dry-run-floor-only",
@@ -170,12 +179,16 @@ def main(argv: list[str] | None = None) -> int:
             "note": "LLM pilot not executed (dry-run or gate closed)",
         }
     else:
-        client = NineRouterJsonExtractClient(model=str(args.model))
+        model_id = str(args.model)
+        max_tokens = int(args.max_tokens)
+        if max_tokens <= 0:
+            max_tokens = 1400 if model_id.startswith("agnes-ai-free/") else 900
+        client = NineRouterJsonExtractClient(model=model_id, max_tokens=max_tokens)
         pilot = score_gold_hybrid_llm_pilot(
             cases=cases,
             extract_fn=client.as_extract_fn(),
             floor_metrics=floor_metrics,
-            model_id=str(args.model),
+            model_id=model_id,
             max_body_chars=int(args.max_body_chars),
         )
         payload = pilot.to_dict()

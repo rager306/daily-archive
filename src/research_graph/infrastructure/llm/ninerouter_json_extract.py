@@ -20,11 +20,14 @@ from research_graph.infrastructure.llm.ninerouter_client import NineRouterChatCl
 
 DEFAULT_PILOT_MODEL = "agnes-ai/agnes-2.0-flash"
 AGNES_25_PILOT_MODEL = "agnes-ai/agnes-2.5-flash"
+AGNES_FREE_25_PILOT_MODEL = "agnes-ai-free/agnes-2.5-flash"
+AGNES_FREE_20_PILOT_MODEL = "agnes-ai-free/agnes-2.0-flash"
 QUALITY_PILOT_MODEL = "minimax/MiniMax-M2.7-highspeed"
 
 _SYSTEM = (
     "You extract scientific knowledge-graph candidates from paper text. "
     "Return ONLY a single JSON object. No markdown fences. No prose. "
+    "No thinking, no explanation, no preamble — JSON object only. "
     "Candidates only — never claim import eligibility or production facts."
 )
 
@@ -103,6 +106,8 @@ class NineRouterJsonExtractClient:
 
 __all__ = [
     "AGNES_25_PILOT_MODEL",
+    "AGNES_FREE_20_PILOT_MODEL",
+    "AGNES_FREE_25_PILOT_MODEL",
     "DEFAULT_PILOT_MODEL",
     "QUALITY_PILOT_MODEL",
     "NineRouterJsonExtractClient",

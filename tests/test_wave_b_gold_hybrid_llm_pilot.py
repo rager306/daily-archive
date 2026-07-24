@@ -64,6 +64,13 @@ def test_parse_llm_json_plain_and_fenced() -> None:
     assert fenced["json_valid"] is True
     assert fenced["entities"][0]["label"] == "B"
 
+    thinking = parse_llm_extraction_json(
+        'Thinking Process:\n1. analyze\n'
+        'Final answer:\n{"entities":[{"type":"Task","label":"C"}],"relations":[]}\n'
+    )
+    assert thinking["json_valid"] is True
+    assert thinking["entities"][0]["label"] == "C"
+
     bad = parse_llm_extraction_json("not json at all")
     assert bad["json_valid"] is False
     assert bad["entities"] == []

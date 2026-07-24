@@ -30,26 +30,70 @@ ALLOWED_ENTITY_TYPES = frozenset({"Field", "Task", "Method", "Dataset", "Model",
 ALLOWED_RELATION_TYPES = frozenset({"APPLIED_TO", "USES_COMPONENT", "EVALUATED_ON", "OUTPERFORMS"})
 
 
+def _balanced_json_objects(text: str) -> list[str]:
+    """Return candidate JSON object substrings by brace balance (best-effort)."""
+    out: list[str] = []
+    start = -1
+    depth = 0
+    in_str = False
+    escape = False
+    for i, ch in enumerate(text):
+        if in_str:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_str = False
+            continue
+        if ch == '"':
+            in_str = True
+            continue
+        if ch == "{":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == "}" and depth > 0:
+            depth -= 1
+            if depth == 0 and start >= 0:
+                out.append(text[start : i + 1])
+                start = -1
+    return out
+
+
 def parse_llm_extraction_json(text: str) -> dict[str, Any]:
     """Parse LLM chat text into extraction dict; fail-closed to empty lists."""
-    raw = _THINK_RE.sub("", text or "").strip()
+    raw = _THINK_RE.sub("", text or "")
+    # Drop common free-model thinking preambles when JSON follows later.
+    for marker in ("Thinking Process:", "## Explanation", "The user wants"):
+        if marker in raw and "{" in raw[raw.find(marker) :]:
+            # keep whole text; balanced scan finds later JSON
+            break
+    raw = raw.strip()
     if not raw:
         return {"entities": [], "relations": [], "json_valid": False}
 
-    candidates: list[str] = [raw]
+    candidates: list[str] = []
     m = _FENCE_RE.search(raw)
     if m:
-        candidates.insert(0, m.group(1).strip())
-    # try substring from first { to last }
+        candidates.append(m.group(1).strip())
+    candidates.extend(reversed(_balanced_json_objects(raw)))
     if "{" in raw and "}" in raw:
         candidates.append(raw[raw.find("{") : raw.rfind("}") + 1])
+    candidates.append(raw)
 
+    seen: set[str] = set()
     for cand in candidates:
+        if not cand or cand in seen:
+            continue
+        seen.add(cand)
         try:
             data = json.loads(cand)
         except json.JSONDecodeError:
             continue
         if not isinstance(data, dict):
+            continue
+        if "entities" not in data and "relations" not in data:
             continue
         entities = data.get("entities")
         relations = data.get("relations")
