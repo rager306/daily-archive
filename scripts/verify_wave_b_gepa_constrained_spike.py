@@ -95,7 +95,44 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--max-body-chars", type=int, default=8000)
-    parser.add_argument("--max-iterations", type=int, default=4)
+    parser.add_argument("--max-iterations", type=int, default=6)
+    parser.add_argument(
+        "--acceptance",
+        type=str,
+        default="val_aware",
+        choices=["val_aware", "train"],
+        help="Accept rule: val_aware (default) or legacy train-only",
+    )
+    parser.add_argument(
+        "--min-support",
+        type=int,
+        default=2,
+        help="Min reflective support for new TYPE_HINT (anti-overfit)",
+    )
+    parser.add_argument(
+        "--max-type-hints",
+        type=int,
+        default=12,
+        help="Cap TYPE_HINT lines in entity instruction",
+    )
+    parser.add_argument(
+        "--max-val-gap",
+        type=float,
+        default=0.35,
+        help="Gap used in spike accept filter diagnostics",
+    )
+    parser.add_argument(
+        "--max-new-hints",
+        type=int,
+        default=3,
+        help="Max new TYPE_HINT lines per iteration (gradual)",
+    )
+    parser.add_argument(
+        "--train-blend",
+        type=float,
+        default=0.2,
+        help="Train weight in val_aware composite score",
+    )
     parser.add_argument(
         "--try-gepa-package",
         action="store_true",
@@ -143,6 +180,12 @@ def main(argv: list[str] | None = None) -> int:
             max_iterations=int(args.max_iterations),
             max_body_chars=int(args.max_body_chars),
             floor_metrics=floor_metrics,
+            acceptance=str(args.acceptance),
+            min_support=int(args.min_support),
+            max_type_hints=int(args.max_type_hints),
+            max_new_hints=int(args.max_new_hints),
+            max_val_gap=float(args.max_val_gap),
+            train_blend=float(args.train_blend),
         )
         payload = spike.to_dict()
         payload["wave_b_gate_open"] = gate.wave_b_gate_open

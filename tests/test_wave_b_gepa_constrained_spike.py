@@ -179,3 +179,61 @@ def test_try_gepa_optimize_without_package_or_lm() -> None:
         "gepa_package_not_installed",
         "reflection_lm_not_provided",
     }
+
+
+
+def test_stable_train_val_split_deterministic() -> None:
+    from research_graph.application.corpus.wave_b_gepa_constrained_spike import (
+        stable_train_val_split,
+    )
+
+    cases = [
+        {"case_id": f"case:{i}", "paper_id": str(i), "gold": {}, "body_text": "x"}
+        for i in range(6)
+    ]
+    a_train, a_val = stable_train_val_split(cases, train_ratio=0.67, seed=0)
+    b_train, b_val = stable_train_val_split(cases, train_ratio=0.67, seed=0)
+    assert [c["case_id"] for c in a_train] == [c["case_id"] for c in b_train]
+    assert [c["case_id"] for c in a_val] == [c["case_id"] for c in b_val]
+    assert len(a_train) + len(a_val) == 6
+    assert len(a_val) >= 1
+
+
+def test_min_support_filters_singleton_hints() -> None:
+    """Surfaces seen once should not become TYPE_HINT when min_support=2."""
+    current = dict(DEFAULT_CANDIDATE)
+    reflective = {
+        COMPONENT_ENTITY: [
+            {
+                "Feedback": "missed_available: gold labels present in candidates but not selected: Unique Paper Method",
+                "Inputs": {
+                    "case_id": "c1",
+                    "gold_entities": [
+                        {
+                            "label": "Unique Paper Method",
+                            "type": "Method",
+                            "in_candidates": True,
+                        }
+                    ],
+                },
+            }
+        ]
+    }
+    proposed = propose_instruction_from_reflection(
+        current, reflective, min_support=2, max_type_hints=12
+    )
+    assert "Unique Paper Method" not in proposed[COMPONENT_ENTITY]
+
+
+def test_val_aware_acceptance_mode_recorded() -> None:
+    pkg = offline_reflective_spike(
+        cases=[_case()],
+        max_iterations=2,
+        acceptance="val_aware",
+        min_support=1,
+        max_type_hints=8,
+    )
+    assert pkg.best_metrics.get("acceptance") == "val_aware"
+    assert all(it.get("acceptance_mode") == "val_aware" for it in pkg.iterations)
+    # single-case still learns
+    assert pkg.best_metrics["entity_f1"] == 1.0

@@ -16,6 +16,7 @@ If gold labels are missing from candidates, reflection can only report candidate
 
 from __future__ import annotations
 
+import hashlib
 import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
@@ -599,21 +600,68 @@ class WaveBConstrainedGEPAAdapter:
         return [p for p in self._prepared if p["case_id"] in wanted]
 
 
+
+def stable_train_val_split(
+    cases: Sequence[Mapping[str, Any]],
+    *,
+    train_ratio: float = 0.67,
+    seed: int = 0,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Deterministic train/val split by case_id hash (not first-N order).
+
+    Avoids train-prefix overfitting when fixtures are ordered by id.
+    """
+    cases_list = [dict(c) for c in cases]
+    n = len(cases_list)
+    if n <= 1:
+        return cases_list, list(cases_list)
+    # stable sort then hash-bucket for train preference
+    ordered = sorted(
+        cases_list,
+        key=lambda c: str(c.get("case_id") or c.get("paper_id") or ""),
+    )
+    n_train = max(1, min(n - 1, int(round(n * float(train_ratio)))))
+    scored: list[tuple[int, dict[str, Any]]] = []
+    for c in ordered:
+        key = f"{seed}:{c.get('case_id') or c.get('paper_id') or id(c)}"
+        h = int(hashlib.md5(key.encode("utf-8")).hexdigest()[:8], 16)
+        scored.append((h, c))
+    scored.sort(key=lambda x: (x[0], str(x[1].get("case_id") or "")))
+    train = [c for _, c in scored[:n_train]]
+    val = [c for _, c in scored[n_train:]]
+    if not val:
+        val = [train[-1]]
+    return train, val
+
+
 def propose_instruction_from_reflection(
     current: Mapping[str, str],
     reflective: Mapping[str, Sequence[Mapping[str, Any]]],
+    *,
+    min_support: int = 1,
+    max_type_hints: int = 12,
+    max_new_hints: int = 3,
 ) -> dict[str, str]:
     """Deterministic offline reflection (stand-in for reflection LM).
 
     Mines Feedback for missed_available / type_mismatch / relation_gap and
     appends structured TYPE_HINT / RELATION_HINT lines. Does not invent surfaces
     that never appear as missed_available (respects candidate coverage).
+
+    min_support: require a surface/type pair to appear in at least this many
+    reflective rows before adding a new TYPE_HINT (reduces paper-id overfit).
+    max_type_hints: hard cap on TYPE_HINT lines in the entity instruction.
     """
     entity_lines = [str(current.get(COMPONENT_ENTITY) or "").rstrip()]
     relation_lines = [str(current.get(COMPONENT_RELATION) or "").rstrip()]
     existing_entity = parse_entity_type_hints("\n".join(entity_lines))
     existing_rel = set(parse_relation_hints("\n".join(relation_lines)))
 
+    # Aggregate surface->type votes across reflective rows (anti-overfit).
+    # Count each (surface, type) at most once per reflective row so a single
+    # paper cannot satisfy min_support via dual gold+feedback channels.
+    votes: dict[tuple[str, str], int] = {}
+    surface_display: dict[str, str] = {}
     for rec in reflective.get(COMPONENT_ENTITY) or []:
         if not isinstance(rec, Mapping):
             continue
@@ -622,29 +670,16 @@ def propose_instruction_from_reflection(
         inputs: Mapping[str, Any] = (
             inputs_raw if isinstance(inputs_raw, Mapping) else {}
         )
+        row_votes: set[tuple[str, str]] = set()
         gold_type_by_norm: dict[str, str] = {}
         for ge in inputs.get("gold_entities") or []:
             if isinstance(ge, Mapping) and ge.get("label") and ge.get("type"):
-                gold_type_by_norm[_normalize(str(ge.get("label")))] = str(ge.get("type"))
-
-        # Prefer structured gold_entities that are in candidates but not yet hinted.
-        for ge in inputs.get("gold_entities") or []:
-            if not isinstance(ge, Mapping):
-                continue
-            if not ge.get("in_candidates"):
-                continue
-            lab = _normalize(str(ge.get("label") or ""))
-            etype = str(ge.get("type") or "")
-            if not lab or etype not in ALLOWED_ENTITY_TYPES:
-                continue
-            if lab in existing_entity and existing_entity[lab] == etype:
-                continue
-            # Use original label casing from gold when possible
-            surface = str(ge.get("label") or lab)
-            entity_lines.append(f"TYPE_HINT: {surface} -> {etype}")
-            existing_entity[lab] = etype
-
-        # missed_available fallback (labels only)
+                lab = _normalize(str(ge.get("label")))
+                etype = str(ge.get("type"))
+                gold_type_by_norm[lab] = etype
+                if ge.get("in_candidates") and etype in ALLOWED_ENTITY_TYPES:
+                    row_votes.add((lab, etype))
+                    surface_display.setdefault(lab, str(ge.get("label") or lab))
         if "missed_available:" in feedback:
             after = feedback.split("missed_available:", 1)[1]
             labels_part = after.split("—")[0].split(";")[0]
@@ -656,13 +691,11 @@ def propose_instruction_from_reflection(
                 if _normalize(x)
             ]
             for lab in labels:
-                if lab in existing_entity:
-                    continue
                 etype = gold_type_by_norm.get(lab, "Method")
                 if etype not in ALLOWED_ENTITY_TYPES:
                     etype = "Method"
-                entity_lines.append(f"TYPE_HINT: {lab} -> {etype}")
-                existing_entity[lab] = etype
+                row_votes.add((lab, etype))
+                surface_display.setdefault(lab, lab)
         for piece in feedback.split(";"):
             piece = piece.strip()
             if piece.startswith("type_mismatch:"):
@@ -673,15 +706,37 @@ def propose_instruction_from_reflection(
                 if m:
                     etype, label = m.group(1), m.group(2)
                     if etype in ALLOWED_ENTITY_TYPES:
-                        entity_lines.append(f"TYPE_HINT: {label} -> {etype}")
-                        existing_entity[_normalize(label)] = etype
+                        lab = _normalize(label)
+                        row_votes.add((lab, etype))
+                        surface_display.setdefault(lab, label)
+        for key in row_votes:
+            votes[key] = votes.get(key, 0) + 1
+
+    # Keep existing hints first; add only high-support new ones up to cap.
+    # Incremental: at most max_new_hints per proposal (val-aware needs gradual steps).
+    current_hint_count = len(existing_entity)
+    added_new = 0
+    ranked = sorted(votes.items(), key=lambda kv: (-kv[1], kv[0][0], kv[0][1]))
+    for (lab, etype), support in ranked:
+        if current_hint_count >= max(1, int(max_type_hints)):
+            break
+        if added_new >= max(0, int(max_new_hints)):
+            break
+        if support < max(1, int(min_support)):
+            continue
+        if lab in existing_entity and existing_entity[lab] == etype:
+            continue
+        surface = surface_display.get(lab, lab)
+        entity_lines.append(f"TYPE_HINT: {surface} -> {etype}")
+        existing_entity[lab] = etype
+        current_hint_count += 1
+        added_new += 1
 
     for rec in reflective.get(COMPONENT_RELATION) or []:
         if not isinstance(rec, Mapping):
             continue
         feedback = str(rec.get("Feedback") or "")
         if "relation_gap" in feedback.casefold():
-            # Prefer types already selected; fall back to gold entity types in candidates.
             gen_raw = rec.get("Generated Outputs")
             gen: Mapping[str, Any] = gen_raw if isinstance(gen_raw, Mapping) else {}
             inputs_raw = rec.get("Inputs")
@@ -704,7 +759,6 @@ def propose_instruction_from_reflection(
                     et = str(ge.get("type") or "")
                     if et in ALLOWED_ENTITY_TYPES:
                         types.append(et)
-            # Prefer Field APPLIED_TO Task when both present
             if "Field" in types and "Task" in types:
                 hint = ("Field", "APPLIED_TO", "Task")
                 if hint not in existing_rel:
@@ -719,8 +773,6 @@ def propose_instruction_from_reflection(
                         )
                         existing_rel.add(hint)
 
-    # Also mine gold labels from Inputs when coverage allows — add explicit correct types
-    # if we can read gold from reflective Inputs only as labels; types recovered via type_mismatch.
     return {
         COMPONENT_ENTITY: "\n".join(entity_lines) + "\n",
         COMPONENT_RELATION: "\n".join(relation_lines) + "\n",
@@ -735,28 +787,48 @@ def offline_reflective_spike(
     max_body_chars: int = 8000,
     floor_metrics: Mapping[str, Any] | None = None,
     train_ratio: float = 0.67,
+    acceptance: str = "val_aware",
+    min_support: int = 1,
+    max_type_hints: int = 12,
+    max_new_hints: int = 3,
+    max_val_gap: float = 0.35,
+    split_seed: int = 0,
+    train_blend: float = 0.2,
 ) -> WaveBGEPASpikePackage:
     """Run a local reflective mutation loop (no gepa package, no LLM).
 
     Demonstrates GEPA method shape: evaluate → ASI → mutate instructions → accept if improved.
+
+    acceptance:
+      - "train": accept when train score sum improves (legacy; overfits)
+      - "val_aware": accept when val score does not degrade and train improves,
+        or val strictly improves; best_candidate selected by val then train
+    min_support / max_type_hints: anti-overfit controls for TYPE_HINT mining.
     """
     cases_list = [dict(c) for c in cases]
     n = len(cases_list)
-    n_train = max(1, int(n * train_ratio)) if n > 1 else n
-    train = cases_list[:n_train]
-    val = cases_list[n_train:] or cases_list[:1]
+    train, val = stable_train_val_split(
+        cases_list, train_ratio=train_ratio, seed=split_seed
+    )
+    # single-case unit tests: train==val is fine
+    if n == 1:
+        train = cases_list
+        val = cases_list
+
+    # For tiny multi-case suites, min_support=2 can starve learning; allow 1 when n small
+    effective_min_support = int(min_support)
+    if n < 3:
+        effective_min_support = 1
 
     adapter = WaveBConstrainedGEPAAdapter(train, max_body_chars=max_body_chars)
     val_adapter = WaveBConstrainedGEPAAdapter(val, max_body_chars=max_body_chars)
     seed = dict(seed_candidate or DEFAULT_CANDIDATE)
     coverage = adapter.coverage_summary()
-    # merge val coverage lightly
     val_cov = val_adapter.coverage_summary()
 
     seed_eval = val_adapter.evaluate(None, seed, capture_traces=True)
     seed_metrics = _aggregate_objective(seed_eval)
 
-    # Oracle ceiling on same cases (diagnostic)
     oracle_pkg = score_gold_hybrid_constrained_pilot(
         cases=cases_list,
         use_lexical_oracle=True,
@@ -766,15 +838,17 @@ def offline_reflective_spike(
     )
 
     best = dict(seed)
-    # Seed train metrics separately (val may be coverage-starved on tiny splits).
     seed_train_eval = adapter.evaluate(None, seed, capture_traces=False)
+    seed_val_sum = sum(seed_eval.scores)
     best_train_sum = sum(seed_train_eval.scores)
+    best_val_sum = seed_val_sum
     best_metrics = dict(seed_metrics)
     best_train_metrics = _aggregate_objective(seed_train_eval)
     iterations: list[dict[str, Any]] = []
     reflective_samples: list[dict[str, Any]] = []
 
     current = dict(seed)
+    current_val_sum = seed_val_sum
     for i in range(max(1, max_iterations)):
         train_eval = adapter.evaluate(None, current, capture_traces=True)
         reflective = adapter.make_reflective_dataset(
@@ -782,7 +856,6 @@ def offline_reflective_spike(
             train_eval,
             [COMPONENT_ENTITY, COMPONENT_RELATION],
         )
-        # keep a compact sample for artifacts
         for comp, rows in reflective.items():
             for row in rows[:2]:
                 reflective_samples.append(
@@ -793,52 +866,113 @@ def offline_reflective_spike(
                         "case_id": (row.get("Inputs") or {}).get("case_id"),
                     }
                 )
-        proposed = propose_instruction_from_reflection(current, reflective)
-        # acceptance on train sum scores (GEPA-style)
+        proposed = propose_instruction_from_reflection(
+            current,
+            reflective,
+            min_support=effective_min_support,
+            max_type_hints=max_type_hints,
+            max_new_hints=max_new_hints,
+        )
         before_sum = sum(train_eval.scores)
         after_eval = adapter.evaluate(None, proposed, capture_traces=False)
         after_sum = sum(after_eval.scores)
-        accepted = after_sum > before_sum
         val_after = val_adapter.evaluate(None, proposed, capture_traces=True)
+        val_after_sum = sum(val_after.scores)
         val_metrics = _aggregate_objective(val_after)
         train_metrics = _aggregate_objective(after_eval)
+
+        mode = (acceptance or "val_aware").strip().lower()
+        blend = max(0.0, min(1.0, float(train_blend)))
+        # composite: prioritize val, blend some train signal (current_val_sum tracked)
+        before_composite = current_val_sum + blend * before_sum
+        after_composite = val_after_sum + blend * after_sum
+        if mode == "train":
+            accepted = after_sum > before_sum
+        else:
+            # val_aware: accept if composite improves and val is not strictly worse
+            train_improved = after_sum > before_sum
+            val_improved = val_after_sum > current_val_sum + 1e-9
+            val_not_worse = val_after_sum + 1e-9 >= current_val_sum
+            composite_improved = after_composite > before_composite + 1e-9
+            accepted = (composite_improved and val_not_worse) or val_improved
+
+        te = float(train_metrics.get("entity_f1") or 0.0)
+        ve = float(val_metrics.get("entity_f1") or 0.0)
+        gap = te - ve
+        gap_reject = False
+        if mode != "train" and n >= 3 and gap > float(max_val_gap):
+            # reject when gap exceeds budget unless val strictly improved
+            if accepted and not (val_after_sum > current_val_sum + 1e-9):
+                accepted = False
+                gap_reject = True
+
         iterations.append(
             {
                 "iteration": i,
                 "accepted": accepted,
+                "acceptance_mode": mode,
                 "train_score_sum_before": before_sum,
                 "train_score_sum_after": after_sum,
+                "val_score_sum_before": current_val_sum,
+                "val_score_sum_after": val_after_sum,
                 "train_entity_f1": train_metrics.get("entity_f1"),
                 "val_entity_f1": val_metrics.get("entity_f1"),
                 "val_relation_f1": val_metrics.get("relation_f1"),
+                "val_gap": round(gap, 6),
+                "gap_reject": gap_reject,
+                "type_hint_count": str(proposed.get(COMPONENT_ENTITY) or "").count(
+                    "TYPE_HINT:"
+                ),
             }
         )
         if accepted:
             current = proposed
-            # Prefer train improvement for best_candidate on tiny pilots where val
-            # papers may have zero candidate coverage (cannot improve via prompts).
-            if after_sum >= best_train_sum:
-                best = dict(proposed)
-                best_train_sum = after_sum
-                best_train_metrics = dict(train_metrics)
-                best_metrics = dict(val_metrics)
+            current_val_sum = val_after_sum
+            # Select best by val first, then train (D128 val-aware)
+            better_val = val_after_sum > best_val_sum + 1e-9
+            equal_val_better_train = (
+                abs(val_after_sum - best_val_sum) <= 1e-9 and after_sum >= best_train_sum
+            )
+            if better_val or equal_val_better_train or mode == "train":
+                if mode == "train":
+                    if after_sum >= best_train_sum:
+                        best = dict(proposed)
+                        best_train_sum = after_sum
+                        best_val_sum = val_after_sum
+                        best_train_metrics = dict(train_metrics)
+                        best_metrics = dict(val_metrics)
+                else:
+                    best = dict(proposed)
+                    best_train_sum = after_sum
+                    best_val_sum = val_after_sum
+                    best_train_metrics = dict(train_metrics)
+                    best_metrics = dict(val_metrics)
 
-    # Full-set metrics for the best candidate (honest overall ceiling vs train-only).
     full_adapter = WaveBConstrainedGEPAAdapter(
         cases_list, max_body_chars=max_body_chars
     )
     full_best = full_adapter.evaluate(None, best, capture_traces=False)
     full_metrics = _aggregate_objective(full_best)
-    # Surface train metrics as primary best when full still low due to OOD gold.
     best_metrics = {
         **full_metrics,
         "train_entity_f1": best_train_metrics.get("entity_f1"),
         "val_entity_f1": best_metrics.get("entity_f1"),
+        "val_relation_f1": best_metrics.get("relation_f1"),
+        "acceptance": acceptance,
+        "min_support": effective_min_support,
+        "max_type_hints": max_type_hints,
+        "max_new_hints": max_new_hints,
+        "max_val_gap": max_val_gap,
+        "train_blend": train_blend,
+        "val_gap": round(float(best_train_metrics.get("entity_f1") or 0.0) - float(best_metrics.get("entity_f1") or 0.0), 6),
     }
 
     import importlib.util
 
     gepa_available = importlib.util.find_spec("gepa") is not None
+    train_e = float(best_metrics.get("train_entity_f1") or 0.0)
+    val_e = float(best_metrics.get("val_entity_f1") or 0.0)
+    val_gap = train_e - val_e
 
     diagnostics = (
         f"case_count:{n}",
@@ -850,6 +984,11 @@ def offline_reflective_spike(
         f"coverage_ratio:{coverage.get('coverage_ratio')}",
         f"iterations:{len(iterations)}",
         f"accepted_any:{any(x.get('accepted') for x in iterations)}",
+        f"acceptance:{acceptance}",
+        f"min_support:{effective_min_support}",
+        f"max_type_hints:{max_type_hints}",
+        f"val_gap:{round(val_gap, 4)}",
+        f"type_hints:{str(best.get(COMPONENT_ENTITY) or '').count('TYPE_HINT:')}",
         f"gepa_package:{str(gepa_available).lower()}",
         "mode:offline_reflective_spike",
         "dspy:false",
