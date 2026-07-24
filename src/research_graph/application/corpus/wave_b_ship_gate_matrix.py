@@ -282,20 +282,21 @@ def build_wave_b_ship_gate_matrix(
         ship_path = "constrained_llm_prefer_header_candidate"
 
     relation_status = {
-        "path": "header_priority_cooccurrence",
+        "path": "header_proximity_type_pair_candidates",
         "header_relation_f1": header_r,
         "floor_relation_f1": floor_r,
         "relation_gap_vs_floor": relation_gap,
         "allowed_relation_types": sorted(ALLOWED_RELATION_TYPES),
         "ceiling_note": (
-            "Header path relation F1 is co-occurrence typed links among top-2 "
-            "header entities (at most one APPLIED_TO). Floor/oracle 1.0 is not "
-            "deploy quality. Accept header relation ceiling until constrained "
-            "relation candidates beat header without invent."
+            "Header path relation F1 uses proximity + closed type-pair priors "
+            "among selected candidate_ids only (M272). No free invent. "
+            "Floor/oracle 1.0 is not deploy quality. Accept header relation "
+            "ceiling until dual F1 improves without invent."
         ),
         "accepted_as_deploy_ceiling": True if header_r is not None else False,
         "free_invent": False,
         "gepa_open": False,
+        "relation_builder": "build_relation_candidates",
     }
 
     n_contract = evaluate_quality_n_contract(

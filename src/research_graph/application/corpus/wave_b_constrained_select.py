@@ -701,6 +701,192 @@ def _is_subspan(norm: str, longer_norms: Sequence[str]) -> bool:
     return False
 
 
+
+# Closed type-pair priors (from gold fixture distribution; no free invent).
+# Only used to choose relation *type* between already-selected candidate_ids.
+_TYPE_PAIR_RELATION_PRIORS: tuple[tuple[str, str, str, int], ...] = (
+    # (source_type, target_type, relation_type, priority) higher priority wins
+    ("Method", "Task", "APPLIED_TO", 100),
+    ("Field", "Task", "APPLIED_TO", 90),
+    ("Method", "Method", "USES_COMPONENT", 80),
+    ("Task", "Method", "USES_COMPONENT", 70),
+    ("Method", "Field", "APPLIED_TO", 60),
+    ("Method", "Dataset", "EVALUATED_ON", 85),
+    ("Task", "Dataset", "EVALUATED_ON", 75),
+    ("Method", "Method", "OUTPERFORMS", 40),
+)
+
+
+def _surface_positions(body_text: str, surface: str) -> list[int]:
+    """All case-insensitive start offsets of surface in body (non-overlapping-ish)."""
+    if not body_text or not surface:
+        return []
+    low = body_text.casefold()
+    needle = surface.casefold().strip()
+    if not needle:
+        return []
+    positions: list[int] = []
+    start = 0
+    while True:
+        i = low.find(needle, start)
+        if i < 0:
+            break
+        positions.append(i)
+        start = i + max(1, len(needle))
+    return positions
+
+
+def min_surface_distance(body_text: str, surface_a: str, surface_b: str) -> int | None:
+    """Minimum character distance between any occurrences; None if either missing."""
+    pa = _surface_positions(body_text, surface_a)
+    pb = _surface_positions(body_text, surface_b)
+    if not pa or not pb:
+        return None
+    best: int | None = None
+    for a in pa:
+        for b in pb:
+            d = abs(a - b)
+            if best is None or d < best:
+                best = d
+    return best
+
+
+def relation_type_for_entity_pair(
+    source_type: str,
+    target_type: str,
+) -> str | None:
+    """Best closed relation type for a typed entity pair, or None if no prior."""
+    st = str(source_type or "")
+    tt = str(target_type or "")
+    best: tuple[int, str] | None = None
+    for src_t, tgt_t, rel, prio in _TYPE_PAIR_RELATION_PRIORS:
+        if src_t == st and tgt_t == tt and rel in ALLOWED_RELATION_TYPES:
+            if best is None or prio > best[0]:
+                best = (prio, rel)
+    return best[1] if best else None
+
+
+def build_relation_candidates(
+    *,
+    body_text: str,
+    entities: Sequence[Mapping[str, Any]],
+    candidates: Sequence[Mapping[str, Any]],
+    max_distance: int = 800,
+    max_relations: int = 2,
+) -> list[dict[str, Any]]:
+    """Build typed relation candidates among selected entities only.
+
+    Never invents labels or candidate_ids. Uses type-pair priors + proximity.
+    Returns list of {type, source_id, target_id, score, distance}.
+    """
+    by_id = {
+        str(c.get("candidate_id")): c
+        for c in candidates
+        if isinstance(c, Mapping) and c.get("candidate_id")
+    }
+    selected: list[dict[str, Any]] = []
+    for e in entities:
+        if not isinstance(e, Mapping):
+            continue
+        cid = str(e.get("candidate_id") or "")
+        etype = str(e.get("type") or "")
+        if not cid or etype not in ALLOWED_ENTITY_TYPES:
+            continue
+        cand = by_id.get(cid)
+        if cand is None:
+            continue
+        surface = str(cand.get("surface") or "")
+        selected.append(
+            {
+                "candidate_id": cid,
+                "type": etype,
+                "surface": surface,
+            }
+        )
+
+    scored: list[dict[str, Any]] = []
+    n = len(selected)
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            a = selected[i]
+            b = selected[j]
+            rtype = relation_type_for_entity_pair(str(a["type"]), str(b["type"]))
+            if rtype is None:
+                continue
+            dist = min_surface_distance(
+                body_text, str(a["surface"]), str(b["surface"])
+            )
+            # Prefer closer pairs; missing distance ranks last but still allowed
+            # when types match (title entities often near each other).
+            if dist is not None and dist > max_distance:
+                continue
+            prox_score = 0.0 if dist is None else max(0.0, 1.0 - (dist / float(max_distance)))
+            # priority from prior table
+            prio = 0
+            for src_t, tgt_t, rel, pr in _TYPE_PAIR_RELATION_PRIORS:
+                if src_t == a["type"] and tgt_t == b["type"] and rel == rtype:
+                    prio = pr
+                    break
+            score = float(prio) + prox_score
+            scored.append(
+                {
+                    "type": rtype,
+                    "source_id": a["candidate_id"],
+                    "target_id": b["candidate_id"],
+                    "score": score,
+                    "distance": dist,
+                }
+            )
+
+    scored.sort(
+        key=lambda r: (
+            -float(r.get("score") or 0.0),
+            int(r["distance"]) if r.get("distance") is not None else 10**9,
+            str(r.get("source_id")),
+            str(r.get("target_id")),
+        )
+    )
+    # Dedup undirected pairs keep best direction
+    seen_pairs: set[tuple[str, str]] = set()
+    out: list[dict[str, Any]] = []
+    for r in scored:
+        a_id = str(r["source_id"])
+        b_id = str(r["target_id"])
+        pair: tuple[str, str] = (a_id, b_id) if a_id <= b_id else (b_id, a_id)
+        if pair in seen_pairs:
+            continue
+        seen_pairs.add(pair)
+        out.append(
+            {
+                "type": r["type"],
+                "source_id": r["source_id"],
+                "target_id": r["target_id"],
+            }
+        )
+        if len(out) >= max(1, int(max_relations)):
+            break
+    return out
+
+
+def select_relations_for_entities(
+    body_text: str,
+    entities: Sequence[Mapping[str, Any]],
+    candidates: Sequence[Mapping[str, Any]],
+    *,
+    max_relations: int = 1,
+) -> list[dict[str, Any]]:
+    """Pick best closed relations among selected entities (candidate_id only)."""
+    rels = build_relation_candidates(
+        body_text=body_text,
+        entities=entities,
+        candidates=candidates,
+        max_relations=max_relations,
+    )
+    return [r for r in rels if r.get("type") in ALLOWED_RELATION_TYPES]
+
+
 def header_priority_select(
     body_text: str,
     case_id: str,
@@ -884,25 +1070,38 @@ def header_priority_select(
         {"candidate_id": e["candidate_id"], "type": e["type"]} for e in picked
     ]
 
-    relations: list[dict[str, Any]] = []
-    sources = by_type.get("Field", []) + by_type.get("Method", [])
-    tasks = by_type.get("Task", [])
-    if sources and tasks:
-        relations.append(
-            {
-                "type": "APPLIED_TO",
-                "source_id": str(sources[0]["candidate_id"]),
-                "target_id": str(tasks[0]["candidate_id"]),
-            }
-        )
-    elif len(entities) >= 2:
-        relations.append(
-            {
-                "type": "APPLIED_TO",
-                "source_id": str(entities[0]["candidate_id"]),
-                "target_id": str(entities[1]["candidate_id"]),
-            }
-        )
+    # M272: proximity + type-pair relation candidates (no free invent).
+    relations = select_relations_for_entities(
+        body_text,
+        entities,
+        candidates,
+        max_relations=1,
+    )
+    # Fallback: legacy type-pair APPLIED_TO if proximity builder empty
+    if not relations:
+        sources = by_type.get("Field", []) + by_type.get("Method", [])
+        tasks = by_type.get("Task", [])
+        if sources and tasks:
+            relations = [
+                {
+                    "type": "APPLIED_TO",
+                    "source_id": str(sources[0]["candidate_id"]),
+                    "target_id": str(tasks[0]["candidate_id"]),
+                }
+            ]
+        elif len(entities) >= 2:
+            rtype = relation_type_for_entity_pair(
+                str(entities[0].get("type") or ""),
+                str(entities[1].get("type") or ""),
+            ) or "APPLIED_TO"
+            if rtype in ALLOWED_RELATION_TYPES:
+                relations = [
+                    {
+                        "type": rtype,
+                        "source_id": str(entities[0]["candidate_id"]),
+                        "target_id": str(entities[1]["candidate_id"]),
+                    }
+                ]
 
     relations = [r for r in relations if r.get("type") in ALLOWED_RELATION_TYPES]
     return {"entities": entities, "relations": relations, "json_valid": True}
@@ -1451,7 +1650,11 @@ def make_header_fallback_select_fn(primary_select: Any) -> Any:
 
 __all__ = [
     "guess_entity_type",
+    "build_relation_candidates",
     "header_priority_select",
+    "min_surface_distance",
+    "relation_type_for_entity_pair",
+    "select_relations_for_entities",
     "make_header_fallback_select_fn",
     "make_header_prefer_select_fn",
     "make_llm_constrained_select_fn",

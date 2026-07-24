@@ -6,15 +6,19 @@ import json
 
 from research_graph.application.corpus.wave_b_constrained_select import (
     _looks_like_author_span,
+    build_relation_candidates,
     guess_entity_type,
     header_priority_select,
     make_header_fallback_select_fn,
     make_header_prefer_select_fn,
+    min_surface_distance,
+    relation_type_for_entity_pair,
     score_selection_structural,
     make_llm_constrained_select_fn,
     parse_constrained_llm_selection,
     prioritize_candidates_for_prompt,
     render_constrained_select_prompt,
+    select_relations_for_entities,
     trim_selection_to_top_k,
 )
 from research_graph.application.corpus.wave_b_gold_hybrid_constrained_pilot import (
@@ -748,3 +752,52 @@ def test_make_llm_trims_overselect_before_return() -> None:
     ids = {e["candidate_id"] for e in sel["entities"]}
     assert cid_field in ids
     assert cid_task in ids
+
+
+
+def test_relation_type_for_entity_pair_priors() -> None:
+    assert relation_type_for_entity_pair("Method", "Task") == "APPLIED_TO"
+    assert relation_type_for_entity_pair("Method", "Method") == "USES_COMPONENT"
+    assert relation_type_for_entity_pair("Method", "Dataset") == "EVALUATED_ON"
+    assert relation_type_for_entity_pair("Dataset", "Field") is None
+
+
+def test_min_surface_distance() -> None:
+    body = "We use Neural Machine Translation for Subword Units in translation."
+    d = min_surface_distance(body, "Neural Machine Translation", "Subword Units")
+    assert d is not None and d < 50
+
+
+def test_build_relation_candidates_type_pair_proximity() -> None:
+    body = (
+        "Neural Machine Translation with Subword Units improves rare words. "
+        "Neural Machine Translation is a Method applied to translation tasks."
+    )
+    cands = build_body_candidates(body)
+    # pick two known surfaces
+    by_surf = {c["surface"]: c for c in cands}
+    assert "Neural Machine Translation" in by_surf
+    assert "Subword Units" in by_surf
+    ents = [
+        {"candidate_id": by_surf["Neural Machine Translation"]["candidate_id"], "type": "Method"},
+        {"candidate_id": by_surf["Subword Units"]["candidate_id"], "type": "Method"},
+    ]
+    rels = build_relation_candidates(
+        body_text=body, entities=ents, candidates=cands, max_relations=1
+    )
+    assert len(rels) == 1
+    assert rels[0]["type"] == "USES_COMPONENT"
+    assert rels[0]["source_id"] != rels[0]["target_id"]
+
+
+def test_header_select_uses_relation_candidates() -> None:
+    body, gold = _body_and_gold()
+    cands = build_body_candidates(body, paper_id="1206.6423")
+    sel = header_priority_select(body, gold["case_id"], cands)
+    assert len(sel["relations"]) >= 1
+    assert sel["relations"][0]["type"] in {
+        "APPLIED_TO",
+        "USES_COMPONENT",
+        "EVALUATED_ON",
+        "OUTPERFORMS",
+    }

@@ -34,7 +34,7 @@ def test_matrix_header_path_ship_ready() -> None:
     assert pkg.deltas["llm_beats_header"] is False
     d = pkg.to_dict()
     assert d["import_eligible"] is False
-    assert d["relation_status"]["path"] == "header_priority_cooccurrence"
+    assert d["relation_status"]["path"] == "header_proximity_type_pair_candidates"
 
 
 def test_matrix_llm_beats_header_can_justify_gepa_flag() -> None:
