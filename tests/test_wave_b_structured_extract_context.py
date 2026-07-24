@@ -40,6 +40,12 @@ def test_build_structured_context_has_outline_sections_candidates() -> None:
     assert ctx.section_catalog
     assert ctx.sections
     assert ctx.candidates
+    assert ctx.page_index_nodes
+    assert all(
+        str(n.get("page_index_node_id") or "").startswith("page_index:")
+        for n in ctx.page_index_nodes
+    )
+    assert all("page_index_node_id" in s for s in ctx.section_catalog)
     surfaces = {str(c.get("surface") or "").casefold() for c in ctx.candidates}
     assert any("language and perception" in s for s in surfaces)
     assert any("grounded attribute learning" in s for s in surfaces)
@@ -63,6 +69,7 @@ def test_render_prompt_is_structured_not_raw_only() -> None:
     )
     assert "--- OUTLINE ---" in prompt
     assert "--- SECTION CATALOG" in prompt
+    assert "--- PAGEINDEX NODES" in prompt
     assert "--- GROUNDED CANDIDATES ---" in prompt
     assert "--- PAPER TEXT ---" not in prompt
     assert "need_sections" in prompt
@@ -100,6 +107,7 @@ def test_package_rejects_import() -> None:
             keywords=(),
             term_dense_windows=(),
             candidates=(),
+            page_index_nodes=(),
             body_head="",
             body_chars=0,
             diagnostics=(),

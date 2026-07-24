@@ -56,6 +56,7 @@ class StructuredExtractContext:
     keywords: tuple[str, ...]
     term_dense_windows: tuple[dict[str, Any], ...]
     candidates: tuple[dict[str, Any], ...]
+    page_index_nodes: tuple[dict[str, Any], ...]
     body_head: str
     body_chars: int
     diagnostics: tuple[str, ...]
@@ -83,6 +84,7 @@ class StructuredExtractContext:
             "keywords": list(self.keywords),
             "term_dense_windows": list(self.term_dense_windows),
             "candidates": list(self.candidates),
+            "page_index_nodes": list(self.page_index_nodes),
             "body_head": self.body_head,
             "body_chars": self.body_chars,
             "diagnostics": list(self.diagnostics),
@@ -298,14 +300,40 @@ def build_structured_extract_context(
     sections_raw = _split_sections(cleaned, max_sections=max_sections)
     sections: list[dict[str, Any]] = []
     catalog: list[dict[str, Any]] = []
-    for sec in sections_raw:
+    page_index_nodes: list[dict[str, Any]] = []
+    parent_stack: list[tuple[int, str]] = []  # (level, node_id)
+    for order, sec in enumerate(sections_raw):
         text_sec = str(sec.get("text") or "")
         if len(text_sec) > max_section_chars:
             text_sec = text_sec[: max_section_chars - 20] + "\n[...section truncated...]"
+        section_id = str(sec["section_id"])
+        level = int(sec["level"] or 1)
+        # PageIndex-shaped navigation node (deterministic, body-derived; not graph write).
+        while parent_stack and parent_stack[-1][0] >= level:
+            parent_stack.pop()
+        parent_id = parent_stack[-1][1] if parent_stack else None
+        node_id = f"page_index:{paper_id or case_id or 'paper'}:{section_id}"
+        path_titles = [t for _, t in parent_stack] + [str(sec["title"])]
+        page_index_nodes.append(
+            {
+                "page_index_node_id": node_id,
+                "section_id": section_id,
+                "title": sec["title"],
+                "level": level,
+                "order": order,
+                "parent_id": parent_id,
+                "path": path_titles,
+                "char_count": sec["char_count"],
+                "start_line": sec["start_line"],
+                "end_line": sec["end_line"],
+            }
+        )
+        parent_stack.append((level, node_id))
         entry = {
-            "section_id": sec["section_id"],
+            "section_id": section_id,
+            "page_index_node_id": node_id,
             "title": sec["title"],
-            "level": sec["level"],
+            "level": level,
             "start_line": sec["start_line"],
             "end_line": sec["end_line"],
             "char_count": sec["char_count"],
@@ -338,9 +366,11 @@ def build_structured_extract_context(
         f"keywords:{len(keywords)}",
         f"candidates:{len(cand_rows)}",
         f"term_windows:{len(term_windows)}",
+        f"page_index_nodes:{len(page_index_nodes)}",
         f"language:{preprocess.language}",
         f"quality:{preprocess.quality_status}",
         "structured_not_raw_only",
+        "page_index_bridge_body_derived",
         "import_write_fail_closed",
         "dspy:false",
     )
@@ -357,6 +387,7 @@ def build_structured_extract_context(
         keywords=tuple(keywords),
         term_dense_windows=tuple(term_windows),
         candidates=tuple(cand_rows),
+        page_index_nodes=tuple(page_index_nodes),
         body_head=body_head,
         body_chars=len(text),
         diagnostics=diagnostics,
@@ -383,8 +414,13 @@ def render_structured_extract_prompt(
         outline_lines.append(f"{indent}- {h.get('text')}")
 
     catalog_lines = [
-        f"- {s.get('section_id')}: {s.get('title')} ({s.get('char_count')} chars)"
+        f"- {s.get('section_id')} | page_index={s.get('page_index_node_id')}: "
+        f"{s.get('title')} ({s.get('char_count')} chars)"
         for s in ctx.section_catalog[:24]
+    ]
+    page_index_lines = [
+        f"- {n.get('page_index_node_id')} path={' > '.join(n.get('path') or [])}"
+        for n in ctx.page_index_nodes[:24]
     ]
     cand_lines = [
         f"- {c.get('candidate_id')}: {c.get('surface')} [{c.get('source')}]"
@@ -443,6 +479,8 @@ def render_structured_extract_prompt(
         + ("\n".join(outline_lines) if outline_lines else "(no outline)")
         + "\n--- SECTION CATALOG (requestable) ---\n"
         + ("\n".join(catalog_lines) if catalog_lines else "(no sections)")
+        + "\n--- PAGEINDEX NODES (body-derived navigation) ---\n"
+        + ("\n".join(page_index_lines) if page_index_lines else "(none)")
         + "\n--- KEYWORDS ---\n"
         + kw_line
         + "\n--- GROUNDED CANDIDATES ---\n"
