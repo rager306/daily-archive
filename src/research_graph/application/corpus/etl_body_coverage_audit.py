@@ -53,14 +53,27 @@ def _hybrid_body_path(body_root: Path, paper_id: str) -> Path:
     return body_root / paper_id / "body" / f"{paper_id}.hybrid.body.md"
 
 
+def _hybrid_body_candidates(body_root: Path, paper_id: str) -> tuple[Path, ...]:
+    """Canonical id-named body first; expand-run original.hybrid.body.md fallback."""
+    base = Path(body_root) / paper_id / "body"
+    return (
+        base / f"{paper_id}.hybrid.body.md",
+        base / "original.hybrid.body.md",
+    )
+
+
 def find_hybrid_body(paper_id: str, body_roots: Sequence[Path]) -> Path | None:
-    """Return first existing hybrid body path for paper_id, else None."""
+    """Return first existing hybrid body path for paper_id, else None.
+
+    Accepts both ``<id>.hybrid.body.md`` and expand-run ``original.hybrid.body.md``
+    under ``<root>/<id>/body/``.
+    """
     if not paper_id:
         return None
     for root in body_roots:
-        candidate = _hybrid_body_path(Path(root), paper_id)
-        if candidate.is_file():
-            return candidate
+        for candidate in _hybrid_body_candidates(Path(root), paper_id):
+            if candidate.is_file():
+                return candidate
     return None
 
 
@@ -88,8 +101,15 @@ def scan_hybrid_body_artifacts(
             n += 1
             total_files += 1
             name = path.name
-            if name.endswith(".hybrid.body.md"):
-                unique_ids.add(name[: -len(".hybrid.body.md")])
+            if not name.endswith(".hybrid.body.md"):
+                continue
+            pid = name[: -len(".hybrid.body.md")]
+            if pid == "original" and path.parent.name == "body":
+                parent = path.parent.parent.name
+                if parent:
+                    pid = parent
+            if pid:
+                unique_ids.add(pid)
         files_by_root[str(root_p)] = n
     return total_files, len(unique_ids), files_by_root
 
@@ -148,6 +168,13 @@ def inventory_multi_root_hybrid_copies(
             if not name.endswith(".hybrid.body.md"):
                 continue
             pid = name[: -len(".hybrid.body.md")]
+            # Expand-run alias: original.hybrid.body.md lives under <paper_id>/body/.
+            if pid == "original" and path.parent.name == "body":
+                parent = path.parent.parent.name
+                if parent:
+                    pid = parent
+            if not pid:
+                continue
             by_id.setdefault(pid, []).append(path)
 
     multi_ids = sorted(pid for pid, paths in by_id.items() if len(paths) > 1)

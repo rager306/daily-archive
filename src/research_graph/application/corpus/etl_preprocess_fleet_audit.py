@@ -53,6 +53,11 @@ def discover_unique_hybrid_bodies(
             if not name.endswith(".hybrid.body.md"):
                 continue
             paper_id = name[: -len(".hybrid.body.md")]
+            # Expand runs sometimes write original.hybrid.body.md under <id>/body/.
+            if paper_id == "original" and path.parent.name == "body":
+                parent = path.parent.parent.name
+                if parent:
+                    paper_id = parent
             if not paper_id or paper_id in seen:
                 continue
             seen[paper_id] = HybridBodyRef(
