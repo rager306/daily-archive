@@ -12,7 +12,7 @@ Source → Parser → Structure → Extraction → Graph → Review → Agents
 
 **Стадия: post-M256 + Wave B extraction quality path (import закрыт).**
 
-Wave A closed. Wave B stamp open (`artifacts/wave-b/human_go.json`, D124). Gold↔hybrid join **10** body-grounded papers; oracle + lexical floor **entity/relation F1=1.0**; header-priority constrained select (no LLM) **~0.90 entity / ~0.70 relation** on n=10 (was 1.0 on n=6) via `verify_wave_b_constrained_select.py`. Structured extract context (outline/sections/candidates/pageindex-bridge) default for LLM pilots; free-form invent still weak. **Not** DSPy optimizer; **not** import. LLM surface: 9router (agnes default / MiniMax quality / grok fallback); optional summary stage composition-default off.
+Wave A closed. Wave B stamp open (`artifacts/wave-b/human_go.json`, D124). Gold↔hybrid join **20** body-grounded papers; oracle + lexical floor **entity/relation F1=1.0**; header-priority constrained select (no LLM) **~0.50 entity / ~0.35 relation** on n=20 (n=10 ~0.90; n=6 1.0) via `verify_wave_b_constrained_select.py`. Structured extract context (outline/sections/candidates/pageindex-bridge) default for LLM pilots; free-form invent still weak. **Not** DSPy optimizer; **not** import. LLM surface: 9router (agnes default / MiniMax quality / grok fallback); optional summary stage composition-default off.
 
 **Live FalkorDB driver и production import выключены**, пока не будет отдельного явного Wave D readiness milestone.
 
@@ -228,8 +228,8 @@ M198 closeout verification:
 ### Сейчас: Wave B extraction quality (post gold-debt + constrained select)
 
 1. **Done M241–M256:** Wave A closed; stamp open; statistical hybrid; gold↔hybrid join; lexical floor.
-2. **Done (session):** body-ground gold for 1611/2109; candidate coverage 12/12; oracle F1=1.0; grounding audit; structured extract context + pageindex-bridge; GEPA offline full-set entity F1=1.0; **header_priority constrained select ~0.90/0.70 on n=10** (1.0/1.0 on n=6; no LLM).
-3. **Next B:** constrained LLM select (`candidate_id` only) vs header baseline on n=10; full-6 structured vs raw ablation; optional GEPA reflection only if constrained LLM beats header without inventing labels; **no DSPy optimizer** until metrics demand; **no import**.
+2. **Done (session):** body-ground gold for 1611/2109; candidate coverage 12/12; oracle F1=1.0; grounding audit; structured extract context + pageindex-bridge; GEPA offline full-set entity F1=1.0; **header_priority constrained select ~0.50/0.35 on n=20** (n=10 ~0.90; n=6 1.0; no LLM).
+3. **Next B:** constrained LLM select (`candidate_id` only) vs header baseline on n=20; full-6 structured vs raw ablation; optional GEPA reflection only if constrained LLM beats header without inventing labels; **no DSPy optimizer** until metrics demand; **no import**.
 4. Import/Falkor не открывать до Wave D + evidence. **Не переспрашивать go на A/B.**
 
 ```bash
