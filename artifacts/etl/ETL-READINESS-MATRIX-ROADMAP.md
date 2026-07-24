@@ -1,6 +1,8 @@
 # ETL Readiness Matrix + Dependency Roadmap
 
-**As of:** 2026-07-24 (post `5c0f0b5`)  
+**As of:** 2026-07-24 (post M257–M263)
+**Execution status:** M257–M263 complete. Import locked (D127). GEPA closed (D126).
+**Live hybrid_found:** 64/230 (0.2783). Ship path: header_priority. Structure: partial.  
 **Horizon policy:** Wave A residual → glue → coverage scale → Wave B quality → structure → **import only Wave D**  
 **Hard locks:** `import_eligible=false`, no DSPy optimizer until LLM beats header, no Falkor write pilot until D.
 
