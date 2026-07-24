@@ -194,7 +194,7 @@ Materialized `Method-OUTPERFORMS-Method` only after promotion.
 | **M276** | E1.4–E1.6 CanonicalDocument + EvidencePath page/bbox **DONE c9cc851** | M275 |
 | **M277** | E2 structure gate v2 + canary design **DONE** | M276 |
 | **M278** | E3 verification (intent, constraints, risk audit, isolation) **DONE 1333995** | M276 |
-| **M279** | E4 EvidenceAssertion staging | M278 |
+| **M279** | E4 EvidenceAssertion staging **DONE 91361b9** + GEPA isolation wire | M278 |
 | **M280+** | E5 optional generators / fallbacks | M277–M279 |
 | **Import** | user go only | M279+ |
 
