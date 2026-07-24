@@ -10,9 +10,9 @@ Source → Parser → Structure → Extraction → Graph → Review → Agents
 
 ## Текущая стадия pipeline
 
-**Стадия: post-M253 / M254 — Wave A closed + Wave B open (stamp D124) + 9router LLM summary path (import закрыт).**
+**Стадия: post-M256 + Wave B extraction quality path (import закрыт).**
 
-Wave A data readiness closed (`wave_a_closed`, hybrid_found≥40, continuity `ready_for_review`, import-hold 0). Wave B extraction quality active via durable `artifacts/wave-b/human_go.json` (D124); M072 baseline proceed; hybrid inventory 41; live hybrid extraction **scaffold** only (no LLM extract yet, no DSPy). LLM primary surface is local 9router (`NINEROUTER_URL`); paper-summary roles: default **agnes**, quality **MiniMax-M2.7-highspeed**, fallback **grok-code-fast-1**; optional summary stage package exists and is **composition-default off**, always `import_eligible=false`.
+Wave A closed. Wave B stamp open (`artifacts/wave-b/human_go.json`, D124). Gold↔hybrid join 6/6 body-grounded; oracle + lexical floor **entity/relation F1=1.0**; header-priority constrained select (no LLM) also **1.0/1.0** via `verify_wave_b_constrained_select.py`. Structured extract context (outline/sections/candidates/pageindex-bridge) default for LLM pilots; free-form invent still weak. **Not** DSPy optimizer; **not** import. LLM surface: 9router (agnes default / MiniMax quality / grok fallback); optional summary stage composition-default off.
 
 **Live FalkorDB driver и production import выключены**, пока не будет отдельного явного Wave D readiness milestone.
 
@@ -225,18 +225,19 @@ M198 closeout verification:
 **Порядок обязателен:** A → B → C → (D только по go) → E.  
 **Неподключённый функционал** (nature fulltext, live Falkor, fleet DSPy, agentic collapse) — не подключать «чтобы % вырос»; только по wave criteria.
 
-### Сейчас: Wave B (extraction quality) + LLM boundary rewrite (M254)
+### Сейчас: Wave B extraction quality (post gold-debt + constrained select)
 
-1. **Done M241–M253:** Wave A **closed**; Wave B **active** (D124 stamp) — gate **open** from stamp (`verify_wave_b_gate` stamp-aware); hybrid extraction candidates **41**; M072 baseline entity_f1 **0.917** gate proceed; disagreements inventory live; import false; DSPy false.
-2. **Done M254 (partial/session):** stamp-aware Wave B gate CLI; `models.yaml` 9router summary bindings; thin `NineRouterChatClient`; binding-driven `PaperSummarizer` (agnes default); optional fail-closed summary stage (default off); live hybrid extraction **scaffold** (`pending_extraction`, 41 candidates).
-3. **Next B:** real staged extraction metrics on hybrid samples (statistical-first; LLM only with metrics; **no import**, **no DSPy optimizer** until metrics demand).
+1. **Done M241–M256:** Wave A closed; stamp open; statistical hybrid; gold↔hybrid join; lexical floor.
+2. **Done (session):** body-ground gold for 1611/2109; candidate coverage 12/12; oracle F1=1.0; grounding audit; structured extract context + pageindex-bridge; GEPA offline full-set entity F1=1.0; **header_priority constrained select F1=1.0/1.0** (no LLM).
+3. **Next B:** constrained LLM select (`candidate_id` only) vs header baseline; full-6 structured vs raw ablation; optional GEPA reflection only if constrained LLM beats header without inventing labels; **no DSPy optimizer** until metrics demand; **no import**.
 4. Import/Falkor не открывать до Wave D + evidence. **Не переспрашивать go на A/B.**
 
 ```bash
 uv run python scripts/verify_wave_b_gate.py
-uv run python scripts/verify_wave_b_hybrid_extraction_inventory.py
-uv run python scripts/verify_wave_b_live_hybrid_extraction.py
-uv run python scripts/verify_wave_b_extraction_baseline.py
+uv run python scripts/verify_wave_b_gold_body_grounding_audit.py
+uv run python scripts/verify_wave_b_gold_hybrid_metrics.py
+uv run python scripts/verify_wave_b_constrained_select.py
+uv run python scripts/verify_wave_b_gold_hybrid_constrained_pilot.py
 uv run python scripts/verify_import_hold_inventory.py
 ```
 
