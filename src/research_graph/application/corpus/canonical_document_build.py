@@ -7,6 +7,7 @@ fallback. Never authorizes import.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from pathlib import Path
 from typing import Any
 
 from research_graph.domain.canonical_document import (
@@ -229,3 +230,111 @@ def build_canonical_document_from_odl(
 __all__ = [
     "build_canonical_document_from_odl",
 ]
+
+
+def write_canonical_document_artifact(
+    path: Path,
+    document: CanonicalDocument,
+) -> str:
+    """Write CanonicalDocument JSON; return sha256 hex. Never import-eligible."""
+    import json
+
+    from research_graph.application.corpus.parser_run_artifacts import write_text_artifact
+
+    payload = json.dumps(document.to_dict(), indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+    return write_text_artifact(path, payload)
+
+
+def persist_canonical_from_odl_metrics(
+    *,
+    body_dir: Path,
+    paper_id: str,
+    odl_metrics: Mapping[str, Any] | None,
+    grobid_metrics: Mapping[str, Any] | None = None,
+    title: str | None = None,
+) -> tuple[CanonicalDocument | None, list[str]]:
+    """Build+write CanonicalDocument from hybrid ODL metrics.
+
+    Returns (document_or_none, diagnostics). Import remains false.
+    """
+    diag: list[str] = []
+    body_dir = Path(body_dir)
+    if not isinstance(odl_metrics, Mapping):
+        return None, ["canonical_skipped_no_odl_metrics"]
+
+    layout = odl_metrics.get("layout_json")
+    markdown = odl_metrics.get("markdown")
+    if layout is None and not (isinstance(markdown, str) and markdown.strip()):
+        return None, ["canonical_skipped_no_layout_or_markdown"]
+
+    layout_hash = odl_metrics.get("layout_json_sha256")
+    if layout is not None and not layout_hash:
+        from research_graph.application.corpus.parser_run_artifacts import sha256_text
+        import json as _json
+
+        try:
+            layout_hash = sha256_text(
+                _json.dumps(layout, sort_keys=True, ensure_ascii=False)
+            )
+        except (TypeError, ValueError):
+            layout_hash = None
+
+    md_hash = None
+    if isinstance(markdown, str) and markdown:
+        from research_graph.application.corpus.parser_run_artifacts import sha256_text
+
+        md_hash = sha256_text(markdown)
+
+    source_hashes: dict[str, str] = {}
+    if layout_hash:
+        source_hashes["odl_layout"] = str(layout_hash)
+    if md_hash:
+        source_hashes["markdown"] = md_hash
+    if isinstance(grobid_metrics, Mapping):
+        tei_sha = grobid_metrics.get("tei_sha256")
+        if tei_sha:
+            source_hashes["tei"] = str(tei_sha)
+
+    parser_runs: list[dict[str, Any]] = []
+    if isinstance(odl_metrics, Mapping):
+        parser_runs.append(
+            {
+                "parser": "opendataloader",
+                "format": odl_metrics.get("format"),
+                "bbox_source": odl_metrics.get("bbox_source"),
+                "layout_element_count": odl_metrics.get("layout_element_count"),
+                "bounding_box_count": odl_metrics.get("bounding_box_count"),
+            }
+        )
+    if isinstance(grobid_metrics, Mapping):
+        parser_runs.append(
+            {
+                "parser": "grobid",
+                "status": grobid_metrics.get("status"),
+                "tei_sha256": grobid_metrics.get("tei_sha256"),
+                "structured_parse_ok": grobid_metrics.get("structured_parse_ok"),
+            }
+        )
+
+    doc = build_canonical_document_from_odl(
+        paper_id=paper_id,
+        layout_json=layout if isinstance(layout, (dict, list)) else None,
+        layout_json_sha256=str(layout_hash) if layout_hash else None,
+        markdown=markdown if isinstance(markdown, str) else None,
+        title=title,
+        parser_runs=parser_runs,
+        source_hashes=source_hashes,
+    )
+    out_path = body_dir / f"{paper_id}.canonical.json"
+    digest = write_canonical_document_artifact(out_path, doc)
+    diag.append(f"canonical_document_path:{out_path.name}")
+    diag.append(f"canonical_document_sha256:{digest}")
+    diag.extend(list(doc.diagnostics))
+    grounded = sum(
+        1
+        for b in doc.blocks
+        if any(s.page is not None or s.bbox is not None for s in b.spans)
+    )
+    diag.append(f"canonical_blocks:{len(doc.blocks)}")
+    diag.append(f"canonical_grounded_blocks:{grounded}")
+    return doc, diag

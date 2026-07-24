@@ -327,6 +327,18 @@ def resolve_article_body(
             odl_metrics=runtime.opendataloader_metrics,
         )
         diagnostics.extend(odl_diag)
+        # M276: CanonicalDocument IR from ODL metrics (import remains false).
+        from research_graph.application.corpus.canonical_document_build import (
+            persist_canonical_from_odl_metrics,
+        )
+
+        _doc, canon_diag = persist_canonical_from_odl_metrics(
+            body_dir=body_dir,
+            paper_id=paper_id,
+            odl_metrics=runtime.opendataloader_metrics,
+            grobid_metrics=runtime.grobid_metrics,
+        )
+        diagnostics.extend(canon_diag)
         if packet.hybrid_claimed_success and packet.body_markdown:
             text_path = body_dir / f"{paper_id}.hybrid.body.md"
             text_path.write_text(packet.body_markdown, encoding="utf-8")

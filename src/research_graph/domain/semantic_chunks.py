@@ -34,7 +34,12 @@ class SemanticChunk:
 
 @dataclass(frozen=True)
 class EvidencePath:
-    """Trace from paper to PageIndexNode to SemanticChunk."""
+    """Trace from paper to PageIndexNode to SemanticChunk.
+
+    M276: optional grounding fields (page/bbox/artifact_hash/element_id/char
+    range) for evidence-trace. Defaults preserve all existing constructors.
+    Never implies import eligibility.
+    """
 
     paper_id: str
     page_index_node_id: str
@@ -42,6 +47,24 @@ class EvidencePath:
     node_path: list[str]
     validation_warnings: list[str] = field(default_factory=list)
     provenance: dict[str, str] = field(default_factory=dict)
+    # Optional grounding (E1.5) — additive; Ladybug schema may ignore until E4.
+    artifact_hash: str | None = None
+    page: int | None = None
+    bbox: tuple[float, float, float, float] | None = None
+    element_id: str | None = None
+    char_start: int | None = None
+    char_end: int | None = None
+
+    def grounding_dict(self) -> dict[str, object]:
+        """Span-like mapping for resolvability checks (import never authorized)."""
+        return {
+            "artifact_hash": self.artifact_hash,
+            "page": self.page,
+            "bbox": list(self.bbox) if self.bbox is not None else None,
+            "element_id": self.element_id,
+            "char_start": self.char_start,
+            "char_end": self.char_end,
+        }
 
 
 __all__ = ["EvidencePath", "SemanticChunk"]
