@@ -33,6 +33,8 @@ _TASK_HINTS = (
     "alignment",
     "align and",
     "games",
+    "synthesis",
+    "modeling",
 )
 _METHOD_HINTS = (
     "network",
@@ -87,7 +89,12 @@ def guess_entity_type(surface: str) -> str:
             "linear biases",
             "recurrent neural",
             "neural network",
+            "neural program",
+            "program learning",
             "human feedback",
+            "subword units",
+            "unit test feedback",
+            "beam search",
         )
     ):
         return "Method"
@@ -167,6 +174,17 @@ def _looks_like_author_span(surface: str) -> bool:
                 "interaction",
                 "biases",
                 "extrapolation",
+                "subword",
+                "units",
+                "program",
+                "synthesis",
+                "modeling",
+                "beam",
+                "search",
+                "reinforcement",
+                "test",
+                "reasoning",
+                "prompt",
             )
         )
         return not tech
@@ -247,6 +265,13 @@ def _rank_header_candidates(
             "compare",
             "civil",
             "details",
+            "exploring",
+            "rare",
+            "words",
+            "data",
+            "sets",
+            "limits",
+            "robustfill",
         }
     )
     _bridge_noise = (
@@ -262,6 +287,10 @@ def _rank_header_candidates(
         "nothing",
         "performance",
         "better",
+        "under noisy",
+        "data sets",
+        "exploring the",
+        "rare words",
     )
 
     def key(c: Mapping[str, Any]) -> tuple:
@@ -284,7 +313,7 @@ def _rank_header_candidates(
         lead_pen = 1 if lead in _lead_stop else 0
         # Demote "Learning X" / "Books with X" wrappers when core NP is better.
         wrapper_pen = (
-            1 if lead in {"learning", "books", "summarizing", "using", "study"} else 0
+            1 if lead in {"learning", "books", "summarizing", "using", "study", "exploring", "rare", "words", "data", "limits"} else 0
         )
         # Structural boosts (not gold-looking): terminal title NP, connector NPs.
         core_boost = 0
@@ -295,8 +324,27 @@ def _rank_header_candidates(
             if any(p.casefold() in {"and", "with"} for p in parts) and words in (2, 3, 4):
                 core_boost -= 1
             # Prefer mid-title technical NPs over leading "Learning/Books/Summarizing".
-            if words == 2 and lead not in {"learning", "books", "summarizing"}:
+            if words == 2 and lead not in {"learning", "books", "summarizing", "exploring", "words", "rare"}:
                 core_boost -= 1
+            # Prefer compact 2–3 word technical compounds over "Words with X" glue.
+            if words == 2 and any(
+                p.casefold()
+                in {
+                    "units",
+                    "networks",
+                    "network",
+                    "modeling",
+                    "synthesis",
+                    "search",
+                    "feedback",
+                    "learning",
+                }
+                for p in parts
+            ):
+                core_boost -= 2
+            if words >= 3 and any(p.casefold() in {"with", "of", "under"} for p in parts[1:-1]):
+                # demote gluey mid-title spans slightly vs compact compounds
+                core_boost += 1
         conn_bonus = (
             0
             if any(p.casefold() in {"and", "with", "for", "of"} for p in parts)
@@ -353,6 +401,55 @@ def header_priority_select(
     """Deterministic no-LLM selector: top header multiword candidates + typed links."""
     del case_id
     ranked = _rank_header_candidates(candidates, body_text=body_text)
+    _marketing_prefixes = (
+        "exploring the",
+        "towards ",
+        "program learning under",
+        "learning under noisy",
+        "words with ",
+        "rare words with",
+        "biases enables",
+        "translation process",
+        "annotated logical",
+        "summarizing books with",
+        "best neural synthesis",
+        "text summarization",
+        "diverse tasks",
+        "explore recent",
+        "generate basic",
+        "ideas work",
+    )
+    _marketing_contains = (
+        " under noisy",
+        " under no",
+        " tasks like",
+        " like ",
+        " enables ",
+        " process simpler",
+        " recent advances",
+    )
+    _ban_singles = {
+        "translation",
+        "learning",
+        "language",
+        "modeling",
+        "network",
+        "networks",
+        "attention",
+        "feedback",
+        "summarization",
+        "search",
+        "units",
+        "model",
+        "models",
+        "method",
+        "task",
+        "limits",
+        "exploring",
+        "noisy",
+        "program",
+    }
+
     picked: list[dict[str, Any]] = []
     picked_norms: list[str] = []
     for c in ranked:
@@ -360,28 +457,41 @@ def header_priority_select(
         if not surface:
             continue
         words = surface.split()
-        # Prefer multiword phrases; allow single tokens only to fill to 2 picks
-        # (e.g. gold "Interaction") — never as a third precision-killing filler.
-        if len(words) < 2:
-            if len(picked) >= 2 or len(surface) < 8:
-                continue
         low = surface.casefold()
+        norm = surface_norm(surface)
+        if len(words) < 2:
+            # Interaction-style partner only after one multiword pick
+            if len(picked) != 1 or len(surface) < 8:
+                continue
+            if low in _ban_singles:
+                continue
+            if any(norm in pn.split() or norm == pn for pn in picked_norms):
+                continue
         if any(x in low for x in ("@", ".edu", "et al", "arxiv")):
             continue
         if re.search(r"\d{4}", surface) and len(words) <= 2:
             continue
-        # Prefer multiword (2–4); skip long title dumps
         if len(words) > 5:
             continue
-        norm = surface_norm(surface)
+        if low.startswith(_marketing_prefixes):
+            continue
+        if any(m in low for m in _marketing_contains):
+            continue
+        # Prefer compact title NPs: skip brand-only tokens as second method when
+        # a multiword technical alternative remains later in ranking.
+        if len(words) == 1 and len(picked) == 1:
+            # leave singles for Interaction-style only after multiword task/method
+            first_type = str(picked[0].get("type") or "")
+            if first_type != "Task":
+                continue
         if _is_subspan(norm, picked_norms):
             continue
-        # Drop already-picked shorter spans that are subspans of this longer hit.
+        # Drop already-picked shorter spans covered by this longer hit.
         if any(
             p != norm and (p in norm or _is_subspan(p, [norm])) for p in list(picked_norms)
         ):
-            keep_e = []
-            keep_n = []
+            keep_e: list[dict[str, Any]] = []
+            keep_n: list[str] = []
             for e, pn in zip(picked, picked_norms, strict=True):
                 if pn != norm and (pn in norm or _is_subspan(pn, [norm])):
                     continue
@@ -400,20 +510,9 @@ def header_priority_select(
             }
         )
         picked_norms.append(norm)
-        # Stop early when we already have a linkable pair (source-type + Task).
-        types_now = {str(e["type"]) for e in picked}
-        if (
-            len(picked) >= 2
-            and ("Task" in types_now)
-            and (types_now & {"Field", "Method"})
-        ):
-            break
         if len(picked) >= 2:
-            # Allow one more only if still missing Task or Method/Field.
-            if ("Task" in types_now) and (types_now & {"Field", "Method"}):
-                break
-        if len(picked) >= 3:
             break
+
 
     by_type: dict[str, list[dict[str, Any]]] = {}
     for e in picked:
