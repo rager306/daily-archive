@@ -1,10 +1,26 @@
 # ArXiv Daily Archive — Specification
 
+> **HISTORICAL / SUPERSEDED as binding product spec (M274 E0).**
+>
+> This document describes the early **Telegram arXiv digest** product surface
+> (Graphify, daily top-10, Hermes cron). It is **not** the binding description of
+> the current Universal Knowledge Base / `research_graph` ETL.
+>
+> **Binding surfaces now:**
+> - `README.md` — architecture, current state, residual problems
+> - `artifacts/etl/ETL-READINESS-MATRIX-ROADMAP.md` — live residual matrix
+> - `artifacts/etl/EVIDENCE-TRACE-AND-VERIFICATION-ROADMAP.md` — evidence-trace next wave
+> - `doc/adr/ADR-INDEX.md` — binding ADRs
+> - `doc/REPO-HYGIENE.md` — truth paths / garbage policy
+>
+> Keep this file for archaeology of the digest product; do not use it to drive
+> agents or import/graph decisions.
+
 **Inspired by:** Ars Contexta (agenticnotetaking/arscontexta) — 3.3k stars, Claude Code plugin for knowledge system generation. We adapt their Three-Space Architecture (self/notes/ops) and 6 Rs pipeline for arXiv research digest.
 
 ---
 
-## Goal
+## Goal (historical digest product)
 
 Daily digest of top-10 research papers from arXiv cs.* categories, delivered to Telegram, with local knowledge base and preference learning from user feedback.
 

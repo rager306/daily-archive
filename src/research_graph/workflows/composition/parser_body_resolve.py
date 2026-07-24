@@ -92,9 +92,10 @@ def _persist_grobid_structured_artifacts(
     paper_id: str,
     grobid_metrics: dict[str, Any] | None,
 ) -> list[str]:
-    """Write hybrid.header.json + hybrid.citations.jsonl when GROBID structured payload exists.
+    """Write hybrid.header.json + hybrid.citations.jsonl + optional raw TEI.
 
     Candidate-only artifacts; never sets import/write true.
+    M274: persist raw TEI when tei_bytes or tei_path present in metrics.
     """
     import json
 
@@ -103,7 +104,14 @@ def _persist_grobid_structured_artifacts(
         return ["grobid_structured_absent"]
     header = grobid_metrics.get("header")
     citations = grobid_metrics.get("citations")
-    if not isinstance(header, dict) and not isinstance(citations, list):
+    tei_bytes = grobid_metrics.get("tei_bytes")
+    tei_path_existing = grobid_metrics.get("tei_path")
+    tei_sha = grobid_metrics.get("tei_sha256")
+    has_structured = isinstance(header, dict) or isinstance(citations, list)
+    has_tei = isinstance(tei_bytes, (bytes, bytearray)) or (
+        isinstance(tei_path_existing, str) and tei_path_existing
+    )
+    if not has_structured and not has_tei:
         return ["grobid_structured_absent"]
 
     body_dir.mkdir(parents=True, exist_ok=True)
@@ -130,6 +138,99 @@ def _persist_grobid_structured_artifacts(
         cites_path.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
         diag.append(f"grobid_citations_artifact:{cites_path.name}")
         diag.append(f"grobid_citation_rows:{len(lines)}")
+
+    # Raw TEI retention (evidence foundation)
+    if isinstance(tei_bytes, (bytes, bytearray)) and not tei_path_existing:
+        from research_graph.application.corpus.parser_run_artifacts import (
+            build_parser_run_manifest,
+            write_bytes_artifact,
+            write_parser_run_manifest,
+        )
+
+        tei_path = body_dir / f"{paper_id}.grobid.tei.xml"
+        digest = write_bytes_artifact(tei_path, bytes(tei_bytes))
+        man = build_parser_run_manifest(
+            paper_id=paper_id,
+            parser="grobid",
+            config={"source": "parser_body_resolve_persist"},
+            artifact_paths={"tei": str(tei_path)},
+            content_hashes={"tei": digest},
+        )
+        write_parser_run_manifest(body_dir / f"{paper_id}.grobid.parser-run.json", man)
+        diag.append(f"grobid_tei_artifact:{tei_path.name}")
+        diag.append(f"grobid_tei_sha256:{digest}")
+    elif isinstance(tei_path_existing, str) and tei_path_existing:
+        diag.append(f"grobid_tei_path:{Path(tei_path_existing).name}")
+        if tei_sha:
+            diag.append(f"grobid_tei_sha256:{tei_sha}")
+
+    return diag
+
+
+def _persist_odl_layout_artifacts(
+    *,
+    body_dir: Path,
+    paper_id: str,
+    odl_metrics: dict[str, Any] | None,
+) -> list[str]:
+    """Persist ODL layout JSON + parser-run when present (M274).
+
+    Candidate-only; never import/write true.
+    """
+    import json
+
+    diag: list[str] = []
+    if not isinstance(odl_metrics, dict):
+        return ["odl_layout_absent"]
+    layout = odl_metrics.get("layout_json")
+    if layout is None:
+        bbox_src = odl_metrics.get("bbox_source")
+        if bbox_src:
+            diag.append(f"odl_bbox_source:{bbox_src}")
+        if odl_metrics.get("layout_element_count") is not None:
+            diag.append(
+                f"odl_layout_element_count:{odl_metrics.get('layout_element_count')}"
+            )
+        if odl_metrics.get("bounding_box_count") is not None:
+            diag.append(
+                f"odl_bounding_box_count:{odl_metrics.get('bounding_box_count')}"
+            )
+        if not diag:
+            diag.append("odl_layout_absent")
+        return diag
+
+    from research_graph.application.corpus.parser_run_artifacts import (
+        build_parser_run_manifest,
+        count_layout_elements,
+        write_parser_run_manifest,
+        write_text_artifact,
+    )
+
+    body_dir.mkdir(parents=True, exist_ok=True)
+    layout_path = body_dir / f"{paper_id}.odl.layout.json"
+    try:
+        payload = json.dumps(layout, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+    except (TypeError, ValueError):
+        return ["odl_layout_not_serializable"]
+    digest = write_text_artifact(layout_path, payload)
+    elements, bboxes = count_layout_elements(layout)
+    man = build_parser_run_manifest(
+        paper_id=paper_id,
+        parser="opendataloader",
+        config={
+            "format": odl_metrics.get("format") or "json+markdown",
+            "bbox_source": odl_metrics.get("bbox_source"),
+        },
+        artifact_paths={"layout_json": str(layout_path)},
+        content_hashes={"layout_json": digest},
+    )
+    write_parser_run_manifest(body_dir / f"{paper_id}.odl.parser-run.json", man)
+    diag.append(f"odl_layout_artifact:{layout_path.name}")
+    diag.append(f"odl_layout_sha256:{digest}")
+    diag.append(f"odl_layout_element_count:{elements}")
+    diag.append(f"odl_bounding_box_count:{bboxes}")
+    if odl_metrics.get("bbox_source"):
+        diag.append(f"odl_bbox_source:{odl_metrics.get('bbox_source')}")
     return diag
 
 
@@ -220,6 +321,12 @@ def resolve_article_body(
             grobid_metrics=runtime.grobid_metrics,
         )
         diagnostics.extend(grobid_artifact_diag)
+        odl_diag = _persist_odl_layout_artifacts(
+            body_dir=body_dir,
+            paper_id=paper_id,
+            odl_metrics=runtime.opendataloader_metrics,
+        )
+        diagnostics.extend(odl_diag)
         if packet.hybrid_claimed_success and packet.body_markdown:
             text_path = body_dir / f"{paper_id}.hybrid.body.md"
             text_path.write_text(packet.body_markdown, encoding="utf-8")
