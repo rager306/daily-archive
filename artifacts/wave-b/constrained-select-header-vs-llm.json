@@ -1,7 +1,7 @@
 {
   "delta_vs_header": {
-    "entity_f1": -0.22819148936170214,
-    "relation_f1": -0.1648148148148148
+    "entity_f1": 0.0,
+    "relation_f1": 0.0
   },
   "dspy_optimizer_enabled": false,
   "gepa_justified": false,
@@ -13,19 +13,28 @@
   },
   "import_eligible": false,
   "joined_count": 20,
-  "llm_agnes_free_with_header_fallback": {
+  "llm_agnes_free_empty_fallback_prior": {
     "entity_f1": 0.4468085106382979,
-    "fallback_used_count": 9,
-    "model_id": "agnes-ai-free/agnes-2.0-flash",
-    "operator_status": "llm_constrained_select_with_header_fallback",
+    "note": "empty-only fallback prior run",
     "relation_f1": 0.18518518518518517
+  },
+  "llm_agnes_free_with_header_prefer": {
+    "entity_f1": 0.675,
+    "fallback_reasons": {
+      "primary_empty_entities": 6,
+      "primary_weaker_structural": 14
+    },
+    "fallback_used_count": 20,
+    "model_id": "agnes-ai-free/agnes-2.0-flash",
+    "operator_status": "llm_constrained_select_with_header_prefer",
+    "relation_f1": 0.35
   },
   "llm_agnes_no_fallback_prior": {
     "entity_f1": 0.3409090909090909,
     "model_id": "agnes-ai/agnes-2.0-flash",
     "relation_f1": 0.038461538461538464
   },
-  "note": "Live n=20 constrained LLM (agnes-free) with header fallback: entity F1\u22480.45 vs header 0.675. fallback_used_count=9/20 (primary empty). Non-empty wrong LLM picks still hurt vs pure header. Process: progressive write + per_case.fallback_used. GEPA/DSPy/import closed.",
+  "note": "Structural prefer-header (top-2 entity credit, no gold labels) falls back on all 20 cases (6 empty + 14 weaker). Metrics match header 0.675/0.35 \u2014 fail-closed quality floor. LLM never wins structural arbiter with compact-pair design. GEPA/DSPy/import closed.",
   "schema_version": "wave-b-constrained-select-comparison.v1",
-  "verdict": "header_wins_on_n20_fallback_covers_empty_only"
+  "verdict": "prefer_header_matches_header_floor_on_n20"
 }

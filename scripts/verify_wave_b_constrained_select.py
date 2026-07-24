@@ -21,6 +21,7 @@ from typing import Any
 from research_graph.application.corpus.wave_b_constrained_select import (
     header_priority_select,
     make_header_fallback_select_fn,
+    make_header_prefer_select_fn,
     make_llm_constrained_select_fn,
 )
 from research_graph.application.corpus.wave_b_extraction_baseline import (
@@ -173,6 +174,20 @@ def main(argv: list[str] | None = None) -> int:
         help="Disable header fallback for empty LLM selections",
     )
     parser.add_argument(
+        "--llm-prefer-header",
+        action="store_true",
+        default=True,
+        help=(
+            "When --mode llm, prefer header if primary is empty OR structurally "
+            "weaker than header (default on; no gold labels)"
+        ),
+    )
+    parser.add_argument(
+        "--no-llm-prefer-header",
+        action="store_true",
+        help="Disable structural prefer-header (empty-only fallback remains unless disabled)",
+    )
+    parser.add_argument(
         "--compare-header",
         action="store_true",
         help="Also score header_priority baseline side-by-side (llm/oracle modes)",
@@ -282,11 +297,18 @@ def main(argv: list[str] | None = None) -> int:
                 max_tokens=int(args.max_tokens),
                 temperature=0.0,
             )
-            use_fallback = bool(args.llm_fallback_header) and not bool(
+            use_prefer = bool(getattr(args, "llm_prefer_header", True)) and not bool(
+                getattr(args, "no_llm_prefer_header", False)
+            )
+            use_empty_fallback = bool(args.llm_fallback_header) and not bool(
                 args.no_llm_fallback_header
             )
-            if use_fallback:
+            # Prefer-header supersedes empty-only fallback (includes empty case).
+            if use_prefer:
+                select_fn = make_header_prefer_select_fn(select_fn)
+            elif use_empty_fallback:
                 select_fn = make_header_fallback_select_fn(select_fn)
+            use_fallback = use_prefer or use_empty_fallback
 
             # Cache selections by case_id so progressive rescoring is O(n) LLM
             # calls, not O(n^2).
@@ -332,11 +354,16 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 if progress_path is not None:
                     partial = last_pilot.to_dict()
-                    partial["operator_status"] = (
-                        "llm_constrained_select_with_header_fallback_partial"
-                        if use_fallback
-                        else "llm_constrained_select_partial"
-                    )
+                    if use_prefer:
+                        partial["operator_status"] = (
+                            "llm_constrained_select_with_header_prefer_partial"
+                        )
+                    elif use_fallback:
+                        partial["operator_status"] = (
+                            "llm_constrained_select_with_header_fallback_partial"
+                        )
+                    else:
+                        partial["operator_status"] = "llm_constrained_select_partial"
                     partial["select_mode"] = "llm"
                     partial["llm_used"] = True
                     partial["model_id"] = str(args.model)
@@ -384,11 +411,12 @@ def main(argv: list[str] | None = None) -> int:
                 llm_used=True,
                 model_id=str(args.model),
             )
-            mode_name = (
-                "llm_constrained_select_with_header_fallback"
-                if use_fallback
-                else "llm_constrained_select"
-            )
+            if use_prefer:
+                mode_name = "llm_constrained_select_with_header_prefer"
+            elif use_fallback:
+                mode_name = "llm_constrained_select_with_header_fallback"
+            else:
+                mode_name = "llm_constrained_select"
             llm_used = True
             model_id = str(args.model)
             ninerouter_diagnostics = dict(client.last_diagnostics)
@@ -409,6 +437,9 @@ def main(argv: list[str] | None = None) -> int:
         if ninerouter_diagnostics is not None:
             payload["ninerouter_diagnostics"] = ninerouter_diagnostics
         if args.mode == "llm":
+            payload["llm_prefer_header"] = bool(getattr(args, "llm_prefer_header", True)) and not bool(
+                getattr(args, "no_llm_prefer_header", False)
+            )
             payload["llm_fallback_header"] = bool(args.llm_fallback_header) and not bool(
                 args.no_llm_fallback_header
             )

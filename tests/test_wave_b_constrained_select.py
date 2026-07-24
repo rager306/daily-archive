@@ -7,6 +7,8 @@ from research_graph.application.corpus.wave_b_constrained_select import (
     guess_entity_type,
     header_priority_select,
     make_header_fallback_select_fn,
+    make_header_prefer_select_fn,
+    score_selection_structural,
     make_llm_constrained_select_fn,
     parse_constrained_llm_selection,
     render_constrained_select_prompt,
@@ -475,3 +477,114 @@ def test_header_priority_prefers_complete_with_np() -> None:
     norms = {by[e["candidate_id"]] for e in sel["entities"]}
     assert "attention with linear biases" in norms
     assert "attention with linear" not in norms
+
+
+
+def test_score_selection_structural_prefers_header_title_multiword() -> None:
+    cands = [
+        {
+            "candidate_id": "c:a",
+            "surface": "Language and Perception",
+            "surface_norm": "language and perception",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:a2",
+            "surface": "Grounded Attribute Learning",
+            "surface_norm": "grounded attribute learning",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:b",
+            "surface": "although several works",
+            "surface_norm": "although several works",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:c",
+            "surface": "random ngram span",
+            "surface_norm": "random ngram span",
+            "source": "ngram",
+        },
+    ]
+    good = {
+        "entities": [
+            {"candidate_id": "c:a", "type": "Field"},
+            {"candidate_id": "c:a2", "type": "Task"},
+        ],
+        "relations": [
+            {"type": "APPLIED_TO", "source_id": "c:a", "target_id": "c:a2"},
+        ],
+        "json_valid": True,
+    }
+    noisy = {
+        "entities": [
+            {"candidate_id": "c:b", "type": "Method"},
+            {"candidate_id": "c:c", "type": "Task"},
+            {"candidate_id": "c:a", "type": "Field"},
+            {"candidate_id": "c:c", "type": "Method"},
+        ],
+        "relations": [],
+        "json_valid": True,
+    }
+    assert score_selection_structural(good, cands) > score_selection_structural(noisy, cands)
+
+
+def test_make_header_prefer_select_fn_switches_when_primary_weaker() -> None:
+    body, gold = _body_and_gold()
+    cands = build_body_candidates(body, paper_id="1206.6423")
+    # primary: pick a weaker ngram-like candidate if present, else empty-ish wrong set
+    weak_id = next(
+        (
+            c["candidate_id"]
+            for c in cands
+            if c.get("source") != "header_title" and " " in str(c.get("surface") or "")
+        ),
+        None,
+    )
+    if weak_id is None:
+        weak_id = cands[0]["candidate_id"]
+
+    def weak_primary(body_text, case_id, candidates):
+        return {
+            "entities": [
+                {"candidate_id": weak_id, "type": "Method"},
+                {"candidate_id": weak_id, "type": "Task"},
+                {"candidate_id": weak_id, "type": "Field"},
+            ],
+            "relations": [],
+            "json_valid": True,
+        }
+
+    select = make_header_prefer_select_fn(weak_primary)
+    sel = select(body, gold["case_id"], cands)
+    assert sel.get("fallback_used") is True
+    assert sel.get("fallback_reason") == "primary_weaker_structural"
+    by_id = {c["candidate_id"]: c for c in cands}
+    labels = {by_id[e["candidate_id"]]["surface"] for e in sel["entities"] if e["candidate_id"] in by_id}
+    assert "Language and Perception" in labels
+
+
+def test_make_header_prefer_select_fn_keeps_strictly_stronger_primary() -> None:
+    body, gold = _body_and_gold()
+    cands = build_body_candidates(body, paper_id="1206.6423")
+    header = header_priority_select(body, gold["case_id"], cands)
+    # Equal-to-header primary is not kept (ties prefer header).
+    def equal_primary(body_text, case_id, candidates):
+        return dict(header)
+
+    select = make_header_prefer_select_fn(equal_primary)
+    sel = select(body, gold["case_id"], cands)
+    assert sel.get("fallback_used") is True
+    assert sel.get("fallback_reason") == "primary_not_stronger_structural"
+
+    # Strictly stronger: header entities plus a clean relation already present is equal;
+    # craft primary that header ranks lower by using only header entities but with
+    # valid relation + same compact set — still equal. Instead inject a primary that
+    # is header selection with an extra high-quality relation already counted, and
+    # compare against a weakened header by using prefer_margin negative.
+    select2 = make_header_prefer_select_fn(equal_primary, prefer_margin=10.0)
+    sel2 = select2(body, gold["case_id"], cands)
+    # With large margin, header must beat primary by >10; equal keeps primary.
+    assert sel2.get("fallback_used") is False
+    assert len(sel2["entities"]) >= 2

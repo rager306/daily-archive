@@ -1118,6 +1118,175 @@ def make_llm_constrained_select_fn(
 
 
 
+
+
+def score_selection_structural(
+    selection: Mapping[str, Any],
+    candidates: Sequence[Mapping[str, Any]],
+) -> float:
+    """Deterministic quality proxy for a constrained selection (no gold labels).
+
+    Higher is better. Designed for "2 central entities" constrained select:
+    credit is dominated by the best two entity surfaces; extras are penalized.
+    Favors header_title multiword technical NPs; demotes prose/noise/ngrams.
+    """
+    by_id = {
+        str(c.get("candidate_id")): c
+        for c in candidates
+        if isinstance(c, Mapping) and c.get("candidate_id")
+    }
+    ents = [e for e in (selection.get("entities") or []) if isinstance(e, Mapping)]
+    rels = [r for r in (selection.get("relations") or []) if isinstance(r, Mapping)]
+    if not ents:
+        return -100.0
+
+    per_entity: list[float] = []
+    seen: set[str] = set()
+    for e in ents:
+        cid = str(e.get("candidate_id") or "")
+        local = 0.0
+        if not cid or cid not in by_id:
+            local -= 4.0
+            per_entity.append(local)
+            continue
+        if cid in seen:
+            local -= 5.0
+            per_entity.append(local)
+            continue
+        seen.add(cid)
+        c = by_id[cid]
+        surface = str(c.get("surface") or "")
+        source = str(c.get("source") or "")
+        words = surface.split()
+        etype = str(e.get("type") or "")
+        if etype in ALLOWED_ENTITY_TYPES:
+            local += 1.0
+        else:
+            local -= 3.0
+        if source == "header_title":
+            local += 4.0
+        elif "title" in source:
+            local += 1.5
+        else:
+            local -= 1.0
+        if len(words) in (2, 3, 4):
+            local += 2.5
+        elif len(words) == 1:
+            local -= 1.0
+        else:
+            local -= 2.0
+        if _is_prose_noise_surface(surface):
+            local -= 6.0
+        if _looks_like_author_span(surface):
+            local -= 5.0
+        per_entity.append(local)
+
+    # Credit only the best two entity contributions (central-pair design).
+    per_entity.sort(reverse=True)
+    score = sum(per_entity[:2])
+    extra_n = max(0, len(seen) - 2)
+    if extra_n:
+        # leftover entity scores already excluded; still penalize over-select
+        score -= 3.0 * float(extra_n)
+        # also subtract weak tail contributions if negative
+        for tail in per_entity[2:]:
+            if tail < 0:
+                score += tail  # add negative tail
+
+    n = len(seen)
+    if n == 2:
+        score += 5.0
+    elif n == 1:
+        score -= 1.0
+    elif n == 0:
+        score -= 10.0
+
+    if not any(
+        str(by_id.get(str(e.get("candidate_id") or ""), {}).get("source") or "")
+        == "header_title"
+        for e in ents
+        if isinstance(e, Mapping)
+    ):
+        score -= 3.0
+
+    selected_ids = set(seen)
+    for r in rels:
+        rtype = str(r.get("type") or "")
+        src = str(r.get("source_id") or r.get("source") or "")
+        tgt = str(r.get("target_id") or r.get("target") or "")
+        if rtype in ALLOWED_RELATION_TYPES and src in selected_ids and tgt in selected_ids and src != tgt:
+            score += 2.0
+        else:
+            score -= 1.5
+
+    if selection.get("json_valid") is False:
+        score -= 3.0
+    return score
+
+
+def make_header_prefer_select_fn(
+    primary_select: Any,
+    *,
+    prefer_margin: float = 0.0,
+) -> Any:
+    """Prefer header when primary is empty or structurally weaker than header.
+
+    Does not use gold labels. Always runs header_priority_select as arbiter.
+    """
+
+    def _select(
+        body_text: str,
+        case_id: str,
+        candidates: Sequence[Mapping[str, Any]],
+    ) -> dict[str, Any]:
+        try:
+            primary: dict[str, Any] = dict(
+                primary_select(body_text, case_id, candidates) or {}
+            )
+        except Exception:  # noqa: BLE001 - fail closed to header
+            primary = {"entities": [], "relations": [], "json_valid": False}
+        header: dict[str, Any] = dict(
+            header_priority_select(body_text, case_id, candidates)
+        )
+        primary_ents = primary.get("entities") or []
+        if not isinstance(primary_ents, list) or len(primary_ents) == 0:
+            out: dict[str, Any] = dict(header)
+            out["fallback_used"] = True
+            out["fallback_reason"] = "primary_empty_entities"
+            out["primary_structural_score"] = score_selection_structural(
+                primary, candidates
+            )
+            out["header_structural_score"] = score_selection_structural(
+                header, candidates
+            )
+            return out
+
+        p_score = score_selection_structural(primary, candidates)
+        h_score = score_selection_structural(header, candidates)
+        # Prefer header on ties (LLM must be strictly stronger structurally).
+        if h_score >= p_score + float(prefer_margin):
+            out = dict(header)
+            out["fallback_used"] = True
+            out["fallback_reason"] = (
+                "primary_weaker_structural"
+                if h_score > p_score + float(prefer_margin)
+                else "primary_not_stronger_structural"
+            )
+            out["primary_structural_score"] = p_score
+            out["header_structural_score"] = h_score
+            return out
+
+        out = dict(primary)
+        out.setdefault("json_valid", True)
+        out["fallback_used"] = False
+        out["fallback_reason"] = None
+        out["primary_structural_score"] = p_score
+        out["header_structural_score"] = h_score
+        return out
+
+    return _select
+
+
 def make_header_fallback_select_fn(primary_select: Any) -> Any:
     """Wrap a select_fn: if it returns zero entities, use header_priority_select."""
 
@@ -1149,8 +1318,10 @@ __all__ = [
     "guess_entity_type",
     "header_priority_select",
     "make_header_fallback_select_fn",
+    "make_header_prefer_select_fn",
     "make_llm_constrained_select_fn",
     "parse_constrained_llm_selection",
     "render_constrained_select_prompt",
+    "score_selection_structural",
     "surface_norm",
 ]
