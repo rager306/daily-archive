@@ -54,7 +54,7 @@ from typing import Any
 
 from research_graph.infrastructure.papers.artifacts.worker import DEFAULT_WORK_REQUEST_DIR
 
-REDUCER_SCHEMA_VERSION = "m050-article-artifact-reducer.v1"
+REDUCER_SCHEMA_VERSION = "article-artifact-reducer.v1"
 
 
 # Default validation_status buckets, plus a safety bucket for everything else.

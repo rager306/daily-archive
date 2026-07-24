@@ -68,9 +68,9 @@ def test_5_safety_defaults() -> None:
         "fact_promotion_authorized": False,
         "llm_calls_authorized": False,
     }
-    # SAFETY_OVERRIDE_M061_INGEST replaces the old SAFETY_OVERRIDE dict
-    assert ingest.SAFETY_OVERRIDE_M061_INGEST.external_network_authorized is True
-    assert "Retry-After" in ingest.SAFETY_OVERRIDE_M061_INGEST.reason
+    # SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST replaces the old SAFETY_OVERRIDE dict
+    assert ingest.SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST.external_network_authorized is True
+    assert "Retry-After" in ingest.SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST.reason
 
 
 def test_idempotent_ingestion(tmp_path: Path) -> None:
@@ -95,7 +95,7 @@ def test_idempotent_ingestion(tmp_path: Path) -> None:
 
     # M120 S05: ingest_catalog now requires IngestOptions dataclass
     options_first = ingest.IngestOptions(
-        m061_root=source_root,
+        catalog_ingest_root=source_root,
         arxiv_root=arxiv_root,
         safety_override=ingest.SafetyOverride(False, "test", "unit"),
         update_index=False,
@@ -103,7 +103,7 @@ def test_idempotent_ingestion(tmp_path: Path) -> None:
     first = ingest.ingest_catalog(options_first)
 
     options_second = ingest.IngestOptions(
-        m061_root=source_root,
+        catalog_ingest_root=source_root,
         arxiv_root=arxiv_root,
         safety_override=ingest.SafetyOverride(False, "test", "unit"),
         update_index=False,

@@ -1,4 +1,4 @@
-"""Wave A preprocess fleet metrics on hybrid bodies (M243).
+"""Wave A preprocess fleet metrics on hybrid bodies.
 
 Discovers unique hybrid body markdown files across body roots (first root wins
 per paper_id), runs ``preprocess_summary_for_body`` with scholarly profile,
@@ -19,7 +19,7 @@ from research_graph.application.corpus.preprocess_summary import (
     preprocess_summary_for_body,
 )
 
-SCHEMA_VERSION = "m243-etl-preprocess-fleet.v1"
+SCHEMA_VERSION = "etl-preprocess-fleet.v1"
 
 
 @dataclass(frozen=True, slots=True)

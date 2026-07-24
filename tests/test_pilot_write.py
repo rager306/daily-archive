@@ -43,13 +43,13 @@ NO_WRITE_MODULES = [
 def _auth(
     *,
     candidate_id: str = "candidate-pilot-1",
-    paper_scope: str = "m205_controlled_falkor_write_pilot",
+    paper_scope: str = "controlled_falkor_write_pilot",
     expired: bool = False,
     token: str = "human-approve-test-token",
     prereqs: tuple[str, ...] = (
         "graph_writes_allowed_explicit_true_in_future_milestone",
         "falkordb_write_driver_available",
-        "GraphDBPort_adapter_path_m205_only",
+        "GraphDBPort_adapter_path_controlled_write_only",
     ),
     required: tuple[str, ...] = (
         "graph_writes_allowed_explicit_true_in_future_milestone",

@@ -31,7 +31,7 @@ from research_graph.workflows.composition.universal_source import (
     structure_loaded_source,
 )
 
-SCHEMA_VERSION = "m222-gnn-textbook-ingest.v1"
+SCHEMA_VERSION = "gnn-textbook-ingest.v1"
 DEFAULT_WORK_DIR = Path("artifacts/m222-gnn-textbook")
 
 

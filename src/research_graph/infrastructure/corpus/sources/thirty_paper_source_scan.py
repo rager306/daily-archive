@@ -204,11 +204,11 @@ def _summary_from_records(
         if method:
             method_counts[str(method)] = method_counts.get(str(method), 0) + 1
     return {
-        "schema_version": "m006-source-acquisition-summary.v1",
+        "schema_version": "source-acquisition-summary.v1",
         "milestone": "M006-638rza",
         "slice": "S02",
         "paper_count": len(records),
-        "m005_overlap_count": manifest.get("m005_overlap_count"),
+        "baseline_overlap_count": manifest.get("baseline_overlap_count"),
         "expansion_count": manifest.get("expansion_count"),
         "attempted_missing_markdown_count": len(attempted),
         "originally_missing_markdown_count": len(originally_missing),

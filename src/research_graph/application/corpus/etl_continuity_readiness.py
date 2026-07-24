@@ -1,7 +1,6 @@
-"""Wave A continuity / operator readiness report (M244).
+"""Wave A continuity / operator readiness report.
 
-Composes catalog↔hybrid body coverage (M241/M242) and preprocess fleet metrics
-(M243) into one fail-closed package with a non-authorizing readiness_signal.
+Composes catalog↔hybrid body coverage (M241/M242) and preprocess fleet metrics into one fail-closed package with a non-authorizing readiness_signal.
 
 readiness_signal is operator guidance only — never sets import_eligible.
 """
@@ -22,7 +21,7 @@ from research_graph.application.corpus.etl_preprocess_fleet_audit import (
     audit_preprocess_fleet,
 )
 
-SCHEMA_VERSION = "m244-etl-continuity-readiness.v1"
+SCHEMA_VERSION = "etl-continuity-readiness.v1"
 
 ReadinessSignal = Literal["blocked", "repair", "ready_for_review"]
 

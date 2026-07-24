@@ -64,7 +64,7 @@ def test_coverage_use_case_aggregates_m121_core_counts() -> None:
 
     assert result.corpus_id == "r024-218-document-corpus-v1"
     assert result.catalog_records == 221
-    assert result.m056_records == 166
+    assert result.cumulative_corpus_records == 166
     assert result.parser_total == 221
     assert result.source_backed_records == 219
     assert result.metadata_only_records == 2

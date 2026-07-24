@@ -104,7 +104,7 @@ def test_to_selection_dict_shape() -> None:
         milestone_id="M245-test",
     )
     sel = pkg.to_selection_dict()
-    assert sel["schema_version"] == "m213-hybrid-gate-selection.v1"
+    assert sel["schema_version"] == "hybrid-gate-selection.v1"
     assert sel["import_eligible"] is False
     assert sel["graph_writes_allowed"] is False
     assert sel["count"] == 1

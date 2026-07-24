@@ -26,7 +26,7 @@ def test_script_temp_fixture(tmp_path: Path) -> None:
     selection.write_text(
         json.dumps(
             {
-                "schema_version": "m213-hybrid-gate-selection.v1",
+                "schema_version": "hybrid-gate-selection.v1",
                 "papers": [{"paper_id": "skip_sel", "category": "cs-cv"}],
             }
         ),

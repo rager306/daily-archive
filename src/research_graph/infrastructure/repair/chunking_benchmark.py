@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = "m005-chunking-benchmark.v1"
+SCHEMA_VERSION = "chunking-benchmark.v1"
 
 FORBIDDEN_RAW_FIELDS = frozenset({"text", "raw_text", "chunk_text", "paper_text", "claim_text"})
 FORBIDDEN_EMBEDDING_FIELDS = frozenset({"embedding", "embeddings"})
@@ -193,7 +193,7 @@ def write_chunking_benchmark_run(benchmark: ChunkingBenchmark, output_dir: Path)
 
 def _method_diagnostic_record(method: dict[str, Any]) -> dict[str, Any]:
     return {
-        "schema_version": "m005-chunking-benchmark-method-diagnostic.v1",
+        "schema_version": "chunking-benchmark-method-diagnostic.v1",
         "method_id": method.get("method_id"),
         "paper_count": method.get("paper_count"),
         "chunk_count": method.get("chunk_count"),

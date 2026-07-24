@@ -20,8 +20,8 @@ from research_graph.infrastructure.papers.artifacts.models import (
     REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION,
 )
 
-ARTICLE_PAGE_INDEX_SCHEMA_VERSION = "m024-article-page-index.v1"
-ARTICLE_PAGE_INDEX_DIAGNOSTICS_SCHEMA_VERSION = "m024-article-page-index-diagnostics.v1"
+ARTICLE_PAGE_INDEX_SCHEMA_VERSION = "article-page-index.v1"
+ARTICLE_PAGE_INDEX_DIAGNOSTICS_SCHEMA_VERSION = "article-page-index-diagnostics.v1"
 ARTICLE_PAGE_INDEX_BUILDER = "redacted_article_structure_page_index_v1"
 
 PageIndexDiagnosticSeverity = Literal["info", "warning", "repair_required", "error"]

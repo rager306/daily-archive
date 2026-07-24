@@ -19,8 +19,8 @@ from uuid import uuid4
 
 from research_graph.application.validation.batch_state import SAFETY_FLAG_KEYS, default_safety_flags
 
-SCHEMA_VERSION = "m009-validation-cli-provenance.v1"
-FRESHNESS_SCHEMA_VERSION = "m009-artifact-freshness-report.v1"
+SCHEMA_VERSION = "validation-cli-provenance.v1"
+FRESHNESS_SCHEMA_VERSION = "artifact-freshness-report.v1"
 _SECRET_MARKERS = ("key", "token", "secret", "password", "credential")
 
 

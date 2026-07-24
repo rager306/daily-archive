@@ -60,7 +60,7 @@ def _handoff(tmp_path: Path, bodies: dict[str, str]) -> HybridReadinessHandoffRe
         body_path.parent.mkdir(parents=True, exist_ok=True)
         body_path.write_text(text, encoding="utf-8")
     sel = {
-        "schema_version": "m213-hybrid-gate-selection.v1",
+        "schema_version": "hybrid-gate-selection.v1",
         "milestone_id": "M233-fixture",
         "count": len(papers),
         "papers": papers,

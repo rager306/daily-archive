@@ -43,7 +43,7 @@ def test_cleaned_body_for_yake_html_strips_nav_boilerplate() -> None:
 
 def _handoff(tmp_path: Path, body: str) -> HybridReadinessHandoffRequest:
     sel = {
-        "schema_version": "m213-hybrid-gate-selection.v1",
+        "schema_version": "hybrid-gate-selection.v1",
         "milestone_id": "M232-fixture",
         "count": 1,
         "papers": [{"paper_id": "ok1", "category": "cs-cl", "pdf_path": "a.pdf"}],

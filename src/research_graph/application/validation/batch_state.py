@@ -15,8 +15,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = "m007-validation-batch-state.v1"
-CONTRACT_SCHEMA_VERSION = "m007-validation-batch-contract.v1"
+SCHEMA_VERSION = "validation-batch-state.v1"
+CONTRACT_SCHEMA_VERSION = "validation-batch-contract.v1"
 
 PHASES = frozenset(
     {

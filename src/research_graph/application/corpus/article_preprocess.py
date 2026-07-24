@@ -19,7 +19,7 @@ from research_graph.application.corpus.html_main_content import extract_html_mai
 from research_graph.application.corpus.language_detect import detect_text_language
 from research_graph.application.corpus.outline_signals import extract_outline_signals
 
-SCHEMA_VERSION = "m225-article-preprocess.v1"
+SCHEMA_VERSION = "article-preprocess.v1"
 
 
 @dataclass(frozen=True, slots=True)

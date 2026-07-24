@@ -1,4 +1,4 @@
-"""M256 S01: M072 gold ↔ hybrid body join inventory."""
+"""M256 S01: Reviewed gold ↔ hybrid body join inventory."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import pytest
 
 from research_graph.application.corpus.wave_b_gold_hybrid_join import (
     GoldHybridJoinPackage,
-    inventory_m072_gold_hybrid_join,
+    inventory_reviewed_gold_hybrid_join,
     normalize_paper_id,
 )
 
@@ -40,7 +40,7 @@ def test_join_with_tmp_hybrid(tmp_path: Path) -> None:
     body.parent.mkdir(parents=True)
     body.write_text("Language and Perception grounded attribute learning.", encoding="utf-8")
 
-    pkg = inventory_m072_gold_hybrid_join(
+    pkg = inventory_reviewed_gold_hybrid_join(
         gold_records=gold,
         body_roots=(body_root,),
     )
@@ -60,7 +60,7 @@ def test_join_with_tmp_hybrid(tmp_path: Path) -> None:
 def test_rejects_import_true() -> None:
     with pytest.raises(ValueError, match="import"):
         GoldHybridJoinPackage(
-            schema_version="m256-wave-b-gold-hybrid-join.v1",
+            schema_version="wave-b-reviewed-gold-hybrid-join.v1",
             gold_case_count=0,
             hybrid_unique_count=0,
             joined_count=0,
@@ -78,12 +78,12 @@ def test_live_join_if_fixtures_present() -> None:
     fixtures = Path("artifacts/m072-reviewed-extraction-benchmark/fixtures/train-gold.jsonl")
     if not fixtures.is_file():
         return
-    from research_graph.application.extraction_ablations import load_m072_split
+    from research_graph.application.reviewed_extraction_fixtures import load_reviewed_extraction_split
     from research_graph.workflows.composition.etl_body_coverage import DEFAULT_BODY_ROOTS
 
-    train_g, _ = load_m072_split("train")
-    val_g, _ = load_m072_split("validation")
-    pkg = inventory_m072_gold_hybrid_join(
+    train_g, _ = load_reviewed_extraction_split("train")
+    val_g, _ = load_reviewed_extraction_split("validation")
+    pkg = inventory_reviewed_gold_hybrid_join(
         gold_records=train_g + val_g,
         body_roots=tuple(Path(r) for r in DEFAULT_BODY_ROOTS),
     )

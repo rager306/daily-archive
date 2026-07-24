@@ -101,7 +101,7 @@ class CorpusCoverageResult:
 
     corpus_id: str
     catalog_records: int
-    m056_records: int
+    cumulative_corpus_records: int
     parser_total: int
     parser_completed: int
     parser_skipped: int
@@ -183,7 +183,7 @@ class CorpusCoverageUseCase:
         return CorpusCoverageResult(
             corpus_id=request.corpus_id,
             catalog_records=catalog_records,
-            m056_records=request.catalog.total_records,
+            cumulative_corpus_records=request.catalog.total_records,
             parser_total=request.parser.total,
             parser_completed=request.parser.completed,
             parser_skipped=request.parser.skipped,

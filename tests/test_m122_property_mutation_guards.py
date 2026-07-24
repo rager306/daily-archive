@@ -30,7 +30,7 @@ def coverage_requests(draw: st.DrawFn) -> CorpusCoverageRequest:
     errors = draw(st.integers(min_value=0, max_value=4))
     total = completed + skipped + errors
     index_entries = draw(st.one_of(st.none(), st.integers(min_value=total, max_value=80)))
-    m056_records = draw(st.integers(min_value=0, max_value=80))
+    cumulative_corpus_records = draw(st.integers(min_value=0, max_value=80))
     html_count = draw(st.integers(min_value=0, max_value=completed))
     pdf_count = completed - html_count
     skip_reason_counts = (
@@ -52,9 +52,9 @@ def coverage_requests(draw: st.DrawFn) -> CorpusCoverageRequest:
     return CorpusCoverageRequest(
         corpus_id="property-corpus",
         catalog=CatalogCoverageInput(
-            total_records=m056_records,
+            total_records=cumulative_corpus_records,
             index_entries=index_entries,
-            ingested_count=m056_records,
+            ingested_count=cumulative_corpus_records,
         ),
         parser=ParserCoverageInput(
             total=total,

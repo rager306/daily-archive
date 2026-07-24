@@ -16,7 +16,7 @@ FALSE_SAFETY_KEYS = (
     "production_import_attempted",
     "import_eligible",
 )
-CONTINUITY_SCHEMA_VERSION = "m040-real-corpus-continuity.v1"
+CONTINUITY_SCHEMA_VERSION = "real-corpus-continuity.v1"
 PER_ARTICLE_ARTIFACTS = (
     "candidate.json",
     "review_packet.json",
@@ -194,7 +194,7 @@ def audit_smoke(manifest_path: Path, run_dir: Path) -> dict[str, Any]:
             )
 
     audit = {
-        "schema_version": "m036-real-corpus-smoke-audit.v1",
+        "schema_version": "real-corpus-smoke-audit.v1",
         "manifest_ref": f"artifact:{manifest_path.as_posix()}",
         "run_summary_ref": f"artifact:{(run_dir / 'summary.json').as_posix()}",
         "article_count": len(manifest_articles),

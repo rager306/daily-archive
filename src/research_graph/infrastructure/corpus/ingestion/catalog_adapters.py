@@ -31,8 +31,8 @@ from research_graph.domain.corpus import (
 from research_graph.infrastructure.corpus.ingestion.catalog_ingest import (
     CATALOG_ROOT_DEFAULT,
     M056_CUMULATIVE_CORPUS_PATH_DEFAULT,
-    M061_ROOT_DEFAULT,
-    SAFETY_OVERRIDE_M061_INGEST,
+    CANONICAL_CATALOG_INGEST_ROOT_DEFAULT,
+    SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST,
     ApiMetrics,
     CumulativePdfRecord,
     RequestPacer,
@@ -43,13 +43,13 @@ from research_graph.infrastructure.corpus.ingestion.catalog_ingest import (
     existing_catalog_pdf,
     fetch_arxiv_metadata,
     invert_anchor_membership,
-    load_m056_corpus,
+    load_cumulative_offline_corpus,
     load_pdf_paths,
     load_selected_ids,
     normalize_category,
     sha256_file,
     update_index_if_exists,
-    verify_m056_sha256,
+    verify_offline_corpus_sha256,
     write_article_record,
 )
 
@@ -72,19 +72,19 @@ class CatalogAdapterError(RuntimeError):
         self.diagnostic = diagnostic
 
 
-class M061SourceAssetStore(SourceAssetStorePort):
+class CanonicalCatalogSourceAssetStore(SourceAssetStorePort):
     """Source asset adapter for M061-style anchor acquisition artifacts."""
 
-    def __init__(self, m061_root: Path | str = M061_ROOT_DEFAULT) -> None:
-        self.m061_root = Path(m061_root)
+    def __init__(self, catalog_ingest_root: Path | str = CANONICAL_CATALOG_INGEST_ROOT_DEFAULT) -> None:
+        self.catalog_ingest_root = Path(catalog_ingest_root)
 
     def selected_article_membership(self) -> Mapping[str, Sequence[str]]:
-        return invert_anchor_membership(load_selected_ids(self.m061_root))
+        return invert_anchor_membership(load_selected_ids(self.catalog_ingest_root))
 
     def pdf_assets_by_article(self) -> Mapping[str, Sequence[SourceAsset]]:
         return {
             article_id: [self.source_asset_from_path(article_id, path) for path in paths]
-            for article_id, paths in load_pdf_paths(self.m061_root).items()
+            for article_id, paths in load_pdf_paths(self.catalog_ingest_root).items()
         }
 
     @staticmethod
@@ -97,7 +97,7 @@ class M061SourceAssetStore(SourceAssetStorePort):
         )
 
 
-class M056CumulativeCorpusSourceAssetStore(SourceAssetStorePort):
+class CumulativeCorpusSourceAssetStore(SourceAssetStorePort):
     """Source asset adapter for the M056 cumulative corpus artifact."""
 
     def __init__(
@@ -108,11 +108,11 @@ class M056CumulativeCorpusSourceAssetStore(SourceAssetStorePort):
     ) -> None:
         self.cumulative_corpus_path = Path(cumulative_corpus_path)
         self.repo_root = Path(repo_root)
-        self.records = load_m056_corpus(self.cumulative_corpus_path, repo_root=self.repo_root)
+        self.records = load_cumulative_offline_corpus(self.cumulative_corpus_path, repo_root=self.repo_root)
 
     def selected_article_membership(self) -> Mapping[str, Sequence[str]]:
         return {
-            article_id: [record.source_milestone or "m056-cumulative"]
+            article_id: [record.source_milestone or "cumulative"]
             for article_id, record in self.records.items()
         }
 
@@ -133,10 +133,10 @@ class M056CumulativeCorpusSourceAssetStore(SourceAssetStorePort):
     def sha256_mismatches(self) -> list[Sha256Mismatch]:
         """Return SHA256 mismatches without exposing PDF payloads."""
 
-        return verify_m056_sha256(self.records)
+        return verify_offline_corpus_sha256(self.records)
 
 
-class M056OfflineMetadataProvider(MetadataProviderPort):
+class OfflineCorpusMetadataProvider(MetadataProviderPort):
     """Synthetic metadata provider for SHA256-verified M056 local PDFs."""
 
     def __init__(self, records: Mapping[str, CumulativePdfRecord]) -> None:
@@ -167,7 +167,7 @@ class ArxivCatalogMetadataProvider(MetadataProviderPort):
     def __init__(
         self,
         *,
-        safety_override: SafetyOverride = SAFETY_OVERRIDE_M061_INGEST,
+        safety_override: SafetyOverride = SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST,
         metrics: ApiMetrics | None = None,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
@@ -293,7 +293,7 @@ class FilesystemCatalogRepository(CatalogRepositoryPort):
         return entries if updated else None
 
 
-def _article_claims_offline_m056(article: dict[str, Any], expected_sha256: str) -> bool:
+def _article_claims_offline_corpus(article: dict[str, Any], expected_sha256: str) -> bool:
     identity = article.get("identity", {})
     if not isinstance(identity, dict):
         return False
@@ -310,7 +310,7 @@ def _article_claims_offline_m056(article: dict[str, Any], expected_sha256: str) 
     )
 
 
-def _patch_m056_offline_article(
+def _patch_offline_corpus_article(
     *,
     article: dict[str, Any],
     record: CumulativePdfRecord,
@@ -373,7 +373,7 @@ def _patch_m056_offline_article(
     return article
 
 
-class M056FilesystemCatalogRepository(FilesystemCatalogRepository):
+class OfflineFilesystemCatalogRepository(FilesystemCatalogRepository):
     """Catalog repository preserving the M056 offline article.json contract."""
 
     def __init__(
@@ -402,7 +402,7 @@ class M056FilesystemCatalogRepository(FilesystemCatalogRepository):
             article = json.loads(article_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             return None
-        if not _article_claims_offline_m056(article, source_sha256):
+        if not _article_claims_offline_corpus(article, source_sha256):
             return None
         record = self.records.get(article_id)
         return CatalogAsset(
@@ -465,7 +465,7 @@ class M056FilesystemCatalogRepository(FilesystemCatalogRepository):
             Path(catalog_asset.path),
             catalog_root=self.catalog_root,
         )
-        article = _patch_m056_offline_article(
+        article = _patch_offline_corpus_article(
             article=article,
             record=record,
             pdf_path=Path(catalog_asset.path),
@@ -475,7 +475,7 @@ class M056FilesystemCatalogRepository(FilesystemCatalogRepository):
         write_article_record(Path(catalog_asset.path).parents[1] / "article.json", article)
 
 
-def write_m056_ingest_events(events_log: Path, result: CatalogIngestResult) -> None:
+def write_offline_corpus_ingest_events(events_log: Path, result: CatalogIngestResult) -> None:
     """Persist the legacy M056 ingest events log from application result diagnostics."""
 
     events_log.parent.mkdir(parents=True, exist_ok=True)
@@ -510,13 +510,13 @@ def write_m056_ingest_events(events_log: Path, result: CatalogIngestResult) -> N
             )
 
 
-def write_m056_ingest_summary(summary_path: Path, result: CatalogIngestResult) -> None:
+def write_offline_corpus_ingest_summary(summary_path: Path, result: CatalogIngestResult) -> None:
     """Persist the legacy M056 ingest summary JSON from application result diagnostics."""
 
     summary = {
         "schema_version": "r024-218-ingest-summary.v00.01",
         "generated_at": datetime.now(UTC).isoformat(),
-        "corpus": "m056-cumulative",
+        "corpus": "cumulative",
         "total_records": result.unique_article_ids,
         "ingested_count": sum(
             1 for record in result.records if record.status != CatalogIngestStatus.SKIPPED
@@ -545,11 +545,11 @@ __all__ = [
     "CatalogAdapterDiagnostic",
     "CatalogAdapterError",
     "FilesystemCatalogRepository",
-    "M056CumulativeCorpusSourceAssetStore",
-    "M056FilesystemCatalogRepository",
-    "M056OfflineMetadataProvider",
-    "M061SourceAssetStore",
+    "CumulativeCorpusSourceAssetStore",
+    "OfflineFilesystemCatalogRepository",
+    "OfflineCorpusMetadataProvider",
+    "CanonicalCatalogSourceAssetStore",
     "Sha256ChecksumVerifier",
-    "write_m056_ingest_events",
-    "write_m056_ingest_summary",
+    "write_offline_corpus_ingest_events",
+    "write_offline_corpus_ingest_summary",
 ]

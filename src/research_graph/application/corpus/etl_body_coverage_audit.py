@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = "m242-etl-body-coverage-audit.v1"
+SCHEMA_VERSION = "etl-body-coverage-audit.v1"
 
 
 def paper_id_for_article(article: Mapping[str, Any]) -> str:

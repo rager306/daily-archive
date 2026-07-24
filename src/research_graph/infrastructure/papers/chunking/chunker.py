@@ -261,7 +261,7 @@ class StructureAwarePackage:
     elements: tuple[StructuralElement, ...] = field(default_factory=tuple)
     chunks: tuple[StructureAwareChunk, ...] = field(default_factory=tuple)
     annotations: tuple[ChunkAnnotationSidecar, ...] = field(default_factory=tuple)
-    run_id: str = "m005-s03-structure-aware"
+    run_id: str = "s03-structure-aware"
     created_at: str = field(default_factory=lambda: _now_iso())
 
     def to_contract(self) -> dict[str, Any]:
@@ -309,7 +309,7 @@ def parse_markdown_structure(
     title: str | None,
     source_artifact: str,
     categories: tuple[str, ...] = (),
-    run_id: str = "m005-s03-structure-aware",
+    run_id: str = "s03-structure-aware",
 ) -> StructureAwarePackage:
     """Parse canonical normalized Markdown into structural elements with absolute spans.
 
@@ -600,7 +600,7 @@ def empty_structure_aware_package(
     markdown_length: int,
     source_artifact: str,
     categories: tuple[str, ...] = (),
-    run_id: str = "m005-s03-structure-aware",
+    run_id: str = "s03-structure-aware",
 ) -> StructureAwarePackage:
     """Create a redacted package skeleton anchored to normalized Markdown length."""
     root_span = SourceSpan(char_start=0, char_end=max(0, markdown_length))
@@ -695,7 +695,7 @@ def _measurement_to_record(measurement: StructureAwareMeasurement) -> dict[str, 
     package = measurement.package
     diagnostics = package["diagnostics"]
     return {
-        "schema_version": "m005-structure-aware-package-diagnostic.v1",
+        "schema_version": "structure-aware-package-diagnostic.v1",
         "paper_id": measurement.paper_id,
         "valid_package": measurement.validation["valid_package"],
         "import_ready": measurement.validation["import_ready"],
@@ -766,7 +766,7 @@ def _summary_for_measurements(measurements: list[StructureAwareMeasurement]) -> 
         )
         _merge_counts(annotation_warning_counts, diagnostics.get("annotation_warning_counts", {}))
     return {
-        "schema_version": "m005-structure-aware-run.v1",
+        "schema_version": "structure-aware-run.v1",
         "paper_count": len(measurements),
         "valid_package_count": sum(
             1 for measurement in measurements if measurement.validation["valid_package"]

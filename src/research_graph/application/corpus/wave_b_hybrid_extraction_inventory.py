@@ -1,4 +1,4 @@
-"""Wave B hybrid-body extraction candidate inventory (M253).
+"""Wave B hybrid-body extraction candidate inventory.
 
 Metadata-only readiness for extraction quality on hybrid bodies:
 paper_id, path, char/word counts. No LLM, no DSPy, no import.
@@ -16,7 +16,7 @@ from research_graph.application.corpus.etl_preprocess_fleet_audit import (
     discover_unique_hybrid_bodies,
 )
 
-SCHEMA_VERSION = "m253-wave-b-hybrid-extraction-inventory.v1"
+SCHEMA_VERSION = "wave-b-hybrid-extraction-inventory.v1"
 
 
 @dataclass(frozen=True, slots=True)

@@ -84,7 +84,7 @@ def inventory_import_hold_trees(roots: Sequence[Path]) -> dict[str, Any]:
         scanned += count
 
     return {
-        "schema_version": "m237-import-hold-inventory.v1",
+        "schema_version": "import-hold-inventory.v1",
         "roots": root_labels,
         "tree_count": len(root_labels),
         "scanned_file_count": scanned,
@@ -114,7 +114,7 @@ def inventory_composition_import_hold(composition_dir: Path) -> dict[str, Any]:
             if _FORBIDDEN_ENABLE.search(line):
                 hits.append(f"{path.name}:{i}:{stripped[:120]}")
     return {
-        "schema_version": "m236-composition-import-hold-inventory.v1",
+        "schema_version": "composition-import-hold-inventory.v1",
         "composition_dir": str(root),
         "scanned_file_count": len(files),
         "module_count": len(modules),

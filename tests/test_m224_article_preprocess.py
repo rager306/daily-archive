@@ -81,7 +81,7 @@ def test_package_rejects_import_true() -> None:
 
     with pytest.raises(ValueError, match="import"):
         ArticlePreprocessPackage(
-            schema_version="m224-article-preprocess.v1",
+            schema_version="article-preprocess.v1",
             source_id="x",
             source_class="web",
             profile="web",

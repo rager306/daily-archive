@@ -16,7 +16,7 @@ from research_graph.application.corpus.wave_b_extraction_baseline import (
     read_human_go_stamp,
 )
 
-SCHEMA_VERSION = "m251-wave-b-gate.v1"
+SCHEMA_VERSION = "wave-b-gate.v1"
 
 GateSignal = Literal["blocked", "open"]
 

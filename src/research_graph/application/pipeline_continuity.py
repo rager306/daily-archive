@@ -219,7 +219,7 @@ def build_continuity_audit(
         layers=layers,
         overall=overall,
         diagnostics=(
-            "post_m208_continuity_inventory",
+            "post_agent_loop_continuity_inventory",
             "falkor_deferred_by_policy",
             "import_write_fail_closed",
             f"overall:{overall}",

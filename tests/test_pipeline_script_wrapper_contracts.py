@@ -141,7 +141,7 @@ def test_canonical_ingest_cli_uses_application_wrapper_not_legacy_orchestration(
     )
 
     assert "CatalogIngestUseCase" in imported_names
-    assert "M061SourceAssetStore" in imported_names
+    assert "CanonicalCatalogSourceAssetStore" in imported_names
     assert "FilesystemCatalogRepository" in imported_names
     assert "ingest_catalog" not in imported_names
     assert "ingest_catalog" not in called_names
@@ -153,14 +153,14 @@ def test_m056_ingest_cli_uses_application_wrapper_not_legacy_orchestration() -> 
     )
 
     assert "CatalogIngestUseCase" in imported_names
-    assert "M056CumulativeCorpusSourceAssetStore" in imported_names
-    assert "M056FilesystemCatalogRepository" in imported_names
-    assert "load_m056_corpus" not in imported_names
-    assert "verify_m056_sha256" not in imported_names
+    assert "CumulativeCorpusSourceAssetStore" in imported_names
+    assert "OfflineFilesystemCatalogRepository" in imported_names
+    assert "load_cumulative_offline_corpus" not in imported_names
+    assert "verify_offline_corpus_sha256" not in imported_names
     assert "build_article_record" not in imported_names
     assert "write_article_record" not in imported_names
-    assert "load_m056_corpus" not in called_names
-    assert "verify_m056_sha256" not in called_names
+    assert "load_cumulative_offline_corpus" not in called_names
+    assert "verify_offline_corpus_sha256" not in called_names
 
 
 def test_parser_replay_scripts_use_application_wrapper_not_parser_internals() -> None:

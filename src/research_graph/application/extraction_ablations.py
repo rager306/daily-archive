@@ -441,12 +441,20 @@ def run_twenty_paper_gate(
     return staged, gate
 
 
-def load_m072_split(split: str = "train") -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Load M072 reviewed gold + baseline predictions for a split."""
-    root = Path("artifacts/m072-reviewed-extraction-benchmark/fixtures")
-    gold = _load_jsonl(root / f"{split}-gold.jsonl")
-    pred = _load_jsonl(root / f"{split}-baseline-predictions.jsonl")
-    return gold, pred
+def load_reviewed_extraction_split(
+    split: str = "train",
+    *,
+    fixtures_root: Path | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Load reviewed gold + baseline predictions for a split.
+
+    Prefer :mod:`research_graph.application.reviewed_extraction_fixtures`.
+    """
+    from research_graph.application.reviewed_extraction_fixtures import (
+        load_reviewed_extraction_split as _load,
+    )
+
+    return _load(split, fixtures_root=fixtures_root)
 
 
 __all__ = [
@@ -466,7 +474,7 @@ __all__ = [
     "compare_providers",
     "decide_gate_verdict",
     "expand_records_to_n",
-    "load_m072_split",
+    "load_reviewed_extraction_split",
     "run_staged_reviewed_run",
     "run_twenty_paper_gate",
 ]

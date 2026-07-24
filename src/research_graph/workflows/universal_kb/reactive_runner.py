@@ -6,7 +6,7 @@ from collections.abc import Awaitable, Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from typing import Any
 
-SCHEMA_VERSION = "m197.reactive_event.v1"
+SCHEMA_VERSION = "reactive_event.v1"
 
 StageCallable = Callable[[], Awaitable[Mapping[str, Any]] | Mapping[str, Any] | None]
 

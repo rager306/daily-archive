@@ -28,7 +28,7 @@ def test_mapper_article_ref_and_invalid_rows() -> None:
     )
     mapped = map_hybrid_selection_to_catalog_selection(
         {
-            "schema_version": "m213-hybrid-gate-selection.v1",
+            "schema_version": "hybrid-gate-selection.v1",
             "milestone_id": "M213-test",
             "count": 2,
             "papers": [
@@ -46,7 +46,7 @@ def test_mapper_article_ref_and_invalid_rows() -> None:
 
 def test_composition_missing_row_fixture(tmp_path: Path) -> None:
     sel = {
-        "schema_version": "m213-hybrid-gate-selection.v1",
+        "schema_version": "hybrid-gate-selection.v1",
         "milestone_id": "M215-fixture",
         "count": 2,
         "papers": [

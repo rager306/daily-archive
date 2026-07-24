@@ -1,4 +1,4 @@
-"""Pure citation candidate review policy over M220 inventory (M221).
+"""Pure citation candidate review policy over M220 inventory.
 
 Maps inventory coverage to human-review readiness verdicts.
 Never authorizes import/writes. Not graph truth. Not human approval.
@@ -13,7 +13,7 @@ from research_graph.application.corpus.citation_candidate_inventory import (
     CitationInventoryPackage,
 )
 
-SCHEMA_VERSION = "m221-citation-review-policy.v1"
+SCHEMA_VERSION = "citation-review-policy.v1"
 
 CitationReviewVerdict = Literal[
     "ready_for_human_review",

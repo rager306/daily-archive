@@ -32,7 +32,7 @@ from research_graph.workflows.validation.batch_state import (
 )
 from research_graph.workflows.validation.logging import ValidationLogger, sanitize_event_details
 
-VALIDATION_SMOKE_REVIEW_SCHEMA_VERSION = "m025-validation-smoke-review.v1"
+VALIDATION_SMOKE_REVIEW_SCHEMA_VERSION = "validation-smoke-review.v1"
 DEFAULT_QUALITY_GATE_PATHS = (
     Path("src/research_graph/workflows/validation/batch_workflow.py"),
     Path("scripts/run_quality_gate.py"),
@@ -128,7 +128,7 @@ def initialize_validation_batch(
     state_path = write_batch_state(state, artifact_dir / "batch-state.json")
     selection_manifest_path = artifact_dir / "selection-manifest.json"
     selection_manifest = {
-        "schema_version": "m007-validation-batch-selection.v1",
+        "schema_version": "validation-batch-selection.v1",
         "batch_id": batch_id,
         "paper_count": len(selected_papers),
         "source_manifest": str(manifest_path),
@@ -248,7 +248,7 @@ def build_source_preflight_summary(state: ValidationBatchState) -> dict[str, Any
     readiness_values = list(state.source_readiness_by_paper.values())
     diagnostics = list(state.diagnostics)
     return {
-        "schema_version": "m007-source-preflight-summary.v1",
+        "schema_version": "source-preflight-summary.v1",
         "batch_id": state.batch_id,
         "phase": state.phase,
         "paper_count": len(state.selected_papers),
@@ -454,10 +454,10 @@ def write_validation_scan_manifest(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     papers = [_paper_manifest_record(paper) for paper in state.selected_papers]
     payload = {
-        "schema_version": "m007-validation-scan-manifest.v1",
+        "schema_version": "validation-scan-manifest.v1",
         "batch_id": state.batch_id,
         "paper_count": len(papers),
-        "m005_overlap_count": sum(
+        "baseline_overlap_count": sum(
             1 for paper in papers if paper.get("selection_role") == "m005_baseline_overlap"
         ),
         "expansion_count": sum(
@@ -477,7 +477,7 @@ def write_validation_scan_source_readiness(
     output_path = Path(path)
     readiness_values = list(state.source_readiness_by_paper.values())
     payload = {
-        "schema_version": "m007-validation-scan-source-readiness.v1",
+        "schema_version": "validation-scan-source-readiness.v1",
         "batch_id": state.batch_id,
         "paper_count": len(state.selected_papers),
         "ready_for_markdown_scan_count": sum(
@@ -502,7 +502,7 @@ def write_validation_scan_artifacts(
     summary.update(_lineage_payload(lineage))
     if lineage and lineage.get("milestone_id"):
         summary["milestone"] = lineage["milestone_id"]
-    summary["schema_version"] = "m007-validation-scan-summary.v1"
+    summary["schema_version"] = "validation-scan-summary.v1"
     summary_path = output / "validation-scan-summary.json"
     diagnostics_path = output / "validation-scan-diagnostics.jsonl"
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -523,7 +523,7 @@ def build_delta_report(
     structure_baseline = _read_optional_json(structure_baseline_path)
     mixed_benchmark = _read_optional_json(mixed_benchmark_path)
     return {
-        "schema_version": "m007-validation-delta-report.v1",
+        "schema_version": "validation-delta-report.v1",
         "paper_count": scan.get("paper_count"),
         "current_chunk_count": aggregate.get("chunk_count", 0),
         "current_import_eligible_chunk_count": aggregate.get("import_eligible_chunk_count", 0),
@@ -559,7 +559,7 @@ def build_outlier_report(
         enriched["chunks_per_10k_bytes"] = density_by_paper.get(paper_id, 0.0)
         enriched_outliers.append(enriched)
     return {
-        "schema_version": "m007-validation-outlier-report.v1",
+        "schema_version": "validation-outlier-report.v1",
         "outlier_count": len(enriched_outliers),
         "thresholds": {
             "high_chunk_count": "chunk_count >= max(2 * median_chunk_count, median_chunk_count + 25)",
@@ -618,7 +618,7 @@ def build_quota_fill_report(
         candidate_inventory, selected_ids, limit=shortage_count
     )
     return {
-        "schema_version": "m008-quota-fill-summary.v1",
+        "schema_version": "quota-fill-summary.v1",
         "batch_id": state.batch_id,
         "target_count": target_count,
         "attempted_count": len(records),
@@ -707,7 +707,7 @@ def build_bounded_top_up_report(
     remaining_shortage_count = max(target_count - final_accepted_ready_count, 0)
     scan_allowed = final_accepted_ready_count == target_count and remaining_shortage_count == 0
     return {
-        "schema_version": "m009-bounded-top-up-summary.v1",
+        "schema_version": "bounded-top-up-summary.v1",
         "batch_id": state.batch_id,
         "target_count": target_count,
         "initial_accepted_ready_count": accepted_ready_count,

@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from research_graph.infrastructure.staging.import_boundary import (
-    build_m031_import_boundary_rehearsal,
+    build_import_boundary_rehearsal,
     validate_import_boundary_rehearsal,
 )
 
@@ -140,7 +140,7 @@ def run_replay(
         review_events=review_events,
     )
 
-    contract = build_m031_import_boundary_rehearsal(
+    contract = build_import_boundary_rehearsal(
         summary_path=summary_path,
         closeout_summary_path=closeout_summary_path,
         graph_readiness_package_paths=[graph_readiness_package_path],
@@ -263,13 +263,13 @@ def _validate_contract_counts(
             "refusal-only rehearsal must not accept or mark candidates import-eligible",
             json_path="$.accepted_count",
         )
-    if contract.get("source_m031_summary", {}).get("zero_chunk_refusal_count") != summary.get(
+    if contract.get("source_import_boundary_summary", {}).get("zero_chunk_refusal_count") != summary.get(
         "zero_chunk_refusal_count"
     ):
         raise RehearsalReplayError(
             "M031_ZERO_CHUNK_REFUSAL_COUNT_DRIFT",
             "contract and summary zero-chunk refusal counts differ",
-            json_path="$.source_m031_summary.zero_chunk_refusal_count",
+            json_path="$.source_import_boundary_summary.zero_chunk_refusal_count",
         )
 
 
@@ -287,7 +287,7 @@ def _summary_record(
             "validation_diagnostic_count": validation_diagnostic_count,
             "import_eligible_count": import_eligible_count,
             "diagnostic_code_counts": {REFUSAL_DIAGNOSTIC_CODE: len(candidate_records)},
-            "artifact_kind": "m031_refusal_only_import_boundary_rehearsal",
+            "artifact_kind": "refusal_only_import_boundary_rehearsal",
         }
     )
     return summary

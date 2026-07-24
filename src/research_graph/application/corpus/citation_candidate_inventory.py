@@ -1,4 +1,4 @@
-"""Pure citation candidate inventory over GROBID hybrid artifacts (M220).
+"""Pure citation candidate inventory over GROBID hybrid artifacts.
 
 Loads nothing from disk itself — operates on already-parsed dict/list rows.
 Fail-closed: never sets import_eligible or graph_writes_allowed true.
@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-SCHEMA_VERSION = "m220-citation-candidate-inventory.v1"
+SCHEMA_VERSION = "citation-candidate-inventory.v1"
 
 
 def _nonempty_str(value: Any) -> bool:

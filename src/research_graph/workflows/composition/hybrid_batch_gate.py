@@ -20,7 +20,7 @@ from research_graph.workflows.composition.single_article_pipeline import (
 )
 
 DEFAULT_SELECTION = Path("artifacts/m213-hybrid-gate/selection.json")
-SCHEMA_VERSION = "m219-hybrid-batch-result.v1"
+SCHEMA_VERSION = "hybrid-batch-result.v1"
 
 
 def scan_scholarly_artifacts(

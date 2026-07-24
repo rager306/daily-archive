@@ -21,7 +21,7 @@ from research_graph.workflows.universal_kb.smoke_runner import run_smoke
 from research_graph.workflows.universal_kb.smoke_selection import select_entries
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_BASE_DIR = ROOT / "artifacts" / "m036-real-corpus-no-write-smoke"
+DEFAULT_BASE_DIR = ROOT / "artifacts" / "real-corpus-no-write-smoke"
 PROFILES = frozenset({"fast", "full"})
 MIN_SMOKE_ARTICLES = 3
 MAX_SMOKE_ARTICLES = 30
@@ -83,7 +83,7 @@ def write_manifest(path: Path, *, limit: int) -> dict[str, Any]:
     if len(entries) < 3:
         raise ValueError(f"only selected {len(entries)} usable articles; need at least 3")
     payload = {
-        "schema_version": "m036-real-corpus-smoke-manifest.v1",
+        "schema_version": "real-corpus-smoke-manifest.v1",
         "catalog_ref": "artifact:data/article_catalog/catalog.json",
         "article_count": len(entries),
         "articles": entries,
@@ -197,7 +197,7 @@ def summarize(
     }
 
 
-def run_m035_verifier() -> None:
+def run_universal_kb_smoke_verifier() -> None:
     subprocess.run(
         [sys.executable, "scripts/verify_m035_universal_kb_prototype.py"], cwd=ROOT, check=True
     )
@@ -209,7 +209,7 @@ def run_all(
     require_profile(profile)
     resolved_paths = resolve_paths(paths)
     if profile == "full":
-        run_m035_verifier()
+        run_universal_kb_smoke_verifier()
     run_select(limit=limit, paths=resolved_paths)
     run_runner(paths=resolved_paths, clean=True)
     run_audit(paths=resolved_paths)
@@ -220,7 +220,7 @@ def run_verify(*, profile: str = "fast", paths: SmokePaths | None = None) -> dic
     require_profile(profile)
     resolved_paths = resolve_paths(paths)
     if profile == "full":
-        run_m035_verifier()
+        run_universal_kb_smoke_verifier()
     if (
         not resolved_paths.manifest.exists()
         or not resolved_paths.run_summary.exists()

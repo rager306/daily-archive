@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 from urllib.parse import urlsplit, urlunsplit
 
-ARTICLE_LINKS_DEDUP_SCHEMA_VERSION = "m024-article-links-dedup.v1"
+ARTICLE_LINKS_DEDUP_SCHEMA_VERSION = "article-links-dedup.v1"
 
 ReviewState = Literal[
     "review_required", "blocked", "repair_required", "accepted", "rejected", "ambiguous"

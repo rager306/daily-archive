@@ -103,7 +103,7 @@ def build_inventory(repo_root: Path = Path(".")) -> ScriptInventory:
             notes="M121 ingest path with offline M056 metadata patching; migrate after the shared catalog ingest use case exists.",
         ),
         _item(
-            script_id="m061-legacy-ingest",
+            script_id="legacy-ingest",
             path="scripts/m061_ingest_to_canonical_catalog.py",
             category=ScriptCategory.CATALOG_INGEST,
             classification=ScriptClassification.COMPATIBILITY_WRAPPER,

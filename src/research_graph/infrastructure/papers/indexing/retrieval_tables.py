@@ -19,7 +19,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Literal
 
-ARTICLE_RETRIEVAL_TABLES_SCHEMA_VERSION = "m024-article-retrieval-tables.v1"
+ARTICLE_RETRIEVAL_TABLES_SCHEMA_VERSION = "article-retrieval-tables.v1"
 ARTICLE_RETRIEVAL_TABLES_BUILDER = "metadata_only_article_retrieval_tables_v1"
 
 BenchmarkStatus = Literal[

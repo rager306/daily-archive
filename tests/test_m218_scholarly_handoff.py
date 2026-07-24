@@ -45,7 +45,7 @@ def test_resolve_scholarly_found_and_missing(tmp_path: Path) -> None:
 
 def test_handoff_includes_scholarly_wrapper(tmp_path: Path) -> None:
     sel = {
-        "schema_version": "m213-hybrid-gate-selection.v1",
+        "schema_version": "hybrid-gate-selection.v1",
         "milestone_id": "M218-fixture",
         "count": 1,
         "papers": [{"paper_id": "ok1", "category": "cs-cl", "pdf_path": "a.pdf"}],
@@ -123,7 +123,7 @@ def test_handoff_includes_scholarly_wrapper(tmp_path: Path) -> None:
 def test_handoff_missing_scholarly_is_honest(tmp_path: Path) -> None:
     """Body present but no GROBID artifacts → scholarly counts zero, not invented."""
     sel = {
-        "schema_version": "m213-hybrid-gate-selection.v1",
+        "schema_version": "hybrid-gate-selection.v1",
         "milestone_id": "M218-missing",
         "count": 1,
         "papers": [{"paper_id": "onlybody", "category": "cs-cl", "pdf_path": "a.pdf"}],

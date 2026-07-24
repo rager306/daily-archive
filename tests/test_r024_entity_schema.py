@@ -88,7 +88,7 @@ def test_schema_counts() -> None:
     counts = s.get("counts")
     assert isinstance(counts, dict)
     assert counts.get("total_entity_types") == 10
-    assert counts.get("from_m025_chunk_types") == 5
+    assert counts.get("from_catalog_chunk_types") == 5
     assert counts.get("from_article_metadata") == 4
     assert counts.get("synthetic_from_metadata_plus_chunks") == 1
 

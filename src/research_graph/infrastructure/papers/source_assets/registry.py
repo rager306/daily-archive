@@ -23,7 +23,7 @@ from research_graph.infrastructure.papers.source_assets.provenance import (
     source_preservation_provenance,
 )
 
-SCHEMA_VERSION = "m005-source-asset-manifest.v1"
+SCHEMA_VERSION = "source-asset-manifest.v1"
 TRUSTED_IMPORT_USE = "trusted_kg_import"
 
 SourceRole = Literal["original_pdf", "normalized_markdown", "derived_asset"]
@@ -245,7 +245,7 @@ class SourceAssetManifest:
     workspace_root: str
     source_files: tuple[PreservedSourceFile, ...] = ()
     assets: tuple[AssetRecord, ...] = ()
-    run_id: str = "m005-s05-source-assets"
+    run_id: str = "s05-source-assets"
     warnings: tuple[str, ...] = ()
 
     def to_contract(self) -> dict[str, Any]:
@@ -292,7 +292,7 @@ def preserve_source_assets_for_paper(
     paper: dict[str, Any],
     *,
     workspace_root: Path,
-    run_id: str = "m005-s05-source-assets",
+    run_id: str = "s05-source-assets",
 ) -> SourceAssetManifest:
     """Copy one paper's source PDF/Markdown artifacts into a deterministic workspace."""
     paper_id = str(paper["paper_id"])
@@ -342,7 +342,7 @@ def build_source_asset_run(
     output_dir: Path,
     annotation_diagnostics_path: Path | None = None,
     structure_diagnostics_path: Path | None = None,
-    run_id: str = "m005-s05-source-assets",
+    run_id: str = "s05-source-assets",
 ) -> SourceAssetRunResult:
     """Build a full source-asset run with optional annotation-derived asset links."""
     result = preserve_source_assets_manifest(manifest_path, output_dir=output_dir, run_id=run_id)
@@ -363,7 +363,7 @@ def preserve_source_assets_manifest(
     manifest_path: Path,
     *,
     output_dir: Path,
-    run_id: str = "m005-s05-source-assets",
+    run_id: str = "s05-source-assets",
 ) -> SourceAssetRunResult:
     """Preserve source artifacts for all papers in a gold-corpus manifest."""
     manifest = _load_json(manifest_path)
@@ -949,7 +949,7 @@ def _summary_for_manifests(
             asset_counts_by_type[asset_type] = asset_counts_by_type.get(asset_type, 0) + 1
             extraction_state_counts[state] = extraction_state_counts.get(state, 0) + 1
     return {
-        "schema_version": "m005-source-preservation-run.v1",
+        "schema_version": "source-preservation-run.v1",
         "source_manifest": str(source_manifest),
         "paper_count": len(manifests),
         "valid_manifest_count": sum(
@@ -978,7 +978,7 @@ def _manifest_to_record(manifest: dict[str, Any]) -> dict[str, Any]:
     validation = validate_source_asset_manifest(manifest)
     diagnostics = manifest.get("diagnostics", {})
     return {
-        "schema_version": "m005-source-asset-package-diagnostic.v1",
+        "schema_version": "source-asset-package-diagnostic.v1",
         "paper_id": manifest.get("paper_id"),
         "valid_manifest": validation.valid_manifest,
         "source_file_count": len(manifest.get("source_files", [])),

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from research_graph.application.graph.falkor_capability import probe_falkor_capabilities
 from research_graph.application.graph.falkor_no_write_verdict import (
-    M205_PREREQUISITES,
+    CONTROLLED_WRITE_PILOT_PREREQUISITES,
     decide_no_write_backend_verdict,
 )
 from research_graph.application.graph.falkor_operation_plan import build_falkor_operation_plan
@@ -109,9 +109,9 @@ def test_s08_no_write_backend_verdict_proceed() -> None:
         queries=queries,
     )
     assert verdict.verdict == "proceed"
-    assert "m205_write_adapter_still_required" in verdict.reasons
-    assert "GraphDBPort_adapter_implementing_upsert_scientific_kg" in M205_PREREQUISITES
-    assert "write_driver_falkordb_or_redis_protocol" in verdict.m205_prerequisites
+    assert "controlled_write_adapter_still_required" in verdict.reasons
+    assert "GraphDBPort_adapter_implementing_upsert_scientific_kg" in CONTROLLED_WRITE_PILOT_PREREQUISITES
+    assert "write_driver_falkordb_or_redis_protocol" in verdict.controlled_write_pilot_prerequisites
     verdict.assert_no_write()
     payload = str(verdict.to_dict()).lower()
     assert "api_key" not in payload

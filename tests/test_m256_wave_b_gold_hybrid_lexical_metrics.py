@@ -128,7 +128,7 @@ def test_score_empty_body_zero_recall() -> None:
 def test_rejects_import_true() -> None:
     with pytest.raises(ValueError, match="import"):
         GoldHybridLexicalMetricsPackage(
-            schema_version="m256-wave-b-gold-hybrid-lexical-metrics.v1",
+            schema_version="wave-b-reviewed-gold-hybrid-lexical-metrics.v1",
             case_count=0,
             metrics={},
             gate_verdict="stop",

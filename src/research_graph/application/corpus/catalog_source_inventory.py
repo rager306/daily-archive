@@ -1,4 +1,4 @@
-"""Pure multi-source catalog inventory (M222).
+"""Pure multi-source catalog inventory.
 
 Scans article.v00.01 records and source_variants into fail-closed coverage.
 Does not fetch network, load bodies, or authorize import.
@@ -10,7 +10,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-SCHEMA_VERSION = "m222-catalog-source-inventory.v1"
+SCHEMA_VERSION = "catalog-source-inventory.v1"
 
 
 def _str(value: Any) -> str:

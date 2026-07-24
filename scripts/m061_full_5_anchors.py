@@ -156,7 +156,7 @@ def extract_arxiv_refs_from_eprint(eprint_path: Path, anchor_arxiv_id: str) -> l
     )
 
 
-def load_m056_corpus_refs(cumulative_corpus: dict[str, Any], anchor_arxiv_id: str) -> list[str]:
+def load_cumulative_offline_corpus_refs(cumulative_corpus: dict[str, Any], anchor_arxiv_id: str) -> list[str]:
     return unique_sorted(
         [
             item["arxiv_id"]
@@ -196,7 +196,7 @@ def stage_1_anchor_acquisition_s02(
     refs = extract_arxiv_refs_from_eprint(eprint_path, anchor_arxiv_id)
     one_hop_ref_source = "live_eprint_arxiv_reference_extraction"
     if not refs:
-        refs = load_m056_corpus_refs(cumulative_corpus, anchor_arxiv_id)
+        refs = load_cumulative_offline_corpus_refs(cumulative_corpus, anchor_arxiv_id)
         one_hop_ref_source = "m056_corpus_refs_after_empty_live_eprint_refs"
     metrics = client.finalized_metrics()
     stage1 = {

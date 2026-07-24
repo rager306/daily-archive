@@ -32,7 +32,7 @@ def test_compare_day_shadow_match() -> None:
     assert report.match is True
     assert report.status == "match"
     assert report.differences == ()
-    assert report.safety["m001_artifacts_mutated"] is False
+    assert report.safety["primary_pipeline_artifacts_mutated"] is False
 
 
 def test_compare_day_shadow_empty_day() -> None:
@@ -73,7 +73,7 @@ def test_run_shadow_parity_executes_analyze_source() -> None:
     assert report.match is True
     assert report.canonical_done_count == 1
     assert report.canonical_results[0].status == "done"
-    assert report.safety["m001_artifacts_mutated"] is False
+    assert report.safety["primary_pipeline_artifacts_mutated"] is False
     assert report.safety["graph_writes_authorized"] is False
 
 

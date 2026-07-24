@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Wave B gold-linked hybrid lexical metrics operator (M256 S03).
+"""Wave B gold-linked hybrid lexical metrics operator.
 
-Joins M072 reviewed gold to hybrid bodies and scores deterministic
+Joins reviewed extraction gold to hybrid bodies and scores deterministic
 lexical gold-recovery (floor baseline). Stamp-aware gate.
 No LLM, no DSPy, no import.
 
@@ -27,12 +27,14 @@ from research_graph.application.corpus.wave_b_gate import (
     evaluate_wave_b_gate_from_stamp,
 )
 from research_graph.application.corpus.wave_b_gold_hybrid_join import (
-    inventory_m072_gold_hybrid_join,
+    inventory_reviewed_gold_hybrid_join,
 )
 from research_graph.application.corpus.wave_b_gold_hybrid_lexical_metrics import (
     score_gold_hybrid_lexical_recovery,
 )
-from research_graph.application.extraction_ablations import load_m072_split
+from research_graph.application.reviewed_extraction_fixtures import (
+    load_reviewed_extraction_split,
+)
 from research_graph.workflows.composition.etl_body_coverage import DEFAULT_BODY_ROOTS
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -65,13 +67,13 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     # load gold from cwd-relative fixtures (repo root)
-    # temporarily ensure cwd semantics for load_m072_split
-    train_g, _ = load_m072_split("train")
-    val_g, _ = load_m072_split("validation")
+    # load_reviewed_extraction_split defaults to reviewed fixture root (repo cwd)
+    train_g, _ = load_reviewed_extraction_split("train")
+    val_g, _ = load_reviewed_extraction_split("validation")
     gold_all = train_g + val_g
     gold_by_case = {str(r.get("case_id")): r for r in gold_all if r.get("case_id")}
 
-    join = inventory_m072_gold_hybrid_join(
+    join = inventory_reviewed_gold_hybrid_join(
         gold_records=gold_all,
         body_roots=roots,
     )

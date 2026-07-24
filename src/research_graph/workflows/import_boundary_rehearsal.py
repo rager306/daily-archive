@@ -21,7 +21,7 @@ from research_graph.infrastructure.staging.import_boundary import (
     RehearsalDiagnostic,
     RehearsalValidationResult,
     build_import_boundary_rehearsal_from_benchmark,
-    build_m031_import_boundary_rehearsal,
+    build_import_boundary_rehearsal,
     validate_import_boundary_rehearsal,
     write_import_boundary_rehearsal_run,
 )
@@ -39,7 +39,7 @@ __all__ = [
     "ImportCandidate",
     "ImportBoundaryRehearsal",
     "build_import_boundary_rehearsal_from_benchmark",
-    "build_m031_import_boundary_rehearsal",
+    "build_import_boundary_rehearsal",
     "write_import_boundary_rehearsal_run",
     "validate_import_boundary_rehearsal",
 ]

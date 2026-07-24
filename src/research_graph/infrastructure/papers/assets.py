@@ -17,8 +17,8 @@ import re
 from dataclasses import dataclass
 from typing import Any, Literal
 
-ARTICLE_ASSET_MANIFEST_SCHEMA_VERSION = "m024-article-assets.v1"
-ARTICLE_ASSET_DIAGNOSTICS_SCHEMA_VERSION = "m024-article-assets-diagnostics.v1"
+ARTICLE_ASSET_MANIFEST_SCHEMA_VERSION = "article-assets.v1"
+ARTICLE_ASSET_DIAGNOSTICS_SCHEMA_VERSION = "article-assets-diagnostics.v1"
 ARTICLE_ASSET_BUILDER = "metadata_only_article_assets_v1"
 
 ArticleAssetType = Literal["figure", "diagram", "chart", "table", "equation_image"]

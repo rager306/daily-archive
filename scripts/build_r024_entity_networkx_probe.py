@@ -200,10 +200,10 @@ def main() -> int:
         )
 
     # Source nodes (entity_derives_from_source edges point to these)
-    for source in ("m025_chunk_types", "article_metadata", "synthetic_from_citation_context"):
+    for source in ("catalog_chunk_types", "article_metadata", "synthetic_from_citation_context"):
         graph.add_node(f"source:{source}", node_type="source", label=source)
     # self-loops on sources for graphml compatibility
-    for source in ("m025_chunk_types", "article_metadata", "synthetic_from_citation_context"):
+    for source in ("catalog_chunk_types", "article_metadata", "synthetic_from_citation_context"):
         graph.add_edge(f"source:{source}", f"source:{source}", edge_type="source_self_ref")
 
     nx.write_graphml(graph, str(GRAPHML))

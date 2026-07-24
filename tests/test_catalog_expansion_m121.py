@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Any
 
 from research_graph.infrastructure.corpus.ingestion.catalog_ingest import (
-    load_m056_corpus,
-    verify_m056_sha256,
+    load_cumulative_offline_corpus,
+    verify_offline_corpus_sha256,
 )
 
 REPO_ROOT = Path("/root/daily-archive")
@@ -32,7 +32,7 @@ def _article_path_for_pdf(pdf_path: Path) -> Path:
 
 
 def _m056_articles() -> list[tuple[str, dict[str, Any]]]:
-    records = load_m056_corpus(repo_root=REPO_ROOT)
+    records = load_cumulative_offline_corpus(repo_root=REPO_ROOT)
     articles: list[tuple[str, dict[str, Any]]] = []
     for arxiv_id, record in sorted(records.items()):
         article_path = _article_path_for_pdf(record.pdf_path)
@@ -46,13 +46,13 @@ def test_expanded_catalog_has_221_article_records() -> None:
 
 
 def test_all_m056_pdf_hashes_still_match_cumulative_corpus() -> None:
-    records = load_m056_corpus(repo_root=REPO_ROOT)
+    records = load_cumulative_offline_corpus(repo_root=REPO_ROOT)
     assert len(records) == EXPECTED_M056_COUNT
-    assert verify_m056_sha256(records) == []
+    assert verify_offline_corpus_sha256(records) == []
 
 
 def test_all_m056_articles_exist_at_pdf_parent_paths() -> None:
-    records = load_m056_corpus(repo_root=REPO_ROOT)
+    records = load_cumulative_offline_corpus(repo_root=REPO_ROOT)
     missing = [
         str(_article_path_for_pdf(record.pdf_path).relative_to(REPO_ROOT))
         for record in records.values()
@@ -62,7 +62,7 @@ def test_all_m056_articles_exist_at_pdf_parent_paths() -> None:
 
 
 def test_m056_article_identity_matches_cumulative_corpus() -> None:
-    records = load_m056_corpus(repo_root=REPO_ROOT)
+    records = load_cumulative_offline_corpus(repo_root=REPO_ROOT)
     for arxiv_id, article in _m056_articles():
         record = records[arxiv_id]
         identity = article["identity"]
@@ -120,7 +120,7 @@ def test_index_json_matches_catalog_articles() -> None:
 
 
 def test_index_includes_all_m056_article_keys() -> None:
-    records = load_m056_corpus(repo_root=REPO_ROOT)
+    records = load_cumulative_offline_corpus(repo_root=REPO_ROOT)
     index = _load_json(INDEX_PATH)
     indexed_keys = {entry["article_key"] for entry in index["articles"]}
     assert set(records) <= indexed_keys

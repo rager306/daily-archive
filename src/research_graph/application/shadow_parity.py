@@ -65,7 +65,7 @@ class ShadowParityReport:
             "fact_promotion_authorized": False,
             "external_network_authorized": False,
             "llm_calls_authorized": False,
-            "m001_artifacts_mutated": False,
+            "primary_pipeline_artifacts_mutated": False,
         }
     )
 
@@ -140,7 +140,7 @@ def run_shadow_parity(
 ) -> ShadowParityReport:
     """Run analyze_source per source, then pure-compare to legacy metadata.
 
-    Does **not** write session/queue artifacts. ``m001_artifacts_mutated`` stays False.
+    Does **not** write session/queue artifacts. ``primary_pipeline_artifacts_mutated`` stays False.
     """
     uc = use_case or AnalyzeSourceUseCase()
     results: list[AnalyzeSourceResult] = []

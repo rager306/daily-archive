@@ -24,7 +24,7 @@ BLOG_ARTICLE = (
 
 def _handoff_fixture(tmp_path: Path) -> HybridReadinessHandoffRequest:
     sel = {
-        "schema_version": "m213-hybrid-gate-selection.v1",
+        "schema_version": "hybrid-gate-selection.v1",
         "milestone_id": "M230-fixture",
         "count": 1,
         "papers": [{"paper_id": "ok1", "category": "cs-cl", "pdf_path": "a.pdf"}],

@@ -1,4 +1,4 @@
-"""Wave B gold-linked hybrid lexical recovery metrics (M256 S02).
+"""Wave B gold-linked hybrid lexical recovery metrics.
 
 Deterministic floor baseline: recover gold entity labels that appear as
 substrings in hybrid body text (casefold-normalized), keep relations only
@@ -16,7 +16,7 @@ from typing import Any
 from research_graph.application.extraction_ablations import decide_gate_verdict
 from research_graph.application.extraction_benchmark import evaluate_records
 
-SCHEMA_VERSION = "m256-wave-b-gold-hybrid-lexical-metrics.v1"
+SCHEMA_VERSION = "wave-b-reviewed-gold-hybrid-lexical-metrics.v1"
 
 
 def _normalize_label(value: str) -> str:

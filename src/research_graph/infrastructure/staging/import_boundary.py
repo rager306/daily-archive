@@ -20,7 +20,7 @@ from research_graph.infrastructure.identity.canonicalization import (
     canonical_package_id,
 )
 
-SCHEMA_VERSION = "m005-negative-import-boundary-rehearsal.v1"
+SCHEMA_VERSION = "negative-import-boundary-rehearsal.v1"
 TRUSTED_IMPORT_USE = "trusted_kg_import"
 
 FORBIDDEN_RAW_FIELDS = frozenset({"text", "raw_text", "chunk_text", "paper_text", "claim_text"})
@@ -158,7 +158,7 @@ def build_import_boundary_rehearsal_from_benchmark(
     *,
     summary_path: str | Path,
     diagnostics_path: str | Path,
-    rehearsal_id: str = "m005-s07-negative-import-boundary",
+    rehearsal_id: str = "s07-negative-import-boundary",
 ) -> dict[str, Any]:
     """Build negative rehearsal evidence from S06 benchmark artifacts.
 
@@ -196,7 +196,7 @@ def build_import_boundary_rehearsal_from_benchmark(
                 )
     rehearsal = ImportBoundaryRehearsal(
         rehearsal_id=rehearsal_id,
-        source_benchmark_id=str(summary.get("input_corpus") or "m005-s06-chunking-benchmark"),
+        source_benchmark_id=str(summary.get("input_corpus") or "s06-chunking-benchmark"),
         candidates=tuple(candidates),
         remediation_hints=(
             "create_reviewed_import_eligible_subset",
@@ -217,13 +217,13 @@ def build_import_boundary_rehearsal_from_benchmark(
     return rehearsal
 
 
-def build_m031_import_boundary_rehearsal(
+def build_import_boundary_rehearsal(
     *,
     summary_path: str | Path,
     closeout_summary_path: str | Path,
     graph_readiness_package_paths: list[str | Path] | tuple[str | Path, ...],
     independent_review_events_path: str | Path,
-    rehearsal_id: str = "m031-s05-refusal-only-import-boundary",
+    rehearsal_id: str = "import-boundary-refusal-only.v1",
 ) -> dict[str, Any]:
     """Build the M031 refusal-only import-boundary rehearsal from S04 artifacts.
 
@@ -247,7 +247,7 @@ def build_m031_import_boundary_rehearsal(
 
     candidates: list[ImportCandidate] = []
     for row_index, row in enumerate(_list_of_dicts(summary.get("results")), start=1):
-        package_id = str(row.get("package_key") or row.get("identity") or f"m031-row-{row_index}")
+        package_id = str(row.get("package_key") or row.get("identity") or f"import-boundary-row-{row_index}")
         if row.get("parser_ready") is True and row.get("status") == "chunked":
             graph_package = graph_packages_by_key.get(package_id, {})
             output_completed = bool(graph_package.get("output_contract_completed"))
@@ -262,9 +262,9 @@ def build_m031_import_boundary_rehearsal(
             )
             candidate = ImportCandidate(
                 candidate_id=canonical_import_candidate_id(
-                    method_id="m031_graph_readiness", refusal_reason=reason, index=row_index
+                    method_id="import_boundary_graph_readiness", refusal_reason=reason, index=row_index
                 ),
-                method_id="m031_graph_readiness",
+                method_id="import_boundary_graph_readiness",
                 package_id=package_id,
                 candidate_type="graph_readiness_package",
                 route=_single_key_or_none(graph_package.get("counts_by_route"))
@@ -297,9 +297,9 @@ def build_m031_import_boundary_rehearsal(
             )
             candidate = ImportCandidate(
                 candidate_id=canonical_import_candidate_id(
-                    method_id="m031_zero_chunk_refusal", refusal_reason=reason, index=row_index
+                    method_id="import_boundary_zero_chunk_refusal", refusal_reason=reason, index=row_index
                 ),
-                method_id="m031_zero_chunk_refusal",
+                method_id="import_boundary_zero_chunk_refusal",
                 package_id=package_id,
                 candidate_type="zero_chunk_refusal",
                 route=_string_or_none(row.get("source_role")),
@@ -323,7 +323,7 @@ def build_m031_import_boundary_rehearsal(
     contract = {
         "schema_version": SCHEMA_VERSION,
         "rehearsal_id": rehearsal_id,
-        "source_benchmark_id": str(summary.get("selection_id") or "m031-catalog-backed-replay-v1"),
+        "source_benchmark_id": str(summary.get("selection_id") or "catalog-backed-replay-v1"),
         "candidate_count": len(candidates),
         "accepted_count": sum(1 for candidate in candidates if candidate["accepted"] is True),  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
         "rejected_count": sum(1 for candidate in candidates if candidate["rejected"] is True),  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
@@ -336,10 +336,10 @@ def build_m031_import_boundary_rehearsal(
             "keep_trusted_kg_import_disabled_until_review_completion",
         ],
         "caveats": [
-            "m031_refusal_only_import_boundary_rehearsal",
+            "refusal_only_import_boundary_rehearsal",
             "metadata_only_no_write_rehearsal",
         ],
-        "source_m031_summary": {
+        "source_import_boundary_summary": {
             "row_count": summary.get("row_count"),
             "parser_ready_row_count": summary.get("parser_ready_row_count"),
             "zero_chunk_refusal_count": summary.get("zero_chunk_refusal_count"),
@@ -366,7 +366,7 @@ def write_import_boundary_rehearsal_run(
     summary_path: str | Path,
     diagnostics_path: str | Path,
     output_dir: str | Path,
-    rehearsal_id: str = "m005-s07-negative-import-boundary",
+    rehearsal_id: str = "s07-negative-import-boundary",
 ) -> dict[str, Path]:
     """Write redacted negative import-boundary summary and candidate diagnostics."""
     rehearsal = build_import_boundary_rehearsal_from_benchmark(
@@ -753,7 +753,7 @@ __all__ = [
     "ImportCandidate",
     "ImportBoundaryRehearsal",
     "build_import_boundary_rehearsal_from_benchmark",
-    "build_m031_import_boundary_rehearsal",
+    "build_import_boundary_rehearsal",
     "write_import_boundary_rehearsal_run",
     "validate_import_boundary_rehearsal",
 ]

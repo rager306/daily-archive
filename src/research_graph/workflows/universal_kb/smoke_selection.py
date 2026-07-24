@@ -152,7 +152,7 @@ def main() -> int:
         raise SystemExit(f"only selected {len(entries)} usable articles; need at least 3")
 
     payload = {
-        "schema_version": "m036-real-corpus-smoke-manifest.v1",
+        "schema_version": "real-corpus-smoke-manifest.v1",
         "catalog_ref": f"artifact:{args.catalog.relative_to(ROOT).as_posix()}",
         "article_count": len(entries),
         "articles": entries,

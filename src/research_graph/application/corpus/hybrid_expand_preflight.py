@@ -1,4 +1,4 @@
-"""Wave A hybrid expand preflight (M246).
+"""Wave A hybrid expand preflight.
 
 Validates a proposed hybrid selection before any live batch: PDF presence and
 already-bodied exclusions. Pure application when given check rows; never
@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
 
-SCHEMA_VERSION = "m246-hybrid-expand-preflight.v1"
+SCHEMA_VERSION = "hybrid-expand-preflight.v1"
 
 PreflightSignal = Literal["blocked", "repair", "ready_to_batch"]
 

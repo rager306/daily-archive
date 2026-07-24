@@ -60,7 +60,7 @@ def test_empty_body_pending() -> None:
 def test_rejects_import_true() -> None:
     with pytest.raises(ValueError, match="import"):
         HybridStatisticalExtractionPackage(
-            schema_version="m255-wave-b-hybrid-statistical-extraction.v1",
+            schema_version="wave-b-hybrid-statistical-extraction.v1",
             paper_id="x",
             body_path=None,
             word_count=0,
@@ -82,7 +82,7 @@ def test_rejects_import_true() -> None:
 def test_rejects_dspy_true() -> None:
     with pytest.raises(ValueError, match="DSPy|dspy"):
         HybridStatisticalExtractionPackage(
-            schema_version="m255-wave-b-hybrid-statistical-extraction.v1",
+            schema_version="wave-b-hybrid-statistical-extraction.v1",
             paper_id="x",
             body_path=None,
             word_count=0,

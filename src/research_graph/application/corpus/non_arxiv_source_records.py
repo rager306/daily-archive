@@ -1,4 +1,4 @@
-"""Pure helpers for non-arxiv / multi-source catalog records (M223).
+"""Pure helpers for non-arxiv / multi-source catalog records.
 
 Builds article.v00.01-shaped dicts for GNN textbook HTML chapters and
 multi-source selection rows. No filesystem, no network, no import auth.
@@ -18,7 +18,7 @@ from research_graph.application.profiles.textbook import (
 )
 
 ARTICLE_SCHEMA_VERSION = "article.v00.01"
-SELECTION_SCHEMA_VERSION = "m223-multi-source-selection.v1"
+SELECTION_SCHEMA_VERSION = "multi-source-selection.v1"
 
 
 def _sha256_text(text: str) -> str:
@@ -135,7 +135,7 @@ def build_gnn_textbook_article_record(
 def build_multi_source_selection(
     rows: list[dict[str, Any]] | tuple[dict[str, Any], ...],
     *,
-    selection_id: str = "m223-multi-source-strengthen-v1",
+    selection_id: str = "multi-source-strengthen.v1",
 ) -> dict[str, Any]:
     """Build selection package for non-arxiv / multi-source operator paths."""
     articles: list[dict[str, Any]] = []

@@ -29,9 +29,9 @@ from research_graph.infrastructure.repair.chunk_import_contract import (
     validation_to_dict,
 )
 
-PACKAGE_SCHEMA_VERSION = "m005-import-ready-chunk-package.v1"
+PACKAGE_SCHEMA_VERSION = "import-ready-chunk-package.v1"
 CONTRACT_VERSION = "import-ready-chunk-contract.v1"
-BASELINE_RUN_SCHEMA = "m005-baseline-chunk-measurement.v1"
+BASELINE_RUN_SCHEMA = "baseline-chunk-measurement.v1"
 
 
 @dataclass(frozen=True)
@@ -171,7 +171,7 @@ def write_review_samples(
         review_lines.append("")
 
     index_payload = {
-        "schema_version": "m005-baseline-review-sample-index.v1",
+        "schema_version": "baseline-review-sample-index.v1",
         "paper_count": len(index_records),
         "records": index_records,
         "raw_text_in_machine_logs": False,
@@ -186,7 +186,7 @@ def write_review_samples(
 def _measurement_to_record(measurement: BaselineMeasurement) -> dict[str, Any]:
     package = measurement.package
     return {
-        "schema_version": "m005-baseline-package-diagnostic.v1",
+        "schema_version": "baseline-package-diagnostic.v1",
         "paper_id": measurement.paper_id,
         "package_state": package["diagnostics"]["package_state"],
         "valid_package": measurement.validation["valid_package"],

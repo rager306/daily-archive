@@ -14,7 +14,7 @@ from research_graph.application.extraction_ablations import (
     compare_providers,
     decide_gate_verdict,
     expand_records_to_n,
-    load_m072_split,
+    load_reviewed_extraction_split,  # re-export from ablations
     run_staged_reviewed_run,
     run_twenty_paper_gate,
 )
@@ -140,7 +140,7 @@ def test_gate_repair_band() -> None:
 def test_m072_deterministic_vs_baseline_if_present() -> None:
     if not M072.exists():
         return
-    gold, pred = load_m072_split("train")
+    gold, pred = load_reviewed_extraction_split("train")
     report = compare_deterministic_vs_llm(gold, pred, name="m072-train")
     assert report.baseline_metrics["entity_f1"] == 1.0
     assert report.treatment_metrics["entity_f1"] < 1.0 or report.treatment_metrics["entity_f1"] == 1.0

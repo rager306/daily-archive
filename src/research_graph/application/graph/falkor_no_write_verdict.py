@@ -14,7 +14,7 @@ from research_graph.domain.universal_kb.contracts import SafetyFlags
 
 BackendVerdict = Literal["proceed", "repair", "reject"]
 
-M205_PREREQUISITES: tuple[str, ...] = (
+CONTROLLED_WRITE_PILOT_PREREQUISITES: tuple[str, ...] = (
     "write_driver_falkordb_or_redis_protocol",
     "GraphDBPort_adapter_implementing_upsert_scientific_kg",
     "explicit_graph_writes_allowed_authorization",
@@ -28,7 +28,7 @@ M205_PREREQUISITES: tuple[str, ...] = (
 class NoWriteBackendVerdict:
     verdict: BackendVerdict
     reasons: tuple[str, ...]
-    m205_prerequisites: tuple[str, ...] = M205_PREREQUISITES
+    controlled_write_pilot_prerequisites: tuple[str, ...] = CONTROLLED_WRITE_PILOT_PREREQUISITES
     safety_flags: SafetyFlags = field(default_factory=SafetyFlags)
     evidence: dict[str, Any] = field(default_factory=dict)
 
@@ -42,7 +42,7 @@ class NoWriteBackendVerdict:
         return {
             "verdict": self.verdict,
             "reasons": list(self.reasons),
-            "m205_prerequisites": list(self.m205_prerequisites),
+            "controlled_write_pilot_prerequisites": list(self.controlled_write_pilot_prerequisites),
             "safety_flags": self.safety_flags.to_dict(),
             "evidence": dict(self.evidence),
         }
@@ -89,7 +89,7 @@ def decide_no_write_backend_verdict(
     else:
         verdict = "proceed"
         reasons.append("falkor_no_write_surface_ready")
-        reasons.append("m205_write_adapter_still_required")
+        reasons.append("controlled_write_adapter_still_required")
 
     report = NoWriteBackendVerdict(
         verdict=verdict,
@@ -110,7 +110,7 @@ def decide_no_write_backend_verdict(
 
 __all__ = [
     "BackendVerdict",
-    "M205_PREREQUISITES",
+    "CONTROLLED_WRITE_PILOT_PREREQUISITES",
     "NoWriteBackendVerdict",
     "decide_no_write_backend_verdict",
 ]

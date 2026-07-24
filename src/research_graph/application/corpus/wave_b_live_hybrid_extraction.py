@@ -1,4 +1,4 @@
-"""Wave B live hybrid extraction package scaffold (M254 S05).
+"""Wave B live hybrid extraction package scaffold.
 
 Structural package over hybrid extraction candidates. No LLM run in this
 slice, no DSPy optimizer, never import/graph write.
@@ -14,7 +14,7 @@ from research_graph.application.corpus.wave_b_hybrid_extraction_inventory import
     HybridExtractionCandidate,
 )
 
-SCHEMA_VERSION = "m254-wave-b-live-hybrid-extraction.v1"
+SCHEMA_VERSION = "wave-b-live-hybrid-extraction.v1"
 
 
 @dataclass(frozen=True, slots=True)

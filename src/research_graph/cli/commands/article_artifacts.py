@@ -135,7 +135,7 @@ def _load_minimax_mock_content_blocks(helper_response: Path | None) -> list[dict
                 "name": "record_article_artifact_hints",
                 "input": {
                     "schema_version": MINIMAX_ARTIFACT_HELPER_SCHEMA_VERSION,
-                    "source_schema_version": "m023-redacted-article-structure.v1",
+                    "source_schema_version": "redacted-article-structure.v1",
                     "manifest_schema_version": ARTICLE_ARTIFACT_SCHEMA_VERSION,
                     "input_sha256": "mock-response-without-input-hash",
                     "artifact_hints": [],

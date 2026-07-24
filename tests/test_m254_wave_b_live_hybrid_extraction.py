@@ -67,7 +67,7 @@ def test_blocked_gate_marks_blocked() -> None:
 def test_rejects_import_true() -> None:
     with pytest.raises(ValueError, match="import"):
         WaveBLiveHybridExtractionPackage(
-            schema_version="m254-wave-b-live-hybrid-extraction.v1",
+            schema_version="wave-b-live-hybrid-extraction.v1",
             extraction_status="pending_extraction",
             candidate_count=0,
             empty_count=0,
@@ -86,7 +86,7 @@ def test_rejects_import_true() -> None:
 def test_rejects_dspy_true() -> None:
     with pytest.raises(ValueError, match="DSPy|dspy"):
         WaveBLiveHybridExtractionPackage(
-            schema_version="m254-wave-b-live-hybrid-extraction.v1",
+            schema_version="wave-b-live-hybrid-extraction.v1",
             extraction_status="pending_extraction",
             candidate_count=0,
             empty_count=0,

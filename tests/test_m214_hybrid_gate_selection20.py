@@ -14,7 +14,7 @@ def test_m214_selection20_extends_m213_and_paths_resolve() -> None:
     assert SEL20.is_file(), SEL20
     ten = json.loads(SEL10.read_text(encoding="utf-8"))
     twenty = json.loads(SEL20.read_text(encoding="utf-8"))
-    assert twenty["schema_version"] == "m213-hybrid-gate-selection.v1"
+    assert twenty["schema_version"] == "hybrid-gate-selection.v1"
     assert twenty["count"] == 20
     assert twenty["rung"] == 20
     assert twenty["import_eligible"] is False

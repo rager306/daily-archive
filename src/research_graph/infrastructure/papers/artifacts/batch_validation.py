@@ -32,7 +32,7 @@ from research_graph.application.validation.batch_provenance import (
 )
 from research_graph.application.validation.batch_state import ValidationBatchState, read_batch_state
 
-ARTICLE_BATCH_VALIDATION_SCHEMA_VERSION = "m024-article-batch-validation.v1"
+ARTICLE_BATCH_VALIDATION_SCHEMA_VERSION = "article-batch-validation.v1"
 ARTICLE_BATCH_VALIDATION_BUILDER = "metadata_only_article_batch_validation_v1"
 EXPECTED_DOCUMENT_COUNT = 10
 

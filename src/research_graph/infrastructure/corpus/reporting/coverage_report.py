@@ -83,7 +83,7 @@ class FilesystemCoverageReportWriter:
             "generated_at": self.generated_at,
             "corpus_id": result.corpus_id,
             "catalog_records": result.catalog_records,
-            "m056_records": result.m056_records,
+            "cumulative_corpus_records": result.cumulative_corpus_records,
             "parser_total": result.parser_total,
             "parser_completed": result.parser_completed,
             "parser_skipped": result.parser_skipped,
@@ -113,7 +113,7 @@ class FilesystemCoverageReportWriter:
         lines = ["## Executive Summary", ""]
         lines.append(
             f"Coverage for `{result.corpus_id}` records **{result.catalog_records} article records**, "
-            f"including **{result.m056_records} M056** records where applicable."
+            f"including **{result.cumulative_corpus_records} M056** records where applicable."
         )
         lines.append("")
         lines.append("The verified downstream stages are:")
@@ -162,9 +162,9 @@ class FilesystemCoverageReportWriter:
             "",
             "### Results",
             "",
-            f"- **M056 cumulative records**: {result.m056_records}",
+            f"- **M056 cumulative records**: {result.cumulative_corpus_records}",
             f"- **Catalog article records after ingest**: {result.catalog_records}",
-            f"- **M056 records ingested**: {result.m056_records}",
+            f"- **M056 records ingested**: {result.cumulative_corpus_records}",
             "- **Fail-closed metadata**: source variants remain offline and do not authorize production import",
             "",
         ]

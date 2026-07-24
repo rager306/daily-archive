@@ -12,7 +12,7 @@ SELECTION = ROOT / "artifacts" / "m213-hybrid-gate" / "selection.json"
 def test_m213_selection_manifest_shape_and_paths() -> None:
     assert SELECTION.is_file(), SELECTION
     payload = json.loads(SELECTION.read_text(encoding="utf-8"))
-    assert payload["schema_version"] == "m213-hybrid-gate-selection.v1"
+    assert payload["schema_version"] == "hybrid-gate-selection.v1"
     assert payload["count"] == 10
     assert payload["import_eligible"] is False
     assert payload["graph_writes_allowed"] is False

@@ -1,10 +1,10 @@
-"""Wave A hybrid selection expand planner (M245).
+"""Wave A hybrid selection expand planner.
 
 Plans the next hybrid-gate selection rung from local PDF inventory rows,
 excluding papers already selected or already having hybrid bodies.
 
 Pure application: no FS, no network, no hybrid batch, never authorizes import.
-Selection shape matches m213-hybrid-gate-selection.v1 for later batch use.
+Selection shape matches hybrid-gate-selection.v1 for later batch use.
 """
 
 from __future__ import annotations
@@ -14,8 +14,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
-SCHEMA_VERSION = "m245-hybrid-selection-expand.v1"
-SELECTION_SCHEMA_VERSION = "m213-hybrid-gate-selection.v1"
+SCHEMA_VERSION = "hybrid-selection-expand.v1"
+SELECTION_SCHEMA_VERSION = "hybrid-gate-selection.v1"
 DEFAULT_MAX_BYTES = 25 * 1024 * 1024
 DEFAULT_TARGET_COUNT = 20
 

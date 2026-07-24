@@ -39,7 +39,7 @@ def build_thirty_paper_deviation_scan(
     manifest_path: str | Path,
     source_acquisition_summary_path: str | Path | None = None,
     baseline_summary_path: str | Path | None = None,
-    run_id: str = "m006-s03-thirty-paper-deviation",
+    run_id: str = "s03-thirty-paper-deviation",
 ) -> dict[str, Any]:
     """Build redacted 30-paper deviation summary and per-paper diagnostics."""
     manifest = _read_json_object(Path(manifest_path))
@@ -62,12 +62,12 @@ def build_thirty_paper_deviation_scan(
             )
         )
     return {
-        "schema_version": "m006-thirty-paper-deviation-summary.v1",
+        "schema_version": "thirty-paper-deviation-summary.v1",
         "milestone": "M006-638rza",
         "slice": "S03",
         "run_id": run_id,
         "paper_count": len(records),
-        "m005_overlap_count": manifest.get("m005_overlap_count"),
+        "baseline_overlap_count": manifest.get("baseline_overlap_count"),
         "expansion_count": manifest.get("expansion_count"),
         "source_readiness": _source_readiness(source_summary),
         "aggregate": _aggregate(records),
@@ -111,7 +111,7 @@ def _paper_diagnostic(
     )
     chunk_count = len(package.get("chunks", []))
     return {
-        "schema_version": "m006-thirty-paper-deviation-diagnostic.v1",
+        "schema_version": "thirty-paper-deviation-diagnostic.v1",
         "paper_id": package.get("paper_id"),
         "rank": manifest_paper.get("rank"),
         "selection_role": manifest_paper.get("selection_role"),

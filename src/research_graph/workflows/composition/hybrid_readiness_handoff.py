@@ -1,10 +1,10 @@
 """M216/M218/M227: hybrid coverage + readiness handoff (+ scholarly wrapper).
 
 Orchestrates:
-1) hybrid selection → catalog coverage (M215)
+1) hybrid selection → catalog coverage
 2) resolve hybrid body markdown paths under a body_root
 3) resolve GROBID hybrid.header.json / hybrid.citations.jsonl (M217/M218)
-4) no-write graph-data readiness on available bodies (M209)
+4) no-write graph-data readiness on available bodies
 5) M227: scholarly preprocess summary per found body (enrichment only)
 
 Never authorizes import/writes. Does not start GROBID/ODL (artifacts must pre-exist).
@@ -47,7 +47,7 @@ DEFAULT_SELECTION = Path("artifacts/m213-hybrid-gate/selection-20.json")
 DEFAULT_BODY_ROOT = Path("artifacts/m213-hybrid-gate/runs-live-20")
 DEFAULT_CATALOG_INDEX = Path("data/article_catalog/index.json")
 DEFAULT_CATALOG_ROOT = Path("data/article_catalog")
-SCHEMA_VERSION = "m227-hybrid-readiness-handoff.v1"
+SCHEMA_VERSION = "hybrid-readiness-handoff.v1"
 
 HandoffVerdict = Literal["ready_for_review", "repair", "blocked"]
 
@@ -171,7 +171,7 @@ def _scholarly_wrapper_summary(
     cites_files = sum(1 for r in rows if r.citations_found)
     citation_total = sum(r.citation_count for r in rows)
     return {
-        "schema_version": "m218-scholarly-wrapper.v1",
+        "schema_version": "scholarly-wrapper.v1",
         "papers": papers,
         "headers_found": headers,
         "headers_missing": max(0, papers - headers),

@@ -18,7 +18,7 @@ from research_graph.workflows.universal_kb.contracts import (
     ToolInvocationRecord,
 )
 
-REVIEW_ASSISTANCE_SCHEMA_VERSION = "m035-review-assistance.v1"
+REVIEW_ASSISTANCE_SCHEMA_VERSION = "review-assistance.v1"
 REVIEW_ASSISTANCE_PROMPT_VERSION = "universal_kb_review_assistance_v1"
 PROMPT_PATH = Path("prompts/universal_kb_review_assistance_v1.md")
 _SECRET_SHAPED_PATTERN = re.compile(

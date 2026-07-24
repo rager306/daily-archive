@@ -33,7 +33,7 @@ from research_graph.workflows.composition.yake_keyword_inject import (
     yake_language_code,
 )
 
-SCHEMA_VERSION = "m226-non-arxiv-html-source-proof.v1"
+SCHEMA_VERSION = "non-arxiv-html-source-proof.v1"
 DEFAULT_BLOG_ARTICLE = Path(
     "data/article_catalog/article_catalog/company_blog/cs-ir/"
     "pageindex_zhang2025pageindex/article.json"

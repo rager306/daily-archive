@@ -22,9 +22,9 @@ from typing import Any, Literal
 
 from research_graph.infrastructure.corpus.ingestion import ArticleLoadResult
 
-ARTICLE_EVIDENCE_BUNDLE_SCHEMA_VERSION = "m024-article-evidence-bundle.v1"
-ARTICLE_EVIDENCE_RUN_SCHEMA_VERSION = "m024-article-evidence-run.v1"
-ARTICLE_EVIDENCE_DIAGNOSTICS_SCHEMA_VERSION = "m024-article-evidence-diagnostics.v1"
+ARTICLE_EVIDENCE_BUNDLE_SCHEMA_VERSION = "article-evidence-bundle.v1"
+ARTICLE_EVIDENCE_RUN_SCHEMA_VERSION = "article-evidence-run.v1"
+ARTICLE_EVIDENCE_DIAGNOSTICS_SCHEMA_VERSION = "article-evidence-diagnostics.v1"
 
 BundleSubtreeStatus = Literal["absent", "metadata_only", "review_only", "blocked", "not_attempted"]
 LoadOutcome = Literal["loaded", "loaded_metadata_only", "failed"]
@@ -1372,7 +1372,7 @@ def _links_dedup_bridge_diagnostics(
                 "links_dedup_missing_manifest_sha256", "/subtrees/links_dedup/manifest/sha256"
             )
         )
-    if manifest.get("schema_version") != "m024-article-links-dedup.v1":
+    if manifest.get("schema_version") != "article-links-dedup.v1":
         diagnostics.append(
             _diagnostic(
                 "links_dedup_invalid_manifest_schema", "/links_dedup_manifest/schema_version"
@@ -1601,7 +1601,7 @@ def _retrieval_table_bridge_diagnostics(
                 "retrieval_table_manifest_sha256_mismatch", "/subtrees/retrieval/manifest/sha256"
             )
         )
-    if manifest.get("schema_version") != "m024-article-retrieval-tables.v1":
+    if manifest.get("schema_version") != "article-retrieval-tables.v1":
         diagnostics.append(
             _diagnostic(
                 "retrieval_table_invalid_manifest_schema",

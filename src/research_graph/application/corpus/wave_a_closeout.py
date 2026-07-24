@@ -1,4 +1,4 @@
-"""Wave A data-readiness closeout (M250).
+"""Wave A data-readiness closeout.
 
 Evaluates whether Wave A metrics meet freeze thresholds for data readiness
 without authorizing import, graph writes, or Wave B auto-start.
@@ -13,7 +13,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
 
-SCHEMA_VERSION = "m250-wave-a-closeout.v1"
+SCHEMA_VERSION = "wave-a-closeout.v1"
 DEFAULT_MIN_HYBRID_FOUND = 40
 
 CloseoutSignal = Literal["wave_a_closed", "blocked"]

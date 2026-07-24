@@ -4,7 +4,7 @@
 Composes:
   - durable human_go stamp → Wave B gate
   - unique hybrid bodies as extraction candidates (metadata only)
-  - M072 disagreement rollup via M202 reviewed harness
+  - Reviewed disagreement rollup via extraction harness
 
 No LLM fleet, no DSPy optimizer, no import.
 
@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 
 from research_graph.application.corpus.wave_b_disagreement_inventory import (
-    inventory_m072_disagreements,
+    inventory_reviewed_extraction_disagreements,
 )
 from research_graph.application.corpus.wave_b_extraction_baseline import (
     DEFAULT_HUMAN_GO_STAMP,
@@ -39,7 +39,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "Wave B: stamp gate + hybrid extraction candidates + M072 disagreements. "
+            "Wave B: stamp gate + hybrid extraction candidates + reviewed disagreements. "
             "Import always false. No DSPy optimizer. No LLM run."
         )
     )
@@ -77,8 +77,8 @@ def main(argv: list[str] | None = None) -> int:
         body_roots=body_roots,
         sample_limit=args.sample_limit,
     )
-    # load_m072_split is cwd-relative; run from repo root
-    disagreements = inventory_m072_disagreements(sample_limit=args.sample_limit)
+    # reviewed fixture loader defaults to artifact root; run from repo root
+    disagreements = inventory_reviewed_extraction_disagreements(sample_limit=args.sample_limit)
 
     payload = {
         "schema_version": "m253-wave-b-hybrid-extraction-inventory-report.v1",
@@ -115,8 +115,8 @@ def main(argv: list[str] | None = None) -> int:
             f"hybrid_candidates: {hybrid.candidate_count} | "
             f"empty: {hybrid.empty_count} | "
             f"total_words: {hybrid.total_words} | "
-            f"m072_train_disagreements: {disagreements.train_disagreement_count} | "
-            f"m072_val_disagreements: {disagreements.validation_disagreement_count} | "
+            f"reviewed_train_disagreements: {disagreements.train_disagreement_count} | "
+            f"reviewed_val_disagreements: {disagreements.validation_disagreement_count} | "
             f"kinds: {kind_s} | "
             f"train_entity_f1: {disagreements.train_entity_f1} | "
             "dspy: false | import_eligible: false\n"

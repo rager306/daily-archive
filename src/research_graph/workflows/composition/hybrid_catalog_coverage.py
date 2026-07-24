@@ -1,4 +1,4 @@
-"""Composition: hybrid selection → catalog coverage package (M215).
+"""Composition: hybrid selection → catalog coverage package.
 
 Loads hybrid gate selection + catalog index JSON (stdlib), maps via application
 helper, reconciles with M210 reconcile_paths. Never authorizes import/writes.
@@ -23,7 +23,7 @@ from research_graph.domain.universal_kb.contracts import SafetyFlags
 DEFAULT_HYBRID_SELECTION = Path("artifacts/m213-hybrid-gate/selection-20.json")
 DEFAULT_CATALOG_INDEX = Path("data/article_catalog/index.json")
 DEFAULT_CATALOG_ROOT = Path("data/article_catalog")
-SCHEMA_VERSION = "m215-hybrid-catalog-coverage.v1"
+SCHEMA_VERSION = "hybrid-catalog-coverage.v1"
 
 
 @dataclass(frozen=True, slots=True)

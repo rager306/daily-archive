@@ -60,7 +60,7 @@ def test_empty_factory_matches_contract() -> None:
 
 def test_hybrid_rollup_contract(tmp_path: Path) -> None:
     sel = {
-        "schema_version": "m213-hybrid-gate-selection.v1",
+        "schema_version": "hybrid-gate-selection.v1",
         "milestone_id": "M235-contract",
         "count": 1,
         "papers": [{"paper_id": "ok1", "category": "cs-cl", "pdf_path": "a.pdf"}],

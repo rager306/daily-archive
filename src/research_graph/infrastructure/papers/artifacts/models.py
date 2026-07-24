@@ -17,9 +17,9 @@ from typing import Any, Literal
 
 from research_graph.domain.universal_kb.contracts import SafetyFlags
 
-ARTICLE_ARTIFACT_SCHEMA_VERSION = "m023-article-artifacts.v1"
-ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION = "m023-article-artifact-run.v1"
-ARTICLE_ARTIFACT_DIAGNOSTICS_SCHEMA_VERSION = "m023-article-artifact-diagnostics.v1"
+ARTICLE_ARTIFACT_SCHEMA_VERSION = "article-artifacts.v1"
+ARTICLE_ARTIFACT_RUN_SCHEMA_VERSION = "article-artifact-run.v1"
+ARTICLE_ARTIFACT_DIAGNOSTICS_SCHEMA_VERSION = "article-artifact-diagnostics.v1"
 TRUSTED_IMPORT_USE = "trusted_kg_import"
 
 ArtifactType = Literal[
@@ -511,9 +511,9 @@ def summarize_article_artifacts(artifacts: list[dict[str, Any]]) -> dict[str, An
     }
 
 
-REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION = "m023-redacted-article-structure.v1"
+REDACTED_ARTICLE_STRUCTURE_SCHEMA_VERSION = "redacted-article-structure.v1"
 DETERMINISTIC_FIXTURE_DETECTOR = "redacted_fixture_v1"
-DEFAULT_DETERMINISTIC_RUN_ID = "m023-s02-deterministic-fixture-run"
+DEFAULT_DETERMINISTIC_RUN_ID = "s02-deterministic-fixture-run"
 
 
 def build_article_artifact_manifest_from_structure(

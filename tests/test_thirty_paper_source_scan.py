@@ -30,7 +30,7 @@ class FakeConverter:
 
 def _manifest(tmp_path: Path) -> Path:
     manifest = {
-        "m005_overlap_count": 1,
+        "baseline_overlap_count": 1,
         "expansion_count": 2,
         "papers": [
             {

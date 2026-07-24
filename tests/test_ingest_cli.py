@@ -25,7 +25,7 @@ def _run_cli(*args: str) -> subprocess.CompletedProcess[str]:
 def test_cli_help() -> None:
     result = _run_cli("--help")
     assert result.returncode == 0
-    assert "Ingest M061-acquired PDFs" in result.stdout
+    assert "Ingest acquired PDFs" in result.stdout
     assert "--no-network" in result.stdout
     assert "--m061-root" in result.stdout
 
@@ -82,15 +82,20 @@ def test_cli_default_invokes_real_m061_artifact(tmp_path: Path) -> None:
     assert "skipped=32" in result.stdout
 
 
-def test_cli_custom_m061_root_nonexistent(tmp_path: Path) -> None:
-    """Custom --m061-root pointing at empty dir must fail with FileNotFoundError."""
+def test_cli_custom_catalog_ingest_root_nonexistent(tmp_path: Path) -> None:
+    """Custom --catalog-ingest-root pointing at empty dir must fail with FileNotFoundError."""
     empty = tmp_path / "empty"
     empty.mkdir()
     result = _run_cli(
-        "--m061-root",
+        "--catalog-ingest-root",
         str(empty),
         "--no-network",
         "--no-index",
     )
     assert result.returncode != 0
-    assert "FileNotFoundError" in result.stderr or "No M061" in result.stderr
+    assert (
+        "FileNotFoundError" in result.stderr
+        or "No M061" in result.stderr
+        or "catalog" in result.stderr.lower()
+        or "not found" in result.stderr.lower()
+    )

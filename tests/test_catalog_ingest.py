@@ -24,7 +24,7 @@ from research_graph.infrastructure.corpus.ingestion.catalog_ingest import (
     CATALOG_SAFETY_FLAGS,
     FALLBACK_CATEGORY,
     SAFETY_DEFAULTS,
-    SAFETY_OVERRIDE_M061_INGEST,
+    SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST,
     ApiMetrics,
     IngestOptions,
     RequestPacer,
@@ -74,13 +74,13 @@ def test_catalog_safety_flags_all_false() -> None:
 
 
 def test_safety_override_m061_ingest_scope() -> None:
-    assert SAFETY_OVERRIDE_M061_INGEST.external_network_authorized is True
+    assert SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST.external_network_authorized is True
     assert (
-        "M064" in SAFETY_OVERRIDE_M061_INGEST.scope or "M061" in SAFETY_OVERRIDE_M061_INGEST.scope
+        "M064" in SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST.scope or "M061" in SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST.scope
     )
     # Reason mentions arxiv API + rate limit (the only network operation allowed)
-    assert "arxiv" in SAFETY_OVERRIDE_M061_INGEST.reason.lower()
-    assert "rate limit" in SAFETY_OVERRIDE_M061_INGEST.reason.lower()
+    assert "arxiv" in SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST.reason.lower()
+    assert "rate limit" in SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST.reason.lower()
 
 
 # ---------------------------------------------------------------------------
@@ -90,21 +90,21 @@ def test_safety_override_m061_ingest_scope() -> None:
 
 def test_ingest_options_defaults() -> None:
     opts = IngestOptions()
-    assert opts.m061_root == Path("artifacts/m061-2hop")
+    assert opts.catalog_ingest_root == Path("artifacts/m061-2hop")
     assert opts.arxiv_root == Path("data/article_catalog/article_catalog/arxiv")
     assert opts.update_index is True
-    assert opts.safety_override is SAFETY_OVERRIDE_M061_INGEST
+    assert opts.safety_override is SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST
 
 
 def test_ingest_options_custom() -> None:
     custom_safety = SafetyOverride(False, "test reason", "unit test scope")
     opts = IngestOptions(
-        m061_root=Path("/tmp/test"),
+        catalog_ingest_root=Path("/tmp/test"),
         arxiv_root=Path("/tmp/test-catalog"),
         safety_override=custom_safety,
         update_index=False,
     )
-    assert opts.m061_root == Path("/tmp/test")
+    assert opts.catalog_ingest_root == Path("/tmp/test")
     assert opts.arxiv_root == Path("/tmp/test-catalog")
     assert opts.safety_override.external_network_authorized is False
     assert opts.update_index is False
@@ -372,8 +372,8 @@ def test_invert_anchor_membership_basic() -> None:
 
 def test_ingest_catalog_fail_closed_no_network(tmp_path: Path) -> None:
     """Offline ingest: external_network_authorized=False → all fallback."""
-    m061_root = tmp_path / "m061"
-    anchor_dir = m061_root / "anchor-test"
+    catalog_ingest_root = tmp_path / "m061"
+    anchor_dir = catalog_ingest_root / "anchor-test"
     (anchor_dir / "acquisition").mkdir(parents=True)
     selected = anchor_dir / "acquisition" / "selected-2hop-papers.json"
     selected.write_text(json.dumps({"selected_arxiv_ids": ["2605.18747", "1703.00050"]}))
@@ -389,7 +389,7 @@ def test_ingest_catalog_fail_closed_no_network(tmp_path: Path) -> None:
 
     safety = SafetyOverride(False, "offline test", "unit test")
     options = IngestOptions(
-        m061_root=m061_root,
+        catalog_ingest_root=catalog_ingest_root,
         arxiv_root=arxiv_root,
         safety_override=safety,
         update_index=False,

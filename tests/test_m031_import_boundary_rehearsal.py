@@ -8,7 +8,7 @@ from pathlib import Path
 
 from research_graph.infrastructure.staging.import_boundary import (
     TRUSTED_IMPORT_USE,
-    build_m031_import_boundary_rehearsal,
+    build_import_boundary_rehearsal,
     validate_import_boundary_rehearsal,
 )
 
@@ -26,7 +26,7 @@ REVIEW_EVENTS_PATH = CHUNK_EVIDENCE_DIR / "independent-review-events.jsonl"
 
 
 def _m031_contract() -> dict[str, object]:
-    return build_m031_import_boundary_rehearsal(
+    return build_import_boundary_rehearsal(
         summary_path=SUMMARY_PATH,
         closeout_summary_path=CLOSEOUT_PATH,
         graph_readiness_package_paths=[GRAPH_PACKAGE_PATH],
@@ -34,13 +34,13 @@ def _m031_contract() -> dict[str, object]:
     )
 
 
-def test_build_m031_import_boundary_rehearsal_rejects_parser_ready_and_zero_chunk_rows() -> None:
+def test_build_import_boundary_rehearsal_rejects_parser_ready_and_zero_chunk_rows() -> None:
     contract = _m031_contract()
 
     validation = validate_import_boundary_rehearsal(contract)
 
     assert validation.valid_rehearsal is True
-    assert contract["rehearsal_id"] == "m031-s05-refusal-only-import-boundary"
+    assert contract["rehearsal_id"] == "import-boundary-refusal-only.v1"
     assert contract["source_benchmark_id"] == "m031-catalog-backed-replay-v1"
     assert contract["candidate_count"] == 7
     assert contract["accepted_count"] == 0
@@ -59,7 +59,7 @@ def test_build_m031_import_boundary_rehearsal_rejects_parser_ready_and_zero_chun
     }
 
 
-def test_build_m031_import_boundary_rehearsal_treats_positive_structural_labels_as_refused() -> (
+def test_build_import_boundary_rehearsal_treats_positive_structural_labels_as_refused() -> (
     None
 ):
     contract = _m031_contract()
@@ -86,7 +86,7 @@ def test_build_m031_import_boundary_rehearsal_treats_positive_structural_labels_
     assert TRUSTED_IMPORT_USE in parser_ready["excluded_uses"]
 
 
-def test_build_m031_import_boundary_rehearsal_is_metadata_only_and_has_consistent_counts() -> None:
+def test_build_import_boundary_rehearsal_is_metadata_only_and_has_consistent_counts() -> None:
     contract = _m031_contract()
 
     forbidden_payload_fragments = (
@@ -147,7 +147,7 @@ def test_validate_m031_rehearsal_rejects_unsafe_graph_import_flags() -> None:
     assert validation.refusal_counts["unsafe_kg_readiness_claimed"] == 1
 
 
-def test_build_m031_import_boundary_rehearsal_requires_completed_review_absence_to_refuse() -> None:
+def test_build_import_boundary_rehearsal_requires_completed_review_absence_to_refuse() -> None:
     contract = _m031_contract()
 
     parser_ready = next(
@@ -157,8 +157,8 @@ def test_build_m031_import_boundary_rehearsal_requires_completed_review_absence_
         if candidate["candidate_type"] == "graph_readiness_package"
     )
 
-    assert contract["source_m031_summary"]["independent_review_completed_count"] == 0  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
-    assert contract["source_m031_summary"]["pending_graph_readiness_review_count"] == 1  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+    assert contract["source_import_boundary_summary"]["independent_review_completed_count"] == 0  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
+    assert contract["source_import_boundary_summary"]["pending_graph_readiness_review_count"] == 1  # pyrefly: ignore [bad-assignment, bad-index]  # ty:ignore[not-subscriptable]
     assert parser_ready["review_state"] == "pending_independent_graph_readiness_review"
     assert parser_ready["output_contract_completed"] is False
     assert parser_ready["independent_review_completed"] is False

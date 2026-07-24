@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Wave A operator: hybrid expand preflight + optional limited batch (M246).
+"""Wave A operator: hybrid expand preflight + optional limited batch.
 
 1. Plan next selection via hybrid_selection_expand inventory scan
 2. Write proposal JSON (m213 selection shape)

@@ -1,4 +1,4 @@
-"""Wave B hybrid-body statistical extraction package (M255 S01).
+"""Wave B hybrid-body statistical extraction package.
 
 Deterministic, statistical-first candidate extraction over hybrid body text:
 token-frequency keywords + window co-occurrence → RELATED_TO candidates.
@@ -14,8 +14,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
-SCHEMA_VERSION = "m255-wave-b-hybrid-statistical-extraction.v1"
-FLEET_SCHEMA_VERSION = "m255-wave-b-hybrid-statistical-fleet.v1"
+SCHEMA_VERSION = "wave-b-hybrid-statistical-extraction.v1"
+FLEET_SCHEMA_VERSION = "wave-b-hybrid-statistical-fleet.v1"
 
 _TOKEN_RE = re.compile(r"[A-Za-z\u0400-\u04FF][A-Za-z\u0400-\u04FF'\-]{2,}")
 _STOP = frozenset(

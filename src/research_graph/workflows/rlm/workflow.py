@@ -20,7 +20,7 @@ from research_graph.infrastructure.papers.artifacts.reducer import (
 )
 from research_graph.infrastructure.papers.artifacts.worker import MockTransport, run_worker_pool
 
-REDUCER_SCHEMA_VERSION = "m052-rlm-workflow.v1"
+REDUCER_SCHEMA_VERSION = "rlm-workflow.v1"
 WorkflowStepType = Literal["section_navigate", "span_visit", "helper_invoke"]
 _SAFETY_KEYS: tuple[str, ...] = (
     "graph_import_allowed",

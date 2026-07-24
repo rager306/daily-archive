@@ -13,7 +13,7 @@ from research_graph.workflows.composition.hybrid_readiness_handoff import (
 
 def test_handoff_preprocess_bodies_for_found_only(tmp_path: Path) -> None:
     sel = {
-        "schema_version": "m213-hybrid-gate-selection.v1",
+        "schema_version": "hybrid-gate-selection.v1",
         "milestone_id": "M227-fixture",
         "count": 2,
         "papers": [

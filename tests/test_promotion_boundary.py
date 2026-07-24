@@ -171,7 +171,7 @@ def test_s04_and_s06_approval_packet_hash_and_compact() -> None:
     assert packet.expiry_utc.startswith("2026-07-25")
     assert packet.import_eligible is False
     assert packet.graph_write_allowed is False
-    assert "GraphDBPort_adapter_path_m205_only" in packet.environment_prerequisites
+    assert "GraphDBPort_adapter_path_controlled_write_only" in packet.environment_prerequisites
     compact = compact_operator_packet(packet)
     assert compact["packet_hash"] == packet.packet_hash
     assert compact["import_eligible"] is False
@@ -232,7 +232,7 @@ def test_s05_s07_ownership_ratchet_no_direct_graphdb_writes() -> None:
     # promotion_boundary must not import infrastructure GraphDB adapters
     src = APP.read_text(encoding="utf-8")
     assert "research_graph.infrastructure" not in src
-    assert "GraphDBPort" not in src or "GraphDBPort_adapter_path_m205_only" in src
+    assert "GraphDBPort" not in src or "GraphDBPort_adapter_path_controlled_write_only" in src
     assert "upsert_scientific_kg" not in src
 
 

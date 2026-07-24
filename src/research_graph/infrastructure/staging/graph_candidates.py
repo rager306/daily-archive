@@ -263,7 +263,7 @@ def build_candidate_locator_batch_from_targets(
     serialized. Source text is read transiently by ``build_candidate_locator_artifact``
     and is not embedded in the returned batch.
     """
-    route_specs_by_m011_name = _route_specs_by_m011_name(route_specs)
+    route_specs_by_locator_name = _route_specs_by_locator_name(route_specs)
     source_ledger: list[dict[str, Any]] = []
     locators: list[dict[str, Any]] = []
     per_paper_summary: list[dict[str, Any]] = []
@@ -277,7 +277,7 @@ def build_candidate_locator_batch_from_targets(
             source_path=Path(str(target_source.get("path", "missing"))),
             expected_sha256=target_source.get("sha256"),
         )
-        selected_specs = _route_specs_for_target(target, route_specs_by_m011_name)
+        selected_specs = _route_specs_for_target(target, route_specs_by_locator_name)
         if not selected_specs:
             selected_specs = tuple(route_specs)
         paper_artifact = build_candidate_locator_artifact(
@@ -680,7 +680,7 @@ def _validate_span(locator_id: str, span: dict[str, Any]) -> list[str]:
     return diagnostics
 
 
-def _route_specs_by_m011_name(
+def _route_specs_by_locator_name(
     route_specs: list[LocatorRouteSpec] | tuple[LocatorRouteSpec, ...],
 ) -> dict[str, LocatorRouteSpec]:
     by_route_name = {spec.route_name: spec for spec in route_specs}
@@ -695,12 +695,12 @@ def _route_specs_by_m011_name(
 
 
 def _route_specs_for_target(
-    target: dict[str, Any], route_specs_by_m011_name: dict[str, LocatorRouteSpec]
+    target: dict[str, Any], route_specs_by_locator_name: dict[str, LocatorRouteSpec]
 ) -> tuple[LocatorRouteSpec, ...]:
     route_counts = (target.get("review_metadata") or {}).get("counts_by_route") or {}
     selected: list[LocatorRouteSpec] = []
-    for m011_route_name, spec in route_specs_by_m011_name.items():
-        if route_counts.get(m011_route_name, 0) > 0:
+    for locator_route_name, spec in route_specs_by_locator_name.items():
+        if route_counts.get(locator_route_name, 0) > 0:
             selected.append(spec)
     return tuple(selected)
 

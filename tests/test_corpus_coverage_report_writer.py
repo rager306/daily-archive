@@ -150,7 +150,7 @@ def test_coverage_report_json_summary_is_schema_stable(tmp_path: Path) -> None:
     summary = json.loads(json_path.read_text())
     assert summary["schema_version"] == COVERAGE_REPORT_SCHEMA_VERSION
     assert summary["catalog_records"] == 221
-    assert summary["m056_records"] == 166
+    assert summary["cumulative_corpus_records"] == 166
     assert summary["source_backed_records"] == 219
     assert summary["metadata_only_records"] == 2
     assert summary["parser_errors"] == 0

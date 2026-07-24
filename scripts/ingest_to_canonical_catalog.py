@@ -5,7 +5,7 @@ Thin compatibility wrapper around the M122 catalog ingest application use case.
 Replaces the legacy ``scripts/m061_ingest_to_canonical_catalog.py`` script.
 
 Behavior matches the M061 S04 CLI:
-- Reads M061 anchor-2hop artifacts under ``--m061-root``
+- Reads anchor-2hop artifacts under ``--catalog-ingest-root`` (legacy ``--m061-root``)
 - Copies PDFs into canonical catalog under ``--catalog-root``
 - Creates ``article.json`` records with safety_flags
 - Optionally updates ``article_catalog/index.json`` (skip with ``--no-index``)
@@ -31,14 +31,14 @@ from research_graph.application.corpus.catalog_ingest import (
 from research_graph.infrastructure.corpus.ingestion.catalog_adapters import (
     ArxivCatalogMetadataProvider,
     FilesystemCatalogRepository,
-    M061SourceAssetStore,
+    CanonicalCatalogSourceAssetStore,
     Sha256ChecksumVerifier,
 )
 from research_graph.infrastructure.corpus.ingestion.catalog_ingest import (
     CATALOG_ROOT_DEFAULT,
-    M061_ROOT_DEFAULT,
+    CANONICAL_CATALOG_INGEST_ROOT_DEFAULT,
     REPORT_PATH_DEFAULT,
-    SAFETY_OVERRIDE_M061_INGEST,
+    SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST,
     ApiMetrics,
     IngestRecord,
     IngestResult,
@@ -49,13 +49,15 @@ from research_graph.infrastructure.corpus.ingestion.catalog_ingest import (
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Ingest M061-acquired PDFs into the canonical article catalog.",
+        description="Ingest acquired PDFs into the canonical article catalog.",
     )
     parser.add_argument(
-        "--m061-root",
+        "--catalog-ingest-root",
+        "--m061-root",  # legacy alias
+        dest="catalog_ingest_root",
         type=Path,
-        default=M061_ROOT_DEFAULT,
-        help="M061 2-hop artifacts root (default: %(default)s)",
+        default=CANONICAL_CATALOG_INGEST_ROOT_DEFAULT,
+        help="Canonical catalog ingest artifacts root (default: %(default)s)",
     )
     parser.add_argument(
         "--catalog-root",
@@ -128,7 +130,7 @@ def _legacy_result(
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
 
-    safety = SAFETY_OVERRIDE_M061_INGEST
+    safety = SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST
     if args.no_network:
         safety = SafetyOverride(
             external_network_authorized=False,
@@ -142,7 +144,7 @@ def main(argv: list[str] | None = None) -> int:
         metrics=api_metrics,
     )
     result = CatalogIngestUseCase(
-        source_assets=M061SourceAssetStore(args.m061_root),
+        source_assets=CanonicalCatalogSourceAssetStore(args.catalog_ingest_root),
         metadata_provider=metadata_provider,
         checksum_verifier=Sha256ChecksumVerifier(),
         catalog_repository=FilesystemCatalogRepository(args.catalog_root),

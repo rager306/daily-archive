@@ -26,7 +26,7 @@ from research_graph.application.profiles.textbook import (
 )
 from research_graph.domain.universal_kb.contracts import SafetyFlags
 
-SCHEMA_VERSION = "m223-gnn-textbook-catalog-register.v1"
+SCHEMA_VERSION = "gnn-textbook-catalog-register.v1"
 DEFAULT_CATALOG_ROOT = Path("data/article_catalog")
 DEFAULT_SOURCE_DIR = Path("artifacts/m222-gnn-textbook/source")
 

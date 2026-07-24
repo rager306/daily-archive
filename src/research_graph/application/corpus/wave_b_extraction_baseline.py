@@ -1,7 +1,7 @@
-"""Wave B extraction quality baseline (M252).
+"""Wave B extraction quality baseline.
 
-Composes M202 reviewed harness APIs over M072 fixtures:
-``load_m072_split`` → staged scores → ``decide_gate_verdict``.
+Composes reviewed extraction harness APIs over reviewed fixtures:
+``load_reviewed_extraction_split`` → staged scores → ``decide_gate_verdict``.
 
 Never enables DSPy optimizers, never authorizes import/graph writes.
 Optional human_go stamp is a durable authorization record for Wave B work
@@ -18,11 +18,14 @@ from typing import Any, Literal
 
 from research_graph.application.extraction_ablations import (
     decide_gate_verdict,
-    load_m072_split,
     run_staged_reviewed_run,
 )
+from research_graph.application.reviewed_extraction_fixtures import (
+    load_jsonl_records,
+    load_reviewed_extraction_split,
+)
 
-SCHEMA_VERSION = "m252-wave-b-extraction-baseline.v1"
+SCHEMA_VERSION = "wave-b-extraction-baseline.v1"
 DEFAULT_HUMAN_GO_STAMP = Path("artifacts/wave-b/human_go.json")
 
 GateVerdict = Literal["proceed", "repair", "stop"]
@@ -67,8 +70,8 @@ class WaveBExtractionBaselinePackage:
             "import_eligible": False,
             "graph_writes_allowed": False,
             "note": (
-                "Wave B extraction quality baseline on M072 reviewed fixtures; "
-                "M202 harness only; not DSPy optimizer; not graph import"
+                "Wave B extraction quality baseline on reviewed extraction fixtures; "
+                "reviewed harness only; not DSPy optimizer; not graph import"
             ),
         }
 
@@ -82,7 +85,7 @@ def write_human_go_stamp(
 ) -> dict[str, Any]:
     """Persist Wave B human go stamp (never import authorization)."""
     payload = {
-        "schema_version": "m252-wave-b-human-go.v1",
+        "schema_version": "wave-b-human-go.v1",
         "human_go": True,
         "authorized_by": authorized_by,
         "decision_ref": decision_ref,
@@ -122,20 +125,18 @@ def build_wave_b_extraction_baseline(
     human_go: bool = True,
     fixtures_root: Path | None = None,
 ) -> WaveBExtractionBaselinePackage:
-    """Score M072 train+validation baseline predictions (M202 harness)."""
-    # load_m072_split uses relative Path("artifacts/m072-..."); cwd is repo root in tests/ops
+    """Score M072 train+validation baseline predictions (reviewed harness)."""
+    # load_reviewed_extraction_split defaults to reviewed fixture root; cwd is repo root in tests/ops
     if fixtures_root is not None:
         # temporary: monkey via chdir not needed if we load manually when root given
-        from research_graph.application.extraction_ablations import _load_jsonl
-
         root = Path(fixtures_root)
-        train_gold = _load_jsonl(root / "train-gold.jsonl")
-        train_pred = _load_jsonl(root / "train-baseline-predictions.jsonl")
-        val_gold = _load_jsonl(root / "validation-gold.jsonl")
-        val_pred = _load_jsonl(root / "validation-baseline-predictions.jsonl")
+        train_gold = load_jsonl_records(root / "train-gold.jsonl")
+        train_pred = load_jsonl_records(root / "train-baseline-predictions.jsonl")
+        val_gold = load_jsonl_records(root / "validation-gold.jsonl")
+        val_pred = load_jsonl_records(root / "validation-baseline-predictions.jsonl")
     else:
-        train_gold, train_pred = load_m072_split("train")
-        val_gold, val_pred = load_m072_split("validation")
+        train_gold, train_pred = load_reviewed_extraction_split("train")
+        val_gold, val_pred = load_reviewed_extraction_split("validation")
 
     train_staged = run_staged_reviewed_run(
         train_gold,
@@ -164,7 +165,7 @@ def build_wave_b_extraction_baseline(
         "dspy:false",
         "import_write_fail_closed",
         "wave_b_extraction_baseline_only",
-        "m202_harness_reuse",
+        "reviewed_harness_reuse",
     )
     return WaveBExtractionBaselinePackage(
         schema_version=SCHEMA_VERSION,

@@ -1,15 +1,15 @@
-"""M253: M072 disagreement inventory via reviewed harness."""
+"""M253: Reviewed disagreement inventory via extraction harness."""
 
 from __future__ import annotations
 
 from research_graph.application.corpus.wave_b_disagreement_inventory import (
     WaveBDisagreementInventoryPackage,
-    inventory_m072_disagreements,
+    inventory_reviewed_extraction_disagreements,
 )
 
 
 def test_inventory_scores_m072_fixtures() -> None:
-    pkg = inventory_m072_disagreements()
+    pkg = inventory_reviewed_extraction_disagreements()
     assert pkg.import_eligible is False
     assert pkg.dspy_optimizer_enabled is False
     assert pkg.train_case_count >= 1

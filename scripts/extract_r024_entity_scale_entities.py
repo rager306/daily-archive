@@ -102,7 +102,7 @@ def main() -> int:
                     {
                         "entity_type": etype,
                         "article_ref": ref,
-                        "source": "m025_chunk_types",
+                        "source": "catalog_chunk_types",
                         "chunk_id": m025_chunks[etype].get("chunk_id", ""),
                         "chunk_type": etype,
                         "section_path": m025_chunks[etype].get("section_path", []),
@@ -117,7 +117,7 @@ def main() -> int:
                     {
                         "entity_type": etype,
                         "article_ref": ref,
-                        "source": "m025_chunk_types",
+                        "source": "catalog_chunk_types",
                         "chunk_id": None,
                         "chunk_type": etype,
                         "section_path": [],

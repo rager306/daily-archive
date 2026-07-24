@@ -1,4 +1,4 @@
-"""Optional paper summary stage package (M254 S04).
+"""Optional paper summary stage package.
 
 Pure application package for an optional ETL summary stage.
 Never authorizes import or graph writes. Composition must keep the
@@ -12,7 +12,7 @@ from typing import Any
 
 from research_graph.domain.universal_kb.contracts import SafetyFlags
 
-SCHEMA_VERSION = "m254-paper-summary-stage.v1"
+SCHEMA_VERSION = "paper-summary-stage.v1"
 
 
 @dataclass(frozen=True, slots=True)

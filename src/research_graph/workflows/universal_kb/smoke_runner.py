@@ -27,7 +27,7 @@ FALSE_SAFETY_KEYS = (
     "production_import_attempted",
     "import_eligible",
 )
-CONTINUITY_SCHEMA_VERSION = "m040-real-corpus-continuity.v1"
+CONTINUITY_SCHEMA_VERSION = "real-corpus-continuity.v1"
 LEGACY_SAFETY_DIAGNOSTIC = "safety_flags_missing_or_not_false"
 LEGACY_LOADER_DIAGNOSTIC = "missing_loader_evidence"
 FORBIDDEN_PAYLOAD_TERMS = (
@@ -255,7 +255,7 @@ def run_smoke(manifest_path: Path, *, output_dir: Path, clean: bool = False) -> 
 
     article_summaries = [run_article(article, output_dir=output_dir) for article in articles]
     summary = {
-        "schema_version": "m036-real-corpus-no-write-smoke-summary.v1",
+        "schema_version": "real-corpus-no-write-smoke-summary.v1",
         "manifest_ref": f"artifact:{manifest_path.as_posix()}",
         "article_count": len(article_summaries),
         "completed_handoff_count": sum(

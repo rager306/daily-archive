@@ -1,4 +1,4 @@
-"""Wave B M072 gold ↔ hybrid body join inventory (M256 S01).
+"""Wave B reviewed-gold ↔ hybrid body join inventory.
 
 Metadata join only: matches reviewed gold paper_ids to hybrid body paths.
 No LLM, no DSPy, never import.
@@ -15,7 +15,7 @@ from research_graph.application.corpus.etl_preprocess_fleet_audit import (
     discover_unique_hybrid_bodies,
 )
 
-SCHEMA_VERSION = "m256-wave-b-gold-hybrid-join.v1"
+SCHEMA_VERSION = "wave-b-reviewed-gold-hybrid-join.v1"
 
 
 def normalize_paper_id(paper_id: str) -> str:
@@ -76,13 +76,13 @@ class GoldHybridJoinPackage:
             "import_eligible": False,
             "graph_writes_allowed": False,
             "note": (
-                "M072 gold to hybrid body join only; "
+                "Reviewed gold to hybrid body join only; "
                 "not LLM; not DSPy; not import; not metrics"
             ),
         }
 
 
-def inventory_m072_gold_hybrid_join(
+def inventory_reviewed_gold_hybrid_join(
     *,
     gold_records: Sequence[Mapping[str, Any]],
     body_roots: Sequence[Path],
@@ -151,6 +151,6 @@ def inventory_m072_gold_hybrid_join(
 __all__ = [
     "SCHEMA_VERSION",
     "GoldHybridJoinPackage",
-    "inventory_m072_gold_hybrid_join",
+    "inventory_reviewed_gold_hybrid_join",
     "normalize_paper_id",
 ]

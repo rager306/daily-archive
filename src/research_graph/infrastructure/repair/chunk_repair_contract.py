@@ -319,9 +319,9 @@ def build_chunk_repair_contract_from_audit(
     return {
         "schema_version": CHUNK_REPAIR_CONTRACT_VERSION,
         "contract_version": CHUNK_REPAIR_CONTRACT_VERSION,
-        "run_id": "m022-s02-chunk-repair-contract-from-s01-audit",
+        "run_id": "s02-chunk-repair-contract-from-s01-audit",
         "created_at": "not-recorded",
-        "paper_id": "m021-s01-audit-batch",
+        "paper_id": "s01-audit-batch",
         "source_audit": {
             "schema_version": audit["schema_version"],
             "input_schema_version": audit["input_schema_version"],

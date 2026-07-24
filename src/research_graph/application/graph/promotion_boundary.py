@@ -204,7 +204,7 @@ class PilotApprovalPacket:
 DEFAULT_ENV_PREREQUISITES: tuple[str, ...] = (
     "graph_writes_allowed_explicit_true_in_future_milestone",
     "falkordb_write_driver_available",
-    "GraphDBPort_adapter_path_m205_only",
+    "GraphDBPort_adapter_path_controlled_write_only",
     "staged_validation_evidence_package",
     "operator_approval_packet_unexpired",
 )
@@ -442,7 +442,7 @@ def build_pilot_approval_packet(
     decision: PilotEligibilityDecision,
     *,
     operation_plan_fingerprint: str,
-    proposed_scope: str = "m205_controlled_falkor_write_pilot_single_candidate",
+    proposed_scope: str = "controlled_falkor_write_pilot_single_candidate",
     ttl_hours: int = 72,
     now: datetime | None = None,
 ) -> PilotApprovalPacket:
@@ -474,12 +474,12 @@ def build_pilot_approval_packet(
         expiry_utc=payload["expiry_utc"],
         proposed_scope=proposed_scope,
         risks=(
-            "write_pilot_may_mutate_graph_if_m205_authorizes",
+            "write_pilot_may_mutate_graph_if_controlled_write_authorizes",
             "rollback_required_on_validation_failure",
             "pilot_eligible_does_not_imply_import_eligible",
         ),
         pilot_eligible=True,
-        diagnostics=("approval_packet_metadata_only", "m205_gate_input"),
+        diagnostics=("approval_packet_metadata_only", "controlled_write_gate_input"),
     )
     packet.assert_no_write()
     return packet

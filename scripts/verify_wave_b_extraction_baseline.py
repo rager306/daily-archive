@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Wave B extraction quality baseline operator (M252 / D124).
 
-Scores M072 reviewed fixtures via M202 harness (no DSPy optimizer, no import).
+Scores reviewed extraction fixtures via reviewed harness (no DSPy optimizer, no import).
 Writes durable human_go stamp for Wave B (not import authorization).
 
 Usage::
@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "Wave B extraction baseline on M072 fixtures. "
+            "Wave B extraction baseline on reviewed extraction fixtures. "
             "Writes human_go stamp (D124). Never import. Never DSPy optimizer."
         )
     )
@@ -95,7 +95,7 @@ def main(argv: list[str] | None = None) -> int:
             "wave": "B",
         }
     else:
-        # load_m072_split uses cwd-relative fixtures path
+        # load_reviewed_extraction_split uses cwd-relative fixtures path
         package = build_wave_b_extraction_baseline(human_go=True)
         payload = {
             "schema_version": "m252-wave-b-extraction-baseline-report.v1",

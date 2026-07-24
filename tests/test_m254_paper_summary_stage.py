@@ -59,7 +59,7 @@ def test_incomplete_fields_pending() -> None:
 def test_rejects_import_true() -> None:
     with pytest.raises(ValueError, match="import"):
         PaperSummaryStagePackage(
-            schema_version="m254-paper-summary-stage.v1",
+            schema_version="paper-summary-stage.v1",
             paper_id="x",
             title="t",
             abstract="a",
@@ -82,7 +82,7 @@ def test_rejects_import_true() -> None:
 def test_rejects_graph_writes() -> None:
     with pytest.raises(ValueError, match="import|write"):
         PaperSummaryStagePackage(
-            schema_version="m254-paper-summary-stage.v1",
+            schema_version="paper-summary-stage.v1",
             paper_id="x",
             title="t",
             abstract="a",

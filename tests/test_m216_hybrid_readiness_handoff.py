@@ -39,7 +39,7 @@ def test_resolve_hybrid_body_paths_found_and_missing(tmp_path: Path) -> None:
 def test_handoff_fixture_coverage_repair_and_partial_bodies(tmp_path: Path) -> None:
     # selection: one cataloged with body, one missing from index
     sel = {
-        "schema_version": "m213-hybrid-gate-selection.v1",
+        "schema_version": "hybrid-gate-selection.v1",
         "milestone_id": "M216-fixture",
         "count": 2,
         "papers": [

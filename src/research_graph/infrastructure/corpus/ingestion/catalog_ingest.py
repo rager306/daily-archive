@@ -50,8 +50,8 @@ KNOWN_REPORT_BUCKETS: tuple[str, ...] = ("cs-cl", "cs-lg", "cs-cv", "cs-ai", "mi
 
 CATALOG_ROOT_DEFAULT = Path("data/article_catalog")
 CANONICAL_ARXIV_ROOT_DEFAULT = CATALOG_ROOT_DEFAULT / "article_catalog" / "arxiv"
-M061_ROOT_DEFAULT = Path("artifacts/m061-2hop")
-REPORT_PATH_DEFAULT = M061_ROOT_DEFAULT / "s04-ingest-report.md"
+CANONICAL_CATALOG_INGEST_ROOT_DEFAULT = Path("artifacts/m061-2hop")
+REPORT_PATH_DEFAULT = CANONICAL_CATALOG_INGEST_ROOT_DEFAULT / "s04-ingest-report.md"
 
 # M056 cumulative corpus (M121 S01): pre-positioned PDFs with sha256 + size + pages metadata.
 M056_CUMULATIVE_CORPUS_PATH_DEFAULT = Path("artifacts/m056-bfs-graph/cumulative-corpus.json")
@@ -97,7 +97,7 @@ class SafetyOverride:
 
 
 # Canonical safety override for M061 catalog ingestion scope.
-SAFETY_OVERRIDE_M061_INGEST = SafetyOverride(
+SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST = SafetyOverride(
     external_network_authorized=True,
     reason=(
         "User explicit authorization for M064-wqfgfa S04 catalog ingestion; "
@@ -175,9 +175,9 @@ class IngestResult:
 class IngestOptions:
     """User-facing options for a catalog ingest run."""
 
-    m061_root: Path = M061_ROOT_DEFAULT
+    catalog_ingest_root: Path = CANONICAL_CATALOG_INGEST_ROOT_DEFAULT
     arxiv_root: Path = CANONICAL_ARXIV_ROOT_DEFAULT
-    safety_override: SafetyOverride = SAFETY_OVERRIDE_M061_INGEST
+    safety_override: SafetyOverride = SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST
     update_index: bool = True
     sleep: Callable[[float], None] = time.sleep
 
@@ -240,13 +240,13 @@ def parse_retry_after(value: str | None) -> float | None:
         return max(0.0, parsed.timestamp() - time.time())
 
 
-def load_selected_ids(m061_root: Path = M061_ROOT_DEFAULT) -> dict[str, list[str]]:
+def load_selected_ids(catalog_ingest_root: Path = CANONICAL_CATALOG_INGEST_ROOT_DEFAULT) -> dict[str, list[str]]:
     """Read M061 ``selected-2hop-papers.json`` per anchor.
 
     Returns: {anchor_id: [arxiv_id, ...]} sorted by anchor_id.
     """
     anchors: dict[str, list[str]] = {}
-    for selected_path in sorted(m061_root.glob("anchor-*/acquisition/selected-2hop-papers.json")):
+    for selected_path in sorted(catalog_ingest_root.glob("anchor-*/acquisition/selected-2hop-papers.json")):
         anchor_id = selected_path.parents[1].name.removeprefix("anchor-")
         payload = json.loads(selected_path.read_text(encoding="utf-8"))
         selected = payload.get("selected_arxiv_ids")
@@ -254,21 +254,21 @@ def load_selected_ids(m061_root: Path = M061_ROOT_DEFAULT) -> dict[str, list[str
             raise ValueError(f"{selected_path} selected_arxiv_ids must be a list")
         anchors[anchor_id] = [normalize_arxiv_id(str(item)) for item in selected]
     if not anchors:
-        raise FileNotFoundError(f"No M061 selected-2hop-papers.json files under {m061_root}")
+        raise FileNotFoundError(f"No M061 selected-2hop-papers.json files under {catalog_ingest_root}")
     return anchors
 
 
-def load_pdf_paths(m061_root: Path = M061_ROOT_DEFAULT) -> dict[str, list[Path]]:
+def load_pdf_paths(catalog_ingest_root: Path = CANONICAL_CATALOG_INGEST_ROOT_DEFAULT) -> dict[str, list[Path]]:
     """Collect every M061-acquired PDF by arxiv_id.
 
     Returns: {arxiv_id: [path, ...]}; multiple paths per arxiv_id indicate
     cross-anchor coverage of the same paper.
     """
     pdfs: dict[str, list[Path]] = defaultdict(list)
-    for pdf_path in sorted(m061_root.glob("anchor-*/acquisition/pdfs/*.pdf")):
+    for pdf_path in sorted(catalog_ingest_root.glob("anchor-*/acquisition/pdfs/*.pdf")):
         pdfs[normalize_arxiv_id(pdf_path.name)].append(pdf_path)
     if not pdfs:
-        raise FileNotFoundError(f"No M061 PDFs under {m061_root}")
+        raise FileNotFoundError(f"No M061 PDFs under {catalog_ingest_root}")
     return dict(pdfs)
 
 
@@ -330,7 +330,7 @@ def fetch_arxiv_metadata(
     pacer: RequestPacer,
     metrics: ApiMetrics,
     sleep: Callable[[float], None] = time.sleep,
-    safety_override: SafetyOverride = SAFETY_OVERRIDE_M061_INGEST,
+    safety_override: SafetyOverride = SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST,
 ) -> ArxivMetadata:
     """Fetch arxiv category/title via arxiv API with retry+backoff.
 
@@ -516,8 +516,8 @@ def build_article_record(
         "safety_defaults": dict(SAFETY_DEFAULTS),
         "safety_override": {
             "external_network_authorized": True,
-            "reason": SAFETY_OVERRIDE_M061_INGEST.reason,
-            "scope": SAFETY_OVERRIDE_M061_INGEST.scope,
+            "reason": SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST.reason,
+            "scope": SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST.scope,
         },
     }
 
@@ -592,8 +592,8 @@ def ingest_catalog(options: IngestOptions | None = None) -> IngestResult:
     catalog, creates article.json records, and updates index.json.
     """
     opts = options or IngestOptions()
-    anchor_ids = load_selected_ids(opts.m061_root)
-    pdf_paths = load_pdf_paths(opts.m061_root)
+    anchor_ids = load_selected_ids(opts.catalog_ingest_root)
+    pdf_paths = load_pdf_paths(opts.catalog_ingest_root)
     membership = invert_anchor_membership(anchor_ids)
     unique_ids = sorted(membership)
     missing_pdfs = [arxiv_id for arxiv_id in unique_ids if arxiv_id not in pdf_paths]
@@ -741,7 +741,7 @@ class CumulativePdfRecord:
     category: str  # derived from path: arxiv/<category>/<id>/source/<id>.pdf
 
 
-def load_m056_corpus(
+def load_cumulative_offline_corpus(
     cumulative_corpus_path: Path = M056_CUMULATIVE_CORPUS_PATH_DEFAULT,
     repo_root: Path = Path(),
 ) -> dict[str, CumulativePdfRecord]:
@@ -805,7 +805,7 @@ class Sha256Mismatch:
     actual_sha256: str
 
 
-def verify_m056_sha256(
+def verify_offline_corpus_sha256(
     records: dict[str, CumulativePdfRecord],
 ) -> list[Sha256Mismatch]:
     """Verify SHA256 of each PDF against cumulative-corpus.json entry.
@@ -954,11 +954,11 @@ __all__ = [
     "IngestResult",
     "KNOWN_REPORT_BUCKETS",
     "M056_CUMULATIVE_CORPUS_PATH_DEFAULT",
-    "M061_ROOT_DEFAULT",
+    "CANONICAL_CATALOG_INGEST_ROOT_DEFAULT",
     "REPORT_PATH_DEFAULT",
     "RequestPacer",
     "SAFETY_DEFAULTS",
-    "SAFETY_OVERRIDE_M061_INGEST",
+    "SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST",
     "SafetyOverride",
     "Sha256Mismatch",
     "arxiv_query_url",
@@ -968,7 +968,7 @@ __all__ = [
     "fetch_arxiv_metadata",
     "ingest_catalog",
     "invert_anchor_membership",
-    "load_m056_corpus",
+    "load_cumulative_offline_corpus",
     "load_pdf_paths",
     "load_selected_ids",
     "normalize_arxiv_id",
@@ -979,6 +979,6 @@ __all__ = [
     "report_bucket",
     "sha256_file",
     "update_index_if_exists",
-    "verify_m056_sha256",
+    "verify_offline_corpus_sha256",
     "write_article_record",
 ]

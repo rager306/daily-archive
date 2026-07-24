@@ -124,7 +124,7 @@ def run_universal_kb_no_write_rehearsal(artifact_dir: str | Path) -> RehearsalRe
         flags=("needs_human_review",),
     )
     review_trace = build_review_tool_invocation_record(
-        invocation_id="m035-s07-review-trace-1",
+        invocation_id="s07-review-trace-1",
         model=DEFAULT_MINIMAX_MODEL,
         input_hash=_REHEARSAL_INPUT_HASH,
         review_packet=review_packet,

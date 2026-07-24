@@ -14,7 +14,7 @@ from research_graph.infrastructure.corpus.ingestion import catalog_adapters
 from research_graph.infrastructure.corpus.ingestion.catalog_adapters import (
     ArxivCatalogMetadataProvider,
     FilesystemCatalogRepository,
-    M061SourceAssetStore,
+    CanonicalCatalogSourceAssetStore,
     Sha256ChecksumVerifier,
 )
 from research_graph.infrastructure.corpus.ingestion.catalog_ingest import ApiMetrics
@@ -34,7 +34,7 @@ def _write_m061_fixture(root: Path, article_id: str = "2605.18747") -> Path:
 
 def test_m061_source_asset_store_reads_membership_and_pdf_assets(tmp_path: Path) -> None:
     source_pdf = _write_m061_fixture(tmp_path / "m061")
-    store = M061SourceAssetStore(tmp_path / "m061")
+    store = CanonicalCatalogSourceAssetStore(tmp_path / "m061")
 
     assert store.selected_article_membership() == {"2605.18747": ["test"]}
     assets = store.pdf_assets_by_article()
@@ -65,7 +65,7 @@ def test_filesystem_catalog_repository_preserves_layout_and_article_record(tmp_p
     metadata = ArxivCatalogMetadataProvider.offline().metadata_for("2605.18747")
 
     catalog_asset = repository.store_pdf_asset(
-        source_asset=M061SourceAssetStore.source_asset_from_path("2605.18747", source_pdf),
+        source_asset=CanonicalCatalogSourceAssetStore.source_asset_from_path("2605.18747", source_pdf),
         metadata=metadata,
         source_sha256=checksum,
     )
@@ -103,7 +103,7 @@ def test_filesystem_catalog_repository_write_article_record_uses_catalog_helper(
     repository = FilesystemCatalogRepository(tmp_path / "data" / "article_catalog")
     metadata = ArxivCatalogMetadataProvider.offline().metadata_for("2605.18747")
     catalog_asset = repository.store_pdf_asset(
-        source_asset=M061SourceAssetStore.source_asset_from_path("2605.18747", source_pdf),
+        source_asset=CanonicalCatalogSourceAssetStore.source_asset_from_path("2605.18747", source_pdf),
         metadata=metadata,
         source_sha256=checksum,
     )
@@ -127,7 +127,7 @@ def test_filesystem_catalog_repository_detects_existing_matching_asset(tmp_path:
     checksum = Sha256ChecksumVerifier().digest(source_pdf.as_posix())
     repository = FilesystemCatalogRepository(tmp_path / "data" / "article_catalog")
     metadata = ArxivCatalogMetadataProvider.offline().metadata_for("2605.18747")
-    source_asset = M061SourceAssetStore.source_asset_from_path("2605.18747", source_pdf)
+    source_asset = CanonicalCatalogSourceAssetStore.source_asset_from_path("2605.18747", source_pdf)
 
     repository.store_pdf_asset(source_asset, metadata, checksum)
 
@@ -141,7 +141,7 @@ def test_filesystem_catalog_repository_detects_existing_matching_asset(tmp_path:
 def test_catalog_ingest_use_case_runs_with_filesystem_adapters_offline(tmp_path: Path) -> None:
     _write_m061_fixture(tmp_path / "m061")
     metrics = ApiMetrics()
-    source_assets = M061SourceAssetStore(tmp_path / "m061")
+    source_assets = CanonicalCatalogSourceAssetStore(tmp_path / "m061")
     metadata_provider = ArxivCatalogMetadataProvider.offline(metrics=metrics)
     repository = FilesystemCatalogRepository(tmp_path / "data" / "article_catalog")
 

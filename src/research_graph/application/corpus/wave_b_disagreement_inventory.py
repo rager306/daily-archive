@@ -1,4 +1,4 @@
-"""Wave B disagreement inventory over M072 reviewed fixtures (M253).
+"""Wave B disagreement inventory over reviewed extraction fixtures.
 
 Rolls up DisagreementEvidence from score_reviewed_split without loading raw
 article text, without DSPy, without import.
@@ -11,12 +11,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from research_graph.application.extraction_ablations import load_m072_split
+from research_graph.application.reviewed_extraction_fixtures import (
+    load_jsonl_records,
+    load_reviewed_extraction_split,
+)
 from research_graph.application.reviewed_extraction_metrics import (
     score_reviewed_split,
 )
 
-SCHEMA_VERSION = "m253-wave-b-disagreement-inventory.v1"
+SCHEMA_VERSION = "wave-b-disagreement-inventory.v1"
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,29 +63,27 @@ class WaveBDisagreementInventoryPackage:
             "import_eligible": False,
             "graph_writes_allowed": False,
             "note": (
-                "Wave B disagreement rollup on M072 reviewed fixtures; "
+                "Wave B disagreement rollup on reviewed extraction fixtures; "
                 "not DSPy; not import; metadata only"
             ),
         }
 
 
-def inventory_m072_disagreements(
+def inventory_reviewed_extraction_disagreements(
     *,
     fixtures_root: Path | None = None,
     sample_limit: int = 20,
 ) -> WaveBDisagreementInventoryPackage:
     """Score M072 train+validation and aggregate disagreement kinds."""
     if fixtures_root is not None:
-        from research_graph.application.extraction_ablations import _load_jsonl
-
         root = Path(fixtures_root)
-        train_gold = _load_jsonl(root / "train-gold.jsonl")
-        train_pred = _load_jsonl(root / "train-baseline-predictions.jsonl")
-        val_gold = _load_jsonl(root / "validation-gold.jsonl")
-        val_pred = _load_jsonl(root / "validation-baseline-predictions.jsonl")
+        train_gold = load_jsonl_records(root / "train-gold.jsonl")
+        train_pred = load_jsonl_records(root / "train-baseline-predictions.jsonl")
+        val_gold = load_jsonl_records(root / "validation-gold.jsonl")
+        val_pred = load_jsonl_records(root / "validation-baseline-predictions.jsonl")
     else:
-        train_gold, train_pred = load_m072_split("train")
-        val_gold, val_pred = load_m072_split("validation")
+        train_gold, train_pred = load_reviewed_extraction_split("train")
+        val_gold, val_pred = load_reviewed_extraction_split("validation")
 
     train = score_reviewed_split(train_gold, train_pred, split_name="train")
     val = score_reviewed_split(val_gold, val_pred, split_name="validation")
@@ -109,7 +110,7 @@ def inventory_m072_disagreements(
         "dspy:false",
         "import_write_fail_closed",
         "wave_b_disagreement_inventory_only",
-        "m202_harness_reuse",
+        "reviewed_harness_reuse",
     )
     return WaveBDisagreementInventoryPackage(
         schema_version=SCHEMA_VERSION,
@@ -129,5 +130,5 @@ def inventory_m072_disagreements(
 __all__ = [
     "SCHEMA_VERSION",
     "WaveBDisagreementInventoryPackage",
-    "inventory_m072_disagreements",
+    "inventory_reviewed_extraction_disagreements",
 ]

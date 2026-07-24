@@ -24,7 +24,7 @@ def _write_manifest(tmp_path: Path) -> Path:
     )
     manifest = {
         "paper_count": 2,
-        "m005_overlap_count": 1,
+        "baseline_overlap_count": 1,
         "expansion_count": 1,
         "papers": [
             {

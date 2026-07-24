@@ -15,7 +15,7 @@ from typing import Any
 from research_graph.domain.universal_kb.contracts import SafetyFlags
 
 EXPECTED_CONTRACT_VERSION = "import-ready-chunk-contract.v1"
-EXPECTED_SCHEMA_VERSION = "m005-import-ready-chunk-package.v1"
+EXPECTED_SCHEMA_VERSION = "import-ready-chunk-package.v1"
 GRAPH_READY_STATE = "ok_for_graph"
 RETRIEVAL_ONLY_STATE = "ok_for_retrieval_only"
 REPAIR_REQUIRED_STATE = "repair_required"
@@ -218,7 +218,7 @@ def validate_import_ready_package(package: dict[str, Any]) -> ContractValidation
 def validation_to_dict(result: ContractValidationResult) -> dict[str, Any]:
     """Serialize validation results without raw text or embeddings."""
     return {
-        "schema_version": "m005-import-contract-validation.v1",
+        "schema_version": "import-contract-validation.v1",
         "valid_package": result.valid_package,
         "passed": result.passed,
         "has_import_eligible_chunks": result.has_import_eligible_chunks,

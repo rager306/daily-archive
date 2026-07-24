@@ -174,9 +174,9 @@ class MockTransport:
             }
         ]
         tool_input = {
-            "schema_version": "m023-minimax-artifact-helper.v1",
-            "source_schema_version": "m023-redacted-article-structure.v1",
-            "manifest_schema_version": "m023-article-artifacts.v1",
+            "schema_version": "minimax-artifact-helper.v1",
+            "source_schema_version": "redacted-article-structure.v1",
+            "manifest_schema_version": "article-artifacts.v1",
             "input_sha256": "mock-input-sha256",
             "artifact_hints": artifact_hints,
             "helper_limit": helper_limit,

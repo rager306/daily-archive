@@ -13,9 +13,9 @@ from research_graph.application.corpus.catalog_ingest import (
 )
 from research_graph.domain.corpus import CatalogIngestStatus
 from research_graph.infrastructure.corpus.ingestion.catalog_adapters import (
-    M056CumulativeCorpusSourceAssetStore,
-    M056FilesystemCatalogRepository,
-    M056OfflineMetadataProvider,
+    CumulativeCorpusSourceAssetStore,
+    OfflineFilesystemCatalogRepository,
+    OfflineCorpusMetadataProvider,
     Sha256ChecksumVerifier,
 )
 from research_graph.infrastructure.corpus.ingestion.catalog_ingest import (
@@ -23,9 +23,9 @@ from research_graph.infrastructure.corpus.ingestion.catalog_ingest import (
     CumulativePdfRecord,
     SafetyOverride,
     Sha256Mismatch,
-    load_m056_corpus,
+    load_cumulative_offline_corpus,
     sha256_file,
-    verify_m056_sha256,
+    verify_offline_corpus_sha256,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -37,13 +37,13 @@ def test_m056_corpus_path_default() -> None:
     )
 
 
-def test_load_m056_corpus_returns_166_records() -> None:
-    records = load_m056_corpus(repo_root=REPO_ROOT)
+def test_load_cumulative_offline_corpus_returns_166_records() -> None:
+    records = load_cumulative_offline_corpus(repo_root=REPO_ROOT)
     assert len(records) == 166
 
 
-def test_load_m056_corpus_record_fields() -> None:
-    records = load_m056_corpus(repo_root=REPO_ROOT)
+def test_load_cumulative_offline_corpus_record_fields() -> None:
+    records = load_cumulative_offline_corpus(repo_root=REPO_ROOT)
     sample = records["1703.04247"]
     assert isinstance(sample, CumulativePdfRecord)
     assert sample.arxiv_id == "1703.04247"
@@ -63,8 +63,8 @@ def test_load_m056_corpus_record_fields() -> None:
     }
 
 
-def test_load_m056_corpus_all_categories_distributed() -> None:
-    records = load_m056_corpus(repo_root=REPO_ROOT)
+def test_load_cumulative_offline_corpus_all_categories_distributed() -> None:
+    records = load_cumulative_offline_corpus(repo_root=REPO_ROOT)
     categories = {r.category for r in records.values()}
     assert "cs-cl" in categories
     assert "cs-lg" in categories
@@ -72,7 +72,7 @@ def test_load_m056_corpus_all_categories_distributed() -> None:
     assert "mixed-source" in categories
 
 
-def test_load_m056_corpus_missing_path(tmp_path: Path) -> None:
+def test_load_cumulative_offline_corpus_missing_path(tmp_path: Path) -> None:
     """If cumulative-corpus.json points to a missing PDF, raise FileNotFoundError."""
     bad_corpus = tmp_path / "bad-corpus.json"
     bad_corpus.write_text(
@@ -93,22 +93,22 @@ def test_load_m056_corpus_missing_path(tmp_path: Path) -> None:
         )
     )
     with pytest.raises(FileNotFoundError, match="missing PDFs"):
-        load_m056_corpus(bad_corpus, repo_root=tmp_path)
+        load_cumulative_offline_corpus(bad_corpus, repo_root=tmp_path)
 
 
-def test_load_m056_corpus_missing_corpus_file(tmp_path: Path) -> None:
+def test_load_cumulative_offline_corpus_missing_corpus_file(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError, match="not found"):
-        load_m056_corpus(tmp_path / "nonexistent.json")
+        load_cumulative_offline_corpus(tmp_path / "nonexistent.json")
 
 
-def test_load_m056_corpus_empty_pdfs(tmp_path: Path) -> None:
+def test_load_cumulative_offline_corpus_empty_pdfs(tmp_path: Path) -> None:
     empty = tmp_path / "empty.json"
     empty.write_text(json.dumps({"pdf_count": 0, "pdfs": []}))
     with pytest.raises(ValueError, match="empty"):
-        load_m056_corpus(empty)
+        load_cumulative_offline_corpus(empty)
 
 
-def test_load_m056_corpus_skips_non_conforming_paths(tmp_path: Path) -> None:
+def test_load_cumulative_offline_corpus_skips_non_conforming_paths(tmp_path: Path) -> None:
     """Entries with paths not containing 'arxiv' are skipped silently."""
     mixed_corpus = tmp_path / "mixed.json"
     (tmp_path / "data" / "article_catalog" / "article_catalog" / "arxiv" / "cs-lg").mkdir(
@@ -169,20 +169,20 @@ def test_load_m056_corpus_skips_non_conforming_paths(tmp_path: Path) -> None:
             }
         )
     )
-    records = load_m056_corpus(mixed_corpus, repo_root=tmp_path)
+    records = load_cumulative_offline_corpus(mixed_corpus, repo_root=tmp_path)
     assert len(records) == 1
     assert "2605.18747" in records
 
 
-def test_verify_m056_sha256_all_match() -> None:
+def test_verify_offline_corpus_sha256_all_match() -> None:
     """166 PDFs all have matching SHA256."""
-    records = load_m056_corpus(repo_root=REPO_ROOT)
-    mismatches = verify_m056_sha256(records)
+    records = load_cumulative_offline_corpus(repo_root=REPO_ROOT)
+    mismatches = verify_offline_corpus_sha256(records)
     assert mismatches == []
 
 
-def test_verify_m056_sha256_detects_mismatch(tmp_path: Path) -> None:
-    """If a PDF is corrupted (wrong content), verify_m056_sha256 detects mismatch."""
+def test_verify_offline_corpus_sha256_detects_mismatch(tmp_path: Path) -> None:
+    """If a PDF is corrupted (wrong content), verify_offline_corpus_sha256 detects mismatch."""
     # create a PDF whose sha256 doesn't match declared sha256
     pdf = tmp_path / "fake.pdf"
     pdf.write_bytes(b"%PDF-1.4 different content")
@@ -195,7 +195,7 @@ def test_verify_m056_sha256_detects_mismatch(tmp_path: Path) -> None:
         source_milestone="wave-1",
         category="cs-lg",
     )
-    mismatches = verify_m056_sha256({"2605.18747": record})
+    mismatches = verify_offline_corpus_sha256({"2605.18747": record})
     assert len(mismatches) == 1
     m = mismatches[0]
     assert isinstance(m, Sha256Mismatch)
@@ -204,8 +204,8 @@ def test_verify_m056_sha256_detects_mismatch(tmp_path: Path) -> None:
     assert m.actual_sha256 != "0" * 64
 
 
-def test_verify_m056_sha256_empty_records() -> None:
-    assert verify_m056_sha256({}) == []
+def test_verify_offline_corpus_sha256_empty_records() -> None:
+    assert verify_offline_corpus_sha256({}) == []
 
 
 def test_cumulative_pdf_record_is_frozen() -> None:
@@ -266,7 +266,7 @@ def test_m056_adapters_rewrite_stale_article_then_skip_matching_offline_record(
     tmp_path: Path,
 ) -> None:
     repo_root, corpus, article_id = _write_m056_adapter_fixture(tmp_path)
-    source_assets = M056CumulativeCorpusSourceAssetStore(corpus, repo_root=repo_root)
+    source_assets = CumulativeCorpusSourceAssetStore(corpus, repo_root=repo_root)
     assert source_assets.sha256_mismatches() == []
 
     record = source_assets.records[article_id]
@@ -285,7 +285,7 @@ def test_m056_adapters_rewrite_stale_article_then_skip_matching_offline_record(
         reason="test offline M056 ingest",
         scope="test",
     )
-    repository = M056FilesystemCatalogRepository(
+    repository = OfflineFilesystemCatalogRepository(
         repo_root / "data" / "article_catalog",
         records=source_assets.records,
         safety_override=safety,
@@ -293,7 +293,7 @@ def test_m056_adapters_rewrite_stale_article_then_skip_matching_offline_record(
 
     result = CatalogIngestUseCase(
         source_assets=source_assets,
-        metadata_provider=M056OfflineMetadataProvider(source_assets.records),
+        metadata_provider=OfflineCorpusMetadataProvider(source_assets.records),
         checksum_verifier=Sha256ChecksumVerifier(),
         catalog_repository=repository,
     ).run(CatalogIngestRequest(update_index=False))
@@ -310,7 +310,7 @@ def test_m056_adapters_rewrite_stale_article_then_skip_matching_offline_record(
 
     rerun = CatalogIngestUseCase(
         source_assets=source_assets,
-        metadata_provider=M056OfflineMetadataProvider(source_assets.records),
+        metadata_provider=OfflineCorpusMetadataProvider(source_assets.records),
         checksum_verifier=Sha256ChecksumVerifier(),
         catalog_repository=repository,
     ).run(CatalogIngestRequest(update_index=False))

@@ -255,7 +255,7 @@ class NetworkXGraphProbeAdapter:
                     node_type="entity",
                     entity_type=entity_type,
                     article_ref=article.article_ref,
-                    source="m025_chunk_types",
+                    source="catalog_chunk_types",
                 )
                 graph.add_edge(article_node_id, entity_id, edge_type="article_has_entity")
 

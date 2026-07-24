@@ -31,7 +31,7 @@ Kept (intentionally):
 
 Safety posture: fail-closed by default. ``SafetyOverride.external_network_authorized``
 defaults to False in the new module unless explicitly set (legacy M061 default
-permitted external network; preserved via ``SAFETY_OVERRIDE_M061_INGEST``).
+permitted external network; preserved via ``SAFETY_OVERRIDE_CANONICAL_CATALOG_INGEST``).
 """
 
 from __future__ import annotations
@@ -100,8 +100,8 @@ def main(argv: list[str] | None = None) -> int:
         forward_args.append("--no-index")
     if args.no_network:
         forward_args.append("--no-network")
-    if args.m061_root is not None:
-        forward_args.extend(["--m061-root", str(args.m061_root)])
+    if args.catalog_ingest_root is not None:
+        forward_args.extend(["--m061-root", str(args.catalog_ingest_root)])
     if args.catalog_root is not None:
         forward_args.extend(["--catalog-root", str(args.catalog_root)])
     if args.report_path is not None:

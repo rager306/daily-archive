@@ -24,8 +24,8 @@ from research_graph.infrastructure.papers.artifacts.models import (
     default_safety_flags,
 )
 
-ARTICLE_ARTIFACT_METRICS_SCHEMA_VERSION = "m023-article-artifact-metrics.v1"
-ARTICLE_ARTIFACT_BENCHMARK_REPORT_SCHEMA_VERSION = "m023-article-artifact-benchmark-report.v1"
+ARTICLE_ARTIFACT_METRICS_SCHEMA_VERSION = "article-artifact-metrics.v1"
+ARTICLE_ARTIFACT_BENCHMARK_REPORT_SCHEMA_VERSION = "article-artifact-benchmark-report.v1"
 
 DSPY_READINESS_THRESHOLDS = {
     "min_case_count": 3,

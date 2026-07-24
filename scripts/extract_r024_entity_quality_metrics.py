@@ -108,11 +108,11 @@ def main() -> int:
         "|-------------|-------|--------|",
     ]
     sources = {
-        "metadata": "m025_chunk_types",
-        "table_context": "m025_chunk_types",
-        "figure_caption_context": "m025_chunk_types",
-        "citation_context": "m025_chunk_types",
-        "retrieval_context": "m025_chunk_types",
+        "metadata": "catalog_chunk_types",
+        "table_context": "catalog_chunk_types",
+        "figure_caption_context": "catalog_chunk_types",
+        "citation_context": "catalog_chunk_types",
+        "retrieval_context": "catalog_chunk_types",
         "title": "article_metadata",
         "authors": "article_metadata",
         "abstract": "article_metadata",

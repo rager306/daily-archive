@@ -18,12 +18,12 @@ from research_graph.application.corpus.catalog_ingest import (
     CatalogIngestUseCase,
 )
 from research_graph.infrastructure.corpus.ingestion.catalog_adapters import (
-    M056CumulativeCorpusSourceAssetStore,
-    M056FilesystemCatalogRepository,
-    M056OfflineMetadataProvider,
+    CumulativeCorpusSourceAssetStore,
+    OfflineFilesystemCatalogRepository,
+    OfflineCorpusMetadataProvider,
     Sha256ChecksumVerifier,
-    write_m056_ingest_events,
-    write_m056_ingest_summary,
+    write_offline_corpus_ingest_events,
+    write_offline_corpus_ingest_summary,
 )
 from research_graph.infrastructure.corpus.ingestion.catalog_ingest import (
     M056_CUMULATIVE_CORPUS_PATH_DEFAULT,
@@ -37,7 +37,7 @@ def main() -> int:
     catalog_root = repo_root / "data" / "article_catalog"
 
     print(f"Loading M056 cumulative corpus from {corpus}...")
-    source_assets = M056CumulativeCorpusSourceAssetStore(corpus, repo_root=repo_root)
+    source_assets = CumulativeCorpusSourceAssetStore(corpus, repo_root=repo_root)
     records = source_assets.records
     print(f"Loaded {len(records)} PDFs")
 
@@ -62,9 +62,9 @@ def main() -> int:
 
     result = CatalogIngestUseCase(
         source_assets=source_assets,
-        metadata_provider=M056OfflineMetadataProvider(records),
+        metadata_provider=OfflineCorpusMetadataProvider(records),
         checksum_verifier=Sha256ChecksumVerifier(),
-        catalog_repository=M056FilesystemCatalogRepository(
+        catalog_repository=OfflineFilesystemCatalogRepository(
             catalog_root,
             records=records,
             safety_override=safety,
@@ -72,10 +72,10 @@ def main() -> int:
     ).run(CatalogIngestRequest(update_index=True))
 
     events_log = repo_root / "data" / "r024-218-document-corpus-v1" / "ingest-events.jsonl"
-    write_m056_ingest_events(events_log, result)
+    write_offline_corpus_ingest_events(events_log, result)
 
     summary_path = repo_root / "data" / "r024-218-document-corpus-v1" / "ingest-summary.json"
-    write_m056_ingest_summary(summary_path, result)
+    write_offline_corpus_ingest_summary(summary_path, result)
 
     ingested_count = sum(
         count for status, count in result.status_counts.items() if status != "skipped"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Wave A operator script: hybrid selection expand plan (M245).
+"""Wave A operator script: hybrid selection expand plan.
 
 Scans local catalog PDFs, excludes papers already in selection-20 and papers
 that already have hybrid bodies, proposes the next selection rung under a

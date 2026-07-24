@@ -85,7 +85,7 @@ def issue_pilot_write_authorization(
     rollback_plan: tuple[str, ...],
     expiry_utc: str,
     human_approval_token: str,
-    scope: str = "m205_controlled_falkor_write_pilot",
+    scope: str = "controlled_falkor_write_pilot",
     required_prerequisites: tuple[str, ...] = (),
     now: datetime | None = None,
 ) -> PilotWriteAuthorization:

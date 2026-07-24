@@ -55,7 +55,7 @@ from research_graph.infrastructure.papers.artifacts.models import (
     build_article_artifact_manifest_from_structure,
 )
 
-MINIMAX_ARTIFACT_HELPER_SCHEMA_VERSION = "m023-minimax-artifact-helper.v1"
+MINIMAX_ARTIFACT_HELPER_SCHEMA_VERSION = "minimax-artifact-helper.v1"
 MINIMAX_ARTIFACT_HELPER_TOOL_NAME = "record_article_artifact_hints"
 MINIMAX_ARTIFACT_HELPER_DETECTOR = "minimax_artifact_helper_review_only"
 REQUEST_MODE = "forced_tool_redacted_article_structure"
