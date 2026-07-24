@@ -152,3 +152,26 @@ def test_audit_includes_multi_root_content_metrics(tmp_path: Path) -> None:
     d = pkg.to_dict()
     assert d["multi_root_identical_content_count"] == 1
     assert d["import_eligible"] is False
+
+
+
+def test_inventory_multi_root_maps_original_filename(tmp_path: Path) -> None:
+    """original.hybrid.body.md under <id>/body maps to parent id (M259)."""
+    r1 = tmp_path / "r1"
+    r2 = tmp_path / "r2"
+    for root, pid, content in (
+        (r1, "aaaa.11111", b"same-body"),
+        (r2, "aaaa.11111", b"same-body"),
+        (r1, "bbbb.22222", b"other-a"),
+        (r2, "bbbb.22222", b"other-b"),  # would be divergent if mis-keyed as original
+    ):
+        body = root / pid / "body"
+        body.mkdir(parents=True, exist_ok=True)
+        # write as original.hybrid.body.md alias
+        (body / "original.hybrid.body.md").write_bytes(content)
+    inv = inventory_multi_root_hybrid_copies((r1, r2))
+    assert inv.multi_root_paper_id_count == 2
+    assert inv.identical_content_count == 1  # aaaa
+    assert inv.divergent_content_count == 1  # bbbb different content
+    # must NOT treat literal paper_id "original" as multi-root cluster
+    assert "original" not in inv.sample_paper_ids
