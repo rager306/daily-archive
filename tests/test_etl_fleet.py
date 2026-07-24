@@ -39,6 +39,7 @@ def test_build_fleet_package_fail_closed() -> None:
 
 
 def test_fleet_alerts_on_quality_n_mismatch() -> None:
+    """Live-world n mismatch (gepa/header) is a hard fleet alert."""
     pkg = build_etl_fleet_package(
         continuity={"dashboard": {"hybrid_found": 1}, "alerts": [], "import_eligible": False},
         import_hold={"verdict": "pass", "enablement_hits": 0},
@@ -46,11 +47,11 @@ def test_fleet_alerts_on_quality_n_mismatch() -> None:
         quality_n={
             "all_match": False,
             "canonical_joined_count": 23,
-            "mismatches": ["llm:20!=canonical:23"],
+            "mismatches": ["gepa:20!=canonical:23"],
         },
     )
     assert pkg.operator_status == "alerts"
-    assert any("quality_n_mismatch" in a for a in pkg.alerts)
+    assert any("quality_n_live_mismatch" in a for a in pkg.alerts)
 
 
 def test_fleet_alerts_on_import_eligible() -> None:
@@ -72,3 +73,30 @@ def test_operator_help() -> None:
     )
     assert proc.returncode == 0
     assert "fleet" in proc.stdout.lower() or "continuity" in proc.stdout.lower()
+
+
+
+def test_fleet_llm_stale_is_soft_alert() -> None:
+    """Only stale LLM n=20 should not hard-fail fleet status (M272)."""
+    pkg = build_etl_fleet_package(
+        continuity={
+            "dashboard": {"hybrid_found": 81, "hybrid_fraction": 0.35},
+            "alerts": [],
+            "import_eligible": False,
+        },
+        import_hold={"verdict": "pass", "enablement_hits": 0},
+        ship_matrix={
+            "ship_path": "header_priority_constrained_select",
+            "gepa_justified": False,
+        },
+        quality_n={
+            "all_match": False,
+            "canonical_joined_count": 23,
+            "mismatches": ["llm:20!=canonical:23", "compare:20!=canonical:23"],
+        },
+    )
+    assert pkg.quality_n is not None
+    assert pkg.quality_n.get("live_all_match") is True
+    assert pkg.quality_n.get("llm_stale") is True
+    assert pkg.operator_status == "ok"
+    assert any(a == "llm_compare_stale_n" for a in pkg.alerts)

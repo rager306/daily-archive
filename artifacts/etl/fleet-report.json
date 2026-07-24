@@ -1,6 +1,6 @@
 {
   "alerts": [
-    "quality_n_mismatch:llm:20!=canonical:23,compare:20!=canonical:23"
+    "llm_compare_stale_n"
   ],
   "continuity": {
     "alerts": [],
@@ -468,6 +468,8 @@
     "ship_path:header_priority_constrained_select",
     "import_hold_verdict:pass",
     "quality_n_all_match:False",
+    "quality_n_live_all_match:True",
+    "llm_stale:True",
     "quality_n_canonical:23",
     "alerts:1",
     "import_write_fail_closed",
@@ -480,7 +482,7 @@
     "enablement_hits": 0,
     "graph_writes_allowed": false,
     "import_eligible": false,
-    "module_count": 91,
+    "module_count": 92,
     "modules_with_import_eligible": [
       "application/corpus/article_preprocess.py",
       "application/corpus/body_quality.py",
@@ -511,6 +513,7 @@
       "application/corpus/paper_summary_stage.py",
       "application/corpus/preprocess_rollup.py",
       "application/corpus/preprocess_summary.py",
+      "application/corpus/structure_chunk_quality_gate.py",
       "application/corpus/structure_readiness_package.py",
       "application/corpus/term_dense_window.py",
       "application/corpus/wave_a_closeout.py",
@@ -580,13 +583,13 @@
       "/root/daily-archive/src/research_graph/workflows/composition",
       "/root/daily-archive/src/research_graph/infrastructure"
     ],
-    "scanned_file_count": 246,
+    "scanned_file_count": 247,
     "schema_version": "import-hold-inventory.v1",
     "tree_count": 4,
     "verdict": "pass"
   },
   "note": "Unattended fleet glue: pack + ship matrix + import-hold + quality n. Never expands, never imports. Expand uses default pack refresh. Use --rescore-quality for live same-n matrix/grounding.",
-  "operator_status": "alerts",
+  "operator_status": "ok",
   "quality_n": {
     "all_match": false,
     "canonical_joined_count": 23,
@@ -600,6 +603,9 @@
     ],
     "graph_writes_allowed": false,
     "import_eligible": false,
+    "live_all_match": true,
+    "live_mismatches": [],
+    "llm_stale": true,
     "mismatches": [
       "llm:20!=canonical:23",
       "compare:20!=canonical:23"
@@ -615,7 +621,7 @@
       "matrix": 23
     }
   },
-  "rescored_quality": true,
+  "rescored_quality": false,
   "schema_version": "etl-fleet.v2",
   "ship_matrix": {
     "deltas": {

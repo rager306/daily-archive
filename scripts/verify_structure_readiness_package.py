@@ -24,6 +24,9 @@ from typing import Any
 from research_graph.application.corpus.etl_continuity_pack import (
     compose_live_continuity_pack,
 )
+from research_graph.application.corpus.structure_chunk_quality_gate import (
+    evaluate_structure_chunk_quality_gate,
+)
 from research_graph.application.corpus.structure_readiness_package import (
     build_structure_readiness_package,
     extract_structure_layer,
@@ -54,6 +57,12 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-etl-pack",
         action="store_true",
         help="Skip live continuity pack (structure layer only)",
+    )
+    parser.add_argument(
+        "--run-chunk-gate",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Run continuous hybrid body chunk quality gate (default ON)",
     )
     args = parser.parse_args(argv)
 
@@ -100,6 +109,25 @@ def main(argv: list[str] | None = None) -> int:
             except Exception as exc:  # noqa: BLE001
                 citation_verdict = f"error:{type(exc).__name__}"
 
+    chunk_gate_payload = None
+    if getattr(args, "run_chunk_gate", True):
+        from research_graph.workflows.composition.etl_body_coverage import (
+            DEFAULT_BODY_ROOTS,
+        )
+
+        roots = [
+            (repo / p).resolve() if not Path(p).is_absolute() else Path(p)
+            for p in DEFAULT_BODY_ROOTS
+        ]
+        gate_pkg = evaluate_structure_chunk_quality_gate(roots)
+        chunk_gate_payload = gate_pkg.to_dict()
+        gate_out = _r(Path("artifacts/etl/structure-chunk-quality-gate.json"))
+        gate_out.parent.mkdir(parents=True, exist_ok=True)
+        gate_out.write_text(
+            json.dumps(chunk_gate_payload, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
     pkg = build_structure_readiness_package(
         structure_layer=structure_layer,
         pipeline_overall=str(audit.overall),
@@ -108,6 +136,7 @@ def main(argv: list[str] | None = None) -> int:
         closeout_signal=closeout_signal,
         citation_verdict=citation_verdict,
         etl_dashboard=dashboard,
+        chunk_quality_gate=chunk_gate_payload,
     )
     payload = pkg.to_dict()
     payload["import_eligible"] = False

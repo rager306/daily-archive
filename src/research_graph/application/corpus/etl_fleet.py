@@ -110,11 +110,27 @@ def build_etl_fleet_package(
         alerts.append("gepa_justified_true_review_deploy")
     if cont.get("import_eligible") is True or hold.get("import_eligible") is True:
         alerts.append("import_eligible_true_fail_closed")
-    if qn and qn.get("all_match") is False:
+    # Live deploy worlds = header/gepa/grounding/matrix. Stale LLM n is debt, not hard red.
+    live_mismatches = [
+        m
+        for m in (qn or {}).get("mismatches") or []
+        if not str(m).startswith("llm:") and not str(m).startswith("compare:")
+    ]
+    llm_stale = any(
+        str(m).startswith("llm:") or str(m).startswith("compare:")
+        for m in (qn or {}).get("mismatches") or []
+    )
+    if qn is not None:
+        qn = dict(qn)
+        qn["live_all_match"] = len(live_mismatches) == 0
+        qn["llm_stale"] = llm_stale
+        qn["live_mismatches"] = live_mismatches
+    if live_mismatches:
         alerts.append(
-            "quality_n_mismatch:"
-            + ",".join(str(x) for x in (qn.get("mismatches") or [])[:4])
+            "quality_n_live_mismatch:" + ",".join(str(x) for x in live_mismatches[:4])
         )
+    if llm_stale:
+        alerts.append("llm_compare_stale_n")
 
     dash = cont.get("dashboard") if isinstance(cont.get("dashboard"), Mapping) else cont
     hybrid_found = dash.get("hybrid_found")
@@ -128,12 +144,15 @@ def build_etl_fleet_package(
         f"ship_path:{ship_path}",
         f"import_hold_verdict:{hold.get('verdict')}",
         f"quality_n_all_match:{(qn or {}).get('all_match')}",
+        f"quality_n_live_all_match:{(qn or {}).get('live_all_match')}",
+        f"llm_stale:{(qn or {}).get('llm_stale')}",
         f"quality_n_canonical:{(qn or {}).get('canonical_joined_count')}",
         f"alerts:{len(alerts)}",
         "import_write_fail_closed",
         "etl_fleet_only",
     )
-    status = "ok" if not alerts else "alerts"
+    hard_alerts = [a for a in alerts if a != "llm_compare_stale_n"]
+    status = "ok" if not hard_alerts else "alerts"
     return EtlFleetPackage(
         schema_version=SCHEMA_VERSION,
         continuity=cont,

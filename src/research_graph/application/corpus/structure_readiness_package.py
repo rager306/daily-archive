@@ -72,6 +72,7 @@ def build_structure_readiness_package(
     closeout_signal: str | None = None,
     citation_verdict: str | None = None,
     etl_dashboard: Mapping[str, Any] | None = None,
+    chunk_quality_gate: Mapping[str, Any] | None = None,
 ) -> StructureReadinessPackage:
     """Compose structure readiness from injected layer/ETL/citation context (pure)."""
     layer = dict(structure_layer or {})
@@ -80,7 +81,23 @@ def build_structure_readiness_package(
     health = str(layer.get("health") or "gap")
     present = tuple(str(x) for x in (layer.get("present_seams") or ()))
     missing = tuple(str(x) for x in (layer.get("missing_seams") or ()))
-    gaps = tuple(str(x) for x in (layer.get("gaps") or ()))
+    gaps_list = [str(x) for x in (layer.get("gaps") or ())]
+    gate = dict(chunk_quality_gate or {})
+    if gate.get("continuity_gap_cleared") is True:
+        gaps_list = [
+            g
+            for g in gaps_list
+            if g != "real_corpus_chunk_quality_not_continuously_gated"
+        ]
+    elif gate and gate.get("gate_signal") in {"partial", "blocked", "pass"}:
+        # keep gap if gate ran but did not clear
+        if (
+            "real_corpus_chunk_quality_not_continuously_gated" not in gaps_list
+            and gate.get("continuity_gap_cleared") is False
+        ):
+            # do not re-add if layer already dropped it
+            pass
+    gaps = tuple(gaps_list)
 
     if hybrid_found is None and dash.get("hybrid_found") is not None:
         hybrid_found = int(dash["hybrid_found"])
@@ -103,11 +120,23 @@ def build_structure_readiness_package(
 
     # Structure signal: seams blocked → blocked; missing/gaps/partial → partial;
     # present seams + hybrid context → ready_for_structure_review (still not import).
+    gap_cleared = bool(gate.get("continuity_gap_cleared"))
     if health == "blocked" or (not present and missing):
         signal: StructureSignal = "blocked"
-    elif health in {"gap", "partial"} or missing or gaps:
+    elif missing:
         signal = "partial"
-    elif health == "present" and (hybrid_found is None or hybrid_found > 0):
+    elif gaps and not gap_cleared:
+        signal = "partial"
+    elif health in {"gap", "partial"} and gaps:
+        signal = "partial"
+    elif (
+        (health in {"present", "partial", "gap"} or present)
+        and (hybrid_found is None or hybrid_found > 0)
+        and (not gaps or gap_cleared)
+        and gate.get("gate_signal") == "pass"
+    ):
+        signal = "ready_for_structure_review"
+    elif health == "present" and (hybrid_found is None or hybrid_found > 0) and not gaps:
         signal = "ready_for_structure_review"
     else:
         signal = "partial"
@@ -124,6 +153,8 @@ def build_structure_readiness_package(
         f"citation_verdict:{citation_verdict}",
         f"pipeline_overall:{pipeline_overall}",
         f"alerts:{len(alerts)}",
+        f"chunk_gate:{gate.get('gate_signal')}",
+        f"chunk_gap_cleared:{gate.get('continuity_gap_cleared')}",
         "import_write_fail_closed",
         "wave_c_structure_readiness_only",
     )
