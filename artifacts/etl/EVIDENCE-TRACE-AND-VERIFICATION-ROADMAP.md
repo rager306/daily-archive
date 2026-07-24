@@ -172,7 +172,7 @@ Materialized `Method-OUTPERFORMS-Method` only after promotion.
 
 - [x] Every hybrid run stores PDF hash + TEI + ODL JSON + ParserRun  *(M274–M276: TEI/ODL layout/ParserRun/canonical; PDF hash via source pipeline when present)*  
 - [ ] ≥95% of gold entities/relations on canary resolve to SourceSpan with page **or** justified char-only fallback rate tracked  *(rule ready M276; canary metrics open)*  
-- [ ] Structure gate uses IR signals; old newline rule removed or demoted to soft  *(next M277)*  
+- [x] Structure gate uses IR signals; old newline rule removed or demoted to soft  *(M277 structure-chunk-quality-gate.v2)*  
 - [x] SPEC/README single binding story  *(M274 SPEC historical)*  
 
 **Verification-ready:**
@@ -192,7 +192,7 @@ Materialized `Method-OUTPERFORMS-Method` only after promotion.
 | **M274** | E0 SPEC hygiene | — |
 | **M275** | E1.1–E1.3 ODL JSON + TEI + ParserRun | M274 optional |
 | **M276** | E1.4–E1.6 CanonicalDocument + EvidencePath page/bbox **DONE c9cc851** | M275 |
-| **M277** | E2 structure gate v2 + canary design | M276 |
+| **M277** | E2 structure gate v2 + canary design **DONE** | M276 |
 | **M278** | E3 verification (intent, constraints, risk audit, isolation) | M276 |
 | **M279** | E4 EvidenceAssertion staging | M278 |
 | **M280+** | E5 optional generators / fallbacks | M277–M279 |
