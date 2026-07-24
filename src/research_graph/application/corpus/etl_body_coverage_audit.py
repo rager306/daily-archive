@@ -14,6 +14,7 @@ from **raw artifact file volume** across overlapping body roots
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections import Counter
 from collections.abc import Mapping, Sequence
@@ -93,6 +94,96 @@ def scan_hybrid_body_artifacts(
     return total_files, len(unique_ids), files_by_root
 
 
+
+@dataclass(frozen=True, slots=True)
+class MultiRootHybridCopyInventory:
+    """Content taxonomy for multi-root hybrid body copies (read-only)."""
+
+    multi_root_paper_id_count: int
+    identical_content_count: int
+    divergent_content_count: int
+    sample_paper_ids: tuple[str, ...]
+    diagnostics: tuple[str, ...]
+    import_eligible: bool = False
+    graph_writes_allowed: bool = False
+
+    def __post_init__(self) -> None:
+        if self.import_eligible or self.graph_writes_allowed:
+            raise ValueError("multi-root inventory cannot authorize import/writes")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "multi_root_paper_id_count": self.multi_root_paper_id_count,
+            "identical_content_count": self.identical_content_count,
+            "divergent_content_count": self.divergent_content_count,
+            "sample_paper_ids": list(self.sample_paper_ids),
+            "diagnostics": list(self.diagnostics),
+            "import_eligible": False,
+            "graph_writes_allowed": False,
+            "note": (
+                "Identical multi-root copies are storage/process debt, not data corruption. "
+                "Divergent copies require human review before expand/dedup."
+            ),
+        }
+
+
+def inventory_multi_root_hybrid_copies(
+    body_roots: Sequence[Path],
+    *,
+    sample_limit: int = 12,
+) -> MultiRootHybridCopyInventory:
+    """Classify multi-root hybrid bodies as identical vs divergent content.
+
+    SHA-256 over full file bytes. Read-only; never deletes or authorizes import.
+    """
+    by_id: dict[str, list[Path]] = {}
+    for root in body_roots:
+        root_p = Path(root)
+        if not root_p.is_dir():
+            continue
+        for path in root_p.rglob("*.hybrid.body.md"):
+            if not path.is_file():
+                continue
+            name = path.name
+            if not name.endswith(".hybrid.body.md"):
+                continue
+            pid = name[: -len(".hybrid.body.md")]
+            by_id.setdefault(pid, []).append(path)
+
+    multi_ids = sorted(pid for pid, paths in by_id.items() if len(paths) > 1)
+    identical = 0
+    divergent = 0
+    samples: list[str] = []
+    for pid in multi_ids:
+        hashes: set[str] = set()
+        for path in by_id[pid]:
+            try:
+                digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            except OSError:
+                digest = f"unreadable:{path}"
+            hashes.add(digest)
+        if len(hashes) <= 1:
+            identical += 1
+        else:
+            divergent += 1
+        if len(samples) < sample_limit:
+            samples.append(pid)
+
+    diagnostics = (
+        f"multi_root_ids:{len(multi_ids)}",
+        f"identical_content:{identical}",
+        f"divergent_content:{divergent}",
+        "import_write_fail_closed",
+        "wave_a_coverage_only",
+    )
+    return MultiRootHybridCopyInventory(
+        multi_root_paper_id_count=len(multi_ids),
+        identical_content_count=identical,
+        divergent_content_count=divergent,
+        sample_paper_ids=tuple(samples),
+        diagnostics=diagnostics,
+    )
+
 @dataclass(frozen=True, slots=True)
 class EtlBodyCoverageSample:
     article_ref: str
@@ -131,6 +222,10 @@ class EtlBodyCoveragePackage:
     hybrid_body_artifact_files: int = 0
     hybrid_body_unique_paper_ids: int = 0
     hybrid_body_files_by_root: dict[str, int] | None = None
+    multi_root_paper_id_count: int = 0
+    multi_root_identical_content_count: int = 0
+    multi_root_divergent_content_count: int = 0
+    multi_root_sample_paper_ids: tuple[str, ...] = ()
     import_eligible: bool = False
     graph_writes_allowed: bool = False
 
@@ -155,6 +250,10 @@ class EtlBodyCoveragePackage:
             "hybrid_body_artifact_files": self.hybrid_body_artifact_files,
             "hybrid_body_unique_paper_ids": self.hybrid_body_unique_paper_ids,
             "hybrid_body_files_by_root": dict(self.hybrid_body_files_by_root or {}),
+            "multi_root_paper_id_count": self.multi_root_paper_id_count,
+            "multi_root_identical_content_count": self.multi_root_identical_content_count,
+            "multi_root_divergent_content_count": self.multi_root_divergent_content_count,
+            "multi_root_sample_paper_ids": list(self.multi_root_sample_paper_ids),
             "article_json_found": self.article_json_found,
             "article_json_missing": self.article_json_missing,
             "body_roots_scanned": self.body_roots_scanned,
@@ -237,6 +336,7 @@ def audit_catalog_body_coverage(
             )
 
     artifact_files, unique_ids, files_by_root = scan_hybrid_body_artifacts(roots)
+    multi_inv = inventory_multi_root_hybrid_copies(roots)
 
     if articles and hybrid_found == 0 and roots:
         gaps.append("no_hybrid_bodies_under_body_roots")
@@ -246,6 +346,13 @@ def audit_catalog_body_coverage(
         gaps.append("no_body_roots_configured")
     if artifact_files > unique_ids and unique_ids > 0:
         gaps.append("multi_root_hybrid_body_copies")
+        if (
+            multi_inv.identical_content_count > 0
+            and multi_inv.divergent_content_count == 0
+        ):
+            gaps.append("multi_root_identical_content_only")
+        if multi_inv.divergent_content_count > 0:
+            gaps.append("multi_root_divergent_content")
 
     diagnostics = (
         f"articles:{len(articles)}",
@@ -253,6 +360,9 @@ def audit_catalog_body_coverage(
         f"hybrid_missing:{hybrid_missing}",
         f"hybrid_artifact_files:{artifact_files}",
         f"hybrid_unique_paper_ids:{unique_ids}",
+        f"multi_root_ids:{multi_inv.multi_root_paper_id_count}",
+        f"multi_root_identical:{multi_inv.identical_content_count}",
+        f"multi_root_divergent:{multi_inv.divergent_content_count}",
         f"body_roots:{len(roots)}",
         "import_write_fail_closed",
         "wave_a_coverage_only",
@@ -273,6 +383,10 @@ def audit_catalog_body_coverage(
         hybrid_body_artifact_files=artifact_files,
         hybrid_body_unique_paper_ids=unique_ids,
         hybrid_body_files_by_root=dict(sorted(files_by_root.items())),
+        multi_root_paper_id_count=multi_inv.multi_root_paper_id_count,
+        multi_root_identical_content_count=multi_inv.identical_content_count,
+        multi_root_divergent_content_count=multi_inv.divergent_content_count,
+        multi_root_sample_paper_ids=multi_inv.sample_paper_ids,
     )
 
 
@@ -280,8 +394,10 @@ __all__ = [
     "SCHEMA_VERSION",
     "EtlBodyCoveragePackage",
     "EtlBodyCoverageSample",
+    "MultiRootHybridCopyInventory",
     "audit_catalog_body_coverage",
     "find_hybrid_body",
+    "inventory_multi_root_hybrid_copies",
     "paper_id_for_article",
     "scan_hybrid_body_artifacts",
 ]

@@ -117,6 +117,13 @@ def main(argv: list[str] | None = None) -> int:
                 for k, v in sorted(pkg.hybrid_body_files_by_root.items())
             ]
             sys.stdout.write("  files_by_root: " + ", ".join(parts) + "\n")
+        if getattr(pkg, "multi_root_paper_id_count", 0):
+            sys.stdout.write(
+                "  multi_root: "
+                f"ids={pkg.multi_root_paper_id_count} "
+                f"identical={pkg.multi_root_identical_content_count} "
+                f"divergent={pkg.multi_root_divergent_content_count}\n"
+            )
         if pkg.gaps:
             sys.stdout.write("  gaps: " + ", ".join(pkg.gaps) + "\n")
 

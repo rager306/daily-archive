@@ -7,6 +7,7 @@ from pathlib import Path
 
 from research_graph.application.corpus.etl_body_coverage_audit import (
     audit_catalog_body_coverage,
+    inventory_multi_root_hybrid_copies,
     scan_hybrid_body_artifacts,
 )
 
@@ -90,3 +91,64 @@ def test_m241_empty_index_still_works(tmp_path: Path) -> None:
     pkg = audit_catalog_body_coverage(catalog_index_path=idx, body_roots=())
     assert pkg.hybrid_body_artifact_files == 0
     assert pkg.hybrid_body_unique_paper_ids == 0
+
+
+
+def test_inventory_multi_root_classifies_identical_copies(tmp_path: Path) -> None:
+    r1 = tmp_path / "r1"
+    r2 = tmp_path / "r2"
+    _body(r1, "p1")
+    _body(r2, "p1")
+    _body(r1, "p2")
+    inv = inventory_multi_root_hybrid_copies((r1, r2))
+    assert inv.multi_root_paper_id_count == 1
+    assert inv.identical_content_count == 1
+    assert inv.divergent_content_count == 0
+    assert inv.import_eligible is False
+    d = inv.to_dict()
+    assert d["multi_root_paper_id_count"] == 1
+    assert d["identical_content_count"] == 1
+    assert "p1" in d["sample_paper_ids"]
+
+
+def test_inventory_multi_root_detects_divergent_content(tmp_path: Path) -> None:
+    r1 = tmp_path / "r1"
+    r2 = tmp_path / "r2"
+    p1a = r1 / "p1" / "body" / "p1.hybrid.body.md"
+    p1b = r2 / "p1" / "body" / "p1.hybrid.body.md"
+    p1a.parent.mkdir(parents=True, exist_ok=True)
+    p1b.parent.mkdir(parents=True, exist_ok=True)
+    p1a.write_text("# body A\n", encoding="utf-8")
+    p1b.write_text("# body B different\n", encoding="utf-8")
+    inv = inventory_multi_root_hybrid_copies((r1, r2))
+    assert inv.multi_root_paper_id_count == 1
+    assert inv.identical_content_count == 0
+    assert inv.divergent_content_count == 1
+
+
+def test_audit_includes_multi_root_content_metrics(tmp_path: Path) -> None:
+    idx = tmp_path / "index.json"
+    _index(
+        idx,
+        [
+            {
+                "article_key": "p1",
+                "article_ref": "arxiv/cs-cl/p1",
+                "source_code": "arxiv",
+            }
+        ],
+    )
+    r1 = tmp_path / "a"
+    r2 = tmp_path / "b"
+    _body(r1, "p1")
+    _body(r2, "p1")
+    pkg = audit_catalog_body_coverage(
+        catalog_index_path=idx, body_roots=(r1, r2), catalog_root=tmp_path
+    )
+    assert "multi_root_hybrid_body_copies" in pkg.gaps
+    assert pkg.multi_root_paper_id_count == 1
+    assert pkg.multi_root_identical_content_count == 1
+    assert pkg.multi_root_divergent_content_count == 0
+    d = pkg.to_dict()
+    assert d["multi_root_identical_content_count"] == 1
+    assert d["import_eligible"] is False
