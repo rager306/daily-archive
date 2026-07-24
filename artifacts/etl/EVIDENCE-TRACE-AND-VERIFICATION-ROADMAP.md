@@ -177,9 +177,9 @@ Materialized `Method-OUTPERFORMS-Method` only after promotion.
 
 **Verification-ready:**
 
-- [ ] ExtractionIntent + negative constraints enforced in validators  
-- [ ] High-impact relations cannot promote without faithfulness check  
-- [ ] GEPA/LLM cannot see held-out gold  
+- [x] ExtractionIntent + negative constraints enforced in validators  *(M278 pure validators; live extract wire next)*  
+- [x] High-impact relations cannot promote without faithfulness check  *(M278 promote_path_allowed; import still false)*  
+- [x] GEPA/LLM cannot see held-out gold  *(M278 gt_isolation ratchet; live wire next)*  
 
 **Graph import:** only after evidence-ready + verification-ready + **explicit user yes**.
 
@@ -193,7 +193,7 @@ Materialized `Method-OUTPERFORMS-Method` only after promotion.
 | **M275** | E1.1–E1.3 ODL JSON + TEI + ParserRun | M274 optional |
 | **M276** | E1.4–E1.6 CanonicalDocument + EvidencePath page/bbox **DONE c9cc851** | M275 |
 | **M277** | E2 structure gate v2 + canary design **DONE** | M276 |
-| **M278** | E3 verification (intent, constraints, risk audit, isolation) | M276 |
+| **M278** | E3 verification (intent, constraints, risk audit, isolation) **DONE 1333995** | M276 |
 | **M279** | E4 EvidenceAssertion staging | M278 |
 | **M280+** | E5 optional generators / fallbacks | M277–M279 |
 | **Import** | user go only | M279+ |
