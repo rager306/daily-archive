@@ -229,6 +229,10 @@ class WaveBGEPASpikePackage:
     graph_writes_allowed: bool = False
     oracle_ceiling_metrics: dict[str, Any] | None = None
     coverage_summary: dict[str, Any] = field(default_factory=dict)
+    # M279: train case ids after held-out exclusion (empty tuple if not recorded)
+    train_case_ids: tuple[str, ...] = ()
+    held_out_case_ids: tuple[str, ...] = ()
+    gt_isolation_ok: bool = True
 
     def __post_init__(self) -> None:
         if self.import_eligible or self.graph_writes_allowed:
@@ -255,6 +259,9 @@ class WaveBGEPASpikePackage:
             "iterations": list(self.iterations),
             "reflective_samples": list(self.reflective_samples),
             "coverage_summary": dict(self.coverage_summary),
+            "train_case_ids": list(self.train_case_ids),
+            "held_out_case_ids": list(self.held_out_case_ids),
+            "gt_isolation_ok": self.gt_isolation_ok,
             "diagnostics": list(self.diagnostics),
             "gepa_package_available": self.gepa_package_available,
             "gepa_ran": self.gepa_ran,
@@ -634,6 +641,72 @@ def stable_train_val_split(
     return train, val
 
 
+def _case_id(case: Mapping[str, Any]) -> str:
+    return str(case.get("case_id") or case.get("paper_id") or "")
+
+
+def partition_cases_for_gepa(
+    cases: Sequence[Mapping[str, Any]],
+    *,
+    held_out_case_ids: Sequence[str] | None = None,
+    train_ratio: float = 0.67,
+    split_seed: int = 0,
+    force_train_ids: Sequence[str] | None = None,
+) -> dict[str, Any]:
+    """Split cases for GEPA with held-out excluded from train (M279).
+
+    Held-out ids are removed from the train pool before split (and may remain
+    in val only if present after split of non-held-out pool — by default held-out
+    is kept out of both train and the optimising pool unless listed only for
+    isolation checks).
+
+    force_train_ids: test/debug only — if set, used as train id list and must
+    pass isolation (used to prove fail-closed).
+    """
+    from research_graph.application.corpus.gt_isolation import check_gt_isolation
+
+    cases_list = [dict(c) for c in cases]
+    held = {str(x) for x in (held_out_case_ids or ()) if str(x)}
+    pool = [c for c in cases_list if _case_id(c) not in held]
+    held_cases = [c for c in cases_list if _case_id(c) in held]
+
+    if force_train_ids is not None:
+        force_set = {str(x) for x in force_train_ids}
+        train = [c for c in cases_list if _case_id(c) in force_set]
+        val = [c for c in cases_list if _case_id(c) not in force_set] or list(train)
+    elif not pool:
+        train, val = stable_train_val_split(
+            cases_list, train_ratio=train_ratio, seed=split_seed
+        )
+    else:
+        train, val = stable_train_val_split(
+            pool, train_ratio=train_ratio, seed=split_seed
+        )
+        # held-out never enters train; optional eval-only list kept separate
+        train = [c for c in train if _case_id(c) not in held]
+
+    train_ids = [_case_id(c) for c in train]
+    isolation = check_gt_isolation(
+        context_paper_ids=train_ids,
+        held_out_ids=sorted(held),
+        role="train",
+    )
+    if not isolation.ok:
+        raise ValueError(
+            "gt_isolation_violation:" + ",".join(isolation.violations)
+        )
+
+    return {
+        "train": train,
+        "val": val,
+        "held_out_cases": held_cases,
+        "held_out_ids": sorted(held),
+        "isolation": isolation,
+        "train_case_ids": train_ids,
+        "val_case_ids": [_case_id(c) for c in val],
+    }
+
+
 def propose_instruction_from_reflection(
     current: Mapping[str, str],
     reflective: Mapping[str, Sequence[Mapping[str, Any]]],
@@ -794,6 +867,7 @@ def offline_reflective_spike(
     max_val_gap: float = 0.35,
     split_seed: int = 0,
     train_blend: float = 0.2,
+    held_out_case_ids: Sequence[str] | None = None,
 ) -> WaveBGEPASpikePackage:
     """Run a local reflective mutation loop (no gepa package, no LLM).
 
@@ -804,16 +878,25 @@ def offline_reflective_spike(
       - "val_aware": accept when val score does not degrade and train improves,
         or val strictly improves; best_candidate selected by val then train
     min_support / max_type_hints: anti-overfit controls for TYPE_HINT mining.
+    held_out_case_ids: M279 GT isolation — never enter train context.
     """
     cases_list = [dict(c) for c in cases]
     n = len(cases_list)
-    train, val = stable_train_val_split(
-        cases_list, train_ratio=train_ratio, seed=split_seed
+    part = partition_cases_for_gepa(
+        cases_list,
+        held_out_case_ids=held_out_case_ids,
+        train_ratio=train_ratio,
+        split_seed=split_seed,
     )
-    # single-case unit tests: train==val is fine
-    if n == 1:
+    train = list(part["train"])
+    val = list(part["val"])
+    isolation = part["isolation"]
+    train_case_ids = tuple(part["train_case_ids"])
+    # single-case unit tests: train==val is fine (no held-out)
+    if n == 1 and not (held_out_case_ids or ()):
         train = cases_list
         val = cases_list
+        train_case_ids = tuple(_case_id(c) for c in train)
 
     # For tiny multi-case suites, min_support=2 can starve learning; allow 1 when n small
     effective_min_support = int(min_support)
@@ -974,6 +1057,7 @@ def offline_reflective_spike(
     val_e = float(best_metrics.get("val_entity_f1") or 0.0)
     val_gap = train_e - val_e
 
+    held_ids = tuple(str(x) for x in (held_out_case_ids or ()) if str(x))
     diagnostics = (
         f"case_count:{n}",
         f"train:{len(train)}",
@@ -990,6 +1074,9 @@ def offline_reflective_spike(
         f"val_gap:{round(val_gap, 4)}",
         f"type_hints:{str(best.get(COMPONENT_ENTITY) or '').count('TYPE_HINT:')}",
         f"gepa_package:{str(gepa_available).lower()}",
+        f"gt_isolation_ok:{str(isolation.ok).lower()}",
+        f"held_out:{len(held_ids)}",
+        f"held_out_count:{len(held_ids)}",
         "mode:offline_reflective_spike",
         "dspy:false",
         "import_write_fail_closed",
@@ -1020,6 +1107,9 @@ def offline_reflective_spike(
             "train": coverage,
             "val": val_cov,
         },
+        train_case_ids=train_case_ids,
+        held_out_case_ids=held_ids,
+        gt_isolation_ok=bool(isolation.ok),
     )
 
 
@@ -1130,6 +1220,8 @@ __all__ = [
     "offline_reflective_spike",
     "parse_entity_type_hints",
     "parse_relation_hints",
+    "partition_cases_for_gepa",
     "propose_instruction_from_reflection",
+    "stable_train_val_split",
     "try_gepa_optimize",
 ]
