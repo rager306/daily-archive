@@ -163,3 +163,20 @@ def test_refresh_continuity_pack_flag_in_help() -> None:
     )
     assert proc.returncode == 0
     assert "--refresh-continuity-pack" in proc.stdout
+
+
+
+def test_refresh_continuity_pack_default_on() -> None:
+    """M266: continuity pack refresh is default; opt-out via --no-refresh."""
+    script = Path(__file__).resolve().parents[1] / "scripts" / "verify_hybrid_expand_batch.py"
+    import subprocess, sys
+    proc = subprocess.run(
+        [sys.executable, str(script), "--help"],
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    assert "--refresh-continuity-pack" in proc.stdout
+    assert "--no-refresh-continuity-pack" in proc.stdout

@@ -177,10 +177,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, default=None)
     parser.add_argument(
         "--refresh-continuity-pack",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
+        default=True,
         help=(
             "After preflight/batch, refresh artifacts/etl/continuity-pack.json "
-            "with live pack (incl. expand_gate). Never import."
+            "with live pack (incl. expand_gate). Default: on. "
+            "Use --no-refresh-continuity-pack to skip. Never import."
         ),
     )
     parser.add_argument(
