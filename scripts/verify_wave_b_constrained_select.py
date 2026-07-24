@@ -20,6 +20,7 @@ from typing import Any
 
 from research_graph.application.corpus.wave_b_constrained_select import (
     header_priority_select,
+    make_header_fallback_select_fn,
     make_llm_constrained_select_fn,
 )
 from research_graph.application.corpus.wave_b_extraction_baseline import (
@@ -161,6 +162,17 @@ def main(argv: list[str] | None = None) -> int:
         help="Actually call 9router for --mode llm (default: dry, no network)",
     )
     parser.add_argument(
+        "--llm-fallback-header",
+        action="store_true",
+        default=True,
+        help="When --mode llm returns zero entities, fall back to header_priority (default on)",
+    )
+    parser.add_argument(
+        "--no-llm-fallback-header",
+        action="store_true",
+        help="Disable header fallback for empty LLM selections",
+    )
+    parser.add_argument(
         "--compare-header",
         action="store_true",
         help="Also score header_priority baseline side-by-side (llm/oracle modes)",
@@ -261,6 +273,11 @@ def main(argv: list[str] | None = None) -> int:
                 max_tokens=int(args.max_tokens),
                 temperature=0.0,
             )
+            use_fallback = bool(args.llm_fallback_header) and not bool(
+                args.no_llm_fallback_header
+            )
+            if use_fallback:
+                select_fn = make_header_fallback_select_fn(select_fn)
             pilot = score_gold_hybrid_constrained_pilot(
                 cases=cases,
                 select_fn=select_fn,
@@ -269,7 +286,11 @@ def main(argv: list[str] | None = None) -> int:
                 llm_used=True,
                 model_id=str(args.model),
             )
-            mode_name = "llm_constrained_select"
+            mode_name = (
+                "llm_constrained_select_with_header_fallback"
+                if use_fallback
+                else "llm_constrained_select"
+            )
             llm_used = True
             model_id = str(args.model)
             ninerouter_diagnostics = dict(client.last_diagnostics)
@@ -289,6 +310,10 @@ def main(argv: list[str] | None = None) -> int:
         payload = pilot.to_dict()
         if ninerouter_diagnostics is not None:
             payload["ninerouter_diagnostics"] = ninerouter_diagnostics
+        if args.mode == "llm":
+            payload["llm_fallback_header"] = bool(args.llm_fallback_header) and not bool(
+                args.no_llm_fallback_header
+            )
         payload["operator_status"] = mode_name
         payload["select_mode"] = args.mode
         payload["llm_used"] = llm_used

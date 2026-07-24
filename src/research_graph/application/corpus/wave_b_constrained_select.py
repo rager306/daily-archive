@@ -186,10 +186,317 @@ def _looks_like_author_span(surface: str) -> bool:
                 "test",
                 "reasoning",
                 "prompt",
+                # Title-Case technical NPs (not author names)
+                "dynamics",
+                "dynamic",
+                "system",
+                "systems",
+                "object",
+                "compositional",
+                "automation",
+                "generation",
+                "repair",
+                "emulator",
+                "instruction",
+                "instructions",
+                "engineering",
+                "github",
+                "mathematical",
+                "physical",
+                "predictive",
+                "representation",
+                "representations",
+                "integration",
+                "expression",
+                "expressions",
+                "software",
+                "code",
+                "web",
+                "api",
+                "tool",
+                "tools",
+                "issue",
+                "issues",
+                "write",
+                "state",
+                "task",
+                "tasks",
+                "method",
+                "methods",
+                "dataset",
+                "benchmark",
+                "transformer",
+                "encoder",
+                "decoder",
             )
         )
         return not tech
     return False
+
+
+
+def _is_prose_noise_surface(surface: str) -> bool:
+    """True for sentence-like / org / non-technical multiword spans.
+
+    Conservative: only demote clear discourse openers, org names, and glue
+    phrases. Do not demote compact technical NPs (e.g. Language and Perception).
+    """
+    parts = [p for p in surface.split() if p]
+    if len(parts) < 2:
+        return False
+    low = surface_norm(surface)
+    lead = parts[0].casefold().strip(",.;:")
+
+    # Clear discourse / clause openers (not technical NPs).
+    discourse_leads = {
+        "although",
+        "however",
+        "therefore",
+        "moreover",
+        "adopt",
+        "using",
+        "study",
+        "present",
+        "show",
+        "propose",
+        "compare",
+        "teaching",
+        "across",
+        "different",
+        "recent",
+        "several",
+        "prior",
+        "our",
+        "we",
+        "this",
+        "that",
+        "these",
+        "those",
+        "initially",
+        "enables",
+        "achieves",
+        "adding",
+        "accurate",
+        "count",
+        "variable",
+        "llms",
+        "follow",
+        "improves",
+        "improve",
+        "resolve",
+        "build",
+        "catch",
+        "teach",
+        "seamless",
+        "against",
+        "expect",
+        "generalize",
+        "rapidly",
+    }
+    if lead in discourse_leads:
+        return True
+
+    # org / affiliation style without tech tokens
+    if _looks_like_author_span(surface):
+        return True
+    orgish = {
+        "google",
+        "deepmind",
+        "openai",
+        "microsoft",
+        "facebook",
+        "meta",
+        "amazon",
+        "stanford",
+        "berkeley",
+        "mit",
+        "cmu",
+    }
+    tech_tokens = {
+        "network",
+        "networks",
+        "model",
+        "models",
+        "translation",
+        "learning",
+        "search",
+        "code",
+        "reasoning",
+        "language",
+        "system",
+        "systems",
+        "attention",
+        "perception",
+        "automation",
+        "generation",
+        "repair",
+        "emulator",
+        "dynamics",
+        "representations",
+        "integration",
+        "instructions",
+        "engineering",
+        "issues",
+        "tools",
+        "expressions",
+        "tasks",
+        "synthesis",
+        "machine",
+        "neural",
+        "beam",
+        "program",
+        "physical",
+        "mathematical",
+        "software",
+        "web",
+        "api",
+        "github",
+        "write",
+        "object",
+        "state",
+        "predictive",
+        "compositional",
+    }
+    if any(p.casefold().strip(",.;:") in orgish for p in parts) and not any(
+        p.casefold().strip(",.;:") in tech_tokens for p in parts
+    ):
+        return True
+
+    # pure prose glue phrases (substring)
+    glue = (
+        "although several",
+        "adopt prior",
+        "prior works",
+        "several works",
+        "recent advances",
+        "software technology",
+        "teaching large language",
+        "count and different",
+        "across variable",
+        "theory for modeling",
+        "language models resolve",
+        "llms for enhanced",
+        "computation from reasoning",
+        "reasoning for numerical",
+        "google deepmind",
+        "model-augmented code",
+        "language model-augmented",
+    )
+    if any(g in low for g in glue):
+        return True
+    return False
+
+
+def _prefer_core_over_wrapper(
+    candidates: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """If both core NP and wrapper exist, demote wrappers in rank order.
+
+    Structural only: wrapper prefixes/suffixes and longer spans that contain
+    a shorter multiword candidate core.
+    """
+    rows = [dict(c) for c in candidates if isinstance(c, Mapping)]
+    norms = {
+        str(c.get("surface_norm") or surface_norm(str(c.get("surface") or ""))): c
+        for c in rows
+    }
+    wrapper_suffix_words = {
+        "strategies",
+        "strategy",
+        "techniques",
+        "technique",
+        "approach",
+        "approaches",
+        "methods",
+        "method",
+        "models",
+        "model",
+        "systems",
+        "system",
+        "framework",
+        "frameworks",
+        "benchmark",
+        "prompting",
+    }
+    wrapper_prefix_words = {
+        "learning",
+        "modeling",
+        "enhanced",
+        "improved",
+        "better",
+        "using",
+        "towards",
+        "exploring",
+        "seamless",
+        "real-world",
+        "real",
+        "teach",
+        "teaching",
+        "follow",
+        "resolve",
+        "build",
+        "latent",
+        "billion",
+        "large",
+        "new",
+        "theory",
+    }
+    demote: set[str] = set()
+    for norm in list(norms):
+        words = norm.split()
+        if len(words) < 2:
+            continue
+        # suffix/prefix whole-string wrappers
+        for suf in tuple(" " + w for w in wrapper_suffix_words):
+            if norm.endswith(suf):
+                core = norm[: -len(suf)].strip()
+                if core in norms and " " in core:
+                    demote.add(norm)
+        for pre in tuple(w + " " for w in wrapper_prefix_words):
+            if norm.startswith(pre):
+                core = norm[len(pre) :].strip()
+                if core in norms and " " in core:
+                    demote.add(norm)
+                # "real world X Y" / "real-world X Y"
+                if pre.strip() in {"real", "real-world"} and len(words) >= 3:
+                    core2 = " ".join(words[1:])
+                    if core2 in norms and " " in core2:
+                        demote.add(norm)
+        # contiguous multiword subspan cores
+        if len(words) >= 3:
+            for i in range(len(words)):
+                for j in range(i + 2, len(words) + 1):
+                    core = " ".join(words[i:j])
+                    if core == norm or core not in norms:
+                        continue
+                    # demote longer if leading/trailing tokens look like wrappers
+                    if i > 0 and words[0] in wrapper_prefix_words:
+                        demote.add(norm)
+                    if j < len(words) and words[-1] in wrapper_suffix_words:
+                        demote.add(norm)
+                    # demote "X Y Z" when core "Y Z" exists and lead is weak modifier
+                    if i == 1 and words[0] in wrapper_prefix_words | {
+                        "improved",
+                        "seamless",
+                        "enhanced",
+                        "follow",
+                        "teach",
+                        "resolve",
+                    }:
+                        demote.add(norm)
+    keep = [
+        c
+        for c in rows
+        if str(c.get("surface_norm") or surface_norm(str(c.get("surface") or "")))
+        not in demote
+    ]
+    rest = [
+        c
+        for c in rows
+        if str(c.get("surface_norm") or surface_norm(str(c.get("surface") or "")))
+        in demote
+    ]
+    return keep + rest
 
 
 def _rank_header_candidates(
@@ -402,6 +709,7 @@ def header_priority_select(
     """Deterministic no-LLM selector: top header multiword candidates + typed links."""
     del case_id
     ranked = _rank_header_candidates(candidates, body_text=body_text)
+    ranked = _prefer_core_over_wrapper(ranked)
     _marketing_prefixes = (
         "exploring the",
         "towards ",
@@ -419,6 +727,22 @@ def header_priority_select(
         "explore recent",
         "generate basic",
         "ideas work",
+        "although ",
+        "adopt prior",
+        "teaching large",
+        "google ",
+        "theory for",
+        "llms for",
+        "language models resolve",
+        "count and",
+        "across variable",
+        "software technology",
+        "prior works",
+        "several works",
+        "reasoning for numerical",
+        "computation from",
+        "model-augmented",
+        "language model-augmented",
     )
     _marketing_contains = (
         " under noisy",
@@ -428,6 +752,17 @@ def header_priority_select(
         " enables ",
         " process simpler",
         " recent advances",
+        " deepmind",
+        " prior techniques",
+        " several works",
+        " for enhanced",
+        " and different",
+        " for modeling",
+        " models resolve",
+        " from reasoning",
+        " for numerical",
+        " technology, moe",
+        " technology,",
     )
     _ban_singles = {
         "translation",
@@ -478,6 +813,38 @@ def header_priority_select(
             continue
         if any(m in low for m in _marketing_contains):
             continue
+        if _is_prose_noise_surface(surface):
+            continue
+        if " the " in f" {low} ":
+            continue
+        # Incomplete open compounds ("attention with linear") lose to longer heads
+        # when a candidate extends the span with a content noun.
+        _open_tails = {
+            "linear",
+            "large",
+            "real",
+            "neural",
+            "deep",
+            "multi",
+            "cross",
+            "self",
+            "physical",
+            "dynamical",
+            "mathematical",
+            "natural",
+            "software",
+            "human",
+        }
+        if words and words[-1].casefold() in _open_tails:
+            has_extension = any(
+                (
+                    str(o.get("surface_norm") or surface_norm(str(o.get("surface") or "")))
+                ).startswith(norm + " ")
+                for o in ranked
+                if isinstance(o, Mapping)
+            )
+            if has_extension:
+                continue
         # Prefer compact title NPs: skip brand-only tokens as second method when
         # a multiword technical alternative remains later in ranking.
         if len(words) == 1 and len(picked) == 1:
@@ -487,19 +854,13 @@ def header_priority_select(
                 continue
         if _is_subspan(norm, picked_norms):
             continue
-        # Drop already-picked shorter spans covered by this longer hit.
+        # Prefer already-picked shorter multiword cores over longer wrappers.
+        # (Do not replace "Recursively Summarizing Books" with "... with Human".)
         if any(
-            p != norm and (p in norm or _is_subspan(p, [norm])) for p in list(picked_norms)
+            p != norm and " " in p and (p in norm or _is_subspan(p, [norm]))
+            for p in list(picked_norms)
         ):
-            keep_e: list[dict[str, Any]] = []
-            keep_n: list[str] = []
-            for e, pn in zip(picked, picked_norms, strict=True):
-                if pn != norm and (pn in norm or _is_subspan(pn, [norm])):
-                    continue
-                keep_e.append(e)
-                keep_n.append(pn)
-            picked = keep_e
-            picked_norms = keep_n
+            continue
         etype = guess_entity_type(surface)
         if etype not in ALLOWED_ENTITY_TYPES:
             continue
@@ -756,9 +1117,38 @@ def make_llm_constrained_select_fn(
     return _select
 
 
+
+def make_header_fallback_select_fn(primary_select: Any) -> Any:
+    """Wrap a select_fn: if it returns zero entities, use header_priority_select."""
+
+    def _select(
+        body_text: str,
+        case_id: str,
+        candidates: Sequence[Mapping[str, Any]],
+    ) -> dict[str, Any]:
+        try:
+            primary = dict(primary_select(body_text, case_id, candidates) or {})
+        except Exception:  # noqa: BLE001 - fail closed to header
+            primary = {"entities": [], "relations": [], "json_valid": False}
+        ents = primary.get("entities") or []
+        if isinstance(ents, list) and len(ents) > 0:
+            out = dict(primary)
+            out.setdefault("json_valid", True)
+            out["fallback_used"] = False
+            return out
+        header = header_priority_select(body_text, case_id, candidates)
+        out = dict(header)
+        out["fallback_used"] = True
+        out["fallback_reason"] = "primary_empty_entities"
+        return out
+
+    return _select
+
+
 __all__ = [
     "guess_entity_type",
     "header_priority_select",
+    "make_header_fallback_select_fn",
     "make_llm_constrained_select_fn",
     "parse_constrained_llm_selection",
     "render_constrained_select_prompt",

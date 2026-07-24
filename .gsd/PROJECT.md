@@ -12,7 +12,7 @@ Source → Parser → Structure → Extraction → Graph → Review → Agents
 
 **Стадия: post-M256 + Wave B extraction quality path (import закрыт).**
 
-Wave A closed. Wave B stamp open (`artifacts/wave-b/human_go.json`, D124). Gold↔hybrid join **20** body-grounded papers; oracle + lexical floor **entity/relation F1=1.0**; header-priority constrained select (no LLM) **~0.50 entity / ~0.35 relation** on n=20 (n=10 ~0.90; n=6 1.0) via `verify_wave_b_constrained_select.py`. Structured extract context (outline/sections/candidates/pageindex-bridge) default for LLM pilots; free-form invent still weak. **Not** DSPy optimizer; **not** import. LLM surface: 9router (agnes default / MiniMax quality / grok fallback); optional summary stage composition-default off.
+Wave A closed. Wave B stamp open (`artifacts/wave-b/human_go.json`, D124). Gold↔hybrid join **20** body-grounded papers; oracle + lexical floor **entity/relation F1=1.0**; header-priority constrained select (no LLM) **~0.675 entity / ~0.35 relation** on n=20 (n=10 ~0.90; n=6 1.0) via `verify_wave_b_constrained_select.py`. Structured extract context (outline/sections/candidates/pageindex-bridge) default for LLM pilots; free-form invent still weak. **Not** DSPy optimizer; **not** import. LLM surface: 9router (agnes default / MiniMax quality / grok fallback); optional summary stage composition-default off.
 
 **Live FalkorDB driver и production import выключены**, пока не будет отдельного явного Wave D readiness milestone.
 

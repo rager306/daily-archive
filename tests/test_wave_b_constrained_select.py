@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from research_graph.application.corpus.wave_b_constrained_select import (
+    _looks_like_author_span,
     guess_entity_type,
     header_priority_select,
+    make_header_fallback_select_fn,
     make_llm_constrained_select_fn,
     parse_constrained_llm_selection,
     render_constrained_select_prompt,
@@ -214,3 +216,262 @@ def test_make_llm_constrained_select_fn_maps_label_to_candidate() -> None:
     sel = select(body, gold["case_id"], cands)
     assert len(sel["entities"]) == 2
     assert all(e.get("candidate_id") for e in sel["entities"])
+
+
+
+def test_header_priority_rejects_prose_noise_and_org_spans() -> None:
+    """Structural demotion: sentence fragments / org names lose to technical NPs."""
+    body = (
+        "# WebAgent: Web Automation with Natural Language Instructions\n\n"
+        "Although several works adopt prior techniques on real websites.\n"
+    )
+    cands = [
+        {
+            "candidate_id": "c:noise1",
+            "surface": "although several works",
+            "surface_norm": "although several works",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:noise2",
+            "surface": "adopt prior techniques",
+            "surface_norm": "adopt prior techniques",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:org",
+            "surface": "Google DeepMind",
+            "surface_norm": "google deepmind",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:web",
+            "surface": "web automation",
+            "surface_norm": "web automation",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:nli",
+            "surface": "natural language instructions",
+            "surface_norm": "natural language instructions",
+            "source": "header_title",
+        },
+    ]
+    sel = header_priority_select(body, "case:x", cands)
+    by = {c["candidate_id"]: c["surface"] for c in cands}
+    labels = {by[e["candidate_id"]] for e in sel["entities"]}
+    assert "web automation" in labels
+    assert "natural language instructions" in labels
+    assert "although several works" not in labels
+    assert "Google DeepMind" not in labels
+
+
+def test_header_priority_prefers_core_np_over_wrapper_suffix() -> None:
+    """Prefer 'beam search' over 'Beam Search Strategies' when both candidates."""
+    body = "# Beam Search Strategies for Neural Machine Translation\n"
+    cands = [
+        {
+            "candidate_id": "c:wrap",
+            "surface": "Beam Search Strategies",
+            "surface_norm": "beam search strategies",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:core",
+            "surface": "beam search",
+            "surface_norm": "beam search",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:nmt",
+            "surface": "Neural Machine Translation",
+            "surface_norm": "neural machine translation",
+            "source": "header_title",
+        },
+    ]
+    sel = header_priority_select(body, "case:x", cands)
+    by = {c["candidate_id"]: c["surface_norm"] for c in cands}
+    norms = {by[e["candidate_id"]] for e in sel["entities"]}
+    assert "beam search" in norms
+    assert "beam search strategies" not in norms
+    assert "neural machine translation" in norms
+
+
+def test_make_header_fallback_select_fn_uses_header_when_primary_empty() -> None:
+    body, gold = _body_and_gold()
+    cands = build_body_candidates(body, paper_id="1206.6423")
+
+    def empty_select(body_text, case_id, candidates):
+        return {"entities": [], "relations": [], "json_valid": False}
+
+    select = make_header_fallback_select_fn(empty_select)
+    sel = select(body, gold["case_id"], cands)
+    assert len(sel["entities"]) >= 2
+    assert sel.get("fallback_used") is True
+    by_id = {c["candidate_id"]: c for c in cands}
+    labels = {by_id[e["candidate_id"]]["surface"] for e in sel["entities"]}
+    assert "Language and Perception" in labels
+
+
+def test_make_header_fallback_select_fn_keeps_primary_when_nonempty() -> None:
+    body, gold = _body_and_gold()
+    cands = build_body_candidates(body, paper_id="1206.6423")
+    cid = next(c["candidate_id"] for c in cands if c["surface"] == "Language and Perception")
+
+    def primary(body_text, case_id, candidates):
+        return {
+            "entities": [{"candidate_id": cid, "type": "Field"}],
+            "relations": [],
+            "json_valid": True,
+        }
+
+    select = make_header_fallback_select_fn(primary)
+    sel = select(body, gold["case_id"], cands)
+    assert sel.get("fallback_used") is False
+    assert len(sel["entities"]) == 1
+    assert sel["entities"][0]["candidate_id"] == cid
+
+
+
+def test_looks_like_author_span_keeps_title_case_tech_nps() -> None:
+    """Title-Case technical NPs must not be treated as author names."""
+    keep = [
+        "Physical Dynamics",
+        "Compositional Object-based",
+        "Web Automation",
+        "Code Generation",
+        "Code Repair",
+        "Code Emulator",
+        "Dynamical Systems",
+        "Predictive State Representations",
+        "Mathematical Reasoning",
+        "Software Engineering",
+        "Natural Language Instructions",
+        "API Search Tools",
+        "GitHub Issues",
+        "Beam Search",
+        "Subword Units",
+    ]
+    for s in keep:
+        assert _looks_like_author_span(s) is False, s
+    # still detect author-like spans
+    assert _looks_like_author_span("Michael Chang") is True
+    assert _looks_like_author_span("Satinder Singh") is True
+
+
+def test_header_priority_recovers_title_case_tech_nps_from_candidates() -> None:
+    body = (
+        "# A Compositional Object-based Approach to Learning Physical Dynamics\n\n"
+        "We study physical dynamics with compositional object-based models.\n"
+    )
+    cands = [
+        {
+            "candidate_id": "c:learn",
+            "surface": "Learning Physical Dynamics",
+            "surface_norm": "learning physical dynamics",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:phys",
+            "surface": "Physical Dynamics",
+            "surface_norm": "physical dynamics",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:obj",
+            "surface": "Compositional Object-based",
+            "surface_norm": "compositional object-based",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:noise",
+            "surface": "balls moving toward",
+            "surface_norm": "balls moving toward",
+            "source": "header_title",
+        },
+    ]
+    sel = header_priority_select(body, "case:x", cands)
+    by = {c["candidate_id"]: c["surface_norm"] for c in cands}
+    norms = {by[e["candidate_id"]] for e in sel["entities"]}
+    assert "physical dynamics" in norms
+    assert "compositional object-based" in norms
+
+
+
+def test_header_priority_keeps_shorter_core_over_longer_wrapper() -> None:
+    """Do not replace shorter multiword gold cores with longer wrappers."""
+    body = (
+        "# Recursively Summarizing Books with Human Feedback\n\n"
+        "We use human feedback for recursively summarizing books.\n"
+    )
+    cands = [
+        {
+            "candidate_id": "c:task",
+            "surface": "Recursively Summarizing Books",
+            "surface_norm": "recursively summarizing books",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:method",
+            "surface": "Human Feedback",
+            "surface_norm": "human feedback",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:long1",
+            "surface": "Recursively Summarizing Books with Human",
+            "surface_norm": "recursively summarizing books with human",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:long2",
+            "surface": "Books with Human Feedback",
+            "surface_norm": "books with human feedback",
+            "source": "header_title",
+        },
+    ]
+    sel = header_priority_select(body, "case:x", cands)
+    by = {c["candidate_id"]: c["surface_norm"] for c in cands}
+    norms = {by[e["candidate_id"]] for e in sel["entities"]}
+    assert "recursively summarizing books" in norms
+    assert "human feedback" in norms
+    assert "recursively summarizing books with human" not in norms
+
+
+
+def test_header_priority_prefers_complete_with_np() -> None:
+    body = "# Attention with Linear Biases\n"
+    cands = [
+        {
+            "candidate_id": "c:short",
+            "surface": "Attention with Linear",
+            "surface_norm": "attention with linear",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:full",
+            "surface": "Attention with Linear Biases",
+            "surface_norm": "attention with linear biases",
+            "source": "header_title",
+        },
+        {
+            "candidate_id": "c:other",
+            "surface": "ALiBi",
+            "surface_norm": "alibi",
+            "source": "header_title",
+        },
+    ]
+    # need second multiword partner; add Field-ish
+    cands.append(
+        {
+            "candidate_id": "c:field",
+            "surface": "Language Modeling",
+            "surface_norm": "language modeling",
+            "source": "header_title",
+        }
+    )
+    sel = header_priority_select(body, "case:x", cands)
+    by = {c["candidate_id"]: c["surface_norm"] for c in cands}
+    norms = {by[e["candidate_id"]] for e in sel["entities"]}
+    assert "attention with linear biases" in norms
+    assert "attention with linear" not in norms
