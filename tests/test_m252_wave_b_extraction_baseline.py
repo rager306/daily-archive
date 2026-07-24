@@ -91,3 +91,33 @@ def test_stamp_file_never_sets_import(tmp_path: Path) -> None:
     raw = json.loads(path.read_text(encoding="utf-8"))
     assert raw["import_eligible"] is False
     assert raw["graph_writes_allowed"] is False
+
+
+def test_write_human_go_stamp_refuses_mutation_without_force(tmp_path: Path) -> None:
+    path = tmp_path / "wave_b_human_go.json"
+    first = write_human_go_stamp(path, authorized_by="user", decision_ref="D124", note="first")
+    at1 = first["authorized_at"]
+    second = write_human_go_stamp(
+        path, authorized_by="other", decision_ref="D999", note="bump"
+    )
+    assert second["authorized_at"] == at1
+    assert second["decision_ref"] == "D124"
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    assert raw["authorized_at"] == at1
+    assert raw["decision_ref"] == "D124"
+
+
+def test_write_human_go_stamp_force_rewrite(tmp_path: Path) -> None:
+    path = tmp_path / "wave_b_human_go.json"
+    first = write_human_go_stamp(path, authorized_by="user", decision_ref="D124")
+    at1 = first["authorized_at"]
+    second = write_human_go_stamp(
+        path,
+        authorized_by="user",
+        decision_ref="D124",
+        note="reauth",
+        force_rewrite=True,
+    )
+    assert second["authorized_at"] != at1
+    assert second.get("prior_authorized_at") == at1
+    assert "force_rewrite" in str(second.get("note") or "")

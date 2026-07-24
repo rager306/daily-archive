@@ -82,9 +82,28 @@ def write_human_go_stamp(
     authorized_by: str,
     decision_ref: str,
     note: str = "Wave B extraction quality authorized",
+    force_rewrite: bool = False,
 ) -> dict[str, Any]:
-    """Persist Wave B human go stamp (never import authorization)."""
-    payload = {
+    """Persist Wave B human go stamp (never import authorization).
+
+    Refuses to mutate an existing valid stamp unless force_rewrite=True.
+    Prevents accidental authorized_at bumps and silent re-auth.
+    """
+    path = Path(path)
+    existing: dict[str, Any] | None = None
+    if path.is_file():
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            raw = None
+        if isinstance(raw, dict) and raw.get("human_go") is True:
+            if raw.get("import_eligible") is True or raw.get("graph_writes_allowed") is True:
+                existing = None
+            else:
+                existing = raw
+    if existing is not None and not force_rewrite:
+        return dict(existing)
+    payload: dict[str, Any] = {
         "schema_version": "wave-b-human-go.v1",
         "human_go": True,
         "authorized_by": authorized_by,
@@ -95,11 +114,12 @@ def write_human_go_stamp(
         "graph_writes_allowed": False,
         "dspy_optimizer_enabled": False,
     }
-    path = Path(path)
+    if force_rewrite and existing is not None:
+        payload["note"] = f"{note} (force_rewrite of prior stamp)"
+        payload["prior_authorized_at"] = existing.get("authorized_at")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return payload
-
 
 def read_human_go_stamp(path: Path) -> dict[str, Any] | None:
     """Read human go stamp if present and valid."""

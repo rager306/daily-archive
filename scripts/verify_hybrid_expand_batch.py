@@ -27,6 +27,9 @@ from research_graph.application.corpus.hybrid_expand_preflight import (
     ProposedPaperCheck,
     preflight_hybrid_expand,
 )
+from research_graph.application.corpus.hybrid_expand_batch_gate import (
+    evaluate_expand_batch_gate,
+)
 from research_graph.application.corpus.hybrid_selection_expand import (
     DEFAULT_MAX_BYTES,
     DEFAULT_TARGET_COUNT,
@@ -37,6 +40,9 @@ from research_graph.workflows.composition.etl_body_coverage import DEFAULT_BODY_
 from research_graph.workflows.composition.hybrid_batch_gate import (
     HybridBatchGateRequest,
     run_hybrid_batch_gate,
+)
+from research_graph.infrastructure.corpus.parsing.sidecar_services import (
+    probe_parser_sidecars,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -225,23 +231,40 @@ def main(argv: list[str] | None = None) -> int:
         target_count=args.target_count,
     )
 
+
+    sidecars = probe_parser_sidecars(ensure=False)
+    grobid_ok = bool(getattr(sidecars.grobid, "available", False))
+    odl_ok = bool(getattr(sidecars.opendataloader, "available", False))
+    batch_gate = evaluate_expand_batch_gate(
+        preflight_signal=preflight.preflight_signal,
+        ready_count=preflight.ready_count,
+        limit=int(args.limit),
+        enable_live_hybrid=bool(args.enable_live_hybrid),
+        grobid_available=grobid_ok,
+        odl_available=odl_ok,
+        max_limit=20,
+    )
+
     batch_summary: dict | None = None
-    if args.limit > 0 and args.enable_live_hybrid:
-        # Trim selection to ready papers only, then apply limit
+    if batch_gate.allow_live_batch and int(args.limit) > 0 and args.enable_live_hybrid:
         ready_set = set(preflight.ready_paper_ids)
         limited_papers = [
             p
             for p in selection_payload["papers"]
             if isinstance(p, dict) and str(p.get("paper_id") or "") in ready_set
-        ][: args.limit]
+        ][: batch_gate.effective_limit]
         limited_path = write_path.with_name(
-            write_path.stem + f"-limit{args.limit}" + write_path.suffix
+            write_path.stem
+            + f"-limit{batch_gate.effective_limit}"
+            + write_path.suffix
         )
         limited_sel = {
             **selection_payload,
             "count": len(limited_papers),
             "papers": limited_papers,
-            "note": "limited live batch subset; import false",
+            "note": (
+                "limited live batch subset; expand batch gate allowed; import false"
+            ),
             "import_eligible": False,
             "graph_writes_allowed": False,
         }
@@ -267,17 +290,20 @@ def main(argv: list[str] | None = None) -> int:
             "hybrid_deferred_count": result.hybrid_deferred_count,
             "error_count": result.error_count,
             "gate_pass": result.gate_pass,
+            "expand_batch_gate": batch_gate.to_dict(),
             "import_eligible_any": False,
             "graph_writes_any": False,
         }
-    elif args.limit > 0 and not args.enable_live_hybrid:
+    elif int(args.limit) > 0:
         batch_summary = {
             "skipped": True,
-            "reason": "limit>0 requires --enable-live-hybrid",
+            "reason": "expand_batch_gate_blocked",
+            "expand_batch_gate": batch_gate.to_dict(),
             "import_eligible_any": False,
         }
 
     payload = {
+        "expand_batch_gate": batch_gate.to_dict(),
         "schema_version": "m246-hybrid-expand-batch-report.v1",
         "proposal_path": str(write_path),
         "expand": {
@@ -304,7 +330,7 @@ def main(argv: list[str] | None = None) -> int:
         batch_s = "none"
         if batch_summary:
             if batch_summary.get("skipped"):
-                batch_s = "skipped_no_live_flag"
+                batch_s = f"skipped:{batch_summary.get('reason')}"
             else:
                 batch_s = (
                     f"papers={batch_summary.get('paper_count')} "
@@ -320,10 +346,18 @@ def main(argv: list[str] | None = None) -> int:
             f"ready: {preflight.ready_count} | "
             f"missing_pdf: {preflight.missing_pdf_count} | "
             f"already_bodied: {preflight.already_bodied_count} | "
+            f"expand_gate: {batch_gate.gate_signal} | "
+            f"eff_limit: {batch_gate.effective_limit} | "
+            f"grobid: {batch_gate.grobid_available} | "
+            f"odl: {batch_gate.odl_available} | "
             f"batch: {batch_s} | "
             f"limit: {args.limit} | "
             "import_eligible: false\n"
         )
+        if batch_gate.reasons:
+            sys.stdout.write(
+                "  expand_gate_reasons: " + ", ".join(batch_gate.reasons) + "\n"
+            )
 
     return 0
 

@@ -227,14 +227,14 @@ M198 closeout verification:
 
 ### Wave A residual (post-closeout observability)
 - multi-root hybrid copies: live **20 ids, all SHA-identical** (`multi_root_identical_content_only`) — storage debt, not content divergence.
-- hybrid-missing PDF readiness: **169/190** missing have local PDF (expand queue); operator `verify_etl_hybrid_missing_pdf_readiness.py`.
+- hybrid-missing PDF readiness queue; post expand-limit10 hybrid_found **49/230** (~0.213); multi-root identical-only (expand queue); operator `verify_etl_hybrid_missing_pdf_readiness.py`.
 - Continuity still `ready_for_review`; import false.
 
 ### Сейчас: Wave B extraction quality (post gold-debt + constrained select)
 
 1. **Done M241–M256:** Wave A closed; stamp open; statistical hybrid; gold↔hybrid join; lexical floor.
 2. **Done (session):** body-ground gold for 1611/2109; candidate coverage 12/12; oracle F1=1.0; grounding audit; structured extract context + pageindex-bridge; GEPA offline full-set entity F1=1.0; **header_priority constrained select ~0.675/0.35 on n=20** (n=10 ~0.90; n=6 1.0; no LLM).
-3. **Next B:** constrained LLM operator wired (`--mode llm --live-llm`); live n=20 **header 0.50 > llm ~0.27–0.34** — prefer-header envelope matches header floor on n=20; improve constrained LLM compact 2-entity select before GEPA; **no DSPy/import**; full-6 structured vs raw ablation; optional GEPA reflection only if constrained LLM beats header without inventing labels; **no DSPy optimizer** until metrics demand; **no import**.
+3. **Next B:** constrained LLM operator wired (`--mode llm --live-llm`); live n=20 **header 0.675 > llm compact+prefer ~0.625** — prefer-header envelope matches header floor on n=20; improve constrained LLM compact 2-entity select before GEPA; **no DSPy/import**; full-6 structured vs raw ablation; optional GEPA reflection only if constrained LLM beats header without inventing labels; **no DSPy optimizer** until metrics demand; **no import**.
 4. Import/Falkor не открывать до Wave D + evidence. **Не переспрашивать go на A/B.**
 
 ```bash
