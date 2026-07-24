@@ -122,6 +122,7 @@ class MultiRootHybridCopyInventory:
     multi_root_paper_id_count: int
     identical_content_count: int
     divergent_content_count: int
+    same_inode_count: int
     sample_paper_ids: tuple[str, ...]
     diagnostics: tuple[str, ...]
     import_eligible: bool = False
@@ -136,12 +137,14 @@ class MultiRootHybridCopyInventory:
             "multi_root_paper_id_count": self.multi_root_paper_id_count,
             "identical_content_count": self.identical_content_count,
             "divergent_content_count": self.divergent_content_count,
+            "same_inode_count": self.same_inode_count,
             "sample_paper_ids": list(self.sample_paper_ids),
             "diagnostics": list(self.diagnostics),
             "import_eligible": False,
             "graph_writes_allowed": False,
             "note": (
                 "Identical multi-root copies are storage/process debt, not data corruption. "
+                "same_inode_count counts multi-root ids already hardlinked (shared inode). "
                 "Divergent copies require human review before expand/dedup."
             ),
         }
@@ -180,19 +183,26 @@ def inventory_multi_root_hybrid_copies(
     multi_ids = sorted(pid for pid, paths in by_id.items() if len(paths) > 1)
     identical = 0
     divergent = 0
+    same_inode = 0
     samples: list[str] = []
     for pid in multi_ids:
         hashes: set[str] = set()
+        inodes: set[int] = set()
         for path in by_id[pid]:
             try:
+                st = path.stat()
+                inodes.add(int(st.st_ino))
                 digest = hashlib.sha256(path.read_bytes()).hexdigest()
             except OSError:
                 digest = f"unreadable:{path}"
+                inodes.add(-1)
             hashes.add(digest)
         if len(hashes) <= 1:
             identical += 1
         else:
             divergent += 1
+        if len(inodes) == 1 and -1 not in inodes:
+            same_inode += 1
         if len(samples) < sample_limit:
             samples.append(pid)
 
@@ -200,6 +210,7 @@ def inventory_multi_root_hybrid_copies(
         f"multi_root_ids:{len(multi_ids)}",
         f"identical_content:{identical}",
         f"divergent_content:{divergent}",
+        f"same_inode:{same_inode}",
         "import_write_fail_closed",
         "wave_a_coverage_only",
     )
@@ -207,6 +218,7 @@ def inventory_multi_root_hybrid_copies(
         multi_root_paper_id_count=len(multi_ids),
         identical_content_count=identical,
         divergent_content_count=divergent,
+        same_inode_count=same_inode,
         sample_paper_ids=tuple(samples),
         diagnostics=diagnostics,
     )
@@ -252,6 +264,7 @@ class EtlBodyCoveragePackage:
     multi_root_paper_id_count: int = 0
     multi_root_identical_content_count: int = 0
     multi_root_divergent_content_count: int = 0
+    multi_root_same_inode_count: int = 0
     multi_root_sample_paper_ids: tuple[str, ...] = ()
     import_eligible: bool = False
     graph_writes_allowed: bool = False
@@ -280,6 +293,7 @@ class EtlBodyCoveragePackage:
             "multi_root_paper_id_count": self.multi_root_paper_id_count,
             "multi_root_identical_content_count": self.multi_root_identical_content_count,
             "multi_root_divergent_content_count": self.multi_root_divergent_content_count,
+            "multi_root_same_inode_count": self.multi_root_same_inode_count,
             "multi_root_sample_paper_ids": list(self.multi_root_sample_paper_ids),
             "article_json_found": self.article_json_found,
             "article_json_missing": self.article_json_missing,
@@ -390,6 +404,7 @@ def audit_catalog_body_coverage(
         f"multi_root_ids:{multi_inv.multi_root_paper_id_count}",
         f"multi_root_identical:{multi_inv.identical_content_count}",
         f"multi_root_divergent:{multi_inv.divergent_content_count}",
+        f"multi_root_same_inode:{multi_inv.same_inode_count}",
         f"body_roots:{len(roots)}",
         "import_write_fail_closed",
         "wave_a_coverage_only",
@@ -413,6 +428,7 @@ def audit_catalog_body_coverage(
         multi_root_paper_id_count=multi_inv.multi_root_paper_id_count,
         multi_root_identical_content_count=multi_inv.identical_content_count,
         multi_root_divergent_content_count=multi_inv.divergent_content_count,
+        multi_root_same_inode_count=multi_inv.same_inode_count,
         multi_root_sample_paper_ids=multi_inv.sample_paper_ids,
     )
 

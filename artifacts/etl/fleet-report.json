@@ -1,5 +1,7 @@
 {
-  "alerts": [],
+  "alerts": [
+    "quality_n_mismatch:llm:20!=canonical:23,compare:20!=canonical:23"
+  ],
   "continuity": {
     "alerts": [],
     "closeout": {
@@ -71,6 +73,7 @@
         "multi_root_ids:20",
         "multi_root_identical:20",
         "multi_root_divergent:0",
+        "multi_root_same_inode:20",
         "body_roots:5",
         "import_write_fail_closed",
         "wave_a_coverage_only"
@@ -97,6 +100,7 @@
       "multi_root_divergent_content_count": 0,
       "multi_root_identical_content_count": 20,
       "multi_root_paper_id_count": 20,
+      "multi_root_same_inode_count": 20,
       "multi_root_sample_paper_ids": [
         "1206.6423",
         "1207.4167",
@@ -210,6 +214,7 @@
       "multi_root_divergent_content_count": 0,
       "multi_root_identical_content_count": 20,
       "multi_root_paper_id_count": 20,
+      "multi_root_same_inode_count": 20,
       "preprocess_body_count": 81,
       "preprocess_errors": 0,
       "preprocess_quality": {
@@ -224,6 +229,7 @@
       "residual_target:0.35",
       "expand_ready_frac:0.906",
       "multi_root_divergent:0",
+      "multi_root_same_inode:20",
       "preprocess_bodies:81",
       "preprocess_errors:0",
       "import_hold_hits:0",
@@ -458,9 +464,12 @@
   "diagnostics": [
     "hybrid_found:81",
     "hybrid_fraction:0.3522",
+    "multi_root_same_inode:20",
     "ship_path:header_priority_constrained_select",
     "import_hold_verdict:pass",
-    "alerts:0",
+    "quality_n_all_match:False",
+    "quality_n_canonical:23",
+    "alerts:1",
     "import_write_fail_closed",
     "etl_fleet_only"
   ],
@@ -468,10 +477,10 @@
   "import_eligible": false,
   "import_hold": {
     "enablement_hit_count": 0,
-    "enablement_hits": [],
+    "enablement_hits": 0,
     "graph_writes_allowed": false,
     "import_eligible": false,
-    "module_count": 90,
+    "module_count": 91,
     "modules_with_import_eligible": [
       "application/corpus/article_preprocess.py",
       "application/corpus/body_quality.py",
@@ -518,6 +527,7 @@
       "application/corpus/wave_b_hybrid_extraction_inventory.py",
       "application/corpus/wave_b_hybrid_statistical_extraction.py",
       "application/corpus/wave_b_live_hybrid_extraction.py",
+      "application/corpus/wave_b_quality_n_contract.py",
       "application/corpus/wave_b_ship_gate_matrix.py",
       "application/corpus/wave_b_structured_extract_context.py",
       "application/graph/pilot_write_use_case.py",
@@ -570,24 +580,56 @@
       "/root/daily-archive/src/research_graph/workflows/composition",
       "/root/daily-archive/src/research_graph/infrastructure"
     ],
-    "scanned_file_count": 245,
+    "scanned_file_count": 246,
     "schema_version": "import-hold-inventory.v1",
     "tree_count": 4,
     "verdict": "pass"
   },
-  "note": "Unattended fleet glue: pack + ship matrix + import-hold. Never expands, never imports. Expand uses default pack refresh.",
-  "operator_status": "ok",
-  "schema_version": "etl-fleet.v1",
+  "note": "Unattended fleet glue: pack + ship matrix + import-hold + quality n. Never expands, never imports. Expand uses default pack refresh. Use --rescore-quality for live same-n matrix/grounding.",
+  "operator_status": "alerts",
+  "quality_n": {
+    "all_match": false,
+    "canonical_joined_count": 23,
+    "diagnostics": [
+      "canonical:23",
+      "present:6",
+      "all_match:False",
+      "mismatches:2",
+      "import_write_fail_closed",
+      "quality_n_contract_only"
+    ],
+    "graph_writes_allowed": false,
+    "import_eligible": false,
+    "mismatches": [
+      "llm:20!=canonical:23",
+      "compare:20!=canonical:23"
+    ],
+    "note": "Same-n contract for quality artifacts. Promotion and gepa_justified require matching joined_count across live header and compare worlds.",
+    "schema_version": "wave-b-quality-n-contract.v1",
+    "sources": {
+      "compare": 20,
+      "gepa": 23,
+      "grounding": 23,
+      "header": 23,
+      "llm": 20,
+      "matrix": 23
+    }
+  },
+  "rescored_quality": true,
+  "schema_version": "etl-fleet.v2",
   "ship_matrix": {
     "deltas": {
+      "compare_n_matches": false,
       "gepa_beats_header": false,
       "gepa_minus_header_entity_f1": -0.086207,
       "gepa_minus_header_relation_f1": -0.186795,
+      "gepa_n_matches": true,
       "header_minus_floor_entity_f1": -0.5,
       "header_minus_floor_relation_f1": -0.73913,
       "llm_beats_header": false,
       "llm_minus_header_entity_f1": 0.125,
-      "llm_minus_header_relation_f1": 0.03913
+      "llm_minus_header_relation_f1": 0.03913,
+      "quality_n_all_match": false
     },
     "diagnostics": [
       "ship_ready:True",
@@ -607,14 +649,16 @@
       "joined_count:23",
       "compare_joined:20",
       "compare_n_matches:False",
+      "gepa_n_matches:True",
+      "quality_n_all_match:False",
       "import_write_fail_closed",
       "wave_b_ship_gate_matrix_only"
     ],
     "dspy_optimizer_enabled": false,
-    "gate_signal": "open",
     "gepa_justified": false,
     "graph_writes_allowed": false,
     "import_eligible": false,
+    "joined_count": 23,
     "note": "Single ship-gate matrix for Wave B quality worlds. floor=lexical oracle ceiling; header=constrained deploy path; baseline=fixture extraction gate; llm=compare only. Staged GEPA spikes allowed (D128); promote ship_path only if same-n delta_vs_header > 0 on entity and relation. Never import.",
     "relation_status": {
       "accepted_as_deploy_ceiling": true,
@@ -632,25 +676,33 @@
       "path": "header_priority_cooccurrence",
       "relation_gap_vs_floor": 0.73913
     },
+    "rescored": true,
     "schema_version": "wave-b-ship-gate-matrix.v1",
     "ship_blocker": null,
     "ship_path": "header_priority_constrained_select",
     "ship_ready": true,
-    "wave_a_closeout_signal": "wave_a_closed",
     "worlds": {
       "context": {
         "compare_joined_count": 20,
         "compare_n_matches": false,
+        "gepa_joined_count": 23,
+        "gepa_n_matches": true,
         "grounding_body_ratio": 1.0,
         "grounding_cand_ratio": 1.0,
         "human_go": true,
         "joined_count": 23,
         "max_val_gap": 0.35,
+        "quality_n_all_match": false,
+        "quality_n_canonical": 23,
+        "quality_n_mismatches": [
+          "llm:20!=canonical:23",
+          "compare:20!=canonical:23"
+        ],
         "wave_a_closeout_pass": true
       },
       "extraction_baseline_train": {
-        "entity_f1": 0.925,
-        "relation_f1": 0.6470588235294117,
+        "entity_f1": null,
+        "relation_f1": null,
         "role": "fixture_gate_not_hybrid_deploy"
       },
       "floor_lexical_oracle": {
@@ -682,6 +734,34 @@
         "val_entity_f1": 0.16666666666666666,
         "val_gap_blocker": null,
         "val_gap_ok": true
+      },
+      "quality_n_contract": {
+        "all_match": false,
+        "canonical_joined_count": 23,
+        "diagnostics": [
+          "canonical:23",
+          "present:6",
+          "all_match:False",
+          "mismatches:2",
+          "import_write_fail_closed",
+          "quality_n_contract_only"
+        ],
+        "graph_writes_allowed": false,
+        "import_eligible": false,
+        "mismatches": [
+          "llm:20!=canonical:23",
+          "compare:20!=canonical:23"
+        ],
+        "note": "Same-n contract for quality artifacts. Promotion and gepa_justified require matching joined_count across live header and compare worlds.",
+        "schema_version": "wave-b-quality-n-contract.v1",
+        "sources": {
+          "compare": 20,
+          "gepa": 23,
+          "grounding": 23,
+          "header": 23,
+          "llm": 20,
+          "matrix": 23
+        }
       }
     }
   }

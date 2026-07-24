@@ -11,6 +11,10 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from research_graph.application.corpus.wave_b_quality_n_contract import (
+    evaluate_quality_n_contract,
+    extract_joined_count,
+)
 from research_graph.application.corpus.wave_b_gold_hybrid_llm_pilot import (
     ALLOWED_RELATION_TYPES,
 )
@@ -215,9 +219,24 @@ def build_wave_b_ship_gate_matrix(
         and delta_llm_e > 0
         and delta_llm_r > 0
     )
-    # Offline GEPA promotion: dual F1 > header + val-gap guard (D128).
+    # Offline GEPA same-n: reject promote when gepa joined_count differs from live header n.
+    gepa_joined = None
+    if ogepa.get("joined_count") is not None:
+        gepa_joined = int(ogepa["joined_count"])
+    elif isinstance(ogepa.get("metrics"), Mapping) and ogepa["metrics"].get("case_count") is not None:
+        gepa_joined = int(ogepa["metrics"]["case_count"])
+    gepa_n_matches = True
+    if (
+        joined_count is not None
+        and gepa_joined is not None
+        and int(joined_count) != int(gepa_joined)
+    ):
+        gepa_n_matches = False
+
+    # Offline GEPA promotion: dual F1 > header + val-gap + same-n (D128/M271).
     gepa_beats_header = (
-        delta_gepa_e is not None
+        gepa_n_matches
+        and delta_gepa_e is not None
         and delta_gepa_r is not None
         and delta_gepa_e > 0
         and delta_gepa_r > 0
@@ -279,6 +298,17 @@ def build_wave_b_ship_gate_matrix(
         "gepa_open": False,
     }
 
+    n_contract = evaluate_quality_n_contract(
+        header_n=joined_count,
+        llm_n=compare_joined if llm_e is not None else None,
+        gepa_n=gepa_joined if gepa_e is not None else None,
+        grounding_n=None,  # filled by operator when known
+        matrix_n=joined_count,
+        compare_n=compare_joined,
+        canonical=joined_count,
+    )
+    # allow operator to pass grounding via offline_gepa/compare side channel later
+
     worlds = {
         "floor_lexical_oracle": {
             "entity_f1": floor_e,
@@ -319,12 +349,18 @@ def build_wave_b_ship_gate_matrix(
             "joined_count": joined_count,
             "compare_joined_count": compare_joined,
             "compare_n_matches": compare_n_matches,
+            "gepa_joined_count": gepa_joined,
+            "gepa_n_matches": gepa_n_matches,
             "grounding_body_ratio": grounding_body_ratio,
             "grounding_cand_ratio": grounding_cand_ratio,
             "human_go": human_go,
             "wave_a_closeout_pass": wave_a_closeout_pass,
             "max_val_gap": max_val_gap,
+            "quality_n_all_match": n_contract.all_match,
+            "quality_n_mismatches": list(n_contract.mismatches),
+            "quality_n_canonical": n_contract.canonical_joined_count,
         },
+        "quality_n_contract": n_contract.to_dict(),
     }
     deltas = {
         "llm_minus_header_entity_f1": delta_llm_e,
@@ -335,6 +371,9 @@ def build_wave_b_ship_gate_matrix(
         "header_minus_floor_relation_f1": _delta(header_r, floor_r),
         "llm_beats_header": llm_beats_header,
         "gepa_beats_header": gepa_beats_header,
+        "quality_n_all_match": n_contract.all_match,
+        "gepa_n_matches": gepa_n_matches,
+        "compare_n_matches": compare_n_matches,
     }
 
     diagnostics = (
@@ -355,6 +394,8 @@ def build_wave_b_ship_gate_matrix(
         f"joined_count:{joined_count}",
         f"compare_joined:{compare_joined}",
         f"compare_n_matches:{compare_n_matches}",
+        f"gepa_n_matches:{gepa_n_matches}",
+        f"quality_n_all_match:{n_contract.all_match}",
         "import_write_fail_closed",
         "wave_b_ship_gate_matrix_only",
     )

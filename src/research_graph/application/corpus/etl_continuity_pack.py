@@ -75,6 +75,7 @@ def build_etl_continuity_pack(
     multi_div = int(getattr(coverage, "multi_root_divergent_content_count", 0) or 0)
     multi_ids = int(getattr(coverage, "multi_root_paper_id_count", 0) or 0)
     multi_ident = int(getattr(coverage, "multi_root_identical_content_count", 0) or 0)
+    multi_same_inode = int(getattr(coverage, "multi_root_same_inode_count", 0) or 0)
     expand_frac = float(pdf_readiness.expand_ready_fraction_of_missing)
 
     pre_bodies = (
@@ -107,6 +108,7 @@ def build_etl_continuity_pack(
         "multi_root_paper_id_count": multi_ids,
         "multi_root_identical_content_count": multi_ident,
         "multi_root_divergent_content_count": multi_div,
+        "multi_root_same_inode_count": multi_same_inode,
         "expand_ready_frac": expand_frac,
         "missing_with_local_pdf_count": pdf_readiness.missing_with_local_pdf_count,
         "missing_without_local_pdf_count": pdf_readiness.missing_without_local_pdf_count,
@@ -147,6 +149,7 @@ def build_etl_continuity_pack(
         f"residual_target:{residual_target}",
         f"expand_ready_frac:{expand_frac}",
         f"multi_root_divergent:{multi_div}",
+        f"multi_root_same_inode:{multi_same_inode}",
         f"preprocess_bodies:{pre_bodies}",
         f"preprocess_errors:{pre_errors}",
         f"import_hold_hits:{hold_hits}",

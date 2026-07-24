@@ -88,6 +88,7 @@ def test_continuity_pack_dashboard_fields() -> None:
     assert d["hybrid_found"] == 4
     assert d["expand_ready_frac"] == 0.8333  # package rounds to 4 decimals
     assert d["multi_root_divergent_content_count"] == 0
+    assert d.get("multi_root_same_inode_count", 0) == 0
     assert d["closeout_pass"] is True
     assert d["preprocess_body_count"] == 8
     assert d["preprocess_errors"] == 0
