@@ -5,6 +5,11 @@ without authorizing import, graph writes, or Wave B auto-start.
 
 wave_a_closed means operator may discuss Wave B — not that extraction quality
 or graph import is ready.
+
+Residual policy (M257):
+  * min_hybrid_found floor raised to live residual baseline (49)
+  * hybrid_fraction residual target interim 0.35 (stretch 0.50 noted in diagnostics)
+  * fraction target does not alone open import
 """
 
 from __future__ import annotations
@@ -13,8 +18,12 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
 
-SCHEMA_VERSION = "wave-a-closeout.v1"
-DEFAULT_MIN_HYBRID_FOUND = 40
+SCHEMA_VERSION = "wave-a-closeout.v2"
+# Live residual floor after expand-limit10 (hybrid_found=49). Still not import.
+DEFAULT_MIN_HYBRID_FOUND = 49
+# Interim residual coverage target; stretch 0.50 is diagnostic only.
+DEFAULT_HYBRID_FRACTION_RESIDUAL_TARGET = 0.35
+STRETCH_HYBRID_FRACTION_TARGET = 0.50
 
 CloseoutSignal = Literal["wave_a_closed", "blocked"]
 
@@ -24,6 +33,7 @@ DEFAULT_OPERATOR_COMMANDS: tuple[str, ...] = (
     "uv run python scripts/verify_etl_body_coverage.py",
     "uv run python scripts/verify_etl_preprocess_fleet.py",
     "uv run python scripts/verify_etl_continuity_readiness.py",
+    "uv run python scripts/verify_etl_continuity_pack.py",
     "uv run python scripts/verify_hybrid_expand_batch.py",
     "uv run python scripts/verify_wave_a_closeout.py",
 )
@@ -43,6 +53,10 @@ class WaveACloseoutPackage:
     article_count: int
     diagnostics: tuple[str, ...]
     operator_commands: tuple[str, ...]
+    hybrid_fraction: float = 0.0
+    hybrid_fraction_residual_target: float = DEFAULT_HYBRID_FRACTION_RESIDUAL_TARGET
+    hybrid_fraction_meets_residual_target: bool = False
+    residual_coverage_pass: bool = False
     wave_b_gate_open: bool = False
     import_eligible: bool = False
     graph_writes_allowed: bool = False
@@ -62,6 +76,12 @@ class WaveACloseoutPackage:
             "closeout_pass": self.closeout_pass,
             "hybrid_found": self.hybrid_found,
             "min_hybrid_found": self.min_hybrid_found,
+            "hybrid_fraction": self.hybrid_fraction,
+            "hybrid_fraction_residual_target": self.hybrid_fraction_residual_target,
+            "hybrid_fraction_meets_residual_target": (
+                self.hybrid_fraction_meets_residual_target
+            ),
+            "residual_coverage_pass": self.residual_coverage_pass,
             "readiness_signal": self.readiness_signal,
             "import_hold_hits": self.import_hold_hits,
             "preprocess_errors": self.preprocess_errors,
@@ -74,7 +94,8 @@ class WaveACloseoutPackage:
             "graph_writes_allowed": False,
             "note": (
                 "Wave A data-readiness closeout only; not import authorization; "
-                "not extraction quality; Wave B requires explicit human go"
+                "not extraction quality; Wave B requires explicit human go; "
+                "hybrid_fraction residual target is interim (0.35), stretch 0.50"
             ),
         }
 
@@ -88,9 +109,31 @@ def evaluate_wave_a_closeout(
     preprocess_body_count: int,
     article_count: int,
     min_hybrid_found: int = DEFAULT_MIN_HYBRID_FOUND,
+    hybrid_fraction: float | None = None,
+    hybrid_fraction_residual_target: float = DEFAULT_HYBRID_FRACTION_RESIDUAL_TARGET,
+    require_residual_fraction: bool = False,
     operator_commands: Sequence[str] | None = None,
 ) -> WaveACloseoutPackage:
-    """Derive Wave A closeout from freeze metrics (pure)."""
+    """Derive Wave A closeout from freeze metrics (pure).
+
+    Hard freeze (closeout_pass): hybrid_found floor, readiness, hold, preprocess.
+    Residual fraction is tracked always; only blocks when require_residual_fraction=True
+    (M258 scale completion path). Default closeout remains floor-based so residual
+    scale work is not falsely blocked mid-flight.
+    """
+    if hybrid_fraction is None:
+        frac = (
+            float(hybrid_found) / float(article_count)
+            if article_count > 0
+            else 0.0
+        )
+    else:
+        frac = float(hybrid_fraction)
+    # stable 4-decimal display alignment with coverage package
+    frac = round(frac, 4)
+    target = float(hybrid_fraction_residual_target)
+    meets_residual = frac >= target
+
     reasons: list[str] = []
     if hybrid_found < min_hybrid_found:
         reasons.append(f"hybrid_found_below_min:{hybrid_found}<{min_hybrid_found}")
@@ -102,6 +145,8 @@ def evaluate_wave_a_closeout(
         reasons.append(f"preprocess_errors:{preprocess_errors}")
     if preprocess_body_count <= 0:
         reasons.append("preprocess_body_count_zero")
+    if require_residual_fraction and not meets_residual:
+        reasons.append(f"hybrid_fraction_below_residual_target:{frac}<{target}")
 
     closed = not reasons
     signal: CloseoutSignal = "wave_a_closed" if closed else "blocked"
@@ -109,6 +154,11 @@ def evaluate_wave_a_closeout(
         f"closeout_signal:{signal}",
         f"hybrid_found:{hybrid_found}",
         f"min_hybrid_found:{min_hybrid_found}",
+        f"hybrid_fraction:{frac}",
+        f"hybrid_fraction_residual_target:{target}",
+        f"hybrid_fraction_meets_residual_target:{meets_residual}",
+        f"stretch_target:{STRETCH_HYBRID_FRACTION_TARGET}",
+        f"require_residual_fraction:{require_residual_fraction}",
         f"readiness_signal:{readiness_signal}",
         f"import_hold_hits:{import_hold_hits}",
         f"preprocess_errors:{preprocess_errors}",
@@ -119,13 +169,21 @@ def evaluate_wave_a_closeout(
         "wave_b_not_auto_open",
         "wave_a_data_readiness_only",
     )
-    cmds = tuple(operator_commands) if operator_commands is not None else DEFAULT_OPERATOR_COMMANDS
+    cmds = (
+        tuple(operator_commands)
+        if operator_commands is not None
+        else DEFAULT_OPERATOR_COMMANDS
+    )
     return WaveACloseoutPackage(
         schema_version=SCHEMA_VERSION,
         closeout_signal=signal,
         closeout_pass=closed,
         hybrid_found=hybrid_found,
         min_hybrid_found=min_hybrid_found,
+        hybrid_fraction=frac,
+        hybrid_fraction_residual_target=target,
+        hybrid_fraction_meets_residual_target=meets_residual,
+        residual_coverage_pass=meets_residual and closed,
         readiness_signal=readiness_signal,
         import_hold_hits=import_hold_hits,
         preprocess_errors=preprocess_errors,
@@ -137,9 +195,11 @@ def evaluate_wave_a_closeout(
 
 
 __all__ = [
+    "DEFAULT_HYBRID_FRACTION_RESIDUAL_TARGET",
     "DEFAULT_MIN_HYBRID_FOUND",
     "DEFAULT_OPERATOR_COMMANDS",
     "SCHEMA_VERSION",
+    "STRETCH_HYBRID_FRACTION_TARGET",
     "CloseoutSignal",
     "WaveACloseoutPackage",
     "evaluate_wave_a_closeout",

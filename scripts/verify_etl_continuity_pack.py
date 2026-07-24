@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Wave A operator: ETL continuity pack dashboard.
+"""Wave A operator: ETL continuity pack dashboard (M257 cockpit).
 
-Composes body coverage + multi-root metrics + hybrid-missing PDF readiness +
-Wave A closeout into one report. Never import. Never starts hybrid batch.
+Composes body coverage + multi-root + hybrid-missing PDF readiness +
+preprocess/hold + Wave A closeout into one report. Never import.
 
 Usage::
 
@@ -19,18 +19,9 @@ import json
 import sys
 from pathlib import Path
 
-from research_graph.application.corpus.composition_import_hold_inventory import (
-    default_import_hold_roots,
-    inventory_import_hold_trees,
+from research_graph.application.corpus.etl_continuity_pack import (
+    compose_live_continuity_pack,
 )
-from research_graph.application.corpus.etl_continuity_pack import build_etl_continuity_pack
-from research_graph.application.corpus.etl_continuity_readiness import (
-    build_continuity_readiness,
-)
-from research_graph.application.corpus.etl_hybrid_missing_pdf_readiness import (
-    audit_hybrid_missing_pdf_readiness,
-)
-from research_graph.application.corpus.wave_a_closeout import evaluate_wave_a_closeout
 from research_graph.workflows.composition.etl_body_coverage import (
     DEFAULT_BODY_ROOTS,
     DEFAULT_CATALOG_INDEX,
@@ -43,8 +34,8 @@ ROOT = Path(__file__).resolve().parents[1]
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "Wave A continuity pack dashboard: coverage + multi_root + PDF readiness "
-            "+ closeout. Import always false."
+            "Wave A continuity pack dashboard v2: coverage + multi_root + PDF "
+            "readiness + preprocess + hold + closeout. Import always false."
         )
     )
     parser.add_argument("--catalog-index", type=Path, default=DEFAULT_CATALOG_INDEX)
@@ -60,43 +51,22 @@ def main(argv: list[str] | None = None) -> int:
     def _r(p: Path) -> Path:
         return p if p.is_absolute() else (repo / p)
 
-    catalog_index = _r(args.catalog_index)
-    catalog_root = _r(args.catalog_root)
+    body_roots = None
     if args.body_root:
         body_roots = tuple(_r(p) for p in args.body_root)
-    else:
-        body_roots = tuple(_r(Path(p)) for p in DEFAULT_BODY_ROOTS)
 
-    continuity = build_continuity_readiness(
-        catalog_index_path=catalog_index,
+    pack = compose_live_continuity_pack(
+        repo_root=repo,
+        catalog_index=_r(args.catalog_index),
+        catalog_root=_r(args.catalog_root),
         body_roots=body_roots,
-        catalog_root=catalog_root,
-    )
-    coverage = continuity.coverage
-    preprocess = continuity.preprocess
-    pdf = audit_hybrid_missing_pdf_readiness(
-        catalog_index_path=catalog_index,
-        catalog_root=catalog_root,
-        body_roots=body_roots,
-    )
-    hold = inventory_import_hold_trees(default_import_hold_roots())
-    closeout = evaluate_wave_a_closeout(
-        hybrid_found=coverage.hybrid_body_found,
-        readiness_signal=continuity.readiness_signal,
-        import_hold_hits=int(hold.get("enablement_hit_count") or 0),
-        preprocess_errors=int(preprocess.error_count),
-        preprocess_body_count=int(preprocess.body_count),
-        article_count=int(coverage.article_count),
-    )
-    pack = build_etl_continuity_pack(
-        coverage=coverage,
-        pdf_readiness=pdf,
-        closeout=closeout,
     )
     payload = pack.to_dict()
     payload["import_eligible"] = False
     payload["graph_writes_allowed"] = False
-    payload["continuity_readiness_signal"] = continuity.readiness_signal
+    payload["continuity_readiness_signal"] = pack.dashboard.get(
+        "continuity_readiness_signal"
+    )
     text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
     if args.output is not None:
         out = _r(args.output)
@@ -111,7 +81,11 @@ def main(argv: list[str] | None = None) -> int:
             "etl-continuity-pack | "
             f"hybrid_found: {d.get('hybrid_found')} | "
             f"hybrid_fraction: {d.get('hybrid_fraction')} | "
+            f"residual_target: {d.get('hybrid_fraction_residual_target')} | "
             f"expand_ready_frac: {d.get('expand_ready_frac')} | "
+            f"preprocess: bodies={d.get('preprocess_body_count')} "
+            f"errors={d.get('preprocess_errors')} | "
+            f"hold_hits: {d.get('import_hold_hits')} | "
             f"multi_root_divergent: {d.get('multi_root_divergent_content_count')} | "
             f"closeout: {d.get('closeout_signal')} | "
             f"alerts: {len(alerts)} | "
@@ -119,6 +93,10 @@ def main(argv: list[str] | None = None) -> int:
         )
         if alerts:
             sys.stdout.write("  alerts: " + ", ".join(alerts) + "\n")
+        q = d.get("preprocess_quality") or {}
+        if q:
+            q_s = ",".join(f"{k}={v}" for k, v in sorted(q.items()))
+            sys.stdout.write(f"  preprocess_quality: {q_s}\n")
         sys.stdout.write(
             "  multi_root: "
             f"ids={d.get('multi_root_paper_id_count')} "
@@ -130,6 +108,12 @@ def main(argv: list[str] | None = None) -> int:
             f"missing_with_pdf={d.get('missing_with_local_pdf_count')} "
             f"missing_without_pdf={d.get('missing_without_local_pdf_count')}\n"
         )
+        gate = d.get("expand_gate") or {}
+        if gate:
+            sys.stdout.write(
+                f"  expand_gate: {gate.get('gate_signal')} "
+                f"eff_limit={gate.get('effective_limit')}\n"
+            )
     return 0
 
 

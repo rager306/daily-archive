@@ -116,7 +116,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--with-closeout",
         action="store_true",
-        help="Compose live Wave A closeout as context (never authorizes B)",
+        default=True,
+        help=(
+            "Compose live Wave A closeout as context (default on; "
+            "never authorizes B). Use --no-closeout to skip."
+        ),
+    )
+    parser.add_argument(
+        "--no-closeout",
+        action="store_true",
+        help="Skip live Wave A closeout context (stamp-only / dry paths)",
     )
     parser.add_argument("--repo-root", type=Path, default=ROOT)
     parser.add_argument("--json", action="store_true")
@@ -126,7 +135,8 @@ def main(argv: list[str] | None = None) -> int:
     repo = Path(args.repo_root)
     closeout_pass: bool | None = None
     closeout_signal: str | None = None
-    if args.with_closeout:
+    # M257: closeout context is default-on so stamp-open is not A-blind.
+    if not args.no_closeout:
         closeout_pass, closeout_signal = _maybe_closeout_context(repo)
 
     stamp_path: Path | None = None

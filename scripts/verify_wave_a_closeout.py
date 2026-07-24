@@ -106,6 +106,7 @@ def main(argv: list[str] | None = None) -> int:
         preprocess_body_count=continuity.preprocess.body_count,
         article_count=continuity.coverage.article_count,
         min_hybrid_found=args.min_hybrid_found,
+        hybrid_fraction=float(continuity.coverage.hybrid_body_fraction),
     )
 
     payload = closeout.to_dict()

@@ -57,7 +57,11 @@ def _closeout(**kwargs):
         closeout_signal=kwargs.get("closeout_signal", "wave_a_closed"),  # type: ignore[arg-type]
         closeout_pass=bool(kwargs.get("closeout_pass", True)),
         hybrid_found=int(kwargs.get("hybrid_found", 40)),
-        min_hybrid_found=int(kwargs.get("min_hybrid_found", 40)),
+        min_hybrid_found=int(kwargs.get("min_hybrid_found", 49)),
+        hybrid_fraction=float(kwargs.get("hybrid_fraction", 0.213)),
+        hybrid_fraction_residual_target=float(kwargs.get("hybrid_fraction_residual_target", 0.35)),
+        hybrid_fraction_meets_residual_target=bool(kwargs.get("hybrid_fraction_meets_residual_target", False)),
+        residual_coverage_pass=bool(kwargs.get("residual_coverage_pass", False)),
         readiness_signal=str(kwargs.get("readiness_signal", "ready_for_review")),
         import_hold_hits=int(kwargs.get("import_hold_hits", 0)),
         preprocess_errors=int(kwargs.get("preprocess_errors", 0)),
@@ -72,7 +76,12 @@ def test_continuity_pack_dashboard_fields() -> None:
     pkg = build_etl_continuity_pack(
         coverage=_coverage(),
         pdf_readiness=_pdf(),
-        closeout=_closeout(),
+        closeout=_closeout(hybrid_fraction=0.4, hybrid_fraction_meets_residual_target=True),
+        preprocess_body_count=8,
+        preprocess_errors=0,
+        preprocess_quality={"ok": 6, "soft_signal": 2},
+        import_hold_hits=0,
+        expand_gate={"gate_signal": "blocked", "effective_limit": 0},
     )
     assert pkg.import_eligible is False
     d = pkg.dashboard
@@ -80,7 +89,14 @@ def test_continuity_pack_dashboard_fields() -> None:
     assert d["expand_ready_frac"] == 0.8333  # package rounds to 4 decimals
     assert d["multi_root_divergent_content_count"] == 0
     assert d["closeout_pass"] is True
-    assert pkg.alerts == ()
+    assert d["preprocess_body_count"] == 8
+    assert d["preprocess_errors"] == 0
+    assert d["import_hold_hits"] == 0
+    assert d["preprocess_quality"]["ok"] == 6
+    assert d["expand_gate"]["gate_signal"] == "blocked"
+    assert d["hybrid_fraction_residual_target"] == 0.35
+    # residual met in this fixture closeout override
+    assert "hybrid_fraction_below_residual_target" not in " ".join(pkg.alerts)
 
 
 def test_continuity_pack_alerts_on_divergent_multi_root() -> None:
@@ -94,3 +110,14 @@ def test_continuity_pack_alerts_on_divergent_multi_root() -> None:
     )
     assert any(a.startswith("multi_root_divergent_content:") for a in pkg.alerts)
     assert pkg.to_dict()["import_eligible"] is False
+
+
+def test_continuity_pack_alerts_residual_fraction() -> None:
+    # Alert uses coverage.hybrid_body_fraction (found/article), not closeout field alone.
+    pkg = build_etl_continuity_pack(
+        coverage=_coverage(hybrid_body_found=2, hybrid_body_missing=8, article_count=10),
+        pdf_readiness=_pdf(),
+        closeout=_closeout(hybrid_fraction=0.2, hybrid_fraction_meets_residual_target=False),
+    )
+    assert float(pkg.dashboard["hybrid_fraction"]) < 0.35
+    assert any(a.startswith("hybrid_fraction_below_residual_target:") for a in pkg.alerts)

@@ -10,21 +10,24 @@ from research_graph.application.corpus.wave_a_closeout import (
 
 def test_closed_when_thresholds_met() -> None:
     pkg = evaluate_wave_a_closeout(
-        hybrid_found=40,
+        hybrid_found=49,
         readiness_signal="ready_for_review",
         import_hold_hits=0,
         preprocess_errors=0,
-        preprocess_body_count=41,
+        preprocess_body_count=50,
         article_count=230,
     )
     assert pkg.closeout_signal == "wave_a_closed"
     assert pkg.closeout_pass is True
     assert pkg.import_eligible is False
     assert pkg.wave_b_gate_open is False
+    assert pkg.min_hybrid_found == 49
+    assert pkg.hybrid_fraction_residual_target == 0.35
     d = pkg.to_dict()
     assert d["import_eligible"] is False
     assert d["closeout_pass"] is True
     assert d["wave_b_gate_open"] is False
+    assert "hybrid_fraction" in d
 
 
 def test_blocked_low_hybrid_found() -> None:
@@ -38,6 +41,50 @@ def test_blocked_low_hybrid_found() -> None:
     )
     assert pkg.closeout_signal == "blocked"
     assert pkg.closeout_pass is False
+
+
+def test_blocked_hybrid_found_40_under_new_floor() -> None:
+    """M257: default min floor raised to 49; 40 is no longer closed."""
+    pkg = evaluate_wave_a_closeout(
+        hybrid_found=40,
+        readiness_signal="ready_for_review",
+        import_hold_hits=0,
+        preprocess_errors=0,
+        preprocess_body_count=41,
+        article_count=230,
+    )
+    assert pkg.closeout_signal == "blocked"
+    assert pkg.closeout_pass is False
+
+
+def test_residual_fraction_tracked_not_blocking_by_default() -> None:
+    pkg = evaluate_wave_a_closeout(
+        hybrid_found=49,
+        readiness_signal="ready_for_review",
+        import_hold_hits=0,
+        preprocess_errors=0,
+        preprocess_body_count=50,
+        article_count=230,
+        hybrid_fraction=0.213,
+    )
+    assert pkg.closeout_pass is True
+    assert pkg.hybrid_fraction_meets_residual_target is False
+    assert pkg.hybrid_fraction == 0.213
+
+
+def test_require_residual_fraction_blocks() -> None:
+    pkg = evaluate_wave_a_closeout(
+        hybrid_found=49,
+        readiness_signal="ready_for_review",
+        import_hold_hits=0,
+        preprocess_errors=0,
+        preprocess_body_count=50,
+        article_count=230,
+        hybrid_fraction=0.213,
+        require_residual_fraction=True,
+    )
+    assert pkg.closeout_pass is False
+    assert pkg.closeout_signal == "blocked"
 
 
 def test_blocked_import_hold_hits() -> None:

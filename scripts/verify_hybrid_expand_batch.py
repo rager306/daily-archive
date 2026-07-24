@@ -175,6 +175,20 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument(
+        "--refresh-continuity-pack",
+        action="store_true",
+        help=(
+            "After preflight/batch, refresh artifacts/etl/continuity-pack.json "
+            "with live pack (incl. expand_gate). Never import."
+        ),
+    )
+    parser.add_argument(
+        "--continuity-pack-output",
+        type=Path,
+        default=Path("artifacts/etl/continuity-pack.json"),
+        help="Path for --refresh-continuity-pack write",
+    )
     args = parser.parse_args(argv)
 
     repo = Path(args.repo_root)
@@ -302,9 +316,38 @@ def main(argv: list[str] | None = None) -> int:
             "import_eligible_any": False,
         }
 
+    continuity_pack_summary: dict | None = None
+    if args.refresh_continuity_pack:
+        from research_graph.application.corpus.etl_continuity_pack import (
+            compose_live_continuity_pack,
+        )
+
+        pack = compose_live_continuity_pack(
+            repo_root=repo,
+            body_roots=tuple(body_roots),
+            expand_gate=batch_gate.to_dict(),
+        )
+        pack_path = _resolve(args.continuity_pack_output)
+        pack_path.parent.mkdir(parents=True, exist_ok=True)
+        pack_payload = pack.to_dict()
+        pack_payload["import_eligible"] = False
+        pack_payload["graph_writes_allowed"] = False
+        pack_path.write_text(
+            json.dumps(pack_payload, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        continuity_pack_summary = {
+            "path": str(pack_path),
+            "dashboard": dict(pack.dashboard),
+            "alerts": list(pack.alerts),
+            "closeout_signal": pack.closeout.closeout_signal,
+            "import_eligible": False,
+        }
+
     payload = {
         "expand_batch_gate": batch_gate.to_dict(),
-        "schema_version": "m246-hybrid-expand-batch-report.v1",
+        "continuity_pack": continuity_pack_summary,
+        "schema_version": "m246-hybrid-expand-batch-report.v2",
         "proposal_path": str(write_path),
         "expand": {
             "proposed_count": expand.proposed_count,
@@ -357,6 +400,14 @@ def main(argv: list[str] | None = None) -> int:
         if batch_gate.reasons:
             sys.stdout.write(
                 "  expand_gate_reasons: " + ", ".join(batch_gate.reasons) + "\n"
+            )
+        if continuity_pack_summary is not None:
+            d = continuity_pack_summary.get("dashboard") or {}
+            sys.stdout.write(
+                "  continuity_pack: "
+                f"hybrid_found={d.get('hybrid_found')} "
+                f"closeout={continuity_pack_summary.get('closeout_signal')} "
+                f"path={Path(continuity_pack_summary['path']).name}\n"
             )
 
     return 0

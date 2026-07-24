@@ -150,3 +150,16 @@ def test_live_preflight_smoke_if_catalog_present() -> None:
     assert "preflight:" in proc.stdout
     proposal = ROOT / "artifacts" / "m213-hybrid-gate" / "selection-40-proposal.json"
     assert proposal.is_file()
+
+
+
+def test_refresh_continuity_pack_flag_in_help() -> None:
+    proc = subprocess.run(
+        [sys.executable, str(SCRIPT), "--help"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    assert "--refresh-continuity-pack" in proc.stdout

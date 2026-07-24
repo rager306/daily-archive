@@ -1,5 +1,7 @@
 {
-  "alerts": [],
+  "alerts": [
+    "hybrid_fraction_below_residual_target:0.213<0.35"
+  ],
   "closeout": {
     "article_count": 230,
     "closeout_pass": true,
@@ -7,7 +9,12 @@
     "diagnostics": [
       "closeout_signal:wave_a_closed",
       "hybrid_found:49",
-      "min_hybrid_found:40",
+      "min_hybrid_found:49",
+      "hybrid_fraction:0.213",
+      "hybrid_fraction_residual_target:0.35",
+      "hybrid_fraction_meets_residual_target:False",
+      "stretch_target:0.5",
+      "require_residual_fraction:False",
       "readiness_signal:ready_for_review",
       "import_hold_hits:0",
       "preprocess_errors:0",
@@ -19,26 +26,30 @@
     ],
     "graph_writes_allowed": false,
     "hybrid_found": 49,
+    "hybrid_fraction": 0.213,
+    "hybrid_fraction_meets_residual_target": false,
+    "hybrid_fraction_residual_target": 0.35,
     "import_eligible": false,
     "import_hold_hits": 0,
-    "min_hybrid_found": 40,
-    "note": "Wave A data-readiness closeout only; not import authorization; not extraction quality; Wave B requires explicit human go",
+    "min_hybrid_found": 49,
+    "note": "Wave A data-readiness closeout only; not import authorization; not extraction quality; Wave B requires explicit human go; hybrid_fraction residual target is interim (0.35), stretch 0.50",
     "operator_commands": [
       "uv run python scripts/verify_onion_layering.py",
       "uv run python scripts/verify_import_hold_inventory.py",
       "uv run python scripts/verify_etl_body_coverage.py",
       "uv run python scripts/verify_etl_preprocess_fleet.py",
       "uv run python scripts/verify_etl_continuity_readiness.py",
+      "uv run python scripts/verify_etl_continuity_pack.py",
       "uv run python scripts/verify_hybrid_expand_batch.py",
       "uv run python scripts/verify_wave_a_closeout.py"
     ],
     "preprocess_body_count": 50,
     "preprocess_errors": 0,
     "readiness_signal": "ready_for_review",
-    "schema_version": "wave-a-closeout.v1",
+    "residual_coverage_pass": false,
+    "schema_version": "wave-a-closeout.v2",
     "wave_b_gate_open": false
   },
-  "continuity_readiness_signal": "ready_for_review",
   "coverage": {
     "article_count": 230,
     "article_json_found": 230,
@@ -173,42 +184,6 @@
         "import_eligible": false,
         "paper_id": "2310.08560",
         "source_code": "arxiv"
-      },
-      {
-        "article_json_present": true,
-        "article_ref": "arxiv/cs-ai/2502.13025",
-        "hybrid_body_path": "",
-        "hybrid_body_present": false,
-        "import_eligible": false,
-        "paper_id": "2502.13025",
-        "source_code": "arxiv"
-      },
-      {
-        "article_json_present": true,
-        "article_ref": "arxiv/cs-ai/2504.11354",
-        "hybrid_body_path": "",
-        "hybrid_body_present": false,
-        "import_eligible": false,
-        "paper_id": "2504.11354",
-        "source_code": "arxiv"
-      },
-      {
-        "article_json_present": true,
-        "article_ref": "arxiv/cs-ai/2504.15257",
-        "hybrid_body_path": "",
-        "hybrid_body_present": false,
-        "import_eligible": false,
-        "paper_id": "2504.15257",
-        "source_code": "arxiv"
-      },
-      {
-        "article_json_present": true,
-        "article_ref": "arxiv/cs-ai/2505.10819",
-        "hybrid_body_path": "",
-        "hybrid_body_present": false,
-        "import_eligible": false,
-        "paper_id": "2505.10819",
-        "source_code": "arxiv"
       }
     ],
     "schema_version": "etl-body-coverage-audit.v1"
@@ -217,26 +192,72 @@
     "article_count": 230,
     "closeout_pass": true,
     "closeout_signal": "wave_a_closed",
+    "continuity_readiness_signal": "ready_for_review",
+    "expand_gate": {
+      "allow_live_batch": false,
+      "diagnostics": [
+        "gate_signal:blocked",
+        "ready_count:20",
+        "limit:0",
+        "effective_limit:0",
+        "preflight_signal:ready_to_batch",
+        "grobid:True",
+        "odl:True",
+        "enable_live:False",
+        "import_write_fail_closed",
+        "wave_a_expand_batch_gate_only"
+      ],
+      "effective_limit": 0,
+      "gate_signal": "blocked",
+      "graph_writes_allowed": false,
+      "grobid_available": true,
+      "import_eligible": false,
+      "note": "Wave A expand batch gate only. allow_live_batch is not import. Requires ready PDF papers + healthy sidecars + positive limit.",
+      "odl_available": true,
+      "preflight_signal": "ready_to_batch",
+      "ready_count": 20,
+      "reasons": [
+        "live_hybrid_not_enabled",
+        "limit_not_positive"
+      ],
+      "schema_version": "hybrid-expand-batch-gate.v1"
+    },
     "expand_ready_frac": 0.884,
     "hybrid_artifact_files": 90,
     "hybrid_found": 49,
     "hybrid_fraction": 0.213,
+    "hybrid_fraction_meets_residual_target": false,
+    "hybrid_fraction_residual_target": 0.35,
     "hybrid_missing": 181,
     "hybrid_unique_paper_ids": 50,
     "import_eligible": false,
+    "import_hold_hits": 0,
+    "min_hybrid_found": 49,
     "missing_with_local_pdf_count": 160,
     "missing_without_local_pdf_count": 21,
     "multi_root_divergent_content_count": 0,
     "multi_root_identical_content_count": 20,
     "multi_root_paper_id_count": 20,
+    "preprocess_body_count": 50,
+    "preprocess_errors": 0,
+    "preprocess_quality": {
+      "ok": 35,
+      "soft_signal": 15
+    },
     "readiness_signal": "ready_for_review"
   },
   "diagnostics": [
     "hybrid_found:49",
+    "hybrid_fraction:0.213",
+    "residual_target:0.35",
     "expand_ready_frac:0.884",
     "multi_root_divergent:0",
+    "preprocess_bodies:50",
+    "preprocess_errors:0",
+    "import_hold_hits:0",
+    "expand_gate:blocked",
     "closeout:wave_a_closed",
-    "alerts:0",
+    "alerts:1",
     "import_write_fail_closed",
     "wave_a_continuity_pack_only"
   ],
@@ -460,5 +481,5 @@
     "note": "Wave A expand queue signal only. missing_with_local_pdf = hybrid expand candidates with local PDF. Does not start hybrid batch; does not authorize import.",
     "schema_version": "etl-hybrid-missing-pdf-readiness.v1"
   },
-  "schema_version": "etl-continuity-pack.v1"
+  "schema_version": "etl-continuity-pack.v2"
 }

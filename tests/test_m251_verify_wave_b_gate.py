@@ -102,3 +102,24 @@ def test_default_reads_repo_stamp_if_present() -> None:
             assert report["human_go_source"] == "stamp"
             assert report["human_go_persisted"] is True
             assert report["human_go_is_dry_run"] is False
+
+
+
+def test_default_includes_closeout_when_catalog() -> None:
+    """M257: default path loads live Wave A closeout (not stamp-only blind)."""
+    index = ROOT / "data" / "article_catalog" / "index.json"
+    if not index.is_file():
+        return
+    proc = subprocess.run(
+        [sys.executable, str(SCRIPT), "--json"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    report = json.loads(proc.stdout)
+    assert report["import_eligible"] is False
+    # closeout context should be populated when catalog/bodies available
+    assert report.get("wave_a_closeout_pass") is not None
+    assert report.get("wave_a_closeout_signal") is not None
