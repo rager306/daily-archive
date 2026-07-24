@@ -267,6 +267,14 @@ import-hold inventory ─► pre-commit ─► import LOCKED
 
 ---
 
+## 11b. Next strategic wave (evidence + verification)
+
+See **`artifacts/etl/EVIDENCE-TRACE-AND-VERIFICATION-ROADMAP.md`**.
+
+Binding gap: reversible evidence (ODL JSON + raw TEI + CanonicalDocument + page/bbox),
+then ARS-shaped verification (intent, constraints, risk audit) before any import.
+Do not rewrite ETL; do not open import without user go.
+
 ## 11. Operator quick check
 
 ```bash

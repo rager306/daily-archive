@@ -26,6 +26,7 @@ Live evidence:
 
 ```text
 artifacts/etl/ETL-READINESS-MATRIX-ROADMAP.md
+artifacts/etl/EVIDENCE-TRACE-AND-VERIFICATION-ROADMAP.md  # evidence-trace + verification next wave
 artifacts/etl/continuity-pack.json
 artifacts/etl/fleet-report.json
 artifacts/wave-b/ship-gate-matrix.json
