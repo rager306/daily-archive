@@ -1,357 +1,316 @@
-# ETL Readiness Matrix + Dependency Roadmap
+# ETL Readiness Matrix + Dependency Roadmap (GEPA-aware)
 
-**As of:** 2026-07-24 (post M257–M263)
-**Execution status:** M257–M263 complete. Import locked (D127). GEPA closed (D126).
-**Live hybrid_found:** 64/230 (0.2783). Ship path: header_priority. Structure: partial.  
-**Horizon policy:** Wave A residual → glue → coverage scale → Wave B quality → structure → **import only Wave D**  
-**Hard locks:** `import_eligible=false`, no DSPy optimizer until LLM beats header, no Falkor write pilot until D.
+**As of:** 2026-07-24 (post M257–M263 + **D128 staged GEPA**)  
+**Execution status:** M257–M263 complete. Import **locked** (D127).  
+**GEPA policy (D128 revises D126 hard-stop):** gradual staged enablement under Wave B stamp; **deploy path stays header** until GEPA-improved constrained select beats header on **entity and relation F1**.  
+**Hard locks:** `import_eligible=false`; no free invent; no Falkor write without explicit user go.  
+**Soft locks:** production *deploy* = `header_priority` while `llm_beats_header=false`; offline/staged GEPA spikes **in-scope**.
 
-Live baseline used for this plan:
+## Live baseline
 
 | Metric | Value |
 |--------|-------|
-| catalog articles | 230 |
-| hybrid_found | **49** (0.213) |
-| hybrid_missing | 181 |
-| PDF ready among missing | **160** (frac ~0.884) |
-| PDF absent | **21** (+ 3 gold IDs not in catalog PDF) |
-| multi_root | 20 ids, identical-only, divergent=0 |
-| preprocess | 50 bodies, 0 errors, soft_signal=15 |
-| Wave A closeout | `wave_a_closed` (min_hybrid_found=40) |
-| Wave B stamp | D124 open |
-| header F1 n=20 | entity **0.675** / relation **0.35** |
-| floor/oracle | 1.0 / 1.0 |
-| LLM compact+prefer | 0.625 / 0.30 (loses) |
-| gold missing IDs | `2507.19457`, `2511.20639`, `2605.18211` |
+| hybrid_found / unique | **64 / 64** (0.2783) of 230 |
+| residual target | **0.35** not met (stretch 0.50) |
+| PDF ready idle | **152**; without PDF **14** |
+| multi_root | identical **20**, divergent **0** |
+| preprocess | 64 bodies, 0 err, soft_signal **19**, yake=false |
+| closeout | wave_a_closed (min=49) |
+| header n=20 | entity **0.675** / relation **0.35** |
+| floor/oracle | **1.0 / 1.0** |
+| LLM compact+prefer | **0.625 / 0.30** (δ −0.05/−0.05) |
+| ship_path | header_priority; ship_ready true; gepa_justified false |
+| gold PDF / hybrid | **3/3** / **0/3** |
+| structure_signal | partial |
+| import-hold | pass, hits=0 |
 
 ---
 
-## 0. Wave map (long horizon)
+## 0. Wave map + GEPA lane
 
 ```
-A data readiness ──► B extraction quality ──► C structure/graph-ready ──► D import pilot ──► E agents
-         │                    │                        │                      │
-         │                    │                        │                      └─ blocked until D evidence
-         │                    │                        └─ PageIndex/TEI/citations as structure truth
-         │                    └─ header floor → constrained LLM only if delta>0 → GEPA last
-         └─ catalog/PDF/hybrid/preprocess/expand/closeout (import false)
+A data readiness ──► B extraction quality ──► C structure ──► D import ──► E agents
+         │                    │  ▲                  │              │
+         │                    │  │ staged GEPA      │              └─ D127 user go
+         │                    │  │ (offline→live→   │
+         │                    │  │  promote-if-wins)│
+         │                    └── header deploy ────┘
+         └─ pack/gate/expand (import false)
 ```
 
-**Optimization principle:** fix **glue + measurement** before **scale**; fix **scale + acquisition** before **quality optimization**; fix **quality gates** before **structure promotion**; never open **import** to “make metrics look complete”.
+**GEPA optimizes (existing spike contract):** instruction text / constrained select rules — **not** weights, **not** candidate coverage, **not** import.
 
 ---
 
 ## 1. Master matrix
 
-Legend status: `done` | `partial` | `gap` | `debt` | `locked` | `n/a`
+### 1.1 Done residual (M257–M263)
 
-### 1.1 Milestone → function → module → links → defects
+| ID | Function | Modules / operators | Links / algorithms | Status | Residual |
+|----|----------|---------------------|--------------------|--------|----------|
+| M257 | Glue cockpit | continuity_pack, expand `--refresh-continuity-pack`, B gate closeout default, closeout residual policy, stamp immutability | expand→pack opt-in; B←A | done | refresh not default |
+| M258 | Scale + gold PDF + join | expand×15, gold_pdf_acquisition, join leak | original.hybrid.body.md→parent | done | fraction&lt;0.35; gold hybrid 0 |
+| M259 | Multi-root map | inventory_multi_root | SHA identical/divergent | done | identical×20 debt |
+| M260 | Ship matrix | wave_b_ship_gate_matrix, header select | floor/header/baseline/LLM worlds | done | relation 0.35 |
+| M261 | GEPA skip snapshot | D126 historical | recorded LLM&lt;header | done | **revised by D128** |
+| M262 | Structure package | structure_readiness_package | M209 structure + ETL | done | signal partial |
+| M263 | Import hold | D127 + import-hold | pilot≠import | done | locked correct |
 
-| ID | Milestone / band | Function (what it does) | Primary modules / operators | Links (depends on / feeds) | Algorithms / ideas | Status | Defects / not glued |
-|----|------------------|-------------------------|-----------------------------|----------------------------|--------------------|--------|---------------------|
-| **M029–M031** | Unified catalog + refusal boundary | Canonical article inventory; graph-readiness refusal | `catalog_ingest`, `import_boundary`, catalog index | → all ETL; → import hold | SHA idempotent ingest; fail-closed import | done | catalog↔body id drift (unique 50 vs found 49) |
-| **M209** | Pipeline continuity (7-layer) | Existence checklist of pipeline seams | `pipeline_continuity.py` | parallel to ETL pack; **not same cockpit** | layer health inventory | partial | **dual continuity models** (M209 vs etl_continuity_*) |
-| **M213–M216** | Hybrid body gate + coverage handoff | Select + live hybrid batch; catalog coverage; readiness handoff | `hybrid_batch_gate`, selection-*, `hybrid_catalog_coverage` | → body roots; → preprocess; → Wave B join | hybrid_claimed_success needs body evidence | done | selection naming `selection-40-*` stale vs hybrid 49 |
-| **M217–M221** | GROBID TEI + citations review | Header/cites ETL; citation inventory; review policy | `grobid_tei_parse`, citation_* | → structure C; not import | TEI parse; review-only cites | partial | not on continuity dashboard; not Wave B relation input |
-| **M222–M223** | Multi-source strengthen | non-arxiv register/proof | non_arxiv_*, universal_source | → catalog diversity | HTML native ≠ hybrid TEI | partial | hybrid body almost arxiv-only |
-| **M224–M235** | Non-LLM preprocess stack | clean/lang/outline/fingerprint/spans/YAKE/rollup | `article_preprocess*`, `preprocess_rollup` | ← hybrid bodies; → readiness | YAKE optional; non-gating rollup | partial | yake=false in fleet; soft_signal 30%; not on pack dashboard |
-| **M236–M240** | Import-hold ratchet | Scan trees; pre-commit block enablement | `composition_import_hold_inventory`, verify + hook | safety for all waves | fail-closed enablement hits | done | must stay on every expand/quality commit |
-| **M241–M242** | Body coverage + hybrid metrics | Join catalog↔hybrid bodies; multi-root taxonomy | `etl_body_coverage_audit`, verify_etl_body_coverage | → pack, closeout, PDF readiness | multi_root identical vs divergent SHA | done | multi_root **storage debt** (20 identical copies) |
-| **M243** | Preprocess fleet audit | Fleet quality over hybrid bodies | `etl_preprocess_fleet_audit` | → continuity readiness | quality ok/soft/error | done | soft_signal debt; not auto after expand |
-| **M244** | Continuity readiness | Compose coverage+preprocess → signal | `etl_continuity_readiness` | → closeout; → pack inputs | blocked\|repair\|ready_for_review | done | signal ≠ full cockpit |
-| **M245** | Selection expand plan | Pure PDF inventory → proposal | `hybrid_selection_expand` | → preflight/batch | round-robin category; size cap | done | does not run batch |
-| **M246–M249** | Preflight + controlled expand | ready_to_batch; live limit batches | `hybrid_expand_preflight`, `verify_hybrid_expand_batch`, body roots include expand | → hybrid_found growth | live hybrid only with flag+sidecars | done | **no post-expand auto pack/preprocess** |
-| **post-M249 ops** | Expand batch gate | Gate: ready + GROBID/ODL + limit + live flag | `hybrid_expand_batch_gate` | wired into expand operator | allow_limited_batch fail-closed | done | gate stdout/artifact ok; not in pack dashboard |
-| **post-M249 ops** | Continuity pack dashboard | One operator report | `etl_continuity_pack`, `verify_etl_continuity_pack` | composes coverage+pdf+closeout; op also hold+preprocess | alerts on divergent/low expand | partial | dashboard missing preprocess/hold/expand_gate fields |
-| **post-M249 ops** | Stamp guard | Refuse silent human_go rewrite | `write_human_go_stamp(force_rewrite=False)` | Wave B gate stamp | durable D124 auth | done | no pre-commit stamp immutability yet |
-| **M250** | Wave A closeout | wave_a_closed when thresholds met | `wave_a_closeout`, verify_wave_a_closeout | ← readiness/hold/preprocess; → Wave B policy | min_hybrid_found=40 | partial | **threshold stale** vs live 49; no residual fraction target |
-| **M251–M254** | Wave B gate + stamp + live extract | human_go open; inventory | `wave_b_gate`, stamp, live hybrid extraction | stamp ≠ import | D123/D124 stamp gate | partial | **standalone gate closeout_pass=None** (not loaded) |
-| **M255–M256** | Statistical extract + gold metrics | hybrid statistical path; gold join metrics | wave_b_hybrid_statistical_*, gold_hybrid_* | → constrained select | lexical floor/oracle | done | three metric worlds (baseline/floor/header) confuse ship gate |
-| **post-M256** | Constrained select + prefer-header | candidate_id select; structural score | `wave_b_constrained_select` | ← gold join+body; → LLM only if delta>0 | header_priority; score_selection_structural; top-k=2 | partial | relation F1 0.35; no dedicated relation module |
-| **post-M256** | LLM compact pilot | constrained LLM + prefer-header | make_llm_constrained_select_fn, pilots | 9router agnes-free | progressive cache; trim top-k | gap | loses to header (−0.05); GEPA unjustified |
-| **post-M256** | Gold body grounding | gold must be body+candidate grounded | `wave_b_gold_body_grounding_audit` | gate for gold expand | substring/cand grounding | done (n=20) | cannot expand gold until 3 PDFs exist |
-| **C (future)** | Structure graph-ready | TEI/PageIndex/citation structure truth | page_index, structure_aware_chunking, cites | ← hybrid+preprocess; → import package | structure-aware chunking | partial | not wired as Wave C gate |
-| **D (future)** | Explicit import pilot | production graph write under auth | pilot_write_*, promotion_boundary, Falkor | only after B+C evidence | pilot_eligible ≠ import_eligible | **locked** | correctly closed |
-| **E (future)** | Agents / SymFSM loop | agent operators over ready graph | symfsm_* | after D | read-only first | locked | n/a now |
+### 1.2 Defect → fix wave
 
-### 1.2 Defect register (actionable)
+| Def | Class | Defect | Fix wave | Fix type |
+|-----|-------|--------|----------|----------|
+| D-X1 | scale | hybrid 0.278; 152 PDF idle | **M264** | gated expand + pack refresh |
+| D-Q4b | gold | 3 PDF, 0 hybrid body | **M265** | gold-only hybrid batch |
+| D-G1b | glue | expand refresh opt-in | **M266** | default refresh / fleet |
+| D-G6 | glue | structure --skip-etl blanks hybrid | **M266** | default full compose |
+| D-G7 | glue | many operators, no fleet entry | **M266** | verify_etl_fleet |
+| D-S1b | storage | multi_root identical×20 | **M267** | hardlink/primary root |
+| D-S3 | naming | selection-40 + original.body names | **M267** | alias/rename policy |
+| D-Q1 | quality | relation F1 0.35 | **M268** | relation candidates + GEPA |
+| D-Q2 | quality | LLM &lt; header | **M268** | staged GEPA→LLM | 
+| D-Q3 | quality | soft_signal ~30% | M268 optional | profile repair |
+| D-Q5 | quality | YAKE off | M268 optional | non-gating |
+| D-C2 | structure | structure partial | **M269** | continuous chunk gate |
+| D-L1 | lock | import closed | **M270** | user go only |
 
-| Def ID | Class | Defect | Why it hurts | Owning wave | Fix type | Blocks |
-|--------|-------|--------|--------------|-------------|----------|--------|
-| D-G1 | glue | Expand success does not auto-run continuity pack / preprocess | Stale ops view after batch | A residual | wire | unattended expand loops |
-| D-G2 | glue | Wave B gate standalone ignores live Wave A closeout | Stamp-only open without A context | A→B seam | wire | honest B open criteria |
-| D-G3 | glue | Continuity pack dashboard omits preprocess + import-hold + expand_gate | Incomplete cockpit | A residual | schema+op | single-pane ops |
-| D-G4 | glue | Dual continuity (M209 pipeline vs ETL pack) | Two “green” languages | A residual | unify or bridge report | false readiness claims |
-| D-G5 | glue | Three Wave B metric worlds (baseline 0.92, floor 1.0, header 0.675) | Wrong proceed decision | B | metrics matrix artifact | quality ship |
-| D-P1 | policy | min_hybrid_found=40 while live=49; no hybrid_fraction target | Closeout under-specified residual | A residual | policy | “A done” ambiguity |
-| D-P2 | policy | PDF readiness never starts batch (correct) but no acquisition SLA for 21+3 | Silent permanent gaps | A residual | acquisition plan | gold + coverage ceiling |
-| D-S1 | storage | multi_root identical copies (20) | Inflated files; root confusion | A residual | consolidate or hard-link policy | clean coverage |
-| D-S2 | storage | hybrid_unique 50 vs found 49 | catalog join leak | A residual | id normalize audit | trust metrics |
-| D-S3 | naming | selection-40-* naming drift | Operator confusion | A residual | rename/alias | ops UX |
-| D-Q1 | quality | relation F1 0.35 header | Weak graph edges | B | relation path | C/D |
-| D-Q2 | quality | LLM < header; GEPA unjustified | Optimizer temptation | B | hold until delta>0 | wasted opt |
-| D-Q3 | quality | preprocess soft_signal 15/50 | Body quality debt | A/B | profile repair | extract noise |
-| D-Q4 | quality | 3 gold IDs no PDF/body | Gold set incomplete | A acquis. → B | download+ingest+hybrid | gold expand |
-| D-Q5 | quality | YAKE off in fleet | Weaker keyword spans | B optional | enable non-gating | optional lift |
-| D-X1 | scale | hybrid_fraction 0.213; 160 PDF ready idle | Corpus still thin | A scale | gated expand loops | B sample bias |
-| D-L1 | lock | import/Falkor/DSPy | Must stay closed | D later | keep ratchet | safety |
-| D-C1 | CI | no pre-commit stamp immutability | Accidental re-auth risk | A residual | hook/test | D124 integrity |
-
-### 1.3 Function × module adjacency (glue map)
+### 1.3 Function × module adjacency
 
 ```
-catalog_index ──► body_coverage_audit ──┬──► continuity_readiness ──► wave_a_closeout ──┐
-       │                │               │            ▲                                  │
-       │                │ multi_root    │            │ preprocess_fleet                 │
-       │                ▼               │            │                                  ▼
-       ├──► pdf_readiness ──────────────┴──► continuity_pack ◄── import_hold ──► [dashboard]
-       │                                         ▲
-       │                                         │ (MISSING auto wire)
-selection_expand ─► preflight ─► expand_batch_gate ─► hybrid_batch_gate ─► body roots
-                                                                  │
-                                                                  ▼
-                                                         hybrid bodies ──► Wave B join/select
-stamp human_go ──► wave_b_gate ──► constrained_select / pilots
-         ▲              │
-         │              └── closeout input often MISSING (D-G2)
-         └── force_rewrite guard (done)
+catalog ─► coverage ─► readiness ─► closeout ─► continuity_pack
+selection ─► preflight ─► expand_gate ─► hybrid_batch ─► bodies ─► preprocess
+gold PDF acquisition ─► source/<id>.pdf ─✗─ hybrid body (3 gold)
+stamp ─► wave_b_gate(+closeout) ─► header_priority_select ─► ship_matrix
+                              └─► make_llm_constrained_select_fn (+prefer-header)
+                              └─► wave_b_gepa_constrained_spike (offline/live gepa)
+M209 structure ─► structure_readiness ◄─ etl pack
+import_hold ─► all fail-closed
 ```
-
-**Critical missing edges (optimize glue first):**
-1. `hybrid_batch_gate` success → `continuity_pack` + optional preprocess refresh  
-2. `wave_b_gate` ← always load `evaluate_wave_a_closeout` or pack artifact  
-3. pack dashboard ← preprocess + hold + last expand_gate  
-4. gold missing → `ingest_to_canonical_catalog` → pdf_readiness → expand (not free invent)
 
 ---
 
-## 2. Dependency-ordered roadmap
+## 2. GEPA insertion map (where optimization fits)
 
-### Planning rules
+Policy: **run early and often under stamp**; **promote late** (only if beats header).
 
-1. **Glue before scale** — unattended measurement first.  
-2. **Scale before quality claims** — n=20 header metrics biased if corpus=49.  
-3. **Acquisition before gold expand** — no PDF ⇒ no hybrid ⇒ no gold.  
-4. **Header/relation before LLM/GEPA** — optimizer only if constrained LLM beats header with ASI.  
-5. **Structure before import** — Wave C evidence package before D.  
-6. **Never open import to unblock A/B metrics.**  
-7. Thin slices: each milestone demoable; fail-closed; TDD; onion clean.
+| # | Insertion site | Module / surface | What GEPA optimizes | When | Depends | Promote gate | Risk if misused |
+|---|----------------|------------------|---------------------|------|---------|--------------|-----------------|
+| **G1** | Offline reflective spike | `wave_b_gepa_constrained_spike` / `offline_reflective_spike` | instruction hints, select_max, type/relation hints | **Now (n=20)** | stamp D124, gold join | never auto-deploy | invent if unconstrained — keep candidate_id only |
+| **G2** | Live `gepa.optimize` (optional pkg) | `try_gepa_optimize` + `WaveBConstrainedGEPAAdapter` | same instruction program | after G1 stable | gepa package optional | ship matrix δ&gt;0 | cost/timeout; no import |
+| **G3** | Constrained LLM prompt | `render_constrained_select_prompt` + `make_llm_constrained_select_fn` | prompt text / ranking prefs from GEPA instruction | after G1/G2 | 9router models | prefer-header until δ&gt;0 | weak LLM without prefer-header |
+| **G4** | Prefer-header envelope | `make_header_prefer_select_fn` / `score_selection_structural` | margin / structural arbiter (not GEPA core, but safety shell) | always with G3 | header_priority | always on until promote | over-fallback hides GEPA learning |
+| **G5** | Relation-focused instruction | relation hints in GEPA instruction + `ALLOWED_RELATION_TYPES` | which typed links among top-k entities | **M268 S01–S02** | header relation baseline 0.35 | relation F1 &gt; header | free invent types — forbid |
+| **G6** | Post-gold-hybrid re-fit | same spike on n=20+3 | re-run G1–G3 on expanded gold | **after M265** | gold hybrid bodies | re-matrix | premature fit on n=20 only |
+| **G7** | Ship matrix promotion | `build_wave_b_ship_gate_matrix` | reads deltas; sets gepa_justified / ship_path | continuous | header+GEPA metrics | entity **and** relation F1 &gt; header | promoting on entity-only |
+| **G8** | Soft preprocess (optional) | preprocess profile / YAKE non-gating | **not** primary GEPA target; ablate only | M268 optional | fleet metrics | never opens import | GEPA on preprocess is low ROI now |
+| **G9** | Expand/selection policy | selection expand round-robin | **out of GEPA scope** (ops/scale) | M264 | PDF readiness | n/a | don't GEPA-ize batch sizing |
+| **G10** | Structure/chunk gate | structure_readiness | **out of GEPA scope** (deterministic quality) | M269 | hybrid scale | n/a | optimizers ≠ structure truth |
+| **G11** | Import/Falkor | pilot write | **forbidden for GEPA** | M270 | user go | n/a | never |
 
-### Wave A residual — **M257 ETL Glue Cockpit** (FIRST)
+### GEPA stage ladder (D128)
 
-**Goal:** eliminate D-G1, D-G2, D-G3, D-P1, D-C1 without growing hybrid_found.
+```
+Stage 0  header_priority_select          ← current deploy (ship_path)
+Stage 1  offline_reflective_spike        ← G1 now
+Stage 2  optional gepa.optimize package  ← G2 when installed
+Stage 3  constrained LLM + GEPA instr.   ← G3 + G4 shell
+Stage 4  relation-specialized GEPA       ← G5 in M268
+Stage 5  re-fit on gold hybrid expand    ← G6 after M265
+Stage 6  PROMOTE ship_path if δ>0 both   ← G7 matrix
+```
 
-| Slice | Demo | Depends | Touches |
-|-------|------|---------|---------|
-| S01 Post-expand continuity hook | expand limit≥1 (or dry) writes/refreshes continuity-pack fields; operator chain documented/auto flag | M246+pack | `verify_hybrid_expand_batch`, optional small app helper |
-| S02 Wave B gate loads closeout | standalone gate shows live closeout_pass/signal | S01 optional | `wave_b_gate`, `verify_wave_b_gate` |
-| S03 Pack dashboard v2 | dashboard includes preprocess ok/soft/err, hold hits, last expand_gate | S01 | `etl_continuity_pack`, operator |
-| S04 Closeout policy refresh | min_hybrid_found + hybrid_fraction residual target documented+coded; PROJECT sync | S03 | `wave_a_closeout`, PROJECT |
-| S05 Stamp immutability CI | pre-commit or verify refuses human_go authorized_at drift without force marker | stamp guard | hook or verify script |
+**Do not skip Stage 0 deploy** until Stage 6 proof.
 
-**Success:** one command path: expand → pack green; B gate sees A; cockpit fields complete; stamp CI.  
-**Out of scope:** live expand volume, LLM, import.
+### Where GEPA does **not** belong (optimize differently)
 
-### Wave A residual — **M258 Coverage Scale + Acquisition**
+| Area | Why not GEPA | Better tool |
+|------|--------------|-------------|
+| Hybrid expand throughput | infra/sidecars | M264 batch gate + limit |
+| PDF acquisition | network/catalog | M265 ingest/download |
+| multi_root identical | storage | M267 hardlink |
+| import eligibility | governance | D127 human go |
+| body grounding | hard constraint | audit gate stay 1.0 |
+| candidate generation coverage | lexical/header inventory | improve candidates before GEPA |
 
-**Goal:** D-X1, D-P2, D-Q4, D-S2; grow hybrid under gate.
-
-| Slice | Demo | Depends | Notes |
-|-------|------|---------|-------|
-| S01 Expand loop 2–3× limit 10–20 | hybrid_found → ~70–90 if sidecars ok | M257 S01 | always post-pack |
-| S02 PDF-absent queue operator | list 21 + 3 gold; download+`ingest_to_canonical_catalog` with network audit | catalog rules | gold IDs first |
-| S03 Hybrid for new gold PDFs | gold join count >20 if bodies ok | S02 | grounding audit re-run |
-| S04 Catalog join leak audit | explain unique50 vs found49; fix or tag | coverage | |
-| S05 Selection artifact rename | selection naming matches state | cosmetic after S01 | |
-
-**Success:** hybrid_fraction target from M257 policy; gold PDF present or explicitly blocked with reason; expand never without gate.
-
-### Wave A residual — **M259 Storage Hygiene (multi_root)**
-
-**Goal:** D-S1 without data loss.
-
-| Slice | Demo | Depends |
-|-------|------|---------|
-| S01 Consolidation plan (identical-only) | choose: keep primary root + refs, or hardlink inventory | M241 taxonomy |
-| S02 Apply + re-audit | multi_root_identical reduced or documented keep; divergent still 0 | S01 |
-| S03 Pack alert thresholds | only alert on divergent; identical is debt metric | M257 pack |
-
-**Depends on:** taxonomy done (yes). **Not before** glue (need clean metrics after).
-
-### Wave B — **M260 Quality Metric Matrix + Relation Path**
-
-**Goal:** D-G5, D-Q1; no GEPA yet.
-
-| Slice | Demo | Depends |
-|-------|------|---------|
-| S01 Ship-gate matrix artifact | single JSON: floor / header / baseline / LLM deltas; which gate blocks ship | M256+constrained |
-| S02 Relation candidate model | relation candidates from header/structure/co-occurrence; constrained select parallel to entities | S01, hybrid bodies |
-| S03 Relation metrics on gold n | relation F1 vs header baseline; no invent | S02, gold join |
-| S04 Prefer-header for relations | fail-closed under header if LLM weak | S03 |
-
-**Success:** relation path measurable; ship criteria explicit.  
-**Blocked if:** gold still n=20 only and biased — prefer after M258 partial scale.
-
-### Wave B — **M261 Constrained LLM only if beats header**
-
-**Goal:** D-Q2 properly; optional D-Q5.
-
-| Slice | Demo | Depends |
-|-------|------|---------|
-| S01 Re-run compact LLM on current gold | delta_vs_header recorded | M260 matrix |
-| S02 Prompt/cand ranking iterate **only if** path to delta>0 | ASI compare | S01 |
-| S03 YAKE non-gating fleet trial | yake on/off ablate preprocess→select | optional parallel |
-| S04 GEPA/DSPy decision gate | open **only if** constrained LLM > header entity+relation | S02 | else skip forever |
-
-**Hard stop:** if delta≤0 after S02 budget → freeze LLM path; keep header.
-
-### Wave C — **M262 Structure Graph-Ready Package**
-
-**Goal:** citations + PageIndex + chunk structure as import package inputs (still no write).
-
-| Slice | Depends |
-|-------|---------|
-| S01 Structure continuity bridge (M209 layers ↔ ETL pack) | M257 D-G4 |
-| S02 Citation review package on expanded hybrid | M217–M221, M258 |
-| S03 Chunk/PageIndex readiness on hybrid bodies | structure modules |
-| S04 Graph-data readiness validate-only package | M209 lineage |
-
-**Success:** import-shaped package with import_eligible still false.
-
-### Wave D — **M263 Explicit Import Pilot** (later, explicit user go)
-
-**Only when:** A residual targets met; B ship matrix green (or accepted header floor); C package complete; separate human auth (not D124 alone).
-
-| Slice | Notes |
-|-------|-------|
-| S01 Promotion rules pilot_eligible→import_eligible | D204 lineage |
-| S02 Falkor/write dry-run → tiny pilot | pilot_write_* |
-| S03 Rollback + observability | required |
-
-**Until then:** keep M236–M240 ratchets.
-
-### Wave E — agents: **after D only**
+**Rule:** GEPA cannot fix missing hybrid bodies or missing candidates — fix coverage first, then optimize select/instruction.
 
 ---
 
-## 3. Critical path (optimized order)
+## 3. Dependency-ordered roadmap
+
+### Critical path
 
 ```
-M257 Glue Cockpit          ← START (highest ROI, unblocks truth)
+M264 Residual expand → fraction ≥ 0.35
    │
-   ├─► M258 Scale+Acquisition (expand 10–20 loops + gold PDFs)
-   │      │
-   │      ├─► M259 multi_root hygiene (can parallel late M258)
-   │      │
-   │      └─► M260 Relation + metric matrix
-   │               │
-   │               └─► M261 LLM only if delta>0 (else skip)
-   │                        │
-   └─► M262 Structure package (needs scale+quality inputs)
-            │
-            └─► M263 Import pilot (user go) → E agents
+   ├─► M265 Gold hybrid (3 PDF) ──────────────┐
+   │         │                                │
+   │         └─ G1/G2 early GEPA spike        │
+   │                                          │
+   └─► M266 Fleet glue defaults               │
+            │                                 │
+            ├─► M267 Storage/naming hygiene   │
+            │                                 │
+            └─► M268 Relation + staged GEPA ◄─┘
+                     G1→G5→G3→G7 promote-if-wins
+                     │
+                     └─► M269 Structure continuous gate
+                              │
+                              └─► M270 Import  [USER GO]
 ```
 
-**Parallelism allowed:**
-- M259 after first M258 expand (needs stable body roots).  
-- M260 S01 matrix can start during M258 if n=20 accepted as pilot.  
-- Stamp CI (M257 S05) anytime.
+**Parallel:** M264 ∥ M265; **G1 GEPA offline can start immediately** on n=20 (does not wait for M264).  
+**Serial for promote:** M265 recommended before Stage 6 promotion (avoid overfit n=20).
 
-**Forbidden parallelism:**
-- GEPA with M257/M258.  
-- Import with any open A/B defect.  
-- Gold invent without PDF/body.
+### Milestone specs
 
----
+#### M264 — Residual hybrid scale
+- **Goal:** hybrid_fraction ≥ 0.35  
+- **Modules:** expand_batch_gate, hybrid_batch, continuity_pack refresh  
+- **GEPA:** not required (G9 out of scope)  
+- **Success:** hybrid_found ≳ 81; pack residual alert cleared; import false  
 
-## 4. Optimization priorities (cost vs value)
+#### M265 — Gold hybrid bodies
+- **Goal:** hybrid for 3 gold PDFs; re-ground; matrix  
+- **Modules:** hybrid_batch on gold selection; grounding audit; ship matrix  
+- **GEPA:** unlocks G6 re-fit  
+- **Success:** 3/3 bodies; grounding 1.0; import false  
 
-| Rank | Work | Cost | Value | Why |
-|------|------|------|-------|-----|
-| 1 | M257 glue cockpit | S | H | Stops lying metrics; enables unattended expand |
-| 2 | M258 gated expand loops | M | H | Coverage 21% → useful corpus |
-| 3 | Gold PDF ingest (3 IDs) | S–M | H | Unblocks honest gold growth |
-| 4 | M260 relation path | M | H | Relation 0.35 is main quality hole |
-| 5 | M259 multi_root hygiene | S | M | Clarity, not capability |
-| 6 | M261 LLM iterate | M | L–M | Only if beats header |
-| 7 | M262 structure | M | H for D | Import-shaped evidence |
-| 8 | GEPA/DSPy | H | L now | Unjustified |
-| 9 | Import pilot | H | H later | Locked |
+#### M266 — Unattended fleet glue
+- **Goal:** expand default pack refresh; one fleet entrypoint  
+- **Modules:** verify_hybrid_expand_batch, continuity_pack, optional stamp hook  
+- **GEPA:** none  
+- **Success:** one command A/B/C read-only green  
 
----
+#### M267 — Storage/naming hygiene
+- **Goal:** identical multi_root debt plan; naming  
+- **GEPA:** none  
 
-## 5. Definition of “ETL ready enough” by wave
+#### M268 — Relation + staged GEPA (quality spine)
+- **Goal:** lift relation/entity under constrained select via gradual GEPA  
+- **Modules:**  
+  - `wave_b_gepa_constrained_spike` (G1/G2)  
+  - `wave_b_constrained_select` LLM+prefer (G3/G4)  
+  - relation candidates (G5)  
+  - `wave_b_ship_gate_matrix` (G7)  
+- **Slices:**  
+  - S01 Relation candidates vs header  
+  - S02 Offline GEPA reflective spike (n=20, then post-M265)  
+  - S03 Live GEPA/LLM vs header; promote or keep header  
+- **Success:** either ship_path promote with δ&gt;0 both F1, or documented plateau with header deploy  
 
-### Wave A residual complete when
-- [ ] Expand → auto pack (D-G1)  
-- [ ] B gate sees A closeout (D-G2)  
-- [ ] Pack dashboard v2 (D-G3)  
-- [ ] Policy targets documented (D-P1)  
-- [ ] Stamp CI (D-C1)  
-- [ ] hybrid_fraction ≥ policy target (propose **≥0.35** interim, stretch **≥0.50**)  
-- [ ] 3 gold PDFs ingested or explicitly blocked with ticket  
-- [ ] multi_root divergent remains 0; identical debt tagged or reduced  
-- [ ] import-hold still 0 hits  
+#### M269 — Structure continuous gate
+- **Goal:** structure_signal not stuck on known_gaps without evidence path  
+- **GEPA:** none (G10)  
 
-### Wave B pilot complete when
-- [ ] Ship-gate matrix artifact single source of truth  
-- [ ] Relation F1 improved vs 0.35 **or** accepted with documented ceiling  
-- [ ] Grounding 1.0 on all gold  
-- [ ] LLM path either beats header or permanently header-default  
-- [ ] No GEPA without delta>0  
-
-### Import still **not** ready until Wave C+D checklist green.
+#### M270 — Import pilot
+- **Requires:** user yes + A residual + B promote-or-accept + C structure  
+- **GEPA:** never authorizes import (G11)  
 
 ---
 
-## 6. Immediate next execution queue (thin)
+## 4. Optimization ROI (with GEPA)
 
-1. **M257-S01** post-expand continuity hook  
-2. **M257-S02** Wave B gate ← closeout  
-3. **M257-S03** pack dashboard v2  
-4. **M257-S04** closeout policy (min_hybrid_found / fraction)  
-5. **M257-S05** stamp CI  
-6. **M258-S01** expand ×2–3 (limit 10–20) under gate  
-7. **M258-S02** gold PDF download+ingest (3 IDs)  
-8. Then M260 relation matrix — **not** LLM-first  
+| Rank | Work | GEPA? | Cost | Value | Why |
+|------|------|-------|------|-------|-----|
+| 1 | M265 gold hybrid | unlocks G6 | S–M | **H** | PDF ready; honest gold growth |
+| 2 | G1 offline GEPA spike now | **yes** | S | **H** | cheap learning signal on n=20 |
+| 3 | M264 expand to 0.35 | no | M | **H** | coverage truth |
+| 4 | M266 fleet defaults | no | S | **H** | unattended truth |
+| 5 | M268 relation + G2–G5 GEPA | **yes** | M | **H** | main quality hole + user policy |
+| 6 | M267 multi_root identical | no | S | M | storage clarity |
+| 7 | M269 structure gate | no | M | H for D | import-shaped |
+| 8 | Promote GEPA deploy | only if δ&gt;0 | S | H if wins | ship_path switch |
+| 9 | Import pilot | no | H | later | D127 |
 
 ---
 
-## 7. Operator commands (current truth surface)
+## 5. Glue checklist (eliminate remaining seams)
+
+| Seam | Status | Next |
+|------|--------|------|
+| expand → pack | opt-in flag | M266 default on |
+| expand → preprocess | manual | M266 fleet |
+| B gate → closeout | **done** default | keep |
+| gold PDF → hybrid | **open** | M265 |
+| GEPA spike → ship matrix | partial (manual) | M268 wire δ into matrix |
+| structure ↔ ETL pack | works unless --skip-etl | M266 default full |
+| multi_root identical | tagged only | M267 |
+| import | locked | M270 user go |
+
+---
+
+## 6. Definition of ready enough
+
+### A residual
+- [x] cockpit, gate, stamp, join, multi_root map  
+- [ ] fraction ≥ 0.35 (M264)  
+- [ ] fleet defaults (M266)  
+
+### B quality
+- [x] ship matrix + header deploy  
+- [x] D128 staged GEPA allowed  
+- [ ] G1 spike current n=20 artifact fresh  
+- [ ] 3 gold hybrid (M265)  
+- [ ] M268 promote **or** accept header ceiling with GEPA plateau evidence  
+
+### C structure
+- [x] package exists  
+- [ ] continuous gate (M269)  
+
+### D import
+- [ ] user go + above  
+
+---
+
+## 7. Immediate queue (execute order)
+
+1. **G1 now:** `verify_wave_b_gepa_constrained_spike` offline on n=20 → artifact  
+2. **M265:** hybrid 3 gold IDs → ground → matrix  
+3. **M264:** expand loops to fraction ≥ 0.35 with pack refresh  
+4. **M266:** fleet defaults  
+5. **M268:** relation candidates + G2/G3 staged GEPA → compare header → promote if wins  
+6. M267 / M269 as capacity allows  
+7. **M270** only with explicit user yes  
+
+### Operators
 
 ```bash
-# A cockpit
+# A
 uv run python scripts/verify_etl_continuity_pack.py
-uv run python scripts/verify_etl_body_coverage.py
-uv run python scripts/verify_etl_hybrid_missing_pdf_readiness.py
-uv run python scripts/verify_etl_preprocess_fleet.py
-uv run python scripts/verify_wave_a_closeout.py
-uv run python scripts/verify_import_hold_inventory.py
-
-# Expand (fail-closed without flags)
 uv run python scripts/verify_hybrid_expand_batch.py --limit 0
-# Live only when intentional:
-# uv run python scripts/verify_hybrid_expand_batch.py --limit 10 --enable-live-hybrid
-
-# B quality
-uv run python scripts/verify_wave_b_gate.py
+# B + GEPA
+uv run python scripts/verify_wave_b_ship_gate_matrix.py
+uv run python scripts/verify_wave_b_gepa_constrained_spike.py
 uv run python scripts/verify_wave_b_constrained_select.py --mode header
-uv run python scripts/verify_wave_b_gold_body_grounding_audit.py
-uv run python scripts/verify_wave_b_gold_hybrid_metrics.py
+# C / safety
+uv run python scripts/verify_structure_readiness_package.py
+uv run python scripts/verify_import_hold_inventory.py
 ```
 
 ---
 
-## 8. Non-goals (explicit)
+## 8. Binding decisions
 
-- Opening `import_eligible` to “finish ETL”  
-- Free-form LLM invent as quality path  
-- GEPA before constrained LLM > header  
-- Treating multi_root identical as content corruption  
-- Treating PDF readiness as auto-batch authorization  
-- Rewriting `human_go.json` timestamps without force re-auth  
+| ID | Choice |
+|----|--------|
+| D124 | Wave B human_go stamp |
+| D126 | Historical: GEPA closed when LLM&lt;header (M261 snapshot) |
+| **D128** | **Staged GEPA in-scope; deploy=header until δ&gt;0 both F1** |
+| D127 | Import held without user go |
 
 ---
 
-*Artifact path: `artifacts/etl/ETL-READINESS-MATRIX-ROADMAP.md`*  
-*Live numbers re-check before each milestone start; re-run continuity pack after every expand.*
+## 9. Non-goals
+
+- Free invent entities/relations  
+- Auto-promote GEPA to ship_path without positive dual F1 delta  
+- GEPA on expand sizing / import / Falkor  
+- Claiming residual complete while fraction &lt; 0.35  
+- Opening import without user go  
+
+---
+
+*Artifact: `artifacts/etl/ETL-READINESS-MATRIX-ROADMAP.md`*  
+*Handoff: `.gsd/continue.md`*  
+*Memory: D128 staged GEPA; G1 can run before scale complete; promote only via ship matrix.*

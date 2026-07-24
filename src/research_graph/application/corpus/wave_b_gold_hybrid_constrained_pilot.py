@@ -34,7 +34,7 @@ ConstrainedSelectFn = Callable[
     [str, str, Sequence[Mapping[str, Any]]], Mapping[str, Any]
 ]
 
-_TOKEN_RE = re.compile(r"[A-Za-z\u0400-\u04FF][A-Za-z\u0400-\u04FF'\-]{2,}")
+_TOKEN_RE = re.compile(r"[A-Za-z\u0400-\u04FF][A-Za-z0-9\u0400-\u04FF'\-]{1,}")
 _CONNECTORS = frozenset(
     {"and", "of", "for", "with", "via", "the", "a", "an", "to", "in", "on", "vs"}
 )
@@ -305,26 +305,65 @@ def _phrase_quality(surface: str) -> tuple:
     return (noise_hits, stop_hits, punct, 1 if has_digit else 0, abs(words - 3), len(s))
 
 
+def _is_tech_token(tok: str) -> bool:
+    """Alnum tech (Seq2Seq) or short ALLCAPS/acronym (GEPA, BERT)."""
+    if not tok:
+        return False
+    if any(ch.isdigit() for ch in tok):
+        return True
+    if tok.isupper() and tok.isalpha() and 3 <= len(tok) <= 8:
+        return True
+    # CamelCase / mixed alnum without being pure Title-case word
+    if any(ch.isupper() for ch in tok[1:]) and any(ch.islower() for ch in tok):
+        return True
+    return False
+
+
 def _is_weak_ngram(parts: Sequence[str]) -> bool:
-    """Reject stopword-heavy / function-word n-grams that crowd out titles."""
+    """Reject stopword-heavy / function-word n-grams that crowd out titles.
+
+    Technical method names like "Seq2Seq Models" end with a common noun that is
+    also in the soft stop list — keep them when a tech/acronym token is present.
+    """
     if not parts:
         return True
     lows = [p.casefold() for p in parts]
-    if lows[0] in _STOPWORDS or lows[-1] in _STOPWORDS:
-        return True
+    tech = any(_is_tech_token(p) for p in parts)
+    if not tech:
+        if lows[0] in _STOPWORDS or lows[-1] in _STOPWORDS:
+            return True
+    else:
+        # still reject pure function edges, not domain nouns (models/network)
+        _edge_func = _CONNECTORS | {
+            "the", "a", "an", "and", "or", "of", "for", "with", "to", "in", "on",
+            "this", "that", "these", "those", "we", "our", "using", "via",
+        }
+        if lows[0] in _edge_func or lows[-1] in _edge_func:
+            return True
     content = [p for p in lows if p not in _STOPWORDS and p not in _CONNECTORS]
-    if len(content) < 2:
+    if tech:
+        # tech token counts as content even if sibling is soft-stop domain noun
+        content = [p for p in lows if p not in _CONNECTORS]
+    if len(content) < (1 if tech else 2):
         return True
     stop_ratio = sum(1 for p in lows if p in _STOPWORDS) / max(1, len(lows))
+    # allow one soft-stop domain noun beside a tech token
+    if tech and stop_ratio <= 0.5:
+        return False
     return stop_ratio > 0.34
 
 
 def _title_case_surface(parts: Sequence[str]) -> str:
-    """Canonical display form: Title Case content, keep connectors lower."""
+    """Canonical display form: Title Case content, keep connectors lower.
+
+    Preserve ALLCAPS acronyms and alnum tech tokens (GEPA, Seq2Seq).
+    """
     out: list[str] = []
     for p in parts:
         if p.casefold() in _CONNECTORS:
             out.append(p.casefold())
+        elif _is_tech_token(p):
+            out.append(p)  # keep Seq2Seq / GEPA / BERT intact
         elif p.isupper() and len(p) > 1:
             out.append(p[:1].upper() + p[1:].lower())
         else:
@@ -367,6 +406,11 @@ def _extract_markdown_header_phrases(text: str, *, max_phrases: int = 48) -> lis
         low = blob.casefold()
         if any(x in low for x in ("@", ".edu", "arxiv:", "http", "university")):
             continue
+        # Leading ALLCAPS acronym before colon/dash (e.g. "GEPA: Reflective...").
+        lead = re.match(r"^\s*([A-Z]{3,8})\s*[:\-—–]", blob)
+        if lead:
+            acr = lead.group(1)
+            counts[acr] = counts.get(acr, 0) + 8
         tokens = list(_TOKEN_RE.finditer(blob))
         if not tokens:
             continue
@@ -396,15 +440,24 @@ def _extract_markdown_header_phrases(text: str, *, max_phrases: int = 48) -> lis
         )
         if title_like:
             for idx, p in enumerate(parts):
-                if len(p) < 5 or p.casefold() in _STOPWORDS or p.casefold() in _CONNECTORS:
+                if p.casefold() in _STOPWORDS or p.casefold() in _CONNECTORS:
+                    continue
+                # ALLCAPS/acronyms (GEPA, BERT) may be 3-6 chars; else require length >= 5.
+                is_acronym = p.isupper() and p.isalpha() and 3 <= len(p) <= 8
+                if not is_acronym and len(p) < 5:
                     continue
                 if not (p[:1].isupper() or p.isupper()):
                     continue
                 surface_tc = _title_case_surface([p])
                 # Terminal content token of a short title is especially valuable.
-                boost = 4 if idx == n - 1 else 2
+                boost = 5 if is_acronym else (4 if idx == n - 1 else 2)
+                if is_acronym:
+                    boost += 2 if idx == 0 else 0
                 counts[surface_tc] = counts.get(surface_tc, 0) + boost
                 counts[p] = counts.get(p, 0) + boost
+                # Prefer exact acronym surface as its own candidate key
+                if is_acronym:
+                    counts[p.upper()] = counts.get(p.upper(), 0) + boost + 1
 
     ranked = sorted(
         counts.items(), key=lambda kv: (-kv[1], _phrase_quality(kv[0]), kv[0].casefold())

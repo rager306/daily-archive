@@ -112,3 +112,33 @@ def test_rejects_import_true() -> None:
             diagnostics=(),
             import_eligible=True,
         )
+
+
+
+def test_stale_llm_compare_does_not_promote() -> None:
+    """LLM artifact from n=20 must not promote over live header n=23 (D128)."""
+    compare = {
+        "header": {"entity_f1": 0.675, "relation_f1": 0.35},
+        "llm_agnes_free_compact_prompt_prefer_header": {
+            "entity_f1": 0.625,
+            "relation_f1": 0.30,
+            "model_id": "agnes",
+        },
+        "delta_vs_header": {"entity_f1": -0.05, "relation_f1": -0.05},
+        "joined_count": 20,
+        "gepa_justified": False,
+    }
+    # Live header weaker on larger n, but compare is stale
+    pkg = build_wave_b_ship_gate_matrix(
+        floor={"entity_f1": 1.0, "relation_f1": 1.0},
+        header={"entity_f1": 0.5, "relation_f1": 0.26, "model_id": "header_priority_select"},
+        llm_compare=compare,
+        joined_count=23,
+        grounding_body_ratio=1.0,
+        grounding_cand_ratio=1.0,
+        human_go=True,
+        wave_a_closeout_pass=True,
+    )
+    assert pkg.ship_path == "header_priority_constrained_select"
+    assert pkg.gepa_justified is False
+    assert pkg.worlds["context"]["compare_n_matches"] is False

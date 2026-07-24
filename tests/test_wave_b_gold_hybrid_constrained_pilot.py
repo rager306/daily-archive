@@ -269,3 +269,19 @@ def test_per_case_records_fallback_used() -> None:
     )
     assert pkg.per_case
     assert pkg.per_case[0].get("fallback_used") is True
+
+
+
+def test_candidates_include_acronyms_and_alnum_tech_terms() -> None:
+    """Gold labels like GEPA and Seq2Seq Models must appear as candidates (M268 debt)."""
+    body = (
+        "## GEPA: REFLECTIVE PROMPT EVOLUTION CAN OUTPERFORM REINFORCEMENT LEARNING\n\n"
+        "# Leveraging Graph Structure in Seq2Seq Models for Knowledge Graph Link Prediction\n\n"
+        "We introduce GEPA as a prompt optimizer and Seq2Seq Models for link prediction."
+    )
+    cands = build_body_candidates(body, paper_id="acronym-demo", max_total=96)
+    norms = {c["surface_norm"] for c in cands}
+    surfaces = {c["surface"] for c in cands}
+    assert "gepa" in norms, norms
+    assert any(s == "GEPA" or s.casefold() == "gepa" for s in surfaces)
+    assert "seq2seq models" in norms, norms

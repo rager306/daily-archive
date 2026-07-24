@@ -63,7 +63,7 @@ class WaveBShipGateMatrixPackage:
                 "Single ship-gate matrix for Wave B quality worlds. "
                 "floor=lexical oracle ceiling; header=constrained deploy path; "
                 "baseline=fixture extraction gate; llm=compare only. "
-                "GEPA/DSPy only if llm delta_vs_header > 0 on entity and relation. "
+                "Staged GEPA spikes allowed (D128); promote ship_path only if same-n delta_vs_header > 0 on entity and relation. "
                 "Never import."
             ),
         }
@@ -119,8 +119,13 @@ def build_wave_b_ship_gate_matrix(
     llm = dict(llm or {})
     compare = dict(llm_compare or {})
 
-    # Prefer explicit compare artifact when present
+    # Prefer explicit compare artifact when present — but only for promotion
+    # when joined_count matches live header n (avoid stale n=20 vs n=23).
+    compare_joined: int | None = None
+    compare_n_matches = True
     if compare:
+        if compare.get("joined_count") is not None:
+            compare_joined = int(compare["joined_count"])
         if not header and isinstance(compare.get("header"), Mapping):
             header = dict(compare["header"])
         if not llm:
@@ -132,8 +137,14 @@ def build_wave_b_ship_gate_matrix(
                 if isinstance(compare.get(key), Mapping):
                     llm = dict(compare[key])
                     break
-        if joined_count is None and compare.get("joined_count") is not None:
-            joined_count = int(compare["joined_count"])
+        if joined_count is None and compare_joined is not None:
+            joined_count = compare_joined
+        if (
+            joined_count is not None
+            and compare_joined is not None
+            and int(joined_count) != int(compare_joined)
+        ):
+            compare_n_matches = False
 
     floor_e = _f1(floor, "entity_f1", "floor_entity_f1")
     floor_r = _f1(floor, "relation_f1", "floor_relation_f1")
@@ -160,14 +171,16 @@ def build_wave_b_ship_gate_matrix(
         if delta_llm_r is None and dv.get("relation_f1") is not None:
             delta_llm_r = float(dv["relation_f1"])
 
-    gepa_from_compare = bool(compare.get("gepa_justified") is True)
+    # Promotion requires same joined_count and positive dual F1 delta (D128).
     llm_beats_header = (
-        delta_llm_e is not None
+        compare_n_matches
+        and delta_llm_e is not None
         and delta_llm_r is not None
         and delta_llm_e > 0
         and delta_llm_r > 0
     )
-    gepa_justified = bool(llm_beats_header and gepa_from_compare) if gepa_from_compare else bool(llm_beats_header)
+    # gepa_justified = ready to promote constrained GEPA/LLM path to deploy
+    gepa_justified = bool(llm_beats_header)
 
     blockers: list[str] = []
     if human_go is False:
@@ -197,7 +210,7 @@ def build_wave_b_ship_gate_matrix(
     ship_ready = len(hard) == 0 and header_e is not None and header_r is not None
     ship_blocker = None if ship_ready else (hard[0] if hard else "unknown")
 
-    # If LLM does not beat header, preferred ship path remains header
+    # Deploy stays header until same-n dual F1 promotion (D128).
     ship_path = DEFAULT_SHIP_PATH
     if llm_beats_header:
         ship_path = "constrained_llm_prefer_header_candidate"
@@ -246,6 +259,8 @@ def build_wave_b_ship_gate_matrix(
         },
         "context": {
             "joined_count": joined_count,
+            "compare_joined_count": compare_joined,
+            "compare_n_matches": compare_n_matches,
             "grounding_body_ratio": grounding_body_ratio,
             "grounding_cand_ratio": grounding_cand_ratio,
             "human_go": human_go,
@@ -272,6 +287,8 @@ def build_wave_b_ship_gate_matrix(
         f"llm_relation_f1:{llm_r}",
         f"gepa_justified:{gepa_justified}",
         f"joined_count:{joined_count}",
+        f"compare_joined:{compare_joined}",
+        f"compare_n_matches:{compare_n_matches}",
         "import_write_fail_closed",
         "wave_b_ship_gate_matrix_only",
     )
