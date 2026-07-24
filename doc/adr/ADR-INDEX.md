@@ -2,6 +2,11 @@
 
 This index lists project-level ADRs and points to historical ADR packages kept under milestone-specific subdirectories.
 
+**Operational snapshot (not an ADR):** live ETL residual and import-hold status live in
+`artifacts/etl/ETL-READINESS-MATRIX-ROADMAP.md` and `README.md` Current state.
+Repo hygiene / garbage policy: `doc/REPO-HYGIENE.md`. Import remains locked unless a later
+accepted decision + explicit human go supersede D127.
+
 ## Status Vocabulary
 
 - `Proposed` — drafted but not accepted.
