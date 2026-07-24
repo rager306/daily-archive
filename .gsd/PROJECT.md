@@ -229,7 +229,7 @@ M198 closeout verification:
 
 1. **Done M241–M256:** Wave A closed; stamp open; statistical hybrid; gold↔hybrid join; lexical floor.
 2. **Done (session):** body-ground gold for 1611/2109; candidate coverage 12/12; oracle F1=1.0; grounding audit; structured extract context + pageindex-bridge; GEPA offline full-set entity F1=1.0; **header_priority constrained select ~0.50/0.35 on n=20** (n=10 ~0.90; n=6 1.0; no LLM).
-3. **Next B:** constrained LLM select (`candidate_id` only) vs header baseline on n=20; full-6 structured vs raw ablation; optional GEPA reflection only if constrained LLM beats header without inventing labels; **no DSPy optimizer** until metrics demand; **no import**.
+3. **Next B:** constrained LLM operator wired (`--mode llm --live-llm`); live n=20 **header 0.50 > llm ~0.27–0.34** — improve constrained prompt/context before GEPA; **no DSPy/import**; full-6 structured vs raw ablation; optional GEPA reflection only if constrained LLM beats header without inventing labels; **no DSPy optimizer** until metrics demand; **no import**.
 4. Import/Falkor не открывать до Wave D + evidence. **Не переспрашивать go на A/B.**
 
 ```bash

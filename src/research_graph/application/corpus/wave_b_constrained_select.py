@@ -11,6 +11,7 @@ import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from research_graph.application.corpus.outline_signals import extract_outline_signals
 from research_graph.application.corpus.wave_b_gold_hybrid_llm_pilot import (
     ALLOWED_ENTITY_TYPES,
     ALLOWED_RELATION_TYPES,
@@ -662,11 +663,30 @@ def make_llm_constrained_select_fn(
         case_id: str,
         candidates: Sequence[Mapping[str, Any]],
     ) -> Mapping[str, Any]:
-        del body_text
+        # Derive paper_id + outline from body/case (no free invent; still candidate-only).
+        paper_id = case_id
+        if ":" in case_id:
+            paper_id = case_id.rsplit(":", 1)[-1]
+        outline_titles: list[str] = []
+        try:
+            outline = extract_outline_signals(body_text or "")
+            headings = list(getattr(outline, "headings", ()) or [])
+            for h in headings[:12]:
+                title = str(getattr(h, "title", "") or "").strip()
+                if title:
+                    outline_titles.append(title)
+        except Exception:  # noqa: BLE001 - outline is optional context
+            outline_titles = []
+        # Prefer header_title candidates first in the prompt listing.
+        ordered = sorted(
+            [c for c in candidates if isinstance(c, Mapping)],
+            key=lambda c: 0 if str(c.get("source") or "") == "header_title" else 1,
+        )
         prompt = render_constrained_select_prompt(
             case_id=case_id,
-            paper_id=case_id,
-            candidates=candidates,
+            paper_id=paper_id,
+            candidates=ordered,
+            outline_titles=outline_titles,
         )
         try:
             text = chat_fn(
@@ -705,30 +725,31 @@ def make_llm_constrained_select_fn(
                 "relations": parsed.get("relations") or [],
                 "json_valid": True,
             }
-            by_norm = {
-                surface_norm(str(c.get("surface") or "")): str(c.get("candidate_id"))
-                for c in candidates
-                if isinstance(c, Mapping)
-            }
-            mapped = []
-            for e in obj["entities"]:
-                if not isinstance(e, Mapping):
-                    continue
-                if e.get("candidate_id"):
-                    mapped.append(e)
-                    continue
-                lab = surface_norm(str(e.get("label") or ""))
-                cid = by_norm.get(lab)
-                if cid:
-                    mapped.append(
-                        {
-                            "candidate_id": cid,
-                            "type": e.get("type") or "Method",
-                        }
-                    )
-            obj["entities"] = mapped
         if not obj:
             return {"entities": [], "relations": [], "json_valid": False}
+        # Map free-form labels onto candidate_ids when model omits ids.
+        by_norm = {
+            surface_norm(str(c.get("surface") or "")): str(c.get("candidate_id"))
+            for c in candidates
+            if isinstance(c, Mapping)
+        }
+        mapped: list[dict[str, Any]] = []
+        for e in obj.get("entities") or []:
+            if not isinstance(e, Mapping):
+                continue
+            if e.get("candidate_id"):
+                mapped.append(dict(e))
+                continue
+            lab = surface_norm(str(e.get("label") or ""))
+            cid = by_norm.get(lab)
+            if cid:
+                mapped.append(
+                    {
+                        "candidate_id": cid,
+                        "type": e.get("type") or "Method",
+                    }
+                )
+        obj["entities"] = mapped
         obj.setdefault("json_valid", True)
         return parse_constrained_llm_selection(obj, candidates)
 

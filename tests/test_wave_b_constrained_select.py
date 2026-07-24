@@ -5,6 +5,7 @@ from __future__ import annotations
 from research_graph.application.corpus.wave_b_constrained_select import (
     guess_entity_type,
     header_priority_select,
+    make_llm_constrained_select_fn,
     parse_constrained_llm_selection,
     render_constrained_select_prompt,
 )
@@ -156,3 +157,60 @@ def test_render_constrained_prompt_lists_candidates_only() -> None:
     assert "Language and Perception" in prompt
     assert "candidate_id" in prompt
     assert "Do NOT invent new labels" in prompt or "do not invent" in prompt.casefold()
+
+
+def test_make_llm_constrained_select_fn_maps_candidate_ids() -> None:
+    """Injected chat returns candidate_id JSON; invents are dropped."""
+    body, gold = _body_and_gold()
+    cands = build_body_candidates(body, paper_id="1206.6423")
+    by_surface = {c["surface"]: c["candidate_id"] for c in cands}
+    cid_field = by_surface["Language and Perception"]
+    cid_task = by_surface["Grounded Attribute Learning"]
+
+    def chat_fn(messages, *, model, max_tokens=700, temperature=0.0):
+        assert model == "mock-model"
+        assert any("CANDIDATES" in str(m.get("content") or "") for m in messages)
+        return (
+            '{"entities":[{"candidate_id":"%s","type":"Field"},'
+            '{"candidate_id":"%s","type":"Task"},'
+            '{"candidate_id":"c:invented","type":"Method"}],'
+            '"relations":[{"type":"APPLIED_TO","source_id":"%s","target_id":"%s"}]}'
+            % (cid_field, cid_task, cid_field, cid_task)
+        )
+
+    select = make_llm_constrained_select_fn(chat_fn=chat_fn, model="mock-model")
+    sel = select(body, gold["case_id"], cands)
+    assert sel["json_valid"] is True
+    ids = {e["candidate_id"] for e in sel["entities"]}
+    assert ids == {cid_field, cid_task}
+    assert "c:invented" not in ids
+    assert len(sel["relations"]) == 1
+
+
+def test_make_llm_constrained_select_fn_fail_closed_on_chat_error() -> None:
+    def chat_fn(messages, *, model, max_tokens=700, temperature=0.0):
+        raise RuntimeError("boom")
+
+    select = make_llm_constrained_select_fn(chat_fn=chat_fn, model="x")
+    sel = select("body", "case:x", [{"candidate_id": "c:1", "surface": "A B", "surface_norm": "a b"}])
+    assert sel["json_valid"] is False
+    assert sel["entities"] == []
+    assert sel["relations"] == []
+
+
+def test_make_llm_constrained_select_fn_maps_label_to_candidate() -> None:
+    """When model returns free labels that match candidates, map to candidate_id."""
+    body, gold = _body_and_gold()
+    cands = build_body_candidates(body, paper_id="1206.6423")
+
+    def chat_fn(messages, *, model, max_tokens=700, temperature=0.0):
+        return (
+            '{"entities":[{"label":"Language and Perception","type":"Field"},'
+            '{"label":"Grounded Attribute Learning","type":"Task"}],'
+            '"relations":[]}'
+        )
+
+    select = make_llm_constrained_select_fn(chat_fn=chat_fn, model="m")
+    sel = select(body, gold["case_id"], cands)
+    assert len(sel["entities"]) == 2
+    assert all(e.get("candidate_id") for e in sel["entities"])
