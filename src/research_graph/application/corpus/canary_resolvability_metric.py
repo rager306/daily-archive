@@ -23,6 +23,7 @@ REAL_MODES = frozenset(
         "real_gold_hybrid_join",
         "char_span_from_hybrid_body",
         "layout_page_bbox",
+        "prediction_resolvability",
         "real",
     }
 )
