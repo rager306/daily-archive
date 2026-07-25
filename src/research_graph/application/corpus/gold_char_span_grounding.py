@@ -112,6 +112,61 @@ def _relation_surface(rel: Mapping[str, Any]) -> str:
     return " ".join(parts).strip()
 
 
+def _entity_id_label_map(entities: Sequence[Mapping[str, Any]]) -> dict[str, str]:
+    """Map entity id (and bare id variants) -> surface label."""
+    out: dict[str, str] = {}
+    for ent in entities:
+        if not isinstance(ent, Mapping):
+            continue
+        label = _entity_surface(ent)
+        if not label:
+            continue
+        eid = str(ent.get("id") or "").strip()
+        if eid:
+            out[eid] = label
+        # also allow last path segment matches used in some fixtures
+        if ":" in eid:
+            out[eid.split(":")[-1]] = label
+    return out
+
+
+def resolve_relation_endpoint_surfaces(
+    rel: Mapping[str, Any],
+    entity_labels: Mapping[str, str],
+) -> list[str]:
+    """Ordered surface candidates for a relation, resolving source/target entity ids.
+
+    m072 gold uses ``source``/``target`` entity ids (not source_label/target_label).
+    """
+    surfaces: list[str] = []
+    seen: set[str] = set()
+
+    def add(value: str) -> None:
+        s = (value or "").strip()
+        if not s or s in seen:
+            return
+        # skip raw entity ids that look like e:paper:type:slug when unresolved
+        seen.add(s)
+        surfaces.append(s)
+
+    add(_relation_surface(rel))
+    for key in ("source_label", "target_label", "subject", "object"):
+        add(str(rel.get(key) or ""))
+
+    for key in ("source", "target", "source_id", "target_id"):
+        raw = str(rel.get(key) or "").strip()
+        if not raw:
+            continue
+        if raw in entity_labels:
+            add(entity_labels[raw])
+        elif ":" in raw and raw.split(":")[-1] in entity_labels:
+            add(entity_labels[raw.split(":")[-1]])
+        else:
+            # do not use opaque entity ids as body surfaces
+            pass
+    return surfaces
+
+
 @dataclass(frozen=True, slots=True)
 class GoldCharSpanGroundingResult:
     schema_version: str
@@ -182,27 +237,32 @@ def attach_char_spans_to_gold_case(
                 item["spans"] = []
         entities_out.append(item)
 
+    entity_labels = _entity_id_label_map(
+        [e for e in entities_out if isinstance(e, Mapping)]
+    )
+
     for rel in relations_in:
         if not isinstance(rel, Mapping):
             continue
         item = dict(rel)
-        # Prefer explicit evidence text; else ground on endpoint surfaces present in body.
-        candidates = [
-            _relation_surface(item),
-            str(item.get("source_label") or "").strip(),
-            str(item.get("target_label") or "").strip(),
-            str(item.get("subject") or "").strip(),
-            str(item.get("object") or "").strip(),
-        ]
-        span = None
+        # Resolve source/target entity ids → labels; ground multi-endpoint spans.
+        candidates = resolve_relation_endpoint_surfaces(item, entity_labels)
+        spans: list[dict[str, Any]] = []
         for surface in candidates:
-            if not surface:
-                continue
             span = span_dict_for_surface(surface, body, artifact_hash=h)
-            if span is not None:
-                break
-        if span is not None:
-            item["spans"] = [span]
+            if span is None:
+                continue
+            # de-dupe by char range
+            key = (span.get("char_start"), span.get("char_end"), span.get("surface"))
+            if any(
+                (s.get("char_start"), s.get("char_end"), s.get("surface")) == key
+                for s in spans
+            ):
+                continue
+            spans.append(span)
+        if spans:
+            item["spans"] = spans
+            item["endpoint_surfaces"] = candidates
             rg += 1
         else:
             item["spans"] = (
@@ -212,6 +272,7 @@ def attach_char_spans_to_gold_case(
             )
             if not item["spans"]:
                 item["spans"] = []
+            item["endpoint_surfaces"] = candidates
         relations_out.append(item)
 
     gold_out = {

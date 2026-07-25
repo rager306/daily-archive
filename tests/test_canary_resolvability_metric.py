@@ -21,7 +21,9 @@ def test_rate_with_page_bbox_and_missing() -> None:
         {"case_id": "c", "spans": [{"page": 1}]},  # no hash
         {"case_id": "d", "spans": []},
     ]
-    pkg = evaluate_canary_resolvability(rows, target_rate=0.5, expand_gold=False)
+    pkg = evaluate_canary_resolvability(
+        rows, target_rate=0.5, expand_gold=False, min_n=1, metric_mode="real"
+    )
     assert pkg.total_rows == 4
     assert pkg.resolvable_count == 2
     assert pkg.char_only_count == 1
@@ -73,3 +75,44 @@ def test_empty_rows() -> None:
     pkg = evaluate_canary_resolvability([], target_rate=0.95)
     assert pkg.total_rows == 0
     assert pkg.target_met is False
+
+
+def test_demo_metric_never_target_met() -> None:
+    rows = [
+        {
+            "case_id": f"c{i}",
+            "spans": [{"artifact_hash": "h", "page": 1, "bbox": [0, 0, 1, 1]}],
+        }
+        for i in range(12)
+    ]
+    pkg = evaluate_canary_resolvability(
+        rows,
+        target_rate=0.5,
+        expand_gold=False,
+        metric_mode="demo_placeholder",
+        demo_metric=True,
+    )
+    assert pkg.demo_metric is True
+    assert pkg.target_met is False
+    assert any("demo_metric" in a for a in pkg.alerts)
+
+
+def test_real_mode_target_met_with_min_n() -> None:
+    rows = [
+        {
+            "case_id": f"c{i}",
+            "kind": "entity",
+            "spans": [{"artifact_hash": "h", "page": 1, "bbox": [0, 0, 1, 1]}],
+        }
+        for i in range(12)
+    ]
+    pkg = evaluate_canary_resolvability(
+        rows,
+        target_rate=0.9,
+        expand_gold=False,
+        metric_mode="real_gold_hybrid_join",
+        demo_metric=False,
+        min_n=10,
+    )
+    assert pkg.target_met is True
+    assert pkg.metric_mode == "real_gold_hybrid_join"

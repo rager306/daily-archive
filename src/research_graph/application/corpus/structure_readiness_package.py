@@ -33,6 +33,10 @@ class StructureReadinessPackage:
     alerts: tuple[str, ...]
     import_eligible: bool = False
     graph_writes_allowed: bool = False
+    # M282: structure gate v2 IR signal
+    ir_hard_count: int | None = None
+    newline_demoted_count: int | None = None
+    weak_structure_ir: bool = False
 
     def __post_init__(self) -> None:
         if self.import_eligible or self.graph_writes_allowed:
@@ -48,6 +52,9 @@ class StructureReadinessPackage:
             "structure_gaps": list(self.structure_gaps),
             "hybrid_found": self.hybrid_found,
             "hybrid_fraction": self.hybrid_fraction,
+            "ir_hard_count": self.ir_hard_count,
+            "newline_demoted_count": self.newline_demoted_count,
+            "weak_structure_ir": self.weak_structure_ir,
             "closeout_signal": self.closeout_signal,
             "citation_verdict": self.citation_verdict,
             "pipeline_overall": self.pipeline_overall,
@@ -106,6 +113,23 @@ def build_structure_readiness_package(
     if closeout_signal is None and dash.get("closeout_signal") is not None:
         closeout_signal = str(dash["closeout_signal"])
 
+    ir_hard = gate.get("ir_hard_count")
+    try:
+        ir_hard_i = int(ir_hard) if ir_hard is not None else None
+    except (TypeError, ValueError):
+        ir_hard_i = None
+    nl_demoted = gate.get("newline_demoted_count")
+    try:
+        nl_i = int(nl_demoted) if nl_demoted is not None else None
+    except (TypeError, ValueError):
+        nl_i = None
+    # Weak IR: gate may pass on soft_legacy newlines with zero hard IR structure.
+    weak_ir = bool(
+        gate.get("gate_signal") == "pass"
+        and ir_hard_i is not None
+        and ir_hard_i == 0
+    )
+
     alerts: list[str] = []
     if missing:
         alerts.append(f"structure_missing_seams:{len(missing)}")
@@ -117,9 +141,12 @@ def build_structure_readiness_package(
         alerts.append(f"wave_a_not_closed:{closeout_signal}")
     if citation_verdict in {"blocked", "repair"}:
         alerts.append(f"citation_verdict:{citation_verdict}")
+    if weak_ir:
+        alerts.append("weak_structure_ir:gate_pass_ir_hard_0")
 
     # Structure signal: seams blocked → blocked; missing/gaps/partial → partial;
     # present seams + hybrid context → ready_for_structure_review (still not import).
+    # M282: weak IR demotes ready → partial (do not claim structure-ready on newlines).
     gap_cleared = bool(gate.get("continuity_gap_cleared"))
     if health == "blocked" or (not present and missing):
         signal: StructureSignal = "blocked"
@@ -128,6 +155,8 @@ def build_structure_readiness_package(
     elif gaps and not gap_cleared:
         signal = "partial"
     elif health in {"gap", "partial"} and gaps:
+        signal = "partial"
+    elif weak_ir:
         signal = "partial"
     elif (
         (health in {"present", "partial", "gap"} or present)
@@ -152,6 +181,9 @@ def build_structure_readiness_package(
         f"closeout_signal:{closeout_signal}",
         f"citation_verdict:{citation_verdict}",
         f"pipeline_overall:{pipeline_overall}",
+        f"ir_hard_count:{ir_hard_i}",
+        f"newline_demoted_count:{nl_i}",
+        f"weak_structure_ir:{str(weak_ir).lower()}",
         f"alerts:{len(alerts)}",
         f"chunk_gate:{gate.get('gate_signal')}",
         f"chunk_gap_cleared:{gate.get('continuity_gap_cleared')}",
@@ -173,6 +205,9 @@ def build_structure_readiness_package(
         pipeline_overall=pipeline_overall,
         diagnostics=diagnostics,
         alerts=tuple(alerts),
+        ir_hard_count=ir_hard_i,
+        newline_demoted_count=nl_i,
+        weak_structure_ir=weak_ir,
     )
 
 

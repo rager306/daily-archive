@@ -161,7 +161,12 @@ def evaluate_joined_canary_resolvability(
         grounded_golds.append(result.gold)
 
     metric = evaluate_canary_resolvability(
-        grounded_golds, target_rate=target_rate, expand_gold=True
+        grounded_golds,
+        target_rate=target_rate,
+        expand_gold=True,
+        metric_mode="real_gold_hybrid_join",
+        demo_metric=False,
+        min_n=10,
     )
     diagnostics = (
         f"gold_total:{len(gold_rows)}",
