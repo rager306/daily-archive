@@ -80,41 +80,21 @@ impl IngestUseCase {
         // 4. Upsert to Samyama Graph (manual upsert — Samyama MERGE doesn't support inline props)
         let vid = paper.vid.clone();
 
-        // Check if node already exists — return n.vid (returns row if exists, empty if not)
-        let check_cypher = format!(
-            "MATCH (n:Paper {{vid: \"{}\"}}) RETURN n.vid",
-            vid
-        );
-        let check_result = self.graph_store.query_readonly("default", &check_cypher).await?;
-        let exists = !check_result.records.is_empty()
-            && check_result.records[0].first().map(|v| !v.is_null()).unwrap_or(false);
+        // MERGE is idempotent — no separate exists check needed (Samyama supports MERGE since v1.0)
 
-        if exists {
-            // Update existing node
-            let update_cypher = format!(
-                "MATCH (n:Paper {{vid: \"{}\"}}) SET n.title = \"{}\", n.pdf_hash = \"{}\", n.embedding = {}",
-                vid,
-                paper.title.replace('"', "'"),
-                parsed.pdf_hash,
-                serde_json::to_string(&vector)?
-            );
-            self.graph_store.query("default", &update_cypher).await?;
-            tracing::info!(paper_id, vid = %vid, "Graph updated (upsert)");
-        } else {
-            // Create new node
-            let create_cypher = format!(
-                "CREATE (n:Paper {{vid: \"{}\", arxiv_id: \"{}\", title: \"{}\", pdf_hash: \"{}\", valid_from: {}, schema_version: {}, evidence_ready: false, import_eligible: false, embedding: {}}})",
-                vid,
-                paper.arxiv_id,
-                paper.title.replace('"', "'"),
-                parsed.pdf_hash,
-                paper.valid_from,
-                paper.schema_version,
-                serde_json::to_string(&vector)?
-            );
-            self.graph_store.query("default", &create_cypher).await?;
-            tracing::info!(paper_id, vid = %vid, "Graph created (new node)");
-        }
+        // Idempotent upsert via MERGE (Samyama docs: ON CREATE SET / ON MATCH SET)
+        let escaped_title = paper.title.replace('"', "'");
+        let vector_json = serde_json::to_string(&vector)?;
+        let merge_cypher = format!(
+            "MERGE (n:Paper {{vid: \"{}\"}}) \
+             ON CREATE SET n.arxiv_id = \"{}\", n.title = \"{}\", n.pdf_hash = \"{}\", n.valid_from = {}, n.schema_version = {}, n.evidence_ready = false, n.import_eligible = false, n.embedding = {} \
+             ON MATCH SET n.title = \"{}\", n.pdf_hash = \"{}\", n.embedding = {} \
+             RETURN n.vid",
+            vid, paper.arxiv_id, escaped_title, parsed.pdf_hash, paper.valid_from, paper.schema_version, vector_json,
+            escaped_title, parsed.pdf_hash, vector_json
+        );
+        self.graph_store.query("default", &merge_cypher).await?;
+        tracing::info!(paper_id, vid = %vid, "Graph upserted (MERGE)");
 
         Ok(IngestResult {
             paper_id: paper_id.to_string(),
