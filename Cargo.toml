@@ -1,0 +1,48 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/da-domain",
+    "crates/da-evidence",
+    "crates/da-parsing",
+    "crates/da-extraction",
+    "crates/da-catalog",
+    "crates/da-graph-nebula",
+    "crates/da-agent",
+    "crates/da-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+
+[workspace.dependencies]
+# Internal crates
+da-domain = { path = "crates/da-domain" }
+da-evidence = { path = "crates/da-evidence" }
+da-parsing = { path = "crates/da-parsing" }
+da-extraction = { path = "crates/da-extraction" }
+da-catalog = { path = "crates/da-catalog" }
+da-graph-nebula = { path = "crates/da-graph-nebula" }
+da-agent = { path = "crates/da-agent" }
+
+# Core dependencies
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+thiserror = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+sha2 = "0.10"
+
+# RuVector crates (local path deps to vendor-source)
+ruvector-core = { path = "../vendor-source/ruvector/crates/ruvector-core" }
+ruvector-graph = { path = "../vendor-source/ruvector/crates/ruvector-graph" }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
